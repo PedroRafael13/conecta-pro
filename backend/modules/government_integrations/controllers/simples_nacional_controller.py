@@ -162,6 +162,7 @@ async def consultar_pendencias(
     response_model=StandardResponse,
     summary="Simular cálculo",
     description="Simula o cálculo do Simples Nacional",
+    status_code=201,
 )
 async def simular_calculo(
     current_user: CurrentActiveUser,
@@ -191,6 +192,7 @@ async def simular_calculo(
     response_model=StandardResponse,
     summary="Calcular Fator R",
     description="Calcula o Fator R e determina o anexo aplicável",
+    status_code=201,
 )
 async def calcular_fator_r(
     current_user: CurrentActiveUser,

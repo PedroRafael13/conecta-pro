@@ -246,7 +246,7 @@ async def update_contract(
     return ContractDetailResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/submit", response_model=ContractResponse)
+@router.post("/{contract_id}/submit", response_model=ContractResponse, status_code=201)
 async def submit_contract_for_signature(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -274,7 +274,7 @@ async def submit_contract_for_signature(
     return ContractResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/activate", response_model=ContractResponse)
+@router.post("/{contract_id}/activate", response_model=ContractResponse, status_code=201)
 async def activate_contract(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -300,7 +300,7 @@ async def activate_contract(
     return ContractResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/suspend", response_model=ContractResponse)
+@router.post("/{contract_id}/suspend", response_model=ContractResponse, status_code=201)
 async def suspend_contract(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -327,7 +327,7 @@ async def suspend_contract(
     return ContractResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/terminate", response_model=ContractResponse)
+@router.post("/{contract_id}/terminate", response_model=ContractResponse, status_code=201)
 async def terminate_contract(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -354,7 +354,7 @@ async def terminate_contract(
     return ContractResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/renew", response_model=RenewalResult)
+@router.post("/{contract_id}/renew", response_model=RenewalResult, status_code=201)
 async def calculate_renewal(
     contract_id: str,
     data: ContractRenewal,
@@ -384,7 +384,7 @@ async def calculate_renewal(
     )
 
 
-@router.post("/{contract_id}/calculate-adjustment", response_model=AdjustmentResult)
+@router.post("/{contract_id}/calculate-adjustment", response_model=AdjustmentResult, status_code=201)
 async def calculate_adjustment(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -553,7 +553,7 @@ async def list_addendums(
     return [ContractAddendumResponse.model_validate(a) for a in addendums]
 
 
-@router.post("/addendums/{addendum_id}/sign", response_model=ContractAddendumResponse)
+@router.post("/addendums/{addendum_id}/sign", response_model=ContractAddendumResponse, status_code=201)
 async def sign_addendum(
     addendum_id: str,
     data: ContractAddendumSign,
@@ -623,7 +623,7 @@ async def update_template(
     return ContractTemplateResponse.model_validate(template)
 
 
-@router.post("/templates/{template_id}/approve", response_model=ContractTemplateResponse)
+@router.post("/templates/{template_id}/approve", response_model=ContractTemplateResponse, status_code=201)
 async def approve_template(
     template_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -707,7 +707,7 @@ async def list_sla_reports(
     return [ContractSLAReportResponse.model_validate(r) for r in reports]
 
 
-@router.post("/sla-reports/{report_id}/approve", response_model=ContractSLAReportResponse)
+@router.post("/sla-reports/{report_id}/approve", response_model=ContractSLAReportResponse, status_code=201)
 async def approve_sla_report(
     report_id: str,
     data: ContractSLAReportApprove,
@@ -735,7 +735,7 @@ async def approve_sla_report(
     return ContractSLAReportResponse.model_validate(report)
 
 
-@router.post("/{contract_id}/calculate-sla", response_model=SLACalculation)
+@router.post("/{contract_id}/calculate-sla", response_model=SLACalculation, status_code=201)
 async def calculate_sla(
     contract_id: str,
     indicator_results: list[dict],

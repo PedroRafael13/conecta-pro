@@ -424,9 +424,7 @@ async def delete_product(
 
 
 @router.post(
-    "/products/{product_id}/block",
-    response_model=ProductResponse,
-    summary="Bloquear produto",
+    "/products/{product_id}/block", response_model=ProductResponse, summary="Bloquear produto", status_code=201
 )
 async def block_product(
     product_id: UUID,
@@ -592,6 +590,7 @@ async def update_requisition(
     "/requisitions/{requisition_id}/submit",
     response_model=PurchaseRequisitionResponse,
     summary="Submeter para aprovação",
+    status_code=201,
 )
 async def submit_requisition(
     requisition_id: UUID,
@@ -619,6 +618,7 @@ async def submit_requisition(
     "/requisitions/{requisition_id}/approve",
     response_model=PurchaseRequisitionResponse,
     summary="Aprovar requisição",
+    status_code=201,
 )
 async def approve_requisition(
     requisition_id: UUID,
@@ -648,6 +648,7 @@ async def approve_requisition(
     "/requisitions/{requisition_id}/reject",
     response_model=PurchaseRequisitionResponse,
     summary="Rejeitar requisição",
+    status_code=201,
 )
 async def reject_requisition(
     requisition_id: UUID,
@@ -676,6 +677,7 @@ async def reject_requisition(
     "/requisitions/{requisition_id}/cancel",
     response_model=PurchaseRequisitionResponse,
     summary="Cancelar requisição",
+    status_code=201,
 )
 async def cancel_requisition(
     requisition_id: UUID,
@@ -700,10 +702,7 @@ async def cancel_requisition(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post(
-    "/requisitions/{requisition_id}/analyze-risks",
-    summary="Analisar riscos da requisição",
-)
+@router.post("/requisitions/{requisition_id}/analyze-risks", summary="Analisar riscos da requisição", status_code=201)
 async def analyze_requisition_risks(
     requisition_id: UUID,
     session: AsyncSession = Depends(get_session),
@@ -896,6 +895,7 @@ async def update_quotation(
     "/quotations/{quotation_id}/score",
     response_model=PurchaseQuotationResponse,
     summary="Pontuar cotação",
+    status_code=201,
 )
 async def score_quotation(
     quotation_id: UUID,
@@ -928,6 +928,7 @@ async def score_quotation(
     "/quotations/{quotation_id}/select",
     response_model=PurchaseQuotationResponse,
     summary="Selecionar cotação",
+    status_code=201,
 )
 async def select_quotation(
     quotation_id: UUID,
@@ -957,6 +958,7 @@ async def select_quotation(
     "/quotations/{quotation_id}/reject",
     response_model=PurchaseQuotationResponse,
     summary="Rejeitar cotação",
+    status_code=201,
 )
 async def reject_quotation(
     quotation_id: UUID,
@@ -1124,9 +1126,7 @@ async def update_order(
 
 
 @router.post(
-    "/orders/{order_id}/approve",
-    response_model=PurchaseOrderResponse,
-    summary="Aprovar ordem",
+    "/orders/{order_id}/approve", response_model=PurchaseOrderResponse, summary="Aprovar ordem", status_code=201
 )
 async def approve_order(  # pylint: disable=unused-argument
     order_id: UUID,
@@ -1152,9 +1152,7 @@ async def approve_order(  # pylint: disable=unused-argument
 
 
 @router.post(
-    "/orders/{order_id}/reject",
-    response_model=PurchaseOrderResponse,
-    summary="Rejeitar ordem",
+    "/orders/{order_id}/reject", response_model=PurchaseOrderResponse, summary="Rejeitar ordem", status_code=201
 )
 async def reject_order(
     order_id: UUID,
@@ -1183,6 +1181,7 @@ async def reject_order(
     "/orders/{order_id}/send",
     response_model=PurchaseOrderResponse,
     summary="Enviar ordem para fornecedor",
+    status_code=201,
 )
 async def send_order(
     order_id: UUID,
@@ -1210,6 +1209,7 @@ async def send_order(
     "/orders/{order_id}/confirm",
     response_model=PurchaseOrderResponse,
     summary="Confirmar ordem pelo fornecedor",
+    status_code=201,
 )
 async def confirm_order(
     order_id: UUID,
@@ -1235,9 +1235,7 @@ async def confirm_order(
 
 
 @router.post(
-    "/orders/{order_id}/cancel",
-    response_model=PurchaseOrderResponse,
-    summary="Cancelar ordem",
+    "/orders/{order_id}/cancel", response_model=PurchaseOrderResponse, summary="Cancelar ordem", status_code=201
 )
 async def cancel_order(
     order_id: UUID,
@@ -1421,9 +1419,7 @@ async def update_receipt(
 
 
 @router.post(
-    "/receipts/{receipt_id}/inspect",
-    response_model=GoodsReceiptResponse,
-    summary="Realizar inspeção",
+    "/receipts/{receipt_id}/inspect", response_model=GoodsReceiptResponse, summary="Realizar inspeção", status_code=201
 )
 async def inspect_receipt(
     receipt_id: UUID,
@@ -1452,6 +1448,7 @@ async def inspect_receipt(
     "/receipts/{receipt_id}/approve",
     response_model=GoodsReceiptResponse,
     summary="Aprovar recebimento",
+    status_code=201,
 )
 async def approve_receipt(
     receipt_id: UUID,
@@ -1480,6 +1477,7 @@ async def approve_receipt(
     "/receipts/{receipt_id}/reject",
     response_model=GoodsReceiptResponse,
     summary="Rejeitar recebimento",
+    status_code=201,
 )
 async def reject_receipt(
     receipt_id: UUID,
@@ -1534,9 +1532,7 @@ async def register_divergence(
 
 
 @router.post(
-    "/receipts/{receipt_id}/sign",
-    response_model=GoodsReceiptResponse,
-    summary="Assinar recebimento",
+    "/receipts/{receipt_id}/sign", response_model=GoodsReceiptResponse, summary="Assinar recebimento", status_code=201
 )
 async def sign_receipt(
     receipt_id: UUID,
@@ -1674,9 +1670,7 @@ async def get_approval(
 
 
 @router.post(
-    "/approvals/{approval_id}/approve",
-    response_model=PurchaseApprovalResponse,
-    summary="Aprovar",
+    "/approvals/{approval_id}/approve", response_model=PurchaseApprovalResponse, summary="Aprovar", status_code=201
 )
 async def approve_approval(
     approval_id: UUID,
@@ -1708,9 +1702,7 @@ async def approve_approval(
 
 
 @router.post(
-    "/approvals/{approval_id}/reject",
-    response_model=PurchaseApprovalResponse,
-    summary="Rejeitar",
+    "/approvals/{approval_id}/reject", response_model=PurchaseApprovalResponse, summary="Rejeitar", status_code=201
 )
 async def reject_approval(
     approval_id: UUID,
@@ -1744,6 +1736,7 @@ async def reject_approval(
     "/approvals/{approval_id}/delegate",
     response_model=PurchaseApprovalResponse,
     summary="Delegar aprovação",
+    status_code=201,
 )
 async def delegate_approval(
     approval_id: UUID,
@@ -1777,6 +1770,7 @@ async def delegate_approval(
     "/approvals/{approval_id}/request-info",
     response_model=PurchaseApprovalResponse,
     summary="Solicitar informações",
+    status_code=201,
 )
 async def request_info(
     approval_id: UUID,
@@ -1810,6 +1804,7 @@ async def request_info(
     "/approvals/{approval_id}/provide-info",
     response_model=PurchaseApprovalResponse,
     summary="Fornecer informações",
+    status_code=201,
 )
 async def provide_info(
     approval_id: UUID,
@@ -1837,10 +1832,7 @@ async def provide_info(
 # ==================== AI Services ====================
 
 
-@router.post(
-    "/ai/suggest-suppliers",
-    summary="Sugerir fornecedores",
-)
+@router.post("/ai/suggest-suppliers", summary="Sugerir fornecedores", status_code=201)
 async def suggest_suppliers(
     condominio_id: UUID,
     product_description: str = Query(..., min_length=3),
@@ -1869,10 +1861,7 @@ async def analyze_supplier(
     return analysis
 
 
-@router.post(
-    "/ai/predict-demand",
-    summary="Prever demanda",
-)
+@router.post("/ai/predict-demand", summary="Prever demanda", status_code=201)
 async def predict_demand(
     product_id: UUID,
     months_ahead: int = Query(3, ge=1, le=12),

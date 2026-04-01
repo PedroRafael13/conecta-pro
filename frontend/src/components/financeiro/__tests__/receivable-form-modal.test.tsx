@@ -101,7 +101,7 @@ const ReceivableFormModal: React.FC<ReceivableFormModalProps> = ({
           id="amount"
           type="number"
           value={form.amount}
-          onChange={(e) => updateField('amount', e.target.value)}
+          onChange={(e) = aria-label="Number"> updateField('amount', e.target.value)}
           data-testid="input-amount"
         />
 
@@ -110,7 +110,7 @@ const ReceivableFormModal: React.FC<ReceivableFormModalProps> = ({
           id="due_date"
           type="date"
           value={form.due_date}
-          onChange={(e) => updateField('due_date', e.target.value)}
+          onChange={(e) = aria-label="Date"> updateField('due_date', e.target.value)}
           data-testid="input-due-date"
         />
 

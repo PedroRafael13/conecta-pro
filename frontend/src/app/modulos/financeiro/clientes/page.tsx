@@ -211,7 +211,7 @@ export default function ClientesPage() {
             type="search"
             placeholder="Buscar por nome, email ou documento..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) = aria-label="Buscar Por Nome, Email Ou Documento..."> { setSearch(e.target.value); setPage(1); }}
             icon={<Search className="w-4 h-4" />}
           />
         </div>

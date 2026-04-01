@@ -119,7 +119,7 @@ async def add_aditivo(
     return contract
 
 
-@router.post("/{contract_id}/reajuste/calcular", response_model=ContractReadjustResponse)
+@router.post("/{contract_id}/reajuste/calcular", response_model=ContractReadjustResponse, status_code=201)
 async def calcular_reajuste(
     contract_id: UUID, data: ContractReadjustRequest, current_user: CurrentActiveUser, db: Session = Depends(get_db)
 ):
@@ -131,7 +131,7 @@ async def calcular_reajuste(
     return result
 
 
-@router.post("/{contract_id}/reajuste/aplicar", response_model=PublicContractResponse)
+@router.post("/{contract_id}/reajuste/aplicar", response_model=PublicContractResponse, status_code=201)
 async def aplicar_reajuste(
     current_user: CurrentActiveUser,
     contract_id: UUID,
@@ -172,7 +172,7 @@ async def add_medicao(
     )
 
 
-@router.post("/medicoes/{measurement_id}/aprovar")
+@router.post("/medicoes/{measurement_id}/aprovar", status_code=201)
 async def aprovar_medicao(
     measurement_id: UUID,
     aprovador: str,

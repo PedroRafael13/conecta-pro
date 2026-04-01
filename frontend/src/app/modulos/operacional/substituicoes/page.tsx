@@ -363,7 +363,7 @@ export default function SubstituicoesPage() {
               <Input
                 placeholder="Buscar por funcionario, posto..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) = aria-label="Buscar Por Funcionario, Posto..."> setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -391,7 +391,7 @@ export default function SubstituicoesPage() {
               <Input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) = aria-label="Date"> setSelectedDate(e.target.value)}
                 className="w-auto"
               />
             </div>

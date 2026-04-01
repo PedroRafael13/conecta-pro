@@ -184,7 +184,7 @@ class TestTriggerResponse(BaseModel):
 @router.post(
     "/my-notifications/test-trigger",
     response_model=TestTriggerResponse,
-    summary="Disparar notificacao de teste (apenas development)",
+    summary="Disparar notificacao de teste (apenas development, status_code=201)",
     description=(
         "Simula um evento de negocio e dispara a auto-notificacao correspondente "
         "para o funcionario autenticado. **Disponivel apenas em modo development.**"

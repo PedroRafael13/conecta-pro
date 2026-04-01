@@ -95,7 +95,7 @@ async def update_termination(
     return termination
 
 
-@router.post("/{termination_id}/calculate", response_model=TerminationCalculation)
+@router.post("/{termination_id}/calculate", response_model=TerminationCalculation, status_code=201)
 async def calculate_severance(
     termination_id: str,
     current_user: CurrentActiveUser,
@@ -124,7 +124,7 @@ async def calculate_severance(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{termination_id}/complete", response_model=TerminationResponse)
+@router.post("/{termination_id}/complete", response_model=TerminationResponse, status_code=201)
 async def complete_termination(
     termination_id: str,
     current_user: CurrentActiveUser,

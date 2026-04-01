@@ -139,7 +139,7 @@ async def delete_tender(tender_id: UUID, current_user: CurrentActiveUser, db: Se
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Edital nao encontrado")
 
 
-@router.post("/{tender_id}/participar", response_model=TenderResponse)
+@router.post("/{tender_id}/participar", response_model=TenderResponse, status_code=201)
 async def marcar_participacao(
     current_user: CurrentActiveUser,
     tender_id: UUID,
@@ -155,7 +155,7 @@ async def marcar_participacao(
     return tender
 
 
-@router.post("/{tender_id}/status", response_model=TenderResponse)
+@router.post("/{tender_id}/status", response_model=TenderResponse, status_code=201)
 async def alterar_status(
     tender_id: UUID, novo_status: str, current_user: CurrentActiveUser, db: Session = Depends(get_db)
 ):
@@ -178,7 +178,7 @@ async def get_documentos(tender_id: UUID, current_user: CurrentActiveUser, db: S
 
 
 # Endpoints PNCP
-@router.post("/sync-pncp")
+@router.post("/sync-pncp", status_code=201)
 async def sync_pncp(
     current_user: CurrentActiveUser,
     uf: str = Query(default="AM", max_length=2),

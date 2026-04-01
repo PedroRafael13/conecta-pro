@@ -348,6 +348,7 @@ async def delete_announcement(
     response_model=AnnouncementResponse,
     summary="Publicar comunicado",
     description="Publica ou agenda um comunicado",
+    status_code=201,
 )
 async def publish_announcement(
     announcement_id: str,
@@ -404,6 +405,7 @@ async def publish_announcement(
     response_model=dict,
     summary="Confirmar leitura",
     description="Confirma leitura de comunicado que requer confirmacao",
+    status_code=201,
 )
 async def acknowledge_announcement(
     announcement_id: str,

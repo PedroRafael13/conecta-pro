@@ -181,11 +181,7 @@ async def delete_billing_rule(
     await repo.delete(rule)
 
 
-@router.post(
-    "/{rule_id}/activate",
-    response_model=BillingRuleResponse,
-    summary="Ativar regra",
-)
+@router.post("/{rule_id}/activate", response_model=BillingRuleResponse, summary="Ativar regra", status_code=201)
 async def activate_rule(
     rule_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
@@ -210,11 +206,7 @@ async def activate_rule(
     return BillingRuleResponse.model_validate(rule)
 
 
-@router.post(
-    "/{rule_id}/pause",
-    response_model=BillingRuleResponse,
-    summary="Pausar regra",
-)
+@router.post("/{rule_id}/pause", response_model=BillingRuleResponse, summary="Pausar regra", status_code=201)
 async def pause_rule(
     rule_id: UUID,
     reason: str | None = Query(None, description="Motivo da pausa"),
@@ -240,11 +232,7 @@ async def pause_rule(
     return BillingRuleResponse.model_validate(rule)
 
 
-@router.post(
-    "/{rule_id}/cancel",
-    response_model=BillingRuleResponse,
-    summary="Cancelar regra",
-)
+@router.post("/{rule_id}/cancel", response_model=BillingRuleResponse, summary="Cancelar regra", status_code=201)
 async def cancel_rule(
     rule_id: UUID,
     reason: str = Query(..., min_length=5, description="Motivo do cancelamento"),
@@ -270,10 +258,7 @@ async def cancel_rule(
     return BillingRuleResponse.model_validate(rule)
 
 
-@router.post(
-    "/{rule_id}/generate",
-    summary="Gerar cobrancas",
-)
+@router.post("/{rule_id}/generate", summary="Gerar cobrancas", status_code=201)
 async def generate_charges(
     rule_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
@@ -301,10 +286,7 @@ async def generate_charges(
     }
 
 
-@router.post(
-    "/process-all",
-    summary="Processar todas as regras",
-)
+@router.post("/process-all", summary="Processar todas as regras", status_code=201)
 async def process_all_rules(
     condominio_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),

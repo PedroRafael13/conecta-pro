@@ -347,7 +347,7 @@ async def consultar_dfe_destinadas(
         )
 
 
-@router.post("/cancelar", response_model=EventoResponse)
+@router.post("/cancelar", response_model=EventoResponse, status_code=201)
 async def cancelar_nfe(
     dados: CancelamentoRequest,
     current_user: CurrentActiveUser,
@@ -396,7 +396,7 @@ async def cancelar_nfe(
         )
 
 
-@router.post("/carta-correcao", response_model=EventoResponse)
+@router.post("/carta-correcao", response_model=EventoResponse, status_code=201)
 async def registrar_carta_correcao(
     dados: CartaCorrecaoRequest,
     current_user: CurrentActiveUser,
@@ -445,7 +445,7 @@ async def registrar_carta_correcao(
         )
 
 
-@router.post("/inutilizar", response_model=EventoResponse)
+@router.post("/inutilizar", response_model=EventoResponse, status_code=201)
 async def inutilizar_numeracao(
     dados: InutilizacaoRequest,
     current_user: CurrentActiveUser,

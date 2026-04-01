@@ -103,7 +103,7 @@ async def get_opportunity(current_user: CurrentActiveUser, opportunity_id: str) 
         )
 
 
-@router.post("/search")
+@router.post("/search", status_code=201)
 async def search_opportunities(current_user: CurrentActiveUser, request: ScoutRequest) -> dict[str, Any]:
     """
     Busca oportunidades nos portais via agente Scout.

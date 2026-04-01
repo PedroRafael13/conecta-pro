@@ -186,7 +186,7 @@ async def update_lead_status(
     return LeadResponse.model_validate(lead)
 
 
-@router.post("/{lead_id}/recalculate-score", response_model=LeadResponse)
+@router.post("/{lead_id}/recalculate-score", response_model=LeadResponse, status_code=201)
 async def recalculate_lead_score(
     lead_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument

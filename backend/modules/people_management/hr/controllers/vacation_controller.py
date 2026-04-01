@@ -139,7 +139,7 @@ async def get_vacation(
     return vacation
 
 
-@router.post("/sync-solides")
+@router.post("/sync-solides", status_code=201)
 async def sync_ferias_solides(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -160,7 +160,7 @@ async def sync_ferias_solides(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/{vacation_id}/approve")
+@router.post("/{vacation_id}/approve", status_code=201)
 async def approve_vacation(
     vacation_id: str,
     current_user: CurrentActiveUser,

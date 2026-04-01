@@ -297,9 +297,7 @@ async def delete_transaction(
 
 
 @router.post(
-    "/{transaction_id}/confirm",
-    response_model=BankTransactionResponse,
-    summary="Confirmar transação",
+    "/{transaction_id}/confirm", response_model=BankTransactionResponse, summary="Confirmar transação", status_code=201
 )
 async def confirm_transaction(
     transaction_id: UUID,
@@ -339,9 +337,7 @@ async def confirm_transaction(
 
 
 @router.post(
-    "/{transaction_id}/cancel",
-    response_model=BankTransactionResponse,
-    summary="Cancelar transação",
+    "/{transaction_id}/cancel", response_model=BankTransactionResponse, summary="Cancelar transação", status_code=201
 )
 async def cancel_transaction(
     transaction_id: UUID,
@@ -392,6 +388,7 @@ async def cancel_transaction(
     "/{transaction_id}/reconcile",
     response_model=BankTransactionResponse,
     summary="Conciliar transação",
+    status_code=201,
 )
 async def reconcile_transaction(
     transaction_id: UUID,
@@ -428,10 +425,7 @@ async def reconcile_transaction(
 # ==================== IMPORTAÇÃO ====================
 
 
-@router.post(
-    "/import",
-    summary="Importar transações de arquivo",
-)
+@router.post("/import", summary="Importar transações de arquivo", status_code=201)
 async def import_transactions(
     data: BankTransactionImport,
     repo: BankTransactionRepository = Depends(get_repository),
@@ -501,10 +495,7 @@ async def import_transactions(
     }
 
 
-@router.post(
-    "/import/ofx",
-    summary="Importar arquivo OFX",
-)
+@router.post("/import/ofx", summary="Importar arquivo OFX", status_code=201)
 async def import_ofx_file(
     bank_account_id: UUID = Query(...),
     file: UploadFile = File(..., description="Arquivo OFX"),

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["GED - Auto-Assemble"])
 
 
-@router.post("/auto-assemble")
+@router.post("/auto-assemble", status_code=201)
 async def auto_assemble_kits(
     reference_month: date | None = Query(None, description="Mes de referencia (default: mes atual)"),
     current_user: CurrentActiveUser = None,

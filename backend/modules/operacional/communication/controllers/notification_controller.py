@@ -155,6 +155,7 @@ async def get_unread_count(
     response_model=NotificationResponse,
     summary="Marcar como lida",
     description="Marca uma notificacao como lida",
+    status_code=201,
 )
 async def mark_notification_read(
     notification_id: str,
@@ -196,6 +197,7 @@ async def mark_notification_read(
     response_model=dict,
     summary="Marcar todas como lidas",
     description="Marca todas notificacoes como lidas",
+    status_code=201,
 )
 async def mark_all_notifications_read(
     request_data: MarkNotificationReadRequest,
@@ -367,6 +369,7 @@ async def list_user_active_alerts(
     response_model=AlertResponse,
     summary="Confirmar alerta",
     description="Confirma recebimento de um alerta",
+    status_code=201,
 )
 async def acknowledge_alert(
     alert_id: str,

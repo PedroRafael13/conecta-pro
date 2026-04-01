@@ -260,6 +260,7 @@ async def gerar_r2099(
     response_model=StandardResponse,
     summary="Enviar lote de eventos",
     description="Envia um lote de eventos XML para a Receita Federal",
+    status_code=201,
 )
 async def enviar_lote(
     eventos_xml: list[str], current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
@@ -285,6 +286,7 @@ async def enviar_lote(
     response_model=StandardResponse,
     summary="Transmitir R-1000 para a Receita Federal",
     description="Transmite o R-1000 de verdade via SOAP + mTLS com certificado A1",
+    status_code=201,
 )
 async def transmitir_r1000(
     current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)

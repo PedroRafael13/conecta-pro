@@ -112,6 +112,7 @@ class EstatisticasResponse(BaseModel):
     response_model=NotificacaoResponse,
     summary="Enviar notificação",
     description="Envia uma notificação para um diarista",
+    status_code=201,
 )
 async def enviar_notificacao(
     request: EnviarNotificacaoRequest,
@@ -163,6 +164,7 @@ async def enviar_notificacao(
     response_model=NotificacaoResponse,
     summary="Enviar confirmação de agendamento",
     description="Envia notificação de confirmação de agendamento",
+    status_code=201,
 )
 async def enviar_confirmacao_agendamento(
     request: EnviarConfirmacaoRequest,
@@ -187,6 +189,7 @@ async def enviar_confirmacao_agendamento(
     response_model=NotificacaoResponse,
     summary="Enviar lembrete 24h",
     description="Envia lembrete 24h antes do serviço",
+    status_code=201,
 )
 async def enviar_lembrete_24h(
     request: EnviarLembreteRequest,
@@ -211,6 +214,7 @@ async def enviar_lembrete_24h(
     response_model=NotificacaoResponse,
     summary="Enviar alerta de atraso",
     description="Envia alerta quando diarista está atrasado",
+    status_code=201,
 )
 async def enviar_alerta_atraso(
     request: EnviarAlertaAtrasoRequest,
@@ -236,6 +240,7 @@ async def enviar_alerta_atraso(
     response_model=NotificacaoResponse,
     summary="Enviar notificação de pagamento",
     description="Envia notificação de pagamento aprovado ou realizado",
+    status_code=201,
 )
 async def enviar_notificacao_pagamento(
     request: EnviarNotificacaoPagamentoRequest,
@@ -265,6 +270,7 @@ async def enviar_notificacao_pagamento(
     "/processar-lembretes-24h",
     summary="Processar lembretes 24h",
     description="Processa e envia lembretes para todos os agendamentos de amanhã",
+    status_code=201,
 )
 async def processar_lembretes_24h(
     background_tasks: BackgroundTasks,
@@ -291,7 +297,10 @@ async def processar_lembretes_24h(
 
 
 @router.post(
-    "/verificar-atrasos", summary="Verificar atrasos", description="Verifica diaristas atrasados e envia alertas"
+    "/verificar-atrasos",
+    summary="Verificar atrasos",
+    description="Verifica diaristas atrasados e envia alertas",
+    status_code=201,
 )
 async def verificar_atrasos(
     current_user: CurrentActiveUser,
@@ -516,6 +525,7 @@ async def listar_canais(current_user: CurrentActiveUser):
     response_model=NotificacaoResponse,
     summary="Enviar boas-vindas",
     description="Envia mensagem de boas-vindas para novo diarista",
+    status_code=201,
 )
 async def enviar_boas_vindas(
     diarist_id: UUID,

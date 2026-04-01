@@ -155,7 +155,7 @@ export default function EscalaDiariaPage() {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) = aria-label="Date"> setSelectedDate(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
               />
               <Button
@@ -340,7 +340,7 @@ export default function EscalaDiariaPage() {
                             <input
                               type="time"
                               value={item.horario_inicio || '08:00'}
-                              onChange={(e) => updateItem(id, 'horario_inicio', e.target.value)}
+                              onChange={(e) = aria-label="Time"> updateItem(id, 'horario_inicio', e.target.value)}
                               className="w-full px-2 py-1 rounded border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
                             />
                           </div>
@@ -351,7 +351,7 @@ export default function EscalaDiariaPage() {
                             <input
                               type="time"
                               value={item.horario_fim || '17:00'}
-                              onChange={(e) => updateItem(id, 'horario_fim', e.target.value)}
+                              onChange={(e) = aria-label="Time"> updateItem(id, 'horario_fim', e.target.value)}
                               className="w-full px-2 py-1 rounded border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
                             />
                           </div>

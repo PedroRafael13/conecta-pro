@@ -105,7 +105,7 @@ async def resumo_fiscal(
 # ── Conciliacao Bancaria ─────────────────────────────────────────────────────
 
 
-@router.post("/bank-reconciliations/auto")
+@router.post("/bank-reconciliations/auto", status_code=201)
 async def conciliacao_auto(
     db: AsyncSession = Depends(get_session),
     _user: dict = Depends(get_current_user),

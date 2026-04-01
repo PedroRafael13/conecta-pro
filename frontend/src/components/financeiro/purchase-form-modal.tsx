@@ -185,7 +185,7 @@ export function PurchaseFormModal({ isOpen, onClose, onSubmit, isLoading = false
                     step="0.01"
                     min="0"
                     value={formData.total_amount}
-                    onChange={(e) => handleChange('total_amount', e.target.value)}
+                    onChange={(e) = aria-label="Number"> handleChange('total_amount', e.target.value)}
                     placeholder="0,00"
                     required
                   />
@@ -197,7 +197,7 @@ export function PurchaseFormModal({ isOpen, onClose, onSubmit, isLoading = false
                   <Input
                     type="date"
                     value={formData.delivery_date}
-                    onChange={(e) => handleChange('delivery_date', e.target.value)}
+                    onChange={(e) = aria-label="Date"> handleChange('delivery_date', e.target.value)}
                   />
                 </div>
               </div>

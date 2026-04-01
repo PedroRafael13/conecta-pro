@@ -79,7 +79,7 @@ async def get_by_version_number(
     return DocumentVersionResponse.model_validate(version)
 
 
-@router.post("/{version_id}/set-current", response_model=DocumentVersionResponse)
+@router.post("/{version_id}/set-current", response_model=DocumentVersionResponse, status_code=201)
 async def set_as_current(
     version_id: str,
     db: AsyncSession = Depends(get_db),
@@ -94,7 +94,7 @@ async def set_as_current(
     return DocumentVersionResponse.model_validate(version)
 
 
-@router.post("/{version_id}/archive", response_model=DocumentVersionResponse)
+@router.post("/{version_id}/archive", response_model=DocumentVersionResponse, status_code=201)
 async def archive_version(
     version_id: str,
     db: AsyncSession = Depends(get_db),

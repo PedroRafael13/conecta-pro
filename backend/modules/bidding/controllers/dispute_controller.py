@@ -117,7 +117,7 @@ async def get_dispute(
     return dispute
 
 
-@router.post("/simulate")
+@router.post("/simulate", status_code=201)
 async def simulate_dispute(current_user: CurrentActiveUser, request: DisputeSimulationRequest) -> dict[str, Any]:
     """
     Simula uma disputa de pregao eletronico usando o agente Warrior.

@@ -274,7 +274,7 @@ export function DocumentSignatureDialog({
                         <Input
                           placeholder="Nome completo"
                           value={signer.name}
-                          onChange={(e) => handleSignerChange(index, 'name', e.target.value)}
+                          onChange={(e) = aria-label="Nome Completo"> handleSignerChange(index, 'name', e.target.value)}
                         />
                       </div>
 
@@ -284,7 +284,7 @@ export function DocumentSignatureDialog({
                           type="email"
                           placeholder="email@exemplo.com"
                           value={signer.email}
-                          onChange={(e) => handleSignerChange(index, 'email', e.target.value)}
+                          onChange={(e) = aria-label="Email@Exemplo.Com"> handleSignerChange(index, 'email', e.target.value)}
                         />
                       </div>
 
@@ -293,7 +293,7 @@ export function DocumentSignatureDialog({
                         <Input
                           placeholder="000.000.000-00"
                           value={signer.document || ''}
-                          onChange={(e) => handleSignerChange(index, 'document', e.target.value)}
+                          onChange={(e) = aria-label="000.000.000 00"> handleSignerChange(index, 'document', e.target.value)}
                         />
                       </div>
 
@@ -302,7 +302,7 @@ export function DocumentSignatureDialog({
                         <Input
                           placeholder="(00) 00000-0000"
                           value={signer.phone || ''}
-                          onChange={(e) => handleSignerChange(index, 'phone', e.target.value)}
+                          onChange={(e) = aria-label="(00) 00000 0000"> handleSignerChange(index, 'phone', e.target.value)}
                         />
                       </div>
 
@@ -333,7 +333,7 @@ export function DocumentSignatureDialog({
                           type="number"
                           min={1}
                           value={signer.order}
-                          onChange={(e) =>
+                          onChange={(e) = aria-label="Number">
                             handleSignerChange(index, 'order', parseInt(e.target.value))
                           }
                         />
@@ -366,7 +366,7 @@ export function DocumentSignatureDialog({
                     min={1}
                     max={90}
                     value={deadlineDays}
-                    onChange={(e) => setDeadlineDays(parseInt(e.target.value))}
+                    onChange={(e) = aria-label="Number"> setDeadlineDays(parseInt(e.target.value))}
                   />
                 </div>
 
@@ -376,7 +376,7 @@ export function DocumentSignatureDialog({
                   <Textarea
                     placeholder="Mensagem que será enviada junto com a solicitação"
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    onChange={(e) = aria-label="Mensagem Que Será Enviada Junto Com A Solicitação"> setMessage(e.target.value)}
                     rows={3}
                   />
                 </div>

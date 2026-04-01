@@ -220,7 +220,10 @@ async def get_ocupacao_postos(
 
 
 @router.post(
-    "/alocar-diarista", summary="Alocar diarista a posto", description="Aloca um diarista a um posto de trabalho"
+    "/alocar-diarista",
+    summary="Alocar diarista a posto",
+    description="Aloca um diarista a um posto de trabalho",
+    status_code=201,
 )
 async def alocar_diarista_posto(
     request: AlocarDiaristaPostoRequest,
@@ -266,6 +269,7 @@ async def alocar_diarista_posto(
     "/desalocar-diarista/{assignment_id}",
     summary="Desalocar diarista",
     description="Remove alocação de diarista de um posto",
+    status_code=201,
 )
 async def desalocar_diarista(
     assignment_id: UUID,

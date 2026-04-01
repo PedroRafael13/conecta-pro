@@ -559,7 +559,7 @@ async def listar_eventos_recentes(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao carregar eventos")
 
 
-@router.post("/endpoints/{uf}/{servico}/verificar")
+@router.post("/endpoints/{uf}/{servico}/verificar", status_code=201)
 async def verificar_endpoint(uf: str, current_user: CurrentActiveUser, servico: str):
     """
     Força verificação de disponibilidade de um endpoint específico.

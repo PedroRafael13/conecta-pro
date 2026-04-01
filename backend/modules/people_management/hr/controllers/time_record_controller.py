@@ -104,7 +104,7 @@ async def clock_in(
     return result
 
 
-@router.post("/clock-out/{record_id}", response_model=TimeRecordResponse)
+@router.post("/clock-out/{record_id}", response_model=TimeRecordResponse, status_code=201)
 async def clock_out(
     record_id: str,
     current_user: CurrentActiveUser,

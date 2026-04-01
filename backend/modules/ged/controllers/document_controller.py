@@ -347,7 +347,7 @@ async def get_expiring_soon(
     return await service.get_expiring_soon(days, condominium_id)
 
 
-@router.post("/{document_id}/approve", response_model=DocumentResponse)
+@router.post("/{document_id}/approve", response_model=DocumentResponse, status_code=201)
 async def approve_document(
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -363,7 +363,7 @@ async def approve_document(
     return document
 
 
-@router.post("/{document_id}/reject", response_model=DocumentResponse)
+@router.post("/{document_id}/reject", response_model=DocumentResponse, status_code=201)
 async def reject_document(
     document_id: UUID,
     reason: str = Query(..., min_length=1),
@@ -378,7 +378,7 @@ async def reject_document(
     return document
 
 
-@router.post("/{document_id}/publish", response_model=DocumentResponse)
+@router.post("/{document_id}/publish", response_model=DocumentResponse, status_code=201)
 async def publish_document(
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -392,7 +392,7 @@ async def publish_document(
     return document
 
 
-@router.post("/{document_id}/archive", response_model=DocumentResponse)
+@router.post("/{document_id}/archive", response_model=DocumentResponse, status_code=201)
 async def archive_document(
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -408,7 +408,7 @@ async def archive_document(
     return document
 
 
-@router.post("/{document_id}/unarchive", response_model=DocumentResponse)
+@router.post("/{document_id}/unarchive", response_model=DocumentResponse, status_code=201)
 async def unarchive_document(
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -422,7 +422,7 @@ async def unarchive_document(
     return document
 
 
-@router.post("/{document_id}/move", response_model=DocumentResponse)
+@router.post("/{document_id}/move", response_model=DocumentResponse, status_code=201)
 async def move_document(
     document_id: UUID,
     folder_id: str = Query(...),
@@ -443,7 +443,7 @@ async def move_document(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{document_id}/view", response_model=DocumentResponse)
+@router.post("/{document_id}/view", response_model=DocumentResponse, status_code=201)
 async def view_document(
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -457,7 +457,7 @@ async def view_document(
     return document
 
 
-@router.post("/{document_id}/download", response_model=DocumentResponse)
+@router.post("/{document_id}/download", response_model=DocumentResponse, status_code=201)
 async def register_download(
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -562,7 +562,7 @@ async def get_stats(
     return await service.get_stats(condominium_id)
 
 
-@router.post("/{document_id}/submit-approval", response_model=DocumentResponse)
+@router.post("/{document_id}/submit-approval", response_model=DocumentResponse, status_code=201)
 async def submit_for_approval(
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -600,7 +600,7 @@ async def create_new_version(
     return document
 
 
-@router.post("/check-expiry/run")
+@router.post("/check-expiry/run", status_code=201)
 async def check_expiry(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -612,7 +612,7 @@ async def check_expiry(
 
 
 # Endpoints de IA
-@router.post("/ai/classify")
+@router.post("/ai/classify", status_code=201)
 async def classify_document(
     text: str = Query(..., min_length=10),
     file_name: str | None = Query(None),
@@ -624,7 +624,7 @@ async def classify_document(
     return await service.classify_document(text, file_name)
 
 
-@router.post("/{document_id}/ai/analyze-ocr", response_model=DocumentOCRResult)
+@router.post("/{document_id}/ai/analyze-ocr", response_model=DocumentOCRResult, status_code=201)
 async def analyze_ocr(
     document_id: UUID,
     ocr_text: str = Query(..., min_length=1),
@@ -637,7 +637,7 @@ async def analyze_ocr(
     return DocumentOCRResult(**result)
 
 
-@router.post("/ai/extract-keywords")
+@router.post("/ai/extract-keywords", status_code=201)
 async def extract_keywords(
     text: str = Query(..., min_length=10),
     max_keywords: int = Query(20, ge=1, le=50),
@@ -650,7 +650,7 @@ async def extract_keywords(
     return {"keywords": keywords}
 
 
-@router.post("/ai/check-duplicates")
+@router.post("/ai/check-duplicates", status_code=201)
 async def check_duplicates(
     checksum: str = Query(...),
     title: str = Query(...),

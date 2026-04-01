@@ -188,6 +188,7 @@ def get_sync_manager(db: AsyncSession = Depends(get_db)) -> SyncManager:  # type
     response_model=SyncResultResponse,
     summary="Executar sincronização de serviço",
     description="Executa sincronização manual de um serviço específico",
+    status_code=201,
 )
 async def executar_sync(
     servico: ServicoEnum,
@@ -248,6 +249,7 @@ async def executar_sync(
     response_model=dict[str, SyncResultResponse],
     summary="Sincronizar todos os serviços",
     description="Executa sincronização de todos os serviços configurados",
+    status_code=201,
 )
 async def sincronizar_todos(
     request: SyncAllRequest,
@@ -304,6 +306,7 @@ async def sincronizar_todos(
     response_model=dict[str, str],
     summary="Executar sincronização em background",
     description="Inicia sincronização assíncrona e retorna imediatamente",
+    status_code=201,
 )
 async def executar_sync_background(
     servico: ServicoEnum,
@@ -542,7 +545,10 @@ async def cancelar_job(
 
 
 @router.post(
-    "/agendamento", summary="Configurar agendamento", description="Configura agendamento automático de sincronização"
+    "/agendamento",
+    summary="Configurar agendamento",
+    description="Configura agendamento automático de sincronização",
+    status_code=201,
 )
 async def configurar_agendamento(
     request: AgendamentoRequest,
@@ -692,7 +698,10 @@ async def remover_agendamento(
 
 
 @router.post(
-    "/configuracao", summary="Configurar integração", description="Configura dados de integração para uma empresa"
+    "/configuracao",
+    summary="Configurar integração",
+    description="Configura dados de integração para uma empresa",
+    status_code=201,
 )
 async def configurar_integracao(
     request: ConfiguracaoEmpresaRequest,

@@ -560,7 +560,7 @@ export default function AICommandCenterOperacionalPage() {
             <input
               type="text"
               value={bartoloInput}
-              onChange={(e) => setBartoloInput(e.target.value)}
+              onChange={(e) = aria-label="Text"> setBartoloInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleBartolSend(bartoloInput)}
               placeholder="Pergunte ao Bartolo..."
               className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500"

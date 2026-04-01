@@ -219,7 +219,7 @@ async def delete_comodato(
         )
 
 
-@router.post("/{comodato_id}/sign", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/sign", response_model=ComodatoResponse, status_code=201)
 async def sign_comodato(
     comodato_id: str,
     signed_by_client: str,
@@ -237,7 +237,7 @@ async def sign_comodato(
     return comodato
 
 
-@router.post("/{comodato_id}/deliver", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/deliver", response_model=ComodatoResponse, status_code=201)
 async def deliver_comodato(
     comodato_id: str,
     delivered_by: str,
@@ -257,7 +257,7 @@ async def deliver_comodato(
     return comodato
 
 
-@router.post("/{comodato_id}/request-return", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/request-return", response_model=ComodatoResponse, status_code=201)
 async def request_return(
     comodato_id: str,
     current_user: CurrentActiveUser,
@@ -273,7 +273,7 @@ async def request_return(
     return comodato
 
 
-@router.post("/{comodato_id}/schedule-return", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/schedule-return", response_model=ComodatoResponse, status_code=201)
 async def schedule_return(
     comodato_id: str,
     scheduled_date: datetime,
@@ -328,7 +328,7 @@ async def register_damage(
     return comodato
 
 
-@router.post("/{comodato_id}/mark-lost", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/mark-lost", response_model=ComodatoResponse, status_code=201)
 async def mark_as_lost(
     comodato_id: str,
     current_user: CurrentActiveUser,
@@ -344,7 +344,7 @@ async def mark_as_lost(
     return comodato
 
 
-@router.post("/{comodato_id}/terminate", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/terminate", response_model=ComodatoResponse, status_code=201)
 async def terminate_comodato(
     comodato_id: str,
     reason: str,
@@ -361,7 +361,7 @@ async def terminate_comodato(
     return comodato
 
 
-@router.post("/{comodato_id}/transfer", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/transfer", response_model=ComodatoResponse, status_code=201)
 async def transfer_comodato(
     comodato_id: str,
     new_client_id: str,
@@ -380,7 +380,7 @@ async def transfer_comodato(
     return comodato
 
 
-@router.post("/{comodato_id}/contract-pdf")
+@router.post("/{comodato_id}/contract-pdf", status_code=201)
 async def generate_contract_pdf(
     comodato_id: str,
     current_user: CurrentActiveUser,
@@ -396,7 +396,7 @@ async def generate_contract_pdf(
     return {"pdf_url": pdf_url}
 
 
-@router.post("/{comodato_id}/delivery-term")
+@router.post("/{comodato_id}/delivery-term", status_code=201)
 async def generate_delivery_term(
     comodato_id: str,
     current_user: CurrentActiveUser,
@@ -412,7 +412,7 @@ async def generate_delivery_term(
     return {"pdf_url": pdf_url}
 
 
-@router.post("/{comodato_id}/return-term")
+@router.post("/{comodato_id}/return-term", status_code=201)
 async def generate_return_term(
     comodato_id: str,
     current_user: CurrentActiveUser,

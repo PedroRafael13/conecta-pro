@@ -193,9 +193,7 @@ async def delete_category(
 
 
 @router.post(
-    "/{category_id}/activate",
-    response_model=ReceivableCategoryResponse,
-    summary="Ativar categoria",
+    "/{category_id}/activate", response_model=ReceivableCategoryResponse, summary="Ativar categoria", status_code=201
 )
 async def activate_category(
     category_id: UUID,
@@ -219,6 +217,7 @@ async def activate_category(
     "/{category_id}/deactivate",
     response_model=ReceivableCategoryResponse,
     summary="Desativar categoria",
+    status_code=201,
 )
 async def deactivate_category(
     category_id: UUID,

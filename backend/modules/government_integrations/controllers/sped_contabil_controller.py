@@ -244,6 +244,7 @@ async def definir_dre(
     response_model=StandardResponse,
     summary="Calcular saldos",
     description="Calcula os saldos periódicos das contas",
+    status_code=201,
 )
 async def calcular_saldos(
     current_user: CurrentActiveUser, request: CalcularSaldosRequest, service: SPEDContabilService = Depends(get_service)
@@ -312,6 +313,7 @@ async def gerar_arquivo(
     response_class=PlainTextResponse,
     summary="Download arquivo SPED",
     description="Gera e retorna o arquivo SPED para download",
+    status_code=201,
 )
 async def gerar_arquivo_download(
     current_user: CurrentActiveUser, request: GerarArquivoRequest, service: SPEDContabilService = Depends(get_service)

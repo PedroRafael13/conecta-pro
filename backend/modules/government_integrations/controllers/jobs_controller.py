@@ -127,7 +127,7 @@ async def listar_configuracoes_disponiveis(current_user: CurrentActiveUser):
     ]
 
 
-@router.post("/registrar-todos", response_model=JobRegistroResponse)
+@router.post("/registrar-todos", response_model=JobRegistroResponse, status_code=201)
 async def registrar_todos_jobs(
     current_user: CurrentActiveUser,
     tenant_id: UUID = Query(..., description="ID do tenant"),
@@ -243,7 +243,7 @@ async def obter_status_sincronizacao(
         )
 
 
-@router.post("/{tipo}/executar", response_model=JobExecResponse)
+@router.post("/{tipo}/executar", response_model=JobExecResponse, status_code=201)
 async def executar_job_agora(
     tipo: SyncJobType,
     current_user: CurrentActiveUser,
@@ -332,7 +332,7 @@ async def atualizar_job(
         )
 
 
-@router.post("/{tipo}/pausar", response_model=JobExecResponse)
+@router.post("/{tipo}/pausar", response_model=JobExecResponse, status_code=201)
 async def pausar_job(
     tipo: SyncJobType,
     current_user: CurrentActiveUser,
@@ -376,7 +376,7 @@ async def pausar_job(
         )
 
 
-@router.post("/{tipo}/retomar", response_model=JobExecResponse)
+@router.post("/{tipo}/retomar", response_model=JobExecResponse, status_code=201)
 async def retomar_job(
     tipo: SyncJobType,
     current_user: CurrentActiveUser,

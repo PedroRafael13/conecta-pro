@@ -318,7 +318,7 @@ async def contracts_summary(
     }
 
 
-@router.post("/contracts/{contract_id}/renew")
+@router.post("/contracts/{contract_id}/renew", status_code=201)
 async def renew_contract(
     contract_id: str,
     reajuste_percent: float = Query(0.0, description="Percentual de reajuste"),

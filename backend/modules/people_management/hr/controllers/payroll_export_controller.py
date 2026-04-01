@@ -115,7 +115,7 @@ async def gerar_contracheque_pdf(
     )
 
 
-@router.post("/contracheques-batch/{competencia}")
+@router.post("/contracheques-batch/{competencia}", status_code=201)
 async def gerar_contracheques_batch(
     competencia: str,
     current_user: CurrentActiveUser,

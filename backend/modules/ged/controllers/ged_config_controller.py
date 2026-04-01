@@ -116,7 +116,7 @@ async def save_config_drive(
     }
 
 
-@router.post("/config/drive/connect")
+@router.post("/config/drive/connect", status_code=201)
 async def connect_drive(
     current_user: dict = Depends(get_current_user),
 ) -> dict[str, Any]:
@@ -134,7 +134,7 @@ async def connect_drive(
     }
 
 
-@router.post("/config/drive/disconnect")
+@router.post("/config/drive/disconnect", status_code=201)
 async def disconnect_drive(
     current_user: dict = Depends(get_current_user),
 ) -> dict[str, Any]:

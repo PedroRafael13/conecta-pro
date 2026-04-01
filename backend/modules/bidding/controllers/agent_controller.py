@@ -129,7 +129,7 @@ async def list_agents_status(current_user: CurrentActiveUser):
 # ============================================================
 # Scout - Busca de oportunidades
 # ============================================================
-@router.post("/scout/buscar")
+@router.post("/scout/buscar", status_code=201)
 async def scout_buscar(current_user: CurrentActiveUser, request: ScoutRequest):
     """Busca oportunidades de licitacao nos portais configurados."""
     try:
@@ -214,7 +214,7 @@ async def scout_portais(current_user: CurrentActiveUser):
 # ============================================================
 # Analyst - Analise de editais
 # ============================================================
-@router.post("/analyst/analisar")
+@router.post("/analyst/analisar", status_code=201)
 async def analyst_analisar(current_user: CurrentActiveUser, request: AnalystRequest):
     """Analisa edital extraindo requisitos, prazos, riscos e oportunidades."""
     try:
@@ -250,7 +250,7 @@ async def analyst_analisar(current_user: CurrentActiveUser, request: AnalystRequ
 # ============================================================
 # Assessor - Avaliacao Go/No-Go
 # ============================================================
-@router.post("/assessor/avaliar")
+@router.post("/assessor/avaliar", status_code=201)
 async def assessor_avaliar(current_user: CurrentActiveUser, request: AssessorRequest):
     """Avalia viabilidade de participacao (Go/No-Go) com scoring multidimensional."""
     try:
@@ -286,7 +286,7 @@ async def assessor_avaliar(current_user: CurrentActiveUser, request: AssessorReq
 # ============================================================
 # Pricer - Precificacao
 # ============================================================
-@router.post("/pricer/calcular")
+@router.post("/pricer/calcular", status_code=201)
 async def pricer_calcular(current_user: CurrentActiveUser, request: PricerRequest):
     """Calcula precificacao com composicao de custos, BDI e cenarios."""
     try:
@@ -318,7 +318,7 @@ async def pricer_calcular(current_user: CurrentActiveUser, request: PricerReques
 # ============================================================
 # Pipeline - Execucao completa
 # ============================================================
-@router.post("/pipeline")
+@router.post("/pipeline", status_code=201)
 async def run_pipeline(current_user: CurrentActiveUser, request: PipelineRequest):
     """Executa pipeline completo: analise -> avaliacao -> precificacao."""
     try:
@@ -374,7 +374,7 @@ async def sentinel_tipos(current_user: CurrentActiveUser):
     }
 
 
-@router.post("/sentinel/verificar")
+@router.post("/sentinel/verificar", status_code=201)
 async def sentinel_verificar(current_user: CurrentActiveUser):
     """Verifica status atual de todas as certidoes da empresa."""
     try:
@@ -441,7 +441,7 @@ async def warrior_status(current_user: CurrentActiveUser):
     }
 
 
-@router.post("/warrior/simular")
+@router.post("/warrior/simular", status_code=201)
 async def warrior_simular(
     current_user: CurrentActiveUser,
     valor_referencia: float = 100000.0,
@@ -470,7 +470,7 @@ async def warrior_simular(
 # ============================================================
 # Compiler - Geracao de documentos
 # ============================================================
-@router.post("/compiler/gerar")
+@router.post("/compiler/gerar", status_code=201)
 async def compiler_gerar(
     current_user: CurrentActiveUser,
     edital_numero: str = "001/2026",

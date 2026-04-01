@@ -258,9 +258,7 @@ async def delete_account(
 
 
 @router.post(
-    "/{account_id}/cancel",
-    response_model=ReceivableAccountResponse,
-    summary="Cancelar conta",
+    "/{account_id}/cancel", response_model=ReceivableAccountResponse, summary="Cancelar conta", status_code=201
 )
 async def cancel_account(
     account_id: UUID,
@@ -282,9 +280,7 @@ async def cancel_account(
 
 
 @router.post(
-    "/{account_id}/suspend",
-    response_model=ReceivableAccountResponse,
-    summary="Suspender conta",
+    "/{account_id}/suspend", response_model=ReceivableAccountResponse, summary="Suspender conta", status_code=201
 )
 async def suspend_account(
     account_id: UUID,
@@ -309,9 +305,7 @@ async def suspend_account(
 
 
 @router.post(
-    "/{account_id}/protest",
-    response_model=ReceivableAccountResponse,
-    summary="Enviar para protesto",
+    "/{account_id}/protest", response_model=ReceivableAccountResponse, summary="Enviar para protesto", status_code=201
 )
 async def protest_account(
     account_id: UUID,
@@ -335,7 +329,7 @@ async def protest_account(
 @router.post(
     "/{account_id}/write-off",
     response_model=ReceivableAccountResponse,
-    summary="Baixar conta (perda)",
+    summary="Baixar conta (perda, status_code=201)",
 )
 async def write_off_account(
     account_id: UUID,
@@ -447,6 +441,7 @@ async def update_installment(
     "/installments/{installment_id}/renegotiate",
     response_model=ReceivableInstallmentResponse,
     summary="Renegociar parcela",
+    status_code=201,
 )
 async def renegotiate_installment(
     installment_id: UUID,
@@ -474,6 +469,7 @@ async def renegotiate_installment(
     "/installments/{installment_id}/generate-boleto",
     response_model=ReceivableInstallmentResponse,
     summary="Gerar boleto",
+    status_code=201,
 )
 async def generate_boleto(
     installment_id: UUID,
@@ -496,6 +492,7 @@ async def generate_boleto(
     "/installments/{installment_id}/generate-pix",
     response_model=ReceivableInstallmentResponse,
     summary="Gerar PIX",
+    status_code=201,
 )
 async def generate_pix(
     installment_id: UUID,
@@ -514,10 +511,7 @@ async def generate_pix(
     return ReceivableInstallmentResponse.model_validate(installment)
 
 
-@router.post(
-    "/bulk-generate-boletos",
-    summary="Gerar boletos em lote",
-)
+@router.post("/bulk-generate-boletos", summary="Gerar boletos em lote", status_code=201)
 async def bulk_generate_boletos(
     data: ReceivableBulkBoletoRequest,
     service: ReceivableService = Depends(get_service),  # pylint: disable=unused-argument
@@ -556,10 +550,7 @@ async def register_payment(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post(
-    "/bulk-payment",
-    summary="Recebimento em lote",
-)
+@router.post("/bulk-payment", summary="Recebimento em lote", status_code=201)
 async def bulk_payment(
     data: ReceivableBulkPaymentRequest,
     service: ReceivableService = Depends(get_service),
@@ -579,6 +570,7 @@ async def bulk_payment(
     "/payments/{payment_id}/reverse",
     response_model=ReceivablePaymentResponse,
     summary="Estornar recebimento",
+    status_code=201,
 )
 async def reverse_payment(
     payment_id: UUID,
@@ -603,6 +595,7 @@ async def reverse_payment(
     "/payments/{payment_id}/reconcile",
     response_model=ReceivablePaymentResponse,
     summary="Reconciliar recebimento",
+    status_code=201,
 )
 async def reconcile_payment(
     payment_id: UUID,
@@ -649,10 +642,7 @@ async def get_pending_reconciliation(
 # ==================== NOTIFICACOES ====================
 
 
-@router.post(
-    "/bulk-notify",
-    summary="Notificar devedores em lote",
-)
+@router.post("/bulk-notify", summary="Notificar devedores em lote", status_code=201)
 async def bulk_notify(
     data: ReceivableBulkNotifyRequest,
     service: ReceivableService = Depends(get_service),  # pylint: disable=unused-argument

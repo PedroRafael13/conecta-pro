@@ -210,7 +210,7 @@ async def delete_equipment(
         )
 
 
-@router.post("/{equipment_id}/install", response_model=EquipmentResponse)
+@router.post("/{equipment_id}/install", response_model=EquipmentResponse, status_code=201)
 async def install_equipment(
     equipment_id: str,
     client_id: str,
@@ -242,7 +242,7 @@ async def install_equipment(
     return equipment
 
 
-@router.post("/{equipment_id}/uninstall", response_model=EquipmentResponse)
+@router.post("/{equipment_id}/uninstall", response_model=EquipmentResponse, status_code=201)
 async def uninstall_equipment(
     equipment_id: str,
     current_user: CurrentActiveUser,
@@ -258,7 +258,7 @@ async def uninstall_equipment(
     return equipment
 
 
-@router.post("/{equipment_id}/online-status", response_model=EquipmentResponse)
+@router.post("/{equipment_id}/online-status", response_model=EquipmentResponse, status_code=201)
 async def update_online_status(
     equipment_id: str,
     is_online: bool,
@@ -275,7 +275,7 @@ async def update_online_status(
     return equipment
 
 
-@router.post("/bulk/online-status")
+@router.post("/bulk/online-status", status_code=201)
 async def bulk_update_online_status(
     equipment_ids: list[str],
     is_online: bool,
@@ -286,7 +286,7 @@ async def bulk_update_online_status(
     return await service.bulk_update_online_status(equipment_ids, is_online)
 
 
-@router.post("/{equipment_id}/qr-code")
+@router.post("/{equipment_id}/qr-code", status_code=201)
 async def generate_qr_code(
     equipment_id: str,
     current_user: CurrentActiveUser,

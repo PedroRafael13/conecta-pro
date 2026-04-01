@@ -346,7 +346,7 @@ async def list_rubricas(
     }
 
 
-@router.post("/close")
+@router.post("/close", status_code=201)
 async def close_payroll(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

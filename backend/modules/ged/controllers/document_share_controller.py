@@ -202,7 +202,7 @@ async def access_by_link(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{share_id}/revoke", response_model=DocumentShareResponse)
+@router.post("/{share_id}/revoke", response_model=DocumentShareResponse, status_code=201)
 async def revoke_share(
     share_id: str,
     db: AsyncSession = Depends(get_db),
@@ -219,7 +219,7 @@ async def revoke_share(
     return share
 
 
-@router.post("/{share_id}/accept", response_model=DocumentShareResponse)
+@router.post("/{share_id}/accept", response_model=DocumentShareResponse, status_code=201)
 async def accept_share(
     share_id: str,
     db: AsyncSession = Depends(get_db),
@@ -236,7 +236,7 @@ async def accept_share(
     return share
 
 
-@router.post("/{share_id}/reject", response_model=DocumentShareResponse)
+@router.post("/{share_id}/reject", response_model=DocumentShareResponse, status_code=201)
 async def reject_share(
     share_id: str,
     reason: str | None = Query(None),
@@ -254,7 +254,7 @@ async def reject_share(
     return share
 
 
-@router.post("/{share_id}/extend", response_model=DocumentShareResponse)
+@router.post("/{share_id}/extend", response_model=DocumentShareResponse, status_code=201)
 async def extend_expiry(
     share_id: str,
     new_expiry: datetime = Query(...),
@@ -272,7 +272,7 @@ async def extend_expiry(
     return share
 
 
-@router.post("/{share_id}/permission", response_model=DocumentShareResponse)
+@router.post("/{share_id}/permission", response_model=DocumentShareResponse, status_code=201)
 async def update_permission(
     share_id: str,
     permission: SharePermission = Query(...),
@@ -290,7 +290,7 @@ async def update_permission(
     return share
 
 
-@router.post("/{share_id}/regenerate-token")
+@router.post("/{share_id}/regenerate-token", status_code=201)
 async def regenerate_token(
     share_id: str,
     db: AsyncSession = Depends(get_db),
@@ -307,7 +307,7 @@ async def regenerate_token(
     return {"token": token}
 
 
-@router.post("/{share_id}/set-password", response_model=DocumentShareResponse)
+@router.post("/{share_id}/set-password", response_model=DocumentShareResponse, status_code=201)
 async def set_password(
     share_id: str,
     password: str = Query(..., min_length=4),
@@ -325,7 +325,7 @@ async def set_password(
     return share
 
 
-@router.post("/{share_id}/remove-password", response_model=DocumentShareResponse)
+@router.post("/{share_id}/remove-password", response_model=DocumentShareResponse, status_code=201)
 async def remove_password(
     share_id: str,
     db: AsyncSession = Depends(get_db),
@@ -342,7 +342,7 @@ async def remove_password(
     return share
 
 
-@router.post("/expire-overdue/run")
+@router.post("/expire-overdue/run", status_code=201)
 async def expire_overdue(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument

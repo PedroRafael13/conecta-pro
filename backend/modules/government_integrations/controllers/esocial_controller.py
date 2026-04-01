@@ -400,7 +400,7 @@ async def gerar_lote(request: GerarLoteRequest) -> StandardResponse:
     summary="Transmite S-1000 real ao webservice do eSocial",
     description=(
         "Gera XML do S-1000, assina com certificado A1 e transmite "
-        "via SOAP+mTLS ao webservice do eSocial (homologação ou produção)."
+        "via SOAP+mTLS ao webservice do eSocial (homologação ou produção, status_code=201)."
     ),
 )
 async def transmitir_s1000(request: TransmitirS1000Request) -> StandardResponse:

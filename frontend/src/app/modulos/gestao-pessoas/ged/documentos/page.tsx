@@ -129,7 +129,7 @@ export default function DocumentosSearchPage() {
                 type="text"
                 placeholder="Buscar por nome do documento, funcionario..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) = aria-label="Buscar Por Nome Do Documento, Funcionario..."> setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               />

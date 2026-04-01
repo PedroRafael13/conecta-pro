@@ -367,7 +367,7 @@ async def get_custeio_resumo(
     }
 
 
-@router.post("/custeio/calcular")
+@router.post("/custeio/calcular", status_code=201)
 async def calcular_custo(
     tipo: str,
     mes: date,
@@ -422,7 +422,7 @@ async def listar_custos(
         return {"total": 0, "itens": [], "aviso": str(e)}
 
 
-@router.post("/custeio/registrar")
+@router.post("/custeio/registrar", status_code=201)
 async def registrar_custo(
     payload: dict,
     db: AsyncSession = Depends(get_session),

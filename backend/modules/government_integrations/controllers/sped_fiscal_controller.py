@@ -244,6 +244,7 @@ async def adicionar_inventario(
     response_model=StandardResponse,
     summary="Calcular apuração",
     description="Calcula a apuração de ICMS do período",
+    status_code=201,
 )
 async def calcular_apuracao(
     current_user: CurrentActiveUser, request: CalcularApuracaoRequest, service: SPEDFiscalService = Depends(get_service)
@@ -315,6 +316,7 @@ async def gerar_arquivo(
     response_class=PlainTextResponse,
     summary="Download arquivo SPED",
     description="Gera e retorna o arquivo SPED para download",
+    status_code=201,
 )
 async def gerar_arquivo_download(
     current_user: CurrentActiveUser, request: GerarArquivoRequest, service: SPEDFiscalService = Depends(get_service)

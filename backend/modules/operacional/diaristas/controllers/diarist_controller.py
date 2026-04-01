@@ -274,7 +274,7 @@ async def get_assignment(
 
 @router.post(
     "/assignments/{assignment_id}/cancel",
-    dependencies=[Depends(require_roles("admin", "sindico"))],
+    dependencies=[Depends(require_roles("admin", "sindico", status_code=201))],
 )
 async def cancel_assignment(
     assignment_id: UUID,
@@ -395,7 +395,7 @@ async def get_schedule(
 @router.post(
     "/schedules/{schedule_id}/confirm",
     response_model=DiaristScheduleResponse,
-    dependencies=[Depends(require_roles("admin", "sindico", "porteiro"))],
+    dependencies=[Depends(require_roles("admin", "sindico", "porteiro", status_code=201))],
 )
 async def confirm_schedule(
     schedule_id: UUID,
@@ -414,7 +414,7 @@ async def confirm_schedule(
 @router.post(
     "/schedules/{schedule_id}/cancel",
     response_model=DiaristScheduleResponse,
-    dependencies=[Depends(require_roles("admin", "sindico"))],
+    dependencies=[Depends(require_roles("admin", "sindico", status_code=201))],
 )
 async def cancel_schedule(
     schedule_id: UUID,
@@ -440,7 +440,7 @@ async def cancel_schedule(
 @router.post(
     "/schedules/checkin",
     response_model=DiaristScheduleResponse,
-    dependencies=[Depends(require_roles("admin", "sindico", "porteiro"))],
+    dependencies=[Depends(require_roles("admin", "sindico", "porteiro", status_code=201))],
 )
 async def register_checkin(
     data: CheckinRequest,
@@ -459,7 +459,7 @@ async def register_checkin(
 @router.post(
     "/schedules/checkout",
     response_model=DiaristScheduleResponse,
-    dependencies=[Depends(require_roles("admin", "sindico", "porteiro"))],
+    dependencies=[Depends(require_roles("admin", "sindico", "porteiro", status_code=201))],
 )
 async def register_checkout(
     data: CheckoutRequest,
@@ -506,7 +506,7 @@ async def get_payroll_report(
 
 @router.post(
     "/payments/payroll-generate",
-    dependencies=[Depends(require_roles("admin", "sindico"))],
+    dependencies=[Depends(require_roles("admin", "sindico", status_code=201))],
 )
 async def generate_payroll_payments(
     data: PayrollGenerateRequest,
@@ -605,7 +605,7 @@ async def get_payment(
 @router.post(
     "/payments/{payment_id}/process",
     response_model=DiaristPaymentResponse,
-    dependencies=[Depends(require_roles("admin", "sindico"))],
+    dependencies=[Depends(require_roles("admin", "sindico", status_code=201))],
 )
 async def process_payment(
     payment_id: UUID,
@@ -630,7 +630,7 @@ async def process_payment(
 @router.post(
     "/payments/generate",
     response_model=DiaristPaymentResponse,
-    dependencies=[Depends(require_roles("admin", "sindico"))],
+    dependencies=[Depends(require_roles("admin", "sindico", status_code=201))],
 )
 async def generate_payment(
     diarist_id: UUID,
@@ -866,7 +866,7 @@ async def update_diarist(
 @router.post(
     "/{diarist_id}/activate",
     response_model=DiaristResponse,
-    dependencies=[Depends(require_roles("admin", "sindico"))],
+    dependencies=[Depends(require_roles("admin", "sindico", status_code=201))],
 )
 async def activate_diarist(
     diarist_id: UUID,
@@ -885,7 +885,7 @@ async def activate_diarist(
 @router.post(
     "/{diarist_id}/deactivate",
     response_model=DiaristResponse,
-    dependencies=[Depends(require_roles("admin", "sindico"))],
+    dependencies=[Depends(require_roles("admin", "sindico", status_code=201))],
 )
 async def deactivate_diarist(
     diarist_id: UUID,

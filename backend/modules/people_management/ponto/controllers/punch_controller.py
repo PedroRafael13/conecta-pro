@@ -160,7 +160,7 @@ async def get_batidas_me(
         return {"employee_id": None, "date": date.today().isoformat(), "batidas": []}
 
 
-@router.post("/sync", response_model=PunchSyncResponse)
+@router.post("/sync", response_model=PunchSyncResponse, status_code=201)
 async def sync_offline_punches(
     data: PunchSyncRequest,
     db: AsyncSession = Depends(get_db),
@@ -243,7 +243,7 @@ async def get_justificativas_pendentes(
     return await service.get_justificativas_pendentes(employee_id)
 
 
-@router.post("/fechamento", response_model=MonthlyClosingResponse)
+@router.post("/fechamento", response_model=MonthlyClosingResponse, status_code=201)
 async def fechar_mes(
     employee_id: int,
     month: int = Query(..., ge=1, le=12),
@@ -311,6 +311,7 @@ async def banco_horas(
     "/sincronizar-solides",
     response_model=SyncSolidesResponse,
     summary="Sincronizar ponto com Solides Tangerino",
+    status_code=201,
 )
 async def sincronizar_solides(
     current_user=Depends(get_current_user),
@@ -322,7 +323,7 @@ async def sincronizar_solides(
     return SyncSolidesResponse(**data)
 
 
-@router.post("/sync-escalas", summary="Sincronizar escalas de trabalho do Sólides")
+@router.post("/sync-escalas", summary="Sincronizar escalas de trabalho do Sólides", status_code=201)
 async def sync_escalas(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
@@ -331,7 +332,7 @@ async def sync_escalas(
     return dashboard_service.sync_escalas_from_solides(db)
 
 
-@router.post("/ajuste", summary="Ajuste manual de ponto pelo DP")
+@router.post("/ajuste", summary="Ajuste manual de ponto pelo DP", status_code=201)
 async def ajuste_ponto(
     request: AjusteRequest,
     current_user=Depends(get_current_user),

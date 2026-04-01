@@ -85,7 +85,7 @@ def _send_celery_task(task_name: str, **kwargs) -> str:
 # ============================================================
 
 
-@router.post("/pncp/trigger", response_model=SyncTriggerResponse)
+@router.post("/pncp/trigger", response_model=SyncTriggerResponse, status_code=201)
 async def trigger_pncp_sync(
     current_user: CurrentActiveUser,
     request: PNCPSyncRequest = PNCPSyncRequest(),
@@ -200,7 +200,7 @@ async def get_sync_job(
 # ============================================================
 
 
-@router.post("/precos/trigger", response_model=SyncTriggerResponse)
+@router.post("/precos/trigger", response_model=SyncTriggerResponse, status_code=201)
 async def trigger_price_sync(
     current_user: CurrentActiveUser,
     request: PrecosSyncRequest = PrecosSyncRequest(),

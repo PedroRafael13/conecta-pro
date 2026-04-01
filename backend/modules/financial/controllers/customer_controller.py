@@ -230,11 +230,7 @@ async def delete_customer(
     await repo.delete(customer)
 
 
-@router.post(
-    "/{customer_id}/block",
-    response_model=CustomerResponse,
-    summary="Bloquear cliente",
-)
+@router.post("/{customer_id}/block", response_model=CustomerResponse, summary="Bloquear cliente", status_code=201)
 async def block_customer(
     customer_id: UUID,
     reason: str = Query(..., min_length=5, description="Motivo do bloqueio"),
@@ -254,11 +250,7 @@ async def block_customer(
     return CustomerResponse.model_validate(customer)
 
 
-@router.post(
-    "/{customer_id}/unblock",
-    response_model=CustomerResponse,
-    summary="Desbloquear cliente",
-)
+@router.post("/{customer_id}/unblock", response_model=CustomerResponse, summary="Desbloquear cliente", status_code=201)
 async def unblock_customer(
     customer_id: UUID,
     repo: CustomerRepository = Depends(get_repository),

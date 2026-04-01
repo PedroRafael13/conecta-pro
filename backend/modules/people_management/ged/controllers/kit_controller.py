@@ -215,7 +215,7 @@ async def delete_kit(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{kit_id}/build")
+@router.post("/{kit_id}/build", status_code=201)
 async def build_kit(
     kit_id: str,
     data: KitBuildRequest,
@@ -245,7 +245,7 @@ async def build_kit(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/auto-assemble")
+@router.post("/auto-assemble", status_code=201)
 async def auto_assemble_kits(
     reference_month: date | None = Query(None, description="Mes de referencia (default: mes atual)"),
     current_user: CurrentActiveUser = None,
@@ -267,7 +267,7 @@ async def auto_assemble_kits(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/{kit_id}/send", response_model=KitResponse)
+@router.post("/{kit_id}/send", response_model=KitResponse, status_code=201)
 async def send_kit(
     kit_id: str,
     data: KitSendRequest,
@@ -288,7 +288,7 @@ async def send_kit(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{kit_id}/send-email")
+@router.post("/{kit_id}/send-email", status_code=201)
 async def send_kit_email(
     kit_id: str,
     current_user: CurrentActiveUser,
@@ -428,7 +428,7 @@ CNPJ: 35.710.481/0001-03
         raise HTTPException(status_code=500, detail=f"Erro ao enviar email: {e}") from e
 
 
-@router.post("/{kit_id}/approve", response_model=KitResponse)
+@router.post("/{kit_id}/approve", response_model=KitResponse, status_code=201)
 async def approve_kit(
     kit_id: str,
     data: KitApproveRequest,

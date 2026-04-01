@@ -112,7 +112,7 @@ class RelatorioRetencoesResponse(BaseModel):
     "/calcular-retencoes",
     response_model=RetencoesResponse,
     summary="Calcular retenções",
-    description="Calcula todas as retenções fiscais (INSS, ISS, IRRF)",
+    description="Calcula todas as retenções fiscais (INSS, ISS, IRRF, status_code=201)",
 )
 async def calcular_retencoes(
     request: CalculoRetencoesRequest,
@@ -204,7 +204,11 @@ async def simular_retencoes(
 
 
 @router.post(
-    "/rpa", response_model=DocumentoFiscalResponse, summary="Gerar RPA", description="Gera Recibo de Pagamento Autônomo"
+    "/rpa",
+    response_model=DocumentoFiscalResponse,
+    summary="Gerar RPA",
+    description="Gera Recibo de Pagamento Autônomo",
+    status_code=201,
 )
 async def gerar_rpa(
     request: GerarRPARequest,

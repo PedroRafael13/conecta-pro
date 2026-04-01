@@ -96,7 +96,7 @@ async def get_integration_status(
         )
 
 
-@router.post("/converter/{contract_id}")
+@router.post("/converter/{contract_id}", status_code=201)
 async def converter_contrato(
     contract_id: UUID,
     current_user: CurrentActiveUser,
@@ -126,7 +126,7 @@ async def converter_contrato(
         )
 
 
-@router.post("/medicao/{contract_id}")
+@router.post("/medicao/{contract_id}", status_code=201)
 async def gerar_medicao(
     contract_id: UUID,
     data: MedicaoRequest,
@@ -154,7 +154,7 @@ async def gerar_medicao(
         )
 
 
-@router.post("/fatura/{medicao_id}")
+@router.post("/fatura/{medicao_id}", status_code=201)
 async def gerar_fatura(
     medicao_id: UUID,
     current_user: CurrentActiveUser,
@@ -176,7 +176,7 @@ async def gerar_fatura(
         )
 
 
-@router.post("/crm/{contract_id}")
+@router.post("/crm/{contract_id}", status_code=201)
 async def contrato_para_crm(
     contract_id: UUID,
     current_user: CurrentActiveUser,

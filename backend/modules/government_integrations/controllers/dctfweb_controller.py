@@ -236,7 +236,11 @@ async def consolidar_declaracao(
 
 
 @router.post(
-    "/gerar-darfs", response_model=StandardResponse, summary="Gerar DARFs", description="Gera DARFs para a declaração"
+    "/gerar-darfs",
+    response_model=StandardResponse,
+    summary="Gerar DARFs",
+    description="Gera DARFs para a declaração",
+    status_code=201,
 )
 async def gerar_darfs(
     request: GerarDarfsRequest, current_user: CurrentActiveUser, service: DCTFWebService = Depends(get_service)
@@ -268,6 +272,7 @@ async def gerar_darfs(
     response_model=StandardResponse,
     summary="Transmitir declaração",
     description="Transmite a declaração DCTFWeb",
+    status_code=201,
 )
 async def transmitir_declaracao(
     current_user: CurrentActiveUser,

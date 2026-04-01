@@ -204,7 +204,7 @@ async def get_by_type(
     return await service.get_by_type(folder_type, condominium_id)
 
 
-@router.post("/{folder_id}/archive", response_model=FolderResponse)
+@router.post("/{folder_id}/archive", response_model=FolderResponse, status_code=201)
 async def archive_folder(
     folder_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -218,7 +218,7 @@ async def archive_folder(
     return folder
 
 
-@router.post("/{folder_id}/unarchive", response_model=FolderResponse)
+@router.post("/{folder_id}/unarchive", response_model=FolderResponse, status_code=201)
 async def unarchive_folder(
     folder_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -232,7 +232,7 @@ async def unarchive_folder(
     return folder
 
 
-@router.post("/{folder_id}/block", response_model=FolderResponse)
+@router.post("/{folder_id}/block", response_model=FolderResponse, status_code=201)
 async def block_folder(
     folder_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -246,7 +246,7 @@ async def block_folder(
     return folder
 
 
-@router.post("/{folder_id}/unblock", response_model=FolderResponse)
+@router.post("/{folder_id}/unblock", response_model=FolderResponse, status_code=201)
 async def unblock_folder(
     folder_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -260,7 +260,7 @@ async def unblock_folder(
     return folder
 
 
-@router.post("/{folder_id}/move", response_model=FolderResponse)
+@router.post("/{folder_id}/move", response_model=FolderResponse, status_code=201)
 async def move_folder(
     folder_id: UUID,
     new_parent_id: str | None = Query(None),
@@ -278,7 +278,7 @@ async def move_folder(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{folder_id}/permissions/grant", response_model=FolderResponse)
+@router.post("/{folder_id}/permissions/grant", response_model=FolderResponse, status_code=201)
 async def grant_permission(
     folder_id: UUID,
     user_id: str = Query(...),
@@ -294,7 +294,7 @@ async def grant_permission(
     return folder
 
 
-@router.post("/{folder_id}/permissions/revoke", response_model=FolderResponse)
+@router.post("/{folder_id}/permissions/revoke", response_model=FolderResponse, status_code=201)
 async def revoke_permission(
     folder_id: UUID,
     user_id: str = Query(...),
@@ -348,7 +348,7 @@ async def get_stats(
     return await service.get_stats(condominium_id)
 
 
-@router.post("/default-structure", include_in_schema=False)
+@router.post("/default-structure", include_in_schema=False, status_code=201)
 @router.post("/default-structure/create", response_model=list[FolderResponse], status_code=201)
 async def create_default_structure(
     condominium_id: str = Query(...),

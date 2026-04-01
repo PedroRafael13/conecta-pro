@@ -114,7 +114,7 @@ async def get_meus_direitos(
     }
 
 
-@router.post("/calculadora")
+@router.post("/calculadora", status_code=201)
 async def calculadora_rescisoria(
     employee_id: CurrentEmployeeId,
     current_user: CurrentActiveUser,

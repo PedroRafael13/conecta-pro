@@ -837,7 +837,7 @@ async def _add_nfse_to_kit(db: AsyncSession, kit_id: str, client_id: str, comp: 
 # ── Endpoints ─────────────────────────────────────────────────────────────
 
 
-@router.post("/kit-real/{kit_id}/gerar")
+@router.post("/kit-real/{kit_id}/gerar", status_code=201)
 async def gerar_kit_real(
     kit_id: str,
     current_user: CurrentActiveUser = None,
@@ -847,7 +847,7 @@ async def gerar_kit_real(
     return await _gerar_kit_real(db, kit_id)
 
 
-@router.post("/kit-real/gerar-todos")
+@router.post("/kit-real/gerar-todos", status_code=201)
 async def gerar_todos_kits_reais(
     mes: int = Query(3, ge=1, le=12),
     ano: int = Query(2026, ge=2020),
@@ -1108,7 +1108,7 @@ async def listar_funcionarios_kit(
     }
 
 
-@router.post("/montar/kit")
+@router.post("/montar/kit", status_code=201)
 async def montar_kit_guiado(
     client_id: str = Query(...),
     competencia: str = Query("2026-03-01"),

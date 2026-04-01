@@ -322,7 +322,7 @@ async def delete_maintenance(
         )
 
 
-@router.post("/{maintenance_id}/start", response_model=MaintenanceResponse)
+@router.post("/{maintenance_id}/start", response_model=MaintenanceResponse, status_code=201)
 async def start_maintenance(
     maintenance_id: str,
     current_user: CurrentActiveUser,
@@ -338,7 +338,7 @@ async def start_maintenance(
     return maintenance
 
 
-@router.post("/{maintenance_id}/complete", response_model=MaintenanceResponse)
+@router.post("/{maintenance_id}/complete", response_model=MaintenanceResponse, status_code=201)
 async def complete_maintenance(
     maintenance_id: str,
     current_user: CurrentActiveUser,
@@ -356,7 +356,7 @@ async def complete_maintenance(
     return maintenance
 
 
-@router.post("/{maintenance_id}/cancel", response_model=MaintenanceResponse)
+@router.post("/{maintenance_id}/cancel", response_model=MaintenanceResponse, status_code=201)
 async def cancel_maintenance(
     maintenance_id: str,
     current_user: CurrentActiveUser,
@@ -372,7 +372,7 @@ async def cancel_maintenance(
     return maintenance
 
 
-@router.post("/{maintenance_id}/waiting-parts", response_model=MaintenanceResponse)
+@router.post("/{maintenance_id}/waiting-parts", response_model=MaintenanceResponse, status_code=201)
 async def mark_waiting_parts(
     maintenance_id: str,
     parts_requested: list,
@@ -409,7 +409,7 @@ async def add_part_replaced(
     return maintenance
 
 
-@router.post("/{maintenance_id}/sign", response_model=MaintenanceResponse)
+@router.post("/{maintenance_id}/sign", response_model=MaintenanceResponse, status_code=201)
 async def sign_maintenance(
     maintenance_id: str,
     signed_by: str,
@@ -427,7 +427,7 @@ async def sign_maintenance(
     return maintenance
 
 
-@router.post("/{maintenance_id}/assign-technician", response_model=MaintenanceResponse)
+@router.post("/{maintenance_id}/assign-technician", response_model=MaintenanceResponse, status_code=201)
 async def assign_technician(
     maintenance_id: str,
     technician_id: str,
@@ -445,7 +445,7 @@ async def assign_technician(
     return maintenance
 
 
-@router.post("/schedule-preventive/{equipment_id}", response_model=MaintenanceResponse)
+@router.post("/schedule-preventive/{equipment_id}", response_model=MaintenanceResponse, status_code=201)
 async def schedule_preventive(
     equipment_id: str,
     current_user: CurrentActiveUser,

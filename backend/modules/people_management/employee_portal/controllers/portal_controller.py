@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Portal - Auth"])
 
 
-@router.post("/auth/login", response_model=PortalLoginResponse)
+@router.post("/auth/login", response_model=PortalLoginResponse, status_code=201)
 async def portal_login(
     request: Request,
     login_data: PortalLoginRequest,
@@ -88,7 +88,7 @@ async def portal_login(
     )
 
 
-@router.post("/auth/primeiro-acesso")
+@router.post("/auth/primeiro-acesso", status_code=201)
 async def portal_primeiro_acesso(
     request: Request,
     current_user: CurrentActiveUser,
@@ -167,7 +167,7 @@ async def portal_primeiro_acesso(
     }
 
 
-@router.post("/auth/reset-senha")
+@router.post("/auth/reset-senha", status_code=201)
 async def portal_reset_senha(
     request: Request,
     current_user: CurrentActiveUser,
@@ -214,7 +214,7 @@ async def portal_reset_senha(
     return {"message": "Senha redefinida com sucesso. Faca login com a nova senha."}
 
 
-@router.post("/auth/refresh")
+@router.post("/auth/refresh", status_code=201)
 async def portal_refresh(current_user: CurrentActiveUser, request: Request) -> Any:
     """Renova token de acesso usando refresh token."""
     auth_header = request.headers.get("Authorization", "")
@@ -242,7 +242,7 @@ async def portal_refresh(current_user: CurrentActiveUser, request: Request) -> A
     }
 
 
-@router.post("/auth/logout")
+@router.post("/auth/logout", status_code=201)
 async def portal_logout(current_user: CurrentActiveUser, employee_id: CurrentEmployeeId) -> Any:
     """Logout do portal (invalida sessao client-side)."""
     logger.info("Portal logout: employee_id=%s", employee_id)

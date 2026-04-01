@@ -252,11 +252,7 @@ async def delete_account(
 # ==================== APROVAÇÃO ====================
 
 
-@router.post(
-    "/{account_id}/approve",
-    response_model=PayableAccountResponse,
-    summary="Aprovar conta",
-)
+@router.post("/{account_id}/approve", response_model=PayableAccountResponse, summary="Aprovar conta", status_code=201)
 async def approve_account(
     account_id: UUID,
     notes: str | None = None,
@@ -276,10 +272,7 @@ async def approve_account(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post(
-    "/bulk-approve",
-    summary="Aprovar múltiplas contas",
-)
+@router.post("/bulk-approve", summary="Aprovar múltiplas contas", status_code=201)
 async def bulk_approve(
     data: PayableBulkApproveRequest,
     service: PayableService = Depends(get_service),
@@ -294,11 +287,7 @@ async def bulk_approve(
     }
 
 
-@router.post(
-    "/{account_id}/reject",
-    response_model=PayableAccountResponse,
-    summary="Rejeitar conta",
-)
+@router.post("/{account_id}/reject", response_model=PayableAccountResponse, summary="Rejeitar conta", status_code=201)
 async def reject_account(
     account_id: UUID,
     reason: str = Query(..., min_length=5, description="Motivo da rejeição"),
@@ -322,9 +311,7 @@ async def reject_account(
 
 
 @router.post(
-    "/{account_id}/schedule",
-    response_model=PayableAccountResponse,
-    summary="Agendar pagamento",
+    "/{account_id}/schedule", response_model=PayableAccountResponse, summary="Agendar pagamento", status_code=201
 )
 async def schedule_payment(
     account_id: UUID,
@@ -416,6 +403,7 @@ async def update_installment(
     "/installments/{installment_id}/renegotiate",
     response_model=PayableInstallmentResponse,
     summary="Renegociar parcela",
+    status_code=201,
 )
 async def renegotiate_installment(
     installment_id: UUID,
@@ -459,10 +447,7 @@ async def register_payment(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post(
-    "/bulk-payment",
-    summary="Pagamento em lote",
-)
+@router.post("/bulk-payment", summary="Pagamento em lote", status_code=201)
 async def bulk_payment(
     data: PayableBulkPaymentRequest,
     service: PayableService = Depends(get_service),
@@ -482,6 +467,7 @@ async def bulk_payment(
     "/payments/{payment_id}/reverse",
     response_model=PayablePaymentResponse,
     summary="Estornar pagamento",
+    status_code=201,
 )
 async def reverse_payment(
     payment_id: UUID,
@@ -506,6 +492,7 @@ async def reverse_payment(
     "/payments/{payment_id}/reconcile",
     response_model=PayablePaymentResponse,
     summary="Reconciliar pagamento",
+    status_code=201,
 )
 async def reconcile_payment(
     payment_id: UUID,
@@ -552,10 +539,7 @@ async def get_pending_reconciliation(
 # ==================== RECORRÊNCIA ====================
 
 
-@router.post(
-    "/process-recurring",
-    summary="Processar contas recorrentes",
-)
+@router.post("/process-recurring", summary="Processar contas recorrentes", status_code=201)
 async def process_recurring(
     condominio_id: UUID | None = Query(None, description="ID do condomínio"),
     reference_date: date | None = None,

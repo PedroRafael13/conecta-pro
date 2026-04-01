@@ -185,11 +185,7 @@ async def delete_supplier(  # pylint: disable=unused-argument
         )
 
 
-@router.post(
-    "/{supplier_id}/block",
-    response_model=SupplierResponse,
-    summary="Bloquear fornecedor",
-)
+@router.post("/{supplier_id}/block", response_model=SupplierResponse, summary="Bloquear fornecedor", status_code=201)
 async def block_supplier(
     supplier_id: UUID,
     data: SupplierBlockRequest,
@@ -210,9 +206,7 @@ async def block_supplier(
 
 
 @router.post(
-    "/{supplier_id}/unblock",
-    response_model=SupplierResponse,
-    summary="Desbloquear fornecedor",
+    "/{supplier_id}/unblock", response_model=SupplierResponse, summary="Desbloquear fornecedor", status_code=201
 )
 async def unblock_supplier(  # pylint: disable=unused-argument
     supplier_id: UUID,
@@ -233,9 +227,7 @@ async def unblock_supplier(  # pylint: disable=unused-argument
 
 
 @router.post(
-    "/{supplier_id}/qualify",
-    response_model=SupplierResponse,
-    summary="Qualificar fornecedor",
+    "/{supplier_id}/qualify", response_model=SupplierResponse, summary="Qualificar fornecedor", status_code=201
 )
 async def qualify_supplier(  # pylint: disable=unused-argument
     supplier_id: UUID,

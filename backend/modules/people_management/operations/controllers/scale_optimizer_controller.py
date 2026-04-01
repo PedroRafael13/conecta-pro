@@ -70,7 +70,7 @@ class OtimizarMesRequest(BaseModel):
     posts: list[PostInput] = Field(..., description="Postos")
 
 
-@router.post("/otimizar")
+@router.post("/otimizar", status_code=201)
 async def otimizar_escala(
     request: OtimizarRequest,
     current_user: CurrentActiveUser,
@@ -109,7 +109,7 @@ async def otimizar_escala(
     return svc.optimize(request.target_date, employees, posts)
 
 
-@router.post("/otimizar-mes")
+@router.post("/otimizar-mes", status_code=201)
 async def otimizar_escala_mensal(
     request: OtimizarMesRequest,
     current_user: CurrentActiveUser,

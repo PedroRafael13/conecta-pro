@@ -133,7 +133,7 @@ export function ContractFormModal({
               type="number"
               step="0.01"
               value={formData.valor_total}
-              onChange={(e) =>
+              onChange={(e) = aria-label="Number">
                 setFormData({ ...formData, valor_total: Number(e.target.value) })
               }
               required
@@ -148,7 +148,7 @@ export function ContractFormModal({
                 id="data_assinatura"
                 type="date"
                 value={formData.data_assinatura}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Date">
                   setFormData({ ...formData, data_assinatura: e.target.value })
                 }
                 required
@@ -161,7 +161,7 @@ export function ContractFormModal({
                 id="data_inicio"
                 type="date"
                 value={formData.data_inicio}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Date">
                   setFormData({ ...formData, data_inicio: e.target.value })
                 }
                 required
@@ -174,7 +174,7 @@ export function ContractFormModal({
                 id="data_fim"
                 type="date"
                 value={formData.data_fim}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Date">
                   setFormData({ ...formData, data_fim: e.target.value })
                 }
                 required

@@ -423,7 +423,7 @@ async def get_risks(
 # ===================================================================
 
 
-@router.post("/advisor")
+@router.post("/advisor", status_code=201)
 async def ask_advisor(
     question: str = Query(...),
     condominio_id: str = Query(default=""),
@@ -694,7 +694,7 @@ class PricingRequest(BaseModel):
     localizacao: str = "default"  # sp_capital, rj_capital, grandes_capitais, interior_sp, nordeste, norte
 
 
-@router.post("/pricing/calculate")
+@router.post("/pricing/calculate", status_code=201)
 async def calculate_pricing(
     request: PricingRequest,
     session: AsyncSession = Depends(get_db_session),
@@ -750,7 +750,7 @@ class AdvisorChatRequest(BaseModel):
     condominio_id: str = ""
 
 
-@router.post("/advisor/chat")
+@router.post("/advisor/chat", status_code=201)
 async def advisor_chat(
     request: AdvisorChatRequest,
     session: AsyncSession = Depends(get_db_session),
@@ -859,7 +859,7 @@ class MedicaoRequest(BaseModel):
     periodo_dias: int = 30
 
 
-@router.post("/billing/medicao")
+@router.post("/billing/medicao", status_code=201)
 async def calcular_medicao(
     request: MedicaoRequest,
     session: AsyncSession = Depends(get_db_session),
@@ -901,7 +901,7 @@ class ContratoAtivadoRequest(BaseModel):
     cliente_nome: str = ""
 
 
-@router.post("/billing/contrato-ativado")
+@router.post("/billing/contrato-ativado", status_code=201)
 async def contrato_ativado(
     request: ContratoAtivadoRequest,
     session: AsyncSession = Depends(get_db_session),
@@ -1015,7 +1015,7 @@ async def get_costing_summary(
     }
 
 
-@router.post("/costing/registrar")
+@router.post("/costing/registrar", status_code=201)
 async def registrar_custo_tipo(
     request: RegistrarCustoRequest,
     session: AsyncSession = Depends(get_db_session),

@@ -224,7 +224,7 @@ async def get_documents_by_tag(
     return {"document_ids": document_ids, "count": len(document_ids)}
 
 
-@router.post("/document/{document_id}/set", response_model=list[DocumentTagResponse])
+@router.post("/document/{document_id}/set", response_model=list[DocumentTagResponse], status_code=201)
 async def set_document_tags(
     document_id: str,
     tag_ids: list[str] = Query(...),
@@ -265,7 +265,7 @@ async def search_tags(
     return await service.search(query, condominium_id, limit)
 
 
-@router.post("/{source_tag_id}/merge/{target_tag_id}", response_model=DocumentTagResponse)
+@router.post("/{source_tag_id}/merge/{target_tag_id}", response_model=DocumentTagResponse, status_code=201)
 async def merge_tags(
     source_tag_id: str,
     target_tag_id: str,
@@ -280,7 +280,7 @@ async def merge_tags(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/suggest", response_model=list[DocumentTagResponse])
+@router.post("/suggest", response_model=list[DocumentTagResponse], status_code=201)
 async def get_suggested_tags(
     text: str = Query(..., min_length=10),
     condominium_id: str | None = Query(None),
@@ -293,7 +293,7 @@ async def get_suggested_tags(
     return await service.get_suggested_tags(text, condominium_id, limit)
 
 
-@router.post("/default", include_in_schema=False)
+@router.post("/default", include_in_schema=False, status_code=201)
 @router.post("/default/create", response_model=list[DocumentTagResponse], status_code=201)
 async def create_default_tags(
     condominium_id: str = Query(...),

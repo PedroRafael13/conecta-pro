@@ -214,7 +214,7 @@ async def delete_installation(
         )
 
 
-@router.post("/{installation_id}/start", response_model=InstallationResponse)
+@router.post("/{installation_id}/start", response_model=InstallationResponse, status_code=201)
 async def start_installation(
     installation_id: str,
     current_user: CurrentActiveUser,
@@ -230,7 +230,7 @@ async def start_installation(
     return installation
 
 
-@router.post("/{installation_id}/complete", response_model=InstallationResponse)
+@router.post("/{installation_id}/complete", response_model=InstallationResponse, status_code=201)
 async def complete_installation(
     installation_id: str,
     current_user: CurrentActiveUser,
@@ -247,7 +247,7 @@ async def complete_installation(
     return installation
 
 
-@router.post("/{installation_id}/cancel", response_model=InstallationResponse)
+@router.post("/{installation_id}/cancel", response_model=InstallationResponse, status_code=201)
 async def cancel_installation(
     installation_id: str,
     reason: str,
@@ -264,7 +264,7 @@ async def cancel_installation(
     return installation
 
 
-@router.post("/{installation_id}/reschedule", response_model=InstallationResponse)
+@router.post("/{installation_id}/reschedule", response_model=InstallationResponse, status_code=201)
 async def reschedule_installation(
     installation_id: str,
     new_date: datetime,
@@ -282,7 +282,7 @@ async def reschedule_installation(
     return installation
 
 
-@router.post("/{installation_id}/accept", response_model=InstallationResponse)
+@router.post("/{installation_id}/accept", response_model=InstallationResponse, status_code=201)
 async def accept_installation(
     installation_id: str,
     accepted_by: str,
@@ -317,7 +317,7 @@ async def add_photo(
     return installation
 
 
-@router.post("/{installation_id}/assign-technician", response_model=InstallationResponse)
+@router.post("/{installation_id}/assign-technician", response_model=InstallationResponse, status_code=201)
 async def assign_technician(
     installation_id: str,
     technician_id: str,

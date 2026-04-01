@@ -479,7 +479,7 @@ export default function FaturamentoPage() {
                 <input
                   type="month"
                   value={mesSelecionado}
-                  onChange={(e) => setMesSelecionado(e.target.value)}
+                  onChange={(e) = aria-label="Month"> setMesSelecionado(e.target.value)}
                   className="border border-[hsl(var(--border))] rounded-lg px-3 py-1.5 text-sm bg-[hsl(var(--background))] text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -620,7 +620,7 @@ export default function FaturamentoPage() {
                   <Input
                     placeholder="Ex: Contrato Condominio XYZ — 2 postos"
                     value={medDescricao}
-                    onChange={(e) => setMedDescricao(e.target.value)}
+                    onChange={(e) = aria-label="Ex:  Contrato  Condominio  X Y Z — 2 Postos"> setMedDescricao(e.target.value)}
                   />
                 </div>
 
@@ -634,7 +634,7 @@ export default function FaturamentoPage() {
                     min={1}
                     max={365}
                     value={medPeriodo}
-                    onChange={(e) => setMedPeriodo(Number(e.target.value))}
+                    onChange={(e) = aria-label="Range"> setMedPeriodo(Number(e.target.value))}
                     className="w-full accent-blue-500"
                   />
                   <div className="flex justify-between text-xs text-[hsl(var(--muted-foreground))]">
@@ -749,7 +749,7 @@ export default function FaturamentoPage() {
                   type="search"
                   placeholder="Buscar por nome ou descricao..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) = aria-label="Buscar Por Nome Ou Descricao..."> setSearchTerm(e.target.value)}
                   icon={<Search className="w-4 h-4" />}
                 />
               </div>

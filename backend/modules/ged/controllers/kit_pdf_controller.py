@@ -311,7 +311,7 @@ def _gerar_nfse_pdf(
 # ── Endpoints ─────────────────────────────────────────────────────────────
 
 
-@router.post("/kits/{kit_id}/generate-pdfs")
+@router.post("/kits/{kit_id}/generate-pdfs", status_code=201)
 async def generate_kit_pdfs(
     kit_id: str,
     current_user: CurrentActiveUser = None,
@@ -392,7 +392,7 @@ async def generate_kit_pdfs(
     return {"kit_id": kit_id, "gerados": gerados, "erros": erros, "total_docs": len(docs)}
 
 
-@router.post("/kits/generate-all-pdfs")
+@router.post("/kits/generate-all-pdfs", status_code=201)
 async def generate_all_pdfs(
     reference_month: str = Query("2026-03-01"),
     current_user: CurrentActiveUser = None,

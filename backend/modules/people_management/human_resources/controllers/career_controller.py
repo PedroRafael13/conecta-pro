@@ -175,6 +175,7 @@ async def update_milestones(
     "/plans/{plan_id}/milestones/{milestone_index}/complete",
     response_model=CareerPlanResponse,
     summary="Concluir milestone",
+    status_code=201,
 )
 async def complete_milestone(
     plan_id: UUID,

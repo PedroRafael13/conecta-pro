@@ -372,7 +372,7 @@ export default function RelatoriosPage() {
                 <Input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) = aria-label="Date"> setStartDate(e.target.value)}
                 />
               </div>
               <div>
@@ -382,7 +382,7 @@ export default function RelatoriosPage() {
                 <Input
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) = aria-label="Date"> setEndDate(e.target.value)}
                 />
               </div>
             </div>

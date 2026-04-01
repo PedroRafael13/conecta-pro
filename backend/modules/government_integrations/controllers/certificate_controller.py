@@ -111,7 +111,7 @@ def get_certificate_store() -> CertificateStore:
     "/upload",
     response_model=CertificateUploadResponse,
     summary="Upload de Certificado A1",
-    description="Faz upload de um certificado digital A1 (.pfx ou .p12)",
+    description="Faz upload de um certificado digital A1 (.pfx ou .p12, status_code=201)",
 )
 async def upload_certificate(
     current_user: CurrentActiveUser,
@@ -191,6 +191,7 @@ async def upload_certificate(
     response_model=CertificateValidationResponse,
     summary="Valida Certificado A1",
     description="Valida um certificado digital sem armazena-lo",
+    status_code=201,
 )
 async def validate_certificate(
     current_user: CurrentActiveUser,
@@ -403,6 +404,7 @@ async def get_public_key(
     "/{certificate_id}/test-sign",
     summary="Testa Assinatura",
     description="Testa a assinatura digital com o certificado",
+    status_code=201,
 )
 async def test_signature(
     certificate_id: str,

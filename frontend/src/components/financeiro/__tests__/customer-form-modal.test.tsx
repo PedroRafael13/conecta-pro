@@ -148,7 +148,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           onChange={handleChange}
           placeholder="Nome completo ou razao social"
           data-testid="input-name"
-        />
+         aria-label="Nome Completo Ou Razao Social" />
 
         <label htmlFor="email">Email</label>
         <input
@@ -159,7 +159,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           onChange={handleChange}
           placeholder="cliente@email.com"
           data-testid="input-email"
-        />
+         aria-label="Cliente@Email.Com" />
 
         <label htmlFor="document">CPF/CNPJ</label>
         <input
@@ -170,7 +170,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           placeholder="000.000.000-00"
           maxLength={18}
           data-testid="input-document"
-        />
+         aria-label="000.000.000 00" />
 
         <label htmlFor="phone">Telefone</label>
         <input
@@ -181,7 +181,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           placeholder="(00) 00000-0000"
           maxLength={15}
           data-testid="input-phone"
-        />
+         aria-label="(00) 00000 0000" />
 
         <label htmlFor="address">Endereco</label>
         <input
@@ -191,7 +191,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           onChange={handleChange}
           placeholder="Rua, numero, bairro, cidade - UF"
           data-testid="input-address"
-        />
+         aria-label="Rua, Numero, Bairro, Cidade    U F" />
 
         <button type="button" onClick={onClose} disabled={isLoading} data-testid="btn-cancel">
           Cancelar

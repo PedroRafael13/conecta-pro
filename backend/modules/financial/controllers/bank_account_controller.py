@@ -222,9 +222,7 @@ async def delete_bank_account(
 
 
 @router.post(
-    "/{account_id}/activate",
-    response_model=BankAccountResponse,
-    summary="Ativar conta bancária",
+    "/{account_id}/activate", response_model=BankAccountResponse, summary="Ativar conta bancária", status_code=201
 )
 async def activate_account(
     account_id: UUID,
@@ -245,9 +243,7 @@ async def activate_account(
 
 
 @router.post(
-    "/{account_id}/suspend",
-    response_model=BankAccountResponse,
-    summary="Suspender conta bancária",
+    "/{account_id}/suspend", response_model=BankAccountResponse, summary="Suspender conta bancária", status_code=201
 )
 async def suspend_account(
     account_id: UUID,
@@ -271,6 +267,7 @@ async def suspend_account(
     "/{account_id}/set-main",
     response_model=BankAccountResponse,
     summary="Definir como conta principal",
+    status_code=201,
 )
 async def set_as_main_account(
     account_id: UUID,
@@ -384,9 +381,7 @@ async def transfer_between_accounts(
 
 
 @router.post(
-    "/{account_id}/adjust-balance",
-    response_model=BankAccountResponse,
-    summary="Ajustar saldo",
+    "/{account_id}/adjust-balance", response_model=BankAccountResponse, summary="Ajustar saldo", status_code=201
 )
 async def adjust_balance(
     account_id: UUID,

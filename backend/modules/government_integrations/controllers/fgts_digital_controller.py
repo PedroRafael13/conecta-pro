@@ -100,6 +100,7 @@ async def listar_modalidades_saque(
     response_model=StandardResponse,
     summary="Calcular FGTS da folha",
     description="Calcula o FGTS da folha de pagamento",
+    status_code=201,
 )
 async def calcular_folha(
     current_user: CurrentActiveUser, request: CalcularFolhaRequest, service: FGTSDigitalService = Depends(get_service)
@@ -128,6 +129,7 @@ async def calcular_folha(
     response_model=StandardResponse,
     summary="Importar do eSocial",
     description="Importa dados do eSocial para cálculo do FGTS",
+    status_code=201,
 )
 async def importar_esocial(
     current_user: CurrentActiveUser, request: ImportarESocialRequest, service: FGTSDigitalService = Depends(get_service)
@@ -210,7 +212,11 @@ async def gerar_guia_rescisoria(
 
 
 @router.post(
-    "/debitos", response_model=StandardResponse, summary="Consultar débitos", description="Consulta débitos de FGTS"
+    "/debitos",
+    response_model=StandardResponse,
+    summary="Consultar débitos",
+    description="Consulta débitos de FGTS",
+    status_code=201,
 )
 async def consultar_debitos(
     current_user: CurrentActiveUser,
@@ -239,6 +245,7 @@ async def consultar_debitos(
     response_model=StandardResponse,
     summary="Consultar extrato",
     description="Consulta extrato do FGTS de um trabalhador",
+    status_code=201,
 )
 async def consultar_extrato(
     current_user: CurrentActiveUser,
@@ -263,7 +270,11 @@ async def consultar_extrato(
 
 
 @router.post(
-    "/simular-saque", response_model=StandardResponse, summary="Simular saque", description="Simula saque do FGTS"
+    "/simular-saque",
+    response_model=StandardResponse,
+    summary="Simular saque",
+    description="Simula saque do FGTS",
+    status_code=201,
 )
 async def simular_saque(
     current_user: CurrentActiveUser, request: SimularSaqueRequest, service: FGTSDigitalService = Depends(get_service)
@@ -291,6 +302,7 @@ async def simular_saque(
     response_model=StandardResponse,
     summary="Relatório mensal",
     description="Gera relatório mensal de FGTS",
+    status_code=201,
 )
 async def gerar_relatorio_mensal(
     current_user: CurrentActiveUser, request: CalcularFolhaRequest, service: FGTSDigitalService = Depends(get_service)

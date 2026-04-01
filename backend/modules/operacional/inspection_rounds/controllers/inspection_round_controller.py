@@ -270,6 +270,7 @@ async def delete_round(
     response_model=InspectionRoundResponse,
     summary="Iniciar ronda",
     description="Inicia uma ronda agendada.",
+    status_code=201,
 )
 async def start_round(
     round_id: UUID,
@@ -298,6 +299,7 @@ async def start_round(
     response_model=InspectionRoundResponse,
     summary="Pausar ronda",
     description="Pausa uma ronda em andamento.",
+    status_code=201,
 )
 async def pause_round(
     round_id: UUID,
@@ -325,6 +327,7 @@ async def pause_round(
     response_model=InspectionRoundResponse,
     summary="Retomar ronda",
     description="Retoma uma ronda pausada.",
+    status_code=201,
 )
 async def resume_round(
     round_id: UUID,
@@ -352,6 +355,7 @@ async def resume_round(
     response_model=InspectionRoundResponse,
     summary="Concluir ronda",
     description="Conclui uma ronda em andamento.",
+    status_code=201,
 )
 async def complete_round(
     round_id: UUID,
@@ -380,6 +384,7 @@ async def complete_round(
     response_model=InspectionRoundResponse,
     summary="Cancelar ronda",
     description="Cancela uma ronda.",
+    status_code=201,
 )
 async def cancel_round(
     round_id: UUID,

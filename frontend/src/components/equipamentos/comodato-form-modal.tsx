@@ -136,7 +136,7 @@ export function ComodatoFormModal({
               onChange={handleChange}
               placeholder="Nome do cliente"
               required
-            />
+             aria-label="Nome Do Cliente" />
           </div>
 
           <div className="space-y-2">
@@ -148,7 +148,7 @@ export function ComodatoFormModal({
               onChange={handleChange}
               placeholder="Nome do equipamento"
               required
-            />
+             aria-label="Nome Do Equipamento" />
           </div>
 
           <div className="space-y-2">
@@ -160,7 +160,7 @@ export function ComodatoFormModal({
               value={formData.start_date}
               onChange={handleChange}
               required
-            />
+             aria-label="Start Date" />
           </div>
 
           <div className="space-y-2">
@@ -172,7 +172,7 @@ export function ComodatoFormModal({
               value={formData.end_date}
               onChange={handleChange}
               required
-            />
+             aria-label="End Date" />
           </div>
         </div>
 
@@ -185,7 +185,7 @@ export function ComodatoFormModal({
             onChange={handleChange}
             placeholder="Termos e condicoes do comodato..."
             rows={4}
-          />
+           aria-label="Termos E Condicoes Do Comodato..." />
         </div>
 
         <div className="space-y-2">
@@ -197,7 +197,7 @@ export function ComodatoFormModal({
             onChange={handleChange}
             placeholder="Observacoes adicionais..."
             rows={3}
-          />
+           aria-label="Observacoes Adicionais..." />
         </div>
 
         <ModalFooter>

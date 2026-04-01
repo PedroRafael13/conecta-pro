@@ -149,7 +149,7 @@ export default function FechamentoFolhaPage() {
             <input
               type="month"
               value={competencia}
-              onChange={(e) => setCompetencia(e.target.value)}
+              onChange={(e) = aria-label="Month"> setCompetencia(e.target.value)}
               className="px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
             />
             <Button

@@ -21,7 +21,7 @@ router = APIRouter(prefix="/recruitment/resume", tags=["RH - Currículos"])
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
-@router.post("/parse")
+@router.post("/parse", status_code=201)
 async def parse_resume(
     file: UploadFile = File(..., description="Currículo em PDF, DOCX ou TXT"),
     current_user: CurrentActiveUser = None,
@@ -65,7 +65,7 @@ async def parse_resume(
     }
 
 
-@router.post("/parse-text")
+@router.post("/parse-text", status_code=201)
 async def parse_resume_text(
     text: str,
     current_user: CurrentActiveUser = None,

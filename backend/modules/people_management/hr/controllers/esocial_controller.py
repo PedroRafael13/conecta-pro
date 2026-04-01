@@ -49,7 +49,7 @@ class DesligamentoESocialRequest(BaseModel):
     verbas_rescisorias: list[dict[str, Any]] | None = None
 
 
-@router.post("/s2200/gerar")
+@router.post("/s2200/gerar", status_code=201)
 async def gerar_s2200(
     request: AdmissaoESocialRequest,
     current_user: CurrentActiveUser,
@@ -95,7 +95,7 @@ async def gerar_s2200(
     )
 
 
-@router.post("/s2299/gerar")
+@router.post("/s2299/gerar", status_code=201)
 async def gerar_s2299(
     request: DesligamentoESocialRequest,
     current_user: CurrentActiveUser,
@@ -124,7 +124,7 @@ async def gerar_s2299(
     )
 
 
-@router.post("/validar")
+@router.post("/validar", status_code=201)
 async def validar_xml_esocial(
     xml_content: str,
     current_user: CurrentActiveUser,

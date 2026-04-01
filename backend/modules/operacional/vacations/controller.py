@@ -136,7 +136,7 @@ async def update_vacation_request(
     return VacationRequestResponse.model_validate(req)
 
 
-@router.post("/{request_id}/approve", response_model=VacationRequestResponse)
+@router.post("/{request_id}/approve", response_model=VacationRequestResponse, status_code=201)
 async def approve_vacation_request(
     request_id: str,
     current_user: CurrentActiveUser,
@@ -156,7 +156,7 @@ async def approve_vacation_request(
     return VacationRequestResponse.model_validate(req)
 
 
-@router.post("/{request_id}/reject", response_model=VacationRequestResponse)
+@router.post("/{request_id}/reject", response_model=VacationRequestResponse, status_code=201)
 async def reject_vacation_request(
     request_id: str,
     current_user: CurrentActiveUser,

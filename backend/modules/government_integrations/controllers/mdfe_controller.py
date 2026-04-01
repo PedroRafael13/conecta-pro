@@ -96,6 +96,7 @@ async def criar_mdfe(
     response_model=StandardResponse,
     summary="Gerar XML",
     description="Gera o XML do MDF-e para envio a SEFAZ",
+    status_code=201,
 )
 async def gerar_xml(
     request: GerarXMLRequest, current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
@@ -119,6 +120,7 @@ async def gerar_xml(
     response_class=PlainTextResponse,
     summary="Download XML",
     description="Gera e retorna o XML do MDF-e para download",
+    status_code=201,
 )
 async def gerar_xml_download(
     current_user: CurrentActiveUser, request: GerarXMLRequest, service: MDFeService = Depends(get_service)
@@ -148,6 +150,7 @@ async def gerar_xml_download(
     response_model=StandardResponse,
     summary="Encerrar MDF-e",
     description="Gera evento de encerramento do MDF-e autorizado",
+    status_code=201,
 )
 async def encerrar_mdfe(
     request: EncerrarMDFeRequest, current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
@@ -172,6 +175,7 @@ async def encerrar_mdfe(
     response_model=StandardResponse,
     summary="Incluir condutor",
     description="Gera evento de inclusao de condutor no MDF-e autorizado",
+    status_code=201,
 )
 async def incluir_condutor(
     current_user: CurrentActiveUser, request: IncluirCondutorRequest, service: MDFeService = Depends(get_service)

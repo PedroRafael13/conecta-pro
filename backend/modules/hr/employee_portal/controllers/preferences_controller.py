@@ -116,11 +116,7 @@ async def update_dashboard_settings(
 # --- 2FA ---
 
 
-@router.post(
-    "/2fa/setup",
-    response_model=TwoFactorSetupResponse,
-    summary="Configurar 2FA",
-)
+@router.post("/2fa/setup", response_model=TwoFactorSetupResponse, summary="Configurar 2FA", status_code=201)
 async def setup_two_factor(
     db: AsyncSession = Depends(get_async_session),
     current_user: dict = Depends(get_current_user),
@@ -133,10 +129,7 @@ async def setup_two_factor(
     return TwoFactorSetupResponse(**result)
 
 
-@router.post(
-    "/2fa/verify",
-    summary="Verificar código 2FA",
-)
+@router.post("/2fa/verify", summary="Verificar código 2FA", status_code=201)
 async def verify_two_factor(
     code: str,
     db: AsyncSession = Depends(get_async_session),
@@ -156,10 +149,7 @@ async def verify_two_factor(
     return {"message": "2FA ativado com sucesso", "enabled": True}
 
 
-@router.post(
-    "/2fa/disable",
-    summary="Desativar 2FA",
-)
+@router.post("/2fa/disable", summary="Desativar 2FA", status_code=201)
 async def disable_two_factor(
     code: str,
     db: AsyncSession = Depends(get_async_session),
@@ -217,10 +207,7 @@ async def list_devices(
     return {"devices": devices}
 
 
-@router.post(
-    "/devices/trust",
-    summary="Adicionar dispositivo confiável",
-)
+@router.post("/devices/trust", summary="Adicionar dispositivo confiável", status_code=201)
 async def trust_device(
     request: Request,
     device_name: str,
@@ -267,10 +254,7 @@ async def remove_device(
     return {"message": "Dispositivo removido"}
 
 
-@router.post(
-    "/devices/revoke-all",
-    summary="Revogar todos os dispositivos",
-)
+@router.post("/devices/revoke-all", summary="Revogar todos os dispositivos", status_code=201)
 async def revoke_all_devices(
     db: AsyncSession = Depends(get_async_session),
     current_user: dict = Depends(get_current_user),
@@ -289,11 +273,7 @@ async def revoke_all_devices(
 # --- Reset ---
 
 
-@router.post(
-    "/reset",
-    response_model=PreferencesResponse,
-    summary="Restaurar padrões",
-)
+@router.post("/reset", response_model=PreferencesResponse, summary="Restaurar padrões", status_code=201)
 async def reset_preferences(
     db: AsyncSession = Depends(get_async_session),
     current_user: dict = Depends(get_current_user),

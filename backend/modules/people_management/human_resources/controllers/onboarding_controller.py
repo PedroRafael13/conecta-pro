@@ -105,7 +105,7 @@ async def get_checklist(
         return {"employee_id": employee_id, "items": []}
 
 
-@router.post("/{employee_id}/checklist/{item_id}/concluir")
+@router.post("/{employee_id}/checklist/{item_id}/concluir", status_code=201)
 async def concluir_item(
     employee_id: str,
     item_id: int,

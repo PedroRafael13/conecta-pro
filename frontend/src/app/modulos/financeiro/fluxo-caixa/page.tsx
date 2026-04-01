@@ -458,7 +458,7 @@ export default function FluxoCaixaPage() {
             type="search"
             placeholder="Buscar por descricao ou categoria..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) = aria-label="Buscar Por Descricao Ou Categoria..."> setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
           />
         </div>

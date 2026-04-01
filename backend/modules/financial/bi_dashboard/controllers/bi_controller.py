@@ -176,7 +176,7 @@ async def delete_dashboard(
     repo.delete(dashboard)
 
 
-@router.post("/dashboards/{dashboard_id}/publish", response_model=DashboardResponse)
+@router.post("/dashboards/{dashboard_id}/publish", response_model=DashboardResponse, status_code=201)
 async def publish_dashboard(
     dashboard_id: UUID,
     condominio_id: UUID = Query(...),
@@ -196,7 +196,7 @@ async def publish_dashboard(
     return dashboard
 
 
-@router.post("/dashboards/{dashboard_id}/archive", response_model=DashboardResponse)
+@router.post("/dashboards/{dashboard_id}/archive", response_model=DashboardResponse, status_code=201)
 async def archive_dashboard(
     dashboard_id: UUID,
     condominio_id: UUID = Query(...),
@@ -216,7 +216,7 @@ async def archive_dashboard(
     return dashboard
 
 
-@router.post("/dashboards/{dashboard_id}/favorite", response_model=DashboardResponse)
+@router.post("/dashboards/{dashboard_id}/favorite", response_model=DashboardResponse, status_code=201)
 async def toggle_dashboard_favorite(
     dashboard_id: UUID,
     condominio_id: UUID = Query(...),
@@ -233,7 +233,7 @@ async def toggle_dashboard_favorite(
     return repo.toggle_favorite(dashboard)
 
 
-@router.post("/dashboards/{dashboard_id}/set-default", response_model=DashboardResponse)
+@router.post("/dashboards/{dashboard_id}/set-default", response_model=DashboardResponse, status_code=201)
 async def set_default_dashboard(
     dashboard_id: UUID,
     condominio_id: UUID = Query(...),
@@ -266,7 +266,7 @@ async def get_default_dashboard(
     return dashboard
 
 
-@router.post("/dashboards/{dashboard_id}/duplicate", response_model=DashboardResponse)
+@router.post("/dashboards/{dashboard_id}/duplicate", response_model=DashboardResponse, status_code=201)
 async def duplicate_dashboard(
     dashboard_id: UUID,
     novo_nome: str = Query(...),
@@ -426,7 +426,7 @@ async def get_widget_data(
     )
 
 
-@router.post("/widgets/{widget_id}/refresh", response_model=WidgetData)
+@router.post("/widgets/{widget_id}/refresh", response_model=WidgetData, status_code=201)
 async def refresh_widget_data(
     widget_id: UUID,
     condominio_id: UUID = Query(...),
@@ -475,7 +475,7 @@ async def set_widget_visibility(
     return repo.set_visibility(widget, is_visible)
 
 
-@router.post("/widgets/{widget_id}/clone", response_model=WidgetResponse)
+@router.post("/widgets/{widget_id}/clone", response_model=WidgetResponse, status_code=201)
 async def clone_widget(
     widget_id: UUID,
     target_dashboard_id: UUID = Query(...),
@@ -667,7 +667,7 @@ async def delete_kpi(
     repo.delete(kpi)
 
 
-@router.post("/kpis/{kpi_id}/calculate", response_model=KPIValue)
+@router.post("/kpis/{kpi_id}/calculate", response_model=KPIValue, status_code=201)
 async def calculate_kpi(
     kpi_id: UUID,
     condominio_id: UUID = Query(...),
@@ -768,7 +768,7 @@ async def get_kpis_stats(
     return repo.get_stats(condominio_id)
 
 
-@router.post("/kpis/calculate-all")
+@router.post("/kpis/calculate-all", status_code=201)
 async def calculate_all_kpis(
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
@@ -893,7 +893,7 @@ async def delete_report(
     repo.delete(report)
 
 
-@router.post("/reports/{report_id}/pause", response_model=ReportResponse)
+@router.post("/reports/{report_id}/pause", response_model=ReportResponse, status_code=201)
 async def pause_report(
     report_id: UUID,
     condominio_id: UUID = Query(...),
@@ -910,7 +910,7 @@ async def pause_report(
     return repo.pause(report)
 
 
-@router.post("/reports/{report_id}/resume", response_model=ReportResponse)
+@router.post("/reports/{report_id}/resume", response_model=ReportResponse, status_code=201)
 async def resume_report(
     report_id: UUID,
     condominio_id: UUID = Query(...),
@@ -927,7 +927,7 @@ async def resume_report(
     return repo.resume(report)
 
 
-@router.post("/reports/{report_id}/execute")
+@router.post("/reports/{report_id}/execute", status_code=201)
 async def execute_report_now(
     report_id: UUID,
     condominio_id: UUID = Query(...),
@@ -977,7 +977,7 @@ async def get_cache_stats(
     return repo.get_stats(condominio_id)
 
 
-@router.post("/cache/invalidate")
+@router.post("/cache/invalidate", status_code=201)
 async def invalidate_cache(
     data: CacheInvalidate,
     condominio_id: UUID = Query(...),
@@ -1005,7 +1005,7 @@ async def invalidate_cache(
     return {"invalidated": count}
 
 
-@router.post("/cache/cleanup")
+@router.post("/cache/cleanup", status_code=201)
 async def cleanup_cache(
     condominio_id: UUID = Query(...),
     older_than_hours: int = Query(24, ge=1, le=168),
@@ -1022,7 +1022,7 @@ async def cleanup_cache(
 # =============================================================================
 
 
-@router.post("/analytics/anomalies")
+@router.post("/analytics/anomalies", status_code=201)
 async def detect_anomalies(
     values: list[Decimal],
     threshold: float = Query(2.0, ge=1.0, le=4.0),
@@ -1033,7 +1033,7 @@ async def detect_anomalies(
     return service.detect_anomalies(values, threshold)
 
 
-@router.post("/analytics/trend")
+@router.post("/analytics/trend", status_code=201)
 async def calculate_trend(
     values: list[Decimal],
     db: Session = Depends(get_db),
@@ -1043,7 +1043,7 @@ async def calculate_trend(
     return service.calculate_trend(values)
 
 
-@router.post("/analytics/distribution")
+@router.post("/analytics/distribution", status_code=201)
 async def analyze_distribution(
     values: list[Decimal],
     db: Session = Depends(get_db),
@@ -1053,7 +1053,7 @@ async def analyze_distribution(
     return service.analyze_distribution(values)
 
 
-@router.post("/analytics/growth-rate")
+@router.post("/analytics/growth-rate", status_code=201)
 async def calculate_growth_rate(
     values: list[Decimal],
     period: str = Query("monthly"),
@@ -1064,7 +1064,7 @@ async def calculate_growth_rate(
     return service.calculate_growth_rate(values, period)
 
 
-@router.post("/analytics/suggest-targets")
+@router.post("/analytics/suggest-targets", status_code=201)
 async def suggest_targets(
     historical_values: list[Decimal],
     growth_target: Decimal | None = None,
@@ -1075,7 +1075,7 @@ async def suggest_targets(
     return service.suggest_targets(historical_values, growth_target)
 
 
-@router.post("/analytics/variance")
+@router.post("/analytics/variance", status_code=201)
 async def analyze_variance(
     actual: Decimal,
     budget: Decimal,
@@ -1092,7 +1092,7 @@ async def analyze_variance(
 # =============================================================================
 
 
-@router.post("/forecast/generate")
+@router.post("/forecast/generate", status_code=201)
 async def generate_forecast(
     historical_values: list[Decimal],
     periods: int = Query(12, ge=1, le=60),
@@ -1103,7 +1103,7 @@ async def generate_forecast(
     return service.generate_forecast(historical_values, periods)
 
 
-@router.post("/forecast/moving-average")
+@router.post("/forecast/moving-average", status_code=201)
 async def moving_average_forecast(
     values: list[Decimal],
     window: int = Query(3, ge=2, le=12),
@@ -1115,7 +1115,7 @@ async def moving_average_forecast(
     return service.moving_average_forecast(values, window, periods)
 
 
-@router.post("/forecast/break-even")
+@router.post("/forecast/break-even", status_code=201)
 async def calculate_break_even(
     fixed_costs: Decimal,
     variable_cost_per_unit: Decimal,
@@ -1127,7 +1127,7 @@ async def calculate_break_even(
     return service.calculate_break_even(fixed_costs, variable_cost_per_unit, price_per_unit)
 
 
-@router.post("/forecast/cash-flow-projection")
+@router.post("/forecast/cash-flow-projection", status_code=201)
 async def project_cash_flow(
     opening_balance: Decimal,
     expected_inflows: list[Decimal],
@@ -1139,7 +1139,7 @@ async def project_cash_flow(
     return service.cash_flow_projection(opening_balance, expected_inflows, expected_outflows)
 
 
-@router.post("/forecast/npv")
+@router.post("/forecast/npv", status_code=201)
 async def calculate_npv(
     initial_investment: Decimal,
     cash_flows: list[Decimal],
@@ -1151,7 +1151,7 @@ async def calculate_npv(
     return service.calculate_npv(initial_investment, cash_flows, discount_rate)
 
 
-@router.post("/forecast/payback")
+@router.post("/forecast/payback", status_code=201)
 async def calculate_payback(
     initial_investment: Decimal,
     cash_flows: list[Decimal],

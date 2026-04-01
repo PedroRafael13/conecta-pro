@@ -226,7 +226,7 @@ export function DocumentShareDialog({ documentId, open, onClose }: DocumentShare
                   type="email"
                   placeholder="email@exemplo.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) = aria-label="Email@Exemplo.Com"> setEmail(e.target.value)}
                 />
               </div>
 
@@ -236,7 +236,7 @@ export function DocumentShareDialog({ documentId, open, onClose }: DocumentShare
                 <Input
                   placeholder="Nome da pessoa"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) = aria-label="Nome Da Pessoa"> setName(e.target.value)}
                 />
               </div>
 
@@ -268,7 +268,7 @@ export function DocumentShareDialog({ documentId, open, onClose }: DocumentShare
                 <Textarea
                   placeholder="Mensagem personalizada para o destinatário"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) = aria-label="Mensagem Personalizada Para O Destinatário"> setMessage(e.target.value)}
                   rows={3}
                 />
               </div>
@@ -311,7 +311,7 @@ export function DocumentShareDialog({ documentId, open, onClose }: DocumentShare
                   type="password"
                   placeholder="Digite a senha"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) = aria-label="Digite A Senha"> setPassword(e.target.value)}
                 />
               )}
             </div>
@@ -332,7 +332,7 @@ export function DocumentShareDialog({ documentId, open, onClose }: DocumentShare
                     min={1}
                     max={365}
                     value={expiryDays}
-                    onChange={(e) => setExpiryDays(parseInt(e.target.value))}
+                    onChange={(e) = aria-label="Number"> setExpiryDays(parseInt(e.target.value))}
                     className="w-20"
                   />
                   <span className="text-sm">dias</span>
@@ -351,7 +351,7 @@ export function DocumentShareDialog({ documentId, open, onClose }: DocumentShare
                 min={1}
                 placeholder="Ilimitado"
                 value={maxDownloads || ''}
-                onChange={(e) => setMaxDownloads(parseInt(e.target.value) || undefined)}
+                onChange={(e) = aria-label="Ilimitado"> setMaxDownloads(parseInt(e.target.value) || undefined)}
               />
             </div>
 
@@ -366,7 +366,7 @@ export function DocumentShareDialog({ documentId, open, onClose }: DocumentShare
                 min={1}
                 placeholder="Ilimitado"
                 value={maxViews || ''}
-                onChange={(e) => setMaxViews(parseInt(e.target.value) || undefined)}
+                onChange={(e) = aria-label="Ilimitado"> setMaxViews(parseInt(e.target.value) || undefined)}
               />
             </div>
           </div>

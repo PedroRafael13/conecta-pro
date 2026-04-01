@@ -258,7 +258,7 @@ async def update_chart(
         ) from e
 
 
-@router.post("/charts/{chart_id}/activate")
+@router.post("/charts/{chart_id}/activate", status_code=201)
 async def activate_chart(
     chart_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -815,7 +815,7 @@ async def get_period(
     return AccountingPeriodResponse.model_validate(period)
 
 
-@router.post("/periods/{period_id}/open")
+@router.post("/periods/{period_id}/open", status_code=201)
 async def open_period(
     period_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -856,7 +856,7 @@ async def open_period(
         ) from e
 
 
-@router.post("/periods/{period_id}/close")
+@router.post("/periods/{period_id}/close", status_code=201)
 async def close_period(
     period_id: uuid.UUID,
     data: PeriodCloseRequest,
@@ -900,7 +900,7 @@ async def close_period(
         ) from e
 
 
-@router.post("/periods/{period_id}/reopen")
+@router.post("/periods/{period_id}/reopen", status_code=201)
 async def reopen_period(
     period_id: uuid.UUID,
     data: PeriodReopenRequest,
@@ -1136,7 +1136,7 @@ async def get_entry_lines(
     return [JournalEntryLineResponse.model_validate(line) for line in lines]
 
 
-@router.post("/journal-entries/{entry_id}/post")
+@router.post("/journal-entries/{entry_id}/post", status_code=201)
 async def post_journal_entry(
     entry_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -1174,7 +1174,7 @@ async def post_journal_entry(
         ) from e
 
 
-@router.post("/journal-entries/{entry_id}/approve")
+@router.post("/journal-entries/{entry_id}/approve", status_code=201)
 async def approve_journal_entry(
     entry_id: uuid.UUID,
     data: JournalEntryApprovalRequest,
@@ -1213,7 +1213,7 @@ async def approve_journal_entry(
         ) from e
 
 
-@router.post("/journal-entries/{entry_id}/reject")
+@router.post("/journal-entries/{entry_id}/reject", status_code=201)
 async def reject_journal_entry(
     entry_id: uuid.UUID,
     reason: str = Query(..., min_length=1),
@@ -1252,7 +1252,7 @@ async def reject_journal_entry(
         ) from e
 
 
-@router.post("/journal-entries/{entry_id}/reverse", response_model=JournalEntryResponse)
+@router.post("/journal-entries/{entry_id}/reverse", response_model=JournalEntryResponse, status_code=201)
 async def reverse_journal_entry(
     entry_id: uuid.UUID,
     data: JournalEntryReversalRequest,
@@ -1502,7 +1502,7 @@ async def get_balance_items(
     return [TrialBalanceItemResponse.model_validate(item) for item in items]
 
 
-@router.post("/trial-balances/{balance_id}/generate")
+@router.post("/trial-balances/{balance_id}/generate", status_code=201)
 async def generate_trial_balance(  # pylint: disable=too-many-locals
     balance_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -1608,7 +1608,7 @@ async def generate_trial_balance(  # pylint: disable=too-many-locals
         ) from e
 
 
-@router.post("/trial-balances/{balance_id}/approve")
+@router.post("/trial-balances/{balance_id}/approve", status_code=201)
 async def approve_trial_balance(
     balance_id: uuid.UUID,
     notes: str | None = None,
@@ -1647,7 +1647,7 @@ async def approve_trial_balance(
         ) from e
 
 
-@router.post("/trial-balances/{balance_id}/publish")
+@router.post("/trial-balances/{balance_id}/publish", status_code=201)
 async def publish_trial_balance(
     balance_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),

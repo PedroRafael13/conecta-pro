@@ -200,7 +200,7 @@ async def criar_mkt_lead(
     return {"id": str(result.fetchone()[0]), "message": "Lead marketing criado"}
 
 
-@router.post("/leads/{lead_id}/convert")
+@router.post("/leads/{lead_id}/convert", status_code=201)
 async def converter_lead_para_crm(
     lead_id: str, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)
 ):
@@ -306,7 +306,7 @@ class LicitacaoConvertRequest(BaseModel):
     numero_edital: str | None = None
 
 
-@router.post("/licitacao/convert-to-crm")
+@router.post("/licitacao/convert-to-crm", status_code=201)
 async def converter_licitacao_para_crm(
     data: LicitacaoConvertRequest,
     current_user: CurrentActiveUser,

@@ -191,7 +191,7 @@ async def get_pending_by_signer(
     return await service.get_pending_by_signer(signer_id=_uid(current_user))
 
 
-@router.post("/{signature_id}/sign", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/sign", response_model=DocumentSignatureResponse, status_code=201)
 async def sign(
     signature_id: str,
     data: SignatureRequest,
@@ -217,7 +217,7 @@ async def sign(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{signature_id}/refuse", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/refuse", response_model=DocumentSignatureResponse, status_code=201)
 async def refuse(
     signature_id: str,
     data: SignatureRefusalRequest,
@@ -238,7 +238,7 @@ async def refuse(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{signature_id}/cancel", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/cancel", response_model=DocumentSignatureResponse, status_code=201)
 async def cancel(
     signature_id: str,
     db: AsyncSession = Depends(get_db),
@@ -258,7 +258,7 @@ async def cancel(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{signature_id}/verify", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/verify", response_model=DocumentSignatureResponse, status_code=201)
 async def verify(
     signature_id: str,
     db: AsyncSession = Depends(get_db),
@@ -278,7 +278,7 @@ async def verify(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{signature_id}/notify", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/notify", response_model=DocumentSignatureResponse, status_code=201)
 async def send_notification(
     signature_id: str,
     db: AsyncSession = Depends(get_db),
@@ -292,7 +292,7 @@ async def send_notification(
     return signature
 
 
-@router.post("/{signature_id}/remind", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/remind", response_model=DocumentSignatureResponse, status_code=201)
 async def send_reminder(
     signature_id: str,
     db: AsyncSession = Depends(get_db),
@@ -306,7 +306,7 @@ async def send_reminder(
     return signature
 
 
-@router.post("/{signature_id}/regenerate-token")
+@router.post("/{signature_id}/regenerate-token", status_code=201)
 async def regenerate_token(
     signature_id: str,
     expires_in_hours: int = Query(72, ge=1, le=720),
@@ -321,7 +321,7 @@ async def regenerate_token(
     return {"token": token}
 
 
-@router.post("/{signature_id}/extend", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/extend", response_model=DocumentSignatureResponse, status_code=201)
 async def extend_deadline(
     signature_id: str,
     new_deadline: datetime = Query(...),
@@ -336,7 +336,7 @@ async def extend_deadline(
     return signature
 
 
-@router.post("/expire-overdue/run")
+@router.post("/expire-overdue/run", status_code=201)
 async def expire_overdue(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -381,7 +381,7 @@ async def get_stats(
     return await service.get_stats(document_id)
 
 
-@router.post("/request", response_model=list[DocumentSignatureResponse])
+@router.post("/request", response_model=list[DocumentSignatureResponse], status_code=201)
 async def request_signatures(
     data: SignatureRequestBody,
     db: AsyncSession = Depends(get_db),
@@ -402,7 +402,7 @@ async def request_signatures(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/document/{document_id}/cancel-all")
+@router.post("/document/{document_id}/cancel-all", status_code=201)
 async def cancel_all_pending(
     document_id: str,
     db: AsyncSession = Depends(get_db),

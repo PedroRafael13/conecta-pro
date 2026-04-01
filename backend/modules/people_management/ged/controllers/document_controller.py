@@ -224,7 +224,7 @@ async def delete_document(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{document_id}/sign")
+@router.post("/{document_id}/sign", status_code=201)
 async def sign_document(
     document_id: str,
     request: Request,

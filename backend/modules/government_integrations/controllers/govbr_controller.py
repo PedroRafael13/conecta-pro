@@ -56,6 +56,7 @@ async def get_status(current_user: CurrentActiveUser, service: GovBrService = De
     response_model=StandardResponse,
     summary="Gerar URL de autorizacao",
     description="Gera URL OAuth2 para redirecionar o usuario ao Gov.br",
+    status_code=201,
 )
 async def gerar_url_autorizacao(
     current_user: CurrentActiveUser, request: GerarUrlAutorizacaoRequest, service: GovBrService = Depends(get_service)
@@ -113,6 +114,7 @@ async def gerar_url_autorizacao_get(
     response_model=StandardResponse,
     summary="Processar callback OAuth2",
     description="Troca codigo de autorizacao por tokens",
+    status_code=201,
 )
 async def processar_callback(
     current_user: CurrentActiveUser, request: TrocarCodigoRequest, service: GovBrService = Depends(get_service)
@@ -173,6 +175,7 @@ async def processar_callback_get(
     response_model=StandardResponse,
     summary="Renovar token",
     description="Renova access_token usando refresh_token",
+    status_code=201,
 )
 async def renovar_token(
     request: RenovarTokenRequest, current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)
@@ -200,6 +203,7 @@ async def renovar_token(
     response_model=StandardResponse,
     summary="Obter dados do usuario",
     description="Obtem dados do usuario autenticado via access_token",
+    status_code=201,
 )
 async def obter_dados_usuario(
     current_user: CurrentActiveUser, request: ObterDadosUsuarioRequest, service: GovBrService = Depends(get_service)
@@ -225,6 +229,7 @@ async def obter_dados_usuario(
     response_model=StandardResponse,
     summary="Validar token",
     description="Valida se o access_token ainda e valido",
+    status_code=201,
 )
 async def validar_token(
     request: ValidarTokenRequest, current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)
@@ -257,6 +262,7 @@ async def validar_token(
     response_model=StandardResponse,
     summary="Gerar URL de logout",
     description="Gera URL para logout federado do Gov.br",
+    status_code=201,
 )
 async def gerar_url_logout(
     current_user: CurrentActiveUser, request: GerarUrlLogoutRequest, service: GovBrService = Depends(get_service)
@@ -282,7 +288,7 @@ async def gerar_url_logout(
     "/empresas",
     response_model=StandardResponse,
     summary="Obter empresas vinculadas",
-    description="Obtem empresas vinculadas ao CPF (requer scope govbr_empresa)",
+    description="Obtem empresas vinculadas ao CPF (requer scope govbr_empresa, status_code=201)",
 )
 async def obter_empresas_vinculadas(
     current_user: CurrentActiveUser, request: ObterEmpresasRequest, service: GovBrService = Depends(get_service)
@@ -342,7 +348,7 @@ async def listar_scopes(
     "/limpar-pendentes",
     response_model=StandardResponse,
     summary="Limpar autenticacoes pendentes",
-    description="Limpa autenticacoes pendentes expiradas (uso interno)",
+    description="Limpa autenticacoes pendentes expiradas (uso interno, status_code=201)",
 )
 async def limpar_pendentes(
     current_user: CurrentActiveUser,

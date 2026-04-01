@@ -305,7 +305,7 @@ export function OccurrenceFormModal({
             onChange={handleChange}
             placeholder="Titulo resumido da ocorrencia"
             className={fieldErrors.has('title') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
-          />
+           aria-label="Titulo Resumido Da Ocorrencia" />
         </div>
 
         {/* Tipo, Severidade e Categoria */}
@@ -320,7 +320,7 @@ export function OccurrenceFormModal({
               value={formData.occurrence_type}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
-            >
+             aria-label="Occurrence Type">
               {Object.entries(OCCURRENCE_TYPE_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -339,7 +339,7 @@ export function OccurrenceFormModal({
               value={formData.severity}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
-            >
+             aria-label="Severity">
               {Object.entries(OCCURRENCE_SEVERITY_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -358,7 +358,7 @@ export function OccurrenceFormModal({
               value={formData.category}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
-            >
+             aria-label="Category">
               {Object.entries(OCCURRENCE_CATEGORY_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -387,7 +387,7 @@ export function OccurrenceFormModal({
                     : 'border-[hsl(var(--border))]'
                 }`}
                 disabled={employeesLoading || isEditing}
-              >
+               aria-label="Employee Id">
                 <option value="">Selecione o funcionario</option>
                 {employees?.map((emp) => (
                   <option key={emp.id} value={emp.id}>
@@ -413,7 +413,7 @@ export function OccurrenceFormModal({
                     : 'border-[hsl(var(--border))]'
                 }`}
                 disabled={postsLoading || isEditing}
-              >
+               aria-label="Post Id">
                 <option value="">Selecione o posto</option>
                 {posts?.map((post) => (
                   <option key={post.id} value={post.id}>
@@ -442,7 +442,7 @@ export function OccurrenceFormModal({
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                 : 'border-[hsl(var(--border))]'
             }`}
-          />
+           aria-label="Descreva Detalhadamente O Ocorrido, Incluindo Circunstancias, Local Exato, E Qualquer Informacao Relevante..." />
         </div>
 
         {/* Data e Testemunhas */}
@@ -459,7 +459,7 @@ export function OccurrenceFormModal({
               onChange={handleChange}
               max={new Date().toISOString().slice(0, 16)}
               className={fieldErrors.has('occurred_at') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
-            />
+             aria-label="Occurred At" />
           </div>
 
           <div>
@@ -472,7 +472,7 @@ export function OccurrenceFormModal({
               value={formData.witnesses}
               onChange={handleChange}
               placeholder="Nomes das testemunhas (opcional)"
-            />
+             aria-label="Nomes Das Testemunhas (Opcional)" />
           </div>
         </div>
 

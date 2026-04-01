@@ -117,7 +117,7 @@ async def delete_document(document_id: UUID, current_user: CurrentActiveUser, db
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento nao encontrado")
 
 
-@router.post("/atualizar-status")
+@router.post("/atualizar-status", status_code=201)
 async def atualizar_todos_status(current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Atualiza status de todos os documentos baseado na validade."""
     service = DocumentService(db)

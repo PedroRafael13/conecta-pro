@@ -112,7 +112,7 @@ class HistoricoExtracaoResponse(BaseModel):
 # ============================================================================
 
 
-@router.post("/iniciar", response_model=ExtracaoResponse)
+@router.post("/iniciar", response_model=ExtracaoResponse, status_code=201)
 async def iniciar_extracao(
     tenant_id: str,
     request: IniciarExtracaoRequest,
@@ -242,7 +242,7 @@ async def listar_historico_extracoes(
     return []
 
 
-@router.post("/cancelar/{extracao_id}")
+@router.post("/cancelar/{extracao_id}", status_code=201)
 async def cancelar_extracao(current_user: CurrentActiveUser, extracao_id: str):
     """
     Cancela uma extração em andamento.
@@ -259,7 +259,7 @@ async def cancelar_extracao(current_user: CurrentActiveUser, extracao_id: str):
 # ============================================================================
 
 
-@router.post("/sync/nfe")
+@router.post("/sync/nfe", status_code=201)
 async def sincronizar_nfe_rapido(
     tenant_id: str,
     current_user: CurrentActiveUser,
@@ -280,7 +280,7 @@ async def sincronizar_nfe_rapido(
     }
 
 
-@router.post("/sync/esocial")
+@router.post("/sync/esocial", status_code=201)
 async def sincronizar_esocial_rapido(
     tenant_id: str,
     current_user: CurrentActiveUser,
@@ -300,7 +300,7 @@ async def sincronizar_esocial_rapido(
     }
 
 
-@router.post("/sync/fgts")
+@router.post("/sync/fgts", status_code=201)
 async def sincronizar_fgts_rapido(
     tenant_id: str,
     current_user: CurrentActiveUser,
@@ -320,7 +320,7 @@ async def sincronizar_fgts_rapido(
     }
 
 
-@router.post("/sync/nfse")
+@router.post("/sync/nfse", status_code=201)
 async def sincronizar_nfse_rapido(
     tenant_id: str,
     current_user: CurrentActiveUser,
@@ -340,7 +340,7 @@ async def sincronizar_nfse_rapido(
     }
 
 
-@router.post("/sync/rfb")
+@router.post("/sync/rfb", status_code=201)
 async def sincronizar_rfb_rapido(
     tenant_id: str,
     cnpjs: list[str],
@@ -362,7 +362,7 @@ async def sincronizar_rfb_rapido(
     }
 
 
-@router.post("/sync/todos")
+@router.post("/sync/todos", status_code=201)
 async def sincronizar_todos_rapido(
     tenant_id: str,
     current_user: CurrentActiveUser,

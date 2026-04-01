@@ -192,7 +192,7 @@ async def create_commission(
     return CommissionResponse.model_validate(commission)
 
 
-@router.post("/calculate", response_model=CommissionResponse)
+@router.post("/calculate", response_model=CommissionResponse, status_code=201)
 async def calculate_commission(
     data: CommissionCalculateRequest,
     current_user: CurrentActiveUser,
@@ -374,10 +374,7 @@ async def get_commission_summary(
     return CommissionSummaryResponse.model_validate(summary)
 
 
-@router.post(
-    "/summaries/{seller_id}/{year}/{month}/close",
-    response_model=CommissionSummaryResponse,
-)
+@router.post("/summaries/{seller_id}/{year}/{month}/close", response_model=CommissionSummaryResponse, status_code=201)
 async def close_commission_summary(
     seller_id: str,
     year: int,
@@ -468,7 +465,7 @@ async def update_commission_status(
     return CommissionResponse.model_validate(commission)
 
 
-@router.post("/{commission_id}/approve", response_model=CommissionResponse)
+@router.post("/{commission_id}/approve", response_model=CommissionResponse, status_code=201)
 async def approve_commission(
     commission_id: str,
     data: CommissionApprove,
@@ -548,10 +545,7 @@ async def create_commission_payment(
     return CommissionPaymentResponse.model_validate(payment)
 
 
-@router.post(
-    "/payments/{payment_id}/confirm",
-    response_model=CommissionPaymentResponse,
-)
+@router.post("/payments/{payment_id}/confirm", response_model=CommissionPaymentResponse, status_code=201)
 async def confirm_commission_payment(
     payment_id: str,
     data: CommissionPaymentConfirm,

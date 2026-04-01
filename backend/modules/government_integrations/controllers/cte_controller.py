@@ -105,7 +105,13 @@ async def criar_cte(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
-@router.post("/gerar-xml", response_model=StandardResponse, summary="Gerar XML", description="Gera o XML do CT-e")
+@router.post(
+    "/gerar-xml",
+    response_model=StandardResponse,
+    summary="Gerar XML",
+    description="Gera o XML do CT-e",
+    status_code=201,
+)
 async def gerar_xml(
     request: GerarXMLRequest, current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
 ) -> StandardResponse:
@@ -160,6 +166,7 @@ async def gerar_xml(
     response_class=PlainTextResponse,
     summary="Download XML",
     description="Gera e retorna o XML do CT-e para download",
+    status_code=201,
 )
 async def gerar_xml_download(
     request: GerarXMLRequest, current_user: CurrentActiveUser, service: CTeService = Depends(get_service)

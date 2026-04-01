@@ -321,9 +321,7 @@ async def update_training(
 
 
 @router.post(
-    "/{training_id}/complete",
-    response_model=TrainingResponse,
-    summary="Concluir treinamento",
+    "/{training_id}/complete", response_model=TrainingResponse, summary="Concluir treinamento", status_code=201
 )
 async def complete_training(
     training_id: UUID,

@@ -202,7 +202,7 @@ async def update_opportunity_stage(
     return OpportunityResponse.model_validate(opportunity)
 
 
-@router.post("/{opportunity_id}/close", response_model=OpportunityResponse)
+@router.post("/{opportunity_id}/close", response_model=OpportunityResponse, status_code=201)
 async def close_opportunity(
     opportunity_id: str,
     data: OpportunityClose,

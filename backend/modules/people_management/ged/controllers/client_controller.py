@@ -116,7 +116,7 @@ async def delete_client(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{client_id}/portal-access", response_model=GedClientResponse)
+@router.post("/{client_id}/portal-access", response_model=GedClientResponse, status_code=201)
 async def toggle_portal_access(
     client_id: str,
     data: PortalAccessRequest,

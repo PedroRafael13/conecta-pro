@@ -167,6 +167,7 @@ async def delete_review(
     "/reviews/{review_id}/complete",
     response_model=PerformanceReviewResponse,
     summary="Concluir avaliacao",
+    status_code=201,
 )
 async def complete_review(
     review_id: UUID,

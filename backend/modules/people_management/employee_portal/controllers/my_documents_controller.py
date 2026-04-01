@@ -55,6 +55,7 @@ async def get_my_documents(
     response_model=SignDocumentResponse,
     summary="Assinar documento",
     description="Assina um documento digitalmente usando SHA-256.",
+    status_code=201,
 )
 async def sign_document(
     request: Request,

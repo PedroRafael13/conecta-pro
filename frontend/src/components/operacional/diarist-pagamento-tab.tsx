@@ -27,7 +27,7 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
             step={0.01}
             placeholder="0.00"
             required
-          />
+           aria-label="0.00" />
         </div>
         <div>
           <label htmlFor="field-valor-hora-extra" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -42,7 +42,7 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
             min={0}
             step={0.01}
             placeholder="25.00"
-          />
+           aria-label="25.00" />
         </div>
       </div>
 
@@ -64,7 +64,7 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
               value={formData.banco}
               onChange={onChange}
               placeholder="Nome do banco"
-            />
+             aria-label="Nome Do Banco" />
           </div>
           <div>
             <label htmlFor="field-tipo-conta" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -76,7 +76,7 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
               value={formData.tipo_conta}
               onChange={onChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-            >
+             aria-label="Tipo Conta">
               <option value="">Selecione</option>
               <option value="corrente">Corrente</option>
               <option value="poupanca">Poupanca</option>
@@ -92,7 +92,7 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
               value={formData.agencia}
               onChange={onChange}
               placeholder="0000"
-            />
+             aria-label="0000" />
           </div>
           <div>
             <label htmlFor="field-conta" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -104,7 +104,7 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
               value={formData.conta}
               onChange={onChange}
               placeholder="00000-0"
-            />
+             aria-label="00000 0" />
           </div>
           <div className="col-span-2">
             <label htmlFor="field-pix" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -116,7 +116,7 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
               value={formData.pix}
               onChange={onChange}
               placeholder="CPF, Email, Telefone ou Chave Aleatoria"
-            />
+             aria-label="C P F,  Email,  Telefone Ou  Chave  Aleatoria" />
           </div>
         </div>
       </div>

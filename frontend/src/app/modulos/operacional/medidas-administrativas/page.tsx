@@ -293,7 +293,7 @@ export default function MedidasAdministrativasPage() {
               <Input
                 placeholder="Buscar por funcionario, codigo..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) = aria-label="Buscar Por Funcionario, Codigo..."> setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["GED - Auto-Assemble"])
 
 
-@router.post("/auto-assemble")
+@router.post("/auto-assemble", status_code=201)
 async def auto_assemble_kits(
     reference_month: date | None = Query(None, description="Mes de referencia (default: mes atual)"),
     current_user: CurrentActiveUser = None,
@@ -256,7 +256,7 @@ async def create_kit(
     return {"id": kit_id, "client_id": client_id, "reference_month": ref_date.isoformat(), "status": "em_montagem"}
 
 
-@router.post("/kits/{kit_id}/send")
+@router.post("/kits/{kit_id}/send", status_code=201)
 async def send_kit(
     kit_id: str,
     current_user: CurrentActiveUser = None,
@@ -291,7 +291,7 @@ async def send_kit(
     return {"success": True, "kit_id": kit_id, "novo_status": "enviado"}
 
 
-@router.post("/kits/{kit_id}/approve")
+@router.post("/kits/{kit_id}/approve", status_code=201)
 async def approve_kit(
     kit_id: str,
     current_user: CurrentActiveUser = None,
@@ -328,7 +328,7 @@ async def approve_kit(
     return {"success": True, "kit_id": kit_id, "novo_status": "aprovado"}
 
 
-@router.post("/kits/montar")
+@router.post("/kits/montar", status_code=201)
 async def montar_kits(
     current_user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),

@@ -130,7 +130,7 @@ export default function LeadsPage() {
             type="search"
             placeholder="Buscar leads..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) = aria-label="Buscar Leads..."> setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
           />
         </div>

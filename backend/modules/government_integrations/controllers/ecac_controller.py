@@ -186,6 +186,7 @@ async def emitir_certidao(
     response_model=StandardResponse,
     summary="Validar certidao",
     description="Valida autenticidade de uma certidao fiscal",
+    status_code=201,
 )
 async def validar_certidao(
     current_user: CurrentActiveUser, request: ValidarCertidaoRequest, service: EcacService = Depends(get_service)
@@ -242,6 +243,7 @@ async def consultar_parcelamentos(
     response_model=StandardResponse,
     summary="Simular parcelamento",
     description="Simula parcelamento de debitos fiscais",
+    status_code=201,
 )
 async def simular_parcelamento(
     current_user: CurrentActiveUser, request: SimularParcelamentoRequest, service: EcacService = Depends(get_service)

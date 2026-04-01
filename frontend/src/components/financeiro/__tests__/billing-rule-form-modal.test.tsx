@@ -97,7 +97,7 @@ const BillingRuleFormModal: React.FC<BillingRuleFormModalProps> = ({
           step={valueStep}
           min="0"
           value={formData.value}
-          onChange={(e) => handleChange('value', e.target.value)}
+          onChange={(e) = aria-label="Number"> handleChange('value', e.target.value)}
           placeholder={valuePlaceholder}
           required
           data-testid="input-value"

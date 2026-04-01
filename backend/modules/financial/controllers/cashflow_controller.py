@@ -416,9 +416,7 @@ async def delete_entry(
 
 
 @router.post(
-    "/entries/{entry_id}/realize",
-    response_model=CashFlowEntryResponse,
-    summary="Realizar entrada",
+    "/entries/{entry_id}/realize", response_model=CashFlowEntryResponse, summary="Realizar entrada", status_code=201
 )
 async def realize_entry(
     entry_id: UUID,
@@ -600,6 +598,7 @@ async def update_forecast(
     "/forecasts/{forecast_id}/update-actuals",
     response_model=CashFlowForecastResponse,
     summary="Atualizar valores realizados",
+    status_code=201,
 )
 async def update_forecast_actuals(
     forecast_id: UUID,
@@ -664,11 +663,7 @@ async def delete_forecast(
 # ==================== INTELIGÊNCIA ARTIFICIAL ====================
 
 
-@router.post(
-    "/ai/forecast",
-    response_model=AIForecastResponse,
-    summary="Gerar previsão com IA",
-)
+@router.post("/ai/forecast", response_model=AIForecastResponse, summary="Gerar previsão com IA", status_code=201)
 async def generate_ai_forecast(
     data: AIForecastRequest,
     service: CashFlowAIService = Depends(get_ai_service),
@@ -687,11 +682,7 @@ async def generate_ai_forecast(
         )
 
 
-@router.post(
-    "/ai/anomalies",
-    response_model=AnomalyDetectionResponse,
-    summary="Detectar anomalias",
-)
+@router.post("/ai/anomalies", response_model=AnomalyDetectionResponse, summary="Detectar anomalias", status_code=201)
 async def detect_anomalies(
     data: AnomalyDetectionRequest,
     service: CashFlowAIService = Depends(get_ai_service),

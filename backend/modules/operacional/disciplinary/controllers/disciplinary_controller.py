@@ -240,6 +240,7 @@ async def get_employee_history(
     response_model=GenerateDocumentResponse,
     summary="Gerar documento",
     description="Gera documento a partir de template",
+    status_code=201,
 )
 async def generate_document(
     current_user: CurrentActiveUser,
@@ -400,6 +401,7 @@ async def delete_template(
     response_model=RecommendationResponse,
     summary="Obter recomendacao de medida",
     description="Utiliza IA para recomendar tipo de medida baseado no historico",
+    status_code=201,
 )
 async def get_recommendation(
     request: RecommendationRequest,
@@ -416,6 +418,7 @@ async def get_recommendation(
     response_model=LegalComplianceResponse,
     summary="Validar conformidade legal",
     description="Valida conformidade da medida com CLT",
+    status_code=201,
 )
 async def validate_compliance(
     request: LegalComplianceRequest,
@@ -432,6 +435,7 @@ async def validate_compliance(
     response_model=ProportionalityCheckResponse,
     summary="Verificar proporcionalidade",
     description="Verifica se medida e proporcional ao historico",
+    status_code=201,
 )
 async def check_proportionality(
     request: ProportionalityCheckRequest,
@@ -560,6 +564,7 @@ async def delete_disciplinary_action(
     response_model=DisciplinaryActionResponse,
     summary="Submeter para aprovacao",
     description="Submete medida disciplinar para aprovacao",
+    status_code=201,
 )
 async def submit_for_approval(
     action_id: str,
@@ -596,6 +601,7 @@ async def submit_for_approval(
     response_model=DisciplinaryActionResponse,
     summary="Aprovar medida",
     description="Aprova uma medida disciplinar pendente",
+    status_code=201,
 )
 async def approve_action(
     action_id: str,
@@ -632,6 +638,7 @@ async def approve_action(
     response_model=DisciplinaryActionResponse,
     summary="Rejeitar medida",
     description="Rejeita uma medida disciplinar pendente",
+    status_code=201,
 )
 async def reject_action(
     action_id: str,
@@ -668,6 +675,7 @@ async def reject_action(
     response_model=SignatureResponse,
     summary="Assinar documento",
     description="Registra assinatura digital no documento",
+    status_code=201,
 )
 async def sign_document(
     action_id: str,
@@ -701,6 +709,7 @@ async def sign_document(
     response_model=DisciplinaryActionResponse,
     summary="Registrar recusa de assinatura",
     description="Registra recusa de assinatura do funcionario com testemunhas",
+    status_code=201,
 )
 async def refuse_signature(
     action_id: str,
@@ -736,6 +745,7 @@ async def refuse_signature(
     response_model=SignatureVerifyResponse,
     summary="Verificar assinatura",
     description="Verifica validade de uma assinatura digital",
+    status_code=201,
 )
 async def verify_signature(
     request: SignatureVerifyRequest,

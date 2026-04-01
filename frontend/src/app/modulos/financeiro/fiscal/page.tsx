@@ -244,7 +244,7 @@ export default function FiscalPage() {
               type="search"
               placeholder="Buscar por numero, destinatario ou chave de acesso..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) = aria-label="Buscar Por Numero, Destinatario Ou Chave De Acesso..."> setSearchTerm(e.target.value)}
               icon={<Search className="w-4 h-4" />}
             />
           </div>

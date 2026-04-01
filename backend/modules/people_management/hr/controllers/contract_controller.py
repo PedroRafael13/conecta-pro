@@ -113,7 +113,7 @@ async def update_contract(
     return contract
 
 
-@router.post("/{contract_id}/document")
+@router.post("/{contract_id}/document", status_code=201)
 async def generate_contract_document(
     contract_id: str,
     current_user: CurrentActiveUser,

@@ -211,7 +211,7 @@ async def update_warehouse(
         ) from e
 
 
-@router.post("/warehouses/{warehouse_id}/block")
+@router.post("/warehouses/{warehouse_id}/block", status_code=201)
 async def block_warehouse(
     warehouse_id: uuid.UUID,
     reason: str = Query(..., min_length=1),
@@ -245,7 +245,7 @@ async def block_warehouse(
         ) from e
 
 
-@router.post("/warehouses/{warehouse_id}/unblock")
+@router.post("/warehouses/{warehouse_id}/unblock", status_code=201)
 async def unblock_warehouse(
     warehouse_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -400,7 +400,7 @@ async def get_stock_item(
     return StockItemResponse.model_validate(item)
 
 
-@router.post("/stock-items/{item_id}/block")
+@router.post("/stock-items/{item_id}/block", status_code=201)
 async def block_stock_item(
     item_id: uuid.UUID,
     reason: str = Query(..., min_length=1),
@@ -434,7 +434,7 @@ async def block_stock_item(
         ) from e
 
 
-@router.post("/stock-items/{item_id}/unblock")
+@router.post("/stock-items/{item_id}/unblock", status_code=201)
 async def unblock_stock_item(
     item_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -608,7 +608,7 @@ async def get_movement(
     return StockMovementResponse.model_validate(movement)
 
 
-@router.post("/movements/{movement_id}/confirm")
+@router.post("/movements/{movement_id}/confirm", status_code=201)
 async def confirm_movement(
     movement_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -685,7 +685,7 @@ async def confirm_movement(
         ) from e
 
 
-@router.post("/movements/{movement_id}/cancel")
+@router.post("/movements/{movement_id}/cancel", status_code=201)
 async def cancel_movement(
     movement_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -833,7 +833,7 @@ async def get_inventory(
     return StockInventoryResponse.model_validate(inventory)
 
 
-@router.post("/inventories/{inventory_id}/start")
+@router.post("/inventories/{inventory_id}/start", status_code=201)
 async def start_inventory(
     inventory_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -872,7 +872,7 @@ async def start_inventory(
         ) from e
 
 
-@router.post("/inventories/{inventory_id}/finalize")
+@router.post("/inventories/{inventory_id}/finalize", status_code=201)
 async def finalize_inventory(
     inventory_id: uuid.UUID,
     db: Session = Depends(get_sync_db_dependency),
@@ -1032,7 +1032,7 @@ async def get_reservation(
     return StockReservationResponse.model_validate(reservation)
 
 
-@router.post("/reservations/{reservation_id}/release")
+@router.post("/reservations/{reservation_id}/release", status_code=201)
 async def release_reservation(
     reservation_id: uuid.UUID,
     data: StockReservationRelease,
@@ -1078,7 +1078,7 @@ async def release_reservation(
         ) from e
 
 
-@router.post("/reservations/{reservation_id}/cancel")
+@router.post("/reservations/{reservation_id}/cancel", status_code=201)
 async def cancel_reservation(
     reservation_id: uuid.UUID,
     reason: str = Query(..., min_length=1),

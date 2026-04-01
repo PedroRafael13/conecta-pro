@@ -42,9 +42,7 @@ async def get_vacation_balance(
 
 
 @router.post(
-    "/calculate",
-    response_model=VacationCalculationResponse,
-    summary="Calcular valores de férias",
+    "/calculate", response_model=VacationCalculationResponse, summary="Calcular valores de férias", status_code=201
 )
 async def calculate_vacation(
     data: VacationCalculationRequest,
@@ -150,6 +148,7 @@ async def get_vacation_request(
     "/requests/{request_id}/submit",
     response_model=VacationRequestResponse,
     summary="Enviar solicitação para aprovação",
+    status_code=201,
 )
 async def submit_vacation_request(
     request_id: UUID,
@@ -174,6 +173,7 @@ async def submit_vacation_request(
     "/requests/{request_id}/cancel",
     response_model=VacationRequestResponse,
     summary="Cancelar solicitação",
+    status_code=201,
 )
 async def cancel_vacation_request(
     request_id: UUID,
@@ -235,7 +235,7 @@ async def list_pending_approvals(
     "/requests/{request_id}/approve",
     response_model=VacationRequestResponse,
     summary="Aprovar solicitação",
-    dependencies=[Depends(require_roles(["admin", "hr", "manager"]))],
+    dependencies=[Depends(require_roles(["admin", "hr", "manager"], status_code=201))],
 )
 async def approve_vacation_request(
     request_id: UUID,
@@ -268,7 +268,7 @@ async def approve_vacation_request(
     "/requests/{request_id}/reject",
     response_model=VacationRequestResponse,
     summary="Rejeitar solicitação",
-    dependencies=[Depends(require_roles(["admin", "hr", "manager"]))],
+    dependencies=[Depends(require_roles(["admin", "hr", "manager"], status_code=201))],
 )
 async def reject_vacation_request(
     request_id: UUID,

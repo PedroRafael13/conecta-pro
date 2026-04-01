@@ -66,6 +66,7 @@ async def calcular_holerite(
     "/calcular/todos/{mes}/{ano}",
     response_model=FolhaBatchResponse,
     summary="Calcular folha de todos os colaboradores",
+    status_code=201,
 )
 async def calcular_batch(
     mes: int,
@@ -124,10 +125,7 @@ def listar_rubricas(
     return [RubricaResponse(**i) for i in items]
 
 
-@router.post(
-    "/ajuste/{employee_id}",
-    summary="Ajuste manual de rubrica no holerite",
-)
+@router.post("/ajuste/{employee_id}", summary="Ajuste manual de rubrica no holerite", status_code=201)
 def ajuste_folha(
     employee_id: str,
     request: AjusteRequest = Body(...),
@@ -146,9 +144,7 @@ def ajuste_folha(
 
 
 @router.post(
-    "/fechar/{mes}/{ano}",
-    response_model=FechamentoResponse,
-    summary="Fechamento mensal da folha",
+    "/fechar/{mes}/{ano}", response_model=FechamentoResponse, summary="Fechamento mensal da folha", status_code=201
 )
 def fechar_folha(
     mes: int,
@@ -213,7 +209,7 @@ def conferencia_alterdata(
 
 @router.post(
     "/importar-alterdata",
-    summary="Importar folha do Alterdata (CSV)",
+    summary="Importar folha do Alterdata (CSV, status_code=201)",
 )
 async def importar_alterdata(
     arquivo: UploadFile = File(..., description="CSV exportado do Alterdata"),

@@ -185,7 +185,7 @@ async def update_proposal(
     return ProposalDetailResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/submit", response_model=ProposalResponse)
+@router.post("/{proposal_id}/submit", response_model=ProposalResponse, status_code=201)
 async def submit_proposal_for_approval(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -209,7 +209,7 @@ async def submit_proposal_for_approval(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/approve", response_model=ProposalResponse)
+@router.post("/{proposal_id}/approve", response_model=ProposalResponse, status_code=201)
 async def process_proposal_approval(
     proposal_id: str,
     data: ProposalApprovalRequest,
@@ -234,7 +234,7 @@ async def process_proposal_approval(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/send", response_model=ProposalResponse)
+@router.post("/{proposal_id}/send", response_model=ProposalResponse, status_code=201)
 async def send_proposal(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -258,7 +258,7 @@ async def send_proposal(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/accept", response_model=ProposalResponse)
+@router.post("/{proposal_id}/accept", response_model=ProposalResponse, status_code=201)
 async def accept_proposal(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -280,7 +280,7 @@ async def accept_proposal(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/reject", response_model=ProposalResponse)
+@router.post("/{proposal_id}/reject", response_model=ProposalResponse, status_code=201)
 async def reject_proposal(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument

@@ -82,7 +82,7 @@ async def criar_ciclo(
     }
 
 
-@router.post("/ciclos/{ciclo_id}/start")
+@router.post("/ciclos/{ciclo_id}/start", status_code=201)
 async def iniciar_coleta(
     ciclo_id: str,
     current_user: CurrentActiveUser,
@@ -99,7 +99,7 @@ async def iniciar_coleta(
     return {"id": str(cycle.id), "status": cycle.status.value}
 
 
-@router.post("/ciclos/{ciclo_id}/respostas")
+@router.post("/ciclos/{ciclo_id}/respostas", status_code=201)
 async def submeter_resposta(
     ciclo_id: str,
     request: SubmitResponseRequest,

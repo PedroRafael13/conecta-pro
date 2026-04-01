@@ -113,7 +113,7 @@ async def delete_certificate(certificate_id: UUID, current_user: CurrentActiveUs
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certidao nao encontrada")
 
 
-@router.post("/renovar", response_model=CertificateRenewResponse)
+@router.post("/renovar", response_model=CertificateRenewResponse, status_code=201)
 async def renovar_certidao(
     data: CertificateRenewRequest, current_user: CurrentActiveUser, db: Session = Depends(get_db)
 ):
@@ -122,7 +122,7 @@ async def renovar_certidao(
     return await service.renovar(data)
 
 
-@router.post("/atualizar-status")
+@router.post("/atualizar-status", status_code=201)
 async def atualizar_todos_status(
     current_user: CurrentActiveUser, cnpj: str | None = None, db: Session = Depends(get_db)
 ):

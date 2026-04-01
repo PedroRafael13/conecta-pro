@@ -362,7 +362,7 @@ async def atualizar_retencao(
     return RetencaoFederalResponse.model_validate(retencao)
 
 
-@router.post("/retencao/calcular", response_model=CalculoRetencaoResponse)
+@router.post("/retencao/calcular", response_model=CalculoRetencaoResponse, status_code=201)
 async def calcular_retencoes(
     data: CalculoRetencaoRequest,
     condominio_id: UUID = Query(...),
@@ -541,7 +541,7 @@ async def atualizar_nfe(
     return NFeResponse.model_validate(nfe)
 
 
-@router.post("/nfe/emitir", response_model=NFeEmitirResponse)
+@router.post("/nfe/emitir", response_model=NFeEmitirResponse, status_code=201)
 async def emitir_nfe(
     data: NFeEmitirRequest,
     repo: FiscalRepository = Depends(get_repository),
@@ -621,7 +621,7 @@ async def emitir_nfe(
         raise HTTPException(status_code=500, detail="Erro interno na emissão da NF-e")
 
 
-@router.post("/nfe/cancelar")
+@router.post("/nfe/cancelar", status_code=201)
 async def cancelar_nfe(
     data: NFeCancelarRequest,
     repo: FiscalRepository = Depends(get_repository),
@@ -689,7 +689,7 @@ async def cancelar_nfe(
         raise HTTPException(status_code=500, detail="Erro interno no cancelamento da NF-e")
 
 
-@router.post("/nfe/inutilizar")
+@router.post("/nfe/inutilizar", status_code=201)
 async def inutilizar_numeracao(
     data: NFeInutilizarRequest,
     condominio_id: UUID = Query(...),
@@ -811,7 +811,7 @@ async def atualizar_nfse(
     return NFSeResponse.model_validate(nfse)
 
 
-@router.post("/nfse/emitir", response_model=NFSeEmitirResponse)
+@router.post("/nfse/emitir", response_model=NFSeEmitirResponse, status_code=201)
 async def emitir_nfse(
     data: NFSeEmitirRequest,
     repo: FiscalRepository = Depends(get_repository),
@@ -848,7 +848,7 @@ async def emitir_nfse(
     )
 
 
-@router.post("/nfse/cancelar")
+@router.post("/nfse/cancelar", status_code=201)
 async def cancelar_nfse(
     data: NFSeCancelarRequest,
     repo: FiscalRepository = Depends(get_repository),
@@ -959,7 +959,7 @@ async def obter_sped(
     return SPEDFileResponse.model_validate(sped)
 
 
-@router.post("/sped/gerar")
+@router.post("/sped/gerar", status_code=201)
 async def gerar_sped(
     data: SPEDGerarRequest,
     condominio_id: UUID = Query(...),
@@ -993,7 +993,7 @@ async def gerar_sped(
     }
 
 
-@router.post("/sped/{sped_id}/validar")
+@router.post("/sped/{sped_id}/validar", status_code=201)
 async def validar_sped(
     sped_id: UUID,
     repo: FiscalRepository = Depends(get_repository),
@@ -1012,7 +1012,7 @@ async def validar_sped(
     return {"message": "Validacao iniciada", "sped_id": str(sped_id)}
 
 
-@router.post("/sped/{sped_id}/transmitir")
+@router.post("/sped/{sped_id}/transmitir", status_code=201)
 async def transmitir_sped(
     sped_id: UUID,
     data: SPEDTransmitirRequest,
@@ -1193,7 +1193,7 @@ async def obter_das_competencia(
     return SimplesNacionalDASResponse.model_validate(das)
 
 
-@router.post("/das/calcular", response_model=DASCalcularResponse)
+@router.post("/das/calcular", response_model=DASCalcularResponse, status_code=201)
 async def calcular_das(
     data: DASCalcularRequest,
     condominio_id: UUID = Query(...),
@@ -1481,7 +1481,7 @@ from modules.financial.agents.tax_calculator import TaxCalculatorAgent  # noqa: 
 _tax_agent = TaxCalculatorAgent()
 
 
-@router.post("/calcular/simples", summary="Calcular DAS Simples Nacional")
+@router.post("/calcular/simples", summary="Calcular DAS Simples Nacional", status_code=201)
 async def calcular_simples_nacional(
     dados: CalculoSimplesRequest,
     current_user: dict = Depends(get_current_user),
@@ -1510,7 +1510,7 @@ async def calcular_simples_nacional(
     }
 
 
-@router.post("/calcular/lucro-real", summary="Calcular impostos Lucro Real")
+@router.post("/calcular/lucro-real", summary="Calcular impostos Lucro Real", status_code=201)
 async def calcular_lucro_real(
     dados: CalculoLucroRealRequest,
     current_user: dict = Depends(get_current_user),
@@ -1547,7 +1547,7 @@ async def calcular_lucro_real(
     }
 
 
-@router.post("/calcular/comparativo-regimes", summary="Comparar Simples vs Lucro Real")
+@router.post("/calcular/comparativo-regimes", summary="Comparar Simples vs Lucro Real", status_code=201)
 async def comparar_regimes(
     dados: ComparativoRegimesRequest,
     current_user: dict = Depends(get_current_user),
@@ -1577,7 +1577,7 @@ async def comparar_regimes(
     }
 
 
-@router.post("/calcular/retencoes-nfse", summary="Calcular retenções na fonte NFS-e")
+@router.post("/calcular/retencoes-nfse", summary="Calcular retenções na fonte NFS-e", status_code=201)
 async def calcular_retencoes_nfse(
     dados: RetencoesNFSeRequest,
     current_user: dict = Depends(get_current_user),
@@ -1607,7 +1607,7 @@ async def calcular_retencoes_nfse(
     }
 
 
-@router.post("/calcular/verificar-limite-simples", summary="Verificar limite do Simples Nacional")
+@router.post("/calcular/verificar-limite-simples", summary="Verificar limite do Simples Nacional", status_code=201)
 async def verificar_limite_simples(
     dados: VerificacaoLimiteSimplesRequest,
     current_user: dict = Depends(get_current_user),

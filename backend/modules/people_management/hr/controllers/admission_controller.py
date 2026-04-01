@@ -124,7 +124,7 @@ async def update_admission(
     return admission
 
 
-@router.post("/{admission_id}/complete")
+@router.post("/{admission_id}/complete", status_code=201)
 async def complete_admission(
     admission_id: str,
     employee_data: dict,

@@ -219,10 +219,7 @@ async def delete_reconciliation(
 # ==================== OPERAÇÕES ====================
 
 
-@router.post(
-    "/{reconciliation_id}/import-statement",
-    summary="Importar extrato",
-)
+@router.post("/{reconciliation_id}/import-statement", summary="Importar extrato", status_code=201)
 async def import_statement(
     reconciliation_id: UUID,
     data: StatementImport,
@@ -297,10 +294,7 @@ async def import_statement(
     }
 
 
-@router.post(
-    "/{reconciliation_id}/match",
-    summary="Conciliar item",
-)
+@router.post("/{reconciliation_id}/match", summary="Conciliar item", status_code=201)
 async def match_item(
     reconciliation_id: UUID,
     data: ReconciliationItemMatch,
@@ -419,6 +413,7 @@ async def create_adjustment(
     "/{reconciliation_id}/complete",
     response_model=BankReconciliationResponse,
     summary="Finalizar conciliação",
+    status_code=201,
 )
 async def complete_reconciliation(
     reconciliation_id: UUID,
@@ -470,6 +465,7 @@ async def complete_reconciliation(
     "/{reconciliation_id}/reopen",
     response_model=BankReconciliationResponse,
     summary="Reabrir conciliação",
+    status_code=201,
 )
 async def reopen_reconciliation(
     reconciliation_id: UUID,

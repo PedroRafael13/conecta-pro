@@ -671,7 +671,7 @@ async def get_allocation(  # pylint: disable=unused-argument
     return CostAllocationResponse.model_validate(allocation)
 
 
-@router.post("/allocations/{allocation_id}/approve", response_model=CostAllocationResponse)
+@router.post("/allocations/{allocation_id}/approve", response_model=CostAllocationResponse, status_code=201)
 async def approve_allocation(
     allocation_id: UUID,
     data: CostAllocationApprove,
@@ -691,7 +691,7 @@ async def approve_allocation(
     return CostAllocationResponse.model_validate(allocation)
 
 
-@router.post("/allocations/{allocation_id}/execute", response_model=CostAllocationResponse)
+@router.post("/allocations/{allocation_id}/execute", response_model=CostAllocationResponse, status_code=201)
 async def execute_allocation(
     allocation_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -706,7 +706,7 @@ async def execute_allocation(
     return CostAllocationResponse.model_validate(allocation)
 
 
-@router.post("/allocations/{allocation_id}/reverse", response_model=CostAllocationResponse)
+@router.post("/allocations/{allocation_id}/reverse", response_model=CostAllocationResponse, status_code=201)
 async def reverse_allocation(
     allocation_id: UUID,
     data: CostAllocationReverse,
@@ -726,7 +726,7 @@ async def reverse_allocation(
     return CostAllocationResponse.model_validate(reversal)
 
 
-@router.post("/allocations/batch-execute")
+@router.post("/allocations/batch-execute", status_code=201)
 async def batch_execute_allocations(
     data: CostAllocationBatch,
     db: AsyncSession = Depends(get_db),
@@ -740,7 +740,7 @@ async def batch_execute_allocations(
     return result
 
 
-@router.post("/allocations/pool-to-activities")
+@router.post("/allocations/pool-to-activities", status_code=201)
 async def allocate_pool_to_activities(
     pool_id: UUID,
     allocations: list[dict],
@@ -763,7 +763,7 @@ async def allocate_pool_to_activities(
     return [CostAllocationResponse.model_validate(a) for a in created]
 
 
-@router.post("/allocations/activity-to-objects")
+@router.post("/allocations/activity-to-objects", status_code=201)
 async def allocate_activity_to_objects(
     activity_id: UUID,
     allocations: list[dict],
@@ -786,7 +786,7 @@ async def allocate_activity_to_objects(
     return [CostAllocationResponse.model_validate(a) for a in created]
 
 
-@router.post("/allocations/by-driver")
+@router.post("/allocations/by-driver", status_code=201)
 async def allocate_by_driver(
     origem_tipo: str,
     origem_id: UUID,
@@ -873,7 +873,7 @@ async def get_analysis(  # pylint: disable=unused-argument
     return CostAnalysisResponse.model_validate(analysis)
 
 
-@router.post("/analyses/run-abc", response_model=dict)
+@router.post("/analyses/run-abc", response_model=dict, status_code=201)
 async def run_abc_costing(
     data: CostAnalysisRun,
     db: AsyncSession = Depends(get_db),
@@ -893,7 +893,7 @@ async def run_abc_costing(
     return result
 
 
-@router.post("/analyses/run-ai", response_model=dict)
+@router.post("/analyses/run-ai", response_model=dict, status_code=201)
 async def run_ai_analysis(
     data: CostAnalysisRun,
     db: AsyncSession = Depends(get_db),

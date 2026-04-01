@@ -102,7 +102,7 @@ async def delete_proposal(proposal_id: UUID, current_user: CurrentActiveUser, db
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proposta nao encontrada")
 
 
-@router.post("/{proposal_id}/pronta", response_model=ProposalResponse)
+@router.post("/{proposal_id}/pronta", response_model=ProposalResponse, status_code=201)
 async def marcar_pronta(proposal_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Marca proposta como pronta para envio."""
     service = ProposalService(db)
@@ -115,7 +115,7 @@ async def marcar_pronta(proposal_id: UUID, current_user: CurrentActiveUser, db: 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post("/{proposal_id}/enviar", response_model=ProposalResponse)
+@router.post("/{proposal_id}/enviar", response_model=ProposalResponse, status_code=201)
 async def enviar_proposta(proposal_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Envia proposta."""
     service = ProposalService(db)
@@ -127,7 +127,7 @@ async def enviar_proposta(proposal_id: UUID, current_user: CurrentActiveUser, db
     return proposal
 
 
-@router.post("/{proposal_id}/resultado", response_model=ProposalResponse)
+@router.post("/{proposal_id}/resultado", response_model=ProposalResponse, status_code=201)
 async def registrar_resultado(
     proposal_id: UUID,
     vencedora: bool,
@@ -145,7 +145,7 @@ async def registrar_resultado(
     return proposal
 
 
-@router.post("/{proposal_id}/lance", response_model=ProposalResponse)
+@router.post("/{proposal_id}/lance", response_model=ProposalResponse, status_code=201)
 async def registrar_lance(
     proposal_id: UUID, data: ProposalLanceCreate, current_user: CurrentActiveUser, db: Session = Depends(get_db)
 ):
@@ -157,7 +157,7 @@ async def registrar_lance(
     return proposal
 
 
-@router.post("/calcular-bdi", response_model=ProposalBDIResponse)
+@router.post("/calcular-bdi", response_model=ProposalBDIResponse, status_code=201)
 async def calcular_bdi(data: ProposalCalculateBDI, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Calcula BDI da proposta."""
     service = ProposalService(db)

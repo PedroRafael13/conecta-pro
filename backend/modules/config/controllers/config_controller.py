@@ -137,7 +137,7 @@ async def update_tenant_address(
     return tenant
 
 
-@router.post("/tenants/{tenant_id}/activate", response_model=TenantResponse)
+@router.post("/tenants/{tenant_id}/activate", response_model=TenantResponse, status_code=201)
 async def activate_tenant(
     tenant_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
@@ -149,7 +149,7 @@ async def activate_tenant(
     return tenant
 
 
-@router.post("/tenants/{tenant_id}/suspend", response_model=TenantResponse)
+@router.post("/tenants/{tenant_id}/suspend", response_model=TenantResponse, status_code=201)
 async def suspend_tenant(
     current_user: CurrentActiveUser, tenant_id: UUID, reason: str | None = None, db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
@@ -161,7 +161,7 @@ async def suspend_tenant(
     return tenant
 
 
-@router.post("/tenants/{tenant_id}/cancel", response_model=TenantResponse)
+@router.post("/tenants/{tenant_id}/cancel", response_model=TenantResponse, status_code=201)
 async def cancel_tenant(
     tenant_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
@@ -173,7 +173,7 @@ async def cancel_tenant(
     return tenant
 
 
-@router.post("/tenants/{tenant_id}/convert-trial", response_model=TenantResponse)
+@router.post("/tenants/{tenant_id}/convert-trial", response_model=TenantResponse, status_code=201)
 async def convert_trial(
     tenant_id: UUID, current_user: CurrentActiveUser, plan: str = "starter", db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
@@ -185,7 +185,7 @@ async def convert_trial(
     return tenant
 
 
-@router.post("/tenants/{tenant_id}/features/{feature}/enable", response_model=TenantResponse)
+@router.post("/tenants/{tenant_id}/features/{feature}/enable", response_model=TenantResponse, status_code=201)
 async def enable_tenant_feature(
     tenant_id: UUID, feature: str, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
@@ -197,7 +197,7 @@ async def enable_tenant_feature(
     return tenant
 
 
-@router.post("/tenants/{tenant_id}/features/{feature}/disable", response_model=TenantResponse)
+@router.post("/tenants/{tenant_id}/features/{feature}/disable", response_model=TenantResponse, status_code=201)
 async def disable_tenant_feature(
     tenant_id: UUID, feature: str, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
@@ -290,7 +290,7 @@ async def update_setting_value(
     return setting
 
 
-@router.post("/settings/{setting_id}/reset", response_model=TenantSettingsResponse)
+@router.post("/settings/{setting_id}/reset", response_model=TenantSettingsResponse, status_code=201)
 async def reset_setting(
     setting_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
 ) -> TenantSettingsResponse:
@@ -431,7 +431,7 @@ async def update_feature_flag(
     return flag
 
 
-@router.post("/flags/{flag_id}/enable", response_model=FeatureFlagResponse)
+@router.post("/flags/{flag_id}/enable", response_model=FeatureFlagResponse, status_code=201)
 async def enable_feature_flag(
     flag_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
 ) -> FeatureFlagResponse:
@@ -443,7 +443,7 @@ async def enable_feature_flag(
     return flag
 
 
-@router.post("/flags/{flag_id}/disable", response_model=FeatureFlagResponse)
+@router.post("/flags/{flag_id}/disable", response_model=FeatureFlagResponse, status_code=201)
 async def disable_feature_flag(
     flag_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
 ) -> FeatureFlagResponse:
@@ -455,7 +455,7 @@ async def disable_feature_flag(
     return flag
 
 
-@router.post("/flags/{flag_id}/percentage", response_model=FeatureFlagResponse)
+@router.post("/flags/{flag_id}/percentage", response_model=FeatureFlagResponse, status_code=201)
 async def set_flag_percentage(
     current_user: CurrentActiveUser,
     flag_id: UUID,
@@ -470,7 +470,7 @@ async def set_flag_percentage(
     return flag
 
 
-@router.post("/flags/{flag_id}/gradual-rollout", response_model=FeatureFlagResponse)
+@router.post("/flags/{flag_id}/gradual-rollout", response_model=FeatureFlagResponse, status_code=201)
 async def start_gradual_rollout(
     current_user: CurrentActiveUser, flag_id: UUID, data: FeatureFlagGradualRollout, db: AsyncSession = Depends(get_db)
 ) -> FeatureFlagResponse:
@@ -482,7 +482,7 @@ async def start_gradual_rollout(
     return flag
 
 
-@router.post("/flags/{flag_id}/toggle-tenant", response_model=FeatureFlagResponse)
+@router.post("/flags/{flag_id}/toggle-tenant", response_model=FeatureFlagResponse, status_code=201)
 async def toggle_flag_for_tenant(
     current_user: CurrentActiveUser, flag_id: UUID, data: FeatureFlagTenantToggle, db: AsyncSession = Depends(get_db)
 ) -> FeatureFlagResponse:
@@ -497,7 +497,7 @@ async def toggle_flag_for_tenant(
     return flag
 
 
-@router.post("/flags/evaluate", response_model=FeatureFlagEvaluateResponse)
+@router.post("/flags/evaluate", response_model=FeatureFlagEvaluateResponse, status_code=201)
 async def evaluate_feature_flag(
     current_user: CurrentActiveUser,
     data: FeatureFlagEvaluate,
@@ -590,7 +590,7 @@ async def update_notification_template(
     return template
 
 
-@router.post("/templates/{template_id}/activate", response_model=NotificationTemplateResponse)
+@router.post("/templates/{template_id}/activate", response_model=NotificationTemplateResponse, status_code=201)
 async def activate_notification_template(
     current_user: CurrentActiveUser, template_id: UUID, db: AsyncSession = Depends(get_db)
 ) -> NotificationTemplateResponse:
@@ -602,7 +602,7 @@ async def activate_notification_template(
     return template
 
 
-@router.post("/templates/{template_id}/deactivate", response_model=NotificationTemplateResponse)
+@router.post("/templates/{template_id}/deactivate", response_model=NotificationTemplateResponse, status_code=201)
 async def deactivate_notification_template(
     current_user: CurrentActiveUser, template_id: UUID, db: AsyncSession = Depends(get_db)
 ) -> NotificationTemplateResponse:
@@ -614,7 +614,7 @@ async def deactivate_notification_template(
     return template
 
 
-@router.post("/templates/{template_id}/render", response_model=NotificationTemplateRenderResponse)
+@router.post("/templates/{template_id}/render", response_model=NotificationTemplateRenderResponse, status_code=201)
 async def render_notification_template(
     current_user: CurrentActiveUser,
     template_id: UUID,
@@ -630,7 +630,7 @@ async def render_notification_template(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.post("/templates/{template_id}/clone", response_model=NotificationTemplateResponse)
+@router.post("/templates/{template_id}/clone", response_model=NotificationTemplateResponse, status_code=201)
 async def clone_notification_template(
     current_user: CurrentActiveUser,
     template_id: UUID,

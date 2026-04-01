@@ -38,7 +38,7 @@ export function DiaristDadosPessoaisTab({
             onChange={onChange}
             placeholder="Nome completo do diarista"
             required
-          />
+           aria-label="Nome Completo Do Diarista" />
         </div>
         <div>
           <label htmlFor="field-cpf" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -52,7 +52,7 @@ export function DiaristDadosPessoaisTab({
               placeholder="000.000.000-00"
               maxLength={14}
               required
-            />
+             aria-label="000.000.000 00" />
             {isFetchingCPF && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 <Loader2 className="w-4 h-4 animate-spin text-[hsl(var(--muted-foreground))]" />
@@ -75,7 +75,7 @@ export function DiaristDadosPessoaisTab({
             value={formData.rg}
             onChange={onChange}
             placeholder="RG"
-          />
+           aria-label="R G" />
         </div>
         <div>
           <label htmlFor="field-data-nascimento" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -87,7 +87,7 @@ export function DiaristDadosPessoaisTab({
             name="data_nascimento"
             value={formData.data_nascimento}
             onChange={onChange}
-          />
+           aria-label="Data Nascimento" />
         </div>
         <div>
           <label htmlFor="field-email" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -100,7 +100,7 @@ export function DiaristDadosPessoaisTab({
             value={formData.email}
             onChange={onChange}
             placeholder="email@exemplo.com"
-          />
+           aria-label="Email@Exemplo.Com" />
         </div>
         <div>
           <label htmlFor="field-telefone" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -112,7 +112,7 @@ export function DiaristDadosPessoaisTab({
             onChange={onPhoneChange('telefone')}
             placeholder="(00) 00000-0000"
             maxLength={15}
-          />
+           aria-label="(00) 00000 0000" />
         </div>
         <div>
           <label htmlFor="field-telefone-emergencia" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -124,7 +124,7 @@ export function DiaristDadosPessoaisTab({
             onChange={onPhoneChange('telefone_emergencia')}
             placeholder="(00) 00000-0000"
             maxLength={15}
-          />
+           aria-label="(00) 00000 0000" />
         </div>
       </div>
 
@@ -144,7 +144,7 @@ export function DiaristDadosPessoaisTab({
               onChange={onCEPChange}
               placeholder="00000-000"
               maxLength={9}
-            />
+             aria-label="00000 000" />
           </div>
           <div className="col-span-2">
             <label htmlFor="field-endereco" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -156,7 +156,7 @@ export function DiaristDadosPessoaisTab({
               value={formData.endereco}
               onChange={onChange}
               placeholder="Rua, numero, bairro"
-            />
+             aria-label="Rua, Numero, Bairro" />
           </div>
           <div>
             <label htmlFor="field-cidade" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -168,7 +168,7 @@ export function DiaristDadosPessoaisTab({
               value={formData.cidade}
               onChange={onChange}
               placeholder="Cidade"
-            />
+             aria-label="Cidade" />
           </div>
           <div>
             <label htmlFor="field-estado" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -180,7 +180,7 @@ export function DiaristDadosPessoaisTab({
               value={formData.estado}
               onChange={onChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-            >
+             aria-label="Estado">
               <option value="">Selecione</option>
               {ESTADOS.map((uf) => (
                 <option key={uf} value={uf}>
