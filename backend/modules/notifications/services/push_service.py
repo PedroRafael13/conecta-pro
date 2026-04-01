@@ -28,11 +28,33 @@ class PushNotificationService:
         """Inicializa o serviço.
 
         Args:
-            db: Sessão do banco de dados
+            db: Sessão do banco de dados (sync ou async — detectado automaticamente)
             tenant_id: ID do tenant
         """
-        self.db = db
+        # Se receber AsyncSession, trocar por sessão síncrona transparentemente
+        try:
+            from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession
+
+            if isinstance(db, _AsyncSession):
+                from core.database.session import SyncSessionLocal
+
+                self.db = SyncSessionLocal()
+                self._owns_session = True
+            else:
+                self.db = db
+                self._owns_session = False
+        except Exception:
+            self.db = db
+            self._owns_session = False
         self.tenant_id = tenant_id
+
+    def __del__(self):
+        """Fecha sessão própria ao ser destruído."""
+        if getattr(self, "_owns_session", False):
+            try:
+                self.db.close()
+            except Exception:
+                pass
 
     def subscribe_device(
         self,
