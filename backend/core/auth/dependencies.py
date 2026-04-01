@@ -18,16 +18,22 @@ from .jwt import TokenError, verify_access_token, verify_token_not_blacklisted
 if TYPE_CHECKING:
     from core.models import User
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user_id(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
 ) -> str:
     """
     Extrai e valida o user_id do token JWT.
     Verifica também se o token foi revogado (blacklist).
     """
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação não fornecido",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         payload = verify_access_token(credentials.credentials)
 
