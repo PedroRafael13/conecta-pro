@@ -153,8 +153,8 @@ def check_containers() -> dict:
 ENDPOINT_CHECKS = {
     "Operacional": [
         "/operacional/posts/",
-        "/operacional/escalas/",
-        "/operacional/turnos/",
+        "/operacional/scales/",
+        "/operacional/shifts/",
         "/operacional/comunicados",
         "/operacional/medidas-administrativas",
     ],
@@ -176,7 +176,7 @@ ENDPOINT_CHECKS = {
         "/people-management/hr/cct/conformidade",
     ],
     "Portal Cliente": [
-        "/portal/auth/me",
+        "/people-management/portal/auth/me",
         "/portal/kits",
         "/portal/tickets",
     ],
