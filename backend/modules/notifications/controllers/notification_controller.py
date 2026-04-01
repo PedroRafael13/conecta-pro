@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from core.database.session import get_sync_db_dependency
 from modules.notifications.models import (
     ChannelType,
     NotificationChannel,
@@ -722,7 +723,7 @@ async def subscribe_push(
     platform: str,
     device_info: dict | None = None,
     current_user: CurrentActiveUser = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Registra dispositivo para receber notificações push."""
     tenant_id = get_tenant_id(current_user)
@@ -742,7 +743,7 @@ async def subscribe_push(
 async def unsubscribe_push(
     device_token: str,
     current_user: CurrentActiveUser = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Remove registro de dispositivo."""
     tenant_id = get_tenant_id(current_user)
@@ -762,7 +763,7 @@ async def list_push_notifications(
     limit: int = 50,
     offset: int = 0,
     current_user: CurrentActiveUser = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Lista notificações push do usuário."""
     try:
@@ -798,7 +799,7 @@ async def list_push_notifications(
 async def mark_push_as_read(
     notification_id: UUID,
     current_user: CurrentActiveUser = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Marca notificação como lida."""
     tenant_id = get_tenant_id(current_user)
@@ -815,7 +816,7 @@ async def mark_push_as_read(
 @router.post("/push/read-all", status_code=status.HTTP_200_OK)
 async def mark_all_push_as_read(
     current_user: CurrentActiveUser = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Marca todas as notificações como lidas."""
     tenant_id = get_tenant_id(current_user)
@@ -829,7 +830,7 @@ async def mark_all_push_as_read(
 @router.get("/push/unread-count", status_code=status.HTTP_200_OK)
 async def get_push_unread_count(
     current_user: CurrentActiveUser = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Retorna quantidade de notificações não lidas."""
     tenant_id = get_tenant_id(current_user)
@@ -848,7 +849,7 @@ async def send_push_notification(
     data: dict | None = None,
     action_url: str | None = None,
     current_user: CurrentActiveUser = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Envia notificação push para usuário (admin apenas)."""
     tenant_id = get_tenant_id(current_user)

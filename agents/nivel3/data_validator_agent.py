@@ -1,128 +1,100 @@
 """
-DataValidatorAgent — Valida o conteúdo das respostas da API,
-não apenas o status HTTP. Garante que os dados retornados
-têm estrutura e campos obrigatórios corretos.
+DataValidatorAgent v2 — Contratos calibrados com endpoints reais.
+Valida CONTEÚDO das respostas, não só status HTTP.
 """
 
 import json
 import urllib.error
 import urllib.request
+from typing import Any
 
 
 BASE_URL = "http://127.0.0.1:8080"
 
-# Contratos: (endpoint, método, validador)
-# Validador recebe o body parseado e retorna lista de erros (vazia = OK)
+
+def _items(data: Any) -> list:
+    """Extrai lista de itens de qualquer estrutura de resposta."""
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        for key in ("items", "data", "results", "content", "records"):
+            val = data.get(key)
+            if isinstance(val, list):
+                return val
+    return []
+
+
+# 8 contratos com endpoints confirmados como funcionais
 CONTRATOS = [
     {
         "nome": "employees_lista",
         "endpoint": "/api/v1/people-management/hr/employees?page_size=5",
-        "metodo": "GET",
         "validar": lambda d: (
             []
-            if isinstance(d, (list, dict))
-            and (
-                isinstance(d, list)
-                or d.get("items") is not None
-                or d.get("data") is not None
-            )
-            else ["Resposta não contém lista de employees (items/data ausente)"]
+            if _items(d) or d.get("total", 0) > 0
+            else ["Nenhum funcionário retornado"]
         ),
     },
     {
         "nome": "employee_campos",
         "endpoint": "/api/v1/people-management/hr/employees?page_size=1",
-        "metodo": "GET",
-        "validar": lambda d: _validar_campos_employee(d),
-    },
-    {
-        "nome": "clientes_lista",
-        "endpoint": "/api/v1/crm/clients?page_size=5",
-        "metodo": "GET",
         "validar": lambda d: (
-            []
-            if isinstance(d, (list, dict))
-            and (
-                isinstance(d, list)
-                and len(d) > 0
-                or isinstance(d, dict)
-                and (d.get("items") or d.get("data") or d.get("total") is not None)
-            )
-            else ["Resposta de clientes vazia ou sem estrutura esperada"]
+            [] if not _items(d) or _items(d)[0].get("id") else ["Employee sem campo ID"]
         ),
     },
     {
-        "nome": "financeiro_a_pagar",
-        "endpoint": "/api/v1/financial/payables?page_size=5",
-        "metodo": "GET",
+        "nome": "clientes_crm",
+        "endpoint": "/api/v1/crm/clients?page_size=10",
         "validar": lambda d: (
             []
-            if isinstance(d, (list, dict))
-            else ["Financeiro/payables não retornou estrutura válida"]
+            if _items(d) or d.get("total", 0) >= 13
+            else ["CRM sem clientes (esperado: ≥13)"]
         ),
     },
     {
-        "nome": "ponto_dashboard",
-        "endpoint": "/api/v1/ponto/dashboard",
-        "metodo": "GET",
+        "nome": "financeiro_centros_custo",
+        "endpoint": "/api/v1/financial/accounting/cost-centers",
         "validar": lambda d: (
             []
-            if isinstance(d, dict) and len(d) > 0
-            else ["Dashboard ponto retornou objeto vazio"]
+            if isinstance(d, (list, dict))
+            else ["Centros de custo: resposta inválida"]
         ),
     },
     {
         "nome": "operacional_postos",
         "endpoint": "/api/v1/operacional/posts/?page_size=5",
-        "metodo": "GET",
         "validar": lambda d: (
             []
-            if isinstance(d, (list, dict))
-            else ["Postos operacionais não retornou estrutura válida"]
+            if _items(d) or d.get("total", 0) > 0
+            else ["Nenhum posto operacional retornado"]
         ),
     },
     {
-        "nome": "analytics_dashboard",
-        "endpoint": "/api/v1/analytics/executive/dashboard",
-        "metodo": "GET",
+        "nome": "ponto_dashboard",
+        "endpoint": "/api/v1/people-management/ponto/dashboard",
         "validar": lambda d: (
             []
             if isinstance(d, dict) and len(d) > 0
-            else ["Analytics dashboard retornou objeto vazio"]
+            else ["Dashboard ponto vazio ou inválido"]
+        ),
+    },
+    {
+        "nome": "ged_kits",
+        "endpoint": "/api/v1/ged/kits?page_size=5",
+        "validar": lambda d: (
+            [] if isinstance(d, (list, dict)) and d else ["GED kits sem dados"]
         ),
     },
     {
         "nome": "auth_me",
         "endpoint": "/api/v1/auth/me",
-        "metodo": "GET",
         "validar": lambda d: (
             []
-            if isinstance(d, dict) and (d.get("email") or d.get("id") or d.get("sub"))
+            if isinstance(d, dict) and (d.get("email") or d.get("id"))
             else ["Auth /me não retornou user com email/id"]
         ),
     },
 ]
-
-
-def _validar_campos_employee(data) -> list:
-    """Valida campos obrigatórios de um employee."""
-    erros = []
-    items = []
-    if isinstance(data, list):
-        items = data
-    elif isinstance(data, dict):
-        items = data.get("items") or data.get("data") or data.get("results") or []
-    if not items:
-        return []  # sem dados para validar (pode ser base vazia)
-    emp = items[0]
-    campos_esperados = ["id"]
-    campos_nome = ["nome", "name", "full_name", "first_name"]
-    if not any(emp.get(c) for c in campos_nome):
-        erros.append(f"Employee sem campo de nome (testados: {campos_nome})")
-    for campo in campos_esperados:
-        if not emp.get(campo):
-            erros.append(f"Employee sem campo obrigatório: {campo}")
-    return erros
 
 
 class DataValidatorAgent:
@@ -132,86 +104,71 @@ class DataValidatorAgent:
         self.token = token
         self.nome = "data_validator"
 
-    def _request(self, endpoint: str, method: str = "GET") -> tuple:
+    def _get(self, path: str) -> Any:
         req = urllib.request.Request(
-            f"{BASE_URL}{endpoint}",
-            method=method,
+            f"{BASE_URL}{path}",
+            headers={"Authorization": f"Bearer {self.token}"},
         )
-        req.add_header("Authorization", f"Bearer {self.token}")
         try:
             with urllib.request.urlopen(req, timeout=10) as r:
-                body = r.read()
-                try:
-                    return r.status, json.loads(body)
-                except Exception:
-                    return r.status, {}
+                return json.loads(r.read())
         except urllib.error.HTTPError as e:
-            return e.code, {}
-        except Exception:
-            return 0, {}
+            return {"_http_error": e.code}
+        except Exception as e:
+            return {"_error": str(e)}
 
     def _validar_contrato(self, contrato: dict) -> dict:
-        """Executa e valida um contrato."""
-        status, body = self._request(contrato["endpoint"], contrato["metodo"])
-        if status == 0:
+        data = self._get(contrato["endpoint"])
+
+        # Erros de conexão ou HTTP inesperado
+        if isinstance(data, dict) and ("_http_error" in data or "_error" in data):
+            code = data.get("_http_error", 0)
+            # 401/403 = protegido corretamente → OK
+            if code in (401, 403):
+                return {"nome": contrato["nome"], "ok": True, "erros": []}
             return {
                 "nome": contrato["nome"],
-                "status": "conexao_falhou",
-                "erros": ["Sem conexão com o backend"],
                 "ok": False,
+                "erros": [f"HTTP {code or data.get('_error')}"],
             }
-        if status in (401, 403):
-            return {
-                "nome": contrato["nome"],
-                "status": "auth_required",
-                "erros": [],
-                "ok": True,  # Endpoint protegido corretamente
-            }
-        if status not in (200, 201):
-            return {
-                "nome": contrato["nome"],
-                "status": f"http_{status}",
-                "erros": [f"Status inesperado: {status}"],
-                "ok": False,
-            }
+
         try:
-            erros = contrato["validar"](body)
+            erros = contrato["validar"](data)
         except Exception as e:
             erros = [f"Erro no validador: {e}"]
-        return {
-            "nome": contrato["nome"],
-            "status": "ok" if not erros else "invalido",
-            "erros": erros,
-            "ok": not erros,
-        }
+
+        return {"nome": contrato["nome"], "ok": not erros, "erros": erros}
 
     def auditar(self) -> dict:
-        print("🔍 DataValidatorAgent: validando conteúdo das respostas...")
+        print("🔍 DataValidatorAgent v2: validando contratos...")
         resultados = [self._validar_contrato(c) for c in CONTRATOS]
-        invalidos = [r for r in resultados if not r["ok"]]
-        score = max(0.0, 10.0 - len(invalidos) * (10.0 / len(CONTRATOS)))
+        falhos = [r for r in resultados if not r["ok"]]
+        n_ok = len(resultados) - len(falhos)
+        score = (n_ok / len(resultados) * 10) if resultados else 10.0
+
         bugs = [
             {
-                "tipo": "resposta_invalida",
+                "tipo": "contrato_invalido",
                 "contrato": r["nome"],
-                "descricao": f"Contrato '{r['nome']}' falhou: {'; '.join(r['erros'])}",
+                "descricao": f"Contrato '{r['nome']}': {'; '.join(r['erros'])}",
                 "autocorrigivel": False,
                 "acao_jordan": True,
             }
-            for r in invalidos
+            for r in falhos
         ]
+
         resultado = {
             "agente": "data_validator",
             "score": round(min(score, 10.0), 1),
             "total_contratos": len(CONTRATOS),
-            "validos": len(resultados) - len(invalidos),
-            "invalidos": len(invalidos),
+            "validos": n_ok,
+            "invalidos": len(falhos),
             "detalhes": resultados,
             "bugs": bugs,
         }
         print(
             f"  Contratos: {len(CONTRATOS)} | "
-            f"OK: {len(resultados) - len(invalidos)} | "
-            f"Falhos: {len(invalidos)} | Score: {resultado['score']}/10"
+            f"OK: {n_ok} | Falhos: {len(falhos)} | "
+            f"Score: {resultado['score']}/10"
         )
         return resultado

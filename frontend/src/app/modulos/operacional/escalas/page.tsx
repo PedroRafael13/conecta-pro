@@ -264,9 +264,9 @@ export default function EscalasPage() {
                 <FileText className="w-4 h-4 mr-2" />
                 Templates
               </Button>
-              <Button onClick={() => setShowGenerateModal(true)}>
+              <Button aria-label="Nova Escala" onClick={() => setShowGenerateModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Gerar Escala
+                Nova Escala
               </Button>
             </div>
           </div>

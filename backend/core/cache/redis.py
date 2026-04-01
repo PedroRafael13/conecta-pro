@@ -86,8 +86,10 @@ async def cache_set(
     client = await get_redis()
     ttl = ttl or settings.redis_ttl
 
-    if isinstance(value, (dict, list)):
-        value = json.dumps(value)
+    if hasattr(value, "model_dump"):
+        value = json.dumps(value.model_dump(), default=str)
+    elif isinstance(value, (dict, list)):
+        value = json.dumps(value, default=str)
 
     await client.setex(key, ttl, value)
     return True

@@ -136,6 +136,40 @@ export default function AdmissaoPage() {
         </div>
       </div>
 
+      {/* Cards de estatísticas */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" aria-label="Estatísticas de admissão">
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-2xl font-bold">{loading ? '...' : admissoes.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-muted-foreground">Em Andamento</p>
+            <p className="text-2xl font-bold text-blue-500">
+              {loading ? '...' : admissoes.filter(a => ['in_progress', 'documents_pending', 'medical_exam', 'contract_signing'].includes(a.status)).length}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-muted-foreground">Concluídas</p>
+            <p className="text-2xl font-bold text-green-500">
+              {loading ? '...' : admissoes.filter(a => a.status === 'completed').length}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-muted-foreground">Canceladas</p>
+            <p className="text-2xl font-bold text-red-500">
+              {loading ? '...' : admissoes.filter(a => a.status === 'cancelled').length}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex gap-2 flex-wrap">
         {Object.entries(statusConfig).map(([key, val]) => (
           <Badge

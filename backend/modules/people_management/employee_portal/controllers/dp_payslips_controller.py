@@ -70,7 +70,7 @@ async def listar_payslips(
     try:
         from modules.hr.employee_portal.models.payslip import PaySlip
 
-        stmt = select(PaySlip).where(PaySlip.is_active == True)  # noqa: E712
+        stmt = select(PaySlip)
         if employee_id:
             stmt = stmt.where(PaySlip.employee_id == uuid.UUID(employee_id))
         if mes:
@@ -263,9 +263,7 @@ async def _get_or_404(db: AsyncSession, payslip_id: uuid.UUID):
     try:
         from modules.hr.employee_portal.models.payslip import PaySlip
 
-        result = await db.execute(
-            select(PaySlip).where(PaySlip.id == payslip_id, PaySlip.is_active == True)  # noqa: E712
-        )
+        result = await db.execute(select(PaySlip).where(PaySlip.id == payslip_id))
         payslip = result.scalar_one_or_none()
     except Exception:
         payslip = None

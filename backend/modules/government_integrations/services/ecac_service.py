@@ -32,7 +32,8 @@ class EcacService:
         self.cert_manager = None
         if self.cert_path and os.path.exists(self.cert_path):
             try:
-                self.cert_manager = CertificateManager(certificate_path=self.cert_path, password=self.cert_password)
+                self.cert_manager = CertificateManager(pfx_path=self.cert_path, password=self.cert_password)
+                self.cert_manager.load()
                 logger.info("Certificado digital carregado para e-CAC")
             except Exception as e:
                 logger.warning(f"Certificado nao carregado: {e}")

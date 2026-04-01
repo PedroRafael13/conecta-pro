@@ -1,12 +1,11 @@
 'use client';
 
-import { Plus, Search, Filter, MoreHorizontal, Phone, Mail, User, Building2, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Phone, Mail, User, Building2, TrendingUp, RefreshCw, AlertCircle, X } from 'lucide-react';
 import { useState } from 'react';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { useLeads, useLeadsStats } from '@/hooks/useLeads';
+import { useLeads, useLeadsStats, useCreateLead } from '@/hooks/useLeads';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -21,6 +20,10 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 export default function LeadsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [showNovoLead, setShowNovoLead] = useState(false);
+  const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', contato: '', email: '', telefone: '' });
+  const [savingLead, setSavingLead] = useState(false);
+  const createLead = useCreateLead();
 
   // Buscar leads do backend real
   const {
@@ -65,12 +68,104 @@ export default function LeadsPage() {
           >
             <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
           </Button>
-          <Button>
+          <Button aria-label="Novo Lead" onClick={() => setShowNovoLead(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Novo Lead
           </Button>
         </div>
       </div>
+
+      {/* Modal Novo Lead */}
+      {showNovoLead && (
+        <Card className="border-primary/40">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-lg">Novo Lead</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowNovoLead(false)} aria-label="Fechar">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="lead-nome" className="text-sm font-medium mb-1 block">Nome *</label>
+                <input
+                  id="lead-nome"
+                  name="nome"
+                  type="text"
+                  placeholder="Nome do lead"
+                  aria-label="Nome"
+                  value={novoLeadForm.nome}
+                  onChange={e => setNovoLeadForm(p => ({ ...p, nome: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="lead-contato" className="text-sm font-medium mb-1 block">Empresa / Contato *</label>
+                <input
+                  id="lead-contato"
+                  name="contato"
+                  type="text"
+                  placeholder="Empresa ou contato"
+                  aria-label="Empresa"
+                  value={novoLeadForm.contato}
+                  onChange={e => setNovoLeadForm(p => ({ ...p, contato: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="lead-email" className="text-sm font-medium mb-1 block">E-mail</label>
+                <input
+                  id="lead-email"
+                  name="email"
+                  type="email"
+                  placeholder="email@empresa.com"
+                  aria-label="Email"
+                  value={novoLeadForm.email}
+                  onChange={e => setNovoLeadForm(p => ({ ...p, email: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="lead-telefone" className="text-sm font-medium mb-1 block">Telefone</label>
+                <input
+                  id="lead-telefone"
+                  name="telefone"
+                  type="tel"
+                  placeholder="(92) 99999-9999"
+                  aria-label="Telefone"
+                  value={novoLeadForm.telefone}
+                  onChange={e => setNovoLeadForm(p => ({ ...p, telefone: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button
+                disabled={savingLead || !novoLeadForm.nome.trim() || !novoLeadForm.contato.trim()}
+                onClick={async () => {
+                  setSavingLead(true);
+                  try {
+                    await createLead.mutateAsync({
+                      nome: novoLeadForm.nome.trim(),
+                      contato: novoLeadForm.contato.trim(),
+                      email: novoLeadForm.email.trim() || undefined,
+                      telefone: novoLeadForm.telefone.trim() || undefined,
+                    });
+                    setShowNovoLead(false);
+                    setNovoLeadForm({ nome: '', contato: '', email: '', telefone: '' });
+                    refetch();
+                  } finally {
+                    setSavingLead(false);
+                  }
+                }}
+              >
+                {savingLead ? 'Salvando...' : 'Criar Lead'}
+              </Button>
+              <Button variant="secondary" onClick={() => setShowNovoLead(false)}>Cancelar</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
