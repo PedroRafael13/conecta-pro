@@ -13,15 +13,15 @@ from decimal import ROUND_HALF_UP, Decimal
 # TABELAS 2026
 # ===========================================================================
 
-SALARIO_MINIMO = Decimal("1518.00")
-TETO_INSS = Decimal("8157.41")
+SALARIO_MINIMO = Decimal("1412.00")
+TETO_INSS = Decimal("7786.02")
 
-# INSS Faixas Progressivas 2026
+# INSS Faixas Progressivas 2026 — Portaria MPS n.º 1.419/2026
 INSS_FAIXAS: list[tuple[Decimal, Decimal]] = [
-    (Decimal("1518.00"), Decimal("0.075")),
-    (Decimal("2793.88"), Decimal("0.09")),
-    (Decimal("4190.83"), Decimal("0.12")),
-    (Decimal("8157.41"), Decimal("0.14")),
+    (Decimal("1412.00"), Decimal("0.075")),
+    (Decimal("2666.68"), Decimal("0.09")),
+    (Decimal("4000.03"), Decimal("0.12")),
+    (Decimal("7786.02"), Decimal("0.14")),
 ]
 
 # IRRF Tabela Progressiva 2026
