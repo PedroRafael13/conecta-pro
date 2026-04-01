@@ -98,11 +98,14 @@ export function useAuth() {
       // Sincronizar cookie para o middleware de rota
       document.cookie = `auth_token=${access_token}; path=/; max-age=${30 * 60}; SameSite=Lax; Secure`;
 
-      // Buscar dados do usuário após login
-      const userResponse = await api.get<User>('/api/v1/auth/me');
+      // Buscar dados do usuário após login (via proxy local — consistente com checkAuth)
+      const meRes = await fetch('/api/v1/auth/me', {
+        headers: { Authorization: `Bearer ${access_token}`, 'Content-Type': 'application/json' },
+      });
+      const userData: User = meRes.ok ? await meRes.json() : { id: '', email: credentials.email, name: '', role: 'user', is_active: true };
 
       setState({
-        user: userResponse.data,
+        user: userData,
         isLoading: false,
         isAuthenticated: true,
       });
