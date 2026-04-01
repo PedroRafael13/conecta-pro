@@ -6,12 +6,25 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
 from core.database import get_db
+from core.rate_limit import limiter
 from core.security.file_validator import ged_file_validator
 from modules.ged.models.document import (
     DocumentCategory,
@@ -255,7 +268,10 @@ async def delete_document(
 
 @router.get("", response_model=DocumentListResponse)
 @router.get("/", response_model=DocumentListResponse, include_in_schema=False)
+@limiter.limit("30/minute")
 async def list_documents(
+    request: Request,
+    response: Response,
     folder_id: str | None = Query(None),
     condominium_id: str | None = Query(None),
     document_type: DocumentType | None = Query(None),

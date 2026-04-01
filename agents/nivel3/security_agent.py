@@ -331,10 +331,10 @@ class SecurityAgent:
     # ── 9. Rate limit geral ─────────────────────────────────────────────────
 
     def testar_rate_limit_api(self) -> list:
-        """20 requisições rápidas devem acionar rate limiting (429)."""
+        """35 requisições rápidas devem acionar rate limiting (429) — limite: 30/min."""
         vulnerabilidades = []
         got_429 = False
-        for _ in range(20):
+        for _ in range(35):
             status, _, _ = self._request("/api/v1/ged/documents", token=self.token)
             if status == 429:
                 got_429 = True
@@ -344,7 +344,7 @@ class SecurityAgent:
             vulnerabilidades.append(
                 {
                     "endpoint": "/api/v1/ged/documents",
-                    "descricao": "Rate limiting não acionado após 20 requisições rápidas",
+                    "descricao": "Rate limiting não acionado após 35 requisições rápidas",
                     "severidade": "BAIXO",
                 }
             )
