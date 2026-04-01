@@ -592,3 +592,159 @@ class CTOBrain:
         if bridge:
             return bridge.resumo_para_cto()
         return "⚠️ TeamBridge indisponível"
+
+    # ─── SPRINT 6 — RUNBOOKS + ESCALADA AUTOMÁTICA ────────────────────────────
+
+    _runbook_executor_instance = None
+    _escalada_instance = None
+
+    @classmethod
+    def _get_runbook_executor(cls):
+        if cls._runbook_executor_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from runbook import RunbookExecutor
+                cls._runbook_executor_instance = RunbookExecutor()
+            except Exception:
+                pass
+        return cls._runbook_executor_instance
+
+    @classmethod
+    def _get_escalada(cls):
+        if cls._escalada_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from escalada import Escalada
+                cls._escalada_instance = Escalada()
+            except Exception:
+                pass
+        return cls._escalada_instance
+
+    def tentar_resolver(
+        self,
+        ticket_num: str,
+        tipo: str,
+        severidade: str,
+        descricao: str,
+    ) -> dict:
+        """
+        Sprint 6 — Tenta resolver autonomamente antes de apenas notificar.
+        1. Executa runbook adequado
+        2. Se falhar, abre escalada temporal
+        3. Retorna resultado consolidado
+        """
+        rb = self._get_runbook_executor()
+        resultado = {
+            "ticket": ticket_num,
+            "tipo": tipo,
+            "resolvido": False,
+            "requer_jordan": False,
+            "runbook_executado": False,
+            "escalada_aberta": False,
+            "mensagem": "",
+        }
+
+        if rb and rb.pode_executar(tipo):
+            resultado["runbook_executado"] = True
+            res_rb = rb.executar(tipo)
+            resultado["resolvido"] = res_rb.resolvido
+            resultado["requer_jordan"] = res_rb.requer_jordan
+            resultado["mensagem"] = res_rb.mensagem
+
+            if res_rb.resolvido:
+                # Atualizar ticket como resolvido automaticamente
+                self.atualizar_ticket(
+                    ticket_num,
+                    f"Runbook {tipo} executado com sucesso",
+                    "resolvido",
+                    resultado=res_rb.mensagem,
+                )
+                return resultado
+
+        # Runbook falhou ou não existe — abrir escalada
+        esc = self._get_escalada()
+        if esc:
+            esc.abrir(ticket_num, tipo, severidade, descricao)
+            resultado["escalada_aberta"] = True
+
+        if not resultado["resolvido"]:
+            resultado["requer_jordan"] = True
+
+        return resultado
+
+    def verificar_escaladas(self) -> list:
+        """
+        Sprint 6 — Verifica escaladas ativas e dispara próximo nível se necessário.
+        Chamado a cada 5 minutos pelo cron.
+        """
+        esc = self._get_escalada()
+        if not esc:
+            return []
+        # Recarregar estado do disco (pode ter sido modificado por outro processo)
+        esc.escaladas = esc._carregar()
+        return esc.verificar_todas()
+
+    def listar_escaladas(self) -> list:
+        """Sprint 6 — Lista escaladas ativas."""
+        esc = self._get_escalada()
+        if not esc:
+            return []
+        esc.escaladas = esc._carregar()
+        return esc.listar_ativas()
+
+    def fechar_escalada(self, ticket_num: str, motivo: str = "resolvido"):
+        """Sprint 6 — Fecha escalada de um ticket."""
+        esc = self._get_escalada()
+        if esc:
+            esc.escaladas = esc._carregar()
+            esc.fechar(ticket_num, motivo)
+
+    def resumo_runbooks(self, limit: int = 5) -> str:
+        """Sprint 6 — Resumo dos últimos runbooks executados."""
+        rb = self._get_runbook_executor()
+        if not rb:
+            return "⚠️ RunbookExecutor indisponível"
+        historico = rb.historico(limit)
+        if not historico:
+            return "📭 Nenhum runbook executado ainda."
+        linhas = [f"🔧 *Últimos {len(historico)} runbook(s):*\n"]
+        for r in historico:
+            emoji = "✅" if r["resolvido"] else ("🔴" if r.get("requer_jordan") else "⚠️")
+            ts = r.get("inicio", "")[:16].replace("T", " ")
+            linhas.append(
+                f"{emoji} `{r['tipo']}` — {ts}\n"
+                f"   {r['mensagem'][:80]}"
+            )
+        return "\n".join(linhas)
+
+    # ─── SPRINT 9 — AUTO-EVOLUÇÃO ─────────────────────────────────────────────
+
+    _auto_evolucao_instance = None
+
+    @classmethod
+    def _get_auto_evolucao(cls):
+        if cls._auto_evolucao_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from auto_evolucao import AutoEvolução
+                cls._auto_evolucao_instance = AutoEvolução()
+            except Exception:
+                pass
+        return cls._auto_evolucao_instance
+
+    def auditoria_completa(self) -> str:
+        """Executa auditoria completa do sistema (Sprint 9)."""
+        ae = self._get_auto_evolucao()
+        if not ae:
+            return "❌ AutoEvolução não disponível"
+        return ae.executar_auditoria_completa()
+
+    def relatorio_evolucao(self) -> str:
+        """Relatório de auto-evolução do sistema (Sprint 9)."""
+        ae = self._get_auto_evolucao()
+        if not ae:
+            return "❌ AutoEvolução não disponível"
+        return ae.relatorio_evolucao()

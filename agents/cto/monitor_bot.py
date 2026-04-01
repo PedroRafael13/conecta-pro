@@ -160,6 +160,12 @@ def cmd_ajuda(chat_id: int):
         "`/agentes` — Status dos 80 agentes (13 módulos)\n"
         "`/modulo [nome]` — Detalhe de um módulo específico\n"
         "`/team` — Resumo executivo do time de suporte\n\n"
+        "🔧 *Sprint 6 — Runbooks + Escalada:*\n"
+        "`/runbooks` — Ver últimos runbooks executados\n"
+        "`/resolver [tipo]` — Executar runbook manualmente\n"
+        "   Tipos: RedisDown, SwapHigh, CeleryUnhealthy,\n"
+        "          BackendUnhealthy, DiskSpaceLow, PM2ExcessiveRestarts\n"
+        "`/escaladas` — Ver escaladas ativas\n\n"
         "*Linguagem natural:*\n"
         "Apenas descreva o problema:\n"
         "_Redis caiu_, _Postgres lento_, _Celery parou_\n\n"
@@ -721,6 +727,26 @@ def processar_update(update: dict):
             send("Uso: `/modulo operacional`", chat_id=chat_id)
     elif tl.startswith("/team"):
         cmd_team(chat_id)
+    elif tl.startswith("/autoevolucao"):
+        cmd_autoevolucao(chat_id)
+    elif tl.startswith("/auditar"):
+        cmd_auditar(chat_id)
+    elif tl.startswith("/runbooks"):
+        cmd_runbooks(chat_id)
+    elif tl.startswith("/resolver"):
+        parts = text.split(maxsplit=1)
+        if len(parts) > 1:
+            cmd_resolver(chat_id, parts[1].strip())
+        else:
+            send(
+                "Uso: `/resolver [tipo]`\n\n"
+                "Tipos disponíveis:\n"
+                "`RedisDown` | `SwapHigh` | `CeleryUnhealthy`\n"
+                "`BackendUnhealthy` | `DiskSpaceLow` | `PM2ExcessiveRestarts`",
+                chat_id=chat_id,
+            )
+    elif tl.startswith("/escaladas"):
+        cmd_escaladas(chat_id)
     else:
         # Linguagem natural
         handle_natural_language(text, chat_id)
@@ -785,6 +811,119 @@ def cmd_team(chat_id: int):
         send(msg, chat_id=chat_id)
     except Exception as e:
         send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+# ─── Comandos Sprint 9 ───────────────────────────────────────────────────────
+
+def cmd_autoevolucao(chat_id: int):
+    """Relatório de auto-evolução do sistema."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        rel = brain.relatorio_evolucao()
+        send(rel, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+def cmd_auditar(chat_id: int):
+    """Executa auditoria completa agora."""
+    send("🔬 Executando auditoria completa...", chat_id=chat_id)
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        resultado = brain.auditoria_completa()
+        send(resultado, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+# ─── Comandos Sprint 6 ───────────────────────────────────────────────────────
+
+def cmd_runbooks(chat_id: int):
+    """Histórico dos últimos runbooks executados."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        resumo = brain.resumo_runbooks(limit=5)
+        send(resumo, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+def cmd_resolver(chat_id: int, tipo: str):
+    """Executa runbook manualmente para um tipo de problema."""
+    TIPOS_VALIDOS = {
+        "RedisDown", "SwapHigh", "CeleryUnhealthy",
+        "BackendUnhealthy", "DiskSpaceLow", "PM2ExcessiveRestarts",
+    }
+    if tipo not in TIPOS_VALIDOS:
+        send(
+            f"❌ Tipo `{tipo}` inválido.\n\n"
+            f"Tipos disponíveis:\n"
+            + "\n".join(f"`{t}`" for t in sorted(TIPOS_VALIDOS)),
+            chat_id=chat_id,
+        )
+        return
+
+    send(f"🔧 Executando runbook `{tipo}`... aguarde.", chat_id=chat_id)
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+
+    try:
+        sys.path.insert(0, str(CTO_DIR))
+        from runbook import RunbookExecutor
+        rb = RunbookExecutor()
+        resultado = rb.executar(tipo)
+        msg = rb.resumo_telegram(resultado)
+        send(msg, chat_id=chat_id)
+
+        # Atualizar ticket se já existir ou criar novo
+        if resultado.resolvido:
+            ticket = brain.criar_ticket(
+                titulo=f"Runbook manual: {tipo}",
+                descricao=f"Executado manualmente via /resolver",
+                severidade="media",
+                categoria="remediacao_manual",
+                causa_raiz=f"Disparado por Jordan via Telegram",
+                solucao_proposta=resultado.mensagem,
+                auto_resolvido=True,
+            )
+            logger.info(f"[Sprint6] Runbook manual {tipo}: {ticket.get('numero')} resolvido")
+        elif resultado.requer_jordan:
+            send(
+                f"⚠️ Runbook `{tipo}` não conseguiu resolver.\n"
+                f"Intervenção manual necessária.\n"
+                f"Mensagem: {resultado.mensagem[:200]}",
+                chat_id=chat_id,
+            )
+    except Exception as e:
+        send(f"⚠️ Erro ao executar runbook: {e}", chat_id=chat_id)
+
+
+def cmd_escaladas(chat_id: int):
+    """Lista escaladas ativas."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        sys.path.insert(0, str(CTO_DIR))
+        from escalada import Escalada
+        esc = Escalada()
+        esc.escaladas = esc._carregar()
+        msg = esc.resumo_telegram()
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro ao listar escaladas: {e}", chat_id=chat_id)
 
 
 def run():
