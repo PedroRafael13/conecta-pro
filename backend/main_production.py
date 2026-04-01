@@ -798,10 +798,26 @@ except Exception as e:
     logger.warning(f"DP Payslips: {e}")
 
 
+# =============================================================================
+# 15. SEGURANÇA / LGPD — Privacidade, consentimento, auditoria de dados
+# =============================================================================
+try:
+    from modules.security_lgpd import security_lgpd_router
+
+    api_router.include_router(
+        security_lgpd_router,
+        prefix="/security",
+        tags=["Security - LGPD Compliance"],
+    )
+    logger.info("Modulo LGPD: OK (Encryption + Masking + Consent + Erasure + PIA + Audit + Status)")
+except Exception as e:
+    logger.warning(f"Modulo LGPD: {e}")
+
+
 # Incluir router principal
 app.include_router(api_router)
 
-logger.info("=== API CONECTA PRO INICIADA (13 módulos) ===")
+logger.info("=== API CONECTA PRO INICIADA (14 módulos) ===")
 
 
 if __name__ == "__main__":

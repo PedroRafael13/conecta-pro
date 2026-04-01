@@ -4,8 +4,9 @@ Controller de Criptografia LGPD.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from core.auth.dependencies import get_current_user
 from modules.security_lgpd.schemas.common import StandardResponse
 from modules.security_lgpd.schemas.encryption import (
     DecryptDataRequest,
@@ -14,7 +15,6 @@ from modules.security_lgpd.schemas.encryption import (
 from modules.security_lgpd.services.encryption_service import EncryptionService
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/encryption", tags=["LGPD - Criptografia"])
 
 
@@ -25,16 +25,13 @@ router = APIRouter(prefix="/encryption", tags=["LGPD - Criptografia"])
     summary="Criptografa dados sensiveis",
     description="Criptografa dados usando AES-256-GCM ou outros algoritmos suportados.",
 )
-async def encrypt_data(request: EncryptDataRequest) -> StandardResponse:
+async def encrypt_data(request: EncryptDataRequest, current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Criptografa dados sensiveis usando algoritmo especificado.
-
     Args:
         request: Dados e configuracoes de criptografia.
-
     Returns:
         StandardResponse: Dados criptografados em base64.
-
     Raises:
         HTTPException: Se falhar a criptografia.
     """
@@ -45,15 +42,12 @@ async def encrypt_data(request: EncryptDataRequest) -> StandardResponse:
             algorithm=request.algorithm,
             key_id=request.key_id,
         )
-
         logger.info("Dados criptografados com sucesso usando %s", request.algorithm)
-
         return StandardResponse(
             success=True,
             message="Dados criptografados com sucesso",
             data=result,
         )
-
     except ValueError as e:
         logger.warning("Algoritmo invalido: %s", str(e))
         raise HTTPException(
@@ -75,16 +69,13 @@ async def encrypt_data(request: EncryptDataRequest) -> StandardResponse:
     summary="Descriptografa dados",
     description="Descriptografa dados previamente criptografados.",
 )
-async def decrypt_data(request: DecryptDataRequest) -> StandardResponse:
+async def decrypt_data(request: DecryptDataRequest, current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Descriptografa dados previamente criptografados.
-
     Args:
         request: Dados criptografados e chave.
-
     Returns:
         StandardResponse: Dados descriptografados.
-
     Raises:
         HTTPException: Se falhar a descriptografia.
     """
@@ -94,13 +85,11 @@ async def decrypt_data(request: DecryptDataRequest) -> StandardResponse:
             encrypted_data=request.encrypted_data,
             key_id=request.key_id,
         )
-
         return StandardResponse(
             success=True,
             message="Descriptografia requer key management configurado",
             data=result,
         )
-
     except Exception as e:
         logger.error("Erro ao descriptografar: %s", str(e))
         raise HTTPException(
@@ -116,16 +105,14 @@ async def decrypt_data(request: DecryptDataRequest) -> StandardResponse:
     summary="Lista algoritmos de criptografia",
     description="Retorna algoritmos de criptografia disponiveis.",
 )
-async def list_algorithms() -> StandardResponse:
+async def list_algorithms(current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Lista algoritmos de criptografia disponiveis.
-
     Returns:
         StandardResponse: Lista de algoritmos.
     """
     service = EncryptionService()
     algorithms = service.list_algorithms()
-
     return StandardResponse(
         success=True,
         message="Algoritmos de criptografia disponiveis",

@@ -4,14 +4,14 @@ Controller de Avaliacao de Impacto de Privacidade (PIA/DPIA) LGPD.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 
+from core.auth.dependencies import get_current_user
 from modules.security_lgpd.schemas.common import StandardResponse
 from modules.security_lgpd.schemas.pia import PIARequest
 from modules.security_lgpd.services.pia_service import PIAService
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/pia", tags=["LGPD - Avaliacao de Impacto (PIA/DPIA)"])
 
 
@@ -22,13 +22,11 @@ router = APIRouter(prefix="/pia", tags=["LGPD - Avaliacao de Impacto (PIA/DPIA)"
     summary="Cria avaliacao de impacto (PIA/DPIA)",
     description="Inicia avaliacao de impacto de privacidade para projeto.",
 )
-async def create_pia(request: PIARequest) -> StandardResponse:
+async def create_pia(request: PIARequest, current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Cria avaliacao de impacto de privacidade.
-
     Args:
         request: Dados do projeto para avaliacao.
-
     Returns:
         StandardResponse: Resultado da avaliacao inicial.
     """
@@ -42,19 +40,16 @@ async def create_pia(request: PIARequest) -> StandardResponse:
             data_subjects=request.data_subjects,
             risk_factors=request.risk_factors,
         )
-
         logger.info(
             "PIA criado para projeto: %s, nivel de risco: %s",
             request.project_name,
             result.get("risk_level", "unknown"),
         )
-
         return StandardResponse(
             success=True,
             message="Avaliacao de impacto criada",
             data=result,
         )
-
     except Exception as e:
         logger.error("Erro ao criar PIA: %s", str(e))
         raise HTTPException(
@@ -71,27 +66,23 @@ async def create_pia(request: PIARequest) -> StandardResponse:
     description="Retorna detalhes de uma avaliacao de impacto.",
 )
 async def get_pia(
-    assessment_id: str = Path(..., description="ID da avaliacao"),
+    assessment_id: str = Path(..., description="ID da avaliacao"), current_user: dict = Depends(get_current_user)
 ) -> StandardResponse:
     """
     Consulta avaliacao de impacto.
-
     Args:
         assessment_id: ID da avaliacao.
-
     Returns:
         StandardResponse: Detalhes da avaliacao.
     """
     try:
         service = PIAService()
         assessment = service.get_assessment(assessment_id)
-
         return StandardResponse(
             success=True,
             message="Avaliacao recuperada",
             data=assessment,
         )
-
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -112,16 +103,14 @@ async def get_pia(
     summary="Lista categorias de risco",
     description="Retorna categorias de risco disponiveis.",
 )
-async def list_risk_categories() -> StandardResponse:
+async def list_risk_categories(current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Lista categorias de risco disponiveis.
-
     Returns:
         StandardResponse: Lista de categorias de risco.
     """
     service = PIAService()
     categories = service.get_risk_categories()
-
     return StandardResponse(
         success=True,
         message="Categorias de risco disponiveis",
