@@ -253,16 +253,9 @@ class AgenteNotificacoesAdmin(BaseAgent):
     SUBMODULO = "notificacoes"
     ENDPOINTS = [
         "/api/v1/notifications/push",
-        "/api/v1/notifications/push/subscriptions",
+        "/api/v1/notifications/push/unread-count",
     ]
-    CONHECE_BUGS = [
-        {
-            "descricao": "Notificações push — endpoint requires "
-            "specific permissions além de admin",
-            "corrigido": False,
-            "auto_corrigivel": False,
-        }
-    ]
+    CONHECE_BUGS = []
 
 
 class AgenteCCTAdmin(BaseAgent):

@@ -17,11 +17,7 @@ class AgenteColaboradores(BaseAgent):
     SUBMODULO = "colaboradores"
     ENDPOINTS = [
         '/api/v1/people-management/hr/employees',
-        {
-            'path': '/api/v1/people-management/hr/employees',
-            'esperado': 401,
-            '_sem_token': True
-        },
+        '/api/v1/people-management/ponto/colaboradores-sem-escala',
     ]
     CONHECE_BUGS = [
         {

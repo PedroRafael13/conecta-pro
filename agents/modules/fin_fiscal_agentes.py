@@ -262,12 +262,8 @@ class AgenteESocialFiscal(BaseAgent):
     MODULO = "fiscal_contabil"
     SUBMODULO = "esocial_fiscal"
     ENDPOINTS = [
-        '/api/v1/government/esocial/status',
-        {
-            'path': '/api/v1/government/'
-                    'esocial/eventos',
-            'esperado': 200
-        }
+        '/api/v1/government/esocial/eventos',
+        '/api/v1/government/esocial/eventos-suportados',
     ]
     CONHECE_BUGS = [
         {

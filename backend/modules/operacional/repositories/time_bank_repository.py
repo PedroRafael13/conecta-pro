@@ -5,7 +5,7 @@ Repository para operações de banco de dados com TimeBank.
 from datetime import date, datetime
 from uuid import uuid4
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
@@ -462,13 +462,13 @@ class TimeBankRepository:
             select(
                 TimeBank.employee_id,
                 func.sum(
-                    func.case(
+                    case(
                         (TimeBank.entry_type == TimeBankEntryType.CREDIT, TimeBank.hours),
                         else_=0,
                     )
                 ).label("credit"),
                 func.sum(
-                    func.case(
+                    case(
                         (TimeBank.entry_type == TimeBankEntryType.DEBIT, TimeBank.hours),
                         else_=0,
                     )
