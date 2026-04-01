@@ -5,9 +5,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, feature/*]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, feature/*]
 
 env:
   PYTHON_VERSION: "3.12"
@@ -65,7 +65,7 @@ jobs:
       - name: MyPy (type checking)
         run: |
           cd backend
-          mypy core/ api/ --ignore-missing-imports || true
+          mypy core/ api/ --ignore-missing-imports
 
   # ===========================================
   # JOB 2: Linting e Type Check (Frontend)
@@ -99,12 +99,12 @@ jobs:
       - name: ESLint
         run: |
           cd frontend
-          npx eslint src/ --max-warnings 0 || true
+          npx eslint src/ --max-warnings 0
 
       - name: TypeScript check
         run: |
           cd frontend
-          npx tsc --noEmit || true
+          npx tsc --noEmit
 
   # ===========================================
   # JOB 3: Security Scan
@@ -129,14 +129,17 @@ jobs:
           pip install bandit safety
 
       - name: Bandit (security scan)
+        # continue-on-error: falhas de bandit são reportadas mas não bloqueiam o build
+        # (muitos falsos positivos em security scans estáticos)
+        continue-on-error: true
         run: |
           cd backend
-          bandit -r core/ api/ -x tests/ -ll || true
+          bandit -r core/ api/ -x tests/ -ll
 
       - name: Safety (vulnerabilidades)
         run: |
           cd backend
-          safety check -r requirements.txt || true
+          safety check -r requirements.txt
 
   # ===========================================
   # JOB 4: Testes (Backend)
@@ -241,12 +244,14 @@ jobs:
       - name: Vitest (testes)
         run: |
           cd frontend
-          npx vitest run --reporter=verbose || true
+          npx vitest run --reporter=verbose
 
       - name: Vitest (coverage)
+        # continue-on-error: relatório de cobertura é informacional, não bloqueia
+        continue-on-error: true
         run: |
           cd frontend
-          npx vitest run --coverage || true
+          npx vitest run --coverage
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4

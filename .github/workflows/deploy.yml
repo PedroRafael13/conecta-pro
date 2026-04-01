@@ -11,7 +11,7 @@ on:
 env:
   SERVER_HOST: ${{ secrets.SERVER_HOST }}
   SERVER_USER: ${{ secrets.SERVER_USER }}
-  DEPLOY_PATH: /opt/erp-conecta-mais
+  DEPLOY_PATH: /opt/conecta-pro
 
 jobs:
   # ===========================================
