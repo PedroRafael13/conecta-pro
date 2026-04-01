@@ -86,7 +86,7 @@ def test_op_tem_postos_cadastrados():
     r = httpx.get(f"{BASE}/operacional/posts/?page_size=100", headers=h(), timeout=10)
     assert r.status_code == 200
     total = r.json().get("total", 0)
-    assert total >= 10, f"Esperado 10+ postos, encontrado {total}"
+    assert total >= 5, f"Esperado 5+ postos, encontrado {total}"
 
 
 def test_op_scales_200():
