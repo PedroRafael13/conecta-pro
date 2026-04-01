@@ -204,7 +204,7 @@ export function AllocationFormModal({
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm"
               required
-             aria-label="Post Id">
+            >
               <option value="">Selecione um posto</option>
               {posts.map((post) => (
                 <option key={post.id} value={post.id}>
@@ -224,7 +224,7 @@ export function AllocationFormModal({
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm"
               required
-             aria-label="Employee Id">
+            >
               <option value="">Selecione um funcionario</option>
               {employees.map((employee) => (
                 <option key={employee.id} value={employee.id}>
@@ -244,7 +244,7 @@ export function AllocationFormModal({
               value={formData.start_date}
               onChange={handleChange}
               required
-             aria-label="Start Date" />
+            />
           </div>
 
           <div>
@@ -256,7 +256,7 @@ export function AllocationFormModal({
               name="end_date"
               value={formData.end_date || ''}
               onChange={handleChange}
-             aria-label="End Date" />
+            />
           </div>
 
           <div>
@@ -268,7 +268,7 @@ export function AllocationFormModal({
               value={formData.role || ''}
               onChange={handleChange}
               placeholder="Ex: Agente de Portaria"
-             aria-label="Ex: Agente de Portaria" />
+            />
           </div>
 
           <div>
@@ -282,7 +282,7 @@ export function AllocationFormModal({
               onChange={handleChange}
               min={0}
               step={0.01}
-             aria-label="Hourly Rate" />
+            />
           </div>
 
           <div>
@@ -296,7 +296,7 @@ export function AllocationFormModal({
               onChange={handleChange}
               min={0}
               step={0.01}
-             aria-label="Monthly Salary" />
+            />
           </div>
 
           <div>
@@ -310,7 +310,7 @@ export function AllocationFormModal({
               onChange={handleChange}
               min={0}
               step={0.01}
-             aria-label="Additional Benefits" />
+            />
           </div>
         </div>
 
@@ -322,7 +322,7 @@ export function AllocationFormModal({
               checked={!!formData.is_primary}
               onChange={handleChange}
               className="rounded border-[hsl(var(--border))]"
-             aria-label="Is Primary" />
+            />
             Alocacao principal
           </label>
           <label className="flex items-center gap-2 text-sm">
@@ -332,7 +332,7 @@ export function AllocationFormModal({
               checked={!!formData.is_temporary}
               onChange={handleChange}
               className="rounded border-[hsl(var(--border))]"
-             aria-label="Is Temporary" />
+            />
             Alocacao temporaria
           </label>
         </div>
@@ -347,7 +347,7 @@ export function AllocationFormModal({
             onChange={handleChange}
             rows={3}
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm resize-none"
-           aria-label="Notes" />
+          />
         </div>
 
         <ModalFooter>

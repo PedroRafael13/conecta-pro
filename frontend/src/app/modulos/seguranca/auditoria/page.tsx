@@ -214,7 +214,7 @@ export default function AuditoriaLGPDPage() {
 
             {/* Action filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedAction} onValueChange={setSelectedAction} aria-label="Selected Action">
+              <Select value={selectedAction} onValueChange={setSelectedAction}>
                 <SelectTrigger>
                   <SelectValue placeholder="Acao" />
                 </SelectTrigger>
@@ -231,7 +231,7 @@ export default function AuditoriaLGPDPage() {
 
             {/* Resource filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedResource} onValueChange={setSelectedResource} aria-label="Selected Resource">
+              <Select value={selectedResource} onValueChange={setSelectedResource}>
                 <SelectTrigger>
                   <SelectValue placeholder="Recurso" />
                 </SelectTrigger>

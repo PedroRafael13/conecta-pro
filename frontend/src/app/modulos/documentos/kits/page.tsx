@@ -258,7 +258,7 @@ export default function KitsPage() {
             className="pl-10"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter} aria-label="Category Filter">
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Todas as categorias" />
           </SelectTrigger>

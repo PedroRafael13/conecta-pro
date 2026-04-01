@@ -248,7 +248,7 @@ export default function FiscalPage() {
               icon={<Search className="w-4 h-4" />}
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter} aria-label="Status Filter">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>

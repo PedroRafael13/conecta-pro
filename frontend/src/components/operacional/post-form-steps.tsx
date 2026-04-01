@@ -24,7 +24,7 @@ export function StepDadosBasicos({ formData, onChange }: StepProps) {
           onChange={onChange}
           placeholder="Ex: Portaria Principal - Condomínio ABC"
           required
-         aria-label="Ex: Portaria Principal - Condomínio ABC" />
+        />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -38,7 +38,7 @@ export function StepDadosBasicos({ formData, onChange }: StepProps) {
             onChange={onChange}
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
             required
-           aria-label="Post Type">
+          >
             {Object.entries(POST_TYPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -57,7 +57,7 @@ export function StepDadosBasicos({ formData, onChange }: StepProps) {
             onChange={onChange}
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
             required
-           aria-label="Shift Type">
+          >
             {Object.entries(SHIFT_TYPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -78,7 +78,7 @@ export function StepDadosBasicos({ formData, onChange }: StepProps) {
           rows={3}
           placeholder="Descricao detalhada do posto..."
           className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-         aria-label="Descricao detalhada do posto..." />
+        />
       </div>
     </div>
   );
@@ -103,7 +103,7 @@ export function StepLocalizacao({ formData, onChange, isFetchingCep, cepError }:
           value={formData.address}
           onChange={onChange}
           placeholder="Rua, numero, bairro..."
-         aria-label="Rua, numero, bairro..." />
+        />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -116,7 +116,7 @@ export function StepLocalizacao({ formData, onChange, isFetchingCep, cepError }:
             value={formData.city}
             onChange={onChange}
             placeholder="Cidade"
-           aria-label="Cidade" />
+          />
         </div>
         <div>
           <label htmlFor="field-post-state" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -128,7 +128,7 @@ export function StepLocalizacao({ formData, onChange, isFetchingCep, cepError }:
             value={formData.state}
             onChange={onChange}
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-           aria-label="State">
+          >
             <option value="">-</option>
             {STATES.map((uf) => (
               <option key={uf} value={uf}>
@@ -151,7 +151,7 @@ export function StepLocalizacao({ formData, onChange, isFetchingCep, cepError }:
             placeholder="00000-000"
             maxLength={9}
             disabled={isFetchingCep}
-           aria-label="00000-000" />
+          />
           {isFetchingCep && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               <Loader2 className="w-4 h-4 animate-spin text-[hsl(var(--muted-foreground))]" />
@@ -183,7 +183,7 @@ export function StepConfiguracao({ formData, onChange }: StepProps) {
             onChange={onChange}
             min={1}
             required
-           aria-label="Required Headcount" />
+          />
         </div>
         <div>
           <label htmlFor="field-break-duration-minutes" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -196,7 +196,7 @@ export function StepConfiguracao({ formData, onChange }: StepProps) {
             value={formData.break_duration_minutes}
             onChange={onChange}
             min={0}
-           aria-label="Break Duration Minutes" />
+          />
         </div>
       </div>
       <div>
@@ -211,7 +211,7 @@ export function StepConfiguracao({ formData, onChange }: StepProps) {
           rows={4}
           placeholder="Detalhes sobre horarios, pausas, troca de turno..."
           className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-         aria-label="Detalhes sobre horarios, pausas, troca de turno..." />
+        />
       </div>
     </div>
   );
@@ -233,7 +233,7 @@ export function StepRequisitos({ formData, onChange }: StepProps) {
           onChange={onChange}
           min={0}
           placeholder="0 = sem requisito de experiência"
-         aria-label="0 = sem requisito de experiência" />
+        />
       </div>
       <div className="space-y-3">
         <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors">
@@ -243,7 +243,7 @@ export function StepRequisitos({ formData, onChange }: StepProps) {
             checked={formData.requires_armed}
             onChange={onChange}
             className="w-4 h-4 rounded border-[hsl(var(--border))]"
-           aria-label="Requires Armed" />
+          />
           <div className="flex-1">
             <div className="text-sm font-medium text-[hsl(var(--foreground))]">
               Requer Armamento
@@ -260,7 +260,7 @@ export function StepRequisitos({ formData, onChange }: StepProps) {
             checked={formData.requires_vehicle}
             onChange={onChange}
             className="w-4 h-4 rounded border-[hsl(var(--border))]"
-           aria-label="Requires Vehicle" />
+          />
           <div className="flex-1">
             <div className="text-sm font-medium text-[hsl(var(--foreground))]">
               Requer Veiculo
@@ -293,7 +293,7 @@ export function StepFinanceiro({ formData, onChange }: StepProps) {
             min={0}
             step={0.01}
             placeholder="0.00"
-           aria-label="0.00" />
+          />
         </div>
         <div>
           <label htmlFor="field-monthly-cost" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -308,7 +308,7 @@ export function StepFinanceiro({ formData, onChange }: StepProps) {
             min={0}
             step={0.01}
             placeholder="0.00"
-           aria-label="0.00" />
+          />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -324,7 +324,7 @@ export function StepFinanceiro({ formData, onChange }: StepProps) {
             onChange={onChange}
             min={0}
             placeholder="20"
-           aria-label="20" />
+          />
         </div>
         <div>
           <label htmlFor="field-hazard-pay-percent" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -338,7 +338,7 @@ export function StepFinanceiro({ formData, onChange }: StepProps) {
             onChange={onChange}
             min={0}
             placeholder="0"
-           aria-label="0" />
+          />
         </div>
       </div>
     </div>
@@ -360,7 +360,7 @@ export function StepContatos({ formData, onChange }: StepProps) {
             value={formData.supervisor_name}
             onChange={onChange}
             placeholder="Nome completo"
-           aria-label="Nome completo" />
+          />
         </div>
         <div>
           <label htmlFor="field-supervisor-phone" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -372,7 +372,7 @@ export function StepContatos({ formData, onChange }: StepProps) {
             value={formData.supervisor_phone}
             onChange={onChange}
             placeholder="(00) 00000-0000"
-           aria-label="(00) 00000-0000" />
+          />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -386,7 +386,7 @@ export function StepContatos({ formData, onChange }: StepProps) {
             value={formData.emergency_contact}
             onChange={onChange}
             placeholder="Nome completo"
-           aria-label="Nome completo" />
+          />
         </div>
         <div>
           <label htmlFor="field-emergency-phone" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -398,7 +398,7 @@ export function StepContatos({ formData, onChange }: StepProps) {
             value={formData.emergency_phone}
             onChange={onChange}
             placeholder="(00) 00000-0000"
-           aria-label="(00) 00000-0000" />
+          />
         </div>
       </div>
     </div>

@@ -219,7 +219,7 @@ export function DisciplinaryFormModal({
             onChange={handleChange}
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
             disabled={isEditing}
-           aria-label="Action Type">
+          >
             {Object.entries(ACTION_TYPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -246,7 +246,7 @@ export function DisciplinaryFormModal({
                 onChange={handleChange}
                 placeholder="Nome completo do funcionário"
                 disabled={isEditing}
-               aria-label="Nome completo do funcionário" />
+              />
             </div>
 
             <div>
@@ -260,7 +260,7 @@ export function DisciplinaryFormModal({
                 placeholder="000.000.000-00"
                 maxLength={14}
                 disabled={isEditing}
-               aria-label="000.000.000-00" />
+              />
             </div>
 
             <div>
@@ -273,7 +273,7 @@ export function DisciplinaryFormModal({
                 onChange={handleChange}
                 placeholder="Cargo do funcionário"
                 disabled={isEditing}
-               aria-label="Cargo do funcionário" />
+              />
             </div>
           </div>
         </div>
@@ -289,7 +289,7 @@ export function DisciplinaryFormModal({
               value={formData.reason_category}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-             aria-label="Reason Category">
+            >
               {Object.entries(REASON_CATEGORY_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -309,7 +309,7 @@ export function DisciplinaryFormModal({
               placeholder="Descreva detalhadamente o fato que motivou a medida disciplinar, incluindo data, hora, local e circunstâncias..."
               rows={4}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-             aria-label="Descreva detalhadamente o fato que motivou a medida disciplinar, incluindo data, hora, local e circunstâncias..." />
+            />
           </div>
 
           <div>
@@ -322,7 +322,7 @@ export function DisciplinaryFormModal({
               value={formData.incident_date}
               onChange={handleChange}
               max={new Date().toISOString().split('T')[0]}
-             aria-label="Incident Date" />
+            />
           </div>
         </div>
 
@@ -346,7 +346,7 @@ export function DisciplinaryFormModal({
                   min={1}
                   max={30}
                   placeholder="1-30"
-                 aria-label="1-30" />
+                />
               </div>
 
               <div>
@@ -358,7 +358,7 @@ export function DisciplinaryFormModal({
                   name="suspension_start_date"
                   value={formData.suspension_start_date || ''}
                   onChange={handleChange}
-                 aria-label="Suspension Start Date" />
+                />
               </div>
             </div>
           </div>

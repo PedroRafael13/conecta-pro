@@ -343,7 +343,7 @@ export default function CentralRelatoriosPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={month} onValueChange={setMonth} aria-label="Month">
+          <Select value={month} onValueChange={setMonth}>
             <SelectTrigger className="w-[130px]">
               <SelectValue />
             </SelectTrigger>
@@ -353,7 +353,7 @@ export default function CentralRelatoriosPage() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={year} onValueChange={setYear} aria-label="Year">
+          <Select value={year} onValueChange={setYear}>
             <SelectTrigger className="w-[90px]">
               <SelectValue />
             </SelectTrigger>

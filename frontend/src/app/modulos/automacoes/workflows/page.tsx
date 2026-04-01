@@ -204,7 +204,7 @@ export default function WorkflowsPage() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="workflow-category">Categoria</Label>
-        <Select value={formCategory} onValueChange={setFormCategory} aria-label="Form Category">
+        <Select value={formCategory} onValueChange={setFormCategory}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione a categoria" />
           </SelectTrigger>

@@ -165,7 +165,7 @@ export function OccurrenceResolveModal({
             placeholder="Descreva como a ocorrencia foi tratada, acoes tomadas, conversas realizadas..."
             rows={4}
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none text-sm"
-           aria-label="Descreva como a ocorrencia foi tratada, acoes tomadas, conversas realizadas..." />
+          />
         </div>
 
         {/* Acao Corretiva */}
@@ -180,7 +180,7 @@ export function OccurrenceResolveModal({
             placeholder="Descreva a acao corretiva ou medida disciplinar aplicada..."
             rows={3}
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none text-sm"
-           aria-label="Descreva a acao corretiva ou medida disciplinar aplicada..." />
+          />
         </div>
 
         {/* Sugestoes */}

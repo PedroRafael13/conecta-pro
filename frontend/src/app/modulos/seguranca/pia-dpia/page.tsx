@@ -242,7 +242,7 @@ export default function PIADPIAPage() {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter} aria-label="Status Filter">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -254,7 +254,7 @@ export default function PIADPIAPage() {
             <SelectItem value="archived">Arquivada</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={riskFilter} onValueChange={setRiskFilter} aria-label="Risk Filter">
+        <Select value={riskFilter} onValueChange={setRiskFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Risco" />
           </SelectTrigger>

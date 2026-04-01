@@ -607,14 +607,14 @@ export default function ArquivosPage() {
               className="hidden"
               onChange={handleFileSelect}
               accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.txt"
-             aria-label="File" />
+            />
           </div>
 
           {/* Upload Options */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Pasta destino</Label>
-              <Select value={selectedFolderId} onValueChange={setSelectedFolderId} aria-label="Selected Folder Id">
+              <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
@@ -630,7 +630,7 @@ export default function ArquivosPage() {
             </div>
             <div className="space-y-2">
               <Label>Tipo de documento</Label>
-              <Select value={selectedDocType} onValueChange={setSelectedDocType} aria-label="Selected Doc Type">
+              <Select value={selectedDocType} onValueChange={setSelectedDocType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -645,7 +645,7 @@ export default function ArquivosPage() {
             </div>
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory} aria-label="Selected Category">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

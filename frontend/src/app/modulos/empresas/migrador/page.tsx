@@ -409,7 +409,7 @@ function SecaoAnaliseIndividual() {
                 readOnly
                 rows={16}
                 className="w-full font-mono text-xs bg-white border border-gray-200 rounded-lg p-3 resize-none"
-               aria-label="Aditivo"/>
+              />
             </div>
           )}
         </div>

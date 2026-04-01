@@ -346,7 +346,7 @@ export default function EnviosPage() {
                     className="pl-10"
                   />
                 </div>
-                <Select value={filterType} onValueChange={setFilterType} aria-label="Filter Type">
+                <Select value={filterType} onValueChange={setFilterType}>
                   <SelectTrigger className="w-[160px]">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>

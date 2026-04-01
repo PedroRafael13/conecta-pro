@@ -209,7 +209,7 @@ export default function ExecucoesPage() {
               <Select
                 value={selectedWorkflowId}
                 onValueChange={setSelectedWorkflowId}
-               aria-label="Selected Workflow Id">
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um workflow para ver as execucoes" />
                 </SelectTrigger>

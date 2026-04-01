@@ -277,7 +277,7 @@ export function ReimbursementFormModal({
                 onChange={handleChange}
                 placeholder="Ex: Despesas Janeiro 2026"
                 required
-               aria-label="Ex: Despesas Janeiro 2026" />
+              />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -289,7 +289,7 @@ export function ReimbursementFormModal({
                 value={formData.expense_date_start}
                 onChange={handleChange}
                 required
-               aria-label="Expense Date Start" />
+              />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -301,7 +301,7 @@ export function ReimbursementFormModal({
                 value={formData.expense_date_end}
                 onChange={handleChange}
                 required
-               aria-label="Expense Date End" />
+              />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -312,7 +312,7 @@ export function ReimbursementFormModal({
                 value={formData.cost_center}
                 onChange={handleChange}
                 placeholder="Centro de custo"
-               aria-label="Centro de custo" />
+              />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -323,7 +323,7 @@ export function ReimbursementFormModal({
                 value={formData.project}
                 onChange={handleChange}
                 placeholder="Projeto"
-               aria-label="Projeto" />
+              />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -336,7 +336,7 @@ export function ReimbursementFormModal({
                 rows={2}
                 placeholder="Descricao das despesas..."
                 className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-               aria-label="Descricao das despesas..." />
+              />
             </div>
           </div>
         </div>
@@ -476,7 +476,7 @@ export function ReimbursementFormModal({
                 onChange={handleChange}
                 placeholder="001"
                 maxLength={10}
-               aria-label="001" />
+              />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -488,7 +488,7 @@ export function ReimbursementFormModal({
                 onChange={handleChange}
                 placeholder="0001"
                 maxLength={10}
-               aria-label="0001" />
+              />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -500,7 +500,7 @@ export function ReimbursementFormModal({
                 onChange={handleChange}
                 placeholder="12345-6"
                 maxLength={20}
-               aria-label="12345-6" />
+              />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -511,7 +511,7 @@ export function ReimbursementFormModal({
                 value={formData.pix_key}
                 onChange={handleChange}
                 placeholder="email@exemplo.com"
-               aria-label="email@exemplo.com" />
+              />
             </div>
           </div>
         </div>
@@ -528,7 +528,7 @@ export function ReimbursementFormModal({
             rows={2}
             placeholder="Observacoes adicionais..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-           aria-label="Observacoes adicionais..." />
+          />
         </div>
 
         <ModalFooter>

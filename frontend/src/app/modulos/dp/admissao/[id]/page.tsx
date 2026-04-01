@@ -467,7 +467,7 @@ export default function AdmissaoDetalhePage() {
                 <option value="dados_conta_bancaria">Dados Bancários</option>
                 <option value="outro">Outro</option>
               </select>
-              <input type="file" id="doc-file" className="text-sm" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"  aria-label="File" />
+              <input type="file" id="doc-file" className="text-sm" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
               <Button size="sm" onClick={async () => {
                 const fileInput = document.getElementById('doc-file') as HTMLInputElement;
                 const typeSelect = document.getElementById('doc-type') as HTMLSelectElement;

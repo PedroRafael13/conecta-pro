@@ -82,7 +82,7 @@ export function DiaristServicosTab({
             name="hora_inicio_disponivel"
             value={formData.hora_inicio_disponivel}
             onChange={onChange}
-           aria-label="Hora Inicio Disponivel" />
+          />
         </div>
         <div>
           <label htmlFor="field-hora-fim-disponivel" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -94,7 +94,7 @@ export function DiaristServicosTab({
             name="hora_fim_disponivel"
             value={formData.hora_fim_disponivel}
             onChange={onChange}
-           aria-label="Hora Fim Disponivel" />
+          />
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export function DiaristServicosTab({
           value={formData.experiencia_anos}
           onChange={onChange}
           min={0}
-         aria-label="Experiencia Anos" />
+        />
       </div>
 
       <label className="flex items-center gap-2 cursor-pointer">
@@ -119,7 +119,7 @@ export function DiaristServicosTab({
           checked={formData.aceita_hora_extra}
           onChange={onChange}
           className="w-4 h-4 rounded"
-         aria-label="Aceita Hora Extra" />
+        />
         <span className="text-sm text-[hsl(var(--foreground))]">Aceita hora extra</span>
       </label>
     </div>

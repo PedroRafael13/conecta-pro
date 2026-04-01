@@ -130,7 +130,7 @@ export function BankAccountFormModal({
             onChange={handleChange}
             placeholder="Ex: Conta Principal, Conta Operacional"
             required
-           aria-label="Ex: Conta Principal, Conta Operacional" />
+          />
         </div>
 
         {/* Banco e Tipo */}
@@ -145,7 +145,7 @@ export function BankAccountFormModal({
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
               required
-             aria-label="Bank Name">
+            >
               <option value="">Selecione...</option>
               {BANKS.map((bank) => (
                 <option key={bank} value={bank}>
@@ -164,7 +164,7 @@ export function BankAccountFormModal({
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
               required
-             aria-label="Account Type">
+            >
               <option value="checking">Conta Corrente</option>
               <option value="savings">Poupanca</option>
             </select>
@@ -182,7 +182,7 @@ export function BankAccountFormModal({
               value={formData.agency}
               onChange={handleChange}
               placeholder="0000"
-             aria-label="0000" />
+            />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -193,7 +193,7 @@ export function BankAccountFormModal({
               value={formData.account_number}
               onChange={handleChange}
               placeholder="00000-0"
-             aria-label="00000-0" />
+            />
           </div>
         </div>
 
@@ -209,7 +209,7 @@ export function BankAccountFormModal({
             onChange={handleChange}
             placeholder="0,00"
             step={0.01}
-           aria-label="0,00" />
+          />
         </div>
 
         <ModalFooter>

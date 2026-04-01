@@ -157,7 +157,7 @@ export function CustomerFormModal({
             onChange={handleChange}
             placeholder="Nome completo ou razao social"
             required
-           aria-label="Nome completo ou razao social" />
+          />
         </div>
 
         {/* Email e Documento */}
@@ -172,7 +172,7 @@ export function CustomerFormModal({
               value={formData.email}
               onChange={handleChange}
               placeholder="cliente@email.com"
-             aria-label="cliente@email.com" />
+            />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -184,7 +184,7 @@ export function CustomerFormModal({
               onChange={handleDocumentChange}
               placeholder="000.000.000-00"
               maxLength={18}
-             aria-label="000.000.000-00" />
+            />
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export function CustomerFormModal({
             onChange={handlePhoneChange}
             placeholder="(00) 00000-0000"
             maxLength={15}
-           aria-label="(00) 00000-0000" />
+          />
         </div>
 
         {/* Endereco */}
@@ -212,7 +212,7 @@ export function CustomerFormModal({
             value={formData.address}
             onChange={handleChange}
             placeholder="Rua, numero, bairro, cidade - UF"
-           aria-label="Rua, numero, bairro, cidade - UF" />
+          />
         </div>
 
         <ModalFooter>

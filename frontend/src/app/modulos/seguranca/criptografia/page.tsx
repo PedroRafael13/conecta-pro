@@ -238,7 +238,7 @@ export default function CriptografiaPage() {
                   readOnly
                   rows={4}
                   className="font-mono text-sm"
-                 aria-label="Encrypt Result"/>
+                />
               </div>
             )}
           </CardContent>
@@ -312,7 +312,7 @@ export default function CriptografiaPage() {
                   value={decryptResult}
                   readOnly
                   rows={4}
-                 aria-label="Decrypt Result"/>
+                />
               </div>
             )}
           </CardContent>
