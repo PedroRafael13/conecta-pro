@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/clients", tags=["CRM - Clientes"])
 
 
+@router.get("")
 @router.get("/")
 async def listar_clientes(
     status: str = Query(None, description="Filtrar por status (active, inactive)"),
