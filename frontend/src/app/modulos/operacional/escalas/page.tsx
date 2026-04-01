@@ -284,7 +284,7 @@ export default function EscalasPage() {
                 placeholder="Buscar escala..."
                 className="pl-9"
                 value={searchTerm}
-                onChange={(e) = aria-label="Buscar Escala..."> setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex gap-2">

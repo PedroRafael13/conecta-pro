@@ -276,7 +276,7 @@ export default function ComodatosPage() {
             type="search"
             placeholder="Buscar por codigo, cliente ou equipamento..."
             value={search}
-            onChange={(e) = aria-label="Buscar Por Codigo, Cliente Ou Equipamento..."> {
+            onChange={(e) => {
               setSearch(e.target.value);
               setPage(0);
             }}

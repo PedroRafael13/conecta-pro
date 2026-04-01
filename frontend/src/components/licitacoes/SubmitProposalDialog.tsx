@@ -74,7 +74,7 @@ export function SubmitProposalDialog({
             id="observacoes"
             placeholder="Adicione observações sobre esta submissão..."
             value={observacoes}
-            onChange={(e) = aria-label="Adicione Observações Sobre Esta Submissão..."> setObservacoes(e.target.value)}
+            onChange={(e) => setObservacoes(e.target.value)}
             rows={4}
             disabled={isSubmitting}
           />

@@ -228,7 +228,7 @@ async def update_shift(
 @router.post(
     "/{shift_id}/check-in",
     response_model=ShiftResponse,
-    dependencies=[require_operacional_permission(Permission.SHIFTS_CHECKIN, status_code=201)],
+    dependencies=[require_operacional_permission(Permission.SHIFTS_CHECKIN)],
 )
 async def check_in(
     shift_id: str,
@@ -261,7 +261,7 @@ async def check_in(
 @router.post(
     "/{shift_id}/check-out",
     response_model=ShiftResponse,
-    dependencies=[require_operacional_permission(Permission.SHIFTS_CHECKIN, status_code=201)],
+    dependencies=[require_operacional_permission(Permission.SHIFTS_CHECKIN)],
 )
 async def check_out(
     shift_id: str,
@@ -299,7 +299,7 @@ async def check_out(
 @router.post(
     "/{shift_id}/mark-missed",
     response_model=ShiftResponse,
-    dependencies=[require_operacional_permission(Permission.SHIFTS_MARK_MISSED, status_code=201)],
+    dependencies=[require_operacional_permission(Permission.SHIFTS_MARK_MISSED)],
 )
 async def mark_as_missed(
     shift_id: str,

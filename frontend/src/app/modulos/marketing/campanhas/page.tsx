@@ -43,7 +43,7 @@ export default function CampanhasPage() {
 
       {showForm && (
         <div className="bg-white border rounded-xl p-4 space-y-3">
-          <input placeholder="Nome da campanha" value={form.name} onChange={e = aria-label="Nome Da Campanha"> setForm({...form, name: e.target.value})} className="w-full border rounded px-3 py-2" />
+          <input placeholder="Nome da campanha" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border rounded px-3 py-2" />
           <div className="flex gap-3">
             <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border rounded px-3 py-2">
               <option value="organic">Orgânico</option>
@@ -53,9 +53,9 @@ export default function CampanhasPage() {
               <option value="email">Email</option>
               <option value="indicacao">Indicação</option>
             </select>
-            <input type="number" placeholder="Budget R$" value={form.budget} onChange={e = aria-label="Budget  R$"> setForm({...form, budget: Number(e.target.value)})} className="border rounded px-3 py-2 w-40" />
+            <input type="number" placeholder="Budget R$" value={form.budget} onChange={e => setForm({...form, budget: Number(e.target.value)})} className="border rounded px-3 py-2 w-40" />
           </div>
-          <textarea placeholder="Descrição" value={form.description} onChange={e = aria-label="Descrição"> setForm({...form, description: e.target.value})} className="w-full border rounded px-3 py-2 h-20" />
+          <textarea placeholder="Descrição" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-3 py-2 h-20" />
           <button onClick={() => createMutation.mutate(form)} disabled={!form.name} className="bg-cyan-600 text-white px-4 py-2 rounded-lg disabled:opacity-50">Criar Campanha</button>
         </div>
       )}

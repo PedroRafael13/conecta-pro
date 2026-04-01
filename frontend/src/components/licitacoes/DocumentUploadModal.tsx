@@ -124,7 +124,7 @@ export function DocumentUploadModal({
               id="data_validade"
               type="date"
               value={formData.data_validade}
-              onChange={(e) = aria-label="Date">
+              onChange={(e) =>
                 setFormData({ ...formData, data_validade: e.target.value })
               }
             />

@@ -70,7 +70,7 @@ export function JournalEntryFormModal({ isOpen, onClose, onSubmit, isLoading = f
               <Input
                 type="date"
                 value={formData.date}
-                onChange={(e) = aria-label="Date"> handleChange('date', e.target.value)}
+                onChange={(e) => handleChange('date', e.target.value)}
                 required
               />
             </div>
@@ -83,7 +83,7 @@ export function JournalEntryFormModal({ isOpen, onClose, onSubmit, isLoading = f
                 step="0.01"
                 min="0.01"
                 value={formData.amount}
-                onChange={(e) = aria-label="Number"> handleChange('amount', e.target.value)}
+                onChange={(e) => handleChange('amount', e.target.value)}
                 placeholder="0,00"
                 required
               />

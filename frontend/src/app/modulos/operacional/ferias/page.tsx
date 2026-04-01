@@ -619,7 +619,7 @@ export default function FeriasPage() {
               <Input
                 placeholder="Nome do colaborador"
                 value={newForm.employeeId}
-                onChange={e = aria-label="Nome Do Colaborador"> setNewForm(f => ({ ...f, employeeId: e.target.value }))}
+                onChange={e => setNewForm(f => ({ ...f, employeeId: e.target.value }))}
               />
             )}
           </div>
@@ -647,7 +647,7 @@ export default function FeriasPage() {
               <Input
                 type="date"
                 value={newForm.startDate}
-                onChange={e = aria-label="Date"> setNewForm(f => ({ ...f, startDate: e.target.value }))}
+                onChange={e => setNewForm(f => ({ ...f, startDate: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
@@ -658,7 +658,7 @@ export default function FeriasPage() {
                 type="date"
                 value={newForm.endDate}
                 min={newForm.startDate}
-                onChange={e = aria-label="Date"> setNewForm(f => ({ ...f, endDate: e.target.value }))}
+                onChange={e => setNewForm(f => ({ ...f, endDate: e.target.value }))}
               />
             </div>
           </div>

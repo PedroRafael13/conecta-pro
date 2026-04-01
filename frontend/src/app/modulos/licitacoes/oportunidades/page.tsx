@@ -509,7 +509,7 @@ export default function OportunidadesPage() {
                   max={100}
                   placeholder="0"
                   value={filterScoreMin}
-                  onChange={(e) = aria-label="0"> { setFilterScoreMin(e.target.value); setPage(1); }}
+                  onChange={(e) => { setFilterScoreMin(e.target.value); setPage(1); }}
                   className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))]"
                 />
               </div>
@@ -521,7 +521,7 @@ export default function OportunidadesPage() {
                   type="text"
                   placeholder="Ex: PNCP"
                   value={filterPortal}
-                  onChange={(e) = aria-label="Ex:  P N C P"> { setFilterPortal(e.target.value); setPage(1); }}
+                  onChange={(e) => { setFilterPortal(e.target.value); setPage(1); }}
                   className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))]"
                 />
               </div>
@@ -532,7 +532,7 @@ export default function OportunidadesPage() {
                 <input
                   type="date"
                   value={filterDateFrom}
-                  onChange={(e) = aria-label="Date"> { setFilterDateFrom(e.target.value); setPage(1); }}
+                  onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1); }}
                   className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))]"
                 />
               </div>
@@ -543,7 +543,7 @@ export default function OportunidadesPage() {
                 <input
                   type="date"
                   value={filterDateTo}
-                  onChange={(e) = aria-label="Date"> { setFilterDateTo(e.target.value); setPage(1); }}
+                  onChange={(e) => { setFilterDateTo(e.target.value); setPage(1); }}
                   className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))]"
                 />
               </div>

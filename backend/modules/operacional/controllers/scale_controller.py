@@ -292,7 +292,7 @@ async def update_scale(
 @router.post(
     "/{scale_id}/submit",
     response_model=ScaleResponse,
-    dependencies=[require_operacional_permission(Permission.SCALES_CREATE, status_code=201)],
+    dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
 )
 async def submit_scale_for_approval(
     scale_id: UUID,
@@ -333,7 +333,7 @@ async def submit_scale_for_approval(
 @router.post(
     "/{scale_id}/approve",
     response_model=ScaleResponse,
-    dependencies=[require_operacional_permission(Permission.SCALES_APPROVE, status_code=201)],
+    dependencies=[require_operacional_permission(Permission.SCALES_APPROVE)],
 )
 async def approve_scale(
     scale_id: UUID,
@@ -366,7 +366,7 @@ async def approve_scale(
 @router.post(
     "/{scale_id}/reject",
     response_model=ScaleResponse,
-    dependencies=[require_operacional_permission(Permission.SCALES_APPROVE, status_code=201)],
+    dependencies=[require_operacional_permission(Permission.SCALES_APPROVE)],
 )
 async def reject_scale(
     scale_id: UUID,
@@ -402,7 +402,7 @@ async def reject_scale(
 @router.post(
     "/{scale_id}/publish",
     response_model=ScaleResponse,
-    dependencies=[require_operacional_permission(Permission.SCALES_PUBLISH, status_code=201)],
+    dependencies=[require_operacional_permission(Permission.SCALES_PUBLISH)],
 )
 async def publish_scale(
     scale_id: UUID,

@@ -352,7 +352,7 @@ export default function ReembolsosOperacionalPage() {
               type="search"
               placeholder="Buscar por codigo, titulo..."
               value={searchTerm}
-              onChange={(e) = aria-label="Buscar Por Codigo, Titulo..."> setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               icon={<Search className="w-4 h-4" />}
             />
           </div>
@@ -658,7 +658,7 @@ export default function ReembolsosOperacionalPage() {
               className="w-full bg-zinc-800 text-white rounded p-3 text-sm min-h-[100px] border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
               placeholder="Descreva o motivo da rejeicao..."
               value={rejectReason}
-              onChange={e = aria-label="Descreva O Motivo Da Rejeicao..."> setRejectReason(e.target.value)}
+              onChange={e => setRejectReason(e.target.value)}
             />
             <div className="flex gap-3 mt-4">
               <button

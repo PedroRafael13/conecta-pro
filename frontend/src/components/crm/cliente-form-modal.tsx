@@ -93,7 +93,7 @@ export function ClienteFormModal({
               id="email"
               type="email"
               value={form.email}
-              onChange={(e) = aria-label="Email"> setForm({ ...form, email: e.target.value })}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="contato@empresa.com"
             />
           </div>

@@ -287,7 +287,7 @@ export default function PostosPage() {
               type="search"
               placeholder="Buscar por nome, codigo ou endereco..."
               value={searchTerm}
-              onChange={(e) = aria-label="Buscar Por Nome, Codigo Ou Endereco..."> setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               icon={<Search className="w-4 h-4" />}
             />
           </div>
@@ -409,7 +409,7 @@ export default function PostosPage() {
                     <input
                       type="checkbox"
                       checked={filters.requires_armed === true}
-                      onChange={(e) = aria-label="Checkbox">
+                      onChange={(e) =>
                         setFilters({ ...filters, requires_armed: e.target.checked ? true : undefined })
                       }
                       className="rounded border-[hsl(var(--border))]"
@@ -420,7 +420,7 @@ export default function PostosPage() {
                     <input
                       type="checkbox"
                       checked={filters.requires_vehicle === true}
-                      onChange={(e) = aria-label="Checkbox">
+                      onChange={(e) =>
                         setFilters({ ...filters, requires_vehicle: e.target.checked ? true : undefined })
                       }
                       className="rounded border-[hsl(var(--border))]"

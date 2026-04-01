@@ -96,9 +96,7 @@ async def get_notification(
     return NotificationResponse.model_validate(notification)
 
 
-@router.post(
-    "/{notification_id}/read", response_model=NotificationResponse, summary="Marcar como lida", status_code=201
-)
+@router.post("/{notification_id}/read", response_model=NotificationResponse, summary="Marcar como lida")
 async def mark_as_read(
     notification_id: UUID,
     db: AsyncSession = Depends(get_async_session),
@@ -118,7 +116,7 @@ async def mark_as_read(
     return NotificationResponse.model_validate(notification)
 
 
-@router.post("/mark-multiple-read", summary="Marcar múltiplas como lidas", status_code=201)
+@router.post("/mark-multiple-read", summary="Marcar múltiplas como lidas")
 async def mark_multiple_as_read(
     notification_ids: list[UUID] = Body(..., min_length=1, max_length=100),
     db: AsyncSession = Depends(get_async_session),
@@ -136,7 +134,7 @@ async def mark_multiple_as_read(
     }
 
 
-@router.post("/mark-all-read", summary="Marcar todas como lidas", status_code=201)
+@router.post("/mark-all-read", summary="Marcar todas como lidas")
 async def mark_all_as_read(
     db: AsyncSession = Depends(get_async_session),
     current_user: dict = Depends(get_current_user),
@@ -153,9 +151,7 @@ async def mark_all_as_read(
     }
 
 
-@router.post(
-    "/{notification_id}/dismiss", response_model=NotificationResponse, summary="Descartar notificação", status_code=201
-)
+@router.post("/{notification_id}/dismiss", response_model=NotificationResponse, summary="Descartar notificação")
 async def dismiss_notification(
     notification_id: UUID,
     db: AsyncSession = Depends(get_async_session),
@@ -214,7 +210,7 @@ async def send_notification(
 @router.post(
     "/bulk",
     summary="Enviar notificação em lote",
-    dependencies=[Depends(require_roles(["admin", "hr"], status_code=201))],
+    dependencies=[Depends(require_roles(["admin", "hr"]))],
 )
 async def send_bulk_notification(
     employee_ids: list[UUID] = Body(..., min_length=1, max_length=1000),

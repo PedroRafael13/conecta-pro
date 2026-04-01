@@ -451,7 +451,7 @@ export default function BoletosPage() {
                     <Input
                       placeholder="Ex: João da Silva"
                       value={form.payer_name}
-                      onChange={(e) = aria-label="Ex:  João Da  Silva"> setField('payer_name', e.target.value)}
+                      onChange={(e) => setField('payer_name', e.target.value)}
                     />
                   </div>
 
@@ -461,7 +461,7 @@ export default function BoletosPage() {
                     <Input
                       placeholder="000.000.000-00 ou 00.000.000/0001-00"
                       value={form.payer_document}
-                      onChange={(e) = aria-label="000.000.000 00 Ou 00.000.000/0001 00"> handleDocumentChange(e.target.value)}
+                      onChange={(e) => handleDocumentChange(e.target.value)}
                       maxLength={18}
                     />
                   </div>
@@ -476,7 +476,7 @@ export default function BoletosPage() {
                         step="0.01"
                         placeholder="0,00"
                         value={form.amount}
-                        onChange={(e) = aria-label="0,00"> setField('amount', e.target.value)}
+                        onChange={(e) => setField('amount', e.target.value)}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -485,7 +485,7 @@ export default function BoletosPage() {
                         type="date"
                         value={form.due_date}
                         min={new Date().toISOString().split('T')[0]}
-                        onChange={(e) = aria-label="Date"> setField('due_date', e.target.value)}
+                        onChange={(e) => setField('due_date', e.target.value)}
                       />
                     </div>
                   </div>
@@ -497,7 +497,7 @@ export default function BoletosPage() {
                       rows={3}
                       placeholder="Ex: Mensalidade de vigilância — Janeiro/2026"
                       value={form.description}
-                      onChange={(e) = aria-label="Ex:  Mensalidade De Vigilância —  Janeiro/2026"> setField('description', e.target.value)}
+                      onChange={(e) => setField('description', e.target.value)}
                       className={cn(
                         'w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
                         'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',

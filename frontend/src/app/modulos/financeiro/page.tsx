@@ -1004,7 +1004,7 @@ export default function FinanceiroPage() {
                   <input
                     type="text"
                     value={chatInput}
-                    onChange={e = aria-label="Text"> setChatInput(e.target.value)}
+                    onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && sendAdvisorMessage()}
                     placeholder="Pergunte algo sobre suas finanças..."
                     className="flex-1 text-xs px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] focus:ring-1 focus:ring-indigo-400 focus:outline-none"

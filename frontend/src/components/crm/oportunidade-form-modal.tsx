@@ -93,7 +93,7 @@ export function OportunidadeFormModal({
               id="valor_estimado"
               type="number"
               value={form.valor_estimado}
-              onChange={(e) = aria-label="Number"> setForm({ ...form, valor_estimado: Number(e.target.value) })}
+              onChange={(e) => setForm({ ...form, valor_estimado: Number(e.target.value) })}
               placeholder="0,00"
             />
           </div>

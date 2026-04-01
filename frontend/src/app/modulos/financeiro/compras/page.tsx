@@ -286,7 +286,7 @@ export default function ComprasPage() {
               type="search"
               placeholder="Buscar por codigo, descricao ou fornecedor..."
               value={searchTerm}
-              onChange={(e) = aria-label="Buscar Por Codigo, Descricao Ou Fornecedor..."> setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               icon={<Search className="w-4 h-4" />}
             />
           </div>

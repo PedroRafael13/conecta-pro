@@ -449,7 +449,7 @@ export default function ConciliacaoPage() {
                 : 'Buscar transacoes...'
             }
             value={search}
-            onChange={(e) = aria-label="Search"> setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
           />
         </div>
@@ -1105,7 +1105,7 @@ export default function ConciliacaoPage() {
                   type="file"
                   accept=".ofx,.OFX"
                   className="hidden"
-                  onChange={(e) = aria-label="File"> {
+                  onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) handleImportOFX(file);
                   }}

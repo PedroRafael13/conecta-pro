@@ -287,7 +287,7 @@ export function ScaleGenerateModal({
           <Input
             placeholder="Buscar funcionario..."
             value={employeeSearch}
-            onChange={(e) = aria-label="Buscar Funcionario..."> setEmployeeSearch(e.target.value)}
+            onChange={(e) => setEmployeeSearch(e.target.value)}
             className="mb-3"
           />
           <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
@@ -308,7 +308,7 @@ export function ScaleGenerateModal({
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={(e) = aria-label="Checkbox"> {
+                      onChange={(e) => {
                         if (e.target.checked) {
                           setEmployeeIds((prev) => [...prev, employee.id]);
                         } else {
@@ -336,7 +336,7 @@ export function ScaleGenerateModal({
               <input
                 type="checkbox"
                 checked={config.consider_holidays}
-                onChange={(e) = aria-label="Checkbox"> setConfig({ ...config, consider_holidays: e.target.checked })}
+                onChange={(e) => setConfig({ ...config, consider_holidays: e.target.checked })}
                 className="rounded border-[hsl(var(--border))]"
               />
               <span className="text-sm text-[hsl(var(--foreground))]">
@@ -347,7 +347,7 @@ export function ScaleGenerateModal({
               <input
                 type="checkbox"
                 checked={config.balance_night_shifts}
-                onChange={(e) = aria-label="Checkbox"> setConfig({ ...config, balance_night_shifts: e.target.checked })}
+                onChange={(e) => setConfig({ ...config, balance_night_shifts: e.target.checked })}
                 className="rounded border-[hsl(var(--border))]"
               />
               <span className="text-sm text-[hsl(var(--foreground))]">
@@ -362,7 +362,7 @@ export function ScaleGenerateModal({
                 <Input
                   type="number"
                   value={config.max_consecutive_days}
-                  onChange={(e) = aria-label="Number"> setConfig({ ...config, max_consecutive_days: Number(e.target.value) })}
+                  onChange={(e) => setConfig({ ...config, max_consecutive_days: Number(e.target.value) })}
                   min={1}
                   max={7}
                 />
@@ -374,7 +374,7 @@ export function ScaleGenerateModal({
                 <Input
                   type="number"
                   value={config.min_rest_hours}
-                  onChange={(e) = aria-label="Number"> setConfig({ ...config, min_rest_hours: Number(e.target.value) })}
+                  onChange={(e) => setConfig({ ...config, min_rest_hours: Number(e.target.value) })}
                   min={8}
                   max={24}
                 />

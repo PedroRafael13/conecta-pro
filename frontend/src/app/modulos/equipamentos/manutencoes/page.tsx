@@ -243,7 +243,7 @@ export default function ManutencoesPage() {
               <Input
                 placeholder="Buscar por equipamento, técnico, código..."
                 value={search}
-                onChange={(e) = aria-label="Buscar Por Equipamento, Técnico, Código..."> {
+                onChange={(e) => {
                   setSearch(e.target.value);
                   setSkip(0);
                 }}

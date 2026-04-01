@@ -273,7 +273,7 @@ export default function ContatosPage() {
                   <Input
                     type="email"
                     value={formData.email}
-                    onChange={(e) = aria-label="Email"> setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="email@exemplo.com"
                   />
                 </div>

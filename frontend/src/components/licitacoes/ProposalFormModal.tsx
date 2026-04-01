@@ -269,7 +269,7 @@ export function ProposalFormModal({
                 step="0.01"
                 min="0"
                 value={formData.valor_global}
-                onChange={(e) = aria-label="Number">
+                onChange={(e) =>
                   handleNumberChange('valor_global', e.target.value)
                 }
                 placeholder="0.00"
@@ -291,7 +291,7 @@ export function ProposalFormModal({
                 type="number"
                 min="0"
                 value={formData.prazo_entrega || ''}
-                onChange={(e) = aria-label="Number">
+                onChange={(e) =>
                   handleNumberChange('prazo_entrega', e.target.value)
                 }
                 placeholder="30"
@@ -308,7 +308,7 @@ export function ProposalFormModal({
                 type="number"
                 min="0"
                 value={formData.validade_proposta || ''}
-                onChange={(e) = aria-label="Number">
+                onChange={(e) =>
                   handleNumberChange('validade_proposta', e.target.value)
                 }
                 placeholder="60"
