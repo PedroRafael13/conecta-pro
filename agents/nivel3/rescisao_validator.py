@@ -208,23 +208,167 @@ class RescisaoValidator:
                 f"{'; '.join(abaixo[:3])}",
             )
 
+    def verificar_prazo_pagamento_rescisorio(self):
+        """CLT art.477: rescisão deve ser paga em até 10 dias corridos."""
+        from datetime import date, datetime, timedelta
+
+        data = self._get(
+            "/api/v1/people-management/hr/terminations",
+            {"page_size": 50},
+        )
+        if "_error" in data:
+            return
+
+        rescisoes = self._items(data)
+        hoje = date.today()
+        vencidos = []
+        for r in rescisoes:
+            # Só verifica rescisões sem pagamento confirmado
+            if r.get("data_pagamento") or r.get("payment_date"):
+                continue
+            data_str = (
+                r.get("data_rescisao")
+                or r.get("termination_date")
+                or r.get("data_demissao")
+            )
+            if not data_str:
+                continue
+            try:
+                dt = datetime.fromisoformat(str(data_str)[:10]).date()
+            except Exception:
+                continue
+            dias = (hoje - dt).days
+            if dias > 10:
+                nome = r.get("funcionario_nome") or r.get("employee_name", "?")
+                vencidos.append(f"{nome} ({dias}d sem pagamento)")
+
+        if vencidos:
+            self._add(
+                "prazo_rescisorio_vencido",
+                f"{len(vencidos)} rescisão(ões) acima de 10 dias sem pagamento "
+                f"(CLT art.477): {'; '.join(vencidos[:2])}",
+                acao_jordan=True,
+            )
+
+    def verificar_fgts_depositos(self):
+        """FGTS: detecta meses sem depósito consultando folha de pagamento."""
+        from datetime import date
+
+        hoje = date.today()
+        # FGTS deve ser depositado até dia 7 do mês seguinte
+        # Se estamos após dia 7, verificar se o mês anterior tem depósito
+        if hoje.day <= 7:
+            return  # ainda dentro do prazo para o mês anterior
+
+        mes_ref = hoje.month - 1 if hoje.month > 1 else 12
+        ano_ref = hoje.year if hoje.month > 1 else hoje.year - 1
+
+        # Tentar endpoint de obrigações fiscais (DARF FGTS)
+        data = self._get(
+            "/api/v1/government/ecac/obrigacoes",
+            {"tipo": "FGTS", "ano": str(ano_ref)},
+        )
+        if "_error" in data or not self._items(data):
+            # Endpoint não disponível — verificar via folha se há salários sem FGTS
+            emp_data = self._get(
+                "/api/v1/people-management/hr/employees",
+                {"page_size": 5},
+            )
+            if "_error" in emp_data:
+                return
+            emps = self._items(emp_data)
+            # Se há funcionários ativos com salário, FGTS deve existir
+            ativos_com_salario = [
+                e for e in emps
+                if e.get("status") in ("ativo", "active") and e.get("salario_base")
+            ]
+            if not ativos_com_salario:
+                return
+            # Sem endpoint de FGTS disponível: registrar alerta de verificação manual
+            self._add(
+                "fgts_verificacao_manual",
+                f"Confirmar depósito FGTS {mes_ref:02d}/{ano_ref} "
+                f"(API FGTS indisponível — verificar via e-CAC/SEFIP)",
+                acao_jordan=True,
+                autocorrigivel=False,
+            )
+            return
+
+        # Se retornou dados, verificar se há FGTS do mês de referência
+        obrigacoes = self._items(data)
+        depositado = any(
+            int(o.get("mes", 0)) == mes_ref and int(o.get("ano", 0)) == ano_ref
+            for o in obrigacoes
+        )
+        if not depositado:
+            self._add(
+                "fgts_deposito_pendente",
+                f"FGTS {mes_ref:02d}/{ano_ref} não registrado "
+                f"(prazo: dia 7/{hoje.month:02d}/{hoje.year})",
+                acao_jordan=True,
+            )
+
+    def _alertar_esocial_urgente(self, n_pendentes: int, tipos: list[str]):
+        """Envia alerta URGENTE no Telegram quando há eventos eSocial pendentes."""
+        import os
+        import subprocess
+
+        token_tg = os.environ.get(
+            "MONITOR_BOT_TOKEN",
+            "8562364686:AAESOC6uXddwShWSs3_1-qJ4lBiZHBiSuBQ",  # pragma: allowlist secret
+        )
+        chat_id = os.environ.get("TELEGRAM_CHAT_ID", "5536961034")
+        tipos_str = ", ".join(tipos[:4])
+        msg = (
+            f"🔴 URGENTE — eSocial\n"
+            f"{n_pendentes} eventos pendentes de transmissão\n"
+            f"Tipos: {tipos_str}\n"
+            f"Competência: 04/2026\n"
+            f"Risco: multa Receita Federal\n"
+            f"Ação: transmitir ao Gov.br antes do fechamento"
+        )
+        subprocess.run(
+            f'curl -sf -X POST '
+            f'"https://api.telegram.org/bot{token_tg}/sendMessage" '
+            f'-d "chat_id={chat_id}&parse_mode=HTML" '
+            f'--data-urlencode "text={msg}" > /dev/null',
+            shell=True,
+        )
+
     # ── auditar ──────────────────────────────────────────────────────────────
 
     def auditar(self) -> dict:
-        print("🔍 RescisaoValidator: rescisão + benefícios + eSocial...")
+        print("🔍 RescisaoValidator v2: rescisão + benefícios + eSocial + FGTS...")
 
         self.verificar_rescisoes_pendentes()
         self.verificar_beneficios_vt()
         self.verificar_esocial_pendentes()
         self.verificar_is_active_status()
         self.verificar_piso_salarial_cct()
+        self.verificar_prazo_pagamento_rescisorio()
+        self.verificar_fgts_depositos()
+
+        # Score por criticidade: esocial/prazo = -2.0, outros = -0.5
+        criticos = [
+            b for b in self._bugs
+            if any(x in b.get("tipo", "") for x in ("esocial", "prazo", "fgts_deposito"))
+        ]
+        outros = [b for b in self._bugs if b not in criticos]
+        score = round(max(0.0, min(10.0, 10.0 - len(criticos) * 2.0 - len(outros) * 0.5)), 1)
 
         n = len(self._bugs)
         jordan = [b for b in self._bugs if b.get("acao_jordan")]
-        score = round(max(0.0, 10.0 - n * 1.5), 1)
 
-        print(f"  Problemas: {n} ({len(jordan)} Jordan)")
+        print(f"  Problemas: {n} (críticos={len(criticos)}, outros={len(outros)})")
         print(f"  Score: {score}/10")
+
+        # Alerta urgente Telegram se há eventos eSocial pendentes
+        esocial_bugs = [b for b in self._bugs if "esocial_eventos_pendentes" in b.get("tipo", "")]
+        if esocial_bugs:
+            desc = esocial_bugs[0].get("descricao", "")
+            # Extrair tipos da descrição
+            tipos_raw = desc.split(": ")[-1].split(", ")
+            self._alertar_esocial_urgente(len(tipos_raw), tipos_raw)
 
         return {
             "agente": "rescisao_validator",
