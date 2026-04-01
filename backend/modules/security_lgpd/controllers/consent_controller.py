@@ -5,14 +5,14 @@ Controller de Consentimento LGPD.
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
+from core.auth.dependencies import get_current_user
 from modules.security_lgpd.schemas.common import StandardResponse
 from modules.security_lgpd.schemas.consent import ConsentRequest
 from modules.security_lgpd.services.consent_service import ConsentService
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/consent", tags=["LGPD - Consentimento"])
 
 
@@ -23,16 +23,13 @@ router = APIRouter(prefix="/consent", tags=["LGPD - Consentimento"])
     summary="Registra consentimento LGPD",
     description="Registra consentimento do titular conforme Art. 7 LGPD.",
 )
-async def register_consent(request: ConsentRequest) -> StandardResponse:
+async def register_consent(request: ConsentRequest, current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Registra consentimento de titular de dados.
-
     Args:
         request: Dados do consentimento.
-
     Returns:
         StandardResponse: Confirmacao do registro.
-
     Raises:
         HTTPException: Se falhar o registro.
     """
@@ -46,19 +43,16 @@ async def register_consent(request: ConsentRequest) -> StandardResponse:
             description=request.description,
             expiration_days=request.expiration_days,
         )
-
         logger.info(
             "Consentimento registrado: titular=%s, finalidade=%s",
             request.titular_id,
             request.purpose,
         )
-
         return StandardResponse(
             success=True,
             message="Consentimento registrado com sucesso",
             data=result,
         )
-
     except ValueError as e:
         logger.warning("Erro de validacao no consentimento: %s", str(e))
         raise HTTPException(
@@ -74,6 +68,37 @@ async def register_consent(request: ConsentRequest) -> StandardResponse:
 
 
 @router.get(
+    "/list",
+    response_model=StandardResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Lista todos os consentimentos",
+    description="Retorna lista de todos os consentimentos registrados.",
+)
+async def list_consents(
+    limit: int = Query(100, ge=1, le=1000, description="Limite de resultados"),
+    offset: int = Query(0, ge=0, description="Offset para paginacao"),
+    current_user: dict = Depends(get_current_user),
+) -> StandardResponse:
+    """Lista todos os consentimentos registrados."""
+    try:
+        service = ConsentService()
+        all_consents = list(service._consents.values())
+        total = len(all_consents)
+        page = all_consents[offset : offset + limit]
+        return StandardResponse(
+            success=True,
+            message=f"Encontrados {total} consentimentos",
+            data={"consents": page, "total": total, "limit": limit, "offset": offset},
+        )
+    except Exception as e:
+        logger.error("Erro ao listar consentimentos: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno ao listar consentimentos",
+        )
+
+
+@router.get(
     "/{titular_id}",
     response_model=StandardResponse,
     status_code=status.HTTP_200_OK,
@@ -81,27 +106,23 @@ async def register_consent(request: ConsentRequest) -> StandardResponse:
     description="Retorna todos os consentimentos de um titular.",
 )
 async def get_consents(
-    titular_id: UUID = Path(..., description="UUID do titular"),
+    titular_id: UUID = Path(..., description="UUID do titular"), current_user: dict = Depends(get_current_user)
 ) -> StandardResponse:
     """
     Consulta consentimentos de um titular.
-
     Args:
         titular_id: UUID do titular.
-
     Returns:
         StandardResponse: Lista de consentimentos.
     """
     try:
         service = ConsentService()
         result = service.get_consents_by_titular(str(titular_id))
-
         return StandardResponse(
             success=True,
             message=f"Encontrados {result['total']} consentimentos",
             data=result,
         )
-
     except Exception as e:
         logger.error("Erro ao consultar consentimentos: %s", str(e))
         raise HTTPException(
@@ -120,29 +141,25 @@ async def get_consents(
 async def revoke_consent(
     consent_id: str = Path(..., description="ID do consentimento"),
     reason: str = Query(..., min_length=5, description="Motivo da revogacao"),
+    current_user: dict = Depends(get_current_user),
 ) -> StandardResponse:
     """
     Revoga um consentimento.
-
     Args:
         consent_id: ID do consentimento.
         reason: Motivo da revogacao.
-
     Returns:
         StandardResponse: Confirmacao da revogacao.
     """
     try:
         service = ConsentService()
         result = service.revoke_consent(consent_id, reason)
-
         logger.info("Consentimento revogado: %s", consent_id)
-
         return StandardResponse(
             success=True,
             message="Consentimento revogado com sucesso",
             data=result,
         )
-
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -163,16 +180,14 @@ async def revoke_consent(
     summary="Lista finalidades de consentimento",
     description="Retorna finalidades de consentimento disponiveis.",
 )
-async def list_purposes() -> StandardResponse:
+async def list_purposes(current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Lista finalidades de consentimento disponiveis.
-
     Returns:
         StandardResponse: Lista de finalidades.
     """
     service = ConsentService()
     purposes = service.list_purposes()
-
     return StandardResponse(
         success=True,
         message="Finalidades de consentimento disponiveis",
@@ -187,16 +202,14 @@ async def list_purposes() -> StandardResponse:
     summary="Lista bases legais LGPD",
     description="Retorna bases legais LGPD disponiveis.",
 )
-async def list_legal_bases() -> StandardResponse:
+async def list_legal_bases(current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Lista bases legais LGPD disponiveis.
-
     Returns:
         StandardResponse: Lista de bases legais.
     """
     service = ConsentService()
     bases = service.list_legal_bases()
-
     return StandardResponse(
         success=True,
         message="Bases legais LGPD disponiveis",
