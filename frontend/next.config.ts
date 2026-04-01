@@ -180,16 +180,16 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Rewrites para API
+  // Rewrites para API — proxy para FastAPI em qualquer ambiente (dev e produção)
   async rewrites() {
-    return process.env.NODE_ENV === 'development'
-      ? [
-          {
-            source: '/api/v1/:path*',
-            destination: 'http://localhost:8080/api/v1/:path*',
-          },
-        ]
-      : [];
+    const backendHost =
+      process.env.BACKEND_URL || 'http://backend:8080';
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${backendHost}/api/v1/:path*`,
+      },
+    ];
   },
 
   // Webpack config (fallback quando Turbopack não está disponível)
