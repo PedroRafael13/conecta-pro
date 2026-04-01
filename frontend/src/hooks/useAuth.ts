@@ -53,9 +53,15 @@ export function useAuth() {
       }
 
       try {
-        const response = await api.get<User>('/api/v1/auth/me');
+        // BUG-01 fix: usar proxy local em vez de URL externa para evitar
+        // falhas de CORS/rede que causavam logout ao navegar entre abas
+        const res = await fetch('/api/v1/auth/me', {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const userData: User = await res.json();
         setState({
-          user: response.data,
+          user: userData,
           isLoading: false,
           isAuthenticated: true,
         });

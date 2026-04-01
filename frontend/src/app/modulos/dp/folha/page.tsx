@@ -172,7 +172,8 @@ export default function FolhaPage() {
   };
 
   // Summary values from dashboard/resumo or computed
-  const totalBruto = resumo?.total_bruto || dashboard?.total_bruto || employees.reduce((a, e) => a + (e.total_proventos || e.salario_bruto || e.salario_base || e.salary || e.salary_proposed || 0), 0);
+  // BUG-02 fix: backend retorna total_proventos, não total_bruto
+  const totalBruto = resumo?.total_proventos ?? dashboard?.total_proventos ?? resumo?.total_bruto ?? dashboard?.total_bruto ?? employees.reduce((a, e) => a + (e.total_proventos || e.salario_bruto || e.salario_base || e.salary || e.salary_proposed || 0), 0);
   const totalDescontos = resumo?.total_descontos || dashboard?.total_descontos || employees.reduce((a, e) => a + (e.total_descontos || 0), 0);
   const totalLiquido = resumo?.total_liquido || dashboard?.total_liquido || (totalBruto - totalDescontos);
   const totalInss = resumo?.total_inss || dashboard?.total_inss || 0;
