@@ -6,13 +6,14 @@ from base_agent import BaseAgent
 
 # ─── FINANCEIRO ─────────────────────────────────
 
+COND = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+
+
 class AgenteDashboardFinanceiro(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "dashboard"
     ENDPOINTS = [
-        '/api/v1/financial/bi/dashboard',
-        '/api/v1/financial/bi/revenue',
-        '/api/v1/financial/bi/cashflow',
+        f'/api/v1/financial/bi/dashboard?condominio_id={COND}',
     ]
     CONHECE_BUGS = [
         {
@@ -51,8 +52,9 @@ class AgenteContasPagar(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "contas_pagar"
     ENDPOINTS = [
-        '/api/v1/financial/payables',
-        '/api/v1/financial/payables/upcoming',
+        f'/api/v1/financial/payables?condominio_id={COND}',
+        f'/api/v1/financial/payables/stats?condominio_id={COND}',
+        f'/api/v1/financial/payables/overdue?condominio_id={COND}',
     ]
     CONHECE_BUGS = [
         {
@@ -80,10 +82,9 @@ class AgenteContasReceber(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "contas_receber"
     ENDPOINTS = [
-        '/api/v1/financial/receivables',
-        '/api/v1/financial/receivables/upcoming',
-        '/api/v1/financial/receivables/'
-        'installments/pending',
+        f'/api/v1/financial/receivables?condominio_id={COND}',
+        f'/api/v1/financial/receivables/stats?condominio_id={COND}',
+        f'/api/v1/financial/receivables/installments/pending?condominio_id={COND}',
     ]
     CONHECE_BUGS = [
         {
@@ -112,8 +113,7 @@ class AgenteFluxoCaixa(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "fluxo_caixa"
     ENDPOINTS = [
-        '/api/v1/financial/cashflow/dashboard',
-        '/api/v1/financial/cashflow/forecast',
+        f'/api/v1/financial/cashflow/dashboard?condominio_id={COND}',
     ]
     CONHECE_BUGS = []
 
@@ -122,8 +122,7 @@ class AgenteConciliacaoBancaria(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "conciliacao_bancaria"
     ENDPOINTS = [
-        '/api/v1/financial/bank-transactions',
-        '/api/v1/financial/bank-reconciliations',
+        f'/api/v1/financial/bank-accounts?condominio_id={COND}',
     ]
     CONHECE_BUGS = [
         {
@@ -146,8 +145,7 @@ class AgenteBoletos(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "boletos_cobr"
     ENDPOINTS = [
-        '/api/v1/financial/boletos',
-        '/api/v1/financial/cobrancas',
+        f'/api/v1/financial/billing-rules?condominio_id={COND}',
     ]
     CONHECE_BUGS = []
 
@@ -156,7 +154,7 @@ class AgenteFornecedores(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "fornecedores"
     ENDPOINTS = [
-        '/api/v1/financial/suppliers',
+        f'/api/v1/financial/suppliers?condominio_id={COND}',
     ]
     CONHECE_BUGS = []
 
@@ -165,10 +163,9 @@ class AgenteContabilidade(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "contabilidade"
     ENDPOINTS = [
-        '/api/v1/financial/accounting/cost-centers',
-        '/api/v1/financial/accounting/periods',
-        '/api/v1/financial/accounting/'
-        'trial-balances',
+        f'/api/v1/financial/accounting/accounts?condominio_id={COND}',
+        f'/api/v1/financial/accounting/cost-centers?condominio_id={COND}',
+        f'/api/v1/financial/accounting/periods?condominio_id={COND}',
     ]
     CONHECE_BUGS = [
         {
@@ -185,7 +182,7 @@ class AgenteFaturamento(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "faturamento"
     ENDPOINTS = [
-        '/api/v1/financial/billing',
+        f'/api/v1/financial/billing-rules?condominio_id={COND}',
     ]
     CONHECE_BUGS = []
 
@@ -194,7 +191,7 @@ class AgentePrecificacao(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "precificacao"
     ENDPOINTS = [
-        '/api/v1/financial/pricing',
+        f'/api/v1/financial/contracts',
     ]
     CONHECE_BUGS = []
 
@@ -203,7 +200,7 @@ class AgenteRelatoriosFinanceiros(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "relatorios_fin"
     ENDPOINTS = [
-        '/api/v1/financial/reports',
+        f'/api/v1/financial/relatorios/dre?condominio_id={COND}&ano=2026',
     ]
     CONHECE_BUGS = []
 
