@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser, get_current_active_user
 from core.database import get_db
+from modules.operacional.models.employee import Employee
 
 from .models import VacationRequest
 from .schemas import (
@@ -81,9 +82,17 @@ async def create_vacation_request(
     delta = (data.end_date - data.start_date).days + 1
     days_str = f"{delta} dia{'s' if delta > 1 else ''}"
 
+    # BUG-03 fix: auto-preencher employee_name quando não fornecido
+    employee_name = data.employee_name
+    if not employee_name:
+        emp_result = await db.execute(select(Employee).where(Employee.id == data.employee_id))
+        emp = emp_result.scalar_one_or_none()
+        if emp:
+            employee_name = emp.nome
+
     req = VacationRequest(
         employee_id=str(data.employee_id),
-        employee_name=data.employee_name,
+        employee_name=employee_name,
         type=data.type,
         status="pendente",
         start_date=data.start_date,

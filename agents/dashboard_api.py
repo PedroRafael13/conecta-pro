@@ -178,6 +178,10 @@ def collect():
         "uptime_history": uptime_data,
         "scheduled_actions": scheduled,
         "celery_queue_length": int(celery_queue) if celery_queue.isdigit() else 0,
+        # Dados do OrchestradorUnificado (substitui OpenClaw)
+        "padroes_aprendidos": get_patterns_aprendidos(),
+        "monitor_state": get_monitor_state(),
+        "ultimo_ciclo": get_ultimo_ciclo(),
     }
 
 
@@ -187,6 +191,50 @@ def get_redis_password():
         if line.startswith("REDIS_PASSWORD=") and "STAGING" not in line:
             return line.split("=", 1)[1]
     return ""
+
+
+def get_patterns_aprendidos() -> dict:
+    """Dados do PatternLearner para o dashboard."""
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(PROJECT_DIR / "agents" / "core"))
+        from pattern_learner import PatternLearner
+        return PatternLearner().resumo()
+    except Exception:
+        # Fallback: ler JSON diretamente
+        f = PROJECT_DIR / "agents" / "knowledge" / "patterns_learned.json"
+        if f.exists():
+            try:
+                data = json.loads(f.read_text())
+                return {"total_padroes": len(data), "padroes": list(data.values())[:10]}
+            except Exception:
+                pass
+        return {}
+
+
+def get_monitor_state() -> dict:
+    """Estado atual do OrchestradorUnificado."""
+    try:
+        f = PROJECT_DIR / "reports" / "monitor_state.json"
+        if f.exists():
+            return json.loads(f.read_text())
+    except Exception:
+        pass
+    return {}
+
+
+def get_ultimo_ciclo() -> dict:
+    """Último relatório do ciclo completo."""
+    try:
+        import glob, os
+        reports = glob.glob(str(PROJECT_DIR / "reports" / "modules" / "ciclo_geral_*.json"))
+        if not reports:
+            return {}
+        reports.sort(key=os.path.getmtime, reverse=True)
+        with open(reports[0]) as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 
 if __name__ == "__main__":

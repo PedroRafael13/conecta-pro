@@ -1,0 +1,102 @@
+[
+  {
+    "id": "15f53624-f530-4a28-85f7-fd7fa4574120",
+    "component": "system",
+    "known_issues": [
+      {
+        "date": "2026-03-21T02:08:33.908947+00:00",
+        "alert": "HighMemoryUsage",
+        "root_cause": "memory_pressure",
+        "resolution_time_s": 1
+      }
+    ],
+    "dependencies": null,
+    "peak_hours": null,
+    "criticality_level": "medium",
+    "runbook": null,
+    "last_incident_at": "2026-03-21T02:08:33.908982+00:00",
+    "created_at": "2026-03-21T02:08:33.823345+00:00",
+    "updated_at": "2026-03-21T02:08:33.823345+00:00",
+    "is_active": true
+  },
+  {
+    "id": "0a8ef088-bea9-4fe0-b811-759d705bbd95",
+    "component": "redis",
+    "known_issues": [
+      {
+        "date": "2026-03-21T02:22:21.379143+00:00",
+        "alert": "RedisDown",
+        "root_cause": "memory_pressure",
+        "resolution_time_s": 0
+      }
+    ],
+    "dependencies": null,
+    "peak_hours": null,
+    "criticality_level": "high",
+    "runbook": null,
+    "last_incident_at": "2026-03-21T02:22:21.379181+00:00",
+    "created_at": "2026-03-21T02:22:21.275004+00:00",
+    "updated_at": "2026-03-21T02:22:21.275004+00:00",
+    "is_active": true
+  },
+  {
+    "id": "578cfad6-0c51-4ccc-bfbd-dfe5963a5b17",
+    "component": "frontend",
+    "known_issues": [
+      {
+        "date": "2026-03-22T01:01:27.293061+00:00",
+        "alert": "PM2ExcessiveRestarts",
+        "root_cause": "resolved_no_root_cause",
+        "resolution_time_s": 0
+      }
+    ],
+    "dependencies": null,
+    "peak_hours": null,
+    "criticality_level": "medium",
+    "runbook": null,
+    "last_incident_at": "2026-03-23T22:23:10.123232+00:00",
+    "created_at": "2026-03-22T01:01:26.482868+00:00",
+    "updated_at": "2026-03-23T22:23:09.284062+00:00",
+    "is_active": true
+  },
+  {
+    "id": "1495797a-4823-4735-8037-70f446d78e43",
+    "component": "unknown",
+    "known_issues": [
+      {
+        "date": "2026-03-23T22:43:15.772065+00:00",
+        "alert": "TestCooldown",
+        "root_cause": "resolved_no_root_cause",
+        "resolution_time_s": 0
+      }
+    ],
+    "dependencies": null,
+    "peak_hours": null,
+    "criticality_level": "low",
+    "runbook": null,
+    "last_incident_at": "2026-03-23T22:43:15.772103+00:00",
+    "created_at": "2026-03-23T22:43:14.938306+00:00",
+    "updated_at": "2026-03-23T22:43:14.938306+00:00",
+    "is_active": true
+  },
+  {
+    "id": "b50bda35-16f5-411f-a147-0d18be1d3164",
+    "component": "filesystem",
+    "known_issues": [
+      {
+        "date": "2026-03-21T04:34:35.928907+00:00",
+        "alert": "DiskSpaceLow",
+        "root_cause": "disk_space",
+        "resolution_time_s": 31
+      }
+    ],
+    "dependencies": null,
+    "peak_hours": null,
+    "criticality_level": "medium",
+    "runbook": null,
+    "last_incident_at": "2026-03-23T22:52:26.628804+00:00",
+    "created_at": "2026-03-21T04:34:05.035197+00:00",
+    "updated_at": "2026-03-23T22:51:55.775200+00:00",
+    "is_active": true
+  }
+]

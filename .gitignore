@@ -93,3 +93,6 @@ monitoring/textfile_collector/*.prom
 agents/system_context.json
 agents/dashboard_data.json
 .next/
+
+# Dados de runtime do PatternLearner (gerados automaticamente)
+agents/knowledge/*.json

@@ -66,6 +66,19 @@ except ImportError as e:
     def analisar_e_alertar(score, modulos): return {}
     REGRESSION_OK = False
 
+# ── PatternLearner + AutoRemediator (herdeiros do OpenClaw) ───────────────────
+try:
+    from pattern_learner import PatternLearner
+    from auto_remediator import AutoRemediator
+    _LEARNER = PatternLearner()
+    _REMEDIATOR = AutoRemediator()
+    CONHECIMENTO_OK = True
+except ImportError as e:
+    print(f"[conhecimento] indisponível: {e}")
+    _LEARNER = None
+    _REMEDIATOR = None
+    CONHECIMENTO_OK = False
+
 # ── Carrega base classes do .pyc se .py ausente (orchestrator_geral legacy) ───
 def _load_pyc(name: str, pyc_path: Path):
     loader = importlib.machinery.SourcelessFileLoader(name, str(pyc_path))
@@ -470,6 +483,22 @@ def ciclo_rapido(token: str, estado: dict) -> tuple[float, dict]:
         telegram(msg)
 
     elif erros:
+        # Aprender com erros detectados e tentar auto-remediar
+        if CONHECIMENTO_OK:
+            for erro in erros[:5]:
+                tipo = erro.split(":")[0].strip().replace(" ", "")
+                _LEARNER.registrar_evento(tipo=tipo, severidade="warning", titulo=erro)
+                p = _LEARNER.patterns.get(tipo, {})
+                conf = p.get("confidence", 0.0)
+                if conf >= 70.0 and _REMEDIATOR.pode_remediar(tipo):
+                    resultado = _REMEDIATOR.remediar(tipo, confidence=conf)
+                    if resultado["sucesso"]:
+                        estado["correcoes_totais"] = estado.get("correcoes_totais", 0) + 1
+                        logger.info(
+                            f"[AutoRemediator] {tipo} remediado "
+                            f"(conf={conf:.0f}/100, {resultado['tempo_s']}s)"
+                        )
+
         persistentes = estado.get("bugs_persistentes", {})
         chave = "|".join(sorted(erros[:5]))
         persistentes[chave] = persistentes.get(chave, 0) + 1

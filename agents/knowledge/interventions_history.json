@@ -1,0 +1,974 @@
+[
+  {
+    "id": "f15aeb70-9394-4f5a-9a99-d6c3201a220f",
+    "alert_name": "DiskSpaceLow",
+    "alert_fingerprint": "audit-disk-1",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO Disco:\n  - Disco: overlay         387G   79G  309G  21% /\n  - Diretorios grandes:\n\n  - Limpeza: \n  - Docker prune: Timeout apos 30s",
+    "actions_taken": [
+      {
+        "step": "disk_usage",
+        "result": "overlay         387G   79G  309G  21% /"
+      },
+      {
+        "step": "large_dirs",
+        "result": ""
+      },
+      {
+        "step": "cleanup_old_logs",
+        "result": ""
+      },
+      {
+        "step": "docker_prune",
+        "result": "Timeout apos 30s"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-23T22:52:25.838965+00:00",
+    "response_time_seconds": 30,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "warning",
+        "alertname": "DiskSpaceLow"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-23T09:30:00Z",
+      "annotations": {
+        "summary": "Disco 8% livre",
+        "description": "Teste auditoria"
+      },
+      "fingerprint": "audit-disk-1"
+    },
+    "telegram_sent": true,
+    "telegram_message_id": "4447",
+    "is_active": true,
+    "created_at": "2026-03-23T22:51:55.775200+00:00",
+    "updated_at": "2026-03-23T22:51:55.775200+00:00",
+    "root_cause": "disk_space",
+    "learned_pattern": "DiskSpaceLow:disk_space",
+    "prevention_action": "Configurar logrotate mais agressivo ou expandir disco",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "c84bce54-5ac3-486d-86d4-2c969c6d61ca",
+    "alert_name": "PostgresDown",
+    "alert_fingerprint": "audit-pg-1",
+    "severity": "critical",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO PostgreSQL:\n  - Container PostgreSQL: running\n  - pg_isready: OK\n  - PostgreSQL respondendo normalmente — alerta era falso positivo",
+    "actions_taken": [
+      {
+        "step": "check_container",
+        "result": "running"
+      },
+      {
+        "step": "pg_isready",
+        "result": "/var/run/postgresql:5432 - accepting connections"
+      },
+      {
+        "step": "false_positive",
+        "reason": "healthy_on_first_check"
+      }
+    ],
+    "resolution": "Falso positivo detectado: healthy_on_first_check",
+    "resolved_at": "2026-03-23T22:51:35.455710+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "critical",
+        "alertname": "PostgresDown"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-23T09:00:00Z",
+      "annotations": {
+        "summary": "teste postgres",
+        "description": "teste"
+      },
+      "fingerprint": "audit-pg-1"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-23T22:51:35.296892+00:00",
+    "updated_at": "2026-03-23T22:51:35.296892+00:00",
+    "root_cause": null,
+    "learned_pattern": null,
+    "prevention_action": null,
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": true,
+    "false_positive_reason": "healthy_on_first_check"
+  },
+  {
+    "id": "7c0c504e-d368-4f42-b1d3-e1185e982733",
+    "alert_name": "TestCooldown",
+    "alert_fingerprint": "cooldown-test-1",
+    "severity": "info",
+    "status": "resolved",
+    "diagnosis": "Alerta 'TestCooldown' recebido mas sem handler de remediacao configurado.",
+    "actions_taken": [
+      {
+        "step": "skip",
+        "detail": "Sem handler mapeado"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-23T22:43:14.970584+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "info",
+        "alertname": "TestCooldown"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-23T08:00:00Z",
+      "annotations": {
+        "summary": "t",
+        "description": "t"
+      },
+      "fingerprint": "cooldown-test-1"
+    },
+    "telegram_sent": true,
+    "telegram_message_id": "4446",
+    "is_active": true,
+    "created_at": "2026-03-23T22:43:14.938306+00:00",
+    "updated_at": "2026-03-23T22:43:14.938306+00:00",
+    "root_cause": "resolved_no_root_cause",
+    "learned_pattern": "TestCooldown:resolved_no_root_cause",
+    "prevention_action": "Monitorar recorrencia de TestCooldown",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "7664cf85-f0ed-42bb-992a-ecf9358af598",
+    "alert_name": "PM2ExcessiveRestarts",
+    "alert_fingerprint": "pm2-validate",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "PM2: Nenhum processo com restarts excessivos no momento.",
+    "actions_taken": [
+      {
+        "step": "pm2_status",
+        "result": ""
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-23T22:23:09.327283+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "warning",
+        "alertname": "PM2ExcessiveRestarts"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-23T07:00:00Z",
+      "annotations": {
+        "summary": "test final",
+        "description": "test"
+      },
+      "fingerprint": "pm2-validate"
+    },
+    "telegram_sent": true,
+    "telegram_message_id": "4445",
+    "is_active": true,
+    "created_at": "2026-03-23T22:23:09.284062+00:00",
+    "updated_at": "2026-03-23T22:23:09.284062+00:00",
+    "root_cause": "resolved_no_root_cause",
+    "learned_pattern": "PM2ExcessiveRestarts:resolved_no_root_cause",
+    "prevention_action": "Monitorar recorrencia de PM2ExcessiveRestarts",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "2739b4bc-6575-44e5-8b2d-e3d9c346df00",
+    "alert_name": "PM2ExcessiveRestarts",
+    "alert_fingerprint": "pm2-final-x",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "PM2: Nenhum processo com restarts excessivos no momento.",
+    "actions_taken": [
+      {
+        "step": "pm2_status",
+        "result": ""
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-23T22:10:58.489640+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "warning",
+        "alertname": "PM2ExcessiveRestarts"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-23T06:00:00Z",
+      "annotations": {
+        "summary": "t",
+        "description": "t"
+      },
+      "fingerprint": "pm2-final-x"
+    },
+    "telegram_sent": true,
+    "telegram_message_id": "4444",
+    "is_active": true,
+    "created_at": "2026-03-23T22:10:58.443740+00:00",
+    "updated_at": "2026-03-23T22:10:58.443740+00:00",
+    "root_cause": "resolved_no_root_cause",
+    "learned_pattern": "PM2ExcessiveRestarts:resolved_no_root_cause",
+    "prevention_action": "Monitorar recorrencia de PM2ExcessiveRestarts",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "c68771f5-de56-4596-82c1-3a5c4e904613",
+    "alert_name": "PM2ExcessiveRestarts",
+    "alert_fingerprint": "test001",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTIC_ERROR: ferramentas indisponíveis para diagnosticar PM2ExcessiveRestarts: pm2. Diagnóstico abortado — NÃO é uma queda do serviço.",
+    "actions_taken": [
+      {
+        "step": "tool_validation",
+        "result": "FAILED",
+        "missing": [
+          "pm2"
+        ]
+      },
+      {
+        "step": "false_positive",
+        "reason": "tool_missing"
+      }
+    ],
+    "resolution": "Falso positivo detectado: tool_missing",
+    "resolved_at": "2026-03-23T21:44:47.789206+00:00",
+    "response_time_seconds": 3,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "warning",
+        "alertname": "PM2ExcessiveRestarts"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-23T05:00:00Z",
+      "annotations": {
+        "summary": "Test",
+        "description": "Test"
+      },
+      "fingerprint": "test001"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-23T21:44:47.712219+00:00",
+    "updated_at": "2026-03-23T21:44:47.712219+00:00",
+    "root_cause": null,
+    "learned_pattern": null,
+    "prevention_action": null,
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": true,
+    "false_positive_reason": "tool_missing"
+  },
+  {
+    "id": "4d93b8d0-58e7-4402-b1ff-f3432e982004",
+    "alert_name": "PM2ExcessiveRestarts",
+    "alert_fingerprint": "cf2e827f8e24b0fd",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "Alerta 'PM2ExcessiveRestarts' recebido mas sem handler de remediacao configurado.",
+    "actions_taken": [
+      {
+        "step": "skip",
+        "detail": "Sem handler mapeado"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-22T17:12:23.065247+00:00",
+    "response_time_seconds": 3,
+    "raw_payload": {
+      "labels": {
+        "job": "node",
+        "process": "conecta-pro-frontend",
+        "project": "erp-conecta-mais",
+        "instance": "erp-node-exporter:9100",
+        "severity": "warning",
+        "alertname": "PM2ExcessiveRestarts"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-22T01:00:26.363Z",
+      "annotations": {
+        "summary": "PM2 frontend com 160 restarts",
+        "description": "O processo PM2 do frontend reiniciou mais de 5 vezes. Possivel crash loop."
+      },
+      "fingerprint": "cf2e827f8e24b0fd"
+    },
+    "telegram_sent": true,
+    "telegram_message_id": "557",
+    "is_active": true,
+    "created_at": "2026-03-22T17:12:23.007175+00:00",
+    "updated_at": "2026-03-22T17:12:23.007175+00:00",
+    "root_cause": "resolved_no_root_cause",
+    "learned_pattern": "PM2ExcessiveRestarts:resolved_no_root_cause",
+    "prevention_action": "Monitorar recorrencia de PM2ExcessiveRestarts",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "d3138a8d-f998-4a03-9d6d-aed2e642a2d3",
+    "alert_name": "PM2ExcessiveRestarts",
+    "alert_fingerprint": "cf2e827f8e24b0fd",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "Alerta 'PM2ExcessiveRestarts' recebido mas sem handler de remediacao configurado.",
+    "actions_taken": [
+      {
+        "step": "skip",
+        "detail": "Sem handler mapeado"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-22T09:06:27.460265+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "node",
+        "process": "conecta-pro-frontend",
+        "project": "erp-conecta-mais",
+        "instance": "erp-node-exporter:9100",
+        "severity": "warning",
+        "alertname": "PM2ExcessiveRestarts"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-22T01:00:26.363Z",
+      "annotations": {
+        "summary": "PM2 frontend com 157 restarts",
+        "description": "O processo PM2 do frontend reiniciou mais de 5 vezes. Possivel crash loop."
+      },
+      "fingerprint": "cf2e827f8e24b0fd"
+    },
+    "telegram_sent": true,
+    "telegram_message_id": "555",
+    "is_active": true,
+    "created_at": "2026-03-22T09:06:27.371324+00:00",
+    "updated_at": "2026-03-22T09:06:27.371324+00:00",
+    "root_cause": "resolved_no_root_cause",
+    "learned_pattern": "PM2ExcessiveRestarts:resolved_no_root_cause",
+    "prevention_action": "Monitorar recorrencia de PM2ExcessiveRestarts",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "f1444634-ed27-431f-a40a-b71c0566505c",
+    "alert_name": "PM2ExcessiveRestarts",
+    "alert_fingerprint": "cf2e827f8e24b0fd",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "Alerta 'PM2ExcessiveRestarts' recebido mas sem handler de remediacao configurado.",
+    "actions_taken": [
+      {
+        "step": "skip",
+        "detail": "Sem handler mapeado"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-22T01:01:26.517091+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "node",
+        "process": "conecta-pro-frontend",
+        "project": "erp-conecta-mais",
+        "instance": "erp-node-exporter:9100",
+        "severity": "warning",
+        "alertname": "PM2ExcessiveRestarts"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-22T01:00:26.363Z",
+      "annotations": {
+        "summary": "PM2 frontend com 6 restarts",
+        "description": "O processo PM2 do frontend reiniciou mais de 5 vezes. Possivel crash loop."
+      },
+      "fingerprint": "cf2e827f8e24b0fd"
+    },
+    "telegram_sent": true,
+    "telegram_message_id": "553",
+    "is_active": true,
+    "created_at": "2026-03-22T01:01:26.482868+00:00",
+    "updated_at": "2026-03-22T01:01:26.482868+00:00",
+    "root_cause": "resolved_no_root_cause",
+    "learned_pattern": "PM2ExcessiveRestarts:resolved_no_root_cause",
+    "prevention_action": "Monitorar recorrencia de PM2ExcessiveRestarts",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "c26fad62-89c8-4ffd-ba7a-82d0839b64c2",
+    "alert_name": "DiskSpaceLow",
+    "alert_fingerprint": "test-telegram-001",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO Disco:\n  - Disco: overlay         387G   48G  339G  13% /\n  - Diretorios grandes:\n\n  - Limpeza: \n  - Docker prune: Timeout apos 30s",
+    "actions_taken": [
+      {
+        "step": "disk_usage",
+        "result": "overlay         387G   48G  339G  13% /"
+      },
+      {
+        "step": "large_dirs",
+        "result": ""
+      },
+      {
+        "step": "cleanup_old_logs",
+        "result": ""
+      },
+      {
+        "step": "docker_prune",
+        "result": "Timeout apos 30s"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-21T04:34:35.156189+00:00",
+    "response_time_seconds": 31,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "warning",
+        "alertname": "DiskSpaceLow"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-21T05:00:00Z",
+      "annotations": {
+        "summary": "Disco baixo (teste Telegram)",
+        "description": "Teste E2E completo"
+      },
+      "fingerprint": "test-telegram-001"
+    },
+    "telegram_sent": true,
+    "telegram_message_id": "537",
+    "is_active": true,
+    "created_at": "2026-03-21T04:34:05.035197+00:00",
+    "updated_at": "2026-03-21T04:34:05.035197+00:00",
+    "root_cause": "disk_space",
+    "learned_pattern": "DiskSpaceLow:disk_space",
+    "prevention_action": "Configurar logrotate mais agressivo ou expandir disco",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "043c1b99-af75-4101-8388-a025f735bc69",
+    "alert_name": "HighMemoryUsage",
+    "alert_fingerprint": "test-fp-mem-001",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO Memoria:\n  - Memoria:\ntotal        used        free      shared  buff/cache   available\nMem:            31Gi        16Gi       2.3Gi        85Mi        13Gi        15Gi\nSwap:          4.0Gi       4.2Mi       4.0Gi\n  - Top processos:\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nerp          1 11.1  5.6 2819672 1853468 ?     Ssl  04:17   1:07 /usr/local/bin/python3.12 /usr/local/bin/uvicorn main_production:app --host 0.0.0.0 --port 8080 --timeout-graceful-shutdown 25\nerp        163  0.0  0.0   6784  3968 ?        R    04:27   0:00 ps aux --sort=-%mem\nerp        162  0.0  0.0   2672  1792 ?        S    04:27   0:00 /bin/sh -c ps aux --sort=-%mem | head -6\nerp        164  0.0  0.0   3020  1664 ?        S    04:27   0:00 head -6\n  - RAM em 52% — abaixo do threshold, alerta pode ser falso positivo",
+    "actions_taken": [
+      {
+        "step": "memory_info",
+        "result": "total        used        free      shared  buff/cache   available\nMem:            31Gi        16Gi       2.3Gi        85Mi        13Gi        15Gi\nSwap:          4.0Gi       4.2Mi       4.0Gi"
+      },
+      {
+        "step": "top_memory_procs",
+        "result": "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nerp          1 11.1  5.6 2819672 1853468 ?     Ssl  04:17   1:07 /usr/local/bin/python3.12 /usr/local/bin/uvicorn main_production:app --host 0.0.0.0 --port 8080 --timeout-graceful-shutdown 25\nerp        163  0.0  0.0   6784  3968 ?        R    04:27   0:00 ps aux --sort=-%mem\nerp        162  0.0  0.0   2672  1792 ?        S    04:27   0:00 /bin/sh -c ps aux --sort=-%mem | head -6\nerp        164  0.0  0.0   3020  1664 ?        S    04:27   0:00 head -6"
+      },
+      {
+        "step": "false_positive",
+        "reason": "memory_at_52_percent"
+      }
+    ],
+    "resolution": "Falso positivo detectado: memory_at_52_percent",
+    "resolved_at": "2026-03-21T04:27:49.109290+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "warning",
+        "alertname": "HighMemoryUsage"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-21T04:01:00Z",
+      "annotations": {
+        "summary": "Memória alta (teste FP)",
+        "description": "teste"
+      },
+      "fingerprint": "test-fp-mem-001"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-21T04:27:49.076303+00:00",
+    "updated_at": "2026-03-21T04:27:49.076303+00:00",
+    "root_cause": null,
+    "learned_pattern": null,
+    "prevention_action": null,
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": true,
+    "false_positive_reason": "memory_at_52_percent"
+  },
+  {
+    "id": "492168e9-3f9e-4ddc-a208-ad639ce4babc",
+    "alert_name": "RedisDown",
+    "alert_fingerprint": "test-fp-redis-001",
+    "severity": "critical",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Classificacao: healthy (PONG)\n  - Redis respondendo normalmente — alerta era falso positivo",
+    "actions_taken": [
+      {
+        "step": "check_container",
+        "result": "running"
+      },
+      {
+        "step": "classify_failure",
+        "detail": "PONG",
+        "failure_type": "healthy"
+      },
+      {
+        "step": "false_positive",
+        "reason": "healthy_on_first_check"
+      }
+    ],
+    "resolution": "Falso positivo detectado: healthy_on_first_check",
+    "resolved_at": "2026-03-21T04:27:30.064364+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "critical",
+        "alertname": "RedisDown"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-21T04:00:00Z",
+      "annotations": {
+        "summary": "Redis down (teste FP)",
+        "description": "Teste falso positivo"
+      },
+      "fingerprint": "test-fp-redis-001"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-21T04:27:29.953328+00:00",
+    "updated_at": "2026-03-21T04:27:29.953328+00:00",
+    "root_cause": null,
+    "learned_pattern": null,
+    "prevention_action": null,
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": true,
+    "false_positive_reason": "healthy_on_first_check"
+  },
+  {
+    "id": "40279ccf-0385-446d-8f91-f8f8699a3694",
+    "alert_name": "RedisDown",
+    "alert_fingerprint": "test-e2e-redis-final",
+    "severity": "critical",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: PONG\n  - Memoria: used_memory_human:6.40M",
+    "actions_taken": [
+      {
+        "step": "check_container",
+        "result": "running"
+      },
+      {
+        "step": "redis_ping",
+        "result": "PONG"
+      },
+      {
+        "step": "memory_usage",
+        "result": "used_memory_human:6.40M"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-21T02:22:21.362741+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "critical",
+        "alertname": "RedisDown"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-21T02:30:00Z",
+      "annotations": {
+        "summary": "Redis down (teste final)",
+        "description": "E2E"
+      },
+      "fingerprint": "test-e2e-redis-final"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-21T02:22:21.275004+00:00",
+    "updated_at": "2026-03-21T02:22:21.275004+00:00",
+    "root_cause": "memory_pressure",
+    "learned_pattern": "RedisDown:memory_pressure",
+    "prevention_action": "Revisar pool_size do SQLAlchemy ou limits no docker-compose",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "6f549f12-8ccf-486a-be99-57d57203052e",
+    "alert_name": "RedisDown",
+    "alert_fingerprint": "test-e2e-redis-003",
+    "severity": "critical",
+    "status": "escalated",
+    "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+    "actions_taken": [
+      {
+        "step": "check_container",
+        "result": "running"
+      },
+      {
+        "step": "redis_ping",
+        "result": "NOAUTH Authentication required."
+      },
+      {
+        "step": "memory_usage",
+        "result": ""
+      },
+      {
+        "step": "restart_container",
+        "result": "executed"
+      },
+      {
+        "step": "post_restart_ping",
+        "result": "FALHA"
+      }
+    ],
+    "resolution": null,
+    "resolved_at": null,
+    "response_time_seconds": 6,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "critical",
+        "alertname": "RedisDown"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-21T02:25:00Z",
+      "annotations": {
+        "summary": "Redis down (teste E2E)",
+        "description": "Teste completo"
+      },
+      "fingerprint": "test-e2e-redis-003"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-21T02:16:41.639156+00:00",
+    "updated_at": "2026-03-21T02:16:41.639156+00:00",
+    "root_cause": null,
+    "learned_pattern": null,
+    "prevention_action": null,
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "7586e013-3856-42d2-bd50-6eb1ffe01efd",
+    "alert_name": "RedisDown",
+    "alert_fingerprint": "test-e2e-redis-002",
+    "severity": "critical",
+    "status": "escalated",
+    "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+    "actions_taken": [
+      {
+        "step": "check_container",
+        "result": "running"
+      },
+      {
+        "step": "redis_ping",
+        "result": "NOAUTH Authentication required."
+      },
+      {
+        "step": "memory_usage",
+        "result": ""
+      },
+      {
+        "step": "restart_container",
+        "result": "executed"
+      },
+      {
+        "step": "post_restart_ping",
+        "result": "FALHA"
+      }
+    ],
+    "resolution": null,
+    "resolved_at": null,
+    "response_time_seconds": 6,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "critical",
+        "alertname": "RedisDown"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-21T02:16:00Z",
+      "annotations": {
+        "summary": "Redis down (teste)",
+        "description": "Teste E2E"
+      },
+      "fingerprint": "test-e2e-redis-002"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-21T02:09:46.097443+00:00",
+    "updated_at": "2026-03-21T02:09:46.097443+00:00",
+    "root_cause": null,
+    "learned_pattern": null,
+    "prevention_action": null,
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "26b44e78-3e17-4110-8993-a27d9669737b",
+    "alert_name": "HighMemoryUsage",
+    "alert_fingerprint": "test-e2e-memory-001",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO Memoria:\n  - Memoria:\ntotal        used        free      shared  buff/cache   available\nMem:            31Gi        16Gi       5.3Gi        80Mi        10Gi        15Gi\nSwap:          4.0Gi       4.5Mi       4.0Gi\n  - Top processos:\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nerp          1 59.9  5.6 2744528 1851676 ?     Ssl  02:07   0:50 /usr/local/bin/python3.12 /usr/local/bin/uvicorn main_production:app --host 0.0.0.0 --port 8080 --timeout-graceful-shutdown 25\nerp         84  0.0  0.0   6784  3968 ?        R    02:08   0:00 ps aux --sort=-%mem\nerp         83  0.0  0.0   2672  1792 ?        S    02:08   0:00 /bin/sh -c ps aux --sort=-%mem | head -6\nerp         85  0.0  0.0   3020  1664 ?        S    02:08   0:00 head -6",
+    "actions_taken": [
+      {
+        "step": "memory_info",
+        "result": "total        used        free      shared  buff/cache   available\nMem:            31Gi        16Gi       5.3Gi        80Mi        10Gi        15Gi\nSwap:          4.0Gi       4.5Mi       4.0Gi"
+      },
+      {
+        "step": "top_memory_procs",
+        "result": "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nerp          1 59.9  5.6 2744528 1851676 ?     Ssl  02:07   0:50 /usr/local/bin/python3.12 /usr/local/bin/uvicorn main_production:app --host 0.0.0.0 --port 8080 --timeout-graceful-shutdown 25\nerp         84  0.0  0.0   6784  3968 ?        R    02:08   0:00 ps aux --sort=-%mem\nerp         83  0.0  0.0   2672  1792 ?        S    02:08   0:00 /bin/sh -c ps aux --sort=-%mem | head -6\nerp         85  0.0  0.0   3020  1664 ?        S    02:08   0:00 head -6"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-21T02:08:33.895243+00:00",
+    "response_time_seconds": 1,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "warning",
+        "alertname": "HighMemoryUsage"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-21T02:15:00Z",
+      "annotations": {
+        "summary": "Uso de memória alto (teste)",
+        "description": "Simulação de alerta para teste E2E"
+      },
+      "fingerprint": "test-e2e-memory-001"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-21T02:08:33.823345+00:00",
+    "updated_at": "2026-03-21T02:08:33.823345+00:00",
+    "root_cause": "memory_pressure",
+    "learned_pattern": "HighMemoryUsage:memory_pressure",
+    "prevention_action": "Revisar pool_size do SQLAlchemy ou limits no docker-compose",
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": null,
+    "validated_at": null,
+    "validated_by": null,
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "68e406be-fd55-4510-8aac-ded9d1768d1a",
+    "alert_name": "RedisDown",
+    "alert_fingerprint": "fp-redis-001",
+    "severity": "critical",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: \n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+    "actions_taken": [
+      {
+        "step": "check_container",
+        "result": ""
+      },
+      {
+        "step": "redis_ping",
+        "result": ""
+      },
+      {
+        "step": "memory_usage",
+        "result": ""
+      },
+      {
+        "step": "restart_container",
+        "result": "executed"
+      },
+      {
+        "step": "post_restart_ping",
+        "result": ""
+      }
+    ],
+    "resolution": "Resolvido manualmente — Redis estava saudável, intervenção ficou presa em acting por limitação do ambiente de execução (dentro do container Docker sem acesso a redis-cli)",
+    "resolved_at": "2026-03-21T01:38:26.098220+00:00",
+    "response_time_seconds": 5,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "critical",
+        "alertname": "RedisDown"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-20T18:40:00Z",
+      "annotations": {
+        "summary": "Redis nao acessivel",
+        "description": "Exporter do Redis nao esta respondendo"
+      },
+      "fingerprint": "fp-redis-001"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-20T18:47:43.247062+00:00",
+    "updated_at": "2026-03-21T01:38:26.098220+00:00",
+    "root_cause": null,
+    "learned_pattern": null,
+    "prevention_action": null,
+    "used_cached_solution": false,
+    "human_validated": false,
+    "human_feedback": "Redis nao estava realmente down, era falso positivo do exporter",
+    "validated_at": "2026-03-20T19:48:41.822608+00:00",
+    "validated_by": "Jordan",
+    "false_positive": false,
+    "false_positive_reason": null
+  },
+  {
+    "id": "8d98f608-8ccf-4f13-bffe-c4fce056e168",
+    "alert_name": "HighMemoryUsage",
+    "alert_fingerprint": "fp003",
+    "severity": "warning",
+    "status": "resolved",
+    "diagnosis": "DIAGNOSTICO Memoria:\n  - /bin/sh: 1: free: not found\n  - Top processos:\n/bin/sh: 1: ps: not found",
+    "actions_taken": [
+      {
+        "step": "memory_info",
+        "result": "/bin/sh: 1: free: not found"
+      },
+      {
+        "step": "top_memory_procs",
+        "result": "/bin/sh: 1: ps: not found"
+      }
+    ],
+    "resolution": "Resolvido automaticamente pelo OpenClaw",
+    "resolved_at": "2026-03-20T18:47:33.335163+00:00",
+    "response_time_seconds": 0,
+    "raw_payload": {
+      "labels": {
+        "job": "",
+        "instance": "",
+        "severity": "warning",
+        "alertname": "HighMemoryUsage"
+      },
+      "status": "firing",
+      "startsAt": "2026-03-20T18:30:00Z",
+      "annotations": {
+        "summary": "Uso de memoria alto",
+        "description": "Mais de 90 porcento"
+      },
+      "fingerprint": "fp003"
+    },
+    "telegram_sent": false,
+    "telegram_message_id": null,
+    "is_active": true,
+    "created_at": "2026-03-20T18:47:33.293492+00:00",
+    "updated_at": "2026-03-20T19:50:04.468842+00:00",
+    "root_cause": null,
+    "learned_pattern": null,
+    "prevention_action": null,
+    "used_cached_solution": false,
+    "human_validated": true,
+    "human_feedback": "Aprovado",
+    "validated_at": "2026-03-20T19:50:04.394268+00:00",
+    "validated_by": "test",
+    "false_positive": false,
+    "false_positive_reason": null
+  }
+]

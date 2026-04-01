@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { FolderOpen, ArrowLeft, Inbox, Loader2, Eye, Download, X, Save, Upload, Search, Filter, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { FolderOpen, ArrowLeft, Inbox, Loader2, Eye, Download, X, Save, Upload, Search, Filter, ChevronLeft, ChevronRight as ChevronRightIcon, FileUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const API_BASE = '/api/v1/people-management/hr';
+const GED_UPLOAD_URL = '/api/v1/ged/documents/upload';
+const GED_FUNCIONARIOS_FOLDER = 'abcbebd2-88af-419e-8907-43b11f38f90b';
+const ACCEPT_TYPES = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls';
+const MAX_SIZE_MB = 10;
 
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
@@ -48,6 +52,9 @@ export default function DocumentosPage() {
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [sortField, setSortField] = useState<string>('');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load documents from API
   useEffect(() => {
@@ -130,6 +137,22 @@ export default function DocumentosPage() {
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   };
 
+  const handleFileSelect = (file: File) => {
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast.error(`Arquivo muito grande. Máximo: ${MAX_SIZE_MB}MB`, { duration: 5000 });
+      return;
+    }
+    setArquivo(file);
+    setFormErrors(p => ({ ...p, arquivo: '' }));
+  };
+
+  const resetForm = () => {
+    setFormData({ employee_id: '', document_type: 'RG', file_name: '', expiry_date: '', notes: '' });
+    setFormErrors({});
+    setArquivo(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <div className="space-y-6 pb-28">
       <div className="flex items-center justify-between">
@@ -203,9 +226,33 @@ export default function DocumentosPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Nome do Arquivo *</label>
-                <input type="text" value={formData.file_name} onChange={e => { setFormData(p => ({ ...p, file_name: e.target.value })); setFormErrors(p => ({ ...p, file_name: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.file_name ? 'border-red-500' : ''}`} placeholder="Ex: rg_joao_silva.pdf" />
-                {formErrors.file_name && <p className="text-red-500 text-xs mt-1">{formErrors.file_name}</p>}
+                <label className="text-sm font-medium mb-1 block">Arquivo *</label>
+                <div
+                  className={`w-full border-2 border-dashed rounded-md p-4 text-center cursor-pointer transition-colors ${dragOver ? 'border-primary bg-primary/5' : formErrors.arquivo ? 'border-red-500' : 'border-muted-foreground/30 hover:border-primary/50'}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFileSelect(f); }}
+                >
+                  {arquivo ? (
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <FileUp className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-primary truncate max-w-[200px]">{arquivo.name}</span>
+                      <span className="text-muted-foreground">({(arquivo.size / 1024).toFixed(0)} KB)</span>
+                      <button type="button" className="ml-1 text-muted-foreground hover:text-destructive" onClick={e => { e.stopPropagation(); setArquivo(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                      <Upload className="h-6 w-6" />
+                      <p className="text-sm">Clique ou arraste o arquivo aqui</p>
+                      <p className="text-xs">PDF, DOC, DOCX, JPG, PNG, XLSX — máx. {MAX_SIZE_MB}MB</p>
+                    </div>
+                  )}
+                </div>
+                <input ref={fileInputRef} type="file" accept={ACCEPT_TYPES} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }} />
+                {formErrors.arquivo && <p className="text-red-500 text-xs mt-1">{formErrors.arquivo}</p>}
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Data de Validade</label>
@@ -220,38 +267,39 @@ export default function DocumentosPage() {
               <Button type="button" size="sm" disabled={saving} onClick={async () => {
                 const errors: Record<string, string> = {};
                 if (!formData.employee_id) errors.employee_id = 'Colaborador e obrigatorio';
-                if (!formData.file_name.trim()) errors.file_name = 'Nome do arquivo e obrigatorio';
+                if (!arquivo) errors.arquivo = 'Selecione um arquivo';
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados', { duration: 5000 }); return; }
                 setSaving(true);
                 try {
-                  const payload = {
-                    title: formData.file_name,
-                    document_type: formData.document_type,
-                    employee_id: formData.employee_id,
-                    expiry_date: formData.expiry_date || null,
-                    notes: formData.notes || null,
-                  };
-                  const res = await fetch(`${API_BASE}/documents`, {
+                  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+                  const fd = new FormData();
+                  const file = arquivo as File;
+                  fd.append('file', file);
+                  fd.append('title', file.name);
+                  fd.append('folder_id', GED_FUNCIONARIOS_FOLDER);
+                  fd.append('category', 'rh');
+                  fd.append('document_type', formData.document_type.toLowerCase());
+                  if (formData.notes) fd.append('description', formData.notes);
+                  const res = await fetch(GED_UPLOAD_URL, {
                     method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify(payload),
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    body: fd,
                   });
                   if (res.ok) {
                     setShowForm(false);
-                    setFormData({ employee_id: '', document_type: 'RG', file_name: '', expiry_date: '', notes: '' });
-                    setFormErrors({});
+                    resetForm();
                     setRefreshKey(k => k + 1);
-                    toast.success('Documento registrado com sucesso!', { duration: 4000 });
+                    toast.success('Documento enviado com sucesso!', { duration: 4000 });
                   } else {
                     const err = await res.json().catch(() => null);
-                    toast.error(err?.detail || 'Erro ao registrar documento', { duration: 5000 });
+                    toast.error(err?.detail || 'Erro ao enviar documento', { duration: 5000 });
                   }
                 } catch { toast.error('Erro de conexao', { duration: 5000 }); } finally { setSaving(false); }
               }}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
                 {saving ? 'Salvando...' : 'Registrar Documento'}
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => { setShowForm(false); resetForm(); }}>Cancelar</Button>
             </div>
           </CardContent>
         </Card>
