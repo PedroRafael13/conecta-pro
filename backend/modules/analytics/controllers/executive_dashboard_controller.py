@@ -12,6 +12,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..services.executive_dashboard_service import executive_dashboard_service
 
 logger = logging.getLogger(__name__)
@@ -25,6 +27,7 @@ router = APIRouter(prefix="/executive", tags=["Executive Dashboard"])
     description="Retorna dashboard executivo com KPIs, alertas e insights preditivos",
 )
 async def get_executive_dashboard(
+    current_user: CurrentActiveUser,
     refresh: bool = Query(False, description="Forçar atualização dos dados"),
 ) -> dict[str, Any]:
     """
@@ -97,7 +100,7 @@ async def get_executive_dashboard(
 @router.get(
     "/kpis/{category}", summary="KPIs por Categoria", description="Retorna KPIs filtrados por categoria específica"
 )
-async def get_kpis_by_category(category: str) -> dict[str, Any]:
+async def get_kpis_by_category(category: str, current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Retorna KPIs filtrados por categoria específica.
     """
@@ -133,7 +136,7 @@ async def get_kpis_by_category(category: str) -> dict[str, Any]:
 
 
 @router.get("/alerts/active", summary="Alertas Ativos", description="Retorna alertas ativos que requerem atenção")
-async def get_active_alerts() -> dict[str, Any]:
+async def get_active_alerts(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Retorna apenas alertas ativos que requerem ação.
     """
@@ -170,7 +173,7 @@ async def get_active_alerts() -> dict[str, Any]:
 @router.get(
     "/insights/predictive", summary="Insights Preditivos", description="Retorna insights preditivos gerados por IA"
 )
-async def get_predictive_insights() -> dict[str, Any]:
+async def get_predictive_insights(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Retorna insights preditivos com recomendações de IA.
     """
@@ -205,7 +208,7 @@ async def get_predictive_insights() -> dict[str, Any]:
 
 
 @router.get("/summary", summary="Resumo Executivo", description="Retorna resumo executivo consolidado")
-async def get_executive_summary() -> dict[str, Any]:
+async def get_executive_summary(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Retorna apenas o resumo executivo consolidado.
     """
@@ -230,7 +233,9 @@ async def get_executive_summary() -> dict[str, Any]:
 
 
 @router.get("/export", summary="Exportar Dashboard", description="Exporta dados do dashboard em diferentes formatos")
-async def export_dashboard(format_type: str = Query("json", description="Formato: json, csv")) -> dict[str, Any]:
+async def export_dashboard(
+    current_user: CurrentActiveUser, format_type: str = Query("json", description="Formato: json, csv")
+) -> dict[str, Any]:
     """
     Exporta dados do dashboard para diferentes formatos.
     """

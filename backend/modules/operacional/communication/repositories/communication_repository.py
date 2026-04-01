@@ -376,18 +376,19 @@ class AnnouncementRepository:
         )
 
         # Filtro por destinatario
-        from modules.operacional.communication.models.announcement import (
-            AnnouncementTargetType,
-        )
-
+        # FIX: usar colunas reais do DB em vez das @property Python que nao
+        # sao atributos SQLAlchemy e causavam AttributeError → 500.
+        # target_type/@property → destinatarios_tipo (coluna real)
+        # target_ids/@property  → destinatarios_funcionarios / destinatarios_postos
+        # target_roles/@property → sem coluna no DB, removido
         target_conditions = [
-            Announcement.target_type == AnnouncementTargetType.ALL.value,
-            Announcement.target_ids.contains([user_id]),
+            or_(
+                Announcement.destinatarios_tipo == "todos",
+                Announcement.destinatarios_tipo == "all",
+            ),
+            Announcement.destinatarios_funcionarios.contains([user_id]),
+            Announcement.destinatarios_postos.contains([user_id]),
         ]
-
-        if user_roles:
-            for role in user_roles:
-                target_conditions.append(Announcement.target_roles.contains([role]))
 
         query = query.where(or_(*target_conditions))
 
@@ -402,8 +403,9 @@ class AnnouncementRepository:
         total = total_result.scalar() or 0
 
         # Ordenacao e paginacao
+        # FIX: usar coluna real 'prioridade' em vez da @property 'priority'
         query = query.order_by(
-            Announcement.priority.desc(),
+            Announcement.prioridade.desc(),
             Announcement.created_at.desc(),
         )
         query = query.offset((page - 1) * page_size).limit(page_size)

@@ -48,6 +48,7 @@ router.include_router(crm_commission_router, prefix="/crm", tags=["CRM - Comiss�
 router.include_router(crm_dashboard_router, prefix="/crm", tags=["CRM - Dashboard"])
 router.include_router(crm_contract_router, prefix="/crm", tags=["CRM - Contratos"])
 router.include_router(client_router, prefix="/clients", tags=["Clients - Cadastro"])
+router.include_router(client_router, prefix="/crm/clients", tags=["CRM - Clientes"])
 router.include_router(service_router, prefix="/services", tags=["Services - Gestão de Serviços"])
 router.include_router(bidding_tender_router, prefix="/bidding", tags=["Bidding - Editais"])
 router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
