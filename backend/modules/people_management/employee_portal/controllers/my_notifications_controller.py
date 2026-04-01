@@ -16,6 +16,7 @@ from fastapi import status as http_status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.config import settings
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
@@ -56,6 +57,7 @@ class NotificationReadResponse(BaseModel):
 )
 async def get_my_notifications(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna notificacoes do funcionario autenticado."""
@@ -100,6 +102,7 @@ async def get_my_notifications(
 async def mark_notification_as_read(
     notification_id: int,
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Marca uma notificacao como lida para o funcionario autenticado."""
@@ -190,6 +193,7 @@ class TestTriggerResponse(BaseModel):
 async def test_notification_trigger(
     payload: TestTriggerRequest,
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Dispara uma auto-notificacao de teste para o funcionario autenticado.

@@ -16,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.campo.models.campo_tecnico import CampoTecnico
 
@@ -72,8 +73,8 @@ class TicketUpdate(BaseModel):
     observations: str | None = None
 
 
-@router.post("/tickets", response_model=TicketResponse)
-async def create_ticket(request: TicketRequest):
+@router.post("/tickets", response_model=TicketResponse, status_code=201)
+async def create_ticket(current_user: CurrentActiveUser, request: TicketRequest):
     """
     Cria novo ticket de atendimento.
 
@@ -104,7 +105,7 @@ async def create_ticket(request: TicketRequest):
 
 
 @router.get("/tickets/{ticket_id}", response_model=TicketResponse)
-async def get_ticket(ticket_id: str):
+async def get_ticket(current_user: CurrentActiveUser, ticket_id: str):
     """
     Consulta ticket específico.
 
@@ -133,6 +134,7 @@ async def get_ticket(ticket_id: str):
 async def update_ticket(
     ticket_id: str,
     update: TicketUpdate,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
 ):
     """
     Atualiza ticket.
@@ -156,8 +158,10 @@ async def update_ticket(
         )
 
 
-@router.post("/technicians", response_model=TechnicianInfo)
-async def create_technician(technician: TechnicianInfo, session: AsyncSession = Depends(get_db)):
+@router.post("/technicians", response_model=TechnicianInfo, status_code=201)
+async def create_technician(
+    technician: TechnicianInfo, current_user: CurrentActiveUser, session: AsyncSession = Depends(get_db)
+):
     """
     Cadastra novo técnico.
 
@@ -216,6 +220,7 @@ async def create_technician(technician: TechnicianInfo, session: AsyncSession = 
 
 @router.get("/technicians")
 async def list_technicians(
+    current_user: CurrentActiveUser,
     tech_status: str | None = None,
     specialty: str | None = None,
     session: AsyncSession = Depends(get_db),
@@ -281,7 +286,7 @@ async def list_technicians(
 
 
 @router.post("/tickets/{ticket_id}/assign/{technician_id}")
-async def assign_technician(ticket_id: str, technician_id: str):
+async def assign_technician(ticket_id: str, current_user: CurrentActiveUser, technician_id: str):
     """
     Atribui técnico ao ticket.
 
@@ -310,7 +315,7 @@ async def assign_technician(ticket_id: str, technician_id: str):
 
 
 @router.get("/dashboard")
-async def campo_dashboard(session: AsyncSession = Depends(get_db)):
+async def campo_dashboard(current_user: CurrentActiveUser, session: AsyncSession = Depends(get_db)):
     """
     Dashboard do CAMPO com estatísticas.
 

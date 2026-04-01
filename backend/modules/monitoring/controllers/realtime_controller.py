@@ -13,6 +13,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Path, Query, WebSocket, WebSocketDisconnect
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..services.realtime_analytics_service import AlertSeverity, MetricPoint, MetricType, realtime_analytics_service
 
 logger = logging.getLogger(__name__)
@@ -75,7 +77,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @router.post("/metrics", summary="Enviar Métrica", description="Envia uma métrica para análise em tempo real")
 async def send_metric(
-    name: str, value: float, metric_type: MetricType = MetricType.GAUGE, tags: dict[str, str] | None = None
+    current_user: CurrentActiveUser,
+    name: str,
+    value: float,
+    metric_type: MetricType = MetricType.GAUGE,
+    tags: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """
     Envia uma métrica para o sistema de analytics.
@@ -98,7 +104,7 @@ async def send_metric(
 
 
 @router.get("/metrics/current", summary="Métricas Atuais", description="Retorna snapshot das métricas em tempo real")
-async def get_current_metrics() -> dict[str, Any]:
+async def get_current_metrics(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Retorna todas as métricas atuais em tempo real.
     """
@@ -127,7 +133,7 @@ async def get_current_metrics() -> dict[str, Any]:
 
 
 @router.get("/alerts/active", summary="Alertas Ativos", description="Retorna todos os alertas ativos no sistema")
-async def get_active_alerts() -> dict[str, Any]:
+async def get_active_alerts(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Retorna alertas ativos em tempo real.
     """
@@ -169,7 +175,9 @@ async def get_active_alerts() -> dict[str, Any]:
 
 
 @router.post("/alerts/{alert_id}/resolve", summary="Resolver Alerta", description="Marca um alerta como resolvido")
-async def resolve_alert(alert_id: str = Path(..., description="ID do alerta")) -> dict[str, Any]:
+async def resolve_alert(
+    current_user: CurrentActiveUser, alert_id: str = Path(..., description="ID do alerta")
+) -> dict[str, Any]:
     """
     Resolve um alerta específico.
     """
@@ -199,6 +207,7 @@ async def resolve_alert(alert_id: str = Path(..., description="ID do alerta")) -
     description="Retorna histórico de uma métrica específica",
 )
 async def get_metric_history(
+    current_user: CurrentActiveUser,
     metric_name: str = Path(..., description="Nome da métrica"),
     points: int = Query(100, description="Número de pontos (max 1000)"),
 ) -> dict[str, Any]:
@@ -238,6 +247,7 @@ async def get_metric_history(
 )
 async def set_custom_threshold(
     metric_name: str,
+    current_user: CurrentActiveUser,
     min_value: float | None = None,
     max_value: float | None = None,
     severity: AlertSeverity = AlertSeverity.MEDIUM,
@@ -265,7 +275,9 @@ async def set_custom_threshold(
 
 
 @router.get("/anomalies/summary", summary="Resumo de Anomalias", description="Retorna resumo de anomalias detectadas")
-async def get_anomaly_summary(hours: int = Query(24, description="Período em horas (max 168)")) -> dict[str, Any]:
+async def get_anomaly_summary(
+    current_user: CurrentActiveUser, hours: int = Query(24, description="Período em horas (max 168)")
+) -> dict[str, Any]:
     """
     Retorna resumo de anomalias detectadas.
     """
@@ -283,7 +295,7 @@ async def get_anomaly_summary(hours: int = Query(24, description="Período em ho
 
 
 @router.get("/dashboard", summary="Dashboard em Tempo Real", description="Retorna dashboard consolidado em tempo real")
-async def get_realtime_dashboard() -> dict[str, Any]:
+async def get_realtime_dashboard(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Retorna dashboard consolidado em tempo real.
     """
@@ -329,7 +341,7 @@ async def get_realtime_dashboard() -> dict[str, Any]:
 
 
 @router.get("/health", summary="Health Check Monitoring", description="Verifica saúde do sistema de monitoramento")
-async def monitoring_health_check() -> dict[str, Any]:
+async def monitoring_health_check(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Health check do sistema de monitoramento em tempo real.
     """

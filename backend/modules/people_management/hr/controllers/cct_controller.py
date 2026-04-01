@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_async_session
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/cct", tags=["CCT 2026 SINDECOMPRESTS"])
 
 
 @router.get("/cargos")
-async def listar_cargos_cct(db: AsyncSession = Depends(get_async_session)):
+async def listar_cargos_cct(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Lista todos os cargos da CCT 2026 SINDECOMPRESTS."""
     result = await db.execute(
         text("""
@@ -52,7 +53,7 @@ async def listar_cargos_cct(db: AsyncSession = Depends(get_async_session)):
 
 
 @router.get("/funcionarios")
-async def listar_funcionarios_cct(db: AsyncSession = Depends(get_async_session)):
+async def listar_funcionarios_cct(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Lista funcionários com vínculo CCT."""
     result = await db.execute(
         text("""
@@ -88,7 +89,7 @@ async def listar_funcionarios_cct(db: AsyncSession = Depends(get_async_session))
 
 
 @router.get("/conformidade")
-async def verificar_conformidade(db: AsyncSession = Depends(get_async_session)):
+async def verificar_conformidade(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Verifica conformidade salarial com o piso CCT."""
     result = await db.execute(
         text("""
@@ -126,7 +127,7 @@ async def verificar_conformidade(db: AsyncSession = Depends(get_async_session)):
 
 
 @router.get("/resumo")
-async def resumo_cct(db: AsyncSession = Depends(get_async_session)):
+async def resumo_cct(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Resumo geral da conformidade CCT 2026."""
     result = await db.execute(
         text("""

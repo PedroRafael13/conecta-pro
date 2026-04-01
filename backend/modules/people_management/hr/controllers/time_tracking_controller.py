@@ -44,7 +44,7 @@ class OperationsTimeEntry(BaseModel):
     notes: str | None = None
 
 
-@router.post("/from-operations")
+@router.post("/from-operations", status_code=201)
 async def register_from_operations(
     data: OperationsTimeEntry,
     current_user: CurrentActiveUser,

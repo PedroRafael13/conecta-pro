@@ -321,6 +321,7 @@ async def get_pending_signature(
     return await service.get_pending_signature(condominium_id, page, page_size)
 
 
+@router.get("/expired", include_in_schema=False)
 @router.get("/expired/list", response_model=list[DocumentResponse])
 async def get_expired(
     condominium_id: str | None = Query(None),
@@ -575,7 +576,7 @@ async def submit_for_approval(
     return document
 
 
-@router.post("/{document_id}/new-version", response_model=DocumentResponse)
+@router.post("/{document_id}/new-version", response_model=DocumentResponse, status_code=201)
 async def create_new_version(
     document_id: UUID,
     data: DocumentUploadRequest,

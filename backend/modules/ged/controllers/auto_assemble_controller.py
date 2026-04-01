@@ -208,7 +208,7 @@ async def get_kit_detail(
     }
 
 
-@router.post("/kits")
+@router.post("/kits", status_code=201)
 async def create_kit(
     data: dict[str, Any],
     current_user: CurrentActiveUser = None,

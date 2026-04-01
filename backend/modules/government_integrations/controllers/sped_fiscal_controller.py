@@ -9,6 +9,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import PlainTextResponse
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.sped_fiscal import (
     AdicionarDocumentoRequest,
@@ -39,7 +41,9 @@ def get_service() -> SPEDFiscalService:
     summary="Status do SPED Fiscal",
     description="Retorna o status da configuração do SPED Fiscal",
 )
-async def get_status(service: SPEDFiscalService = Depends(get_service)) -> StandardResponse:
+async def get_status(
+    current_user: CurrentActiveUser, service: SPEDFiscalService = Depends(get_service)
+) -> StandardResponse:
     """Retorna status da configuração."""
     try:
         status_data = service.validar_status()
@@ -57,7 +61,9 @@ async def get_status(service: SPEDFiscalService = Depends(get_service)) -> Stand
     summary="Lista blocos",
     description="Retorna a lista de blocos do SPED Fiscal",
 )
-async def listar_blocos(service: SPEDFiscalService = Depends(get_service)) -> StandardResponse:
+async def listar_blocos(
+    current_user: CurrentActiveUser, service: SPEDFiscalService = Depends(get_service)
+) -> StandardResponse:
     """Lista blocos do SPED."""
     try:
         blocos = service.listar_blocos()
@@ -75,7 +81,9 @@ async def listar_blocos(service: SPEDFiscalService = Depends(get_service)) -> St
     summary="Lista participantes",
     description="Retorna a lista de participantes cadastrados",
 )
-async def listar_participantes(service: SPEDFiscalService = Depends(get_service)) -> StandardResponse:
+async def listar_participantes(
+    current_user: CurrentActiveUser, service: SPEDFiscalService = Depends(get_service)
+) -> StandardResponse:
     """Lista participantes."""
     try:
         participantes = service.listar_participantes()
@@ -95,7 +103,9 @@ async def listar_participantes(service: SPEDFiscalService = Depends(get_service)
     summary="Lista produtos",
     description="Retorna a lista de produtos cadastrados",
 )
-async def listar_produtos(service: SPEDFiscalService = Depends(get_service)) -> StandardResponse:
+async def listar_produtos(
+    current_user: CurrentActiveUser, service: SPEDFiscalService = Depends(get_service)
+) -> StandardResponse:
     """Lista produtos."""
     try:
         produtos = service.listar_produtos()
@@ -113,7 +123,9 @@ async def listar_produtos(service: SPEDFiscalService = Depends(get_service)) -> 
     summary="Lista documentos",
     description="Retorna a lista de documentos cadastrados",
 )
-async def listar_documentos(service: SPEDFiscalService = Depends(get_service)) -> StandardResponse:
+async def listar_documentos(
+    current_user: CurrentActiveUser, service: SPEDFiscalService = Depends(get_service)
+) -> StandardResponse:
     """Lista documentos."""
     try:
         documentos = service.listar_documentos()
@@ -133,7 +145,9 @@ async def listar_documentos(service: SPEDFiscalService = Depends(get_service)) -
     description="Adiciona um participante ao cadastro",
 )
 async def adicionar_participante(
-    request: AdicionarParticipanteRequest, service: SPEDFiscalService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: AdicionarParticipanteRequest,
+    service: SPEDFiscalService = Depends(get_service),
 ) -> StandardResponse:
     """Adiciona participante."""
     try:
@@ -157,7 +171,7 @@ async def adicionar_participante(
     description="Adiciona um produto ao cadastro",
 )
 async def adicionar_produto(
-    request: AdicionarProdutoRequest, service: SPEDFiscalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: AdicionarProdutoRequest, service: SPEDFiscalService = Depends(get_service)
 ) -> StandardResponse:
     """Adiciona produto."""
     try:
@@ -181,7 +195,9 @@ async def adicionar_produto(
     description="Adiciona um documento fiscal",
 )
 async def adicionar_documento(
-    request: AdicionarDocumentoRequest, service: SPEDFiscalService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: AdicionarDocumentoRequest,
+    service: SPEDFiscalService = Depends(get_service),
 ) -> StandardResponse:
     """Adiciona documento fiscal."""
     try:
@@ -205,7 +221,9 @@ async def adicionar_documento(
     description="Adiciona um item ao inventário",
 )
 async def adicionar_inventario(
-    request: AdicionarInventarioRequest, service: SPEDFiscalService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: AdicionarInventarioRequest,
+    service: SPEDFiscalService = Depends(get_service),
 ) -> StandardResponse:
     """Adiciona item ao inventário."""
     try:
@@ -228,7 +246,7 @@ async def adicionar_inventario(
     description="Calcula a apuração de ICMS do período",
 )
 async def calcular_apuracao(
-    request: CalcularApuracaoRequest, service: SPEDFiscalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: CalcularApuracaoRequest, service: SPEDFiscalService = Depends(get_service)
 ) -> StandardResponse:
     """Calcula apuração ICMS."""
     try:
@@ -261,7 +279,7 @@ async def calcular_apuracao(
     description="Gera o arquivo SPED Fiscal",
 )
 async def gerar_arquivo(
-    request: GerarArquivoRequest, service: SPEDFiscalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarArquivoRequest, service: SPEDFiscalService = Depends(get_service)
 ) -> StandardResponse:
     """Gera arquivo SPED."""
     try:
@@ -299,7 +317,7 @@ async def gerar_arquivo(
     description="Gera e retorna o arquivo SPED para download",
 )
 async def gerar_arquivo_download(
-    request: GerarArquivoRequest, service: SPEDFiscalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarArquivoRequest, service: SPEDFiscalService = Depends(get_service)
 ) -> PlainTextResponse:
     """Gera arquivo SPED para download."""
     try:
@@ -334,7 +352,9 @@ async def gerar_arquivo_download(
 @router.delete(
     "/limpar", response_model=StandardResponse, summary="Limpar dados", description="Limpa todos os dados em memória"
 )
-async def limpar_dados(service: SPEDFiscalService = Depends(get_service)) -> StandardResponse:
+async def limpar_dados(
+    current_user: CurrentActiveUser, service: SPEDFiscalService = Depends(get_service)
+) -> StandardResponse:
     """Limpa dados em memória."""
     try:
         resultado = service.limpar_dados()

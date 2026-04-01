@@ -6,6 +6,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.equipment_management.schemas.maintenance import (
     MaintenanceCreate,
@@ -40,6 +41,7 @@ async def get_ai_service(db: AsyncSession = Depends(get_db)) -> MaintenanceAISer
 @router.post("", response_model=MaintenanceResponse, status_code=status.HTTP_201_CREATED)
 async def create_maintenance(
     data: MaintenanceCreate,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Cria uma nova manutenção."""
@@ -57,6 +59,7 @@ async def create_maintenance(
 
 @router.get("", response_model=MaintenanceListResponse)
 async def list_maintenances(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,
     search: str | None = Query(None),
     maintenance_type: str | None = Query(None),
     status_filter: str | None = Query(None, alias="status"),
@@ -95,6 +98,7 @@ async def list_maintenances(  # pylint: disable=too-many-locals
 
 @router.get("/stats", response_model=MaintenanceStats)
 async def get_stats(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     date_from: datetime | None = Query(None),
     date_to: datetime | None = Query(None),
@@ -106,6 +110,7 @@ async def get_stats(
 
 @router.get("/overdue", response_model=list[MaintenanceResponse])
 async def get_overdue(
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> list[MaintenanceResponse]:
     """Lista manutenções atrasadas."""
@@ -114,6 +119,7 @@ async def get_overdue(
 
 @router.get("/waiting-parts", response_model=list[MaintenanceResponse])
 async def get_waiting_parts(
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> list[MaintenanceResponse]:
     """Lista manutenções aguardando peças."""
@@ -122,6 +128,7 @@ async def get_waiting_parts(
 
 @router.get("/needing-followup", response_model=list[MaintenanceResponse])
 async def get_needing_followup(
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> list[MaintenanceResponse]:
     """Lista manutenções que precisam de follow-up."""
@@ -131,6 +138,7 @@ async def get_needing_followup(
 @router.get("/by-date/{date}", response_model=list[MaintenanceResponse])
 async def get_by_date(
     date: datetime,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> list[MaintenanceResponse]:
     """Lista manutenções agendadas para uma data."""
@@ -140,6 +148,7 @@ async def get_by_date(
 @router.get("/by-equipment/{equipment_id}", response_model=list[MaintenanceResponse])
 async def get_by_equipment(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> list[MaintenanceResponse]:
     """Lista manutenções de um equipamento."""
@@ -149,6 +158,7 @@ async def get_by_equipment(
 @router.get("/by-client/{client_id}", response_model=list[MaintenanceResponse])
 async def get_by_client(
     client_id: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> list[MaintenanceResponse]:
     """Lista manutenções de um cliente."""
@@ -158,6 +168,7 @@ async def get_by_client(
 @router.get("/by-technician/{technician_id}", response_model=list[MaintenanceResponse])
 async def get_by_technician(
     technician_id: str,
+    current_user: CurrentActiveUser,
     include_completed: bool = Query(False),
     service: MaintenanceService = Depends(get_service),
 ) -> list[MaintenanceResponse]:
@@ -169,6 +180,7 @@ async def get_by_technician(
 @router.get("/ai/health/{equipment_id}")
 async def analyze_health(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     ai_service: MaintenanceAIService = Depends(get_ai_service),
 ) -> dict:
     """Analisa saúde do equipamento usando IA."""
@@ -184,6 +196,7 @@ async def analyze_health(
 @router.get("/ai/predict-failure/{equipment_id}")
 async def predict_failure(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     ai_service: MaintenanceAIService = Depends(get_ai_service),
 ) -> dict:
     """Prevê probabilidade de falha do equipamento."""
@@ -198,6 +211,7 @@ async def predict_failure(
 
 @router.get("/ai/recommend-schedule")
 async def recommend_schedule(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     ai_service: MaintenanceAIService = Depends(get_ai_service),
 ) -> list[dict]:
@@ -209,6 +223,7 @@ async def recommend_schedule(
 async def optimize_route(
     technician_id: str,
     date: datetime,
+    current_user: CurrentActiveUser,
     ai_service: MaintenanceAIService = Depends(get_ai_service),
 ) -> list[dict]:
     """Otimiza rota de manutenções para técnico."""
@@ -217,6 +232,7 @@ async def optimize_route(
 
 @router.get("/ai/patterns")
 async def analyze_patterns(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     months: int = Query(12, ge=1, le=24),
     ai_service: MaintenanceAIService = Depends(get_ai_service),
@@ -228,6 +244,7 @@ async def analyze_patterns(
 @router.get("/ai/estimate-cost/{equipment_id}")
 async def estimate_cost(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     maintenance_type: str = Query("preventiva"),
     ai_service: MaintenanceAIService = Depends(get_ai_service),
 ) -> dict:
@@ -244,6 +261,7 @@ async def estimate_cost(
 @router.get("/code/{code}", response_model=MaintenanceResponse)
 async def get_by_code(
     code: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Busca manutenção por código."""
@@ -259,6 +277,7 @@ async def get_by_code(
 @router.get("/{maintenance_id}", response_model=MaintenanceResponse)
 async def get_maintenance(
     maintenance_id: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Busca manutenção por ID."""
@@ -275,6 +294,7 @@ async def get_maintenance(
 async def update_maintenance(
     maintenance_id: str,
     data: MaintenanceUpdate,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Atualiza uma manutenção."""
@@ -290,6 +310,7 @@ async def update_maintenance(
 @router.delete("/{maintenance_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_maintenance(
     maintenance_id: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> None:
     """Remove uma manutenção (soft delete)."""
@@ -304,6 +325,7 @@ async def delete_maintenance(
 @router.post("/{maintenance_id}/start", response_model=MaintenanceResponse)
 async def start_maintenance(
     maintenance_id: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Inicia uma manutenção."""
@@ -319,6 +341,7 @@ async def start_maintenance(
 @router.post("/{maintenance_id}/complete", response_model=MaintenanceResponse)
 async def complete_maintenance(
     maintenance_id: str,
+    current_user: CurrentActiveUser,
     problem_resolved: bool = True,
     equipment_status_after: str | None = None,
     service: MaintenanceService = Depends(get_service),
@@ -336,6 +359,7 @@ async def complete_maintenance(
 @router.post("/{maintenance_id}/cancel", response_model=MaintenanceResponse)
 async def cancel_maintenance(
     maintenance_id: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Cancela uma manutenção."""
@@ -352,6 +376,7 @@ async def cancel_maintenance(
 async def mark_waiting_parts(
     maintenance_id: str,
     parts_requested: list,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Marca como aguardando peças."""
@@ -364,10 +389,11 @@ async def mark_waiting_parts(
     return maintenance
 
 
-@router.post("/{maintenance_id}/add-part", response_model=MaintenanceResponse)
+@router.post("/{maintenance_id}/add-part", response_model=MaintenanceResponse, status_code=201)
 async def add_part_replaced(
     maintenance_id: str,
     part_name: str,
+    current_user: CurrentActiveUser,
     part_code: str | None = None,
     quantity: int = 1,
     unit_cost: float = 0.0,
@@ -388,6 +414,7 @@ async def sign_maintenance(
     maintenance_id: str,
     signed_by: str,
     signature: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Registra assinatura do cliente."""
@@ -405,6 +432,7 @@ async def assign_technician(
     maintenance_id: str,
     technician_id: str,
     technician_name: str,
+    current_user: CurrentActiveUser,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Atribui técnico à manutenção."""
@@ -420,6 +448,7 @@ async def assign_technician(
 @router.post("/schedule-preventive/{equipment_id}", response_model=MaintenanceResponse)
 async def schedule_preventive(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     interval_days: int = Query(90, ge=1),
     checklist_template_id: str | None = None,
     service: MaintenanceService = Depends(get_service),

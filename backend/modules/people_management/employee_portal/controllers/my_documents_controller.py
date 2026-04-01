@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
 from modules.people_management.employee_portal.schemas.signature import (
@@ -40,6 +41,7 @@ router = APIRouter(tags=["Portal - Documentos"])
 )
 async def get_my_documents(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna documentos do funcionario autenticado."""
@@ -57,6 +59,7 @@ async def get_my_documents(
 async def sign_document(
     request: Request,
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     document_id: int = Path(..., gt=0, description="ID do documento", alias="id"),
     sign_data: SignDocumentRequest = None,  # type: ignore[assignment]
     db: AsyncSession = Depends(get_db),
@@ -93,6 +96,7 @@ async def sign_document(
     description="Verifica a validade da assinatura de um documento.",
 )
 async def verify_document_signature(
+    current_user: CurrentActiveUser,
     document_id: int = Path(..., gt=0, description="ID do documento", alias="id"),
     signature_hash: str = None,  # type: ignore[assignment]
     db: AsyncSession = Depends(get_db),

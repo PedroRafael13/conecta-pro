@@ -6,6 +6,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.equipment_management.schemas.comodato import (
     ComodatoCreate,
@@ -29,6 +30,7 @@ async def get_service(db: AsyncSession = Depends(get_db)) -> ComodatoService:
 @router.post("", response_model=ComodatoResponse, status_code=status.HTTP_201_CREATED)
 async def create_comodato(
     data: ComodatoCreate,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Cria um novo comodato."""
@@ -46,6 +48,7 @@ async def create_comodato(
 
 @router.get("", response_model=ComodatoListResponse)
 async def list_comodatos(
+    current_user: CurrentActiveUser,
     search: str | None = Query(None),
     status_filter: str | None = Query(None, alias="status"),
     client_id: str | None = Query(None),
@@ -78,6 +81,7 @@ async def list_comodatos(
 
 @router.get("/stats")
 async def get_stats(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     service: ComodatoService = Depends(get_service),
 ) -> dict:
@@ -87,6 +91,7 @@ async def get_stats(
 
 @router.get("/active", response_model=list[ComodatoResponse])
 async def get_active(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     service: ComodatoService = Depends(get_service),
 ) -> list[ComodatoResponse]:
@@ -96,6 +101,7 @@ async def get_active(
 
 @router.get("/pending-signature", response_model=list[ComodatoResponse])
 async def get_pending_signature(
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> list[ComodatoResponse]:
     """Lista comodatos aguardando assinatura."""
@@ -104,6 +110,7 @@ async def get_pending_signature(
 
 @router.get("/pending-delivery", response_model=list[ComodatoResponse])
 async def get_pending_delivery(
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> list[ComodatoResponse]:
     """Lista comodatos aguardando entrega."""
@@ -112,6 +119,7 @@ async def get_pending_delivery(
 
 @router.get("/pending-return", response_model=list[ComodatoResponse])
 async def get_pending_return(
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> list[ComodatoResponse]:
     """Lista comodatos com devolução pendente."""
@@ -120,6 +128,7 @@ async def get_pending_return(
 
 @router.get("/expiring", response_model=list[ComodatoResponse])
 async def get_expiring(
+    current_user: CurrentActiveUser,
     days: int = Query(30, ge=1, le=365),
     service: ComodatoService = Depends(get_service),
 ) -> list[ComodatoResponse]:
@@ -129,6 +138,7 @@ async def get_expiring(
 
 @router.get("/expired", response_model=list[ComodatoResponse])
 async def get_expired(
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> list[ComodatoResponse]:
     """Lista comodatos expirados não devolvidos."""
@@ -138,6 +148,7 @@ async def get_expired(
 @router.get("/by-client/{client_id}", response_model=list[ComodatoResponse])
 async def get_by_client(
     client_id: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> list[ComodatoResponse]:
     """Lista comodatos de um cliente."""
@@ -147,6 +158,7 @@ async def get_by_client(
 @router.get("/code/{code}", response_model=ComodatoResponse)
 async def get_by_code(
     code: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Busca comodato por código."""
@@ -162,6 +174,7 @@ async def get_by_code(
 @router.get("/{comodato_id}", response_model=ComodatoResponse)
 async def get_comodato(
     comodato_id: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Busca comodato por ID."""
@@ -178,6 +191,7 @@ async def get_comodato(
 async def update_comodato(
     comodato_id: str,
     data: ComodatoUpdate,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Atualiza um comodato."""
@@ -193,6 +207,7 @@ async def update_comodato(
 @router.delete("/{comodato_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_comodato(
     comodato_id: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> None:
     """Remove um comodato (soft delete)."""
@@ -209,6 +224,7 @@ async def sign_comodato(
     comodato_id: str,
     signed_by_client: str,
     signed_by_company: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Registra assinatura do contrato."""
@@ -226,6 +242,7 @@ async def deliver_comodato(
     comodato_id: str,
     delivered_by: str,
     received_by: str,
+    current_user: CurrentActiveUser,
     notes: str | None = None,
     photos: list | None = None,
     service: ComodatoService = Depends(get_service),
@@ -243,6 +260,7 @@ async def deliver_comodato(
 @router.post("/{comodato_id}/request-return", response_model=ComodatoResponse)
 async def request_return(
     comodato_id: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Solicita devolução."""
@@ -259,6 +277,7 @@ async def request_return(
 async def schedule_return(
     comodato_id: str,
     scheduled_date: datetime,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Agenda devolução."""
@@ -271,11 +290,12 @@ async def schedule_return(
     return comodato
 
 
-@router.post("/{comodato_id}/return", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/return", response_model=ComodatoResponse, status_code=201)
 async def register_return(
     comodato_id: str,
     returned_by: str,
     condition: str,
+    current_user: CurrentActiveUser,
     notes: str | None = None,
     photos: list | None = None,
     service: ComodatoService = Depends(get_service),
@@ -290,11 +310,12 @@ async def register_return(
     return comodato
 
 
-@router.post("/{comodato_id}/damage", response_model=ComodatoResponse)
+@router.post("/{comodato_id}/damage", response_model=ComodatoResponse, status_code=201)
 async def register_damage(
     comodato_id: str,
     description: str,
     cost: float,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Registra dano no equipamento."""
@@ -310,6 +331,7 @@ async def register_damage(
 @router.post("/{comodato_id}/mark-lost", response_model=ComodatoResponse)
 async def mark_as_lost(
     comodato_id: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Marca equipamento como perdido."""
@@ -326,6 +348,7 @@ async def mark_as_lost(
 async def terminate_comodato(
     comodato_id: str,
     reason: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Encerra contrato de comodato."""
@@ -344,6 +367,7 @@ async def transfer_comodato(
     new_client_id: str,
     new_client_name: str,
     reason: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Transfere comodato para outro cliente."""
@@ -359,6 +383,7 @@ async def transfer_comodato(
 @router.post("/{comodato_id}/contract-pdf")
 async def generate_contract_pdf(
     comodato_id: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> dict:
     """Gera PDF do contrato."""
@@ -374,6 +399,7 @@ async def generate_contract_pdf(
 @router.post("/{comodato_id}/delivery-term")
 async def generate_delivery_term(
     comodato_id: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> dict:
     """Gera termo de entrega."""
@@ -389,6 +415,7 @@ async def generate_delivery_term(
 @router.post("/{comodato_id}/return-term")
 async def generate_return_term(
     comodato_id: str,
+    current_user: CurrentActiveUser,
     service: ComodatoService = Depends(get_service),
 ) -> dict:
     """Gera termo de devolução."""

@@ -187,7 +187,7 @@ async def cancel_meeting(
 # ============== Participant Endpoints ==============
 
 
-@router.post("/meetings/{meeting_id}/participants", response_model=ParticipantResponse)
+@router.post("/meetings/{meeting_id}/participants", response_model=ParticipantResponse, status_code=201)
 async def add_participant(
     meeting_id: uuid.UUID, data: ParticipantCreate, repo: MeetingAssistantRepository = Depends(get_repository)
 ):
@@ -239,7 +239,7 @@ async def remove_participant(
 # ============== Notes & Summary Endpoints ==============
 
 
-@router.post("/meetings/{meeting_id}/notes", response_model=MeetingNoteResponse)
+@router.post("/meetings/{meeting_id}/notes", response_model=MeetingNoteResponse, status_code=201)
 async def create_note(
     meeting_id: uuid.UUID,
     data: MeetingNoteCreate,
@@ -567,7 +567,7 @@ async def get_meeting_tasks(meeting_id: uuid.UUID, repo: MeetingAssistantReposit
     return repo.get_tasks_from_meeting(meeting_id)
 
 
-@router.post("/meetings/{meeting_id}/create-task", response_model=TaskResponse)
+@router.post("/meetings/{meeting_id}/create-task", response_model=TaskResponse, status_code=201)
 async def create_task_from_meeting(
     meeting_id: uuid.UUID,
     data: TaskCreate,

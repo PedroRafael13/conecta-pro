@@ -10,6 +10,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Path, Query, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.nfse_manaus import (
     CancelarNFSeRequest,
@@ -33,7 +35,7 @@ router = APIRouter(prefix="/nfse-manaus", tags=["NFS-e Manaus"])
     summary="Emite NFS-e",
     description="Emite Nota Fiscal de Serviços Eletronica via RPS para Prefeitura de Manaus.",
 )
-async def emitir_nfse(request: EmitirNFSeRequest) -> StandardResponse:
+async def emitir_nfse(current_user: CurrentActiveUser, request: EmitirNFSeRequest) -> StandardResponse:
     """
     Emite NFS-e através de RPS.
 
@@ -103,6 +105,7 @@ async def emitir_nfse(request: EmitirNFSeRequest) -> StandardResponse:
     description="Consulta NFS-e pelo número do RPS.",
 )
 async def consultar_nfse_por_rps(
+    current_user: CurrentActiveUser,
     numero_rps: str = Path(..., description="Número do RPS"),
     serie: str = Query(default="RPS", description="Série do RPS"),
     tipo: str = Query(default="1", description="Tipo do RPS"),
@@ -152,6 +155,7 @@ async def consultar_nfse_por_rps(
     description="Consulta NFS-e pelo número da nota.",
 )
 async def consultar_nfse_por_numero(
+    current_user: CurrentActiveUser,
     numero_nfse: str = Path(..., description="Número da NFS-e"),
 ) -> StandardResponse:
     """
@@ -194,7 +198,7 @@ async def consultar_nfse_por_numero(
     summary="Cancela NFS-e",
     description="Cancela uma NFS-e emitida.",
 )
-async def cancelar_nfse(request: CancelarNFSeRequest) -> StandardResponse:
+async def cancelar_nfse(current_user: CurrentActiveUser, request: CancelarNFSeRequest) -> StandardResponse:
     """
     Cancela uma NFS-e.
 
@@ -250,7 +254,7 @@ async def cancelar_nfse(request: CancelarNFSeRequest) -> StandardResponse:
     summary="Substitui NFS-e",
     description="Substitui uma NFS-e por outra.",
 )
-async def substituir_nfse(request: SubstituirNFSeRequest) -> StandardResponse:
+async def substituir_nfse(current_user: CurrentActiveUser, request: SubstituirNFSeRequest) -> StandardResponse:
     """
     Substitui uma NFS-e.
 
@@ -298,6 +302,7 @@ async def substituir_nfse(request: SubstituirNFSeRequest) -> StandardResponse:
     description="Consulta a situação de processamento de um lote de RPS.",
 )
 async def consultar_lote(
+    current_user: CurrentActiveUser,
     numero_lote: str = Path(..., description="Número/protocolo do lote"),
 ) -> StandardResponse:
     """
@@ -337,7 +342,7 @@ async def consultar_lote(
     summary="Valida conexão com WebService",
     description="Verifica conexão com WebService da Prefeitura de Manaus e status do certificado.",
 )
-async def validar_conexao() -> StandardResponse:
+async def validar_conexao(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Valida conexão com WebService.
 
@@ -387,7 +392,7 @@ async def validar_conexao() -> StandardResponse:
     summary="Lista códigos de serviço",
     description="Lista códigos de serviço comuns para vigilância/segurança.",
 )
-async def listar_codigos_servico() -> StandardResponse:
+async def listar_codigos_servico(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Lista códigos de serviço disponíveis.
 

@@ -13,6 +13,8 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request, status
 from pydantic import BaseModel
 
+from core.auth.dependencies import CurrentActiveUser
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/whatsapp", tags=["Portal - WhatsApp"])
@@ -206,6 +208,7 @@ def _send_whatsapp_reply(phone: str, message: str) -> None:
 async def receive_whatsapp_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
+    current_user: CurrentActiveUser,
     x_webhook_secret: str | None = Header(None, alias="X-Webhook-Secret"),
 ) -> dict:
     """Recebe webhook do Evolution API e processa mensagens em background."""
@@ -233,7 +236,7 @@ async def receive_whatsapp_webhook(
 
 
 @router.get("/config")
-async def get_whatsapp_config() -> WhatsAppConfigResponse:
+async def get_whatsapp_config(current_user: CurrentActiveUser) -> WhatsAppConfigResponse:
     """Retorna configuração pública do WhatsApp (número, status)."""
     return WhatsAppConfigResponse(
         whatsapp_number=WHATSAPP_NUMBER,

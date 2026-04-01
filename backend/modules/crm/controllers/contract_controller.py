@@ -441,7 +441,7 @@ async def delete_contract(
 # ============== Contract Item Endpoints ==============
 
 
-@router.post("/{contract_id}/items", response_model=ContractItemResponse)
+@router.post("/{contract_id}/items", response_model=ContractItemResponse, status_code=201)
 async def add_contract_item(
     contract_id: str,
     data: ContractItemCreate,
@@ -516,7 +516,7 @@ async def remove_contract_item(
 # ============== Contract Addendum Endpoints ==============
 
 
-@router.post("/{contract_id}/addendums", response_model=ContractAddendumResponse)
+@router.post("/{contract_id}/addendums", response_model=ContractAddendumResponse, status_code=201)
 async def create_addendum(
     contract_id: str,
     data: ContractAddendumCreate,
@@ -669,7 +669,7 @@ async def delete_template(
 # ============== SLA Report Endpoints ==============
 
 
-@router.post("/{contract_id}/sla-reports", response_model=ContractSLAReportResponse)
+@router.post("/{contract_id}/sla-reports", response_model=ContractSLAReportResponse, status_code=201)
 async def create_sla_report(
     contract_id: str,
     data: ContractSLAReportCreate,

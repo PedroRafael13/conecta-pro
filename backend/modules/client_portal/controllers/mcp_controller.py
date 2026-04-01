@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.client_portal.middleware.portal_auth import get_current_portal_client
 
@@ -50,6 +51,7 @@ class MCPRevokeResponse(BaseModel):
 
 @router.post("/token", response_model=MCPTokenResponse)
 async def generate_mcp_token(
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -103,6 +105,7 @@ async def generate_mcp_token(
 
 @router.delete("/token", response_model=MCPRevokeResponse)
 async def revoke_mcp_token(
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
 ) -> Any:

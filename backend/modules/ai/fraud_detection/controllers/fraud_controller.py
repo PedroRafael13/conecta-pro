@@ -519,9 +519,7 @@ async def escalate_alert(
 
 
 @router.post(
-    "/alerts/{alert_id}/feedback",
-    response_model=FraudAlertResponse,
-    summary="Adicionar feedback",
+    "/alerts/{alert_id}/feedback", response_model=FraudAlertResponse, summary="Adicionar feedback", status_code=201
 )
 async def add_feedback(
     alert_id: UUID,

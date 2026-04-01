@@ -11,6 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.ai.report_generator.models.report import ReportStatusEnum, ReportTypeEnum
 from modules.ai.report_generator.models.report_execution import ExecutionStatusEnum
@@ -57,6 +58,7 @@ router = APIRouter(prefix="/reports", tags=["AI Report Generator"])
 @router.post("/generate", response_model=GenerateReportResponse, status_code=status.HTTP_202_ACCEPTED)
 async def generate_report(
     request: GenerateReportRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -98,6 +100,7 @@ async def generate_report(
 
 @router.get("", response_model=ReportListResponse)
 async def list_reports(
+    current_user: CurrentActiveUser,
     report_type: ReportTypeEnum | None = None,
     status: ReportStatusEnum | None = None,
     category: str | None = None,
@@ -137,6 +140,7 @@ async def list_reports(
 @router.get("/{report_id}", response_model=ReportResponse)
 async def get_report(
     report_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Busca relatório por ID."""
@@ -157,6 +161,7 @@ async def get_report(
 async def update_report(
     report_id: UUID,
     update_data: ReportUpdate,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Atualiza relatório."""
@@ -175,6 +180,7 @@ async def update_report(
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_report(
     report_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Remove relatório."""
@@ -187,6 +193,7 @@ async def delete_report(
 async def export_report(
     report_id: UUID,
     request: ExportReportRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Exporta relatório para formato especificado."""
@@ -222,6 +229,7 @@ async def export_report(
 @router.post("/templates", response_model=ReportTemplateResponse, status_code=status.HTTP_201_CREATED)
 async def create_template(
     template_data: ReportTemplateCreate,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Cria novo template de relatório."""
@@ -250,6 +258,7 @@ async def create_template(
 
 @router.get("/templates", response_model=ReportTemplateListResponse)
 async def list_templates(
+    current_user: CurrentActiveUser,
     category: TemplateCategoryEnum | None = None,
     status: TemplateStatusEnum | None = None,
     is_public: bool | None = None,
@@ -285,6 +294,7 @@ async def list_templates(
 @router.get("/templates/{template_id}", response_model=ReportTemplateResponse)
 async def get_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Busca template por ID."""
@@ -301,6 +311,7 @@ async def get_template(
 async def update_template(
     template_id: UUID,
     update_data: ReportTemplateUpdate,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Atualiza template."""
@@ -318,6 +329,7 @@ async def update_template(
 @router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Remove template."""
@@ -329,6 +341,7 @@ async def delete_template(
 @router.post("/templates/{template_id}/clone", response_model=ReportTemplateResponse)
 async def clone_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     new_code: str = Query(...),
     new_name: str = Query(...),
     db: Session = Depends(get_db),
@@ -346,6 +359,7 @@ async def clone_template(
 @router.post("/templates/{template_id}/publish", response_model=ReportTemplateResponse)
 async def publish_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Publica um template (ativa)."""
@@ -363,6 +377,7 @@ async def publish_template(
 @router.post("/templates/{template_id}/validate")
 async def validate_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Valida um template."""
@@ -377,6 +392,7 @@ async def validate_template(
 
 @router.post("/templates/initialize-defaults")
 async def initialize_default_templates(
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Inicializa templates padrão do sistema."""
@@ -395,6 +411,7 @@ async def initialize_default_templates(
 @router.post("/schedules", response_model=ReportScheduleResponse, status_code=status.HTTP_201_CREATED)
 async def create_schedule(
     schedule_data: ReportScheduleCreate,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Cria novo agendamento de relatório."""
@@ -426,6 +443,7 @@ async def create_schedule(
 
 @router.get("/schedules", response_model=ReportScheduleListResponse)
 async def list_schedules(
+    current_user: CurrentActiveUser,
     template_id: UUID | None = None,
     status: ScheduleStatusEnum | None = None,
     page: int = Query(1, ge=1),
@@ -455,6 +473,7 @@ async def list_schedules(
 @router.get("/schedules/{schedule_id}", response_model=ReportScheduleResponse)
 async def get_schedule(
     schedule_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Busca agendamento por ID."""
@@ -471,6 +490,7 @@ async def get_schedule(
 async def update_schedule(
     schedule_id: UUID,
     update_data: ReportScheduleUpdate,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Atualiza agendamento."""
@@ -487,6 +507,7 @@ async def update_schedule(
 @router.delete("/schedules/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_schedule(
     schedule_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Remove agendamento."""
@@ -498,6 +519,7 @@ async def delete_schedule(
 @router.post("/schedules/{schedule_id}/pause", response_model=ReportScheduleResponse)
 async def pause_schedule(
     schedule_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Pausa agendamento."""
@@ -513,6 +535,7 @@ async def pause_schedule(
 @router.post("/schedules/{schedule_id}/resume", response_model=ReportScheduleResponse)
 async def resume_schedule(
     schedule_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Retoma agendamento."""
@@ -527,6 +550,7 @@ async def resume_schedule(
 
 @router.post("/schedules/process-due")
 async def process_due_schedules(
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Processa agendamentos pendentes."""
@@ -544,6 +568,7 @@ async def process_due_schedules(
 
 @router.get("/executions", response_model=ReportExecutionListResponse)
 async def list_executions(
+    current_user: CurrentActiveUser,
     report_id: UUID | None = None,
     template_id: UUID | None = None,
     schedule_id: UUID | None = None,
@@ -577,6 +602,7 @@ async def list_executions(
 @router.get("/executions/{execution_id}", response_model=ReportExecutionResponse)
 async def get_execution(
     execution_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Busca execução por ID."""
@@ -594,6 +620,7 @@ async def get_execution(
 
 @router.get("/dashboard", response_model=ReportDashboardResponse)
 async def get_dashboard(
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Retorna dashboard de relatórios."""
@@ -621,6 +648,7 @@ async def get_dashboard(
 
 @router.get("/stats", response_model=ReportStatsResponse)
 async def get_stats(
+    current_user: CurrentActiveUser,
     days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
 ):
@@ -649,6 +677,7 @@ async def get_stats(
 
 @router.get("/metadata/data-sources")
 async def get_data_sources(
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Retorna fontes de dados disponíveis."""
@@ -658,6 +687,7 @@ async def get_data_sources(
 
 @router.get("/metadata/section-types")
 async def get_section_types(
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Retorna tipos de seção disponíveis."""
@@ -667,6 +697,7 @@ async def get_section_types(
 
 @router.get("/metadata/chart-types")
 async def get_chart_types(
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Retorna tipos de gráfico disponíveis."""
@@ -676,6 +707,7 @@ async def get_chart_types(
 
 @router.get("/metadata/export-formats")
 async def get_export_formats(
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Retorna formatos de exportação suportados."""

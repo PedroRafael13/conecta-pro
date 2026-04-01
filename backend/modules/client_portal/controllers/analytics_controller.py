@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import case, extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.client_portal.middleware.portal_auth import get_current_portal_client
 from modules.client_portal.models.ticket import ClientTicket, TicketStatus
@@ -35,6 +36,7 @@ CERTIDOES_TYPES = [
 
 @router.get("/overview")
 async def get_overview(
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -166,6 +168,7 @@ async def get_overview(
 
 @router.get("/kits-history")
 async def get_kits_history(
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
     months: int = Query(6, ge=1, le=24, description="Quantos meses de historico retornar"),
@@ -210,6 +213,7 @@ async def get_kits_history(
 
 @router.get("/tickets-history")
 async def get_tickets_history(
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
     months: int = Query(6, ge=1, le=24, description="Quantos meses de historico retornar"),
@@ -274,6 +278,7 @@ async def get_tickets_history(
 
 @router.get("/conformidade")
 async def get_conformidade(
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
 ) -> Any:

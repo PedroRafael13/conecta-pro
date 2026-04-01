@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.config.schemas import (
     # Dashboard
@@ -62,6 +63,7 @@ router = APIRouter(prefix="/config", tags=["Config"])
 
 @router.get("/tenants", response_model=TenantList)
 async def list_tenants(
+    current_user: CurrentActiveUser,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     status: str | None = None,
@@ -79,14 +81,18 @@ async def list_tenants(
 
 
 @router.post("/tenants", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
-async def create_tenant(data: TenantCreate, db: AsyncSession = Depends(get_db)) -> TenantResponse:
+async def create_tenant(
+    data: TenantCreate, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantResponse:
     """Cria novo tenant."""
     service = ConfigService(db)
     return await service.create_tenant(data)
 
 
 @router.get("/tenants/{tenant_id}", response_model=TenantResponse)
-async def get_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -> TenantResponse:
+async def get_tenant(
+    tenant_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantResponse:
     """Busca tenant por ID."""
     service = ConfigService(db)
     tenant = await service.get_tenant(tenant_id)
@@ -96,7 +102,9 @@ async def get_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -> Ten
 
 
 @router.put("/tenants/{tenant_id}", response_model=TenantResponse)
-async def update_tenant(tenant_id: UUID, data: TenantUpdate, db: AsyncSession = Depends(get_db)) -> TenantResponse:
+async def update_tenant(
+    tenant_id: UUID, data: TenantUpdate, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantResponse:
     """Atualiza tenant."""
     service = ConfigService(db)
     tenant = await service.update_tenant(tenant_id, data)
@@ -107,7 +115,7 @@ async def update_tenant(tenant_id: UUID, data: TenantUpdate, db: AsyncSession = 
 
 @router.put("/tenants/{tenant_id}/plan", response_model=TenantResponse)
 async def update_tenant_plan(
-    tenant_id: UUID, data: TenantPlanUpdate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, tenant_id: UUID, data: TenantPlanUpdate, db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
     """Atualiza plano do tenant."""
     service = ConfigService(db)
@@ -119,7 +127,7 @@ async def update_tenant_plan(
 
 @router.put("/tenants/{tenant_id}/address", response_model=TenantResponse)
 async def update_tenant_address(
-    tenant_id: UUID, data: TenantAddressUpdate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, tenant_id: UUID, data: TenantAddressUpdate, db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
     """Atualiza endereço do tenant."""
     service = ConfigService(db)
@@ -130,7 +138,9 @@ async def update_tenant_address(
 
 
 @router.post("/tenants/{tenant_id}/activate", response_model=TenantResponse)
-async def activate_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -> TenantResponse:
+async def activate_tenant(
+    tenant_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantResponse:
     """Ativa tenant."""
     service = ConfigService(db)
     tenant = await service.activate_tenant(tenant_id)
@@ -141,7 +151,7 @@ async def activate_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -
 
 @router.post("/tenants/{tenant_id}/suspend", response_model=TenantResponse)
 async def suspend_tenant(
-    tenant_id: UUID, reason: str | None = None, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, tenant_id: UUID, reason: str | None = None, db: AsyncSession = Depends(get_db)
 ) -> TenantResponse:
     """Suspende tenant."""
     service = ConfigService(db)
@@ -152,7 +162,9 @@ async def suspend_tenant(
 
 
 @router.post("/tenants/{tenant_id}/cancel", response_model=TenantResponse)
-async def cancel_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -> TenantResponse:
+async def cancel_tenant(
+    tenant_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantResponse:
     """Cancela tenant."""
     service = ConfigService(db)
     tenant = await service.cancel_tenant(tenant_id)
@@ -162,7 +174,9 @@ async def cancel_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -> 
 
 
 @router.post("/tenants/{tenant_id}/convert-trial", response_model=TenantResponse)
-async def convert_trial(tenant_id: UUID, plan: str = "starter", db: AsyncSession = Depends(get_db)) -> TenantResponse:
+async def convert_trial(
+    tenant_id: UUID, current_user: CurrentActiveUser, plan: str = "starter", db: AsyncSession = Depends(get_db)
+) -> TenantResponse:
     """Converte trial para plano pago."""
     service = ConfigService(db)
     tenant = await service.convert_trial(tenant_id, plan)
@@ -172,7 +186,9 @@ async def convert_trial(tenant_id: UUID, plan: str = "starter", db: AsyncSession
 
 
 @router.post("/tenants/{tenant_id}/features/{feature}/enable", response_model=TenantResponse)
-async def enable_tenant_feature(tenant_id: UUID, feature: str, db: AsyncSession = Depends(get_db)) -> TenantResponse:
+async def enable_tenant_feature(
+    tenant_id: UUID, feature: str, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantResponse:
     """Habilita feature para tenant."""
     service = ConfigService(db)
     tenant = await service.enable_feature(tenant_id, feature)
@@ -182,7 +198,9 @@ async def enable_tenant_feature(tenant_id: UUID, feature: str, db: AsyncSession 
 
 
 @router.post("/tenants/{tenant_id}/features/{feature}/disable", response_model=TenantResponse)
-async def disable_tenant_feature(tenant_id: UUID, feature: str, db: AsyncSession = Depends(get_db)) -> TenantResponse:
+async def disable_tenant_feature(
+    tenant_id: UUID, feature: str, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantResponse:
     """Desabilita feature para tenant."""
     service = ConfigService(db)
     tenant = await service.disable_feature(tenant_id, feature)
@@ -192,7 +210,7 @@ async def disable_tenant_feature(tenant_id: UUID, feature: str, db: AsyncSession
 
 
 @router.delete("/tenants/{tenant_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_tenant(tenant_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)) -> None:
     """Remove tenant."""
     service = ConfigService(db)
     deleted = await service.delete_tenant(tenant_id)
@@ -206,6 +224,7 @@ async def delete_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -> 
 @router.get("/tenants/{tenant_id}/settings", response_model=TenantSettingsList)
 async def list_tenant_settings(
     tenant_id: UUID,
+    current_user: CurrentActiveUser,
     category: str | None = None,
     group: str | None = None,
     visible: bool | None = None,
@@ -223,7 +242,7 @@ async def list_tenant_settings(
     "/tenants/{tenant_id}/settings", response_model=TenantSettingsResponse, status_code=status.HTTP_201_CREATED
 )
 async def create_tenant_setting(
-    tenant_id: UUID, data: TenantSettingsCreate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, tenant_id: UUID, data: TenantSettingsCreate, db: AsyncSession = Depends(get_db)
 ) -> TenantSettingsResponse:
     """Cria configuração do tenant."""
     data.tenant_id = tenant_id
@@ -232,7 +251,9 @@ async def create_tenant_setting(
 
 
 @router.get("/settings/{setting_id}", response_model=TenantSettingsResponse)
-async def get_setting(setting_id: UUID, db: AsyncSession = Depends(get_db)) -> TenantSettingsResponse:
+async def get_setting(
+    setting_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantSettingsResponse:
     """Busca configuração por ID."""
     service = ConfigService(db)
     setting = await service.get_setting(setting_id)
@@ -243,7 +264,7 @@ async def get_setting(setting_id: UUID, db: AsyncSession = Depends(get_db)) -> T
 
 @router.put("/settings/{setting_id}", response_model=TenantSettingsResponse)
 async def update_setting(
-    setting_id: UUID, data: TenantSettingsUpdate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, setting_id: UUID, data: TenantSettingsUpdate, db: AsyncSession = Depends(get_db)
 ) -> TenantSettingsResponse:
     """Atualiza configuração."""
     service = ConfigService(db)
@@ -255,7 +276,10 @@ async def update_setting(
 
 @router.put("/settings/{setting_id}/value", response_model=TenantSettingsResponse)
 async def update_setting_value(
-    setting_id: UUID, data: TenantSettingsValueUpdate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser,
+    setting_id: UUID,
+    data: TenantSettingsValueUpdate,
+    db: AsyncSession = Depends(get_db),
 ) -> TenantSettingsResponse:
     """Atualiza valor da configuração."""
     service = ConfigService(db)
@@ -267,7 +291,9 @@ async def update_setting_value(
 
 
 @router.post("/settings/{setting_id}/reset", response_model=TenantSettingsResponse)
-async def reset_setting(setting_id: UUID, db: AsyncSession = Depends(get_db)) -> TenantSettingsResponse:
+async def reset_setting(
+    setting_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantSettingsResponse:
     """Reseta configuração para valor padrão."""
     service = ConfigService(db)
     setting = await service.reset_setting(setting_id)
@@ -277,7 +303,7 @@ async def reset_setting(setting_id: UUID, db: AsyncSession = Depends(get_db)) ->
 
 
 @router.delete("/settings/{setting_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_setting(setting_id: UUID, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_setting(setting_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)) -> None:
     """Remove configuração."""
     service = ConfigService(db)
     deleted = await service.delete_setting(setting_id)
@@ -290,6 +316,7 @@ async def delete_setting(setting_id: UUID, db: AsyncSession = Depends(get_db)) -
 
 @router.get("/system", response_model=SystemConfigList)
 async def list_system_configs(
+    current_user: CurrentActiveUser,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     scope: str | None = None,
@@ -306,14 +333,18 @@ async def list_system_configs(
 
 
 @router.post("/system", response_model=SystemConfigResponse, status_code=status.HTTP_201_CREATED)
-async def create_system_config(data: SystemConfigCreate, db: AsyncSession = Depends(get_db)) -> SystemConfigResponse:
+async def create_system_config(
+    data: SystemConfigCreate, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> SystemConfigResponse:
     """Cria configuração global."""
     service = ConfigService(db)
     return await service.create_system_config(data)
 
 
 @router.get("/system/{config_id}", response_model=SystemConfigResponse)
-async def get_system_config(config_id: UUID, db: AsyncSession = Depends(get_db)) -> SystemConfigResponse:
+async def get_system_config(
+    config_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> SystemConfigResponse:
     """Busca configuração global por ID."""
     service = ConfigService(db)
     config = await service.get_system_config(config_id)
@@ -324,7 +355,7 @@ async def get_system_config(config_id: UUID, db: AsyncSession = Depends(get_db))
 
 @router.put("/system/{config_id}", response_model=SystemConfigResponse)
 async def update_system_config(
-    config_id: UUID, data: SystemConfigUpdate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, config_id: UUID, data: SystemConfigUpdate, db: AsyncSession = Depends(get_db)
 ) -> SystemConfigResponse:
     """Atualiza configuração global."""
     service = ConfigService(db)
@@ -335,7 +366,9 @@ async def update_system_config(
 
 
 @router.delete("/system/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_system_config(config_id: UUID, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_system_config(
+    config_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> None:
     """Remove configuração global."""
     service = ConfigService(db)
     deleted = await service.delete_system_config(config_id)
@@ -348,6 +381,7 @@ async def delete_system_config(config_id: UUID, db: AsyncSession = Depends(get_d
 
 @router.get("/flags", response_model=FeatureFlagList)
 async def list_feature_flags(
+    current_user: CurrentActiveUser,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     status: str | None = None,
@@ -365,14 +399,18 @@ async def list_feature_flags(
 
 
 @router.post("/flags", response_model=FeatureFlagResponse, status_code=status.HTTP_201_CREATED)
-async def create_feature_flag(data: FeatureFlagCreate, db: AsyncSession = Depends(get_db)) -> FeatureFlagResponse:
+async def create_feature_flag(
+    data: FeatureFlagCreate, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> FeatureFlagResponse:
     """Cria feature flag."""
     service = ConfigService(db)
     return await service.create_feature_flag(data)
 
 
 @router.get("/flags/{flag_id}", response_model=FeatureFlagResponse)
-async def get_feature_flag(flag_id: UUID, db: AsyncSession = Depends(get_db)) -> FeatureFlagResponse:
+async def get_feature_flag(
+    flag_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> FeatureFlagResponse:
     """Busca feature flag por ID."""
     service = ConfigService(db)
     flag = await service.get_feature_flag(flag_id)
@@ -383,7 +421,7 @@ async def get_feature_flag(flag_id: UUID, db: AsyncSession = Depends(get_db)) ->
 
 @router.put("/flags/{flag_id}", response_model=FeatureFlagResponse)
 async def update_feature_flag(
-    flag_id: UUID, data: FeatureFlagUpdate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, flag_id: UUID, data: FeatureFlagUpdate, db: AsyncSession = Depends(get_db)
 ) -> FeatureFlagResponse:
     """Atualiza feature flag."""
     service = ConfigService(db)
@@ -394,7 +432,9 @@ async def update_feature_flag(
 
 
 @router.post("/flags/{flag_id}/enable", response_model=FeatureFlagResponse)
-async def enable_feature_flag(flag_id: UUID, db: AsyncSession = Depends(get_db)) -> FeatureFlagResponse:
+async def enable_feature_flag(
+    flag_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> FeatureFlagResponse:
     """Habilita feature flag."""
     service = ConfigService(db)
     flag = await service.enable_flag(flag_id)
@@ -404,7 +444,9 @@ async def enable_feature_flag(flag_id: UUID, db: AsyncSession = Depends(get_db))
 
 
 @router.post("/flags/{flag_id}/disable", response_model=FeatureFlagResponse)
-async def disable_feature_flag(flag_id: UUID, db: AsyncSession = Depends(get_db)) -> FeatureFlagResponse:
+async def disable_feature_flag(
+    flag_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> FeatureFlagResponse:
     """Desabilita feature flag."""
     service = ConfigService(db)
     flag = await service.disable_flag(flag_id)
@@ -415,7 +457,10 @@ async def disable_feature_flag(flag_id: UUID, db: AsyncSession = Depends(get_db)
 
 @router.post("/flags/{flag_id}/percentage", response_model=FeatureFlagResponse)
 async def set_flag_percentage(
-    flag_id: UUID, percentage: float = Query(..., ge=0, le=100), db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser,
+    flag_id: UUID,
+    percentage: float = Query(..., ge=0, le=100),
+    db: AsyncSession = Depends(get_db),
 ) -> FeatureFlagResponse:
     """Define percentual de rollout."""
     service = ConfigService(db)
@@ -427,7 +472,7 @@ async def set_flag_percentage(
 
 @router.post("/flags/{flag_id}/gradual-rollout", response_model=FeatureFlagResponse)
 async def start_gradual_rollout(
-    flag_id: UUID, data: FeatureFlagGradualRollout, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, flag_id: UUID, data: FeatureFlagGradualRollout, db: AsyncSession = Depends(get_db)
 ) -> FeatureFlagResponse:
     """Inicia rollout gradual."""
     service = ConfigService(db)
@@ -439,7 +484,7 @@ async def start_gradual_rollout(
 
 @router.post("/flags/{flag_id}/toggle-tenant", response_model=FeatureFlagResponse)
 async def toggle_flag_for_tenant(
-    flag_id: UUID, data: FeatureFlagTenantToggle, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, flag_id: UUID, data: FeatureFlagTenantToggle, db: AsyncSession = Depends(get_db)
 ) -> FeatureFlagResponse:
     """Toggle de flag para tenant."""
     service = ConfigService(db)
@@ -454,7 +499,10 @@ async def toggle_flag_for_tenant(
 
 @router.post("/flags/evaluate", response_model=FeatureFlagEvaluateResponse)
 async def evaluate_feature_flag(
-    data: FeatureFlagEvaluate, codigo: str = Query(...), db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser,
+    data: FeatureFlagEvaluate,
+    codigo: str = Query(...),
+    db: AsyncSession = Depends(get_db),
 ) -> FeatureFlagEvaluateResponse:
     """Avalia feature flag."""
     service = ConfigService(db)
@@ -465,7 +513,9 @@ async def evaluate_feature_flag(
 
 
 @router.delete("/flags/{flag_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_feature_flag(flag_id: UUID, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_feature_flag(
+    flag_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> None:
     """Remove feature flag."""
     service = ConfigService(db)
     deleted = await service.delete_feature_flag(flag_id)
@@ -478,6 +528,7 @@ async def delete_feature_flag(flag_id: UUID, db: AsyncSession = Depends(get_db))
 
 @router.get("/templates", response_model=NotificationTemplateList)
 async def list_notification_templates(
+    current_user: CurrentActiveUser,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     tenant_id: UUID | None = None,
@@ -505,7 +556,7 @@ async def list_notification_templates(
 
 @router.post("/templates", response_model=NotificationTemplateResponse, status_code=status.HTTP_201_CREATED)
 async def create_notification_template(
-    data: NotificationTemplateCreate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, data: NotificationTemplateCreate, db: AsyncSession = Depends(get_db)
 ) -> NotificationTemplateResponse:
     """Cria template de notificação."""
     service = ConfigService(db)
@@ -514,7 +565,7 @@ async def create_notification_template(
 
 @router.get("/templates/{template_id}", response_model=NotificationTemplateResponse)
 async def get_notification_template(
-    template_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, template_id: UUID, db: AsyncSession = Depends(get_db)
 ) -> NotificationTemplateResponse:
     """Busca template por ID."""
     service = ConfigService(db)
@@ -526,7 +577,10 @@ async def get_notification_template(
 
 @router.put("/templates/{template_id}", response_model=NotificationTemplateResponse)
 async def update_notification_template(
-    template_id: UUID, data: NotificationTemplateUpdate, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser,
+    template_id: UUID,
+    data: NotificationTemplateUpdate,
+    db: AsyncSession = Depends(get_db),
 ) -> NotificationTemplateResponse:
     """Atualiza template."""
     service = ConfigService(db)
@@ -538,7 +592,7 @@ async def update_notification_template(
 
 @router.post("/templates/{template_id}/activate", response_model=NotificationTemplateResponse)
 async def activate_notification_template(
-    template_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, template_id: UUID, db: AsyncSession = Depends(get_db)
 ) -> NotificationTemplateResponse:
     """Ativa template."""
     service = ConfigService(db)
@@ -550,7 +604,7 @@ async def activate_notification_template(
 
 @router.post("/templates/{template_id}/deactivate", response_model=NotificationTemplateResponse)
 async def deactivate_notification_template(
-    template_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser, template_id: UUID, db: AsyncSession = Depends(get_db)
 ) -> NotificationTemplateResponse:
     """Desativa template."""
     service = ConfigService(db)
@@ -562,7 +616,10 @@ async def deactivate_notification_template(
 
 @router.post("/templates/{template_id}/render", response_model=NotificationTemplateRenderResponse)
 async def render_notification_template(
-    template_id: UUID, data: NotificationTemplateRender, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser,
+    template_id: UUID,
+    data: NotificationTemplateRender,
+    db: AsyncSession = Depends(get_db),
 ) -> NotificationTemplateRenderResponse:
     """Renderiza template com variáveis."""
     service = ConfigService(db)
@@ -575,7 +632,10 @@ async def render_notification_template(
 
 @router.post("/templates/{template_id}/clone", response_model=NotificationTemplateResponse)
 async def clone_notification_template(
-    template_id: UUID, new_codigo: str | None = None, db: AsyncSession = Depends(get_db)
+    current_user: CurrentActiveUser,
+    template_id: UUID,
+    new_codigo: str | None = None,
+    db: AsyncSession = Depends(get_db),
 ) -> NotificationTemplateResponse:
     """Clona template."""
     service = ConfigService(db)
@@ -586,7 +646,9 @@ async def clone_notification_template(
 
 
 @router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_notification_template(template_id: UUID, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_notification_template(
+    template_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> None:
     """Remove template."""
     service = ConfigService(db)
     deleted = await service.delete_notification_template(template_id)
@@ -598,14 +660,16 @@ async def delete_notification_template(template_id: UUID, db: AsyncSession = Dep
 
 
 @router.get("/dashboard", response_model=ConfigDashboard)
-async def get_config_dashboard(db: AsyncSession = Depends(get_db)) -> ConfigDashboard:
+async def get_config_dashboard(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)) -> ConfigDashboard:
     """Retorna dashboard de configurações."""
     service = ConfigService(db)
     return await service.get_config_dashboard()
 
 
 @router.get("/tenants/{tenant_id}/dashboard", response_model=TenantDashboard)
-async def get_tenant_dashboard(tenant_id: UUID, db: AsyncSession = Depends(get_db)) -> TenantDashboard:
+async def get_tenant_dashboard(
+    tenant_id: UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> TenantDashboard:
     """Retorna dashboard do tenant."""
     service = ConfigService(db)
     dashboard = await service.get_tenant_dashboard(tenant_id)

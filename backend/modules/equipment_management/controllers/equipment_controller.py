@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.equipment_management.schemas.equipment import (
     EquipmentCreate,
@@ -29,6 +30,7 @@ async def get_service(db: AsyncSession = Depends(get_db)) -> EquipmentService:
 @router.post("", response_model=EquipmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_equipment(
     data: EquipmentCreate,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentResponse:
     """Cria um novo equipamento."""
@@ -46,6 +48,7 @@ async def create_equipment(
 
 @router.get("", response_model=EquipmentListResponse)
 async def list_equipment(
+    current_user: CurrentActiveUser,
     search: str | None = Query(None),
     equipment_type: str | None = Query(None),
     category: str | None = Query(None),
@@ -78,6 +81,7 @@ async def list_equipment(
 
 @router.get("/stats", response_model=EquipmentStats)
 async def get_stats(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentStats:
@@ -87,6 +91,7 @@ async def get_stats(
 
 @router.get("/in-stock", response_model=list[EquipmentResponse])
 async def get_in_stock(
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> list[EquipmentResponse]:
     """Lista equipamentos em estoque."""
@@ -95,6 +100,7 @@ async def get_in_stock(
 
 @router.get("/needing-maintenance", response_model=list[EquipmentResponse])
 async def get_needing_maintenance(
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> list[EquipmentResponse]:
     """Lista equipamentos que precisam de manutenção."""
@@ -103,6 +109,7 @@ async def get_needing_maintenance(
 
 @router.get("/offline", response_model=list[EquipmentResponse])
 async def get_offline(
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> list[EquipmentResponse]:
     """Lista equipamentos offline."""
@@ -111,6 +118,7 @@ async def get_offline(
 
 @router.get("/expiring-warranty", response_model=list[EquipmentResponse])
 async def get_expiring_warranty(
+    current_user: CurrentActiveUser,
     days: int = Query(30, ge=1, le=365),
     service: EquipmentService = Depends(get_service),
 ) -> list[EquipmentResponse]:
@@ -121,6 +129,7 @@ async def get_expiring_warranty(
 @router.get("/by-client/{client_id}", response_model=list[EquipmentResponse])
 async def get_by_client(
     client_id: str,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> list[EquipmentResponse]:
     """Lista equipamentos de um cliente."""
@@ -130,6 +139,7 @@ async def get_by_client(
 @router.get("/by-contract/{contract_id}", response_model=list[EquipmentResponse])
 async def get_by_contract(
     contract_id: str,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> list[EquipmentResponse]:
     """Lista equipamentos de um contrato."""
@@ -139,6 +149,7 @@ async def get_by_contract(
 @router.get("/code/{code}", response_model=EquipmentResponse)
 async def get_by_code(
     code: str,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentResponse:
     """Busca equipamento por código."""
@@ -154,6 +165,7 @@ async def get_by_code(
 @router.get("/{equipment_id}", response_model=EquipmentResponse)
 async def get_equipment(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentResponse:
     """Busca equipamento por ID."""
@@ -170,6 +182,7 @@ async def get_equipment(
 async def update_equipment(
     equipment_id: str,
     data: EquipmentUpdate,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentResponse:
     """Atualiza um equipamento."""
@@ -185,6 +198,7 @@ async def update_equipment(
 @router.delete("/{equipment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_equipment(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> None:
     """Remove um equipamento (soft delete)."""
@@ -201,6 +215,7 @@ async def install_equipment(
     equipment_id: str,
     client_id: str,
     client_name: str,
+    current_user: CurrentActiveUser,
     contract_id: str | None = None,
     installation_id: str | None = None,
     location: str | None = None,
@@ -230,6 +245,7 @@ async def install_equipment(
 @router.post("/{equipment_id}/uninstall", response_model=EquipmentResponse)
 async def uninstall_equipment(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentResponse:
     """Desinstala equipamento."""
@@ -246,6 +262,7 @@ async def uninstall_equipment(
 async def update_online_status(
     equipment_id: str,
     is_online: bool,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentResponse:
     """Atualiza status online/offline."""
@@ -262,6 +279,7 @@ async def update_online_status(
 async def bulk_update_online_status(
     equipment_ids: list[str],
     is_online: bool,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> dict:
     """Atualiza status online/offline em massa."""
@@ -271,6 +289,7 @@ async def bulk_update_online_status(
 @router.post("/{equipment_id}/qr-code")
 async def generate_qr_code(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> dict:
     """Gera QR Code para equipamento."""
@@ -286,6 +305,7 @@ async def generate_qr_code(
 @router.get("/{equipment_id}/depreciation")
 async def get_depreciation(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     service: EquipmentService = Depends(get_service),
 ) -> dict:
     """Calcula depreciação do equipamento."""

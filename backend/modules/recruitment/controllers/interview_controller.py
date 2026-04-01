@@ -506,9 +506,7 @@ async def mark_no_show(
 
 
 @router.post(
-    "/{interview_id}/evaluation",
-    response_model=InterviewResponse,
-    summary="Adicionar avaliação",
+    "/{interview_id}/evaluation", response_model=InterviewResponse, summary="Adicionar avaliação", status_code=201
 )
 async def add_evaluation(
     interview_id: str,

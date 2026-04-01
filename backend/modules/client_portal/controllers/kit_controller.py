@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.client_portal.middleware.portal_auth import get_current_portal_client
 from modules.client_portal.schemas.kit import (
@@ -29,6 +30,7 @@ router = APIRouter(prefix="/kits", tags=["Portal - Kits Documentais"])
 
 @router.get("", response_model=PortalKitListResponse)
 async def list_kits(
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
     skip: int = Query(0, ge=0, description="Offset para paginacao"),
@@ -52,6 +54,7 @@ async def list_kits(
 @router.get("/{kit_id}", response_model=PortalKitResponse)
 async def get_kit(
     kit_id: str,
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -69,6 +72,7 @@ async def get_kit(
 @router.get("/{kit_id}/documents", response_model=list[PortalDocumentResponse])
 async def list_kit_documents(
     kit_id: str,
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -87,6 +91,7 @@ async def list_kit_documents(
 async def download_document(
     kit_id: str,
     document_id: str,
+    current_user: CurrentActiveUser,
     client_id: str = Depends(get_current_portal_client),
     db: AsyncSession = Depends(get_db),
 ) -> Any:

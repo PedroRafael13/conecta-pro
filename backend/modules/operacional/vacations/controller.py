@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.auth.dependencies import get_current_active_user
+from core.auth.dependencies import CurrentActiveUser, get_current_active_user
 from core.database import get_db
 
 from .models import VacationRequest
@@ -31,6 +31,7 @@ router = APIRouter(
 
 @router.get("", response_model=VacationRequestListResponse)
 async def list_vacation_requests(
+    current_user: CurrentActiveUser,
     status: str | None = Query(None),
     type_filter: str | None = Query(None, alias="type"),
     employee_id: str | None = Query(None),
@@ -72,6 +73,7 @@ async def list_vacation_requests(
 @router.post("", response_model=VacationRequestResponse, status_code=201)
 async def create_vacation_request(
     data: VacationRequestCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> VacationRequestResponse:
     """Cria nova solicitação de férias/afastamento."""
@@ -97,7 +99,9 @@ async def create_vacation_request(
 
 
 @router.get("/{request_id}", response_model=VacationRequestResponse)
-async def get_vacation_request(request_id: str, db: AsyncSession = Depends(get_db)) -> VacationRequestResponse:
+async def get_vacation_request(
+    request_id: str, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> VacationRequestResponse:
     """Busca uma solicitação pelo ID."""
     result = await db.execute(
         select(VacationRequest).where(and_(VacationRequest.id == request_id, VacationRequest.is_active))
@@ -112,6 +116,7 @@ async def get_vacation_request(request_id: str, db: AsyncSession = Depends(get_d
 async def update_vacation_request(
     request_id: str,
     data: VacationRequestUpdate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> VacationRequestResponse:
     """Atualiza uma solicitação."""
@@ -134,6 +139,7 @@ async def update_vacation_request(
 @router.post("/{request_id}/approve", response_model=VacationRequestResponse)
 async def approve_vacation_request(
     request_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> VacationRequestResponse:
     """Aprova uma solicitação."""
@@ -153,6 +159,7 @@ async def approve_vacation_request(
 @router.post("/{request_id}/reject", response_model=VacationRequestResponse)
 async def reject_vacation_request(
     request_id: str,
+    current_user: CurrentActiveUser,
     reason: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> VacationRequestResponse:
@@ -173,6 +180,7 @@ async def reject_vacation_request(
 @router.delete("/{request_id}", status_code=204)
 async def delete_vacation_request(
     request_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Cancela/exclui uma solicitação."""

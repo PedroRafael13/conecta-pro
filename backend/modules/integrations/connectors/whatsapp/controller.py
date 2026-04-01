@@ -7,7 +7,7 @@ import logging
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from core.auth.dependencies import CurrentUserId
+from core.auth.dependencies import CurrentActiveUser, CurrentUserId
 from modules.integrations.connectors.whatsapp.service import whatsapp_service
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class SendResponse(BaseModel):
 
 
 @router.get("/status", response_model=WhatsAppStatusResponse)
-async def get_whatsapp_status() -> WhatsAppStatusResponse:
+async def get_whatsapp_status(current_user: CurrentActiveUser) -> WhatsAppStatusResponse:
     """Verifica status da conexao WhatsApp/Evolution API."""
     result = await whatsapp_service.check_status()
     return WhatsAppStatusResponse(
@@ -83,6 +83,7 @@ async def get_whatsapp_status() -> WhatsAppStatusResponse:
 async def send_kit_notification(
     request: SendKitNotificationRequest,
     user_id: CurrentUserId,
+    current_user: CurrentActiveUser,
 ) -> SendResponse:
     """Envia notificacao de kit documental via WhatsApp."""
     result = await whatsapp_service.send_kit_notification(
@@ -105,6 +106,7 @@ async def send_kit_notification(
 async def send_certificate_alert(
     request: SendCertAlertRequest,
     user_id: CurrentUserId,
+    current_user: CurrentActiveUser,
 ) -> SendResponse:
     """Envia alerta de certidao vencendo via WhatsApp."""
     result = await whatsapp_service.send_certificate_alert(
@@ -126,6 +128,7 @@ async def send_certificate_alert(
 async def send_nfse_notification(
     request: SendNfseRequest,
     user_id: CurrentUserId,
+    current_user: CurrentActiveUser,
 ) -> SendResponse:
     """Envia notificacao de NFS-e emitida via WhatsApp."""
     result = await whatsapp_service.send_nfse_notification(
@@ -148,6 +151,7 @@ async def send_nfse_notification(
 async def send_custom_message(
     request: SendCustomRequest,
     user_id: CurrentUserId,
+    current_user: CurrentActiveUser,
 ) -> SendResponse:
     """Envia mensagem customizada via WhatsApp."""
     result = await whatsapp_service.send_custom(

@@ -303,7 +303,7 @@ async def reject_proposal(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/new-version", response_model=ProposalDetailResponse)
+@router.post("/{proposal_id}/new-version", response_model=ProposalDetailResponse, status_code=201)
 async def create_new_version(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -351,7 +351,7 @@ async def delete_proposal(
 # ============== Item Endpoints ==============
 
 
-@router.post("/{proposal_id}/items", response_model=ProposalItemResponse)
+@router.post("/{proposal_id}/items", response_model=ProposalItemResponse, status_code=201)
 async def add_proposal_item(
     proposal_id: str,
     data: ProposalItemCreate,

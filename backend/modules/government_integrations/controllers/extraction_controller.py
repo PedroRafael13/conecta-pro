@@ -11,6 +11,8 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..extractors.orchestrator import (
     ConfiguracaoExtracao,
     TipoServico,
@@ -115,6 +117,7 @@ async def iniciar_extracao(
     tenant_id: str,
     request: IniciarExtracaoRequest,
     background_tasks: BackgroundTasks,
+    current_user: CurrentActiveUser,
 ):
     """
     Inicia extração de dados governamentais.
@@ -201,7 +204,7 @@ async def iniciar_extracao(
 
 
 @router.get("/status/{extracao_id}", response_model=StatusExtracaoResponse)
-async def obter_status_extracao(extracao_id: str):
+async def obter_status_extracao(current_user: CurrentActiveUser, extracao_id: str):
     """
     Obtém status de uma extração em andamento.
     """
@@ -226,6 +229,7 @@ async def obter_status_extracao(extracao_id: str):
 @router.get("/historico", response_model=list[HistoricoExtracaoResponse])
 async def listar_historico_extracoes(
     tenant_id: str,
+    current_user: CurrentActiveUser,
     limite: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
@@ -239,7 +243,7 @@ async def listar_historico_extracoes(
 
 
 @router.post("/cancelar/{extracao_id}")
-async def cancelar_extracao(extracao_id: str):
+async def cancelar_extracao(current_user: CurrentActiveUser, extracao_id: str):
     """
     Cancela uma extração em andamento.
     """
@@ -258,6 +262,7 @@ async def cancelar_extracao(extracao_id: str):
 @router.post("/sync/nfe")
 async def sincronizar_nfe_rapido(
     tenant_id: str,
+    current_user: CurrentActiveUser,
     cnpjs: list[str] | None = None,
     ufs: list[str] | None = None,
     dias: int = Query(30, ge=1, le=365),
@@ -278,6 +283,7 @@ async def sincronizar_nfe_rapido(
 @router.post("/sync/esocial")
 async def sincronizar_esocial_rapido(
     tenant_id: str,
+    current_user: CurrentActiveUser,
     cnpjs: list[str] | None = None,
     competencia: str | None = None,
 ):
@@ -297,6 +303,7 @@ async def sincronizar_esocial_rapido(
 @router.post("/sync/fgts")
 async def sincronizar_fgts_rapido(
     tenant_id: str,
+    current_user: CurrentActiveUser,
     cnpjs: list[str] | None = None,
     competencias: list[str] | None = None,
 ):
@@ -316,6 +323,7 @@ async def sincronizar_fgts_rapido(
 @router.post("/sync/nfse")
 async def sincronizar_nfse_rapido(
     tenant_id: str,
+    current_user: CurrentActiveUser,
     cnpjs: list[str] | None = None,
     dias: int = Query(30, ge=1, le=365),
 ):
@@ -336,6 +344,7 @@ async def sincronizar_nfse_rapido(
 async def sincronizar_rfb_rapido(
     tenant_id: str,
     cnpjs: list[str],
+    current_user: CurrentActiveUser,
 ):
     """
     Sincroniza dados da Receita Federal (background).
@@ -356,6 +365,7 @@ async def sincronizar_rfb_rapido(
 @router.post("/sync/todos")
 async def sincronizar_todos_rapido(
     tenant_id: str,
+    current_user: CurrentActiveUser,
     cnpjs: list[str] | None = None,
     servicos: list[str] | None = None,
 ):

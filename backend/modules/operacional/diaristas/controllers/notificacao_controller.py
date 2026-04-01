@@ -16,6 +16,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, s
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.operacional.diaristas.services.notificacao_service import (
     CanalNotificacao,
@@ -114,6 +115,7 @@ class EstatisticasResponse(BaseModel):
 )
 async def enviar_notificacao(
     request: EnviarNotificacaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -164,6 +166,7 @@ async def enviar_notificacao(
 )
 async def enviar_confirmacao_agendamento(
     request: EnviarConfirmacaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Envia notificação de confirmação de agendamento."""
@@ -187,6 +190,7 @@ async def enviar_confirmacao_agendamento(
 )
 async def enviar_lembrete_24h(
     request: EnviarLembreteRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Envia lembrete 24h antes do serviço."""
@@ -210,6 +214,7 @@ async def enviar_lembrete_24h(
 )
 async def enviar_alerta_atraso(
     request: EnviarAlertaAtrasoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Envia alerta de atraso para o diarista."""
@@ -234,6 +239,7 @@ async def enviar_alerta_atraso(
 )
 async def enviar_notificacao_pagamento(
     request: EnviarNotificacaoPagamentoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Envia notificação de pagamento."""
@@ -262,6 +268,7 @@ async def enviar_notificacao_pagamento(
 )
 async def processar_lembretes_24h(
     background_tasks: BackgroundTasks,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -287,6 +294,7 @@ async def processar_lembretes_24h(
     "/verificar-atrasos", summary="Verificar atrasos", description="Verifica diaristas atrasados e envia alertas"
 )
 async def verificar_atrasos(
+    current_user: CurrentActiveUser,
     tolerancia_minutos: int = Query(15, ge=5, le=60, description="Tolerância em minutos"),
     background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db),
@@ -323,6 +331,7 @@ async def verificar_atrasos(
     description="Lista notificações enviadas com filtros",
 )
 async def listar_notificacoes(
+    current_user: CurrentActiveUser,
     diarist_id: UUID | None = Query(None, description="Filtrar por diarista"),
     tipo: TipoNotificacao | None = Query(None, description="Filtrar por tipo"),
     status_filter: StatusNotificacao | None = Query(None, alias="status", description="Filtrar por status"),
@@ -354,6 +363,7 @@ async def listar_notificacoes(
 )
 async def listar_notificacoes_diarista(
     diarist_id: UUID,
+    current_user: CurrentActiveUser,
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
@@ -384,6 +394,7 @@ async def listar_notificacoes_diarista(
     description="Retorna estatísticas de notificações enviadas",
 )
 async def get_estatisticas(
+    current_user: CurrentActiveUser,
     data_inicio: date | None = Query(None, description="Data inicial"),
     data_fim: date | None = Query(None, description="Data final"),
     db: Session = Depends(get_db),
@@ -409,7 +420,7 @@ async def get_estatisticas(
 
 
 @router.get("/templates", summary="Listar templates", description="Lista templates de mensagens disponíveis")
-async def listar_templates():
+async def listar_templates(current_user: CurrentActiveUser):
     """Lista todos os templates de mensagens disponíveis."""
     from modules.operacional.diaristas.services.notificacao_service import TEMPLATES_MENSAGENS
 
@@ -428,7 +439,7 @@ async def listar_templates():
 
 
 @router.get("/templates/{tipo}", summary="Obter template", description="Retorna um template específico")
-async def get_template(tipo: TipoNotificacao):
+async def get_template(current_user: CurrentActiveUser, tipo: TipoNotificacao):
     """Retorna um template específico."""
     from modules.operacional.diaristas.services.notificacao_service import TEMPLATES_MENSAGENS
 
@@ -457,7 +468,7 @@ def _extrair_variaveis(texto: str) -> list[str]:
 
 
 @router.get("/canais", summary="Listar canais", description="Lista canais de notificação disponíveis")
-async def listar_canais():
+async def listar_canais(current_user: CurrentActiveUser):
     """Lista canais de notificação disponíveis."""
     return {
         "canais": [
@@ -508,6 +519,7 @@ async def listar_canais():
 )
 async def enviar_boas_vindas(
     diarist_id: UUID,
+    current_user: CurrentActiveUser,
     canal: CanalNotificacao = Query(CanalNotificacao.WHATSAPP),
     db: Session = Depends(get_db),
 ):

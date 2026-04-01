@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_async_session
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class ActivityCreate(BaseModel):
 
 @router.get("/contacts/")
 async def listar_contatos(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -88,9 +90,10 @@ async def listar_contatos(
     }
 
 
-@router.post("/contacts/")
+@router.post("/contacts/", status_code=201)
 async def criar_contato(
     data: ContactCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Cria novo contato vinculado a um cliente."""
@@ -119,6 +122,7 @@ async def criar_contato(
 @router.delete("/contacts/{contact_id}")
 async def deletar_contato(
     contact_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Remove contato."""
@@ -132,6 +136,7 @@ async def deletar_contato(
 
 @router.get("/activities/recent")
 async def atividades_recentes(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Ultimas 20 atividades de todos os clientes."""
@@ -167,6 +172,7 @@ async def atividades_recentes(
 
 @router.get("/activities/")
 async def listar_atividades(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     limit: int = Query(20, le=100),
     db: AsyncSession = Depends(get_async_session),
@@ -211,9 +217,10 @@ async def listar_atividades(
     }
 
 
-@router.post("/activities/")
+@router.post("/activities/", status_code=201)
 async def criar_atividade(
     data: ActivityCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Registra atividade (chamada, email, visita, nota)."""
@@ -243,6 +250,7 @@ async def criar_atividade(
 @router.get("/clients/{client_id}/360")
 async def visao_360_cliente(
     client_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Visao 360 do cliente — contratos, NFS-e, oportunidades, atividades, contatos."""

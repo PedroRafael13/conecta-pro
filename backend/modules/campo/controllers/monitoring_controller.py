@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 
 # Configurar logging
@@ -114,7 +115,7 @@ def get_uptime() -> str:
 
 
 @router.get("/health", response_model=HealthStatus)
-async def health_check(session: AsyncSession = Depends(get_db)):
+async def health_check(current_user: CurrentActiveUser, session: AsyncSession = Depends(get_db)):
     """
     Health check básico do sistema.
 
@@ -154,7 +155,7 @@ async def health_check(session: AsyncSession = Depends(get_db)):
 
 
 @router.get("/ready", response_model=ReadinessStatus)
-async def readiness_check(session: AsyncSession = Depends(get_db)):
+async def readiness_check(current_user: CurrentActiveUser, session: AsyncSession = Depends(get_db)):
     """
     Readiness check detalhado do sistema.
 
@@ -211,6 +212,7 @@ async def readiness_check(session: AsyncSession = Depends(get_db)):
 
 @router.get("/metrics", response_model=SystemMetrics)
 async def get_metrics(
+    current_user: CurrentActiveUser,
     session: AsyncSession = Depends(get_db),  # pylint: disable=unused-argument
 ):
     """
@@ -249,7 +251,7 @@ async def get_metrics(
 
 
 @router.get("/ping")
-async def ping():
+async def ping(current_user: CurrentActiveUser):
     """
     Ping simples para verificar se o serviço responde.
 
@@ -260,7 +262,7 @@ async def ping():
 
 
 @router.get("/status")
-async def system_status(session: AsyncSession = Depends(get_db)):
+async def system_status(current_user: CurrentActiveUser, session: AsyncSession = Depends(get_db)):
     """
     Status resumido do sistema.
 

@@ -7,6 +7,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.campo.models.access_log import AccessLogType
@@ -31,6 +32,7 @@ router = APIRouter(prefix="/campo/access-logs", tags=["Campo Access Logs"])
 )
 async def create_access_log(
     data: AccessLogCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLogResponse:
     """Cria um novo log de acesso."""
@@ -52,6 +54,7 @@ async def create_access_log(
 @router.post("/batch", status_code=status.HTTP_201_CREATED)
 async def create_access_logs_batch(
     data: list[AccessLogCreate],
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Cria múltiplos logs de acesso em lote."""
@@ -66,6 +69,7 @@ async def create_access_logs_batch(
 
 @router.get("", response_model=AccessLogListResponse)
 async def list_access_logs(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,
     search: str | None = Query(None),
     log_type: AccessLogType | None = Query(None),
     client_id: str | None = Query(None),
@@ -110,6 +114,7 @@ async def list_access_logs(  # pylint: disable=too-many-locals
 
 @router.get("/stats", response_model=AccessLogStats)
 async def get_access_log_stats(
+    current_user: CurrentActiveUser,
     client_id: str | None = Query(None),
     date_from: datetime | None = Query(None),
     date_to: datetime | None = Query(None),
@@ -123,6 +128,7 @@ async def get_access_log_stats(
 @router.get("/by-person/{person_document}")
 async def get_logs_by_person(
     person_document: str,
+    current_user: CurrentActiveUser,
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ) -> list[AccessLogResponse]:
@@ -137,6 +143,7 @@ async def get_logs_by_person(
 @router.get("/by-vehicle/{vehicle_plate}")
 async def get_logs_by_vehicle(
     vehicle_plate: str,
+    current_user: CurrentActiveUser,
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ) -> list[AccessLogResponse]:
@@ -151,6 +158,7 @@ async def get_logs_by_vehicle(
 @router.get("/{log_id}", response_model=AccessLogResponse)
 async def get_access_log(
     log_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLogResponse:
     """Obtém um log de acesso por ID."""
@@ -167,6 +175,7 @@ async def get_access_log(
 @router.delete("/{log_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_access_log(
     log_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Remove um log de acesso (soft delete)."""

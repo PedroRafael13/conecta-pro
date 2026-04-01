@@ -69,7 +69,7 @@ async def create_signature(
         ) from e
 
 
-@router.post("/bulk", response_model=list[DocumentSignatureResponse])
+@router.post("/bulk", response_model=list[DocumentSignatureResponse], status_code=201)
 async def create_bulk_signatures(
     data: BulkSignatureRequest,
     db: AsyncSession = Depends(get_db),
@@ -166,6 +166,7 @@ async def get_pending_by_document(
     return await service.get_pending_by_document(document_id)
 
 
+@router.get("/signer", include_in_schema=False)
 @router.get("/signer/list", response_model=list[DocumentSignatureResponse])
 async def get_by_signer(
     signature_status: SignatureStatus | None = Query(None),

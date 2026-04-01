@@ -8,6 +8,8 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.ecac import (
     EmitirCertidaoRequest,
@@ -35,7 +37,7 @@ def get_service() -> EcacService:
     summary="Status do e-CAC",
     description="Retorna o status da configuracao e conexao do e-CAC",
 )
-async def get_status(service: EcacService = Depends(get_service)) -> StandardResponse:
+async def get_status(current_user: CurrentActiveUser, service: EcacService = Depends(get_service)) -> StandardResponse:
     """Retorna status da configuracao e-CAC."""
     try:
         status_data = service.validar_status()
@@ -54,6 +56,7 @@ async def get_status(service: EcacService = Depends(get_service)) -> StandardRes
     description="Consulta a situacao fiscal do contribuinte no e-CAC",
 )
 async def consultar_situacao_fiscal(
+    current_user: CurrentActiveUser,
     cpf_cnpj: str | None = Query(None, description="CPF ou CNPJ (opcional, usa o configurado)"),
     service: EcacService = Depends(get_service),
 ) -> StandardResponse:
@@ -84,6 +87,7 @@ async def consultar_situacao_fiscal(
     description="Consulta debitos fiscais do contribuinte",
 )
 async def consultar_debitos(
+    current_user: CurrentActiveUser,
     situacao: SituacaoDebitoEnum | None = Query(None, description="Filtro por situacao do debito"),
     competencia_inicio: str | None = Query(None, pattern=r"^\d{4}-\d{2}$", description="Competencia inicial (YYYY-MM)"),
     competencia_fim: str | None = Query(None, pattern=r"^\d{4}-\d{2}$", description="Competencia final (YYYY-MM)"),
@@ -118,6 +122,7 @@ async def consultar_debitos(
     description="Consulta declaracoes transmitidas no e-CAC",
 )
 async def consultar_declaracoes(
+    current_user: CurrentActiveUser,
     tipo: TipoDeclaracaoEnum = Query(..., description="Tipo de declaracao"),
     exercicio_inicio: int = Query(..., ge=2000, le=2100, description="Exercicio inicial"),
     exercicio_fim: int | None = Query(None, ge=2000, le=2100, description="Exercicio final"),
@@ -153,7 +158,7 @@ async def consultar_declaracoes(
     description="Emite certidao fiscal (CND/CPEN) via e-CAC",
 )
 async def emitir_certidao(
-    request: EmitirCertidaoRequest, service: EcacService = Depends(get_service)
+    current_user: CurrentActiveUser, request: EmitirCertidaoRequest, service: EcacService = Depends(get_service)
 ) -> StandardResponse:
     """Emite certidao fiscal."""
     try:
@@ -183,7 +188,7 @@ async def emitir_certidao(
     description="Valida autenticidade de uma certidao fiscal",
 )
 async def validar_certidao(
-    request: ValidarCertidaoRequest, service: EcacService = Depends(get_service)
+    current_user: CurrentActiveUser, request: ValidarCertidaoRequest, service: EcacService = Depends(get_service)
 ) -> StandardResponse:
     """Valida autenticidade de certidao."""
     try:
@@ -213,6 +218,7 @@ async def validar_certidao(
     description="Consulta parcelamentos ativos do contribuinte",
 )
 async def consultar_parcelamentos(
+    current_user: CurrentActiveUser,
     situacao: str | None = Query(None, description="Filtro por situacao (ativo, encerrado)"),
     service: EcacService = Depends(get_service),
 ) -> StandardResponse:
@@ -238,7 +244,7 @@ async def consultar_parcelamentos(
     description="Simula parcelamento de debitos fiscais",
 )
 async def simular_parcelamento(
-    request: SimularParcelamentoRequest, service: EcacService = Depends(get_service)
+    current_user: CurrentActiveUser, request: SimularParcelamentoRequest, service: EcacService = Depends(get_service)
 ) -> StandardResponse:
     """Simula parcelamento de debitos."""
     try:
@@ -270,6 +276,7 @@ async def simular_parcelamento(
     description="Consulta processos digitais (e-Processo) do contribuinte",
 )
 async def consultar_processos(
+    current_user: CurrentActiveUser,
     situacao: SituacaoProcessoEnum | None = Query(None, description="Filtro por situacao do processo"),
     numero_processo: str | None = Query(None, description="Numero especifico do processo"),
     service: EcacService = Depends(get_service),

@@ -1508,6 +1508,7 @@ async def reject_receipt(
     "/receipts/{receipt_id}/divergence",
     response_model=GoodsReceiptResponse,
     summary="Registrar divergência",
+    status_code=201,
 )
 async def register_divergence(
     receipt_id: UUID,

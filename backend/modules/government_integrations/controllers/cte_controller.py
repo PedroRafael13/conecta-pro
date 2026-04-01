@@ -9,6 +9,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import PlainTextResponse
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.cte import (
     CriarCTeRequest,
@@ -35,7 +37,7 @@ def get_service() -> CTeService:
     summary="Status do CT-e",
     description="Retorna o status da configuracao do CT-e",
 )
-async def get_status(service: CTeService = Depends(get_service)) -> StandardResponse:
+async def get_status(current_user: CurrentActiveUser, service: CTeService = Depends(get_service)) -> StandardResponse:
     """Retorna status da configuracao."""
     try:
         status_data = service.validar_status()
@@ -54,7 +56,9 @@ async def get_status(service: CTeService = Depends(get_service)) -> StandardResp
     summary="Criar CT-e",
     description="Cria um novo CT-e",
 )
-async def criar_cte(request: CriarCTeRequest, service: CTeService = Depends(get_service)) -> StandardResponse:
+async def criar_cte(
+    request: CriarCTeRequest, current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
+) -> StandardResponse:
     """Cria um novo CT-e."""
     try:
         # Converte request para dict
@@ -102,7 +106,9 @@ async def criar_cte(request: CriarCTeRequest, service: CTeService = Depends(get_
 
 
 @router.post("/gerar-xml", response_model=StandardResponse, summary="Gerar XML", description="Gera o XML do CT-e")
-async def gerar_xml(request: GerarXMLRequest, service: CTeService = Depends(get_service)) -> StandardResponse:
+async def gerar_xml(
+    request: GerarXMLRequest, current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
+) -> StandardResponse:
     """Gera XML do CT-e."""
     try:
         # Converte request para dict
@@ -155,7 +161,9 @@ async def gerar_xml(request: GerarXMLRequest, service: CTeService = Depends(get_
     summary="Download XML",
     description="Gera e retorna o XML do CT-e para download",
 )
-async def gerar_xml_download(request: GerarXMLRequest, service: CTeService = Depends(get_service)) -> PlainTextResponse:
+async def gerar_xml_download(
+    request: GerarXMLRequest, current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
+) -> PlainTextResponse:
     """Gera XML do CT-e para download."""
     try:
         # Converte request para dict
@@ -187,7 +195,9 @@ async def gerar_xml_download(request: GerarXMLRequest, service: CTeService = Dep
     summary="Consultar Status Servico",
     description="Consulta o status do servico CT-e na SEFAZ",
 )
-async def consultar_status_servico(service: CTeService = Depends(get_service)) -> StandardResponse:
+async def consultar_status_servico(
+    current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
+) -> StandardResponse:
     """Consulta status do servico na SEFAZ."""
     try:
         resultado = service.consultar_status_servico()
@@ -205,7 +215,9 @@ async def consultar_status_servico(service: CTeService = Depends(get_service)) -
     summary="Listar Modais",
     description="Lista os modais de transporte disponiveis",
 )
-async def listar_modais(service: CTeService = Depends(get_service)) -> StandardResponse:
+async def listar_modais(
+    current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
+) -> StandardResponse:
     """Lista modais de transporte."""
     try:
         modais = service.listar_modais()
@@ -223,7 +235,9 @@ async def listar_modais(service: CTeService = Depends(get_service)) -> StandardR
     summary="Listar Tipos de Servico",
     description="Lista os tipos de servico de transporte disponiveis",
 )
-async def listar_tipos_servico(service: CTeService = Depends(get_service)) -> StandardResponse:
+async def listar_tipos_servico(
+    current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
+) -> StandardResponse:
     """Lista tipos de servico."""
     try:
         tipos = service.listar_tipos_servico()
@@ -240,7 +254,7 @@ async def listar_tipos_servico(service: CTeService = Depends(get_service)) -> St
 @router.get(
     "/listar", response_model=StandardResponse, summary="Listar CT-e", description="Lista todos os CT-e em cache"
 )
-async def listar_ctes(service: CTeService = Depends(get_service)) -> StandardResponse:
+async def listar_ctes(current_user: CurrentActiveUser, service: CTeService = Depends(get_service)) -> StandardResponse:
     """Lista CT-e em cache."""
     try:
         ctes = service.listar_ctes()
@@ -258,7 +272,9 @@ async def listar_ctes(service: CTeService = Depends(get_service)) -> StandardRes
     summary="Obter CT-e",
     description="Obtem um CT-e especifico pelo numero",
 )
-async def obter_cte(numero: int, serie: int = 1, service: CTeService = Depends(get_service)) -> StandardResponse:
+async def obter_cte(
+    numero: int, current_user: CurrentActiveUser, serie: int = 1, service: CTeService = Depends(get_service)
+) -> StandardResponse:
     """Obtem CT-e pelo numero."""
     try:
         cte = service.obter_cte(numero, serie)
@@ -278,7 +294,7 @@ async def obter_cte(numero: int, serie: int = 1, service: CTeService = Depends(g
 @router.delete(
     "/limpar", response_model=StandardResponse, summary="Limpar Cache", description="Limpa todos os CT-e em cache"
 )
-async def limpar_cache(service: CTeService = Depends(get_service)) -> StandardResponse:
+async def limpar_cache(current_user: CurrentActiveUser, service: CTeService = Depends(get_service)) -> StandardResponse:
     """Limpa cache de CT-e."""
     try:
         resultado = service.limpar_cache()

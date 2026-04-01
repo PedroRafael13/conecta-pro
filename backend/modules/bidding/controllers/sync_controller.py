@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.bidding.models.opportunity import BiddingOpportunity
 from modules.bidding.models.sync_job import BiddingSyncJob
@@ -86,6 +87,7 @@ def _send_celery_task(task_name: str, **kwargs) -> str:
 
 @router.post("/pncp/trigger", response_model=SyncTriggerResponse)
 async def trigger_pncp_sync(
+    current_user: CurrentActiveUser,
     request: PNCPSyncRequest = PNCPSyncRequest(),
     db: AsyncSession = Depends(get_db),
 ):
@@ -132,6 +134,7 @@ async def trigger_pncp_sync(
 
 @router.get("/jobs")
 async def list_sync_jobs(
+    current_user: CurrentActiveUser,
     portal: str | None = Query(default=None),
     job_status: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=20, ge=1, le=100),
@@ -169,6 +172,7 @@ async def list_sync_jobs(
 @router.get("/jobs/{job_id}")
 async def get_sync_job(
     job_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Retorna detalhes de um job de sincronizacao."""
@@ -198,6 +202,7 @@ async def get_sync_job(
 
 @router.post("/precos/trigger", response_model=SyncTriggerResponse)
 async def trigger_price_sync(
+    current_user: CurrentActiveUser,
     request: PrecosSyncRequest = PrecosSyncRequest(),
     db: AsyncSession = Depends(get_db),
 ):
@@ -244,6 +249,7 @@ async def trigger_price_sync(
 
 @router.get("/status")
 async def get_sync_status(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Retorna status geral de sincronizacao."""

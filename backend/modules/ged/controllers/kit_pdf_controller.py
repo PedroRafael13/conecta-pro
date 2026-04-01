@@ -482,7 +482,7 @@ async def generate_all_pdfs(
     return {"kits_processados": len(kits), "total_pdfs_gerados": total_gerados, "detalhes": detalhes}
 
 
-@router.post("/kits/{kit_id}/add-nfse")
+@router.post("/kits/{kit_id}/add-nfse", status_code=201)
 async def add_nfse_to_kit(
     kit_id: str,
     current_user: CurrentActiveUser = None,

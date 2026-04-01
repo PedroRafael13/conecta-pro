@@ -54,7 +54,7 @@ class SubmitResponseRequest(BaseModel):
     comments: dict[str, str] | None = Field(None, description="Comentarios por dimensao")
 
 
-@router.post("/ciclos")
+@router.post("/ciclos", status_code=201)
 async def criar_ciclo(
     request: CriarCicloRequest,
     current_user: CurrentActiveUser,

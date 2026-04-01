@@ -14,6 +14,7 @@ from loguru import logger
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_db
 
 from . import memory_service, telegram_service
@@ -33,6 +34,7 @@ FINGERPRINT_COOLDOWN_SECONDS = 7200  # 2 horas
 @router.post("/alert-webhook", response_model=list[InterventionResponse])
 async def receive_alert_webhook(
     payload: AlertmanagerPayload,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -271,6 +273,7 @@ async def _silence_alertmanager(alert_name: str, duration_hours: int = 1) -> Non
 
 @router.get("/interventions")
 async def list_interventions(
+    current_user: CurrentActiveUser,
     limit: int = Query(default=20, le=100),
     alert_name: str | None = None,
     status: str | None = None,
@@ -306,7 +309,7 @@ async def list_interventions(
 
 
 @router.get("/interventions/stats")
-async def intervention_stats(db: AsyncSession = Depends(get_db)):
+async def intervention_stats(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)):
     """Estatísticas das intervenções."""
     from sqlalchemy import func as sqlfunc
 
@@ -362,6 +365,7 @@ async def intervention_stats(db: AsyncSession = Depends(get_db)):
 
 @router.get("/knowledge")
 async def get_knowledge_base(
+    current_user: CurrentActiveUser,
     component: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -397,6 +401,7 @@ async def get_knowledge_base(
 
 @router.get("/patterns")
 async def get_patterns(
+    current_user: CurrentActiveUser,
     alert_name: str | None = None,
     min_confidence: float = Query(default=0.0, ge=0, le=100),
     human_validated_only: bool = False,
@@ -447,6 +452,7 @@ async def get_patterns(
 @router.post("/feedback", response_model=FeedbackResponse)
 async def submit_feedback(
     body: FeedbackRequest,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """

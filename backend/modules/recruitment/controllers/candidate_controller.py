@@ -439,11 +439,7 @@ async def update_candidate_tags(
     return CandidateResponse.model_validate(candidate)
 
 
-@router.post(
-    "/{candidate_id}/note",
-    response_model=CandidateResponse,
-    summary="Adicionar nota",
-)
+@router.post("/{candidate_id}/note", response_model=CandidateResponse, summary="Adicionar nota", status_code=201)
 async def add_candidate_note(
     candidate_id: str,
     note: str,

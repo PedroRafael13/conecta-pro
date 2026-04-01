@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.campo.services.estoque_integration import (
     get_estoque_integration_service,
@@ -94,9 +95,12 @@ class RequisicaoResponse(BaseModel):
 # =============================================================================
 
 
-@router.post("/requisicao", summary="Criar requisição", description="Cria requisição de materiais para uma OS")
+@router.post(
+    "/requisicao", summary="Criar requisição", description="Cria requisição de materiais para uma OS", status_code=201
+)
 async def criar_requisicao(
     request: CriarRequisicaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -151,6 +155,7 @@ async def criar_requisicao(
 async def aprovar_requisicao(
     requisicao_id: UUID,
     request: AprovarRequisicaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -193,6 +198,7 @@ async def aprovar_requisicao(
 async def registrar_entrega(
     requisicao_id: UUID,
     request: EntregarRequisicaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -232,6 +238,7 @@ async def registrar_entrega(
 async def registrar_baixa(
     ordem_servico_id: UUID,
     request: RegistrarBaixaRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -270,6 +277,7 @@ async def registrar_baixa(
 )
 async def baixa_automatica(
     ordem_servico_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -301,6 +309,7 @@ async def baixa_automatica(
 )
 async def verificar_disponibilidade(
     produto_id: UUID,
+    current_user: CurrentActiveUser,
     quantidade: Decimal = Query(..., gt=0),
     db: Session = Depends(get_db),
 ):
@@ -326,6 +335,7 @@ async def verificar_disponibilidade(
 )
 async def verificar_estoque_tecnico(
     tecnico_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -344,6 +354,7 @@ async def verificar_estoque_tecnico(
 
 @router.get("/alertas", summary="Alertas de estoque", description="Retorna alertas de produtos com estoque baixo")
 async def alertas_estoque_baixo(
+    current_user: CurrentActiveUser,
     threshold: float = Query(20, ge=0, le=100, description="Percentual mínimo"),
     db: Session = Depends(get_db),
 ):
@@ -377,6 +388,7 @@ async def alertas_estoque_baixo(
 )
 async def relatorio_consumo_os(
     ordem_servico_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -404,6 +416,7 @@ async def relatorio_consumo_os(
     description="Relatório de materiais consumidos em um período",
 )
 async def relatorio_consumo_periodo(
+    current_user: CurrentActiveUser,
     data_inicio: date = Query(..., description="Data inicial"),
     data_fim: date = Query(..., description="Data final"),
     tecnico_id: UUID | None = Query(None, description="Filtrar por técnico"),
@@ -441,7 +454,7 @@ async def relatorio_consumo_periodo(
 
 
 @router.get("/kit-padrao", summary="Kits padrão", description="Lista kits padrão de materiais por tipo de OS")
-async def listar_kits_padrao():
+async def listar_kits_padrao(current_user: CurrentActiveUser):
     """
     Lista kits padrão de materiais por tipo de serviço.
 
@@ -484,6 +497,7 @@ async def listar_kits_padrao():
 async def requisitar_kit(
     ordem_servico_id: UUID,
     tecnico_id: UUID,
+    current_user: CurrentActiveUser,
     tipo_kit: str = Query(..., description="Tipo do kit (INSTALACAO, MANUTENCAO, etc)"),
     db: Session = Depends(get_db),
 ):

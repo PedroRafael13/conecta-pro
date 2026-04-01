@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,7 @@ class PayslipLoteItem(PayslipCreateBody):
 
 @router.get("/")
 async def listar_payslips(
+    current_user: CurrentActiveUser,
     employee_id: str | None = Query(None),
     mes: int | None = Query(None, ge=1, le=12),
     ano: int | None = Query(None, ge=2020, le=2030),
@@ -96,7 +98,9 @@ async def listar_payslips(
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def criar_payslip(body: PayslipCreateBody, db: AsyncSession = Depends(get_db)) -> Any:
+async def criar_payslip(
+    body: PayslipCreateBody, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> Any:
     """Cria contracheque manualmente. Status inicial: DRAFT."""
     try:
         from modules.hr.employee_portal.models.payslip import PaySlip, PaySlipStatus, PaySlipType
@@ -133,14 +137,18 @@ async def criar_payslip(body: PayslipCreateBody, db: AsyncSession = Depends(get_
 
 
 @router.get("/{payslip_id}")
-async def detalhe_payslip(payslip_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
+async def detalhe_payslip(
+    payslip_id: uuid.UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> Any:
     """Retorna detalhe de um contracheque."""
     payslip = await _get_or_404(db, payslip_id)
     return _serialize_payslip(payslip)
 
 
 @router.patch("/{payslip_id}/publicar")
-async def publicar_payslip(payslip_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
+async def publicar_payslip(
+    payslip_id: uuid.UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> Any:
     """Publica contracheque — torna visível no portal do funcionário."""
     payslip = await _get_or_404(db, payslip_id)
     try:
@@ -172,7 +180,9 @@ async def publicar_payslip(payslip_id: uuid.UUID, db: AsyncSession = Depends(get
 
 
 @router.patch("/{payslip_id}/rascunho")
-async def reverter_rascunho(payslip_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
+async def reverter_rascunho(
+    payslip_id: uuid.UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> Any:
     """Reverte contracheque para rascunho."""
     payslip = await _get_or_404(db, payslip_id)
     try:
@@ -188,7 +198,9 @@ async def reverter_rascunho(payslip_id: uuid.UUID, db: AsyncSession = Depends(ge
 
 
 @router.delete("/{payslip_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def deletar_payslip(payslip_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> None:
+async def deletar_payslip(
+    payslip_id: uuid.UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> None:
     """Soft delete de contracheque."""
     payslip = await _get_or_404(db, payslip_id)
     try:
@@ -201,7 +213,9 @@ async def deletar_payslip(payslip_id: uuid.UUID, db: AsyncSession = Depends(get_
 
 
 @router.post("/importar-lote", status_code=status.HTTP_201_CREATED)
-async def importar_lote(items: list[PayslipLoteItem], db: AsyncSession = Depends(get_db)) -> Any:
+async def importar_lote(
+    items: list[PayslipLoteItem], current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> Any:
     """Importa múltiplos contracheques de uma vez. Máximo 100 por lote."""
     if len(items) > 100:
         raise HTTPException(

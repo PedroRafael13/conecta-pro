@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.bidding.schemas.certificate import (
     CertificateBulkStatusResponse,
@@ -27,6 +28,7 @@ router = APIRouter(prefix="/certificates", tags=["Licitacoes - Certidoes"])
 
 @router.get("")
 async def list_certificates(
+    current_user: CurrentActiveUser,
     cnpj: str | None = None,
     tipo: str | None = None,
     status: str | None = None,
@@ -41,14 +43,14 @@ async def list_certificates(
 
 
 @router.get("/status/{cnpj}", response_model=CertificateBulkStatusResponse)
-async def get_status_geral(cnpj: str, db: Session = Depends(get_db)):
+async def get_status_geral(cnpj: str, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Retorna status geral das certidoes de uma empresa."""
     service = CertificateService(db)
     return await service.get_status_geral(cnpj)
 
 
 @router.get("/tipos")
-async def get_tipos_certidao(db: Session = Depends(get_db)):
+async def get_tipos_certidao(current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Retorna tipos de certidao disponiveis."""
     service = CertificateService(db)
     tipos = await service.get_tipos_certidao()
@@ -56,14 +58,14 @@ async def get_tipos_certidao(db: Session = Depends(get_db)):
 
 
 @router.get("/pendentes-renovacao")
-async def get_pendentes_renovacao(db: Session = Depends(get_db)):
+async def get_pendentes_renovacao(current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Lista certidoes pendentes de renovacao automatica."""
     service = CertificateService(db)
     return await service.get_pending_renewal()
 
 
 @router.get("/{certificate_id}", response_model=CertificateResponse)
-async def get_certificate(certificate_id: UUID, db: Session = Depends(get_db)):
+async def get_certificate(certificate_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca certidao por ID."""
     service = CertificateService(db)
     cert = await service.get_by_id(certificate_id)
@@ -73,7 +75,7 @@ async def get_certificate(certificate_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/cnpj/{cnpj}/tipo/{tipo}", response_model=CertificateResponse)
-async def get_by_cnpj_tipo(cnpj: str, tipo: str, db: Session = Depends(get_db)):
+async def get_by_cnpj_tipo(cnpj: str, tipo: str, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca certidao mais recente por CNPJ e tipo."""
     service = CertificateService(db)
     cert = await service.get_by_tipo(cnpj, tipo)
@@ -85,14 +87,16 @@ async def get_by_cnpj_tipo(cnpj: str, tipo: str, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=CertificateResponse, status_code=status.HTTP_201_CREATED)
-async def create_certificate(data: CertificateCreate, db: Session = Depends(get_db)):
+async def create_certificate(data: CertificateCreate, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Cria nova certidao."""
     service = CertificateService(db)
     return await service.create(data)
 
 
 @router.put("/{certificate_id}", response_model=CertificateResponse)
-async def update_certificate(certificate_id: UUID, data: CertificateUpdate, db: Session = Depends(get_db)):
+async def update_certificate(
+    certificate_id: UUID, data: CertificateUpdate, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Atualiza certidao."""
     service = CertificateService(db)
     cert = await service.update(certificate_id, data)
@@ -102,7 +106,7 @@ async def update_certificate(certificate_id: UUID, data: CertificateUpdate, db: 
 
 
 @router.delete("/{certificate_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_certificate(certificate_id: UUID, db: Session = Depends(get_db)):
+async def delete_certificate(certificate_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Remove certidao."""
     service = CertificateService(db)
     if not await service.delete(certificate_id):
@@ -110,14 +114,18 @@ async def delete_certificate(certificate_id: UUID, db: Session = Depends(get_db)
 
 
 @router.post("/renovar", response_model=CertificateRenewResponse)
-async def renovar_certidao(data: CertificateRenewRequest, db: Session = Depends(get_db)):
+async def renovar_certidao(
+    data: CertificateRenewRequest, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Solicita renovacao de certidao."""
     service = CertificateService(db)
     return await service.renovar(data)
 
 
 @router.post("/atualizar-status")
-async def atualizar_todos_status(cnpj: str | None = None, db: Session = Depends(get_db)):
+async def atualizar_todos_status(
+    current_user: CurrentActiveUser, cnpj: str | None = None, db: Session = Depends(get_db)
+):
     """Atualiza status de todas as certidoes."""
     service = CertificateService(db)
     updated = await service.atualizar_todos_status(cnpj)

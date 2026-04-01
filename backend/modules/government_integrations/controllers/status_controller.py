@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, status
 
+from core.auth.dependencies import CurrentActiveUser
 from core.config.credentials import (
     get_government_credentials,
     is_certificate_configured,
@@ -24,7 +25,7 @@ router = APIRouter(tags=["Status"])
     summary="Status das integracoes governamentais",
     description="Retorna status de todas as integracoes.",
 )
-async def get_government_status() -> StandardResponse:
+async def get_government_status(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Retorna status das integrações governamentais.
 
@@ -88,7 +89,7 @@ async def get_government_status() -> StandardResponse:
     summary="Health check",
     description="Verifica saude do modulo.",
 )
-async def health_check() -> dict[str, Any]:
+async def health_check(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Health check do módulo.
 

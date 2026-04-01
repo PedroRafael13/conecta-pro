@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.bidding.schemas.proposal import (
     ProposalBDIResponse,
@@ -29,6 +30,7 @@ router = APIRouter(prefix="/proposals", tags=["Licitacoes - Propostas"])
 
 @router.get("", response_model=ProposalListResponse)
 async def list_proposals(
+    current_user: CurrentActiveUser,
     tender_id: UUID | None = None,
     status: str | None = None,
     page: int = Query(default=1, ge=1),
@@ -41,28 +43,28 @@ async def list_proposals(
 
 
 @router.get("/estatisticas")
-async def get_estatisticas(db: Session = Depends(get_db)):
+async def get_estatisticas(current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Retorna estatisticas de propostas."""
     service = ProposalService(db)
     return await service.get_estatisticas()
 
 
 @router.get("/vencedoras")
-async def list_vencedoras(db: Session = Depends(get_db)):
+async def list_vencedoras(current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Lista propostas vencedoras."""
     service = ProposalService(db)
     return await service.get_vencedoras()
 
 
 @router.get("/tender/{tender_id}")
-async def list_by_tender(tender_id: UUID, db: Session = Depends(get_db)):
+async def list_by_tender(tender_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Lista propostas de um edital especifico."""
     service = ProposalService(db)
     return await service.get_by_tender(tender_id)
 
 
 @router.get("/{proposal_id}", response_model=ProposalResponse)
-async def get_proposal(proposal_id: UUID, db: Session = Depends(get_db)):
+async def get_proposal(proposal_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca proposta por ID."""
     service = ProposalService(db)
     proposal = await service.get(proposal_id)
@@ -72,14 +74,16 @@ async def get_proposal(proposal_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=ProposalResponse, status_code=status.HTTP_201_CREATED)
-async def create_proposal(data: ProposalCreate, db: Session = Depends(get_db)):
+async def create_proposal(data: ProposalCreate, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Cria nova proposta."""
     service = ProposalService(db)
     return await service.create(data)
 
 
 @router.put("/{proposal_id}", response_model=ProposalResponse)
-async def update_proposal(proposal_id: UUID, data: ProposalUpdate, db: Session = Depends(get_db)):
+async def update_proposal(
+    proposal_id: UUID, data: ProposalUpdate, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Atualiza proposta."""
     service = ProposalService(db)
     proposal = await service.update(proposal_id, data)
@@ -91,7 +95,7 @@ async def update_proposal(proposal_id: UUID, data: ProposalUpdate, db: Session =
 
 
 @router.delete("/{proposal_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_proposal(proposal_id: UUID, db: Session = Depends(get_db)):
+async def delete_proposal(proposal_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Remove proposta."""
     service = ProposalService(db)
     if not await service.delete(proposal_id):
@@ -99,7 +103,7 @@ async def delete_proposal(proposal_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("/{proposal_id}/pronta", response_model=ProposalResponse)
-async def marcar_pronta(proposal_id: UUID, db: Session = Depends(get_db)):
+async def marcar_pronta(proposal_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Marca proposta como pronta para envio."""
     service = ProposalService(db)
     try:
@@ -112,7 +116,7 @@ async def marcar_pronta(proposal_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("/{proposal_id}/enviar", response_model=ProposalResponse)
-async def enviar_proposta(proposal_id: UUID, db: Session = Depends(get_db)):
+async def enviar_proposta(proposal_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Envia proposta."""
     service = ProposalService(db)
     proposal = await service.enviar(proposal_id)
@@ -127,6 +131,7 @@ async def enviar_proposta(proposal_id: UUID, db: Session = Depends(get_db)):
 async def registrar_resultado(
     proposal_id: UUID,
     vencedora: bool,
+    current_user: CurrentActiveUser,
     posicao: int | None = None,
     valor_final: float | None = None,
     db: Session = Depends(get_db),
@@ -141,7 +146,9 @@ async def registrar_resultado(
 
 
 @router.post("/{proposal_id}/lance", response_model=ProposalResponse)
-async def registrar_lance(proposal_id: UUID, data: ProposalLanceCreate, db: Session = Depends(get_db)):
+async def registrar_lance(
+    proposal_id: UUID, data: ProposalLanceCreate, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Registra lance em pregao."""
     service = ProposalService(db)
     proposal = await service.registrar_lance(proposal_id, data.valor)
@@ -151,7 +158,7 @@ async def registrar_lance(proposal_id: UUID, data: ProposalLanceCreate, db: Sess
 
 
 @router.post("/calcular-bdi", response_model=ProposalBDIResponse)
-async def calcular_bdi(data: ProposalCalculateBDI, db: Session = Depends(get_db)):
+async def calcular_bdi(data: ProposalCalculateBDI, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Calcula BDI da proposta."""
     service = ProposalService(db)
     return await service.calcular_bdi(data)

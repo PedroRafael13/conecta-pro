@@ -8,6 +8,8 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.fgts_digital import (
     CalcularFolhaRequest,
@@ -39,7 +41,9 @@ def get_service() -> FGTSDigitalService:
     summary="Status do FGTS Digital",
     description="Retorna o status da configuração do FGTS Digital",
 )
-async def get_status(service: FGTSDigitalService = Depends(get_service)) -> StandardResponse:
+async def get_status(
+    current_user: CurrentActiveUser, service: FGTSDigitalService = Depends(get_service)
+) -> StandardResponse:
     """Retorna status da configuração."""
     try:
         status_data = service.validar_status()
@@ -57,7 +61,9 @@ async def get_status(service: FGTSDigitalService = Depends(get_service)) -> Stan
     summary="Lista categorias",
     description="Retorna a lista de categorias de trabalhadores",
 )
-async def listar_categorias(service: FGTSDigitalService = Depends(get_service)) -> StandardResponse:
+async def listar_categorias(
+    current_user: CurrentActiveUser, service: FGTSDigitalService = Depends(get_service)
+) -> StandardResponse:
     """Lista categorias de trabalhadores."""
     try:
         categorias = service.listar_categorias()
@@ -75,7 +81,9 @@ async def listar_categorias(service: FGTSDigitalService = Depends(get_service)) 
     summary="Lista modalidades de saque",
     description="Retorna a lista de modalidades de saque",
 )
-async def listar_modalidades_saque(service: FGTSDigitalService = Depends(get_service)) -> StandardResponse:
+async def listar_modalidades_saque(
+    current_user: CurrentActiveUser, service: FGTSDigitalService = Depends(get_service)
+) -> StandardResponse:
     """Lista modalidades de saque."""
     try:
         modalidades = service.listar_modalidades_saque()
@@ -94,7 +102,7 @@ async def listar_modalidades_saque(service: FGTSDigitalService = Depends(get_ser
     description="Calcula o FGTS da folha de pagamento",
 )
 async def calcular_folha(
-    request: CalcularFolhaRequest, service: FGTSDigitalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: CalcularFolhaRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Calcula FGTS da folha."""
     try:
@@ -122,7 +130,7 @@ async def calcular_folha(
     description="Importa dados do eSocial para cálculo do FGTS",
 )
 async def importar_esocial(
-    request: ImportarESocialRequest, service: FGTSDigitalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: ImportarESocialRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Importa dados do eSocial."""
     try:
@@ -151,7 +159,7 @@ async def importar_esocial(
     description="Gera guia de recolhimento mensal (GRFGTS) com PIX",
 )
 async def gerar_guia_mensal(
-    request: GerarGuiaMensalRequest, service: FGTSDigitalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarGuiaMensalRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Gera guia mensal."""
     try:
@@ -183,7 +191,7 @@ async def gerar_guia_mensal(
     description="Gera guia de recolhimento rescisório (GRRF) com PIX",
 )
 async def gerar_guia_rescisoria(
-    request: RescisaoRequest, service: FGTSDigitalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: RescisaoRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Gera guia rescisória."""
     try:
@@ -205,7 +213,9 @@ async def gerar_guia_rescisoria(
     "/debitos", response_model=StandardResponse, summary="Consultar débitos", description="Consulta débitos de FGTS"
 )
 async def consultar_debitos(
-    request: ConsultarDebitosRequest, service: FGTSDigitalService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: ConsultarDebitosRequest,
+    service: FGTSDigitalService = Depends(get_service),
 ) -> StandardResponse:
     """Consulta débitos."""
     try:
@@ -231,7 +241,9 @@ async def consultar_debitos(
     description="Consulta extrato do FGTS de um trabalhador",
 )
 async def consultar_extrato(
-    request: ConsultarExtratoRequest, service: FGTSDigitalService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: ConsultarExtratoRequest,
+    service: FGTSDigitalService = Depends(get_service),
 ) -> StandardResponse:
     """Consulta extrato do trabalhador."""
     try:
@@ -254,7 +266,7 @@ async def consultar_extrato(
     "/simular-saque", response_model=StandardResponse, summary="Simular saque", description="Simula saque do FGTS"
 )
 async def simular_saque(
-    request: SimularSaqueRequest, service: FGTSDigitalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: SimularSaqueRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Simula saque do FGTS."""
     try:
@@ -281,7 +293,7 @@ async def simular_saque(
     description="Gera relatório mensal de FGTS",
 )
 async def gerar_relatorio_mensal(
-    request: CalcularFolhaRequest, service: FGTSDigitalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: CalcularFolhaRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Gera relatório mensal."""
     try:

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_async_session
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class MktLeadCreate(BaseModel):
 
 
 @router.get("/campaigns/")
-async def listar_campanhas(db: AsyncSession = Depends(get_async_session)):
+async def listar_campanhas(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     result = await db.execute(
         text("""
         SELECT mc.*, (SELECT COUNT(*) FROM marketing_leads ml WHERE ml.campaign_id = mc.id) as total_leads,
@@ -73,8 +74,10 @@ async def listar_campanhas(db: AsyncSession = Depends(get_async_session)):
     }
 
 
-@router.post("/campaigns/")
-async def criar_campanha(data: CampaignCreate, db: AsyncSession = Depends(get_async_session)):
+@router.post("/campaigns/", status_code=201)
+async def criar_campanha(
+    data: CampaignCreate, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)
+):
     result = await db.execute(
         text("""
         INSERT INTO marketing_campaigns (name, type, budget, description, start_date, end_date, utm_source, utm_medium, utm_campaign)
@@ -97,7 +100,12 @@ async def criar_campanha(data: CampaignCreate, db: AsyncSession = Depends(get_as
 
 
 @router.put("/campaigns/{campaign_id}")
-async def atualizar_campanha(campaign_id: str, data: CampaignCreate, db: AsyncSession = Depends(get_async_session)):
+async def atualizar_campanha(
+    campaign_id: str,
+    data: CampaignCreate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_async_session),
+):
     """Atualiza campanha existente."""
     await db.execute(
         text("""
@@ -128,6 +136,7 @@ async def atualizar_campanha(campaign_id: str, data: CampaignCreate, db: AsyncSe
 
 @router.get("/leads/")
 async def listar_mkt_leads(
+    current_user: CurrentActiveUser,
     campaign_id: str | None = Query(None),
     status: str | None = Query(None),
     db: AsyncSession = Depends(get_async_session),
@@ -169,8 +178,10 @@ async def listar_mkt_leads(
     }
 
 
-@router.post("/leads/")
-async def criar_mkt_lead(data: MktLeadCreate, db: AsyncSession = Depends(get_async_session)):
+@router.post("/leads/", status_code=201)
+async def criar_mkt_lead(
+    data: MktLeadCreate, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)
+):
     result = await db.execute(
         text("""
         INSERT INTO marketing_leads (campaign_id, name, email, phone, whatsapp, source)
@@ -190,7 +201,9 @@ async def criar_mkt_lead(data: MktLeadCreate, db: AsyncSession = Depends(get_asy
 
 
 @router.post("/leads/{lead_id}/convert")
-async def converter_lead_para_crm(lead_id: str, db: AsyncSession = Depends(get_async_session)):
+async def converter_lead_para_crm(
+    lead_id: str, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)
+):
     """Converte lead de marketing em lead CRM — fecha o ciclo campanha→CRM."""
     # Buscar lead marketing
     ml = await db.execute(text("SELECT * FROM marketing_leads WHERE id = :id"), {"id": lead_id})
@@ -245,7 +258,7 @@ async def converter_lead_para_crm(lead_id: str, db: AsyncSession = Depends(get_a
 
 
 @router.get("/leads/stats")
-async def stats_mkt_leads(db: AsyncSession = Depends(get_async_session)):
+async def stats_mkt_leads(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Estatísticas de leads por campanha."""
     result = await db.execute(
         text("""
@@ -296,6 +309,7 @@ class LicitacaoConvertRequest(BaseModel):
 @router.post("/licitacao/convert-to-crm")
 async def converter_licitacao_para_crm(
     data: LicitacaoConvertRequest,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Converte licitação vencida em lead CRM — fecha ciclo licitação→CRM."""

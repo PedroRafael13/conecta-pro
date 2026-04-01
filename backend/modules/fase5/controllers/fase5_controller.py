@@ -13,6 +13,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, Field
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..cct_compliance.enums import TipoBeneficio, TipoCargo, TipoJornada
 from ..cct_compliance.service import CCTComplianceService
 from ..email_intelligence.models import EmailMessage
@@ -89,7 +91,7 @@ class QualidadeRequest(BaseModel):
 
 
 @router.get("/cct/cargos", response_model=dict[str, Any])
-async def listar_cargos():
+async def listar_cargos(current_user: CurrentActiveUser):
     """Lista todos os cargos com pisos salariais CCT 2026."""
     try:
         cargos = cct_service.listar_cargos()
@@ -100,7 +102,7 @@ async def listar_cargos():
 
 
 @router.get("/cct/cargo/{cargo}", response_model=dict[str, Any])
-async def obter_cargo(cargo: str):
+async def obter_cargo(current_user: CurrentActiveUser, cargo: str):
     """Obtem detalhes de um cargo especifico."""
     try:
         tipo_cargo = TipoCargo(cargo)
@@ -118,7 +120,7 @@ async def obter_cargo(cargo: str):
 
 
 @router.post("/cct/validar-salario", response_model=dict[str, Any])
-async def validar_salario(request: ValidarSalarioRequest):
+async def validar_salario(current_user: CurrentActiveUser, request: ValidarSalarioRequest):
     """Valida salario contra piso da CCT."""
     try:
         tipo_cargo = TipoCargo(request.cargo)
@@ -130,7 +132,7 @@ async def validar_salario(request: ValidarSalarioRequest):
 
 
 @router.post("/cct/validar-completo", response_model=dict[str, Any])
-async def validar_completo(request: ValidarCompletoRequest):
+async def validar_completo(current_user: CurrentActiveUser, request: ValidarCompletoRequest):
     """Executa validacao completa de compliance CCT."""
     try:
         tipo_cargo = TipoCargo(request.cargo)
@@ -147,7 +149,7 @@ async def validar_completo(request: ValidarCompletoRequest):
 
 
 @router.post("/cct/calcular-custo", response_model=dict[str, Any])
-async def calcular_custo(request: CalcularCustoRequest):
+async def calcular_custo(current_user: CurrentActiveUser, request: CalcularCustoRequest):
     """Calcula custo total de um funcionario."""
     try:
         tipo_cargo = TipoCargo(request.cargo)
@@ -164,7 +166,7 @@ async def calcular_custo(request: CalcularCustoRequest):
 
 
 @router.post("/cct/gerar-proposta", response_model=dict[str, Any])
-async def gerar_proposta(request: GerarPropostaRequest):
+async def gerar_proposta(current_user: CurrentActiveUser, request: GerarPropostaRequest):
     """Gera proposta comercial baseada na CCT."""
     try:
         resultado = cct_service.gerar_proposta_comercial(
@@ -182,7 +184,7 @@ async def gerar_proposta(request: GerarPropostaRequest):
 
 
 @router.post("/email/analisar", response_model=dict[str, Any])
-async def analisar_email(request: AnalisarEmailRequest):
+async def analisar_email(current_user: CurrentActiveUser, request: AnalisarEmailRequest):
     """Analisa um email e retorna classificacao, entidades e sugestoes."""
     try:
         email = EmailMessage(
@@ -202,7 +204,7 @@ async def analisar_email(request: AnalisarEmailRequest):
 
 
 @router.get("/email/contexto/{email_address}", response_model=dict[str, Any])
-async def obter_contexto_email(email_address: str, tenant_id: str = Query(...)):
+async def obter_contexto_email(email_address: str, current_user: CurrentActiveUser, tenant_id: str = Query(...)):
     """Obtem contexto historico de um endereco de email."""
     try:
         contexto = await email_service.get_email_context(email_address, UUID(tenant_id))
@@ -219,7 +221,7 @@ async def obter_contexto_email(email_address: str, tenant_id: str = Query(...)):
 
 
 @router.post("/quality/validate", response_model=dict[str, Any])
-async def validar_qualidade(request: QualidadeRequest):
+async def validar_qualidade(current_user: CurrentActiveUser, request: QualidadeRequest):
     """Executa validacao de qualidade do sistema."""
     try:
         report = await quality_validator.validate(component=request.component, phase=request.phase)
@@ -238,7 +240,7 @@ async def validar_qualidade(request: QualidadeRequest):
 
 
 @router.get("/status", response_model=dict[str, Any])
-async def status_fase5():
+async def status_fase5(current_user: CurrentActiveUser):
     """Retorna status da Fase 5."""
     return {
         "success": True,
@@ -259,6 +261,6 @@ async def status_fase5():
 
 
 @router.get("/health", response_model=dict[str, Any])
-async def health_fase5():
+async def health_fase5(current_user: CurrentActiveUser):
     """Health check da Fase 5."""
     return {"status": "healthy", "phase": "fase5", "timestamp": datetime.utcnow().isoformat()}

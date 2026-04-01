@@ -134,6 +134,7 @@ async def get_by_document(
     return await service.get_by_document(document_id)
 
 
+@router.get("/owner", include_in_schema=False)
 @router.get("/owner/list", response_model=list[DocumentShareResponse])
 async def get_by_owner(
     page: int = Query(1, ge=1),
@@ -146,6 +147,7 @@ async def get_by_owner(
     return await service.get_by_owner(_uid(current_user), page, page_size)
 
 
+@router.get("/recipient", include_in_schema=False)
 @router.get("/recipient/list", response_model=list[DocumentShareResponse])
 async def get_by_recipient(
     page: int = Query(1, ge=1),
@@ -162,7 +164,7 @@ async def get_by_recipient(
     )
 
 
-@router.post("/public-link", response_model=DocumentShareResponse)
+@router.post("/public-link", response_model=DocumentShareResponse, status_code=201)
 async def create_public_link(
     data: DocumentShareLinkRequest,
     db: AsyncSession = Depends(get_db),

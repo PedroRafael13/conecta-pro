@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.automation.workflow.models import (
     ExecutionStatus,
@@ -93,6 +94,7 @@ class ExecutionResponse(BaseModel):
 
 @router.get("/", response_model=list[WorkflowResponse])
 async def list_workflows(
+    current_user: CurrentActiveUser,
     tenant_id: str = Query(..., description="ID do tenant"),
     workflow_status: WorkflowStatus | None = Query(None, alias="status"),
     category: WorkflowCategory | None = None,
@@ -122,6 +124,7 @@ async def list_workflows(
 @router.get("/{workflow_id}", response_model=WorkflowResponse)
 async def get_workflow(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Obtem workflow por ID."""
@@ -136,6 +139,7 @@ async def get_workflow(
 @router.post("/", response_model=WorkflowResponse, status_code=status.HTTP_201_CREATED)
 async def create_workflow(
     data: WorkflowCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Cria novo workflow."""
@@ -163,6 +167,7 @@ async def create_workflow(
 async def update_workflow(
     workflow_id: UUID,
     data: WorkflowUpdate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Atualiza workflow."""
@@ -192,6 +197,7 @@ async def update_workflow(
 @router.delete("/{workflow_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_workflow(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Remove workflow."""
@@ -214,6 +220,7 @@ async def delete_workflow(
 @router.post("/{workflow_id}/activate", response_model=WorkflowResponse)
 async def activate_workflow(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Ativa workflow."""
@@ -233,6 +240,7 @@ async def activate_workflow(
 @router.post("/{workflow_id}/deactivate", response_model=WorkflowResponse)
 async def deactivate_workflow(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Desativa workflow."""
@@ -252,6 +260,7 @@ async def deactivate_workflow(
 @router.get("/{workflow_id}/executions", response_model=list[ExecutionResponse])
 async def list_executions(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     execution_status: ExecutionStatus | None = Query(None, alias="status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -272,6 +281,7 @@ async def list_executions(
 @router.post("/executions/{execution_id}/cancel")
 async def cancel_execution(
     execution_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Cancela execucao."""

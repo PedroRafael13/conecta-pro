@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 
 logger = logging.getLogger(__name__)
@@ -144,6 +145,7 @@ class EventoResponse(BaseModel):
 
 @router.get("/status", response_model=StatusServicoResponse)
 async def consultar_status_servico(
+    current_user: CurrentActiveUser,
     ambiente: str = Query("producao", enum=["producao", "homologacao"]),
     db: Session = Depends(get_db),
 ):
@@ -182,6 +184,7 @@ async def consultar_status_servico(
 @router.get("/nfe/{chave_acesso}", response_model=ConsultaNFeResponse)
 async def consultar_nfe(
     chave_acesso: str,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -228,6 +231,7 @@ async def consultar_nfe(
 @router.get("/cadastro/ie/{inscricao_estadual}", response_model=CadastroContribuinteResponse)
 async def consultar_cadastro_ie(
     inscricao_estadual: str,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -263,6 +267,7 @@ async def consultar_cadastro_ie(
 @router.get("/cadastro/cnpj/{cnpj}", response_model=CadastroContribuinteResponse)
 async def consultar_cadastro_cnpj(
     cnpj: str,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -303,6 +308,7 @@ async def consultar_cadastro_cnpj(
 
 @router.get("/dfe", response_model=DFeResponse)
 async def consultar_dfe_destinadas(
+    current_user: CurrentActiveUser,
     cnpj: str = Query(..., min_length=14, max_length=14, description="CNPJ do interessado"),
     ultimo_nsu: str = Query("0", description="Ultimo NSU recebido"),
     db: Session = Depends(get_db),
@@ -344,6 +350,7 @@ async def consultar_dfe_destinadas(
 @router.post("/cancelar", response_model=EventoResponse)
 async def cancelar_nfe(
     dados: CancelamentoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -392,6 +399,7 @@ async def cancelar_nfe(
 @router.post("/carta-correcao", response_model=EventoResponse)
 async def registrar_carta_correcao(
     dados: CartaCorrecaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -440,6 +448,7 @@ async def registrar_carta_correcao(
 @router.post("/inutilizar", response_model=EventoResponse)
 async def inutilizar_numeracao(
     dados: InutilizacaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """

@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.operacional.diaristas.models.documento_fiscal import (
     StatusDocumentoFiscal,
@@ -115,6 +116,7 @@ class RelatorioRetencoesResponse(BaseModel):
 )
 async def calcular_retencoes(
     request: CalculoRetencoesRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -170,6 +172,7 @@ async def calcular_retencoes(
 )
 async def simular_retencoes(
     valor_bruto: Decimal,
+    current_user: CurrentActiveUser,
     dependentes: int = Query(0, ge=0),
     aliquota_iss: Decimal | None = Query(None),
     db: Session = Depends(get_db),
@@ -205,6 +208,7 @@ async def simular_retencoes(
 )
 async def gerar_rpa(
     request: GerarRPARequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -258,6 +262,7 @@ async def gerar_rpa(
     description="Lista documentos fiscais com filtros",
 )
 async def listar_documentos(
+    current_user: CurrentActiveUser,
     diarist_id: UUID | None = Query(None),
     tipo: TipoDocumentoFiscal | None = Query(None),
     competencia: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
@@ -307,6 +312,7 @@ async def listar_documentos(
 )
 async def get_documento(
     documento_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Retorna detalhes de um documento fiscal."""
@@ -382,6 +388,7 @@ async def get_documento(
     description="Gera relatório de retenções por período",
 )
 async def relatorio_retencoes(
+    current_user: CurrentActiveUser,
     data_inicio: date = Query(..., description="Data inicial"),
     data_fim: date = Query(..., description="Data final"),
     diarist_id: UUID | None = Query(None),
@@ -423,6 +430,7 @@ async def relatorio_retencoes(
 )
 async def relatorio_diarista(
     diarist_id: UUID,
+    current_user: CurrentActiveUser,
     ano: int = Query(..., ge=2020, le=2030),
     db: Session = Depends(get_db),
 ):
@@ -510,7 +518,7 @@ async def relatorio_diarista(
 
 
 @router.get("/tabelas/inss", summary="Tabela INSS", description="Retorna tabela INSS vigente")
-async def get_tabela_inss():
+async def get_tabela_inss(current_user: CurrentActiveUser):
     """Retorna tabela INSS vigente para contribuintes individuais."""
     # Tabela INSS 2026 para contribuinte individual (autonomo)
     return {
@@ -523,7 +531,7 @@ async def get_tabela_inss():
 
 
 @router.get("/tabelas/irrf", summary="Tabela IRRF", description="Retorna tabela IRRF vigente")
-async def get_tabela_irrf():
+async def get_tabela_irrf(current_user: CurrentActiveUser):
     """Retorna tabela IRRF vigente."""
     # Tabela IRRF 2026
     faixas = [
@@ -541,7 +549,7 @@ async def get_tabela_irrf():
 
 
 @router.get("/codigos-servico", summary="Códigos de serviço", description="Lista códigos de serviço (LC 116/2003)")
-async def listar_codigos_servico():
+async def listar_codigos_servico(current_user: CurrentActiveUser):
     """Lista códigos de serviço relevantes para diaristas."""
     return {
         "codigos": [

@@ -146,6 +146,7 @@ async def get_prediction(
     "/predictions/{prediction_id}/feedback",
     response_model=PredictionResponse,
     summary="Adiciona feedback a previsao",
+    status_code=201,
 )
 async def add_prediction_feedback(
     prediction_id: UUID,

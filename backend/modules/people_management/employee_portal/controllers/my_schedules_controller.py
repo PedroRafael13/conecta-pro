@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
 from modules.people_management.employee_portal.schemas.schedule import (
@@ -38,6 +39,7 @@ router = APIRouter(tags=["Portal - Escalas"])
 )
 async def get_my_schedules(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     month: int = Query(default=None, ge=1, le=12, description="Mes (1-12)"),
     year: int = Query(default=None, ge=2020, le=2030, description="Ano"),
     db: AsyncSession = Depends(get_db),
@@ -60,6 +62,7 @@ async def get_my_schedules(
 )
 async def get_current_month_schedule(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna escala do mes atual do funcionario autenticado."""
@@ -81,6 +84,7 @@ async def get_current_month_schedule(
 )
 async def get_next_shift(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna o proximo turno agendado do funcionario autenticado."""

@@ -5,6 +5,8 @@ BookkeeperController — Endpoints escrituração contábil automática
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..agents.bookkeeper_auto import BookkeeperAutoAgent
 
 router = APIRouter(prefix="/empresas/contabilidade", tags=["Escrituração Contábil"])
@@ -34,17 +36,17 @@ class ResumoContabilRequest(BaseModel):
 
 
 @router.post("/lancamentos/folha")
-def lancamentos_folha(req: LancamentosFolhaRequest):
+def lancamentos_folha(current_user: CurrentActiveUser, req: LancamentosFolhaRequest):
     return agent.gerar_lancamentos_folha(req.empresa_slug, req.competencia, req.funcionarios)
 
 
 @router.post("/lancamentos/impostos")
-def lancamentos_impostos(req: LancamentosImpostosRequest):
+def lancamentos_impostos(current_user: CurrentActiveUser, req: LancamentosImpostosRequest):
     return agent.gerar_lancamentos_impostos(req.empresa_slug, req.competencia, req.impostos, req.regime)
 
 
 @router.post("/resumo-mensal")
-def resumo_mensal(req: ResumoContabilRequest):
+def resumo_mensal(current_user: CurrentActiveUser, req: ResumoContabilRequest):
     return agent.resumo_contabil_mensal(
         req.empresa_slug, req.periodo, req.receitas, req.custos_folha, req.impostos, req.despesas_admin
     )

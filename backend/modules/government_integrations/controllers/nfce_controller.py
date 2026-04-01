@@ -24,6 +24,8 @@ from decimal import Decimal
 from fastapi import APIRouter, HTTPException, Path, Query, status
 from fastapi.responses import Response
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.nfce import (
     NFCeCancelamentoRequest,
@@ -45,7 +47,7 @@ router = APIRouter(prefix="/nfce", tags=["NFC-e - Nota Fiscal Consumidor"])
     summary="Emite NFC-e",
     description="Emite Nota Fiscal de Consumidor Eletronica (modelo 65).",
 )
-async def emitir_nfce(request: NFCeEmissaoRequest) -> StandardResponse:
+async def emitir_nfce(current_user: CurrentActiveUser, request: NFCeEmissaoRequest) -> StandardResponse:
     """
     Emite NFC-e para venda ao consumidor final.
 
@@ -210,6 +212,7 @@ async def emitir_nfce(request: NFCeEmissaoRequest) -> StandardResponse:
     description="Consulta situacao de NFC-e pela chave de acesso.",
 )
 async def consultar_nfce(
+    current_user: CurrentActiveUser,
     chave_acesso: str = Path(
         ...,
         min_length=44,
@@ -273,7 +276,7 @@ async def consultar_nfce(
     summary="Cancela NFC-e",
     description="Cancela NFC-e autorizada (prazo de 30 minutos para NFC-e).",
 )
-async def cancelar_nfce(request: NFCeCancelamentoRequest) -> StandardResponse:
+async def cancelar_nfce(current_user: CurrentActiveUser, request: NFCeCancelamentoRequest) -> StandardResponse:
     """
     Cancela NFC-e autorizada.
 
@@ -326,7 +329,7 @@ async def cancelar_nfce(request: NFCeCancelamentoRequest) -> StandardResponse:
     summary="Inutiliza numeracao",
     description="Inutiliza faixa de numeracao de NFC-e.",
 )
-async def inutilizar_nfce(request: NFCeInutilizacaoRequest) -> StandardResponse:
+async def inutilizar_nfce(current_user: CurrentActiveUser, request: NFCeInutilizacaoRequest) -> StandardResponse:
     """
     Inutiliza numeracao de NFC-e.
 
@@ -382,6 +385,7 @@ async def inutilizar_nfce(request: NFCeInutilizacaoRequest) -> StandardResponse:
     description="Consulta status do servico de NFC-e na SEFAZ.",
 )
 async def status_servico_nfce(
+    current_user: CurrentActiveUser,
     uf: str = Query(default="AM", min_length=2, max_length=2, description="UF do servico"),
 ) -> StandardResponse:
     """
@@ -426,7 +430,9 @@ async def status_servico_nfce(
     summary="Transmite NFC-e em contingencia",
     description="Transmite NFC-e que foi emitida em contingencia offline.",
 )
-async def transmitir_contingencia(request: NFCeContingenciaRequest) -> StandardResponse:
+async def transmitir_contingencia(
+    current_user: CurrentActiveUser, request: NFCeContingenciaRequest
+) -> StandardResponse:
     """
     Transmite NFC-e emitida em contingencia.
 
@@ -471,6 +477,7 @@ async def transmitir_contingencia(request: NFCeContingenciaRequest) -> StandardR
     description="Gera DANFE (cupom fiscal) da NFC-e.",
 )
 async def gerar_danfe_nfce(
+    current_user: CurrentActiveUser,
     chave_acesso: str = Path(..., min_length=44, max_length=44),
     formato: str = Query(default="pdf", pattern=r"^(pdf|html|escpos)$"),
 ) -> Response:
@@ -533,6 +540,7 @@ async def gerar_danfe_nfce(
     description="Download do XML autorizado da NFC-e.",
 )
 async def download_xml_nfce(
+    current_user: CurrentActiveUser,
     chave_acesso: str = Path(..., min_length=44, max_length=44),
 ) -> Response:
     """
@@ -584,6 +592,7 @@ async def download_xml_nfce(
     description="Lista NFC-e emitidas com filtros.",
 )
 async def listar_nfce(
+    current_user: CurrentActiveUser,
     data_inicio: str | None = Query(None, description="Data inicio (YYYY-MM-DD)"),
     data_fim: str | None = Query(None, description="Data fim (YYYY-MM-DD)"),
     _status_nfce: str | None = Query(None, description="Status (autorizada, cancelada)"),

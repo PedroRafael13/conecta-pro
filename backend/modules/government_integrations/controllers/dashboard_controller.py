@@ -12,6 +12,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..core.contingency import VerificadorDisponibilidade
 from ..core.credentials import GerenciadorCertificados, get_vault_client
 from ..core.events import get_event_bus
@@ -443,7 +445,7 @@ dashboard_service = DashboardService()
 
 
 @router.get("/status", response_model=IntegrationStatusResponse)
-async def obter_status_integracoes():
+async def obter_status_integracoes(current_user: CurrentActiveUser):
     """
     Status de TODAS as integrações externas do sistema.
 
@@ -459,6 +461,7 @@ async def obter_status_integracoes():
 
 @router.get("/", response_model=DashboardResponse)
 async def obter_dashboard(
+    current_user: CurrentActiveUser,
     tenant_id: str | None = Query(None, description="ID do tenant"),
     dias: int = Query(7, ge=1, le=90, description="Período em dias"),
 ):
@@ -484,6 +487,7 @@ async def obter_dashboard(
 
 @router.get("/metricas", response_model=MetricasResponse)
 async def obter_metricas(
+    current_user: CurrentActiveUser,
     tenant_id: str | None = Query(None, description="ID do tenant"),
     dias: int = Query(30, ge=1, le=365, description="Período em dias"),
 ):
@@ -503,7 +507,7 @@ async def obter_metricas(
 
 
 @router.get("/endpoints", response_model=list[StatusEndpoint])
-async def listar_status_endpoints():
+async def listar_status_endpoints(current_user: CurrentActiveUser):
     """
     Lista status de todos os endpoints governamentais.
 
@@ -518,6 +522,7 @@ async def listar_status_endpoints():
 
 @router.get("/certificados/alertas", response_model=list[AlertaCertificado])
 async def listar_alertas_certificados(
+    current_user: CurrentActiveUser,
     tenant_id: str | None = Query(None, description="ID do tenant"),
 ):
     """
@@ -535,6 +540,7 @@ async def listar_alertas_certificados(
 
 @router.get("/eventos", response_model=list[EventoRecente])
 async def listar_eventos_recentes(
+    current_user: CurrentActiveUser,
     tenant_id: str | None = Query(None, description="ID do tenant"),
     limite: int = Query(50, ge=1, le=200, description="Limite de eventos"),
 ):
@@ -554,7 +560,7 @@ async def listar_eventos_recentes(
 
 
 @router.post("/endpoints/{uf}/{servico}/verificar")
-async def verificar_endpoint(uf: str, servico: str):
+async def verificar_endpoint(uf: str, current_user: CurrentActiveUser, servico: str):
     """
     Força verificação de disponibilidade de um endpoint específico.
     """

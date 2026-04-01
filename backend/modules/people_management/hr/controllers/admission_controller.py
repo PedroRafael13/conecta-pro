@@ -145,7 +145,7 @@ async def complete_admission(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{admission_id}/documents")
+@router.post("/{admission_id}/documents", status_code=201)
 async def upload_document(
     admission_id: str,
     file: UploadFile = File(...),

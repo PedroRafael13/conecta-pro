@@ -399,7 +399,7 @@ async def delete_pool(
     logger.info(f"Cost Pool removido: {pool_id} por {current_user.id}")
 
 
-@router.post("/pools/{pool_id}/add-cost", response_model=CostPoolResponse)
+@router.post("/pools/{pool_id}/add-cost", response_model=CostPoolResponse, status_code=201)
 async def add_cost_to_pool(  # pylint: disable=unused-argument
     pool_id: UUID,
     data: CostPoolAddCost,
@@ -539,7 +539,7 @@ async def delete_object(
     logger.info(f"Cost Object removido: {object_id} por {current_user.id}")
 
 
-@router.post("/objects/{object_id}/add-direct-cost", response_model=CostObjectResponse)
+@router.post("/objects/{object_id}/add-direct-cost", response_model=CostObjectResponse, status_code=201)
 async def add_direct_cost(  # pylint: disable=unused-argument
     object_id: UUID,
     data: CostObjectAddDirectCost,

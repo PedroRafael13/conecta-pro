@@ -12,6 +12,8 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..cross_module_analytics import CrossModuleAnalytics
 from ..insight_distributor import Insight, InsightDistributor, InsightPriority, InsightType
 from ..module_integration_manager import ModuleIntegrationManager
@@ -83,7 +85,7 @@ class ModuleHealthResponse(BaseModel):
 
 
 @router.get("/health", summary="Health Check da Central de IA")
-async def health_check():
+async def health_check(current_user: CurrentActiveUser):
     """Verifica saúde geral da Central de IA"""
     try:
         # Verificar todos os componentes
@@ -109,7 +111,7 @@ async def health_check():
 
 
 @router.post("/ai/predict", summary="Fazer Predição com IA")
-async def make_ai_prediction(request: AIRequestSchema):
+async def make_ai_prediction(current_user: CurrentActiveUser, request: AIRequestSchema):
     """Faz uma predição usando o motor central de IA"""
     try:
         # Converter para AIInput
@@ -142,7 +144,7 @@ async def make_ai_prediction(request: AIRequestSchema):
 
 
 @router.post("/predictions/submit", summary="Submeter Predição para Fila")
-async def submit_prediction(request: PredictionRequestSchema):
+async def submit_prediction(current_user: CurrentActiveUser, request: PredictionRequestSchema):
     """Submete uma predição para a fila do orquestrador"""
     try:
         # Converter prioridade
@@ -184,7 +186,7 @@ async def submit_prediction(request: PredictionRequestSchema):
 
 
 @router.get("/predictions/{prediction_id}/status", summary="Status de Predição")
-async def get_prediction_status(prediction_id: str):
+async def get_prediction_status(current_user: CurrentActiveUser, prediction_id: str):
     """Obtém status de uma predição específica"""
     try:
         status = await orchestra.get_prediction_status(prediction_id)
@@ -202,7 +204,7 @@ async def get_prediction_status(prediction_id: str):
 
 
 @router.get("/analytics/correlations", summary="Análises Cross-Module")
-async def get_module_correlations(tenant_id: str, timeframe_days: int = 30):
+async def get_module_correlations(tenant_id: str, current_user: CurrentActiveUser, timeframe_days: int = 30):
     """Obtém correlações entre módulos"""
     try:
         correlations = await analytics.analyze_all_correlations(tenant_id, timeframe_days)
@@ -237,7 +239,7 @@ async def get_module_correlations(tenant_id: str, timeframe_days: int = 30):
 
 
 @router.get("/analytics/insights", summary="Insights Integrados")
-async def get_integrated_insights(tenant_id: str):
+async def get_integrated_insights(current_user: CurrentActiveUser, tenant_id: str):
     """Obtém insights integrados cross-module"""
     try:
         insights = await analytics.generate_integrated_insights(tenant_id)
@@ -249,7 +251,7 @@ async def get_integrated_insights(tenant_id: str):
 
 
 @router.post("/insights/distribute", summary="Distribuir Insight")
-async def distribute_insight(insight_data: InsightSchema):
+async def distribute_insight(current_user: CurrentActiveUser, insight_data: InsightSchema):
     """Distribui um insight para módulos e usuários relevantes"""
     try:
         # Converter para Insight
@@ -277,7 +279,7 @@ async def distribute_insight(insight_data: InsightSchema):
 
 
 @router.get("/modules/health", summary="Saúde dos Módulos")
-async def get_modules_health():
+async def get_modules_health(current_user: CurrentActiveUser):
     """Obtém saúde de todos os módulos integrados"""
     try:
         health = await integration_manager.get_all_modules_health()
@@ -289,7 +291,7 @@ async def get_modules_health():
 
 
 @router.get("/modules/{module_name}/health", summary="Saúde de Módulo Específico")
-async def get_module_health(module_name: str):
+async def get_module_health(current_user: CurrentActiveUser, module_name: str):
     """Obtém saúde de um módulo específico"""
     try:
         health = await integration_manager.get_module_health(module_name)
@@ -301,7 +303,7 @@ async def get_module_health(module_name: str):
 
 
 @router.post("/modules/discover", summary="Auto-descobrir Módulos")
-async def discover_modules(background_tasks: BackgroundTasks):
+async def discover_modules(current_user: CurrentActiveUser, background_tasks: BackgroundTasks):
     """Executa auto-descoberta de módulos"""
     try:
         # Executar em background para não bloquear
@@ -315,7 +317,7 @@ async def discover_modules(background_tasks: BackgroundTasks):
 
 
 @router.get("/queue/status", summary="Status da Fila de Predições")
-async def get_queue_status():
+async def get_queue_status(current_user: CurrentActiveUser):
     """Obtém status da fila de predições"""
     try:
         status = await orchestra.get_queue_status()
@@ -327,7 +329,7 @@ async def get_queue_status():
 
 
 @router.get("/stats", summary="Estatísticas da Central IA")
-async def get_intelligence_hub_stats():
+async def get_intelligence_hub_stats(current_user: CurrentActiveUser):
     """Obtém estatísticas gerais da Central de IA"""
     try:
         # Coletar estatísticas de todos os componentes

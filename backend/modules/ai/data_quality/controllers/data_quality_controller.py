@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.ai.data_quality.models import (
     CheckStatusEnum,
@@ -57,7 +58,7 @@ router = APIRouter(prefix="/data-quality", tags=["Data Quality"])
 
 
 @router.post("/rules", response_model=DataQualityRuleResponse, status_code=status.HTTP_201_CREATED)
-async def create_rule(rule_data: DataQualityRuleCreate, db: Session = Depends(get_db)):
+async def create_rule(rule_data: DataQualityRuleCreate, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Cria regra de qualidade."""
     repo = DataQualityRepository(db)
 
@@ -74,6 +75,7 @@ async def create_rule(rule_data: DataQualityRuleCreate, db: Session = Depends(ge
 
 @router.get("/rules", response_model=list[DataQualityRuleResponse])
 async def list_rules(
+    current_user: CurrentActiveUser,
     entity_type: str | None = None,
     category: str | None = None,
     status: RuleStatusEnum | None = None,
@@ -88,7 +90,7 @@ async def list_rules(
 
 
 @router.get("/rules/{rule_id}", response_model=DataQualityRuleResponse)
-async def get_rule(rule_id: UUID, db: Session = Depends(get_db)):
+async def get_rule(rule_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca regra por ID."""
     repo = DataQualityRepository(db)
     rule = repo.get_rule(rule_id)
@@ -98,7 +100,9 @@ async def get_rule(rule_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.patch("/rules/{rule_id}", response_model=DataQualityRuleResponse)
-async def update_rule(rule_id: UUID, rule_data: DataQualityRuleUpdate, db: Session = Depends(get_db)):
+async def update_rule(
+    rule_id: UUID, rule_data: DataQualityRuleUpdate, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Atualiza regra."""
     repo = DataQualityRepository(db)
     rule = repo.get_rule(rule_id)
@@ -112,7 +116,7 @@ async def update_rule(rule_id: UUID, rule_data: DataQualityRuleUpdate, db: Sessi
 
 
 @router.delete("/rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_rule(rule_id: UUID, db: Session = Depends(get_db)):
+async def delete_rule(rule_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Remove regra."""
     repo = DataQualityRepository(db)
     rule = repo.get_rule(rule_id)
@@ -127,7 +131,9 @@ async def delete_rule(rule_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("/checks", response_model=DataQualityCheckResponse, status_code=status.HTTP_201_CREATED)
-async def create_check(check_data: DataQualityCheckCreate, db: Session = Depends(get_db)):
+async def create_check(
+    check_data: DataQualityCheckCreate, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Cria e executa verificação de qualidade."""
     repo = DataQualityRepository(db)
 
@@ -148,6 +154,7 @@ async def create_check(check_data: DataQualityCheckCreate, db: Session = Depends
 
 @router.get("/checks", response_model=list[DataQualityCheckResponse])
 async def list_checks(
+    current_user: CurrentActiveUser,
     entity_type: str | None = None,
     status: CheckStatusEnum | None = None,
     skip: int = Query(0, ge=0),
@@ -161,7 +168,7 @@ async def list_checks(
 
 
 @router.get("/checks/{check_id}", response_model=DataQualityCheckResponse)
-async def get_check(check_id: UUID, db: Session = Depends(get_db)):
+async def get_check(check_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca verificação por ID."""
     repo = DataQualityRepository(db)
     check = repo.get_check(check_id)
@@ -177,6 +184,7 @@ async def get_check(check_id: UUID, db: Session = Depends(get_db)):
 
 @router.get("/issues", response_model=list[DataQualityIssueResponse])
 async def list_issues(
+    current_user: CurrentActiveUser,
     entity_type: str | None = None,
     entity_id: UUID | None = None,
     status: IssueStatusEnum | None = None,
@@ -195,7 +203,7 @@ async def list_issues(
 
 
 @router.get("/issues/{issue_id}", response_model=DataQualityIssueResponse)
-async def get_issue(issue_id: UUID, db: Session = Depends(get_db)):
+async def get_issue(issue_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca issue por ID."""
     repo = DataQualityRepository(db)
     issue = repo.get_issue(issue_id)
@@ -205,7 +213,9 @@ async def get_issue(issue_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.patch("/issues/{issue_id}", response_model=DataQualityIssueResponse)
-async def update_issue(issue_id: UUID, issue_data: DataQualityIssueUpdate, db: Session = Depends(get_db)):
+async def update_issue(
+    issue_id: UUID, issue_data: DataQualityIssueUpdate, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Atualiza issue."""
     repo = DataQualityRepository(db)
     issue = repo.get_issue(issue_id)
@@ -219,7 +229,9 @@ async def update_issue(issue_id: UUID, issue_data: DataQualityIssueUpdate, db: S
 
 
 @router.post("/issues/{issue_id}/resolve", response_model=DataQualityIssueResponse)
-async def resolve_issue(issue_id: UUID, resolution: IssueResolutionRequest, db: Session = Depends(get_db)):
+async def resolve_issue(
+    issue_id: UUID, resolution: IssueResolutionRequest, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Resolve issue."""
     repo = DataQualityRepository(db)
     issue = repo.get_issue(issue_id)
@@ -237,7 +249,9 @@ async def resolve_issue(issue_id: UUID, resolution: IssueResolutionRequest, db: 
 
 
 @router.post("/issues/bulk-update")
-async def bulk_update_issues(request: IssueBulkUpdateRequest, db: Session = Depends(get_db)):
+async def bulk_update_issues(
+    request: IssueBulkUpdateRequest, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Atualiza issues em lote."""
     repo = DataQualityRepository(db)
     updates = {}
@@ -259,6 +273,7 @@ async def bulk_update_issues(request: IssueBulkUpdateRequest, db: Session = Depe
 
 @router.get("/duplicates", response_model=list[DuplicateRecordResponse])
 async def list_duplicates(
+    current_user: CurrentActiveUser,
     entity_type: str | None = None,
     status: DuplicateStatusEnum | None = None,
     min_score: float | None = None,
@@ -275,7 +290,7 @@ async def list_duplicates(
 
 
 @router.get("/duplicates/{duplicate_id}", response_model=DuplicateRecordResponse)
-async def get_duplicate(duplicate_id: UUID, db: Session = Depends(get_db)):
+async def get_duplicate(duplicate_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca duplicata por ID."""
     repo = DataQualityRepository(db)
     duplicate = repo.get_duplicate(duplicate_id)
@@ -285,7 +300,12 @@ async def get_duplicate(duplicate_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("/duplicates/{duplicate_id}/merge", response_model=DuplicateRecordResponse)
-async def merge_duplicates(duplicate_id: UUID, merge_request: DuplicateMergeRequest, db: Session = Depends(get_db)):
+async def merge_duplicates(
+    duplicate_id: UUID,
+    merge_request: DuplicateMergeRequest,
+    current_user: CurrentActiveUser,
+    db: Session = Depends(get_db),
+):
     """Realiza merge de duplicatas."""
     repo = DataQualityRepository(db)
     duplicate = repo.get_duplicate(duplicate_id)
@@ -303,7 +323,12 @@ async def merge_duplicates(duplicate_id: UUID, merge_request: DuplicateMergeRequ
 
 
 @router.post("/duplicates/{duplicate_id}/reject", response_model=DuplicateRecordResponse)
-async def reject_duplicate(duplicate_id: UUID, reject_request: DuplicateRejectRequest, db: Session = Depends(get_db)):
+async def reject_duplicate(
+    duplicate_id: UUID,
+    reject_request: DuplicateRejectRequest,
+    current_user: CurrentActiveUser,
+    db: Session = Depends(get_db),
+):
     """Rejeita duplicata como falso positivo."""
     repo = DataQualityRepository(db)
     duplicate = repo.get_duplicate(duplicate_id)
@@ -320,7 +345,9 @@ async def reject_duplicate(duplicate_id: UUID, reject_request: DuplicateRejectRe
 
 
 @router.post("/profiles", response_model=DataProfileResponse, status_code=status.HTTP_201_CREATED)
-async def create_profile(profile_request: DataProfileRequest, db: Session = Depends(get_db)):
+async def create_profile(
+    profile_request: DataProfileRequest, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Cria perfil de dados."""
     repo = DataQualityRepository(db)
     DataProfiler()
@@ -345,6 +372,7 @@ async def create_profile(profile_request: DataProfileRequest, db: Session = Depe
 
 @router.get("/profiles", response_model=list[DataProfileResponse])
 async def list_profiles(
+    current_user: CurrentActiveUser,
     entity_type: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -357,7 +385,7 @@ async def list_profiles(
 
 
 @router.get("/profiles/{profile_id}", response_model=DataProfileResponse)
-async def get_profile(profile_id: UUID, db: Session = Depends(get_db)):
+async def get_profile(profile_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca perfil por ID."""
     repo = DataQualityRepository(db)
     profile = repo.get_profile(profile_id)
@@ -372,7 +400,7 @@ async def get_profile(profile_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("/validate", response_model=ValidationResponse)
-async def validate_data(request: ValidationRequest, db: Session = Depends(get_db)):
+async def validate_data(request: ValidationRequest, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Valida dados contra regras."""
     repo = DataQualityRepository(db)
     validator = DataValidator()
@@ -398,7 +426,7 @@ async def validate_data(request: ValidationRequest, db: Session = Depends(get_db
 
 
 @router.post("/cleanse", response_model=CleansingResponse)
-async def cleanse_data(request: CleansingRequest):
+async def cleanse_data(current_user: CurrentActiveUser, request: CleansingRequest):
     """Limpa e padroniza dados."""
     cleaner = DataCleaner()
 
@@ -417,7 +445,7 @@ async def cleanse_data(request: CleansingRequest):
 
 
 @router.get("/dashboard", response_model=DataQualityDashboard)
-async def get_dashboard(db: Session = Depends(get_db)):
+async def get_dashboard(current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Retorna dashboard de qualidade de dados."""
     repo = DataQualityRepository(db)
     stats = repo.get_quality_stats()
@@ -446,7 +474,7 @@ async def get_dashboard(db: Session = Depends(get_db)):
 
 
 @router.get("/stats/{entity_type}")
-async def get_entity_stats(entity_type: str, db: Session = Depends(get_db)):
+async def get_entity_stats(entity_type: str, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Retorna estatísticas para entidade específica."""
     repo = DataQualityRepository(db)
 

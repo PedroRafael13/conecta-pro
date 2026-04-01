@@ -11,6 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_sync_db_dependency
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.pcmso import (
@@ -47,6 +48,7 @@ def get_pcmso_service(db: Session = Depends(get_sync_db_dependency)) -> PCMSOSer
 )
 async def schedule_medical_exam(
     request: MedicalExamRequest,
+    current_user: CurrentActiveUser,
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
     """
@@ -106,6 +108,7 @@ async def schedule_medical_exam(
     summary="Busca exame por ID",
 )
 async def get_exam(
+    current_user: CurrentActiveUser,
     exame_id: UUID = Path(..., description="ID do exame"),
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
@@ -143,6 +146,7 @@ async def get_exam(
 async def update_exam(
     exame_id: UUID,
     request: MedicalExamUpdateRequest,
+    current_user: CurrentActiveUser,
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
     """Atualiza dados de exame medico."""
@@ -178,6 +182,7 @@ async def update_exam(
     description="Retorna historico de exames de um funcionario.",
 )
 async def list_employee_exams(
+    current_user: CurrentActiveUser,
     funcionario_id: UUID = Path(..., description="UUID do funcionario"),
     status_filter: str | None = Query(None, description="Filtrar por status"),
     tipo_filter: str | None = Query(None, description="Filtrar por tipo"),
@@ -223,6 +228,7 @@ async def list_employee_exams(
 )
 async def confirm_exam(
     exame_id: UUID,
+    current_user: CurrentActiveUser,
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
     """Confirma agendamento de exame."""
@@ -258,6 +264,7 @@ async def confirm_exam(
 )
 async def complete_exam(
     exame_id: UUID,
+    current_user: CurrentActiveUser,
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
     """Marca exame como realizado."""
@@ -303,6 +310,7 @@ async def complete_exam(
 )
 async def emit_aso(
     request: ASORequest,
+    current_user: CurrentActiveUser,
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
     """
@@ -366,6 +374,7 @@ async def emit_aso(
 )
 async def get_aso(
     aso_id: UUID,
+    current_user: CurrentActiveUser,
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
     """Busca ASO por ID."""
@@ -401,6 +410,7 @@ async def get_aso(
     description="Retorna ASOs com vencimento proximo.",
 )
 async def list_expiring_asos(
+    current_user: CurrentActiveUser,
     dias: int = Query(30, ge=1, le=180, description="Dias para vencimento"),
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
@@ -434,6 +444,7 @@ async def list_expiring_asos(
 )
 async def sign_aso(
     aso_id: UUID,
+    current_user: CurrentActiveUser,
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
     """Registra assinatura do funcionario no ASO."""
@@ -481,6 +492,7 @@ async def sign_aso(
     summary="Estatisticas do PCMSO",
 )
 async def get_statistics(
+    current_user: CurrentActiveUser,
     service: PCMSOService = Depends(get_pcmso_service),
 ) -> StandardResponse:
     """Retorna estatisticas do PCMSO."""

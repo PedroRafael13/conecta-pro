@@ -157,6 +157,7 @@ async def list_folders(
     return await service.list(filters, page, page_size, order_by, order_desc)
 
 
+@router.get("/root", include_in_schema=False)
 @router.get("/root/list", response_model=list[FolderResponse])
 async def get_root_folders(
     condominium_id: str | None = Query(None),
@@ -347,7 +348,8 @@ async def get_stats(
     return await service.get_stats(condominium_id)
 
 
-@router.post("/default-structure/create", response_model=list[FolderResponse])
+@router.post("/default-structure", include_in_schema=False)
+@router.post("/default-structure/create", response_model=list[FolderResponse], status_code=201)
 async def create_default_structure(
     condominium_id: str = Query(...),
     owner_id: str = Query(...),

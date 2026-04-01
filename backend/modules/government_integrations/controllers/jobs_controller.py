@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.government_integrations.jobs import (
     SYNC_JOBS_CONFIG,
@@ -107,7 +108,7 @@ class JobConfigInfo(BaseModel):
 
 
 @router.get("/configuracoes", response_model=list[JobConfigInfo])
-async def listar_configuracoes_disponiveis():
+async def listar_configuracoes_disponiveis(current_user: CurrentActiveUser):
     """
     Lista todas as configuracoes de jobs disponiveis.
 
@@ -128,6 +129,7 @@ async def listar_configuracoes_disponiveis():
 
 @router.post("/registrar-todos", response_model=JobRegistroResponse)
 async def registrar_todos_jobs(
+    current_user: CurrentActiveUser,
     tenant_id: UUID = Query(..., description="ID do tenant"),
     db: Session = Depends(get_db),
 ):
@@ -162,6 +164,7 @@ async def registrar_todos_jobs(
 
 @router.get("", response_model=JobListResponse)
 async def listar_jobs(
+    current_user: CurrentActiveUser,
     tenant_id: UUID = Query(..., description="ID do tenant"),
     db: Session = Depends(get_db),
 ):
@@ -207,6 +210,7 @@ async def listar_jobs(
 
 @router.get("/status", response_model=JobStatusResponse)
 async def obter_status_sincronizacao(
+    current_user: CurrentActiveUser,
     tenant_id: UUID = Query(..., description="ID do tenant"),
     db: Session = Depends(get_db),
 ):
@@ -242,6 +246,7 @@ async def obter_status_sincronizacao(
 @router.post("/{tipo}/executar", response_model=JobExecResponse)
 async def executar_job_agora(
     tipo: SyncJobType,
+    current_user: CurrentActiveUser,
     tenant_id: UUID = Query(..., description="ID do tenant"),
     db: Session = Depends(get_db),
 ):
@@ -284,6 +289,7 @@ async def executar_job_agora(
 async def atualizar_job(
     job_id: UUID,
     dados: JobUpdateRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -329,6 +335,7 @@ async def atualizar_job(
 @router.post("/{tipo}/pausar", response_model=JobExecResponse)
 async def pausar_job(
     tipo: SyncJobType,
+    current_user: CurrentActiveUser,
     tenant_id: UUID = Query(..., description="ID do tenant"),
     db: Session = Depends(get_db),
 ):
@@ -372,6 +379,7 @@ async def pausar_job(
 @router.post("/{tipo}/retomar", response_model=JobExecResponse)
 async def retomar_job(
     tipo: SyncJobType,
+    current_user: CurrentActiveUser,
     tenant_id: UUID = Query(..., description="ID do tenant"),
     db: Session = Depends(get_db),
 ):

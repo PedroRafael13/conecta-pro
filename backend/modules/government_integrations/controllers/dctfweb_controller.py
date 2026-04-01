@@ -8,6 +8,8 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.dctfweb import (
     ConsolidarDeclaracaoRequest,
@@ -35,7 +37,9 @@ def get_service() -> DCTFWebService:
     summary="Status do DCTFWeb",
     description="Retorna o status da configuração DCTFWeb",
 )
-async def get_status(service: DCTFWebService = Depends(get_service)) -> StandardResponse:
+async def get_status(
+    current_user: CurrentActiveUser, service: DCTFWebService = Depends(get_service)
+) -> StandardResponse:
     """Retorna status da configuração."""
     try:
         status_data = service.validar_status()
@@ -53,7 +57,9 @@ async def get_status(service: DCTFWebService = Depends(get_service)) -> Standard
     summary="Lista códigos de receita",
     description="Retorna a lista de códigos de receita disponíveis",
 )
-async def listar_codigos_receita(service: DCTFWebService = Depends(get_service)) -> StandardResponse:
+async def listar_codigos_receita(
+    current_user: CurrentActiveUser, service: DCTFWebService = Depends(get_service)
+) -> StandardResponse:
     """Lista códigos de receita."""
     try:
         codigos = service.listar_codigos_receita()
@@ -71,7 +77,9 @@ async def listar_codigos_receita(service: DCTFWebService = Depends(get_service))
     summary="Lista tipos de declaração",
     description="Retorna a lista de tipos de declaração DCTFWeb",
 )
-async def listar_tipos_declaracao(service: DCTFWebService = Depends(get_service)) -> StandardResponse:
+async def listar_tipos_declaracao(
+    current_user: CurrentActiveUser, service: DCTFWebService = Depends(get_service)
+) -> StandardResponse:
     """Lista tipos de declaração."""
     try:
         tipos = service.listar_tipos_declaracao()
@@ -89,7 +97,9 @@ async def listar_tipos_declaracao(service: DCTFWebService = Depends(get_service)
     summary="Lista tipos de crédito",
     description="Retorna a lista de tipos de crédito vinculáveis",
 )
-async def listar_tipos_credito(service: DCTFWebService = Depends(get_service)) -> StandardResponse:
+async def listar_tipos_credito(
+    current_user: CurrentActiveUser, service: DCTFWebService = Depends(get_service)
+) -> StandardResponse:
     """Lista tipos de crédito."""
     try:
         tipos = service.listar_tipos_credito()
@@ -109,7 +119,7 @@ async def listar_tipos_credito(service: DCTFWebService = Depends(get_service)) -
     description="Cria uma nova declaração DCTFWeb",
 )
 async def criar_declaracao(
-    request: CriarDeclaracaoRequest, service: DCTFWebService = Depends(get_service)
+    current_user: CurrentActiveUser, request: CriarDeclaracaoRequest, service: DCTFWebService = Depends(get_service)
 ) -> StandardResponse:
     """Cria nova declaração."""
     try:
@@ -138,7 +148,7 @@ async def criar_declaracao(
     description="Cria declaração e importa dados do eSocial",
 )
 async def importar_esocial(
-    request: ImportarESocialRequest, service: DCTFWebService = Depends(get_service)
+    current_user: CurrentActiveUser, request: ImportarESocialRequest, service: DCTFWebService = Depends(get_service)
 ) -> StandardResponse:
     """Importa dados do eSocial."""
     try:
@@ -167,7 +177,7 @@ async def importar_esocial(
     description="Cria declaração e importa dados da EFD-Reinf",
 )
 async def importar_reinf(
-    request: ImportarReinfRequest, service: DCTFWebService = Depends(get_service)
+    current_user: CurrentActiveUser, request: ImportarReinfRequest, service: DCTFWebService = Depends(get_service)
 ) -> StandardResponse:
     """Importa dados da EFD-Reinf."""
     try:
@@ -200,7 +210,9 @@ async def importar_reinf(
     description="Consolida declaração com dados do eSocial e EFD-Reinf",
 )
 async def consolidar_declaracao(
-    request: ConsolidarDeclaracaoRequest, service: DCTFWebService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: ConsolidarDeclaracaoRequest,
+    service: DCTFWebService = Depends(get_service),
 ) -> StandardResponse:
     """Consolida declaração."""
     try:
@@ -226,7 +238,9 @@ async def consolidar_declaracao(
 @router.post(
     "/gerar-darfs", response_model=StandardResponse, summary="Gerar DARFs", description="Gera DARFs para a declaração"
 )
-async def gerar_darfs(request: GerarDarfsRequest, service: DCTFWebService = Depends(get_service)) -> StandardResponse:
+async def gerar_darfs(
+    request: GerarDarfsRequest, current_user: CurrentActiveUser, service: DCTFWebService = Depends(get_service)
+) -> StandardResponse:
     """Gera DARFs."""
     try:
         dados_esocial = request.dados_esocial.model_dump(exclude_none=True) if request.dados_esocial else None
@@ -256,7 +270,9 @@ async def gerar_darfs(request: GerarDarfsRequest, service: DCTFWebService = Depe
     description="Transmite a declaração DCTFWeb",
 )
 async def transmitir_declaracao(
-    request: TransmitirDeclaracaoRequest, service: DCTFWebService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: TransmitirDeclaracaoRequest,
+    service: DCTFWebService = Depends(get_service),
 ) -> StandardResponse:
     """Transmite declaração."""
     try:
@@ -288,7 +304,7 @@ async def transmitir_declaracao(
     description="Consulta declaração DCTFWeb por período",
 )
 async def consultar_declaracao(
-    periodo_apuracao: str, service: DCTFWebService = Depends(get_service)
+    current_user: CurrentActiveUser, periodo_apuracao: str, service: DCTFWebService = Depends(get_service)
 ) -> StandardResponse:
     """Consulta declaração por período."""
     try:

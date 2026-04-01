@@ -8,6 +8,8 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.efd_reinf import (
     GerarR1000Request,
@@ -34,7 +36,9 @@ def get_service() -> EFDReinfService:
     summary="Status do EFD-Reinf",
     description="Retorna o status da configuração e conexão do EFD-Reinf",
 )
-async def get_status(service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def get_status(
+    current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Retorna status da configuração EFD-Reinf."""
     try:
         status_data = service.validar_status()
@@ -52,7 +56,9 @@ async def get_status(service: EFDReinfService = Depends(get_service)) -> Standar
     summary="Lista naturezas de rendimento",
     description="Retorna a lista de códigos de natureza de rendimento disponíveis",
 )
-async def listar_naturezas_rendimento(service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def listar_naturezas_rendimento(
+    current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Lista naturezas de rendimento disponíveis."""
     try:
         naturezas = service.listar_naturezas_rendimento()
@@ -72,7 +78,9 @@ async def listar_naturezas_rendimento(service: EFDReinfService = Depends(get_ser
     summary="Lista classificações tributárias",
     description="Retorna a lista de classificações tributárias disponíveis",
 )
-async def listar_classificacoes(service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def listar_classificacoes(
+    current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Lista classificações tributárias disponíveis."""
     try:
         classificacoes = service.listar_classificacoes_tributarias()
@@ -93,7 +101,9 @@ async def listar_classificacoes(service: EFDReinfService = Depends(get_service))
     summary="Gerar evento R-1000",
     description="Gera evento R-1000 - Informações do Contribuinte",
 )
-async def gerar_r1000(request: GerarR1000Request, service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def gerar_r1000(
+    request: GerarR1000Request, current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Gera evento R-1000 - Informações do Contribuinte."""
     try:
         resultado = service.gerar_r1000(
@@ -127,7 +137,9 @@ async def gerar_r1000(request: GerarR1000Request, service: EFDReinfService = Dep
     summary="Gerar evento R-2010",
     description="Gera evento R-2010 - Retenção Contribuição Previdenciária - Serviços Tomados",
 )
-async def gerar_r2010(request: GerarR2010Request, service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def gerar_r2010(
+    request: GerarR2010Request, current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Gera evento R-2010 - Retenção CP Serviços Tomados."""
     try:
         retencoes = [ret.model_dump() for ret in request.retencoes]
@@ -157,7 +169,9 @@ async def gerar_r2010(request: GerarR2010Request, service: EFDReinfService = Dep
     summary="Gerar evento R-4010",
     description="Gera evento R-4010 - Pagamentos/créditos a beneficiário pessoa física",
 )
-async def gerar_r4010(request: GerarR4010Request, service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def gerar_r4010(
+    request: GerarR4010Request, current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Gera evento R-4010 - Pagamentos PF."""
     try:
         pagamentos = [pag.model_dump() for pag in request.pagamentos]
@@ -187,7 +201,9 @@ async def gerar_r4010(request: GerarR4010Request, service: EFDReinfService = Dep
     summary="Gerar evento R-4020",
     description="Gera evento R-4020 - Pagamentos/créditos a beneficiário pessoa jurídica",
 )
-async def gerar_r4020(request: GerarR4020Request, service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def gerar_r4020(
+    request: GerarR4020Request, current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Gera evento R-4020 - Pagamentos PJ."""
     try:
         pagamentos = [pag.model_dump() for pag in request.pagamentos]
@@ -217,7 +233,9 @@ async def gerar_r4020(request: GerarR4020Request, service: EFDReinfService = Dep
     summary="Gerar evento R-2099",
     description="Gera evento R-2099 - Fechamento dos Eventos Periódicos",
 )
-async def gerar_r2099(request: GerarR2099Request, service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def gerar_r2099(
+    request: GerarR2099Request, current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Gera evento R-2099 - Fechamento Periódico."""
     try:
         resultado = service.gerar_r2099(
@@ -243,7 +261,9 @@ async def gerar_r2099(request: GerarR2099Request, service: EFDReinfService = Dep
     summary="Enviar lote de eventos",
     description="Envia um lote de eventos XML para a Receita Federal",
 )
-async def enviar_lote(eventos_xml: list[str], service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def enviar_lote(
+    eventos_xml: list[str], current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Envia lote de eventos para a Receita Federal."""
     try:
         if not eventos_xml:
@@ -266,7 +286,9 @@ async def enviar_lote(eventos_xml: list[str], service: EFDReinfService = Depends
     summary="Transmitir R-1000 para a Receita Federal",
     description="Transmite o R-1000 de verdade via SOAP + mTLS com certificado A1",
 )
-async def transmitir_r1000(service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+async def transmitir_r1000(
+    current_user: CurrentActiveUser, service: EFDReinfService = Depends(get_service)
+) -> StandardResponse:
     """Transmite R-1000 real para a Receita Federal."""
     try:
         resultado = service.transmitir_r1000_real()

@@ -9,6 +9,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import PlainTextResponse
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.mdfe import (
     CriarMDFeRequest,
@@ -37,7 +39,7 @@ def get_service() -> MDFeService:
     summary="Status do MDF-e",
     description="Retorna o status da configuracao do modulo MDF-e",
 )
-async def get_status(service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def get_status(current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)) -> StandardResponse:
     """Retorna status da configuracao."""
     try:
         status_data = service.validar_status()
@@ -56,7 +58,9 @@ async def get_status(service: MDFeService = Depends(get_service)) -> StandardRes
     summary="Criar MDF-e",
     description="Cria um novo Manifesto Eletronico de Documentos Fiscais",
 )
-async def criar_mdfe(request: CriarMDFeRequest, service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def criar_mdfe(
+    request: CriarMDFeRequest, current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Cria um novo MDF-e."""
     try:
         dados = request.model_dump()
@@ -93,7 +97,9 @@ async def criar_mdfe(request: CriarMDFeRequest, service: MDFeService = Depends(g
     summary="Gerar XML",
     description="Gera o XML do MDF-e para envio a SEFAZ",
 )
-async def gerar_xml(request: GerarXMLRequest, service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def gerar_xml(
+    request: GerarXMLRequest, current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Gera XML do MDF-e."""
     try:
         resultado = service.gerar_xml(request.mdfe_id)
@@ -115,7 +121,7 @@ async def gerar_xml(request: GerarXMLRequest, service: MDFeService = Depends(get
     description="Gera e retorna o XML do MDF-e para download",
 )
 async def gerar_xml_download(
-    request: GerarXMLRequest, service: MDFeService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarXMLRequest, service: MDFeService = Depends(get_service)
 ) -> PlainTextResponse:
     """Gera XML do MDF-e para download."""
     try:
@@ -143,7 +149,9 @@ async def gerar_xml_download(
     summary="Encerrar MDF-e",
     description="Gera evento de encerramento do MDF-e autorizado",
 )
-async def encerrar_mdfe(request: EncerrarMDFeRequest, service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def encerrar_mdfe(
+    request: EncerrarMDFeRequest, current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Encerra o MDF-e."""
     try:
         dados = request.model_dump()
@@ -166,7 +174,7 @@ async def encerrar_mdfe(request: EncerrarMDFeRequest, service: MDFeService = Dep
     description="Gera evento de inclusao de condutor no MDF-e autorizado",
 )
 async def incluir_condutor(
-    request: IncluirCondutorRequest, service: MDFeService = Depends(get_service)
+    current_user: CurrentActiveUser, request: IncluirCondutorRequest, service: MDFeService = Depends(get_service)
 ) -> StandardResponse:
     """Inclui condutor no MDF-e."""
     try:
@@ -192,7 +200,9 @@ async def incluir_condutor(
     summary="Status do servico SEFAZ",
     description="Consulta status do servico MDF-e na SEFAZ",
 )
-async def consultar_status_servico(service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def consultar_status_servico(
+    current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Consulta status do servico."""
     try:
         resultado = service.consultar_status_servico()
@@ -210,7 +220,9 @@ async def consultar_status_servico(service: MDFeService = Depends(get_service)) 
     summary="MDF-e nao encerrados",
     description="Lista MDF-e autorizados que ainda nao foram encerrados",
 )
-async def consultar_nao_encerrados(service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def consultar_nao_encerrados(
+    current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Consulta MDF-e nao encerrados."""
     try:
         resultado = service.consultar_nao_encerrados()
@@ -228,7 +240,9 @@ async def consultar_nao_encerrados(service: MDFeService = Depends(get_service)) 
     summary="Lista modais de transporte",
     description="Retorna os modais de transporte disponiveis para MDF-e",
 )
-async def listar_modais(service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def listar_modais(
+    current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Lista modais de transporte."""
     try:
         resultado = service.listar_modais()
@@ -246,7 +260,9 @@ async def listar_modais(service: MDFeService = Depends(get_service)) -> Standard
     summary="Lista tipos de emitente",
     description="Retorna os tipos de emitente disponiveis para MDF-e",
 )
-async def listar_tipos_emitente(service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def listar_tipos_emitente(
+    current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Lista tipos de emitente."""
     try:
         resultado = service.listar_tipos_emitente()
@@ -264,7 +280,9 @@ async def listar_tipos_emitente(service: MDFeService = Depends(get_service)) -> 
     summary="Lista tipos de carroceria",
     description="Retorna os tipos de carroceria disponiveis para MDF-e",
 )
-async def listar_tipos_carroceria(service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def listar_tipos_carroceria(
+    current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Lista tipos de carroceria."""
     try:
         resultado = service.listar_tipos_carroceria()
@@ -279,7 +297,9 @@ async def listar_tipos_carroceria(service: MDFeService = Depends(get_service)) -
 @router.get(
     "/listar", response_model=StandardResponse, summary="Lista MDF-e", description="Lista todos os MDF-e em memoria"
 )
-async def listar_mdfes(service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def listar_mdfes(
+    current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Lista MDF-e."""
     try:
         resultado = service.listar_mdfes()
@@ -292,7 +312,9 @@ async def listar_mdfes(service: MDFeService = Depends(get_service)) -> StandardR
 
 
 @router.get("/{mdfe_id}", response_model=StandardResponse, summary="Buscar MDF-e", description="Busca um MDF-e pelo ID")
-async def buscar_mdfe(mdfe_id: str, service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def buscar_mdfe(
+    mdfe_id: str, current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Busca MDF-e pelo ID."""
     try:
         resultado = service.buscar_mdfe(mdfe_id)
@@ -312,7 +334,9 @@ async def buscar_mdfe(mdfe_id: str, service: MDFeService = Depends(get_service))
 @router.delete(
     "/limpar", response_model=StandardResponse, summary="Limpar dados", description="Limpa todos os MDF-e em memoria"
 )
-async def limpar_dados(service: MDFeService = Depends(get_service)) -> StandardResponse:
+async def limpar_dados(
+    current_user: CurrentActiveUser, service: MDFeService = Depends(get_service)
+) -> StandardResponse:
     """Limpa dados em memoria."""
     try:
         resultado = service.limpar_dados()

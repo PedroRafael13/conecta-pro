@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_async_session
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/clients", tags=["CRM - Clientes"])
 @router.get("")
 @router.get("/")
 async def listar_clientes(
+    current_user: CurrentActiveUser,
     status: str = Query(None, description="Filtrar por status (active, inactive)"),
     segment: str = Query(None, description="Filtrar por segmento"),
     db: AsyncSession = Depends(get_async_session),
@@ -106,7 +108,7 @@ async def listar_clientes(
 
 
 @router.get("/resumo")
-async def resumo_clientes(db: AsyncSession = Depends(get_async_session)):
+async def resumo_clientes(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Resumo da base de clientes."""
     result = await db.execute(
         text("""
@@ -141,6 +143,7 @@ async def resumo_clientes(db: AsyncSession = Depends(get_async_session)):
 @router.get("/{client_id}")
 async def detalhe_cliente(
     client_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Detalhe completo de um cliente com contratos e lead origem."""

@@ -6,6 +6,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query, status
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.ai.signature.schemas import (
     ComparisonResultResponse,
     ExtractionResultResponse,
@@ -58,6 +59,7 @@ validation_service = SignatureValidationService(
 )
 async def upload_signature(
     request: SignatureUploadRequest,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> SignatureResponse:
     """Upload a new signature."""
@@ -104,6 +106,7 @@ async def upload_signature(
 )
 async def extract_signatures(
     request: SignatureExtractRequest,
+    current_user: CurrentActiveUser,
 ) -> ExtractionResultResponse:
     """Extract signatures from an image."""
     try:
@@ -139,6 +142,7 @@ async def extract_signatures(
 )
 async def compare_signatures(
     request: SignatureCompareRequest,
+    current_user: CurrentActiveUser,
 ) -> ComparisonResultResponse:
     """Compare two signatures."""
     try:
@@ -170,6 +174,7 @@ async def compare_signatures(
 )
 async def validate_signature(
     request: SignatureValidateRequest,
+    current_user: CurrentActiveUser,
 ) -> ValidationResultResponse:
     """Validate a signature."""
     try:
@@ -204,6 +209,7 @@ async def validate_signature(
     summary="List signatures",
 )
 async def list_signatures(
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
     owner_id: uuid.UUID | None = Query(None, description="Owner ID"),
     status: str | None = Query(None, description="Status filter"),
@@ -229,6 +235,7 @@ async def list_signatures(
 )
 async def get_signature(
     signature_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> SignatureResponse:
     """Get signature by ID."""
@@ -246,6 +253,7 @@ async def get_signature(
 )
 async def delete_signature(
     signature_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> None:
     """Delete a signature."""
@@ -264,6 +272,7 @@ async def delete_signature(
 )
 async def create_template(
     request: TemplateCreateRequest,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> TemplateResponse:
     """Create a new signature template."""
@@ -302,6 +311,7 @@ async def create_template(
     summary="List templates",
 )
 async def list_templates(
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
     owner_id: uuid.UUID | None = Query(None, description="Owner ID"),
     status: str | None = Query(None, description="Status filter"),
@@ -325,6 +335,7 @@ async def list_templates(
 )
 async def get_template(
     template_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> TemplateResponse:
     """Get template by ID."""
@@ -338,10 +349,12 @@ async def get_template(
     "/templates/{template_id}/samples",
     response_model=TemplateResponse,
     summary="Add sample to template",
+    status_code=201,
 )
 async def add_template_sample(
     template_id: uuid.UUID,
     request: TemplateAddSampleRequest,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> TemplateResponse:
     """Add a signature sample to template."""
@@ -373,6 +386,7 @@ async def add_template_sample(
 )
 async def activate_template(
     template_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> TemplateResponse:
     """Activate a template for verification."""
@@ -389,6 +403,7 @@ async def activate_template(
 )
 async def delete_template(
     template_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> None:
     """Delete a template."""
@@ -404,6 +419,7 @@ async def delete_template(
     summary="Verify signature against template",
 )
 async def verify_signature(
+    current_user: CurrentActiveUser,
     signature_id: uuid.UUID = Query(..., description="Signature ID"),
     template_id: uuid.UUID = Query(..., description="Template ID"),
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
@@ -451,6 +467,7 @@ async def verify_signature(
 )
 async def get_verification(
     verification_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> VerificationResponse:
     """Get verification result by ID."""
@@ -471,6 +488,7 @@ async def get_verification(
 )
 async def create_request(
     request: SignatureRequestCreate,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
     requested_by: uuid.UUID = Query(..., description="Requester ID"),
 ) -> SignatureRequestResponse:
@@ -511,6 +529,7 @@ async def create_request(
     summary="List signature requests",
 )
 async def list_requests(
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
     status: str | None = Query(None, description="Status filter"),
     signer_id: uuid.UUID | None = Query(None, description="Signer ID"),
@@ -534,6 +553,7 @@ async def list_requests(
 )
 async def get_request(
     request_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> SignatureRequestResponse:
     """Get signature request by ID."""
@@ -551,6 +571,7 @@ async def get_request(
 async def sign_request(
     request_id: uuid.UUID,
     request: SignatureSubmitRequest,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> SignatureRequestResponse:
     """Submit a signature for a request."""
@@ -582,6 +603,7 @@ async def sign_request(
 )
 async def reject_request(
     request_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     reason: str = Query(..., description="Rejection reason"),
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> SignatureRequestResponse:
@@ -599,6 +621,7 @@ async def reject_request(
 )
 async def cancel_request(
     request_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     reason: str = Query(..., description="Cancellation reason"),
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
     cancelled_by: uuid.UUID = Query(..., description="User ID"),
@@ -620,6 +643,7 @@ async def cancel_request(
 )
 async def get_signed_document(
     document_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> SignedDocumentResponse:
     """Get signed document by ID."""
@@ -636,6 +660,7 @@ async def get_signed_document(
 )
 async def verify_document_by_code(
     verification_code: str,
+    current_user: CurrentActiveUser,
 ) -> SignedDocumentResponse:
     """Verify a signed document using its verification code."""
     raise HTTPException(
@@ -653,6 +678,7 @@ async def verify_document_by_code(
     summary="Get signature statistics",
 )
 async def get_stats(
+    current_user: CurrentActiveUser,
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
 ) -> SignatureStatsResponse:
     """Get signature statistics for tenant."""
@@ -681,7 +707,7 @@ async def get_stats(
     "/health",
     summary="Health check",
 )
-async def health_check() -> dict:
+async def health_check(current_user: CurrentActiveUser) -> dict:
     """Check signature service health."""
     return {
         "status": "healthy",

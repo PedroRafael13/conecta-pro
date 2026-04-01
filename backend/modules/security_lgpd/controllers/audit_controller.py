@@ -125,6 +125,7 @@ async def list_audit_logs(
         )
 
 
+@router.get("/actions", include_in_schema=False)
 @router.get(
     "/actions/list",
     response_model=StandardResponse,
@@ -147,6 +148,7 @@ async def list_actions(current_user: dict = Depends(get_current_user)) -> Standa
     )
 
 
+@router.get("/resource-types", include_in_schema=False)
 @router.get(
     "/resource-types/list",
     response_model=StandardResponse,

@@ -10,6 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, status
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.bidding.agents.scout_agent import ScoutAgent, ScoutSearchParams
 from modules.bidding.schemas.opportunity import ScoutRequest
 from modules.bidding.services.opportunity_service import OpportunityFilters, OpportunityService
@@ -25,6 +26,7 @@ scout_agent = ScoutAgent()
 
 @router.get("")
 async def list_opportunities(
+    current_user: CurrentActiveUser,
     portal: str | None = Query(None, description="Filtrar por portal (pncp, comprasnet, bll, etc.)"),
     uf: str | None = Query(None, description="Filtrar por UF"),
     modalidade: str | None = Query(None, description="Filtrar por modalidade"),
@@ -64,7 +66,7 @@ async def list_opportunities(
 
 
 @router.get("/statistics")
-async def get_statistics() -> dict[str, Any]:
+async def get_statistics(current_user: CurrentActiveUser) -> dict[str, Any]:
     """Retorna estatisticas das oportunidades."""
     try:
         stats = await opportunity_service.get_statistics()
@@ -81,7 +83,7 @@ async def get_statistics() -> dict[str, Any]:
 
 
 @router.get("/{opportunity_id}")
-async def get_opportunity(opportunity_id: str) -> dict[str, Any]:
+async def get_opportunity(current_user: CurrentActiveUser, opportunity_id: str) -> dict[str, Any]:
     """Busca oportunidade por ID."""
     try:
         opportunity = await opportunity_service.get_opportunity(opportunity_id)
@@ -102,7 +104,7 @@ async def get_opportunity(opportunity_id: str) -> dict[str, Any]:
 
 
 @router.post("/search")
-async def search_opportunities(request: ScoutRequest) -> dict[str, Any]:
+async def search_opportunities(current_user: CurrentActiveUser, request: ScoutRequest) -> dict[str, Any]:
     """
     Busca oportunidades nos portais via agente Scout.
 

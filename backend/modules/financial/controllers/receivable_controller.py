@@ -675,6 +675,7 @@ async def bulk_notify(
     "/{account_id}/agreement",
     response_model=ReceivableAccountResponse,
     summary="Criar acordo de pagamento",
+    status_code=201,
 )
 async def create_agreement(
     account_id: UUID,

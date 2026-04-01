@@ -373,7 +373,7 @@ async def predict_engagement(
 # ============================================================================
 
 
-@router.post("/experiments", response_model=ExperimentResponse)
+@router.post("/experiments", response_model=ExperimentResponse, status_code=201)
 async def create_experiment(
     request: ExperimentCreateRequest,
     current_user: CurrentActiveUser,
@@ -664,7 +664,7 @@ async def get_user_consents(
     ]
 
 
-@router.post("/data-request", response_model=DataRequestResponse)
+@router.post("/data-request", response_model=DataRequestResponse, status_code=201)
 async def create_data_request(
     request: DataRequestCreate,
     current_user: CurrentActiveUser,

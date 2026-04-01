@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.bidding.services.erp_integration_service import ERPIntegrationService
 
@@ -71,6 +72,7 @@ class MedicaoRequest(BaseModel):
 @router.get("/status/{contract_id}")
 async def get_integration_status(
     contract_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -97,6 +99,7 @@ async def get_integration_status(
 @router.post("/converter/{contract_id}")
 async def converter_contrato(
     contract_id: UUID,
+    current_user: CurrentActiveUser,
     data: ConverterRequest | None = None,
     db: Session = Depends(get_db),
 ):
@@ -127,6 +130,7 @@ async def converter_contrato(
 async def gerar_medicao(
     contract_id: UUID,
     data: MedicaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -153,6 +157,7 @@ async def gerar_medicao(
 @router.post("/fatura/{medicao_id}")
 async def gerar_fatura(
     medicao_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -174,6 +179,7 @@ async def gerar_fatura(
 @router.post("/crm/{contract_id}")
 async def contrato_para_crm(
     contract_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """

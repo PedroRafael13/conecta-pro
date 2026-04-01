@@ -14,6 +14,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Body, HTTPException, Path, Query, status
 from pydantic import BaseModel, Field
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.bidding.agents.warrior_agent import WarriorAgent
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ VALID_ESTRATEGIAS = {"conservador", "moderado", "agressivo"}
 
 @router.get("")
 async def list_disputes(
+    current_user: CurrentActiveUser,
     status_filter: str | None = Query(None, alias="status", description="Filtrar por status"),
     tender_id: str | None = Query(None, description="Filtrar por edital"),
     page: int = Query(1, ge=1),
@@ -102,6 +104,7 @@ async def list_disputes(
 
 @router.get("/{dispute_id}")
 async def get_dispute(
+    current_user: CurrentActiveUser,
     dispute_id: str = Path(..., description="ID da disputa"),
 ) -> dict[str, Any]:
     """Busca detalhes de uma disputa especifica."""
@@ -115,7 +118,7 @@ async def get_dispute(
 
 
 @router.post("/simulate")
-async def simulate_dispute(request: DisputeSimulationRequest) -> dict[str, Any]:
+async def simulate_dispute(current_user: CurrentActiveUser, request: DisputeSimulationRequest) -> dict[str, Any]:
     """
     Simula uma disputa de pregao eletronico usando o agente Warrior.
 
@@ -178,8 +181,9 @@ async def simulate_dispute(request: DisputeSimulationRequest) -> dict[str, Any]:
         )
 
 
-@router.post("/{dispute_id}/lance")
+@router.post("/{dispute_id}/lance", status_code=201)
 async def register_lance(
+    current_user: CurrentActiveUser,
     dispute_id: str = Path(..., description="ID da disputa"),
     request: LanceRequest = Body(...),
 ) -> dict[str, Any]:
@@ -226,6 +230,7 @@ async def register_lance(
 
 @router.patch("/{dispute_id}/status")
 async def update_dispute_status(
+    current_user: CurrentActiveUser,
     dispute_id: str = Path(..., description="ID da disputa"),
     request: DisputeStatusUpdate = Body(...),
 ) -> dict[str, Any]:

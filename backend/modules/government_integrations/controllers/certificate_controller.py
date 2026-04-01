@@ -13,6 +13,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.government_integrations.core.certificate_manager import (
     CertificateManager,
     CertificateStore,
@@ -113,6 +114,7 @@ def get_certificate_store() -> CertificateStore:
     description="Faz upload de um certificado digital A1 (.pfx ou .p12)",
 )
 async def upload_certificate(
+    current_user: CurrentActiveUser,
     file: UploadFile = File(..., description="Arquivo .pfx ou .p12 do certificado"),
     password: str = Form(..., description="Senha do certificado"),
     alias: str | None = Form(None, description="Alias/nome identificador do certificado"),
@@ -191,6 +193,7 @@ async def upload_certificate(
     description="Valida um certificado digital sem armazena-lo",
 )
 async def validate_certificate(
+    current_user: CurrentActiveUser,
     file: UploadFile = File(..., description="Arquivo .pfx ou .p12 do certificado"),
     password: str = Form(..., description="Senha do certificado"),
 ):
@@ -273,7 +276,7 @@ async def validate_certificate(
     summary="Lista Certificados",
     description="Lista todos os certificados carregados no sistema",
 )
-async def list_certificates(store: CertificateStore = Depends(get_certificate_store)):
+async def list_certificates(current_user: CurrentActiveUser, store: CertificateStore = Depends(get_certificate_store)):
     """Lista todos os certificados carregados."""
     certificates = []
 
@@ -312,7 +315,9 @@ async def list_certificates(store: CertificateStore = Depends(get_certificate_st
     summary="Obtem Certificado",
     description="Obtem informacoes de um certificado especifico",
 )
-async def get_certificate(certificate_id: str, store: CertificateStore = Depends(get_certificate_store)):
+async def get_certificate(
+    certificate_id: str, current_user: CurrentActiveUser, store: CertificateStore = Depends(get_certificate_store)
+):
     """Obtem informacoes de um certificado especifico."""
     cert_manager = store.get(certificate_id)
 
@@ -351,7 +356,9 @@ async def get_certificate(certificate_id: str, store: CertificateStore = Depends
     summary="Remove Certificado",
     description="Remove um certificado do sistema",
 )
-async def delete_certificate(certificate_id: str, store: CertificateStore = Depends(get_certificate_store)):
+async def delete_certificate(
+    certificate_id: str, current_user: CurrentActiveUser, store: CertificateStore = Depends(get_certificate_store)
+):
     """Remove um certificado do sistema."""
     if not store.get(certificate_id):
         raise HTTPException(
@@ -370,7 +377,9 @@ async def delete_certificate(certificate_id: str, store: CertificateStore = Depe
     summary="Obtem Chave Publica",
     description="Retorna a chave publica do certificado em formato PEM",
 )
-async def get_public_key(certificate_id: str, store: CertificateStore = Depends(get_certificate_store)):
+async def get_public_key(
+    certificate_id: str, current_user: CurrentActiveUser, store: CertificateStore = Depends(get_certificate_store)
+):
     """Retorna a chave publica do certificado."""
     cert_manager = store.get(certificate_id)
 
@@ -397,6 +406,7 @@ async def get_public_key(certificate_id: str, store: CertificateStore = Depends(
 )
 async def test_signature(
     certificate_id: str,
+    current_user: CurrentActiveUser,
     data: str = Form(..., description="Dados para assinar"),
     store: CertificateStore = Depends(get_certificate_store),
 ):

@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.bidding.schemas.tender import (
     TenderCreate,
@@ -27,6 +28,7 @@ router = APIRouter(prefix="/tenders", tags=["Licitacoes - Editais"])
 
 @router.get("", response_model=TenderListResponse)
 async def list_tenders(
+    current_user: CurrentActiveUser,
     uf: str = Query(default="AM", max_length=2),
     municipio: str | None = None,
     modalidade: str | None = None,
@@ -61,35 +63,44 @@ async def list_tenders(
 
 
 @router.get("/dashboard")
-async def get_dashboard(uf: str = Query(default="AM", max_length=2), db: Session = Depends(get_db)):
+async def get_dashboard(
+    current_user: CurrentActiveUser, uf: str = Query(default="AM", max_length=2), db: Session = Depends(get_db)
+):
     """Retorna dados para dashboard de editais."""
     service = TenderService(db)
     return await service.get_dashboard(uf)
 
 
 @router.get("/abertos", response_model=list[TenderResponse])
-async def list_abertos(uf: str = Query(default="AM", max_length=2), db: Session = Depends(get_db)):
+async def list_abertos(
+    current_user: CurrentActiveUser, uf: str = Query(default="AM", max_length=2), db: Session = Depends(get_db)
+):
     """Lista editais abertos para participacao."""
     service = TenderService(db)
     return await service.get_abertos(uf)
 
 
 @router.get("/participando", response_model=list[TenderResponse])
-async def list_participando(db: Session = Depends(get_db)):
+async def list_participando(current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Lista editais que estamos participando."""
     service = TenderService(db)
     return await service.get_participando()
 
 
 @router.get("/segmento/{segmento}", response_model=list[TenderResponse])
-async def list_por_segmento(segmento: str, uf: str = Query(default="AM", max_length=2), db: Session = Depends(get_db)):
+async def list_por_segmento(
+    segmento: str,
+    current_user: CurrentActiveUser,
+    uf: str = Query(default="AM", max_length=2),
+    db: Session = Depends(get_db),
+):
     """Lista editais por segmento."""
     service = TenderService(db)
     return await service.get_por_segmento(segmento, uf)
 
 
 @router.get("/{tender_id}", response_model=TenderResponse)
-async def get_tender(tender_id: UUID, db: Session = Depends(get_db)):
+async def get_tender(tender_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Busca edital por ID."""
     service = TenderService(db)
     tender = await service.get(tender_id)
@@ -99,7 +110,7 @@ async def get_tender(tender_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=TenderResponse, status_code=status.HTTP_201_CREATED)
-async def create_tender(data: TenderCreate, db: Session = Depends(get_db)):
+async def create_tender(data: TenderCreate, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Cria novo edital."""
     service = TenderService(db)
     try:
@@ -109,7 +120,9 @@ async def create_tender(data: TenderCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{tender_id}", response_model=TenderResponse)
-async def update_tender(tender_id: UUID, data: TenderUpdate, db: Session = Depends(get_db)):
+async def update_tender(
+    tender_id: UUID, data: TenderUpdate, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Atualiza edital."""
     service = TenderService(db)
     tender = await service.update(tender_id, data)
@@ -119,7 +132,7 @@ async def update_tender(tender_id: UUID, data: TenderUpdate, db: Session = Depen
 
 
 @router.delete("/{tender_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_tender(tender_id: UUID, db: Session = Depends(get_db)):
+async def delete_tender(tender_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Remove edital."""
     service = TenderService(db)
     if not await service.delete(tender_id):
@@ -128,7 +141,11 @@ async def delete_tender(tender_id: UUID, db: Session = Depends(get_db)):
 
 @router.post("/{tender_id}/participar", response_model=TenderResponse)
 async def marcar_participacao(
-    tender_id: UUID, participando: bool = True, motivo: str | None = None, db: Session = Depends(get_db)
+    current_user: CurrentActiveUser,
+    tender_id: UUID,
+    participando: bool = True,
+    motivo: str | None = None,
+    db: Session = Depends(get_db),
 ):
     """Marca participacao em edital."""
     service = TenderService(db)
@@ -139,7 +156,9 @@ async def marcar_participacao(
 
 
 @router.post("/{tender_id}/status", response_model=TenderResponse)
-async def alterar_status(tender_id: UUID, novo_status: str, db: Session = Depends(get_db)):
+async def alterar_status(
+    tender_id: UUID, novo_status: str, current_user: CurrentActiveUser, db: Session = Depends(get_db)
+):
     """Altera status do edital."""
     service = TenderService(db)
     try:
@@ -152,7 +171,7 @@ async def alterar_status(tender_id: UUID, novo_status: str, db: Session = Depend
 
 
 @router.get("/{tender_id}/documentos")
-async def get_documentos(tender_id: UUID, db: Session = Depends(get_db)):
+async def get_documentos(tender_id: UUID, current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Lista documentos do edital."""
     service = TenderService(db)
     return await service.get_documents(tender_id)
@@ -161,6 +180,7 @@ async def get_documentos(tender_id: UUID, db: Session = Depends(get_db)):
 # Endpoints PNCP
 @router.post("/sync-pncp")
 async def sync_pncp(
+    current_user: CurrentActiveUser,
     uf: str = Query(default="AM", max_length=2),
     dias: int = Query(default=30, ge=1, le=90),
     segmentos: list[str] | None = Query(default=None),
@@ -176,7 +196,7 @@ async def sync_pncp(
 
 
 @router.get("/pncp/status")
-async def pncp_status(db: Session = Depends(get_db)):
+async def pncp_status(current_user: CurrentActiveUser, db: Session = Depends(get_db)):
     """Verifica status da API PNCP."""
     service = PNCPService(db)
     try:
@@ -187,6 +207,7 @@ async def pncp_status(db: Session = Depends(get_db)):
 
 @router.get("/pncp/buscar")
 async def buscar_pncp(
+    current_user: CurrentActiveUser,
     uf: str = Query(default="AM", max_length=2),
     modalidade: str | None = None,
     pagina: int = Query(default=1, ge=1),

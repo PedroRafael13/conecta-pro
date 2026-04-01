@@ -13,6 +13,8 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
+from core.auth.dependencies import CurrentActiveUser
+
 # Configurar logging
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,7 @@ class SSHSessionInfo(BaseModel):
 
 
 @router.post("/connect", response_model=SSHConnectionResponse)
-async def create_ssh_connection(request: SSHConnectionRequest):
+async def create_ssh_connection(current_user: CurrentActiveUser, request: SSHConnectionRequest):
     """
     Cria nova conexão SSH.
 
@@ -91,7 +93,7 @@ async def create_ssh_connection(request: SSHConnectionRequest):
 
 
 @router.get("/sessions/{session_id}", response_model=SSHSessionInfo)
-async def get_ssh_session(session_id: str):
+async def get_ssh_session(current_user: CurrentActiveUser, session_id: str):
     """
     Consulta informações de sessão SSH.
 
@@ -122,7 +124,7 @@ async def get_ssh_session(session_id: str):
 
 
 @router.post("/sessions/{session_id}/execute")
-async def execute_ssh_command(session_id: str, command: str):
+async def execute_ssh_command(session_id: str, current_user: CurrentActiveUser, command: str):
     """
     Executa comando via SSH.
 
@@ -152,7 +154,7 @@ async def execute_ssh_command(session_id: str, command: str):
 
 
 @router.delete("/sessions/{session_id}")
-async def close_ssh_session(session_id: str):
+async def close_ssh_session(current_user: CurrentActiveUser, session_id: str):
     """
     Encerra sessão SSH.
 
@@ -181,6 +183,7 @@ async def close_ssh_session(session_id: str):
 
 @router.get("/sessions")
 async def list_ssh_sessions(
+    current_user: CurrentActiveUser,
     _session_status: str | None = None,  # pylint: disable=unused-argument
     limit: int = 10,
 ):

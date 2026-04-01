@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.operacional.services.integration_service import (
     get_integration_service,
@@ -106,6 +107,7 @@ class SugestaoDiaristaResponse(BaseModel):
     description="Retorna métricas consolidadas de funcionários fixos e diaristas",
 )
 async def get_dashboard(
+    current_user: CurrentActiveUser,
     data: date | None = Query(None, description="Data de referência (default: hoje)"),
     cliente_id: UUID | None = Query(None, description="Filtrar por cliente"),
     db: Session = Depends(get_db),
@@ -142,6 +144,7 @@ async def get_dashboard(
     description="Retorna métricas consolidadas para um período específico",
 )
 async def get_metricas_periodo(
+    current_user: CurrentActiveUser,
     data_inicio: date = Query(..., description="Data inicial"),
     data_fim: date = Query(..., description="Data final"),
     cliente_id: UUID | None = Query(None, description="Filtrar por cliente"),
@@ -188,6 +191,7 @@ async def get_metricas_periodo(
     description="Retorna status de ocupação de cada posto ativo",
 )
 async def get_ocupacao_postos(
+    current_user: CurrentActiveUser,
     data: date | None = Query(None, description="Data de referência (default: hoje)"),
     db: Session = Depends(get_db),
 ) -> list[OcupacaoPostoResponse]:
@@ -220,6 +224,7 @@ async def get_ocupacao_postos(
 )
 async def alocar_diarista_posto(
     request: AlocarDiaristaPostoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """
@@ -265,6 +270,7 @@ async def alocar_diarista_posto(
 async def desalocar_diarista(
     assignment_id: UUID,
     request: DesalocarDiaristaRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """
@@ -306,6 +312,7 @@ async def desalocar_diarista(
 )
 async def sugerir_diarista_posto(
     post_id: UUID,
+    current_user: CurrentActiveUser,
     data: date = Query(..., description="Data desejada para cobertura"),
     habilidades: str | None = Query(None, description="Habilidades requeridas (separadas por vírgula)"),
     db: Session = Depends(get_db),
@@ -346,6 +353,7 @@ async def sugerir_diarista_posto(
 
 @router.get("/resumo-dia", summary="Resumo do dia", description="Retorna resumo executivo do dia atual")
 async def get_resumo_dia(
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """
@@ -376,6 +384,7 @@ async def get_resumo_dia(
 
 @router.get("/kpis", summary="KPIs operacionais", description="Retorna KPIs principais do operacional")
 async def get_kpis(
+    current_user: CurrentActiveUser,
     periodo_dias: int = Query(30, ge=7, le=365, description="Período em dias"),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
@@ -414,6 +423,7 @@ async def get_kpis(
 
 @router.get("/kpi-trends", summary="Tendências de KPIs", description="Retorna dados históricos para sparklines de KPIs")
 async def get_kpi_trends(
+    current_user: CurrentActiveUser,
     period: str = Query("7d", description="Período de análise (7d, 30d, 90d)"),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:

@@ -355,10 +355,7 @@ async def match_item(
     }
 
 
-@router.post(
-    "/{reconciliation_id}/adjustment",
-    summary="Criar ajuste",
-)
+@router.post("/{reconciliation_id}/adjustment", summary="Criar ajuste", status_code=201)
 async def create_adjustment(
     reconciliation_id: UUID,
     data: ReconciliationAdjustment,

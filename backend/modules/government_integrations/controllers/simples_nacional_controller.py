@@ -8,6 +8,8 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.simples_nacional import (
     CalcularFatorRRequest,
@@ -36,7 +38,9 @@ def get_service() -> SimplesNacionalService:
     summary="Status do Simples Nacional",
     description="Retorna o status da configuração",
 )
-async def get_status(service: SimplesNacionalService = Depends(get_service)) -> StandardResponse:
+async def get_status(
+    current_user: CurrentActiveUser, service: SimplesNacionalService = Depends(get_service)
+) -> StandardResponse:
     """Retorna status da configuração."""
     try:
         status_data = service.validar_status()
@@ -54,7 +58,9 @@ async def get_status(service: SimplesNacionalService = Depends(get_service)) -> 
     summary="Consultar opção",
     description="Consulta a situação da opção pelo Simples Nacional",
 )
-async def consultar_opcao(service: SimplesNacionalService = Depends(get_service)) -> StandardResponse:
+async def consultar_opcao(
+    current_user: CurrentActiveUser, service: SimplesNacionalService = Depends(get_service)
+) -> StandardResponse:
     """Consulta situação da opção."""
     try:
         resultado = service.consultar_opcao()
@@ -72,7 +78,9 @@ async def consultar_opcao(service: SimplesNacionalService = Depends(get_service)
     summary="Lista anexos",
     description="Retorna a lista de anexos do Simples Nacional",
 )
-async def listar_anexos(service: SimplesNacionalService = Depends(get_service)) -> StandardResponse:
+async def listar_anexos(
+    current_user: CurrentActiveUser, service: SimplesNacionalService = Depends(get_service)
+) -> StandardResponse:
     """Lista anexos disponíveis."""
     try:
         anexos = service.listar_anexos()
@@ -90,7 +98,9 @@ async def listar_anexos(service: SimplesNacionalService = Depends(get_service)) 
     summary="Lista tipos de receita",
     description="Retorna a lista de tipos de receita",
 )
-async def listar_tipos_receita(service: SimplesNacionalService = Depends(get_service)) -> StandardResponse:
+async def listar_tipos_receita(
+    current_user: CurrentActiveUser, service: SimplesNacionalService = Depends(get_service)
+) -> StandardResponse:
     """Lista tipos de receita."""
     try:
         tipos = service.listar_tipos_receita()
@@ -109,7 +119,7 @@ async def listar_tipos_receita(service: SimplesNacionalService = Depends(get_ser
     description="Retorna a tabela de alíquotas de um anexo",
 )
 async def obter_tabela_aliquotas(
-    anexo: str, service: SimplesNacionalService = Depends(get_service)
+    current_user: CurrentActiveUser, anexo: str, service: SimplesNacionalService = Depends(get_service)
 ) -> StandardResponse:
     """Retorna tabela de alíquotas."""
     try:
@@ -133,7 +143,9 @@ async def obter_tabela_aliquotas(
     summary="Consultar pendências",
     description="Consulta pendências no Simples Nacional",
 )
-async def consultar_pendencias(service: SimplesNacionalService = Depends(get_service)) -> StandardResponse:
+async def consultar_pendencias(
+    current_user: CurrentActiveUser, service: SimplesNacionalService = Depends(get_service)
+) -> StandardResponse:
     """Consulta pendências."""
     try:
         pendencias = service.consultar_pendencias()
@@ -152,7 +164,9 @@ async def consultar_pendencias(service: SimplesNacionalService = Depends(get_ser
     description="Simula o cálculo do Simples Nacional",
 )
 async def simular_calculo(
-    request: SimularCalculoRequest, service: SimplesNacionalService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: SimularCalculoRequest,
+    service: SimplesNacionalService = Depends(get_service),
 ) -> StandardResponse:
     """Simula cálculo do Simples."""
     try:
@@ -179,7 +193,9 @@ async def simular_calculo(
     description="Calcula o Fator R e determina o anexo aplicável",
 )
 async def calcular_fator_r(
-    request: CalcularFatorRRequest, service: SimplesNacionalService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: CalcularFatorRRequest,
+    service: SimplesNacionalService = Depends(get_service),
 ) -> StandardResponse:
     """Calcula Fator R."""
     try:
@@ -206,7 +222,9 @@ async def calcular_fator_r(
     description="Calcula o PGDAS-D (declaração mensal)",
 )
 async def calcular_pgdasd(
-    request: CalcularPGDASDRequest, service: SimplesNacionalService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: CalcularPGDASDRequest,
+    service: SimplesNacionalService = Depends(get_service),
 ) -> StandardResponse:
     """Calcula PGDAS-D."""
     try:
@@ -239,7 +257,7 @@ async def calcular_pgdasd(
     description="Gera o DAS (guia de pagamento)",
 )
 async def gerar_das(
-    request: GerarDASRequest, service: SimplesNacionalService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarDASRequest, service: SimplesNacionalService = Depends(get_service)
 ) -> StandardResponse:
     """Gera DAS."""
     try:

@@ -397,7 +397,7 @@ async def delete_item(
 # ==================== ANEXOS ====================
 
 
-@router.post("/{request_id}/attachments", response_model=ReimbursementAttachmentResponse)
+@router.post("/{request_id}/attachments", response_model=ReimbursementAttachmentResponse, status_code=201)
 async def upload_attachment(
     request_id: UUID,
     file: UploadFile = File(...),

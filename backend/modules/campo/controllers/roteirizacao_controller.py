@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.config import settings
 from core.database import get_db
 from modules.campo.services.roteirizacao_service import (
@@ -186,6 +187,7 @@ def _roteiro_to_response(roteiro: RoteiroOtimizado) -> dict[str, Any]:
 )
 async def otimizar_rota(
     request: OtimizarRotaRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -243,6 +245,7 @@ async def otimizar_rota(
 )
 async def get_rota_tecnico(
     tecnico_id: UUID,
+    current_user: CurrentActiveUser,
     data: date = Query(..., description="Data do roteiro"),
     tipo_otimizacao: TipoOtimizacao = Query(TipoOtimizacao.BALANCEADA, description="Tipo de otimização"),
     db: Session = Depends(get_db),
@@ -277,6 +280,7 @@ async def get_rota_tecnico(
 )
 async def reotimizar_rota(
     request: ReotimizarRotaRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -315,6 +319,7 @@ async def reotimizar_rota(
     description="Analisa rotas de toda a equipe para um dia",
 )
 async def analisar_rotas_equipe(
+    current_user: CurrentActiveUser,
     data: date = Query(..., description="Data de análise"),
     tecnico_ids: str | None = Query(None, description="IDs dos técnicos separados por vírgula (default: todos)"),
     db: Session = Depends(get_db),
@@ -355,6 +360,7 @@ async def analisar_rotas_equipe(
     description="Sugere redistribuição de OS entre técnicos",
 )
 async def sugerir_redistribuicao(
+    current_user: CurrentActiveUser,
     data: date = Query(..., description="Data de análise"),
     tecnico_ids: str | None = Query(None, description="IDs dos técnicos separados por vírgula"),
     db: Session = Depends(get_db),
@@ -395,7 +401,7 @@ async def sugerir_redistribuicao(
 @router.get(
     "/tipos-otimizacao", summary="Listar tipos de otimização", description="Lista os tipos de otimização disponíveis"
 )
-async def listar_tipos_otimizacao():
+async def listar_tipos_otimizacao(current_user: CurrentActiveUser):
     """Lista os tipos de otimização disponíveis."""
     return {
         "tipos": [
@@ -429,6 +435,7 @@ async def listar_tipos_otimizacao():
 
 @router.post("/calcular-distancia", summary="Calcular distância", description="Calcula distância entre dois pontos")
 async def calcular_distancia(
+    current_user: CurrentActiveUser,
     lat1: float = Query(..., ge=-90, le=90),
     lon1: float = Query(..., ge=-180, le=180),
     lat2: float = Query(..., ge=-90, le=90),
@@ -471,6 +478,7 @@ async def calcular_distancia(
 @router.get("/resumo-dia/{tecnico_id}", summary="Resumo do dia", description="Retorna resumo rápido da rota do técnico")
 async def get_resumo_dia(
     tecnico_id: UUID,
+    current_user: CurrentActiveUser,
     data: date = Query(..., description="Data do roteiro"),
     db: Session = Depends(get_db),
 ):

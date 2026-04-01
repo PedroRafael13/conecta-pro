@@ -453,7 +453,7 @@ async def execute_batch(
 # =============================================================================
 
 
-@router.post("/devices/register", response_model=DeviceTokenResponse)
+@router.post("/devices/register", response_model=DeviceTokenResponse, status_code=201)
 async def register_device(
     device_data: DeviceTokenCreate,
     db: AsyncSession = Depends(get_db),

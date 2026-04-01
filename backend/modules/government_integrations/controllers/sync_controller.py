@@ -17,6 +17,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, s
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 
 from ..sync.sync_manager import ServicoGov, SyncManager
@@ -192,6 +193,7 @@ async def executar_sync(
     servico: ServicoEnum,
     request: SyncRequest,
     background_tasks: BackgroundTasks,
+    current_user: CurrentActiveUser,
     sync_manager: SyncManager = Depends(get_sync_manager),
 ):
     """
@@ -249,6 +251,7 @@ async def executar_sync(
 )
 async def sincronizar_todos(
     request: SyncAllRequest,
+    current_user: CurrentActiveUser,
     sync_manager: SyncManager = Depends(get_sync_manager),
 ):
     """
@@ -306,6 +309,7 @@ async def executar_sync_background(
     servico: ServicoEnum,
     request: SyncRequest,
     background_tasks: BackgroundTasks,
+    current_user: CurrentActiveUser,
     sync_manager: SyncManager = Depends(get_sync_manager),
 ):
     """
@@ -358,6 +362,7 @@ async def executar_sync_background(
 )
 async def obter_status(
     cnpj: str,
+    current_user: CurrentActiveUser,
     sync_manager: SyncManager = Depends(get_sync_manager),
 ):
     """
@@ -417,6 +422,7 @@ async def obter_status(
 )
 async def obter_historico(
     cnpj: str,
+    current_user: CurrentActiveUser,
     servico: ServicoEnum | None = None,
     limite: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -473,6 +479,7 @@ async def obter_historico(
     description="Lista todos os jobs de sincronização ativos",
 )
 async def listar_jobs(
+    current_user: CurrentActiveUser,
     cnpj: str | None = None,
     sync_manager: SyncManager = Depends(get_sync_manager),
 ):
@@ -502,6 +509,7 @@ async def listar_jobs(
 @router.delete("/jobs/{job_id}", summary="Cancelar job", description="Solicita cancelamento de um job em execução")
 async def cancelar_job(
     job_id: str,
+    current_user: CurrentActiveUser,
     sync_manager: SyncManager = Depends(get_sync_manager),
 ):
     """Solicita cancelamento de job de sincronização."""
@@ -538,6 +546,7 @@ async def cancelar_job(
 )
 async def configurar_agendamento(
     request: AgendamentoRequest,
+    current_user: CurrentActiveUser,
     sync_manager: SyncManager = Depends(get_sync_manager),
     db: AsyncSession = Depends(get_db),
 ):
@@ -611,6 +620,7 @@ async def configurar_agendamento(
 )
 async def listar_agendamentos(
     cnpj: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Lista todos os agendamentos de sincronização."""
@@ -644,6 +654,7 @@ async def listar_agendamentos(
 async def remover_agendamento(
     cnpj: str,
     servico: ServicoEnum,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     sync_manager: SyncManager = Depends(get_sync_manager),
 ):
@@ -685,6 +696,7 @@ async def remover_agendamento(
 )
 async def configurar_integracao(
     request: ConfiguracaoEmpresaRequest,
+    current_user: CurrentActiveUser,
     sync_manager: SyncManager = Depends(get_sync_manager),
     db: AsyncSession = Depends(get_db),
 ):
@@ -757,6 +769,7 @@ async def configurar_integracao(
 )
 async def obter_configuracao(
     cnpj: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Obtém configuração de integração."""
@@ -807,6 +820,7 @@ async def obter_configuracao(
 )
 async def listar_documentos(
     cnpj: str,
+    current_user: CurrentActiveUser,
     tipo: str | None = None,
     data_inicial: date | None = None,
     data_final: date | None = None,
@@ -861,6 +875,7 @@ async def listar_documentos(
 )
 async def listar_eventos_esocial(
     cnpj: str,
+    current_user: CurrentActiveUser,
     tipo_evento: str | None = None,
     periodo: str | None = None,
     limite: int = Query(default=100, ge=1, le=1000),
@@ -909,6 +924,7 @@ async def listar_eventos_esocial(
 @router.get("/dados/certidoes/{cnpj}", summary="Listar certidões", description="Lista certidões sincronizadas")
 async def listar_certidoes(
     cnpj: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Lista certidões (CND, CNDT, CRF, etc)."""
@@ -951,6 +967,7 @@ async def listar_certidoes(
 )
 async def listar_guias(
     cnpj: str,
+    current_user: CurrentActiveUser,
     tipo: str | None = None,
     data_inicial: date | None = None,
     data_final: date | None = None,

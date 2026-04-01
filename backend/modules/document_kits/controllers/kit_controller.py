@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.auth.dependencies import CurrentUserId
+from core.auth.dependencies import CurrentActiveUser, CurrentUserId
 from core.database import get_db
 from modules.document_kits.models.document_kit import (
     AssignmentStatus,
@@ -61,6 +61,7 @@ async def get_operational_service(db: AsyncSession = Depends(get_db)) -> KitOper
 async def create_kit(
     data: DocumentKitCreate,
     user_id: CurrentUserId,
+    current_user: CurrentActiveUser,
     service: DocumentKitService = Depends(get_service),
 ) -> DocumentKitResponse:
     """Cria um novo kit documental."""
@@ -75,6 +76,7 @@ async def create_kit(
 
 @router.get("", response_model=DocumentKitListResponse)
 async def list_kits(
+    current_user: CurrentActiveUser,
     condominio_id: UUID | None = Query(None, description="ID do condominio (opcional)"),
     user_id: CurrentUserId = None,
     tipo: KitType | None = None,
@@ -109,6 +111,7 @@ async def list_kits(
 
 @router.get("/stats", response_model=KitStatsResponse)
 async def get_stats(
+    current_user: CurrentActiveUser,
     condominio_id: UUID | None = Query(None, description="ID do condominio (opcional)"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -120,6 +123,7 @@ async def get_stats(
 
 @router.get("/templates", response_model=list[DocumentKitResponse])
 async def list_templates(
+    current_user: CurrentActiveUser,
     condominio_id: UUID | None = Query(None, description="ID do condominio (opcional)"),
     user_id: CurrentUserId = None,
     tipo: KitType | None = None,
@@ -138,6 +142,7 @@ async def list_templates(
 @router.get("/{kit_id}", response_model=DocumentKitResponse)
 async def get_kit(
     kit_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -153,6 +158,7 @@ async def get_kit(
 async def update_kit(
     kit_id: UUID,
     data: DocumentKitUpdate,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -168,6 +174,7 @@ async def update_kit(
 @router.delete("/{kit_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_kit(
     kit_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -182,6 +189,7 @@ async def delete_kit(
 @router.post("/{kit_id}/activate", response_model=DocumentKitResponse)
 async def activate_kit(
     kit_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -197,6 +205,7 @@ async def activate_kit(
 @router.post("/{kit_id}/deactivate", response_model=DocumentKitResponse)
 async def deactivate_kit(
     kit_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -212,6 +221,7 @@ async def deactivate_kit(
 @router.post("/{kit_id}/archive", response_model=DocumentKitResponse)
 async def archive_kit(
     kit_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -227,6 +237,7 @@ async def archive_kit(
 @router.post("/{kit_id}/duplicate", response_model=DocumentKitResponse)
 async def duplicate_kit(
     kit_id: UUID,
+    current_user: CurrentActiveUser,
     new_codigo: str = Query(..., min_length=1),
     new_nome: str = Query(..., min_length=1),
     condominio_id: UUID = Query(..., description="ID do condominio"),
@@ -252,6 +263,7 @@ async def duplicate_kit(
 async def add_item(
     kit_id: UUID,
     data: DocumentKitItemCreate,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -267,6 +279,7 @@ async def add_item(
 @router.get("/{kit_id}/items", response_model=list[DocumentKitItemResponse])
 async def list_items(
     kit_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     only_active: bool = True,
@@ -280,6 +293,7 @@ async def list_items(
 @router.get("/items/{item_id}", response_model=DocumentKitItemResponse)
 async def get_item(
     item_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -295,6 +309,7 @@ async def get_item(
 async def update_item(
     item_id: UUID,
     data: DocumentKitItemUpdate,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -310,6 +325,7 @@ async def update_item(
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(
     item_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -325,6 +341,7 @@ async def delete_item(
 async def reorder_items(
     kit_id: UUID,
     item_orders: list[dict],
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -344,6 +361,7 @@ async def reorder_items(
 async def assign_kit(
     data: DocumentKitAssignmentCreate,
     user_id: CurrentUserId,
+    current_user: CurrentActiveUser,
     service: DocumentKitService = Depends(get_service),
 ) -> DocumentKitAssignmentResponse:
     """Atribui kit a uma entidade."""
@@ -356,6 +374,7 @@ async def assign_kit(
 
 @router.get("/assignments", response_model=list[DocumentKitAssignmentResponse])
 async def list_assignments(
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     kit_id: UUID | None = None,
@@ -383,6 +402,7 @@ async def list_assignments(
 
 @router.get("/assignments/pending", response_model=list[DocumentKitAssignmentResponse])
 async def list_pending_assignments(
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -397,6 +417,7 @@ async def list_pending_assignments(
 
 @router.get("/assignments/overdue", response_model=list[DocumentKitAssignmentResponse])
 async def list_overdue_assignments(
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -412,6 +433,7 @@ async def list_overdue_assignments(
 @router.get("/assignments/{assignment_id}", response_model=DocumentKitAssignmentResponse)
 async def get_assignment(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -427,6 +449,7 @@ async def get_assignment(
 async def update_assignment(
     assignment_id: UUID,
     data: DocumentKitAssignmentUpdate,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -442,6 +465,7 @@ async def update_assignment(
 @router.post("/assignments/{assignment_id}/start", response_model=DocumentKitAssignmentResponse)
 async def start_assignment(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -457,6 +481,7 @@ async def start_assignment(
 @router.post("/assignments/{assignment_id}/approve", response_model=DocumentKitAssignmentResponse)
 async def approve_assignment(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -472,6 +497,7 @@ async def approve_assignment(
 @router.post("/assignments/{assignment_id}/reject", response_model=DocumentKitAssignmentResponse)
 async def reject_assignment(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     motivo: str = Query(..., min_length=1),
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
@@ -488,6 +514,7 @@ async def reject_assignment(
 @router.post("/assignments/{assignment_id}/complete", response_model=DocumentKitAssignmentResponse)
 async def complete_assignment(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -503,6 +530,7 @@ async def complete_assignment(
 @router.post("/assignments/{assignment_id}/cancel", response_model=DocumentKitAssignmentResponse)
 async def cancel_assignment(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -518,6 +546,7 @@ async def cancel_assignment(
 @router.post("/assignments/{assignment_id}/notify", response_model=DocumentKitAssignmentResponse)
 async def notify_assignment(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -539,6 +568,7 @@ async def notify_assignment(
 )
 async def list_item_statuses(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     item_status: ItemStatusEnum | None = Query(None, alias="status"),
@@ -552,6 +582,7 @@ async def list_item_statuses(
 @router.get("/item-statuses/{status_id}", response_model=DocumentKitItemStatusResponse)
 async def get_item_status(
     status_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -566,6 +597,7 @@ async def get_item_status(
 @router.post("/item-statuses/{status_id}/submit", response_model=DocumentKitItemStatusResponse)
 async def submit_document(
     status_id: UUID,
+    current_user: CurrentActiveUser,
     arquivo_url: str = Query(...),
     arquivo_nome: str = Query(...),
     arquivo_tamanho: int = Query(..., ge=0),
@@ -587,6 +619,7 @@ async def submit_document(
 @router.post("/item-statuses/{status_id}/approve", response_model=DocumentKitItemStatusResponse)
 async def approve_document(
     status_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     observacoes: str | None = None,
@@ -603,6 +636,7 @@ async def approve_document(
 @router.post("/item-statuses/{status_id}/reject", response_model=DocumentKitItemStatusResponse)
 async def reject_document(
     status_id: UUID,
+    current_user: CurrentActiveUser,
     motivo: str = Query(..., min_length=1),
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
@@ -622,6 +656,7 @@ async def reject_document(
 )
 async def mark_not_applicable(
     status_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     motivo: str | None = None,
@@ -641,6 +676,7 @@ async def mark_not_applicable(
 @router.get("/ai/suggest", response_model=list[KitSuggestionResponse])
 async def suggest_kits(
     entity_type: EntityType,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     cargo: str | None = None,
@@ -660,6 +696,7 @@ async def suggest_kits(
 async def analyze_compliance(
     entity_type: EntityType,
     entity_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     ai_service: DocumentKitAIService = Depends(get_ai_service),
@@ -671,6 +708,7 @@ async def analyze_compliance(
 @router.get("/ai/predict/{assignment_id}")
 async def predict_completion(
     assignment_id: UUID,
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -685,6 +723,7 @@ async def predict_completion(
 
 @router.get("/ai/priorities", response_model=list[dict])
 async def get_priorities(
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     limit: int = Query(10, ge=1, le=50),
@@ -696,6 +735,7 @@ async def get_priorities(
 
 @router.get("/ai/usage")
 async def analyze_usage(
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     ai_service: DocumentKitAIService = Depends(get_ai_service),
@@ -706,6 +746,7 @@ async def analyze_usage(
 
 @router.get("/ai/expiring", response_model=list[dict])
 async def get_expiring_documents(
+    current_user: CurrentActiveUser,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     days_ahead: int = Query(30, ge=1, le=365),
@@ -721,6 +762,7 @@ async def get_expiring_documents(
 @router.get("/operational/employees", response_model=list[dict])
 async def get_employees_by_condominium(
     condominium_id: str,
+    current_user: CurrentActiveUser,
     user_id: CurrentUserId = None,
     start_date: str | None = Query(None, description="Data inicial (YYYY-MM-DD)"),
     end_date: str | None = Query(None, description="Data final (YYYY-MM-DD)"),
@@ -762,6 +804,7 @@ async def get_employees_by_condominium(
 @router.get("/operational/employees/month", response_model=list[dict])
 async def get_employees_by_month(
     condominium_id: str,
+    current_user: CurrentActiveUser,
     month: int = Query(..., ge=1, le=12, description="Mes (1-12)"),
     year: int = Query(..., ge=2020, le=2100, description="Ano (ex: 2026)"),
     user_id: CurrentUserId = None,
@@ -799,6 +842,7 @@ async def get_employees_by_month(
 
 @router.get("/operational/condominiums", response_model=list[dict])
 async def get_condominiums_with_employees(
+    current_user: CurrentActiveUser,
     user_id: CurrentUserId = None,
     op_service: KitOperationalService = Depends(get_operational_service),
 ) -> list[dict]:
@@ -818,6 +862,7 @@ async def get_condominiums_with_employees(
 @router.get("/operational/validate", response_model=dict)
 async def validate_condominium_has_employees(
     condominium_id: str,
+    current_user: CurrentActiveUser,
     user_id: CurrentUserId = None,
     month: int | None = Query(None, ge=1, le=12, description="Mes (1-12)"),
     year: int | None = Query(None, ge=2020, le=2100, description="Ano"),

@@ -14,6 +14,8 @@ from uuid import uuid4
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from pydantic import BaseModel
 
+from core.auth.dependencies import CurrentActiveUser
+
 # Configurar logging
 logger = logging.getLogger(__name__)
 
@@ -56,7 +58,9 @@ class AuditResult(BaseModel):
 
 
 @router.post("/start", response_model=AuditResponse)
-async def start_security_audit(request: AuditRequest, background_tasks: BackgroundTasks):
+async def start_security_audit(
+    request: AuditRequest, current_user: CurrentActiveUser, background_tasks: BackgroundTasks
+):
     """
     Inicia auditoria de segurança.
 
@@ -99,7 +103,7 @@ async def start_security_audit(request: AuditRequest, background_tasks: Backgrou
 
 
 @router.get("/status/{audit_id}", response_model=AuditResult)
-async def get_audit_status(audit_id: str):
+async def get_audit_status(current_user: CurrentActiveUser, audit_id: str):
     """
     Consulta status de auditoria.
 
@@ -130,8 +134,9 @@ async def get_audit_status(audit_id: str):
         )
 
 
+@router.get("/", include_in_schema=False)
 @router.get("/list")
-async def list_audits(limit: int = 10, offset: int = 0):
+async def list_audits(current_user: CurrentActiveUser, limit: int = 10, offset: int = 0):
     """
     Lista auditorias realizadas.
 

@@ -169,7 +169,7 @@ async def get_tree(
     return await service.get_tree(condominium_id)
 
 
-@router.post("/{tag_id}/documents/{document_id}/add")
+@router.post("/{tag_id}/documents/{document_id}/add", status_code=201)
 async def add_to_document(
     tag_id: str,
     document_id: str,
@@ -185,6 +185,7 @@ async def add_to_document(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
+@router.delete("/{tag_id}/documents/{document_id}", include_in_schema=False)
 @router.delete("/{tag_id}/documents/{document_id}/remove")
 async def remove_from_document(
     tag_id: str,
@@ -238,6 +239,7 @@ async def set_document_tags(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
+@router.get("/most-used", include_in_schema=False)
 @router.get("/most-used/list", response_model=list[DocumentTagResponse])
 async def get_most_used(
     condominium_id: str | None = Query(None),
@@ -291,7 +293,8 @@ async def get_suggested_tags(
     return await service.get_suggested_tags(text, condominium_id, limit)
 
 
-@router.post("/default/create", response_model=list[DocumentTagResponse])
+@router.post("/default", include_in_schema=False)
+@router.post("/default/create", response_model=list[DocumentTagResponse], status_code=201)
 async def create_default_tags(
     condominium_id: str = Query(...),
     db: AsyncSession = Depends(get_db),

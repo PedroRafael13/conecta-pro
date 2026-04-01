@@ -11,6 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_sync_db_dependency
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.epi import (
@@ -50,6 +51,7 @@ def get_epi_service(db: Session = Depends(get_sync_db_dependency)) -> EPIService
 )
 async def create_epi(
     request: EPICreateRequest,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """
@@ -107,6 +109,7 @@ async def create_epi(
     summary="Lista EPIs cadastrados",
 )
 async def list_epis(
+    current_user: CurrentActiveUser,
     categoria: str | None = Query(None, description="Filtrar por categoria"),
     ativo: bool | None = Query(True, description="Filtrar por status"),
     page: int = Query(1, ge=1),
@@ -154,6 +157,7 @@ async def list_epis(
     description="Retorna categorias de EPI conforme NR-6.",
 )
 async def list_epi_categories(
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Lista categorias de EPI."""
@@ -178,6 +182,7 @@ async def list_epi_categories(
     summary="Estatisticas de EPI",
 )
 async def get_statistics(
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Retorna estatisticas de EPI."""
@@ -211,6 +216,7 @@ async def get_statistics(
     description="Retorna estoque atual de todos os EPIs.",
 )
 async def get_epi_inventory(
+    current_user: CurrentActiveUser,
     categoria: str | None = Query(None, description="Filtrar por categoria"),
     baixo_estoque: bool = Query(False, description="Apenas com estoque baixo"),
     service: EPIService = Depends(get_epi_service),
@@ -251,6 +257,7 @@ async def get_epi_inventory(
     description="Retorna historico de EPIs entregues ao funcionario.",
 )
 async def get_epi_record(
+    current_user: CurrentActiveUser,
     funcionario_id: UUID = Path(..., description="UUID do funcionario"),
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
@@ -293,6 +300,7 @@ async def get_epi_record(
 )
 async def deliver_epi(
     request: EPIDeliveryRequest,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """
@@ -354,6 +362,7 @@ async def deliver_epi(
 )
 async def get_delivery(
     delivery_id: UUID,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Busca entrega por ID."""
@@ -389,6 +398,7 @@ async def get_delivery(
 )
 async def return_epi(
     delivery_id: UUID,
+    current_user: CurrentActiveUser,
     motivo: str = Query(..., description="Motivo da devolucao"),
     condicao: str = Query(..., description="Condicao do EPI (bom, danificado, etc)"),
     service: EPIService = Depends(get_epi_service),
@@ -431,6 +441,7 @@ async def return_epi(
 )
 async def sign_delivery(
     delivery_id: UUID,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Registra assinatura do funcionario na entrega."""
@@ -474,6 +485,7 @@ async def sign_delivery(
 async def update_inventory(
     epi_id: UUID,
     request: EPIInventoryUpdateRequest,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Atualiza estoque de EPI."""
@@ -509,6 +521,7 @@ async def update_inventory(
 )
 async def add_to_inventory(
     epi_id: UUID,
+    current_user: CurrentActiveUser,
     quantidade: int = Query(..., ge=1, description="Quantidade a adicionar"),
     lote: str | None = Query(None, description="Numero do lote"),
     service: EPIService = Depends(get_epi_service),
@@ -553,6 +566,7 @@ async def add_to_inventory(
 )
 async def get_epi(
     epi_id: UUID,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Busca EPI por ID."""
@@ -589,6 +603,7 @@ async def get_epi(
 async def update_epi(
     epi_id: UUID,
     request: EPIUpdateRequest,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Atualiza dados de EPI."""
@@ -624,6 +639,7 @@ async def update_epi(
 )
 async def deactivate_epi(
     epi_id: UUID,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Desativa EPI (soft delete)."""

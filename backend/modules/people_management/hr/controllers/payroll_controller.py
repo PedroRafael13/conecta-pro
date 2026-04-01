@@ -263,7 +263,7 @@ async def list_all_benefits(
     }
 
 
-@router.post("/benefits")
+@router.post("/benefits", status_code=201)
 async def create_benefit(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

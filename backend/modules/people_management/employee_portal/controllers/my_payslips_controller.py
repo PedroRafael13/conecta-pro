@@ -17,6 +17,7 @@ from fastapi import status as http_status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
 from modules.people_management.employee_portal.schemas.payslip import MyPayslipResponse
@@ -37,6 +38,7 @@ router = APIRouter(tags=["Portal - Contracheques"])
 )
 async def get_my_payslips(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     year: int = Query(default=None, ge=2020, le=2030, description="Ano de referencia"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -56,6 +58,7 @@ async def get_my_payslips(
 )
 async def get_payslip_by_month(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     month: int = Path(..., ge=1, le=12, description="Mes (1-12)"),
     year: int = Path(..., ge=2020, le=2030, description="Ano"),
     db: AsyncSession = Depends(get_db),
@@ -78,6 +81,7 @@ async def get_payslip_by_month(
 )
 async def get_payslip_pdf(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     month: int = Path(..., ge=1, le=12, description="Mes (1-12)"),
     year: int = Path(..., ge=2020, le=2030, description="Ano"),
     db: AsyncSession = Depends(get_db),

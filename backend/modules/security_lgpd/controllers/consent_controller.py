@@ -67,6 +67,7 @@ async def register_consent(request: ConsentRequest, current_user: dict = Depends
         )
 
 
+@router.get("/", include_in_schema=False)
 @router.get(
     "/list",
     response_model=StandardResponse,
@@ -173,6 +174,7 @@ async def revoke_consent(
         )
 
 
+@router.get("/purposes", include_in_schema=False)
 @router.get(
     "/purposes/list",
     response_model=StandardResponse,
@@ -195,6 +197,7 @@ async def list_purposes(current_user: dict = Depends(get_current_user)) -> Stand
     )
 
 
+@router.get("/legal-bases", include_in_schema=False)
 @router.get(
     "/legal-bases/list",
     response_model=StandardResponse,

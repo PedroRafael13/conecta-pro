@@ -329,7 +329,7 @@ async def resolve_occurrence(
 @router.post(
     "/{occurrence_id}/attachments",
     response_model=OccurrenceResponse,
-    dependencies=[require_operacional_permission(Permission.OCCURRENCES_EDIT)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_EDIT, status_code=201)],
 )
 async def add_attachment(
     occurrence_id: str,

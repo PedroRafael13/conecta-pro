@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.employee_portal.auth import (
     CurrentEmployeeId,
@@ -39,6 +40,7 @@ router = APIRouter(tags=["Portal - Auth"])
 async def portal_login(
     request: Request,
     login_data: PortalLoginRequest,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Autentica funcionario por CPF + senha ou CPF + data de nascimento."""
@@ -89,6 +91,7 @@ async def portal_login(
 @router.post("/auth/primeiro-acesso")
 async def portal_primeiro_acesso(
     request: Request,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Primeiro acesso ao portal: define senha usando CPF + data de nascimento."""
@@ -167,6 +170,7 @@ async def portal_primeiro_acesso(
 @router.post("/auth/reset-senha")
 async def portal_reset_senha(
     request: Request,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Reset de senha do portal: redefine senha usando CPF + data de nascimento."""
@@ -211,7 +215,7 @@ async def portal_reset_senha(
 
 
 @router.post("/auth/refresh")
-async def portal_refresh(request: Request) -> Any:
+async def portal_refresh(current_user: CurrentActiveUser, request: Request) -> Any:
     """Renova token de acesso usando refresh token."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
@@ -239,7 +243,7 @@ async def portal_refresh(request: Request) -> Any:
 
 
 @router.post("/auth/logout")
-async def portal_logout(employee_id: CurrentEmployeeId) -> Any:
+async def portal_logout(current_user: CurrentActiveUser, employee_id: CurrentEmployeeId) -> Any:
     """Logout do portal (invalida sessao client-side)."""
     logger.info("Portal logout: employee_id=%s", employee_id)
     return {"message": "Logout realizado com sucesso."}
@@ -248,6 +252,7 @@ async def portal_logout(employee_id: CurrentEmployeeId) -> Any:
 @router.get("/auth/me")
 async def portal_me(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna dados do funcionario autenticado."""
@@ -279,6 +284,7 @@ async def portal_me(
 @router.get("/dashboard", response_model=PortalDashboard)
 async def get_dashboard(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna dados do dashboard do funcionario autenticado."""

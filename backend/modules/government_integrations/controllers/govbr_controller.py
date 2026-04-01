@@ -8,6 +8,8 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.govbr import (
     GerarUrlAutorizacaoRequest,
@@ -37,7 +39,7 @@ def get_service() -> GovBrService:
     summary="Status do Gov.br",
     description="Retorna o status da configuracao e conexao do Gov.br",
 )
-async def get_status(service: GovBrService = Depends(get_service)) -> StandardResponse:
+async def get_status(current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)) -> StandardResponse:
     """Retorna status da configuracao Gov.br."""
     try:
         status_data = service.validar_status()
@@ -56,7 +58,7 @@ async def get_status(service: GovBrService = Depends(get_service)) -> StandardRe
     description="Gera URL OAuth2 para redirecionar o usuario ao Gov.br",
 )
 async def gerar_url_autorizacao(
-    request: GerarUrlAutorizacaoRequest, service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarUrlAutorizacaoRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Gera URL de autorizacao OAuth2."""
     try:
@@ -82,6 +84,7 @@ async def gerar_url_autorizacao(
     description="Gera URL OAuth2 via GET com parametros opcionais",
 )
 async def gerar_url_autorizacao_get(
+    current_user: CurrentActiveUser,
     scopes: str | None = Query(None, description="Scopes separados por virgula (ex: openid,email,profile)"),
     nivel_minimo: NivelAutenticacaoEnum | None = Query(None, description="Nivel minimo de autenticacao"),
     service: GovBrService = Depends(get_service),
@@ -112,7 +115,7 @@ async def gerar_url_autorizacao_get(
     description="Troca codigo de autorizacao por tokens",
 )
 async def processar_callback(
-    request: TrocarCodigoRequest, service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: TrocarCodigoRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Processa callback OAuth2 e troca codigo por tokens."""
     try:
@@ -141,6 +144,7 @@ async def processar_callback(
     description="Processa callback via GET (redirect do Gov.br)",
 )
 async def processar_callback_get(
+    current_user: CurrentActiveUser,
     code: str = Query(..., description="Codigo de autorizacao"),
     state: str = Query(..., description="State para validacao CSRF"),
     service: GovBrService = Depends(get_service),
@@ -170,7 +174,9 @@ async def processar_callback_get(
     summary="Renovar token",
     description="Renova access_token usando refresh_token",
 )
-async def renovar_token(request: RenovarTokenRequest, service: GovBrService = Depends(get_service)) -> StandardResponse:
+async def renovar_token(
+    request: RenovarTokenRequest, current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)
+) -> StandardResponse:
     """Renova token de acesso."""
     try:
         resultado = service.renovar_token(
@@ -196,7 +202,7 @@ async def renovar_token(request: RenovarTokenRequest, service: GovBrService = De
     description="Obtem dados do usuario autenticado via access_token",
 )
 async def obter_dados_usuario(
-    request: ObterDadosUsuarioRequest, service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: ObterDadosUsuarioRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Obtem dados do usuario autenticado."""
     try:
@@ -220,7 +226,9 @@ async def obter_dados_usuario(
     summary="Validar token",
     description="Valida se o access_token ainda e valido",
 )
-async def validar_token(request: ValidarTokenRequest, service: GovBrService = Depends(get_service)) -> StandardResponse:
+async def validar_token(
+    request: ValidarTokenRequest, current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)
+) -> StandardResponse:
     """Valida token de acesso."""
     try:
         resultado = service.validar_token(
@@ -251,7 +259,7 @@ async def validar_token(request: ValidarTokenRequest, service: GovBrService = De
     description="Gera URL para logout federado do Gov.br",
 )
 async def gerar_url_logout(
-    request: GerarUrlLogoutRequest, service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarUrlLogoutRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Gera URL de logout."""
     try:
@@ -277,7 +285,7 @@ async def gerar_url_logout(
     description="Obtem empresas vinculadas ao CPF (requer scope govbr_empresa)",
 )
 async def obter_empresas_vinculadas(
-    request: ObterEmpresasRequest, service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: ObterEmpresasRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Obtem empresas vinculadas ao CPF."""
     try:
@@ -307,7 +315,9 @@ async def obter_empresas_vinculadas(
     summary="Listar scopes disponiveis",
     description="Lista todos os scopes OAuth2 disponiveis no Gov.br",
 )
-async def listar_scopes(service: GovBrService = Depends(get_service)) -> StandardResponse:
+async def listar_scopes(
+    current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)
+) -> StandardResponse:
     """Lista scopes disponiveis."""
     try:
         scopes = service.manager.SCOPES
@@ -335,6 +345,7 @@ async def listar_scopes(service: GovBrService = Depends(get_service)) -> Standar
     description="Limpa autenticacoes pendentes expiradas (uso interno)",
 )
 async def limpar_pendentes(
+    current_user: CurrentActiveUser,
     max_age_minutes: int = Query(default=15, ge=1, le=60, description="Idade maxima em minutos"),
     service: GovBrService = Depends(get_service),
 ) -> StandardResponse:

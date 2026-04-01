@@ -89,7 +89,7 @@ async def export_my_data(
         )
 
 
-@router.post("/data-request", response_model=DataRequestResponse)
+@router.post("/data-request", response_model=DataRequestResponse, status_code=201)
 async def create_data_request(
     request_data: DataRequestCreate,
     db: AsyncSession = Depends(get_db),

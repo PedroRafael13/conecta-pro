@@ -9,6 +9,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.bidding.agents.analyst_agent import AnalystAgent
 from modules.bidding.agents.assessor_agent import AssessorAgent
 from modules.bidding.agents.base_agent import AgentStatus
@@ -114,7 +115,7 @@ def _planned_response(agent_name: str) -> dict:
 # Status geral dos agentes
 # ============================================================
 @router.get("/status")
-async def list_agents_status():
+async def list_agents_status(current_user: CurrentActiveUser):
     """Lista todos os agentes e seus status de implementacao."""
     return {
         "agents": AGENTS_REGISTRY,
@@ -129,7 +130,7 @@ async def list_agents_status():
 # Scout - Busca de oportunidades
 # ============================================================
 @router.post("/scout/buscar")
-async def scout_buscar(request: ScoutRequest):
+async def scout_buscar(current_user: CurrentActiveUser, request: ScoutRequest):
     """Busca oportunidades de licitacao nos portais configurados."""
     try:
         search_params = ScoutSearchParams(
@@ -166,7 +167,7 @@ async def scout_buscar(request: ScoutRequest):
 
 
 @router.get("/scout/portais")
-async def scout_portais():
+async def scout_portais(current_user: CurrentActiveUser):
     """Lista portais de licitacao disponiveis para busca."""
     return {
         "portais": [
@@ -214,7 +215,7 @@ async def scout_portais():
 # Analyst - Analise de editais
 # ============================================================
 @router.post("/analyst/analisar")
-async def analyst_analisar(request: AnalystRequest):
+async def analyst_analisar(current_user: CurrentActiveUser, request: AnalystRequest):
     """Analisa edital extraindo requisitos, prazos, riscos e oportunidades."""
     try:
         if not request.tender_id and not request.edital_text:
@@ -250,7 +251,7 @@ async def analyst_analisar(request: AnalystRequest):
 # Assessor - Avaliacao Go/No-Go
 # ============================================================
 @router.post("/assessor/avaliar")
-async def assessor_avaliar(request: AssessorRequest):
+async def assessor_avaliar(current_user: CurrentActiveUser, request: AssessorRequest):
     """Avalia viabilidade de participacao (Go/No-Go) com scoring multidimensional."""
     try:
         if not request.tender_id and not request.analysis_id:
@@ -286,7 +287,7 @@ async def assessor_avaliar(request: AssessorRequest):
 # Pricer - Precificacao
 # ============================================================
 @router.post("/pricer/calcular")
-async def pricer_calcular(request: PricerRequest):
+async def pricer_calcular(current_user: CurrentActiveUser, request: PricerRequest):
     """Calcula precificacao com composicao de custos, BDI e cenarios."""
     try:
         pricing_input = {
@@ -318,7 +319,7 @@ async def pricer_calcular(request: PricerRequest):
 # Pipeline - Execucao completa
 # ============================================================
 @router.post("/pipeline")
-async def run_pipeline(request: PipelineRequest):
+async def run_pipeline(current_user: CurrentActiveUser, request: PipelineRequest):
     """Executa pipeline completo: analise -> avaliacao -> precificacao."""
     try:
         if not request.tender_id and not request.edital_text:
@@ -365,7 +366,7 @@ async def run_pipeline(request: PipelineRequest):
 # Sentinel - Monitoramento de certidoes
 # ============================================================
 @router.get("/sentinel/tipos")
-async def sentinel_tipos():
+async def sentinel_tipos(current_user: CurrentActiveUser):
     """Lista tipos de certidoes monitoradas pelo agente Sentinel."""
     return {
         "tipos": CERTIFICATE_TYPES,
@@ -374,7 +375,7 @@ async def sentinel_tipos():
 
 
 @router.post("/sentinel/verificar")
-async def sentinel_verificar():
+async def sentinel_verificar(current_user: CurrentActiveUser):
     """Verifica status atual de todas as certidoes da empresa."""
     try:
         result = await sentinel_agent.run()
@@ -398,7 +399,7 @@ async def sentinel_verificar():
 
 
 @router.get("/sentinel/alertas")
-async def sentinel_alertas():
+async def sentinel_alertas(current_user: CurrentActiveUser):
     """Retorna certidoes proximas do vencimento ou vencidas."""
     try:
         result = await sentinel_agent.run()
@@ -429,7 +430,7 @@ async def sentinel_alertas():
 # Warrior - Robo de disputa
 # ============================================================
 @router.get("/warrior/status")
-async def warrior_status():
+async def warrior_status(current_user: CurrentActiveUser):
     """Retorna status do robo de disputa (Warrior)."""
     return {
         "status": warrior_agent.AGENT_STATUS.value,
@@ -442,6 +443,7 @@ async def warrior_status():
 
 @router.post("/warrior/simular")
 async def warrior_simular(
+    current_user: CurrentActiveUser,
     valor_referencia: float = 100000.0,
     estrategia: str = "moderado",
     piso_minimo: float | None = None,
@@ -470,6 +472,7 @@ async def warrior_simular(
 # ============================================================
 @router.post("/compiler/gerar")
 async def compiler_gerar(
+    current_user: CurrentActiveUser,
     edital_numero: str = "001/2026",
     objeto: str = "Contratacao de servicos de vigilancia patrimonial",
     valor_total: float = 100000.0,

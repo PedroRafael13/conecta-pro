@@ -11,6 +11,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, Field
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..models.document import DocumentSource, DocumentType
 from ..models.extraction_template import TemplateCategory
 from ..services.data_extractor import DataExtractor
@@ -179,6 +181,7 @@ def get_template_manager() -> TemplateManager:
     summary="Upload de documento",
 )
 async def upload_document(
+    current_user: CurrentActiveUser,
     file: UploadFile = File(...),
     tenant_id: str = Query(..., description="ID do tenant"),
     source: str = Query("upload", description="Origem do documento"),
@@ -244,6 +247,7 @@ async def upload_document(
     summary="Upload de multiplos documentos",
 )
 async def upload_batch(
+    current_user: CurrentActiveUser,
     files: list[UploadFile] = File(...),
     tenant_id: str = Query(...),
     scanner: DocumentScanner = Depends(get_scanner),
@@ -291,6 +295,7 @@ async def upload_batch(
 )
 async def run_ocr(
     document_id: str,
+    current_user: CurrentActiveUser,
     provider: str = Query("tesseract", description="Provider de OCR"),
     languages: str = Query("por,eng", description="Idiomas (separados por virgula)"),
     ocr_engine: OCREngine = Depends(get_ocr_engine),
@@ -318,6 +323,7 @@ async def run_ocr(
 )
 async def classify_document(
     document_id: str,
+    current_user: CurrentActiveUser,
     _classifier: DocumentClassifier = Depends(get_classifier),
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> ClassificationResponse:
@@ -343,6 +349,7 @@ async def classify_document(
 )
 async def extract_data(
     document_id: str,
+    current_user: CurrentActiveUser,
     template_id: str | None = Query(None, description="ID do template"),
     extractor: DataExtractor = Depends(get_extractor),
     template_manager: TemplateManager = Depends(get_template_manager),
@@ -369,6 +376,7 @@ async def extract_data(
 )
 async def validate_data(
     document_id: str,
+    current_user: CurrentActiveUser,
     validator: ValidationEngine = Depends(get_validator),
 ) -> ValidationResponse:
     """
@@ -394,6 +402,7 @@ async def validate_data(
 async def process_document(
     document_id: str,
     request: ProcessingRequest,
+    current_user: CurrentActiveUser,
     scanner: DocumentScanner = Depends(get_scanner),
     _classifier: DocumentClassifier = Depends(get_classifier),
     extractor: DataExtractor = Depends(get_extractor),
@@ -423,6 +432,7 @@ async def process_document(
     summary="Listar templates",
 )
 async def list_templates(
+    current_user: CurrentActiveUser,
     category: str | None = Query(None, description="Filtrar por categoria"),
     document_type: str | None = Query(None, description="Filtrar por tipo"),
     include_builtin: bool = Query(True, description="Incluir templates builtin"),
@@ -469,6 +479,7 @@ async def list_templates(
 )
 async def get_template(
     template_id: str,
+    current_user: CurrentActiveUser,
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> dict[str, Any]:
     """Obtem detalhes de um template."""
@@ -490,6 +501,7 @@ async def get_template(
 )
 async def create_template(
     request: TemplateRequest,
+    current_user: CurrentActiveUser,
     tenant_id: str = Query(...),
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> TemplateResponse:
@@ -553,6 +565,7 @@ async def create_template(
 )
 async def delete_template(
     template_id: str,
+    current_user: CurrentActiveUser,
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> None:
     """Remove um template customizado."""
@@ -579,7 +592,7 @@ async def delete_template(
     response_model=list[dict[str, str]],
     summary="Listar tipos de documentos",
 )
-async def list_document_types() -> list[dict[str, str]]:
+async def list_document_types(current_user: CurrentActiveUser) -> list[dict[str, str]]:
     """Lista todos os tipos de documentos suportados."""
     return [{"type": t.value, "name": t.name} for t in DocumentType]
 
@@ -590,6 +603,7 @@ async def list_document_types() -> list[dict[str, str]]:
     summary="Listar providers OCR",
 )
 async def list_ocr_providers(
+    current_user: CurrentActiveUser,
     ocr_engine: OCREngine = Depends(get_ocr_engine),
 ) -> dict[str, Any]:
     """Lista providers de OCR disponiveis."""
@@ -602,6 +616,7 @@ async def list_ocr_providers(
     summary="Estatisticas de armazenamento",
 )
 async def get_storage_stats(
+    current_user: CurrentActiveUser,
     tenant_id: str = Query(...),
     scanner: DocumentScanner = Depends(get_scanner),
 ) -> dict[str, Any]:
@@ -615,6 +630,7 @@ async def get_storage_stats(
     summary="Validar CPF",
 )
 async def validate_cpf(
+    current_user: CurrentActiveUser,
     cpf: str = Query(..., description="CPF a validar"),
     validator: ValidationEngine = Depends(get_validator),
 ) -> dict[str, bool]:
@@ -631,6 +647,7 @@ async def validate_cpf(
     summary="Validar CNPJ",
 )
 async def validate_cnpj(
+    current_user: CurrentActiveUser,
     cnpj: str = Query(..., description="CNPJ a validar"),
     validator: ValidationEngine = Depends(get_validator),
 ) -> dict[str, bool]:

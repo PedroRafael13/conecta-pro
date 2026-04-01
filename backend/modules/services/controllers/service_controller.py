@@ -550,7 +550,10 @@ async def finish_execution(
 
 
 @router.post(
-    "/executions/{execution_id}/materials", response_model=ServiceExecutionResponse, summary="Adicionar Material"
+    "/executions/{execution_id}/materials",
+    response_model=ServiceExecutionResponse,
+    summary="Adicionar Material",
+    status_code=201,
 )
 async def add_material(
     execution_id: UUID,
@@ -586,7 +589,10 @@ async def update_checklist(
 
 
 @router.post(
-    "/executions/{execution_id}/signatures", response_model=ServiceExecutionResponse, summary="Adicionar Assinatura"
+    "/executions/{execution_id}/signatures",
+    response_model=ServiceExecutionResponse,
+    summary="Adicionar Assinatura",
+    status_code=201,
 )
 async def add_signature(
     execution_id: UUID,

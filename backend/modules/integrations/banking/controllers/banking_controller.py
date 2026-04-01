@@ -626,6 +626,7 @@ async def generate_pix_charge(
         )
 
 
+@router.get("/boleto", include_in_schema=False)
 @router.get("/boleto/list", response_model=BoletoListResponse)
 async def list_boletos(
     bank_code: str | None = Query(default=None),

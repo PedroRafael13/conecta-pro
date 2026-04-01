@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/climate", tags=["RH - Clima"])
 
 @router.get("/dashboard")
 async def climate_dashboard(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Dashboard de clima organizacional."""
@@ -57,6 +59,7 @@ async def climate_dashboard(
 
 @router.get("/surveys")
 async def climate_surveys(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Lista pesquisas de clima organizacional."""
@@ -65,6 +68,7 @@ async def climate_surveys(
 
 @router.get("/alerts")
 async def climate_alerts(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Lista alertas de clima organizacional."""
@@ -73,6 +77,7 @@ async def climate_alerts(
 
 @router.get("/absenteismo/alertas")
 async def absenteismo_alertas(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Alertas de absenteismo ativos."""
@@ -86,6 +91,7 @@ async def absenteismo_alertas(
 
 @router.get("/absenteismo/dashboard")
 async def absenteismo_dashboard(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Dashboard de absenteismo."""

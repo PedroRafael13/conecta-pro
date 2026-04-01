@@ -42,7 +42,7 @@ async def get_employee_discipline_history(
     return await service.get_employee_history(employee_id, page=page, page_size=page_size)
 
 
-@router.post("/from-occurrence/{occurrence_id}")
+@router.post("/from-occurrence/{occurrence_id}", status_code=201)
 async def create_from_occurrence(
     occurrence_id: str,
     current_user: CurrentActiveUser,

@@ -521,6 +521,7 @@ async def verify_justification(
     "/{justification_id}/attachments",
     response_model=TimeJustificationResponse,
     summary="Adicionar anexo",
+    status_code=201,
 )
 async def add_attachment(
     justification_id: UUID,

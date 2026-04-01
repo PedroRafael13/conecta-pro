@@ -274,7 +274,7 @@ async def get_escalation_rules(
         )
 
 
-@router.post("/rules", summary="Criar Regra de Escalation")
+@router.post("/rules", summary="Criar Regra de Escalation", status_code=201)
 async def create_escalation_rule(
     rule_request: EscalationRuleRequest,
     current_user: User = Depends(get_current_user),

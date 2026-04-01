@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
 
@@ -58,6 +59,7 @@ class VacationRequestResponse(BaseModel):
 )
 async def get_vacation_balance(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna saldo de ferias do funcionario autenticado."""
@@ -151,6 +153,7 @@ async def get_vacation_balance(
 )
 async def get_vacation_requests(
     employee_id: CurrentEmployeeId,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna solicitacoes de ferias do funcionario autenticado."""

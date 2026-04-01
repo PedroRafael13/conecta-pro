@@ -9,6 +9,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import PlainTextResponse
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.sped_contabil import (
     AdicionarContaRequest,
@@ -39,7 +41,9 @@ def get_service() -> SPEDContabilService:
     summary="Status do SPED Contábil",
     description="Retorna o status da configuração do SPED Contábil",
 )
-async def get_status(service: SPEDContabilService = Depends(get_service)) -> StandardResponse:
+async def get_status(
+    current_user: CurrentActiveUser, service: SPEDContabilService = Depends(get_service)
+) -> StandardResponse:
     """Retorna status da configuração."""
     try:
         status_data = service.validar_status()
@@ -57,7 +61,9 @@ async def get_status(service: SPEDContabilService = Depends(get_service)) -> Sta
     summary="Lista blocos",
     description="Retorna a lista de blocos do SPED Contábil",
 )
-async def listar_blocos(service: SPEDContabilService = Depends(get_service)) -> StandardResponse:
+async def listar_blocos(
+    current_user: CurrentActiveUser, service: SPEDContabilService = Depends(get_service)
+) -> StandardResponse:
     """Lista blocos do SPED."""
     try:
         blocos = service.listar_blocos()
@@ -75,7 +81,9 @@ async def listar_blocos(service: SPEDContabilService = Depends(get_service)) -> 
     summary="Lista tipos de ECD",
     description="Retorna a lista de tipos de livros ECD",
 )
-async def listar_tipos_ecd(service: SPEDContabilService = Depends(get_service)) -> StandardResponse:
+async def listar_tipos_ecd(
+    current_user: CurrentActiveUser, service: SPEDContabilService = Depends(get_service)
+) -> StandardResponse:
     """Lista tipos de ECD."""
     try:
         tipos = service.listar_tipos_ecd()
@@ -93,7 +101,9 @@ async def listar_tipos_ecd(service: SPEDContabilService = Depends(get_service)) 
     summary="Lista contas",
     description="Retorna a lista de contas do plano de contas",
 )
-async def listar_contas(service: SPEDContabilService = Depends(get_service)) -> StandardResponse:
+async def listar_contas(
+    current_user: CurrentActiveUser, service: SPEDContabilService = Depends(get_service)
+) -> StandardResponse:
     """Lista contas."""
     try:
         contas = service.listar_contas()
@@ -111,7 +121,9 @@ async def listar_contas(service: SPEDContabilService = Depends(get_service)) -> 
     summary="Lista lançamentos",
     description="Retorna a lista de lançamentos contábeis",
 )
-async def listar_lancamentos(service: SPEDContabilService = Depends(get_service)) -> StandardResponse:
+async def listar_lancamentos(
+    current_user: CurrentActiveUser, service: SPEDContabilService = Depends(get_service)
+) -> StandardResponse:
     """Lista lançamentos."""
     try:
         lancamentos = service.listar_lancamentos()
@@ -133,7 +145,7 @@ async def listar_lancamentos(service: SPEDContabilService = Depends(get_service)
     description="Adiciona uma conta ao plano de contas",
 )
 async def adicionar_conta(
-    request: AdicionarContaRequest, service: SPEDContabilService = Depends(get_service)
+    current_user: CurrentActiveUser, request: AdicionarContaRequest, service: SPEDContabilService = Depends(get_service)
 ) -> StandardResponse:
     """Adiciona conta."""
     try:
@@ -157,7 +169,9 @@ async def adicionar_conta(
     description="Adiciona um lançamento contábil",
 )
 async def adicionar_lancamento(
-    request: AdicionarLancamentoRequest, service: SPEDContabilService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    request: AdicionarLancamentoRequest,
+    service: SPEDContabilService = Depends(get_service),
 ) -> StandardResponse:
     """Adiciona lançamento."""
     try:
@@ -181,7 +195,7 @@ async def adicionar_lancamento(
     description="Define o balanço patrimonial",
 )
 async def definir_balanco(
-    request: DefinirBalancoRequest, service: SPEDContabilService = Depends(get_service)
+    current_user: CurrentActiveUser, request: DefinirBalancoRequest, service: SPEDContabilService = Depends(get_service)
 ) -> StandardResponse:
     """Define balanço."""
     try:
@@ -207,7 +221,7 @@ async def definir_balanco(
     description="Define a Demonstração do Resultado do Exercício",
 )
 async def definir_dre(
-    request: DefinirDRERequest, service: SPEDContabilService = Depends(get_service)
+    current_user: CurrentActiveUser, request: DefinirDRERequest, service: SPEDContabilService = Depends(get_service)
 ) -> StandardResponse:
     """Define DRE."""
     try:
@@ -232,7 +246,7 @@ async def definir_dre(
     description="Calcula os saldos periódicos das contas",
 )
 async def calcular_saldos(
-    request: CalcularSaldosRequest, service: SPEDContabilService = Depends(get_service)
+    current_user: CurrentActiveUser, request: CalcularSaldosRequest, service: SPEDContabilService = Depends(get_service)
 ) -> StandardResponse:
     """Calcula saldos."""
     try:
@@ -261,7 +275,7 @@ async def calcular_saldos(
     description="Gera o arquivo SPED Contábil",
 )
 async def gerar_arquivo(
-    request: GerarArquivoRequest, service: SPEDContabilService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarArquivoRequest, service: SPEDContabilService = Depends(get_service)
 ) -> StandardResponse:
     """Gera arquivo SPED."""
     try:
@@ -300,7 +314,7 @@ async def gerar_arquivo(
     description="Gera e retorna o arquivo SPED para download",
 )
 async def gerar_arquivo_download(
-    request: GerarArquivoRequest, service: SPEDContabilService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarArquivoRequest, service: SPEDContabilService = Depends(get_service)
 ) -> PlainTextResponse:
     """Gera arquivo SPED para download."""
     try:
@@ -336,7 +350,9 @@ async def gerar_arquivo_download(
 @router.delete(
     "/limpar", response_model=StandardResponse, summary="Limpar dados", description="Limpa todos os dados em memória"
 )
-async def limpar_dados(service: SPEDContabilService = Depends(get_service)) -> StandardResponse:
+async def limpar_dados(
+    current_user: CurrentActiveUser, service: SPEDContabilService = Depends(get_service)
+) -> StandardResponse:
     """Limpa dados em memória."""
     try:
         resultado = service.limpar_dados()

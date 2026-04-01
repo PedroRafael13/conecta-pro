@@ -12,7 +12,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.auth.dependencies import get_current_active_user
+from core.auth.dependencies import CurrentActiveUser, get_current_active_user
 from core.database import get_db
 
 from ..schemas import (
@@ -61,6 +61,7 @@ def get_inspection_service(db: AsyncSession = Depends(get_db)) -> InspectionRoun
 )
 async def create_round(
     data: InspectionRoundCreate,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Cria uma nova ronda."""
@@ -87,6 +88,7 @@ async def create_round(
     description="Lista rondas com filtros e paginacao.",
 )
 async def list_rounds(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,
     tenant_id: UUID | None = Query(None, description="ID do tenant (opcional)"),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(10, ge=1, le=100, description="Itens por página"),
@@ -137,6 +139,7 @@ async def list_rounds(  # pylint: disable=too-many-locals
     description="Retorna estatísticas de rondas de inspeção.",
 )
 async def get_stats(
+    current_user: CurrentActiveUser,
     tenant_id: UUID | None = Query(None, description="ID do tenant (opcional)"),
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionDashboardStats:
@@ -152,6 +155,7 @@ async def get_stats(
     description="Retorna estatisticas do dashboard de rondas.",
 )
 async def get_dashboard(
+    current_user: CurrentActiveUser,
     tenant_id: UUID | None = Query(None, description="ID do tenant (opcional)"),
     _start_date: datetime | None = Query(None, description="Data inicial"),
     _end_date: datetime | None = Query(None, description="Data final"),
@@ -169,6 +173,7 @@ async def get_dashboard(
     description="Lista rondas do inspetor logado.",
 )
 async def get_my_rounds(
+    current_user: CurrentActiveUser,
     inspector_id: UUID = Query(..., description="ID do inspetor"),
     tenant_id: UUID = Query(..., description="ID do tenant"),
     limit: int = Query(50, ge=1, le=200),
@@ -187,6 +192,7 @@ async def get_my_rounds(
 )
 async def get_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Busca ronda por ID."""
@@ -209,6 +215,7 @@ async def get_round(
 async def update_round(
     round_id: UUID,
     data: InspectionRoundUpdate,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Atualiza uma ronda."""
@@ -235,6 +242,7 @@ async def update_round(
 )
 async def delete_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ):
     """Remove uma ronda."""
@@ -265,6 +273,7 @@ async def delete_round(
 )
 async def start_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     data: StartRoundRequest | None = None,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
@@ -292,6 +301,7 @@ async def start_round(
 )
 async def pause_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Pausa uma ronda."""
@@ -318,6 +328,7 @@ async def pause_round(
 )
 async def resume_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Retoma uma ronda pausada."""
@@ -344,6 +355,7 @@ async def resume_round(
 )
 async def complete_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     data: CompleteRoundRequest | None = None,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
@@ -371,6 +383,7 @@ async def complete_round(
 )
 async def cancel_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     reason: str | None = Query(None, description="Motivo do cancelamento"),
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
@@ -405,6 +418,7 @@ async def cancel_round(
 async def create_checkpoint(
     round_id: UUID,
     data: CheckpointCreate,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> CheckpointResponse:
     """Cria um checkpoint."""
@@ -431,6 +445,7 @@ async def create_checkpoint(
 )
 async def get_checkpoints(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> list[CheckpointResponse]:
     """Lista checkpoints de uma ronda."""
@@ -454,6 +469,7 @@ async def update_checkpoint(
     _round_id: UUID,
     checkpoint_id: UUID,
     data: CheckpointUpdate,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> CheckpointResponse:
     """Atualiza um checkpoint."""
@@ -482,6 +498,7 @@ async def update_checkpoint(
 async def register_occurrence(
     round_id: UUID,
     data: RegisterOccurrenceRequest,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> dict:
     """Registra uma ocorrencia durante a ronda."""
@@ -520,6 +537,7 @@ async def register_occurrence(
 async def apply_disciplinary_action(
     round_id: UUID,
     data: ApplyDisciplinaryRequest,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> dict:
     """Aplica medida disciplinar durante a ronda."""

@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/onboarding", tags=["RH - Onboarding"])
 
 @router.get("/dashboard")
 async def onboarding_dashboard(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Dashboard de onboarding com dados reais."""
@@ -77,6 +79,7 @@ async def onboarding_dashboard(
 @router.get("/{employee_id}/checklist")
 async def get_checklist(
     employee_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Checklist de onboarding do colaborador."""
@@ -106,6 +109,7 @@ async def get_checklist(
 async def concluir_item(
     employee_id: str,
     item_id: int,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Marca etapa do checklist como concluida."""
@@ -127,6 +131,7 @@ async def concluir_item(
 
 @router.get("/pendencias")
 async def pendencias(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Itens vencidos ou proximos do vencimento."""

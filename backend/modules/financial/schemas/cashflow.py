@@ -119,7 +119,7 @@ class BankTransactionBase(BaseModel):
 
     transaction_type: str
     category: str = "nao_identificado"
-    amount: Decimal = Field(..., gt=0)
+    amount: Decimal
     description: str = Field(..., min_length=1, max_length=500)
     memo: str | None = None
     transaction_date: date

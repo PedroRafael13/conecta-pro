@@ -6,6 +6,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.security_lgpd.schemas.common import StandardResponse
 from modules.security_lgpd.schemas.masking import MaskDataRequest
 from modules.security_lgpd.services.masking_service import MaskingService
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/masking", tags=["LGPD - Mascaramento"])
     summary="Mascara dados sensiveis",
     description="Aplica mascaramento em dados PII (CPF, email, telefone, etc).",
 )
-async def mask_data(request: MaskDataRequest) -> StandardResponse:
+async def mask_data(current_user: CurrentActiveUser, request: MaskDataRequest) -> StandardResponse:
     """
     Mascara dados sensiveis de acordo com categoria.
 
@@ -76,7 +77,7 @@ async def mask_data(request: MaskDataRequest) -> StandardResponse:
     summary="Lista formatos de mascaramento",
     description="Retorna categorias e niveis de mascaramento disponiveis.",
 )
-async def list_masking_formats() -> StandardResponse:
+async def list_masking_formats(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Lista formatos de mascaramento disponiveis.
 

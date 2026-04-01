@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ router = APIRouter(prefix="/ged-integration", tags=["GED - Integracao"])
 @router.get("/onboarding/{employee_id}")
 async def get_onboarding_docs(
     employee_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Documentos de onboarding por colaborador."""
@@ -81,6 +83,7 @@ async def get_onboarding_docs(
 @router.get("/contracheques/{employee_id}")
 async def get_contracheques(
     employee_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Historico de contracheques arquivados no GED."""
@@ -137,6 +140,7 @@ async def get_contracheques(
 @router.get("/sst/{employee_id}")
 async def get_sst_docs(
     employee_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Documentos SST por colaborador (atestados, ASOs, CATs)."""
@@ -179,6 +183,7 @@ async def get_sst_docs(
 
 @router.get("/sst/asos/vencendo")
 async def get_asos_vencendo(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """ASOs proximos do vencimento (sem ASO nos ultimos 12 meses)."""
@@ -220,6 +225,7 @@ async def get_asos_vencendo(
 
 @router.get("/institucional/cct")
 async def get_cct_documento(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """CCT 2026 vigente para download."""
@@ -261,6 +267,7 @@ async def get_cct_documento(
 
 @router.get("/institucional/comunicados")
 async def get_comunicados(
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Comunicados institucionais do GED."""

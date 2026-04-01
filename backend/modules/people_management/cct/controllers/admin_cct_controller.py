@@ -22,6 +22,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.cct.repositories.cct_repository import CCTRepository
 from modules.people_management.cct.schemas.cct_schemas import (
@@ -47,14 +48,14 @@ router = APIRouter(prefix="/admin/cct", tags=["Admin - CCT"])
 
 
 @router.get("/convencoes", response_model=list[CCTConvencaoResponse])
-async def listar_convencoes(db: AsyncSession = Depends(get_db)) -> Any:
+async def listar_convencoes(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)) -> Any:
     """Lista todas as convenções coletivas cadastradas."""
     repo = CCTRepository(db)
     return await repo.list_convencoes()
 
 
 @router.get("/convencao-vigente", response_model=CCTConvencaoResponse | None)
-async def get_convencao_vigente(db: AsyncSession = Depends(get_db)) -> Any:
+async def get_convencao_vigente(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)) -> Any:
     """Retorna a convenção vigente (is_vigente=True)."""
     repo = CCTRepository(db)
     return await repo.get_convencao_vigente()
@@ -63,6 +64,7 @@ async def get_convencao_vigente(db: AsyncSession = Depends(get_db)) -> Any:
 @router.post("/convencoes", response_model=CCTConvencaoResponse, status_code=status.HTTP_201_CREATED)
 async def criar_convencao(
     body: CCTConvencaoCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Cria nova convenção coletiva."""
@@ -74,6 +76,7 @@ async def criar_convencao(
 async def atualizar_convencao(
     convencao_id: uuid.UUID,
     body: CCTConvencaoUpdate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Atualiza dados de uma convenção (ex: marcar como vigente)."""
@@ -88,7 +91,9 @@ async def atualizar_convencao(
 
 
 @router.get("/convencoes/{convencao_id}/cargos", response_model=list[CCTCargoResponse])
-async def listar_cargos(convencao_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
+async def listar_cargos(
+    convencao_id: uuid.UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> Any:
     """Lista cargos (pisos salariais) de uma convenção."""
     repo = CCTRepository(db)
     return await repo.get_cargos_by_convencao(convencao_id)
@@ -102,6 +107,7 @@ async def listar_cargos(convencao_id: uuid.UUID, db: AsyncSession = Depends(get_
 async def adicionar_cargo(
     convencao_id: uuid.UUID,
     body: CCTCargoCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Adiciona cargo com piso salarial a uma convenção."""
@@ -115,6 +121,7 @@ async def adicionar_cargo(
 async def atualizar_cargo(
     cargo_id: uuid.UUID,
     body: CCTCargoUpdate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Atualiza piso salarial ou adicionais de um cargo."""
@@ -131,6 +138,7 @@ async def atualizar_cargo(
 @router.get("/convencoes/{convencao_id}/feriados", response_model=list[CCTFeriadoResponse])
 async def listar_feriados(
     convencao_id: uuid.UUID,
+    current_user: CurrentActiveUser,
     ano: int | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -149,6 +157,7 @@ async def listar_feriados(
 async def adicionar_feriado(
     convencao_id: uuid.UUID,
     body: CCTFeriadoCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Adiciona feriado à convenção."""
@@ -159,7 +168,9 @@ async def adicionar_feriado(
 
 
 @router.delete("/feriados/{feriado_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remover_feriado(feriado_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> None:
+async def remover_feriado(
+    feriado_id: uuid.UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> None:
     """Remove feriado."""
     repo = CCTRepository(db)
     deleted = await repo.delete_feriado(feriado_id)
@@ -171,7 +182,9 @@ async def remover_feriado(feriado_id: uuid.UUID, db: AsyncSession = Depends(get_
 
 
 @router.get("/convencoes/{convencao_id}/beneficios", response_model=list[CCTBeneficioResponse])
-async def listar_beneficios(convencao_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
+async def listar_beneficios(
+    convencao_id: uuid.UUID, current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)
+) -> Any:
     """Lista benefícios obrigatórios de uma convenção."""
     repo = CCTRepository(db)
     return await repo.get_beneficios_obrigatorios(convencao_id)
@@ -185,6 +198,7 @@ async def listar_beneficios(convencao_id: uuid.UUID, db: AsyncSession = Depends(
 async def adicionar_beneficio(
     convencao_id: uuid.UUID,
     body: CCTBeneficioCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Adiciona benefício obrigatório à convenção."""
@@ -198,7 +212,7 @@ async def adicionar_beneficio(
 
 
 @router.post("/cache/invalidar", status_code=status.HTTP_200_OK)
-async def invalidar_cache_cct(db: AsyncSession = Depends(get_db)) -> dict:
+async def invalidar_cache_cct(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)) -> dict:
     """Invalida todo o cache CCT no Redis (usar após atualizações)."""
     service = CCTService(db)
     await service.invalidar_cache()
