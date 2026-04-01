@@ -90,46 +90,87 @@ def send_telegram(text: str) -> bool:
         return False
 
 
-# ── Pre-fetch shared token ────────────────────────────────
-def obter_token_compartilhado() -> str:
-    """Obtém um token e injeta em BaseAgent para evitar rate limit."""
-    import subprocess
+# ── Token management ─────────────────────────────────────
+import time as _time
+import subprocess as _subprocess
 
+
+_LOGIN_CMD = [
+    "curl", "-sf", "-X", "POST",
+    "http://127.0.0.1:8080/api/v1/auth/login",
+    "-H", "Content-Type: application/x-www-form-urlencoded",
+    "-d", "username=jjesus@conectamais.pro&password=Jordan0612",
+]
+
+
+def _fazer_login(timeout: int = 15) -> str:
+    """Faz um único login; retorna token ou '' em falha."""
     try:
-        r = subprocess.run(
-            [
-                "curl",
-                "-sf",
-                "-X",
-                "POST",
-                "http://127.0.0.1:8080/api/v1/auth/login",
-                "-H",
-                "Content-Type: application/x-www-form-urlencoded",
-                "-d",
-                "username=jjesus@conectamais.pro&password=Jordan0612",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=15,
+        r = _subprocess.run(
+            _LOGIN_CMD, capture_output=True, text=True, timeout=timeout
         )
-        token = json.loads(r.stdout).get("access_token", "")
-        if token:
-            _cached = token
-            # Monkey-patch BaseAgent.obter_token
-            import base_agent
-            base_agent.BaseAgent.obter_token = (
-                lambda self: setattr(self, "token", _cached) or _cached
-            )
-            # Monkey-patch BaseOrchestrator._obter_token_compartilhado
-            import base_orchestrator
-            base_orchestrator.BaseOrchestrator._obter_token_compartilhado = (
-                lambda self: _cached
-            )
-            logger.info("✅ Token compartilhado injetado em BaseAgent + BaseOrchestrator")
-        return token
-    except Exception as e:
-        logger.error(f"Token error: {e}")
+        return json.loads(r.stdout).get("access_token", "")
+    except Exception:
         return ""
+
+
+def _obter_token_com_retry(max_tentativas: int = 4) -> str:
+    """Obtém token com retry exponencial (60s → 120s → 180s)."""
+    for tentativa in range(max_tentativas):
+        token = _fazer_login()
+        if token:
+            logger.info(f"✅ Token obtido (tentativa {tentativa + 1})")
+            return token
+        if tentativa < max_tentativas - 1:
+            espera = 65 * (tentativa + 1)
+            logger.warning(
+                f"[TOKEN] Rate limit — aguardando {espera}s "
+                f"(tentativa {tentativa + 1}/{max_tentativas})..."
+            )
+            _time.sleep(espera)
+    logger.error("[TOKEN] Falhou após todas as tentativas")
+    return ""
+
+
+def _token_valido(token: str) -> bool:
+    """Verifica se o token ainda é válido via /auth/me."""
+    if not token:
+        return False
+    try:
+        req = urllib.request.Request(
+            "http://127.0.0.1:8080/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return r.status == 200
+    except Exception:
+        return False
+
+
+def _injetar_token(token: str) -> None:
+    """Monkey-patcha BaseAgent e BaseOrchestrator com o token fornecido."""
+    _t = token  # captura no closure
+
+    import base_agent
+    import base_orchestrator
+
+    base_agent.BaseAgent.obter_token = (
+        lambda self: setattr(self, "token", _t) or _t
+    )
+    base_orchestrator.BaseOrchestrator._obter_token_compartilhado = (
+        lambda self: _t
+    )
+
+
+def obter_token_compartilhado() -> str:
+    """Obtém token com retry e injeta em BaseAgent/BaseOrchestrator."""
+    token = _obter_token_com_retry()
+    if token:
+        _injetar_token(token)
+        logger.info("✅ Token compartilhado injetado em BaseAgent + BaseOrchestrator")
+    else:
+        logger.warning("⚠️ Token não obtido — agentes usarão obter_token() individual")
+    return token
 
 
 # ── Orquestradores ────────────────────────────────────────
