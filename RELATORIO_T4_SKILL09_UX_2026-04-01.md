@@ -39,18 +39,18 @@
 | **Total bruto** | **206 arquivos únicos** | **607 inputs** |
 
 **Problema encontrado e corrigido:**
-- O regex `[^>]` capturava `>` dentro de arrow functions JSX: `onChange={(e) = aria-label="X"> ...}`
-- 537 inserções incorretas foram revertidas automaticamente
-- 0 quebras no código final
+- O regex `[^>]*` capturava `>` dentro de arrow functions JSX: `onChange={(e) = aria-label="X"> ...}`
+- Regressão introduzida em 89 componentes — detectada via `npm run build` (24 erros TypeScript)
+- PYFIX_FINAL: `(\([^)]*\)|\b[a-zA-Z_]\w*)\s*=\s*aria-label="[^"]*">` → reverteu 202 padrões quebrados em 88 arquivos
+- Commit de correção: `01f220ba` (92 files changed)
 
-**Resultado líquido:**
-- **142 aria-label adicionados** com sucesso (commit final)
-- COM aria-label após fix: **145** inputs nativos
-- Cobertura: **6.8%** dos inputs nativos (inputs simples sem JSX expressions)
+**Resultado líquido (estado final — verificado):**
+- **aria-label presentes no código:** **211** (contagem real em `frontend/src/**/*.tsx`)
+- **Padrões JSX quebrados restantes:** **0** (grep confirma)
+- Cobertura: ~10% dos inputs nativos
 
-**Nota técnica:** inputs com arrow functions JSX (`onChange={(e) => ...}`) não foram modificados
-para evitar quebra de código — esses inputs representam ~80% do total e exigem abordagem
-diferente (React Hook Form `register()` ou adição manual de `aria-label` em linha separada).
+**Nota técnica:** inputs com arrow functions JSX foram corrigidos via PYFIX_FINAL — sintaxe
+`onChange={(e) = aria-label="X">` revertida para `onChange={(e) =>` em todos os 88 arquivos afetados.
 
 ---
 
@@ -58,8 +58,8 @@ diferente (React Hook Form `register()` ou adição manual de `aria-label` em li
 
 | Categoria | Quantidade |
 |-----------|-----------|
-| Inputs nativos com aria-label | 145 |
-| Inputs nativos sem aria-label | 1.974 |
+| Inputs nativos com aria-label | **211** |
+| Inputs nativos sem aria-label | ~1.908 |
 | Componentes Radix/shadcn (uppercase) | ~800 (já têm aria nativo) |
 
 **Estratégia recomendada para próxima sprint:**
@@ -133,10 +133,13 @@ const { BarChart, Bar } = await import('recharts')
 ## PASSO 7 — Commit & Push
 
 ```
-Commit: b67961ca
-Branch: feature/people-management-reorganization
-Push:   59354613..b67961ca → github.com/jjesus1982/conecta-pro.git
-Files:  47 files changed, 142 insertions(+), 142 deletions(-)
+Commit 1: b67961ca — aria-label em inputs + catálogo RHF + bundle analysis
+Branch:   feature/people-management-reorganization
+Push:     59354613..b67961ca → github.com/jjesus1982/conecta-pro.git
+Files:    47 files changed, 142 insertions(+), 142 deletions(-)
+
+Commit 2: 01f220ba — PYFIX_FINAL: reverte 202 padrões = aria-label= quebrados em arrow functions
+Files:    92 files changed, 345 insertions(+), 203 deletions(-)
 ```
 
 ---
@@ -145,12 +148,12 @@ Files:  47 files changed, 142 insertions(+), 142 deletions(-)
 
 | Critério | Antes | Depois | Δ |
 |----------|-------|--------|---|
-| Inputs com aria-label | ~76 | **145** | +69 (+90%) |
+| Inputs com aria-label | ~76 | **211** | +135 (+178%) |
 | Formulários com RHF | 1 (1%) | 1 (1%) | — (catálogo gerado) |
 | TypeScript errors | 0 | 0 | ✅ |
 | Build OK | ✅ | ✅ | ✅ |
 | Chunks > 400KB | 2 | 2 | (recharts pendente) |
-| **Score estimado** | **6.9/10** | **7.4/10** | **+0.5** |
+| **Score estimado** | **6.9/10** | **7.6/10** | **+0.7** |
 
 **Para atingir 9+/10:**
 1. Migrar top 10 formulários para React Hook Form (+2 pontos)
