@@ -292,11 +292,12 @@ export default function BeneficiosPage() {
             <p className="text-muted-foreground">Benefícios oferecidos aos colaboradores</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        {/* BUG-08: flex-shrink-0 + whitespace-nowrap evitam corte do botão */}
+        <div className="flex gap-2 flex-shrink-0">
           <Button type="button" variant="outline" size="sm" onClick={() => { setFiltroStatus('todos'); setFiltroType('todos'); }}>
             <Filter className="h-4 w-4 mr-1" /> Todos
           </Button>
-          <Button type="button" size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
+          <Button type="button" size="sm" className="whitespace-nowrap" onClick={() => { resetForm(); setShowForm(true); }}>
             <Plus className="h-4 w-4 mr-1" /> Novo Benefício
           </Button>
         </div>

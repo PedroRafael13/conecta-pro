@@ -137,7 +137,14 @@ export default function FuncionariosPage() {
       const res = await fetch(`${API_BASE}/employees/${empId}/profile`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
-        setProfileData(data);
+        // BUG-06: API retorna {employee, benefits, current_contract, documents}
+        // mas template espera campos flat — mapear aqui
+        setProfileData({
+          benefits_count: Array.isArray(data.benefits) ? data.benefits.length : 0,
+          contract_type: data.current_contract?.type ?? null,
+          contract_start_date: data.current_contract?.start_date ?? null,
+          base_salary: data.current_contract?.base_salary ?? data.employee?.salario_base ?? null,
+        });
       }
     } catch { /* ignore */ }
   };

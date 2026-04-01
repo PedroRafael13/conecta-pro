@@ -1,18 +1,20 @@
 'use client';
 
-;
 import { Plus, FileWarning, UserPlus, MapPin, FileText } from 'lucide-react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 
 export function QuickActions() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const actions = [
-    { icon: FileWarning, label: 'Nova Ocorrência', onClick: () => {} },
-    { icon: UserPlus, label: 'Adicionar Colaborador', onClick: () => {} },
-    { icon: MapPin, label: 'Criar Posto', onClick: () => {} },
-    { icon: FileText, label: 'Gerar Relatório', onClick: () => {} },
+    { icon: FileWarning, label: 'Nova Ocorrência', onClick: () => router.push('/modulos/operacional/ocorrencias') },
+    { icon: UserPlus, label: 'Adicionar Colaborador', onClick: () => router.push('/modulos/dp/funcionarios') },
+    { icon: MapPin, label: 'Criar Posto', onClick: () => router.push('/modulos/operacional/postos') },
+    // BUG-05: onClick vazio substituído por navegação para página de folha/relatórios DP
+    { icon: FileText, label: 'Gerar Relatório', onClick: () => router.push('/modulos/dp/folha') },
   ];
 
   return (
