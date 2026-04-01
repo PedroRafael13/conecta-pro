@@ -155,7 +155,7 @@ export function MaintenanceFormModal({
             value={formData.equipment_name}
             onChange={handleChange}
             placeholder="Nome do equipamento"
-          />
+           aria-label="Nome do equipamento" />
         </div>
 
         {/* Tipo e Prioridade */}
@@ -206,7 +206,7 @@ export function MaintenanceFormModal({
               value={formData.technician_name}
               onChange={handleChange}
               placeholder="Nome do técnico"
-            />
+             aria-label="Nome do técnico" />
           </div>
 
           <div className="space-y-2">
@@ -217,7 +217,7 @@ export function MaintenanceFormModal({
               type="date"
               value={formData.scheduled_date}
               onChange={handleChange}
-            />
+             aria-label="Scheduled Date" />
           </div>
         </div>
 
@@ -231,7 +231,7 @@ export function MaintenanceFormModal({
             onChange={handleChange}
             placeholder="Descreva a manutenção a ser realizada..."
             rows={3}
-          />
+           aria-label="Descreva a manutenção a ser realizada..." />
         </div>
 
         {/* Observações */}
@@ -244,7 +244,7 @@ export function MaintenanceFormModal({
             onChange={handleChange}
             placeholder="Observações adicionais..."
             rows={3}
-          />
+           aria-label="Observações adicionais..." />
         </div>
 
         <ModalFooter>

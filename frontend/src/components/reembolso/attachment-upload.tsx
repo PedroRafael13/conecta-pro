@@ -146,7 +146,7 @@ export function AttachmentUpload({
           onChange={handleChange}
           disabled={disabled || isUploading}
           className="hidden"
-        />
+         aria-label="File" />
 
         {selectedFile ? (
           <div className="flex items-center justify-center gap-3">

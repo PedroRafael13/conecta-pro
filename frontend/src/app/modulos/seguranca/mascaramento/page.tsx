@@ -338,7 +338,7 @@ export default function MascaramentoPage() {
                 placeholder="Os resultados mascarados aparecerao aqui..."
                 rows={8}
                 className="font-mono text-sm"
-              />
+               aria-label="Os resultados mascarados aparecerao aqui..." />
             </div>
           </div>
         </CardContent>

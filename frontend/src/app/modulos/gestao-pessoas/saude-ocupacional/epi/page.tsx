@@ -254,7 +254,7 @@ export default function EPIPage() {
                     className="pl-10"
                   />
                 </div>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter} aria-label="Category Filter">
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Categoria" />
                   </SelectTrigger>

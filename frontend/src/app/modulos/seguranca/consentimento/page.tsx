@@ -307,7 +307,7 @@ export default function ConsentimentoPage() {
 
             {/* Status filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus} aria-label="Selected Status">
                 <SelectTrigger>
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
