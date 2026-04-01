@@ -3,22 +3,19 @@ DataRetention Model - Políticas de Retenção de Dados
 Sprint 33: Auditoria e Compliance
 """
 
-import enum
 from datetime import datetime, timedelta
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class RetentionPeriod(str, enum.Enum):
+class RetentionPeriod(StrEnum):
     """Período de retenção."""
+
     DAYS_30 = "30_days"
     DAYS_90 = "90_days"
     DAYS_180 = "180_days"
@@ -32,8 +29,9 @@ class RetentionPeriod(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class RetentionAction(str, enum.Enum):
+class RetentionAction(StrEnum):
     """Ação ao expirar."""
+
     DELETE = "delete"
     ARCHIVE = "archive"
     ANONYMIZE = "anonymize"
@@ -41,16 +39,18 @@ class RetentionAction(str, enum.Enum):
     NOTIFY = "notify"
 
 
-class RetentionStatus(str, enum.Enum):
+class RetentionStatus(StrEnum):
     """Status da política."""
+
     DRAFT = "draft"
     ACTIVE = "active"
     PAUSED = "paused"
     DEPRECATED = "deprecated"
 
 
-class DataCategory(str, enum.Enum):
+class DataCategory(StrEnum):
     """Categoria de dados."""
+
     PERSONAL = "personal"
     SENSITIVE = "sensitive"
     FINANCIAL = "financial"
@@ -69,6 +69,7 @@ class DataRetention(Base):
     Model para políticas de retenção de dados.
     Define quanto tempo os dados são mantidos e o que fazer após expiração.
     """
+
     __tablename__ = "data_retention_policies"
 
     # Primary key
@@ -90,9 +91,7 @@ class DataRetention(Base):
     grace_period_days = Column(Integer, nullable=True, default=30)
 
     # Ação ao expirar
-    expiration_action = Column(
-        Enum(RetentionAction), nullable=False, default=RetentionAction.DELETE
-    )
+    expiration_action = Column(Enum(RetentionAction), nullable=False, default=RetentionAction.DELETE)
     secondary_action = Column(Enum(RetentionAction), nullable=True)
     action_delay_days = Column(Integer, nullable=True, default=0)
 
@@ -169,9 +168,7 @@ class DataRetention(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -189,7 +186,7 @@ class DataRetention(Base):
     def __repr__(self) -> str:
         return f"<DataRetention {self.code} ({self.retention_period.value})>"
 
-    def get_retention_days(self) -> Optional[int]:
+    def get_retention_days(self) -> int | None:
         """Retorna dias de retenção."""
         if self.retention_days:
             return self.retention_days
@@ -216,14 +213,14 @@ class DataRetention(Base):
             self.effective_from = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
-    def pause(self, reason: Optional[str] = None) -> None:
+    def pause(self, reason: str | None = None) -> None:
         """Pausa a política."""
         self.status = RetentionStatus.PAUSED
         if reason:
             self.notes = f"Pausada: {reason}"
         self.updated_at = datetime.utcnow()
 
-    def deprecate(self, replacement_code: Optional[str] = None) -> None:
+    def deprecate(self, replacement_code: str | None = None) -> None:
         """Deprecia a política."""
         self.status = RetentionStatus.DEPRECATED
         if replacement_code:
@@ -231,7 +228,7 @@ class DataRetention(Base):
             self.metadata["replaced_by"] = replacement_code
         self.updated_at = datetime.utcnow()
 
-    def approve(self, approver_id: str, notes: Optional[str] = None) -> None:
+    def approve(self, approver_id: str, notes: str | None = None) -> None:
         """Aprova a política."""
         self.approved_by = approver_id
         self.approved_at = datetime.utcnow()
@@ -240,12 +237,7 @@ class DataRetention(Base):
         self.updated_at = datetime.utcnow()
 
     def record_execution(
-        self,
-        records_affected: int,
-        deleted: int = 0,
-        archived: int = 0,
-        anonymized: int = 0,
-        storage_freed: int = 0
+        self, records_affected: int, deleted: int = 0, archived: int = 0, anonymized: int = 0, storage_freed: int = 0
     ) -> None:
         """Registra execução."""
         self.total_executions += 1

@@ -2,21 +2,23 @@
 """
 Script de diagnóstico para identificar imports problemáticos.
 """
-import sys
+
 import time
+
 
 def test_import(name, import_statement):
     """Testa um import específico."""
     print(f"Testing: {name}...", end=" ", flush=True)
     start = time.time()
     try:
-        exec(import_statement)
+        exec(import_statement)  # noqa: S102
         duration = time.time() - start
         print(f"OK ({duration:.2f}s)")
         return True, duration
     except Exception as e:
         print(f"FAILED: {e}")
         return False, 0
+
 
 # Lista de imports a testar (na ordem do main.py e api/v1)
 imports = [

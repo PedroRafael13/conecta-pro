@@ -1,19 +1,18 @@
 """Repository para documentos do funcionário."""
 
 import logging
-import random
+import random  # noqa: S311
 import string
-from datetime import datetime, date, timedelta
-from typing import Optional, List, Tuple
+from datetime import date, datetime, timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, func, and_, or_, desc
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.employee_portal.models import (
-    EmployeeDocument,
-    DocumentType,
     DocumentStatus,
+    DocumentType,
+    EmployeeDocument,
 )
 from modules.hr.employee_portal.schemas import DocumentCreate, DocumentUpdate
 
@@ -31,7 +30,7 @@ class DocumentRepository:
         data: DocumentCreate,
         condominio_id: UUID,
         *,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> EmployeeDocument:
         """Cria novo documento."""
         document = EmployeeDocument(
@@ -76,21 +75,17 @@ class DocumentRepository:
 
     def _generate_code(self) -> str:
         """Gera código único do documento."""
-        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
+        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))  # noqa: S311
         return f"DOC{suffix}"
 
-    async def get_by_id(self, document_id: UUID) -> Optional[EmployeeDocument]:
+    async def get_by_id(self, document_id: UUID) -> EmployeeDocument | None:
         """Busca documento por ID."""
-        result = await self.db.execute(
-            select(EmployeeDocument).where(EmployeeDocument.id == document_id)
-        )
+        result = await self.db.execute(select(EmployeeDocument).where(EmployeeDocument.id == document_id))
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[EmployeeDocument]:
+    async def get_by_code(self, code: str) -> EmployeeDocument | None:
         """Busca documento por código."""
-        result = await self.db.execute(
-            select(EmployeeDocument).where(EmployeeDocument.document_code == code)
-        )
+        result = await self.db.execute(select(EmployeeDocument).where(EmployeeDocument.document_code == code))
         return result.scalar_one_or_none()
 
     async def list_by_employee(
@@ -99,25 +94,25 @@ class DocumentRepository:
         *,
         page: int = 1,
         page_size: int = 20,
-        document_type: Optional[DocumentType] = None,
-        category: Optional[str] = None,
+        document_type: DocumentType | None = None,
+        category: str | None = None,
         only_visible: bool = True,
         only_pending_ack: bool = False,
         only_pending_signature: bool = False,
-        search: Optional[str] = None,
-    ) -> Tuple[List[EmployeeDocument], int]:
+        search: str | None = None,
+    ) -> tuple[list[EmployeeDocument], int]:
         """Lista documentos do funcionário."""
-        query = select(EmployeeDocument).where(
-            EmployeeDocument.employee_id == employee_id
-        )
+        query = select(EmployeeDocument).where(EmployeeDocument.employee_id == employee_id)
 
         if only_visible:
             query = query.where(EmployeeDocument.is_visible.is_(True))
             query = query.where(
-                EmployeeDocument.status.in_([
-                    DocumentStatus.PUBLISHED.value,
-                    DocumentStatus.ACKNOWLEDGED.value,
-                ])
+                EmployeeDocument.status.in_(
+                    [
+                        DocumentStatus.PUBLISHED.value,
+                        DocumentStatus.ACKNOWLEDGED.value,
+                    ]
+                )
             )
 
         if document_type:
@@ -151,9 +146,7 @@ class DocumentRepository:
             )
 
         # Total
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar() or 0
 
         # Paginação
@@ -167,7 +160,7 @@ class DocumentRepository:
         self,
         document_id: UUID,
         data: DocumentUpdate,
-    ) -> Optional[EmployeeDocument]:
+    ) -> EmployeeDocument | None:
         """Atualiza documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -189,9 +182,9 @@ class DocumentRepository:
         self,
         document_id: UUID,
         *,
-        published_by: Optional[UUID] = None,
+        published_by: UUID | None = None,
         send_notification: bool = True,
-    ) -> Optional[EmployeeDocument]:
+    ) -> EmployeeDocument | None:
         """Publica documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -211,7 +204,7 @@ class DocumentRepository:
         logger.info("Documento %s publicado", document_id)
         return document
 
-    async def record_view(self, document_id: UUID) -> Optional[EmployeeDocument]:
+    async def record_view(self, document_id: UUID) -> EmployeeDocument | None:
         """Registra visualização do documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -223,7 +216,7 @@ class DocumentRepository:
 
         return document
 
-    async def record_download(self, document_id: UUID) -> Optional[EmployeeDocument]:
+    async def record_download(self, document_id: UUID) -> EmployeeDocument | None:
         """Registra download do documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -239,9 +232,9 @@ class DocumentRepository:
         self,
         document_id: UUID,
         *,
-        ip_address: Optional[str] = None,
-        device_info: Optional[str] = None,
-    ) -> Optional[EmployeeDocument]:
+        ip_address: str | None = None,
+        device_info: str | None = None,
+    ) -> EmployeeDocument | None:
         """Registra ciência do documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -267,8 +260,8 @@ class DocumentRepository:
         signature_hash: str,
         *,
         signed_by: UUID,
-        certificate: Optional[str] = None,
-    ) -> Optional[EmployeeDocument]:
+        certificate: str | None = None,
+    ) -> EmployeeDocument | None:
         """Assina documento digitalmente."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -293,8 +286,8 @@ class DocumentRepository:
         self,
         document_id: UUID,
         *,
-        archived_by: Optional[UUID] = None,
-    ) -> Optional[EmployeeDocument]:
+        archived_by: UUID | None = None,
+    ) -> EmployeeDocument | None:
         """Arquiva documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -352,7 +345,7 @@ class DocumentRepository:
     async def get_expiring_documents(
         self,
         days_ahead: int = 30,
-    ) -> List[EmployeeDocument]:
+    ) -> list[EmployeeDocument]:
         """Busca documentos prestes a expirar."""
         target_date = date.today() + timedelta(days_ahead)  # noqa: E501
         result = await self.db.execute(

@@ -5,26 +5,18 @@ Implementa executores para cada tipo de acao.
 """
 
 import asyncio
+import json
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Type
-import aiohttp
-import json
+from typing import Any
 
 from modules._deprecated_workflows_dataclass.models.action import (
     Action,
-    ActionConfig,
     ActionResult,
     ActionStatus,
     ActionType,
-    DataOperationConfig,
-    EmailConfig,
-    HTTPConfig,
-    TaskConfig,
-    WhatsAppConfig,
 )
-from modules._deprecated_workflows_dataclass.models.execution import ExecutionLog, LogLevel
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +28,7 @@ class BaseActionHandler(ABC):
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """Executa acao."""
         pass
@@ -44,7 +36,7 @@ class BaseActionHandler(ABC):
     def render_template(
         self,
         template: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> str:
         """Renderiza template com contexto."""
         if not template:
@@ -75,7 +67,7 @@ class SendEmailHandler(BaseActionHandler):
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """Envia email."""
         result = ActionResult(
@@ -92,8 +84,8 @@ class SendEmailHandler(BaseActionHandler):
         try:
             # Renderiza templates
             subject = self.render_template(config.subject, context)
-            body = self.render_template(config.body, context)
-            body_html = self.render_template(config.body_html, context)
+            self.render_template(config.body, context)
+            self.render_template(config.body_html, context)
 
             # Processa destinatarios
             to = [self.render_template(t, context) for t in config.to]
@@ -117,9 +109,7 @@ class SendEmailHandler(BaseActionHandler):
             logger.error(f"Erro ao enviar email: {e}")
 
         result.completed_at = datetime.utcnow()
-        result.execution_time_ms = (
-            result.completed_at - result.started_at
-        ).total_seconds() * 1000
+        result.execution_time_ms = (result.completed_at - result.started_at).total_seconds() * 1000
 
         return result
 
@@ -130,7 +120,7 @@ class SendWhatsAppHandler(BaseActionHandler):
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """Envia mensagem WhatsApp."""
         result = ActionResult(
@@ -149,10 +139,7 @@ class SendWhatsAppHandler(BaseActionHandler):
             message = self.render_template(config.message, context)
 
             # Processa telefones
-            phones = [
-                self.render_template(p, context)
-                for p in config.phone_numbers
-            ]
+            phones = [self.render_template(p, context) for p in config.phone_numbers]
 
             # Simula envio (integrar com Evolution API ou similar)
             # await whatsapp_service.send(phones, message)
@@ -173,9 +160,7 @@ class SendWhatsAppHandler(BaseActionHandler):
             logger.error(f"Erro ao enviar WhatsApp: {e}")
 
         result.completed_at = datetime.utcnow()
-        result.execution_time_ms = (
-            result.completed_at - result.started_at
-        ).total_seconds() * 1000
+        result.execution_time_ms = (result.completed_at - result.started_at).total_seconds() * 1000
 
         return result
 
@@ -186,7 +171,7 @@ class HTTPRequestHandler(BaseActionHandler):
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """Executa requisicao HTTP."""
         result = ActionResult(
@@ -204,47 +189,37 @@ class HTTPRequestHandler(BaseActionHandler):
             # Renderiza URL e headers
             url = self.render_template(config.url, context)
 
-            headers = {
-                k: self.render_template(v, context)
-                for k, v in config.headers.items()
-            }
+            headers = {k: self.render_template(v, context) for k, v in config.headers.items()}
 
             # Renderiza body
             body = None
             if config.body:
-                body = json.dumps(
-                    self._render_dict(config.body, context)
-                )
+                body = json.dumps(self._render_dict(config.body, context))
                 headers.setdefault("Content-Type", "application/json")
 
             # Query params
-            params = {
-                k: self.render_template(v, context)
-                for k, v in config.query_params.items()
-            }
+            params = {k: self.render_template(v, context) for k, v in config.query_params.items()}
 
             # Autenticacao
             auth = None
             if config.auth_type == "basic":
                 import aiohttp
+
                 auth = aiohttp.BasicAuth(
                     config.auth_credentials.get("username", ""),
                     config.auth_credentials.get("password", ""),
                 )
             elif config.auth_type == "bearer":
-                headers["Authorization"] = (
-                    f"Bearer {config.auth_credentials.get('token', '')}"
-                )
+                headers["Authorization"] = f"Bearer {config.auth_credentials.get('token', '')}"
             elif config.auth_type == "api_key":
-                headers[config.auth_credentials.get("header", "X-API-Key")] = (
-                    config.auth_credentials.get("key", "")
-                )
+                headers[config.auth_credentials.get("header", "X-API-Key")] = config.auth_credentials.get("key", "")
 
             # Executa requisicao
             timeout = aiohttp.ClientTimeout(total=action.config.timeout_seconds)
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.request(
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.request(
                     method=config.method,
                     url=url,
                     headers=headers,
@@ -253,30 +228,31 @@ class HTTPRequestHandler(BaseActionHandler):
                     auth=auth,
                     ssl=config.validate_ssl,
                     allow_redirects=config.follow_redirects,
-                ) as response:
-                    response_text = await response.text()
+                ) as response,
+            ):
+                response_text = await response.text()
 
-                    try:
-                        response_data = json.loads(response_text)
-                    except json.JSONDecodeError:
-                        response_data = {"raw": response_text}
+                try:
+                    response_data = json.loads(response_text)
+                except json.JSONDecodeError:
+                    response_data = {"raw": response_text}
 
-                    result.output = {
-                        "status_code": response.status,
-                        "headers": dict(response.headers),
-                        "body": response_data,
-                    }
+                result.output = {
+                    "status_code": response.status,
+                    "headers": dict(response.headers),
+                    "body": response_data,
+                }
 
-                    if 200 <= response.status < 300:
-                        result.status = ActionStatus.COMPLETED
-                        result.success = True
-                    else:
-                        result.status = ActionStatus.FAILED
-                        result.error = f"HTTP {response.status}"
+                if 200 <= response.status < 300:
+                    result.status = ActionStatus.COMPLETED
+                    result.success = True
+                else:
+                    result.status = ActionStatus.FAILED
+                    result.error = f"HTTP {response.status}"
 
             logger.info(f"HTTP {config.method} {url}: {result.output.get('status_code')}")
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             result.status = ActionStatus.FAILED
             result.error = "Timeout na requisicao"
             logger.error(f"Timeout ao executar HTTP: {config.url}")
@@ -287,17 +263,15 @@ class HTTPRequestHandler(BaseActionHandler):
             logger.error(f"Erro ao executar HTTP: {e}")
 
         result.completed_at = datetime.utcnow()
-        result.execution_time_ms = (
-            result.completed_at - result.started_at
-        ).total_seconds() * 1000
+        result.execution_time_ms = (result.completed_at - result.started_at).total_seconds() * 1000
 
         return result
 
     def _render_dict(
         self,
-        data: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Renderiza dicionario com variaveis."""
         result = {}
         for key, value in data.items():
@@ -306,10 +280,7 @@ class HTTPRequestHandler(BaseActionHandler):
             elif isinstance(value, dict):
                 result[key] = self._render_dict(value, context)
             elif isinstance(value, list):
-                result[key] = [
-                    self.render_template(v, context) if isinstance(v, str) else v
-                    for v in value
-                ]
+                result[key] = [self.render_template(v, context) if isinstance(v, str) else v for v in value]
             else:
                 result[key] = value
         return result
@@ -321,7 +292,7 @@ class CreateTaskHandler(BaseActionHandler):
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """Cria tarefa."""
         result = ActionResult(
@@ -338,11 +309,12 @@ class CreateTaskHandler(BaseActionHandler):
         try:
             # Renderiza campos
             title = self.render_template(config.title, context)
-            description = self.render_template(config.description, context)
+            self.render_template(config.description, context)
             assignee_id = self.render_template(config.assignee_id, context)
 
             # Simula criacao (integrar com servico real)
             import uuid
+
             task_id = str(uuid.uuid4())
 
             result.status = ActionStatus.COMPLETED
@@ -362,9 +334,7 @@ class CreateTaskHandler(BaseActionHandler):
             logger.error(f"Erro ao criar tarefa: {e}")
 
         result.completed_at = datetime.utcnow()
-        result.execution_time_ms = (
-            result.completed_at - result.started_at
-        ).total_seconds() * 1000
+        result.execution_time_ms = (result.completed_at - result.started_at).total_seconds() * 1000
 
         return result
 
@@ -375,7 +345,7 @@ class SetVariableHandler(BaseActionHandler):
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """Define variavel no contexto."""
         result = ActionResult(
@@ -410,7 +380,7 @@ class LogMessageHandler(BaseActionHandler):
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """Registra log."""
         result = ActionResult(
@@ -440,7 +410,7 @@ class DelayHandler(BaseActionHandler):
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """Aguarda periodo especificado."""
         result = ActionResult(
@@ -468,9 +438,7 @@ class DelayHandler(BaseActionHandler):
             result.error = str(e)
 
         result.completed_at = datetime.utcnow()
-        result.execution_time_ms = (
-            result.completed_at - result.started_at
-        ).total_seconds() * 1000
+        result.execution_time_ms = (result.completed_at - result.started_at).total_seconds() * 1000
 
         return result
 
@@ -483,7 +451,7 @@ class ActionExecutor:
     """
 
     def __init__(self):
-        self._handlers: Dict[ActionType, BaseActionHandler] = {
+        self._handlers: dict[ActionType, BaseActionHandler] = {
             ActionType.SEND_EMAIL: SendEmailHandler(),
             ActionType.SEND_WHATSAPP: SendWhatsAppHandler(),
             ActionType.HTTP_REQUEST: HTTPRequestHandler(),
@@ -505,7 +473,7 @@ class ActionExecutor:
     async def execute(
         self,
         action: Action,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> ActionResult:
         """
         Executa acao.
@@ -556,7 +524,7 @@ class ActionExecutor:
                     result.retry_count = attempt + 1
                     await asyncio.sleep(action.config.retry_delay_seconds)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 result.status = ActionStatus.FAILED
                 result.error = "Timeout na execucao"
                 result.retry_count = attempt
@@ -579,10 +547,10 @@ class ActionExecutor:
 
     async def execute_batch(
         self,
-        actions: List[Action],
-        context: Dict[str, Any],
+        actions: list[Action],
+        context: dict[str, Any],
         parallel: bool = False,
-    ) -> List[ActionResult]:
+    ) -> list[ActionResult]:
         """
         Executa lista de acoes.
 
@@ -595,10 +563,7 @@ class ActionExecutor:
             Lista de resultados
         """
         if parallel:
-            tasks = [
-                self.execute(action, context.copy())
-                for action in actions
-            ]
+            tasks = [self.execute(action, context.copy()) for action in actions]
             return await asyncio.gather(*tasks)
 
         results = []
@@ -615,8 +580,8 @@ class ActionExecutor:
     def _prepare_context(
         self,
         action: Action,
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Prepara contexto para execucao."""
         exec_context = context.copy()
 
@@ -629,7 +594,7 @@ class ActionExecutor:
 
         return exec_context
 
-    def _get_value_by_path(self, data: Dict[str, Any], path: str) -> Any:
+    def _get_value_by_path(self, data: dict[str, Any], path: str) -> Any:
         """Obtem valor por path."""
         if not path:
             return None

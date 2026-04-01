@@ -6,7 +6,7 @@ Sprint 36 - Notification Hub.
 import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -15,7 +15,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class QueueStatus(str, enum.Enum):
+class QueueStatus(StrEnum):
     """Status do item na fila."""
 
     PENDING = "pending"

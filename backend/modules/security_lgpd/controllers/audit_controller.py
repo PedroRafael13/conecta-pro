@@ -4,16 +4,15 @@ Controller de Auditoria LGPD.
 
 import logging
 from datetime import datetime
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from core.auth.dependencies import get_current_user
 from modules.security_lgpd.schemas.audit import AuditLogRequest
 from modules.security_lgpd.schemas.common import StandardResponse
 from modules.security_lgpd.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/audit", tags=["LGPD - Auditoria"])
 
 
@@ -24,13 +23,13 @@ router = APIRouter(prefix="/audit", tags=["LGPD - Auditoria"])
     summary="Registra evento de auditoria",
     description="Registra evento na trilha de auditoria com hash chain.",
 )
-async def create_audit_log(request: AuditLogRequest) -> StandardResponse:
+async def create_audit_log(
+    request: AuditLogRequest, current_user: dict = Depends(get_current_user)
+) -> StandardResponse:
     """
     Registra evento de auditoria.
-
     Args:
         request: Dados do evento.
-
     Returns:
         StandardResponse: Confirmacao do registro.
     """
@@ -44,13 +43,11 @@ async def create_audit_log(request: AuditLogRequest) -> StandardResponse:
             details=request.details,
             severity=request.severity,
         )
-
         return StandardResponse(
             success=True,
             message="Evento registrado na trilha de auditoria",
             data=result,
         )
-
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -72,16 +69,16 @@ async def create_audit_log(request: AuditLogRequest) -> StandardResponse:
     description="Retorna eventos de auditoria com filtros.",
 )
 async def list_audit_logs(
-    resource_type: Optional[str] = Query(None, description="Tipo de recurso"),
-    user_id: Optional[str] = Query(None, description="ID do usuario"),
-    start_date: Optional[datetime] = Query(None, description="Data inicial"),
-    end_date: Optional[datetime] = Query(None, description="Data final"),
+    resource_type: str | None = Query(None, description="Tipo de recurso"),
+    user_id: str | None = Query(None, description="ID do usuario"),
+    start_date: datetime | None = Query(None, description="Data inicial"),
+    end_date: datetime | None = Query(None, description="Data final"),
     limit: int = Query(100, ge=1, le=1000, description="Limite de resultados"),
     offset: int = Query(0, ge=0, description="Offset para paginacao"),
+    current_user: dict = Depends(get_current_user),
 ) -> StandardResponse:
     """
     Lista eventos de auditoria.
-
     Args:
         resource_type: Filtro por tipo de recurso.
         user_id: Filtro por usuario.
@@ -89,27 +86,37 @@ async def list_audit_logs(
         end_date: Data final.
         limit: Limite de resultados.
         offset: Offset para paginacao.
-
     Returns:
         StandardResponse: Lista de eventos.
     """
     try:
+        from modules.security_lgpd.services.audit_service import ResourceType as AuditResourceType
+
         service = AuditService()
-        result = service.query_logs(
-            resource_type=resource_type,
-            user_id=user_id,
+        rt = (
+            AuditResourceType(resource_type)
+            if resource_type and resource_type in [r.value for r in AuditResourceType]
+            else None
+        )
+        entries = await service.query(
             start_date=start_date,
             end_date=end_date,
+            user_id=user_id,
+            resource_type=rt,
             limit=limit,
             offset=offset,
         )
-
+        result = {
+            "logs": [e.to_dict() for e in entries],
+            "total": len(entries),
+            "limit": limit,
+            "offset": offset,
+        }
         return StandardResponse(
             success=True,
             message=f"Encontrados {result['total']} eventos",
             data=result,
         )
-
     except Exception as e:
         logger.error("Erro ao listar auditoria: %s", str(e))
         raise HTTPException(
@@ -118,6 +125,7 @@ async def list_audit_logs(
         )
 
 
+@router.get("/actions", include_in_schema=False)
 @router.get(
     "/actions/list",
     response_model=StandardResponse,
@@ -125,16 +133,14 @@ async def list_audit_logs(
     summary="Lista acoes de auditoria",
     description="Retorna acoes de auditoria disponiveis.",
 )
-async def list_actions() -> StandardResponse:
+async def list_actions(current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Lista acoes de auditoria disponiveis.
-
     Returns:
         StandardResponse: Lista de acoes.
     """
     service = AuditService()
     actions = service.get_actions()
-
     return StandardResponse(
         success=True,
         message="Acoes de auditoria disponiveis",
@@ -142,6 +148,7 @@ async def list_actions() -> StandardResponse:
     )
 
 
+@router.get("/resource-types", include_in_schema=False)
 @router.get(
     "/resource-types/list",
     response_model=StandardResponse,
@@ -149,16 +156,14 @@ async def list_actions() -> StandardResponse:
     summary="Lista tipos de recurso",
     description="Retorna tipos de recurso auditados.",
 )
-async def list_resource_types() -> StandardResponse:
+async def list_resource_types(current_user: dict = Depends(get_current_user)) -> StandardResponse:
     """
     Lista tipos de recurso auditados.
-
     Returns:
         StandardResponse: Lista de tipos de recurso.
     """
     service = AuditService()
     types = service.get_resource_types()
-
     return StandardResponse(
         success=True,
         message="Tipos de recurso disponiveis",

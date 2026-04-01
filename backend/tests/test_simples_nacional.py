@@ -4,30 +4,31 @@ Testes para Simples Nacional.
 Testes unitários e de integração para Simples Nacional.
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
 from unittest.mock import Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.simples_nacional import (
+    DAS,
+    PGDASD,
+    AnexoSimples,
+    ReceitaCompetencia,
+    SimplesNacionalManager,
+    TipoReceita,
+)
 from modules.government_integrations.schemas.simples_nacional import (
-    SimularCalculoRequest,
+    AnexoSimplesEnum,
+    CalcularFatorRRequest,
     CalcularPGDASDRequest,
     GerarDASRequest,
     ReceitaRequest,
-    CalcularFatorRRequest,
-    AnexoSimplesEnum,
+    SimularCalculoRequest,
     TipoReceitaEnum,
 )
 from modules.government_integrations.services.simples_nacional_service import (
     SimplesNacionalService,
-)
-from modules.government_integrations.core.simples_nacional import (
-    SimplesNacionalManager,
-    PGDASD,
-    DAS,
-    ReceitaCompetencia,
-    AnexoSimples,
-    TipoReceita,
 )
 
 
@@ -58,9 +59,7 @@ class TestSchemas:
         """Testa request de PGDAS-D válido."""
         request = CalcularPGDASDRequest(
             competencia="2026-01",
-            receitas=[
-                ReceitaRequest(valor_bruto=Decimal("50000.00"))
-            ],
+            receitas=[ReceitaRequest(valor_bruto=Decimal("50000.00"))],
             rbt12=Decimal("600000.00"),
         )
         assert request.competencia == "2026-01"
@@ -70,9 +69,7 @@ class TestSchemas:
         """Testa request de DAS válido."""
         request = GerarDASRequest(
             competencia="2026-01",
-            receitas=[
-                ReceitaRequest(valor_bruto=Decimal("50000.00"))
-            ],
+            receitas=[ReceitaRequest(valor_bruto=Decimal("50000.00"))],
             rbt12=Decimal("600000.00"),
             data_vencimento="2026-02-20",
         )
@@ -225,11 +222,14 @@ class TestSimplesNacionalService:
     @pytest.fixture
     def service(self):
         """Cria instância do service."""
-        with patch.dict('os.environ', {
-            'SIMPLES_CNPJ': '35710481000103',
-            'EMPRESA_RAZAO_SOCIAL': 'Empresa Teste',
-            'SIMPLES_ANEXO': 'III',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "SIMPLES_CNPJ": "35710481000103",
+                "EMPRESA_RAZAO_SOCIAL": "Empresa Teste",
+                "SIMPLES_ANEXO": "III",
+            },
+        ):
             return SimplesNacionalService()
 
     def test_service_init(self, service):
@@ -276,9 +276,7 @@ class TestSimplesNacionalService:
 
     def test_gerar_das(self, service):
         """Testa geração de DAS via service."""
-        receitas = [
-            {"valor_bruto": "50000.00", "tipo_receita": "servicos"}
-        ]
+        receitas = [{"valor_bruto": "50000.00", "tipo_receita": "servicos"}]
 
         resultado = service.gerar_das(
             competencia="2026-01",
@@ -335,12 +333,13 @@ class TestSimplesNacionalEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.simples_nacional_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -381,16 +380,9 @@ class TestSimplesNacionalEndpoints:
 
     def test_simular_calculo_endpoint(self, client):
         """Testa endpoint de simulação."""
-        payload = {
-            "receita_mensal": "50000.00",
-            "rbt12": "600000.00",
-            "folha_12_meses": "180000.00"
-        }
+        payload = {"receita_mensal": "50000.00", "rbt12": "600000.00", "folha_12_meses": "180000.00"}
 
-        response = client.post(
-            "/api/v1/government/simples-nacional/simular",
-            json=payload
-        )
+        response = client.post("/api/v1/government/simples-nacional/simular", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -399,15 +391,9 @@ class TestSimplesNacionalEndpoints:
 
     def test_fator_r_endpoint(self, client):
         """Testa endpoint de Fator R."""
-        payload = {
-            "folha_12_meses": "180000.00",
-            "rbt12": "600000.00"
-        }
+        payload = {"folha_12_meses": "180000.00", "rbt12": "600000.00"}
 
-        response = client.post(
-            "/api/v1/government/simples-nacional/fator-r",
-            json=payload
-        )
+        response = client.post("/api/v1/government/simples-nacional/fator-r", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -418,16 +404,11 @@ class TestSimplesNacionalEndpoints:
         """Testa endpoint de PGDAS-D."""
         payload = {
             "competencia": "2026-01",
-            "receitas": [
-                {"valor_bruto": "50000.00", "tipo_receita": "servicos"}
-            ],
-            "rbt12": "600000.00"
+            "receitas": [{"valor_bruto": "50000.00", "tipo_receita": "servicos"}],
+            "rbt12": "600000.00",
         }
 
-        response = client.post(
-            "/api/v1/government/simples-nacional/pgdasd",
-            json=payload
-        )
+        response = client.post("/api/v1/government/simples-nacional/pgdasd", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -437,16 +418,11 @@ class TestSimplesNacionalEndpoints:
         """Testa endpoint de DAS."""
         payload = {
             "competencia": "2026-01",
-            "receitas": [
-                {"valor_bruto": "50000.00", "tipo_receita": "servicos"}
-            ],
-            "rbt12": "600000.00"
+            "receitas": [{"valor_bruto": "50000.00", "tipo_receita": "servicos"}],
+            "rbt12": "600000.00",
         }
 
-        response = client.post(
-            "/api/v1/government/simples-nacional/das",
-            json=payload
-        )
+        response = client.post("/api/v1/government/simples-nacional/das", json=payload)
 
         assert response.status_code == 201
         data = response.json()

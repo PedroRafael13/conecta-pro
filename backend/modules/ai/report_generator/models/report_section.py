@@ -6,19 +6,21 @@ Define seções/blocos que compõem um relatório.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -26,7 +28,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class SectionTypeEnum(str, Enum):
+class SectionTypeEnum(StrEnum):
     """Tipos de seção."""
 
     # Estruturais
@@ -70,7 +72,7 @@ class SectionTypeEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class SectionLayoutEnum(str, Enum):
+class SectionLayoutEnum(StrEnum):
     """Layout da seção."""
 
     FULL_WIDTH = "full_width"
@@ -87,7 +89,7 @@ class ReportSection(Base):
     __tablename__ = "ai_report_sections"
 
     # Identificação
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)  # noqa: A003
     code = Column(String(100), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -101,14 +103,10 @@ class ReportSection(Base):
 
     # Tipo e layout
     section_type = Column(
-        SQLEnum(SectionTypeEnum, name="section_type_enum"),
-        nullable=False,
-        default=SectionTypeEnum.TEXT
+        SQLEnum(SectionTypeEnum, name="section_type_enum"), nullable=False, default=SectionTypeEnum.TEXT
     )
     layout = Column(
-        SQLEnum(SectionLayoutEnum, name="section_layout_enum"),
-        nullable=False,
-        default=SectionLayoutEnum.FULL_WIDTH
+        SQLEnum(SectionLayoutEnum, name="section_layout_enum"), nullable=False, default=SectionLayoutEnum.FULL_WIDTH
     )
 
     # Ordenação
@@ -202,9 +200,9 @@ class ReportSection(Base):
     children = relationship(
         "ReportSection",
         backref="parent",
-        remote_side=[id],
+        remote_side=[id],  # noqa: A003
         cascade="all, delete-orphan",
-        single_parent=True
+        single_parent=True,
     )
 
     def __repr__(self) -> str:
@@ -229,12 +227,7 @@ class ReportSection(Base):
         """Número de seções filhas."""
         return len(self.children) if self.children else 0
 
-    def set_chart_data(
-        self,
-        chart_type: str,
-        data: Dict[str, Any],
-        config: Dict[str, Any] = None
-    ) -> None:
+    def set_chart_data(self, chart_type: str, data: dict[str, Any], config: dict[str, Any] = None) -> None:
         """Configura dados do gráfico."""
         self.section_type = SectionTypeEnum.CHART
         self.chart_type = chart_type
@@ -243,10 +236,7 @@ class ReportSection(Base):
             self.chart_config = config
 
     def set_table_data(
-        self,
-        columns: List[Dict[str, Any]],
-        data: List[Dict[str, Any]],
-        config: Dict[str, Any] = None
+        self, columns: list[dict[str, Any]], data: list[dict[str, Any]], config: dict[str, Any] = None
     ) -> None:
         """Configura dados da tabela."""
         self.section_type = SectionTypeEnum.TABLE
@@ -263,7 +253,7 @@ class ReportSection(Base):
         trend: str = None,
         change: float = None,
         target: float = None,
-        format_str: str = None
+        format_str: str = None,
     ) -> None:
         """Configura métrica/KPI."""
         self.section_type = SectionTypeEnum.METRIC
@@ -275,13 +265,7 @@ class ReportSection(Base):
         self.metric_target = target
         self.metric_format = format_str
 
-    def set_insight(
-        self,
-        insight_type: str,
-        content: str,
-        severity: str = "info",
-        data: Dict[str, Any] = None
-    ) -> None:
+    def set_insight(self, insight_type: str, content: str, severity: str = "info", data: dict[str, Any] = None) -> None:
         """Configura insight."""
         self.section_type = SectionTypeEnum.INSIGHT
         self.insight_type = insight_type
@@ -290,7 +274,7 @@ class ReportSection(Base):
         if data:
             self.insight_data = data
 
-    def render_template(self, context: Dict[str, Any]) -> str:
+    def render_template(self, context: dict[str, Any]) -> str:
         """Renderiza template com contexto."""
         if not self.content_template:
             return self.content or ""
@@ -303,18 +287,18 @@ class ReportSection(Base):
         self.rendered_content = rendered
         return rendered
 
-    def evaluate_visibility(self, context: Dict[str, Any]) -> bool:
+    def evaluate_visibility(self, context: dict[str, Any]) -> bool:
         """Avalia condição de visibilidade."""
         if not self.visibility_condition:
             return True
 
         try:
             # Avaliação segura da condição
-            return eval(self.visibility_condition, {"__builtins__": {}}, context)
+            return eval(self.visibility_condition, {"__builtins__": {}}, context)  # noqa: S307  # nosec B307
         except Exception:
             return True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -331,23 +315,25 @@ class ReportSection(Base):
             "children_count": self.children_count,
         }
 
-    def to_render_dict(self) -> Dict[str, Any]:
+    def to_render_dict(self) -> dict[str, Any]:
         """Converte para dicionário de renderização."""
         base = self.to_dict()
-        base.update({
-            "content": self.rendered_content or self.content,
-            "data": self.data,
-            "styles": self.styles,
-            "chart_type": self.chart_type,
-            "chart_config": self.chart_config,
-            "chart_data": self.chart_data,
-            "table_columns": self.table_columns,
-            "table_config": self.table_config,
-            "table_data": self.table_data,
-            "metric_value": self.metric_value,
-            "metric_label": self.metric_label,
-            "metric_unit": self.metric_unit,
-            "metric_trend": self.metric_trend,
-            "metric_change": self.metric_change,
-        })
+        base.update(
+            {
+                "content": self.rendered_content or self.content,
+                "data": self.data,
+                "styles": self.styles,
+                "chart_type": self.chart_type,
+                "chart_config": self.chart_config,
+                "chart_data": self.chart_data,
+                "table_columns": self.table_columns,
+                "table_config": self.table_config,
+                "table_data": self.table_data,
+                "metric_value": self.metric_value,
+                "metric_label": self.metric_label,
+                "metric_unit": self.metric_unit,
+                "metric_trend": self.metric_trend,
+                "metric_change": self.metric_change,
+            }
+        )
         return base

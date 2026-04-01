@@ -173,6 +173,28 @@ describe('Modal', () => {
     const overlay = container.querySelector('.backdrop-blur-sm');
     expect(overlay).toBeInTheDocument();
   });
+
+  it('não deve chamar onClose ao pressionar Escape quando closeOnEscape é false', () => {
+    const handleClose = vi.fn();
+    render(
+      <Modal isOpen={true} onClose={handleClose} closeOnEscape={false}>
+        Conteúdo
+      </Modal>
+    );
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(handleClose).not.toHaveBeenCalled();
+  });
+
+  it('deve chamar onClose ao pressionar Escape quando closeOnEscape é true', () => {
+    const handleClose = vi.fn();
+    render(
+      <Modal isOpen={true} onClose={handleClose} closeOnEscape={true}>
+        Conteúdo
+      </Modal>
+    );
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(handleClose).toHaveBeenCalled();
+  });
 });
 
 describe('ConfirmModal', () => {

@@ -5,11 +5,11 @@ Sprint 36 - Notification Hub.
 
 import logging
 import uuid
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from modules.notifications.models import (
@@ -21,7 +21,6 @@ from modules.notifications.models import (
     NotificationPreference,
     NotificationQueue,
     NotificationTemplate,
-    QueuePriority,
     QueueStatus,
     TemplateStatus,
 )
@@ -50,7 +49,7 @@ class NotificationService:
     def send_notification(
         self,
         request: SendNotificationRequest,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> SendNotificationResponse:
         """Envia notificações para os destinatários.
 
@@ -63,7 +62,7 @@ class NotificationService:
         """
         notification_ids = []
         skipped_count = 0
-        skipped_reasons: Dict[str, int] = {}
+        skipped_reasons: dict[str, int] = {}
 
         # Gerar batch_id se não fornecido
         batch_id = request.batch_id or uuid.uuid4()
@@ -114,10 +113,10 @@ class NotificationService:
         self,
         recipient: RecipientSchema,
         request: SendNotificationRequest,
-        template: Optional[NotificationTemplate],
+        template: NotificationTemplate | None,
         batch_id: UUID,
-        created_by: Optional[UUID],
-    ) -> Dict[str, Any]:
+        created_by: UUID | None,
+    ) -> dict[str, Any]:
         """Processa um destinatário individual.
 
         Args:
@@ -191,8 +190,8 @@ class NotificationService:
         self,
         recipient: RecipientSchema,
         request: SendNotificationRequest,
-        preferences: Optional[NotificationPreference],
-    ) -> List[Tuple[ChannelType, Optional[NotificationChannel]]]:
+        preferences: NotificationPreference | None,
+    ) -> list[tuple[ChannelType, NotificationChannel | None]]:
         """Determina os canais a usar para o envio.
 
         Args:
@@ -257,7 +256,7 @@ class NotificationService:
         self,
         recipient: RecipientSchema,
         channel_type: ChannelType,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Obtém o endereço do destinatário para um canal.
 
         Args:
@@ -282,11 +281,11 @@ class NotificationService:
         self,
         recipient: RecipientSchema,
         request: SendNotificationRequest,
-        template: Optional[NotificationTemplate],
+        template: NotificationTemplate | None,
         channel_type: ChannelType,
-        channel_config: Optional[NotificationChannel],
+        channel_config: NotificationChannel | None,
         batch_id: UUID,
-        created_by: Optional[UUID],
+        created_by: UUID | None,
     ) -> NotificationQueue:
         """Cria um item na fila de notificações.
 
@@ -351,11 +350,11 @@ class NotificationService:
 
     def _render_content(
         self,
-        template: Optional[NotificationTemplate],
+        template: NotificationTemplate | None,
         request: SendNotificationRequest,
         channel_type: ChannelType,
-        variables: Dict[str, Any],
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        variables: dict[str, Any],
+    ) -> tuple[str | None, str | None, str | None]:
         """Renderiza o conteúdo da notificação.
 
         Args:
@@ -397,9 +396,9 @@ class NotificationService:
 
     def _substitute_variables(
         self,
-        content: Optional[str],
-        variables: Dict[str, Any],
-    ) -> Optional[str]:
+        content: str | None,
+        variables: dict[str, Any],
+    ) -> str | None:
         """Substitui variáveis no conteúdo.
 
         Args:
@@ -425,7 +424,7 @@ class NotificationService:
         event_type: LogEventType,
         message: str,
         level: LogLevel = LogLevel.INFO,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> NotificationLog:
         """Cria uma entrada de log.
 
@@ -462,52 +461,52 @@ class NotificationService:
     # Métodos de busca
     # =========================================================================
 
-    def _get_template_by_id(self, template_id: UUID) -> Optional[NotificationTemplate]:
+    def _get_template_by_id(self, template_id: UUID) -> NotificationTemplate | None:
         """Busca template por ID."""
         return (
             self.db.query(NotificationTemplate)
             .filter(
                 NotificationTemplate.tenant_id == self.tenant_id,
                 NotificationTemplate.id == template_id,
-                NotificationTemplate.active == True,
+                NotificationTemplate.active,
                 NotificationTemplate.status == TemplateStatus.ACTIVE,
             )
             .first()
         )
 
-    def _get_template_by_slug(self, slug: str) -> Optional[NotificationTemplate]:
+    def _get_template_by_slug(self, slug: str) -> NotificationTemplate | None:
         """Busca template por slug."""
         return (
             self.db.query(NotificationTemplate)
             .filter(
                 NotificationTemplate.tenant_id == self.tenant_id,
                 NotificationTemplate.slug == slug,
-                NotificationTemplate.active == True,
+                NotificationTemplate.active,
                 NotificationTemplate.status == TemplateStatus.ACTIVE,
             )
             .first()
         )
 
-    def _get_user_preferences(self, user_id: UUID) -> Optional[NotificationPreference]:
+    def _get_user_preferences(self, user_id: UUID) -> NotificationPreference | None:
         """Busca preferências do usuário."""
         return (
             self.db.query(NotificationPreference)
             .filter(
                 NotificationPreference.tenant_id == self.tenant_id,
                 NotificationPreference.user_id == user_id,
-                NotificationPreference.active == True,
+                NotificationPreference.active,
             )
             .first()
         )
 
-    def _get_channel_by_id(self, channel_id: UUID) -> Optional[NotificationChannel]:
+    def _get_channel_by_id(self, channel_id: UUID) -> NotificationChannel | None:
         """Busca canal por ID."""
         return (
             self.db.query(NotificationChannel)
             .filter(
                 NotificationChannel.tenant_id == self.tenant_id,
                 NotificationChannel.id == channel_id,
-                NotificationChannel.active == True,
+                NotificationChannel.active,
             )
             .first()
         )
@@ -515,15 +514,15 @@ class NotificationService:
     def _get_default_channel(
         self,
         channel_type: ChannelType,
-    ) -> Optional[NotificationChannel]:
+    ) -> NotificationChannel | None:
         """Busca canal padrão para um tipo."""
         return (
             self.db.query(NotificationChannel)
             .filter(
                 NotificationChannel.tenant_id == self.tenant_id,
                 NotificationChannel.channel_type == channel_type,
-                NotificationChannel.is_default == True,
-                NotificationChannel.active == True,
+                NotificationChannel.is_default,
+                NotificationChannel.active,
             )
             .first()
         )
@@ -532,7 +531,7 @@ class NotificationService:
     # Métodos de consulta
     # =========================================================================
 
-    def get_queue_stats(self) -> Dict[str, Any]:
+    def get_queue_stats(self) -> dict[str, Any]:
         """Obtém estatísticas da fila.
 
         Returns:
@@ -582,14 +581,14 @@ class NotificationService:
 
     def get_notification_history(
         self,
-        user_id: Optional[UUID] = None,
-        channel_type: Optional[str] = None,
-        status: Optional[QueueStatus] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        user_id: UUID | None = None,
+        channel_type: str | None = None,
+        status: QueueStatus | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[NotificationQueue]:
+    ) -> list[NotificationQueue]:
         """Obtém histórico de notificações.
 
         Args:
@@ -604,9 +603,7 @@ class NotificationService:
         Returns:
             Lista de notificações.
         """
-        query = self.db.query(NotificationQueue).filter(
-            NotificationQueue.tenant_id == self.tenant_id
-        )
+        query = self.db.query(NotificationQueue).filter(NotificationQueue.tenant_id == self.tenant_id)
 
         if user_id:
             query = query.filter(NotificationQueue.user_id == user_id)
@@ -624,7 +621,7 @@ class NotificationService:
     def cancel_notification(
         self,
         notification_id: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> bool:
         """Cancela uma notificação pendente.
 

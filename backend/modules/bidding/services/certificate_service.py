@@ -3,21 +3,23 @@ Service de Certidao - Licitacoes
 ================================
 """
 
+import builtins
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from modules.bidding.models.certificate import (
-    Certificate, CertificateType, CertificateStatus, CertificateSource
-)
+from modules.bidding.models.certificate import Certificate, CertificateStatus, CertificateType
 from modules.bidding.schemas.certificate import (
-    CertificateCreate, CertificateUpdate, CertificateResponse,
-    CertificateRenewRequest, CertificateRenewResponse,
-    CertificateBulkStatusResponse, CertificateTypeInfo
+    CertificateBulkStatusResponse,
+    CertificateCreate,
+    CertificateRenewRequest,
+    CertificateRenewResponse,
+    CertificateResponse,
+    CertificateTypeInfo,
+    CertificateUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,31 +48,20 @@ class CertificateService:
     def __init__(self, db: Session):
         self.db = db
 
-    async def get_by_id(self, certificate_id: UUID) -> Optional[CertificateResponse]:
+    async def get_by_id(self, certificate_id: UUID) -> CertificateResponse | None:
         """Busca certidao por ID."""
-        result = await self.db.execute(
-            select(Certificate).where(
-                Certificate.id == certificate_id,
-                Certificate.ativo == True
-            )
-        )
+        result = await self.db.execute(select(Certificate).where(Certificate.id == certificate_id, Certificate.ativo))
         cert = result.scalar_one_or_none()
         if not cert:
             return None
         return self._to_response(cert)
 
-    async def get_by_tipo(
-        self,
-        cnpj: str,
-        tipo: str
-    ) -> Optional[CertificateResponse]:
+    async def get_by_tipo(self, cnpj: str, tipo: str) -> CertificateResponse | None:
         """Busca certidao mais recente por CNPJ e tipo."""
         result = await self.db.execute(
-            select(Certificate).where(
-                Certificate.cnpj == cnpj,
-                Certificate.tipo == tipo,
-                Certificate.ativo == True
-            ).order_by(Certificate.data_validade.desc())
+            select(Certificate)
+            .where(Certificate.cnpj == cnpj, Certificate.tipo == tipo, Certificate.ativo)
+            .order_by(Certificate.data_validade.desc())
         )
         cert = result.scalar_one_or_none()
         if not cert:
@@ -78,15 +69,10 @@ class CertificateService:
         return self._to_response(cert)
 
     async def list(
-        self,
-        cnpj: str = None,
-        tipo: str = None,
-        status: str = None,
-        page: int = 1,
-        size: int = 50
-    ) -> Tuple[List[CertificateResponse], int]:
+        self, cnpj: str = None, tipo: str = None, status: str = None, page: int = 1, size: int = 50
+    ) -> tuple[list[CertificateResponse], int]:
         """Lista certidoes com filtros."""
-        query = select(Certificate).where(Certificate.ativo == True)
+        query = select(Certificate).where(Certificate.ativo)
 
         if cnpj:
             query = query.where(Certificate.cnpj == cnpj)
@@ -112,16 +98,9 @@ class CertificateService:
 
         return [self._to_response(c) for c in items], total
 
-    async def create(
-        self,
-        data: CertificateCreate,
-        user_id: UUID = None
-    ) -> CertificateResponse:
+    async def create(self, data: CertificateCreate, user_id: UUID = None) -> CertificateResponse:
         """Cria nova certidao."""
-        cert = Certificate(
-            **data.model_dump(exclude_unset=True),
-            created_by=user_id
-        )
+        cert = Certificate(**data.model_dump(exclude_unset=True), created_by=user_id)
         cert.atualizar_status()
 
         self.db.add(cert)
@@ -131,15 +110,10 @@ class CertificateService:
         return self._to_response(cert)
 
     async def update(
-        self,
-        certificate_id: UUID,
-        data: CertificateUpdate,
-        user_id: UUID = None
-    ) -> Optional[CertificateResponse]:
+        self, certificate_id: UUID, data: CertificateUpdate, user_id: UUID = None
+    ) -> CertificateResponse | None:
         """Atualiza certidao."""
-        result = await self.db.execute(
-            select(Certificate).where(Certificate.id == certificate_id)
-        )
+        result = await self.db.execute(select(Certificate).where(Certificate.id == certificate_id))
         cert = result.scalar_one_or_none()
         if not cert:
             return None
@@ -158,9 +132,7 @@ class CertificateService:
 
     async def delete(self, certificate_id: UUID) -> bool:
         """Remove certidao (soft delete)."""
-        result = await self.db.execute(
-            select(Certificate).where(Certificate.id == certificate_id)
-        )
+        result = await self.db.execute(select(Certificate).where(Certificate.id == certificate_id))
         cert = result.scalar_one_or_none()
         if not cert:
             return False
@@ -209,31 +181,24 @@ class CertificateService:
             com_erro=len(com_erro),
             certidoes=certidoes,
             por_tipo=por_tipo,
-            alertas=alertas
+            alertas=alertas,
         )
 
-    async def renovar(
-        self,
-        request: CertificateRenewRequest
-    ) -> CertificateRenewResponse:
+    async def renovar(self, request: CertificateRenewRequest) -> CertificateRenewResponse:
         """Solicita renovacao de certidao."""
-        result = await self.db.execute(
-            select(Certificate).where(Certificate.id == request.certificate_id)
-        )
+        result = await self.db.execute(select(Certificate).where(Certificate.id == request.certificate_id))
         cert = result.scalar_one_or_none()
 
         if not cert:
             return CertificateRenewResponse(
-                certificate_id=request.certificate_id,
-                sucesso=False,
-                mensagem="Certidao nao encontrada"
+                certificate_id=request.certificate_id, sucesso=False, mensagem="Certidao nao encontrada"
             )
 
         if not cert.obtencao_automatica:
             return CertificateRenewResponse(
                 certificate_id=request.certificate_id,
                 sucesso=False,
-                mensagem="Certidao nao possui renovacao automatica habilitada"
+                mensagem="Certidao nao possui renovacao automatica habilitada",
             )
 
         # Marca para renovacao
@@ -241,15 +206,11 @@ class CertificateService:
         cert.proxima_tentativa = datetime.utcnow()
         await self.db.commit()
 
-        return CertificateRenewResponse(
-            certificate_id=cert.id,
-            sucesso=True,
-            mensagem="Renovacao agendada"
-        )
+        return CertificateRenewResponse(certificate_id=cert.id, sucesso=True, mensagem="Renovacao agendada")
 
     async def atualizar_todos_status(self, cnpj: str = None) -> int:
         """Atualiza status de todas as certidoes."""
-        query = select(Certificate).where(Certificate.ativo == True)
+        query = select(Certificate).where(Certificate.ativo)
         if cnpj:
             query = query.where(Certificate.cnpj == cnpj)
 
@@ -267,24 +228,26 @@ class CertificateService:
         logger.info(f"Status atualizado para {updated} certidoes")
         return updated
 
-    async def get_pending_renewal(self) -> List[CertificateResponse]:
+    async def get_pending_renewal(self) -> builtins.list[CertificateResponse]:
         """Lista certidoes pendentes de renovacao automatica."""
         agora = datetime.utcnow()
         result = await self.db.execute(
             select(Certificate).where(
-                Certificate.ativo == True,
-                Certificate.obtencao_automatica == True,
+                Certificate.ativo,
+                Certificate.obtencao_automatica,
                 Certificate.proxima_tentativa <= agora,
-                Certificate.status.in_([
-                    CertificateStatus.EXPIRED.value,
-                    CertificateStatus.EXPIRING.value,
-                    CertificateStatus.RENEWING.value
-                ])
+                Certificate.status.in_(
+                    [
+                        CertificateStatus.EXPIRED.value,
+                        CertificateStatus.EXPIRING.value,
+                        CertificateStatus.RENEWING.value,
+                    ]
+                ),
             )
         )
         return [self._to_response(c) for c in result.scalars().all()]
 
-    async def get_tipos_certidao(self) -> List[CertificateTypeInfo]:
+    async def get_tipos_certidao(self) -> builtins.list[CertificateTypeInfo]:
         """Retorna informacoes sobre tipos de certidao."""
         tipos = []
         for cert_type in CertificateType:
@@ -295,18 +258,16 @@ class CertificateService:
                 orgao_emissor=self._get_orgao_emissor(cert_type),
                 url_emissao=self.URLS_EMISSAO.get(cert_type.value),
                 validade_padrao_dias=self.VALIDADE_PADRAO.get(cert_type.value, 180),
-                renovacao_automatica_disponivel=cert_type in [
-                    CertificateType.CND_FEDERAL,
-                    CertificateType.CND_TRABALHISTA,
-                    CertificateType.CRF_FGTS
-                ],
-                obrigatoria=cert_type in [
+                renovacao_automatica_disponivel=cert_type
+                in [CertificateType.CND_FEDERAL, CertificateType.CND_TRABALHISTA, CertificateType.CRF_FGTS],
+                obrigatoria=cert_type
+                in [
                     CertificateType.CND_FEDERAL,
                     CertificateType.CND_TRABALHISTA,
                     CertificateType.CRF_FGTS,
                     CertificateType.CND_MUNICIPAL,
-                    CertificateType.CERTIDAO_FALENCIA
-                ]
+                    CertificateType.CERTIDAO_FALENCIA,
+                ],
             )
             tipos.append(tipo)
         return tipos
@@ -352,7 +313,7 @@ class CertificateService:
             pode_usar_licitacao=cert.pode_usar_licitacao,
             observacoes=cert.observacoes,
             created_at=cert.created_at,
-            updated_at=cert.updated_at
+            updated_at=cert.updated_at,
         )
 
     def _get_descricao_tipo(self, tipo: CertificateType) -> str:

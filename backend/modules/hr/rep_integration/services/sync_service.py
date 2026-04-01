@@ -2,17 +2,17 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.rep_integration.models import (
-    REPDevice,
     DeviceStatus,
-    SyncType,
+    REPDevice,
     SyncStatus,
     SyncTrigger,
+    SyncType,
 )
 from modules.hr.rep_integration.repositories import (
     REPDeviceRepository,
@@ -23,6 +23,7 @@ from modules.hr.rep_integration.schemas import (
     REPEventCreate,
     REPSyncCreate,
 )
+
 from .rep_communication_service import REPCommunicationService
 
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ class SyncService:
         triggered_by: UUID = None,
         from_nsr: int = None,
         from_datetime: datetime = None,
-    ) -> Tuple[bool, Dict[str, Any]]:
+    ) -> tuple[bool, dict[str, Any]]:
         """Sincroniza eventos de um dispositivo.
 
         Returns:
@@ -65,14 +66,16 @@ class SyncService:
             return False, {"error": "Já existe sincronização em andamento"}
 
         # Criar registro de sync
-        sync = await self.sync_repo.create(REPSyncCreate(
-            device_id=device_id,
-            condominio_id=device.condominio_id,
-            sync_type=SyncType.EVENTS_PULL.value,
-            trigger=trigger,
-            triggered_by=triggered_by,
-            events_from_datetime=from_datetime,
-        ))
+        sync = await self.sync_repo.create(
+            REPSyncCreate(
+                device_id=device_id,
+                condominio_id=device.condominio_id,
+                sync_type=SyncType.EVENTS_PULL.value,
+                trigger=trigger,
+                triggered_by=triggered_by,
+                events_from_datetime=from_datetime,
+            )
+        )
 
         try:
             # Iniciar sync
@@ -161,9 +164,9 @@ class SyncService:
     async def _process_events(
         self,
         device: REPDevice,
-        events: List[Dict[str, Any]],
+        events: list[dict[str, Any]],
         sync_id: UUID,
-    ) -> Tuple[int, int, int]:
+    ) -> tuple[int, int, int]:
         """Processa lista de eventos.
 
         Returns:
@@ -217,7 +220,7 @@ class SyncService:
     async def sync_all_devices(
         self,
         condominio_id: UUID = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Sincroniza todos os dispositivos pendentes."""
         devices = await self.device_repo.get_devices_for_sync(condominio_id)
 
@@ -239,21 +242,23 @@ class SyncService:
             else:
                 results["failed"] += 1
 
-            results["details"].append({
-                "device_id": str(device.id),
-                "device_name": device.device_name,
-                "success": success,
-                "result": result,
-            })
+            results["details"].append(
+                {
+                    "device_id": str(device.id),
+                    "device_name": device.device_name,
+                    "success": success,
+                    "result": result,
+                }
+            )
 
         return results
 
     async def process_webhook_events(
         self,
         device_serial: str,
-        events: List[Dict[str, Any]],
+        events: list[dict[str, Any]],
         signature: str = None,
-    ) -> Tuple[bool, Dict[str, Any]]:
+    ) -> tuple[bool, dict[str, Any]]:
         """Processa eventos recebidos via webhook.
 
         Returns:
@@ -270,12 +275,14 @@ class SyncService:
             pass
 
         # Criar registro de sync
-        sync = await self.sync_repo.create(REPSyncCreate(
-            device_id=device.id,
-            condominio_id=device.condominio_id,
-            sync_type=SyncType.EVENTS_PUSH.value,
-            trigger=SyncTrigger.WEBHOOK.value,
-        ))
+        sync = await self.sync_repo.create(
+            REPSyncCreate(
+                device_id=device.id,
+                condominio_id=device.condominio_id,
+                sync_type=SyncType.EVENTS_PUSH.value,
+                trigger=SyncTrigger.WEBHOOK.value,
+            )
+        )
 
         try:
             await self.sync_repo.start_sync(sync.id)
@@ -308,7 +315,7 @@ class SyncService:
             await self.sync_repo.fail_sync(sync.id, str(e))
             return False, {"error": str(e)}
 
-    async def retry_failed_sync(self, sync_id: UUID) -> Tuple[bool, Dict[str, Any]]:
+    async def retry_failed_sync(self, sync_id: UUID) -> tuple[bool, dict[str, Any]]:
         """Retenta uma sincronização que falhou."""
         sync = await self.sync_repo.get_by_id(sync_id)
         if not sync:
@@ -326,7 +333,7 @@ class SyncService:
             from_nsr=sync.last_nsr_before,
         )
 
-    async def get_sync_progress(self, sync_id: UUID) -> Optional[Dict[str, Any]]:
+    async def get_sync_progress(self, sync_id: UUID) -> dict[str, Any] | None:
         """Obtém progresso de uma sincronização."""
         sync = await self.sync_repo.get_by_id(sync_id)
         if not sync:

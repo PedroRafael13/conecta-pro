@@ -12,26 +12,24 @@ Date: 2026-01-18
 Quality Score Target: 99+/100
 """
 
-from datetime import date, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
 from modules.operacional.disciplinary.models import (
-    DisciplinaryAction,
     DisciplinaryActionStatus,
     DisciplinaryActionType,
     ReasonCategory,
 )
 from modules.operacional.disciplinary.repositories import DisciplinaryRepository
 from modules.operacional.disciplinary.schemas import (
-    RecommendationRequest,
-    RecommendationResponse,
     LegalComplianceRequest,
     LegalComplianceResponse,
     ProportionalityCheckRequest,
     ProportionalityCheckResponse,
+    RecommendationRequest,
+    RecommendationResponse,
 )
 
 
@@ -102,22 +100,18 @@ class DisciplinaryAdvisor:
         """
         # Buscar historico do funcionario
         history = await self.repo.get_by_employee(request.employee_id, tenant_id)
-        applied_history = [
-            h for h in history
-            if h.status == DisciplinaryActionStatus.APLICADA.value
-        ]
+        applied_history = [h for h in history if h.status == DisciplinaryActionStatus.APLICADA.value]
 
         warnings = [
-            h for h in applied_history
-            if h.action_type in [
+            h
+            for h in applied_history
+            if h.action_type
+            in [
                 DisciplinaryActionType.ADVERTENCIA_VERBAL.value,
                 DisciplinaryActionType.ADVERTENCIA_ESCRITA.value,
             ]
         ]
-        suspensions = [
-            h for h in applied_history
-            if h.action_type == DisciplinaryActionType.SUSPENSAO.value
-        ]
+        suspensions = [h for h in applied_history if h.action_type == DisciplinaryActionType.SUSPENSAO.value]
 
         # Determinar ultima ocorrencia
         last_incident_date = None
@@ -172,17 +166,16 @@ class DisciplinaryAdvisor:
         is_grave: bool,
         is_medium: bool,
         category: ReasonCategory,
-        last_incident_date: Optional[date],
+        last_incident_date: date | None,
         incident_date: date,
-    ) -> tuple[DisciplinaryActionType, float, str, List[DisciplinaryActionType]]:
+    ) -> tuple[DisciplinaryActionType, float, str, list[DisciplinaryActionType]]:
         """
         Calcula a recomendacao baseada em regras.
 
         Returns:
             Tupla (tipo_recomendado, confianca, justificativa, alternativas)
         """
-        alternatives: List[DisciplinaryActionType] = []
-        reasoning_parts: List[str] = []
+        reasoning_parts: list[str] = []
 
         # 1. Falta grave pode justificar justa causa direta
         if is_grave:
@@ -231,9 +224,7 @@ class DisciplinaryAdvisor:
                 )
 
             if warnings_count >= 2:
-                reasoning_parts.append(
-                    f"Funcionario possui {warnings_count} advertencias e cometeu falta grave."
-                )
+                reasoning_parts.append(f"Funcionario possui {warnings_count} advertencias e cometeu falta grave.")
                 return (
                     DisciplinaryActionType.SUSPENSAO,
                     0.85,
@@ -244,8 +235,7 @@ class DisciplinaryAdvisor:
         # 2. Progressao disciplinar padrao
         if suspensions_count >= 2:
             reasoning_parts.append(
-                f"Funcionario ja possui {suspensions_count} suspensoes aplicadas. "
-                "Proxima medida seria justa causa."
+                f"Funcionario ja possui {suspensions_count} suspensoes aplicadas. Proxima medida seria justa causa."
             )
             return (
                 DisciplinaryActionType.DEMISSAO_JUSTA_CAUSA,
@@ -256,8 +246,7 @@ class DisciplinaryAdvisor:
 
         if suspensions_count >= 1:
             reasoning_parts.append(
-                f"Funcionario ja possui {suspensions_count} suspensao. "
-                "Nova suspensao ou justa causa sao aplicaveis."
+                f"Funcionario ja possui {suspensions_count} suspensao. Nova suspensao ou justa causa sao aplicaveis."
             )
             if is_medium:
                 return (
@@ -286,18 +275,13 @@ class DisciplinaryAdvisor:
             )
 
         if warnings_count >= 1:
-            reasoning_parts.append(
-                f"Funcionario possui {warnings_count} advertencia(s) anterior(es). "
-            )
+            reasoning_parts.append(f"Funcionario possui {warnings_count} advertencia(s) anterior(es). ")
 
             # Verificar reincidencia recente (menos de 6 meses)
             if last_incident_date:
                 days_since_last = (incident_date - last_incident_date).days
                 if days_since_last < 180:
-                    reasoning_parts.append(
-                        f"Reincidencia em {days_since_last} dias. "
-                        "Advertencia escrita recomendada."
-                    )
+                    reasoning_parts.append(f"Reincidencia em {days_since_last} dias. Advertencia escrita recomendada.")
                     if is_medium:
                         return (
                             DisciplinaryActionType.SUSPENSAO,
@@ -320,9 +304,7 @@ class DisciplinaryAdvisor:
             )
 
         # Primeira ocorrencia
-        reasoning_parts.append(
-            "Primeira ocorrencia do funcionario. "
-        )
+        reasoning_parts.append("Primeira ocorrencia do funcionario. ")
 
         if is_grave:
             return (
@@ -351,7 +333,7 @@ class DisciplinaryAdvisor:
         self,
         category: ReasonCategory,
         action_type: DisciplinaryActionType,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Obtem referencias legais aplicaveis.
 
@@ -406,10 +388,10 @@ class DisciplinaryAdvisor:
         Returns:
             Resultado da validacao
         """
-        issues: List[str] = []
-        warnings: List[str] = []
-        recommendations: List[str] = []
-        clt_articles: List[str] = []
+        issues: list[str] = []
+        warnings: list[str] = []
+        recommendations: list[str] = []
+        clt_articles: list[str] = []
 
         # 1. Validar principio da imediaticidade
         days_since_incident = (request.application_date - request.incident_date).days
@@ -419,17 +401,14 @@ class DisciplinaryAdvisor:
                 "Jurisprudencia recomenda aplicacao em ate 30 dias."
             )
             recommendations.append(
-                "Aplique medidas disciplinares o mais proximo possivel do fato para "
-                "evitar alegacao de perdao tacito."
+                "Aplique medidas disciplinares o mais proximo possivel do fato para evitar alegacao de perdao tacito."
             )
 
         # 2. Validar limite de suspensao
         if request.action_type == DisciplinaryActionType.SUSPENSAO:
             clt_articles.append(self.CLT_ARTICLES["art_474"])
             if request.suspension_days and request.suspension_days > 30:
-                issues.append(
-                    f"SUSPENSAO: {request.suspension_days} dias excede limite de 30 dias (Art. 474 CLT)"
-                )
+                issues.append(f"SUSPENSAO: {request.suspension_days} dias excede limite de 30 dias (Art. 474 CLT)")
 
         # 3. Validar progressao disciplinar
         if request.action_type == DisciplinaryActionType.DEMISSAO_JUSTA_CAUSA:
@@ -448,10 +427,7 @@ class DisciplinaryAdvisor:
 
         if request.action_type == DisciplinaryActionType.SUSPENSAO:
             if request.previous_warnings == 0:
-                warnings.append(
-                    "PROGRESSAO: Suspensao sem advertencia previa. "
-                    "Recomenda-se progressao gradativa."
-                )
+                warnings.append("PROGRESSAO: Suspensao sem advertencia previa. Recomenda-se progressao gradativa.")
 
         # 4. Validar dupla punicao
         # (Nao implementado aqui - precisaria verificar se ja existe medida para o mesmo incidente)
@@ -480,8 +456,8 @@ class DisciplinaryAdvisor:
             Resultado da verificacao
         """
         score = 1.0
-        analysis_parts: List[str] = []
-        suggested_action: Optional[DisciplinaryActionType] = None
+        analysis_parts: list[str] = []
+        suggested_action: DisciplinaryActionType | None = None
 
         # Pontuacao baseada em historico
         expected_action = self._get_expected_action(
@@ -498,22 +474,17 @@ class DisciplinaryAdvisor:
         elif self._is_more_severe(request.action_type, expected_action):
             score -= 0.3
             suggested_action = expected_action
-            analysis_parts.append(
-                f"Medida mais severa que o esperado. Sugestao: {expected_action.value}."
-            )
+            analysis_parts.append(f"Medida mais severa que o esperado. Sugestao: {expected_action.value}.")
         else:
             score -= 0.1
-            analysis_parts.append(
-                "Medida menos severa que o esperado, mas aceitavel."
-            )
+            analysis_parts.append("Medida menos severa que o esperado, mas aceitavel.")
 
         # Ajuste por tempo de empresa
         if request.employee_tenure_days > 365 * 5:  # Mais de 5 anos
             if request.action_type == DisciplinaryActionType.DEMISSAO_JUSTA_CAUSA:
                 score -= 0.1
                 analysis_parts.append(
-                    "Funcionario com mais de 5 anos de empresa. "
-                    "Considerar historico completo antes de justa causa."
+                    "Funcionario com mais de 5 anos de empresa. Considerar historico completo antes de justa causa."
                 )
 
         # Ajuste por gravidade
@@ -523,9 +494,7 @@ class DisciplinaryAdvisor:
                 DisciplinaryActionType.ADVERTENCIA_ESCRITA,
             ]:
                 score -= 0.2
-                analysis_parts.append(
-                    "Falta classificada como grave. Medida pode ser insuficiente."
-                )
+                analysis_parts.append("Falta classificada como grave. Medida pode ser insuficiente.")
 
         is_proportional = score >= 0.6
 

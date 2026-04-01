@@ -5,7 +5,6 @@ Sprint 33 - Workflow Engine.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import Integer, and_, func, select
@@ -55,10 +54,10 @@ class ExecutionSummary:
     workflow_name: str
     status: ExecutionStatus
     steps_executed: int
-    duration_ms: Optional[int]
-    error_message: Optional[str]
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
+    duration_ms: int | None
+    error_message: str | None
+    started_at: datetime | None
+    completed_at: datetime | None
 
 
 class WorkflowService:
@@ -80,11 +79,11 @@ class WorkflowService:
         name: str,
         slug: str,
         category: WorkflowCategory = WorkflowCategory.CUSTOM,
-        description: Optional[str] = None,
-        config: Optional[dict] = None,
-        context_variables: Optional[list[str]] = None,
-        tags: Optional[list[str]] = None,
-        created_by: Optional[UUID] = None,
+        description: str | None = None,
+        config: dict | None = None,
+        context_variables: list[str] | None = None,
+        tags: list[str] | None = None,
+        created_by: UUID | None = None,
     ) -> Workflow:
         """Cria novo workflow.
 
@@ -123,8 +122,8 @@ class WorkflowService:
     async def get_workflow(
         self,
         workflow_id: UUID,
-        tenant_id: Optional[UUID] = None,
-    ) -> Optional[Workflow]:
+        tenant_id: UUID | None = None,
+    ) -> Workflow | None:
         """Busca workflow por ID.
 
         Args:
@@ -146,7 +145,7 @@ class WorkflowService:
         self,
         tenant_id: UUID,
         slug: str,
-    ) -> Optional[Workflow]:
+    ) -> Workflow | None:
         """Busca workflow por slug.
 
         Args:
@@ -169,8 +168,8 @@ class WorkflowService:
     async def list_workflows(
         self,
         tenant_id: UUID,
-        category: Optional[WorkflowCategory] = None,
-        status: Optional[WorkflowStatus] = None,
+        category: WorkflowCategory | None = None,
+        status: WorkflowStatus | None = None,
         active_only: bool = False,
         limit: int = 100,
         offset: int = 0,
@@ -213,12 +212,12 @@ class WorkflowService:
     async def update_workflow(
         self,
         workflow: Workflow,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        config: Optional[dict] = None,
-        context_variables: Optional[list[str]] = None,
-        tags: Optional[list[str]] = None,
-        updated_by: Optional[UUID] = None,
+        name: str | None = None,
+        description: str | None = None,
+        config: dict | None = None,
+        context_variables: list[str] | None = None,
+        tags: list[str] | None = None,
+        updated_by: UUID | None = None,
     ) -> Workflow:
         """Atualiza workflow.
 
@@ -363,8 +362,8 @@ class WorkflowService:
         name: str,
         step_type: StepType,
         config: dict,
-        order: Optional[int] = None,
-        description: Optional[str] = None,
+        order: int | None = None,
+        description: str | None = None,
         is_start: bool = False,
         is_end: bool = False,
     ) -> WorkflowStep:
@@ -406,11 +405,11 @@ class WorkflowService:
     async def update_step(
         self,
         step: WorkflowStep,
-        name: Optional[str] = None,
-        config: Optional[dict] = None,
-        order: Optional[int] = None,
-        connections: Optional[dict] = None,
-        position: Optional[dict] = None,
+        name: str | None = None,
+        config: dict | None = None,
+        order: int | None = None,
+        connections: dict | None = None,
+        position: dict | None = None,
     ) -> WorkflowStep:
         """Atualiza step.
 
@@ -460,9 +459,9 @@ class WorkflowService:
         name: str,
         trigger_type: TriggerType,
         config: dict,
-        description: Optional[str] = None,
-        filters: Optional[dict] = None,
-        max_executions: Optional[int] = None,
+        description: str | None = None,
+        filters: dict | None = None,
+        max_executions: int | None = None,
     ) -> WorkflowTrigger:
         """Adiciona trigger ao workflow.
 
@@ -517,9 +516,7 @@ class WorkflowService:
             Estatisticas.
         """
         # Total workflows
-        total_query = select(func.count(Workflow.id)).where(
-            Workflow.tenant_id == tenant_id
-        )
+        total_query = select(func.count(Workflow.id)).where(Workflow.tenant_id == tenant_id)
         total_result = await self.session.execute(total_query)
         total_workflows = total_result.scalar() or 0
 
@@ -630,7 +627,7 @@ class WorkflowService:
     async def get_templates(
         self,
         tenant_id: UUID,
-        category: Optional[WorkflowCategory] = None,
+        category: WorkflowCategory | None = None,
     ) -> list[Workflow]:
         """Retorna templates de workflow.
 

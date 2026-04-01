@@ -4,25 +4,17 @@ Service para e-CAC - Centro Virtual de Atendimento ao Contribuinte.
 Camada de servico para operacoes do e-CAC.
 """
 
-import os
 import logging
-from datetime import datetime, date
+import os
+from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any
 
+from ..core.certificate_manager import CertificateManager
 from ..core.ecac import (
     EcacManager,
-    TipoCertidao,
-    SituacaoFiscal,
-    TipoPendencia,
     TipoDeclaracaoConsulta,
-    PendenciaFiscal,
-    DebitoFiscal,
-    Certidao,
-    DeclaracaoConsultada,
-    ResultadoSituacaoFiscal,
 )
-from ..core.certificate_manager import CertificateManager
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +32,7 @@ class EcacService:
         self.cert_manager = None
         if self.cert_path and os.path.exists(self.cert_path):
             try:
-                self.cert_manager = CertificateManager(
-                    certificate_path=self.cert_path,
-                    password=self.cert_password
-                )
+                self.cert_manager = CertificateManager(certificate_path=self.cert_path, password=self.cert_password)
                 logger.info("Certificado digital carregado para e-CAC")
             except Exception as e:
                 logger.warning(f"Certificado nao carregado: {e}")
@@ -54,15 +43,12 @@ class EcacService:
             certificado_senha=self.cert_password,
         )
 
-        logger.info(
-            f"e-CAC Service inicializado - CPF/CNPJ: {self.cpf_cnpj}, "
-            f"Tipo: {self.manager.tipo_documento}"
-        )
+        logger.info(f"e-CAC Service inicializado - CPF/CNPJ: {self.cpf_cnpj}, Tipo: {self.manager.tipo_documento}")
 
     def consultar_situacao_fiscal(
         self,
-        cpf_cnpj: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        cpf_cnpj: str | None = None,
+    ) -> dict[str, Any]:
         """
         Consulta situacao fiscal do contribuinte.
 
@@ -91,31 +77,35 @@ class EcacService:
         # Converte pendencias
         pendencias = []
         for p in resultado.pendencias:
-            pendencias.append({
-                "tipo": p.tipo.value,
-                "descricao": p.descricao,
-                "valor": str(p.valor) if p.valor else None,
-                "data_vencimento": p.data_vencimento.isoformat() if p.data_vencimento else None,
-                "numero_processo": p.numero_processo,
-                "exercicio": p.exercicio,
-                "periodo_apuracao": p.periodo_apuracao,
-            })
+            pendencias.append(
+                {
+                    "tipo": p.tipo.value,
+                    "descricao": p.descricao,
+                    "valor": str(p.valor) if p.valor else None,
+                    "data_vencimento": p.data_vencimento.isoformat() if p.data_vencimento else None,
+                    "numero_processo": p.numero_processo,
+                    "exercicio": p.exercicio,
+                    "periodo_apuracao": p.periodo_apuracao,
+                }
+            )
 
         # Converte debitos
         debitos = []
         for d in resultado.debitos:
-            debitos.append({
-                "codigo_receita": d.codigo_receita,
-                "descricao": d.descricao,
-                "competencia": d.competencia,
-                "valor_principal": str(d.valor_principal),
-                "valor_multa": str(d.valor_multa),
-                "valor_juros": str(d.valor_juros),
-                "valor_total": str(d.valor_total),
-                "data_vencimento": d.data_vencimento.isoformat() if d.data_vencimento else None,
-                "situacao": d.situacao,
-                "numero_processo": d.numero_processo,
-            })
+            debitos.append(
+                {
+                    "codigo_receita": d.codigo_receita,
+                    "descricao": d.descricao,
+                    "competencia": d.competencia,
+                    "valor_principal": str(d.valor_principal),
+                    "valor_multa": str(d.valor_multa),
+                    "valor_juros": str(d.valor_juros),
+                    "valor_total": str(d.valor_total),
+                    "data_vencimento": d.data_vencimento.isoformat() if d.data_vencimento else None,
+                    "situacao": d.situacao,
+                    "numero_processo": d.numero_processo,
+                }
+            )
 
         return {
             "cpf_cnpj": resultado.cpf_cnpj,
@@ -127,17 +117,16 @@ class EcacService:
             "declaracoes_omissas": resultado.declaracoes_omissas,
             "certidao_disponivel": resultado.certidao_disponivel,
             "tipo_certidao_disponivel": (
-                resultado.tipo_certidao_disponivel.value
-                if resultado.tipo_certidao_disponivel else None
+                resultado.tipo_certidao_disponivel.value if resultado.tipo_certidao_disponivel else None
             ),
         }
 
     def consultar_debitos(
         self,
-        situacao: Optional[str] = None,
-        competencia_inicio: Optional[str] = None,
-        competencia_fim: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        situacao: str | None = None,
+        competencia_inicio: str | None = None,
+        competencia_fim: str | None = None,
+    ) -> dict[str, Any]:
         """
         Consulta debitos do contribuinte.
 
@@ -194,9 +183,9 @@ class EcacService:
 
     def emitir_certidao(
         self,
-        finalidade: Optional[str] = None,
-        cpf_cnpj: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        finalidade: str | None = None,
+        cpf_cnpj: str | None = None,
+    ) -> dict[str, Any]:
         """
         Emite certidao fiscal (CND/CPEN).
 
@@ -238,7 +227,7 @@ class EcacService:
         self,
         numero: str,
         codigo_controle: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Valida autenticidade de uma certidao.
 
@@ -272,8 +261,8 @@ class EcacService:
         self,
         tipo: str,
         exercicio_inicio: int,
-        exercicio_fim: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        exercicio_fim: int | None = None,
+    ) -> dict[str, Any]:
         """
         Consulta declaracoes transmitidas.
 
@@ -300,19 +289,20 @@ class EcacService:
 
         declaracoes = []
         for d in declaracoes_raw:
-            declaracoes.append({
-                "tipo": d.tipo.value,
-                "exercicio": d.exercicio,
-                "numero_recibo": d.numero_recibo,
-                "data_transmissao": d.data_transmissao.isoformat(),
-                "situacao": d.situacao,
-                "retificadora": d.retificadora,
-                "numero_recibo_anterior": d.numero_recibo_anterior,
-            })
+            declaracoes.append(
+                {
+                    "tipo": d.tipo.value,
+                    "exercicio": d.exercicio,
+                    "numero_recibo": d.numero_recibo,
+                    "data_transmissao": d.data_transmissao.isoformat(),
+                    "situacao": d.situacao,
+                    "retificadora": d.retificadora,
+                    "numero_recibo_anterior": d.numero_recibo_anterior,
+                }
+            )
 
         logger.info(
-            f"Declaracoes consultadas: {len(declaracoes)} encontradas "
-            f"({tipo} {exercicio_inicio}-{exercicio_fim})"
+            f"Declaracoes consultadas: {len(declaracoes)} encontradas ({tipo} {exercicio_inicio}-{exercicio_fim})"
         )
 
         return {
@@ -326,8 +316,8 @@ class EcacService:
 
     def consultar_parcelamentos(
         self,
-        situacao: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        situacao: str | None = None,
+    ) -> dict[str, Any]:
         """
         Consulta parcelamentos ativos.
 
@@ -341,10 +331,7 @@ class EcacService:
 
         # Filtra por situacao se especificado
         if situacao:
-            parcelamentos = [
-                p for p in parcelamentos
-                if p.get("situacao") == situacao
-            ]
+            parcelamentos = [p for p in parcelamentos if p.get("situacao") == situacao]
 
         logger.info(f"Parcelamentos consultados: {len(parcelamentos)} encontrados")
 
@@ -357,9 +344,9 @@ class EcacService:
 
     def simular_parcelamento(
         self,
-        debitos: List[str],
+        debitos: list[str],
         quantidade_parcelas: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Simula parcelamento de debitos.
 
@@ -375,9 +362,7 @@ class EcacService:
             quantidade_parcelas=quantidade_parcelas,
         )
 
-        logger.info(
-            f"Parcelamento simulado: {len(debitos)} debitos em {quantidade_parcelas}x"
-        )
+        logger.info(f"Parcelamento simulado: {len(debitos)} debitos em {quantidade_parcelas}x")
 
         return {
             "cpf_cnpj": self.cpf_cnpj,
@@ -396,9 +381,9 @@ class EcacService:
 
     def consultar_processos(
         self,
-        situacao: Optional[str] = None,
-        numero_processo: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        situacao: str | None = None,
+        numero_processo: str | None = None,
+    ) -> dict[str, Any]:
         """
         Consulta processos digitais (e-Processo).
 
@@ -413,10 +398,7 @@ class EcacService:
 
         # Filtra por numero se especificado
         if numero_processo:
-            processos = [
-                p for p in processos
-                if p.get("numero") == numero_processo
-            ]
+            processos = [p for p in processos if p.get("numero") == numero_processo]
 
         logger.info(f"Processos consultados: {len(processos)} encontrados")
 
@@ -431,7 +413,7 @@ class EcacService:
             "processos": processos,
         }
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """
         Valida status da configuracao e-CAC.
 
@@ -444,9 +426,7 @@ class EcacService:
             "cpf_cnpj": self.cpf_cnpj,
             "tipo_documento": self.manager.tipo_documento,
             "certificado_configurado": self.cert_manager is not None,
-            "certificado_valido": (
-                self.cert_manager._loaded if self.cert_manager else False
-            ),
+            "certificado_valido": (self.cert_manager._loaded if self.cert_manager else False),
             "servicos_disponiveis": [
                 "Consulta de Situacao Fiscal",
                 "Consulta de Debitos",
@@ -460,7 +440,7 @@ class EcacService:
 
 
 # Singleton
-_ecac_service: Optional[EcacService] = None
+_ecac_service: EcacService | None = None
 
 
 def get_ecac_service() -> EcacService:

@@ -3,12 +3,12 @@
 import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.operacional.diaristas.models.diarist import (
+    AssignmentStatus,
     Diarist,
     DiaristAssignment,
     DiaristEvaluation,
@@ -16,24 +16,23 @@ from modules.operacional.diaristas.models.diarist import (
     DiaristSchedule,
     DiaristStatus,
     DiaristType,
-    AssignmentStatus,
+    PaymentMethod,
+    PaymentStatus,
     RecurrenceType,
     ScheduleStatus,
-    PaymentStatus,
-    PaymentMethod,
     Weekday,
 )
 from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 from modules.operacional.diaristas.schemas.diarist_schemas import (
-    DiaristCreate,
-    DiaristUpdate,
-    DiaristAssignmentCreate,
-    DiaristScheduleCreate,
-    DiaristPaymentCreate,
-    DiaristEvaluationCreate,
+    BatchScheduleCreate,
     CheckinRequest,
     CheckoutRequest,
-    BatchScheduleCreate,
+    DiaristAssignmentCreate,
+    DiaristCreate,
+    DiaristEvaluationCreate,
+    DiaristPaymentCreate,
+    DiaristScheduleCreate,
+    DiaristUpdate,
     PayrollGenerateRequest,
 )
 
@@ -95,7 +94,7 @@ class DiaristService:
         logger.info(f"Diarista criada: {created.id} - {created.nome}")
         return created
 
-    async def get_diarist(self, diarist_id: UUID) -> Optional[Diarist]:
+    async def get_diarist(self, diarist_id: UUID) -> Diarist | None:
         """Busca diarista por ID."""
         return await self.repository.get_by_id(diarist_id)
 
@@ -103,9 +102,9 @@ class DiaristService:
         self,
         skip: int = 0,
         limit: int = 100,
-        status: Optional[DiaristStatus] = None,
-        tipo: Optional[DiaristType] = None,
-        search: Optional[str] = None,
+        status: DiaristStatus | None = None,
+        tipo: DiaristType | None = None,
+        search: str | None = None,
     ) -> list[Diarist]:
         """Lista diaristas com filtros."""
         return await self.repository.list_all(
@@ -116,9 +115,7 @@ class DiaristService:
             search=search,
         )
 
-    async def update_diarist(
-        self, diarist_id: UUID, data: DiaristUpdate
-    ) -> Optional[Diarist]:
+    async def update_diarist(self, diarist_id: UUID, data: DiaristUpdate) -> Diarist | None:
         """Atualiza diarista."""
         diarist = await self.repository.get_by_id(diarist_id)
         if not diarist:
@@ -132,7 +129,7 @@ class DiaristService:
         logger.info(f"Diarista atualizada: {diarist_id}")
         return updated
 
-    async def activate_diarist(self, diarist_id: UUID) -> Optional[Diarist]:
+    async def activate_diarist(self, diarist_id: UUID) -> Diarist | None:
         """Ativa uma diarista."""
         diarist = await self.repository.get_by_id(diarist_id)
         if not diarist:
@@ -144,7 +141,7 @@ class DiaristService:
         logger.info(f"Diarista ativada: {diarist_id}")
         return updated
 
-    async def deactivate_diarist(self, diarist_id: UUID) -> Optional[Diarist]:
+    async def deactivate_diarist(self, diarist_id: UUID) -> Diarist | None:
         """Desativa uma diarista."""
         diarist = await self.repository.get_by_id(diarist_id)
         if not diarist:
@@ -162,9 +159,7 @@ class DiaristService:
 
     # ==================== ASSIGNMENT OPERATIONS ====================
 
-    async def create_assignment(
-        self, data: DiaristAssignmentCreate
-    ) -> DiaristAssignment:
+    async def create_assignment(self, data: DiaristAssignmentCreate) -> DiaristAssignment:
         """Cria uma alocação de diarista."""
         diarist = await self.repository.get_by_id(data.diarist_id)
         if not diarist:
@@ -175,7 +170,6 @@ class DiaristService:
 
         assignment = DiaristAssignment(
             diarist_id=data.diarist_id,
-            
             unidade_id=data.unidade_id,
             tipo=data.tipo,
             descricao=data.descricao,
@@ -202,7 +196,7 @@ class DiaristService:
     async def _generate_schedules_from_assignment(
         self,
         assignment: DiaristAssignment,
-        until_date: Optional[date] = None,
+        until_date: date | None = None,
     ) -> list[DiaristSchedule]:
         """Gera agendamentos a partir de uma alocação recorrente."""
         if not until_date:
@@ -217,7 +211,8 @@ class DiaristService:
             if weekday in (assignment.dias_semana or []):
                 # Verificar se já não existe agendamento
                 existing = [
-                    s for s in await self.repository.list_schedules(
+                    s
+                    for s in await self.repository.list_schedules(
                         diarist_id=assignment.diarist_id,
                         data_inicio=current_date,
                         data_fim=current_date,
@@ -229,7 +224,6 @@ class DiaristService:
                     schedule = DiaristSchedule(
                         diarist_id=assignment.diarist_id,
                         assignment_id=assignment.id,
-                        
                         unidade_id=assignment.unidade_id,
                         data=current_date,
                         hora_inicio=assignment.hora_inicio,
@@ -245,40 +239,32 @@ class DiaristService:
                 current_date += timedelta(days=1)
             elif assignment.recorrencia == RecurrenceType.QUINZENAL:
                 current_date += timedelta(days=1)
-                if len(schedules) > 0 and len(schedules) % len(
-                    assignment.dias_semana or [1]
-                ) == 0:
+                if len(schedules) > 0 and len(schedules) % len(assignment.dias_semana or [1]) == 0:
                     current_date += timedelta(days=7)
             elif assignment.recorrencia == RecurrenceType.MENSAL:
                 current_date += timedelta(days=1)
-                if len(schedules) > 0 and len(schedules) % len(
-                    assignment.dias_semana or [1]
-                ) == 0:
+                if len(schedules) > 0 and len(schedules) % len(assignment.dias_semana or [1]) == 0:
                     current_date += timedelta(days=21)
             else:
                 current_date += timedelta(days=1)
 
-        logger.info(
-            f"Gerados {len(schedules)} agendamentos para alocação {assignment.id}"
-        )
+        logger.info(f"Gerados {len(schedules)} agendamentos para alocação {assignment.id}")
         return schedules
 
-    async def get_assignment(self, assignment_id: UUID) -> Optional[DiaristAssignment]:
+    async def get_assignment(self, assignment_id: UUID) -> DiaristAssignment | None:
         """Busca alocação por ID."""
         return await self.repository.get_assignment_by_id(assignment_id)
 
     async def list_assignments(
         self,
-        diarist_id: Optional[UUID] = None,
-        
-        status: Optional[AssignmentStatus] = None,
+        diarist_id: UUID | None = None,
+        status: AssignmentStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[DiaristAssignment]:
         """Lista alocações."""
         return await self.repository.list_assignments(
             diarist_id=diarist_id,
-            
             status=status,
             skip=skip,
             limit=limit,
@@ -317,24 +303,22 @@ class DiaristService:
         logger.info(f"Agendamento criado: {created.id}")
         return created
 
-    async def get_schedule(self, schedule_id: UUID) -> Optional[DiaristSchedule]:
+    async def get_schedule(self, schedule_id: UUID) -> DiaristSchedule | None:
         """Busca agendamento por ID."""
         return await self.repository.get_schedule_by_id(schedule_id)
 
     async def list_schedules(
         self,
-        diarist_id: Optional[UUID] = None,
-        
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
-        status: Optional[ScheduleStatus] = None,
+        diarist_id: UUID | None = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
+        status: ScheduleStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[DiaristSchedule]:
         """Lista agendamentos."""
         return await self.repository.list_schedules(
             diarist_id=diarist_id,
-            
             data_inicio=data_inicio,
             data_fim=data_fim,
             status=status,
@@ -342,13 +326,11 @@ class DiaristService:
             limit=limit,
         )
 
-    async def get_today_schedules(
-        self
-    ) -> list[DiaristSchedule]:
+    async def get_today_schedules(self) -> list[DiaristSchedule]:
         """Busca agendamentos de hoje."""
         return await self.repository.get_schedules_by_date(date.today(), None)
 
-    async def confirm_schedule(self, schedule_id: UUID) -> Optional[DiaristSchedule]:
+    async def confirm_schedule(self, schedule_id: UUID) -> DiaristSchedule | None:
         """Confirma um agendamento."""
         schedule = await self.repository.get_schedule_by_id(schedule_id)
         if not schedule or schedule.status != ScheduleStatus.AGENDADO:
@@ -359,9 +341,7 @@ class DiaristService:
         logger.info(f"Agendamento confirmado: {schedule_id}")
         return updated
 
-    async def cancel_schedule(
-        self, schedule_id: UUID, motivo: Optional[str] = None
-    ) -> Optional[DiaristSchedule]:
+    async def cancel_schedule(self, schedule_id: UUID, motivo: str | None = None) -> DiaristSchedule | None:
         """Cancela um agendamento."""
         schedule = await self.repository.get_schedule_by_id(schedule_id)
         if not schedule:
@@ -379,7 +359,7 @@ class DiaristService:
         logger.info(f"Agendamento cancelado: {schedule_id}")
         return updated
 
-    async def register_checkin(self, data: CheckinRequest) -> Optional[DiaristSchedule]:
+    async def register_checkin(self, data: CheckinRequest) -> DiaristSchedule | None:
         """Registra check-in."""
         schedule = await self.repository.register_checkin(
             schedule_id=data.schedule_id,
@@ -393,7 +373,7 @@ class DiaristService:
 
         return schedule
 
-    async def register_checkout(self, data: CheckoutRequest) -> Optional[DiaristSchedule]:
+    async def register_checkout(self, data: CheckoutRequest) -> DiaristSchedule | None:
         """Registra check-out."""
         schedule = await self.repository.register_checkout(
             schedule_id=data.schedule_id,
@@ -431,7 +411,6 @@ class DiaristService:
 
         payment = DiaristPayment(
             diarist_id=data.diarist_id,
-            
             data_referencia=data.data_referencia,
             data_vencimento=data.data_vencimento,
             valor_bruto=valor_bruto,
@@ -450,24 +429,22 @@ class DiaristService:
         logger.info(f"Pagamento criado: {created.id}")
         return created
 
-    async def get_payment(self, payment_id: UUID) -> Optional[DiaristPayment]:
+    async def get_payment(self, payment_id: UUID) -> DiaristPayment | None:
         """Busca pagamento por ID."""
         return await self.repository.get_payment_by_id(payment_id)
 
     async def list_payments(
         self,
-        diarist_id: Optional[UUID] = None,
-        
-        status: Optional[PaymentStatus] = None,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
+        diarist_id: UUID | None = None,
+        status: PaymentStatus | None = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[DiaristPayment]:
         """Lista pagamentos."""
         return await self.repository.list_payments(
             diarist_id=diarist_id,
-            
             status=status,
             data_inicio=data_inicio,
             data_fim=data_fim,
@@ -475,9 +452,7 @@ class DiaristService:
             limit=limit,
         )
 
-    async def get_pending_payments(
-        self
-    ) -> list[DiaristPayment]:
+    async def get_pending_payments(self) -> list[DiaristPayment]:
         """Lista pagamentos pendentes."""
         return await self.repository.get_pending_payments()
 
@@ -485,8 +460,8 @@ class DiaristService:
         self,
         payment_id: UUID,
         data_pagamento: date,
-        comprovante: Optional[str] = None,
-    ) -> Optional[DiaristPayment]:
+        comprovante: str | None = None,
+    ) -> DiaristPayment | None:
         """Processa pagamento."""
         payment = await self.repository.mark_payment_as_paid(
             payment_id=payment_id,
@@ -498,9 +473,7 @@ class DiaristService:
             # Atualizar valor total recebido pela diarista
             diarist = await self.repository.get_by_id(payment.diarist_id)
             if diarist:
-                diarist.valor_total_recebido = (
-                    diarist.valor_total_recebido or Decimal("0")
-                ) + payment.valor_liquido
+                diarist.valor_total_recebido = (diarist.valor_total_recebido or Decimal("0")) + payment.valor_liquido
                 await self.repository.update(diarist)
 
             logger.info(f"Pagamento processado: {payment_id}")
@@ -510,15 +483,13 @@ class DiaristService:
     async def generate_payment_from_schedules(
         self,
         diarist_id: UUID,
-        
         data_inicio: date,
         data_fim: date,
         forma_pagamento: PaymentMethod = PaymentMethod.PIX,
-    ) -> Optional[DiaristPayment]:
+    ) -> DiaristPayment | None:
         """Gera pagamento a partir de agendamentos concluídos."""
         schedules = await self.repository.list_schedules(
             diarist_id=diarist_id,
-            
             data_inicio=data_inicio,
             data_fim=data_fim,
             status=ScheduleStatus.CONCLUIDO,
@@ -535,7 +506,6 @@ class DiaristService:
 
         payment_data = DiaristPaymentCreate(
             diarist_id=diarist_id,
-            
             data_referencia=data_fim,
             data_vencimento=data_fim + timedelta(days=5),
             valor_bruto=valor_bruto,
@@ -549,9 +519,7 @@ class DiaristService:
 
     # ==================== EVALUATION OPERATIONS ====================
 
-    async def create_evaluation(
-        self, data: DiaristEvaluationCreate
-    ) -> DiaristEvaluation:
+    async def create_evaluation(self, data: DiaristEvaluationCreate) -> DiaristEvaluation:
         """Cria uma avaliação."""
         schedule = await self.repository.get_schedule_by_id(data.schedule_id)
         if not schedule:
@@ -582,14 +550,14 @@ class DiaristService:
         logger.info(f"Avaliação criada: {created.id}")
         return created
 
-    async def get_evaluation(self, evaluation_id: UUID) -> Optional[DiaristEvaluation]:
+    async def get_evaluation(self, evaluation_id: UUID) -> DiaristEvaluation | None:
         """Busca avaliação por ID."""
         return await self.repository.get_evaluation_by_id(evaluation_id)
 
     async def list_evaluations(
         self,
-        diarist_id: Optional[UUID] = None,
-        nota_minima: Optional[int] = None,
+        diarist_id: UUID | None = None,
+        nota_minima: int | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[DiaristEvaluation]:
@@ -606,8 +574,8 @@ class DiaristService:
     async def get_diarist_metrics(
         self,
         diarist_id: UUID,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
     ) -> dict:
         """Retorna métricas da diarista."""
         return await self.repository.get_diarist_metrics(
@@ -618,46 +586,38 @@ class DiaristService:
 
     async def get_condominio_statistics(
         self,
-        
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
     ) -> dict:
         """Retorna estatísticas do condomínio."""
         return await self.repository.get_condominio_statistics(
-            
             data_inicio=data_inicio,
             data_fim=data_fim,
         )
 
     async def get_top_diarists(
         self,
-        
         limit: int = 10,
     ) -> list[dict]:
         """Retorna ranking das melhores diaristas."""
         return await self.repository.get_top_diarists(
-            
             limit=limit,
         )
 
     async def get_available_diarists(
         self,
         data: date,
-        tipo: Optional[DiaristType] = None,
-
+        tipo: DiaristType | None = None,
     ) -> list[Diarist]:
         """Busca diaristas disponíveis."""
         return await self.repository.get_available_diarists(
             data=data,
             tipo=tipo,
-
         )
 
     # ==================== BATCH SCHEDULE ====================
 
-    async def create_batch_schedules(
-        self, data: BatchScheduleCreate
-    ) -> dict:
+    async def create_batch_schedules(self, data: BatchScheduleCreate) -> dict:
         """Cria agendamentos em lote para uma data (escala diaria)."""
         from datetime import time as dt_time
 
@@ -676,9 +636,7 @@ class DiaristService:
                     continue
 
                 # Verificar disponibilidade
-                available = await self.repository.check_availability(
-                    item.diarist_id, data.data
-                )
+                available = await self.repository.check_availability(item.diarist_id, data.data)
                 if not available:
                     errors.append(f"{diarist.nome}: indisponivel na data {data.data}")
                     continue
@@ -717,9 +675,7 @@ class DiaristService:
 
     # ==================== PAYROLL (FECHAMENTO DE FOLHA) ====================
 
-    async def generate_payroll_report(
-        self, competencia: str, condominio_id: Optional[UUID] = None
-    ) -> dict:
+    async def generate_payroll_report(self, competencia: str, condominio_id: UUID | None = None) -> dict:
         """Gera relatorio de fechamento de folha para uma competencia (YYYY-MM)."""
         from calendar import monthrange
 
@@ -783,21 +739,23 @@ class DiaristService:
             total_liquido += liquido
             total_diarias += entry["quantidade_diarias"]
 
-            items.append({
-                "diarist_id": entry["diarist_id"],
-                "diarist_nome": entry["diarist_nome"],
-                "cpf": entry["cpf"],
-                "quantidade_diarias": entry["quantidade_diarias"],
-                "total_horas": entry["total_horas"],
-                "valor_diaria": entry["valor_diaria"],
-                "valor_bruto": bruto,
-                "inss_retido": round(inss, 2),
-                "valor_liquido": round(liquido, 2),
-                "pix": entry["pix"],
-                "banco": entry["banco"],
-                "agencia": entry["agencia"],
-                "conta": entry["conta"],
-            })
+            items.append(
+                {
+                    "diarist_id": entry["diarist_id"],
+                    "diarist_nome": entry["diarist_nome"],
+                    "cpf": entry["cpf"],
+                    "quantidade_diarias": entry["quantidade_diarias"],
+                    "total_horas": entry["total_horas"],
+                    "valor_diaria": entry["valor_diaria"],
+                    "valor_bruto": bruto,
+                    "inss_retido": round(inss, 2),
+                    "valor_liquido": round(liquido, 2),
+                    "pix": entry["pix"],
+                    "banco": entry["banco"],
+                    "agencia": entry["agencia"],
+                    "conta": entry["conta"],
+                }
+            )
 
         # Ordenar por nome
         items.sort(key=lambda x: x["diarist_nome"])
@@ -814,9 +772,7 @@ class DiaristService:
             "items": items,
         }
 
-    async def generate_payroll_payments(
-        self, data: PayrollGenerateRequest
-    ) -> dict:
+    async def generate_payroll_payments(self, data: PayrollGenerateRequest) -> dict:
         """Gera pagamentos em lote a partir do relatorio de folha."""
         report = await self.generate_payroll_report(
             competencia=data.competencia,
@@ -832,11 +788,9 @@ class DiaristService:
                 continue
 
             try:
-                from uuid import UUID as UUIDType
-
                 payment = DiaristPayment(
                     condominio_id=data.condominio_id,
-                    diarist_id=UUIDType(item["diarist_id"]),
+                    diarist_id=UUID(item["diarist_id"]),
                     data_referencia=report["periodo_fim"],
                     data_vencimento=report["periodo_fim"] + timedelta(days=5),
                     valor_bruto=item["valor_bruto"],
@@ -849,15 +803,10 @@ class DiaristService:
 
                 created_payment = await self.repository.create_payment(payment)
                 created.append(created_payment)
-                logger.info(
-                    f"Pagamento gerado: {item['diarist_nome']} - "
-                    f"R$ {item['valor_liquido']}"
-                )
+                logger.info(f"Pagamento gerado: {item['diarist_nome']} - R$ {item['valor_liquido']}")
 
             except Exception as e:
-                errors.append(
-                    f"Erro ao gerar pagamento para {item['diarist_nome']}: {str(e)}"
-                )
+                errors.append(f"Erro ao gerar pagamento para {item['diarist_nome']}: {str(e)}")
                 logger.error(f"Erro payroll payment: {e}")
 
         return {

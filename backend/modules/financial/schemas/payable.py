@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -23,12 +22,12 @@ class PayableAccountBase(BaseModel):
     """Base para conta a pagar."""
 
     description: str = Field(..., min_length=3, max_length=500)
-    document_number: Optional[str] = Field(None, max_length=50)
+    document_number: str | None = Field(None, max_length=50)
     payable_type: PayableType = PayableType.AVULSA
     priority: PayablePriority = PayablePriority.MEDIA
 
-    supplier_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
+    supplier_id: UUID | None = None
+    category_id: UUID | None = None
 
     gross_value: Decimal = Field(..., gt=0)
     discount_value: Decimal = Field(default=Decimal("0"), ge=0)
@@ -43,40 +42,40 @@ class PayableAccountBase(BaseModel):
     withhold_inss: Decimal = Field(default=Decimal("0"), ge=0)
 
     # Datas
-    issue_date: Optional[date] = None
+    issue_date: date | None = None
     due_date: date
-    competence_date: Optional[date] = None
+    competence_date: date | None = None
 
     # Parcelamento
     total_installments: int = Field(default=1, ge=1, le=360)
 
     # Recorrência
     is_recurring: bool = False
-    recurrence_type: Optional[RecurrenceType] = None
-    recurrence_end_date: Optional[date] = None
+    recurrence_type: RecurrenceType | None = None
+    recurrence_end_date: date | None = None
 
     # Centro de custo
-    cost_center: Optional[str] = Field(None, max_length=50)
-    project: Optional[str] = Field(None, max_length=50)
+    cost_center: str | None = Field(None, max_length=50)
+    project: str | None = Field(None, max_length=50)
 
     # Documento fiscal
-    fiscal_document_type: Optional[str] = Field(None, max_length=30)
-    fiscal_document_key: Optional[str] = Field(None, max_length=50)
-    fiscal_document_url: Optional[str] = Field(None, max_length=500)
+    fiscal_document_type: str | None = Field(None, max_length=30)
+    fiscal_document_key: str | None = Field(None, max_length=50)
+    fiscal_document_url: str | None = Field(None, max_length=500)
 
     # Contrato
-    contract_id: Optional[UUID] = None
+    contract_id: UUID | None = None
 
     # Forma de pagamento
-    payment_method_id: Optional[UUID] = None
-    bank_account_id: Optional[UUID] = None
+    payment_method_id: UUID | None = None
+    bank_account_id: UUID | None = None
 
     # Aprovação
     requires_approval: bool = False
 
     # Tags e notas
-    tags: List[str] = Field(default_factory=list)
-    notes: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    notes: str | None = None
 
 
 class PayableAccountCreate(PayableAccountBase):
@@ -95,40 +94,40 @@ class PayableAccountCreate(PayableAccountBase):
 class PayableAccountUpdate(BaseModel):
     """Schema para atualização de conta a pagar."""
 
-    description: Optional[str] = Field(None, min_length=3, max_length=500)
-    document_number: Optional[str] = Field(None, max_length=50)
-    priority: Optional[PayablePriority] = None
+    description: str | None = Field(None, min_length=3, max_length=500)
+    document_number: str | None = Field(None, max_length=50)
+    priority: PayablePriority | None = None
 
-    supplier_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
+    supplier_id: UUID | None = None
+    category_id: UUID | None = None
 
-    gross_value: Optional[Decimal] = Field(None, gt=0)
-    discount_value: Optional[Decimal] = Field(None, ge=0)
-    addition_value: Optional[Decimal] = Field(None, ge=0)
+    gross_value: Decimal | None = Field(None, gt=0)
+    discount_value: Decimal | None = Field(None, ge=0)
+    addition_value: Decimal | None = Field(None, ge=0)
 
     # Retenções
-    withhold_iss: Optional[Decimal] = Field(None, ge=0)
-    withhold_ir: Optional[Decimal] = Field(None, ge=0)
-    withhold_pis: Optional[Decimal] = Field(None, ge=0)
-    withhold_cofins: Optional[Decimal] = Field(None, ge=0)
-    withhold_csll: Optional[Decimal] = Field(None, ge=0)
-    withhold_inss: Optional[Decimal] = Field(None, ge=0)
+    withhold_iss: Decimal | None = Field(None, ge=0)
+    withhold_ir: Decimal | None = Field(None, ge=0)
+    withhold_pis: Decimal | None = Field(None, ge=0)
+    withhold_cofins: Decimal | None = Field(None, ge=0)
+    withhold_csll: Decimal | None = Field(None, ge=0)
+    withhold_inss: Decimal | None = Field(None, ge=0)
 
     # Datas
-    due_date: Optional[date] = None
-    competence_date: Optional[date] = None
+    due_date: date | None = None
+    competence_date: date | None = None
 
     # Centro de custo
-    cost_center: Optional[str] = Field(None, max_length=50)
-    project: Optional[str] = Field(None, max_length=50)
+    cost_center: str | None = Field(None, max_length=50)
+    project: str | None = Field(None, max_length=50)
 
     # Forma de pagamento
-    payment_method_id: Optional[UUID] = None
-    bank_account_id: Optional[UUID] = None
+    payment_method_id: UUID | None = None
+    bank_account_id: UUID | None = None
 
     # Tags e notas
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    tags: list[str] | None = None
+    notes: str | None = None
 
 
 class PayableAccountResponse(PayableAccountBase):
@@ -136,24 +135,24 @@ class PayableAccountResponse(PayableAccountBase):
 
     id: UUID
     condominio_id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     status: PayableStatus
     net_value: Decimal
     paid_value: Decimal
-    remaining_value: Optional[Decimal] = None
+    remaining_value: Decimal | None = None
     total_withholdings: Decimal
 
     entry_date: date
-    payment_date: Optional[date] = None
+    payment_date: date | None = None
 
     current_installment: int
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
 
-    approval_status: Optional[str] = None
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
+    approval_status: str | None = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
 
-    scheduled_payment_date: Optional[date] = None
+    scheduled_payment_date: date | None = None
 
     is_overdue: bool
     days_overdue: int
@@ -161,10 +160,10 @@ class PayableAccountResponse(PayableAccountBase):
     payment_percentage: float
     balance: Decimal
 
-    attachments: List[dict] = Field(default_factory=list)
+    attachments: list[dict] = Field(default_factory=list)
 
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -176,19 +175,19 @@ class PayableAccountListResponse(BaseModel):
     """Schema de lista de contas a pagar."""
 
     id: UUID
-    code: Optional[str] = None
-    document_number: Optional[str] = None
+    code: str | None = None
+    document_number: str | None = None
     description: str
     payable_type: str
     status: str
     priority: str
-    supplier_name: Optional[str] = None
-    category_name: Optional[str] = None
+    supplier_name: str | None = None
+    category_name: str | None = None
     net_value: Decimal
     paid_value: Decimal
     balance: Decimal
     due_date: date
-    payment_date: Optional[date] = None
+    payment_date: date | None = None
     is_overdue: bool
     days_overdue: int
     total_installments: int
@@ -202,22 +201,22 @@ class PayableAccountListResponse(BaseModel):
 class PayableAccountFilter(BaseModel):
     """Filtros para busca de contas a pagar."""
 
-    search: Optional[str] = None
-    supplier_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
-    status: Optional[PayableStatus] = None
-    payable_type: Optional[PayableType] = None
-    priority: Optional[PayablePriority] = None
-    due_date_start: Optional[date] = None
-    due_date_end: Optional[date] = None
-    payment_date_start: Optional[date] = None
-    payment_date_end: Optional[date] = None
-    is_overdue: Optional[bool] = None
-    cost_center: Optional[str] = None
-    project: Optional[str] = None
-    min_value: Optional[Decimal] = None
-    max_value: Optional[Decimal] = None
-    tags: Optional[List[str]] = None
+    search: str | None = None
+    supplier_id: UUID | None = None
+    category_id: UUID | None = None
+    status: PayableStatus | None = None
+    payable_type: PayableType | None = None
+    priority: PayablePriority | None = None
+    due_date_start: date | None = None
+    due_date_end: date | None = None
+    payment_date_start: date | None = None
+    payment_date_end: date | None = None
+    is_overdue: bool | None = None
+    cost_center: str | None = None
+    project: str | None = None
+    min_value: Decimal | None = None
+    max_value: Decimal | None = None
+    tags: list[str] | None = None
 
 
 class PayableAccountStats(BaseModel):
@@ -251,31 +250,31 @@ class PayableInstallmentCreate(BaseModel):
     interest_rate: Decimal = Field(default=Decimal("0"), ge=0)
     penalty_rate: Decimal = Field(default=Decimal("0"), ge=0)
 
-    payment_method_id: Optional[UUID] = None
-    barcode: Optional[str] = Field(None, max_length=100)
-    pix_copy_paste: Optional[str] = Field(None, max_length=500)
+    payment_method_id: UUID | None = None
+    barcode: str | None = Field(None, max_length=100)
+    pix_copy_paste: str | None = Field(None, max_length=500)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class PayableInstallmentUpdate(BaseModel):
     """Schema para atualização de parcela."""
 
-    due_date: Optional[date] = None
-    discount_value: Optional[Decimal] = Field(None, ge=0)
-    addition_value: Optional[Decimal] = Field(None, ge=0)
-    interest_rate: Optional[Decimal] = Field(None, ge=0)
-    penalty_rate: Optional[Decimal] = Field(None, ge=0)
+    due_date: date | None = None
+    discount_value: Decimal | None = Field(None, ge=0)
+    addition_value: Decimal | None = Field(None, ge=0)
+    interest_rate: Decimal | None = Field(None, ge=0)
+    penalty_rate: Decimal | None = Field(None, ge=0)
 
-    payment_method_id: Optional[UUID] = None
-    barcode: Optional[str] = Field(None, max_length=100)
-    digitable_line: Optional[str] = Field(None, max_length=100)
-    pix_qrcode: Optional[str] = None
-    pix_copy_paste: Optional[str] = Field(None, max_length=500)
-    boleto_url: Optional[str] = Field(None, max_length=500)
+    payment_method_id: UUID | None = None
+    barcode: str | None = Field(None, max_length=100)
+    digitable_line: str | None = Field(None, max_length=100)
+    pix_qrcode: str | None = None
+    pix_copy_paste: str | None = Field(None, max_length=500)
+    boleto_url: str | None = Field(None, max_length=500)
 
-    scheduled_payment_date: Optional[date] = None
-    notes: Optional[str] = None
+    scheduled_payment_date: date | None = None
+    notes: str | None = None
 
 
 class PayableInstallmentResponse(BaseModel):
@@ -299,18 +298,18 @@ class PayableInstallmentResponse(BaseModel):
     balance: Decimal
 
     due_date: date
-    original_due_date: Optional[date] = None
-    payment_date: Optional[date] = None
+    original_due_date: date | None = None
+    payment_date: date | None = None
 
     interest_rate: Decimal
     penalty_rate: Decimal
 
-    barcode: Optional[str] = None
-    digitable_line: Optional[str] = None
-    pix_copy_paste: Optional[str] = None
-    boleto_url: Optional[str] = None
+    barcode: str | None = None
+    digitable_line: str | None = None
+    pix_copy_paste: str | None = None
+    boleto_url: str | None = None
 
-    scheduled_payment_date: Optional[date] = None
+    scheduled_payment_date: date | None = None
 
     is_overdue: bool
     days_overdue: int
@@ -319,7 +318,7 @@ class PayableInstallmentResponse(BaseModel):
     is_partially_paid: bool
     is_renegotiated: bool
 
-    notes: Optional[str] = None
+    notes: str | None = None
     created_at: datetime
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -332,7 +331,7 @@ class PayableInstallmentRenegotiateRequest(BaseModel):
     """Request para renegociar parcela."""
 
     new_due_date: date
-    new_value: Optional[Decimal] = Field(None, gt=0)
+    new_value: Decimal | None = Field(None, gt=0)
     reason: str = Field(..., min_length=5, max_length=500)
 
 
@@ -351,30 +350,30 @@ class PayablePaymentCreate(BaseModel):
     penalty_value: Decimal = Field(default=Decimal("0"), ge=0)
     fee_value: Decimal = Field(default=Decimal("0"), ge=0)
 
-    payment_method_id: Optional[UUID] = None
-    bank_account_id: Optional[UUID] = None
+    payment_method_id: UUID | None = None
+    bank_account_id: UUID | None = None
 
-    receipt_number: Optional[str] = Field(None, max_length=50)
-    receipt_url: Optional[str] = Field(None, max_length=500)
-    authentication_code: Optional[str] = Field(None, max_length=100)
+    receipt_number: str | None = Field(None, max_length=50)
+    receipt_url: str | None = Field(None, max_length=500)
+    authentication_code: str | None = Field(None, max_length=100)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class PayablePaymentUpdate(BaseModel):
     """Schema para atualização de pagamento."""
 
-    payment_date: Optional[date] = None
-    discount_value: Optional[Decimal] = Field(None, ge=0)
-    interest_value: Optional[Decimal] = Field(None, ge=0)
-    penalty_value: Optional[Decimal] = Field(None, ge=0)
-    fee_value: Optional[Decimal] = Field(None, ge=0)
+    payment_date: date | None = None
+    discount_value: Decimal | None = Field(None, ge=0)
+    interest_value: Decimal | None = Field(None, ge=0)
+    penalty_value: Decimal | None = Field(None, ge=0)
+    fee_value: Decimal | None = Field(None, ge=0)
 
-    receipt_number: Optional[str] = Field(None, max_length=50)
-    receipt_url: Optional[str] = Field(None, max_length=500)
-    authentication_code: Optional[str] = Field(None, max_length=100)
+    receipt_number: str | None = Field(None, max_length=50)
+    receipt_url: str | None = Field(None, max_length=500)
+    authentication_code: str | None = Field(None, max_length=100)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class PayablePaymentResponse(BaseModel):
@@ -383,7 +382,7 @@ class PayablePaymentResponse(BaseModel):
     id: UUID
     installment_id: UUID
     condominio_id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     status: PaymentStatus
     origin: PaymentOrigin
 
@@ -396,28 +395,28 @@ class PayablePaymentResponse(BaseModel):
     total_additions: Decimal
 
     payment_date: date
-    processing_date: Optional[date] = None
-    confirmation_date: Optional[date] = None
+    processing_date: date | None = None
+    confirmation_date: date | None = None
 
-    payment_method_name: Optional[str] = None
-    bank_account_name: Optional[str] = None
+    payment_method_name: str | None = None
+    bank_account_name: str | None = None
 
-    receipt_number: Optional[str] = None
-    receipt_url: Optional[str] = None
-    authentication_code: Optional[str] = None
+    receipt_number: str | None = None
+    receipt_url: str | None = None
+    authentication_code: str | None = None
 
-    bank_transaction_id: Optional[str] = None
-    bank_return_code: Optional[str] = None
-    bank_return_message: Optional[str] = None
+    bank_transaction_id: str | None = None
+    bank_return_code: str | None = None
+    bank_return_message: str | None = None
 
     is_confirmed: bool
     is_reversed: bool
     is_reconciled: bool
 
-    reversed_at: Optional[datetime] = None
-    reversal_reason: Optional[str] = None
+    reversed_at: datetime | None = None
+    reversal_reason: str | None = None
 
-    notes: Optional[str] = None
+    notes: str | None = None
     created_at: datetime
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -430,13 +429,13 @@ class PayablePaymentReverseRequest(BaseModel):
     """Request para estornar pagamento."""
 
     reason: str = Field(..., min_length=5, max_length=500)
-    receipt: Optional[str] = Field(None, max_length=500)
+    receipt: str | None = Field(None, max_length=500)
 
 
 class PayablePaymentReconcileRequest(BaseModel):
     """Request para conciliar pagamento."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 # ============= Bulk Operations =============
@@ -445,17 +444,17 @@ class PayablePaymentReconcileRequest(BaseModel):
 class PayableBulkPaymentRequest(BaseModel):
     """Request para pagamento em lote."""
 
-    installment_ids: List[UUID] = Field(..., min_length=1)
+    installment_ids: list[UUID] = Field(..., min_length=1)
     payment_date: date
-    payment_method_id: Optional[UUID] = None
-    bank_account_id: Optional[UUID] = None
+    payment_method_id: UUID | None = None
+    bank_account_id: UUID | None = None
 
 
 class PayableBulkApproveRequest(BaseModel):
     """Request para aprovação em lote."""
 
-    payable_ids: List[UUID] = Field(..., min_length=1)
-    notes: Optional[str] = Field(None, max_length=500)
+    payable_ids: list[UUID] = Field(..., min_length=1)
+    notes: str | None = Field(None, max_length=500)
 
 
 class PayableScheduleRequest(BaseModel):

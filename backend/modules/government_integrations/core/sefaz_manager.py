@@ -8,63 +8,65 @@ Quality Score Target: 99+/100
 Compliance: SINIEF, CONFAZ, Legislacao Fiscal Brasileira
 """
 
-from typing import Dict, List, Optional, Any, Union, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
-from abc import ABC, abstractmethod
-from datetime import datetime, date, timedelta, timezone
-from decimal import Decimal
-from uuid import UUID, uuid4
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
-import hashlib
-import base64
-import re
 import logging
+import re
+import xml.etree.ElementTree as ET  # noqa: N817, S405
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
+from uuid import UUID, uuid4
+from xml.dom import minidom  # noqa: S408
+from xml.etree.ElementTree import Element  # noqa: S405
 
-from pydantic import BaseModel, Field, validator
-from sqlalchemy import Column, String, Boolean, DateTime, Date, Text, Integer, Numeric
-from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB
+from sqlalchemy import Column, DateTime, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
 
 # Importa gerenciador de certificados e assinador XML
-from .certificate_manager import CertificateManager, CertificateStore, CertificateStatus
-from .xml_signer import NFEXMLSigner, SignatureType
+from .certificate_manager import CertificateManager
+from .xml_signer import NFEXMLSigner
 
 logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """Tipos de documentos fiscais eletronicos."""
-    NFE = "nfe"           # Nota Fiscal Eletronica (modelo 55)
-    NFCE = "nfce"         # NF Consumidor Eletronica (modelo 65)
-    CTE = "cte"           # Conhecimento de Transporte (modelo 57)
-    MDFE = "mdfe"         # Manifesto de Documentos Fiscais (modelo 58)
-    NFSE = "nfse"         # NF de Servicos Eletronica (municipal)
+
+    NFE = "nfe"  # Nota Fiscal Eletronica (modelo 55)
+    NFCE = "nfce"  # NF Consumidor Eletronica (modelo 65)
+    CTE = "cte"  # Conhecimento de Transporte (modelo 57)
+    MDFE = "mdfe"  # Manifesto de Documentos Fiscais (modelo 58)
+    NFSE = "nfse"  # NF de Servicos Eletronica (municipal)
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     """Status de um documento fiscal."""
-    DRAFT = "draft"                   # Em edicao
-    VALIDATING = "validating"         # Em validacao
-    AUTHORIZED = "authorized"         # Autorizado
-    DENIED = "denied"                 # Denegado
-    CANCELLED = "cancelled"           # Cancelado
-    CORRECTED = "corrected"           # Carta de correcao emitida
-    CONTINGENCY = "contingency"       # Emitido em contingencia
-    ERROR = "error"                   # Erro
+
+    DRAFT = "draft"  # Em edicao
+    VALIDATING = "validating"  # Em validacao
+    AUTHORIZED = "authorized"  # Autorizado
+    DENIED = "denied"  # Denegado
+    CANCELLED = "cancelled"  # Cancelado
+    CORRECTED = "corrected"  # Carta de correcao emitida
+    CONTINGENCY = "contingency"  # Emitido em contingencia
+    ERROR = "error"  # Erro
 
 
-class OperationType(str, Enum):
+class OperationType(StrEnum):
     """Tipo de operacao fiscal."""
-    ENTRADA = "0"         # Entrada
-    SAIDA = "1"           # Saida
+
+    ENTRADA = "0"  # Entrada
+    SAIDA = "1"  # Saida
 
 
-class PaymentType(str, Enum):
+class PaymentType(StrEnum):
     """Formas de pagamento."""
+
     DINHEIRO = "01"
     CHEQUE = "02"
     CARTAO_CREDITO = "03"
@@ -83,22 +85,23 @@ class PaymentType(str, Enum):
     OUTROS = "99"
 
 
-class ContingencyType(str, Enum):
+class ContingencyType(StrEnum):
     """Tipos de contingencia."""
-    NORMAL = "1"          # Normal
-    FS_IA = "2"           # Formulario de Seguranca - Impressor Autonomo
-    SCAN = "3"            # SCAN (desativado)
-    DPEC = "4"            # DPEC (desativado)
-    FS_DA = "5"           # FS-DA
-    SVC_AN = "6"          # SVC-AN (SEFAZ Virtual de Contingencia AN)
-    SVC_RS = "7"          # SVC-RS (SEFAZ Virtual de Contingencia RS)
-    OFFLINE = "9"         # NFC-e Offline
+
+    NORMAL = "1"  # Normal
+    FS_IA = "2"  # Formulario de Seguranca - Impressor Autonomo
+    SCAN = "3"  # SCAN (desativado)
+    DPEC = "4"  # DPEC (desativado)
+    FS_DA = "5"  # FS-DA
+    SVC_AN = "6"  # SVC-AN (SEFAZ Virtual de Contingencia AN)
+    SVC_RS = "7"  # SVC-RS (SEFAZ Virtual de Contingencia RS)
+    OFFLINE = "9"  # NFC-e Offline
 
 
 class SEFAZError(Exception):
     """Erro em operacao SEFAZ."""
 
-    def __init__(self, message: str, code: Optional[str] = None, document_id: Optional[str] = None):
+    def __init__(self, message: str, code: str | None = None, document_id: str | None = None):
         self.message = message
         self.code = code
         self.document_id = document_id
@@ -107,26 +110,29 @@ class SEFAZError(Exception):
 
 class ValidationError(SEFAZError):
     """Erro de validacao de documento."""
+
     pass
 
 
 class TransmissionError(SEFAZError):
     """Erro de transmissao."""
+
     pass
 
 
 @dataclass
 class UFConfig:
     """Configuracao por UF."""
+
     uf: str
-    code: str                          # Codigo IBGE
+    code: str  # Codigo IBGE
     webservice_url: str
-    contingency_url: Optional[str] = None
+    contingency_url: str | None = None
     timezone: str = "America/Sao_Paulo"
 
 
 # Configuracoes das UFs
-UF_CONFIGS: Dict[str, UFConfig] = {
+UF_CONFIGS: dict[str, UFConfig] = {
     "AC": UFConfig("AC", "12", "https://nfe.sefaznet.ac.gov.br"),
     "AL": UFConfig("AL", "27", "https://nfe.sefaz.al.gov.br"),
     "AM": UFConfig("AM", "13", "https://nfe.sefaz.am.gov.br"),
@@ -160,6 +166,7 @@ UF_CONFIGS: Dict[str, UFConfig] = {
 @dataclass
 class Endereco:
     """Endereco para documentos fiscais."""
+
     logradouro: str
     numero: str
     bairro: str
@@ -167,11 +174,11 @@ class Endereco:
     uf: str
     cep: str
     codigo_municipio: str
-    complemento: Optional[str] = None
+    complemento: str | None = None
     pais: str = "Brasil"
     codigo_pais: str = "1058"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "logradouro": self.logradouro,
             "numero": self.numero,
@@ -187,16 +194,17 @@ class Endereco:
 @dataclass
 class Emitente:
     """Dados do emitente."""
+
     cnpj: str
     razao_social: str
-    nome_fantasia: Optional[str]
+    nome_fantasia: str | None
     inscricao_estadual: str
     endereco: Endereco
-    regime_tributario: str = "3"      # 1=Simples, 2=Simples Excesso, 3=Normal
-    cnae: Optional[str] = None
-    inscricao_municipal: Optional[str] = None
+    regime_tributario: str = "3"  # 1=Simples, 2=Simples Excesso, 3=Normal
+    cnae: str | None = None
+    inscricao_municipal: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "cnpj": self.cnpj,
             "razao_social": self.razao_social,
@@ -210,21 +218,22 @@ class Emitente:
 @dataclass
 class Destinatario:
     """Dados do destinatario."""
+
     cpf_cnpj: str
     nome: str
-    endereco: Optional[Endereco] = None
-    inscricao_estadual: Optional[str] = None
-    email: Optional[str] = None
-    telefone: Optional[str] = None
-    indicador_ie: str = "9"           # 1=Contribuinte, 2=Isento, 9=Nao Contribuinte
+    endereco: Endereco | None = None
+    inscricao_estadual: str | None = None
+    email: str | None = None
+    telefone: str | None = None
+    indicador_ie: str = "9"  # 1=Contribuinte, 2=Isento, 9=Nao Contribuinte
 
     @property
     def is_cpf(self) -> bool:
         """Verifica se documento e CPF."""
-        doc = re.sub(r'[^\d]', '', self.cpf_cnpj)
+        doc = re.sub(r"[^\d]", "", self.cpf_cnpj)
         return len(doc) == 11
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "cpf_cnpj": self.cpf_cnpj,
             "nome": self.nome,
@@ -237,6 +246,7 @@ class Destinatario:
 @dataclass
 class Produto:
     """Item/Produto da nota fiscal."""
+
     codigo: str
     descricao: str
     ncm: str
@@ -244,9 +254,9 @@ class Produto:
     unidade: str
     quantidade: Decimal
     valor_unitario: Decimal
-    cest: Optional[str] = None
-    ean: Optional[str] = None
-    origem: str = "0"                 # 0=Nacional
+    cest: str | None = None
+    ean: str | None = None
+    origem: str = "0"  # 0=Nacional
     cst_icms: str = "00"
     cst_pis: str = "01"
     cst_cofins: str = "01"
@@ -265,7 +275,7 @@ class Produto:
         """Calcula valor do ICMS."""
         return self.valor_total * (self.aliquota_icms / 100)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "codigo": self.codigo,
             "descricao": self.descricao,
@@ -281,13 +291,14 @@ class Produto:
 @dataclass
 class Pagamento:
     """Forma de pagamento."""
+
     tipo: PaymentType
     valor: Decimal
-    bandeira: Optional[str] = None    # Para cartoes
-    autorizacao: Optional[str] = None
-    cnpj_credenciadora: Optional[str] = None
+    bandeira: str | None = None  # Para cartoes
+    autorizacao: str | None = None
+    cnpj_credenciadora: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "tipo": self.tipo.value,
             "valor": str(self.valor),
@@ -298,29 +309,30 @@ class Pagamento:
 @dataclass
 class NotaFiscal:
     """Nota Fiscal Eletronica."""
+
     id: UUID
     tipo: DocumentType
     status: DocumentStatus
     emitente: Emitente
-    destinatario: Optional[Destinatario]
-    produtos: List[Produto]
-    pagamentos: List[Pagamento]
+    destinatario: Destinatario | None
+    produtos: list[Produto]
+    pagamentos: list[Pagamento]
     operacao: OperationType
     natureza_operacao: str
     numero: int
     serie: int
     data_emissao: datetime
-    chave_acesso: Optional[str] = None
-    protocolo: Optional[str] = None
-    xml_content: Optional[str] = None
-    xml_signed: Optional[str] = None
+    chave_acesso: str | None = None
+    protocolo: str | None = None
+    xml_content: str | None = None
+    xml_signed: str | None = None
     contingency_type: ContingencyType = ContingencyType.NORMAL
-    informacoes_adicionais: Optional[str] = None
+    informacoes_adicionais: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
-    authorized_at: Optional[datetime] = None
-    cancelled_at: Optional[datetime] = None
-    errors: List[Dict[str, Any]] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    authorized_at: datetime | None = None
+    cancelled_at: datetime | None = None
+    errors: list[dict[str, Any]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def valor_total_produtos(self) -> Decimal:
@@ -346,7 +358,7 @@ class NotaFiscal:
         # Componentes da chave
         cuf = uf.code
         aamm = self.data_emissao.strftime("%y%m")
-        cnpj = re.sub(r'[^\d]', '', self.emitente.cnpj)
+        cnpj = re.sub(r"[^\d]", "", self.emitente.cnpj)
         mod = "55" if self.tipo == DocumentType.NFE else "65"
         serie = str(self.serie).zfill(3)
         numero = str(self.numero).zfill(9)
@@ -372,7 +384,7 @@ class NotaFiscal:
         dv = 11 - resto
         return str(0 if dv >= 10 else dv)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "tipo": self.tipo.value,
@@ -394,6 +406,7 @@ class NotaFiscal:
 # SQLAlchemy Model
 class NotaFiscalModel(Base):
     """Modelo de banco para notas fiscais."""
+
     __tablename__ = "gov_notas_fiscais"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -467,8 +480,14 @@ class NFEXMLBuilder:
         ET.SubElement(ide, "nNF").text = str(nf.numero)
         # Fuso horário baseado na UF do emitente
         uf_timezone_offset = {
-            "AC": -5, "AM": -4, "AP": -3, "PA": -3,
-            "RO": -4, "RR": -4, "TO": -3, "MT": -4,
+            "AC": -5,
+            "AM": -4,
+            "AP": -3,
+            "PA": -3,
+            "RO": -4,
+            "RR": -4,
+            "TO": -3,
+            "MT": -4,
         }.get(nf.emitente.endereco.uf, -3)
         uf_timezone_str = f"{uf_timezone_offset:+03d}:00"
 
@@ -486,16 +505,13 @@ class NFEXMLBuilder:
         ET.SubElement(ide, "tpNF").text = nf.operacao.value
         ET.SubElement(ide, "idDest").text = "1"  # Operacao interna
         ET.SubElement(ide, "cMunFG").text = nf.emitente.endereco.codigo_municipio
-        ET.SubElement(ide, "tpImp").text = "1"   # DANFE retrato
+        ET.SubElement(ide, "tpImp").text = "1"  # DANFE retrato
         ET.SubElement(ide, "tpEmis").text = nf.contingency_type.value
         ET.SubElement(ide, "cDV").text = nf.chave_acesso[-1]
-        ET.SubElement(ide, "tpAmb").text = "2"   # Homologacao
+        ET.SubElement(ide, "tpAmb").text = "2"  # Homologacao
         ET.SubElement(ide, "finNFe").text = "1"  # Normal
         # indFinal: 1 se NFC-e ou destinatário não contribuinte
-        is_consumidor_final = (
-            nf.tipo == DocumentType.NFCE or
-            (nf.destinatario and nf.destinatario.indicador_ie == "9")
-        )
+        is_consumidor_final = nf.tipo == DocumentType.NFCE or (nf.destinatario and nf.destinatario.indicador_ie == "9")
         ET.SubElement(ide, "indFinal").text = "1" if is_consumidor_final else "0"
         ET.SubElement(ide, "indPres").text = "1"  # Presencial
         ET.SubElement(ide, "procEmi").text = "0"
@@ -503,7 +519,7 @@ class NFEXMLBuilder:
 
         # emit - Emitente
         emit = ET.SubElement(inf, "emit")
-        ET.SubElement(emit, "CNPJ").text = re.sub(r'[^\d]', '', nf.emitente.cnpj)
+        ET.SubElement(emit, "CNPJ").text = re.sub(r"[^\d]", "", nf.emitente.cnpj)
         ET.SubElement(emit, "xNome").text = nf.emitente.razao_social
         if nf.emitente.nome_fantasia:
             ET.SubElement(emit, "xFant").text = nf.emitente.nome_fantasia
@@ -514,7 +530,7 @@ class NFEXMLBuilder:
         # dest - Destinatario
         if nf.destinatario:
             dest = ET.SubElement(inf, "dest")
-            doc = re.sub(r'[^\d]', '', nf.destinatario.cpf_cnpj)
+            doc = re.sub(r"[^\d]", "", nf.destinatario.cpf_cnpj)
             if nf.destinatario.is_cpf:
                 ET.SubElement(dest, "CPF").text = doc
             else:
@@ -596,14 +612,14 @@ class NFEXMLBuilder:
 
         # infRespTec - Responsável Técnico (obrigatório)
         inf_resp = ET.SubElement(inf, "infRespTec")
-        ET.SubElement(inf_resp, "CNPJ").text = re.sub(r'[^\d]', '', nf.emitente.cnpj)
+        ET.SubElement(inf_resp, "CNPJ").text = re.sub(r"[^\d]", "", nf.emitente.cnpj)
         ET.SubElement(inf_resp, "xContato").text = "Suporte Tecnico"
         ET.SubElement(inf_resp, "email").text = "suporte@conectapro.com.br"
         ET.SubElement(inf_resp, "fone").text = "92999999999"
 
         return self._prettify(root)
 
-    def _add_endereco(self, parent: ET.Element, tag: str, endereco: Endereco) -> None:
+    def _add_endereco(self, parent: Element, tag: str, endereco: Endereco) -> None:
         """Adiciona endereco ao XML."""
         end = ET.SubElement(parent, tag)
         ET.SubElement(end, "xLgr").text = endereco.logradouro
@@ -614,11 +630,11 @@ class NFEXMLBuilder:
         ET.SubElement(end, "cMun").text = endereco.codigo_municipio
         ET.SubElement(end, "xMun").text = endereco.cidade
         ET.SubElement(end, "UF").text = endereco.uf
-        ET.SubElement(end, "CEP").text = re.sub(r'[^\d]', '', endereco.cep)
+        ET.SubElement(end, "CEP").text = re.sub(r"[^\d]", "", endereco.cep)
         ET.SubElement(end, "cPais").text = endereco.codigo_pais
         ET.SubElement(end, "xPais").text = endereco.pais
 
-    def _add_icms(self, parent: ET.Element, produto: Produto) -> None:
+    def _add_icms(self, parent: Element, produto: Produto) -> None:
         """Adiciona ICMS ao XML."""
         icms = ET.SubElement(parent, "ICMS")
         cst = produto.cst_icms
@@ -670,7 +686,7 @@ class NFEXMLBuilder:
                 ET.SubElement(icms_elem, "vICMSSTRet").text = "0.00"
             # 40, 41, 50, 51 - apenas orig e CST
 
-    def _add_pis(self, parent: ET.Element, produto: Produto) -> None:
+    def _add_pis(self, parent: Element, produto: Produto) -> None:
         """Adiciona PIS ao XML."""
         pis = ET.SubElement(parent, "PIS")
         pis_elem = ET.SubElement(pis, "PISAliq" if produto.cst_pis in ["01", "02"] else "PISOutr")
@@ -680,7 +696,7 @@ class NFEXMLBuilder:
             ET.SubElement(pis_elem, "pPIS").text = f"{produto.aliquota_pis:.2f}"
             ET.SubElement(pis_elem, "vPIS").text = "0.00"
 
-    def _add_cofins(self, parent: ET.Element, produto: Produto) -> None:
+    def _add_cofins(self, parent: Element, produto: Produto) -> None:
         """Adiciona COFINS ao XML."""
         cofins = ET.SubElement(parent, "COFINS")
         cofins_elem = ET.SubElement(cofins, "COFINSAliq" if produto.cst_cofins in ["01", "02"] else "COFINSOutr")
@@ -690,10 +706,10 @@ class NFEXMLBuilder:
             ET.SubElement(cofins_elem, "pCOFINS").text = f"{produto.aliquota_cofins:.2f}"
             ET.SubElement(cofins_elem, "vCOFINS").text = "0.00"
 
-    def _prettify(self, elem: ET.Element) -> str:
+    def _prettify(self, elem: Element) -> str:
         """Formata XML com identacao."""
-        rough_string = ET.tostring(elem, encoding='unicode')
-        reparsed = minidom.parseString(rough_string)
+        rough_string = ET.tostring(elem, encoding="unicode")
+        reparsed = minidom.parseString(rough_string)  # noqa: S318 - Apenas formata XML gerado internamente
         return reparsed.toprettyxml(indent="  ")
 
 
@@ -717,10 +733,10 @@ class SEFAZManager:
     def __init__(
         self,
         emitente: Emitente,
-        certificate_path: Optional[str] = None,
-        certificate_password: Optional[str] = None,
-        certificate_data: Optional[bytes] = None,
-        ambiente: str = "2"  # 1=Producao, 2=Homologacao
+        certificate_path: str | None = None,
+        certificate_password: str | None = None,
+        certificate_data: bytes | None = None,
+        ambiente: str = "2",  # 1=Producao, 2=Homologacao
     ):
         """
         Inicializa o gerenciador SEFAZ.
@@ -737,15 +753,15 @@ class SEFAZManager:
         self.certificate_password = certificate_password
         self.certificate_data = certificate_data
         self.ambiente = ambiente
-        self._documents: Dict[UUID, NotaFiscal] = {}
+        self._documents: dict[UUID, NotaFiscal] = {}
         self._xml_builder = NFEXMLBuilder()
-        self._next_numero: Dict[str, int] = {}
-        self._certificate_manager: Optional[CertificateManager] = None
-        self._xml_signer: Optional[NFEXMLSigner] = None
+        self._next_numero: dict[str, int] = {}
+        self._certificate_manager: CertificateManager | None = None
+        self._xml_signer: NFEXMLSigner | None = None
         self._certificate_loaded: bool = False
         logger.info("SEFAZManager inicializado para %s", emitente.cnpj)
 
-    async def load_certificate(self) -> Dict[str, Any]:
+    async def load_certificate(self) -> dict[str, Any]:
         """
         Carrega e valida certificado digital A1.
 
@@ -770,9 +786,7 @@ class SEFAZManager:
         try:
             # Carrega certificado usando CertificateManager
             self._certificate_manager = CertificateManager(
-                pfx_path=self.certificate_path,
-                pfx_data=self.certificate_data,
-                password=self.certificate_password
+                pfx_path=self.certificate_path, pfx_data=self.certificate_data, password=self.certificate_password
             )
 
             if not self._certificate_manager.load():
@@ -794,7 +808,7 @@ class SEFAZManager:
                 "Certificado A1 carregado para SEFAZ: %s (CPF/CNPJ: %s, valido ate %s)",
                 cert_info.subject_cn,
                 cert_info.cpf_cnpj or "N/A",
-                cert_info.valid_until.date()
+                cert_info.valid_until.date(),
             )
 
             return {
@@ -824,13 +838,13 @@ class SEFAZManager:
 
     async def create_nfe(
         self,
-        destinatario: Optional[Destinatario],
-        produtos: List[Produto],
-        pagamentos: List[Pagamento],
+        destinatario: Destinatario | None,
+        produtos: list[Produto],
+        pagamentos: list[Pagamento],
         natureza_operacao: str = "VENDA DE MERCADORIA",
         operacao: OperationType = OperationType.SAIDA,
         serie: int = 1,
-        informacoes_adicionais: Optional[str] = None
+        informacoes_adicionais: str | None = None,
     ) -> NotaFiscal:
         """
         Cria uma NFe.
@@ -873,19 +887,16 @@ class SEFAZManager:
 
         self._documents[nfe.id] = nfe
 
-        logger.info(
-            "NFe criada: id=%s, numero=%d, chave=%s",
-            nfe.id, numero, nfe.chave_acesso
-        )
+        logger.info("NFe criada: id=%s, numero=%d, chave=%s", nfe.id, numero, nfe.chave_acesso)
 
         return nfe
 
     async def create_nfce(
         self,
-        produtos: List[Produto],
-        pagamentos: List[Pagamento],
-        destinatario: Optional[Destinatario] = None,
-        serie: int = 1
+        produtos: list[Produto],
+        pagamentos: list[Pagamento],
+        destinatario: Destinatario | None = None,
+        serie: int = 1,
     ) -> NotaFiscal:
         """
         Cria uma NFCe (Cupom Fiscal Eletronico).
@@ -921,14 +932,11 @@ class SEFAZManager:
 
         self._documents[nfce.id] = nfce
 
-        logger.info(
-            "NFCe criada: id=%s, numero=%d, valor=%.2f",
-            nfce.id, numero, nfce.valor_total_nota
-        )
+        logger.info("NFCe criada: id=%s, numero=%d, valor=%.2f", nfce.id, numero, nfce.valor_total_nota)
 
         return nfce
 
-    async def validate(self, document_id: UUID) -> Dict[str, Any]:
+    async def validate(self, document_id: UUID) -> dict[str, Any]:
         """
         Valida documento antes da transmissao.
 
@@ -955,16 +963,15 @@ class SEFAZManager:
 
         valor_pago = sum(p.valor for p in doc.pagamentos)
         if valor_pago != doc.valor_total_nota:
-            warnings.append({
-                "code": "PAG_DIFF",
-                "message": f"Valor pago ({valor_pago}) difere do total ({doc.valor_total_nota})"
-            })
+            warnings.append(
+                {"code": "PAG_DIFF", "message": f"Valor pago ({valor_pago}) difere do total ({doc.valor_total_nota})"}
+            )
 
         for i, produto in enumerate(doc.produtos):
             if not produto.ncm or len(produto.ncm) != 8:
-                errors.append({"code": "NCM_INVALID", "message": f"NCM invalido no item {i+1}"})
+                errors.append({"code": "NCM_INVALID", "message": f"NCM invalido no item {i + 1}"})
             if not produto.cfop:
-                errors.append({"code": "CFOP_REQUIRED", "message": f"CFOP obrigatorio no item {i+1}"})
+                errors.append({"code": "CFOP_REQUIRED", "message": f"CFOP obrigatorio no item {i + 1}"})
 
         doc.errors = errors
 
@@ -1006,17 +1013,11 @@ class SEFAZManager:
 
         try:
             # Usa NFEXMLSigner para assinatura real
-            signed_xml = self._xml_signer.sign_nfe(
-                xml_content=doc.xml_content,
-                inf_nfe_id=f"NFe{doc.chave_acesso}"
-            )
+            signed_xml = self._xml_signer.sign_nfe(xml_content=doc.xml_content, inf_nfe_id=f"NFe{doc.chave_acesso}")
 
             doc.xml_signed = signed_xml
 
-            logger.info(
-                "Documento assinado com certificado A1: id=%s, chave=%s",
-                document_id, doc.chave_acesso
-            )
+            logger.info("Documento assinado com certificado A1: id=%s, chave=%s", document_id, doc.chave_acesso)
 
             return signed_xml
 
@@ -1052,18 +1053,11 @@ class SEFAZManager:
         doc.status = DocumentStatus.AUTHORIZED
         doc.authorized_at = datetime.utcnow()
 
-        logger.info(
-            "Documento autorizado: id=%s, protocolo=%s, chave=%s",
-            document_id, protocolo, doc.chave_acesso
-        )
+        logger.info("Documento autorizado: id=%s, protocolo=%s, chave=%s", document_id, protocolo, doc.chave_acesso)
 
         return doc
 
-    async def cancel(
-        self,
-        document_id: UUID,
-        justificativa: str
-    ) -> NotaFiscal:
+    async def cancel(self, document_id: UUID, justificativa: str) -> NotaFiscal:
         """
         Cancela documento autorizado.
 
@@ -1101,11 +1095,11 @@ class SEFAZManager:
 
         return doc
 
-    async def get_document(self, document_id: UUID) -> Optional[NotaFiscal]:
+    async def get_document(self, document_id: UUID) -> NotaFiscal | None:
         """Recupera documento por ID."""
         return self._documents.get(document_id)
 
-    async def get_by_chave(self, chave_acesso: str) -> Optional[NotaFiscal]:
+    async def get_by_chave(self, chave_acesso: str) -> NotaFiscal | None:
         """Recupera documento pela chave de acesso."""
         for doc in self._documents.values():
             if doc.chave_acesso == chave_acesso:
@@ -1114,11 +1108,11 @@ class SEFAZManager:
 
     async def list_documents(
         self,
-        status: Optional[DocumentStatus] = None,
-        tipo: Optional[DocumentType] = None,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None
-    ) -> List[NotaFiscal]:
+        status: DocumentStatus | None = None,
+        tipo: DocumentType | None = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
+    ) -> list[NotaFiscal]:
         """Lista documentos com filtros."""
         docs = list(self._documents.values())
 
@@ -1133,30 +1127,21 @@ class SEFAZManager:
 
         return sorted(docs, key=lambda x: x.data_emissao, reverse=True)
 
-    async def get_summary(self) -> Dict[str, Any]:
+    async def get_summary(self) -> dict[str, Any]:
         """Gera resumo de documentos."""
         docs = list(self._documents.values())
 
         return {
             "generated_at": datetime.utcnow().isoformat(),
             "total": len(docs),
-            "by_status": {
-                s.value: sum(1 for d in docs if d.status == s)
-                for s in DocumentStatus
-            },
-            "by_type": {
-                t.value: sum(1 for d in docs if d.tipo == t)
-                for t in DocumentType
-            },
-            "valor_total_emitido": str(sum(
-                d.valor_total_nota for d in docs
-                if d.status == DocumentStatus.AUTHORIZED
-            )),
+            "by_status": {s.value: sum(1 for d in docs if d.status == s) for s in DocumentStatus},
+            "by_type": {t.value: sum(1 for d in docs if d.tipo == t) for t in DocumentType},
+            "valor_total_emitido": str(sum(d.valor_total_nota for d in docs if d.status == DocumentStatus.AUTHORIZED)),
         }
 
 
 # Singleton
-_sefaz_manager: Optional[SEFAZManager] = None
+_sefaz_manager: SEFAZManager | None = None
 
 
 def get_sefaz_manager() -> SEFAZManager:
@@ -1169,10 +1154,10 @@ def get_sefaz_manager() -> SEFAZManager:
 
 def init_sefaz_manager(
     emitente: Emitente,
-    certificate_path: Optional[str] = None,
-    certificate_password: Optional[str] = None,
-    certificate_data: Optional[bytes] = None,
-    ambiente: str = "2"
+    certificate_path: str | None = None,
+    certificate_password: str | None = None,
+    certificate_data: bytes | None = None,
+    ambiente: str = "2",
 ) -> SEFAZManager:
     """
     Inicializa o SEFAZManager singleton.
@@ -1193,6 +1178,6 @@ def init_sefaz_manager(
         certificate_path=certificate_path,
         certificate_password=certificate_password,
         certificate_data=certificate_data,
-        ambiente=ambiente
+        ambiente=ambiente,
     )
     return _sefaz_manager

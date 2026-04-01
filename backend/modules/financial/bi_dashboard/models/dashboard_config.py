@@ -1,26 +1,29 @@
 """Model de Configuracao de Dashboard Financeiro."""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
 
 from core.models.base import Base
 
 
-class DashboardType(str, Enum):
+class DashboardType(StrEnum):
     """Tipo de dashboard."""
 
     EXECUTIVE = "EXECUTIVE"
@@ -30,7 +33,7 @@ class DashboardType(str, Enum):
     CUSTOM = "CUSTOM"
 
 
-class DashboardStatus(str, Enum):
+class DashboardStatus(StrEnum):
     """Status do dashboard."""
 
     ACTIVE = "ACTIVE"
@@ -39,7 +42,7 @@ class DashboardStatus(str, Enum):
     ARCHIVED = "ARCHIVED"
 
 
-class DashboardLayout(str, Enum):
+class DashboardLayout(StrEnum):
     """Layout do dashboard."""
 
     GRID_2X2 = "GRID_2X2"
@@ -50,7 +53,7 @@ class DashboardLayout(str, Enum):
     RESPONSIVE = "RESPONSIVE"
 
 
-class RefreshInterval(str, Enum):
+class RefreshInterval(StrEnum):
     """Intervalo de atualizacao."""
 
     REAL_TIME = "REAL_TIME"

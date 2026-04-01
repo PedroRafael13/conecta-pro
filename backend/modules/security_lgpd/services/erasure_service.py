@@ -10,22 +10,22 @@ Migrado de 01_security_lgpd/compliance/data_erasure.py
 Compliance: LGPD Art. 16, 18 - Eliminação de Dados Pessoais
 """
 
-from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime, timedelta
-from uuid import UUID, uuid4
 import logging
 import secrets
-import asyncio
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import StrEnum
+from typing import Any
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
-class ErasureStatus(str, Enum):
+class ErasureStatus(StrEnum):
     """Status de uma solicitação de exclusão."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -35,8 +35,9 @@ class ErasureStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class ErasureMethod(str, Enum):
+class ErasureMethod(StrEnum):
     """Métodos de exclusão de dados."""
+
     HARD_DELETE = "hard_delete"
     SOFT_DELETE = "soft_delete"
     ANONYMIZE = "anonymize"
@@ -45,8 +46,9 @@ class ErasureMethod(str, Enum):
     OVERWRITE = "overwrite"
 
 
-class RetentionReason(str, Enum):
+class RetentionReason(StrEnum):
     """Motivos para retenção de dados após solicitação de exclusão."""
+
     LEGAL_OBLIGATION = "legal_obligation"
     TAX_RECORDS = "tax_records"
     LABOR_RECORDS = "labor_records"
@@ -56,8 +58,9 @@ class RetentionReason(str, Enum):
     PUBLIC_INTEREST = "public_interest"
 
 
-class ErasureScope(str, Enum):
+class ErasureScope(StrEnum):
     """Escopos de exclusão disponíveis."""
+
     ALL = "all"
     MARKETING = "marketing"
     ANALYTICS = "analytics"
@@ -69,7 +72,7 @@ class ErasureScope(str, Enum):
 class ErasureError(Exception):
     """Erro base para operações de exclusão."""
 
-    def __init__(self, message: str, request_id: Optional[str] = None):
+    def __init__(self, message: str, request_id: str | None = None):
         self.message = message
         self.request_id = request_id
         super().__init__(self.message)
@@ -78,15 +81,16 @@ class ErasureError(Exception):
 @dataclass
 class DataLocation:
     """Localização de dados do titular no sistema."""
+
     table_name: str
     record_id: str
-    field_names: List[str]
+    field_names: list[str]
     data_category: str
     erasure_method: ErasureMethod
-    retention_period_days: Optional[int] = None
-    retention_reason: Optional[RetentionReason] = None
+    retention_period_days: int | None = None
+    retention_reason: RetentionReason | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "table_name": self.table_name,
             "record_id": self.record_id,
@@ -101,14 +105,15 @@ class DataLocation:
 @dataclass
 class ErasureResult:
     """Resultado de uma operação de exclusão."""
+
     location: DataLocation
     success: bool
     method_used: ErasureMethod
     executed_at: datetime
-    error_message: Optional[str] = None
+    error_message: str | None = None
     records_affected: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "location": self.location.to_dict(),
             "success": self.success,
@@ -122,26 +127,27 @@ class ErasureResult:
 @dataclass
 class ErasureRequest:
     """Solicitação de exclusão de dados."""
+
     id: UUID
     titular_id: str
-    titular_email: Optional[str]
+    titular_email: str | None
     status: ErasureStatus
     scope: ErasureScope
-    reason: Optional[str]
+    reason: str | None
     requested_at: datetime
     requested_by: str
     deadline: datetime
-    completed_at: Optional[datetime] = None
-    processed_by: Optional[str] = None
-    data_locations: List[DataLocation] = field(default_factory=list)
-    results: List[ErasureResult] = field(default_factory=list)
-    blocked_locations: List[DataLocation] = field(default_factory=list)
-    verification_code: Optional[str] = None
-    verified_at: Optional[datetime] = None
-    notes: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    completed_at: datetime | None = None
+    processed_by: str | None = None
+    data_locations: list[DataLocation] = field(default_factory=list)
+    results: list[ErasureResult] = field(default_factory=list)
+    blocked_locations: list[DataLocation] = field(default_factory=list)
+    verification_code: str | None = None
+    verified_at: datetime | None = None
+    notes: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "request_id": str(self.id),
             "titular_id": self.titular_id,
@@ -165,13 +171,14 @@ class ErasureRequest:
 
 class DataMapEntry(BaseModel):
     """Entrada no mapa de dados do sistema."""
+
     table_name: str
     subject_id_column: str
-    pii_columns: List[str]
+    pii_columns: list[str]
     category: str
     erasure_method: ErasureMethod = ErasureMethod.ANONYMIZE
-    retention_days: Optional[int] = None
-    retention_reason: Optional[RetentionReason] = None
+    retention_days: int | None = None
+    retention_reason: RetentionReason | None = None
 
 
 class ErasureService:
@@ -201,8 +208,8 @@ class ErasureService:
         """
         self.verification_required = verification_required
         self.auto_process = auto_process
-        self._requests: Dict[str, ErasureRequest] = {}
-        self._data_map: Dict[str, DataMapEntry] = {}
+        self._requests: dict[str, ErasureRequest] = {}
+        self._data_map: dict[str, DataMapEntry] = {}
         self._init_default_data_map()
         logger.info("ErasureService inicializado")
 
@@ -254,7 +261,7 @@ class ErasureService:
         titular_email: str,
         reason: str,
         scope: str = "all",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Cria solicitação de exclusão de dados.
 
@@ -315,10 +322,7 @@ class ErasureService:
 
         self._requests[str(request_id)] = request
 
-        logger.info(
-            "Solicitação de exclusão criada: id=%s, titular=%s, scope=%s",
-            request_id, titular_id, scope
-        )
+        logger.info("Solicitação de exclusão criada: id=%s, titular=%s, scope=%s", request_id, titular_id, scope)
 
         return {
             "request_id": str(request_id),
@@ -330,7 +334,7 @@ class ErasureService:
             "blocked_locations_count": len(blocked_locations),
         }
 
-    def get_status(self, request_id: str) -> Dict[str, Any]:
+    def get_status(self, request_id: str) -> dict[str, Any]:
         """
         Consulta status de solicitação de exclusão.
 
@@ -358,7 +362,7 @@ class ErasureService:
             "results_failed": sum(1 for r in request.results if not r.success),
         }
 
-    def process_request(self, request_id: str, processor_id: str) -> Dict[str, Any]:
+    def process_request(self, request_id: str, processor_id: str) -> dict[str, Any]:
         """
         Processa uma solicitação de exclusão.
 
@@ -392,8 +396,7 @@ class ErasureService:
                     records_affected=1,
                 )
                 logger.info(
-                    "Exclusão executada: table=%s, method=%s",
-                    location.table_name, location.erasure_method.value
+                    "Exclusão executada: table=%s, method=%s", location.table_name, location.erasure_method.value
                 )
             except Exception as e:
                 result = ErasureResult(
@@ -413,9 +416,7 @@ class ErasureService:
 
         if successful == total and not request.blocked_locations:
             request.status = ErasureStatus.COMPLETED
-        elif successful == total and request.blocked_locations:
-            request.status = ErasureStatus.PARTIAL
-        elif successful > 0:
+        elif successful == total and request.blocked_locations or successful > 0:
             request.status = ErasureStatus.PARTIAL
         else:
             request.status = ErasureStatus.FAILED
@@ -424,7 +425,10 @@ class ErasureService:
 
         logger.info(
             "Processamento concluído: request=%s, status=%s, success=%d/%d",
-            request_id, request.status.value, successful, total
+            request_id,
+            request.status.value,
+            successful,
+            total,
         )
 
         return {
@@ -461,7 +465,7 @@ class ErasureService:
         logger.info("Solicitação verificada: %s", request_id)
         return True
 
-    def complete_request(self, request_id: str, success: bool = True, notes: str = "") -> Dict[str, Any]:
+    def complete_request(self, request_id: str, success: bool = True, notes: str = "") -> dict[str, Any]:
         """
         Finaliza processamento de solicitação.
 
@@ -490,7 +494,7 @@ class ErasureService:
             "processed_at": request.completed_at.isoformat(),
         }
 
-    def cancel_request(self, request_id: str, cancelled_by: str, reason: Optional[str] = None) -> bool:
+    def cancel_request(self, request_id: str, cancelled_by: str, reason: str | None = None) -> bool:
         """Cancela solicitação de exclusão."""
         if request_id not in self._requests:
             raise ErasureError("Solicitação não encontrada", request_id)
@@ -508,15 +512,16 @@ class ErasureService:
         logger.info("Solicitação cancelada: %s by %s", request_id, cancelled_by)
         return True
 
-    def list_pending_requests(self, limit: int = 100, offset: int = 0) -> Dict[str, Any]:
+    def list_pending_requests(self, limit: int = 100, offset: int = 0) -> dict[str, Any]:
         """Lista solicitações pendentes."""
         pending = [
-            r.to_dict() for r in self._requests.values()
+            r.to_dict()
+            for r in self._requests.values()
             if r.status in [ErasureStatus.PENDING, ErasureStatus.IN_PROGRESS]
         ]
 
         total = len(pending)
-        paginated = pending[offset:offset + limit]
+        paginated = pending[offset : offset + limit]
 
         return {
             "requests": paginated,
@@ -525,7 +530,7 @@ class ErasureService:
             "offset": offset,
         }
 
-    def generate_erasure_report(self, request_id: str) -> Dict[str, Any]:
+    def generate_erasure_report(self, request_id: str) -> dict[str, Any]:
         """Gera relatório de exclusão para o titular."""
         if request_id not in self._requests:
             raise ErasureError("Solicitação não encontrada", request_id)
@@ -553,7 +558,8 @@ class ErasureService:
                     "method": r.method_used.value,
                     "executed_at": r.executed_at.isoformat(),
                 }
-                for r in request.results if r.success
+                for r in request.results
+                if r.success
             ],
             "retained_data": [
                 {
@@ -566,21 +572,21 @@ class ErasureService:
             ],
         }
 
-    def get_scopes(self) -> List[Dict[str, str]]:
+    def get_scopes(self) -> list[dict[str, str]]:
         """Lista escopos de exclusão disponíveis."""
         return [{"id": s.value, "description": s.name.replace("_", " ").title()} for s in ErasureScope]
 
-    def get_methods(self) -> List[Dict[str, str]]:
+    def get_methods(self) -> list[dict[str, str]]:
         """Lista métodos de exclusão disponíveis."""
         return [{"id": m.value, "description": m.name.replace("_", " ").title()} for m in ErasureMethod]
 
-    def get_retention_reasons(self) -> List[Dict[str, str]]:
+    def get_retention_reasons(self) -> list[dict[str, str]]:
         """Lista motivos de retenção."""
         return [{"id": r.value, "description": r.name.replace("_", " ").title()} for r in RetentionReason]
 
 
 # Singleton
-_erasure_service: Optional[ErasureService] = None
+_erasure_service: ErasureService | None = None
 
 
 def get_erasure_service() -> ErasureService:

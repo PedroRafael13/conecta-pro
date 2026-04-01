@@ -4,29 +4,32 @@ Sprint 31: Gestão de Serviços
 """
 
 import logging
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, or_, desc
+from sqlalchemy import desc, func, or_
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import Session
 
-from modules.services.models.service_catalog import (
-    ServiceCatalog, ServiceStatus
-)
-from modules.services.models.service_order import (
-    ServiceOrder, OrderStatus
-)
+from modules.services.models.service_catalog import ServiceCatalog, ServiceStatus
 from modules.services.models.service_execution import ServiceExecution
+from modules.services.models.service_order import OrderStatus, ServiceOrder
 from modules.services.models.service_report import ServiceReport
 from modules.services.models.sla_config import SLAConfig
 from modules.services.schemas.service_schemas import (
-    ServiceCatalogCreate, ServiceCatalogUpdate,
-    ServiceOrderCreate, ServiceOrderUpdate, ServiceOrderFilter,
-    ServiceExecutionCreate, ServiceExecutionUpdate,
-    ServiceReportCreate, ServiceReportUpdate,
-    SLAConfigCreate, SLAConfigUpdate,
+    ServiceCatalogCreate,
+    ServiceCatalogUpdate,
+    ServiceExecutionCreate,
+    ServiceExecutionUpdate,
+    ServiceOrderCreate,
+    ServiceOrderFilter,
+    ServiceOrderUpdate,
+    ServiceReportCreate,
+    ServiceReportUpdate,
+    SLAConfigCreate,
+    SLAConfigUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,44 +48,36 @@ class ServiceRepository:
 
     def create_service(self, data: ServiceCatalogCreate) -> ServiceCatalog:
         """Cria um novo serviço no catálogo."""
-        service = ServiceCatalog(
-            id=uuid4(),
-            code=self._generate_service_code(),
-            **data.model_dump()
-        )
+        service = ServiceCatalog(id=uuid4(), code=self._generate_service_code(), **data.model_dump())
         self.db.add(service)
         self.db.commit()
         self.db.refresh(service)
         logger.info(f"Serviço criado: {service.code}")
         return service
 
-    def get_service(self, service_id: UUID) -> Optional[ServiceCatalog]:
+    def get_service(self, service_id: UUID) -> ServiceCatalog | None:
         """Busca serviço por ID."""
-        return self.db.query(ServiceCatalog).filter(
-            ServiceCatalog.id == service_id,
-            ServiceCatalog.ativo.is_(True)
-        ).first()
+        return (
+            self.db.query(ServiceCatalog)
+            .filter(ServiceCatalog.id == service_id, ServiceCatalog.ativo.is_(True))
+            .first()
+        )
 
-    def get_service_by_code(self, code: str) -> Optional[ServiceCatalog]:
+    def get_service_by_code(self, code: str) -> ServiceCatalog | None:
         """Busca serviço por código."""
-        return self.db.query(ServiceCatalog).filter(
-            ServiceCatalog.code == code,
-            ServiceCatalog.ativo.is_(True)
-        ).first()
+        return self.db.query(ServiceCatalog).filter(ServiceCatalog.code == code, ServiceCatalog.ativo.is_(True)).first()
 
     def list_services(
         self,
         skip: int = 0,
         limit: int = 100,
-        category: Optional[str] = None,
-        service_type: Optional[str] = None,
-        status: Optional[str] = None,
-        search: Optional[str] = None
-    ) -> Tuple[List[ServiceCatalog], int]:
+        category: str | None = None,
+        service_type: str | None = None,
+        status: str | None = None,
+        search: str | None = None,
+    ) -> tuple[list[ServiceCatalog], int]:
         """Lista serviços com filtros."""
-        query = self.db.query(ServiceCatalog).filter(
-            ServiceCatalog.ativo.is_(True)
-        )
+        query = self.db.query(ServiceCatalog).filter(ServiceCatalog.ativo.is_(True))
 
         if category:
             query = query.filter(ServiceCatalog.category == category)
@@ -96,20 +91,16 @@ class ServiceRepository:
                 or_(
                     ServiceCatalog.name.ilike(search_filter),
                     ServiceCatalog.code.ilike(search_filter),
-                    ServiceCatalog.description.ilike(search_filter)
+                    ServiceCatalog.description.ilike(search_filter),
                 )
             )
 
         total = query.count()
-        services = query.order_by(
-            desc(ServiceCatalog.created_at)
-        ).offset(skip).limit(limit).all()
+        services = query.order_by(desc(ServiceCatalog.created_at)).offset(skip).limit(limit).all()
 
         return services, total
 
-    def update_service(
-        self, service_id: UUID, data: ServiceCatalogUpdate
-    ) -> Optional[ServiceCatalog]:
+    def update_service(self, service_id: UUID, data: ServiceCatalogUpdate) -> ServiceCatalog | None:
         """Atualiza um serviço."""
         service = self.get_service(service_id)
         if not service:
@@ -135,42 +126,38 @@ class ServiceRepository:
         self.db.commit()
         return True
 
-    def get_service_stats(self) -> Dict[str, Any]:
+    def get_service_stats(self) -> dict[str, Any]:
         """Retorna estatísticas dos serviços."""
-        total = self.db.query(func.count(ServiceCatalog.id)).filter(
-            ServiceCatalog.ativo.is_(True)
-        ).scalar() or 0
+        total = self.db.query(func.count(ServiceCatalog.id)).filter(ServiceCatalog.ativo.is_(True)).scalar() or 0
 
-        active = self.db.query(func.count(ServiceCatalog.id)).filter(
-            ServiceCatalog.ativo.is_(True),
-            ServiceCatalog.status == ServiceStatus.ATIVO
-        ).scalar() or 0
-
-        by_category = dict(
-            self.db.query(
-                ServiceCatalog.category,
-                func.count(ServiceCatalog.id)
-            ).filter(
-                ServiceCatalog.ativo.is_(True)
-            ).group_by(ServiceCatalog.category).all()
+        active = (
+            self.db.query(func.count(ServiceCatalog.id))
+            .filter(ServiceCatalog.ativo.is_(True), ServiceCatalog.status == ServiceStatus.ATIVO)
+            .scalar()
+            or 0
         )
 
-        total_revenue = self.db.query(
-            func.sum(ServiceCatalog.total_revenue)
-        ).filter(ServiceCatalog.ativo.is_(True)).scalar() or Decimal("0")
+        by_category = dict(
+            self.db.query(ServiceCatalog.category, func.count(ServiceCatalog.id))
+            .filter(ServiceCatalog.ativo.is_(True))
+            .group_by(ServiceCatalog.category)
+            .all()
+        )
+
+        total_revenue = self.db.query(func.sum(ServiceCatalog.total_revenue)).filter(
+            ServiceCatalog.ativo.is_(True)
+        ).scalar() or Decimal("0")
 
         return {
             "total_services": total,
             "active_services": active,
             "by_category": {str(k): v for k, v in by_category.items()},
-            "total_revenue": total_revenue
+            "total_revenue": total_revenue,
         }
 
     def _generate_service_code(self) -> str:
         """Gera código único para serviço."""
-        last = self.db.query(ServiceCatalog).order_by(
-            desc(ServiceCatalog.created_at)
-        ).first()
+        last = self.db.query(ServiceCatalog).order_by(desc(ServiceCatalog.created_at)).first()
 
         if last and last.code:
             try:
@@ -188,43 +175,35 @@ class ServiceRepository:
 
     def create_order(self, data: ServiceOrderCreate) -> ServiceOrder:
         """Cria uma nova ordem de serviço."""
-        order = ServiceOrder(
-            id=uuid4(),
-            order_number=self._generate_order_number(),
-            **data.model_dump()
-        )
+        order = ServiceOrder(id=uuid4(), order_number=self._generate_order_number(), **data.model_dump())
         self.db.add(order)
         self.db.commit()
         self.db.refresh(order)
         logger.info(f"Ordem criada: {order.order_number}")
         return order
 
-    def get_order(self, order_id: UUID) -> Optional[ServiceOrder]:
+    def get_order(self, order_id: UUID) -> ServiceOrder | None:
         """Busca ordem por ID."""
-        return self.db.query(ServiceOrder).filter(
-            ServiceOrder.id == order_id,
-            ServiceOrder.ativo.is_(True)
-        ).first()
+        return self.db.query(ServiceOrder).filter(ServiceOrder.id == order_id, ServiceOrder.ativo.is_(True)).first()
 
-    def get_order_by_number(self, order_number: str) -> Optional[ServiceOrder]:
+    def get_order_by_number(self, order_number: str) -> ServiceOrder | None:
         """Busca ordem por número."""
-        return self.db.query(ServiceOrder).filter(
-            ServiceOrder.order_number == order_number,
-            ServiceOrder.ativo.is_(True)
-        ).first()
+        return (
+            self.db.query(ServiceOrder)
+            .filter(ServiceOrder.order_number == order_number, ServiceOrder.ativo.is_(True))
+            .first()
+        )
 
     def list_orders(
         self,
-        filters: Optional[ServiceOrderFilter] = None,
+        filters: ServiceOrderFilter | None = None,
         skip: int = 0,
         limit: int = 100,
         order_by: str = "created_at",
-        order_desc: bool = True
-    ) -> Tuple[List[ServiceOrder], int]:
+        order_desc: bool = True,
+    ) -> tuple[list[ServiceOrder], int]:
         """Lista ordens com filtros."""
-        query = self.db.query(ServiceOrder).filter(
-            ServiceOrder.ativo.is_(True)
-        )
+        query = self.db.query(ServiceOrder).filter(ServiceOrder.ativo.is_(True))
 
         if filters:
             if filters.status:
@@ -234,35 +213,25 @@ class ServiceRepository:
             if filters.client_id:
                 query = query.filter(ServiceOrder.client_id == filters.client_id)
             if filters.condominium_id:
-                query = query.filter(
-                    ServiceOrder.condominium_id == filters.condominium_id
-                )
+                query = query.filter(ServiceOrder.condominium_id == filters.condominium_id)
             if filters.service_id:
                 query = query.filter(ServiceOrder.service_id == filters.service_id)
             if filters.technician_id:
-                query = query.filter(
-                    ServiceOrder.assigned_technician_id == filters.technician_id
-                )
+                query = query.filter(ServiceOrder.assigned_technician_id == filters.technician_id)
             if filters.scheduled_date_from:
-                query = query.filter(
-                    ServiceOrder.scheduled_date >= filters.scheduled_date_from
-                )
+                query = query.filter(ServiceOrder.scheduled_date >= filters.scheduled_date_from)
             if filters.scheduled_date_to:
-                query = query.filter(
-                    ServiceOrder.scheduled_date <= filters.scheduled_date_to
-                )
+                query = query.filter(ServiceOrder.scheduled_date <= filters.scheduled_date_to)
             if filters.search:
                 search_filter = f"%{filters.search}%"
                 query = query.filter(
-                    or_(
-                        ServiceOrder.order_number.ilike(search_filter),
-                        ServiceOrder.title.ilike(search_filter)
-                    )
+                    or_(ServiceOrder.order_number.ilike(search_filter), ServiceOrder.title.ilike(search_filter))
                 )
 
         total = query.count()
 
-        order_column = getattr(ServiceOrder, order_by, ServiceOrder.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(ServiceOrder).mapper.column_attrs}
+        order_column = getattr(ServiceOrder, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(desc(order_column))
         else:
@@ -271,9 +240,7 @@ class ServiceRepository:
         orders = query.offset(skip).limit(limit).all()
         return orders, total
 
-    def update_order(
-        self, order_id: UUID, data: ServiceOrderUpdate
-    ) -> Optional[ServiceOrder]:
+    def update_order(self, order_id: UUID, data: ServiceOrderUpdate) -> ServiceOrder | None:
         """Atualiza uma ordem."""
         order = self.get_order(order_id)
         if not order:
@@ -289,15 +256,10 @@ class ServiceRepository:
         return order
 
     def get_order_stats(
-        self,
-        client_id: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None
-    ) -> Dict[str, Any]:
+        self, client_id: UUID | None = None, date_from: date | None = None, date_to: date | None = None
+    ) -> dict[str, Any]:
         """Retorna estatísticas das ordens."""
-        query = self.db.query(ServiceOrder).filter(
-            ServiceOrder.ativo.is_(True)
-        )
+        query = self.db.query(ServiceOrder).filter(ServiceOrder.ativo.is_(True))
 
         if client_id:
             query = query.filter(ServiceOrder.client_id == client_id)
@@ -309,58 +271,53 @@ class ServiceRepository:
         total = query.count()
 
         by_status = dict(
-            query.with_entities(
-                ServiceOrder.status,
-                func.count(ServiceOrder.id)
-            ).group_by(ServiceOrder.status).all()
+            query.with_entities(ServiceOrder.status, func.count(ServiceOrder.id)).group_by(ServiceOrder.status).all()
         )
 
         by_priority = dict(
-            query.with_entities(
-                ServiceOrder.priority,
-                func.count(ServiceOrder.id)
-            ).group_by(ServiceOrder.priority).all()
+            query.with_entities(ServiceOrder.priority, func.count(ServiceOrder.id))
+            .group_by(ServiceOrder.priority)
+            .all()
         )
 
         overdue = query.filter(
-            ServiceOrder.status.notin_([
-                OrderStatus.CONCLUIDA, OrderStatus.CANCELADA
-            ]),
-            ServiceOrder.sla_resolution_deadline < datetime.utcnow()
+            ServiceOrder.status.notin_([OrderStatus.CONCLUIDA, OrderStatus.CANCELADA]),
+            ServiceOrder.sla_resolution_deadline < datetime.utcnow(),
         ).count()
 
-        avg_rating = query.filter(
-            ServiceOrder.rating.isnot(None)
-        ).with_entities(
-            func.avg(ServiceOrder.rating)
-        ).scalar()
+        avg_rating = query.filter(ServiceOrder.rating.isnot(None)).with_entities(func.avg(ServiceOrder.rating)).scalar()
 
         return {
             "total_orders": total,
             "by_status": {str(k): v for k, v in by_status.items()},
             "by_priority": {str(k): v for k, v in by_priority.items()},
             "overdue_count": overdue,
-            "avg_rating": float(avg_rating) if avg_rating else None
+            "avg_rating": float(avg_rating) if avg_rating else None,
         }
 
-    def get_overdue_orders(self) -> List[ServiceOrder]:
+    def get_overdue_orders(self) -> list[ServiceOrder]:
         """Retorna ordens atrasadas."""
-        return self.db.query(ServiceOrder).filter(
-            ServiceOrder.ativo.is_(True),
-            ServiceOrder.status.notin_([
-                OrderStatus.CONCLUIDA, OrderStatus.CANCELADA
-            ]),
-            ServiceOrder.sla_resolution_deadline < datetime.utcnow()
-        ).all()
+        return (
+            self.db.query(ServiceOrder)
+            .filter(
+                ServiceOrder.ativo.is_(True),
+                ServiceOrder.status.notin_([OrderStatus.CONCLUIDA, OrderStatus.CANCELADA]),
+                ServiceOrder.sla_resolution_deadline < datetime.utcnow(),
+            )
+            .all()
+        )
 
     def _generate_order_number(self) -> str:
         """Gera número único para ordem."""
         year = datetime.now().year
         prefix = f"OS-{year}-"
 
-        last = self.db.query(ServiceOrder).filter(
-            ServiceOrder.order_number.like(f"{prefix}%")
-        ).order_by(desc(ServiceOrder.created_at)).first()
+        last = (
+            self.db.query(ServiceOrder)
+            .filter(ServiceOrder.order_number.like(f"{prefix}%"))
+            .order_by(desc(ServiceOrder.created_at))
+            .first()
+        )
 
         if last:
             try:
@@ -376,48 +333,43 @@ class ServiceRepository:
     # SERVICE EXECUTION
     # ========================================
 
-    def create_execution(
-        self, data: ServiceExecutionCreate
-    ) -> ServiceExecution:
+    def create_execution(self, data: ServiceExecutionCreate) -> ServiceExecution:
         """Cria uma nova execução."""
         order = self.get_order(data.order_id)
         sequence = 1
         if order:
-            existing = self.db.query(ServiceExecution).filter(
-                ServiceExecution.order_id == data.order_id
-            ).count()
+            existing = self.db.query(ServiceExecution).filter(ServiceExecution.order_id == data.order_id).count()
             sequence = existing + 1
 
         execution = ServiceExecution(
             id=uuid4(),
             execution_number=self._generate_execution_number(data.order_id),
             sequence=sequence,
-            **data.model_dump()
+            **data.model_dump(),
         )
         self.db.add(execution)
         self.db.commit()
         self.db.refresh(execution)
         return execution
 
-    def get_execution(self, execution_id: UUID) -> Optional[ServiceExecution]:
+    def get_execution(self, execution_id: UUID) -> ServiceExecution | None:
         """Busca execução por ID."""
-        return self.db.query(ServiceExecution).filter(
-            ServiceExecution.id == execution_id,
-            ServiceExecution.ativo.is_(True)
-        ).first()
+        return (
+            self.db.query(ServiceExecution)
+            .filter(ServiceExecution.id == execution_id, ServiceExecution.ativo.is_(True))
+            .first()
+        )
 
-    def list_executions_by_order(
-        self, order_id: UUID
-    ) -> List[ServiceExecution]:
+    def list_executions_by_order(self, order_id: UUID) -> list[ServiceExecution]:
         """Lista execuções de uma ordem."""
-        return self.db.query(ServiceExecution).filter(
-            ServiceExecution.order_id == order_id,
-            ServiceExecution.ativo.is_(True)
-        ).order_by(ServiceExecution.sequence).all()
+        return (
+            self.db.query(ServiceExecution)
+            .filter(ServiceExecution.order_id == order_id, ServiceExecution.ativo.is_(True))
+            .order_by(ServiceExecution.sequence)
+            .all()
+        )
 
-    def update_execution(
-        self, execution_id: UUID, data: ServiceExecutionUpdate
-    ) -> Optional[ServiceExecution]:
+    def update_execution(self, execution_id: UUID, data: ServiceExecutionUpdate) -> ServiceExecution | None:
         """Atualiza uma execução."""
         execution = self.get_execution(execution_id)
         if not execution:
@@ -436,9 +388,7 @@ class ServiceRepository:
         """Gera número da execução."""
         order = self.get_order(order_id)
         if order:
-            count = self.db.query(ServiceExecution).filter(
-                ServiceExecution.order_id == order_id
-            ).count()
+            count = self.db.query(ServiceExecution).filter(ServiceExecution.order_id == order_id).count()
             return f"{order.order_number}-E{count + 1:02d}"
         return f"EXE-{uuid4().hex[:8].upper()}"
 
@@ -448,33 +398,26 @@ class ServiceRepository:
 
     def create_report(self, data: ServiceReportCreate) -> ServiceReport:
         """Cria um novo relatório."""
-        report = ServiceReport(
-            id=uuid4(),
-            report_number=self._generate_report_number(),
-            **data.model_dump()
-        )
+        report = ServiceReport(id=uuid4(), report_number=self._generate_report_number(), **data.model_dump())
         self.db.add(report)
         self.db.commit()
         self.db.refresh(report)
         return report
 
-    def get_report(self, report_id: UUID) -> Optional[ServiceReport]:
+    def get_report(self, report_id: UUID) -> ServiceReport | None:
         """Busca relatório por ID."""
-        return self.db.query(ServiceReport).filter(
-            ServiceReport.id == report_id,
-            ServiceReport.ativo.is_(True)
-        ).first()
+        return self.db.query(ServiceReport).filter(ServiceReport.id == report_id, ServiceReport.ativo.is_(True)).first()
 
-    def list_reports_by_order(self, order_id: UUID) -> List[ServiceReport]:
+    def list_reports_by_order(self, order_id: UUID) -> list[ServiceReport]:
         """Lista relatórios de uma ordem."""
-        return self.db.query(ServiceReport).filter(
-            ServiceReport.order_id == order_id,
-            ServiceReport.ativo.is_(True)
-        ).order_by(desc(ServiceReport.created_at)).all()
+        return (
+            self.db.query(ServiceReport)
+            .filter(ServiceReport.order_id == order_id, ServiceReport.ativo.is_(True))
+            .order_by(desc(ServiceReport.created_at))
+            .all()
+        )
 
-    def update_report(
-        self, report_id: UUID, data: ServiceReportUpdate
-    ) -> Optional[ServiceReport]:
+    def update_report(self, report_id: UUID, data: ServiceReportUpdate) -> ServiceReport | None:
         """Atualiza um relatório."""
         report = self.get_report(report_id)
         if not report:
@@ -494,9 +437,12 @@ class ServiceRepository:
         year = datetime.now().year
         prefix = f"REL-{year}-"
 
-        last = self.db.query(ServiceReport).filter(
-            ServiceReport.report_number.like(f"{prefix}%")
-        ).order_by(desc(ServiceReport.created_at)).first()
+        last = (
+            self.db.query(ServiceReport)
+            .filter(ServiceReport.report_number.like(f"{prefix}%"))
+            .order_by(desc(ServiceReport.created_at))
+            .first()
+        )
 
         if last:
             try:
@@ -514,63 +460,36 @@ class ServiceRepository:
 
     def create_sla(self, data: SLAConfigCreate) -> SLAConfig:
         """Cria uma nova configuração de SLA."""
-        sla = SLAConfig(
-            id=uuid4(),
-            code=self._generate_sla_code(),
-            **data.model_dump()
-        )
+        sla = SLAConfig(id=uuid4(), code=self._generate_sla_code(), **data.model_dump())
         self.db.add(sla)
         self.db.commit()
         self.db.refresh(sla)
         return sla
 
-    def get_sla(self, sla_id: UUID) -> Optional[SLAConfig]:
+    def get_sla(self, sla_id: UUID) -> SLAConfig | None:
         """Busca SLA por ID."""
-        return self.db.query(SLAConfig).filter(
-            SLAConfig.id == sla_id,
-            SLAConfig.ativo.is_(True)
-        ).first()
+        return self.db.query(SLAConfig).filter(SLAConfig.id == sla_id, SLAConfig.ativo.is_(True)).first()
 
-    def get_sla_for_service(
-        self,
-        service_id: UUID,
-        client_id: Optional[UUID] = None
-    ) -> Optional[SLAConfig]:
+    def get_sla_for_service(self, service_id: UUID, client_id: UUID | None = None) -> SLAConfig | None:
         """Busca SLA para um serviço/cliente."""
-        query = self.db.query(SLAConfig).filter(
-            SLAConfig.ativo.is_(True),
-            SLAConfig.is_active.is_(True)
-        )
+        query = self.db.query(SLAConfig).filter(SLAConfig.ativo.is_(True), SLAConfig.is_active.is_(True))
 
         if client_id:
-            client_sla = query.filter(
-                SLAConfig.service_id == service_id,
-                SLAConfig.client_id == client_id
-            ).first()
+            client_sla = query.filter(SLAConfig.service_id == service_id, SLAConfig.client_id == client_id).first()
             if client_sla:
                 return client_sla
 
-        service_sla = query.filter(
-            SLAConfig.service_id == service_id,
-            SLAConfig.client_id.is_(None)
-        ).first()
+        service_sla = query.filter(SLAConfig.service_id == service_id, SLAConfig.client_id.is_(None)).first()
         if service_sla:
             return service_sla
 
-        return query.filter(
-            SLAConfig.is_default.is_(True)
-        ).first()
+        return query.filter(SLAConfig.is_default.is_(True)).first()
 
     def list_slas(
-        self,
-        service_id: Optional[UUID] = None,
-        client_id: Optional[UUID] = None,
-        is_active: Optional[bool] = None
-    ) -> List[SLAConfig]:
+        self, service_id: UUID | None = None, client_id: UUID | None = None, is_active: bool | None = None
+    ) -> list[SLAConfig]:
         """Lista configurações de SLA."""
-        query = self.db.query(SLAConfig).filter(
-            SLAConfig.ativo.is_(True)
-        )
+        query = self.db.query(SLAConfig).filter(SLAConfig.ativo.is_(True))
 
         if service_id:
             query = query.filter(SLAConfig.service_id == service_id)
@@ -581,9 +500,7 @@ class ServiceRepository:
 
         return query.order_by(desc(SLAConfig.created_at)).all()
 
-    def update_sla(
-        self, sla_id: UUID, data: SLAConfigUpdate
-    ) -> Optional[SLAConfig]:
+    def update_sla(self, sla_id: UUID, data: SLAConfigUpdate) -> SLAConfig | None:
         """Atualiza um SLA."""
         sla = self.get_sla(sla_id)
         if not sla:
@@ -600,9 +517,7 @@ class ServiceRepository:
 
     def _generate_sla_code(self) -> str:
         """Gera código do SLA."""
-        last = self.db.query(SLAConfig).order_by(
-            desc(SLAConfig.created_at)
-        ).first()
+        last = self.db.query(SLAConfig).order_by(desc(SLAConfig.created_at)).first()
 
         if last and last.code:
             try:

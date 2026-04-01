@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-;
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,7 +73,7 @@ const QUEUE_STATUS_ICONS: Record<string, React.ReactNode> = {
   cancelled: <XCircle className="w-3 h-3" />,
 };
 
-;
+const PAGE_SIZE = 20;
 
 export default function SyncPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('queue');
@@ -141,7 +140,6 @@ export default function SyncPage() {
       refetchQueue();
       refetchStats();
     } catch (error) {
-      console.error('Erro ao cancelar item:', error);
     }
   };
 
@@ -184,7 +182,7 @@ export default function SyncPage() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
               <div className="text-2xl font-bold text-gray-600">
-                {stats?.pending ?? stats?.queued ?? 0}
+                {stats?.pending ?? 0}
               </div>
             )}
           </CardContent>
@@ -200,7 +198,7 @@ export default function SyncPage() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
               <div className="text-2xl font-bold text-blue-600">
-                {stats?.processing ?? stats?.running ?? 0}
+                {stats?.processing ?? 0}
               </div>
             )}
           </CardContent>

@@ -5,10 +5,10 @@ Revises:
 Create Date: 2026-01-05
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "sprint34_ai_predictions"
@@ -32,29 +32,99 @@ def create_enum_safe(name: str, values: list):
 def upgrade() -> None:
     """Create AI tables."""
     # Enums
-    create_enum_safe("predictiontype", ['CHURN', 'REVENUE_FORECAST', 'EXPENSE_FORECAST', 'DEMAND_FORECAST', 'LEAD_SCORING', 'CREDIT_RISK', 'ANOMALY', 'CLASSIFICATION', 'REGRESSION', 'RECOMMENDATION', 'SENTIMENT', 'CLUSTER'])
+    create_enum_safe(
+        "predictiontype",
+        [
+            "CHURN",
+            "REVENUE_FORECAST",
+            "EXPENSE_FORECAST",
+            "DEMAND_FORECAST",
+            "LEAD_SCORING",
+            "CREDIT_RISK",
+            "ANOMALY",
+            "CLASSIFICATION",
+            "REGRESSION",
+            "RECOMMENDATION",
+            "SENTIMENT",
+            "CLUSTER",
+        ],
+    )
 
-    create_enum_safe("predictionstatus", ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'EXPIRED', 'INVALIDATED'])
+    create_enum_safe("predictionstatus", ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "EXPIRED", "INVALIDATED"])
 
-    create_enum_safe("modeltype", ['CLASSIFICATION', 'REGRESSION', 'CLUSTERING', 'ANOMALY_DETECTION', 'TIME_SERIES', 'RECOMMENDATION', 'NLP', 'RANKING'])
+    create_enum_safe(
+        "modeltype",
+        [
+            "CLASSIFICATION",
+            "REGRESSION",
+            "CLUSTERING",
+            "ANOMALY_DETECTION",
+            "TIME_SERIES",
+            "RECOMMENDATION",
+            "NLP",
+            "RANKING",
+        ],
+    )
 
-    create_enum_safe("modelstatus", ['DRAFT', 'TRAINING', 'VALIDATING', 'READY', 'DEPLOYED', 'DEPRECATED', 'FAILED', 'ARCHIVED'])
+    create_enum_safe(
+        "modelstatus", ["DRAFT", "TRAINING", "VALIDATING", "READY", "DEPLOYED", "DEPRECATED", "FAILED", "ARCHIVED"]
+    )
 
-    create_enum_safe("featurestatus", ['DRAFT', 'ACTIVE', 'DEPRECATED', 'ARCHIVED'])
+    create_enum_safe("featurestatus", ["DRAFT", "ACTIVE", "DEPRECATED", "ARCHIVED"])
 
-    create_enum_safe("featuredatatype", ['NUMERIC', 'INTEGER', 'CATEGORICAL', 'BOOLEAN', 'TEXT', 'DATE', 'DATETIME', 'ARRAY', 'EMBEDDING'])
+    create_enum_safe(
+        "featuredatatype",
+        ["NUMERIC", "INTEGER", "CATEGORICAL", "BOOLEAN", "TEXT", "DATE", "DATETIME", "ARRAY", "EMBEDDING"],
+    )
 
-    create_enum_safe("trainingstatus", ['QUEUED', 'PREPARING', 'TRAINING', 'VALIDATING', 'COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT'])
+    create_enum_safe(
+        "trainingstatus",
+        ["QUEUED", "PREPARING", "TRAINING", "VALIDATING", "COMPLETED", "FAILED", "CANCELLED", "TIMEOUT"],
+    )
 
-    create_enum_safe("anomalytype", ['OUTLIER', 'SPIKE', 'DROP', 'TREND_CHANGE', 'SEASONAL_DEVIATION', 'MISSING_DATA', 'DUPLICATE', 'PATTERN_BREAK', 'FRAUD', 'ERROR', 'OTHER'])
+    create_enum_safe(
+        "anomalytype",
+        [
+            "OUTLIER",
+            "SPIKE",
+            "DROP",
+            "TREND_CHANGE",
+            "SEASONAL_DEVIATION",
+            "MISSING_DATA",
+            "DUPLICATE",
+            "PATTERN_BREAK",
+            "FRAUD",
+            "ERROR",
+            "OTHER",
+        ],
+    )
 
-    create_enum_safe("anomalyseverity", ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
+    create_enum_safe("anomalyseverity", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
 
-    create_enum_safe("anomalystatus", ['DETECTED', 'INVESTIGATING', 'CONFIRMED', 'FALSE_POSITIVE', 'RESOLVED', 'IGNORED'])
+    create_enum_safe(
+        "anomalystatus", ["DETECTED", "INVESTIGATING", "CONFIRMED", "FALSE_POSITIVE", "RESOLVED", "IGNORED"]
+    )
 
-    create_enum_safe("recommendationtype", ['PRODUCT', 'SERVICE', 'ACTION', 'CONTENT', 'UPSELL', 'CROSS_SELL', 'RETENTION', 'OPTIMIZATION', 'ALERT', 'INSIGHT', 'NEXT_BEST_ACTION'])
+    create_enum_safe(
+        "recommendationtype",
+        [
+            "PRODUCT",
+            "SERVICE",
+            "ACTION",
+            "CONTENT",
+            "UPSELL",
+            "CROSS_SELL",
+            "RETENTION",
+            "OPTIMIZATION",
+            "ALERT",
+            "INSIGHT",
+            "NEXT_BEST_ACTION",
+        ],
+    )
 
-    create_enum_safe("recommendationstatus", ['PENDING', 'SHOWN', 'CLICKED', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CONVERTED'])
+    create_enum_safe(
+        "recommendationstatus", ["PENDING", "SHOWN", "CLICKED", "ACCEPTED", "REJECTED", "EXPIRED", "CONVERTED"]
+    )
 
     # ML Models table
     op.create_table(
@@ -65,8 +135,41 @@ def upgrade() -> None:
         sa.Column("slug", sa.String(100), nullable=False, index=True),
         sa.Column("description", sa.Text, nullable=True),
         sa.Column("version", sa.String(50), nullable=False, default="1.0.0"),
-        sa.Column("model_type", postgresql.ENUM("CLASSIFICATION", "REGRESSION", "CLUSTERING", "ANOMALY_DETECTION", "TIME_SERIES", "RECOMMENDATION", "NLP", "RANKING", name="modeltype", create_type=False), nullable=False, index=True),
-        sa.Column("status", postgresql.ENUM("DRAFT", "TRAINING", "VALIDATING", "READY", "DEPLOYED", "DEPRECATED", "FAILED", "ARCHIVED", name="modelstatus", create_type=False), nullable=False, default="DRAFT", index=True),
+        sa.Column(
+            "model_type",
+            postgresql.ENUM(
+                "CLASSIFICATION",
+                "REGRESSION",
+                "CLUSTERING",
+                "ANOMALY_DETECTION",
+                "TIME_SERIES",
+                "RECOMMENDATION",
+                "NLP",
+                "RANKING",
+                name="modeltype",
+                create_type=False,
+            ),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "status",
+            postgresql.ENUM(
+                "DRAFT",
+                "TRAINING",
+                "VALIDATING",
+                "READY",
+                "DEPLOYED",
+                "DEPRECATED",
+                "FAILED",
+                "ARCHIVED",
+                name="modelstatus",
+                create_type=False,
+            ),
+            nullable=False,
+            default="DRAFT",
+            index=True,
+        ),
         sa.Column("algorithm", sa.String(100), nullable=False),
         sa.Column("framework", sa.String(50), nullable=True),
         sa.Column("library_version", sa.String(50), nullable=True),
@@ -100,7 +203,13 @@ def upgrade() -> None:
         sa.Column("auto_retrain", sa.Boolean, default=False, nullable=False),
         sa.Column("tags", postgresql.ARRAY(sa.String), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("trained_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("deployed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("deprecated_at", sa.DateTime(timezone=True), nullable=True),
@@ -113,9 +222,50 @@ def upgrade() -> None:
         "ai_predictions",
         sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), primary_key=True),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("model_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("ai_ml_models.id", ondelete="SET NULL"), nullable=True, index=True),
-        sa.Column("prediction_type", postgresql.ENUM("CHURN", "REVENUE_FORECAST", "EXPENSE_FORECAST", "DEMAND_FORECAST", "LEAD_SCORING", "CREDIT_RISK", "ANOMALY", "CLASSIFICATION", "REGRESSION", "RECOMMENDATION", "SENTIMENT", "CLUSTER", name="predictiontype", create_type=False), nullable=False, index=True),
-        sa.Column("status", postgresql.ENUM("PENDING", "PROCESSING", "COMPLETED", "FAILED", "EXPIRED", "INVALIDATED", name="predictionstatus", create_type=False), nullable=False, default="PENDING", index=True),
+        sa.Column(
+            "model_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("ai_ml_models.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+        sa.Column(
+            "prediction_type",
+            postgresql.ENUM(
+                "CHURN",
+                "REVENUE_FORECAST",
+                "EXPENSE_FORECAST",
+                "DEMAND_FORECAST",
+                "LEAD_SCORING",
+                "CREDIT_RISK",
+                "ANOMALY",
+                "CLASSIFICATION",
+                "REGRESSION",
+                "RECOMMENDATION",
+                "SENTIMENT",
+                "CLUSTER",
+                name="predictiontype",
+                create_type=False,
+            ),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "status",
+            postgresql.ENUM(
+                "PENDING",
+                "PROCESSING",
+                "COMPLETED",
+                "FAILED",
+                "EXPIRED",
+                "INVALIDATED",
+                name="predictionstatus",
+                create_type=False,
+            ),
+            nullable=False,
+            default="PENDING",
+            index=True,
+        ),
         sa.Column("entity_type", sa.String(100), nullable=False, index=True),
         sa.Column("entity_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
         sa.Column("prediction_value", sa.Float, nullable=True),
@@ -147,7 +297,13 @@ def upgrade() -> None:
         sa.Column("batch_id", postgresql.UUID(as_uuid=True), nullable=True, index=True),
         sa.Column("tags", postgresql.ARRAY(sa.String), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_by", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("requested_by", postgresql.UUID(as_uuid=True), nullable=True),
@@ -162,7 +318,13 @@ def upgrade() -> None:
         sa.Column("slug", sa.String(100), nullable=False, index=True),
         sa.Column("description", sa.Text, nullable=True),
         sa.Column("version", sa.String(50), nullable=False, default="1.0.0"),
-        sa.Column("status", postgresql.ENUM("DRAFT", "ACTIVE", "DEPRECATED", "ARCHIVED", name="featurestatus", create_type=False), nullable=False, default="DRAFT", index=True),
+        sa.Column(
+            "status",
+            postgresql.ENUM("DRAFT", "ACTIVE", "DEPRECATED", "ARCHIVED", name="featurestatus", create_type=False),
+            nullable=False,
+            default="DRAFT",
+            index=True,
+        ),
         sa.Column("entity_type", sa.String(100), nullable=False, index=True),
         sa.Column("data_source", sa.String(200), nullable=True),
         sa.Column("source_query", sa.Text, nullable=True),
@@ -182,7 +344,13 @@ def upgrade() -> None:
         sa.Column("is_cached", sa.Boolean, default=True, nullable=False),
         sa.Column("tags", postgresql.ARRAY(sa.String), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("created_by", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("updated_by", postgresql.UUID(as_uuid=True), nullable=True),
     )
@@ -192,12 +360,39 @@ def upgrade() -> None:
         "ai_features",
         sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), primary_key=True),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("feature_store_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("ai_feature_stores.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "feature_store_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("ai_feature_stores.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(200), nullable=False, index=True),
         sa.Column("slug", sa.String(100), nullable=False, index=True),
         sa.Column("description", sa.Text, nullable=True),
-        sa.Column("data_type", postgresql.ENUM("NUMERIC", "INTEGER", "CATEGORICAL", "BOOLEAN", "TEXT", "DATE", "DATETIME", "ARRAY", "EMBEDDING", name="featuredatatype", create_type=False), nullable=False),
-        sa.Column("status", postgresql.ENUM("DRAFT", "ACTIVE", "DEPRECATED", "ARCHIVED", name="featurestatus", create_type=False), nullable=False, default="ACTIVE"),
+        sa.Column(
+            "data_type",
+            postgresql.ENUM(
+                "NUMERIC",
+                "INTEGER",
+                "CATEGORICAL",
+                "BOOLEAN",
+                "TEXT",
+                "DATE",
+                "DATETIME",
+                "ARRAY",
+                "EMBEDDING",
+                name="featuredatatype",
+                create_type=False,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "status",
+            postgresql.ENUM("DRAFT", "ACTIVE", "DEPRECATED", "ARCHIVED", name="featurestatus", create_type=False),
+            nullable=False,
+            default="ACTIVE",
+        ),
         sa.Column("source_column", sa.String(200), nullable=True),
         sa.Column("transformation", sa.Text, nullable=True),
         sa.Column("transformation_config", postgresql.JSONB, nullable=True),
@@ -211,7 +406,13 @@ def upgrade() -> None:
         sa.Column("is_computed", sa.Boolean, default=False, nullable=False),
         sa.Column("is_derived", sa.Boolean, default=False, nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("created_by", postgresql.UUID(as_uuid=True), nullable=True),
     )
 
@@ -220,10 +421,33 @@ def upgrade() -> None:
         "ai_training_jobs",
         sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), primary_key=True),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("model_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("ai_ml_models.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "model_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("ai_ml_models.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("description", sa.Text, nullable=True),
-        sa.Column("status", postgresql.ENUM("QUEUED", "PREPARING", "TRAINING", "VALIDATING", "COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", name="trainingstatus", create_type=False), nullable=False, default="QUEUED", index=True),
+        sa.Column(
+            "status",
+            postgresql.ENUM(
+                "QUEUED",
+                "PREPARING",
+                "TRAINING",
+                "VALIDATING",
+                "COMPLETED",
+                "FAILED",
+                "CANCELLED",
+                "TIMEOUT",
+                name="trainingstatus",
+                create_type=False,
+            ),
+            nullable=False,
+            default="QUEUED",
+            index=True,
+        ),
         sa.Column("config", postgresql.JSONB, nullable=True),
         sa.Column("hyperparameters", postgresql.JSONB, nullable=True),
         sa.Column("feature_store_id", postgresql.UUID(as_uuid=True), nullable=True),
@@ -263,7 +487,13 @@ def upgrade() -> None:
         sa.Column("max_retries", sa.Integer, default=3, nullable=True),
         sa.Column("tags", postgresql.ARRAY(sa.String), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("created_by", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("cancelled_by", postgresql.UUID(as_uuid=True), nullable=True),
     )
@@ -273,7 +503,13 @@ def upgrade() -> None:
         "ai_prediction_logs",
         sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), primary_key=True),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("prediction_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("ai_predictions.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "prediction_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("ai_predictions.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("model_id", postgresql.UUID(as_uuid=True), nullable=True, index=True),
         sa.Column("model_version", sa.String(50), nullable=True),
         sa.Column("request_id", sa.String(100), nullable=True, index=True),
@@ -310,9 +546,49 @@ def upgrade() -> None:
         "ai_anomaly_logs",
         sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), primary_key=True),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("anomaly_type", postgresql.ENUM("OUTLIER", "SPIKE", "DROP", "TREND_CHANGE", "SEASONAL_DEVIATION", "MISSING_DATA", "DUPLICATE", "PATTERN_BREAK", "FRAUD", "ERROR", "OTHER", name="anomalytype", create_type=False), nullable=False, index=True),
-        sa.Column("severity", postgresql.ENUM("LOW", "MEDIUM", "HIGH", "CRITICAL", name="anomalyseverity", create_type=False), nullable=False, default="MEDIUM", index=True),
-        sa.Column("status", postgresql.ENUM("DETECTED", "INVESTIGATING", "CONFIRMED", "FALSE_POSITIVE", "RESOLVED", "IGNORED", name="anomalystatus", create_type=False), nullable=False, default="DETECTED", index=True),
+        sa.Column(
+            "anomaly_type",
+            postgresql.ENUM(
+                "OUTLIER",
+                "SPIKE",
+                "DROP",
+                "TREND_CHANGE",
+                "SEASONAL_DEVIATION",
+                "MISSING_DATA",
+                "DUPLICATE",
+                "PATTERN_BREAK",
+                "FRAUD",
+                "ERROR",
+                "OTHER",
+                name="anomalytype",
+                create_type=False,
+            ),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "severity",
+            postgresql.ENUM("LOW", "MEDIUM", "HIGH", "CRITICAL", name="anomalyseverity", create_type=False),
+            nullable=False,
+            default="MEDIUM",
+            index=True,
+        ),
+        sa.Column(
+            "status",
+            postgresql.ENUM(
+                "DETECTED",
+                "INVESTIGATING",
+                "CONFIRMED",
+                "FALSE_POSITIVE",
+                "RESOLVED",
+                "IGNORED",
+                name="anomalystatus",
+                create_type=False,
+            ),
+            nullable=False,
+            default="DETECTED",
+            index=True,
+        ),
         sa.Column("entity_type", sa.String(100), nullable=False, index=True),
         sa.Column("entity_id", postgresql.UUID(as_uuid=True), nullable=True, index=True),
         sa.Column("entity_field", sa.String(100), nullable=True),
@@ -351,7 +627,13 @@ def upgrade() -> None:
         sa.Column("recurrence_count", sa.Integer, default=0, nullable=False),
         sa.Column("tags", postgresql.ARRAY(sa.String), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("created_by", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("updated_by", postgresql.UUID(as_uuid=True), nullable=True),
     )
@@ -361,8 +643,43 @@ def upgrade() -> None:
         "ai_recommendations",
         sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), primary_key=True),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("recommendation_type", postgresql.ENUM("PRODUCT", "SERVICE", "ACTION", "CONTENT", "UPSELL", "CROSS_SELL", "RETENTION", "OPTIMIZATION", "ALERT", "INSIGHT", "NEXT_BEST_ACTION", name="recommendationtype", create_type=False), nullable=False, index=True),
-        sa.Column("status", postgresql.ENUM("PENDING", "SHOWN", "CLICKED", "ACCEPTED", "REJECTED", "EXPIRED", "CONVERTED", name="recommendationstatus", create_type=False), nullable=False, default="PENDING", index=True),
+        sa.Column(
+            "recommendation_type",
+            postgresql.ENUM(
+                "PRODUCT",
+                "SERVICE",
+                "ACTION",
+                "CONTENT",
+                "UPSELL",
+                "CROSS_SELL",
+                "RETENTION",
+                "OPTIMIZATION",
+                "ALERT",
+                "INSIGHT",
+                "NEXT_BEST_ACTION",
+                name="recommendationtype",
+                create_type=False,
+            ),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "status",
+            postgresql.ENUM(
+                "PENDING",
+                "SHOWN",
+                "CLICKED",
+                "ACCEPTED",
+                "REJECTED",
+                "EXPIRED",
+                "CONVERTED",
+                name="recommendationstatus",
+                create_type=False,
+            ),
+            nullable=False,
+            default="PENDING",
+            index=True,
+        ),
         sa.Column("target_entity_type", sa.String(100), nullable=False, index=True),
         sa.Column("target_entity_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
         sa.Column("recommended_entity_type", sa.String(100), nullable=True),
@@ -407,7 +724,13 @@ def upgrade() -> None:
         sa.Column("is_realtime", sa.Boolean, default=False, nullable=False),
         sa.Column("tags", postgresql.ARRAY(sa.String), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("created_by", postgresql.UUID(as_uuid=True), nullable=True),
     )
 

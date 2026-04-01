@@ -3,7 +3,6 @@ Serviço de Lead com algoritmo de scoring baseado em IA.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional
 
 from core.logging import logger
 from modules.crm.models.lead import Lead, LeadSource, LeadStatus
@@ -84,9 +83,7 @@ class LeadScoringEngine:  # pylint: disable=too-few-public-methods
         }
 
         # Calcular score ponderado
-        total_score = sum(
-            scores[factor] * weight for factor, weight in self.WEIGHTS.items()
-        )
+        total_score = sum(scores[factor] * weight for factor, weight in self.WEIGHTS.items())
 
         # Converter para inteiro (0-100)
         final_score = min(100, max(0, int(total_score)))
@@ -266,7 +263,7 @@ class LeadService:
             return "Qualificar - obter informações da empresa"
         return "Nutrir com conteúdo antes de contato direto"
 
-    def get_next_contact_date(self, lead: Lead) -> Optional[datetime]:
+    def get_next_contact_date(self, lead: Lead) -> datetime | None:
         """
         Sugere data para próximo contato.
 

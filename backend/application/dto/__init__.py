@@ -5,15 +5,15 @@ application/dto/__init__.py - DATA TRANSFER OBJECTS
 
 from .inventory import (
     CreateProductDTO,
-    UpdateProductDTO,
-    ProductResponseDTO,
-    ProductListDTO,
-    MovementLineDTO,
     CreateStockMovementDTO,
+    MovementLineDTO,
+    ProductListDTO,
+    ProductResponseDTO,
     StockMovementResponseDTO,
+    StockMovementSummaryDTO,
     StockPositionDTO,
     StockValuationDTO,
-    StockMovementSummaryDTO
+    UpdateProductDTO,
 )
 
 __all__ = [
@@ -29,5 +29,5 @@ __all__ = [
     # Report DTOs
     "StockPositionDTO",
     "StockValuationDTO",
-    "StockMovementSummaryDTO"
+    "StockMovementSummaryDTO",
 ]

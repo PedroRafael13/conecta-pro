@@ -1,6 +1,6 @@
 """Sistema de Checklist Diário."""
 
+from .checklist_controller import router  # noqa: F401
 from .checklist_manager import ChecklistManager
-from .checklist_controller import ChecklistController
 
-__all__ = ["ChecklistManager", "ChecklistController"]
+__all__ = ["ChecklistManager", "router"]

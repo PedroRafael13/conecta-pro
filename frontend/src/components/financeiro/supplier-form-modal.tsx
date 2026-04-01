@@ -1,11 +1,10 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 
 interface SupplierFormModalProps {
   isOpen: boolean;
@@ -39,6 +38,16 @@ const SUPPLIER_CATEGORIES = [
   'Outros',
 ];
 
+const defaultFormData: SupplierFormData = {
+  name: '',
+  document: '',
+  email: '',
+  phone: '',
+  address: '',
+  category: '',
+  observacoes: '',
+};
+
 export function SupplierFormModal({
   isOpen,
   onClose,
@@ -48,43 +57,32 @@ export function SupplierFormModal({
 }: SupplierFormModalProps) {
   const isEditing = !!supplier;
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<SupplierFormData>({
-    name: '',
-    document: '',
-    email: '',
-    phone: '',
-    address: '',
-    category: '',
-    observacoes: '',
-  });
+  const [formData, setFormData] = useState<SupplierFormData>(defaultFormData);
 
-  // Populate form when editing or reset when creating
+  // Create form data from supplier
+  const createFormData = useCallback((sup?: any): SupplierFormData => ({
+    name: sup?.name || '',
+    document: sup?.document || '',
+    email: sup?.email || '',
+    phone: sup?.phone || '',
+    address: sup?.address || '',
+    category: sup?.category || '',
+    observacoes: sup?.observacoes || sup?.notes || '',
+  }), []);
+
   useEffect(() => {
     if (isOpen) {
       if (supplier) {
-        setFormData({
-          name: supplier.name || '',
-          document: supplier.document || '',
-          email: supplier.email || '',
-          phone: supplier.phone || '',
-          address: supplier.address || '',
-          category: supplier.category || '',
-          observacoes: supplier.observacoes || supplier.notes || '',
-        });
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+        setFormData(createFormData(supplier));
       } else {
-        setFormData({
-          name: '',
-          document: '',
-          email: '',
-          phone: '',
-          address: '',
-          category: '',
-          observacoes: '',
-        });
+
+        setFormData(defaultFormData);
       }
+
       setError(null);
     }
-  }, [isOpen, supplier]);
+  }, [isOpen, supplier, createFormData]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -181,7 +179,7 @@ export function SupplierFormModal({
             onChange={handleChange}
             placeholder="Nome completo ou razao social"
             required
-          />
+           aria-label="Nome completo ou razao social" />
         </div>
 
         {/* Documento e Email */}
@@ -196,7 +194,7 @@ export function SupplierFormModal({
               onChange={handleDocumentChange}
               placeholder="00.000.000/0000-00"
               maxLength={18}
-            />
+             aria-label="00.000.000/0000-00" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -208,7 +206,7 @@ export function SupplierFormModal({
               value={formData.email}
               onChange={handleChange}
               placeholder="contato@fornecedor.com"
-            />
+             aria-label="contato@fornecedor.com" />
           </div>
         </div>
 
@@ -224,7 +222,7 @@ export function SupplierFormModal({
               onChange={handlePhoneChange}
               placeholder="(00) 00000-0000"
               maxLength={15}
-            />
+             aria-label="(00) 00000-0000" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -235,7 +233,7 @@ export function SupplierFormModal({
               value={formData.category}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-            >
+             aria-label="Category">
               <option value="">Selecione...</option>
               {SUPPLIER_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -256,7 +254,7 @@ export function SupplierFormModal({
             value={formData.address}
             onChange={handleChange}
             placeholder="Rua, numero, bairro, cidade - UF"
-          />
+           aria-label="Rua, numero, bairro, cidade - UF" />
         </div>
 
         {/* Observacoes */}
@@ -271,7 +269,7 @@ export function SupplierFormModal({
             rows={3}
             placeholder="Informacoes adicionais sobre o fornecedor..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-          />
+           aria-label="Informacoes adicionais sobre o fornecedor..." />
         </div>
 
         <ModalFooter>

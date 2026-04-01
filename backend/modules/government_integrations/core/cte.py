@@ -20,18 +20,19 @@ Eventos:
 """
 
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Dict, List, Optional, Any
+import xml.etree.ElementTree as ET  # noqa: S405
 from dataclasses import dataclass, field
-from enum import Enum
-import xml.etree.ElementTree as ET
+from datetime import datetime
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class ModalTransporte(str, Enum):
+class ModalTransporte(StrEnum):
     """Modal de transporte."""
+
     RODOVIARIO = "01"
     AEREO = "02"
     AQUAVIARIO = "03"
@@ -40,8 +41,9 @@ class ModalTransporte(str, Enum):
     MULTIMODAL = "06"
 
 
-class TipoServico(str, Enum):
+class TipoServico(StrEnum):
     """Tipo de serviço de transporte."""
+
     NORMAL = "0"
     SUBCONTRATACAO = "1"
     REDESPACHO = "2"
@@ -49,8 +51,9 @@ class TipoServico(str, Enum):
     SERVICO_VINCULADO_MULTIMODAL = "4"
 
 
-class TomadorServico(str, Enum):
+class TomadorServico(StrEnum):
     """Indicador do tomador do serviço."""
+
     REMETENTE = "0"
     EXPEDIDOR = "1"
     RECEBEDOR = "2"
@@ -58,8 +61,9 @@ class TomadorServico(str, Enum):
     OUTROS = "4"
 
 
-class SituacaoCTe(str, Enum):
+class SituacaoCTe(StrEnum):
     """Situação do CT-e."""
+
     EM_DIGITACAO = "em_digitacao"
     ASSINADO = "assinado"
     AUTORIZADO = "autorizado"
@@ -71,31 +75,34 @@ class SituacaoCTe(str, Enum):
 @dataclass
 class Participante:
     """Participante do CT-e."""
+
     tipo: str  # remetente, destinatario, expedidor, recebedor
     cnpj_cpf: str
     nome: str
-    inscricao_estadual: Optional[str] = None
-    endereco: Optional[str] = None
-    numero: Optional[str] = None
-    bairro: Optional[str] = None
-    codigo_municipio: Optional[str] = None
-    municipio: Optional[str] = None
-    uf: Optional[str] = None
-    cep: Optional[str] = None
-    telefone: Optional[str] = None
-    email: Optional[str] = None
+    inscricao_estadual: str | None = None
+    endereco: str | None = None
+    numero: str | None = None
+    bairro: str | None = None
+    codigo_municipio: str | None = None
+    municipio: str | None = None
+    uf: str | None = None
+    cep: str | None = None
+    telefone: str | None = None
+    email: str | None = None
 
 
 @dataclass
 class NFReferenciada:
     """NF-e referenciada no CT-e."""
+
     chave: str
-    pin: Optional[str] = None  # PIN SUFRAMA se aplicável
+    pin: str | None = None  # PIN SUFRAMA se aplicável
 
 
 @dataclass
 class Carga:
     """Informações da carga."""
+
     valor_total_carga: Decimal
     produto_predominante: str
     peso_bruto: Decimal = Decimal("0")
@@ -108,6 +115,7 @@ class Carga:
 @dataclass
 class ComponenteValor:
     """Componente de valor do frete."""
+
     nome: str
     valor: Decimal
 
@@ -115,8 +123,9 @@ class ComponenteValor:
 @dataclass
 class CTe:
     """Conhecimento de Transporte Eletrônico."""
+
     # Identificação
-    chave: Optional[str] = None
+    chave: str | None = None
     numero: int = 0
     serie: int = 1
     modelo: str = "57"
@@ -134,21 +143,21 @@ class CTe:
     uf_fim: str = ""
 
     # Participantes
-    remetente: Optional[Participante] = None
-    destinatario: Optional[Participante] = None
-    expedidor: Optional[Participante] = None
-    recebedor: Optional[Participante] = None
+    remetente: Participante | None = None
+    destinatario: Participante | None = None
+    expedidor: Participante | None = None
+    recebedor: Participante | None = None
 
     # Documentos
-    nf_referenciadas: List[NFReferenciada] = field(default_factory=list)
+    nf_referenciadas: list[NFReferenciada] = field(default_factory=list)
 
     # Carga
-    carga: Optional[Carga] = None
+    carga: Carga | None = None
 
     # Valores
     valor_total_servico: Decimal = Decimal("0")
     valor_receber: Decimal = Decimal("0")
-    componentes_valor: List[ComponenteValor] = field(default_factory=list)
+    componentes_valor: list[ComponenteValor] = field(default_factory=list)
 
     # Tributos
     icms_base_calculo: Decimal = Decimal("0")
@@ -158,12 +167,12 @@ class CTe:
 
     # Situação
     situacao: SituacaoCTe = SituacaoCTe.EM_DIGITACAO
-    protocolo_autorizacao: Optional[str] = None
-    data_autorizacao: Optional[datetime] = None
+    protocolo_autorizacao: str | None = None
+    data_autorizacao: datetime | None = None
 
     # XML
-    xml_assinado: Optional[str] = None
-    xml_protocolo: Optional[str] = None
+    xml_assinado: str | None = None
+    xml_protocolo: str | None = None
 
 
 class CTeManager:
@@ -215,12 +224,7 @@ class CTeManager:
         self.ambiente = ambiente
         self.tipo_ambiente = "1" if ambiente == "producao" else "2"
 
-    def criar_cte(
-        self,
-        numero: int,
-        serie: int = 1,
-        modal: ModalTransporte = ModalTransporte.RODOVIARIO
-    ) -> CTe:
+    def criar_cte(self, numero: int, serie: int = 1, modal: ModalTransporte = ModalTransporte.RODOVIARIO) -> CTe:
         """
         Cria um novo CT-e.
 
@@ -403,7 +407,7 @@ class CTeManager:
         logger.info(f"Gerado XML CT-e nº {cte.numero}")
         return xml_str
 
-    def consultar_status_servico(self) -> Dict[str, Any]:
+    def consultar_status_servico(self) -> dict[str, Any]:
         """
         Consulta status do serviço CT-e na SEFAZ.
 
@@ -418,17 +422,38 @@ class CTeManager:
             "servico": "CTeStatusServico",
             "url": url,
             "status": "pendente",
-            "mensagem": "Implementar consulta via WebService"
+            "mensagem": "Implementar consulta via WebService",
         }
 
     def _codigo_uf(self, uf: str) -> str:
         """Retorna código IBGE da UF."""
         codigos = {
-            "AC": "12", "AL": "27", "AP": "16", "AM": "13", "BA": "29",
-            "CE": "23", "DF": "53", "ES": "32", "GO": "52", "MA": "21",
-            "MT": "51", "MS": "50", "MG": "31", "PA": "15", "PB": "25",
-            "PR": "41", "PE": "26", "PI": "22", "RJ": "33", "RN": "24",
-            "RS": "43", "RO": "11", "RR": "14", "SC": "42", "SP": "35",
-            "SE": "28", "TO": "17"
+            "AC": "12",
+            "AL": "27",
+            "AP": "16",
+            "AM": "13",
+            "BA": "29",
+            "CE": "23",
+            "DF": "53",
+            "ES": "32",
+            "GO": "52",
+            "MA": "21",
+            "MT": "51",
+            "MS": "50",
+            "MG": "31",
+            "PA": "15",
+            "PB": "25",
+            "PR": "41",
+            "PE": "26",
+            "PI": "22",
+            "RJ": "33",
+            "RN": "24",
+            "RS": "43",
+            "RO": "11",
+            "RR": "14",
+            "SC": "42",
+            "SP": "35",
+            "SE": "28",
+            "TO": "17",
         }
         return codigos.get(uf, "13")

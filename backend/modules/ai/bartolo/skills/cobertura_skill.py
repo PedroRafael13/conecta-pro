@@ -4,8 +4,8 @@ Skill /relatorio - Relatorios operacionais avancados
 """
 
 import logging
-from datetime import date, datetime, timedelta
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from datetime import date, timedelta
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -21,22 +21,32 @@ class CoberturaSkill(BaseSkill):
     name = "cobertura"
     description = "Analise de cobertura de postos e relatorios operacionais"
     commands = [
-        "", "critica", "hoje", "semana", "help",
+        "",
+        "critica",
+        "hoje",
+        "semana",
+        "help",
         # Relatorios avancados
         "relatorio",
     ]
 
     # Subcomandos de relatorio validos
     REPORT_TYPES = [
-        "horas_extras", "custos", "banco_horas", "substituicoes",
-        "disciplinar", "ocorrencias", "diaristas", "rondas",
+        "horas_extras",
+        "custos",
+        "banco_horas",
+        "substituicoes",
+        "disciplinar",
+        "ocorrencias",
+        "diaristas",
+        "rondas",
     ]
 
     def __init__(self, data_connector: Optional["DataConnector"] = None, db=None):
         super().__init__(data_connector=data_connector)
         self.db = db
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         if not command or command == "help":
             return await self._visao_geral(context)
 
@@ -53,7 +63,7 @@ class CoberturaSkill(BaseSkill):
         handler = handlers.get(command, self._posto_especifico)
         return await handler(args if args else [command], context)
 
-    async def _visao_geral(self, context: Dict) -> Dict[str, Any]:
+    async def _visao_geral(self, context: dict) -> dict[str, Any]:
         """Visao geral da cobertura - usa dados reais quando disponivel"""
 
         if self.has_data_connector:
@@ -74,7 +84,6 @@ class CoberturaSkill(BaseSkill):
 
                     # Classificar postos
                     criticos = 0
-                    atencao = 0
                     ok = 0
                     linhas_criticos = []
 
@@ -133,7 +142,7 @@ class CoberturaSkill(BaseSkill):
             "suggestions": ["/cobertura critica", "/cobertura hoje", "/cobertura Centro-001"],
         }
 
-    async def _critica(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _critica(self, args: list[str], context: dict) -> dict[str, Any]:
         """Postos com cobertura critica - dados reais quando disponivel"""
 
         if self.has_data_connector:
@@ -175,7 +184,7 @@ class CoberturaSkill(BaseSkill):
             "suggestions": ["Buscar substituto Centro-001", "Ver funcionarios disponiveis"],
         }
 
-    async def _hoje(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _hoje(self, args: list[str], context: dict) -> dict[str, Any]:
         """Cobertura de hoje - dados reais quando disponivel"""
 
         if self.has_data_connector:
@@ -195,7 +204,7 @@ class CoberturaSkill(BaseSkill):
 **Taxa de cobertura atual:** {taxa}% {status_icon} {status}
 
 **Turnos programados hoje:** {turnos}
-**Efetivo:** {op.get('efetivo_alocado', 0)}/{op.get('efetivo_requerido', 0)}
+**Efetivo:** {op.get("efetivo_alocado", 0)}/{op.get("efetivo_requerido", 0)}
 
 _Para detalhes por turno, consulte o modulo de escalas._""",
                         "data": {"taxa": taxa, "turnos": turnos},
@@ -214,7 +223,7 @@ _Para detalhes por turno, consulte o modulo de escalas._""",
 **Media do dia: 91.7%** [OK]""",
         }
 
-    async def _semana(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _semana(self, args: list[str], context: dict) -> dict[str, Any]:
         """Projecao semanal - estatico por enquanto (requer dados historicos)"""
         return {
             "response": """**Projecao da Semana**
@@ -232,7 +241,7 @@ _Para detalhes por turno, consulte o modulo de escalas._""",
 [!] **Atencao:** Sabado com cobertura critica""",
         }
 
-    async def _posto_especifico(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _posto_especifico(self, args: list[str], context: dict) -> dict[str, Any]:
         """Cobertura de posto especifico"""
         posto = args[0] if args else "desconhecido"
 
@@ -252,14 +261,14 @@ _Para detalhes por turno, consulte o modulo de escalas._""",
                             deficit = p.get("deficit", 0)
 
                             return {
-                                "response": f"""**Cobertura do Posto {p.get('nome', posto)}** ({p.get('codigo', '')})
+                                "response": f"""**Cobertura do Posto {p.get("nome", posto)}** ({p.get("codigo", "")})
 
-**Atual:** {cobertura}% [{'X' if cobertura < 80 else '!' if cobertura < 90 else 'OK'}]
+**Atual:** {cobertura}% [{"X" if cobertura < 80 else "!" if cobertura < 90 else "OK"}]
 **Necessario:** {requeridos} funcionarios
 **Alocados:** {alocados} funcionarios
 **Deficit:** {deficit}
 
-**Acao recomendada:** {'URGENTE - Buscar substituto' if cobertura < 80 else 'Alocar funcionario adicional'}""",
+**Acao recomendada:** {"URGENTE - Buscar substituto" if cobertura < 80 else "Alocar funcionario adicional"}""",
                                 "suggestions": [f"Buscar substituto {posto}", "Ver funcionarios disponiveis"],
                             }
             except Exception as e:
@@ -284,7 +293,7 @@ _Para detalhes por turno, consulte o modulo de escalas._""",
     # RELATORIOS AVANCADOS
     # ==================================================================
 
-    def _parse_periodo(self, args: List[str], offset: int = 0) -> tuple:
+    def _parse_periodo(self, args: list[str], offset: int = 0) -> tuple:
         """Extrai periodo dos argumentos. Retorna (start_date, end_date, label)."""
         periodo = args[offset].lower() if len(args) > offset else "mes"
         today = date.today()
@@ -306,7 +315,7 @@ _Para detalhes por turno, consulte o modulo de escalas._""",
             start = today.replace(day=1)
             return start, today, f"{today.strftime('%m/%Y')}"
 
-    async def _relatorio_dispatch(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_dispatch(self, args: list[str], context: dict) -> dict[str, Any]:
         """Roteamento dos relatorios avancados."""
         if not args:
             return {
@@ -357,14 +366,15 @@ _Para detalhes por turno, consulte o modulo de escalas._""",
 ```
 **Periodos:** hoje, semana, mes (padrao), trimestre"""
 
-    async def _relatorio_horas_extras(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_horas_extras(self, args: list[str], context: dict) -> dict[str, Any]:
         """Relatorio de horas extras."""
         start_date, end_date, label = self._parse_periodo(args)
-        posto_filtro = args[1] if len(args) > 1 else None
+        args[1] if len(args) > 1 else None
 
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.repositories.reports_repository import ReportsRepository
+
                 repo = ReportsRepository(self.db)
                 data = await repo.get_hours(start_date, end_date)
 
@@ -388,7 +398,7 @@ _Para detalhes por turno, consulte o modulo de escalas._""",
 
                     return {
                         "response": f"""**RELATORIO DE HORAS EXTRAS** - {label}
-Periodo: {start_date.strftime('%d/%m/%Y')} a {end_date.strftime('%d/%m/%Y')}
+Periodo: {start_date.strftime("%d/%m/%Y")} a {end_date.strftime("%d/%m/%Y")}
 
 **Resumo:**
 | Indicador | Valor |
@@ -396,7 +406,7 @@ Periodo: {start_date.strftime('%d/%m/%Y')} a {end_date.strftime('%d/%m/%Y')}
 | Total de Turnos | {total_turnos} |
 | Total de Horas | {total_horas:.1f}h |
 | Total Horas Extras | {total_he:.1f}h |
-| Funcionarios com HE | {len([d for d in data if d.get('overtime_hours', 0) > 0])} |
+| Funcionarios com HE | {len([d for d in data if d.get("overtime_hours", 0) > 0])} |
 
 **Top 10 - Mais Horas Extras:**
 
@@ -404,7 +414,7 @@ Periodo: {start_date.strftime('%d/%m/%Y')} a {end_date.strftime('%d/%m/%Y')}
 |---|-------------|--------|----|
 {table_rows}
 
-{'**ALERTA:** Horas extras acima de 200h no periodo!' if total_he > 200 else ''}""",
+{"**ALERTA:** Horas extras acima de 200h no periodo!" if total_he > 200 else ""}""",
                         "data": {"total_he": total_he, "total_turnos": total_turnos, "periodo": label},
                         "suggestions": ["/relatorio custos", "/relatorio banco_horas", "/relatorio substituicoes"],
                     }
@@ -433,7 +443,7 @@ _Dados ilustrativos. Conecte ao banco para dados reais._""",
             "suggestions": ["/relatorio custos", "/relatorio banco_horas"],
         }
 
-    async def _relatorio_custos(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_custos(self, args: list[str], context: dict) -> dict[str, Any]:
         """Relatorio de custos detalhados."""
         start_date, end_date, label = self._parse_periodo(args)
         posto_filtro = args[1] if len(args) > 1 else None
@@ -441,6 +451,7 @@ _Dados ilustrativos. Conecte ao banco para dados reais._""",
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.repositories.reports_repository import ReportsRepository
+
                 repo = ReportsRepository(self.db)
                 data = await repo.get_costs(start_date, end_date, post_id=posto_filtro)
 
@@ -462,7 +473,7 @@ _Dados ilustrativos. Conecte ao banco para dados reais._""",
 
                     return {
                         "response": f"""**RELATORIO DE CUSTOS** - {label}
-Periodo: {start_date.strftime('%d/%m/%Y')} a {end_date.strftime('%d/%m/%Y')}
+Periodo: {start_date.strftime("%d/%m/%Y")} a {end_date.strftime("%d/%m/%Y")}
 
 **Total Geral:** R$ {total_custo:,.2f}
 **Total de Turnos:** {total_turnos}
@@ -498,13 +509,14 @@ _Dados ilustrativos._""",
             "suggestions": ["/relatorio horas_extras", "/relatorio diaristas"],
         }
 
-    async def _relatorio_banco_horas(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_banco_horas(self, args: list[str], context: dict) -> dict[str, Any]:
         """Relatorio de banco de horas."""
         funcionario_filtro = args[0] if args else None
 
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.repositories import TimeBankRepository
+
                 repo = TimeBankRepository(self.db)
 
                 if funcionario_filtro:
@@ -513,15 +525,16 @@ _Dados ilustrativos._""",
                         entries, total = await repo.list(page=1, page_size=50)
                         # Filtra pelo nome/id do funcionario
                         filtered = [
-                            e for e in entries
-                            if funcionario_filtro.lower() in str(getattr(e, 'employee_name', '')).lower()
-                            or funcionario_filtro.lower() in str(getattr(e, 'employee_id', '')).lower()
+                            e
+                            for e in entries
+                            if funcionario_filtro.lower() in str(getattr(e, "employee_name", "")).lower()
+                            or funcionario_filtro.lower() in str(getattr(e, "employee_id", "")).lower()
                         ]
                         if filtered:
                             lines = []
                             for e in filtered[:10]:
-                                nome = getattr(e, 'employee_name', 'N/A')
-                                saldo = getattr(e, 'balance_hours', 0)
+                                nome = getattr(e, "employee_name", "N/A")
+                                saldo = getattr(e, "balance_hours", 0)
                                 lines.append(f"- **{nome}**: {saldo:+.1f}h")
 
                             return {
@@ -534,7 +547,7 @@ _Saldo positivo = credito | Saldo negativo = debito_""",
                                 "suggestions": ["/relatorio horas_extras", "/relatorio banco_horas"],
                             }
                     except Exception:
-                        pass
+                        logger.debug(f"Erro ao buscar banco de horas para funcionario {funcionario_filtro}")
 
                 # Listagem geral
                 entries, total = await repo.list(page=1, page_size=20)
@@ -543,9 +556,8 @@ _Saldo positivo = credito | Saldo negativo = debito_""",
                     negativos = 0
                     lines = []
                     for e in entries[:15]:
-                        nome = getattr(e, 'employee_name', 'N/A')
-                        saldo = getattr(e, 'balance_hours', 0)
-                        icon = "+" if saldo >= 0 else "-"
+                        nome = getattr(e, "employee_name", "N/A")
+                        saldo = getattr(e, "balance_hours", 0)
                         if saldo >= 0:
                             positivos += 1
                         else:
@@ -561,7 +573,7 @@ _Saldo positivo = credito | Saldo negativo = debito_""",
 |-------------|-------|--------|
 {chr(10).join(lines)}
 
-{'*Exibindo os primeiros 15 registros.*' if total > 15 else ''}""",
+{"*Exibindo os primeiros 15 registros.*" if total > 15 else ""}""",
                         "data": {"total": total, "positivos": positivos, "negativos": negativos},
                         "suggestions": ["/relatorio horas_extras", "/relatorio substituicoes"],
                     }
@@ -586,28 +598,29 @@ _Dados ilustrativos._""",
             "suggestions": ["/relatorio horas_extras", "/relatorio substituicoes"],
         }
 
-    async def _relatorio_substituicoes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_substituicoes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Relatorio de substituicoes."""
         start_date, end_date, label = self._parse_periodo(args)
 
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.repositories import SubstitutionRepository
+
                 repo = SubstitutionRepository(self.db)
                 entries, total = await repo.list(page=1, page_size=50)
 
                 if entries:
-                    pendentes = sum(1 for e in entries if getattr(e, 'status', '') in ('pending', 'pendente'))
-                    aprovadas = sum(1 for e in entries if getattr(e, 'status', '') in ('approved', 'aprovada'))
-                    rejeitadas = sum(1 for e in entries if getattr(e, 'status', '') in ('rejected', 'rejeitada'))
-                    concluidas = sum(1 for e in entries if getattr(e, 'status', '') in ('completed', 'concluida'))
+                    pendentes = sum(1 for e in entries if getattr(e, "status", "") in ("pending", "pendente"))
+                    aprovadas = sum(1 for e in entries if getattr(e, "status", "") in ("approved", "aprovada"))
+                    rejeitadas = sum(1 for e in entries if getattr(e, "status", "") in ("rejected", "rejeitada"))
+                    concluidas = sum(1 for e in entries if getattr(e, "status", "") in ("completed", "concluida"))
 
                     lines = []
                     for e in entries[:10]:
-                        emp_name = getattr(e, 'employee_name', 'N/A')
-                        sub_name = getattr(e, 'substitute_name', 'N/A')
-                        status = getattr(e, 'status', 'N/A')
-                        dt = getattr(e, 'date', 'N/A')
+                        emp_name = getattr(e, "employee_name", "N/A")
+                        sub_name = getattr(e, "substitute_name", "N/A")
+                        status = getattr(e, "status", "N/A")
+                        dt = getattr(e, "date", "N/A")
                         lines.append(f"| {emp_name[:15]} | {sub_name[:15]} | {status} | {dt} |")
 
                     return {
@@ -649,27 +662,34 @@ _Dados ilustrativos._""",
             "suggestions": ["/relatorio horas_extras", "/relatorio custos"],
         }
 
-    async def _relatorio_disciplinar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_disciplinar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Relatorio de medidas disciplinares."""
         start_date, end_date, label = self._parse_periodo(args)
 
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 entries, total = await repo.list(page=1, page_size=50)
 
                 if entries:
-                    por_tipo: Dict[str, int] = {}
-                    por_status: Dict[str, int] = {}
+                    por_tipo: dict[str, int] = {}
+                    por_status: dict[str, int] = {}
                     for e in entries:
-                        tipo = getattr(e, 'action_type', 'outros')
-                        status = getattr(e, 'status', 'desconhecido')
+                        tipo = getattr(e, "action_type", "outros")
+                        status = getattr(e, "status", "desconhecido")
                         por_tipo[tipo] = por_tipo.get(tipo, 0) + 1
                         por_status[status] = por_status.get(status, 0) + 1
 
-                    tipo_lines = [f"| {t.replace('_', ' ').title()} | {c} |" for t, c in sorted(por_tipo.items(), key=lambda x: x[1], reverse=True)]
-                    status_lines = [f"| {s.replace('_', ' ').title()} | {c} |" for s, c in sorted(por_status.items(), key=lambda x: x[1], reverse=True)]
+                    tipo_lines = [
+                        f"| {t.replace('_', ' ').title()} | {c} |"
+                        for t, c in sorted(por_tipo.items(), key=lambda x: x[1], reverse=True)
+                    ]
+                    status_lines = [
+                        f"| {s.replace('_', ' ').title()} | {c} |"
+                        for s, c in sorted(por_status.items(), key=lambda x: x[1], reverse=True)
+                    ]
 
                     return {
                         "response": f"""**RELATORIO DISCIPLINAR** - {label}
@@ -709,7 +729,7 @@ _Dados ilustrativos._""",
             "suggestions": ["/relatorio ocorrencias", "/relatorio substituicoes"],
         }
 
-    async def _relatorio_ocorrencias(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_ocorrencias(self, args: list[str], context: dict) -> dict[str, Any]:
         """Relatorio de ocorrencias com filtro de severidade."""
         start_date, end_date, label = self._parse_periodo(args)
         severidade_filtro = args[1].lower() if len(args) > 1 else None
@@ -717,6 +737,7 @@ _Dados ilustrativos._""",
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
+
                 repo = OccurrenceRepository(self.db)
                 stats = await repo.get_stats()
 
@@ -745,7 +766,7 @@ _Dados ilustrativos._""",
 
                     return {
                         "response": f"""**RELATORIO DE OCORRENCIAS** - {label}
-{f'Filtro de severidade: {severidade_filtro}' if severidade_filtro else ''}
+{f"Filtro de severidade: {severidade_filtro}" if severidade_filtro else ""}
 
 **Indicadores Gerais:**
 | Indicador | Valor |
@@ -754,24 +775,24 @@ _Dados ilustrativos._""",
 | Abertas | {stats.open} |
 | Em Analise | {stats.in_analysis} |
 | Resolvidas | {stats.resolved} |
-| Graves/Gravissimas | {stats.severe} {'🚨' if stats.severe > 0 else ''} |
+| Graves/Gravissimas | {stats.severe} {"🚨" if stats.severe > 0 else ""} |
 | Taxa de Resolucao | {taxa_resolucao:.1f}% |
 | Tempo Medio Resolucao | {avg_time} |
 
 **Por Severidade:**
 | Severidade | Qtd |
 |------------|-----|
-{chr(10).join(sev_lines) if sev_lines else '| Nenhum dado | - |'}
+{chr(10).join(sev_lines) if sev_lines else "| Nenhum dado | - |"}
 
 **Por Tipo (Top 8):**
 | Tipo | Qtd |
 |------|-----|
-{chr(10).join(tipo_lines) if tipo_lines else '| Nenhum dado | - |'}
+{chr(10).join(tipo_lines) if tipo_lines else "| Nenhum dado | - |"}
 
 **Por Categoria:**
 | Categoria | Qtd |
 |-----------|-----|
-{chr(10).join(cat_lines) if cat_lines else '| Nenhum dado | - |'}""",
+{chr(10).join(cat_lines) if cat_lines else "| Nenhum dado | - |"}""",
                         "data": {
                             "total": stats.total,
                             "abertas": stats.open,
@@ -801,28 +822,27 @@ _Dados ilustrativos._""",
             "suggestions": ["/relatorio disciplinar", "/relatorio rondas"],
         }
 
-    async def _relatorio_diaristas(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_diaristas(self, args: list[str], context: dict) -> dict[str, Any]:
         """Relatorio de diaristas (servicos, pagamentos)."""
         start_date, end_date, label = self._parse_periodo(args)
 
         if self.has_data_connector and self.db:
             try:
-                from sqlalchemy import select, func
+                from sqlalchemy import select
+
                 from modules.operacional.diaristas.models.diarist import Diarist
 
                 # Busca diaristas ativos
-                result = await self.db.execute(
-                    select(Diarist).where(Diarist.ativo.is_(True))
-                )
+                result = await self.db.execute(select(Diarist).where(Diarist.ativo.is_(True)))
                 diaristas = list(result.scalars().all())
 
                 if diaristas:
                     total = len(diaristas)
                     lines = []
                     for d in diaristas[:15]:
-                        nome = getattr(d, 'nome', 'N/A')
-                        especialidade = getattr(d, 'especialidade', 'N/A')
-                        valor_diaria = getattr(d, 'valor_diaria', 0)
+                        nome = getattr(d, "nome", "N/A")
+                        especialidade = getattr(d, "especialidade", "N/A")
+                        valor_diaria = getattr(d, "valor_diaria", 0)
                         lines.append(f"| {nome[:25]} | {especialidade} | R$ {valor_diaria:,.2f} |")
 
                     return {
@@ -834,7 +854,7 @@ _Dados ilustrativos._""",
 |------|--------------|--------------|
 {chr(10).join(lines)}
 
-{'*Exibindo os primeiros 15 registros.*' if total > 15 else ''}""",
+{"*Exibindo os primeiros 15 registros.*" if total > 15 else ""}""",
                         "data": {"total": total, "periodo": label},
                         "suggestions": ["/relatorio custos", "/relatorio horas_extras"],
                     }
@@ -857,7 +877,7 @@ _Dados ilustrativos._""",
             "suggestions": ["/relatorio custos", "/relatorio horas_extras"],
         }
 
-    async def _relatorio_rondas(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _relatorio_rondas(self, args: list[str], context: dict) -> dict[str, Any]:
         """Relatorio de rondas de inspecao."""
         start_date, end_date, label = self._parse_periodo(args)
 
@@ -897,7 +917,7 @@ _Dados ilustrativos._""",
 
 | Ronda | Inspetor | Status | Conformidade |
 |-------|----------|--------|-------------|
-{chr(10).join(lines) if lines else '| - | - | - | - |'}""",
+{chr(10).join(lines) if lines else "| - | - | - | - |"}""",
                         "data": {"total": total, "concluidas": concluidas, "periodo": label},
                         "suggestions": ["/relatorio ocorrencias", "/relatorio disciplinar"],
                     }

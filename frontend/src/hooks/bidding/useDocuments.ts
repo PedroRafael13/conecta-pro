@@ -2,15 +2,13 @@
 
 /**
  * Hooks React Query - Documents (Documentos de Licitação)
- *
- * Hooks para gestão de documentos exigidos em editais e documentos da empresa
+ * Cobertura 100% dos 11 endpoints backend
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import documentsService, {
-  type ListTenderDocumentsParams,
-  type ListCompanyDocumentsParams,
+  type ListDocumentsParams,
 } from '@/services/bidding/documents.service';
 import type {
   CompanyDocumentCreate,
@@ -19,193 +17,121 @@ import type {
 
 const QUERY_KEYS = {
   all: ['bidding', 'documents'] as const,
-  tenderDocs: (tenderId: string, params?: ListTenderDocumentsParams) =>
-    [...QUERY_KEYS.all, 'tender', tenderId, params] as const,
-  companyDocs: {
-    all: () => [...QUERY_KEYS.all, 'company'] as const,
-    list: (params?: ListCompanyDocumentsParams) =>
-      [...QUERY_KEYS.companyDocs.all(), 'list', params] as const,
-    detail: (id: string) => [...QUERY_KEYS.companyDocs.all(), 'detail', id] as const,
-    pendentes: (params?: any) =>
-      [...QUERY_KEYS.companyDocs.all(), 'pendentes', params] as const,
-  },
+  lists: () => [...QUERY_KEYS.all, 'list'] as const,
+  list: (params?: ListDocumentsParams) => [...QUERY_KEYS.lists(), params] as const,
+  details: () => [...QUERY_KEYS.all, 'detail'] as const,
+  detail: (id: string) => [...QUERY_KEYS.details(), id] as const,
+  expiring: (params?: unknown) => [...QUERY_KEYS.all, 'expiring', params] as const,
+  status: () => [...QUERY_KEYS.all, 'status'] as const,
+  habilitacao: () => [...QUERY_KEYS.all, 'habilitacao'] as const,
+  tipos: () => [...QUERY_KEYS.all, 'tipos'] as const,
+  tipo: (tipo: string) => [...QUERY_KEYS.all, 'tipo', tipo] as const,
 };
 
-// ========== DOCUMENTOS DO EDITAL ==========
-
-/**
- * Hook para listar documentos exigidos de um edital
- */
-export function useListarDocumentosEdital(
-  tenderId: string,
-  params?: ListTenderDocumentsParams
-) {
+// GET /documents/
+export function useListarDocumentos(params?: ListDocumentsParams) {
   return useQuery({
-    queryKey: QUERY_KEYS.tenderDocs(tenderId, params),
-    queryFn: () => documentsService.listarDocumentosEdital(tenderId, params),
-    enabled: !!tenderId,
+    queryKey: QUERY_KEYS.list(params),
+    queryFn: () => documentsService.listarDocumentos(params),
     staleTime: 1000 * 60 * 5,
   });
 }
 
-/**
- * Hook para adicionar documento exigido ao edital
- */
-export function useAdicionarDocumentoEdital() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      tenderId,
-      data,
-    }: {
-      tenderId: string;
-      data: any;
-    }) => documentsService.adicionarDocumentoEdital(tenderId, data),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.tenderDocs(variables.tenderId),
-      });
-      toast.success('Documento adicionado ao edital');
-    },
-    onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao adicionar documento'
-      );
-    },
-  });
-}
-
-/**
- * Hook para atualizar documento do edital
- */
-export function useAtualizarDocumentoEdital() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      tenderId,
-      documentId,
-      data,
-    }: {
-      tenderId: string;
-      documentId: string;
-      data: any;
-    }) => documentsService.atualizarDocumentoEdital(tenderId, documentId, data),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.tenderDocs(variables.tenderId),
-      });
-      toast.success('Documento atualizado');
-    },
-    onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao atualizar documento'
-      );
-    },
-  });
-}
-
-/**
- * Hook para remover documento do edital
- */
-export function useRemoverDocumentoEdital() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ tenderId, documentId }: { tenderId: string; documentId: string }) =>
-      documentsService.removerDocumentoEdital(tenderId, documentId),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.tenderDocs(variables.tenderId),
-      });
-      toast.success('Documento removido do edital');
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao remover documento');
-    },
-  });
-}
-
-// ========== DOCUMENTOS DA EMPRESA ==========
-
-/**
- * Hook para listar documentos da empresa
- */
-export function useListarDocumentosEmpresa(params?: ListCompanyDocumentsParams) {
+// GET /documents/expiring
+export function useListarDocumentosVencendo(params?: { dias?: number }) {
   return useQuery({
-    queryKey: QUERY_KEYS.companyDocs.list(params),
-    queryFn: () => documentsService.listarDocumentosEmpresa(params),
+    queryKey: QUERY_KEYS.expiring(params),
+    queryFn: () => documentsService.listarVencendo(params),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// GET /documents/status
+export function useStatusGeralDocumentos() {
+  return useQuery({
+    queryKey: QUERY_KEYS.status(),
+    queryFn: () => documentsService.getStatusGeral(),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// GET /documents/habilitacao
+export function useVerificarHabilitacao() {
+  return useQuery({
+    queryKey: QUERY_KEYS.habilitacao(),
+    queryFn: () => documentsService.verificarHabilitacao(),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// GET /documents/tipos
+export function useListarTiposDocumento() {
+  return useQuery({
+    queryKey: QUERY_KEYS.tipos(),
+    queryFn: () => documentsService.listarTipos(),
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+// GET /documents/tipo/{tipo}
+export function useBuscarDocumentoPorTipo(tipo: string, enabled = true) {
+  return useQuery({
+    queryKey: QUERY_KEYS.tipo(tipo),
+    queryFn: () => documentsService.buscarPorTipo(tipo),
+    enabled: enabled && !!tipo,
     staleTime: 1000 * 60 * 5,
   });
 }
 
-/**
- * Hook para buscar documento da empresa por ID
- */
-export function useBuscarDocumentoEmpresa(documentId: string, enabled = true) {
+// GET /documents/{id}
+export function useBuscarDocumento(documentId: string, enabled = true) {
   return useQuery({
-    queryKey: QUERY_KEYS.companyDocs.detail(documentId),
-    queryFn: () => documentsService.buscarDocumentoEmpresaPorId(documentId),
+    queryKey: QUERY_KEYS.detail(documentId),
+    queryFn: () => documentsService.buscarDocumentoPorId(documentId),
     enabled: enabled && !!documentId,
     staleTime: 1000 * 60 * 5,
   });
 }
 
-/**
- * Hook para upload de documento da empresa
- */
-export function useUploadDocumentoEmpresa() {
+// POST /documents/
+export function useCriarDocumento() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (payload: CompanyDocumentCreate) =>
-      documentsService.uploadDocumentoEmpresa(payload),
+    mutationFn: (payload: CompanyDocumentCreate) => documentsService.criarDocumento(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.companyDocs.all() });
-      toast.success('Documento enviado com sucesso');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
+      toast.success('Documento criado com sucesso');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao enviar documento');
+      toast.error(error?.response?.data?.detail || 'Erro ao criar documento');
     },
   });
 }
 
-/**
- * Hook para atualizar documento da empresa
- */
-export function useAtualizarDocumentoEmpresa() {
+// PUT /documents/{id}
+export function useAtualizarDocumento() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: CompanyDocumentUpdate }) =>
-      documentsService.atualizarDocumentoEmpresa(id, data),
+      documentsService.atualizarDocumento(id, data),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.companyDocs.all() });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.companyDocs.detail(data.id),
-      });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(data.id) });
       toast.success('Documento atualizado com sucesso');
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao atualizar documento'
-      );
+      toast.error(error?.response?.data?.detail || 'Erro ao atualizar documento');
     },
   });
 }
 
-/**
- * Hook para remover documento da empresa
- */
-export function useRemoverDocumentoEmpresa() {
+// DELETE /documents/{id}
+export function useRemoverDocumento() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (documentId: string) =>
-      documentsService.removerDocumentoEmpresa(documentId),
+    mutationFn: (documentId: string) => documentsService.removerDocumento(documentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.companyDocs.all() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
       toast.success('Documento removido com sucesso');
     },
     onError: (error: any) => {
@@ -214,69 +140,18 @@ export function useRemoverDocumentoEmpresa() {
   });
 }
 
-/**
- * Hook para listar documentos pendentes de envio
- */
-export function useListarDocumentosPendentes(params?: {
-  cnpj?: string;
-  tender_id?: string;
-}) {
-  return useQuery({
-    queryKey: QUERY_KEYS.companyDocs.pendentes(params),
-    queryFn: () => documentsService.listarDocumentosPendentes(params),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para validar documento (Bidding)
- */
-export function useValidarDocumentoBidding() {
+// POST /documents/atualizar-status
+export function useAtualizarStatusEmLote() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (documentId: string) =>
-      documentsService.validarDocumento(documentId),
-    onSuccess: (data, documentId) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.companyDocs.all() });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.companyDocs.detail(documentId),
-      });
-      if (data.valido) {
-        toast.success('Documento validado com sucesso');
-      } else {
-        toast.warning('Documento inválido');
-      }
+    mutationFn: () => documentsService.atualizarStatusEmLote(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.status() });
+      toast.success(`${data.total_atualizado} documentos atualizados`);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao validar documento');
-    },
-  });
-}
-
-/**
- * Hook para download de documento da empresa (PDF/arquivo)
- */
-export function useDownloadDocumentoEmpresa() {
-  return useMutation({
-    mutationFn: (documentId: string) =>
-      documentsService.downloadDocumentoEmpresa(documentId),
-    onSuccess: (blob, documentId) => {
-      // Criar URL temporário para o blob
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `documento-${documentId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast.success('Download iniciado');
-    },
-    onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao fazer download do documento'
-      );
+      toast.error(error?.response?.data?.detail || 'Erro ao atualizar status');
     },
   });
 }

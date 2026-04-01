@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -59,9 +58,7 @@ class InstallationRepository:
         logger.info(f"Instalação criada: {installation.installation_code}")
         return installation
 
-    async def get_by_id(
-        self, installation_id: str | UUID
-    ) -> Optional[EquipmentInstallation]:
+    async def get_by_id(self, installation_id: str | UUID) -> EquipmentInstallation | None:
         """Busca instalação por ID."""
         if isinstance(installation_id, str):
             installation_id = UUID(installation_id)
@@ -75,7 +72,7 @@ class InstallationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[EquipmentInstallation]:
+    async def get_by_code(self, code: str) -> EquipmentInstallation | None:
         """Busca instalação por código."""
         result = await self.session.execute(
             select(EquipmentInstallation).where(
@@ -87,9 +84,7 @@ class InstallationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, installation_id: str | UUID, data: InstallationUpdate
-    ) -> Optional[EquipmentInstallation]:
+    async def update(self, installation_id: str | UUID, data: InstallationUpdate) -> EquipmentInstallation | None:
         """Atualiza uma instalação."""
         installation = await self.get_by_id(installation_id)
         if not installation:
@@ -119,14 +114,12 @@ class InstallationRepository:
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[InstallationFilter] = None,
+        filters: InstallationFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[EquipmentInstallation], int]:
         """Lista instalações com filtros e paginação."""
-        query = select(EquipmentInstallation).where(
-            EquipmentInstallation.is_active.is_(True)
-        )
+        query = select(EquipmentInstallation).where(EquipmentInstallation.is_active.is_(True))
 
         if filters:
             conditions = []
@@ -149,22 +142,16 @@ class InstallationRepository:
                 conditions.append(EquipmentInstallation.client_id == filters.client_id)
 
             if filters.technician_id:
-                conditions.append(
-                    EquipmentInstallation.technician_id == filters.technician_id
-                )
+                conditions.append(EquipmentInstallation.technician_id == filters.technician_id)
 
             if filters.priority:
                 conditions.append(EquipmentInstallation.priority == filters.priority)
 
             if filters.date_from:
-                conditions.append(
-                    EquipmentInstallation.scheduled_date >= filters.date_from
-                )
+                conditions.append(EquipmentInstallation.scheduled_date >= filters.date_from)
 
             if filters.date_to:
-                conditions.append(
-                    EquipmentInstallation.scheduled_date <= filters.date_to
-                )
+                conditions.append(EquipmentInstallation.scheduled_date <= filters.date_to)
 
             if filters.is_overdue is not None:
                 now = datetime.utcnow()
@@ -194,9 +181,7 @@ class InstallationRepository:
                     )
 
             if filters.has_acceptance is not None:
-                conditions.append(
-                    EquipmentInstallation.client_accepted == filters.has_acceptance
-                )
+                conditions.append(EquipmentInstallation.client_accepted == filters.has_acceptance)
 
             if conditions:
                 query = query.where(and_(*conditions))
@@ -251,15 +236,11 @@ class InstallationRepository:
             )
 
         result = await self.session.execute(
-            select(EquipmentInstallation)
-            .where(and_(*conditions))
-            .order_by(EquipmentInstallation.scheduled_date)
+            select(EquipmentInstallation).where(and_(*conditions)).order_by(EquipmentInstallation.scheduled_date)
         )
         return list(result.scalars().all())
 
-    async def get_scheduled_for_date(
-        self, date: datetime
-    ) -> list[EquipmentInstallation]:
+    async def get_scheduled_for_date(self, date: datetime) -> list[EquipmentInstallation]:
         """Lista instalações agendadas para uma data."""
         start = date.replace(hour=0, minute=0, second=0, microsecond=0)
         end = start + timedelta(days=1)
@@ -314,7 +295,7 @@ class InstallationRepository:
         )
         return list(result.scalars().all())
 
-    async def start(self, installation_id: str | UUID) -> Optional[EquipmentInstallation]:
+    async def start(self, installation_id: str | UUID) -> EquipmentInstallation | None:
         """Inicia uma instalação."""
         installation = await self.get_by_id(installation_id)
         if not installation:
@@ -329,8 +310,8 @@ class InstallationRepository:
     async def complete(
         self,
         installation_id: str | UUID,
-        technical_report: Optional[str] = None,
-    ) -> Optional[EquipmentInstallation]:
+        technical_report: str | None = None,
+    ) -> EquipmentInstallation | None:
         """Conclui uma instalação."""
         installation = await self.get_by_id(installation_id)
         if not installation:
@@ -342,9 +323,7 @@ class InstallationRepository:
         logger.info(f"Instalação concluída: {installation.installation_code}")
         return installation
 
-    async def cancel(
-        self, installation_id: str | UUID, reason: str
-    ) -> Optional[EquipmentInstallation]:
+    async def cancel(self, installation_id: str | UUID, reason: str) -> EquipmentInstallation | None:
         """Cancela uma instalação."""
         installation = await self.get_by_id(installation_id)
         if not installation:
@@ -360,8 +339,8 @@ class InstallationRepository:
         self,
         installation_id: str | UUID,
         new_date: datetime,
-        reason: Optional[str] = None,
-    ) -> Optional[EquipmentInstallation]:
+        reason: str | None = None,
+    ) -> EquipmentInstallation | None:
         """Reagenda uma instalação."""
         installation = await self.get_by_id(installation_id)
         if not installation:
@@ -373,9 +352,7 @@ class InstallationRepository:
         logger.info(f"Instalação reagendada: {installation.installation_code}")
         return installation
 
-    async def accept_by_client(
-        self, installation_id: str | UUID, accepted_by: str
-    ) -> Optional[EquipmentInstallation]:
+    async def accept_by_client(self, installation_id: str | UUID, accepted_by: str) -> EquipmentInstallation | None:
         """Registra aceite do cliente."""
         installation = await self.get_by_id(installation_id)
         if not installation:
@@ -392,7 +369,7 @@ class InstallationRepository:
         installation_id: str | UUID,
         photo_url: str,
         photo_type: str = "after",
-    ) -> Optional[EquipmentInstallation]:
+    ) -> EquipmentInstallation | None:
         """Adiciona foto à instalação."""
         installation = await self.get_by_id(installation_id)
         if not installation:
@@ -403,9 +380,7 @@ class InstallationRepository:
         await self.session.refresh(installation)
         return installation
 
-    async def get_stats_by_period(
-        self, date_from: datetime, date_to: datetime
-    ) -> dict:
+    async def get_stats_by_period(self, date_from: datetime, date_to: datetime) -> dict:
         """Estatísticas de instalações por período."""
         result = await self.session.execute(
             select(EquipmentInstallation).where(

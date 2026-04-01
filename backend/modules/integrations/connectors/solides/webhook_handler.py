@@ -5,27 +5,19 @@ Sprint 33: Integration Framework
 Processa eventos de webhook recebidos do Sólides.
 """
 
-import asyncio
-import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional, Callable, Awaitable
-from uuid import UUID
+from typing import Any
+from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.integrations.connectors.solides.connector import SolidesConnector
 from modules.integrations.connectors.solides.models import (
-    SolidesWebhookLog,
     SolidesIntegrationConfig,
-    SyncSource,
-    log_webhook,
+    SolidesWebhookLog,
     log_webhook_async,
-)
-from modules.integrations.connectors.solides.schemas import (
-    SolidesWebhookEvent,
-    SolidesWebhookEventType,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,12 +52,7 @@ class SolidesWebhookHandler:
         "mudanca_etapa": "_handle_stage_change",
     }
 
-    def __init__(
-        self,
-        db: AsyncSession,
-        redis_client=None,
-        async_processing: bool = True
-    ):
+    def __init__(self, db: AsyncSession, redis_client=None, async_processing: bool = True):
         """
         Inicializa o handler.
 
@@ -81,12 +68,12 @@ class SolidesWebhookHandler:
     async def handle_webhook(
         self,
         event_type: str,
-        payload: Dict[str, Any],
-        headers: Dict[str, str],
+        payload: dict[str, Any],
+        headers: dict[str, str],
         raw_body: bytes,
-        request_id: Optional[str] = None,
-        ip_address: Optional[str] = None
-    ) -> Dict[str, Any]:
+        request_id: str | None = None,
+        ip_address: str | None = None,
+    ) -> dict[str, Any]:
         """
         Processa webhook recebido.
 
@@ -113,21 +100,16 @@ class SolidesWebhookHandler:
             condominio_id=condominio_id,
             headers=dict(headers),
             request_id=request_id,
-            ip_address=ip_address
+            ip_address=ip_address,
         )
 
-        logger.info(
-            f"[Solides Webhook] Recebido evento '{event_type}' "
-            f"(id={webhook_log.id}, empresa={empresa_id})"
-        )
+        logger.info(f"[Solides Webhook] Recebido evento '{event_type}' (id={webhook_log.id}, empresa={empresa_id})")
 
         # Validar assinatura se configurado
         if condominio_id:
             config = await self._get_config(condominio_id)
             if config and config.webhook_secret:
-                connector = SolidesConnector(
-                    credentials={"webhook_secret": config.webhook_secret}
-                )
+                connector = SolidesConnector(credentials={"webhook_secret": config.webhook_secret})
                 if not await connector.validate_webhook(headers, raw_body):
                     webhook_log.status = "invalid_signature"
                     webhook_log.error = "Assinatura inválida"
@@ -146,10 +128,7 @@ class SolidesWebhookHandler:
             result = await self._process_event(webhook_log)
             return {"status": result, "webhook_id": str(webhook_log.id)}
 
-    async def _process_event(
-        self,
-        webhook_log: SolidesWebhookLog
-    ) -> str:
+    async def _process_event(self, webhook_log: SolidesWebhookLog) -> str:
         """
         Processa evento de webhook.
 
@@ -208,16 +187,10 @@ class SolidesWebhookHandler:
             webhook_id: ID do webhook
         """
         if self.redis:
-            await self.redis.lpush(
-                "solides:webhooks:queue",
-                str(webhook_id)
-            )
+            await self.redis.lpush("solides:webhooks:queue", str(webhook_id))
             logger.debug(f"[Solides Webhook] Enfileirado {webhook_id}")
 
-    async def _get_condominio_from_empresa(
-        self,
-        empresa_id: Optional[int]
-    ) -> Optional[UUID]:
+    async def _get_condominio_from_empresa(self, empresa_id: int | None) -> UUID | None:
         """
         Mapeia empresa_id do Sólides para condominio_id.
 
@@ -232,35 +205,26 @@ class SolidesWebhookHandler:
 
         # Buscar mapeamento
         stmt = select(SolidesIntegrationConfig).where(
-            SolidesIntegrationConfig.extra_config['empresa_id'].astext == str(empresa_id)
+            SolidesIntegrationConfig.extra_config["empresa_id"].astext == str(empresa_id)
         )
         result = await self.db.execute(stmt)
         config = result.scalar_one_or_none()
 
         return config.condominio_id if config else None
 
-    async def _get_config(
-        self,
-        condominio_id: UUID
-    ) -> Optional[SolidesIntegrationConfig]:
+    async def _get_config(self, condominio_id: UUID) -> SolidesIntegrationConfig | None:
         """
         Obtém configuração da integração.
         """
-        stmt = select(SolidesIntegrationConfig).where(
-            SolidesIntegrationConfig.condominio_id == condominio_id
-        )
+        stmt = select(SolidesIntegrationConfig).where(SolidesIntegrationConfig.condominio_id == condominio_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     # ==================== HANDLERS DE EVENTOS ====================
 
-    async def _handle_new_employee(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_new_employee(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
-        Processa evento de novo colaborador.
+        Processa evento de novo colaborador — dispara sync imediato.
         """
         if not condominio_id:
             logger.warning("[Solides Webhook] Condomínio não identificado para novo colaborador")
@@ -269,16 +233,14 @@ class SolidesWebhookHandler:
         colaborador_data = payload.get("data", payload)
         solides_id = str(colaborador_data.get("id"))
 
-        logger.info(f"[Solides Webhook] Processando novo colaborador {solides_id}")
-        # Sincronização será implementada via integration_service
+        logger.info(f"[Solides Webhook] Novo colaborador {solides_id} — disparando sync")
+        from modules.integrations.connectors.solides.tasks import sync_solides_incremental
 
-    async def _handle_employee_update(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+        sync_solides_incremental.delay(str(condominio_id))
+
+    async def _handle_employee_update(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
-        Processa evento de atualização de colaborador.
+        Processa evento de atualizacao de colaborador — dispara sync imediato.
         """
         if not condominio_id:
             return
@@ -286,15 +248,14 @@ class SolidesWebhookHandler:
         colaborador_data = payload.get("data", payload)
         solides_id = str(colaborador_data.get("id"))
 
-        logger.info(f"[Solides Webhook] Processando atualização colaborador {solides_id}")
+        logger.info(f"[Solides Webhook] Atualizacao colaborador {solides_id} — disparando sync")
+        from modules.integrations.connectors.solides.tasks import sync_solides_incremental
 
-    async def _handle_employee_termination(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+        sync_solides_incremental.delay(str(condominio_id))
+
+    async def _handle_employee_termination(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
-        Processa evento de demissão de colaborador.
+        Processa evento de demissao — inativa colaborador e dispara sync.
         """
         if not condominio_id:
             return
@@ -302,55 +263,215 @@ class SolidesWebhookHandler:
         colaborador_data = payload.get("data", payload)
         solides_id = str(colaborador_data.get("id"))
 
-        logger.info(f"[Solides Webhook] Processando demissão colaborador {solides_id}")
+        logger.info(f"[Solides Webhook] Demissao colaborador {solides_id} — inativando + sync")
 
-    async def _handle_new_occurrence(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
-        """
-        Processa evento de nova ocorrência.
-        """
-        if not condominio_id:
-            return
+        # Inativar imediatamente pelo solides_id
+        try:
+            await self.db.execute(
+                text("UPDATE employees SET status = 'inativo' WHERE solides_id = :sid"),
+                {"sid": solides_id},
+            )
+            await self.db.commit()
+            logger.info(f"[Solides Webhook] Colaborador {solides_id} inativado com sucesso")
+        except Exception as e:
+            logger.error(f"[Solides Webhook] Erro ao inativar {solides_id}: {e}")
 
+        # Disparar sync completo para atualizar tudo
+        from modules.integrations.connectors.solides.tasks import sync_solides_incremental
+
+        sync_solides_incremental.delay(str(condominio_id))
+
+    async def _handle_new_occurrence(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
+        """
+        Processa evento de nova ocorrência — persiste em gp_justifications.
+        """
         ocorrencia_data = payload.get("data", payload)
-        solides_id = str(ocorrencia_data.get("id"))
+        solides_id = str(ocorrencia_data.get("id", ""))
+        solides_employee_id = str(ocorrencia_data.get("employeeId") or ocorrencia_data.get("employee_id", ""))
+        occurrence_type = ocorrencia_data.get("type", "")
+        description = ocorrencia_data.get("description") or ocorrencia_data.get(
+            "descricao", "Ocorrência registrada no Sólides"
+        )
 
         logger.info(f"[Solides Webhook] Processando nova ocorrência {solides_id}")
 
-    async def _handle_new_absence(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
-        """
-        Processa evento de novo absenteísmo.
-        """
-        if not condominio_id:
-            return
+        try:
+            # Resolver employee_id local
+            result = await self.db.execute(
+                text("SELECT employee_id FROM solides_employees WHERE solides_id::text = :sid LIMIT 1"),
+                {"sid": solides_employee_id},
+            )
+            row = result.fetchone()
+            if not row:
+                logger.warning(f"[Solides Webhook] Ocorrência {solides_id}: employee {solides_employee_id} não mapeado")
+                return
+            local_id = row[0]
 
+            # Verificar duplicata
+            source_id = f"solides_occ_{solides_id}"
+            dup = await self.db.execute(
+                text("SELECT 1 FROM gp_justifications WHERE source_id = :source_id LIMIT 1"),
+                {"source_id": source_id},
+            )
+            if dup.fetchone():
+                logger.info(f"[Solides Webhook] Ocorrência {solides_id} já processada")
+                return
+
+            # Mapear tipo para categoria
+            occ_lower = occurrence_type.lower()
+            if "advertencia" in occ_lower:
+                category, justification_type = "outro", "atraso"
+            elif "atestado" in occ_lower:
+                category, justification_type = "saude", "falta"
+            else:
+                category, justification_type = "outro", "atraso"
+
+            jid = str(uuid4())
+            try:
+                await self.db.execute(
+                    text(
+                        "INSERT INTO gp_justifications "
+                        "(justification_id, employee_id, justification_type, reason, category, status, source, source_id, created_at) "
+                        "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', 'solides', :source_id, NOW())"
+                    ),
+                    {
+                        "jid": jid,
+                        "eid": local_id,
+                        "jtype": justification_type,
+                        "reason": description,
+                        "cat": category,
+                        "source_id": source_id,
+                    },
+                )
+            except Exception as col_err:
+                from sqlalchemy.exc import ProgrammingError
+
+                if isinstance(col_err, ProgrammingError):
+                    await self.db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, status, created_at) "
+                            "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', NOW())"
+                        ),
+                        {
+                            "jid": jid,
+                            "eid": local_id,
+                            "jtype": justification_type,
+                            "reason": description,
+                            "cat": category,
+                        },
+                    )
+                else:
+                    raise
+
+            await self.db.flush()
+            logger.info(f"[Solides Webhook] Ocorrência {solides_id} processada para employee {local_id}")
+
+        except Exception as e:
+            logger.error(f"[Solides Webhook] Erro ao processar ocorrência {solides_id}: {e}")
+            raise
+
+    async def _handle_new_absence(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
+        """
+        Processa evento de novo absenteísmo — persiste em gp_justifications.
+        """
         absenteismo_data = payload.get("data", payload)
-        solides_id = str(absenteismo_data.get("id"))
+        solides_id = str(absenteismo_data.get("id", ""))
+        solides_employee_id = str(absenteismo_data.get("employeeId") or absenteismo_data.get("employee_id", ""))
+        absence_type = absenteismo_data.get("type", "")
+        description = (
+            absenteismo_data.get("description") or absenteismo_data.get("descricao") or f"Absenteísmo: {absence_type}"
+        )
 
         logger.info(f"[Solides Webhook] Processando novo absenteísmo {solides_id}")
 
-    async def _handle_survey_response(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+        try:
+            # Resolver employee_id local
+            result = await self.db.execute(
+                text("SELECT employee_id FROM solides_employees WHERE solides_id::text = :sid LIMIT 1"),
+                {"sid": solides_employee_id},
+            )
+            row = result.fetchone()
+            if not row:
+                logger.warning(
+                    f"[Solides Webhook] Absenteísmo {solides_id}: employee {solides_employee_id} não mapeado"
+                )
+                return
+            local_id = row[0]
+
+            # Verificar duplicata
+            source_id = f"solides_abs_{solides_id}"
+            dup = await self.db.execute(
+                text("SELECT 1 FROM gp_justifications WHERE source_id = :source_id LIMIT 1"),
+                {"source_id": source_id},
+            )
+            if dup.fetchone():
+                logger.info(f"[Solides Webhook] Absenteísmo {solides_id} já processado")
+                return
+
+            # Mapear tipo para categoria
+            abs_upper = absence_type.upper()
+            if abs_upper in ("DOENCA", "ATESTADO"):
+                category, justification_type = "saude", "falta"
+            elif abs_upper == "LICENCA":
+                category, justification_type = "familiar", "falta"
+            elif abs_upper == "ATRASO":
+                category, justification_type = "transito", "atraso"
+            else:
+                category, justification_type = "outro", "falta"
+
+            jid = str(uuid4())
+            try:
+                await self.db.execute(
+                    text(
+                        "INSERT INTO gp_justifications "
+                        "(justification_id, employee_id, justification_type, reason, category, status, source, source_id, created_at) "
+                        "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', 'solides', :source_id, NOW())"
+                    ),
+                    {
+                        "jid": jid,
+                        "eid": local_id,
+                        "jtype": justification_type,
+                        "reason": description,
+                        "cat": category,
+                        "source_id": source_id,
+                    },
+                )
+            except Exception as col_err:
+                from sqlalchemy.exc import ProgrammingError
+
+                if isinstance(col_err, ProgrammingError):
+                    await self.db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, status, created_at) "
+                            "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', NOW())"
+                        ),
+                        {
+                            "jid": jid,
+                            "eid": local_id,
+                            "jtype": justification_type,
+                            "reason": description,
+                            "cat": category,
+                        },
+                    )
+                else:
+                    raise
+
+            await self.db.flush()
+            logger.info(f"[Solides Webhook] Absenteísmo {solides_id} processado para employee {local_id}")
+
+        except Exception as e:
+            logger.error(f"[Solides Webhook] Erro ao processar absenteísmo {solides_id}: {e}")
+            raise
+
+    async def _handle_survey_response(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de resposta em pesquisa.
         """
         logger.info("[Solides Webhook] Resposta de pesquisa recebida (não processado)")
 
-    async def _handle_new_resume(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_new_resume(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de novo currículo.
         """
@@ -362,11 +483,7 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando novo currículo {solides_id}")
 
-    async def _handle_new_application(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_new_application(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de nova inscrição em vaga.
         """
@@ -378,11 +495,7 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando nova inscrição {solides_id}")
 
-    async def _handle_stage_change(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_stage_change(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de mudança de etapa em processo seletivo.
         """
@@ -397,11 +510,8 @@ class SolidesWebhookHandler:
 
 # ==================== WORKER PARA FILA ====================
 
-async def process_webhook_queue(
-    db: AsyncSession,
-    redis_client,
-    batch_size: int = 10
-) -> int:
+
+async def process_webhook_queue(db: AsyncSession, redis_client, batch_size: int = 10) -> int:
     """
     Processa webhooks enfileirados.
 
@@ -425,9 +535,7 @@ async def process_webhook_queue(
         webhook_id = webhook_id_bytes.decode()
 
         # Buscar webhook
-        stmt = select(SolidesWebhookLog).where(
-            SolidesWebhookLog.id == webhook_id
-        )
+        stmt = select(SolidesWebhookLog).where(SolidesWebhookLog.id == webhook_id)
         result = await db.execute(stmt)
         webhook_log = result.scalar_one_or_none()
 

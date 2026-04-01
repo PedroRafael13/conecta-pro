@@ -1,15 +1,15 @@
 """Controller para endpoints de reembolso."""
 
 import logging
-from typing import Annotated, List, Optional
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.auth.dependencies import CurrentActiveUser, require_permission
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from modules.reimbursement.models import ExpenseCategory, AttachmentType
+from modules.reimbursement.models import AttachmentType, ExpenseCategory
 from modules.reimbursement.schemas import (
     PaginatedReimbursementResponse,
     ReimbursementApproveRequest,
@@ -28,7 +28,7 @@ from modules.reimbursement.schemas import (
     ReimbursementReturnRequest,
     ReimbursementSubmitRequest,
 )
-from modules.reimbursement.services import ApprovalService, ReimbursementService, FileValidator
+from modules.reimbursement.services import ApprovalService, FileValidator, ReimbursementService
 
 logger = logging.getLogger(__name__)
 
@@ -36,31 +36,28 @@ router = APIRouter()
 
 
 # Dependência para obter condominio_id do usuário
-def get_condominio_id(user: CurrentActiveUser) -> UUID:
-    """Extrai condominio_id do usuário."""
+def get_condominio_id(user: CurrentActiveUser) -> UUID | None:
+    """Extrai condominio_id do usuário. Admins retornam None."""
+    if hasattr(user, "role") and user.role == "admin":
+        return None
     if hasattr(user, "condominio_id") and user.condominio_id:
         return user.condominio_id
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Usuário não possui condomínio associado",
-    )
+    # Em vez de bloquear, retorna None para permitir listagem vazia
+    return None
 
 
-def get_condominio_id_optional(user: CurrentActiveUser) -> Optional[UUID]:
+def get_condominio_id_optional(user: CurrentActiveUser) -> UUID | None:
     """Extrai condominio_id do usuário. Retorna None para admins."""
     # Admins podem ver todos os reembolsos
     if hasattr(user, "role") and user.role == "admin":
         return None
     if hasattr(user, "condominio_id") and user.condominio_id:
         return user.condominio_id
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Usuário não possui condomínio associado",
-    )
+    return None
 
 
 CondominioId = Annotated[UUID, Depends(get_condominio_id)]
-CondominioIdOptional = Annotated[Optional[UUID], Depends(get_condominio_id_optional)]
+CondominioIdOptional = Annotated[UUID | None, Depends(get_condominio_id_optional)]
 
 
 # ==================== SOLICITAÇÕES ====================
@@ -105,13 +102,13 @@ async def list_reimbursements(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    status_filter: Optional[str] = Query(None, alias="status"),
-    approval_level: Optional[str] = Query(None),
-    expense_date_start: Optional[str] = Query(None),
-    expense_date_end: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
-    cost_center: Optional[str] = Query(None),
-    project: Optional[str] = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    approval_level: str | None = Query(None),
+    expense_date_start: str | None = Query(None),
+    expense_date_end: str | None = Query(None),
+    search: str | None = Query(None),
+    cost_center: str | None = Query(None),
+    project: str | None = Query(None),
 ):
     """Lista todas as solicitações de reembolso (para gestores). Admins veem todos."""
     from datetime import date
@@ -148,16 +145,14 @@ async def list_my_reimbursements(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    status_filter: Optional[str] = Query(None, alias="status"),
+    status_filter: str | None = Query(None, alias="status"),
 ):
     """Lista solicitações do usuário autenticado."""
     filters = ReimbursementRequestFilter(status=status_filter)
 
     service = ReimbursementService(db)
     skip = (page - 1) * page_size
-    requests, total = await service.list_my_requests(
-        condominio_id, user.id, filters, skip, page_size
-    )
+    requests, total = await service.list_my_requests(condominio_id, user.id, filters, skip, page_size)
 
     total_pages = (total + page_size - 1) // page_size
 
@@ -195,10 +190,7 @@ async def list_categories(
 
     # Se não houver categorias customizadas, retorna as padrão
     if not categories:
-        return [
-            {"code": e.value, "name": e.value.replace("_", " ").title()}
-            for e in ExpenseCategory
-        ]
+        return [{"code": e.value, "name": e.value.replace("_", " ").title()} for e in ExpenseCategory]
 
     return [c.to_dict() for c in categories]
 
@@ -206,19 +198,13 @@ async def list_categories(
 @router.get("/expense-types")
 async def list_expense_types():
     """Lista tipos de despesa disponíveis (enum)."""
-    return [
-        {"value": e.value, "label": e.value.replace("_", " ").title()}
-        for e in ExpenseCategory
-    ]
+    return [{"value": e.value, "label": e.value.replace("_", " ").title()} for e in ExpenseCategory]
 
 
 @router.get("/attachment-types")
 async def list_attachment_types():
     """Lista tipos de anexo disponíveis (enum)."""
-    return [
-        {"value": e.value, "label": e.value.replace("_", " ").title()}
-        for e in AttachmentType
-    ]
+    return [{"value": e.value, "label": e.value.replace("_", " ").title()} for e in AttachmentType]
 
 
 @router.get("/{request_id}", response_model=ReimbursementRequestResponse)
@@ -288,7 +274,7 @@ async def delete_reimbursement(
 @router.post("/{request_id}/submit", response_model=ReimbursementRequestResponse)
 async def submit_reimbursement(
     request_id: UUID,
-    data: Optional[ReimbursementSubmitRequest] = None,
+    data: ReimbursementSubmitRequest | None = None,
     user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -313,7 +299,7 @@ async def submit_reimbursement(
 @router.post("/{request_id}/cancel", response_model=ReimbursementRequestResponse)
 async def cancel_reimbursement(
     request_id: UUID,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -411,13 +397,13 @@ async def delete_item(
 # ==================== ANEXOS ====================
 
 
-@router.post("/{request_id}/attachments", response_model=ReimbursementAttachmentResponse)
+@router.post("/{request_id}/attachments", response_model=ReimbursementAttachmentResponse, status_code=201)
 async def upload_attachment(
     request_id: UUID,
     file: UploadFile = File(...),
-    item_id: Optional[UUID] = Form(None),
+    item_id: UUID | None = Form(None),
     attachment_type: str = Form("outros"),
-    description: Optional[str] = Form(None),
+    description: str | None = Form(None),
     user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -431,7 +417,7 @@ async def upload_attachment(
             "image/gif",
             "image/webp",
             "application/pdf",
-        ]
+        ],
     )
 
     content = await validator.validate_file(file)
@@ -465,10 +451,10 @@ async def upload_attachment(
     return attachment
 
 
-@router.get("/{request_id}/attachments", response_model=List[ReimbursementAttachmentResponse])
+@router.get("/{request_id}/attachments", response_model=list[ReimbursementAttachmentResponse])
 async def list_attachments(
     request_id: UUID,
-    item_id: Optional[UUID] = Query(None),
+    item_id: UUID | None = Query(None),
     user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -533,15 +519,13 @@ async def list_pending_approvals(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    approval_level: Optional[str] = Query(None),
+    approval_level: str | None = Query(None),
 ):
     """Lista solicitações pendentes de aprovação."""
     service = ApprovalService(db)
     skip = (page - 1) * page_size
 
-    requests, total = await service.list_pending_approvals(
-        condominio_id, approval_level, skip, page_size
-    )
+    requests, total = await service.list_pending_approvals(condominio_id, approval_level, skip, page_size)
 
     total_pages = (total + page_size - 1) // page_size
 
@@ -580,7 +564,7 @@ async def start_analysis(
 @router.post("/{request_id}/approve", response_model=ReimbursementRequestResponse)
 async def approve_reimbursement(
     request_id: UUID,
-    data: Optional[ReimbursementApproveRequest] = None,
+    data: ReimbursementApproveRequest | None = None,
     user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -686,7 +670,7 @@ async def list_ready_for_payment(
 @router.post("/{request_id}/process", response_model=ReimbursementRequestResponse)
 async def process_reimbursement(
     request_id: UUID,
-    data: Optional[ReimbursementProcessRequest] = None,
+    data: ReimbursementProcessRequest | None = None,
     user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ):

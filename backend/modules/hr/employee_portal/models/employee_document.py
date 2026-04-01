@@ -1,26 +1,26 @@
 """Model para documentos do funcionário."""
 
-from datetime import datetime, date
-from enum import Enum
 import uuid
+from datetime import date, datetime
+from enum import StrEnum
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
-    DateTime,
+    Column,
     Date,
+    DateTime,
     ForeignKey,
-    Integer,
     Index,
+    Integer,
+    String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """Tipo de documento."""
 
     # Documentos de RH
@@ -73,7 +73,7 @@ class DocumentType(str, Enum):
     OTHER = "other"  # Outro
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     """Status do documento."""
 
     DRAFT = "draft"  # Rascunho
@@ -223,11 +223,7 @@ class EmployeeDocument(Base):
     @property
     def needs_acknowledgement(self) -> bool:
         """Verifica se precisa de ciência."""
-        return (
-            self.requires_acknowledgement
-            and not self.acknowledged_at
-            and self.is_published
-        )
+        return self.requires_acknowledgement and not self.acknowledged_at and self.is_published
 
     @property
     def needs_signature(self) -> bool:
@@ -265,9 +261,7 @@ class EmployeeDocument(Base):
             "status": self.status,
             "file_type": self.file_type,
             "file_size": self.file_size,
-            "reference_date": (
-                self.reference_date.isoformat() if self.reference_date else None
-            ),
+            "reference_date": (self.reference_date.isoformat() if self.reference_date else None),
             "is_visible": self.is_visible,
             "requires_acknowledgement": self.requires_acknowledgement,
             "acknowledged": self.acknowledged_at is not None,

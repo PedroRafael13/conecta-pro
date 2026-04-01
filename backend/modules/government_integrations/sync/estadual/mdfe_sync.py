@@ -9,12 +9,14 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import datetime
 from decimal import Decimal
-import xml.etree.ElementTree as ET
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+import defusedxml.ElementTree as ET  # noqa: N817
+
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class MDFeSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai MDF-e do webservice SEFAZ.
 
@@ -62,10 +64,7 @@ class MDFeSynchronizer(BaseSynchronizer):
         """
         cnpj = self._normalizar_cnpj(config.cnpj_empresa)
 
-        logger.info(
-            f"[MDF-e] Extraindo dados - CNPJ: {cnpj}, "
-            f"Periodo: {config.data_inicial} a {config.data_final}"
-        )
+        logger.info(f"[MDF-e] Extraindo dados - CNPJ: {cnpj}, Periodo: {config.data_inicial} a {config.data_final}")
 
         # 1. MDF-e emitidos
         async for mdfe in self._consultar_mdfe_emitidos(cnpj, config):
@@ -79,7 +78,7 @@ class MDFeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta MDF-e emitidos."""
         try:
             if not self.sefaz_manager:
@@ -97,11 +96,13 @@ class MDFeSynchronizer(BaseSynchronizer):
                 xml = await self._baixar_xml(mdfe.get("chave"))
                 dados = self._parse_mdfe_xml(xml) if xml else {}
 
-                dados.update({
-                    "tipo": "mdfe",
-                    "chave_acesso": mdfe.get("chave"),
-                    "xml_original": xml,
-                })
+                dados.update(
+                    {
+                        "tipo": "mdfe",
+                        "chave_acesso": mdfe.get("chave"),
+                        "xml_original": xml,
+                    }
+                )
 
                 yield dados
 
@@ -113,7 +114,7 @@ class MDFeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta eventos dos MDF-e."""
         try:
             if not self.sefaz_manager:
@@ -148,7 +149,7 @@ class MDFeSynchronizer(BaseSynchronizer):
         except Exception as e:
             logger.error(f"[MDF-e] Erro consultando eventos: {e}")
 
-    async def _baixar_xml(self, chave: str) -> Optional[bytes]:
+    async def _baixar_xml(self, chave: str) -> bytes | None:
         """Baixa XML completo do MDF-e."""
         try:
             if not self.sefaz_manager or not chave:
@@ -168,11 +169,11 @@ class MDFeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Busca MDF-e no banco para consultar eventos."""
         return []
 
-    def _parse_mdfe_xml(self, xml: bytes) -> Dict[str, Any]:
+    def _parse_mdfe_xml(self, xml: bytes) -> dict[str, Any]:
         """Extrai dados do XML do MDF-e."""
         if not xml:
             return {}
@@ -180,98 +181,118 @@ class MDFeSynchronizer(BaseSynchronizer):
         try:
             root = ET.fromstring(xml)
 
-            infMDFe = root.find(".//mdfe:infMDFe", self.NS_MDFE)
-            if infMDFe is None:
-                infMDFe = root.find(".//infMDFe")
+            inf_mdfe = root.find(".//mdfe:infMDFe", self.NS_MDFE)
+            if inf_mdfe is None:
+                inf_mdfe = root.find(".//infMDFe")
 
-            if infMDFe is None:
+            if inf_mdfe is None:
                 return {}
 
-            ide = infMDFe.find("mdfe:ide", self.NS_MDFE) or infMDFe.find("ide")
-            emit = infMDFe.find("mdfe:emit", self.NS_MDFE) or infMDFe.find("emit")
-            infDoc = infMDFe.find("mdfe:infDoc", self.NS_MDFE) or infMDFe.find("infDoc")
-            tot = infMDFe.find("mdfe:tot", self.NS_MDFE) or infMDFe.find("tot")
+            ide = inf_mdfe.find("mdfe:ide", self.NS_MDFE) or inf_mdfe.find("ide")
+            emit = inf_mdfe.find("mdfe:emit", self.NS_MDFE) or inf_mdfe.find("emit")
+            inf_doc = inf_mdfe.find("mdfe:infDoc", self.NS_MDFE) or inf_mdfe.find("infDoc")
+            tot = inf_mdfe.find("mdfe:tot", self.NS_MDFE) or inf_mdfe.find("tot")
 
             dados = {
                 "numero": self._get_text(ide, "nMDF"),
                 "serie": self._get_text(ide, "serie"),
                 "data_emissao": self._parse_data(self._get_text(ide, "dhEmi")),
                 "tipo_emitente": self._get_text(ide, "tpEmit"),
-                "descricao_tipo_emitente": self.TIPOS_EMITENTE.get(
-                    self._get_text(ide, "tpEmit"), "Transportador"
-                ),
+                "descricao_tipo_emitente": self.TIPOS_EMITENTE.get(self._get_text(ide, "tpEmit"), "Transportador"),
                 "modal": self._get_text(ide, "modal"),
                 "uf_inicio": self._get_text(ide, "UFIni"),
                 "uf_fim": self._get_text(ide, "UFFim"),
             }
 
             if emit:
-                dados.update({
-                    "cnpj_emitente": self._get_text(emit, "CNPJ"),
-                    "razao_social_emitente": self._get_text(emit, "xNome"),
-                    "ie_emitente": self._get_text(emit, "IE"),
-                    "uf_emitente": self._get_text(emit, "enderEmit/UF"),
-                })
+                dados.update(
+                    {
+                        "cnpj_emitente": self._get_text(emit, "CNPJ"),
+                        "razao_social_emitente": self._get_text(emit, "xNome"),
+                        "ie_emitente": self._get_text(emit, "IE"),
+                        "uf_emitente": self._get_text(emit, "enderEmit/UF"),
+                    }
+                )
 
             if tot:
-                dados.update({
-                    "qtd_cte": int(self._get_text(tot, "qCTe") or 0),
-                    "qtd_nfe": int(self._get_text(tot, "qNFe") or 0),
-                    "qtd_mdfe": int(self._get_text(tot, "qMDFe") or 0),
-                    "valor_carga": self._parse_decimal(self._get_text(tot, "vCarga")),
-                    "peso_bruto": self._parse_decimal(self._get_text(tot, "qCarga")),
-                    "unidade": self._get_text(tot, "cUnid"),
-                })
+                dados.update(
+                    {
+                        "qtd_cte": int(self._get_text(tot, "qCTe") or 0),
+                        "qtd_nfe": int(self._get_text(tot, "qNFe") or 0),
+                        "qtd_mdfe": int(self._get_text(tot, "qMDFe") or 0),
+                        "valor_carga": self._parse_decimal(self._get_text(tot, "vCarga")),
+                        "peso_bruto": self._parse_decimal(self._get_text(tot, "qCarga")),
+                        "unidade": self._get_text(tot, "cUnid"),
+                    }
+                )
 
             # Documentos vinculados
             docs = []
-            if infDoc:
-                for infMunDescarga in infDoc.findall("mdfe:infMunDescarga", self.NS_MDFE) or infDoc.findall("infMunDescarga"):
-                    municipio = self._get_text(infMunDescarga, "xMunDescarga")
-                    uf = self._get_text(infMunDescarga, "cMunDescarga")[:2] if self._get_text(infMunDescarga, "cMunDescarga") else None
+            if inf_doc:
+                for inf_mun_descarga in inf_doc.findall("mdfe:infMunDescarga", self.NS_MDFE) or inf_doc.findall(
+                    "infMunDescarga"
+                ):
+                    municipio = self._get_text(inf_mun_descarga, "xMunDescarga")
+                    self._get_text(inf_mun_descarga, "cMunDescarga")[:2] if self._get_text(
+                        inf_mun_descarga, "cMunDescarga"
+                    ) else None
 
-                    for infCTe in infMunDescarga.findall("mdfe:infCTe", self.NS_MDFE) or infMunDescarga.findall("infCTe"):
-                        docs.append({
-                            "tipo": "CTe",
-                            "chave": self._get_text(infCTe, "chCTe"),
-                            "municipio_descarga": municipio,
-                        })
+                    for inf_cte in inf_mun_descarga.findall("mdfe:infCTe", self.NS_MDFE) or inf_mun_descarga.findall(
+                        "infCTe"
+                    ):
+                        docs.append(
+                            {
+                                "tipo": "CTe",
+                                "chave": self._get_text(inf_cte, "chCTe"),
+                                "municipio_descarga": municipio,
+                            }
+                        )
 
-                    for infNFe in infMunDescarga.findall("mdfe:infNFe", self.NS_MDFE) or infMunDescarga.findall("infNFe"):
-                        docs.append({
-                            "tipo": "NFe",
-                            "chave": self._get_text(infNFe, "chNFe"),
-                            "municipio_descarga": municipio,
-                        })
+                    for inf_nfe in inf_mun_descarga.findall("mdfe:infNFe", self.NS_MDFE) or inf_mun_descarga.findall(
+                        "infNFe"
+                    ):
+                        docs.append(
+                            {
+                                "tipo": "NFe",
+                                "chave": self._get_text(inf_nfe, "chNFe"),
+                                "municipio_descarga": municipio,
+                            }
+                        )
 
             dados["documentos_vinculados"] = docs
 
             # Condutores
             condutores = []
-            for condutor in infMDFe.findall(".//mdfe:condutor", self.NS_MDFE) or infMDFe.findall(".//condutor"):
-                condutores.append({
-                    "cpf": self._get_text(condutor, "CPF"),
-                    "nome": self._get_text(condutor, "xNome"),
-                })
+            for condutor in inf_mdfe.findall(".//mdfe:condutor", self.NS_MDFE) or inf_mdfe.findall(".//condutor"):
+                condutores.append(
+                    {
+                        "cpf": self._get_text(condutor, "CPF"),
+                        "nome": self._get_text(condutor, "xNome"),
+                    }
+                )
             dados["condutores"] = condutores
 
             # Veiculos
             veiculos = []
-            for veiculo in infMDFe.findall(".//mdfe:veicTracao", self.NS_MDFE) or infMDFe.findall(".//veicTracao"):
-                veiculos.append({
-                    "placa": self._get_text(veiculo, "placa"),
-                    "renavam": self._get_text(veiculo, "RENAVAM"),
-                    "uf": self._get_text(veiculo, "UF"),
-                    "tipo": "tracao",
-                })
+            for veiculo in inf_mdfe.findall(".//mdfe:veicTracao", self.NS_MDFE) or inf_mdfe.findall(".//veicTracao"):
+                veiculos.append(
+                    {
+                        "placa": self._get_text(veiculo, "placa"),
+                        "renavam": self._get_text(veiculo, "RENAVAM"),
+                        "uf": self._get_text(veiculo, "UF"),
+                        "tipo": "tracao",
+                    }
+                )
 
-            for veiculo in infMDFe.findall(".//mdfe:veicReboque", self.NS_MDFE) or infMDFe.findall(".//veicReboque"):
-                veiculos.append({
-                    "placa": self._get_text(veiculo, "placa"),
-                    "renavam": self._get_text(veiculo, "RENAVAM"),
-                    "uf": self._get_text(veiculo, "UF"),
-                    "tipo": "reboque",
-                })
+            for veiculo in inf_mdfe.findall(".//mdfe:veicReboque", self.NS_MDFE) or inf_mdfe.findall(".//veicReboque"):
+                veiculos.append(
+                    {
+                        "placa": self._get_text(veiculo, "placa"),
+                        "renavam": self._get_text(veiculo, "RENAVAM"),
+                        "uf": self._get_text(veiculo, "UF"),
+                        "tipo": "reboque",
+                    }
+                )
 
             dados["veiculos"] = veiculos
 
@@ -281,7 +302,7 @@ class MDFeSynchronizer(BaseSynchronizer):
             logger.error(f"[MDF-e] Erro parseando XML: {e}")
             return {}
 
-    def _get_text(self, element, path: str) -> Optional[str]:
+    def _get_text(self, element, path: str) -> str | None:
         """Obtem texto de elemento XML."""
         if element is None:
             return None
@@ -294,7 +315,7 @@ class MDFeSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -309,19 +330,17 @@ class MDFeSynchronizer(BaseSynchronizer):
 
     async def _salvar_mdfe(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva ou atualiza MDF-e no banco."""
-        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal, StatusDocumentoFiscal
+        from ..models.sync_models import DocumentoFiscal, StatusDocumentoFiscal, TipoDocumentoFiscal
 
         chave = registro.get("chave_acesso")
         if not chave:
             return False
 
-        existente = self.db.query(DocumentoFiscal).filter(
-            DocumentoFiscal.chave_acesso == chave
-        ).first()
+        existente = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.chave_acesso == chave).first()
 
         if existente:
             existente.xml_original = registro.get("xml_original") or existente.xml_original
@@ -359,7 +378,7 @@ class MDFeSynchronizer(BaseSynchronizer):
         self.db.add(novo)
         return True
 
-    async def _salvar_evento(self, registro: Dict[str, Any]) -> bool:
+    async def _salvar_evento(self, registro: dict[str, Any]) -> bool:
         """Salva evento de MDF-e."""
         from ..models.sync_models import DocumentoFiscal, EventoDocumentoFiscal, StatusDocumentoFiscal
 
@@ -367,18 +386,20 @@ class MDFeSynchronizer(BaseSynchronizer):
         if not chave:
             return False
 
-        mdfe = self.db.query(DocumentoFiscal).filter(
-            DocumentoFiscal.chave_acesso == chave
-        ).first()
+        mdfe = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.chave_acesso == chave).first()
 
         if not mdfe:
             return False
 
-        existente = self.db.query(EventoDocumentoFiscal).filter(
-            EventoDocumentoFiscal.documento_id == mdfe.id,
-            EventoDocumentoFiscal.tipo_evento == registro.get("tipo_evento"),
-            EventoDocumentoFiscal.sequencia == registro.get("sequencia", 1),
-        ).first()
+        existente = (
+            self.db.query(EventoDocumentoFiscal)
+            .filter(
+                EventoDocumentoFiscal.documento_id == mdfe.id,
+                EventoDocumentoFiscal.tipo_evento == registro.get("tipo_evento"),
+                EventoDocumentoFiscal.sequencia == registro.get("sequencia", 1),
+            )
+            .first()
+        )
 
         if existente:
             return False
@@ -407,37 +428,51 @@ class MDFeSynchronizer(BaseSynchronizer):
 
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao de MDF-e."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo dos MDF-e sincronizados."""
-        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal, StatusDocumentoFiscal
         from sqlalchemy import func
 
-        totais = self.db.query(
-            func.count(DocumentoFiscal.id),
-        ).filter(
-            DocumentoFiscal.cnpj_empresa == cnpj,
-            DocumentoFiscal.tipo == TipoDocumentoFiscal.MDFE,
-        ).first()
+        from ..models.sync_models import DocumentoFiscal, StatusDocumentoFiscal, TipoDocumentoFiscal
 
-        abertos = self.db.query(
-            func.count(DocumentoFiscal.id),
-        ).filter(
-            DocumentoFiscal.cnpj_empresa == cnpj,
-            DocumentoFiscal.tipo == TipoDocumentoFiscal.MDFE,
-            DocumentoFiscal.status == StatusDocumentoFiscal.AUTORIZADO,
-        ).first()
+        totais = (
+            self.db.query(
+                func.count(DocumentoFiscal.id),
+            )
+            .filter(
+                DocumentoFiscal.cnpj_empresa == cnpj,
+                DocumentoFiscal.tipo == TipoDocumentoFiscal.MDFE,
+            )
+            .first()
+        )
+
+        abertos = (
+            self.db.query(
+                func.count(DocumentoFiscal.id),
+            )
+            .filter(
+                DocumentoFiscal.cnpj_empresa == cnpj,
+                DocumentoFiscal.tipo == TipoDocumentoFiscal.MDFE,
+                DocumentoFiscal.status == StatusDocumentoFiscal.AUTORIZADO,
+            )
+            .first()
+        )
 
         return {
             "total_mdfes": totais[0] or 0,

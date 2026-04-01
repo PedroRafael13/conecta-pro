@@ -1,11 +1,10 @@
 """Schemas Pydantic para TimeSheet."""
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.hr.time_tracking.models import TimeSheetStatus
 
@@ -22,7 +21,7 @@ class DailySummaryEntry(BaseModel):
     early: int = 0
     is_holiday: bool = False
     is_absent: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class PendingIssue(BaseModel):
@@ -46,30 +45,30 @@ class TimeSheetBase(BaseModel):
 class TimeSheetCreate(TimeSheetBase):
     """Schema para criação de TimeSheet."""
 
-    employee_registration: Optional[str] = Field(None, max_length=50)
-    employee_cpf: Optional[str] = Field(None, max_length=14)
-    employee_pis: Optional[str] = Field(None, max_length=15)
-    department_id: Optional[str] = Field(None, max_length=50)
-    department_name: Optional[str] = Field(None, max_length=100)
-    position_name: Optional[str] = Field(None, max_length=100)
+    employee_registration: str | None = Field(None, max_length=50)
+    employee_cpf: str | None = Field(None, max_length=14)
+    employee_pis: str | None = Field(None, max_length=15)
+    department_id: str | None = Field(None, max_length=50)
+    department_name: str | None = Field(None, max_length=100)
+    position_name: str | None = Field(None, max_length=100)
 
-    work_schedule_id: Optional[str] = Field(None, max_length=50)
-    work_schedule_name: Optional[str] = Field(None, max_length=200)
+    work_schedule_id: str | None = Field(None, max_length=50)
+    work_schedule_name: str | None = Field(None, max_length=200)
     weekly_hours_expected: int = Field(2640, ge=0)
 
     hourly_rate: Decimal = Field(Decimal("0"), ge=0)
 
-    condominium_id: Optional[str] = Field(None, max_length=50)
-    condominium_name: Optional[str] = Field(None, max_length=200)
+    condominium_id: str | None = Field(None, max_length=50)
+    condominium_name: str | None = Field(None, max_length=200)
 
 
 class TimeSheetUpdate(BaseModel):
     """Schema para atualização de TimeSheet."""
 
-    status: Optional[TimeSheetStatus] = None
-    hourly_rate: Optional[Decimal] = Field(None, ge=0)
-    notes: Optional[str] = None
-    internal_notes: Optional[str] = None
+    status: TimeSheetStatus | None = None
+    hourly_rate: Decimal | None = Field(None, ge=0)
+    notes: str | None = None
+    internal_notes: str | None = None
 
 
 class TimeSheetRecalculate(BaseModel):
@@ -81,25 +80,25 @@ class TimeSheetRecalculate(BaseModel):
 class TimeSheetEmployeeApproval(BaseModel):
     """Schema para aprovação do funcionário."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class TimeSheetManagerApproval(BaseModel):
     """Schema para aprovação do gestor."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class TimeSheetHRApproval(BaseModel):
     """Schema para aprovação do RH."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class TimeSheetReview(BaseModel):
     """Schema para revisão."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class TimeSheetClose(BaseModel):
@@ -110,7 +109,7 @@ class TimeSheetPayroll(BaseModel):
     """Schema para envio à folha."""
 
     payroll_reference: str = Field(..., min_length=1, max_length=100)
-    batch_id: Optional[str] = Field(None, max_length=50)
+    batch_id: str | None = Field(None, max_length=50)
 
 
 class TimeSheetReopen(BaseModel):
@@ -131,15 +130,15 @@ class TimeSheetResponse(TimeSheetBase):
     period_start: date
     period_end: date
 
-    employee_registration: Optional[str] = None
-    employee_cpf: Optional[str] = None
-    employee_pis: Optional[str] = None
-    department_id: Optional[str] = None
-    department_name: Optional[str] = None
-    position_name: Optional[str] = None
+    employee_registration: str | None = None
+    employee_cpf: str | None = None
+    employee_pis: str | None = None
+    department_id: str | None = None
+    department_name: str | None = None
+    position_name: str | None = None
 
-    work_schedule_id: Optional[str] = None
-    work_schedule_name: Optional[str] = None
+    work_schedule_id: str | None = None
+    work_schedule_name: str | None = None
     weekly_hours_expected: int = 2640
 
     # Dias
@@ -190,7 +189,7 @@ class TimeSheetResponse(TimeSheetBase):
     # DSR
     dsr_entitled: bool = True
     dsr_lost_days: int = 0
-    dsr_lost_reason: Optional[str] = None
+    dsr_lost_reason: str | None = None
 
     # Valores
     hourly_rate: Decimal = Decimal("0")
@@ -210,35 +209,35 @@ class TimeSheetResponse(TimeSheetBase):
     manual_entries_count: int = 0
 
     # Detalhes
-    daily_summary: Optional[List[dict]] = None
+    daily_summary: list[dict] | None = None
     has_pending_issues: bool = False
-    pending_issues: Optional[List[dict]] = None
+    pending_issues: list[dict] | None = None
 
     # Revisão
-    reviewed_by_name: Optional[str] = None
-    reviewed_at: Optional[datetime] = None
+    reviewed_by_name: str | None = None
+    reviewed_at: datetime | None = None
 
     # Aprovações
     approved_by_employee: bool = False
-    employee_approved_at: Optional[datetime] = None
+    employee_approved_at: datetime | None = None
 
     approved_by_manager: bool = False
-    manager_name: Optional[str] = None
-    manager_approved_at: Optional[datetime] = None
+    manager_name: str | None = None
+    manager_approved_at: datetime | None = None
 
     approved_by_hr: bool = False
-    hr_approver_name: Optional[str] = None
-    hr_approved_at: Optional[datetime] = None
+    hr_approver_name: str | None = None
+    hr_approved_at: datetime | None = None
 
     # Fechamento
-    closed_at: Optional[datetime] = None
-    closed_by_name: Optional[str] = None
+    closed_at: datetime | None = None
+    closed_by_name: str | None = None
 
     # Folha
-    sent_to_payroll_at: Optional[datetime] = None
-    payroll_reference: Optional[str] = None
+    sent_to_payroll_at: datetime | None = None
+    payroll_reference: str | None = None
 
-    condominium_name: Optional[str] = None
+    condominium_name: str | None = None
 
     # Calculados
     hours_worked: float
@@ -252,7 +251,7 @@ class TimeSheetResponse(TimeSheetBase):
 
     created_at: datetime
     updated_at: datetime
-    last_calculated_at: Optional[datetime] = None
+    last_calculated_at: datetime | None = None
 
 
 class TimeSheetListResponse(BaseModel):
@@ -274,20 +273,20 @@ class TimeSheetListResponse(BaseModel):
     overtime_total_hours: float
     has_pending_issues: bool
     is_fully_approved: bool
-    condominium_name: Optional[str] = None
+    condominium_name: str | None = None
 
 
 class TimeSheetFilter(BaseModel):
     """Schema para filtros de TimeSheet."""
 
-    employee_id: Optional[str] = None
-    reference_month: Optional[int] = Field(None, ge=1, le=12)
-    reference_year: Optional[int] = Field(None, ge=2000, le=2100)
-    status: Optional[TimeSheetStatus] = None
-    condominium_id: Optional[str] = None
-    department_id: Optional[str] = None
-    has_pending_issues: Optional[bool] = None
-    is_fully_approved: Optional[bool] = None
+    employee_id: str | None = None
+    reference_month: int | None = Field(None, ge=1, le=12)
+    reference_year: int | None = Field(None, ge=2000, le=2100)
+    status: TimeSheetStatus | None = None
+    condominium_id: str | None = None
+    department_id: str | None = None
+    has_pending_issues: bool | None = None
+    is_fully_approved: bool | None = None
 
 
 class TimeSheetStats(BaseModel):
@@ -310,7 +309,7 @@ class TimeSheetStats(BaseModel):
 class TimeSheetBatchAction(BaseModel):
     """Schema para ação em lote."""
 
-    sheet_ids: List[str] = Field(..., min_length=1)
+    sheet_ids: list[str] = Field(..., min_length=1)
     action: str = Field(..., pattern=r"^(close|send_to_payroll|reopen)$")
-    notes: Optional[str] = Field(None, max_length=500)
-    payroll_reference: Optional[str] = Field(None, max_length=100)
+    notes: str | None = Field(None, max_length=500)
+    payroll_reference: str | None = Field(None, max_length=100)

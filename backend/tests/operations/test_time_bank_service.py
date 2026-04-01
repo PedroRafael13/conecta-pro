@@ -167,7 +167,6 @@ class TestCompensationValue:
             is_holiday=False,
         )
 
-        base = 200.0
         night_bonus = 40.0  # 20% de R$200
         assert result["night_bonus"] == night_bonus
         assert result["total_value"] == 240.0
@@ -183,7 +182,6 @@ class TestCompensationValue:
             is_holiday=False,
         )
 
-        base = 200.0
         sunday_bonus = 200.0  # 100% de R$200
         assert result["sunday_bonus"] == sunday_bonus
         assert result["total_value"] == 400.0
@@ -199,7 +197,6 @@ class TestCompensationValue:
             is_holiday=True,
         )
 
-        base = 200.0
         holiday_bonus = 200.0
         assert result["holiday_bonus"] == holiday_bonus
         assert result["total_value"] == 400.0

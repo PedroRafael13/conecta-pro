@@ -3,7 +3,6 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -77,9 +76,7 @@ class EmployeePayrollConfigRepository:
             union_contribution_enabled=data.union_contribution_enabled,
             union_contribution_type=data.union_contribution_type,
             union_contribution_value=data.union_contribution_value,
-            calculation_config=(
-                data.calculation_config.model_dump() if data.calculation_config else {}
-            ),
+            calculation_config=(data.calculation_config.model_dump() if data.calculation_config else {}),
             external_codes=(data.external_codes.model_dump() if data.external_codes else {}),
             created_by=created_by,
         )
@@ -100,7 +97,7 @@ class EmployeePayrollConfigRepository:
     async def get_by_id(
         self,
         config_id: UUID,
-    ) -> Optional[EmployeePayrollConfig]:
+    ) -> EmployeePayrollConfig | None:
         """Busca configuração por ID."""
         query = select(EmployeePayrollConfig).where(
             and_(
@@ -116,7 +113,7 @@ class EmployeePayrollConfigRepository:
         self,
         employee_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[EmployeePayrollConfig]:
+    ) -> EmployeePayrollConfig | None:
         """Busca configuração por funcionário."""
         query = select(EmployeePayrollConfig).where(
             and_(
@@ -137,7 +134,7 @@ class EmployeePayrollConfigRepository:
         active_only: bool = True,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[EmployeePayrollConfig], int]:
+    ) -> tuple[list[EmployeePayrollConfig], int]:
         """Lista configurações com filtros."""
         conditions = [
             EmployeePayrollConfig.condominio_id == condominio_id,
@@ -172,7 +169,7 @@ class EmployeePayrollConfigRepository:
         self,
         config_id: UUID,
         data: EmployeePayrollConfigUpdate,
-    ) -> Optional[EmployeePayrollConfig]:
+    ) -> EmployeePayrollConfig | None:
         """Atualiza configuração."""
         config = await self.get_by_id(config_id)
         if not config:
@@ -184,7 +181,7 @@ class EmployeePayrollConfigRepository:
         if "benefits" in update_data and update_data["benefits"]:
             update_data["benefits"] = self._serialize_benefits(update_data["benefits"])
         if "loans" in update_data and update_data["loans"]:
-            update_data["loans"] = [l.model_dump() for l in update_data["loans"]]
+            update_data["loans"] = [loan.model_dump() for loan in update_data["loans"]]
         if "alimony" in update_data and update_data["alimony"]:
             update_data["alimony"] = [a.model_dump() for a in update_data["alimony"]]
         if "dependents" in update_data and update_data["dependents"]:
@@ -218,7 +215,7 @@ class EmployeePayrollConfigRepository:
         new_salary: Decimal,
         *,
         new_hourly_rate: Decimal = None,
-    ) -> Optional[EmployeePayrollConfig]:
+    ) -> EmployeePayrollConfig | None:
         """Atualiza salário."""
         config = await self.get_by_id(config_id)
         if not config:
@@ -240,7 +237,7 @@ class EmployeePayrollConfigRepository:
         adjustment: Decimal,
         *,
         adjustment_type: str = "credit",
-    ) -> Optional[EmployeePayrollConfig]:
+    ) -> EmployeePayrollConfig | None:
         """Atualiza saldo do banco de horas."""
         config = await self.get_by_id(config_id)
         if not config:
@@ -263,7 +260,7 @@ class EmployeePayrollConfigRepository:
         self,
         config_id: UUID,
         termination_date,
-    ) -> Optional[EmployeePayrollConfig]:
+    ) -> EmployeePayrollConfig | None:
         """Registra demissão."""
         config = await self.get_by_id(config_id)
         if not config:
@@ -292,7 +289,7 @@ class EmployeePayrollConfigRepository:
     async def get_active_employees(
         self,
         condominio_id: UUID,
-    ) -> List[EmployeePayrollConfig]:
+    ) -> list[EmployeePayrollConfig]:
         """Retorna funcionários ativos."""
         query = select(EmployeePayrollConfig).where(
             and_(
@@ -308,7 +305,7 @@ class EmployeePayrollConfigRepository:
     async def get_employees_with_bank_hours(
         self,
         condominio_id: UUID,
-    ) -> List[EmployeePayrollConfig]:
+    ) -> list[EmployeePayrollConfig]:
         """Retorna funcionários com banco de horas ativo."""
         query = select(EmployeePayrollConfig).where(
             and_(

@@ -1,15 +1,14 @@
 """Schemas Pydantic para TimeJustification."""
 
-from datetime import datetime, date, time
-from typing import Optional, List
+from datetime import date, datetime, time
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.hr.time_tracking.models import (
-    JustificationType,
-    JustificationStatus,
     JustificationCategory,
+    JustificationStatus,
+    JustificationType,
 )
 
 
@@ -25,12 +24,12 @@ class AttachmentInfo(BaseModel):
 class MedicalInfo(BaseModel):
     """Informações médicas."""
 
-    cid_code: Optional[str] = Field(None, max_length=10)
-    cid_description: Optional[str] = Field(None, max_length=200)
-    certificate_number: Optional[str] = Field(None, max_length=50)
-    doctor_name: Optional[str] = Field(None, max_length=200)
-    doctor_crm: Optional[str] = Field(None, max_length=20)
-    clinic_name: Optional[str] = Field(None, max_length=200)
+    cid_code: str | None = Field(None, max_length=10)
+    cid_description: str | None = Field(None, max_length=200)
+    certificate_number: str | None = Field(None, max_length=50)
+    doctor_name: str | None = Field(None, max_length=200)
+    doctor_crm: str | None = Field(None, max_length=20)
+    clinic_name: str | None = Field(None, max_length=200)
 
 
 class TimeJustificationBase(BaseModel):
@@ -47,68 +46,68 @@ class TimeJustificationBase(BaseModel):
 class TimeJustificationCreate(TimeJustificationBase):
     """Schema para criação de TimeJustification."""
 
-    employee_registration: Optional[str] = Field(None, max_length=50)
-    department_id: Optional[str] = Field(None, max_length=50)
-    department_name: Optional[str] = Field(None, max_length=100)
+    employee_registration: str | None = Field(None, max_length=50)
+    department_id: str | None = Field(None, max_length=50)
+    department_name: str | None = Field(None, max_length=100)
 
-    start_time: Optional[time] = None
-    end_time: Optional[time] = None
+    start_time: time | None = None
+    end_time: time | None = None
     is_full_day: bool = True
 
-    description: Optional[str] = Field(None, max_length=1000)
-    detailed_reason: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=1000)
+    detailed_reason: str | None = Field(None, max_length=2000)
 
     # Médico
-    medical_info: Optional[MedicalInfo] = None
+    medical_info: MedicalInfo | None = None
 
     # Registros vinculados
-    time_entry_ids: Optional[List[str]] = None
+    time_entry_ids: list[str] | None = None
 
     # Jornada
-    work_schedule_id: Optional[str] = Field(None, max_length=50)
+    work_schedule_id: str | None = Field(None, max_length=50)
 
     # Local
-    condominium_id: Optional[str] = Field(None, max_length=50)
-    condominium_name: Optional[str] = Field(None, max_length=200)
+    condominium_id: str | None = Field(None, max_length=50)
+    condominium_name: str | None = Field(None, max_length=200)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class TimeJustificationUpdate(BaseModel):
     """Schema para atualização de TimeJustification."""
 
-    justification_type: Optional[JustificationType] = None
-    title: Optional[str] = Field(None, min_length=5, max_length=200)
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    start_time: Optional[time] = None
-    end_time: Optional[time] = None
-    is_full_day: Optional[bool] = None
-    description: Optional[str] = Field(None, max_length=1000)
-    detailed_reason: Optional[str] = Field(None, max_length=2000)
-    medical_info: Optional[MedicalInfo] = None
-    notes: Optional[str] = None
+    justification_type: JustificationType | None = None
+    title: str | None = Field(None, min_length=5, max_length=200)
+    start_date: date | None = None
+    end_date: date | None = None
+    start_time: time | None = None
+    end_time: time | None = None
+    is_full_day: bool | None = None
+    description: str | None = Field(None, max_length=1000)
+    detailed_reason: str | None = Field(None, max_length=2000)
+    medical_info: MedicalInfo | None = None
+    notes: str | None = None
 
 
 class TimeJustificationAnalysis(BaseModel):
     """Schema para análise."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class TimeJustificationApproval(BaseModel):
     """Schema para aprovação."""
 
     approved: bool = True
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class TimeJustificationPartialApproval(BaseModel):
     """Schema para aprovação parcial."""
 
-    approved_days: Optional[int] = Field(None, ge=0)
-    approved_minutes: Optional[int] = Field(None, ge=0)
-    notes: Optional[str] = Field(None, max_length=500)
+    approved_days: int | None = Field(None, ge=0)
+    approved_minutes: int | None = Field(None, ge=0)
+    notes: str | None = Field(None, max_length=500)
 
 
 class TimeJustificationRejection(BaseModel):
@@ -120,7 +119,7 @@ class TimeJustificationRejection(BaseModel):
 class TimeJustificationVerification(BaseModel):
     """Schema para verificação RH."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class TimeJustificationResponse(TimeJustificationBase):
@@ -133,63 +132,63 @@ class TimeJustificationResponse(TimeJustificationBase):
     category: JustificationCategory
     status: JustificationStatus
 
-    employee_registration: Optional[str] = None
-    department_id: Optional[str] = None
-    department_name: Optional[str] = None
+    employee_registration: str | None = None
+    department_id: str | None = None
+    department_name: str | None = None
 
-    start_time: Optional[time] = None
-    end_time: Optional[time] = None
+    start_time: time | None = None
+    end_time: time | None = None
     is_full_day: bool = True
     days_count: int = 1
     hours_count: int = 0
     minutes_justified: int = 0
 
-    description: Optional[str] = None
-    detailed_reason: Optional[str] = None
+    description: str | None = None
+    detailed_reason: str | None = None
 
     has_attachments: bool = False
-    attachments: Optional[List[dict]] = None
+    attachments: list[dict] | None = None
 
-    cid_code: Optional[str] = None
-    cid_description: Optional[str] = None
-    medical_certificate_number: Optional[str] = None
-    doctor_name: Optional[str] = None
-    doctor_crm: Optional[str] = None
-    clinic_name: Optional[str] = None
+    cid_code: str | None = None
+    cid_description: str | None = None
+    medical_certificate_number: str | None = None
+    doctor_name: str | None = None
+    doctor_crm: str | None = None
+    clinic_name: str | None = None
 
-    time_entry_ids: Optional[List[str]] = None
+    time_entry_ids: list[str] | None = None
 
-    analyzed_by_name: Optional[str] = None
-    analyzed_at: Optional[datetime] = None
+    analyzed_by_name: str | None = None
+    analyzed_at: datetime | None = None
 
     requires_approval: bool = True
-    approved_by_name: Optional[str] = None
-    approved_at: Optional[datetime] = None
-    approval_notes: Optional[str] = None
+    approved_by_name: str | None = None
+    approved_at: datetime | None = None
+    approval_notes: str | None = None
 
     approval_level: int = 1
     max_approval_level: int = 1
-    approval_history: Optional[List[dict]] = None
+    approval_history: list[dict] | None = None
 
-    rejected_by_name: Optional[str] = None
-    rejected_at: Optional[datetime] = None
-    rejection_reason: Optional[str] = None
+    rejected_by_name: str | None = None
+    rejected_at: datetime | None = None
+    rejection_reason: str | None = None
 
-    partial_approved_days: Optional[int] = None
-    partial_approved_minutes: Optional[int] = None
+    partial_approved_days: int | None = None
+    partial_approved_minutes: int | None = None
 
     grants_paid_leave: bool = False
     affects_dsr: bool = True
 
-    deadline_for_submission: Optional[datetime] = None
+    deadline_for_submission: datetime | None = None
     is_late_submission: bool = False
     late_submission_days: int = 0
 
     is_verified: bool = False
-    verified_by_name: Optional[str] = None
-    verified_at: Optional[datetime] = None
+    verified_by_name: str | None = None
+    verified_at: datetime | None = None
 
-    condominium_name: Optional[str] = None
+    condominium_name: str | None = None
 
     # Calculados
     is_pending: bool
@@ -202,7 +201,7 @@ class TimeJustificationResponse(TimeJustificationBase):
 
     created_at: datetime
     updated_at: datetime
-    submitted_at: Optional[datetime] = None
+    submitted_at: datetime | None = None
 
 
 class TimeJustificationListResponse(BaseModel):
@@ -224,24 +223,24 @@ class TimeJustificationListResponse(BaseModel):
     days_count: int
     is_pending: bool
     has_attachments: bool
-    condominium_name: Optional[str] = None
+    condominium_name: str | None = None
 
 
 class TimeJustificationFilter(BaseModel):
     """Schema para filtros de TimeJustification."""
 
-    employee_id: Optional[str] = None
-    justification_type: Optional[JustificationType] = None
-    category: Optional[JustificationCategory] = None
-    status: Optional[JustificationStatus] = None
-    condominium_id: Optional[str] = None
-    department_id: Optional[str] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    is_pending: Optional[bool] = None
-    is_verified: Optional[bool] = None
-    has_attachments: Optional[bool] = None
-    is_late_submission: Optional[bool] = None
+    employee_id: str | None = None
+    justification_type: JustificationType | None = None
+    category: JustificationCategory | None = None
+    status: JustificationStatus | None = None
+    condominium_id: str | None = None
+    department_id: str | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    is_pending: bool | None = None
+    is_verified: bool | None = None
+    has_attachments: bool | None = None
+    is_late_submission: bool | None = None
 
 
 class TimeJustificationStats(BaseModel):

@@ -3,8 +3,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +22,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class ReconciliationPeriodType(str, Enum):
+class ReconciliationPeriodType(StrEnum):
     """Tipo de periodo de conciliacao."""
 
     DIARIO = "diario"
@@ -33,7 +32,7 @@ class ReconciliationPeriodType(str, Enum):
     PERSONALIZADO = "personalizado"
 
 
-class ReconciliationStatus(str, Enum):
+class ReconciliationStatus(StrEnum):
     """Status da conciliacao."""
 
     RASCUNHO = "rascunho"
@@ -206,12 +205,8 @@ class BankReconciliation(Base):
         self.closing_difference = (self.bank_closing_balance or Decimal("0")) - (
             self.system_closing_balance or Decimal("0")
         )
-        self.credits_difference = (self.bank_credits or Decimal("0")) - (
-            self.system_credits or Decimal("0")
-        )
-        self.debits_difference = (self.bank_debits or Decimal("0")) - (
-            self.system_debits or Decimal("0")
-        )
+        self.credits_difference = (self.bank_credits or Decimal("0")) - (self.system_credits or Decimal("0"))
+        self.debits_difference = (self.bank_debits or Decimal("0")) - (self.system_debits or Decimal("0"))
 
     def calculate_progress(self) -> None:
         """Calcula progresso da conciliacao."""
@@ -274,7 +269,7 @@ class BankReconciliation(Base):
         else:
             self.total_adjustments = (self.total_adjustments or Decimal("0")) - amount
 
-    def review(self, user_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def review(self, user_id: uuid.UUID, notes: str | None = None) -> None:
         """Marca como revisada."""
         self.reviewed_by = user_id
         self.reviewed_at = datetime.utcnow()

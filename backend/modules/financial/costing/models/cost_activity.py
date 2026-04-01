@@ -1,8 +1,8 @@
 """Cost Activity model - Atividades ABC."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -25,10 +25,9 @@ from core.models import Base
 if TYPE_CHECKING:
     from modules.financial.costing.models.cost_driver import CostDriver
     from modules.financial.costing.models.cost_pool import CostPool
-    from modules.financial.costing.models.cost_allocation import CostAllocation
 
 
-class ActivityType(str, enum.Enum):
+class ActivityType(StrEnum):
     """Tipo de atividade."""
 
     PRIMARY = "PRIMARY"  # Atividade primária (agrega valor)
@@ -43,7 +42,7 @@ class ActivityType(str, enum.Enum):
     CUSTOMER_SERVICE = "CUSTOMER_SERVICE"  # Atendimento ao cliente
 
 
-class ActivityLevel(str, enum.Enum):
+class ActivityLevel(StrEnum):
     """Nível hierárquico da atividade (ABC)."""
 
     UNIT = "UNIT"  # Por unidade produzida
@@ -53,7 +52,7 @@ class ActivityLevel(str, enum.Enum):
     FACILITY = "FACILITY"  # Por instalação/estrutura
 
 
-class ActivityStatus(str, enum.Enum):
+class ActivityStatus(StrEnum):
     """Status da atividade."""
 
     ACTIVE = "ACTIVE"
@@ -62,7 +61,7 @@ class ActivityStatus(str, enum.Enum):
     PENDING_APPROVAL = "PENDING_APPROVAL"
 
 
-class ValueAddedType(str, enum.Enum):
+class ValueAddedType(StrEnum):
     """Classificação de valor agregado."""
 
     VALUE_ADDED = "VALUE_ADDED"  # Agrega valor ao cliente
@@ -74,9 +73,7 @@ class CostActivity(Base):
     """Atividade de Custo - base do custeio ABC (Activity-Based Costing)."""
 
     __tablename__ = "fin_cost_activities"
-    __table_args__ = (
-        UniqueConstraint("condominio_id", "code", name="uq_cost_activity_code"),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "code", name="uq_cost_activity_code"),)
 
     # Primary Key
     id = Column(

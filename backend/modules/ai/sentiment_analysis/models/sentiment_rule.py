@@ -4,27 +4,27 @@ Sentiment Rule Model - Sprint 46
 Model para regras de classificacao e alerta de sentimento.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
-    Float,
-    Integer,
     Boolean,
+    Column,
     DateTime,
     Enum,
+    Float,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class RuleCategory(str, enum.Enum):
+class RuleCategory(StrEnum):
     """Categorias de regras."""
 
     SENTIMENT = "sentiment"
@@ -39,7 +39,7 @@ class RuleCategory(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class RuleAction(str, enum.Enum):
+class RuleAction(StrEnum):
     """Acoes da regra."""
 
     ALERT = "alert"
@@ -154,14 +154,14 @@ class SentimentRule(Base):
         return f"<SentimentRule {self.code} - {self.name}>"
 
     @property
-    def precision_rate(self) -> Optional[float]:
+    def precision_rate(self) -> float | None:
         """Taxa de precisao da regra."""
         total = (self.true_positives or 0) + (self.false_positives or 0)
         if total == 0:
             return None
         return (self.true_positives / total) * 100
 
-    def evaluate(self, analysis: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate(self, analysis: dict[str, Any]) -> dict[str, Any]:
         """
         Avalia se a regra aplica a uma analise.
 
@@ -186,9 +186,7 @@ class SentimentRule(Base):
             score = analysis.get("sentiment_score", 0)
             if score <= self.sentiment_threshold:
                 conditions_met.append("sentiment_threshold")
-                result["reasons"].append(
-                    f"Score {score} <= threshold {self.sentiment_threshold}"
-                )
+                result["reasons"].append(f"Score {score} <= threshold {self.sentiment_threshold}")
 
         # Verificar tipos de sentimento
         if self.sentiment_types:
@@ -211,15 +209,11 @@ class SentimentRule(Base):
         if self.keywords_include:
             result["conditions_total"] += 1
             text = analysis.get("original_text", "").lower()
-            keywords_found = [
-                kw for kw in self.keywords_include if kw.lower() in text
-            ]
+            keywords_found = [kw for kw in self.keywords_include if kw.lower() in text]
             if self.keywords_match_all:
                 if len(keywords_found) == len(self.keywords_include):
                     conditions_met.append("keywords")
-                    result["reasons"].append(
-                        f"Todas keywords encontradas: {keywords_found}"
-                    )
+                    result["reasons"].append(f"Todas keywords encontradas: {keywords_found}")
             else:
                 if keywords_found:
                     conditions_met.append("keywords")
@@ -228,9 +222,7 @@ class SentimentRule(Base):
         # Verificar exclusao de keywords
         if self.keywords_exclude:
             text = analysis.get("original_text", "").lower()
-            excluded_found = [
-                kw for kw in self.keywords_exclude if kw.lower() in text
-            ]
+            excluded_found = [kw for kw in self.keywords_exclude if kw.lower() in text]
             if excluded_found:
                 # Invalida a regra
                 result["matched"] = False
@@ -255,9 +247,7 @@ class SentimentRule(Base):
             matched = self._evaluate_condition(actual, operator, value)
             if matched:
                 conditions_met.append(f"custom_{field}")
-                result["reasons"].append(
-                    f"{field} {operator} {value}"
-                )
+                result["reasons"].append(f"{field} {operator} {value}")
 
         result["conditions_matched"] = len(conditions_met)
 
@@ -317,28 +307,30 @@ class SentimentRule(Base):
         else:
             self.false_positives = (self.false_positives or 0) + 1
 
-    def get_actions(self) -> List[Dict[str, Any]]:
+    def get_actions(self) -> list[dict[str, Any]]:
         """Retorna lista de acoes a executar."""
         actions = []
 
         # Acao primaria
         if self.primary_action:
-            action_config = (self.action_config or {}).get(
-                self.primary_action.value, {}
+            action_config = (self.action_config or {}).get(self.primary_action.value, {})
+            actions.append(
+                {
+                    "action": self.primary_action.value,
+                    "config": action_config,
+                    "is_primary": True,
+                }
             )
-            actions.append({
-                "action": self.primary_action.value,
-                "config": action_config,
-                "is_primary": True,
-            })
 
         # Acoes secundarias
         for action in self.secondary_actions or []:
             action_config = (self.action_config or {}).get(action, {})
-            actions.append({
-                "action": action,
-                "config": action_config,
-                "is_primary": False,
-            })
+            actions.append(
+                {
+                    "action": action,
+                    "config": action_config,
+                    "is_primary": False,
+                }
+            )
 
         return actions

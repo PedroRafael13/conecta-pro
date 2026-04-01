@@ -4,10 +4,9 @@ Demand Pattern Models - AI Inventory Forecasting
 Models para padroes de demanda identificados pela IA.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -16,18 +15,16 @@ from sqlalchemy import (
     DateTime,
     Enum,
     Float,
-    ForeignKey,
     Integer,
     String,
     Text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class PatternType(str, enum.Enum):
+class PatternType(StrEnum):
     """Tipo de padrao de demanda."""
 
     CONSTANT = "constant"  # Demanda estavel
@@ -38,7 +35,7 @@ class PatternType(str, enum.Enum):
     INTERMITTENT = "intermittent"  # Demanda esporadica
 
 
-class SeasonalityType(str, enum.Enum):
+class SeasonalityType(StrEnum):
     """Tipo de sazonalidade."""
 
     NONE = "none"
@@ -49,7 +46,7 @@ class SeasonalityType(str, enum.Enum):
     CUSTOM = "custom"  # Periodo personalizado
 
 
-class TrendDirection(str, enum.Enum):
+class TrendDirection(StrEnum):
     """Direcao da tendencia."""
 
     STABLE = "stable"
@@ -80,29 +77,17 @@ class DemandPattern(Base):
     total_data_points = Column(Integer, default=0)
 
     # Classificacao do padrao
-    pattern_type = Column(
-        Enum(PatternType),
-        default=PatternType.CONSTANT,
-        nullable=False
-    )
+    pattern_type = Column(Enum(PatternType), default=PatternType.CONSTANT, nullable=False)
     pattern_confidence = Column(Float, default=0)  # 0-100
 
     # Sazonalidade
-    seasonality_type = Column(
-        Enum(SeasonalityType),
-        default=SeasonalityType.NONE,
-        nullable=False
-    )
+    seasonality_type = Column(Enum(SeasonalityType), default=SeasonalityType.NONE, nullable=False)
     seasonality_strength = Column(Float, default=0)  # 0-1
     seasonal_periods = Column(ARRAY(Integer))  # Ex: [7, 30, 365]
     peak_periods = Column(JSONB, default=list)  # Periodos de pico
 
     # Tendencia
-    trend_direction = Column(
-        Enum(TrendDirection),
-        default=TrendDirection.STABLE,
-        nullable=False
-    )
+    trend_direction = Column(Enum(TrendDirection), default=TrendDirection.STABLE, nullable=False)
     trend_slope = Column(Float, default=0)  # Taxa de variacao
     trend_strength = Column(Float, default=0)  # 0-1
 
@@ -165,15 +150,9 @@ class DemandPattern(Base):
     @property
     def is_seasonal(self) -> bool:
         """Retorna se ha sazonalidade significativa."""
-        return (
-            self.seasonality_type != SeasonalityType.NONE
-            and self.seasonality_strength >= 0.3
-        )
+        return self.seasonality_type != SeasonalityType.NONE and self.seasonality_strength >= 0.3
 
     @property
     def is_trending(self) -> bool:
         """Retorna se ha tendencia significativa."""
-        return (
-            self.trend_direction != TrendDirection.STABLE
-            and self.trend_strength >= 0.3
-        )
+        return self.trend_direction != TrendDirection.STABLE and self.trend_strength >= 0.3

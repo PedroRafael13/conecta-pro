@@ -1,26 +1,29 @@
 """Models de Kit Documental."""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
 
 from core.models.base import Base
 
 
-class KitType(str, Enum):
+class KitType(StrEnum):
     """Tipo de kit documental."""
 
     ADMISSAO = "ADMISSAO"
@@ -42,7 +45,7 @@ class KitType(str, Enum):
     OUTRO = "OUTRO"
 
 
-class KitStatus(str, Enum):
+class KitStatus(StrEnum):
     """Status do kit."""
 
     RASCUNHO = "RASCUNHO"
@@ -52,7 +55,7 @@ class KitStatus(str, Enum):
     OBSOLETO = "OBSOLETO"
 
 
-class ItemType(str, Enum):
+class ItemType(StrEnum):
     """Tipo de item do kit."""
 
     DOCUMENTO_PESSOAL = "DOCUMENTO_PESSOAL"
@@ -71,7 +74,7 @@ class ItemType(str, Enum):
     OUTRO = "OUTRO"
 
 
-class ItemPriority(str, Enum):
+class ItemPriority(StrEnum):
     """Prioridade do item."""
 
     OBRIGATORIO = "OBRIGATORIO"
@@ -80,7 +83,7 @@ class ItemPriority(str, Enum):
     OPCIONAL = "OPCIONAL"
 
 
-class AssignmentStatus(str, Enum):
+class AssignmentStatus(StrEnum):
     """Status da atribuicao do kit."""
 
     PENDENTE = "PENDENTE"
@@ -95,7 +98,7 @@ class AssignmentStatus(str, Enum):
     EXPIRADO = "EXPIRADO"
 
 
-class ItemStatusEnum(str, Enum):
+class ItemStatusEnum(StrEnum):
     """Status do item na atribuicao."""
 
     PENDENTE = "PENDENTE"
@@ -107,7 +110,7 @@ class ItemStatusEnum(str, Enum):
     NAO_APLICAVEL = "NAO_APLICAVEL"
 
 
-class EntityType(str, Enum):
+class EntityType(StrEnum):
     """Tipo de entidade para atribuicao."""
 
     FUNCIONARIO = "FUNCIONARIO"
@@ -233,10 +236,7 @@ class DocumentKit(Base):
         """Atualiza contadores de itens."""
         if self.itens:
             self.total_itens = len(self.itens)
-            self.itens_obrigatorios = sum(
-                1 for item in self.itens
-                if item.prioridade == ItemPriority.OBRIGATORIO
-            )
+            self.itens_obrigatorios = sum(1 for item in self.itens if item.prioridade == ItemPriority.OBRIGATORIO)
 
 
 class DocumentKitItem(Base):
@@ -430,9 +430,7 @@ class DocumentKitAssignment(Base):
         if self.total_itens == 0:
             self.percentual_completo = 0
             return
-        self.percentual_completo = int(
-            (self.itens_aprovados / self.total_itens) * 100
-        )
+        self.percentual_completo = int((self.itens_aprovados / self.total_itens) * 100)
 
     def iniciar(self) -> None:
         """Inicia a atribuicao."""
@@ -589,17 +587,16 @@ class DocumentKitItemStatus(Base):
     def marcar_nao_aplicavel(self, motivo: str = None) -> None:
         """Marca como nao aplicavel."""
         self.status = ItemStatusEnum.NAO_APLICAVEL
-        self._adicionar_historico(
-            "NAO_APLICAVEL",
-            motivo or "Item nao aplicavel"
-        )
+        self._adicionar_historico("NAO_APLICAVEL", motivo or "Item nao aplicavel")
 
     def _adicionar_historico(self, acao: str, descricao: str) -> None:
         """Adiciona entrada ao historico."""
         if not self.historico:
             self.historico = []
-        self.historico.append({
-            "acao": acao,
-            "descricao": descricao,
-            "data": datetime.utcnow().isoformat(),
-        })
+        self.historico.append(
+            {
+                "acao": acao,
+                "descricao": descricao,
+                "data": datetime.utcnow().isoformat(),
+            }
+        )

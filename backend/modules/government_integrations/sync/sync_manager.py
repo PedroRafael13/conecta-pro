@@ -8,14 +8,14 @@ Coordena todas as sincronizacoes de dados governamentais:
 - Notificacoes
 """
 
-import logging
 import asyncio
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass, field
-from enum import Enum
+import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
+from enum import StrEnum
+from typing import Any
 
 from .base_sync import SyncConfig, SyncResult, SyncStatus
 
@@ -26,8 +26,10 @@ logger = logging.getLogger(__name__)
 # ENUMS E DATACLASSES
 # =============================================================================
 
-class ServicoGov(str, Enum):
+
+class ServicoGov(StrEnum):
     """Servicos governamentais disponiveis."""
+
     # Federais
     ESOCIAL = "esocial"
     RECEITA_FEDERAL = "receita_federal"
@@ -52,32 +54,35 @@ class ServicoGov(str, Enum):
 @dataclass
 class SyncJob:
     """Job de sincronizacao."""
+
     id: str
     cnpj: str
     servico: ServicoGov
     config: SyncConfig
     status: SyncStatus = SyncStatus.IDLE
-    resultado: Optional[SyncResult] = None
-    inicio: Optional[datetime] = None
-    fim: Optional[datetime] = None
-    erro: Optional[str] = None
+    resultado: SyncResult | None = None
+    inicio: datetime | None = None
+    fim: datetime | None = None
+    erro: str | None = None
 
 
 @dataclass
 class SyncSchedule:
     """Agendamento de sincronizacao."""
+
     servico: ServicoGov
     intervalo_minutos: int = 60
-    horario_preferencial: Optional[str] = None  # HH:MM
-    dias_semana: List[int] = field(default_factory=lambda: [0, 1, 2, 3, 4, 5, 6])
+    horario_preferencial: str | None = None  # HH:MM
+    dias_semana: list[int] = field(default_factory=lambda: [0, 1, 2, 3, 4, 5, 6])
     ativo: bool = True
-    ultima_execucao: Optional[datetime] = None
-    proxima_execucao: Optional[datetime] = None
+    ultima_execucao: datetime | None = None
+    proxima_execucao: datetime | None = None
 
 
 # =============================================================================
 # SYNC MANAGER
 # =============================================================================
+
 
 class SyncManager:
     """
@@ -109,14 +114,14 @@ class SyncManager:
         self.max_workers = max_workers
 
         # Sincronizadores registrados
-        self._synchronizers: Dict[ServicoGov, Any] = {}
+        self._synchronizers: dict[ServicoGov, Any] = {}
 
         # Jobs em execucao
-        self._jobs: Dict[str, SyncJob] = {}
+        self._jobs: dict[str, SyncJob] = {}
         self._jobs_lock = threading.Lock()
 
         # Agendamentos
-        self._schedules: Dict[str, Dict[ServicoGov, SyncSchedule]] = {}
+        self._schedules: dict[str, dict[ServicoGov, SyncSchedule]] = {}
 
         # Thread pool para execucao paralela
         self._executor = ThreadPoolExecutor(max_workers=max_workers)
@@ -133,6 +138,7 @@ class SyncManager:
         try:
             # eSocial
             from .federal.esocial_sync import ESocialSynchronizer
+
             self._synchronizers[ServicoGov.ESOCIAL] = ESocialSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -140,6 +146,7 @@ class SyncManager:
 
             # Receita Federal
             from .federal.receita_sync import ReceitaFederalSynchronizer
+
             self._synchronizers[ServicoGov.RECEITA_FEDERAL] = ReceitaFederalSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -147,6 +154,7 @@ class SyncManager:
 
             # NF-e/SEFAZ
             from .estadual.nfe_sync import NFeSynchronizer
+
             self._synchronizers[ServicoGov.SEFAZ_NFE] = NFeSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -154,6 +162,7 @@ class SyncManager:
 
             # NFS-e Manaus
             from .municipal.nfse_manaus_sync import NFSeManausSynchronizer
+
             self._synchronizers[ServicoGov.NFSE_MANAUS] = NFSeManausSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -161,6 +170,7 @@ class SyncManager:
 
             # FGTS Digital
             from .federal.fgts_digital_sync import FGTSDigitalSynchronizer
+
             self._synchronizers[ServicoGov.FGTS_DIGITAL] = FGTSDigitalSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -168,6 +178,7 @@ class SyncManager:
 
             # EFD-Reinf
             from .federal.efd_reinf_sync import EFDReinfSynchronizer
+
             self._synchronizers[ServicoGov.EFD_REINF] = EFDReinfSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -175,6 +186,7 @@ class SyncManager:
 
             # DCTFWeb
             from .federal.dctfweb_sync import DCTFWebSynchronizer
+
             self._synchronizers[ServicoGov.DCTFWEB] = DCTFWebSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -182,6 +194,7 @@ class SyncManager:
 
             # CT-e
             from .estadual.cte_sync import CTeSynchronizer
+
             self._synchronizers[ServicoGov.SEFAZ_CTE] = CTeSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -189,6 +202,7 @@ class SyncManager:
 
             # MDF-e
             from .estadual.mdfe_sync import MDFeSynchronizer
+
             self._synchronizers[ServicoGov.SEFAZ_MDFE] = MDFeSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -196,6 +210,7 @@ class SyncManager:
 
             # SPED Fiscal
             from .estadual.sped_fiscal_sync import SPEDFiscalSynchronizer
+
             self._synchronizers[ServicoGov.SPED_FISCAL] = SPEDFiscalSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -203,6 +218,7 @@ class SyncManager:
 
             # SPED Contabil
             from .federal.sped_contabil_sync import SPEDContabilSynchronizer
+
             self._synchronizers[ServicoGov.SPED_CONTABIL] = SPEDContabilSynchronizer(
                 self.db,
                 self.certificate_manager,
@@ -210,14 +226,13 @@ class SyncManager:
 
             # NFS-e Nacional
             from .municipal.nfse_nacional_sync import NFSeNacionalSynchronizer
+
             self._synchronizers[ServicoGov.NFSE_NACIONAL] = NFSeNacionalSynchronizer(
                 self.db,
                 self.certificate_manager,
             )
 
-            logger.info(
-                f"[SyncManager] Inicializado com {len(self._synchronizers)} sincronizadores"
-            )
+            logger.info(f"[SyncManager] Inicializado com {len(self._synchronizers)} sincronizadores")
 
         except Exception as e:
             logger.error(f"[SyncManager] Erro inicializando sincronizadores: {e}")
@@ -231,8 +246,8 @@ class SyncManager:
         cnpj: str,
         servico: ServicoGov,
         tipo_sync: str = "incremental",
-        data_inicial: Optional[date] = None,
-        data_final: Optional[date] = None,
+        data_inicial: date | None = None,
+        data_final: date | None = None,
         **kwargs,
     ) -> SyncResult:
         """
@@ -308,9 +323,9 @@ class SyncManager:
     async def sincronizar_todos(
         self,
         cnpj: str,
-        servicos: Optional[List[ServicoGov]] = None,
+        servicos: list[ServicoGov] | None = None,
         paralelo: bool = True,
-    ) -> Dict[ServicoGov, SyncResult]:
+    ) -> dict[ServicoGov, SyncResult]:
         """
         Sincroniza multiplos servicos.
 
@@ -329,13 +344,10 @@ class SyncManager:
 
         if paralelo:
             # Executar em paralelo
-            tasks = [
-                self.sincronizar(cnpj, servico)
-                for servico in servicos
-            ]
+            tasks = [self.sincronizar(cnpj, servico) for servico in servicos]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for servico, result in zip(servicos, results):
+            for servico, result in zip(servicos, results, strict=False):
                 if isinstance(result, Exception):
                     resultados[servico] = SyncResult(
                         sucesso=False,
@@ -359,8 +371,8 @@ class SyncManager:
         cnpj: str,
         servico: ServicoGov,
         intervalo_minutos: int = 60,
-        horario_preferencial: Optional[str] = None,
-        dias_semana: Optional[List[int]] = None,
+        horario_preferencial: str | None = None,
+        dias_semana: list[int] | None = None,
         ativo: bool = True,
     ):
         """
@@ -391,8 +403,7 @@ class SyncManager:
         self._schedules[cnpj][servico] = schedule
 
         logger.info(
-            f"[SyncManager] Agendamento configurado: {servico.value} para {cnpj} "
-            f"a cada {intervalo_minutos} minutos"
+            f"[SyncManager] Agendamento configurado: {servico.value} para {cnpj} a cada {intervalo_minutos} minutos"
         )
 
     def _calcular_proxima_execucao(self, schedule: SyncSchedule) -> datetime:
@@ -412,9 +423,7 @@ class SyncManager:
 
         else:
             if schedule.ultima_execucao:
-                proxima = schedule.ultima_execucao + timedelta(
-                    minutes=schedule.intervalo_minutos
-                )
+                proxima = schedule.ultima_execucao + timedelta(minutes=schedule.intervalo_minutos)
             else:
                 proxima = agora + timedelta(minutes=schedule.intervalo_minutos)
 
@@ -443,9 +452,7 @@ class SyncManager:
 
                         if schedule.proxima_execucao and schedule.proxima_execucao <= agora:
                             # Executar sincronizacao em background
-                            asyncio.create_task(
-                                self.sincronizar(cnpj, servico)
-                            )
+                            asyncio.create_task(self.sincronizar(cnpj, servico))
 
                 # Aguardar 60 segundos
                 await asyncio.sleep(60)
@@ -476,7 +483,7 @@ class SyncManager:
     # MONITORAMENTO
     # =========================================================================
 
-    def obter_status(self, cnpj: str) -> Dict[str, Any]:
+    def obter_status(self, cnpj: str) -> dict[str, Any]:
         """
         Obtem status de todas as sincronizacoes de uma empresa.
 
@@ -500,31 +507,36 @@ class SyncManager:
             # Verificar agendamento
             if cnpj in self._schedules and servico in self._schedules[cnpj]:
                 schedule = self._schedules[cnpj][servico]
-                servico_status.update({
-                    "agendamento_ativo": schedule.ativo,
-                    "intervalo_minutos": schedule.intervalo_minutos,
-                    "ultima_sincronizacao": schedule.ultima_execucao.isoformat() if schedule.ultima_execucao else None,
-                    "proxima_sincronizacao": schedule.proxima_execucao.isoformat() if schedule.proxima_execucao else None,
-                })
+                servico_status.update(
+                    {
+                        "agendamento_ativo": schedule.ativo,
+                        "intervalo_minutos": schedule.intervalo_minutos,
+                        "ultima_sincronizacao": schedule.ultima_execucao.isoformat()
+                        if schedule.ultima_execucao
+                        else None,
+                        "proxima_sincronizacao": schedule.proxima_execucao.isoformat()
+                        if schedule.proxima_execucao
+                        else None,
+                    }
+                )
 
             # Verificar jobs recentes
             with self._jobs_lock:
-                jobs_servico = [
-                    j for j in self._jobs.values()
-                    if j.cnpj == cnpj and j.servico == servico
-                ]
+                jobs_servico = [j for j in self._jobs.values() if j.cnpj == cnpj and j.servico == servico]
                 if jobs_servico:
                     ultimo_job = max(jobs_servico, key=lambda j: j.inicio or datetime.min)
-                    servico_status.update({
-                        "status_ultima": ultimo_job.status.value,
-                        "ultima_sincronizacao": ultimo_job.fim.isoformat() if ultimo_job.fim else None,
-                    })
+                    servico_status.update(
+                        {
+                            "status_ultima": ultimo_job.status.value,
+                            "ultima_sincronizacao": ultimo_job.fim.isoformat() if ultimo_job.fim else None,
+                        }
+                    )
 
             status[servico.value] = servico_status
 
         return status
 
-    def obter_jobs_ativos(self, cnpj: Optional[str] = None) -> List[Dict[str, Any]]:
+    def obter_jobs_ativos(self, cnpj: str | None = None) -> list[dict[str, Any]]:
         """Obtem jobs em execucao."""
         with self._jobs_lock:
             jobs = list(self._jobs.values())
@@ -548,15 +560,13 @@ class SyncManager:
     def obter_historico(
         self,
         cnpj: str,
-        servico: Optional[ServicoGov] = None,
+        servico: ServicoGov | None = None,
         limite: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtem historico de sincronizacoes."""
         from .models.sync_models import SyncLog
 
-        query = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj
-        )
+        query = self.db.query(SyncLog).filter(SyncLog.cnpj_empresa == cnpj)
 
         if servico:
             query = query.filter(SyncLog.servico == servico.value)
@@ -587,9 +597,9 @@ class SyncManager:
     def configurar_empresa(
         self,
         cnpj: str,
-        certificado_id: Optional[str] = None,
-        servicos_habilitados: Optional[List[ServicoGov]] = None,
-        agendamentos: Optional[Dict[ServicoGov, int]] = None,
+        _certificado_id: str | None = None,
+        servicos_habilitados: list[ServicoGov] | None = None,
+        agendamentos: dict[ServicoGov, int] | None = None,
     ):
         """
         Configura sincronizacao completa para uma empresa.
@@ -620,17 +630,14 @@ class SyncManager:
                     ativo=True,
                 )
 
-        logger.info(
-            f"[SyncManager] Empresa {cnpj} configurada com "
-            f"{len(servicos_habilitados)} servicos"
-        )
+        logger.info(f"[SyncManager] Empresa {cnpj} configurada com {len(servicos_habilitados)} servicos")
 
 
 # =============================================================================
 # INSTANCIA GLOBAL
 # =============================================================================
 
-_sync_manager: Optional[SyncManager] = None
+_sync_manager: SyncManager | None = None
 
 
 def get_sync_manager() -> SyncManager:

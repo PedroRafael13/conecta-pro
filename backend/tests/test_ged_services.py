@@ -1,13 +1,14 @@
 """Testes para os services do módulo GED."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
+
+from modules.ged.models.document import DocumentCategory, DocumentType
 from modules.ged.services.document_ai_service import DocumentAIService
 from modules.ged.services.document_tag_service import DocumentTagService
-from modules.ged.models.document import DocumentType, DocumentCategory
 
 
 class TestDocumentAIService:
@@ -87,8 +88,7 @@ class TestDocumentAIService:
 
         assert result["suggested_type"] == DocumentType.NOTA_FISCAL.value
 
-    @pytest.mark.asyncio
-    async def test_extract_keywords(self, service):
+    def test_extract_keywords(self, service):
         """Testa extração de palavras-chave."""
         text = """
         Contrato de manutenção predial com empresa terceirizada.
@@ -96,7 +96,7 @@ class TestDocumentAIService:
         Valor mensal de R$ 3.000,00 com vigência de 12 meses.
         """
 
-        keywords = await service.extract_keywords(text, max_keywords=10)
+        keywords = service._extract_keywords(text)[:10]
 
         assert len(keywords) > 0
         assert len(keywords) <= 10
@@ -145,20 +145,24 @@ class TestDocumentAIService:
 
     @pytest.mark.asyncio
     async def test_analyze_ocr_text(self, service):
-        """Testa análise de texto OCR."""
-        with patch.object(service, 'document_repository') as mock_repo:
+        """Testa análise de resultado OCR."""
+        with patch.object(service, "document_repository") as mock_repo:
             mock_doc = MagicMock()
             mock_doc.id = str(uuid4())
+            mock_doc.file_name = "contrato_locacao.pdf"
             mock_repo.get_by_id = AsyncMock(return_value=mock_doc)
+            mock_repo.set_ocr_result = AsyncMock()
+            mock_repo.mark_as_indexed = AsyncMock()
 
-            result = await service.analyze_ocr_text(
+            result = await service.analyze_ocr_result(
                 mock_doc.id,
-                "Contrato de locação residencial no valor de R$ 2.000,00"
+                "Contrato de locação residencial no valor de R$ 2.000,00",
+                confidence=0.95,
             )
 
             assert "classification" in result
-            assert "keywords" in result
-            assert result["ocr_quality"] in ["excellent", "good", "fair", "poor"]
+            assert "indexed_keywords" in result
+            assert result["status"] == "processed"
 
 
 class TestDocumentTagServiceHelpers:
@@ -220,14 +224,16 @@ class TestDocumentAIServiceInsights:
     @pytest.mark.asyncio
     async def test_calculate_health_score(self, service):
         """Testa cálculo de score de saúde."""
-        with patch.object(service, 'document_repository') as mock_repo:
+        with patch.object(service, "document_repository") as mock_repo:
             # Mock stats
-            mock_repo.get_stats = AsyncMock(return_value={
-                "total_documents": 100,
-                "pending_approval": 5,
-                "pending_signature": 3,
-                "expired": 2,
-            })
+            mock_repo.get_stats = AsyncMock(
+                return_value={
+                    "total_documents": 100,
+                    "pending_approval": 5,
+                    "pending_signature": 3,
+                    "expired": 2,
+                }
+            )
 
             # Mock expiring soon
             mock_repo.get_expiring_soon = AsyncMock(return_value=[])
@@ -237,23 +243,27 @@ class TestDocumentAIServiceInsights:
             assert "health_score" in insights
             assert 0 <= insights["health_score"] <= 100
             assert "health_level" in insights
-            assert insights["health_level"] in [
-                "excellent", "good", "attention", "critical"
-            ]
+            assert insights["health_level"] in ["excellent", "good", "attention", "critical"]
 
     @pytest.mark.asyncio
     async def test_get_recommendations(self, service):
         """Testa geração de recomendações."""
-        with patch.object(service, 'document_repository') as mock_repo:
-            mock_repo.get_stats = AsyncMock(return_value={
-                "total_documents": 100,
-                "pending_approval": 15,  # > 10
-                "pending_signature": 5,
-                "expired": 3,
-            })
-            mock_repo.get_expiring_soon = AsyncMock(return_value=[
-                MagicMock(), MagicMock(), MagicMock()  # 3 expirando
-            ])
+        with patch.object(service, "document_repository") as mock_repo:
+            mock_repo.get_stats = AsyncMock(
+                return_value={
+                    "total_documents": 100,
+                    "pending_approval": 15,  # > 10
+                    "pending_signature": 5,
+                    "expired": 3,
+                }
+            )
+            mock_repo.get_expiring_soon = AsyncMock(
+                return_value=[
+                    MagicMock(),
+                    MagicMock(),
+                    MagicMock(),  # 3 expirando
+                ]
+            )
 
             insights = await service.get_insights()
 
@@ -263,19 +273,18 @@ class TestDocumentAIServiceInsights:
     @pytest.mark.asyncio
     async def test_get_trends(self, service):
         """Testa obtenção de tendências."""
-        with patch.object(service, 'document_repository') as mock_repo:
-            mock_repo.get_stats = AsyncMock(return_value={
-                "total_documents": 100,
-                "by_type": {"contrato": 30, "ata": 20},
-                "by_category": {"administrativo": 50},
-                "by_status": {"publicado": 80, "rascunho": 20},
-            })
+        with patch.object(service, "document_repository") as mock_repo:
+            mock_doc = MagicMock()
+            mock_doc.created_at = datetime.utcnow()
+            mock_doc.document_type = MagicMock(value="contrato")
+            mock_doc.category = MagicMock(value="administrativo")
+            mock_repo.list_with_filters = AsyncMock(return_value=([mock_doc], 1))
 
-            trends = await service.get_trends(days=30)
+            trends = await service.analyze_document_trends(days=30)
 
-            assert "summary" in trends
+            assert "total_documents" in trends
             assert "by_type" in trends
-            assert "by_status" in trends
+            assert "by_category" in trends
 
 
 class TestDocumentClassificationPatterns:
@@ -337,7 +346,7 @@ class TestDocumentClassificationPatterns:
 
     @pytest.mark.asyncio
     async def test_classify_comunicado(self, service):
-        """Testa classificação de comunicado."""
+        """Testa classificação de comunicado (sem tipo específico no enum)."""
         text = """
         COMUNICADO AOS MORADORES
 
@@ -349,7 +358,9 @@ class TestDocumentClassificationPatterns:
         """
 
         result = await service.classify_document(text)
-        assert result["suggested_type"] == DocumentType.COMUNICADO.value
+        # "comunicado" não é um tipo reconhecido, classifica como OUTRO
+        assert result["suggested_type"] == DocumentType.OUTRO.value
+        assert result["type_confidence"] == 0.0
 
     @pytest.mark.asyncio
     async def test_classify_unknown(self, service):

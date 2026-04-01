@@ -5,12 +5,12 @@ Agente de inteligencia para processamento de emails
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any
 from uuid import UUID
 
-from .base import BaseAgent, AgentType, AgentTask, AgentMessage
-from ..email_intelligence.service import EmailIntelligenceService
 from ..email_intelligence.models import EmailMessage
+from ..email_intelligence.service import EmailIntelligenceService
+from .base import AgentMessage, AgentTask, AgentType, BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,11 @@ class EmailAgent(BaseAgent):
     5. Notificar outros agentes
     """
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: dict[str, Any] = None):
         super().__init__(AgentType.EMAIL_INTELLIGENCE, config)
         self.email_service = EmailIntelligenceService()
 
-    async def process_task(self, task: AgentTask) -> Dict[str, Any]:
+    async def process_task(self, task: AgentTask) -> dict[str, Any]:
         """Processa tarefa de email."""
         task_type = task.task_type
 
@@ -50,11 +50,7 @@ class EmailAgent(BaseAgent):
 
         if msg_type == "new_email_received":
             # Criar tarefa para analisar email
-            task = AgentTask(
-                task_type="analyze_email",
-                data=message.payload,
-                priority=3
-            )
+            task = AgentTask(task_type="analyze_email", data=message.payload, priority=3)
             await self.submit_task(task)
 
         elif msg_type == "request_context":
@@ -65,45 +61,38 @@ class EmailAgent(BaseAgent):
                 to_agent=message.from_agent,
                 message_type="context_response",
                 payload=context,
-                reply_to=message.message_id
+                reply_to=message.message_id,
             )
             await self.send_message(reply)
 
-    async def _analyze_email(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _analyze_email(self, data: dict[str, Any]) -> dict[str, Any]:
         """Analisa um email."""
         email = EmailMessage(**data)
         result = await self.email_service.process_incoming_email(email)
 
         # Notificar agente de integracao
         if result.get("analysis", {}).get("category") == "proposta_comercial":
-            await self.send_message(AgentMessage(
-                from_agent=self.agent_type,
-                to_agent=AgentType.INTEGRATION_HUB,
-                message_type="proposta_solicitada",
-                payload={
-                    "email_id": result["email_id"],
-                    "analysis": result["analysis"]
-                }
-            ))
+            await self.send_message(
+                AgentMessage(
+                    from_agent=self.agent_type,
+                    to_agent=AgentType.INTEGRATION_HUB,
+                    message_type="proposta_solicitada",
+                    payload={"email_id": result["email_id"], "analysis": result["analysis"]},
+                )
+            )
 
         return result
 
-    async def _generate_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _generate_response(self, data: dict[str, Any]) -> dict[str, Any]:
         """Gera resposta para email."""
         # Implementar geracao de resposta com IA
-        return {
-            "response_generated": True,
-            "template_used": data.get("template_id")
-        }
+        return {"response_generated": True, "template_used": data.get("template_id")}
 
-    async def _get_email_context(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _get_email_context(self, data: dict[str, Any]) -> dict[str, Any]:
         """Obtem contexto do email."""
         email_address = data.get("email_address")
         tenant_id = UUID(data.get("tenant_id"))
 
-        context = await self.email_service.get_email_context(
-            email_address,
-            tenant_id
-        )
+        context = await self.email_service.get_email_context(email_address, tenant_id)
 
         return context.model_dump()

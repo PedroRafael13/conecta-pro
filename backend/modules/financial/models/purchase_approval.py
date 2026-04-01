@@ -3,8 +3,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -12,7 +11,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class ApprovalType(str, Enum):
+class ApprovalType(StrEnum):
     """Tipo de aprovação."""
 
     REQUISICAO = "requisicao"
@@ -22,7 +21,7 @@ class ApprovalType(str, Enum):
     PAGAMENTO = "pagamento"
 
 
-class ApprovalStatus(str, Enum):
+class ApprovalStatus(StrEnum):
     """Status da aprovação."""
 
     PENDENTE = "pendente"
@@ -33,7 +32,7 @@ class ApprovalStatus(str, Enum):
     CANCELADO = "cancelado"
 
 
-class ApprovalLevel(str, Enum):
+class ApprovalLevel(StrEnum):
     """Nível de aprovação."""
 
     OPERACIONAL = "operacional"  # Até R$ 1.000
@@ -43,7 +42,7 @@ class ApprovalLevel(str, Enum):
     CONSELHO = "conselho"  # Acima de R$ 100.000
 
 
-class ApprovalAction(str, Enum):
+class ApprovalAction(StrEnum):
     """Ação de aprovação."""
 
     APROVAR = "aprovar"
@@ -80,15 +79,11 @@ class PurchaseApproval(Base):
     document_total = Column(Numeric(15, 2), nullable=True)  # Valor do documento
 
     # Aprovador
-    approver_id = Column(
-        UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=False, index=True
-    )
+    approver_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=False, index=True)
     approver_role = Column(String(50), nullable=True)  # Cargo do aprovador
 
     # Delegação
-    original_approver_id = Column(
-        UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True
-    )
+    original_approver_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
     delegated_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
     delegation_reason = Column(Text, nullable=True)
     delegated_at = Column(DateTime, nullable=True)
@@ -170,7 +165,7 @@ class PurchaseApproval(Base):
         return self.status == ApprovalStatus.DELEGADO.value or self.delegated_by is not None
 
     @property
-    def time_pending_hours(self) -> Optional[float]:
+    def time_pending_hours(self) -> float | None:
         """Tempo pendente em horas."""
         if self.status == ApprovalStatus.PENDENTE.value:
             delta = datetime.utcnow() - self.requested_at
@@ -198,18 +193,16 @@ class PurchaseApproval(Base):
         hours_pending = self.time_pending_hours or 0
         return hours_pending >= 24
 
-    def approve(self, comments: Optional[str] = None) -> None:
+    def approve(self, comments: str | None = None) -> None:
         """Aprova."""
         self._respond(ApprovalStatus.APROVADO.value, ApprovalAction.APROVAR.value, comments)
 
-    def reject(self, reason: str, comments: Optional[str] = None) -> None:
+    def reject(self, reason: str, comments: str | None = None) -> None:
         """Rejeita."""
         self.rejection_reason = reason
         self._respond(ApprovalStatus.REJEITADO.value, ApprovalAction.REJEITAR.value, comments)
 
-    def delegate(
-        self, new_approver_id: uuid.UUID, delegator_id: uuid.UUID, reason: str
-    ) -> None:
+    def delegate(self, new_approver_id: uuid.UUID, delegator_id: uuid.UUID, reason: str) -> None:
         """Delega para outro aprovador."""
         self.original_approver_id = self.approver_id
         self.approver_id = new_approver_id
@@ -238,7 +231,7 @@ class PurchaseApproval(Base):
         self.status = ApprovalStatus.EXPIRADO.value
         self._add_history("expirado", "Prazo de aprovação expirado")
 
-    def cancel(self, reason: Optional[str] = None) -> None:
+    def cancel(self, reason: str | None = None) -> None:
         """Cancela a aprovação."""
         self.status = ApprovalStatus.CANCELADO.value
         self._add_history("cancelado", reason or "Aprovação cancelada")
@@ -254,7 +247,7 @@ class PurchaseApproval(Base):
         self.last_reminder_at = datetime.utcnow()
         self._add_history("lembrete", f"Lembrete #{self.reminder_count} enviado")
 
-    def _respond(self, status: str, action: str, comments: Optional[str] = None) -> None:
+    def _respond(self, status: str, action: str, comments: str | None = None) -> None:
         """Registra resposta."""
         self.status = status
         self.action = action
@@ -268,7 +261,7 @@ class PurchaseApproval(Base):
 
         self._add_history(action, comments)
 
-    def _add_history(self, action: str, details: Optional[str] = None) -> None:
+    def _add_history(self, action: str, details: str | None = None) -> None:
         """Adiciona ao histórico."""
         if not self.action_history:
             self.action_history = []

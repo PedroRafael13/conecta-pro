@@ -4,40 +4,41 @@ Sprint 32: API Gateway / Integrações
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from modules.integrations.models import (
-    HTTPMethod,
+    APIKeyStatus,
+    APIKeyType,
     EndpointCategory,
     EndpointStatus,
-    RateLimitType,
-    APIKeyType,
-    APIKeyStatus,
-    WebhookEvent,
-    WebhookStatus,
-    WebhookFormat,
-    WebhookAuthType,
-    LogType,
+    ExternalSystem,
+    HTTPMethod,
     LogLevel,
     LogStatus,
+    LogType,
+    RateLimitType,
     SyncDirection,
-    SyncPriority,
-    SyncStatus,
     SyncEntityType,
     SyncOperationType,
-    ExternalSystem,
+    SyncPriority,
+    SyncStatus,
+    WebhookAuthType,
+    WebhookEvent,
+    WebhookFormat,
+    WebhookStatus,
 )
-
 
 # ==================== API Endpoint Schemas ====================
 
+
 class APIEndpointBase(BaseModel):
     """Schema base para API Endpoint."""
+
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     version: str = Field(default="v1", max_length=20)
     path: str = Field(..., min_length=1, max_length=500)
     method: HTTPMethod
@@ -45,43 +46,43 @@ class APIEndpointBase(BaseModel):
 
     # Autenticação
     requires_auth: bool = True
-    auth_methods: Optional[List[str]] = None
-    required_scopes: Optional[List[str]] = None
-    required_permissions: Optional[List[str]] = None
+    auth_methods: list[str] | None = None
+    required_scopes: list[str] | None = None
+    required_permissions: list[str] | None = None
 
     # Rate Limiting
     rate_limit_enabled: bool = True
-    rate_limit_type: Optional[RateLimitType] = RateLimitType.PER_MINUTE
-    rate_limit_value: Optional[int] = 60
+    rate_limit_type: RateLimitType | None = RateLimitType.PER_MINUTE
+    rate_limit_value: int | None = 60
     rate_limit_by_key: bool = True
 
     # Request/Response
-    request_schema: Optional[Dict[str, Any]] = None
-    response_schema: Optional[Dict[str, Any]] = None
-    request_example: Optional[Dict[str, Any]] = None
-    response_example: Optional[Dict[str, Any]] = None
-    error_responses: Optional[Dict[str, Any]] = None
+    request_schema: dict[str, Any] | None = None
+    response_schema: dict[str, Any] | None = None
+    request_example: dict[str, Any] | None = None
+    response_example: dict[str, Any] | None = None
+    error_responses: dict[str, Any] | None = None
 
     # Validação
     request_validation_enabled: bool = True
     response_validation_enabled: bool = False
-    max_request_size_bytes: Optional[int] = 1048576
+    max_request_size_bytes: int | None = 1048576
 
     # Cache
     cache_enabled: bool = False
-    cache_ttl_seconds: Optional[int] = None
-    cache_key_pattern: Optional[str] = None
+    cache_ttl_seconds: int | None = None
+    cache_key_pattern: str | None = None
 
     # Configurações
-    timeout_seconds: Optional[int] = 30
+    timeout_seconds: int | None = 30
     retry_enabled: bool = False
-    retry_count: Optional[int] = 3
+    retry_count: int | None = 3
     circuit_breaker_enabled: bool = False
 
     # Documentação
-    documentation_url: Optional[str] = None
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    documentation_url: str | None = None
+    tags: list[str] | None = None
+    notes: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -92,36 +93,38 @@ class APIEndpointCreate(APIEndpointBase):
 
 class APIEndpointUpdate(BaseModel):
     """Schema para atualizar API Endpoint."""
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    status: Optional[EndpointStatus] = None
-    requires_auth: Optional[bool] = None
-    auth_methods: Optional[List[str]] = None
-    required_scopes: Optional[List[str]] = None
-    rate_limit_enabled: Optional[bool] = None
-    rate_limit_value: Optional[int] = None
-    cache_enabled: Optional[bool] = None
-    cache_ttl_seconds: Optional[int] = None
-    timeout_seconds: Optional[int] = None
-    documentation_url: Optional[str] = None
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    status: EndpointStatus | None = None
+    requires_auth: bool | None = None
+    auth_methods: list[str] | None = None
+    required_scopes: list[str] | None = None
+    rate_limit_enabled: bool | None = None
+    rate_limit_value: int | None = None
+    cache_enabled: bool | None = None
+    cache_ttl_seconds: int | None = None
+    timeout_seconds: int | None = None
+    documentation_url: str | None = None
+    tags: list[str] | None = None
+    notes: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class APIEndpointResponse(APIEndpointBase):
     """Schema de resposta para API Endpoint."""
+
     id: UUID
     status: EndpointStatus
-    deprecated_at: Optional[datetime] = None
-    sunset_date: Optional[datetime] = None
-    replacement_endpoint_id: Optional[UUID] = None
+    deprecated_at: datetime | None = None
+    sunset_date: datetime | None = None
+    replacement_endpoint_id: UUID | None = None
     total_calls: int = 0
     successful_calls: int = 0
     failed_calls: int = 0
-    avg_response_time_ms: Optional[int] = None
-    last_called_at: Optional[datetime] = None
+    avg_response_time_ms: int | None = None
+    last_called_at: datetime | None = None
     success_rate: float = 100.0
     full_path: str
     ativo: bool
@@ -131,7 +134,8 @@ class APIEndpointResponse(APIEndpointBase):
 
 class APIEndpointList(BaseModel):
     """Schema para listagem de API Endpoints."""
-    items: List[APIEndpointResponse]
+
+    items: list[APIEndpointResponse]
     total: int
     page: int
     page_size: int
@@ -140,34 +144,36 @@ class APIEndpointList(BaseModel):
 
 # ==================== API Key Schemas ====================
 
+
 class APIKeyBase(BaseModel):
     """Schema base para API Key."""
+
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
-    client_id: Optional[UUID] = None
-    user_id: Optional[UUID] = None
+    description: str | None = None
+    client_id: UUID | None = None
+    user_id: UUID | None = None
     key_type: APIKeyType = APIKeyType.PRODUCTION
 
     # Permissões
-    scopes: Optional[List[str]] = None
-    allowed_endpoints: Optional[List[str]] = None
-    blocked_endpoints: Optional[List[str]] = None
+    scopes: list[str] | None = None
+    allowed_endpoints: list[str] | None = None
+    blocked_endpoints: list[str] | None = None
 
     # Rate Limiting
-    rate_limit_per_minute: Optional[int] = 60
-    rate_limit_per_hour: Optional[int] = 1000
-    rate_limit_per_day: Optional[int] = 10000
+    rate_limit_per_minute: int | None = 60
+    rate_limit_per_hour: int | None = 1000
+    rate_limit_per_day: int | None = 10000
 
     # Restrições de IP
-    ip_whitelist: Optional[List[str]] = None
-    ip_blacklist: Optional[List[str]] = None
+    ip_whitelist: list[str] | None = None
+    ip_blacklist: list[str] | None = None
 
     # Validade
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     never_expires: bool = False
 
     # Metadados
-    notes: Optional[str] = None
+    notes: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -178,6 +184,7 @@ class APIKeyCreate(APIKeyBase):
 
 class APIKeyCreateResponse(BaseModel):
     """Resposta após criar API Key - inclui a chave em texto."""
+
     id: UUID
     name: str
     key: str  # A chave completa, só mostrada uma vez
@@ -185,54 +192,56 @@ class APIKeyCreateResponse(BaseModel):
     key_hint: str
     key_type: APIKeyType
     status: APIKeyStatus
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     created_at: datetime
 
 
 class APIKeyUpdate(BaseModel):
     """Schema para atualizar API Key."""
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    scopes: Optional[List[str]] = None
-    allowed_endpoints: Optional[List[str]] = None
-    blocked_endpoints: Optional[List[str]] = None
-    rate_limit_per_minute: Optional[int] = None
-    rate_limit_per_hour: Optional[int] = None
-    rate_limit_per_day: Optional[int] = None
-    ip_whitelist: Optional[List[str]] = None
-    ip_blacklist: Optional[List[str]] = None
-    expires_at: Optional[datetime] = None
-    notes: Optional[str] = None
+
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    scopes: list[str] | None = None
+    allowed_endpoints: list[str] | None = None
+    blocked_endpoints: list[str] | None = None
+    rate_limit_per_minute: int | None = None
+    rate_limit_per_hour: int | None = None
+    rate_limit_per_day: int | None = None
+    ip_whitelist: list[str] | None = None
+    ip_blacklist: list[str] | None = None
+    expires_at: datetime | None = None
+    notes: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class APIKeyResponse(BaseModel):
     """Schema de resposta para API Key."""
+
     id: UUID
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     key_prefix: str
-    key_hint: Optional[str] = None
+    key_hint: str | None = None
     key_type: APIKeyType
     status: APIKeyStatus
-    client_id: Optional[UUID] = None
-    user_id: Optional[UUID] = None
-    scopes: Optional[List[str]] = None
-    rate_limit_per_minute: Optional[int] = None
-    rate_limit_per_hour: Optional[int] = None
-    rate_limit_per_day: Optional[int] = None
-    ip_whitelist: Optional[List[str]] = None
-    expires_at: Optional[datetime] = None
+    client_id: UUID | None = None
+    user_id: UUID | None = None
+    scopes: list[str] | None = None
+    rate_limit_per_minute: int | None = None
+    rate_limit_per_hour: int | None = None
+    rate_limit_per_day: int | None = None
+    ip_whitelist: list[str] | None = None
+    expires_at: datetime | None = None
     never_expires: bool
-    last_used_at: Optional[datetime] = None
-    last_used_ip: Optional[str] = None
+    last_used_at: datetime | None = None
+    last_used_ip: str | None = None
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
     success_rate: float = 100.0
     is_valid: bool
-    days_until_expiry: Optional[int] = None
+    days_until_expiry: int | None = None
     ativo: bool
     created_at: datetime
     updated_at: datetime
@@ -242,7 +251,8 @@ class APIKeyResponse(BaseModel):
 
 class APIKeyList(BaseModel):
     """Schema para listagem de API Keys."""
-    items: List[APIKeyResponse]
+
+    items: list[APIKeyResponse]
     total: int
     page: int
     page_size: int
@@ -251,35 +261,38 @@ class APIKeyList(BaseModel):
 
 class APIKeyRevokeRequest(BaseModel):
     """Schema para revogar API Key."""
-    reason: Optional[str] = None
+
+    reason: str | None = None
 
 
 # ==================== Webhook Schemas ====================
 
+
 class WebhookConfigBase(BaseModel):
     """Schema base para Webhook Config."""
+
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     url: str = Field(..., min_length=1, max_length=1000)
     method: str = "POST"
-    events: List[str]  # Lista de WebhookEvent
-    event_filters: Optional[Dict[str, Any]] = None
+    events: list[str]  # Lista de WebhookEvent
+    event_filters: dict[str, Any] | None = None
 
     # Formato
     content_type: str = "application/json"
     payload_format: WebhookFormat = WebhookFormat.JSON
-    payload_template: Optional[str] = None
+    payload_template: str | None = None
 
     # Autenticação
     auth_type: WebhookAuthType = WebhookAuthType.HMAC
-    auth_credentials: Optional[Dict[str, Any]] = None
+    auth_credentials: dict[str, Any] | None = None
 
     # Segurança
     verify_ssl: bool = True
-    allowed_ips: Optional[List[str]] = None
+    allowed_ips: list[str] | None = None
 
     # Headers customizados
-    custom_headers: Optional[Dict[str, str]] = None
+    custom_headers: dict[str, str] | None = None
 
     # Retry
     retry_enabled: bool = True
@@ -293,20 +306,20 @@ class WebhookConfigBase(BaseModel):
 
     # Batching
     batch_enabled: bool = False
-    batch_size: Optional[int] = 10
-    batch_interval_seconds: Optional[int] = 60
+    batch_size: int | None = 10
+    batch_interval_seconds: int | None = 60
 
     # Configurações
-    auto_disable_on_failures: Optional[int] = 10
+    auto_disable_on_failures: int | None = 10
 
     # Metadados
-    notes: Optional[str] = None
+    notes: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
     @field_validator("events")
     @classmethod
-    def validate_events(cls, v: List[str]) -> List[str]:
+    def validate_events(cls, v: list[str]) -> list[str]:
         """Valida lista de eventos."""
         if not v:
             raise ValueError("Pelo menos um evento é obrigatório")
@@ -319,49 +332,52 @@ class WebhookConfigBase(BaseModel):
 
 class WebhookConfigCreate(WebhookConfigBase):
     """Schema para criar Webhook Config."""
-    client_id: Optional[UUID] = None
-    api_key_id: Optional[UUID] = None
+
+    client_id: UUID | None = None
+    api_key_id: UUID | None = None
 
 
 class WebhookConfigUpdate(BaseModel):
     """Schema para atualizar Webhook Config."""
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    url: Optional[str] = Field(None, min_length=1, max_length=1000)
-    events: Optional[List[str]] = None
-    event_filters: Optional[Dict[str, Any]] = None
-    status: Optional[WebhookStatus] = None
-    payload_template: Optional[str] = None
-    auth_type: Optional[WebhookAuthType] = None
-    auth_credentials: Optional[Dict[str, Any]] = None
-    verify_ssl: Optional[bool] = None
-    custom_headers: Optional[Dict[str, str]] = None
-    retry_enabled: Optional[bool] = None
-    max_retries: Optional[int] = None
-    timeout_seconds: Optional[int] = None
-    batch_enabled: Optional[bool] = None
-    batch_size: Optional[int] = None
-    notes: Optional[str] = None
+
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    url: str | None = Field(None, min_length=1, max_length=1000)
+    events: list[str] | None = None
+    event_filters: dict[str, Any] | None = None
+    status: WebhookStatus | None = None
+    payload_template: str | None = None
+    auth_type: WebhookAuthType | None = None
+    auth_credentials: dict[str, Any] | None = None
+    verify_ssl: bool | None = None
+    custom_headers: dict[str, str] | None = None
+    retry_enabled: bool | None = None
+    max_retries: int | None = None
+    timeout_seconds: int | None = None
+    batch_enabled: bool | None = None
+    batch_size: int | None = None
+    notes: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class WebhookConfigResponse(WebhookConfigBase):
     """Schema de resposta para Webhook Config."""
+
     id: UUID
-    client_id: Optional[UUID] = None
-    api_key_id: Optional[UUID] = None
+    client_id: UUID | None = None
+    api_key_id: UUID | None = None
     status: WebhookStatus
-    secret_key: Optional[str] = None  # Mostrado apenas na criação
+    secret_key: str | None = None  # Mostrado apenas na criação
     total_deliveries: int = 0
     successful_deliveries: int = 0
     failed_deliveries: int = 0
     consecutive_failures: int = 0
-    avg_response_time_ms: Optional[int] = None
-    last_delivery_at: Optional[datetime] = None
-    last_success_at: Optional[datetime] = None
-    last_failure_at: Optional[datetime] = None
-    last_failure_reason: Optional[str] = None
+    avg_response_time_ms: int | None = None
+    last_delivery_at: datetime | None = None
+    last_success_at: datetime | None = None
+    last_failure_at: datetime | None = None
+    last_failure_reason: str | None = None
     delivery_rate: float = 100.0
     health_status: str
     is_available: bool
@@ -372,7 +388,8 @@ class WebhookConfigResponse(WebhookConfigBase):
 
 class WebhookConfigList(BaseModel):
     """Schema para listagem de Webhook Configs."""
-    items: List[WebhookConfigResponse]
+
+    items: list[WebhookConfigResponse]
     total: int
     page: int
     page_size: int
@@ -381,49 +398,53 @@ class WebhookConfigList(BaseModel):
 
 class WebhookTestRequest(BaseModel):
     """Schema para testar webhook."""
+
     event: str
-    payload: Optional[Dict[str, Any]] = None
+    payload: dict[str, Any] | None = None
 
 
 class WebhookTestResponse(BaseModel):
     """Resposta do teste de webhook."""
+
     success: bool
-    status_code: Optional[int] = None
+    status_code: int | None = None
     response_time_ms: int
-    response_body: Optional[str] = None
-    error: Optional[str] = None
+    response_body: str | None = None
+    error: str | None = None
 
 
 # ==================== Integration Log Schemas ====================
 
+
 class IntegrationLogResponse(BaseModel):
     """Schema de resposta para Integration Log."""
+
     id: UUID
-    endpoint_id: Optional[UUID] = None
-    api_key_id: Optional[UUID] = None
-    webhook_id: Optional[UUID] = None
-    sync_queue_id: Optional[UUID] = None
+    endpoint_id: UUID | None = None
+    api_key_id: UUID | None = None
+    webhook_id: UUID | None = None
+    sync_queue_id: UUID | None = None
     log_type: LogType
     level: LogLevel
     status: LogStatus
-    correlation_id: Optional[str] = None
-    trace_id: Optional[str] = None
-    request_id: Optional[str] = None
-    method: Optional[str] = None
-    path: Optional[str] = None
-    response_status_code: Optional[int] = None
-    duration_ms: Optional[int] = None
-    client_ip: Optional[str] = None
-    error_code: Optional[str] = None
-    error_message: Optional[str] = None
+    correlation_id: str | None = None
+    trace_id: str | None = None
+    request_id: str | None = None
+    method: str | None = None
+    path: str | None = None
+    response_status_code: int | None = None
+    duration_ms: int | None = None
+    client_ip: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
     retry_count: int = 0
     is_retry: bool = False
-    user_id: Optional[UUID] = None
-    client_id: Optional[UUID] = None
-    resource_type: Optional[str] = None
-    resource_id: Optional[UUID] = None
-    action: Optional[str] = None
-    tags: Optional[List[str]] = None
+    user_id: UUID | None = None
+    client_id: UUID | None = None
+    resource_type: str | None = None
+    resource_id: UUID | None = None
+    action: str | None = None
+    tags: list[str] | None = None
     timestamp: datetime
     created_at: datetime
 
@@ -432,7 +453,8 @@ class IntegrationLogResponse(BaseModel):
 
 class IntegrationLogList(BaseModel):
     """Schema para listagem de logs."""
-    items: List[IntegrationLogResponse]
+
+    items: list[IntegrationLogResponse]
     total: int
     page: int
     page_size: int
@@ -441,39 +463,42 @@ class IntegrationLogList(BaseModel):
 
 class IntegrationLogFilter(BaseModel):
     """Filtros para busca de logs."""
-    log_type: Optional[LogType] = None
-    level: Optional[LogLevel] = None
-    status: Optional[LogStatus] = None
-    endpoint_id: Optional[UUID] = None
-    api_key_id: Optional[UUID] = None
-    webhook_id: Optional[UUID] = None
-    correlation_id: Optional[str] = None
-    trace_id: Optional[str] = None
-    client_id: Optional[UUID] = None
-    user_id: Optional[UUID] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+
+    log_type: LogType | None = None
+    level: LogLevel | None = None
+    status: LogStatus | None = None
+    endpoint_id: UUID | None = None
+    api_key_id: UUID | None = None
+    webhook_id: UUID | None = None
+    correlation_id: str | None = None
+    trace_id: str | None = None
+    client_id: UUID | None = None
+    user_id: UUID | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     error_only: bool = False
 
 
 # ==================== Sync Queue Schemas ====================
 
+
 class SyncQueueBase(BaseModel):
     """Schema base para Sync Queue."""
+
     external_system: ExternalSystem = ExternalSystem.CUSTOM
-    external_system_config_id: Optional[UUID] = None
+    external_system_config_id: UUID | None = None
     direction: SyncDirection = SyncDirection.OUTBOUND
     entity_type: SyncEntityType
-    entity_id: Optional[UUID] = None
-    external_id: Optional[str] = None
+    entity_id: UUID | None = None
+    external_id: str | None = None
     operation: SyncOperationType = SyncOperationType.UPSERT
-    payload: Optional[Dict[str, Any]] = None
+    payload: dict[str, Any] | None = None
     priority: SyncPriority = SyncPriority.NORMAL
 
     # Agendamento
-    scheduled_at: Optional[datetime] = None
-    not_before: Optional[datetime] = None
-    not_after: Optional[datetime] = None
+    scheduled_at: datetime | None = None
+    not_before: datetime | None = None
+    not_after: datetime | None = None
 
     # Retry
     max_retries: int = 3
@@ -481,67 +506,71 @@ class SyncQueueBase(BaseModel):
     retry_backoff_multiplier: int = 2
 
     # Callbacks
-    callback_url: Optional[str] = None
+    callback_url: str | None = None
     callback_on_success: bool = False
     callback_on_failure: bool = False
 
     # Metadados
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
+    notes: str | None = None
+    tags: list[str] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class SyncQueueCreate(SyncQueueBase):
     """Schema para criar item na fila de sync."""
-    correlation_id: Optional[str] = None
-    batch_id: Optional[UUID] = None
+
+    correlation_id: str | None = None
+    batch_id: UUID | None = None
 
 
 class SyncQueueBatchCreate(BaseModel):
     """Schema para criar múltiplos itens na fila."""
-    items: List[SyncQueueCreate]
-    batch_id: Optional[UUID] = None
+
+    items: list[SyncQueueCreate]
+    batch_id: UUID | None = None
 
 
 class SyncQueueUpdate(BaseModel):
     """Schema para atualizar item na fila."""
-    priority: Optional[SyncPriority] = None
-    scheduled_at: Optional[datetime] = None
-    not_before: Optional[datetime] = None
-    not_after: Optional[datetime] = None
-    max_retries: Optional[int] = None
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
+
+    priority: SyncPriority | None = None
+    scheduled_at: datetime | None = None
+    not_before: datetime | None = None
+    not_after: datetime | None = None
+    max_retries: int | None = None
+    notes: str | None = None
+    tags: list[str] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class SyncQueueResponse(SyncQueueBase):
     """Schema de resposta para Sync Queue."""
+
     id: UUID
-    correlation_id: Optional[str] = None
-    batch_id: Optional[UUID] = None
-    payload_hash: Optional[str] = None
+    correlation_id: str | None = None
+    batch_id: UUID | None = None
+    payload_hash: str | None = None
     status: SyncStatus
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    processing_time_ms: Optional[int] = None
-    processed_by: Optional[str] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    processing_time_ms: int | None = None
+    processed_by: str | None = None
     retry_count: int = 0
-    next_retry_at: Optional[datetime] = None
-    error_code: Optional[str] = None
-    error_message: Optional[str] = None
-    external_response: Optional[Dict[str, Any]] = None
-    external_status_code: Optional[int] = None
-    validation_errors: Optional[List[Dict[str, Any]]] = None
+    next_retry_at: datetime | None = None
+    error_code: str | None = None
+    error_message: str | None = None
+    external_response: dict[str, Any] | None = None
+    external_status_code: int | None = None
+    validation_errors: list[dict[str, Any]] | None = None
     requires_review: bool = False
-    reviewed_by: Optional[UUID] = None
-    reviewed_at: Optional[datetime] = None
+    reviewed_by: UUID | None = None
+    reviewed_at: datetime | None = None
     is_ready_to_process: bool
     is_expired: bool
     can_retry: bool
-    wait_time_seconds: Optional[int] = None
+    wait_time_seconds: int | None = None
     ativo: bool
     created_at: datetime
     updated_at: datetime
@@ -549,7 +578,8 @@ class SyncQueueResponse(SyncQueueBase):
 
 class SyncQueueList(BaseModel):
     """Schema para listagem de itens da fila."""
-    items: List[SyncQueueResponse]
+
+    items: list[SyncQueueResponse]
     total: int
     page: int
     page_size: int
@@ -558,21 +588,23 @@ class SyncQueueList(BaseModel):
 
 class SyncQueueFilter(BaseModel):
     """Filtros para busca na fila."""
-    status: Optional[SyncStatus] = None
-    priority: Optional[SyncPriority] = None
-    entity_type: Optional[SyncEntityType] = None
-    external_system: Optional[ExternalSystem] = None
-    direction: Optional[SyncDirection] = None
-    batch_id: Optional[UUID] = None
-    correlation_id: Optional[str] = None
-    requires_review: Optional[bool] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+
+    status: SyncStatus | None = None
+    priority: SyncPriority | None = None
+    entity_type: SyncEntityType | None = None
+    external_system: ExternalSystem | None = None
+    direction: SyncDirection | None = None
+    batch_id: UUID | None = None
+    correlation_id: str | None = None
+    requires_review: bool | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     ready_only: bool = False
 
 
 class SyncQueueStats(BaseModel):
     """Estatísticas da fila de sincronização."""
+
     total: int = 0
     pending: int = 0
     processing: int = 0
@@ -580,23 +612,25 @@ class SyncQueueStats(BaseModel):
     failed: int = 0
     retrying: int = 0
     requires_review: int = 0
-    by_entity_type: Dict[str, int] = Field(default_factory=dict)
-    by_external_system: Dict[str, int] = Field(default_factory=dict)
-    avg_processing_time_ms: Optional[int] = None
-    oldest_pending_at: Optional[datetime] = None
+    by_entity_type: dict[str, int] = Field(default_factory=dict)
+    by_external_system: dict[str, int] = Field(default_factory=dict)
+    avg_processing_time_ms: int | None = None
+    oldest_pending_at: datetime | None = None
 
 
 # ==================== Dashboard Schemas ====================
 
+
 class IntegrationDashboard(BaseModel):
     """Dashboard de integrações."""
+
     # API Stats
     total_endpoints: int = 0
     active_endpoints: int = 0
     deprecated_endpoints: int = 0
     total_api_calls_today: int = 0
     api_success_rate: float = 100.0
-    avg_response_time_ms: Optional[int] = None
+    avg_response_time_ms: int | None = None
 
     # API Keys
     total_api_keys: int = 0
@@ -614,7 +648,7 @@ class IntegrationDashboard(BaseModel):
     sync_stats: SyncQueueStats = Field(default_factory=SyncQueueStats)
 
     # Recent Errors
-    recent_errors: List[IntegrationLogResponse] = Field(default_factory=list)
+    recent_errors: list[IntegrationLogResponse] = Field(default_factory=list)
 
     # Health
     overall_health: str = "healthy"  # healthy, degraded, critical
@@ -622,8 +656,9 @@ class IntegrationDashboard(BaseModel):
 
 class IntegrationHealthCheck(BaseModel):
     """Health check de integrações."""
+
     api_gateway: str = "healthy"
     webhooks: str = "healthy"
     sync_queue: str = "healthy"
-    external_systems: Dict[str, str] = Field(default_factory=dict)
+    external_systems: dict[str, str] = Field(default_factory=dict)
     last_check_at: datetime = Field(default_factory=datetime.utcnow)

@@ -6,54 +6,55 @@ Sprint 33: Integration Framework (Sólides, Bling, Domínio, GOV)
 
 from modules.integrations.models.api_endpoint import (
     APIEndpoint,
-    HTTPMethod,
     EndpointCategory,
     EndpointStatus,
+    HTTPMethod,
     RateLimitType,
 )
 from modules.integrations.models.api_key import (
     APIKey,
-    APIKeyType,
-    APIKeyStatus,
     APIKeyScope,
+    APIKeyStatus,
+    APIKeyType,
 )
-from modules.integrations.models.webhook_config import (
-    WebhookConfig,
-    WebhookEvent,
-    WebhookStatus,
-    WebhookFormat,
-    WebhookAuthType,
+from modules.integrations.models.id_map import IDMap
+
+# Sprint 33: Integration Framework
+from modules.integrations.models.integration_account import (
+    AccountStatus,
+    AuthType,
+    ConnectorType,
+    IntegrationAccount,
 )
 from modules.integrations.models.integration_log import (
     IntegrationLog,
-    LogType,
     LogLevel,
     LogStatus,
+    LogType,
 )
 from modules.integrations.models.sync_queue import (
-    SyncQueue,
+    ExternalSystem,
     SyncDirection,
-    SyncPriority,
-    SyncStatus,
     SyncEntityType,
     SyncOperationType,
-    ExternalSystem,
-)
-# Sprint 33: Integration Framework
-from modules.integrations.models.integration_account import (
-    IntegrationAccount,
-    ConnectorType,
-    AuthType,
-    AccountStatus,
+    SyncPriority,
+    SyncQueue,
+    SyncStatus,
 )
 from modules.integrations.models.sync_run import (
     SyncRun,
-    SyncRunStatus,
     SyncRunMode,
+    SyncRunStatus,
     SyncRunTrigger,
 )
 from modules.integrations.models.sync_state import SyncState
-from modules.integrations.models.id_map import IDMap
+from modules.integrations.models.webhook_config import (
+    WebhookAuthType,
+    WebhookConfig,
+    WebhookEvent,
+    WebhookFormat,
+    WebhookStatus,
+)
 
 __all__ = [
     # API Endpoint

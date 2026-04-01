@@ -6,25 +6,23 @@ Logica de negocio para mapeamento de riscos ocupacionais.
 """
 
 import logging
-from datetime import date
-from typing import List, Optional, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.health_occupational.models.ppra import (
-    RiskMapping,
-    OccupationalRisk,
     ControlMeasure,
-    RiskCategory,
+    OccupationalRisk,
     RiskLevel,
+    RiskMapping,
 )
 from modules.health_occupational.schemas.ppra import (
-    RiskMappingRequest,
-    RiskMappingUpdateRequest,
-    OccupationalRiskRequest,
     ControlMeasureRequest,
     ControlMeasureUpdateRequest,
+    OccupationalRiskRequest,
+    RiskMappingRequest,
+    RiskMappingUpdateRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,7 +43,7 @@ EPI_RECOMMENDATIONS = {
 class PPRAService:
     """Service para gerenciamento de riscos ocupacionais (PPRA/PGR - NR-9)."""
 
-    def __init__(self, db: Optional[Session] = None):
+    def __init__(self, db: Session | None = None):
         self.db = db
 
     # ==========================================================================
@@ -55,7 +53,7 @@ class PPRAService:
     def create_mapping(
         self,
         request: RiskMappingRequest,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> RiskMapping:
         """
         Cria mapeamento de riscos para um setor.
@@ -131,7 +129,7 @@ class PPRAService:
         self.db.add(risk)
         return risk
 
-    def _calculate_general_risk_level(self, risks: List[OccupationalRisk]) -> str:
+    def _calculate_general_risk_level(self, risks: list[OccupationalRisk]) -> str:
         """Calcula nivel de risco geral baseado nos riscos individuais."""
         if not risks:
             return RiskLevel.TRIVIAL.value
@@ -144,9 +142,7 @@ class PPRAService:
             RiskLevel.INTOLERAVEL.value: 5,
         }
 
-        max_level = max(
-            level_order.get(r.nivel_risco, 3) for r in risks
-        )
+        max_level = max(level_order.get(r.nivel_risco, 3) for r in risks)
 
         for level, order in level_order.items():
             if order == max_level:
@@ -154,11 +150,11 @@ class PPRAService:
 
         return RiskLevel.MODERADO.value
 
-    def _get_recommended_epis(self, agente: str) -> List[str]:
+    def _get_recommended_epis(self, agente: str) -> list[str]:
         """Retorna EPIs recomendados para um agente de risco."""
         return EPI_RECOMMENDATIONS.get(agente.lower(), [])
 
-    def get_mapping(self, mapping_id: UUID) -> Optional[RiskMapping]:
+    def get_mapping(self, mapping_id: UUID) -> RiskMapping | None:
         """Busca mapeamento por ID."""
         return self.db.query(RiskMapping).filter(RiskMapping.id == mapping_id).first()
 
@@ -166,7 +162,7 @@ class PPRAService:
         self,
         mapping_id: UUID,
         request: RiskMappingUpdateRequest,
-    ) -> Optional[RiskMapping]:
+    ) -> RiskMapping | None:
         """Atualiza mapeamento de riscos."""
         mapping = self.get_mapping(mapping_id)
         if not mapping:
@@ -185,49 +181,79 @@ class PPRAService:
 
     def list_mappings(
         self,
-        setor: Optional[str] = None,
-        ativo: Optional[bool] = True,
+        setor: str | None = None,
+        ativo: bool | None = True,
         page: int = 1,
         size: int = 20,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Lista mapeamentos de risco."""
-        query = self.db.query(RiskMapping)
+        if not self.db:
+            return {"items": [], "total": 0, "page": page, "size": size}
 
-        if setor:
-            query = query.filter(RiskMapping.setor.ilike(f"%{setor}%"))
+        from sqlalchemy import text
 
-        if ativo is not None:
-            query = query.filter(RiskMapping.ativo == ativo)
+        try:
+            where = "WHERE 1=1"
+            params: dict = {"limit": size, "offset": (page - 1) * size}
 
-        total = query.count()
-        mappings = query.order_by(RiskMapping.data_avaliacao.desc()).offset(
-            (page - 1) * size
-        ).limit(size).all()
+            if setor:
+                where += " AND setor ILIKE :setor"
+                params["setor"] = f"%{setor}%"
+            if ativo is not None:
+                where += " AND status = :status"
+                params["status"] = "ativo" if ativo else "inativo"
 
-        return {
-            "items": mappings,
-            "total": total,
-            "page": page,
-            "size": size,
-        }
+            total = self.db.execute(text(f"SELECT count(*) FROM health_risk_mappings {where}"), params).scalar() or 0
 
-    def get_sector_risks(self, setor: str) -> List[OccupationalRisk]:
+            rows = self.db.execute(
+                text(
+                    f"SELECT id, setor, funcao, agente_risco, tipo_risco, intensidade, fonte_geradora, medidas_controle, epi_recomendado, status, created_at FROM health_risk_mappings {where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+                ),
+                params,
+            ).fetchall()
+
+            items = [
+                {
+                    "id": str(r.id),
+                    "setor": r.setor,
+                    "funcao": r.funcao,
+                    "agente_risco": r.agente_risco,
+                    "tipo_risco": r.tipo_risco,
+                    "intensidade": r.intensidade,
+                    "fonte_geradora": r.fonte_geradora,
+                    "medidas_controle": r.medidas_controle,
+                    "epi_recomendado": r.epi_recomendado,
+                    "status": r.status,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ]
+
+            return {"items": items, "total": total, "page": page, "size": size}
+        except Exception as e:
+            logger.error("Erro ao listar mapeamentos: %s", e)
+            return {"items": [], "total": 0, "page": page, "size": size}
+
+    def get_sector_risks(self, setor: str) -> list[OccupationalRisk]:
         """Retorna riscos de um setor."""
-        mapping = self.db.query(RiskMapping).filter(
-            RiskMapping.setor == setor,
-            RiskMapping.ativo == True,
-        ).order_by(RiskMapping.data_avaliacao.desc()).first()
+        mapping = (
+            self.db.query(RiskMapping)
+            .filter(
+                RiskMapping.setor == setor,
+                RiskMapping.ativo,
+            )
+            .order_by(RiskMapping.data_avaliacao.desc())
+            .first()
+        )
 
         if not mapping:
             return []
 
         return mapping.riscos
 
-    def get_function_risks(self, funcao: str) -> List[OccupationalRisk]:
+    def get_function_risks(self, funcao: str) -> list[OccupationalRisk]:
         """Retorna riscos associados a uma funcao."""
-        risks = self.db.query(OccupationalRisk).filter(
-            OccupationalRisk.funcoes_expostas.contains([funcao])
-        ).all()
+        risks = self.db.query(OccupationalRisk).filter(OccupationalRisk.funcoes_expostas.contains([funcao])).all()
 
         return risks
 
@@ -236,7 +262,7 @@ class PPRAService:
         risks = self.get_sector_risks(setor)
         return self._calculate_general_risk_level(risks)
 
-    def get_recommended_epis(self, funcao: str) -> List[str]:
+    def get_recommended_epis(self, funcao: str) -> list[str]:
         """Retorna EPIs recomendados para uma funcao."""
         risks = self.get_function_risks(funcao)
         epis = set()
@@ -278,11 +304,9 @@ class PPRAService:
         self,
         measure_id: UUID,
         request: ControlMeasureUpdateRequest,
-    ) -> Optional[ControlMeasure]:
+    ) -> ControlMeasure | None:
         """Atualiza medida de controle."""
-        measure = self.db.query(ControlMeasure).filter(
-            ControlMeasure.id == measure_id
-        ).first()
+        measure = self.db.query(ControlMeasure).filter(ControlMeasure.id == measure_id).first()
 
         if not measure:
             return None
@@ -298,12 +322,10 @@ class PPRAService:
     def list_control_measures(
         self,
         mapeamento_id: UUID,
-        status: Optional[str] = None,
-    ) -> List[ControlMeasure]:
+        status: str | None = None,
+    ) -> list[ControlMeasure]:
         """Lista medidas de controle de um mapeamento."""
-        query = self.db.query(ControlMeasure).filter(
-            ControlMeasure.mapeamento_id == mapeamento_id
-        )
+        query = self.db.query(ControlMeasure).filter(ControlMeasure.mapeamento_id == mapeamento_id)
 
         if status:
             query = query.filter(ControlMeasure.status == status)
@@ -314,7 +336,7 @@ class PPRAService:
     # Risk Categories Info
     # ==========================================================================
 
-    def get_risk_categories(self) -> Dict[str, Any]:
+    def get_risk_categories(self) -> dict[str, Any]:
         """Retorna informacoes sobre categorias de risco."""
         return {
             "categorias": [
@@ -362,28 +384,45 @@ class PPRAService:
     # Statistics
     # ==========================================================================
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Retorna estatisticas do PPRA."""
-        total_mappings = self.db.query(RiskMapping).filter(
-            RiskMapping.ativo == True
-        ).count()
+        if not self.db:
+            return {
+                "total_mapeamentos_ativos": 0,
+                "total_riscos_identificados": 0,
+                "riscos_alto_nivel": 0,
+                "medidas_pendentes": 0,
+            }
 
-        total_risks = self.db.query(OccupationalRisk).count()
+        from sqlalchemy import text
 
-        high_risks = self.db.query(OccupationalRisk).filter(
-            OccupationalRisk.nivel_risco.in_([
-                RiskLevel.SUBSTANCIAL.value,
-                RiskLevel.INTOLERAVEL.value,
-            ])
-        ).count()
+        try:
+            total_mappings = (
+                self.db.execute(text("SELECT count(*) FROM health_risk_mappings WHERE status = 'ativo'")).scalar() or 0
+            )
 
-        pending_measures = self.db.query(ControlMeasure).filter(
-            ControlMeasure.status == "pendente"
-        ).count()
+            total_risks = self.db.execute(text("SELECT count(*) FROM health_risk_mappings")).scalar() or 0
 
-        return {
-            "total_mapeamentos_ativos": total_mappings,
-            "total_riscos_identificados": total_risks,
-            "riscos_alto_nivel": high_risks,
-            "medidas_pendentes": pending_measures,
-        }
+            high_risks = (
+                self.db.execute(
+                    text(
+                        "SELECT count(*) FROM health_risk_mappings WHERE intensidade IN ('alta', 'critica', 'muito_alta')"
+                    )
+                ).scalar()
+                or 0
+            )
+
+            return {
+                "total_mapeamentos_ativos": total_mappings,
+                "total_riscos_identificados": total_risks,
+                "riscos_alto_nivel": high_risks,
+                "medidas_pendentes": 0,
+            }
+        except Exception as e:
+            logger.error("Erro ao consultar estatisticas PPRA: %s", e)
+            return {
+                "total_mapeamentos_ativos": 0,
+                "total_riscos_identificados": 0,
+                "riscos_alto_nivel": 0,
+                "medidas_pendentes": 0,
+            }

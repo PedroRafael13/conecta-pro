@@ -10,28 +10,26 @@ Classes:
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_, case, distinct
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy import and_, case, distinct, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from modules.retention.onboarding.models import (
     OnboardingChecklist,
-    OnboardingStep,
     OnboardingProgress,
-    StepType,
+    OnboardingStep,
     ProgressStatus,
 )
 from modules.retention.onboarding.schemas import (
     ChecklistCreate,
     ChecklistUpdate,
-    StepCreate,
-    StepUpdate,
     ProgressCreate,
     ProgressUpdate,
-    OnboardingFilter,
+    StepCreate,
+    StepUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,9 +63,7 @@ class OnboardingRepository:
     # CHECKLIST OPERATIONS
     # =========================================================================
 
-    async def create_checklist(
-        self, data: ChecklistCreate
-    ) -> OnboardingChecklist:
+    async def create_checklist(self, data: ChecklistCreate) -> OnboardingChecklist:
         """
         Cria um novo checklist de onboarding.
 
@@ -103,7 +99,7 @@ class OnboardingRepository:
         self,
         checklist_id: UUID,
         include_etapas: bool = False,
-    ) -> Optional[OnboardingChecklist]:
+    ) -> OnboardingChecklist | None:
         """
         Busca checklist por ID.
 
@@ -131,7 +127,7 @@ class OnboardingRepository:
         self,
         nome: str,
         condominium_id: UUID,
-    ) -> Optional[OnboardingChecklist]:
+    ) -> OnboardingChecklist | None:
         """
         Busca checklist por nome dentro de um condomínio.
 
@@ -156,8 +152,8 @@ class OnboardingRepository:
     async def get_default_checklist(
         self,
         condominium_id: UUID,
-        cargo_id: Optional[UUID] = None,
-    ) -> Optional[OnboardingChecklist]:
+        cargo_id: UUID | None = None,
+    ) -> OnboardingChecklist | None:
         """
         Busca o checklist padrão para um condomínio/cargo.
 
@@ -201,7 +197,7 @@ class OnboardingRepository:
         self,
         checklist_id: UUID,
         data: ChecklistUpdate,
-    ) -> Optional[OnboardingChecklist]:
+    ) -> OnboardingChecklist | None:
         """
         Atualiza um checklist existente.
 
@@ -258,11 +254,11 @@ class OnboardingRepository:
         condominium_id: UUID,
         skip: int = 0,
         limit: int = 20,
-        is_active: Optional[bool] = None,
-        cargo_id: Optional[UUID] = None,
-        departamento: Optional[str] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[OnboardingChecklist], int]:
+        is_active: bool | None = None,
+        cargo_id: UUID | None = None,
+        departamento: str | None = None,
+        search: str | None = None,
+    ) -> tuple[list[OnboardingChecklist], int]:
         """
         Lista checklists com filtros e paginação.
 
@@ -360,7 +356,7 @@ class OnboardingRepository:
 
         return step
 
-    async def get_step_by_id(self, step_id: UUID) -> Optional[OnboardingStep]:
+    async def get_step_by_id(self, step_id: UUID) -> OnboardingStep | None:
         """
         Busca etapa por ID.
 
@@ -370,16 +366,14 @@ class OnboardingRepository:
         Returns:
             Etapa encontrada ou None
         """
-        result = await self.session.execute(
-            select(OnboardingStep).where(OnboardingStep.id == step_id)
-        )
+        result = await self.session.execute(select(OnboardingStep).where(OnboardingStep.id == step_id))
         return result.scalar_one_or_none()
 
     async def update_step(
         self,
         step_id: UUID,
         data: StepUpdate,
-    ) -> Optional[OnboardingStep]:
+    ) -> OnboardingStep | None:
         """
         Atualiza uma etapa existente.
 
@@ -434,7 +428,7 @@ class OnboardingRepository:
     async def list_steps_by_checklist(
         self,
         checklist_id: UUID,
-    ) -> List[OnboardingStep]:
+    ) -> list[OnboardingStep]:
         """
         Lista etapas de um checklist ordenadas.
 
@@ -445,17 +439,15 @@ class OnboardingRepository:
             Lista de etapas ordenadas
         """
         result = await self.session.execute(
-            select(OnboardingStep)
-            .where(OnboardingStep.checklist_id == checklist_id)
-            .order_by(OnboardingStep.ordem)
+            select(OnboardingStep).where(OnboardingStep.checklist_id == checklist_id).order_by(OnboardingStep.ordem)
         )
         return list(result.scalars().all())
 
     async def reorder_steps(
         self,
         checklist_id: UUID,
-        step_orders: List[Dict[str, Any]],
-    ) -> List[OnboardingStep]:
+        step_orders: list[dict[str, Any]],
+    ) -> list[OnboardingStep]:
         """
         Reordena as etapas de um checklist.
 
@@ -478,9 +470,7 @@ class OnboardingRepository:
     # PROGRESS OPERATIONS
     # =========================================================================
 
-    async def create_progress(
-        self, data: ProgressCreate
-    ) -> OnboardingProgress:
+    async def create_progress(self, data: ProgressCreate) -> OnboardingProgress:
         """
         Cria um registro de progresso.
 
@@ -514,8 +504,8 @@ class OnboardingRepository:
 
     async def create_progress_batch(
         self,
-        progress_list: List[ProgressCreate],
-    ) -> List[OnboardingProgress]:
+        progress_list: list[ProgressCreate],
+    ) -> list[OnboardingProgress]:
         """
         Cria múltiplos registros de progresso em lote.
 
@@ -551,7 +541,7 @@ class OnboardingRepository:
         self,
         progress_id: UUID,
         include_step: bool = False,
-    ) -> Optional[OnboardingProgress]:
+    ) -> OnboardingProgress | None:
         """
         Busca progresso por ID.
 
@@ -562,9 +552,7 @@ class OnboardingRepository:
         Returns:
             Progresso encontrado ou None
         """
-        query = select(OnboardingProgress).where(
-            OnboardingProgress.id == progress_id
-        )
+        query = select(OnboardingProgress).where(OnboardingProgress.id == progress_id)
 
         if include_step:
             query = query.options(selectinload(OnboardingProgress.step))
@@ -576,7 +564,7 @@ class OnboardingRepository:
         self,
         funcionario_id: UUID,
         step_id: UUID,
-    ) -> Optional[OnboardingProgress]:
+    ) -> OnboardingProgress | None:
         """
         Busca progresso por funcionário e etapa.
 
@@ -601,7 +589,7 @@ class OnboardingRepository:
         self,
         progress_id: UUID,
         data: ProgressUpdate,
-    ) -> Optional[OnboardingProgress]:
+    ) -> OnboardingProgress | None:
         """
         Atualiza um progresso existente.
 
@@ -632,9 +620,9 @@ class OnboardingRepository:
     async def list_by_funcionario(
         self,
         funcionario_id: UUID,
-        checklist_id: Optional[UUID] = None,
-        status: Optional[ProgressStatus] = None,
-    ) -> List[OnboardingProgress]:
+        checklist_id: UUID | None = None,
+        status: ProgressStatus | None = None,
+    ) -> list[OnboardingProgress]:
         """
         Lista progressos de um funcionário.
 
@@ -646,9 +634,7 @@ class OnboardingRepository:
         Returns:
             Lista de progressos
         """
-        query = select(OnboardingProgress).where(
-            OnboardingProgress.funcionario_id == funcionario_id
-        )
+        query = select(OnboardingProgress).where(OnboardingProgress.funcionario_id == funcionario_id)
 
         if checklist_id:
             query = query.where(OnboardingProgress.checklist_id == checklist_id)
@@ -666,7 +652,7 @@ class OnboardingRepository:
         condominium_id: UUID,
         skip: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[OnboardingProgress], int]:
+    ) -> tuple[list[OnboardingProgress], int]:
         """
         Lista progressos pendentes de um condomínio.
 
@@ -684,10 +670,12 @@ class OnboardingRepository:
             .where(
                 and_(
                     OnboardingChecklist.condominium_id == condominium_id,
-                    OnboardingProgress.status.in_([
-                        ProgressStatus.PENDENTE,
-                        ProgressStatus.EM_ANDAMENTO,
-                    ]),
+                    OnboardingProgress.status.in_(
+                        [
+                            ProgressStatus.PENDENTE,
+                            ProgressStatus.EM_ANDAMENTO,
+                        ]
+                    ),
                 )
             )
             .options(
@@ -713,7 +701,7 @@ class OnboardingRepository:
         condominium_id: UUID,
         skip: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[OnboardingProgress], int]:
+    ) -> tuple[list[OnboardingProgress], int]:
         """
         Lista progressos atrasados de um condomínio.
 
@@ -733,11 +721,13 @@ class OnboardingRepository:
             .where(
                 and_(
                     OnboardingChecklist.condominium_id == condominium_id,
-                    OnboardingProgress.status.in_([
-                        ProgressStatus.PENDENTE,
-                        ProgressStatus.EM_ANDAMENTO,
-                        ProgressStatus.ATRASADO,
-                    ]),
+                    OnboardingProgress.status.in_(
+                        [
+                            ProgressStatus.PENDENTE,
+                            ProgressStatus.EM_ANDAMENTO,
+                            ProgressStatus.ATRASADO,
+                        ]
+                    ),
                     OnboardingProgress.data_prevista < today,
                 )
             )
@@ -777,10 +767,12 @@ class OnboardingRepository:
             .where(
                 and_(
                     OnboardingChecklist.condominium_id == condominium_id,
-                    OnboardingProgress.status.in_([
-                        ProgressStatus.PENDENTE,
-                        ProgressStatus.EM_ANDAMENTO,
-                    ]),
+                    OnboardingProgress.status.in_(
+                        [
+                            ProgressStatus.PENDENTE,
+                            ProgressStatus.EM_ANDAMENTO,
+                        ]
+                    ),
                     OnboardingProgress.data_prevista < today,
                 )
             )
@@ -810,7 +802,7 @@ class OnboardingRepository:
     async def get_dashboard_stats(
         self,
         condominium_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Obtém estatísticas para o dashboard.
 
@@ -827,11 +819,13 @@ class OnboardingRepository:
             .where(
                 and_(
                     OnboardingChecklist.condominium_id == condominium_id,
-                    OnboardingProgress.status.in_([
-                        ProgressStatus.PENDENTE,
-                        ProgressStatus.EM_ANDAMENTO,
-                        ProgressStatus.ATRASADO,
-                    ]),
+                    OnboardingProgress.status.in_(
+                        [
+                            ProgressStatus.PENDENTE,
+                            ProgressStatus.EM_ANDAMENTO,
+                            ProgressStatus.ATRASADO,
+                        ]
+                    ),
                 )
             )
         )
@@ -895,10 +889,12 @@ class OnboardingRepository:
 
         # Tempo médio de conclusão
         tempo_query = (
-            select(func.avg(
-                func.extract("day", OnboardingProgress.data_conclusao)
-                - func.extract("day", OnboardingProgress.created_at)
-            ))
+            select(
+                func.avg(
+                    func.extract("day", OnboardingProgress.data_conclusao)
+                    - func.extract("day", OnboardingProgress.created_at)
+                )
+            )
             .join(OnboardingChecklist)
             .where(
                 and_(
@@ -946,14 +942,11 @@ class OnboardingRepository:
         nota_media = nota_result.scalar() or 0
 
         # Checklists ativos
-        checklists_query = (
-            select(func.count(OnboardingChecklist.id))
-            .where(
-                and_(
-                    OnboardingChecklist.condominium_id == condominium_id,
-                    OnboardingChecklist.is_active.is_(True),
-                    OnboardingChecklist.deleted_at.is_(None),
-                )
+        checklists_query = select(func.count(OnboardingChecklist.id)).where(
+            and_(
+                OnboardingChecklist.condominium_id == condominium_id,
+                OnboardingChecklist.is_active.is_(True),
+                OnboardingChecklist.deleted_at.is_(None),
             )
         )
         checklists_result = await self.session.execute(checklists_query)
@@ -978,7 +971,7 @@ class OnboardingRepository:
         self,
         condominium_id: UUID,
         limit: int = 20,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Obtém alertas de onboarding.
 
@@ -1000,11 +993,13 @@ class OnboardingRepository:
             .where(
                 and_(
                     OnboardingChecklist.condominium_id == condominium_id,
-                    OnboardingProgress.status.in_([
-                        ProgressStatus.PENDENTE,
-                        ProgressStatus.EM_ANDAMENTO,
-                        ProgressStatus.ATRASADO,
-                    ]),
+                    OnboardingProgress.status.in_(
+                        [
+                            ProgressStatus.PENDENTE,
+                            ProgressStatus.EM_ANDAMENTO,
+                            ProgressStatus.ATRASADO,
+                        ]
+                    ),
                     OnboardingProgress.data_prevista < today,
                 )
             )
@@ -1023,19 +1018,21 @@ class OnboardingRepository:
             dias_atraso = (today - progress.data_prevista).days
             nivel = "critico" if dias_atraso > 7 else "alto" if dias_atraso > 3 else "medio"
 
-            alerts.append({
-                "id": progress.id,
-                "tipo": "atrasado",
-                "nivel": nivel,
-                "funcionario_id": progress.funcionario_id,
-                "step_id": progress.step_id,
-                "step_nome": progress.step.nome if progress.step else None,
-                "checklist_nome": progress.checklist.nome if progress.checklist else None,
-                "dias_atraso": dias_atraso,
-                "supervisor_id": progress.supervisor_id,
-                "mensagem": f"Etapa '{progress.step.nome}' atrasada há {dias_atraso} dia(s)",
-                "created_at": datetime.utcnow(),
-            })
+            alerts.append(
+                {
+                    "id": progress.id,
+                    "tipo": "atrasado",
+                    "nivel": nivel,
+                    "funcionario_id": progress.funcionario_id,
+                    "step_id": progress.step_id,
+                    "step_nome": progress.step.nome if progress.step else None,
+                    "checklist_nome": progress.checklist.nome if progress.checklist else None,
+                    "dias_atraso": dias_atraso,
+                    "supervisor_id": progress.supervisor_id,
+                    "mensagem": f"Etapa '{progress.step.nome}' atrasada há {dias_atraso} dia(s)",
+                    "created_at": datetime.utcnow(),
+                }
+            )
 
         # Próximos a vencer (próximos 3 dias)
         proximo_vencer_query = (
@@ -1064,26 +1061,28 @@ class OnboardingRepository:
         for progress in proximos:
             dias_restantes = (progress.data_prevista - today).days
 
-            alerts.append({
-                "id": progress.id,
-                "tipo": "proximo_vencer",
-                "nivel": "baixo",
-                "funcionario_id": progress.funcionario_id,
-                "step_id": progress.step_id,
-                "step_nome": progress.step.nome if progress.step else None,
-                "checklist_nome": progress.checklist.nome if progress.checklist else None,
-                "dias_atraso": -dias_restantes,
-                "supervisor_id": progress.supervisor_id,
-                "mensagem": f"Etapa '{progress.step.nome}' vence em {dias_restantes} dia(s)",
-                "created_at": datetime.utcnow(),
-            })
+            alerts.append(
+                {
+                    "id": progress.id,
+                    "tipo": "proximo_vencer",
+                    "nivel": "baixo",
+                    "funcionario_id": progress.funcionario_id,
+                    "step_id": progress.step_id,
+                    "step_nome": progress.step.nome if progress.step else None,
+                    "checklist_nome": progress.checklist.nome if progress.checklist else None,
+                    "dias_atraso": -dias_restantes,
+                    "supervisor_id": progress.supervisor_id,
+                    "mensagem": f"Etapa '{progress.step.nome}' vence em {dias_restantes} dia(s)",
+                    "created_at": datetime.utcnow(),
+                }
+            )
 
         return alerts
 
     async def get_funcionario_onboarding_summary(
         self,
         funcionario_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Obtém resumo do onboarding de um funcionário.
 
@@ -1109,10 +1108,15 @@ class OnboardingRepository:
 
         # Próxima etapa
         proxima = next(
-            (p for p in progressos if p.status in [
-                ProgressStatus.PENDENTE,
-                ProgressStatus.EM_ANDAMENTO,
-            ]),
+            (
+                p
+                for p in progressos
+                if p.status
+                in [
+                    ProgressStatus.PENDENTE,
+                    ProgressStatus.EM_ANDAMENTO,
+                ]
+            ),
             None,
         )
 
@@ -1132,5 +1136,7 @@ class OnboardingRepository:
                 "nome": proxima.step.nome if proxima.step else None,
                 "data_prevista": proxima.data_prevista,
                 "status": proxima.status.value,
-            } if proxima else None,
+            }
+            if proxima
+            else None,
         }

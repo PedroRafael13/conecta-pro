@@ -6,30 +6,32 @@ Sprint 33: Auditoria e Compliance
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_, desc
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.audit.models import (
-    AuditLog,
-    ComplianceRule,
-    ComplianceCheck,
-    DataRetention,
     AccessHistory,
+    AccessType,
     AuditAction,
     AuditCategory,
-    AuditSeverity,
+    AuditLog,
     AuditResult,
-    RuleStatus,
-    RuleSeverity,
-    CheckStatus,
+    AuditSeverity,
     CheckResult,
+    CheckStatus,
+    ComplianceCheck,
+    ComplianceRule,
+    DataRetention,
     RetentionStatus,
-    AccessType,
-    AccessResult as AccessResultEnum,
     RiskLevel,
+    RuleSeverity,
+    RuleStatus,
+)
+from modules.audit.models import (
+    AccessResult as AccessResultEnum,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,36 +52,32 @@ class AuditRepository:
         await self.db.refresh(log)
         return log
 
-    async def get_audit_log(self, log_id: UUID) -> Optional[AuditLog]:
+    async def get_audit_log(self, log_id: UUID) -> AuditLog | None:
         """Busca log por ID."""
-        result = await self.db.execute(
-            select(AuditLog).where(AuditLog.id == log_id)
-        )
+        result = await self.db.execute(select(AuditLog).where(AuditLog.id == log_id))
         return result.scalar_one_or_none()
 
-    async def get_audit_log_by_event_id(self, event_id: str) -> Optional[AuditLog]:
+    async def get_audit_log_by_event_id(self, event_id: str) -> AuditLog | None:
         """Busca log por event_id."""
-        result = await self.db.execute(
-            select(AuditLog).where(AuditLog.event_id == event_id)
-        )
+        result = await self.db.execute(select(AuditLog).where(AuditLog.event_id == event_id))
         return result.scalar_one_or_none()
 
     async def list_audit_logs(
         self,
-        action: Optional[AuditAction] = None,
-        category: Optional[AuditCategory] = None,
-        severity: Optional[AuditSeverity] = None,
-        result: Optional[AuditResult] = None,
-        user_id: Optional[UUID] = None,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        requires_review: Optional[bool] = None,
-        search: Optional[str] = None,
+        action: AuditAction | None = None,
+        category: AuditCategory | None = None,
+        severity: AuditSeverity | None = None,
+        result: AuditResult | None = None,
+        user_id: UUID | None = None,
+        entity_type: str | None = None,
+        entity_id: UUID | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        requires_review: bool | None = None,
+        search: str | None = None,
         skip: int = 0,
-        limit: int = 50
-    ) -> Tuple[List[AuditLog], int]:
+        limit: int = 50,
+    ) -> tuple[list[AuditLog], int]:
         """Lista logs de auditoria com filtros."""
         query = select(AuditLog)
         count_query = select(func.count(AuditLog.id))
@@ -111,7 +109,7 @@ class AuditRepository:
                 or_(
                     AuditLog.description.ilike(f"%{search}%"),
                     AuditLog.user_email.ilike(f"%{search}%"),
-                    AuditLog.entity_name.ilike(f"%{search}%")
+                    AuditLog.entity_name.ilike(f"%{search}%"),
                 )
             )
 
@@ -129,10 +127,8 @@ class AuditRepository:
         return logs, total
 
     async def get_audit_stats(
-        self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
-    ) -> Dict[str, Any]:
+        self, start_date: datetime | None = None, end_date: datetime | None = None
+    ) -> dict[str, Any]:
         """Retorna estatísticas de auditoria."""
         now = datetime.utcnow()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -145,26 +141,16 @@ class AuditRepository:
 
         # Total de eventos
         total_result = await self.db.execute(
-            select(func.count(AuditLog.id)).where(
-                AuditLog.created_at.between(start_date, end_date)
-            )
+            select(func.count(AuditLog.id)).where(AuditLog.created_at.between(start_date, end_date))
         )
         total = total_result.scalar() or 0
 
         # Eventos hoje
-        today_result = await self.db.execute(
-            select(func.count(AuditLog.id)).where(
-                AuditLog.created_at >= today_start
-            )
-        )
+        today_result = await self.db.execute(select(func.count(AuditLog.id)).where(AuditLog.created_at >= today_start))
         today_count = today_result.scalar() or 0
 
         # Eventos esta semana
-        week_result = await self.db.execute(
-            select(func.count(AuditLog.id)).where(
-                AuditLog.created_at >= week_start
-            )
-        )
+        week_result = await self.db.execute(select(func.count(AuditLog.id)).where(AuditLog.created_at >= week_start))
         week_count = week_result.scalar() or 0
 
         # Por categoria
@@ -206,7 +192,7 @@ class AuditRepository:
             "by_category": by_category,
             "by_severity": by_severity,
             "by_result": by_result,
-            "pending_reviews": pending_reviews
+            "pending_reviews": pending_reviews,
         }
 
     # ==================== ComplianceRule ====================
@@ -218,25 +204,25 @@ class AuditRepository:
         await self.db.refresh(rule)
         return rule
 
-    async def get_compliance_rule(self, rule_id: UUID) -> Optional[ComplianceRule]:
+    async def get_compliance_rule(self, rule_id: UUID) -> ComplianceRule | None:
         """Busca regra por ID."""
         result = await self.db.execute(
             select(ComplianceRule).where(
                 and_(
                     ComplianceRule.id == rule_id,
-                    ComplianceRule.ativo == True  # noqa: E712
+                    ComplianceRule.ativo == True,  # noqa: E712
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_compliance_rule_by_code(self, code: str) -> Optional[ComplianceRule]:
+    async def get_compliance_rule_by_code(self, code: str) -> ComplianceRule | None:
         """Busca regra por código."""
         result = await self.db.execute(
             select(ComplianceRule).where(
                 and_(
                     ComplianceRule.code == code,
-                    ComplianceRule.ativo == True  # noqa: E712
+                    ComplianceRule.ativo == True,  # noqa: E712
                 )
             )
         )
@@ -244,13 +230,13 @@ class AuditRepository:
 
     async def list_compliance_rules(
         self,
-        framework: Optional[str] = None,
-        category: Optional[str] = None,
-        status: Optional[RuleStatus] = None,
-        severity: Optional[RuleSeverity] = None,
+        framework: str | None = None,
+        category: str | None = None,
+        status: RuleStatus | None = None,
+        severity: RuleSeverity | None = None,
         skip: int = 0,
-        limit: int = 50
-    ) -> Tuple[List[ComplianceRule], int]:
+        limit: int = 50,
+    ) -> tuple[list[ComplianceRule], int]:
         """Lista regras de compliance."""
         query = select(ComplianceRule).where(
             ComplianceRule.ativo == True  # noqa: E712
@@ -303,13 +289,13 @@ class AuditRepository:
         await self.db.refresh(check)
         return check
 
-    async def get_compliance_check(self, check_id: UUID) -> Optional[ComplianceCheck]:
+    async def get_compliance_check(self, check_id: UUID) -> ComplianceCheck | None:
         """Busca verificação por ID."""
         result = await self.db.execute(
             select(ComplianceCheck).where(
                 and_(
                     ComplianceCheck.id == check_id,
-                    ComplianceCheck.ativo == True  # noqa: E712
+                    ComplianceCheck.ativo == True,  # noqa: E712
                 )
             )
         )
@@ -317,16 +303,16 @@ class AuditRepository:
 
     async def list_compliance_checks(
         self,
-        rule_id: Optional[UUID] = None,
-        status: Optional[CheckStatus] = None,
-        result: Optional[CheckResult] = None,
-        requires_review: Optional[bool] = None,
-        remediation_required: Optional[bool] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        rule_id: UUID | None = None,
+        status: CheckStatus | None = None,
+        result: CheckResult | None = None,
+        requires_review: bool | None = None,
+        remediation_required: bool | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         skip: int = 0,
-        limit: int = 50
-    ) -> Tuple[List[ComplianceCheck], int]:
+        limit: int = 50,
+    ) -> tuple[list[ComplianceCheck], int]:
         """Lista verificações de compliance."""
         query = select(ComplianceCheck).where(
             ComplianceCheck.ativo == True  # noqa: E712
@@ -379,25 +365,25 @@ class AuditRepository:
         await self.db.refresh(policy)
         return policy
 
-    async def get_data_retention(self, policy_id: UUID) -> Optional[DataRetention]:
+    async def get_data_retention(self, policy_id: UUID) -> DataRetention | None:
         """Busca política por ID."""
         result = await self.db.execute(
             select(DataRetention).where(
                 and_(
                     DataRetention.id == policy_id,
-                    DataRetention.ativo == True  # noqa: E712
+                    DataRetention.ativo == True,  # noqa: E712
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_data_retention_by_code(self, code: str) -> Optional[DataRetention]:
+    async def get_data_retention_by_code(self, code: str) -> DataRetention | None:
         """Busca política por código."""
         result = await self.db.execute(
             select(DataRetention).where(
                 and_(
                     DataRetention.code == code,
-                    DataRetention.ativo == True  # noqa: E712
+                    DataRetention.ativo == True,  # noqa: E712
                 )
             )
         )
@@ -405,12 +391,12 @@ class AuditRepository:
 
     async def list_data_retention_policies(
         self,
-        data_category: Optional[str] = None,
-        status: Optional[RetentionStatus] = None,
-        schedule_enabled: Optional[bool] = None,
+        data_category: str | None = None,
+        status: RetentionStatus | None = None,
+        schedule_enabled: bool | None = None,
         skip: int = 0,
-        limit: int = 50
-    ) -> Tuple[List[DataRetention], int]:
+        limit: int = 50,
+    ) -> tuple[list[DataRetention], int]:
         """Lista políticas de retenção."""
         query = select(DataRetention).where(
             DataRetention.ativo == True  # noqa: E712
@@ -452,7 +438,7 @@ class AuditRepository:
         policy.updated_at = datetime.utcnow()
         await self.db.flush()
 
-    async def get_due_retention_policies(self) -> List[DataRetention]:
+    async def get_due_retention_policies(self) -> list[DataRetention]:
         """Busca políticas que devem ser executadas."""
         now = datetime.utcnow()
         result = await self.db.execute(
@@ -464,8 +450,8 @@ class AuditRepository:
                     DataRetention.legal_hold_enabled == False,  # noqa: E712
                     or_(
                         DataRetention.next_execution_at == None,  # noqa: E711
-                        DataRetention.next_execution_at <= now
-                    )
+                        DataRetention.next_execution_at <= now,
+                    ),
                 )
             )
         )
@@ -480,27 +466,25 @@ class AuditRepository:
         await self.db.refresh(access)
         return access
 
-    async def get_access_history(self, access_id: UUID) -> Optional[AccessHistory]:
+    async def get_access_history(self, access_id: UUID) -> AccessHistory | None:
         """Busca registro por ID."""
-        result = await self.db.execute(
-            select(AccessHistory).where(AccessHistory.id == access_id)
-        )
+        result = await self.db.execute(select(AccessHistory).where(AccessHistory.id == access_id))
         return result.scalar_one_or_none()
 
     async def list_access_history(
         self,
-        access_type: Optional[AccessType] = None,
-        result: Optional[AccessResultEnum] = None,
-        user_id: Optional[UUID] = None,
-        ip_address: Optional[str] = None,
-        risk_level: Optional[RiskLevel] = None,
-        anomaly_detected: Optional[bool] = None,
-        requires_review: Optional[bool] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        access_type: AccessType | None = None,
+        result: AccessResultEnum | None = None,
+        user_id: UUID | None = None,
+        ip_address: str | None = None,
+        risk_level: RiskLevel | None = None,
+        anomaly_detected: bool | None = None,
+        requires_review: bool | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         skip: int = 0,
-        limit: int = 50
-    ) -> Tuple[List[AccessHistory], int]:
+        limit: int = 50,
+    ) -> tuple[list[AccessHistory], int]:
         """Lista registros de acesso."""
         query = select(AccessHistory)
         count_query = select(func.count(AccessHistory.id))
@@ -539,10 +523,8 @@ class AuditRepository:
         return accesses, total
 
     async def get_access_stats(
-        self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
-    ) -> Dict[str, Any]:
+        self, start_date: datetime | None = None, end_date: datetime | None = None
+    ) -> dict[str, Any]:
         """Retorna estatísticas de acessos."""
         now = datetime.utcnow()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -554,9 +536,7 @@ class AuditRepository:
 
         # Total de acessos
         total_result = await self.db.execute(
-            select(func.count(AccessHistory.id)).where(
-                AccessHistory.accessed_at.between(start_date, end_date)
-            )
+            select(func.count(AccessHistory.id)).where(AccessHistory.accessed_at.between(start_date, end_date))
         )
         total = total_result.scalar() or 0
 
@@ -566,7 +546,7 @@ class AuditRepository:
                 and_(
                     AccessHistory.accessed_at.between(start_date, end_date),
                     AccessHistory.access_type == AccessType.LOGIN,
-                    AccessHistory.result == AccessResultEnum.SUCCESS
+                    AccessHistory.result == AccessResultEnum.SUCCESS,
                 )
             )
         )
@@ -578,7 +558,7 @@ class AuditRepository:
                 and_(
                     AccessHistory.accessed_at.between(start_date, end_date),
                     AccessHistory.access_type == AccessType.LOGIN,
-                    AccessHistory.result == AccessResultEnum.FAILURE
+                    AccessHistory.result == AccessResultEnum.FAILURE,
                 )
             )
         )
@@ -621,7 +601,7 @@ class AuditRepository:
             select(func.count(AccessHistory.id)).where(
                 and_(
                     AccessHistory.accessed_at.between(start_date, end_date),
-                    AccessHistory.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
+                    AccessHistory.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL]),
                 )
             )
         )
@@ -632,7 +612,7 @@ class AuditRepository:
             select(func.count(AccessHistory.id)).where(
                 and_(
                     AccessHistory.accessed_at.between(start_date, end_date),
-                    AccessHistory.anomaly_detected == True  # noqa: E712
+                    AccessHistory.anomaly_detected == True,  # noqa: E712
                 )
             )
         )
@@ -656,14 +636,10 @@ class AuditRepository:
             "by_result": by_result,
             "high_risk_accesses": high_risk,
             "anomalies_detected": anomalies,
-            "pending_reviews": pending_reviews
+            "pending_reviews": pending_reviews,
         }
 
-    async def get_user_access_history(
-        self,
-        user_id: UUID,
-        limit: int = 50
-    ) -> List[AccessHistory]:
+    async def get_user_access_history(self, user_id: UUID, limit: int = 50) -> list[AccessHistory]:
         """Busca histórico de acessos de um usuário."""
         result = await self.db.execute(
             select(AccessHistory)
@@ -673,11 +649,7 @@ class AuditRepository:
         )
         return list(result.scalars().all())
 
-    async def get_ip_access_history(
-        self,
-        ip_address: str,
-        limit: int = 50
-    ) -> List[AccessHistory]:
+    async def get_ip_access_history(self, ip_address: str, limit: int = 50) -> list[AccessHistory]:
         """Busca histórico de acessos de um IP."""
         result = await self.db.execute(
             select(AccessHistory)
@@ -689,7 +661,7 @@ class AuditRepository:
 
     # ==================== Compliance Overview ====================
 
-    async def get_compliance_overview(self) -> Dict[str, Any]:
+    async def get_compliance_overview(self) -> dict[str, Any]:
         """Retorna visão geral de compliance."""
         now = datetime.utcnow()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -707,7 +679,7 @@ class AuditRepository:
             select(func.count(ComplianceRule.id)).where(
                 and_(
                     ComplianceRule.ativo == True,  # noqa: E712
-                    ComplianceRule.status == RuleStatus.ACTIVE
+                    ComplianceRule.status == RuleStatus.ACTIVE,
                 )
             )
         )
@@ -742,7 +714,7 @@ class AuditRepository:
             select(func.count(ComplianceCheck.id)).where(
                 and_(
                     ComplianceCheck.ativo == True,  # noqa: E712
-                    ComplianceCheck.created_at >= month_start
+                    ComplianceCheck.created_at >= month_start,
                 )
             )
         )
@@ -754,7 +726,7 @@ class AuditRepository:
                 and_(
                     ComplianceCheck.ativo == True,  # noqa: E712
                     ComplianceCheck.remediation_required == True,  # noqa: E712
-                    ComplianceCheck.remediation_completed_at == None  # noqa: E711
+                    ComplianceCheck.remediation_completed_at == None,  # noqa: E711
                 )
             )
         )
@@ -767,7 +739,7 @@ class AuditRepository:
                     ComplianceCheck.ativo == True,  # noqa: E712
                     ComplianceCheck.remediation_required == True,  # noqa: E712
                     ComplianceCheck.remediation_completed_at == None,  # noqa: E711
-                    ComplianceCheck.remediation_deadline < now
+                    ComplianceCheck.remediation_deadline < now,
                 )
             )
         )
@@ -778,7 +750,7 @@ class AuditRepository:
             select(func.count(ComplianceCheck.id)).where(
                 and_(
                     ComplianceCheck.ativo == True,  # noqa: E712
-                    ComplianceCheck.critical_violations > 0
+                    ComplianceCheck.critical_violations > 0,
                 )
             )
         )
@@ -793,5 +765,5 @@ class AuditRepository:
             "checks_this_month": checks_this_month,
             "pending_remediations": pending_remediations,
             "overdue_remediations": overdue_remediations,
-            "critical_violations": critical_violations
+            "critical_violations": critical_violations,
         }

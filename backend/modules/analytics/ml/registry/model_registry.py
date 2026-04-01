@@ -3,15 +3,13 @@
 import hashlib
 import json
 import logging
-import pickle
+import pickle  # noqa: S403
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
-
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -56,17 +54,17 @@ class ModelFramework(Enum):
 class ModelMetrics:
     """Métricas de performance do modelo."""
 
-    accuracy: Optional[float] = None
-    precision: Optional[float] = None
-    recall: Optional[float] = None
-    f1_score: Optional[float] = None
-    auc_roc: Optional[float] = None
-    auc_pr: Optional[float] = None
-    mse: Optional[float] = None
-    rmse: Optional[float] = None
-    mae: Optional[float] = None
-    r2: Optional[float] = None
-    log_loss: Optional[float] = None
+    accuracy: float | None = None
+    precision: float | None = None
+    recall: float | None = None
+    f1_score: float | None = None
+    auc_roc: float | None = None
+    auc_pr: float | None = None
+    mse: float | None = None
+    rmse: float | None = None
+    mae: float | None = None
+    r2: float | None = None
+    log_loss: float | None = None
     custom_metrics: dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -91,9 +89,9 @@ class ModelMetadata:
     tags: list[str] = field(default_factory=list)
     hyperparameters: dict[str, Any] = field(default_factory=dict)
     feature_names: list[str] = field(default_factory=list)
-    target_column: Optional[str] = None
+    target_column: str | None = None
     training_data_info: dict[str, Any] = field(default_factory=dict)
-    author: Optional[str] = None
+    author: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -108,13 +106,13 @@ class ModelVersion:
     stage: ModelStage
     metadata: ModelMetadata
     metrics: ModelMetrics
-    model_path: Optional[str] = None
-    model_hash: Optional[str] = None
-    artifact_uri: Optional[str] = None
-    run_id: Optional[str] = None
+    model_path: str | None = None
+    model_hash: str | None = None
+    artifact_uri: str | None = None
+    run_id: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
-    promoted_at: Optional[datetime] = None
-    promoted_by: Optional[str] = None
+    promoted_at: datetime | None = None
+    promoted_by: str | None = None
     description: str = ""
     is_active: bool = True
 
@@ -132,7 +130,7 @@ class ModelExperiment:
     metrics: dict[str, float]
     artifacts: list[str]
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     tags: list[str] = field(default_factory=list)
 
 
@@ -153,7 +151,7 @@ class ModelRegistry:
 
     def __init__(
         self,
-        storage_path: Optional[str] = None,
+        storage_path: str | None = None,
     ) -> None:
         """
         Inicializa o Model Registry.
@@ -168,6 +166,7 @@ class ModelRegistry:
             logger.warning(f"Não foi possível criar diretório de modelos: {e}")
             # Fallback para diretório temporário
             import tempfile
+
             self.storage_path = Path(tempfile.gettempdir()) / "conecta_models"
             self.storage_path.mkdir(parents=True, exist_ok=True)
             logger.info(f"Usando diretório temporário: {self.storage_path}")
@@ -185,12 +184,12 @@ class ModelRegistry:
         model_type: ModelType,
         framework: ModelFramework,
         description: str = "",
-        metrics: Optional[ModelMetrics] = None,
-        hyperparameters: Optional[dict] = None,
-        feature_names: Optional[list[str]] = None,
-        target_column: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        author: Optional[str] = None,
+        metrics: ModelMetrics | None = None,
+        hyperparameters: dict | None = None,
+        feature_names: list[str] | None = None,
+        target_column: str | None = None,
+        tags: list[str] | None = None,
+        author: str | None = None,
     ) -> ModelVersion:
         """
         Registra um novo modelo ou versão.
@@ -266,9 +265,9 @@ class ModelRegistry:
     def get_model(
         self,
         name: str,
-        version: Optional[str] = None,
-        stage: Optional[ModelStage] = None,
-    ) -> Optional[Any]:
+        version: str | None = None,
+        stage: ModelStage | None = None,
+    ) -> Any | None:
         """
         Carrega um modelo do registry.
 
@@ -286,7 +285,7 @@ class ModelRegistry:
 
         try:
             with open(model_version.model_path, "rb") as f:
-                return pickle.load(f)
+                return pickle.load(f)  # noqa: S301
         except Exception as e:
             logger.error(f"Erro ao carregar modelo: {e}")
             return None
@@ -294,9 +293,9 @@ class ModelRegistry:
     def get_model_version(
         self,
         name: str,
-        version: Optional[str] = None,
-        stage: Optional[ModelStage] = None,
-    ) -> Optional[ModelVersion]:
+        version: str | None = None,
+        stage: ModelStage | None = None,
+    ) -> ModelVersion | None:
         """
         Obtém informações de uma versão do modelo.
 
@@ -374,10 +373,7 @@ class ModelRegistry:
 
             self._production_models[name] = version
 
-        logger.info(
-            f"Modelo promovido: {name} v{version} "
-            f"{old_stage.value} -> {target_stage.value}"
-        )
+        logger.info(f"Modelo promovido: {name} v{version} {old_stage.value} -> {target_stage.value}")
         return True
 
     def rollback_model(
@@ -446,11 +442,7 @@ class ModelRegistry:
         hp_diff = {
             "added": {k: v for k, v in hp2.items() if k not in hp1},
             "removed": {k: v for k, v in hp1.items() if k not in hp2},
-            "changed": {
-                k: {"old": hp1[k], "new": hp2[k]}
-                for k in hp1
-                if k in hp2 and hp1[k] != hp2[k]
-            },
+            "changed": {k: {"old": hp1[k], "new": hp2[k]} for k in hp1 if k in hp2 and hp1[k] != hp2[k]},
         }
 
         return {
@@ -470,26 +462,26 @@ class ModelRegistry:
         models = []
         for name, versions in self._models.items():
             prod_version = self._production_models.get(name)
-            latest = sorted(
-                versions.values(), key=lambda x: x.created_at, reverse=True
-            )[0]
+            latest = sorted(versions.values(), key=lambda x: x.created_at, reverse=True)[0]
 
-            models.append({
-                "name": name,
-                "total_versions": len(versions),
-                "production_version": prod_version,
-                "latest_version": latest.version,
-                "model_type": latest.metadata.model_type.value,
-                "framework": latest.metadata.framework.value,
-                "created_at": latest.created_at.isoformat(),
-            })
+            models.append(
+                {
+                    "name": name,
+                    "total_versions": len(versions),
+                    "production_version": prod_version,
+                    "latest_version": latest.version,
+                    "model_type": latest.metadata.model_type.value,
+                    "framework": latest.metadata.framework.value,
+                    "created_at": latest.created_at.isoformat(),
+                }
+            )
 
         return models
 
     def list_versions(
         self,
         name: str,
-        stage: Optional[ModelStage] = None,
+        stage: ModelStage | None = None,
     ) -> list[dict[str, Any]]:
         """Lista versões de um modelo."""
         if name not in self._models:
@@ -500,14 +492,16 @@ class ModelRegistry:
             if stage and model_version.stage != stage:
                 continue
 
-            versions.append({
-                "version": version,
-                "stage": model_version.stage.value,
-                "metrics": model_version.metrics.to_dict(),
-                "created_at": model_version.created_at.isoformat(),
-                "is_active": model_version.is_active,
-                "is_production": version == self._production_models.get(name),
-            })
+            versions.append(
+                {
+                    "version": version,
+                    "stage": model_version.stage.value,
+                    "metrics": model_version.metrics.to_dict(),
+                    "created_at": model_version.created_at.isoformat(),
+                    "is_active": model_version.is_active,
+                    "is_production": version == self._production_models.get(name),
+                }
+            )
 
         return sorted(versions, key=lambda x: x["created_at"], reverse=True)
 
@@ -547,7 +541,7 @@ class ModelRegistry:
         logger.info(f"Modelo arquivado: {name} v{version}")
         return True
 
-    def get_production_model(self, name: str) -> Optional[Any]:
+    def get_production_model(self, name: str) -> Any | None:
         """Obtém modelo em produção."""
         return self.get_model(name, stage=ModelStage.PRODUCTION)
 
@@ -557,7 +551,7 @@ class ModelRegistry:
         model_name: str,
         parameters: dict[str, Any],
         description: str = "",
-        tags: Optional[list[str]] = None,
+        tags: list[str] | None = None,
     ) -> ModelExperiment:
         """
         Inicia log de um experimento.
@@ -615,7 +609,7 @@ class ModelRegistry:
         name: str,
         metric: str = "accuracy",
         higher_is_better: bool = True,
-    ) -> Optional[ModelVersion]:
+    ) -> ModelVersion | None:
         """
         Obtém o melhor modelo baseado em uma métrica.
 
@@ -640,10 +634,7 @@ class ModelRegistry:
             metrics = version.metrics.to_dict()
             if metric in metrics:
                 value = metrics[metric]
-                if higher_is_better and value > best_value:
-                    best_value = value
-                    best_version = version
-                elif not higher_is_better and value < best_value:
+                if higher_is_better and value > best_value or not higher_is_better and value < best_value:
                     best_value = value
                     best_version = version
 
@@ -751,11 +742,13 @@ class ModelRegistry:
         ]
 
         if model_version.promoted_at:
-            history.append({
-                "stage": model_version.stage.value,
-                "timestamp": model_version.promoted_at.isoformat(),
-                "by": model_version.promoted_by or "system",
-            })
+            history.append(
+                {
+                    "stage": model_version.stage.value,
+                    "timestamp": model_version.promoted_at.isoformat(),
+                    "by": model_version.promoted_by or "system",
+                }
+            )
 
         return history
 

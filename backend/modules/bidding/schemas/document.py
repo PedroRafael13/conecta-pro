@@ -3,55 +3,56 @@ Schemas de Documento da Empresa - Licitacoes
 =============================================
 """
 
-from datetime import datetime, date
-from typing import Optional, List
+from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
-
-from modules.bidding.models.company_document import DocumentType, DocumentStatus
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CompanyDocumentBase(BaseModel):
     """Schema base para documento da empresa."""
+
     tipo: str = Field(..., max_length=50)
     nome: str = Field(..., min_length=1, max_length=255)
-    descricao: Optional[str] = None
-    numero: Optional[str] = Field(None, max_length=100)
-    orgao_emissor: Optional[str] = Field(None, max_length=255)
+    descricao: str | None = None
+    numero: str | None = Field(None, max_length=100)
+    orgao_emissor: str | None = Field(None, max_length=255)
 
 
 class CompanyDocumentCreate(CompanyDocumentBase):
     """Schema para criacao de documento."""
-    data_emissao: Optional[date] = None
-    data_validade: Optional[date] = None
-    arquivo_url: Optional[str] = None
-    arquivo_nome: Optional[str] = None
-    arquivo_tamanho: Optional[int] = None
+
+    data_emissao: date | None = None
+    data_validade: date | None = None
+    arquivo_url: str | None = None
+    arquivo_nome: str | None = None
+    arquivo_tamanho: int | None = None
     certidao_automatica: bool = Field(default=False)
-    observacoes: Optional[str] = None
+    observacoes: str | None = None
     metadados: dict = Field(default_factory=dict)
 
 
 class CompanyDocumentUpdate(BaseModel):
     """Schema para atualizacao de documento."""
-    nome: Optional[str] = Field(None, min_length=1, max_length=255)
-    descricao: Optional[str] = None
-    numero: Optional[str] = None
-    data_emissao: Optional[date] = None
-    data_validade: Optional[date] = None
-    arquivo_url: Optional[str] = None
-    arquivo_nome: Optional[str] = None
-    arquivo_tamanho: Optional[int] = None
-    status: Optional[str] = None
-    certidao_automatica: Optional[bool] = None
-    orgao_emissor: Optional[str] = None
-    observacoes: Optional[str] = None
-    metadados: Optional[dict] = None
+
+    nome: str | None = Field(None, min_length=1, max_length=255)
+    descricao: str | None = None
+    numero: str | None = None
+    data_emissao: date | None = None
+    data_validade: date | None = None
+    arquivo_url: str | None = None
+    arquivo_nome: str | None = None
+    arquivo_tamanho: int | None = None
+    status: str | None = None
+    certidao_automatica: bool | None = None
+    orgao_emissor: str | None = None
+    observacoes: str | None = None
+    metadados: dict | None = None
 
 
 class CompanyDocumentResponse(CompanyDocumentBase):
     """Schema de resposta para documento."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -59,38 +60,39 @@ class CompanyDocumentResponse(CompanyDocumentBase):
     ativo: bool
 
     # Datas
-    data_emissao: Optional[date] = None
-    data_validade: Optional[date] = None
+    data_emissao: date | None = None
+    data_validade: date | None = None
 
     # Arquivo
-    arquivo_url: Optional[str] = None
-    arquivo_nome: Optional[str] = None
-    arquivo_tamanho: Optional[int] = None
+    arquivo_url: str | None = None
+    arquivo_nome: str | None = None
+    arquivo_tamanho: int | None = None
 
     # Renovacao
     certidao_automatica: bool
-    ultima_verificacao: Optional[datetime] = None
-    ultima_renovacao: Optional[datetime] = None
-    erro_renovacao: Optional[str] = None
+    ultima_verificacao: datetime | None = None
+    ultima_renovacao: datetime | None = None
+    erro_renovacao: str | None = None
 
     # Metadados
     metadados: dict = {}
-    observacoes: Optional[str] = None
+    observacoes: str | None = None
 
     # Propriedades calculadas
-    esta_valido: Optional[bool] = None
-    dias_para_vencer: Optional[int] = None
-    esta_vencendo: Optional[bool] = None
+    esta_valido: bool | None = None
+    dias_para_vencer: int | None = None
+    esta_vencendo: bool | None = None
 
     # Auditoria
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
 
 class DocumentExpiringResponse(BaseModel):
     """Resposta para documentos vencendo."""
-    documentos_vencendo: List[CompanyDocumentResponse]
-    documentos_vencidos: List[CompanyDocumentResponse]
+
+    documentos_vencendo: list[CompanyDocumentResponse]
+    documentos_vencidos: list[CompanyDocumentResponse]
     total_vencendo: int
     total_vencidos: int
     dias_alerta: int
@@ -98,14 +100,16 @@ class DocumentExpiringResponse(BaseModel):
 
 class DocumentTypeInfo(BaseModel):
     """Informacoes sobre tipo de documento."""
+
     tipo: str
     nome: str
     descricao: str
     renovacao_automatica_disponivel: bool
-    validade_padrao_dias: Optional[int] = None
+    validade_padrao_dias: int | None = None
     obrigatorio_licitacao: bool = True
 
 
 class DocumentTypesResponse(BaseModel):
     """Lista de tipos de documento disponiveis."""
-    tipos: List[DocumentTypeInfo]
+
+    tipos: list[DocumentTypeInfo]

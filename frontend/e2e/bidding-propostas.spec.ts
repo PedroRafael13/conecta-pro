@@ -18,7 +18,7 @@ test.describe('Propostas', () => {
 
   test('deve ter filtros disponíveis', async ({ page }) => {
     await page.goto('/modulos/licitacoes/propostas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verificar presença de inputs de filtro
     const inputs = page.locator('input');
@@ -34,7 +34,7 @@ test.describe('Contratos', () => {
 
   test('deve exibir lista de contratos', async ({ page }) => {
     await page.goto('/modulos/licitacoes/contratos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 });
 

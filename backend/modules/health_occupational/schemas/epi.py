@@ -5,18 +5,15 @@ Schemas EPI (NR-6) - Equipamentos de Protecao Individual
 Schemas Pydantic para endpoints EPI.
 """
 
-from datetime import datetime, date
-from typing import List, Optional
+from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
-
-from modules.health_occupational.models.epi import EPICategory, EPIStatus, DeliveryReason
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # ==============================================================================
 # EPI Schemas
 # ==============================================================================
+
 
 class EPICreateRequest(BaseModel):
     """Request para cadastro de EPI."""
@@ -27,8 +24,8 @@ class EPICreateRequest(BaseModel):
         max_length=100,
         description="Nome do EPI",
     )
-    descricao: Optional[str] = Field(None, max_length=500)
-    codigo_interno: Optional[str] = Field(None, max_length=30)
+    descricao: str | None = Field(None, max_length=500)
+    codigo_interno: str | None = Field(None, max_length=30)
     categoria: str = Field(
         ...,
         description="Categoria do EPI",
@@ -40,75 +37,77 @@ class EPICreateRequest(BaseModel):
         max_length=20,
         description="Numero do CA",
     )
-    ca_validade: Optional[date] = Field(None, description="Validade do CA")
+    ca_validade: date | None = Field(None, description="Validade do CA")
     fabricante: str = Field(
         ...,
         min_length=2,
         max_length=100,
         description="Fabricante",
     )
-    modelo: Optional[str] = Field(None, max_length=100)
+    modelo: str | None = Field(None, max_length=100)
     validade_dias: int = Field(
         default=365,
         ge=30,
         le=1825,
         description="Validade em dias apos entrega",
     )
-    especificacoes: Optional[dict] = Field(default_factory=dict)
-    riscos_protegidos: List[str] = Field(default_factory=list)
-    instrucoes_uso: Optional[str] = None
-    instrucoes_higienizacao: Optional[str] = None
-    instrucoes_armazenamento: Optional[str] = None
-    imagem_url: Optional[str] = None
+    especificacoes: dict | None = Field(default_factory=dict)
+    riscos_protegidos: list[str] = Field(default_factory=list)
+    instrucoes_uso: str | None = None
+    instrucoes_higienizacao: str | None = None
+    instrucoes_armazenamento: str | None = None
+    imagem_url: str | None = None
 
 
 class EPIUpdateRequest(BaseModel):
     """Request para atualizacao de EPI."""
 
-    nome: Optional[str] = Field(None, min_length=3, max_length=100)
-    descricao: Optional[str] = None
-    ca_validade: Optional[date] = None
-    validade_dias: Optional[int] = Field(None, ge=30, le=1825)
-    especificacoes: Optional[dict] = None
-    riscos_protegidos: Optional[List[str]] = None
-    instrucoes_uso: Optional[str] = None
-    instrucoes_higienizacao: Optional[str] = None
-    instrucoes_armazenamento: Optional[str] = None
-    imagem_url: Optional[str] = None
-    ativo: Optional[bool] = None
+    nome: str | None = Field(None, min_length=3, max_length=100)
+    descricao: str | None = None
+    ca_validade: date | None = None
+    validade_dias: int | None = Field(None, ge=30, le=1825)
+    especificacoes: dict | None = None
+    riscos_protegidos: list[str] | None = None
+    instrucoes_uso: str | None = None
+    instrucoes_higienizacao: str | None = None
+    instrucoes_armazenamento: str | None = None
+    imagem_url: str | None = None
+    ativo: bool | None = None
 
 
 class EPIResponse(BaseModel):
     """Response de EPI."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     nome: str
-    descricao: Optional[str] = None
-    codigo_interno: Optional[str] = None
+    descricao: str | None = None
+    codigo_interno: str | None = None
     categoria: str
     ca_number: str
-    ca_validade: Optional[date] = None
+    ca_validade: date | None = None
     fabricante: str
-    modelo: Optional[str] = None
+    modelo: str | None = None
     validade_dias: int
     especificacoes: dict
-    riscos_protegidos: List[str]
-    instrucoes_uso: Optional[str] = None
-    instrucoes_higienizacao: Optional[str] = None
-    instrucoes_armazenamento: Optional[str] = None
-    imagem_url: Optional[str] = None
+    riscos_protegidos: list[str]
+    instrucoes_uso: str | None = None
+    instrucoes_higienizacao: str | None = None
+    instrucoes_armazenamento: str | None = None
+    imagem_url: str | None = None
     ativo: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     # Campos calculados
-    ca_esta_valido: Optional[bool] = None
+    ca_esta_valido: bool | None = None
 
 
 class EPIListResponse(BaseModel):
     """Response de lista de EPIs."""
-    items: List[EPIResponse]
+
+    items: list[EPIResponse]
     total: int
     page: int = 1
     size: int = 20
@@ -116,6 +115,7 @@ class EPIListResponse(BaseModel):
 
 class EPISummary(BaseModel):
     """Resumo de EPI para listagens."""
+
     id: UUID
     nome: str
     categoria: str
@@ -127,6 +127,7 @@ class EPISummary(BaseModel):
 # ==============================================================================
 # EPI Delivery Schemas
 # ==============================================================================
+
 
 class EPIDeliveryRequest(BaseModel):
     """Request para entrega de EPI."""
@@ -150,23 +151,24 @@ class EPIDeliveryRequest(BaseModel):
         max_length=20,
         description="Numero do CA",
     )
-    observacoes: Optional[str] = Field(None, max_length=500)
+    observacoes: str | None = Field(None, max_length=500)
     treinamento_realizado: bool = Field(default=False)
 
 
 class EPIDeliveryUpdateRequest(BaseModel):
     """Request para atualizacao de entrega."""
 
-    devolvido: Optional[bool] = None
-    data_devolucao: Optional[datetime] = None
-    motivo_devolucao: Optional[str] = None
-    condicao_devolucao: Optional[str] = None
-    assinatura_funcionario: Optional[bool] = None
-    observacoes: Optional[str] = None
+    devolvido: bool | None = None
+    data_devolucao: datetime | None = None
+    motivo_devolucao: str | None = None
+    condicao_devolucao: str | None = None
+    assinatura_funcionario: bool | None = None
+    observacoes: str | None = None
 
 
 class EPIDeliveryResponse(BaseModel):
     """Response de entrega de EPI."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -176,30 +178,31 @@ class EPIDeliveryResponse(BaseModel):
     motivo: str
     ca_number: str
     data_entrega: datetime
-    data_validade: Optional[date] = None
+    data_validade: date | None = None
     devolvido: bool
-    data_devolucao: Optional[datetime] = None
-    motivo_devolucao: Optional[str] = None
-    condicao_devolucao: Optional[str] = None
+    data_devolucao: datetime | None = None
+    motivo_devolucao: str | None = None
+    condicao_devolucao: str | None = None
     assinatura_funcionario: bool
-    data_assinatura: Optional[datetime] = None
-    entregue_por: Optional[UUID] = None
-    observacoes: Optional[str] = None
+    data_assinatura: datetime | None = None
+    entregue_por: UUID | None = None
+    observacoes: str | None = None
     treinamento_realizado: bool
-    data_treinamento: Optional[datetime] = None
+    data_treinamento: datetime | None = None
     created_at: datetime
 
     # Campos calculados
-    esta_vencido: Optional[bool] = None
-    dias_para_vencer: Optional[int] = None
+    esta_vencido: bool | None = None
+    dias_para_vencer: int | None = None
 
     # EPI relacionado (opcional, para detalhes)
-    epi: Optional[EPISummary] = None
+    epi: EPISummary | None = None
 
 
 class EPIDeliveryListResponse(BaseModel):
     """Response de lista de entregas."""
-    items: List[EPIDeliveryResponse]
+
+    items: list[EPIDeliveryResponse]
     total: int
     page: int = 1
     size: int = 20
@@ -207,61 +210,65 @@ class EPIDeliveryListResponse(BaseModel):
 
 class EPIRecordResponse(BaseModel):
     """Ficha de EPI do funcionario."""
+
     funcionario_id: UUID
-    entregas: List[EPIDeliveryResponse]
+    entregas: list[EPIDeliveryResponse]
     total_entregas: int
-    epis_ativos: List[EPIDeliveryResponse]
-    epis_vencidos: List[EPIDeliveryResponse]
-    epis_devolvidos: List[EPIDeliveryResponse]
+    epis_ativos: list[EPIDeliveryResponse]
+    epis_vencidos: list[EPIDeliveryResponse]
+    epis_devolvidos: list[EPIDeliveryResponse]
 
 
 # ==============================================================================
 # EPI Inventory Schemas
 # ==============================================================================
 
+
 class EPIInventoryUpdateRequest(BaseModel):
     """Request para atualizacao de estoque."""
 
-    quantidade_atual: Optional[int] = Field(None, ge=0)
-    quantidade_minima: Optional[int] = Field(None, ge=0)
-    quantidade_maxima: Optional[int] = Field(None, ge=0)
-    local_armazenamento: Optional[str] = None
-    lote_atual: Optional[str] = None
-    data_validade_lote: Optional[date] = None
-    custo_unitario: Optional[float] = Field(None, ge=0)
-    fornecedor: Optional[str] = None
+    quantidade_atual: int | None = Field(None, ge=0)
+    quantidade_minima: int | None = Field(None, ge=0)
+    quantidade_maxima: int | None = Field(None, ge=0)
+    local_armazenamento: str | None = None
+    lote_atual: str | None = None
+    data_validade_lote: date | None = None
+    custo_unitario: float | None = Field(None, ge=0)
+    fornecedor: str | None = None
 
 
 class EPIInventoryResponse(BaseModel):
     """Response de estoque de EPI."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     epi_id: UUID
     quantidade_atual: int
     quantidade_minima: int
-    quantidade_maxima: Optional[int] = None
-    local_armazenamento: Optional[str] = None
-    lote_atual: Optional[str] = None
-    data_validade_lote: Optional[date] = None
-    custo_unitario: Optional[float] = None
-    fornecedor: Optional[str] = None
-    ultima_entrada: Optional[datetime] = None
-    ultima_saida: Optional[datetime] = None
+    quantidade_maxima: int | None = None
+    local_armazenamento: str | None = None
+    lote_atual: str | None = None
+    data_validade_lote: date | None = None
+    custo_unitario: float | None = None
+    fornecedor: str | None = None
+    ultima_entrada: datetime | None = None
+    ultima_saida: datetime | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     # Campos calculados
-    estoque_baixo: Optional[bool] = None
-    percentual_estoque: Optional[float] = None
+    estoque_baixo: bool | None = None
+    percentual_estoque: float | None = None
 
     # EPI relacionado
-    epi: Optional[EPISummary] = None
+    epi: EPISummary | None = None
 
 
 class EPIInventoryListResponse(BaseModel):
     """Response de lista de estoque."""
-    items: List[EPIInventoryResponse]
+
+    items: list[EPIInventoryResponse]
     total: int
     itens_baixo_estoque: int = 0
 
@@ -270,13 +277,16 @@ class EPIInventoryListResponse(BaseModel):
 # EPI Category Info
 # ==============================================================================
 
+
 class EPICategoryInfo(BaseModel):
     """Informacoes de categoria de EPI."""
+
     id: str
     nome: str
-    exemplos: List[str]
+    exemplos: list[str]
 
 
 class EPICategoriesResponse(BaseModel):
     """Response com categorias de EPI."""
-    categorias: List[EPICategoryInfo]
+
+    categorias: list[EPICategoryInfo]

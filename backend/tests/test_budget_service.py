@@ -163,8 +163,8 @@ class TestBudgetReport:
         for i in range(3):
             item = BudgetLineItem(
                 account_id=uuid4(),
-                account_code=f"5.1.0{i+1}.001",
-                account_name=f"Despesa {i+1}",
+                account_code=f"5.1.0{i + 1}.001",
+                account_name=f"Despesa {i + 1}",
                 jan=Decimal("1000"),
                 feb=Decimal("1000"),
             )
@@ -293,7 +293,7 @@ class TestBudgetService:  # pylint: disable=protected-access
 
     def test_variance_threshold(self) -> None:
         """Testa threshold de variância."""
-        assert BudgetService.VARIANCE_THRESHOLD == Decimal("5")
+        assert Decimal("5") == BudgetService.VARIANCE_THRESHOLD
 
 
 class TestBudgetCalculations:

@@ -3,8 +3,7 @@ Model EquipmentComodato - Contratos de Comodato de Equipamentos.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
@@ -14,7 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class ComodatoStatus(str, Enum):
+class ComodatoStatus(StrEnum):
     """Status do contrato de comodato."""
 
     DRAFT = "draft"  # Rascunho
@@ -66,7 +65,7 @@ class EquipmentComodato(Base):
     equipment_code: Mapped[str] = mapped_column(String(30), nullable=False)
     equipment_name: Mapped[str] = mapped_column(String(200), nullable=False)
     equipment_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    serial_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    serial_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     equipment_value: Mapped[float] = mapped_column(Float, nullable=False)
     equipment_condition: Mapped[str] = mapped_column(
         String(30),
@@ -80,31 +79,31 @@ class EquipmentComodato(Base):
         index=True,
     )
     client_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    client_document: Mapped[Optional[str]] = mapped_column(
+    client_document: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )  # CNPJ/CPF
-    contract_id: Mapped[Optional[str]] = mapped_column(
+    contract_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )  # Contrato principal
 
     # Responsável do cliente
-    responsible_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    responsible_document: Mapped[Optional[str]] = mapped_column(
+    responsible_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    responsible_document: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
-    responsible_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    responsible_email: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    responsible_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    responsible_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # Vigência
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    end_date: Mapped[Optional[datetime]] = mapped_column(
+    end_date: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )  # Null = indeterminado
-    duration_months: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    duration_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
     auto_renewal: Mapped[bool] = mapped_column(Boolean, default=True)
     renewal_period_months: Mapped[int] = mapped_column(Integer, default=12)
     notice_period_days: Mapped[int] = mapped_column(
@@ -114,125 +113,125 @@ class EquipmentComodato(Base):
 
     # Local de uso
     usage_location: Mapped[str] = mapped_column(Text, nullable=False)
-    usage_address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    gps_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    gps_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    usage_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    gps_latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    gps_longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Termos e condições
-    terms: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    special_conditions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    usage_restrictions: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    terms: Mapped[str | None] = mapped_column(Text, nullable=True)
+    special_conditions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    usage_restrictions: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     maintenance_responsibility: Mapped[str] = mapped_column(
         String(30),
         default="comodante",
     )  # comodante, comodatario, compartilhada
 
     # Multas e penalidades
-    damage_penalty_percent: Mapped[Optional[float]] = mapped_column(
+    damage_penalty_percent: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )  # % do valor do equipamento
-    loss_penalty_percent: Mapped[Optional[float]] = mapped_column(
+    loss_penalty_percent: Mapped[float | None] = mapped_column(
         Float,
         default=100.0,
     )  # % do valor em caso de perda
-    early_return_penalty: Mapped[Optional[float]] = mapped_column(
+    early_return_penalty: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
 
     # Assinatura
-    signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    signed_by_client: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    signed_by_company: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    client_signature: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    company_signature: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    signature_document_id: Mapped[Optional[str]] = mapped_column(
+    signed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    signed_by_client: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    signed_by_company: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    client_signature: Mapped[str | None] = mapped_column(Text, nullable=True)
+    company_signature: Mapped[str | None] = mapped_column(Text, nullable=True)
+    signature_document_id: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
 
     # Documentos
-    contract_pdf_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    delivery_term_url: Mapped[Optional[str]] = mapped_column(
+    contract_pdf_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    delivery_term_url: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
     )  # Termo de entrega
-    return_term_url: Mapped[Optional[str]] = mapped_column(
+    return_term_url: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
     )  # Termo de devolução
-    photos_delivery: Mapped[Optional[list]] = mapped_column(
+    photos_delivery: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
     )  # Fotos na entrega
-    photos_return: Mapped[Optional[list]] = mapped_column(
+    photos_return: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
     )  # Fotos na devolução
 
     # Entrega
-    delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    delivered_by: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    received_by: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    delivery_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    delivered_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    received_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    delivery_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Devolução
-    return_requested_at: Mapped[Optional[datetime]] = mapped_column(
+    return_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    return_scheduled_at: Mapped[Optional[datetime]] = mapped_column(
+    return_scheduled_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    returned_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    returned_by: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    return_received_by: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    return_condition: Mapped[Optional[str]] = mapped_column(
+    returned_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    returned_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    return_received_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    return_condition: Mapped[str | None] = mapped_column(
         String(30),
         nullable=True,
     )  # bom, danificado, perdido
-    return_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    return_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Danos e cobranças
     has_damages: Mapped[bool] = mapped_column(Boolean, default=False)
-    damage_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    damage_photos: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    damage_cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    penalty_applied: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    damage_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    damage_photos: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    damage_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
+    penalty_applied: Mapped[float | None] = mapped_column(Float, nullable=True)
     is_lost: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Transferência
-    transferred_to_client_id: Mapped[Optional[str]] = mapped_column(
+    transferred_to_client_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    transferred_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    transfer_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    new_comodato_id: Mapped[Optional[str]] = mapped_column(
+    transferred_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    transfer_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    new_comodato_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Encerramento
-    terminated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    terminated_by: Mapped[Optional[str]] = mapped_column(
+    terminated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    terminated_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    termination_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    termination_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Histórico
-    history: Mapped[Optional[list]] = mapped_column(
+    history: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
     )  # [{action, date, by, notes}]
 
     # Metadados
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    metadata_extra: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    metadata_extra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Auditoria
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
@@ -247,7 +246,7 @@ class EquipmentComodato(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
@@ -271,7 +270,7 @@ class EquipmentComodato(Base):
         return datetime.utcnow() > self.end_date
 
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> int | None:
         """Dias até a expiração."""
         if not self.end_date:
             return None
@@ -298,7 +297,7 @@ class EquipmentComodato(Base):
         self,
         signed_by_client: str,
         signed_by_company: str,
-        client_signature: Optional[str] = None,
+        client_signature: str | None = None,
     ) -> None:
         """Registra assinatura do contrato."""
         self.status = ComodatoStatus.ACTIVE.value
@@ -312,7 +311,7 @@ class EquipmentComodato(Base):
         self,
         delivered_by: str,
         received_by: str,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> None:
         """Registra entrega do equipamento."""
         self.delivered_at = datetime.utcnow()
@@ -321,7 +320,7 @@ class EquipmentComodato(Base):
         self.delivery_notes = notes
         self._add_history("delivered", f"Entregue a {received_by}")
 
-    def request_return(self, reason: Optional[str] = None) -> None:
+    def request_return(self, reason: str | None = None) -> None:
         """Solicita devolução do equipamento."""
         self.return_requested_at = datetime.utcnow()
         self._add_history("return_requested", reason or "Devolução solicitada")
@@ -339,7 +338,7 @@ class EquipmentComodato(Base):
         returned_by: str,
         received_by: str,
         condition: str,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> None:
         """Registra devolução do equipamento."""
         self.status = ComodatoStatus.RETURNED.value
@@ -354,7 +353,7 @@ class EquipmentComodato(Base):
         self,
         description: str,
         cost: float,
-        photos: Optional[list] = None,
+        photos: list | None = None,
     ) -> None:
         """Registra dano no equipamento."""
         self.has_damages = True
@@ -405,8 +404,10 @@ class EquipmentComodato(Base):
         """Adiciona entrada ao histórico."""
         if not self.history:
             self.history = []
-        self.history.append({
-            "action": action,
-            "date": datetime.utcnow().isoformat(),
-            "notes": notes,
-        })
+        self.history.append(
+            {
+                "action": action,
+                "date": datetime.utcnow().isoformat(),
+                "notes": notes,
+            }
+        )

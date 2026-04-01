@@ -6,31 +6,29 @@ Modelos para gerenciamento de riscos ocupacionais e mapeamento.
 """
 
 import uuid
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List
+from datetime import date, datetime
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Integer, ForeignKey, Index, Float
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models import Base
 
 
-class RiskCategory(str, Enum):
+class RiskCategory(StrEnum):
     """Categorias de risco ocupacional conforme NR-9."""
-    FISICO = "fisico"           # Verde no mapa de riscos
-    QUIMICO = "quimico"         # Vermelho
-    BIOLOGICO = "biologico"     # Marrom
-    ERGONOMICO = "ergonomico"   # Amarelo
-    ACIDENTE = "acidente"       # Azul
+
+    FISICO = "fisico"  # Verde no mapa de riscos
+    QUIMICO = "quimico"  # Vermelho
+    BIOLOGICO = "biologico"  # Marrom
+    ERGONOMICO = "ergonomico"  # Amarelo
+    ACIDENTE = "acidente"  # Azul
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(StrEnum):
     """Niveis de risco (matriz de probabilidade x severidade)."""
+
     TRIVIAL = "trivial"
     TOLERAVEL = "toleravel"
     MODERADO = "moderado"
@@ -38,8 +36,9 @@ class RiskLevel(str, Enum):
     INTOLERAVEL = "intoleravel"
 
 
-class RiskAgent(str, Enum):
+class RiskAgent(StrEnum):
     """Agentes de risco comuns."""
+
     # Fisicos
     RUIDO = "ruido"
     VIBRACOES = "vibracoes"
@@ -79,8 +78,9 @@ class RiskAgent(str, Enum):
     ANIMAIS_PECONHENTOS = "animais_peconhentos"
 
 
-class ControlType(str, Enum):
+class ControlType(StrEnum):
     """Tipos de medidas de controle."""
+
     ELIMINACAO = "eliminacao"
     SUBSTITUICAO = "substituicao"
     CONTROLE_ENGENHARIA = "controle_engenharia"
@@ -97,6 +97,7 @@ class RiskMapping(Base):
     Representa o mapeamento de riscos ocupacionais de um setor especifico,
     conforme NR-9 (PPRA/PGR).
     """
+
     __tablename__ = "health_risk_mappings"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -136,8 +137,8 @@ class RiskMapping(Base):
 
     # Indices
     __table_args__ = (
-        Index('idx_mapping_setor_ativo', 'setor', 'ativo'),
-        Index('idx_mapping_data', 'data_avaliacao'),
+        Index("idx_mapping_setor_ativo", "setor", "ativo"),
+        Index("idx_mapping_data", "data_avaliacao"),
     )
 
     def __repr__(self) -> str:
@@ -150,6 +151,7 @@ class OccupationalRisk(Base):
 
     Representa um risco especifico identificado no mapeamento.
     """
+
     __tablename__ = "health_occupational_risks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -157,7 +159,7 @@ class OccupationalRisk(Base):
 
     # Identificacao do risco
     categoria = Column(String(20), nullable=False)  # fisico, quimico, etc
-    agente = Column(String(50), nullable=False)     # ruido, poeira, etc
+    agente = Column(String(50), nullable=False)  # ruido, poeira, etc
     descricao = Column(Text, nullable=True)
 
     # Fonte geradora
@@ -171,8 +173,8 @@ class OccupationalRisk(Base):
 
     # Avaliacao de risco
     probabilidade = Column(Integer, nullable=True)  # 1-5
-    severidade = Column(Integer, nullable=True)     # 1-5
-    nivel_risco = Column(String(20), nullable=True) # trivial a intoleravel
+    severidade = Column(Integer, nullable=True)  # 1-5
+    nivel_risco = Column(String(20), nullable=True)  # trivial a intoleravel
 
     # Valores medidos (quando aplicavel)
     valor_medido = Column(Float, nullable=True)
@@ -200,8 +202,8 @@ class OccupationalRisk(Base):
 
     # Indices
     __table_args__ = (
-        Index('idx_risk_categoria', 'categoria'),
-        Index('idx_risk_nivel', 'nivel_risco'),
+        Index("idx_risk_categoria", "categoria"),
+        Index("idx_risk_nivel", "nivel_risco"),
     )
 
     def __repr__(self) -> str:
@@ -232,6 +234,7 @@ class ControlMeasure(Base):
 
     Acoes para eliminacao, reducao ou controle de riscos.
     """
+
     __tablename__ = "health_control_measures"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

@@ -11,8 +11,8 @@ Date: 2026-01-23
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .inspection_round import InspectionRound
 
 
-class CheckpointType(str, Enum):
+class CheckpointType(StrEnum):
     """Tipo de checkpoint realizado."""
 
     VERIFICACAO_POSTO = "verificacao_posto"
@@ -36,7 +36,7 @@ class CheckpointType(str, Enum):
     FOTO_EVIDENCIA = "foto_evidencia"
 
 
-class CheckpointStatus(str, Enum):
+class CheckpointStatus(StrEnum):
     """Status do checkpoint."""
 
     CONFORME = "conforme"
@@ -94,21 +94,21 @@ class InspectionCheckpoint(Base):
     )
 
     # === Posto ===
-    post_id: Mapped[Optional[str]] = mapped_column(
+    post_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("posts.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
-    post_name: Mapped[Optional[str]] = mapped_column(
+    post_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
-    client_id: Mapped[Optional[str]] = mapped_column(
+    client_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    client_name: Mapped[Optional[str]] = mapped_column(
+    client_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
@@ -127,90 +127,90 @@ class InspectionCheckpoint(Base):
     )
 
     # === Funcionario (se aplicavel) ===
-    employee_id: Mapped[Optional[str]] = mapped_column(
+    employee_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    employee_name: Mapped[Optional[str]] = mapped_column(
+    employee_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
-    employee_cpf: Mapped[Optional[str]] = mapped_column(
+    employee_cpf: Mapped[str | None] = mapped_column(
         String(14),
         nullable=True,
     )
-    employee_position: Mapped[Optional[str]] = mapped_column(
+    employee_position: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
 
     # === Vinculo com Ocorrencia ===
-    occurrence_id: Mapped[Optional[str]] = mapped_column(
+    occurrence_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    occurrence_code: Mapped[Optional[str]] = mapped_column(
+    occurrence_code: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
 
     # === Vinculo com Medida Disciplinar ===
-    disciplinary_action_id: Mapped[Optional[str]] = mapped_column(
+    disciplinary_action_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    disciplinary_action_code: Mapped[Optional[str]] = mapped_column(
+    disciplinary_action_code: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
-    disciplinary_action_type: Mapped[Optional[str]] = mapped_column(
+    disciplinary_action_type: Mapped[str | None] = mapped_column(
         String(30),
         nullable=True,
     )
 
     # === Descricao ===
-    title: Mapped[Optional[str]] = mapped_column(
+    title: Mapped[str | None] = mapped_column(
         String(200),
         nullable=True,
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    observations: Mapped[Optional[str]] = mapped_column(
+    observations: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
     # === Categoria da Infracao (se nao conforme) ===
-    infraction_category: Mapped[Optional[str]] = mapped_column(
+    infraction_category: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    infraction_severity: Mapped[Optional[str]] = mapped_column(
+    infraction_severity: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
 
     # === Evidencias ===
-    photos: Mapped[Optional[list]] = mapped_column(
+    photos: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    attachments: Mapped[Optional[list]] = mapped_column(
+    attachments: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
 
     # === Geolocalizacao ===
-    latitude: Mapped[Optional[float]] = mapped_column(
+    latitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    longitude: Mapped[Optional[float]] = mapped_column(
+    longitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
@@ -223,7 +223,7 @@ class InspectionCheckpoint(Base):
     )
 
     # === Metadados ===
-    extra_data: Mapped[Optional[dict]] = mapped_column(
+    extra_data: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -246,13 +246,13 @@ class InspectionCheckpoint(Base):
         default=func.now(),
         onupdate=func.now(),
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # === Relacionamentos ===
-    inspection_round: Mapped["InspectionRound"] = relationship(
+    inspection_round: Mapped[InspectionRound] = relationship(
         "InspectionRound",
         back_populates="checkpoints",
     )
@@ -303,7 +303,7 @@ class InspectionCheckpoint(Base):
 
     # === Methods ===
 
-    def mark_conforme(self, observations: Optional[str] = None) -> None:
+    def mark_conforme(self, observations: str | None = None) -> None:
         """Marca checkpoint como conforme."""
         self.status = CheckpointStatus.CONFORME.value
         if observations:
@@ -312,8 +312,8 @@ class InspectionCheckpoint(Base):
     def mark_nao_conforme(
         self,
         description: str,
-        infraction_category: Optional[str] = None,
-        infraction_severity: Optional[str] = None,
+        infraction_category: str | None = None,
+        infraction_severity: str | None = None,
     ) -> None:
         """Marca checkpoint como nao conforme."""
         self.status = CheckpointStatus.NAO_CONFORME.value
@@ -340,22 +340,24 @@ class InspectionCheckpoint(Base):
         self.disciplinary_action_code = action_code
         self.disciplinary_action_type = action_type
 
-    def add_photo(self, photo_url: str, description: Optional[str] = None) -> None:
+    def add_photo(self, photo_url: str, description: str | None = None) -> None:
         """Adiciona foto ao checkpoint."""
         if self.photos is None:
             self.photos = []
-        self.photos.append({
-            "url": photo_url,
-            "description": description,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self.photos.append(
+            {
+                "url": photo_url,
+                "description": description,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
     def set_employee(
         self,
         employee_id: str,
         employee_name: str,
-        employee_cpf: Optional[str] = None,
-        employee_position: Optional[str] = None,
+        employee_cpf: str | None = None,
+        employee_position: str | None = None,
     ) -> None:
         """Define o funcionario do checkpoint."""
         self.employee_id = employee_id

@@ -5,28 +5,27 @@ Repositorio para acesso a dados da base de conhecimento.
 """
 
 import logging
-from typing import List, Optional, Dict, Any, Tuple
+from datetime import datetime
+from typing import Any
 from uuid import UUID
-from datetime import datetime, timedelta
 
+from sqlalchemy import desc, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc
 
 from modules.ai.knowledge_base.models import (
-    KnowledgeBase,
-    KnowledgeBaseStatusEnum,
-    KBCategory,
+    FAQ,
     Article,
+    ArticleFeedback,
     ArticleStatusEnum,
     ArticleVersion,
-    ArticleFeedback,
-    FAQ,
-    FAQStatusEnum,
     FAQFeedback,
+    FAQStatusEnum,
+    KBCategory,
+    KnowledgeBase,
+    KnowledgeBaseStatusEnum,
+    QAInteraction,
     QASession,
     QASessionStatusEnum,
-    QAInteraction,
-    QASuggestion,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,7 +50,7 @@ class KnowledgeBaseRepository:
         description: str = None,
         condominio_id: UUID = None,
         owner_id: UUID = None,
-        settings: Dict[str, Any] = None,
+        settings: dict[str, Any] = None,
     ) -> KnowledgeBase:
         """Cria nova base de conhecimento."""
         kb = KnowledgeBase(
@@ -70,19 +69,27 @@ class KnowledgeBaseRepository:
         logger.info(f"KnowledgeBase created: {kb.id} - {kb.name}")
         return kb
 
-    def get_knowledge_base(self, kb_id: UUID) -> Optional[KnowledgeBase]:
+    def get_knowledge_base(self, kb_id: UUID) -> KnowledgeBase | None:
         """Busca base de conhecimento por ID."""
-        return self.db.query(KnowledgeBase).filter(
-            KnowledgeBase.id == kb_id,
-            KnowledgeBase.ativo == True,
-        ).first()
+        return (
+            self.db.query(KnowledgeBase)
+            .filter(
+                KnowledgeBase.id == kb_id,
+                KnowledgeBase.ativo,
+            )
+            .first()
+        )
 
-    def get_knowledge_base_by_slug(self, slug: str) -> Optional[KnowledgeBase]:
+    def get_knowledge_base_by_slug(self, slug: str) -> KnowledgeBase | None:
         """Busca base de conhecimento por slug."""
-        return self.db.query(KnowledgeBase).filter(
-            KnowledgeBase.slug == slug,
-            KnowledgeBase.ativo == True,
-        ).first()
+        return (
+            self.db.query(KnowledgeBase)
+            .filter(
+                KnowledgeBase.slug == slug,
+                KnowledgeBase.ativo,
+            )
+            .first()
+        )
 
     def list_knowledge_bases(
         self,
@@ -91,9 +98,9 @@ class KnowledgeBaseRepository:
         kb_type: str = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[KnowledgeBase], int]:
+    ) -> tuple[list[KnowledgeBase], int]:
         """Lista bases de conhecimento com filtros."""
-        query = self.db.query(KnowledgeBase).filter(KnowledgeBase.ativo == True)
+        query = self.db.query(KnowledgeBase).filter(KnowledgeBase.ativo)
 
         if condominio_id:
             query = query.filter(KnowledgeBase.condominio_id == condominio_id)
@@ -111,7 +118,7 @@ class KnowledgeBaseRepository:
         self,
         kb_id: UUID,
         **kwargs,
-    ) -> Optional[KnowledgeBase]:
+    ) -> KnowledgeBase | None:
         """Atualiza base de conhecimento."""
         kb = self.get_knowledge_base(kb_id)
         if not kb:
@@ -186,28 +193,32 @@ class KnowledgeBaseRepository:
         self.db.refresh(category)
         return category
 
-    def get_category(self, category_id: UUID) -> Optional[KBCategory]:
+    def get_category(self, category_id: UUID) -> KBCategory | None:
         """Busca categoria por ID."""
-        return self.db.query(KBCategory).filter(
-            KBCategory.id == category_id,
-            KBCategory.ativo == True,
-        ).first()
+        return (
+            self.db.query(KBCategory)
+            .filter(
+                KBCategory.id == category_id,
+                KBCategory.ativo,
+            )
+            .first()
+        )
 
     def list_categories(
         self,
         knowledge_base_id: UUID,
         parent_id: UUID = None,
-    ) -> List[KBCategory]:
+    ) -> list[KBCategory]:
         """Lista categorias de uma KB."""
         query = self.db.query(KBCategory).filter(
             KBCategory.knowledge_base_id == knowledge_base_id,
-            KBCategory.ativo == True,
+            KBCategory.ativo,
         )
 
         if parent_id:
             query = query.filter(KBCategory.parent_id == parent_id)
         else:
-            query = query.filter(KBCategory.parent_id == None)
+            query = query.filter(KBCategory.parent_id is None)
 
         return query.order_by(KBCategory.order, KBCategory.name).all()
 
@@ -224,9 +235,9 @@ class KnowledgeBaseRepository:
         article_type: str = "guide",
         category_id: UUID = None,
         author_id: UUID = None,
-        tags: List[str] = None,
-        keywords: List[str] = None,
-        metadata: Dict[str, Any] = None,
+        tags: list[str] = None,
+        keywords: list[str] = None,
+        metadata: dict[str, Any] = None,
     ) -> Article:
         """Cria novo artigo."""
         article = Article(
@@ -258,24 +269,32 @@ class KnowledgeBaseRepository:
         logger.info(f"Article created: {article.id} - {article.title[:50]}")
         return article
 
-    def get_article(self, article_id: UUID) -> Optional[Article]:
+    def get_article(self, article_id: UUID) -> Article | None:
         """Busca artigo por ID."""
-        return self.db.query(Article).filter(
-            Article.id == article_id,
-            Article.ativo == True,
-        ).first()
+        return (
+            self.db.query(Article)
+            .filter(
+                Article.id == article_id,
+                Article.ativo,
+            )
+            .first()
+        )
 
     def get_article_by_slug(
         self,
         knowledge_base_id: UUID,
         slug: str,
-    ) -> Optional[Article]:
+    ) -> Article | None:
         """Busca artigo por slug."""
-        return self.db.query(Article).filter(
-            Article.knowledge_base_id == knowledge_base_id,
-            Article.slug == slug,
-            Article.ativo == True,
-        ).first()
+        return (
+            self.db.query(Article)
+            .filter(
+                Article.knowledge_base_id == knowledge_base_id,
+                Article.slug == slug,
+                Article.ativo,
+            )
+            .first()
+        )
 
     def list_articles(
         self,
@@ -283,13 +302,13 @@ class KnowledgeBaseRepository:
         category_id: UUID = None,
         status: str = None,
         article_type: str = None,
-        tags: List[str] = None,
+        tags: list[str] = None,
         search: str = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[Article], int]:
+    ) -> tuple[list[Article], int]:
         """Lista artigos com filtros."""
-        query = self.db.query(Article).filter(Article.ativo == True)
+        query = self.db.query(Article).filter(Article.ativo)
 
         if knowledge_base_id:
             query = query.filter(Article.knowledge_base_id == knowledge_base_id)
@@ -318,7 +337,7 @@ class KnowledgeBaseRepository:
         article_id: UUID,
         updated_by: UUID = None,
         **kwargs,
-    ) -> Optional[Article]:
+    ) -> Article | None:
         """Atualiza artigo."""
         article = self.get_article(article_id)
         if not article:
@@ -404,10 +423,10 @@ class KnowledgeBaseRepository:
         source: str = "manual",
         category_id: UUID = None,
         author_id: UUID = None,
-        tags: List[str] = None,
-        keywords: List[str] = None,
-        question_variations: List[str] = None,
-        metadata: Dict[str, Any] = None,
+        tags: list[str] = None,
+        keywords: list[str] = None,
+        question_variations: list[str] = None,
+        metadata: dict[str, Any] = None,
     ) -> FAQ:
         """Cria nova FAQ."""
         faq = FAQ(
@@ -439,25 +458,29 @@ class KnowledgeBaseRepository:
         logger.info(f"FAQ created: {faq.id} - {faq.question[:50]}")
         return faq
 
-    def get_faq(self, faq_id: UUID) -> Optional[FAQ]:
+    def get_faq(self, faq_id: UUID) -> FAQ | None:
         """Busca FAQ por ID."""
-        return self.db.query(FAQ).filter(
-            FAQ.id == faq_id,
-            FAQ.ativo == True,
-        ).first()
+        return (
+            self.db.query(FAQ)
+            .filter(
+                FAQ.id == faq_id,
+                FAQ.ativo,
+            )
+            .first()
+        )
 
     def list_faqs(
         self,
         knowledge_base_id: UUID = None,
         category_id: UUID = None,
         status: str = None,
-        tags: List[str] = None,
+        tags: list[str] = None,
         search: str = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[FAQ], int]:
+    ) -> tuple[list[FAQ], int]:
         """Lista FAQs com filtros."""
-        query = self.db.query(FAQ).filter(FAQ.ativo == True)
+        query = self.db.query(FAQ).filter(FAQ.ativo)
 
         if knowledge_base_id:
             query = query.filter(FAQ.knowledge_base_id == knowledge_base_id)
@@ -484,7 +507,7 @@ class KnowledgeBaseRepository:
         faq_id: UUID,
         updated_by: UUID = None,
         **kwargs,
-    ) -> Optional[FAQ]:
+    ) -> FAQ | None:
         """Atualiza FAQ."""
         faq = self.get_faq(faq_id)
         if not faq:
@@ -553,7 +576,7 @@ class KnowledgeBaseRepository:
         knowledge_base_id: UUID = None,
         user_id: UUID = None,
         condominio_id: UUID = None,
-        context: Dict[str, Any] = None,
+        context: dict[str, Any] = None,
     ) -> QASession:
         """Cria nova sessao Q&A."""
         session = QASession(
@@ -569,11 +592,11 @@ class KnowledgeBaseRepository:
         self.db.refresh(session)
         return session
 
-    def get_qa_session(self, session_id: UUID) -> Optional[QASession]:
+    def get_qa_session(self, session_id: UUID) -> QASession | None:
         """Busca sessao Q&A por ID."""
         return self.db.query(QASession).filter(QASession.id == session_id).first()
 
-    def get_qa_session_by_key(self, session_key: str) -> Optional[QASession]:
+    def get_qa_session_by_key(self, session_key: str) -> QASession | None:
         """Busca sessao Q&A por chave."""
         return self.db.query(QASession).filter(QASession.session_key == session_key).first()
 
@@ -585,8 +608,8 @@ class KnowledgeBaseRepository:
         response_type: str = None,
         response: str = None,
         confidence_score: float = 0.0,
-        matched_articles: List[Dict[str, Any]] = None,
-        matched_faqs: List[Dict[str, Any]] = None,
+        matched_articles: list[dict[str, Any]] = None,
+        matched_faqs: list[dict[str, Any]] = None,
         response_time_ms: int = 0,
     ) -> QAInteraction:
         """Adiciona interacao a sessao."""
@@ -625,11 +648,9 @@ class KnowledgeBaseRepository:
         is_helpful: bool = None,
         rating: int = None,
         feedback_text: str = None,
-    ) -> Optional[QAInteraction]:
+    ) -> QAInteraction | None:
         """Atualiza feedback de interacao."""
-        interaction = self.db.query(QAInteraction).filter(
-            QAInteraction.id == interaction_id
-        ).first()
+        interaction = self.db.query(QAInteraction).filter(QAInteraction.id == interaction_id).first()
 
         if not interaction:
             return None
@@ -650,7 +671,7 @@ class KnowledgeBaseRepository:
         resolved: bool = False,
         escalated: bool = False,
         escalation_reason: str = None,
-    ) -> Optional[QASession]:
+    ) -> QASession | None:
         """Encerra sessao Q&A."""
         session = self.get_qa_session(session_id)
         if not session:
@@ -678,7 +699,7 @@ class KnowledgeBaseRepository:
         self,
         knowledge_base_id: UUID = None,
         condominio_id: UUID = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Retorna estatisticas do dashboard."""
         # Filtros base
         kb_filter = []
@@ -688,14 +709,18 @@ class KnowledgeBaseRepository:
             kb_filter.append(KnowledgeBase.condominio_id == condominio_id)
 
         # Contagens
-        total_kbs = self.db.query(KnowledgeBase).filter(
-            KnowledgeBase.ativo == True,
-            *kb_filter,
-        ).count()
+        total_kbs = (
+            self.db.query(KnowledgeBase)
+            .filter(
+                KnowledgeBase.ativo,
+                *kb_filter,
+            )
+            .count()
+        )
 
-        total_articles = self.db.query(Article).filter(Article.ativo == True).count()
-        total_faqs = self.db.query(FAQ).filter(FAQ.ativo == True).count()
-        total_categories = self.db.query(KBCategory).filter(KBCategory.ativo == True).count()
+        total_articles = self.db.query(Article).filter(Article.ativo).count()
+        total_faqs = self.db.query(FAQ).filter(FAQ.ativo).count()
+        total_categories = self.db.query(KBCategory).filter(KBCategory.ativo).count()
 
         # Sessoes Q&A
         total_sessions = self.db.query(QASession).count()
@@ -704,30 +729,50 @@ class KnowledgeBaseRepository:
         # Artigos por status
         articles_by_status = {}
         for status in ArticleStatusEnum:
-            count = self.db.query(Article).filter(
-                Article.ativo == True,
-                Article.status == status,
-            ).count()
+            count = (
+                self.db.query(Article)
+                .filter(
+                    Article.ativo,
+                    Article.status == status,
+                )
+                .count()
+            )
             articles_by_status[status.value] = count
 
         # FAQs por status
         faqs_by_status = {}
         for status in FAQStatusEnum:
-            count = self.db.query(FAQ).filter(
-                FAQ.ativo == True,
-                FAQ.status == status,
-            ).count()
+            count = (
+                self.db.query(FAQ)
+                .filter(
+                    FAQ.ativo,
+                    FAQ.status == status,
+                )
+                .count()
+            )
             faqs_by_status[status.value] = count
 
         # Top artigos
-        top_articles = self.db.query(Article).filter(
-            Article.ativo == True,
-        ).order_by(desc(Article.view_count)).limit(5).all()
+        top_articles = (
+            self.db.query(Article)
+            .filter(
+                Article.ativo,
+            )
+            .order_by(desc(Article.view_count))
+            .limit(5)
+            .all()
+        )
 
         # Top FAQs
-        top_faqs = self.db.query(FAQ).filter(
-            FAQ.ativo == True,
-        ).order_by(desc(FAQ.view_count)).limit(5).all()
+        top_faqs = (
+            self.db.query(FAQ)
+            .filter(
+                FAQ.ativo,
+            )
+            .order_by(desc(FAQ.view_count))
+            .limit(5)
+            .all()
+        )
 
         return {
             "total_knowledge_bases": total_kbs,

@@ -3,7 +3,6 @@ Repository para operações de banco de dados com Opportunity.
 """
 
 from datetime import date, datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import func, or_, select
@@ -66,7 +65,7 @@ class OpportunityRepository:
         logger.info(f"Opportunity criada: {opportunity.id} ({opportunity.title})")
         return opportunity
 
-    async def create_from_lead(self, data: OpportunityCreateFromLead) -> Optional[Opportunity]:
+    async def create_from_lead(self, data: OpportunityCreateFromLead) -> Opportunity | None:
         """
         Cria uma opportunity a partir de um lead.
 
@@ -77,9 +76,7 @@ class OpportunityRepository:
             Opportunity criada ou None se lead não encontrado
         """
         # Buscar o lead
-        result = await self.db.execute(
-            select(Lead).where(Lead.id == data.lead_id, Lead.is_active.is_(True))
-        )
+        result = await self.db.execute(select(Lead).where(Lead.id == data.lead_id, Lead.is_active.is_(True)))
         lead = result.scalar_one_or_none()
 
         if not lead:
@@ -112,12 +109,10 @@ class OpportunityRepository:
         await self.db.commit()
         await self.db.refresh(opportunity)
 
-        logger.info(
-            f"Lead {lead.id} convertido em Opportunity {opportunity.id}"
-        )
+        logger.info(f"Lead {lead.id} convertido em Opportunity {opportunity.id}")
         return opportunity
 
-    async def get_by_id(self, opportunity_id: str) -> Optional[Opportunity]:
+    async def get_by_id(self, opportunity_id: str) -> Opportunity | None:
         """
         Busca opportunity por ID.
 
@@ -137,7 +132,7 @@ class OpportunityRepository:
 
     async def list(
         self,
-        filters: Optional[OpportunityFilter] = None,
+        filters: OpportunityFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Opportunity], int]:
@@ -158,9 +153,7 @@ class OpportunityRepository:
             query = self._apply_filters(query, filters)
 
         # Count total
-        count_query = select(func.count(Opportunity.id)).where(
-            Opportunity.is_active.is_(True)
-        )
+        count_query = select(func.count(Opportunity.id)).where(Opportunity.is_active.is_(True))
         if filters:
             count_query = self._apply_filters(count_query, filters)
 
@@ -206,9 +199,7 @@ class OpportunityRepository:
             query = query.where(Opportunity.value <= filters.max_value)
 
         if filters.company_name:
-            query = query.where(
-                Opportunity.company_name.ilike(f"%{filters.company_name}%")
-            )
+            query = query.where(Opportunity.company_name.ilike(f"%{filters.company_name}%"))
 
         if filters.search:
             search_term = f"%{filters.search}%"
@@ -223,9 +214,7 @@ class OpportunityRepository:
 
         return query
 
-    async def update(
-        self, opportunity_id: str, data: OpportunityUpdate
-    ) -> Optional[Opportunity]:
+    async def update(self, opportunity_id: str, data: OpportunityUpdate) -> Opportunity | None:
         """
         Atualiza uma opportunity.
 
@@ -244,9 +233,7 @@ class OpportunityRepository:
         update_data = data.model_dump(exclude_unset=True)
 
         for field, value in update_data.items():
-            if field == "stage" and value:
-                setattr(opportunity, field, value.value)
-            elif field == "priority" and value:
+            if field == "stage" and value or field == "priority" and value:
                 setattr(opportunity, field, value.value)
             else:
                 setattr(opportunity, field, value)
@@ -263,8 +250,8 @@ class OpportunityRepository:
         self,
         opportunity_id: str,
         stage: OpportunityStage,
-        notes: Optional[str] = None,
-    ) -> Optional[Opportunity]:
+        notes: str | None = None,
+    ) -> Opportunity | None:
         """
         Atualiza estágio da opportunity.
 
@@ -297,23 +284,17 @@ class OpportunityRepository:
         if notes:
             existing_notes = opportunity.notes or ""
             timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
-            opportunity.notes = (
-                f"{existing_notes}\n[{timestamp}] {old_stage} -> {stage.value}: {notes}"
-            ).strip()
+            opportunity.notes = (f"{existing_notes}\n[{timestamp}] {old_stage} -> {stage.value}: {notes}").strip()
 
         opportunity.updated_at = datetime.utcnow()
 
         await self.db.commit()
         await self.db.refresh(opportunity)
 
-        logger.info(
-            f"Opportunity {opportunity.id} stage: {old_stage} -> {stage.value}"
-        )
+        logger.info(f"Opportunity {opportunity.id} stage: {old_stage} -> {stage.value}")
         return opportunity
 
-    async def close(
-        self, opportunity_id: str, data: OpportunityClose
-    ) -> Optional[Opportunity]:
+    async def close(self, opportunity_id: str, data: OpportunityClose) -> Opportunity | None:
         """
         Fecha uma opportunity (ganhou ou perdeu).
 
@@ -372,7 +353,7 @@ class OpportunityRepository:
         return True
 
     async def get_pipeline_stats(  # pylint: disable=too-many-locals
-        self, owner_id: Optional[str] = None
+        self, owner_id: str | None = None
     ) -> PipelineStats:
         """
         Obtém estatísticas do pipeline de vendas.
@@ -450,9 +431,7 @@ class OpportunityRepository:
         total_closed = won_count + lost_count
         win_rate = (won_count / total_closed * 100) if total_closed > 0 else 0.0
         avg_deal_size = total_value / len(opportunities) if opportunities else 0.0
-        avg_days_to_close = (
-            total_days_to_close / closed_count if closed_count > 0 else 0.0
-        )
+        avg_days_to_close = total_days_to_close / closed_count if closed_count > 0 else 0.0
 
         return PipelineStats(
             total_opportunities=len(opportunities),

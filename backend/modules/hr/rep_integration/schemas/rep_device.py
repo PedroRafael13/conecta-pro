@@ -3,10 +3,9 @@
 import re
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class REPDeviceBase(BaseModel):
@@ -20,11 +19,11 @@ class REPDeviceBase(BaseModel):
         default="generic",
         description="Modelo do REP",
     )
-    firmware_version: Optional[str] = Field(
+    firmware_version: str | None = Field(
         default=None,
         max_length=50,
     )
-    mte_registration: Optional[str] = Field(
+    mte_registration: str | None = Field(
         default=None,
         max_length=20,
         description="Número de registro no MTE",
@@ -41,17 +40,17 @@ class REPDeviceBase(BaseModel):
         max_length=100,
         description="Nome identificador do dispositivo",
     )
-    description: Optional[str] = None
-    location: Optional[str] = Field(
+    description: str | None = None
+    location: str | None = Field(
         default=None,
         max_length=200,
     )
-    latitude: Optional[Decimal] = Field(
+    latitude: Decimal | None = Field(
         default=None,
         ge=-90,
         le=90,
     )
-    longitude: Optional[Decimal] = Field(
+    longitude: Decimal | None = Field(
         default=None,
         ge=-180,
         le=180,
@@ -62,7 +61,7 @@ class REPDeviceBase(BaseModel):
         le=10000,
         description="Raio de geofence em metros",
     )
-    ip_address: Optional[str] = Field(
+    ip_address: str | None = Field(
         default=None,
         max_length=45,
     )
@@ -71,7 +70,7 @@ class REPDeviceBase(BaseModel):
         ge=1,
         le=65535,
     )
-    mac_address: Optional[str] = Field(
+    mac_address: str | None = Field(
         default=None,
         max_length=17,
     )
@@ -100,7 +99,7 @@ class REPDeviceBase(BaseModel):
 
     @field_validator("ip_address")
     @classmethod
-    def validate_ip(cls, v: Optional[str]) -> Optional[str]:
+    def validate_ip(cls, v: str | None) -> str | None:
         """Valida formato de endereço IP."""
         if v is None:
             return v
@@ -113,7 +112,7 @@ class REPDeviceBase(BaseModel):
 
     @field_validator("mac_address")
     @classmethod
-    def validate_mac(cls, v: Optional[str]) -> Optional[str]:
+    def validate_mac(cls, v: str | None) -> str | None:
         """Valida formato de MAC address."""
         if v is None:
             return v
@@ -127,47 +126,47 @@ class REPDeviceCreate(REPDeviceBase):
     """Schema para criar REPDevice."""
 
     condominio_id: UUID
-    auth_username: Optional[str] = None
-    auth_password: Optional[str] = Field(
+    auth_username: str | None = None
+    auth_password: str | None = Field(
         default=None,
         description="Senha (será criptografada)",
     )
-    api_key: Optional[str] = Field(
+    api_key: str | None = Field(
         default=None,
         description="API Key (será criptografada)",
     )
-    webhook_url: Optional[str] = None
-    webhook_secret: Optional[str] = None
-    endpoints_config: Optional[dict] = None
-    vendor_config: Optional[dict] = None
+    webhook_url: str | None = None
+    webhook_secret: str | None = None
+    endpoints_config: dict | None = None
+    vendor_config: dict | None = None
 
 
 class REPDeviceUpdate(BaseModel):
     """Schema para atualizar REPDevice."""
 
-    device_name: Optional[str] = Field(default=None, max_length=100)
-    description: Optional[str] = None
-    location: Optional[str] = None
-    firmware_version: Optional[str] = None
-    ip_address: Optional[str] = None
-    port: Optional[int] = None
-    communication_protocol: Optional[str] = None
-    auth_method: Optional[str] = None
-    auth_username: Optional[str] = None
-    auth_password: Optional[str] = None
-    api_key: Optional[str] = None
-    sync_enabled: Optional[bool] = None
-    sync_interval_seconds: Optional[int] = None
-    sync_mode: Optional[str] = None
-    webhook_url: Optional[str] = None
-    webhook_secret: Optional[str] = None
-    endpoints_config: Optional[dict] = None
-    vendor_config: Optional[dict] = None
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
-    geofence_radius: Optional[int] = None
-    timezone: Optional[str] = None
-    is_active: Optional[bool] = None
+    device_name: str | None = Field(default=None, max_length=100)
+    description: str | None = None
+    location: str | None = None
+    firmware_version: str | None = None
+    ip_address: str | None = None
+    port: int | None = None
+    communication_protocol: str | None = None
+    auth_method: str | None = None
+    auth_username: str | None = None
+    auth_password: str | None = None
+    api_key: str | None = None
+    sync_enabled: bool | None = None
+    sync_interval_seconds: int | None = None
+    sync_mode: str | None = None
+    webhook_url: str | None = None
+    webhook_secret: str | None = None
+    endpoints_config: dict | None = None
+    vendor_config: dict | None = None
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
+    geofence_radius: int | None = None
+    timezone: str | None = None
+    is_active: bool | None = None
 
 
 class REPDeviceResponse(REPDeviceBase):
@@ -178,9 +177,9 @@ class REPDeviceResponse(REPDeviceBase):
     id: UUID
     condominio_id: UUID
     status: str
-    last_online: Optional[datetime] = None
-    last_sync: Optional[datetime] = None
-    last_error: Optional[str] = None
+    last_online: datetime | None = None
+    last_sync: datetime | None = None
+    last_error: str | None = None
     consecutive_errors: int = 0
     registered_users: int = 0
     registered_fingerprints: int = 0
@@ -195,7 +194,7 @@ class REPDeviceResponse(REPDeviceBase):
 class REPDeviceList(BaseModel):
     """Schema para lista de dispositivos."""
 
-    items: List[REPDeviceResponse]
+    items: list[REPDeviceResponse]
     total: int
     page: int
     page_size: int
@@ -205,14 +204,14 @@ class REPDeviceList(BaseModel):
 class REPDeviceFilter(BaseModel):
     """Filtros para busca de dispositivos."""
 
-    condominio_id: Optional[UUID] = None
-    manufacturer: Optional[str] = None
-    model: Optional[str] = None
-    status: Optional[str] = None
-    is_active: Optional[bool] = None
-    sync_enabled: Optional[bool] = None
-    location: Optional[str] = None
-    search: Optional[str] = Field(
+    condominio_id: UUID | None = None
+    manufacturer: str | None = None
+    model: str | None = None
+    status: str | None = None
+    is_active: bool | None = None
+    sync_enabled: bool | None = None
+    location: str | None = None
+    search: str | None = Field(
         default=None,
         description="Busca em nome, serial, localização",
     )
@@ -222,22 +221,22 @@ class REPDeviceStatusUpdate(BaseModel):
     """Schema para atualizar status do dispositivo."""
 
     status: str
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 class REPDeviceCredentials(BaseModel):
     """Schema para credenciais do dispositivo."""
 
-    auth_username: Optional[str] = None
-    auth_password: Optional[str] = None
-    api_key: Optional[str] = None
-    certificate_path: Optional[str] = None
+    auth_username: str | None = None
+    auth_password: str | None = None
+    api_key: str | None = None
+    certificate_path: str | None = None
 
 
 class REPDeviceTestConnection(BaseModel):
     """Schema para resultado de teste de conexão."""
 
     success: bool
-    latency_ms: Optional[int] = None
-    device_info: Optional[dict] = None
-    error_message: Optional[str] = None
+    latency_ms: int | None = None
+    device_info: dict | None = None
+    error_message: str | None = None

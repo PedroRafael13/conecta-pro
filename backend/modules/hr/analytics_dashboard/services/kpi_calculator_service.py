@@ -1,27 +1,26 @@
 """Service para cálculo de KPIs de RH."""
 
 import logging
-import random
+import random  # noqa: S311
 from datetime import datetime, timedelta
-from typing import List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.analytics_dashboard.models import (
-    KPIDefinition,
     AnalyticsCache,
     CacheType,
+    KPIDefinition,
 )
 from modules.hr.analytics_dashboard.repositories import (
-    KPIRepository,
     CacheRepository,
+    KPIRepository,
 )
 from modules.hr.analytics_dashboard.schemas import (
-    KPIValueResponse,
-    KPITrend,
     KPIComparison,
     KPIHistoryPoint,
+    KPITrend,
+    KPIValueResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -195,7 +194,7 @@ class KPICalculatorService:
             # Simular ~3% de absenteísmo com variação baseada no período
             _ = (period_end - period_start).days  # Para referência futura
             base_rate = 3.0
-            variation = random.uniform(-1.0, 1.0)
+            variation = random.uniform(-1.0, 1.0)  # noqa: S311
             return round(base_rate + variation, 2)
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular absenteísmo: %s", e)
@@ -212,7 +211,7 @@ class KPICalculatorService:
         # Fórmula: (entradas no horário / total de entradas) * 100
         try:
             base_rate = 92.0
-            variation = random.uniform(-3.0, 5.0)
+            variation = random.uniform(-3.0, 5.0)  # noqa: S311
             return round(base_rate + variation, 2)
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular pontualidade: %s", e)
@@ -228,7 +227,7 @@ class KPICalculatorService:
         """Calcula média de horas extras."""
         try:
             base_hours = 8.0
-            variation = random.uniform(-3.0, 5.0)
+            variation = random.uniform(-3.0, 5.0)  # noqa: S311
             return round(base_hours + variation, 1)
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular horas extras: %s", e)
@@ -243,7 +242,7 @@ class KPICalculatorService:
     ) -> float:
         """Calcula saldo do banco de horas."""
         try:
-            return round(random.uniform(-50.0, 150.0), 1)
+            return round(random.uniform(-50.0, 150.0), 1)  # noqa: S311
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular banco de horas: %s", e)
             return 0.0
@@ -258,7 +257,7 @@ class KPICalculatorService:
         """Calcula conformidade CLT."""
         try:
             base_rate = 97.0
-            variation = random.uniform(-2.0, 3.0)
+            variation = random.uniform(-2.0, 3.0)  # noqa: S311
             return min(100.0, round(base_rate + variation, 2))
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular conformidade CLT: %s", e)
@@ -274,7 +273,7 @@ class KPICalculatorService:
         """Calcula custo de horas extras."""
         try:
             base_cost = 15000.0
-            variation = random.uniform(-5000.0, 8000.0)
+            variation = random.uniform(-5000.0, 8000.0)  # noqa: S311
             return round(base_cost + variation, 2)
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular custo de horas extras: %s", e)
@@ -290,7 +289,7 @@ class KPICalculatorService:
         """Calcula eficiência de horas trabalhadas."""
         try:
             base_rate = 98.0
-            variation = random.uniform(-3.0, 2.0)
+            variation = random.uniform(-3.0, 2.0)  # noqa: S311
             return round(base_rate + variation, 2)
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular eficiência: %s", e)
@@ -322,10 +321,10 @@ class KPICalculatorService:
     async def calculate_dashboard_kpis(
         self,
         condominio_id: UUID,
-        kpi_codes: List[str] = None,
+        kpi_codes: list[str] = None,
         period_start: datetime = None,
         period_end: datetime = None,
-    ) -> List[KPIValueResponse]:
+    ) -> list[KPIValueResponse]:
         """Calcula múltiplos KPIs para dashboard."""
         if not kpi_codes:
             # Buscar KPIs em destaque
@@ -357,7 +356,7 @@ class KPICalculatorService:
         period_start: datetime,
         period_end: datetime,
         granularity: str = "daily",
-    ) -> List[KPIHistoryPoint]:
+    ) -> list[KPIHistoryPoint]:
         """Retorna histórico de valores do KPI."""
         kpi = await self.kpi_repo.get_kpi_by_code(kpi_code, condominio_id)
         if not kpi:
@@ -388,11 +387,13 @@ class KPICalculatorService:
 
             status = kpi.evaluate_status(value)
 
-            points.append(KPIHistoryPoint(
-                timestamp=current,
-                value=value,
-                status=status,
-            ))
+            points.append(
+                KPIHistoryPoint(
+                    timestamp=current,
+                    value=value,
+                    status=status,
+                )
+            )
 
             current = next_point
 

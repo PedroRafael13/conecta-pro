@@ -1,19 +1,19 @@
 """Modelo AnalyticsCache - Cache de métricas calculadas."""
 
-import uuid
 import hashlib
 import json
+import uuid
 from datetime import datetime, timedelta
-from enum import Enum
-from typing import Optional, Any
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Index,
     Integer,
     String,
     Text,
-    Index,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,17 +21,19 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 
-class CacheType(str, Enum):
+class CacheType(StrEnum):
     """Tipo de cache."""
-    KPI = "kpi"                      # Cache de KPI
-    WIDGET = "widget"                # Cache de widget
-    REPORT = "report"                # Cache de relatório
-    AGGREGATION = "aggregation"      # Cache de agregação
-    QUERY = "query"                  # Cache de query
+
+    KPI = "kpi"  # Cache de KPI
+    WIDGET = "widget"  # Cache de widget
+    REPORT = "report"  # Cache de relatório
+    AGGREGATION = "aggregation"  # Cache de agregação
+    QUERY = "query"  # Cache de query
 
 
-class CacheStatus(str, Enum):
+class CacheStatus(StrEnum):
     """Status do cache."""
+
     VALID = "valid"
     STALE = "stale"
     EXPIRED = "expired"
@@ -68,34 +70,34 @@ class AnalyticsCache(Base):
     )
 
     # Referências
-    kpi_code: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    widget_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
-    report_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
+    kpi_code: Mapped[str | None] = mapped_column(String(50), index=True)
+    widget_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    report_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
     # Parâmetros usados para gerar o cache
     params_hash: Mapped[str] = mapped_column(String(64))
-    params: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    params: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Período dos dados
-    period_start: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    period_end: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    granularity: Mapped[Optional[str]] = mapped_column(String(20))
+    period_start: Mapped[datetime | None] = mapped_column(DateTime)
+    period_end: Mapped[datetime | None] = mapped_column(DateTime)
+    granularity: Mapped[str | None] = mapped_column(String(20))
 
     # Dados cacheados
-    data: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    data_compressed: Mapped[Optional[str]] = mapped_column(Text)
+    data: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    data_compressed: Mapped[str | None] = mapped_column(Text)
     is_compressed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Metadados do resultado
-    row_count: Mapped[Optional[int]] = mapped_column(Integer)
-    data_size_bytes: Mapped[Optional[int]] = mapped_column(Integer)
+    row_count: Mapped[int | None] = mapped_column(Integer)
+    data_size_bytes: Mapped[int | None] = mapped_column(Integer)
 
     # Status
     status: Mapped[str] = mapped_column(
         String(20),
         default=CacheStatus.VALID.value,
     )
-    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    error_message: Mapped[str | None] = mapped_column(Text)
 
     # TTL e validade
     ttl_seconds: Mapped[int] = mapped_column(Integer, default=300)
@@ -104,15 +106,15 @@ class AnalyticsCache(Base):
         DateTime,
         default=datetime.utcnow,
     )
-    computation_time_ms: Mapped[Optional[int]] = mapped_column(Integer)
+    computation_time_ms: Mapped[int | None] = mapped_column(Integer)
 
     # Estatísticas de uso
     hit_count: Mapped[int] = mapped_column(Integer, default=0)
-    last_hit_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_hit_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Dependências (para invalidação em cascata)
-    dependencies: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    invalidated_by: Mapped[Optional[str]] = mapped_column(String(100))
+    dependencies: Mapped[list | None] = mapped_column(JSONB, default=list)
+    invalidated_by: Mapped[str | None] = mapped_column(String(100))
 
     # Auditoria
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -137,11 +139,7 @@ class AnalyticsCache(Base):
     @property
     def is_valid(self) -> bool:
         """Verifica se cache é válido."""
-        return (
-            self.status == CacheStatus.VALID.value
-            and self.expires_at > datetime.utcnow()
-            and self.is_active
-        )
+        return self.status == CacheStatus.VALID.value and self.expires_at > datetime.utcnow() and self.is_active
 
     @property
     def is_expired(self) -> bool:

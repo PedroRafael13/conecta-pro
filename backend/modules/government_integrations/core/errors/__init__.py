@@ -9,17 +9,17 @@ Implementa:
 
 from .error_classifier import (
     CategoriaErro,
-    ErroIntegracao,
     ClassificadorErros,
+    ErroIntegracao,
+)
+from .reprocessing_queue import (
+    FilaReprocessamento,
+    StatusReprocessamento,
 )
 from .retry_handler import (
     RetryConfig,
-    retry_com_backoff,
     com_retry,
-)
-from .reprocessing_queue import (
-    StatusReprocessamento,
-    FilaReprocessamento,
+    retry_com_backoff,
 )
 
 __all__ = [

@@ -1,20 +1,20 @@
 """Repository para WorkSchedule."""
 
+import builtins
 from datetime import date as _date  # noqa: F401
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import (
-    WorkSchedule,
     ScheduleStatus,
+    WorkSchedule,
 )
 from modules.hr.time_tracking.schemas import (
     WorkScheduleCreate,
-    WorkScheduleUpdate,
     WorkScheduleFilter,
+    WorkScheduleUpdate,
 )
 
 
@@ -40,7 +40,7 @@ class WorkScheduleRepository:
         await self.db.refresh(schedule)
         return schedule
 
-    async def get_by_id(self, schedule_id: UUID) -> Optional[WorkSchedule]:
+    async def get_by_id(self, schedule_id: UUID) -> WorkSchedule | None:
         """Busca jornada por ID."""
         result = await self.db.execute(
             select(WorkSchedule).where(
@@ -50,7 +50,7 @@ class WorkScheduleRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[WorkSchedule]:
+    async def get_by_code(self, code: str) -> WorkSchedule | None:
         """Busca jornada por código."""
         result = await self.db.execute(
             select(WorkSchedule).where(
@@ -60,7 +60,7 @@ class WorkScheduleRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_employee(self, employee_id: str) -> Optional[WorkSchedule]:
+    async def get_by_employee(self, employee_id: str) -> WorkSchedule | None:
         """Busca jornada ativa de um funcionário."""
         result = await self.db.execute(
             select(WorkSchedule).where(
@@ -94,7 +94,7 @@ class WorkScheduleRepository:
         filters: WorkScheduleFilter = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[WorkSchedule], int]:
+    ) -> tuple[list[WorkSchedule], int]:
         """Lista jornadas com filtros."""
         query = select(WorkSchedule).where(WorkSchedule.is_deleted.is_(False))
 
@@ -125,7 +125,7 @@ class WorkScheduleRepository:
     async def get_templates(
         self,
         condominium_id: str = None,
-    ) -> List[WorkSchedule]:
+    ) -> builtins.list[WorkSchedule]:
         """Busca templates de jornada."""
         query = select(WorkSchedule).where(
             WorkSchedule.is_template.is_(True),
@@ -147,9 +147,7 @@ class WorkScheduleRepository:
         if condominium_id:
             base_where.append(WorkSchedule.condominium_id == condominium_id)
 
-        total_result = await self.db.execute(
-            select(func.count()).where(*base_where)
-        )
+        total_result = await self.db.execute(select(func.count()).where(*base_where))
         total = total_result.scalar() or 0
 
         active_result = await self.db.execute(
@@ -169,9 +167,7 @@ class WorkScheduleRepository:
         templates = template_result.scalar() or 0
 
         type_result = await self.db.execute(
-            select(WorkSchedule.schedule_type, func.count())
-            .where(*base_where)
-            .group_by(WorkSchedule.schedule_type)
+            select(WorkSchedule.schedule_type, func.count()).where(*base_where).group_by(WorkSchedule.schedule_type)
         )
         by_type = {row[0].value: row[1] for row in type_result.all()}
 

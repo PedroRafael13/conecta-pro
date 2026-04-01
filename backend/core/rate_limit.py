@@ -5,7 +5,7 @@ Implementa rate limiting usando slowapi + Redis para limitar
 requisições por IP, usuário ou endpoint.
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from slowapi import Limiter
@@ -140,7 +140,7 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> Response:
 PUBLIC_LIMIT = "10/minute"
 
 # Endpoints de autenticação (login, registro)
-AUTH_LIMIT = "5/minute"
+AUTH_LIMIT = getattr(settings, "auth_rate_limit", "20/minute")
 
 # Endpoints de leitura (GET)
 READ_LIMIT = "100/minute"

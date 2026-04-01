@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -64,7 +63,7 @@ class PayrollIntegrationRepository:
     async def get_by_id(
         self,
         integration_id: UUID,
-    ) -> Optional[PayrollIntegration]:
+    ) -> PayrollIntegration | None:
         """Busca integração por ID."""
         query = select(PayrollIntegration).where(
             and_(
@@ -80,7 +79,7 @@ class PayrollIntegrationRepository:
         self,
         integration_type: IntegrationType,
         condominio_id: UUID,
-    ) -> Optional[PayrollIntegration]:
+    ) -> PayrollIntegration | None:
         """Busca integração por tipo."""
         query = select(PayrollIntegration).where(
             and_(
@@ -101,7 +100,7 @@ class PayrollIntegrationRepository:
         status: IntegrationStatus = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[PayrollIntegration], int]:
+    ) -> tuple[list[PayrollIntegration], int]:
         """Lista integrações com filtros."""
         conditions = [
             PayrollIntegration.condominio_id == condominio_id,
@@ -136,7 +135,7 @@ class PayrollIntegrationRepository:
         self,
         integration_id: UUID,
         data: PayrollIntegrationUpdate,
-    ) -> Optional[PayrollIntegration]:
+    ) -> PayrollIntegration | None:
         """Atualiza integração."""
         integration = await self.get_by_id(integration_id)
         if not integration:
@@ -168,7 +167,7 @@ class PayrollIntegrationRepository:
         self,
         integration_id: UUID,
         status: IntegrationStatus,
-    ) -> Optional[PayrollIntegration]:
+    ) -> PayrollIntegration | None:
         """Atualiza status da integração."""
         integration = await self.get_by_id(integration_id)
         if not integration:
@@ -188,7 +187,7 @@ class PayrollIntegrationRepository:
         success: bool,
         records: int = 0,
         message: str = None,
-    ) -> Optional[PayrollIntegration]:
+    ) -> PayrollIntegration | None:
         """Registra resultado de sincronização."""
         integration = await self.get_by_id(integration_id)
         if not integration:
@@ -206,7 +205,7 @@ class PayrollIntegrationRepository:
         *,
         field_mapping: dict = None,
         rubrica_mapping: dict = None,
-    ) -> Optional[PayrollIntegration]:
+    ) -> PayrollIntegration | None:
         """Atualiza mapeamentos."""
         integration = await self.get_by_id(integration_id)
         if not integration:
@@ -239,7 +238,7 @@ class PayrollIntegrationRepository:
     async def get_active_integrations(
         self,
         condominio_id: UUID,
-    ) -> List[PayrollIntegration]:
+    ) -> list[PayrollIntegration]:
         """Retorna integrações ativas."""
         query = select(PayrollIntegration).where(
             and_(
@@ -255,6 +254,6 @@ class PayrollIntegrationRepository:
     async def get_esocial_integration(
         self,
         condominio_id: UUID,
-    ) -> Optional[PayrollIntegration]:
+    ) -> PayrollIntegration | None:
         """Retorna integração eSocial ativa."""
         return await self.get_by_type(IntegrationType.ESOCIAL, condominio_id)

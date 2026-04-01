@@ -4,21 +4,18 @@ Service para Simples Nacional.
 Camada de serviço para operações do Simples Nacional.
 """
 
-import os
 import logging
-from datetime import datetime, date
+import os
+from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 from ..core.simples_nacional import (
-    SimplesNacionalManager,
-    PGDASD,
     DAS,
-    DEFIS,
-    ReceitaCompetencia,
-    FaixaAliquota,
+    PGDASD,
     AnexoSimples,
-    SituacaoOpcao,
+    ReceitaCompetencia,
+    SimplesNacionalManager,
     TipoReceita,
 )
 
@@ -48,12 +45,9 @@ class SimplesNacionalService:
             anexo_principal=self.anexo_principal,
         )
 
-        logger.info(
-            f"Simples Nacional Service inicializado - CNPJ: {self.cnpj}, "
-            f"Anexo: {self.anexo_principal.value}"
-        )
+        logger.info(f"Simples Nacional Service inicializado - CNPJ: {self.cnpj}, Anexo: {self.anexo_principal.value}")
 
-    def consultar_opcao(self) -> Dict[str, Any]:
+    def consultar_opcao(self) -> dict[str, Any]:
         """
         Consulta situação da opção pelo Simples Nacional.
 
@@ -66,8 +60,8 @@ class SimplesNacionalService:
         self,
         receita_mensal: str,
         rbt12: str,
-        folha_12_meses: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        folha_12_meses: str | None = None,
+    ) -> dict[str, Any]:
         """
         Simula cálculo do Simples Nacional.
 
@@ -88,10 +82,10 @@ class SimplesNacionalService:
     def calcular_pgdasd(
         self,
         competencia: str,
-        receitas: List[Dict[str, Any]],
+        receitas: list[dict[str, Any]],
         rbt12: str,
-        folha_12_meses: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        folha_12_meses: str | None = None,
+    ) -> dict[str, Any]:
         """
         Calcula o PGDAS-D (declaração mensal).
 
@@ -109,13 +103,15 @@ class SimplesNacionalService:
             tipo = TipoReceita(rec.get("tipo_receita", "servicos"))
             anexo = AnexoSimples(rec.get("anexo", self.anexo_principal.value))
 
-            lista_receitas.append(ReceitaCompetencia(
-                competencia=competencia,
-                tipo_receita=tipo,
-                anexo=anexo,
-                valor_bruto=Decimal(str(rec["valor_bruto"])),
-                deducoes=Decimal(str(rec.get("deducoes", "0"))),
-            ))
+            lista_receitas.append(
+                ReceitaCompetencia(
+                    competencia=competencia,
+                    tipo_receita=tipo,
+                    anexo=anexo,
+                    valor_bruto=Decimal(str(rec["valor_bruto"])),
+                    deducoes=Decimal(str(rec.get("deducoes", "0"))),
+                )
+            )
 
         pgdasd = self.manager.calcular_pgdasd(
             competencia=competencia,
@@ -124,21 +120,18 @@ class SimplesNacionalService:
             folha_12_meses=Decimal(folha_12_meses) if folha_12_meses else None,
         )
 
-        logger.info(
-            f"PGDAS-D calculado: {competencia}, "
-            f"Receita: {pgdasd.receita_mes}, Devido: {pgdasd.valor_devido}"
-        )
+        logger.info(f"PGDAS-D calculado: {competencia}, Receita: {pgdasd.receita_mes}, Devido: {pgdasd.valor_devido}")
 
         return self._pgdasd_to_dict(pgdasd)
 
     def gerar_das(
         self,
         competencia: str,
-        receitas: List[Dict[str, Any]],
+        receitas: list[dict[str, Any]],
         rbt12: str,
-        folha_12_meses: Optional[str] = None,
-        data_vencimento: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        folha_12_meses: str | None = None,
+        data_vencimento: str | None = None,
+    ) -> dict[str, Any]:
         """
         Gera DAS para uma competência.
 
@@ -157,13 +150,15 @@ class SimplesNacionalService:
             tipo = TipoReceita(rec.get("tipo_receita", "servicos"))
             anexo = AnexoSimples(rec.get("anexo", self.anexo_principal.value))
 
-            lista_receitas.append(ReceitaCompetencia(
-                competencia=competencia,
-                tipo_receita=tipo,
-                anexo=anexo,
-                valor_bruto=Decimal(str(rec["valor_bruto"])),
-                deducoes=Decimal(str(rec.get("deducoes", "0"))),
-            ))
+            lista_receitas.append(
+                ReceitaCompetencia(
+                    competencia=competencia,
+                    tipo_receita=tipo,
+                    anexo=anexo,
+                    valor_bruto=Decimal(str(rec["valor_bruto"])),
+                    deducoes=Decimal(str(rec.get("deducoes", "0"))),
+                )
+            )
 
         pgdasd = self.manager.calcular_pgdasd(
             competencia=competencia,
@@ -189,7 +184,7 @@ class SimplesNacionalService:
         self,
         folha_12_meses: str,
         rbt12: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calcula o Fator R e determina o anexo aplicável.
 
@@ -218,7 +213,7 @@ class SimplesNacionalService:
             ),
         }
 
-    def obter_tabela_aliquotas(self, anexo: str = "III") -> Dict[str, Any]:
+    def obter_tabela_aliquotas(self, anexo: str = "III") -> dict[str, Any]:
         """
         Retorna a tabela de alíquotas de um anexo.
 
@@ -251,7 +246,7 @@ class SimplesNacionalService:
             ],
         }
 
-    def consultar_pendencias(self) -> Dict[str, Any]:
+    def consultar_pendencias(self) -> dict[str, Any]:
         """
         Consulta pendências no Simples Nacional.
 
@@ -260,7 +255,7 @@ class SimplesNacionalService:
         """
         return self.manager.consultar_pendencias()
 
-    def listar_anexos(self) -> Dict[str, Any]:
+    def listar_anexos(self) -> dict[str, Any]:
         """
         Lista os anexos disponíveis.
 
@@ -280,7 +275,7 @@ class SimplesNacionalService:
             "anexo_atual": self.anexo_principal.value,
         }
 
-    def listar_tipos_receita(self) -> Dict[str, Any]:
+    def listar_tipos_receita(self) -> dict[str, Any]:
         """
         Lista os tipos de receita.
 
@@ -296,7 +291,7 @@ class SimplesNacionalService:
             ]
         }
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """
         Valida status da configuração.
 
@@ -331,7 +326,7 @@ class SimplesNacionalService:
         }
         return descricoes.get(anexo, anexo.name)
 
-    def _pgdasd_to_dict(self, pgdasd: PGDASD) -> Dict[str, Any]:
+    def _pgdasd_to_dict(self, pgdasd: PGDASD) -> dict[str, Any]:
         """Converte PGDAS-D para dict."""
         return {
             "competencia": pgdasd.competencia,
@@ -357,7 +352,7 @@ class SimplesNacionalService:
             "numero_recibo": pgdasd.numero_recibo,
         }
 
-    def _das_to_dict(self, das: DAS) -> Dict[str, Any]:
+    def _das_to_dict(self, das: DAS) -> dict[str, Any]:
         """Converte DAS para dict."""
         return {
             "numero_documento": das.numero_documento,
@@ -383,7 +378,7 @@ class SimplesNacionalService:
 
 
 # Singleton
-_simples_nacional_service: Optional[SimplesNacionalService] = None
+_simples_nacional_service: SimplesNacionalService | None = None
 
 
 def get_simples_nacional_service() -> SimplesNacionalService:

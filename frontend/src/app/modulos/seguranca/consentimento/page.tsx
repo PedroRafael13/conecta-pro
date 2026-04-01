@@ -94,8 +94,10 @@ export default function ConsentimentoPage() {
 
   // Extrair dados - cast data para shape esperado
   const responseData = consentsResponse?.data as ConsentsData | undefined;
-  const rawConsents = responseData?.consents || (Array.isArray(responseData) ? responseData : []);
-  const allConsents = Array.isArray(rawConsents) ? rawConsents : [];
+  const allConsents = useMemo(() => {
+    const rawConsents = responseData?.consents || (Array.isArray(responseData) ? responseData : []);
+    return Array.isArray(rawConsents) ? rawConsents : [];
+  }, [responseData]);
 
   // Filtrar localmente
   const filteredConsents = useMemo(() => {
@@ -174,7 +176,6 @@ export default function ConsentimentoPage() {
       setSelectedConsent(null);
       handleRefresh();
     } catch (error) {
-      console.error('Erro ao revogar consentimento:', error);
     } finally {
       setIsRevoking(false);
     }
@@ -186,7 +187,6 @@ export default function ConsentimentoPage() {
       setShowFormModal(false);
       handleRefresh();
     } catch (error) {
-      console.error('Erro ao registrar consentimento:', error);
     }
   };
 
@@ -307,7 +307,7 @@ export default function ConsentimentoPage() {
 
             {/* Status filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus} aria-label="Selected Status">
                 <SelectTrigger>
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>

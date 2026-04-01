@@ -14,64 +14,63 @@ Compliance: LGPD (Lei 13.709/2018)
 """
 
 # Criptografia
-from modules.security_lgpd.services.crypto_service import (
-    CryptoService,
-    CryptoConfig,
-    EncryptionAlgorithm,
-    EncryptionResult,
-    KeyType,
-    CryptoError,
-    EncryptionError,
-    DecryptionError,
-    KeyGenerationError,
-    get_crypto_service,
-)
-
 # Auditoria
 from modules.security_lgpd.services.audit_service import (
-    AuditService,
     AuditAction,
-    AuditSeverity,
-    ResourceType,
     AuditContext,
     AuditEntry,
+    AuditService,
+    AuditSeverity,
     AuditStoreInterface,
     InMemoryAuditStore,
+    ResourceType,
     audit_action,
     get_audit_service,
     init_audit_service,
 )
 
+# Consentimento
+from modules.security_lgpd.services.consent_service import ConsentService
+from modules.security_lgpd.services.crypto_service import (
+    CryptoConfig,
+    CryptoError,
+    CryptoService,
+    DecryptionError,
+    EncryptionAlgorithm,
+    EncryptionError,
+    EncryptionResult,
+    KeyGenerationError,
+    KeyType,
+    get_crypto_service,
+)
+
+# Exclusão
+from modules.security_lgpd.services.erasure_service import (
+    DataLocation,
+    ErasureError,
+    ErasureMethod,
+    ErasureRequest,
+    ErasureResult,
+    ErasureScope,
+    ErasureService,
+    ErasureStatus,
+    RetentionReason,
+    get_erasure_service,
+)
+
 # Mascaramento
 from modules.security_lgpd.services.masking_service import (
+    MaskingConfig,
+    MaskingLevel,
+    MaskingRule,
     MaskingService,
     MaskingStrategy,
     PIICategory,
-    MaskingLevel,
-    MaskingRule,
-    MaskingConfig,
     get_masking_service,
     mask_cpf,
     mask_email,
     mask_phone,
     mask_pii_in_text,
-)
-
-# Consentimento
-from modules.security_lgpd.services.consent_service import ConsentService
-
-# Exclusão
-from modules.security_lgpd.services.erasure_service import (
-    ErasureService,
-    ErasureStatus,
-    ErasureMethod,
-    RetentionReason,
-    ErasureScope,
-    ErasureError,
-    DataLocation,
-    ErasureResult,
-    ErasureRequest,
-    get_erasure_service,
 )
 
 # PIA (Privacy Impact Assessment)

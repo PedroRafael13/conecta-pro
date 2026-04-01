@@ -12,11 +12,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-;
 import { toast } from 'sonner';
+import { type DocumentResponse, formatFileSize } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
+import {
+  approveDocumentApiV1GedDocumentsDocumentIdApprovePost,
+  rejectDocumentApiV1GedDocumentsDocumentIdRejectPost,
+} from '@/types/generated/ged/ged-documentos/ged-documentos';
 
 interface DocumentApprovalDialogProps {
-  document: Document | null;
+  document: DocumentResponse | null;
   open: boolean;
   onClose: () => void;
   onApproved?: () => void;
@@ -36,13 +40,14 @@ export function DocumentApprovalDialog({
 
     setLoading(true);
     try {
-      await documentService.approve(document.id);
+      await approveDocumentApiV1GedDocumentsDocumentIdApprovePost(document.id);
       toast.success('Documento aprovado');
       onApproved?.();
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
       toast.error('Erro ao aprovar documento', {
-        description: error.response?.data?.detail || 'Erro desconhecido',
+        description: err.response?.data?.detail || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
@@ -59,13 +64,14 @@ export function DocumentApprovalDialog({
 
     setLoading(true);
     try {
-      await documentService.reject(document.id, rejectionReason);
+      await rejectDocumentApiV1GedDocumentsDocumentIdRejectPost(document.id, { reason: rejectionReason });
       toast.success('Documento rejeitado');
       onApproved?.();
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
       toast.error('Erro ao rejeitar documento', {
-        description: error.response?.data?.detail || 'Erro desconhecido',
+        description: err.response?.data?.detail || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);

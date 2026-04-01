@@ -8,20 +8,16 @@ Author: Claude AI + Human Developer
 Date: 2026-01-17
 """
 
-from typing import Dict, Optional, Any, Tuple
+import logging
+import re
+import ssl
 from dataclasses import dataclass
 from datetime import datetime
-from uuid import UUID, uuid4
-import asyncio
-import logging
-import ssl
-import re
-from xml.etree import ElementTree as ET
-from lxml import etree
 
 import aiohttp
+from lxml import etree
 
-from .contingency import MatrizContingencia, ENDPOINTS_CENTRALIZADOS
+from .contingency import ENDPOINTS_CENTRALIZADOS, MatrizContingencia
 from .credentials.file_credential_provider import get_file_credential_provider
 
 logger = logging.getLogger(__name__)
@@ -36,15 +32,16 @@ NS_NFE_WSDL = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4"
 @dataclass
 class ResultadoTransmissao:
     """Resultado da transmissão para SEFAZ."""
+
     sucesso: bool
     status_code: str
     motivo: str
-    protocolo: Optional[str] = None
-    chave_acesso: Optional[str] = None
-    data_recebimento: Optional[datetime] = None
-    xml_retorno: Optional[str] = None
+    protocolo: str | None = None
+    chave_acesso: str | None = None
+    data_recebimento: datetime | None = None
+    xml_retorno: str | None = None
     tempo_resposta: float = 0.0
-    erro_tecnico: Optional[str] = None
+    erro_tecnico: str | None = None
 
 
 class NFETransmitter:
@@ -75,8 +72,8 @@ class NFETransmitter:
         """
         self.uf = uf.upper()
         self.ambiente = ambiente
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._ssl_context: Optional[ssl.SSLContext] = None
+        self._session: aiohttp.ClientSession | None = None
+        self._ssl_context: ssl.SSLContext | None = None
         self._lote_counter = int(datetime.utcnow().strftime("%y%m%d%H%M%S"))
 
         logger.info(
@@ -125,11 +122,7 @@ class NFETransmitter:
         path = service_paths.get(servico, servico)
         return f"{base_url}/{path}"
 
-    def _criar_envelope_autorizacao(
-        self,
-        xml_nfe_assinado: str,
-        sincrono: bool = True
-    ) -> str:
+    def _criar_envelope_autorizacao(self, xml_nfe_assinado: str, sincrono: bool = True) -> str:
         """
         Cria envelope SOAP 1.2 para autorização de NF-e.
 
@@ -144,33 +137,29 @@ class NFETransmitter:
         ind_sinc = "1" if sincrono else "0"
 
         # Remover declaração XML da NFe assinada (será incluída no envelope)
-        xml_nfe_limpo = re.sub(r'<\?xml[^?]*\?>\s*', '', xml_nfe_assinado)
+        xml_nfe_limpo = re.sub(r"<\?xml[^?]*\?>\s*", "", xml_nfe_assinado)
 
         # Garantir namespace correto na NFe
         if 'xmlns="http://www.portalfiscal.inf.br/nfe"' not in xml_nfe_limpo:
             # Adicionar namespace se não existir
-            xml_nfe_limpo = xml_nfe_limpo.replace(
-                '<NFe',
-                '<NFe xmlns="http://www.portalfiscal.inf.br/nfe"',
-                1
-            )
+            xml_nfe_limpo = xml_nfe_limpo.replace("<NFe", '<NFe xmlns="http://www.portalfiscal.inf.br/nfe"', 1)
 
         # Envelope SOAP 1.2 - formato bare (sem wrapper)
         # nfeDadosMsg vai direto no Body com namespace do WSDL
         envelope = (
             f'<?xml version="1.0" encoding="UTF-8"?>'
             f'<soap12:Envelope xmlns:soap12="{NS_SOAP12}" xmlns:nfea="{NS_NFE_WSDL}">'
-            f'<soap12:Header/>'
-            f'<soap12:Body>'
-            f'<nfea:nfeDadosMsg>'
+            f"<soap12:Header/>"
+            f"<soap12:Body>"
+            f"<nfea:nfeDadosMsg>"
             f'<enviNFe xmlns="{NS_NFE}" versao="{self.VERSION}">'
-            f'<idLote>{id_lote}</idLote>'
-            f'<indSinc>{ind_sinc}</indSinc>'
-            f'{xml_nfe_limpo}'
-            f'</enviNFe>'
-            f'</nfea:nfeDadosMsg>'
-            f'</soap12:Body>'
-            f'</soap12:Envelope>'
+            f"<idLote>{id_lote}</idLote>"
+            f"<indSinc>{ind_sinc}</indSinc>"
+            f"{xml_nfe_limpo}"
+            f"</enviNFe>"
+            f"</nfea:nfeDadosMsg>"
+            f"</soap12:Body>"
+            f"</soap12:Envelope>"
         )
 
         return envelope
@@ -183,16 +172,16 @@ class NFETransmitter:
         envelope = (
             f'<?xml version="1.0" encoding="UTF-8"?>'
             f'<soap12:Envelope xmlns:soap12="{NS_SOAP12}" xmlns:nfer="{wsdl_ns}">'
-            f'<soap12:Header/>'
-            f'<soap12:Body>'
-            f'<nfer:nfeDadosMsg>'
+            f"<soap12:Header/>"
+            f"<soap12:Body>"
+            f"<nfer:nfeDadosMsg>"
             f'<consReciNFe xmlns="{NS_NFE}" versao="{self.VERSION}">'
-            f'<tpAmb>{self.ambiente}</tpAmb>'
-            f'<nRec>{recibo}</nRec>'
-            f'</consReciNFe>'
-            f'</nfer:nfeDadosMsg>'
-            f'</soap12:Body>'
-            f'</soap12:Envelope>'
+            f"<tpAmb>{self.ambiente}</tpAmb>"
+            f"<nRec>{recibo}</nRec>"
+            f"</consReciNFe>"
+            f"</nfer:nfeDadosMsg>"
+            f"</soap12:Body>"
+            f"</soap12:Envelope>"
         )
 
         return envelope
@@ -201,12 +190,33 @@ class NFETransmitter:
         """Cria envelope para consultar status do serviço."""
         # Código UF
         uf_codes = {
-            "AC": "12", "AL": "27", "AM": "13", "AP": "16", "BA": "29",
-            "CE": "23", "DF": "53", "ES": "32", "GO": "52", "MA": "21",
-            "MG": "31", "MS": "50", "MT": "51", "PA": "15", "PB": "25",
-            "PE": "26", "PI": "22", "PR": "41", "RJ": "33", "RN": "24",
-            "RO": "11", "RR": "14", "RS": "43", "SC": "42", "SE": "28",
-            "SP": "35", "TO": "17",
+            "AC": "12",
+            "AL": "27",
+            "AM": "13",
+            "AP": "16",
+            "BA": "29",
+            "CE": "23",
+            "DF": "53",
+            "ES": "32",
+            "GO": "52",
+            "MA": "21",
+            "MG": "31",
+            "MS": "50",
+            "MT": "51",
+            "PA": "15",
+            "PB": "25",
+            "PE": "26",
+            "PI": "22",
+            "PR": "41",
+            "RJ": "33",
+            "RN": "24",
+            "RO": "11",
+            "RR": "14",
+            "RS": "43",
+            "SC": "42",
+            "SE": "28",
+            "SP": "35",
+            "TO": "17",
         }
         cod_uf = uf_codes.get(self.uf, "35")
 
@@ -218,17 +228,17 @@ class NFETransmitter:
         envelope = (
             f'<?xml version="1.0" encoding="UTF-8"?>'
             f'<soap12:Envelope xmlns:soap12="{NS_SOAP12}" xmlns:nfes="{wsdl_ns}">'
-            f'<soap12:Header/>'
-            f'<soap12:Body>'
-            f'<nfes:nfeDadosMsg>'
+            f"<soap12:Header/>"
+            f"<soap12:Body>"
+            f"<nfes:nfeDadosMsg>"
             f'<consStatServ xmlns="{NS_NFE}" versao="{self.VERSION}">'
-            f'<tpAmb>{self.ambiente}</tpAmb>'
-            f'<cUF>{cod_uf}</cUF>'
-            f'<xServ>STATUS</xServ>'
-            f'</consStatServ>'
-            f'</nfes:nfeDadosMsg>'
-            f'</soap12:Body>'
-            f'</soap12:Envelope>'
+            f"<tpAmb>{self.ambiente}</tpAmb>"
+            f"<cUF>{cod_uf}</cUF>"
+            f"<xServ>STATUS</xServ>"
+            f"</consStatServ>"
+            f"</nfes:nfeDadosMsg>"
+            f"</soap12:Body>"
+            f"</soap12:Envelope>"
         )
 
         return envelope
@@ -253,12 +263,7 @@ class NFETransmitter:
 
         return self._session
 
-    async def _fazer_requisicao(
-        self,
-        url: str,
-        envelope: str,
-        soap_action: str
-    ) -> Tuple[int, str]:
+    async def _fazer_requisicao(self, url: str, envelope: str, soap_action: str) -> tuple[int, str]:
         """
         Faz requisição SOAP para SEFAZ.
 
@@ -280,7 +285,7 @@ class NFETransmitter:
         logger.debug(f"Requisição SOAP para: {url}")
         logger.debug(f"SOAP Action: {soap_action}")
 
-        async with session.post(url, data=envelope.encode('utf-8'), headers=headers) as response:
+        async with session.post(url, data=envelope.encode("utf-8"), headers=headers) as response:
             texto = await response.text()
             return response.status, texto
 
@@ -303,7 +308,7 @@ class NFETransmitter:
 
         try:
             # Parse XML
-            root = etree.fromstring(xml_resposta.encode('utf-8'))
+            root = etree.fromstring(xml_resposta.encode("utf-8"))
 
             # Buscar retEnviNFe
             ret_envi = root.find(f".//{{{NS_NFE}}}retEnviNFe")
@@ -329,7 +334,9 @@ class NFETransmitter:
                         if prot_status in ["100", "150"]:
                             resultado.sucesso = True
                             resultado.protocolo = inf_prot.findtext(f"{{{NS_NFE}}}nProt") or inf_prot.findtext("nProt")
-                            resultado.chave_acesso = inf_prot.findtext(f"{{{NS_NFE}}}chNFe") or inf_prot.findtext("chNFe")
+                            resultado.chave_acesso = inf_prot.findtext(f"{{{NS_NFE}}}chNFe") or inf_prot.findtext(
+                                "chNFe"
+                            )
 
                             dh_recbto = inf_prot.findtext(f"{{{NS_NFE}}}dhRecbto") or inf_prot.findtext("dhRecbto")
                             if dh_recbto:
@@ -337,11 +344,15 @@ class NFETransmitter:
                                     resultado.data_recebimento = datetime.fromisoformat(
                                         dh_recbto.replace("Z", "+00:00")
                                     )
-                                except:
-                                    pass
+                                except Exception as e:
+                                    logger.debug(f"Erro ao processar data de recebimento: {e}")
 
                         resultado.status_code = prot_status
-                        resultado.motivo = inf_prot.findtext(f"{{{NS_NFE}}}xMotivo") or inf_prot.findtext("xMotivo") or resultado.motivo
+                        resultado.motivo = (
+                            inf_prot.findtext(f"{{{NS_NFE}}}xMotivo")
+                            or inf_prot.findtext("xMotivo")
+                            or resultado.motivo
+                        )
 
                 # Resposta assíncrona - pode ter apenas recibo
                 recibo = ret_envi.findtext(f".//{{{NS_NFE}}}nRec") or ret_envi.findtext(".//nRec")
@@ -399,7 +410,7 @@ class NFETransmitter:
                 return resultado
 
             # Parse resposta
-            root = etree.fromstring(resposta.encode('utf-8'))
+            root = etree.fromstring(resposta.encode("utf-8"))
             ret = root.find(f".//{{{NS_NFE}}}retConsStatServ")
             if ret is None:
                 ret = root.find(".//retConsStatServ")
@@ -423,11 +434,7 @@ class NFETransmitter:
                 tempo_resposta=(datetime.utcnow() - inicio).total_seconds(),
             )
 
-    async def transmitir(
-        self,
-        xml_nfe_assinado: str,
-        sincrono: bool = True
-    ) -> ResultadoTransmissao:
+    async def transmitir(self, xml_nfe_assinado: str, sincrono: bool = True) -> ResultadoTransmissao:
         """
         Transmite NF-e para SEFAZ.
 
@@ -465,15 +472,9 @@ class NFETransmitter:
             resultado.tempo_resposta = tempo_resposta
 
             if resultado.sucesso:
-                logger.info(
-                    f"NF-e autorizada: chave={resultado.chave_acesso}, "
-                    f"protocolo={resultado.protocolo}"
-                )
+                logger.info(f"NF-e autorizada: chave={resultado.chave_acesso}, protocolo={resultado.protocolo}")
             else:
-                logger.warning(
-                    f"NF-e não autorizada: status={resultado.status_code}, "
-                    f"motivo={resultado.motivo}"
-                )
+                logger.warning(f"NF-e não autorizada: status={resultado.status_code}, motivo={resultado.motivo}")
 
             return resultado
 
@@ -536,7 +537,7 @@ class NFETransmitter:
 
 
 # Singleton
-_nfe_transmitter: Optional[NFETransmitter] = None
+_nfe_transmitter: NFETransmitter | None = None
 
 
 def get_nfe_transmitter(uf: str = "AM", ambiente: str = "2") -> NFETransmitter:

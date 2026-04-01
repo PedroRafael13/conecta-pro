@@ -1,8 +1,6 @@
 """Schemas para operações em batch."""
 
-from datetime import datetime
-from typing import Any, Optional
-from uuid import UUID
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -13,11 +11,11 @@ class BatchOperation(BaseModel):
     id: str = Field(..., description="ID único da operação")
     method: str = Field(..., description="GET, POST, PUT, PATCH, DELETE")
     endpoint: str = Field(..., description="Endpoint da API")
-    data: Optional[dict[str, Any]] = Field(default=None, description="Dados do request")
-    params: Optional[dict[str, Any]] = Field(default=None, description="Query params")
-    headers: Optional[dict[str, str]] = Field(default=None, description="Headers adicionais")
+    data: dict[str, Any] | None = Field(default=None, description="Dados do request")
+    params: dict[str, Any] | None = Field(default=None, description="Query params")
+    headers: dict[str, str] | None = Field(default=None, description="Headers adicionais")
     can_parallelize: bool = Field(default=True, description="Pode executar em paralelo")
-    depends_on: Optional[str] = Field(default=None, description="ID de operação dependente")
+    depends_on: str | None = Field(default=None, description="ID de operação dependente")
     timeout_ms: int = Field(default=30000, description="Timeout em ms")
     retry_on_failure: bool = Field(default=True)
     max_retries: int = Field(default=2, ge=0, le=5)
@@ -56,8 +54,8 @@ class BatchOperationResult(BaseModel):
     id: str = Field(..., description="ID da operação")
     status: str = Field(..., description="success, error, skipped")
     status_code: int = Field(..., description="HTTP status code")
-    data: Optional[dict[str, Any]] = Field(default=None, description="Dados da resposta")
-    error: Optional[str] = Field(default=None, description="Mensagem de erro")
+    data: dict[str, Any] | None = Field(default=None, description="Dados da resposta")
+    error: str | None = Field(default=None, description="Mensagem de erro")
     execution_time_ms: int = Field(..., description="Tempo de execução em ms")
     retries: int = Field(default=0, description="Número de retries")
 
@@ -72,7 +70,7 @@ class BatchResponse(BaseModel):
     success_count: int = Field(..., description="Operações bem sucedidas")
     error_count: int = Field(..., description="Operações com erro")
     skipped_count: int = Field(default=0, description="Operações puladas")
-    transaction_committed: Optional[bool] = Field(
+    transaction_committed: bool | None = Field(
         default=None,
         description="Se transação foi commitada",
     )

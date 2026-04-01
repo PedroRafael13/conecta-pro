@@ -286,8 +286,8 @@ class AllocationRepository:
             return []
 
         # Coletar IDs únicos
-        employee_ids = list(set(str(a.employee_id) for a in allocations if a.employee_id))
-        post_ids = list(set(str(a.post_id) for a in allocations if a.post_id))
+        employee_ids = list({str(a.employee_id) for a in allocations if a.employee_id})
+        post_ids = list({str(a.post_id) for a in allocations if a.post_id})
 
         # Buscar funcionários
         employees_map = {}

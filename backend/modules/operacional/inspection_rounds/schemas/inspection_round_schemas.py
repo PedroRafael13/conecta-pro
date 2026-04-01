@@ -6,11 +6,9 @@ Date: 2026-01-23
 """
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # =============================================================================
 # ENUMS PARA SCHEMAS
@@ -56,35 +54,35 @@ class CheckpointStatusEnum(str):
 class CheckpointCreate(BaseModel):
     """Schema para criacao de checkpoint."""
 
-    post_id: Optional[UUID] = None
-    post_name: Optional[str] = None
-    client_id: Optional[UUID] = None
-    client_name: Optional[str] = None
+    post_id: UUID | None = None
+    post_name: str | None = None
+    client_id: UUID | None = None
+    client_name: str | None = None
     checkpoint_type: str = Field(default="verificacao_posto")
     status: str = Field(default="pendente")
-    employee_id: Optional[UUID] = None
-    employee_name: Optional[str] = None
-    employee_cpf: Optional[str] = None
-    employee_position: Optional[str] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    observations: Optional[str] = None
-    infraction_category: Optional[str] = None
-    infraction_severity: Optional[str] = None
-    photos: Optional[List[dict]] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    employee_id: UUID | None = None
+    employee_name: str | None = None
+    employee_cpf: str | None = None
+    employee_position: str | None = None
+    title: str | None = None
+    description: str | None = None
+    observations: str | None = None
+    infraction_category: str | None = None
+    infraction_severity: str | None = None
+    photos: list[dict] | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class CheckpointUpdate(BaseModel):
     """Schema para atualizacao de checkpoint."""
 
-    status: Optional[str] = None
-    description: Optional[str] = None
-    observations: Optional[str] = None
-    infraction_category: Optional[str] = None
-    infraction_severity: Optional[str] = None
-    photos: Optional[List[dict]] = None
+    status: str | None = None
+    description: str | None = None
+    observations: str | None = None
+    infraction_category: str | None = None
+    infraction_severity: str | None = None
+    photos: list[dict] | None = None
 
 
 class CheckpointResponse(BaseModel):
@@ -94,29 +92,29 @@ class CheckpointResponse(BaseModel):
 
     id: UUID
     inspection_round_id: UUID
-    post_id: Optional[UUID] = None
-    post_name: Optional[str] = None
-    client_id: Optional[UUID] = None
-    client_name: Optional[str] = None
+    post_id: UUID | None = None
+    post_name: str | None = None
+    client_id: UUID | None = None
+    client_name: str | None = None
     checkpoint_type: str
     status: str
-    employee_id: Optional[UUID] = None
-    employee_name: Optional[str] = None
-    employee_cpf: Optional[str] = None
-    employee_position: Optional[str] = None
-    occurrence_id: Optional[UUID] = None
-    occurrence_code: Optional[str] = None
-    disciplinary_action_id: Optional[UUID] = None
-    disciplinary_action_code: Optional[str] = None
-    disciplinary_action_type: Optional[str] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    observations: Optional[str] = None
-    infraction_category: Optional[str] = None
-    infraction_severity: Optional[str] = None
-    photos: Optional[List[dict]] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    employee_id: UUID | None = None
+    employee_name: str | None = None
+    employee_cpf: str | None = None
+    employee_position: str | None = None
+    occurrence_id: UUID | None = None
+    occurrence_code: str | None = None
+    disciplinary_action_id: UUID | None = None
+    disciplinary_action_code: str | None = None
+    disciplinary_action_type: str | None = None
+    title: str | None = None
+    description: str | None = None
+    observations: str | None = None
+    infraction_category: str | None = None
+    infraction_severity: str | None = None
+    photos: list[dict] | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     sequence: int
     created_at: datetime
 
@@ -124,9 +122,9 @@ class CheckpointResponse(BaseModel):
 class CheckpointWithOccurrence(CheckpointResponse):
     """Checkpoint com detalhes da ocorrencia."""
 
-    occurrence_title: Optional[str] = None
-    occurrence_status: Optional[str] = None
-    disciplinary_action_status: Optional[str] = None
+    occurrence_title: str | None = None
+    occurrence_status: str | None = None
+    disciplinary_action_status: str | None = None
 
 
 # =============================================================================
@@ -141,18 +139,18 @@ class InspectionRoundCreate(BaseModel):
     inspector_id: UUID
     inspector_name: str = Field(..., min_length=2, max_length=255)
     inspector_role: str = Field(default="supervisor_operacional")
-    scheduled_date: Optional[datetime] = None
-    posts_to_visit: Optional[List[UUID]] = None
-    observations: Optional[str] = None
+    scheduled_date: datetime | None = None
+    posts_to_visit: list[UUID] | None = None
+    observations: str | None = None
 
 
 class InspectionRoundUpdate(BaseModel):
     """Schema para atualizacao de ronda."""
 
-    scheduled_date: Optional[datetime] = None
-    posts_to_visit: Optional[List[UUID]] = None
-    observations: Optional[str] = None
-    summary: Optional[str] = None
+    scheduled_date: datetime | None = None
+    posts_to_visit: list[UUID] | None = None
+    observations: str | None = None
+    summary: str | None = None
 
 
 class InspectionRoundResponse(BaseModel):
@@ -167,28 +165,28 @@ class InspectionRoundResponse(BaseModel):
     inspector_name: str
     inspector_role: str
     status: str
-    scheduled_date: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    duration_minutes: Optional[int] = None
-    posts_to_visit: Optional[List[str]] = None
-    posts_visited: Optional[List[str]] = None
+    scheduled_date: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    duration_minutes: int | None = None
+    posts_to_visit: list[str] | None = None
+    posts_visited: list[str] | None = None
     total_checkpoints: int
     total_occurrences: int
     total_disciplinary_actions: int
     total_employees_checked: int
-    observations: Optional[str] = None
-    summary: Optional[str] = None
-    start_latitude: Optional[float] = None
-    start_longitude: Optional[float] = None
-    end_latitude: Optional[float] = None
-    end_longitude: Optional[float] = None
-    total_distance_km: Optional[float] = None
+    observations: str | None = None
+    summary: str | None = None
+    start_latitude: float | None = None
+    start_longitude: float | None = None
+    end_latitude: float | None = None
+    end_longitude: float | None = None
+    total_distance_km: float | None = None
     progress_percentage: float = 0.0
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    checkpoints: Optional[List[CheckpointResponse]] = None
+    checkpoints: list[CheckpointResponse] | None = None
 
 
 class InspectionRoundSummary(BaseModel):
@@ -201,9 +199,9 @@ class InspectionRoundSummary(BaseModel):
     inspector_name: str
     inspector_role: str
     status: str
-    scheduled_date: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    scheduled_date: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     total_checkpoints: int
     total_occurrences: int
     total_disciplinary_actions: int
@@ -214,7 +212,7 @@ class InspectionRoundSummary(BaseModel):
 class InspectionRoundListResponse(BaseModel):
     """Resposta paginada de rondas."""
 
-    items: List[InspectionRoundSummary]
+    items: list[InspectionRoundSummary]
     total: int
     page: int
     page_size: int
@@ -224,14 +222,14 @@ class InspectionRoundListResponse(BaseModel):
 class InspectionRoundFilter(BaseModel):
     """Filtros para listagem de rondas."""
 
-    inspector_id: Optional[UUID] = None
-    inspector_role: Optional[str] = None
-    status: Optional[str] = None
-    post_id: Optional[UUID] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    has_occurrences: Optional[bool] = None
-    has_disciplinary_actions: Optional[bool] = None
+    inspector_id: UUID | None = None
+    inspector_role: str | None = None
+    status: str | None = None
+    post_id: UUID | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    has_occurrences: bool | None = None
+    has_disciplinary_actions: bool | None = None
 
 
 # =============================================================================
@@ -242,16 +240,16 @@ class InspectionRoundFilter(BaseModel):
 class StartRoundRequest(BaseModel):
     """Request para iniciar ronda."""
 
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class CompleteRoundRequest(BaseModel):
     """Request para concluir ronda."""
 
-    summary: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    summary: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class RegisterOccurrenceRequest(BaseModel):
@@ -259,10 +257,10 @@ class RegisterOccurrenceRequest(BaseModel):
 
     post_id: UUID
     post_name: str
-    employee_id: Optional[UUID] = None
-    employee_name: Optional[str] = None
-    employee_cpf: Optional[str] = None
-    employee_position: Optional[str] = None
+    employee_id: UUID | None = None
+    employee_name: str | None = None
+    employee_cpf: str | None = None
+    employee_position: str | None = None
 
     # Dados da ocorrencia
     title: str = Field(..., min_length=5, max_length=200)
@@ -273,57 +271,51 @@ class RegisterOccurrenceRequest(BaseModel):
     priority: str = Field(default="normal")
 
     # Localizacao
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    location_description: Optional[str] = None
+    latitude: float | None = None
+    longitude: float | None = None
+    location_description: str | None = None
 
     # Fotos
-    photos: Optional[List[dict]] = None
+    photos: list[dict] | None = None
 
 
 class ApplyDisciplinaryRequest(BaseModel):
     """Request para aplicar medida disciplinar durante ronda."""
 
     # Checkpoint/Ocorrencia de origem
-    checkpoint_id: Optional[UUID] = None
-    occurrence_id: Optional[UUID] = None
+    checkpoint_id: UUID | None = None
+    occurrence_id: UUID | None = None
 
     # Dados do funcionario
     employee_id: UUID
     employee_name: str
     employee_cpf: str
-    employee_position: Optional[str] = None
-    employee_admission_date: Optional[datetime] = None
+    employee_position: str | None = None
+    employee_admission_date: datetime | None = None
 
     # Local
     post_id: UUID
-    client_id: Optional[UUID] = None
+    client_id: UUID | None = None
 
     # Tipo de medida
-    action_type: str = Field(
-        ...,
-        description="advertencia_verbal, advertencia_escrita, suspensao"
-    )
+    action_type: str = Field(..., description="advertencia_verbal, advertencia_escrita, suspensao")
 
     # Motivo
-    reason_category: str = Field(
-        ...,
-        description="falta, atraso, insubordinacao, indisciplina, negligencia, etc"
-    )
+    reason_category: str = Field(..., description="falta, atraso, insubordinacao, indisciplina, negligencia, etc")
     reason_description: str = Field(..., min_length=20)
 
     # Data do incidente
     incident_date: datetime
 
     # Suspensao (se aplicavel)
-    suspension_days: Optional[int] = Field(None, ge=1, le=30)
-    suspension_start_date: Optional[datetime] = None
+    suspension_days: int | None = Field(None, ge=1, le=30)
+    suspension_start_date: datetime | None = None
 
     # Testemunhas
-    witness_1_name: Optional[str] = None
-    witness_1_cpf: Optional[str] = None
-    witness_2_name: Optional[str] = None
-    witness_2_cpf: Optional[str] = None
+    witness_1_name: str | None = None
+    witness_1_cpf: str | None = None
+    witness_2_name: str | None = None
+    witness_2_cpf: str | None = None
 
 
 class RegisterOccurrenceResponse(BaseModel):
@@ -333,14 +325,14 @@ class RegisterOccurrenceResponse(BaseModel):
 
     success: bool = Field(..., description="Se o registro foi bem-sucedido")
     occurrence_id: UUID = Field(..., description="ID da ocorrência criada")
-    checkpoint_id: Optional[UUID] = Field(None, description="ID do checkpoint atualizado")
+    checkpoint_id: UUID | None = Field(None, description="ID do checkpoint atualizado")
     message: str = Field(default="Ocorrência registrada com sucesso")
 
     # Dados da ocorrência criada
-    occurrence_type: Optional[str] = None
-    severity: Optional[str] = None
-    status: Optional[str] = None
-    created_at: Optional[datetime] = None
+    occurrence_type: str | None = None
+    severity: str | None = None
+    status: str | None = None
+    created_at: datetime | None = None
 
 
 class ApplyDisciplinaryResponse(BaseModel):
@@ -350,15 +342,15 @@ class ApplyDisciplinaryResponse(BaseModel):
 
     success: bool = Field(..., description="Se a aplicação foi bem-sucedida")
     disciplinary_action_id: UUID = Field(..., description="ID da medida disciplinar criada")
-    occurrence_id: Optional[UUID] = Field(None, description="ID da ocorrência vinculada")
-    checkpoint_id: Optional[UUID] = Field(None, description="ID do checkpoint vinculado")
+    occurrence_id: UUID | None = Field(None, description="ID da ocorrência vinculada")
+    checkpoint_id: UUID | None = Field(None, description="ID do checkpoint vinculado")
     message: str = Field(default="Medida disciplinar aplicada com sucesso")
 
     # Dados da medida criada
-    action_type: Optional[str] = None
-    status: Optional[str] = None
-    employee_name: Optional[str] = None
-    created_at: Optional[datetime] = None
+    action_type: str | None = None
+    status: str | None = None
+    employee_name: str | None = None
+    created_at: datetime | None = None
 
 
 # =============================================================================
@@ -376,7 +368,7 @@ class InspectorStats(BaseModel):
     total_occurrences: int
     total_disciplinary_actions: int
     avg_duration_minutes: float
-    last_round_date: Optional[datetime] = None
+    last_round_date: datetime | None = None
 
 
 class InspectionDashboardStats(BaseModel):
@@ -404,10 +396,10 @@ class InspectionDashboardStats(BaseModel):
     rounds_this_month: int
 
     # Top inspetores
-    top_inspectors: List[InspectorStats]
+    top_inspectors: list[InspectorStats]
 
     # Postos mais visitados
-    most_visited_posts: List[dict]
+    most_visited_posts: list[dict]
 
     # Categorias de infracoes mais comuns
-    top_infraction_categories: List[dict]
+    top_infraction_categories: list[dict]

@@ -1,15 +1,15 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Users, Search, Plus, Eye, Edit2, ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, Star, Calendar, DollarSign, Clock, CheckCircle, XCircle, Filter, Sparkles, TrendingUp, Phone, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiarists } from '@/hooks/operacional/useDiarists';
-import { DiaristFormModal } from '@/components/operacional/diarist-form-modal';
+const DiaristFormModal = dynamic(() => import('@/components/operacional/diarist-form-modal').then(m => m.DiaristFormModal), { ssr: false });
 import {
   type Diarist,
   type DiaristStatus,
@@ -37,7 +37,8 @@ export default function DiaristasPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const { data: diarists = [], isLoading, error, refetch } = useDiarists();
+  const { data, isLoading, error, refetch } = useDiarists();
+  const diarists: Diarist[] = (data?.items as unknown as Diarist[]) ?? [];
   const total = diarists.length;
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -154,7 +155,7 @@ export default function DiaristasPage() {
                   Fechamento
                 </Button>
               </Link>
-              <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={() => { refetch(); }} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
@@ -269,8 +270,8 @@ export default function DiaristasPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-500" />
-            <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
+            <p className="text-red-500">{error.detail?.map(e => e.msg).join(', ') ?? 'Erro ao carregar diaristas'}</p>
+            <Button variant="outline" size="sm" onClick={() => { refetch(); }} className="ml-auto">
               Tentar novamente
             </Button>
           </div>

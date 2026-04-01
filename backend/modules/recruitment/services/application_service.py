@@ -1,7 +1,6 @@
 """Service para Application."""
 
 import logging
-from typing import Optional, List, Tuple
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,24 +10,24 @@ from modules.recruitment.models.application import (
     ApplicationStatus,
     RejectionReason,
 )
-from modules.recruitment.schemas.application import (
-    ApplicationCreate,
-    ApplicationUpdate,
-    ApplicationFilter,
-    ApplicationAdvance,
-    ApplicationReject,
-    ApplicationProposal,
-    ApplicationHire,
-    ApplicationBulkAction,
-)
 from modules.recruitment.repositories.application_repository import (
     ApplicationRepository,
+)
+from modules.recruitment.repositories.candidate_repository import (
+    CandidateRepository,
 )
 from modules.recruitment.repositories.job_position_repository import (
     JobPositionRepository,
 )
-from modules.recruitment.repositories.candidate_repository import (
-    CandidateRepository,
+from modules.recruitment.schemas.application import (
+    ApplicationAdvance,
+    ApplicationBulkAction,
+    ApplicationCreate,
+    ApplicationFilter,
+    ApplicationHire,
+    ApplicationProposal,
+    ApplicationReject,
+    ApplicationUpdate,
 )
 from modules.recruitment.services.recruitment_ai_service import RecruitmentAIService
 
@@ -57,9 +56,7 @@ class ApplicationService:
             Candidatura criada
         """
         # Verifica se já existe candidatura
-        existing = await self.repository.get_by_candidate_and_position(
-            data.candidate_id, data.job_position_id
-        )
+        existing = await self.repository.get_by_candidate_and_position(data.candidate_id, data.job_position_id)
         if existing:
             raise ValueError("Candidato já se candidatou a esta vaga")
 
@@ -74,7 +71,7 @@ class ApplicationService:
         candidate = await self.candidate_repo.get_by_id(data.candidate_id)
         if not candidate:
             raise ValueError("Candidato não encontrado")
-        if candidate.is_blocked:
+        if candidate.status == "bloqueado":
             raise ValueError("Candidato está bloqueado")
 
         # Cria candidatura
@@ -83,16 +80,10 @@ class ApplicationService:
         # Incrementa contador na vaga
         await self.position_repo.increment_application(data.job_position_id)
 
-        # Incrementa contador no candidato
-        candidate.applications_count += 1
-        candidate.record_activity()
-
         # Calcula score de matching
         try:
-            matching = await self.ai_service.calculate_matching_score(
-                candidate, position
-            )
-            application.matching_score = matching["final_score"]
+            matching = await self.ai_service.calculate_matching_score(candidate, position)
+            application.ai_match_score = matching["final_score"]
         except (ValueError, KeyError, TypeError) as e:
             logger.warning("Erro ao calcular matching: %s", e)
 
@@ -109,19 +100,15 @@ class ApplicationService:
 
         return application
 
-    async def get_by_id(self, application_id: str) -> Optional[Application]:
+    async def get_by_id(self, application_id: str) -> Application | None:
         """Busca candidatura por ID."""
         return await self.repository.get_by_id(application_id)
 
-    async def get_by_id_with_relations(
-        self, application_id: str
-    ) -> Optional[Application]:
+    async def get_by_id_with_relations(self, application_id: str) -> Application | None:
         """Busca candidatura por ID com relacionamentos."""
         return await self.repository.get_by_id_with_relations(application_id)
 
-    async def update(
-        self, application_id: str, data: ApplicationUpdate
-    ) -> Optional[Application]:
+    async def update(self, application_id: str, data: ApplicationUpdate) -> Application | None:
         """
         Atualiza uma candidatura.
 
@@ -159,12 +146,12 @@ class ApplicationService:
 
     async def list_with_filters(
         self,
-        filters: Optional[ApplicationFilter] = None,
+        filters: ApplicationFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "applied_at",
         order_desc: bool = True,
-    ) -> Tuple[List[Application], int]:
+    ) -> tuple[list[Application], int]:
         """
         Lista candidaturas com filtros.
 
@@ -178,9 +165,7 @@ class ApplicationService:
         Returns:
             Tuple com lista de candidaturas e total
         """
-        return await self.repository.list_with_filters(
-            filters, skip, limit, order_by, order_desc
-        )
+        return await self.repository.list_with_filters(filters, skip, limit, order_by, order_desc)
 
     async def get_by_position(
         self,
@@ -188,37 +173,27 @@ class ApplicationService:
         status: ApplicationStatus = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[Application]:
+    ) -> list[Application]:
         """Retorna candidaturas de uma vaga."""
         return await self.repository.get_by_position(position_id, status, skip, limit)
 
-    async def get_by_candidate(
-        self, candidate_id: str, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_by_candidate(self, candidate_id: str, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas de um candidato."""
         return await self.repository.get_by_candidate(candidate_id, skip, limit)
 
-    async def get_active(
-        self, position_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_active(self, position_id: str = None, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas ativas."""
         return await self.repository.get_active(position_id, skip, limit)
 
-    async def get_shortlisted(
-        self, position_id: str, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_shortlisted(self, position_id: str, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas na lista restrita."""
         return await self.repository.get_shortlisted(position_id, skip, limit)
 
-    async def get_favorites(
-        self, position_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_favorites(self, position_id: str = None, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas favoritas."""
         return await self.repository.get_favorites(position_id, skip, limit)
 
-    async def advance_stage(
-        self, application_id: str, data: ApplicationAdvance
-    ) -> Optional[Application]:
+    async def advance_stage(self, application_id: str, data: ApplicationAdvance) -> Application | None:
         """
         Avança candidatura de estágio.
 
@@ -229,9 +204,7 @@ class ApplicationService:
         Returns:
             Candidatura atualizada ou None
         """
-        application = await self.repository.advance_stage(
-            application_id, data.new_status, data.notes
-        )
+        application = await self.repository.advance_stage(application_id, data.new_status, data.notes)
         if application:
             await self.session.commit()
             logger.info(
@@ -243,9 +216,7 @@ class ApplicationService:
             )
         return application
 
-    async def reject(
-        self, application_id: str, data: ApplicationReject
-    ) -> Optional[Application]:
+    async def reject(self, application_id: str, data: ApplicationReject) -> Application | None:
         """
         Rejeita candidatura.
 
@@ -256,9 +227,7 @@ class ApplicationService:
         Returns:
             Candidatura rejeitada ou None
         """
-        application = await self.repository.reject(
-            application_id, data.reason, data.details, data.rejected_by
-        )
+        application = await self.repository.reject(application_id, data.reason, data.details)
         if application:
             await self.session.commit()
             logger.info(
@@ -266,14 +235,11 @@ class ApplicationService:
                 extra={
                     "application_id": str(application.id),
                     "reason": data.reason.value,
-                    "rejected_by": data.rejected_by,
                 },
             )
         return application
 
-    async def send_proposal(
-        self, application_id: str, data: ApplicationProposal
-    ) -> Optional[Application]:
+    async def send_proposal(self, application_id: str, data: ApplicationProposal) -> Application | None:
         """
         Envia proposta ao candidato.
 
@@ -288,27 +254,20 @@ class ApplicationService:
         if not application:
             return None
 
-        application.send_proposal(
-            salary=data.salary,
-            benefits=data.benefits,
-            start_date=data.start_date,
-            details=data.details,
-        )
+        application.send_proposal(amount=data.amount)
         await self.session.commit()
 
         logger.info(
-            f"Proposta enviada: R$ {data.salary}",
+            f"Proposta enviada: R$ {data.amount}",
             extra={
                 "application_id": str(application.id),
-                "salary": data.salary,
+                "salary": data.amount,
             },
         )
 
         return application
 
-    async def accept_proposal(
-        self, application_id: str, start_date: datetime = None
-    ) -> Optional[Application]:
+    async def accept_proposal(self, application_id: str, start_date: datetime = None) -> Application | None:
         """
         Aceita proposta.
 
@@ -324,8 +283,6 @@ class ApplicationService:
             return None
 
         application.accept_proposal()
-        if start_date:
-            application.expected_start_date = start_date
 
         await self.session.commit()
 
@@ -336,9 +293,7 @@ class ApplicationService:
 
         return application
 
-    async def reject_proposal(
-        self, application_id: str, reason: str = None
-    ) -> Optional[Application]:
+    async def reject_proposal(self, application_id: str, reason: str = None) -> Application | None:
         """
         Recusa proposta.
 
@@ -366,9 +321,7 @@ class ApplicationService:
 
         return application
 
-    async def hire(
-        self, application_id: str, data: ApplicationHire
-    ) -> Optional[Application]:
+    async def hire(self, application_id: str, data: ApplicationHire) -> Application | None:
         """
         Contrata candidato.
 
@@ -401,42 +354,28 @@ class ApplicationService:
 
         return application
 
-    async def toggle_favorite(self, application_id: str) -> Optional[Application]:
+    async def toggle_favorite(self, application_id: str) -> Application | None:
         """
         Alterna favorito.
 
-        Args:
-            application_id: ID da candidatura
-
-        Returns:
-            Candidatura atualizada ou None
+        DB nao possui coluna is_favorite — operacao noop, retorna application.
         """
         application = await self.repository.get_by_id(application_id)
         if not application:
             return None
-
-        application.is_favorite = not application.is_favorite
-        await self.session.commit()
-
+        # is_favorite nao existe no banco — noop
         return application
 
-    async def toggle_shortlist(self, application_id: str) -> Optional[Application]:
+    async def toggle_shortlist(self, application_id: str) -> Application | None:
         """
         Alterna lista restrita.
 
-        Args:
-            application_id: ID da candidatura
-
-        Returns:
-            Candidatura atualizada ou None
+        DB nao possui coluna is_shortlisted — operacao noop, retorna application.
         """
         application = await self.repository.get_by_id(application_id)
         if not application:
             return None
-
-        application.is_shortlisted = not application.is_shortlisted
-        await self.session.commit()
-
+        # is_shortlisted nao existe no banco — noop
         return application
 
     async def update_score(
@@ -445,15 +384,18 @@ class ApplicationService:
         interview_score: float = None,
         test_score: float = None,
         reference_score: float = None,
-    ) -> Optional[Application]:
+    ) -> Application | None:
         """
         Atualiza scores da candidatura.
+
+        DB possui apenas rating (int) e ai_match_score (Decimal).
+        Mapeia interview_score -> rating.
 
         Args:
             application_id: ID da candidatura
             interview_score: Score de entrevista
-            test_score: Score de teste
-            reference_score: Score de referência
+            test_score: Score de teste (ignorado — coluna nao existe)
+            reference_score: Score de referência (ignorado — coluna nao existe)
 
         Returns:
             Candidatura atualizada ou None
@@ -463,15 +405,9 @@ class ApplicationService:
             return None
 
         if interview_score is not None:
-            application.interview_score = interview_score
-        if test_score is not None:
-            application.test_score = test_score
-        if reference_score is not None:
-            application.reference_score = reference_score
+            application.rating = int(interview_score)
 
-        # Recalcula score final
-        application.calculate_final_score()
-
+        application.updated_at = datetime.utcnow()
         await self.session.commit()
 
         return application
@@ -480,15 +416,11 @@ class ApplicationService:
         """
         Atualiza ranking das candidaturas de uma vaga.
 
-        Args:
-            position_id: ID da vaga
+        DB nao possui ranking_position — noop.
         """
-        await self.repository.update_ranking(position_id)
-        await self.session.commit()
+        return  # Ordenação via ai_match_score no repositório
 
-    async def bulk_action(
-        self, data: ApplicationBulkAction
-    ) -> Tuple[int, int]:
+    async def bulk_action(self, data: ApplicationBulkAction) -> tuple[int, int]:
         """
         Executa ação em lote.
 
@@ -515,9 +447,8 @@ class ApplicationService:
                     result = await self.advance_stage(app_id, adv_data)
                 elif data.action == "reject":
                     rej_data = ApplicationReject(
-                        reason=data.rejection_reason or RejectionReason.PERFIL_NAO_ADEQUADO,
+                        reason=RejectionReason.PERFIL_INADEQUADO,
                         details=data.notes,
-                        rejected_by=data.action_by,
                     )
                     result = await self.reject(app_id, rej_data)
                 else:
@@ -544,9 +475,7 @@ class ApplicationService:
 
         return success, failed
 
-    async def calculate_matching(
-        self, application_id: str
-    ) -> Optional[dict]:
+    async def calculate_matching(self, application_id: str) -> dict | None:
         """
         Recalcula matching de uma candidatura.
 
@@ -568,7 +497,7 @@ class ApplicationService:
 
         result = await self.ai_service.calculate_matching_score(candidate, position)
 
-        application.matching_score = result["final_score"]
+        application.ai_match_score = result["final_score"]
         await self.session.commit()
 
         return result

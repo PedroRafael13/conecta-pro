@@ -1,7 +1,7 @@
 """Service de Previsao Financeira com IA."""
 
-from decimal import Decimal
 import statistics
+from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
@@ -57,7 +57,7 @@ class ForecastService:
         x_mean = statistics.mean(x_vals)
         y_mean = statistics.mean(values)
 
-        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_vals, values))
+        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_vals, values, strict=False))
         denominator = sum((x - x_mean) ** 2 for x in x_vals)
 
         if denominator == 0:
@@ -67,10 +67,10 @@ class ForecastService:
             intercept = y_mean - slope * x_mean
 
         predictions = [slope * x + intercept for x in x_vals]
-        residuals = [a - p for a, p in zip(values, predictions)]
-        std_error = (sum(r ** 2 for r in residuals) / (n - 2)) ** 0.5 if n > 2 else 0
+        residuals = [a - p for a, p in zip(values, predictions, strict=False)]
+        std_error = (sum(r**2 for r in residuals) / (n - 2)) ** 0.5 if n > 2 else 0
 
-        ss_res = sum(r ** 2 for r in residuals)
+        ss_res = sum(r**2 for r in residuals)
         ss_tot = sum((y - y_mean) ** 2 for y in values)
         r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
 
@@ -99,12 +99,14 @@ class ForecastService:
             x = n + i
             predicted = slope * x + intercept
 
-            forecasts.append({
-                "period": i + 1,
-                "value": Decimal(str(round(predicted, 2))),
-                "lower_bound": Decimal(str(round(predicted - margin, 2))),
-                "upper_bound": Decimal(str(round(predicted + margin, 2))),
-            })
+            forecasts.append(
+                {
+                    "period": i + 1,
+                    "value": Decimal(str(round(predicted, 2))),
+                    "lower_bound": Decimal(str(round(predicted - margin, 2))),
+                    "upper_bound": Decimal(str(round(predicted + margin, 2))),
+                }
+            )
 
             pessimistic.append(Decimal(str(round(predicted * 0.85, 2))))
             realistic.append(Decimal(str(round(predicted, 2))))
@@ -273,19 +275,21 @@ class ForecastService:
         projections = []
         balance = float(opening)
 
-        for i, (inf, out) in enumerate(zip(inflows, outflows)):
+        for i, (inf, out) in enumerate(zip(inflows, outflows, strict=False)):
             inflow, outflow = float(inf), float(out)
             net_flow = inflow - outflow
             balance += net_flow
 
-            projections.append({
-                "period": i + 1,
-                "inflow": Decimal(str(round(inflow, 2))),
-                "outflow": Decimal(str(round(outflow, 2))),
-                "net_flow": Decimal(str(round(net_flow, 2))),
-                "closing_balance": Decimal(str(round(balance, 2))),
-                "is_negative": balance < 0,
-            })
+            projections.append(
+                {
+                    "period": i + 1,
+                    "inflow": Decimal(str(round(inflow, 2))),
+                    "outflow": Decimal(str(round(outflow, 2))),
+                    "net_flow": Decimal(str(round(net_flow, 2))),
+                    "closing_balance": Decimal(str(round(balance, 2))),
+                    "is_negative": balance < 0,
+                }
+            )
 
         return projections
 
@@ -341,13 +345,15 @@ class ForecastService:
                 modified = original * (1 + float(change) / 100)
                 impact = modified - original
 
-                results.append({
-                    "variable": var_name,
-                    "change_percent": change,
-                    "original_value": Decimal(str(original)),
-                    "modified_value": Decimal(str(round(modified, 2))),
-                    "impact": Decimal(str(round(impact, 2))),
-                })
+                results.append(
+                    {
+                        "variable": var_name,
+                        "change_percent": change,
+                        "original_value": Decimal(str(original)),
+                        "modified_value": Decimal(str(round(modified, 2))),
+                        "impact": Decimal(str(round(impact, 2))),
+                    }
+                )
 
         return results
 
@@ -400,9 +406,7 @@ class ForecastService:
 
         return {
             "initial_investment": initial_investment,
-            "payback_period": (
-                Decimal(str(round(payback_period, 2))) if payback_period is not None else None
-            ),
+            "payback_period": (Decimal(str(round(payback_period, 2))) if payback_period is not None else None),
             "recovered": payback_period is not None,
             "total_cash_flows": sum(cash_flows),
             "periods_analyzed": len(cash_flows),

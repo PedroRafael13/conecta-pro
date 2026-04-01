@@ -5,51 +5,51 @@ Schemas Pydantic para validação de dados na API.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from modules.ai.data_quality.models import (
-    RuleTypeEnum,
-    RuleSeverityEnum,
-    RuleStatusEnum,
-    RuleCategoryEnum,
-    CheckStatusEnum,
     CheckScopeEnum,
-    CheckTriggerEnum,
+    CheckStatusEnum,
+    DataTypeEnum,
+    DuplicateStatusEnum,
+    DuplicateTypeEnum,
     IssueSeverityEnum,
     IssueStatusEnum,
     IssueTypeEnum,
-    DuplicateStatusEnum,
-    DuplicateTypeEnum,
     MergeStrategyEnum,
     ProfileStatusEnum,
-    DataTypeEnum,
+    RuleCategoryEnum,
+    RuleSeverityEnum,
+    RuleStatusEnum,
+    RuleTypeEnum,
 )
-
 
 # ============================================================
 # Rule Schemas
 # ============================================================
+
 
 class DataQualityRuleBase(BaseModel):
     """Schema base para regra de qualidade."""
 
     code: str = Field(..., min_length=1, max_length=100)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     rule_type: RuleTypeEnum
     category: RuleCategoryEnum = RuleCategoryEnum.VALIDITY
     severity: RuleSeverityEnum = RuleSeverityEnum.MEDIUM
     entity_type: str = Field(..., min_length=1, max_length=100)
-    field_name: Optional[str] = None
+    field_name: str | None = None
 
     @field_validator("code")
     @classmethod
     def validate_code(cls, v: str) -> str:
         """Valida código da regra."""
         import re
+
         if not re.match(r"^[a-z][a-z0-9_]*$", v):
             raise ValueError("Código deve conter apenas letras minúsculas, números e underscore")
         return v
@@ -58,38 +58,38 @@ class DataQualityRuleBase(BaseModel):
 class DataQualityRuleCreate(DataQualityRuleBase):
     """Schema para criar regra."""
 
-    condition: Optional[str] = None
-    parameters: Dict[str, Any] = Field(default_factory=dict)
-    threshold: Optional[float] = None
-    regex_pattern: Optional[str] = None
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    allowed_values: List[str] = Field(default_factory=list)
+    condition: str | None = None
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    threshold: float | None = None
+    regex_pattern: str | None = None
+    min_value: float | None = None
+    max_value: float | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    allowed_values: list[str] = Field(default_factory=list)
     action_on_violation: str = "flag"
     auto_fix_enabled: bool = False
-    fix_function: Optional[str] = None
-    error_message: Optional[str] = None
+    fix_function: str | None = None
+    error_message: str | None = None
     priority: int = Field(default=50, ge=1, le=100)
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class DataQualityRuleUpdate(BaseModel):
     """Schema para atualizar regra."""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[RuleCategoryEnum] = None
-    severity: Optional[RuleSeverityEnum] = None
-    status: Optional[RuleStatusEnum] = None
-    condition: Optional[str] = None
-    parameters: Optional[Dict[str, Any]] = None
-    threshold: Optional[float] = None
-    auto_fix_enabled: Optional[bool] = None
-    error_message: Optional[str] = None
-    priority: Optional[int] = Field(default=None, ge=1, le=100)
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    category: RuleCategoryEnum | None = None
+    severity: RuleSeverityEnum | None = None
+    status: RuleStatusEnum | None = None
+    condition: str | None = None
+    parameters: dict[str, Any] | None = None
+    threshold: float | None = None
+    auto_fix_enabled: bool | None = None
+    error_message: str | None = None
+    priority: int | None = Field(default=None, ge=1, le=100)
+    is_active: bool | None = None
 
 
 class DataQualityRuleResponse(DataQualityRuleBase):
@@ -102,7 +102,7 @@ class DataQualityRuleResponse(DataQualityRuleBase):
     violation_rate: float
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -112,18 +112,19 @@ class DataQualityRuleResponse(DataQualityRuleBase):
 # Check Schemas
 # ============================================================
 
+
 class DataQualityCheckCreate(BaseModel):
     """Schema para criar verificação."""
 
-    name: Optional[str] = None
+    name: str | None = None
     entity_type: str = Field(..., min_length=1, max_length=100)
     scope: CheckScopeEnum = CheckScopeEnum.FULL
-    entity_ids: List[UUID] = Field(default_factory=list)
-    rule_ids: List[UUID] = Field(default_factory=list)
-    sample_size: Optional[int] = Field(default=None, ge=1)
-    sample_percentage: Optional[float] = Field(default=None, ge=0.1, le=100)
+    entity_ids: list[UUID] = Field(default_factory=list)
+    rule_ids: list[UUID] = Field(default_factory=list)
+    sample_size: int | None = Field(default=None, ge=1)
+    sample_percentage: float | None = Field(default=None, ge=0.1, le=100)
     auto_fix_enabled: bool = False
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
 
 
 class DataQualityCheckResponse(BaseModel):
@@ -131,7 +132,7 @@ class DataQualityCheckResponse(BaseModel):
 
     id: UUID
     check_number: int
-    name: Optional[str] = None
+    name: str | None = None
     status: CheckStatusEnum
     scope: CheckScopeEnum
     entity_type: str
@@ -143,16 +144,16 @@ class DataQualityCheckResponse(BaseModel):
     issues_found: int
     issues_critical: int
     issues_high: int
-    overall_score: Optional[float] = None
-    completeness_score: Optional[float] = None
-    accuracy_score: Optional[float] = None
-    consistency_score: Optional[float] = None
-    validity_score: Optional[float] = None
-    uniqueness_score: Optional[float] = None
+    overall_score: float | None = None
+    completeness_score: float | None = None
+    accuracy_score: float | None = None
+    consistency_score: float | None = None
+    validity_score: float | None = None
+    uniqueness_score: float | None = None
     pass_rate: float
     duration_ms: int
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     created_at: datetime
 
     class Config:
@@ -164,7 +165,7 @@ class DataQualityCheckSummary(BaseModel):
 
     id: UUID
     status: CheckStatusEnum
-    overall_score: Optional[float] = None
+    overall_score: float | None = None
     issues_found: int
     pass_rate: float
     duration_ms: int
@@ -177,30 +178,31 @@ class DataQualityCheckSummary(BaseModel):
 # Issue Schemas
 # ============================================================
 
+
 class DataQualityIssueCreate(BaseModel):
     """Schema para criar issue manualmente."""
 
     issue_type: IssueTypeEnum
     severity: IssueSeverityEnum = IssueSeverityEnum.MEDIUM
     entity_type: str = Field(..., min_length=1, max_length=100)
-    entity_id: Optional[UUID] = None
-    field_name: Optional[str] = None
+    entity_id: UUID | None = None
+    field_name: str | None = None
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    current_value: Optional[str] = None
-    expected_value: Optional[str] = None
-    suggested_value: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    description: str | None = None
+    current_value: str | None = None
+    expected_value: str | None = None
+    suggested_value: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
 
 class DataQualityIssueUpdate(BaseModel):
     """Schema para atualizar issue."""
 
-    status: Optional[IssueStatusEnum] = None
-    severity: Optional[IssueSeverityEnum] = None
-    assigned_to: Optional[UUID] = None
-    resolution_notes: Optional[str] = None
-    tags: Optional[List[str]] = None
+    status: IssueStatusEnum | None = None
+    severity: IssueSeverityEnum | None = None
+    assigned_to: UUID | None = None
+    resolution_notes: str | None = None
+    tags: list[str] | None = None
 
 
 class DataQualityIssueResponse(BaseModel):
@@ -212,18 +214,18 @@ class DataQualityIssueResponse(BaseModel):
     severity: IssueSeverityEnum
     status: IssueStatusEnum
     entity_type: str
-    entity_id: Optional[UUID] = None
-    field_name: Optional[str] = None
+    entity_id: UUID | None = None
+    field_name: str | None = None
     title: str
-    description: Optional[str] = None
-    current_value: Optional[str] = None
-    suggested_value: Optional[str] = None
+    description: str | None = None
+    current_value: str | None = None
+    suggested_value: str | None = None
     can_auto_fix: bool
     occurrence_count: int
     is_open: bool
     is_resolved: bool
-    assigned_to: Optional[UUID] = None
-    resolved_at: Optional[datetime] = None
+    assigned_to: UUID | None = None
+    resolved_at: datetime | None = None
     created_at: datetime
 
     class Config:
@@ -234,30 +236,31 @@ class IssueResolutionRequest(BaseModel):
     """Schema para resolver issue."""
 
     resolution_type: str = Field(..., pattern="^(fixed|ignored|false_positive|wont_fix)$")
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class IssueBulkUpdateRequest(BaseModel):
     """Schema para atualização em lote."""
 
-    issue_ids: List[UUID] = Field(..., min_items=1)
-    status: Optional[IssueStatusEnum] = None
-    assigned_to: Optional[UUID] = None
-    severity: Optional[IssueSeverityEnum] = None
+    issue_ids: list[UUID] = Field(..., min_items=1)
+    status: IssueStatusEnum | None = None
+    assigned_to: UUID | None = None
+    severity: IssueSeverityEnum | None = None
 
 
 # ============================================================
 # Duplicate Schemas
 # ============================================================
 
+
 class DuplicateSearchRequest(BaseModel):
     """Schema para buscar duplicatas."""
 
     entity_type: str = Field(..., min_length=1, max_length=100)
-    fields: List[str] = Field(..., min_items=1)
+    fields: list[str] = Field(..., min_items=1)
     threshold: float = Field(default=80.0, ge=50, le=100)
     limit: int = Field(default=100, ge=1, le=1000)
-    entity_ids: Optional[List[UUID]] = None
+    entity_ids: list[UUID] | None = None
 
 
 class DuplicateRecordResponse(BaseModel):
@@ -268,13 +271,13 @@ class DuplicateRecordResponse(BaseModel):
     status: DuplicateStatusEnum
     duplicate_type: DuplicateTypeEnum
     entity_type: str
-    record_ids: List[str]
+    record_ids: list[str]
     record_count: int
-    master_record_id: Optional[UUID] = None
+    master_record_id: UUID | None = None
     similarity_score: float
     confidence_score: float
-    matching_fields: List[str]
-    conflicting_fields: List[str]
+    matching_fields: list[str]
+    conflicting_fields: list[str]
     can_auto_merge: bool
     is_pending: bool
     created_at: datetime
@@ -288,7 +291,7 @@ class DuplicateMergeRequest(BaseModel):
 
     master_record_id: UUID
     strategy: MergeStrategyEnum = MergeStrategyEnum.KEEP_MOST_COMPLETE
-    field_resolutions: Dict[str, str] = Field(default_factory=dict)
+    field_resolutions: dict[str, str] = Field(default_factory=dict)
 
 
 class DuplicateRejectRequest(BaseModel):
@@ -301,12 +304,13 @@ class DuplicateRejectRequest(BaseModel):
 # Profile Schemas
 # ============================================================
 
+
 class DataProfileRequest(BaseModel):
     """Schema para solicitar profiling."""
 
     entity_type: str = Field(..., min_length=1, max_length=100)
-    field_name: Optional[str] = None
-    sample_size: Optional[int] = Field(default=None, ge=100)
+    field_name: str | None = None
+    sample_size: int | None = Field(default=None, ge=100)
 
 
 class DataProfileResponse(BaseModel):
@@ -316,20 +320,20 @@ class DataProfileResponse(BaseModel):
     profile_code: str
     status: ProfileStatusEnum
     entity_type: str
-    field_name: Optional[str] = None
-    detected_type: Optional[DataTypeEnum] = None
+    field_name: str | None = None
+    detected_type: DataTypeEnum | None = None
     total_records: int
     null_count: int
     null_percentage: float
     distinct_count: int
     distinct_percentage: float
-    completeness_score: Optional[float] = None
-    quality_score: Optional[float] = None
+    completeness_score: float | None = None
+    quality_score: float | None = None
     outlier_count: int
     has_quality_issues: bool
     is_outdated: bool
     duration_ms: int
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     created_at: datetime
 
     class Config:
@@ -346,24 +350,25 @@ class DataProfileStats(BaseModel):
     distinct_percentage: float
     duplicate_count: int
     # Numéricas
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    mean_value: Optional[float] = None
-    median_value: Optional[float] = None
-    std_deviation: Optional[float] = None
-    percentiles: Dict[str, float] = Field(default_factory=dict)
+    min_value: float | None = None
+    max_value: float | None = None
+    mean_value: float | None = None
+    median_value: float | None = None
+    std_deviation: float | None = None
+    percentiles: dict[str, float] = Field(default_factory=dict)
     # String
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    avg_length: Optional[float] = None
-    common_patterns: List[str] = Field(default_factory=list)
+    min_length: int | None = None
+    max_length: int | None = None
+    avg_length: float | None = None
+    common_patterns: list[str] = Field(default_factory=list)
     # Distribuição
-    value_distribution: Dict[str, int] = Field(default_factory=dict)
+    value_distribution: dict[str, int] = Field(default_factory=dict)
 
 
 # ============================================================
 # Dashboard/Analytics Schemas
 # ============================================================
+
 
 class DataQualityDashboard(BaseModel):
     """Schema do dashboard de qualidade."""
@@ -371,11 +376,11 @@ class DataQualityDashboard(BaseModel):
     overall_score: float
     total_records: int
     total_issues: int
-    issues_by_severity: Dict[str, int]
-    issues_by_type: Dict[str, int]
-    top_problematic_fields: List[Dict[str, Any]]
-    quality_trend: List[Dict[str, Any]]
-    recent_checks: List[DataQualityCheckSummary]
+    issues_by_severity: dict[str, int]
+    issues_by_type: dict[str, int]
+    top_problematic_fields: list[dict[str, Any]]
+    quality_trend: list[dict[str, Any]]
+    recent_checks: list[DataQualityCheckSummary]
     duplicate_groups_pending: int
     profiles_outdated: int
 
@@ -389,15 +394,15 @@ class QualityScoreByEntity(BaseModel):
     completeness_score: float
     validity_score: float
     issues_count: int
-    last_check_at: Optional[datetime] = None
+    last_check_at: datetime | None = None
 
 
 class ValidationRequest(BaseModel):
     """Schema para validação de dados."""
 
     entity_type: str = Field(..., min_length=1, max_length=100)
-    data: Dict[str, Any] = Field(..., min_items=1)
-    rule_ids: Optional[List[UUID]] = None
+    data: dict[str, Any] = Field(..., min_items=1)
+    rule_ids: list[UUID] | None = None
     auto_fix: bool = False
 
 
@@ -405,9 +410,9 @@ class ValidationResponse(BaseModel):
     """Schema de resposta de validação."""
 
     is_valid: bool
-    errors: List[Dict[str, Any]]
-    warnings: List[Dict[str, Any]]
-    fixed_data: Optional[Dict[str, Any]] = None
+    errors: list[dict[str, Any]]
+    warnings: list[dict[str, Any]]
+    fixed_data: dict[str, Any] | None = None
     fixes_applied: int = 0
 
 
@@ -415,14 +420,14 @@ class CleansingRequest(BaseModel):
     """Schema para limpeza de dados."""
 
     entity_type: str = Field(..., min_length=1, max_length=100)
-    data: Dict[str, Any] = Field(..., min_items=1)
-    operations: List[str] = Field(default_factory=list)
+    data: dict[str, Any] = Field(..., min_items=1)
+    operations: list[str] = Field(default_factory=list)
 
 
 class CleansingResponse(BaseModel):
     """Schema de resposta de limpeza."""
 
-    original_data: Dict[str, Any]
-    cleaned_data: Dict[str, Any]
-    changes: List[Dict[str, Any]]
+    original_data: dict[str, Any]
+    cleaned_data: dict[str, Any]
+    changes: list[dict[str, Any]]
     changes_count: int

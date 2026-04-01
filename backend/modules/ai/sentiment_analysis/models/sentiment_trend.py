@@ -4,28 +4,25 @@ Sentiment Trend Model - Sprint 46
 Model para rastrear tendencias de sentimento ao longo do tempo.
 """
 
-import enum
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
     Column,
-    String,
-    Text,
+    DateTime,
+    Enum,
     Float,
     Integer,
-    Boolean,
-    DateTime,
-    Date,
-    Enum,
+    String,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class TrendPeriod(str, enum.Enum):
+class TrendPeriod(StrEnum):
     """Periodo de agregacao da tendencia."""
 
     HOURLY = "hourly"
@@ -36,7 +33,7 @@ class TrendPeriod(str, enum.Enum):
     YEARLY = "yearly"
 
 
-class TrendDirection(str, enum.Enum):
+class TrendDirection(StrEnum):
     """Direcao da tendencia."""
 
     IMPROVING = "improving"
@@ -45,7 +42,7 @@ class TrendDirection(str, enum.Enum):
     VOLATILE = "volatile"
 
 
-class TrendCategory(str, enum.Enum):
+class TrendCategory(StrEnum):
     """Categoria da tendencia."""
 
     OVERALL = "overall"
@@ -212,8 +209,8 @@ class SentimentTrend(Base):
 
     def calculate_trend(
         self,
-        previous_score: Optional[float] = None,
-        previous_volume: Optional[int] = None,
+        previous_score: float | None = None,
+        previous_volume: int | None = None,
     ) -> None:
         """Calcula tendencia baseada em periodo anterior."""
         if previous_score is not None:
@@ -244,19 +241,21 @@ class SentimentTrend(Base):
         insight_type: str,
         message: str,
         importance: str = "medium",
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> None:
         """Adiciona insight automatico."""
         if self.insights is None:
             self.insights = []
 
-        self.insights.append({
-            "type": insight_type,
-            "message": message,
-            "importance": importance,
-            "data": data or {},
-            "generated_at": datetime.utcnow().isoformat(),
-        })
+        self.insights.append(
+            {
+                "type": insight_type,
+                "message": message,
+                "importance": importance,
+                "data": data or {},
+                "generated_at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def generate_automatic_insights(self) -> None:
         """Gera insights automaticos baseados nos dados."""
@@ -264,69 +263,85 @@ class SentimentTrend(Base):
 
         # Insight de tendencia
         if self.is_declining and self.score_change_pct < -10:
-            insights_to_add.append({
-                "type": "trend_alert",
-                "message": f"Sentimento em queda de {abs(self.score_change_pct):.1f}% no periodo",
-                "importance": "high",
-            })
+            insights_to_add.append(
+                {
+                    "type": "trend_alert",
+                    "message": f"Sentimento em queda de {abs(self.score_change_pct):.1f}% no periodo",
+                    "importance": "high",
+                }
+            )
 
         # Insight de satisfacao
         if self.satisfaction_rate > 80:
-            insights_to_add.append({
-                "type": "satisfaction",
-                "message": f"Alta taxa de satisfacao: {self.satisfaction_rate:.1f}%",
-                "importance": "low",
-            })
+            insights_to_add.append(
+                {
+                    "type": "satisfaction",
+                    "message": f"Alta taxa de satisfacao: {self.satisfaction_rate:.1f}%",
+                    "importance": "low",
+                }
+            )
         elif self.dissatisfaction_rate > 30:
-            insights_to_add.append({
-                "type": "dissatisfaction_alert",
-                "message": f"Taxa de insatisfacao elevada: {self.dissatisfaction_rate:.1f}%",
-                "importance": "high",
-            })
+            insights_to_add.append(
+                {
+                    "type": "dissatisfaction_alert",
+                    "message": f"Taxa de insatisfacao elevada: {self.dissatisfaction_rate:.1f}%",
+                    "importance": "high",
+                }
+            )
 
         # Insight de reclamacoes
         if self.complaints_rate > 10:
-            insights_to_add.append({
-                "type": "complaints_alert",
-                "message": f"Taxa de reclamacoes acima do normal: {self.complaints_rate:.1f}%",
-                "importance": "high",
-            })
+            insights_to_add.append(
+                {
+                    "type": "complaints_alert",
+                    "message": f"Taxa de reclamacoes acima do normal: {self.complaints_rate:.1f}%",
+                    "importance": "high",
+                }
+            )
 
         # Insight de volume
         if self.volume_change_pct > 50:
-            insights_to_add.append({
-                "type": "volume_spike",
-                "message": f"Aumento de {self.volume_change_pct:.1f}% no volume de feedback",
-                "importance": "medium",
-            })
+            insights_to_add.append(
+                {
+                    "type": "volume_spike",
+                    "message": f"Aumento de {self.volume_change_pct:.1f}% no volume de feedback",
+                    "importance": "medium",
+                }
+            )
 
         # Insight de NPS
         if self.nps_score is not None:
             if self.nps_score >= 50:
-                insights_to_add.append({
-                    "type": "nps_excellent",
-                    "message": f"NPS excelente: {self.nps_score:.0f}",
-                    "importance": "low",
-                })
+                insights_to_add.append(
+                    {
+                        "type": "nps_excellent",
+                        "message": f"NPS excelente: {self.nps_score:.0f}",
+                        "importance": "low",
+                    }
+                )
             elif self.nps_score < 0:
-                insights_to_add.append({
-                    "type": "nps_critical",
-                    "message": f"NPS critico: {self.nps_score:.0f} (negativo)",
-                    "importance": "high",
-                })
+                insights_to_add.append(
+                    {
+                        "type": "nps_critical",
+                        "message": f"NPS critico: {self.nps_score:.0f} (negativo)",
+                        "importance": "high",
+                    }
+                )
 
         # Insight de risco de churn
         if self.churn_risk_count > 0:
-            insights_to_add.append({
-                "type": "churn_risk",
-                "message": f"{self.churn_risk_count} clientes com risco de churn identificados",
-                "importance": "high",
-            })
+            insights_to_add.append(
+                {
+                    "type": "churn_risk",
+                    "message": f"{self.churn_risk_count} clientes com risco de churn identificados",
+                    "importance": "high",
+                }
+            )
 
         for insight in insights_to_add:
             self.add_insight(**insight)
 
-    def to_summary(self) -> Dict[str, Any]:
+    def to_summary(self) -> dict[str, Any]:
         """Retorna resumo da tendencia."""
         return {
             "period": self.period_label,

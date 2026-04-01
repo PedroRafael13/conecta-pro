@@ -4,7 +4,6 @@ Sprint 35 - Task Scheduler.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -22,21 +21,21 @@ class TaskCreate(BaseModel):
     """Schema para criar tarefa."""
 
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     task_type: TaskType = TaskType.CRON
     category: TaskCategory = TaskCategory.CUSTOM
 
     # Agendamento
-    cron_expression: Optional[str] = Field(None, description="Ex: '0 0 * * *'")
-    interval_seconds: Optional[int] = Field(None, ge=1)
-    scheduled_at: Optional[datetime] = None
+    cron_expression: str | None = Field(None, description="Ex: '0 0 * * *'")
+    interval_seconds: int | None = Field(None, ge=1)
+    scheduled_at: datetime | None = None
     timezone: str = "America/Sao_Paulo"
 
     # Handler
     handler: str = Field(..., min_length=1, max_length=200)
-    handler_module: Optional[str] = None
-    handler_args: Optional[dict] = None
-    handler_kwargs: Optional[dict] = None
+    handler_module: str | None = None
+    handler_args: dict | None = None
+    handler_kwargs: dict | None = None
 
     # Configuração
     timeout_seconds: int = Field(3600, ge=1, le=86400)
@@ -52,38 +51,38 @@ class TaskCreate(BaseModel):
     # Notificações
     notify_on_success: bool = False
     notify_on_failure: bool = True
-    notify_emails: Optional[list[str]] = None
-    notify_webhook: Optional[str] = None
+    notify_emails: list[str] | None = None
+    notify_webhook: str | None = None
 
     # Metadados
-    tags: Optional[list[str]] = None
-    extra_data: Optional[dict] = None
+    tags: list[str] | None = None
+    extra_data: dict | None = None
 
 
 class TaskUpdate(BaseModel):
     """Schema para atualizar tarefa."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    status: Optional[TaskStatus] = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    status: TaskStatus | None = None
 
-    cron_expression: Optional[str] = None
-    interval_seconds: Optional[int] = Field(None, ge=1)
-    timezone: Optional[str] = None
+    cron_expression: str | None = None
+    interval_seconds: int | None = Field(None, ge=1)
+    timezone: str | None = None
 
-    handler_args: Optional[dict] = None
-    handler_kwargs: Optional[dict] = None
+    handler_args: dict | None = None
+    handler_kwargs: dict | None = None
 
-    timeout_seconds: Optional[int] = Field(None, ge=1, le=86400)
-    max_retries: Optional[int] = Field(None, ge=0, le=10)
-    priority: Optional[int] = Field(None, ge=1, le=10)
+    timeout_seconds: int | None = Field(None, ge=1, le=86400)
+    max_retries: int | None = Field(None, ge=0, le=10)
+    priority: int | None = Field(None, ge=1, le=10)
 
-    notify_on_success: Optional[bool] = None
-    notify_on_failure: Optional[bool] = None
-    notify_emails: Optional[list[str]] = None
+    notify_on_success: bool | None = None
+    notify_on_failure: bool | None = None
+    notify_emails: list[str] | None = None
 
-    tags: Optional[list[str]] = None
-    extra_data: Optional[dict] = None
+    tags: list[str] | None = None
+    extra_data: dict | None = None
 
 
 class TaskResponse(BaseModel):
@@ -93,16 +92,16 @@ class TaskResponse(BaseModel):
     tenant_id: UUID
     name: str
     slug: str
-    description: Optional[str] = None
+    description: str | None = None
     task_type: TaskType
     category: TaskCategory
     status: TaskStatus
-    cron_expression: Optional[str] = None
-    interval_seconds: Optional[int] = None
-    scheduled_at: Optional[datetime] = None
+    cron_expression: str | None = None
+    interval_seconds: int | None = None
+    scheduled_at: datetime | None = None
     timezone: str
     handler: str
-    handler_module: Optional[str] = None
+    handler_module: str | None = None
     timeout_seconds: int
     max_retries: int
     priority: int
@@ -111,14 +110,14 @@ class TaskResponse(BaseModel):
     total_executions: int
     successful_executions: int
     failed_executions: int
-    success_rate: Optional[float] = None
-    avg_duration_seconds: Optional[float] = None
-    last_run_at: Optional[datetime] = None
-    next_run_at: Optional[datetime] = None
-    tags: Optional[list[str]] = None
+    success_rate: float | None = None
+    avg_duration_seconds: float | None = None
+    last_run_at: datetime | None = None
+    next_run_at: datetime | None = None
+    tags: list[str] | None = None
     active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         """Config."""
@@ -156,20 +155,20 @@ class ExecutionResponse(BaseModel):
     execution_number: int
     run_id: str
     status: ExecutionStatus
-    worker_hostname: Optional[str] = None
-    scheduled_at: Optional[datetime] = None
-    queued_at: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    duration_seconds: Optional[float] = None
+    worker_hostname: str | None = None
+    scheduled_at: datetime | None = None
+    queued_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    duration_seconds: float | None = None
     attempt_number: int
     progress_percent: float
-    progress_message: Optional[str] = None
-    output_result: Optional[dict] = None
-    error_type: Optional[str] = None
-    error_message: Optional[str] = None
-    trigger_type: Optional[str] = None
-    triggered_by: Optional[UUID] = None
+    progress_message: str | None = None
+    output_result: dict | None = None
+    error_type: str | None = None
+    error_message: str | None = None
+    trigger_type: str | None = None
+    triggered_by: UUID | None = None
     created_at: datetime
 
     class Config:
@@ -186,7 +185,7 @@ class ExecutionLogResponse(BaseModel):
     timestamp: datetime
     level: str
     message: str
-    context: Optional[dict] = None
+    context: dict | None = None
 
     class Config:
         """Config."""
@@ -214,14 +213,14 @@ class QueueItemCreate(BaseModel):
     payload: dict = Field(default_factory=dict)
     queue_name: str = "default"
     priority: QueuePriority = QueuePriority.NORMAL
-    scheduled_at: Optional[datetime] = None
-    not_after: Optional[datetime] = None
+    scheduled_at: datetime | None = None
+    not_after: datetime | None = None
     timeout_seconds: int = Field(3600, ge=1)
     max_attempts: int = Field(3, ge=1, le=10)
-    deduplication_id: Optional[str] = None
-    group_id: Optional[str] = None
-    correlation_id: Optional[str] = None
-    extra_data: Optional[dict] = None
+    deduplication_id: str | None = None
+    group_id: str | None = None
+    correlation_id: str | None = None
+    extra_data: dict | None = None
 
 
 class QueueItemResponse(BaseModel):
@@ -231,22 +230,22 @@ class QueueItemResponse(BaseModel):
     tenant_id: UUID
     queue_name: str
     message_id: str
-    task_id: Optional[UUID] = None
-    execution_id: Optional[UUID] = None
+    task_id: UUID | None = None
+    execution_id: UUID | None = None
     status: QueueStatus
     priority: QueuePriority
     handler: str
     payload: dict
-    scheduled_at: Optional[datetime] = None
+    scheduled_at: datetime | None = None
     attempt: int
     max_attempts: int
     enqueued_at: datetime
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    processing_time_ms: Optional[int] = None
-    error_message: Optional[str] = None
-    group_id: Optional[str] = None
-    correlation_id: Optional[str] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    processing_time_ms: int | None = None
+    error_message: str | None = None
+    group_id: str | None = None
+    correlation_id: str | None = None
 
     class Config:
         """Config."""
@@ -259,7 +258,7 @@ class QueueStatsResponse(BaseModel):
 
     queue_name: str
     by_status: dict
-    oldest_pending_at: Optional[datetime] = None
+    oldest_pending_at: datetime | None = None
     oldest_pending_age_seconds: float
 
 
@@ -273,8 +272,8 @@ class WorkerResponse(BaseModel):
     name: str
     worker_id: str
     hostname: str
-    ip_address: Optional[str] = None
-    pid: Optional[int] = None
+    ip_address: str | None = None
+    pid: int | None = None
     status: WorkerStatus
     queues: list[str]
     concurrency: int
@@ -282,14 +281,14 @@ class WorkerResponse(BaseModel):
     total_tasks_processed: int
     tasks_succeeded: int
     tasks_failed: int
-    success_rate: Optional[float] = None
+    success_rate: float | None = None
     utilization_percent: float
-    cpu_percent: Optional[float] = None
-    memory_percent: Optional[float] = None
-    last_heartbeat_at: Optional[datetime] = None
-    last_task_at: Optional[datetime] = None
-    version: Optional[str] = None
-    started_at: Optional[datetime] = None
+    cpu_percent: float | None = None
+    memory_percent: float | None = None
+    last_heartbeat_at: datetime | None = None
+    last_task_at: datetime | None = None
+    version: str | None = None
+    started_at: datetime | None = None
     active: bool
 
     class Config:
@@ -318,10 +317,10 @@ class LockCreate(BaseModel):
     """Schema para criar lock."""
 
     lock_key: str = Field(..., min_length=1, max_length=500)
-    lock_name: Optional[str] = None
+    lock_name: str | None = None
     ttl_seconds: int = Field(3600, ge=1, le=86400)
-    reason: Optional[str] = None
-    extra_data: Optional[dict] = None
+    reason: str | None = None
+    extra_data: dict | None = None
 
 
 class LockResponse(BaseModel):
@@ -330,16 +329,16 @@ class LockResponse(BaseModel):
     id: UUID
     tenant_id: UUID
     lock_key: str
-    lock_name: Optional[str] = None
+    lock_name: str | None = None
     status: LockStatus
     owner_id: str
-    owner_hostname: Optional[str] = None
+    owner_hostname: str | None = None
     acquired_at: datetime
     expires_at: datetime
     ttl_seconds: int
-    remaining_seconds: Optional[int] = None
+    remaining_seconds: int | None = None
     renew_count: int
-    reason: Optional[str] = None
+    reason: str | None = None
 
     class Config:
         """Config."""
@@ -353,10 +352,10 @@ class LockResponse(BaseModel):
 class TriggerTaskRequest(BaseModel):
     """Schema para disparar tarefa manualmente."""
 
-    override_args: Optional[dict] = None
-    override_kwargs: Optional[dict] = None
-    priority: Optional[int] = Field(None, ge=1, le=10)
-    queue_name: Optional[str] = None
+    override_args: dict | None = None
+    override_kwargs: dict | None = None
+    priority: int | None = Field(None, ge=1, le=10)
+    queue_name: str | None = None
 
 
 class TriggerTaskResponse(BaseModel):

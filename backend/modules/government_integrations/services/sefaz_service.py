@@ -3,16 +3,13 @@ Service para integrações com SEFAZ (NFe/NFCe).
 """
 
 import logging
-import sys
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-
-
+from typing import Any
 
 # Imports relativos do módulo pai
 from modules.government_integrations.utils import (
-    get_sefaz_manager,
     DocumentType,
+    get_sefaz_manager,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,11 +21,11 @@ class SEFAZService:
     @staticmethod
     def emitir_nfe(
         tipo: str,
-        destinatario: Dict[str, Any],
-        produtos: List[Dict[str, Any]],
-        pagamento: Dict[str, Any],
-        observacoes: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        destinatario: dict[str, Any],
+        produtos: list[dict[str, Any]],
+        pagamento: dict[str, Any],
+        observacoes: str | None = None,
+    ) -> dict[str, Any]:
         """
         Emite NFe ou NFCe.
 
@@ -73,7 +70,7 @@ class SEFAZService:
         }
 
     @staticmethod
-    def consultar_nfe(chave_acesso: str) -> Dict[str, Any]:
+    def consultar_nfe(chave_acesso: str) -> dict[str, Any]:
         """
         Consulta NFe pela chave de acesso.
 

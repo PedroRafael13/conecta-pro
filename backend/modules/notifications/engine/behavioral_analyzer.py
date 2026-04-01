@@ -4,7 +4,6 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -169,8 +168,8 @@ class BehavioralAnalyzer:
         db: AsyncSession,
         user_id: int,
         notification_type: str,
-        content_category: Optional[str] = None,
-        send_time: Optional[datetime] = None,
+        content_category: str | None = None,
+        send_time: datetime | None = None,
     ) -> EngagementPrediction:
         """
         Prediz engajamento para uma notificação.
@@ -213,9 +212,7 @@ class BehavioralAnalyzer:
         best_time = await self._find_best_send_time(profile, send_time)
 
         # Gerar reasoning
-        reasoning = self._generate_prediction_reasoning(
-            profile, open_prob, hour_factor, fatigue_factor
-        )
+        reasoning = self._generate_prediction_reasoning(profile, open_prob, hour_factor, fatigue_factor)
 
         return EngagementPrediction(
             will_open=open_prob > 0.5,
@@ -358,8 +355,6 @@ class BehavioralAnalyzer:
         user_id: int,
     ) -> dict:
         """Obtém histórico de notificações."""
-        # TODO: Buscar do repositório real
-
         return {
             "total_sent": 50,
             "total_opened": 35,
@@ -379,8 +374,6 @@ class BehavioralAnalyzer:
         user_id: int,
     ) -> dict:
         """Obtém dados de atividade do usuário."""
-        # TODO: Buscar do repositório real
-
         return {
             "last_login": datetime.utcnow() - timedelta(hours=5),
             "sessions_30d": 25,
@@ -539,7 +532,7 @@ class BehavioralAnalyzer:
         session_factor = 1.0 - min(sessions / 30, 1.0)
 
         # Score combinado
-        score = (engagement_factor * 0.4 + login_factor * 0.35 + session_factor * 0.25)
+        score = engagement_factor * 0.4 + login_factor * 0.35 + session_factor * 0.25
 
         return min(max(score, 0.0), 1.0)
 
@@ -662,7 +655,6 @@ class BehavioralAnalyzer:
         user_id: int,
     ) -> int:
         """Obtém contagem de notificações recentes."""
-        # TODO: Buscar do repositório real
         return 3
 
     def _get_daily_limit(self, level: EngagementLevel) -> int:

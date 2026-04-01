@@ -5,27 +5,26 @@ e outras ocorrências relacionadas ao ponto eletrônico.
 """
 
 import uuid
-from datetime import datetime, date, time, timedelta
-from enum import Enum
-from typing import Optional, List
+from datetime import date, datetime, time, timedelta
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
-    DateTime,
     Date,
-    Time,
+    DateTime,
+    Index,
     Integer,
     String,
     Text,
-    Index,
+    Time,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
 
 
-class JustificationType(str, Enum):
+class JustificationType(StrEnum):
     """Tipo de justificativa."""
 
     ATRASO = "atraso"
@@ -54,7 +53,7 @@ class JustificationType(str, Enum):
     OUTRO = "outro"
 
 
-class JustificationStatus(str, Enum):
+class JustificationStatus(StrEnum):
     """Status da justificativa."""
 
     RASCUNHO = "rascunho"
@@ -67,7 +66,7 @@ class JustificationStatus(str, Enum):
     EXPIRADA = "expirada"
 
 
-class JustificationCategory(str, Enum):
+class JustificationCategory(StrEnum):
     """Categoria da justificativa."""
 
     PESSOAL = "pessoal"
@@ -88,34 +87,26 @@ class TimeJustification(Base):
     __tablename__ = "time_justifications"
 
     # Identificação
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     code: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
 
     # Funcionário
     employee_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     employee_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    employee_registration: Mapped[Optional[str]] = mapped_column(String(50))
-    department_id: Mapped[Optional[str]] = mapped_column(String(50))
-    department_name: Mapped[Optional[str]] = mapped_column(String(100))
+    employee_registration: Mapped[str | None] = mapped_column(String(50))
+    department_id: Mapped[str | None] = mapped_column(String(50))
+    department_name: Mapped[str | None] = mapped_column(String(100))
 
     # Tipo e status
-    justification_type: Mapped[JustificationType] = mapped_column(
-        String(40), default=JustificationType.OUTRO
-    )
-    category: Mapped[JustificationCategory] = mapped_column(
-        String(20), default=JustificationCategory.PESSOAL
-    )
-    status: Mapped[JustificationStatus] = mapped_column(
-        String(20), default=JustificationStatus.PENDENTE
-    )
+    justification_type: Mapped[JustificationType] = mapped_column(String(40), default=JustificationType.OUTRO)
+    category: Mapped[JustificationCategory] = mapped_column(String(20), default=JustificationCategory.PESSOAL)
+    status: Mapped[JustificationStatus] = mapped_column(String(20), default=JustificationStatus.PENDENTE)
 
     # Período
     start_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
-    start_time: Mapped[Optional[time]] = mapped_column(Time)
-    end_time: Mapped[Optional[time]] = mapped_column(Time)
+    start_time: Mapped[time | None] = mapped_column(Time)
+    end_time: Mapped[time | None] = mapped_column(Time)
     is_full_day: Mapped[bool] = mapped_column(Boolean, default=True)
     days_count: Mapped[int] = mapped_column(Integer, default=1)
     hours_count: Mapped[int] = mapped_column(Integer, default=0)  # Em minutos
@@ -123,62 +114,60 @@ class TimeJustification(Base):
 
     # Descrição
     title: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
-    detailed_reason: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
+    detailed_reason: Mapped[str | None] = mapped_column(Text)
 
     # Documentos anexos
     has_attachments: Mapped[bool] = mapped_column(Boolean, default=False)
-    attachments: Mapped[Optional[List[dict]]] = mapped_column(JSONB, default=list)
+    attachments: Mapped[list[dict] | None] = mapped_column(JSONB, default=list)
     # Formato: [{"name": "atestado.pdf", "url": "...", "type": "application/pdf", "size": 12345}]
 
     # CID (para atestados médicos)
-    cid_code: Mapped[Optional[str]] = mapped_column(String(10))
-    cid_description: Mapped[Optional[str]] = mapped_column(String(200))
-    medical_certificate_number: Mapped[Optional[str]] = mapped_column(String(50))
-    doctor_name: Mapped[Optional[str]] = mapped_column(String(200))
-    doctor_crm: Mapped[Optional[str]] = mapped_column(String(20))
-    clinic_name: Mapped[Optional[str]] = mapped_column(String(200))
+    cid_code: Mapped[str | None] = mapped_column(String(10))
+    cid_description: Mapped[str | None] = mapped_column(String(200))
+    medical_certificate_number: Mapped[str | None] = mapped_column(String(50))
+    doctor_name: Mapped[str | None] = mapped_column(String(200))
+    doctor_crm: Mapped[str | None] = mapped_column(String(20))
+    clinic_name: Mapped[str | None] = mapped_column(String(200))
 
     # Registros de ponto vinculados
-    time_entry_ids: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
+    time_entry_ids: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
 
     # Análise
-    analyzed_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    analyzed_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    analyzed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    analyzed_by_id: Mapped[str | None] = mapped_column(String(50))
+    analyzed_by_name: Mapped[str | None] = mapped_column(String(200))
+    analyzed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Aprovação
     requires_approval: Mapped[bool] = mapped_column(Boolean, default=True)
-    approved_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    approved_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    approval_notes: Mapped[Optional[str]] = mapped_column(Text)
+    approved_by_id: Mapped[str | None] = mapped_column(String(50))
+    approved_by_name: Mapped[str | None] = mapped_column(String(200))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    approval_notes: Mapped[str | None] = mapped_column(Text)
 
     # Aprovação em níveis
     approval_level: Mapped[int] = mapped_column(Integer, default=1)
     max_approval_level: Mapped[int] = mapped_column(Integer, default=1)
     # Formato: [{"level": 1, "approver_id": "...", "approver_name": "...",
     #            "status": "approved", "at": "..."}]
-    approval_history: Mapped[Optional[List[dict]]] = mapped_column(JSONB, default=list)
+    approval_history: Mapped[list[dict] | None] = mapped_column(JSONB, default=list)
 
     # Rejeição
-    rejected_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    rejected_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    rejected_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    rejection_reason: Mapped[Optional[str]] = mapped_column(Text)
+    rejected_by_id: Mapped[str | None] = mapped_column(String(50))
+    rejected_by_name: Mapped[str | None] = mapped_column(String(200))
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime)
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
 
     # Aprovação parcial
-    partial_approved_days: Mapped[Optional[int]] = mapped_column(Integer)
-    partial_approved_minutes: Mapped[Optional[int]] = mapped_column(Integer)
-    partial_approval_notes: Mapped[Optional[str]] = mapped_column(Text)
+    partial_approved_days: Mapped[int | None] = mapped_column(Integer)
+    partial_approved_minutes: Mapped[int | None] = mapped_column(Integer)
+    partial_approval_notes: Mapped[str | None] = mapped_column(Text)
 
     # Recorrência (para justificativas que se repetem)
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=False)
-    recurrence_pattern: Mapped[Optional[str]] = mapped_column(String(50))
-    recurrence_end_date: Mapped[Optional[date]] = mapped_column(Date)
-    parent_justification_id: Mapped[Optional[str]] = mapped_column(String(50))
+    recurrence_pattern: Mapped[str | None] = mapped_column(String(50))
+    recurrence_end_date: Mapped[date | None] = mapped_column(Date)
+    parent_justification_id: Mapped[str | None] = mapped_column(String(50))
 
     # Abono
     grants_paid_leave: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -186,38 +175,36 @@ class TimeJustification(Base):
     deducts_from_vacation: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Prazo
-    deadline_for_submission: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    deadline_for_submission: Mapped[datetime | None] = mapped_column(DateTime)
     is_late_submission: Mapped[bool] = mapped_column(Boolean, default=False)
     late_submission_days: Mapped[int] = mapped_column(Integer, default=0)
 
     # Verificação (para RH)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    verified_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    verified_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    verification_notes: Mapped[Optional[str]] = mapped_column(Text)
+    verified_by_id: Mapped[str | None] = mapped_column(String(50))
+    verified_by_name: Mapped[str | None] = mapped_column(String(200))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    verification_notes: Mapped[str | None] = mapped_column(Text)
 
     # Jornada
-    work_schedule_id: Mapped[Optional[str]] = mapped_column(String(50))
+    work_schedule_id: Mapped[str | None] = mapped_column(String(50))
 
     # Local
-    condominium_id: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    condominium_name: Mapped[Optional[str]] = mapped_column(String(200))
+    condominium_id: Mapped[str | None] = mapped_column(String(50), index=True)
+    condominium_name: Mapped[str | None] = mapped_column(String(200))
 
     # Observações e metadados
-    notes: Mapped[Optional[str]] = mapped_column(Text)
-    internal_notes: Mapped[Optional[str]] = mapped_column(Text)
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    notes: Mapped[str | None] = mapped_column(Text)
+    internal_notes: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[list | None] = mapped_column(JSONB, default=list)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Controle
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    created_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id: Mapped[str | None] = mapped_column(String(50))
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Índices
     __table_args__ = (
@@ -299,9 +286,7 @@ class TimeJustification(Base):
             return
 
         # Prazo padrão: 48h após a ocorrência
-        deadline = datetime.combine(
-            self.start_date, time(23, 59)
-        ) + timedelta(hours=48)
+        deadline = datetime.combine(self.start_date, time(23, 59)) + timedelta(hours=48)
 
         self.deadline_for_submission = deadline
 
@@ -355,14 +340,16 @@ class TimeJustification(Base):
         if not self.approval_history:
             self.approval_history = []
 
-        self.approval_history.append({
-            "level": self.approval_level,
-            "approver_id": approved_by_id,
-            "approver_name": approved_by_name,
-            "status": "approved",
-            "notes": notes,
-            "at": datetime.utcnow().isoformat(),
-        })
+        self.approval_history.append(
+            {
+                "level": self.approval_level,
+                "approver_id": approved_by_id,
+                "approver_name": approved_by_name,
+                "status": "approved",
+                "notes": notes,
+                "at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def approve_partial(
         self,
@@ -451,13 +438,15 @@ class TimeJustification(Base):
         if not self.attachments:
             self.attachments = []
 
-        self.attachments.append({
-            "name": name,
-            "url": url,
-            "type": file_type,
-            "size": size,
-            "uploaded_at": datetime.utcnow().isoformat(),
-        })
+        self.attachments.append(
+            {
+                "name": name,
+                "url": url,
+                "type": file_type,
+                "size": size,
+                "uploaded_at": datetime.utcnow().isoformat(),
+            }
+        )
         self.has_attachments = True
 
     def set_medical_info(
@@ -486,7 +475,7 @@ class TimeJustification(Base):
         self.doctor_crm = doctor_crm
         self.clinic_name = clinic_name
 
-    def link_time_entries(self, entry_ids: List[str]) -> None:
+    def link_time_entries(self, entry_ids: list[str]) -> None:
         """Vincula registros de ponto.
 
         Args:
@@ -548,7 +537,7 @@ class TimeJustification(Base):
         if self.start_date == self.end_date:
             if self.is_full_day:
                 return self.start_date.strftime("%d/%m/%Y")
-            start_str = self.start_date.strftime('%d/%m/%Y')
+            start_str = self.start_date.strftime("%d/%m/%Y")
             time_str = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
             return f"{start_str} {time_str}"
         return f"{self.start_date.strftime('%d/%m/%Y')} a {self.end_date.strftime('%d/%m/%Y')}"
@@ -601,7 +590,4 @@ class TimeJustification(Base):
 
     def __repr__(self) -> str:
         """Representação do objeto."""
-        return (
-            f"<TimeJustification {self.code}: {self.employee_name} "
-            f"{self.type_display} {self.period_display}>"
-        )
+        return f"<TimeJustification {self.code}: {self.employee_name} {self.type_display} {self.period_display}>"

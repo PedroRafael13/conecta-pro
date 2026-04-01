@@ -5,10 +5,11 @@ Endpoints para operacoes do CT-e.
 """
 
 import logging
-from typing import Dict, Any
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import PlainTextResponse
+
+from core.auth.dependencies import CurrentActiveUser
 
 from ..schemas.common import StandardResponse
 from ..schemas.cte import (
@@ -34,27 +35,18 @@ def get_service() -> CTeService:
     "/status",
     response_model=StandardResponse,
     summary="Status do CT-e",
-    description="Retorna o status da configuracao do CT-e"
+    description="Retorna o status da configuracao do CT-e",
 )
-async def get_status(
-    service: CTeService = Depends(get_service)
-) -> StandardResponse:
+async def get_status(current_user: CurrentActiveUser, service: CTeService = Depends(get_service)) -> StandardResponse:
     """Retorna status da configuracao."""
     try:
         status_data = service.validar_status()
 
-        return StandardResponse(
-            success=True,
-            message="Status CT-e obtido",
-            data=status_data
-        )
+        return StandardResponse(success=True, message="Status CT-e obtido", data=status_data)
 
     except Exception as e:
         logger.error(f"Erro ao obter status: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
@@ -62,11 +54,10 @@ async def get_status(
     response_model=StandardResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar CT-e",
-    description="Cria um novo CT-e"
+    description="Cria um novo CT-e",
 )
 async def criar_cte(
-    request: CriarCTeRequest,
-    service: CTeService = Depends(get_service)
+    request: CriarCTeRequest, current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
 ) -> StandardResponse:
     """Cria um novo CT-e."""
     try:
@@ -103,34 +94,26 @@ async def criar_cte(
         resultado = service.criar_cte(dados)
 
         return StandardResponse(
-            success=True,
-            message=f"CT-e {resultado['numero']}/{resultado['serie']} criado",
-            data=resultado
+            success=True, message=f"CT-e {resultado['numero']}/{resultado['serie']} criado", data=resultado
         )
 
     except ValueError as e:
         logger.warning(f"Erro de validacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao criar CT-e: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
     "/gerar-xml",
     response_model=StandardResponse,
     summary="Gerar XML",
-    description="Gera o XML do CT-e"
+    description="Gera o XML do CT-e",
+    status_code=201,
 )
 async def gerar_xml(
-    request: GerarXMLRequest,
-    service: CTeService = Depends(get_service)
+    request: GerarXMLRequest, current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
 ) -> StandardResponse:
     """Gera XML do CT-e."""
     try:
@@ -167,34 +150,26 @@ async def gerar_xml(
         resultado = service.gerar_xml(dados)
 
         return StandardResponse(
-            success=True,
-            message=f"XML gerado para CT-e {resultado['numero']}/{resultado['serie']}",
-            data=resultado
+            success=True, message=f"XML gerado para CT-e {resultado['numero']}/{resultado['serie']}", data=resultado
         )
 
     except ValueError as e:
         logger.warning(f"Erro de validacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao gerar XML: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
     "/gerar-xml/download",
     response_class=PlainTextResponse,
     summary="Download XML",
-    description="Gera e retorna o XML do CT-e para download"
+    description="Gera e retorna o XML do CT-e para download",
+    status_code=201,
 )
 async def gerar_xml_download(
-    request: GerarXMLRequest,
-    service: CTeService = Depends(get_service)
+    request: GerarXMLRequest, current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
 ) -> PlainTextResponse:
     """Gera XML do CT-e para download."""
     try:
@@ -213,186 +188,126 @@ async def gerar_xml_download(
         return PlainTextResponse(
             content=resultado["xml"],
             media_type="application/xml",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}"
-            }
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
 
     except Exception as e:
         logger.error(f"Erro no download: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.get(
     "/consultar-status-servico",
     response_model=StandardResponse,
     summary="Consultar Status Servico",
-    description="Consulta o status do servico CT-e na SEFAZ"
+    description="Consulta o status do servico CT-e na SEFAZ",
 )
 async def consultar_status_servico(
-    service: CTeService = Depends(get_service)
+    current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
 ) -> StandardResponse:
     """Consulta status do servico na SEFAZ."""
     try:
         resultado = service.consultar_status_servico()
 
-        return StandardResponse(
-            success=True,
-            message=f"Status: {resultado['status']}",
-            data=resultado
-        )
+        return StandardResponse(success=True, message=f"Status: {resultado['status']}", data=resultado)
 
     except Exception as e:
         logger.error(f"Erro ao consultar status: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.get(
     "/modais",
     response_model=StandardResponse,
     summary="Listar Modais",
-    description="Lista os modais de transporte disponiveis"
+    description="Lista os modais de transporte disponiveis",
 )
 async def listar_modais(
-    service: CTeService = Depends(get_service)
+    current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
 ) -> StandardResponse:
     """Lista modais de transporte."""
     try:
         modais = service.listar_modais()
 
-        return StandardResponse(
-            success=True,
-            message=f"{len(modais['modais'])} modais disponiveis",
-            data=modais
-        )
+        return StandardResponse(success=True, message=f"{len(modais['modais'])} modais disponiveis", data=modais)
 
     except Exception as e:
         logger.error(f"Erro ao listar modais: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.get(
     "/tipos-servico",
     response_model=StandardResponse,
     summary="Listar Tipos de Servico",
-    description="Lista os tipos de servico de transporte disponiveis"
+    description="Lista os tipos de servico de transporte disponiveis",
 )
 async def listar_tipos_servico(
-    service: CTeService = Depends(get_service)
+    current_user: CurrentActiveUser, service: CTeService = Depends(get_service)
 ) -> StandardResponse:
     """Lista tipos de servico."""
     try:
         tipos = service.listar_tipos_servico()
 
         return StandardResponse(
-            success=True,
-            message=f"{len(tipos['tipos_servico'])} tipos de servico disponiveis",
-            data=tipos
+            success=True, message=f"{len(tipos['tipos_servico'])} tipos de servico disponiveis", data=tipos
         )
 
     except Exception as e:
         logger.error(f"Erro ao listar tipos de servico: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.get(
-    "/listar",
-    response_model=StandardResponse,
-    summary="Listar CT-e",
-    description="Lista todos os CT-e em cache"
+    "/listar", response_model=StandardResponse, summary="Listar CT-e", description="Lista todos os CT-e em cache"
 )
-async def listar_ctes(
-    service: CTeService = Depends(get_service)
-) -> StandardResponse:
+async def listar_ctes(current_user: CurrentActiveUser, service: CTeService = Depends(get_service)) -> StandardResponse:
     """Lista CT-e em cache."""
     try:
         ctes = service.listar_ctes()
 
-        return StandardResponse(
-            success=True,
-            message=f"{len(ctes['ctes'])} CT-e em cache",
-            data=ctes
-        )
+        return StandardResponse(success=True, message=f"{len(ctes['ctes'])} CT-e em cache", data=ctes)
 
     except Exception as e:
         logger.error(f"Erro ao listar CT-e: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.get(
     "/obter/{numero}",
     response_model=StandardResponse,
     summary="Obter CT-e",
-    description="Obtem um CT-e especifico pelo numero"
+    description="Obtem um CT-e especifico pelo numero",
 )
 async def obter_cte(
-    numero: int,
-    serie: int = 1,
-    service: CTeService = Depends(get_service)
+    numero: int, current_user: CurrentActiveUser, serie: int = 1, service: CTeService = Depends(get_service)
 ) -> StandardResponse:
     """Obtem CT-e pelo numero."""
     try:
         cte = service.obter_cte(numero, serie)
 
         if not cte:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"CT-e {numero}/{serie} nao encontrado"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"CT-e {numero}/{serie} nao encontrado")
 
-        return StandardResponse(
-            success=True,
-            message=f"CT-e {numero}/{serie} obtido",
-            data=cte
-        )
+        return StandardResponse(success=True, message=f"CT-e {numero}/{serie} obtido", data=cte)
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Erro ao obter CT-e: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.delete(
-    "/limpar",
-    response_model=StandardResponse,
-    summary="Limpar Cache",
-    description="Limpa todos os CT-e em cache"
+    "/limpar", response_model=StandardResponse, summary="Limpar Cache", description="Limpa todos os CT-e em cache"
 )
-async def limpar_cache(
-    service: CTeService = Depends(get_service)
-) -> StandardResponse:
+async def limpar_cache(current_user: CurrentActiveUser, service: CTeService = Depends(get_service)) -> StandardResponse:
     """Limpa cache de CT-e."""
     try:
         resultado = service.limpar_cache()
 
-        return StandardResponse(
-            success=True,
-            message="Cache limpo",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="Cache limpo", data=resultado)
 
     except Exception as e:
         logger.error(f"Erro ao limpar cache: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")

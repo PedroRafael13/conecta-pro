@@ -5,11 +5,9 @@ Guia o usuario no processo de criacao de uma escala mensal,
 coletando posto, mes, tipo de escala, funcionarios e turnos.
 """
 
-from datetime import datetime, date
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+from datetime import date, datetime
+
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
 
 class EscalaWizard(BaseWizard):
@@ -42,7 +40,6 @@ class EscalaWizard(BaseWizard):
                 validation_rules={"min_length": 2, "max_length": 200},
                 help_text="Informe o nome ou codigo do posto. Ex: 'POST-001', 'Portaria Principal'",
             ),
-
             # 2. Mes/Ano
             WizardStep(
                 id="mes_ano",
@@ -54,7 +51,6 @@ class EscalaWizard(BaseWizard):
                 validation_rules={"min_length": 4, "max_length": 30},
                 help_text="Informe o mes e ano da escala. Formato: MM/AAAA ou nome do mes + ano.",
             ),
-
             # 3. Tipo de escala
             WizardStep(
                 id="tipo_escala",
@@ -81,7 +77,6 @@ class EscalaWizard(BaseWizard):
                     "- Personalizada: Definir manualmente"
                 ),
             ),
-
             # 4. Turno
             WizardStep(
                 id="turno",
@@ -101,7 +96,6 @@ class EscalaWizard(BaseWizard):
                 ],
                 help_text="Selecione o turno de trabalho ou 'Personalizado' para definir horarios.",
             ),
-
             # 5. Horario personalizado (condicional)
             WizardStep(
                 id="horario_personalizado",
@@ -114,7 +108,6 @@ class EscalaWizard(BaseWizard):
                 help_text="Formato: HH:MM - HH:MM (ex: 07:00 - 19:00)",
                 skip_condition=lambda data: data.get("turno") != "Personalizado",
             ),
-
             # 6. Funcionarios
             WizardStep(
                 id="funcionarios",
@@ -133,7 +126,6 @@ class EscalaWizard(BaseWizard):
                     "- 'disponíveis' para incluir apenas os disponíveis"
                 ),
             ),
-
             # 7. Observacoes
             WizardStep(
                 id="observacoes",
@@ -148,7 +140,6 @@ class EscalaWizard(BaseWizard):
                     "'Priorizar escala equilibrada'"
                 ),
             ),
-
             # 8. Confirmacao
             WizardStep(
                 id="confirmacao",
@@ -245,10 +236,19 @@ class EscalaWizard(BaseWizard):
 
         # Formato nome do mes + ano
         meses = {
-            "janeiro": 1, "fevereiro": 2, "marco": 3, "março": 3,
-            "abril": 4, "maio": 5, "junho": 6, "julho": 7,
-            "agosto": 8, "setembro": 9, "outubro": 10,
-            "novembro": 11, "dezembro": 12,
+            "janeiro": 1,
+            "fevereiro": 2,
+            "marco": 3,
+            "março": 3,
+            "abril": 4,
+            "maio": 5,
+            "junho": 6,
+            "julho": 7,
+            "agosto": 8,
+            "setembro": 9,
+            "outubro": 10,
+            "novembro": 11,
+            "dezembro": 12,
         }
         mes_lower = mes_ano.lower()
         for nome, num in meses.items():
@@ -264,31 +264,35 @@ class EscalaWizard(BaseWizard):
         alerts = []
 
         if tipo_escala == "12x36":
-            alerts.append({
-                "tipo": "info",
-                "mensagem": (
-                    "Escala 12x36: Verificar CLT art. 59-A. "
-                    "Jornada de 12h seguidas exige acordo coletivo."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": (
+                        "Escala 12x36: Verificar CLT art. 59-A. Jornada de 12h seguidas exige acordo coletivo."
+                    ),
+                }
+            )
 
         if tipo_escala == "24x72":
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    "Escala 24x72: Verificar conformidade com convencao coletiva. "
-                    "Turno de 24h requer atencao especial a saude do trabalhador."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        "Escala 24x72: Verificar conformidade com convencao coletiva. "
+                        "Turno de 24h requer atencao especial a saude do trabalhador."
+                    ),
+                }
+            )
 
         turno = data.get("turno", "")
         if "Noturno" in turno or "Madrugada" in turno:
-            alerts.append({
-                "tipo": "info",
-                "mensagem": (
-                    "Turno noturno: Adicional noturno obrigatorio (CLT art. 73). "
-                    "Hora noturna = 52min30s."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": (
+                        "Turno noturno: Adicional noturno obrigatorio (CLT art. 73). Hora noturna = 52min30s."
+                    ),
+                }
+            )
 
         return alerts

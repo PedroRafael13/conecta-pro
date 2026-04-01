@@ -5,8 +5,6 @@ Gera escalas mensais automaticamente baseadas em alocações ativas.
 """
 
 from datetime import date, datetime
-from typing import List, Optional
-from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,7 +32,7 @@ class AutoScaleService:
 
     async def generate_scales_for_current_month(
         self,
-        created_by: Optional[str] = None,
+        created_by: str | None = None,
     ) -> dict:
         """
         Gera escalas para o mês atual baseado em alocações ativas.
@@ -120,8 +118,7 @@ class AutoScaleService:
                 shifts_created += len(shifts_data)
 
                 logger.info(
-                    f"Escala {scale.id} gerada com {len(shifts_data)} turnos "
-                    f"para {len(employee_ids)} funcionários"
+                    f"Escala {scale.id} gerada com {len(shifts_data)} turnos para {len(employee_ids)} funcionários"
                 )
 
             except Exception as e:
@@ -142,7 +139,7 @@ class AutoScaleService:
         self,
         month: int,
         year: int,
-        created_by: Optional[str] = None,
+        created_by: str | None = None,
     ) -> dict:
         """
         Gera escalas para um mês específico.
@@ -231,7 +228,7 @@ class AutoScaleService:
             "errors": errors,
         }
 
-    async def _get_active_allocations(self) -> List[Allocation]:
+    async def _get_active_allocations(self) -> list[Allocation]:
         """Busca todas as alocações ativas."""
         query = select(Allocation).where(
             Allocation.is_active.is_(True),
@@ -241,9 +238,7 @@ class AutoScaleService:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    def _group_allocations_by_post(
-        self, allocations: List[Allocation]
-    ) -> dict[str, List[Allocation]]:
+    def _group_allocations_by_post(self, allocations: list[Allocation]) -> dict[str, list[Allocation]]:
         """Agrupa alocações por posto."""
         grouped = {}
         for allocation in allocations:

@@ -4,8 +4,8 @@ Gerencia propostas, versões, itens e workflow de aprovação.
 """
 
 from datetime import date, datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -24,10 +24,10 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 if TYPE_CHECKING:
-    from modules.crm.models.opportunity import Opportunity
+    pass
 
 
-class ProposalStatus(str, Enum):
+class ProposalStatus(StrEnum):
     """Status da proposta."""
 
     DRAFT = "draft"  # Rascunho
@@ -42,7 +42,7 @@ class ProposalStatus(str, Enum):
     CANCELLED = "cancelled"  # Cancelada
 
 
-class ProposalType(str, Enum):
+class ProposalType(StrEnum):
     """Tipo de proposta."""
 
     PRODUCT = "product"  # Venda de produtos
@@ -52,7 +52,7 @@ class ProposalType(str, Enum):
     MIXED = "mixed"  # Misto
 
 
-class DiscountType(str, Enum):
+class DiscountType(StrEnum):
     """Tipo de desconto."""
 
     PERCENTAGE = "percentage"  # Percentual
@@ -142,10 +142,8 @@ class Proposal(Base):
 
     # Relationships
     items = relationship("ProposalItem", back_populates="proposal", cascade="all, delete-orphan")
-    versions = relationship("Proposal", backref="parent", remote_side=[id])
-    approvals = relationship(
-        "ProposalApproval", back_populates="proposal", cascade="all, delete-orphan"
-    )
+    versions = relationship("Proposal", backref="parent", remote_side=[id])  # noqa: A003
+    approvals = relationship("ProposalApproval", back_populates="proposal", cascade="all, delete-orphan")
 
     @property
     def is_draft(self) -> bool:
@@ -199,7 +197,7 @@ class Proposal(Base):
         return False
 
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> int | None:
         """Dias até expirar."""
         if not self.valid_until:
             return None
@@ -312,7 +310,7 @@ class ProposalTemplate(Base):  # pylint: disable=too-few-public-methods
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
-class ApprovalAction(str, Enum):
+class ApprovalAction(StrEnum):
     """Ação de aprovação."""
 
     APPROVE = "approve"

@@ -16,9 +16,14 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'src/api/generated/',
+        'src/types/generated/',
         '**/*.d.ts',
         '**/*.config.*',
         'src/test/',
+        // Pure re-export files (no executable logic)
+        'src/hooks/reimbursement/index.ts',
+        'src/services/reimbursement/index.ts',
+        'src/lib/api/client.ts',
       ],
     },
   },

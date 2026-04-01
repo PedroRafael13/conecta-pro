@@ -99,7 +99,7 @@ test.describe('Comodatos - Visualização', () => {
 
     await loginViaAPI(page);
     await page.goto('/modulos/equipamentos/comodatos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

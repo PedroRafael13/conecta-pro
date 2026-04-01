@@ -1,12 +1,12 @@
 """Analytics de Notificações - Sprint 03."""
 
 from modules.notifications.analytics.notification_analytics import (
-    NotificationAnalytics,
     AnalyticsDashboard,
-    MetricReport,
-    TrendAnalysis,
-    ChannelPerformance,
     CampaignMetrics,
+    ChannelPerformance,
+    MetricReport,
+    NotificationAnalytics,
+    TrendAnalysis,
 )
 
 __all__ = [

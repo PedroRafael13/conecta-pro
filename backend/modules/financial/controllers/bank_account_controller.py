@@ -2,16 +2,14 @@
 
 import logging
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
 from core.database import get_session
-from sqlalchemy import update as sql_update
-
 from modules.financial.models import (
     BankAccount,
     BankAccountStatus,
@@ -43,7 +41,7 @@ def get_repository(session: AsyncSession = Depends(get_session)) -> BankAccountR
 
 
 @router.post(
-    "/",
+    "",
     response_model=BankAccountResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar conta bancária",
@@ -67,20 +65,20 @@ async def create_bank_account(
 
 
 @router.get(
-    "/",
-    response_model=List[BankAccountResponse],
+    "",
+    response_model=list[BankAccountResponse],
     summary="Listar contas bancárias",
 )
 async def list_bank_accounts(  # pylint: disable=unused-argument
     condominio_id: UUID,
-    account_type: Optional[BankAccountType] = Query(None, description="Tipo de conta"),
-    account_status: Optional[BankAccountStatus] = Query(None, description="Status"),
-    is_main: Optional[bool] = Query(None, description="Conta principal"),
+    account_type: BankAccountType | None = Query(None, description="Tipo de conta"),
+    account_status: BankAccountStatus | None = Query(None, description="Status"),
+    is_main: bool | None = Query(None, description="Conta principal"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: BankAccountRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> List[BankAccountResponse]:
+) -> list[BankAccountResponse]:
     """Lista contas bancárias com filtros."""
     filters = BankAccountFilter(
         condominio_id=condominio_id,
@@ -224,9 +222,7 @@ async def delete_bank_account(
 
 
 @router.post(
-    "/{account_id}/activate",
-    response_model=BankAccountResponse,
-    summary="Ativar conta bancária",
+    "/{account_id}/activate", response_model=BankAccountResponse, summary="Ativar conta bancária", status_code=201
 )
 async def activate_account(
     account_id: UUID,
@@ -247,9 +243,7 @@ async def activate_account(
 
 
 @router.post(
-    "/{account_id}/suspend",
-    response_model=BankAccountResponse,
-    summary="Suspender conta bancária",
+    "/{account_id}/suspend", response_model=BankAccountResponse, summary="Suspender conta bancária", status_code=201
 )
 async def suspend_account(
     account_id: UUID,
@@ -273,6 +267,7 @@ async def suspend_account(
     "/{account_id}/set-main",
     response_model=BankAccountResponse,
     summary="Definir como conta principal",
+    status_code=201,
 )
 async def set_as_main_account(
     account_id: UUID,
@@ -347,8 +342,7 @@ async def transfer_between_accounts(
             "transaction_type": TransactionType.DEBITO,
             "category": TransactionCategory.TRANSFERENCIA,
             "amount": data.amount,
-            "description": data.description
-            or f"Transferência para conta {to_account.account_number}",
+            "description": data.description or f"Transferência para conta {to_account.account_number}",
             "is_transfer": True,
             "transfer_to_account_id": data.to_account_id,
         }
@@ -361,8 +355,7 @@ async def transfer_between_accounts(
             "transaction_type": TransactionType.CREDITO,
             "category": TransactionCategory.TRANSFERENCIA,
             "amount": data.amount,
-            "description": data.description
-            or f"Transferência de conta {from_account.account_number}",
+            "description": data.description or f"Transferência de conta {from_account.account_number}",
             "is_transfer": True,
             "transfer_from_account_id": data.from_account_id,
         }
@@ -388,9 +381,7 @@ async def transfer_between_accounts(
 
 
 @router.post(
-    "/{account_id}/adjust-balance",
-    response_model=BankAccountResponse,
-    summary="Ajustar saldo",
+    "/{account_id}/adjust-balance", response_model=BankAccountResponse, summary="Ajustar saldo", status_code=201
 )
 async def adjust_balance(
     account_id: UUID,
@@ -415,9 +406,7 @@ async def adjust_balance(
     await tx_repo.create(
         {
             "bank_account_id": account_id,
-            "transaction_type": (
-                TransactionType.CREDITO if difference > 0 else TransactionType.DEBITO
-            ),
+            "transaction_type": (TransactionType.CREDITO if difference > 0 else TransactionType.DEBITO),
             "category": TransactionCategory.AJUSTE,
             "amount": abs(difference),
             "description": f"Ajuste de saldo: {reason}",
@@ -430,8 +419,7 @@ async def adjust_balance(
     await session.commit()
 
     logger.info(
-        f"Saldo ajustado: conta {account_id}, diferença {difference}, "
-        f"por {current_user.get('email')}, motivo: {reason}"
+        f"Saldo ajustado: conta {account_id}, diferença {difference}, por {current_user.get('email')}, motivo: {reason}"
     )
 
     return BankAccountResponse.model_validate(account)

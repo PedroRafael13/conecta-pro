@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -40,20 +39,20 @@ class ChartOfAccountsBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     chart_type: ChartType = ChartType.STANDARD
     standard: ChartStandard = ChartStandard.CUSTOM
-    version: Optional[str] = Field(None, max_length=20)
+    version: str | None = Field(None, max_length=20)
     max_levels: int = Field(default=5, ge=1, le=10)
-    account_mask: Optional[str] = Field(None, max_length=50)
-    separator: Optional[str] = Field(".", max_length=1)
-    valid_from: Optional[datetime] = None
-    valid_until: Optional[datetime] = None
-    sped_layout_code: Optional[str] = Field(None, max_length=10)
-    sped_version: Optional[str] = Field(None, max_length=20)
+    account_mask: str | None = Field(None, max_length=50)
+    separator: str | None = Field(".", max_length=1)
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+    sped_layout_code: str | None = Field(None, max_length=10)
+    sped_version: str | None = Field(None, max_length=20)
     is_default: bool = False
     allow_modifications: bool = True
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ChartOfAccountsCreate(ChartOfAccountsBase):
@@ -63,14 +62,14 @@ class ChartOfAccountsCreate(ChartOfAccountsBase):
 class ChartOfAccountsUpdate(BaseModel):
     """Schema para atualizar ChartOfAccounts."""
 
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
-    status: Optional[ChartStatus] = None
-    version: Optional[str] = Field(None, max_length=20)
-    valid_until: Optional[datetime] = None
-    is_default: Optional[bool] = None
-    allow_modifications: Optional[bool] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, max_length=100)
+    description: str | None = None
+    status: ChartStatus | None = None
+    version: str | None = Field(None, max_length=20)
+    valid_until: datetime | None = None
+    is_default: bool | None = None
+    allow_modifications: bool | None = None
+    notes: str | None = None
 
 
 class ChartOfAccountsResponse(ChartOfAccountsBase):
@@ -79,14 +78,14 @@ class ChartOfAccountsResponse(ChartOfAccountsBase):
     id: UUID
     condominio_id: UUID
     status: ChartStatus
-    version_date: Optional[datetime] = None
+    version_date: datetime | None = None
     total_accounts: int = 0
     total_analytical: int = 0
     total_synthetic: int = 0
     active: bool = True
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -113,31 +112,31 @@ class AccountingAccountBase(BaseModel):
     """Schema base para AccountingAccount."""
 
     chart_id: UUID
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
     code: str = Field(..., min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=150)
-    short_name: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = None
+    short_name: str | None = Field(None, max_length=50)
+    description: str | None = None
     account_type: AccountType
     nature: AccountNature
     classification: AccountClassification
     level: int = Field(default=1, ge=1, le=10)
-    order_index: Optional[int] = None
-    sped_nature: Optional[SpedAccountNature] = None
-    sped_referential_code: Optional[str] = Field(None, max_length=30)
-    default_cost_center_id: Optional[UUID] = None
+    order_index: int | None = None
+    sped_nature: SpedAccountNature | None = None
+    sped_referential_code: str | None = Field(None, max_length=30)
+    default_cost_center_id: UUID | None = None
     requires_cost_center: bool = False
     requires_project: bool = False
     requires_history: bool = True
     allows_manual_entry: bool = True
-    dre_group: Optional[str] = Field(None, max_length=50)
-    dre_order: Optional[int] = None
-    balance_sheet_group: Optional[str] = Field(None, max_length=50)
-    balance_sheet_order: Optional[int] = None
+    dre_group: str | None = Field(None, max_length=50)
+    dre_order: int | None = None
+    balance_sheet_group: str | None = Field(None, max_length=50)
+    balance_sheet_order: int | None = None
     is_tax_related: bool = False
     is_bank_account: bool = False
-    bank_account_id: Optional[UUID] = None
-    notes: Optional[str] = None
+    bank_account_id: UUID | None = None
+    notes: str | None = None
 
 
 class AccountingAccountCreate(AccountingAccountBase):
@@ -149,19 +148,19 @@ class AccountingAccountCreate(AccountingAccountBase):
 class AccountingAccountUpdate(BaseModel):
     """Schema para atualizar AccountingAccount."""
 
-    name: Optional[str] = Field(None, max_length=150)
-    short_name: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = None
-    status: Optional[AccountStatus] = None
-    sped_nature: Optional[SpedAccountNature] = None
-    sped_referential_code: Optional[str] = Field(None, max_length=30)
-    default_cost_center_id: Optional[UUID] = None
-    requires_cost_center: Optional[bool] = None
-    requires_project: Optional[bool] = None
-    allows_manual_entry: Optional[bool] = None
-    dre_group: Optional[str] = Field(None, max_length=50)
-    dre_order: Optional[int] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, max_length=150)
+    short_name: str | None = Field(None, max_length=50)
+    description: str | None = None
+    status: AccountStatus | None = None
+    sped_nature: SpedAccountNature | None = None
+    sped_referential_code: str | None = Field(None, max_length=30)
+    default_cost_center_id: UUID | None = None
+    requires_cost_center: bool | None = None
+    requires_project: bool | None = None
+    allows_manual_entry: bool | None = None
+    dre_group: str | None = Field(None, max_length=50)
+    dre_order: int | None = None
+    notes: str | None = None
 
 
 class AccountingAccountResponse(AccountingAccountBase):
@@ -170,7 +169,7 @@ class AccountingAccountResponse(AccountingAccountBase):
     id: UUID
     condominio_id: UUID
     status: AccountStatus
-    path: Optional[str] = None
+    path: str | None = None
     opening_balance: Decimal = Decimal("0")
     current_balance: Decimal = Decimal("0")
     debit_total: Decimal = Decimal("0")
@@ -178,12 +177,12 @@ class AccountingAccountResponse(AccountingAccountBase):
     period_debit: Decimal = Decimal("0")
     period_credit: Decimal = Decimal("0")
     period_balance: Decimal = Decimal("0")
-    last_movement_date: Optional[datetime] = None
+    last_movement_date: datetime | None = None
     is_system: bool = False
     active: bool = True
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -228,29 +227,29 @@ class AccountTreeResponse(BaseModel):
 class CostCenterBase(BaseModel):
     """Schema base para CostCenter."""
 
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=100)
-    short_name: Optional[str] = Field(None, max_length=30)
-    description: Optional[str] = None
+    short_name: str | None = Field(None, max_length=30)
+    description: str | None = None
     cost_center_type: CostCenterType = CostCenterType.ADMINISTRATIVE
     level: int = Field(default=1, ge=1, le=10)
-    manager_id: Optional[UUID] = None
-    manager_name: Optional[str] = Field(None, max_length=100)
-    department: Optional[str] = Field(None, max_length=100)
+    manager_id: UUID | None = None
+    manager_name: str | None = Field(None, max_length=100)
+    department: str | None = Field(None, max_length=100)
     budget_annual: Decimal = Field(default=Decimal("0"))
     budget_monthly: Decimal = Field(default=Decimal("0"))
     allocation_method: AllocationMethod = AllocationMethod.DIRECT
     allocation_percentage: Decimal = Field(default=Decimal("100"), ge=0, le=100)
     headcount: int = Field(default=0, ge=0)
     area_m2: Decimal = Field(default=Decimal("0"), ge=0)
-    valid_from: Optional[datetime] = None
-    valid_until: Optional[datetime] = None
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
     is_default: bool = False
     requires_approval: bool = False
-    approval_limit: Optional[Decimal] = None
+    approval_limit: Decimal | None = None
     allows_over_budget: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class CostCenterCreate(CostCenterBase):
@@ -260,22 +259,22 @@ class CostCenterCreate(CostCenterBase):
 class CostCenterUpdate(BaseModel):
     """Schema para atualizar CostCenter."""
 
-    name: Optional[str] = Field(None, max_length=100)
-    short_name: Optional[str] = Field(None, max_length=30)
-    description: Optional[str] = None
-    status: Optional[CostCenterStatus] = None
-    manager_id: Optional[UUID] = None
-    manager_name: Optional[str] = Field(None, max_length=100)
-    department: Optional[str] = Field(None, max_length=100)
-    budget_annual: Optional[Decimal] = None
-    budget_monthly: Optional[Decimal] = None
-    allocation_percentage: Optional[Decimal] = Field(None, ge=0, le=100)
-    headcount: Optional[int] = Field(None, ge=0)
-    area_m2: Optional[Decimal] = Field(None, ge=0)
-    valid_until: Optional[datetime] = None
-    requires_approval: Optional[bool] = None
-    approval_limit: Optional[Decimal] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, max_length=100)
+    short_name: str | None = Field(None, max_length=30)
+    description: str | None = None
+    status: CostCenterStatus | None = None
+    manager_id: UUID | None = None
+    manager_name: str | None = Field(None, max_length=100)
+    department: str | None = Field(None, max_length=100)
+    budget_annual: Decimal | None = None
+    budget_monthly: Decimal | None = None
+    allocation_percentage: Decimal | None = Field(None, ge=0, le=100)
+    headcount: int | None = Field(None, ge=0)
+    area_m2: Decimal | None = Field(None, ge=0)
+    valid_until: datetime | None = None
+    requires_approval: bool | None = None
+    approval_limit: Decimal | None = None
+    notes: str | None = None
 
 
 class CostCenterResponse(CostCenterBase):
@@ -284,8 +283,8 @@ class CostCenterResponse(CostCenterBase):
     id: UUID
     condominio_id: UUID
     status: CostCenterStatus
-    path: Optional[str] = None
-    order_index: Optional[int] = None
+    path: str | None = None
+    order_index: int | None = None
     budget_used: Decimal = Decimal("0")
     budget_available: Decimal = Decimal("0")
     total_debit: Decimal = Decimal("0")
@@ -293,11 +292,11 @@ class CostCenterResponse(CostCenterBase):
     current_balance: Decimal = Decimal("0")
     period_debit: Decimal = Decimal("0")
     period_credit: Decimal = Decimal("0")
-    last_movement_date: Optional[datetime] = None
+    last_movement_date: datetime | None = None
     active: bool = True
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -323,20 +322,20 @@ class CostCenterListResponse(BaseModel):
 class AccountingPeriodBase(BaseModel):
     """Schema base para AccountingPeriod."""
 
-    chart_id: Optional[UUID] = None
+    chart_id: UUID | None = None
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     period_type: PeriodType = PeriodType.MONTHLY
     year: int = Field(..., ge=2000, le=2100)
-    month: Optional[int] = Field(None, ge=1, le=12)
-    quarter: Optional[int] = Field(None, ge=1, le=4)
+    month: int | None = Field(None, ge=1, le=12)
+    quarter: int | None = Field(None, ge=1, le=4)
     start_date: date
     end_date: date
     requires_approval: bool = True
     is_initial: bool = False
     is_adjustment: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
     @field_validator("end_date")
     @classmethod
@@ -354,10 +353,10 @@ class AccountingPeriodCreate(AccountingPeriodBase):
 class AccountingPeriodUpdate(BaseModel):
     """Schema para atualizar AccountingPeriod."""
 
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
-    requires_approval: Optional[bool] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, max_length=100)
+    description: str | None = None
+    requires_approval: bool | None = None
+    notes: str | None = None
 
 
 class AccountingPeriodResponse(AccountingPeriodBase):
@@ -366,9 +365,9 @@ class AccountingPeriodResponse(AccountingPeriodBase):
     id: UUID
     condominio_id: UUID
     status: PeriodStatus
-    opening_date: Optional[datetime] = None
-    closing_date: Optional[datetime] = None
-    closing_type: Optional[ClosingType] = None
+    opening_date: datetime | None = None
+    closing_date: datetime | None = None
+    closing_type: ClosingType | None = None
     total_entries: int = 0
     total_debit: Decimal = Decimal("0")
     total_credit: Decimal = Decimal("0")
@@ -378,13 +377,13 @@ class AccountingPeriodResponse(AccountingPeriodBase):
     period_revenue: Decimal = Decimal("0")
     period_expenses: Decimal = Decimal("0")
     period_result: Decimal = Decimal("0")
-    closed_by: Optional[UUID] = None
+    closed_by: UUID | None = None
     sped_transmitted: bool = False
     allows_entries: bool = True
     active: bool = True
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -406,7 +405,7 @@ class PeriodCloseRequest(BaseModel):
     """Schema para fechar período."""
 
     closing_type: ClosingType = ClosingType.PROVISIONAL
-    closing_notes: Optional[str] = None
+    closing_notes: str | None = None
 
 
 class PeriodReopenRequest(BaseModel):
@@ -424,17 +423,17 @@ class JournalEntryLineBase(BaseModel):
     """Schema base para JournalEntryLine."""
 
     account_id: UUID
-    cost_center_id: Optional[UUID] = None
+    cost_center_id: UUID | None = None
     line_number: int = Field(..., ge=1)
     debit_amount: Decimal = Field(default=Decimal("0"), ge=0)
     credit_amount: Decimal = Field(default=Decimal("0"), ge=0)
-    description: Optional[str] = Field(None, max_length=500)
-    history_code: Optional[str] = Field(None, max_length=10)
-    document_type: Optional[str] = Field(None, max_length=30)
-    document_number: Optional[str] = Field(None, max_length=50)
-    document_date: Optional[date] = None
-    project_id: Optional[UUID] = None
-    project_code: Optional[str] = Field(None, max_length=30)
+    description: str | None = Field(None, max_length=500)
+    history_code: str | None = Field(None, max_length=10)
+    document_type: str | None = Field(None, max_length=30)
+    document_number: str | None = Field(None, max_length=50)
+    document_date: date | None = None
+    project_id: UUID | None = None
+    project_code: str | None = Field(None, max_length=30)
 
     @field_validator("credit_amount")
     @classmethod
@@ -457,10 +456,10 @@ class JournalEntryLineResponse(JournalEntryLineBase):
 
     id: UUID
     journal_entry_id: UUID
-    counterpart_account_id: Optional[UUID] = None
-    counterpart_account_code: Optional[str] = None
+    counterpart_account_id: UUID | None = None
+    counterpart_account_code: str | None = None
     is_reconciled: bool = False
-    reconciliation_date: Optional[datetime] = None
+    reconciliation_date: datetime | None = None
     created_at: datetime
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -474,16 +473,16 @@ class JournalEntryBase(BaseModel):
 
     period_id: UUID
     description: str = Field(..., min_length=1, max_length=500)
-    complement: Optional[str] = None
+    complement: str | None = None
     entry_type: EntryType = EntryType.MANUAL
     origin: EntryOrigin = EntryOrigin.MANUAL
     entry_date: date
     competence_date: date
-    source_type: Optional[str] = Field(None, max_length=50)
-    source_id: Optional[UUID] = None
-    source_number: Optional[str] = Field(None, max_length=50)
+    source_type: str | None = Field(None, max_length=50)
+    source_id: UUID | None = None
+    source_number: str | None = Field(None, max_length=50)
     requires_approval: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class JournalEntryCreate(JournalEntryBase):
@@ -498,19 +497,17 @@ class JournalEntryCreate(JournalEntryBase):
         total_debit = sum(line.debit_amount for line in v)
         total_credit = sum(line.credit_amount for line in v)
         if total_debit != total_credit:
-            raise ValueError(
-                f"Lançamento desbalanceado: Débito={total_debit}, Crédito={total_credit}"
-            )
+            raise ValueError(f"Lançamento desbalanceado: Débito={total_debit}, Crédito={total_credit}")
         return v
 
 
 class JournalEntryUpdate(BaseModel):
     """Schema para atualizar JournalEntry."""
 
-    description: Optional[str] = Field(None, max_length=500)
-    complement: Optional[str] = None
-    competence_date: Optional[date] = None
-    notes: Optional[str] = None
+    description: str | None = Field(None, max_length=500)
+    complement: str | None = None
+    competence_date: date | None = None
+    notes: str | None = None
 
 
 class JournalEntryResponse(JournalEntryBase):
@@ -519,24 +516,24 @@ class JournalEntryResponse(JournalEntryBase):
     id: UUID
     condominio_id: UUID
     entry_number: str
-    batch_number: Optional[str] = None
+    batch_number: str | None = None
     status: EntryStatus
     total_debit: Decimal = Decimal("0")
     total_credit: Decimal = Decimal("0")
     line_count: int = 0
-    posting_date: Optional[datetime] = None
+    posting_date: datetime | None = None
     is_reversal: bool = False
-    reversed_entry_id: Optional[UUID] = None
-    reversal_entry_id: Optional[UUID] = None
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
-    posted_by: Optional[UUID] = None
+    reversed_entry_id: UUID | None = None
+    reversal_entry_id: UUID | None = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
+    posted_by: UUID | None = None
     sped_included: bool = False
     is_balanced: bool = True
     active: bool = True
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
     lines: list[JournalEntryLineResponse] = []
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -559,14 +556,14 @@ class JournalEntryReversalRequest(BaseModel):
     """Schema para estornar lançamento."""
 
     reversal_reason: str = Field(..., min_length=10, max_length=200)
-    reversal_date: Optional[date] = None
+    reversal_date: date | None = None
 
 
 class JournalEntryApprovalRequest(BaseModel):
     """Schema para aprovar/rejeitar lançamento."""
 
     approved: bool
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 # ============================================================================
@@ -578,28 +575,28 @@ class TrialBalanceBase(BaseModel):
     """Schema base para TrialBalance."""
 
     chart_id: UUID
-    period_id: Optional[UUID] = None
+    period_id: UUID | None = None
     name: str = Field(..., min_length=1, max_length=150)
-    description: Optional[str] = None
+    description: str | None = None
     balance_type: BalanceType = BalanceType.VERIFICATION
     balance_period: BalancePeriod = BalancePeriod.MONTHLY
     reference_date: date
     start_date: date
     end_date: date
     year: int = Field(..., ge=2000, le=2100)
-    month: Optional[int] = Field(None, ge=1, le=12)
+    month: int | None = Field(None, ge=1, le=12)
     include_zero_balance: bool = False
     include_inactive: bool = False
     show_cost_centers: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class TrialBalanceCreate(TrialBalanceBase):
     """Schema para criar TrialBalance."""
 
-    filter_account_types: Optional[list[AccountType]] = None
-    filter_levels: Optional[list[int]] = None
-    filter_cost_centers: Optional[list[UUID]] = None
+    filter_account_types: list[AccountType] | None = None
+    filter_levels: list[int] | None = None
+    filter_cost_centers: list[UUID] | None = None
 
 
 class TrialBalanceResponse(TrialBalanceBase):
@@ -629,17 +626,17 @@ class TrialBalanceResponse(TrialBalanceBase):
     total_assets: Decimal = Decimal("0")
     total_liabilities: Decimal = Decimal("0")
     total_equity: Decimal = Decimal("0")
-    generated_at: Optional[datetime] = None
-    generated_by: Optional[UUID] = None
-    generation_time_ms: Optional[int] = None
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
+    generated_at: datetime | None = None
+    generated_by: UUID | None = None
+    generation_time_ms: int | None = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
     exported_pdf: bool = False
     exported_excel: bool = False
     active: bool = True
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -659,9 +656,9 @@ class TrialBalanceItemResponse(BaseModel):
     account_nature: str
     account_level: int
     is_analytical: bool
-    cost_center_id: Optional[UUID] = None
-    cost_center_code: Optional[str] = None
-    cost_center_name: Optional[str] = None
+    cost_center_id: UUID | None = None
+    cost_center_code: str | None = None
+    cost_center_name: str | None = None
     previous_debit: Decimal = Decimal("0")
     previous_credit: Decimal = Decimal("0")
     previous_balance: Decimal = Decimal("0")
@@ -670,9 +667,9 @@ class TrialBalanceItemResponse(BaseModel):
     current_debit: Decimal = Decimal("0")
     current_credit: Decimal = Decimal("0")
     current_balance: Decimal = Decimal("0")
-    variation_absolute: Optional[Decimal] = None
-    variation_percentage: Optional[Decimal] = None
-    display_order: Optional[int] = None
+    variation_absolute: Decimal | None = None
+    variation_percentage: Decimal | None = None
+    display_order: int | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -774,7 +771,7 @@ class BalanceStats(BaseModel):
     approved: int = 0
     by_type: dict[str, int] = {}
     by_status: dict[str, int] = {}
-    last_generated: Optional[datetime] = None
+    last_generated: datetime | None = None
 
 
 # ============================================================================
@@ -785,39 +782,39 @@ class BalanceStats(BaseModel):
 class AccountFilter(BaseModel):
     """Filtros para contas contábeis."""
 
-    chart_id: Optional[UUID] = None
-    parent_id: Optional[UUID] = None
-    account_type: Optional[AccountType] = None
-    nature: Optional[AccountNature] = None
-    classification: Optional[AccountClassification] = None
-    status: Optional[AccountStatus] = None
-    level: Optional[int] = None
-    has_balance: Optional[bool] = None
-    search: Optional[str] = None
+    chart_id: UUID | None = None
+    parent_id: UUID | None = None
+    account_type: AccountType | None = None
+    nature: AccountNature | None = None
+    classification: AccountClassification | None = None
+    status: AccountStatus | None = None
+    level: int | None = None
+    has_balance: bool | None = None
+    search: str | None = None
 
 
 class JournalFilter(BaseModel):
     """Filtros para lançamentos contábeis."""
 
-    period_id: Optional[UUID] = None
-    entry_type: Optional[EntryType] = None
-    status: Optional[EntryStatus] = None
-    origin: Optional[EntryOrigin] = None
-    account_id: Optional[UUID] = None
-    cost_center_id: Optional[UUID] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    min_amount: Optional[Decimal] = None
-    max_amount: Optional[Decimal] = None
-    search: Optional[str] = None
+    period_id: UUID | None = None
+    entry_type: EntryType | None = None
+    status: EntryStatus | None = None
+    origin: EntryOrigin | None = None
+    account_id: UUID | None = None
+    cost_center_id: UUID | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    min_amount: Decimal | None = None
+    max_amount: Decimal | None = None
+    search: str | None = None
 
 
 class BalanceFilter(BaseModel):
     """Filtros para balancetes."""
 
-    balance_type: Optional[BalanceType] = None
-    status: Optional[BalanceStatus] = None
-    year: Optional[int] = None
-    month: Optional[int] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
+    balance_type: BalanceType | None = None
+    status: BalanceStatus | None = None
+    year: int | None = None
+    month: int | None = None
+    date_from: date | None = None
+    date_to: date | None = None

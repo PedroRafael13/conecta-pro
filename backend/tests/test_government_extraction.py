@@ -4,26 +4,32 @@ Testes de Extração de Dados Governamentais.
 Valida orquestrador, extratores e jobs.
 """
 
-import pytest
 import asyncio
-from datetime import datetime, timedelta
-from uuid import uuid4
-from unittest.mock import AsyncMock, MagicMock, patch
-import sys
 import os
+import sys
+from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
+import pytest
 
 # Adicionar path do módulo
-sys.path.insert(0, '/opt/conecta-pro/backend')
+sys.path.insert(0, "/opt/conecta-pro/backend")
 
-from modules.government_integrations.extractors.orchestrator import (
-    OrquestradorExtracao,
-    ConfiguracaoExtracao,
-    TipoServico,
-    ResultadoExtracao,
+from modules.government_integrations.extractors.base_extractor import (
+    DocumentoExtraido,
+    ExtratorBase,
 )
 from modules.government_integrations.extractors.base_extractor import (
-    ExtratorBase,
-    DocumentoExtraido,
+    ResultadoExtracao as ResultadoExtracaoBase,
+)
+from modules.government_integrations.extractors.orchestrator import (
+    ConfiguracaoExtracao,
+    OrquestradorExtracao,
+    ResultadoExtracao,
+    ResultadoServico,
+    StatusExtracao,
+    TipoServico,
 )
 
 
@@ -38,7 +44,7 @@ class TestConfiguracaoExtracao:
 
         assert config.servicos == [TipoServico.SEFAZ_NFE]
         assert config.modo_incremental is True
-        assert config.processar_em_paralelo is False
+        assert config.processar_em_paralelo is True
         assert config.max_workers == 5
         print("✓ Configuração padrão OK")
 
@@ -128,47 +134,43 @@ class TestResultadoExtracao:
 
     def test_resultado_vazio(self):
         """Testa resultado sem documentos."""
-        resultado = ResultadoExtracao(
-            servico="sefaz_nfe",
-            inicio=datetime.utcnow(),
-        )
+        resultado = ResultadoExtracao()
 
-        assert resultado.documentos_processados == 0
-        assert resultado.documentos_novos == 0
-        assert resultado.documentos_erro == 0
-        assert resultado.status == "pendente"
+        assert resultado.total_documentos == 0
+        assert resultado.total_novos == 0
+        assert resultado.total_erros == 0
+        assert resultado.status == StatusExtracao.INICIADA
         print("✓ Resultado vazio OK")
 
     def test_resultado_com_documentos(self):
         """Testa resultado com documentos."""
         resultado = ResultadoExtracao(
-            servico="sefaz_nfe",
-            inicio=datetime.utcnow(),
-            documentos_processados=100,
-            documentos_novos=50,
-            documentos_atualizados=30,
-            documentos_erro=5,
-            status="concluida",
+            status=StatusExtracao.CONCLUIDA,
+            total_documentos=100,
+            total_novos=50,
+            total_atualizados=30,
+            total_erros=5,
         )
 
-        assert resultado.documentos_processados == 100
-        assert resultado.documentos_novos == 50
+        assert resultado.total_documentos == 100
+        assert resultado.total_novos == 50
         print("✓ Resultado com documentos OK")
 
     def test_resultado_to_dict(self):
         """Testa conversão para dicionário."""
+        tenant_id = uuid4()
         resultado = ResultadoExtracao(
-            servico="esocial",
-            inicio=datetime.utcnow(),
-            status="concluida",
+            tenant_id=tenant_id,
+            status=StatusExtracao.CONCLUIDA,
         )
 
         data = resultado.to_dict()
 
-        assert "servico" in data
-        assert "inicio" in data
         assert "status" in data
-        assert data["servico"] == "esocial"
+        assert "tenant_id" in data
+        assert "totais" in data
+        assert data["status"] == "concluida"
+        assert data["tenant_id"] == str(tenant_id)
         print("✓ Resultado to_dict OK")
 
 
@@ -183,7 +185,7 @@ class TestOrquestradorExtracao:
     def test_instanciacao(self, orquestrador):
         """Testa criação do orquestrador."""
         assert orquestrador is not None
-        assert hasattr(orquestrador, 'iniciar_extracao')
+        assert hasattr(orquestrador, "iniciar_extracao")
         print("✓ Orquestrador instanciado OK")
 
     @pytest.mark.asyncio
@@ -192,18 +194,17 @@ class TestOrquestradorExtracao:
         tenant_id = uuid4()
 
         # Mock do provedor de credenciais
-        with patch.object(orquestrador, 'credenciais') as mock_cred:
-            mock_cred.verificar_certificado = AsyncMock(return_value={
-                "valido": True,
-                "dias_restantes": 30,
-            })
-
-            resultado = await orquestrador._validar_prerequisitos(
-                tenant_id,
-                [TipoServico.SEFAZ_NFE]
+        with patch.object(orquestrador, "credentials") as mock_cred:
+            mock_cred.verificar_certificado = AsyncMock(
+                return_value={
+                    "valido": True,
+                    "dias_restantes": 30,
+                }
             )
 
-            # Deve retornar True ou dict de validação
+            resultado = await orquestrador.validar_prerequisitos(tenant_id, [TipoServico.SEFAZ_NFE])
+
+            # Deve retornar dict de validação
             assert resultado is not None
             print("✓ Validação de pré-requisitos OK")
 
@@ -216,35 +217,49 @@ class TestOrquestradorExtracao:
             cnpjs=["12345678000100"],
         )
 
-        # Mock dos extratores
-        mock_resultado = ResultadoExtracao(
-            servico="receita_federal",
+        # Mock do método _extrair_servico
+        mock_resultado_servico = ResultadoServico(
+            servico=TipoServico.RECEITA_FEDERAL,
+            status=StatusExtracao.CONCLUIDA,
             inicio=datetime.utcnow(),
             fim=datetime.utcnow(),
-            status="concluida",
             documentos_processados=1,
             documentos_novos=1,
+            erros=[],
+            detalhes={},
         )
 
-        with patch.object(orquestrador, '_executar_extrator', new_callable=AsyncMock) as mock_exec:
-            mock_exec.return_value = mock_resultado
+        with patch.object(orquestrador, "_extrair_servico", new_callable=AsyncMock) as mock_exec:
+            mock_exec.return_value = mock_resultado_servico
 
             resultado = await orquestrador.iniciar_extracao(tenant_id, config)
 
             assert resultado is not None
-            assert resultado.status in ["concluida", "concluida_parcial", "pendente"]
+            assert resultado.status in [
+                StatusExtracao.CONCLUIDA,
+                StatusExtracao.CONCLUIDA_PARCIAL,
+                StatusExtracao.INICIADA,
+                StatusExtracao.EM_ANDAMENTO,
+            ]
             print("✓ Extração simples OK")
 
 
 class TestExtratoresIndividuais:
     """Testes dos extratores individuais."""
 
-    @pytest.mark.asyncio
-    async def test_extrator_nfe_instancia(self):
-        """Testa instanciação do extrator NF-e."""
-        from modules.government_integrations.extractors.sefaz.nfe_extractor import ExtratorNFe
+    @pytest.fixture
+    def mock_credentials(self):
+        """Fixture para mock de credenciais."""
+        return MagicMock()
 
-        extrator = ExtratorNFe()
+    @pytest.mark.asyncio
+    async def test_extrator_nfe_instancia(self, mock_credentials):
+        """Testa instanciação do extrator NF-e."""
+        from modules.government_integrations.extractors.sefaz.nfe_extractor import (
+            ExtratorNFe,
+        )
+
+        extrator = ExtratorNFe(credentials=mock_credentials)
 
         assert extrator.tipo_servico == "sefaz_nfe"
         assert extrator.TIMEOUT > 0
@@ -252,44 +267,52 @@ class TestExtratoresIndividuais:
         print("✓ Extrator NF-e instanciado OK")
 
     @pytest.mark.asyncio
-    async def test_extrator_esocial_instancia(self):
+    async def test_extrator_esocial_instancia(self, mock_credentials):
         """Testa instanciação do extrator eSocial."""
-        from modules.government_integrations.extractors.esocial.esocial_extractor import ExtratoreSocial
+        from modules.government_integrations.extractors.esocial.esocial_extractor import (
+            ExtratoreSocial,
+        )
 
-        extrator = ExtratoreSocial()
+        extrator = ExtratoreSocial(credentials=mock_credentials)
 
         assert extrator.tipo_servico == "esocial"
-        assert hasattr(extrator, 'EVENTOS_PERIODICOS')
-        assert hasattr(extrator, 'EVENTOS_NAO_PERIODICOS')
+        assert hasattr(extrator, "URLS")
+        assert hasattr(extrator, "listar_eventos_pendentes")
         print("✓ Extrator eSocial instanciado OK")
 
     @pytest.mark.asyncio
-    async def test_extrator_fgts_instancia(self):
+    async def test_extrator_fgts_instancia(self, mock_credentials):
         """Testa instanciação do extrator FGTS."""
-        from modules.government_integrations.extractors.fgts.fgts_extractor import ExtratorFGTS
+        from modules.government_integrations.extractors.fgts.fgts_extractor import (
+            ExtratorFGTS,
+        )
 
-        extrator = ExtratorFGTS()
+        extrator = ExtratorFGTS(credentials=mock_credentials)
 
         assert extrator.tipo_servico == "fgts_digital"
         print("✓ Extrator FGTS instanciado OK")
 
     @pytest.mark.asyncio
-    async def test_extrator_nfse_instancia(self):
+    async def test_extrator_nfse_instancia(self, mock_credentials):
         """Testa instanciação do extrator NFS-e."""
-        from modules.government_integrations.extractors.nfse.manaus_extractor import ExtratorNFSeManaus
+        from modules.government_integrations.extractors.nfse.manaus_extractor import (
+            ExtratorNFSeManaus,
+        )
 
-        extrator = ExtratorNFSeManaus()
+        extrator = ExtratorNFSeManaus(credentials=mock_credentials)
 
         assert extrator.tipo_servico == "nfse_manaus"
         assert "manaus" in extrator.URL_PRODUCAO.lower()
         print("✓ Extrator NFS-e Manaus instanciado OK")
 
     @pytest.mark.asyncio
-    async def test_extrator_rfb_instancia(self):
+    async def test_extrator_rfb_instancia(self, mock_credentials):
         """Testa instanciação do extrator RFB."""
-        from modules.government_integrations.extractors.receita_federal.rfb_extractor import ExtratorRFB
+        from modules.government_integrations.extractors.receita_federal.rfb_extractor import (
+            ExtratorRFB,
+        )
 
-        extrator = ExtratorRFB()
+        extrator = ExtratorRFB(credentials=mock_credentials)
 
         assert extrator.tipo_servico == "receita_federal"
         assert "cnpj" in extrator.URLS
@@ -302,9 +325,9 @@ class TestJobsCelery:
     def test_import_sync_tasks(self):
         """Testa importação das tasks de sync."""
         from modules.government_integrations.jobs.sync_tasks import (
-            sincronizar_nfe,
             sincronizar_esocial,
             sincronizar_fgts,
+            sincronizar_nfe,
             sincronizar_nfse,
             sincronizar_rfb,
             sincronizar_todos,
@@ -321,11 +344,11 @@ class TestJobsCelery:
     def test_import_monitoring_tasks(self):
         """Testa importação das tasks de monitoramento."""
         from modules.government_integrations.jobs.monitoring_tasks import (
-            verificar_disponibilidade,
-            verificar_certificados,
-            reprocessar_falhas,
-            limpar_cache,
             gerar_relatorio_diario,
+            limpar_cache,
+            reprocessar_falhas,
+            verificar_certificados,
+            verificar_disponibilidade,
         )
 
         assert verificar_disponibilidade is not None
@@ -349,9 +372,9 @@ class TestControllersAPI:
     def test_import_dashboard_controller(self):
         """Testa importação do dashboard controller."""
         from modules.government_integrations.controllers.dashboard_controller import (
-            router,
-            DashboardService,
             DashboardResponse,
+            DashboardService,
+            router,
         )
 
         assert router is not None
@@ -361,9 +384,9 @@ class TestControllersAPI:
     def test_import_extraction_controller(self):
         """Testa importação do extraction controller."""
         from modules.government_integrations.controllers.extraction_controller import (
-            router,
-            IniciarExtracaoRequest,
             ExtracaoResponse,
+            IniciarExtracaoRequest,
+            router,
         )
 
         assert router is not None
@@ -372,13 +395,15 @@ class TestControllersAPI:
 
     def test_dashboard_service_instancia(self):
         """Testa instanciação do DashboardService."""
-        from modules.government_integrations.controllers.dashboard_controller import DashboardService
+        from modules.government_integrations.controllers.dashboard_controller import (
+            DashboardService,
+        )
 
         service = DashboardService()
 
         assert service is not None
-        assert hasattr(service, 'obter_dashboard')
-        assert hasattr(service, 'obter_metricas')
+        assert hasattr(service, "obter_dashboard")
+        assert hasattr(service, "obter_metricas")
         print("✓ DashboardService instanciado OK")
 
 
@@ -408,12 +433,13 @@ def run_tests():
     test_result.test_resultado_to_dict()
 
     print("\n--- Extratores Individuais ---")
+    mock_cred = MagicMock()
     test_ext = TestExtratoresIndividuais()
-    asyncio.run(test_ext.test_extrator_nfe_instancia())
-    asyncio.run(test_ext.test_extrator_esocial_instancia())
-    asyncio.run(test_ext.test_extrator_fgts_instancia())
-    asyncio.run(test_ext.test_extrator_nfse_instancia())
-    asyncio.run(test_ext.test_extrator_rfb_instancia())
+    asyncio.run(test_ext.test_extrator_nfe_instancia(mock_cred))
+    asyncio.run(test_ext.test_extrator_esocial_instancia(mock_cred))
+    asyncio.run(test_ext.test_extrator_fgts_instancia(mock_cred))
+    asyncio.run(test_ext.test_extrator_nfse_instancia(mock_cred))
+    asyncio.run(test_ext.test_extrator_rfb_instancia(mock_cred))
 
     print("\n--- Jobs Celery ---")
     test_jobs = TestJobsCelery()

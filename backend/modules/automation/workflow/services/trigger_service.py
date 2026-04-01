@@ -8,18 +8,15 @@ import asyncio
 import hashlib
 import hmac
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
 import uuid
+from collections.abc import Callable
+from datetime import datetime, timedelta
+from typing import Any
 
 from modules._deprecated_workflows_dataclass.models.trigger import (
-    DataChangeConfig,
-    ScheduleConfig,
     ScheduleFrequency,
     Trigger,
-    TriggerEvent,
     TriggerType,
-    WebhookConfig,
 )
 from modules._deprecated_workflows_dataclass.models.workflow import Workflow
 
@@ -30,10 +27,10 @@ class TriggerRegistry:
     """Registro de triggers ativos."""
 
     def __init__(self):
-        self._triggers: Dict[str, Trigger] = {}
-        self._event_handlers: Dict[str, List[str]] = {}  # event -> [trigger_ids]
-        self._webhook_handlers: Dict[str, str] = {}  # webhook_id -> trigger_id
-        self._data_handlers: Dict[str, List[str]] = {}  # entity_type -> [trigger_ids]
+        self._triggers: dict[str, Trigger] = {}
+        self._event_handlers: dict[str, list[str]] = {}  # event -> [trigger_ids]
+        self._webhook_handlers: dict[str, str] = {}  # webhook_id -> trigger_id
+        self._data_handlers: dict[str, list[str]] = {}  # entity_type -> [trigger_ids]
 
     def register(self, trigger: Trigger) -> None:
         """Registra trigger."""
@@ -74,27 +71,19 @@ class TriggerRegistry:
             if trigger_id in handlers:
                 handlers.remove(trigger_id)
 
-    def get_trigger(self, trigger_id: str) -> Optional[Trigger]:
+    def get_trigger(self, trigger_id: str) -> Trigger | None:
         """Obtem trigger por ID."""
         return self._triggers.get(trigger_id)
 
-    def get_triggers_for_event(self, event: str) -> List[Trigger]:
+    def get_triggers_for_event(self, event: str) -> list[Trigger]:
         """Obtem triggers para evento."""
         trigger_ids = self._event_handlers.get(event, [])
-        return [
-            self._triggers[tid]
-            for tid in trigger_ids
-            if tid in self._triggers
-        ]
+        return [self._triggers[tid] for tid in trigger_ids if tid in self._triggers]
 
-    def get_triggers_for_data_change(self, entity_type: str) -> List[Trigger]:
+    def get_triggers_for_data_change(self, entity_type: str) -> list[Trigger]:
         """Obtem triggers para mudanca de dados."""
         trigger_ids = self._data_handlers.get(entity_type, [])
-        return [
-            self._triggers[tid]
-            for tid in trigger_ids
-            if tid in self._triggers
-        ]
+        return [self._triggers[tid] for tid in trigger_ids if tid in self._triggers]
 
 
 class TriggerService:
@@ -110,8 +99,8 @@ class TriggerService:
 
     def __init__(self):
         self.registry = TriggerRegistry()
-        self._workflow_executor: Optional[Callable] = None
-        self._scheduled_tasks: Dict[str, asyncio.Task] = {}
+        self._workflow_executor: Callable | None = None
+        self._scheduled_tasks: dict[str, asyncio.Task] = {}
 
     def set_executor(self, executor: Callable) -> None:
         """Define executor de workflows."""
@@ -139,10 +128,7 @@ class TriggerService:
         if trigger.trigger_type == TriggerType.SCHEDULE:
             await self._start_schedule_task(trigger)
 
-        logger.info(
-            f"Trigger {trigger.id} ({trigger.trigger_type.value}) "
-            f"registrado para workflow {workflow.name}"
-        )
+        logger.info(f"Trigger {trigger.id} ({trigger.trigger_type.value}) registrado para workflow {workflow.name}")
         return True
 
     async def unregister_trigger(self, trigger_id: str) -> bool:
@@ -159,8 +145,8 @@ class TriggerService:
     async def process_event(
         self,
         event_name: str,
-        event_data: Dict[str, Any],
-    ) -> List[str]:
+        event_data: dict[str, Any],
+    ) -> list[str]:
         """
         Processa evento do sistema.
 
@@ -185,19 +171,16 @@ class TriggerService:
                     execution_ids.append(exec_id)
                     trigger.record_trigger()
 
-        logger.info(
-            f"Evento {event_name} processado, "
-            f"{len(execution_ids)} workflows disparados"
-        )
+        logger.info(f"Evento {event_name} processado, {len(execution_ids)} workflows disparados")
         return execution_ids
 
     async def process_webhook(
         self,
         trigger_id: str,
-        payload: Dict[str, Any],
-        headers: Dict[str, str],
+        payload: dict[str, Any],
+        headers: dict[str, str],
         remote_ip: str = "",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Processa chamada de webhook.
 
@@ -253,9 +236,9 @@ class TriggerService:
         entity_type: str,
         entity_id: str,
         operation: str,
-        old_data: Dict[str, Any] = None,
-        new_data: Dict[str, Any] = None,
-    ) -> List[str]:
+        old_data: dict[str, Any] = None,
+        new_data: dict[str, Any] = None,
+    ) -> list[str]:
         """
         Processa mudanca de dados.
 
@@ -291,10 +274,7 @@ class TriggerService:
 
             # Verifica campos alterados
             if config.fields and old_data and new_data:
-                changed_fields = [
-                    f for f in config.fields
-                    if old_data.get(f) != new_data.get(f)
-                ]
+                changed_fields = [f for f in config.fields if old_data.get(f) != new_data.get(f)]
                 if not changed_fields:
                     continue
 
@@ -317,8 +297,8 @@ class TriggerService:
     async def _execute_workflow(
         self,
         trigger: Trigger,
-        input_data: Dict[str, Any],
-    ) -> Optional[str]:
+        input_data: dict[str, Any],
+    ) -> str | None:
         """Executa workflow associado ao trigger."""
         if not self._workflow_executor:
             logger.error("Executor de workflow nao configurado")
@@ -340,8 +320,8 @@ class TriggerService:
     def _map_input(
         self,
         trigger: Trigger,
-        input_data: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        input_data: dict[str, Any],
+    ) -> dict[str, Any]:
         """Mapeia dados de entrada."""
         if not trigger.input_mapping:
             return input_data
@@ -354,7 +334,7 @@ class TriggerService:
 
         return mapped
 
-    def _get_value_by_path(self, data: Dict[str, Any], path: str) -> Any:
+    def _get_value_by_path(self, data: dict[str, Any], path: str) -> Any:
         """Obtem valor por path (ex: $.user.name)."""
         if not path:
             return None
@@ -375,7 +355,7 @@ class TriggerService:
 
     def _validate_signature(
         self,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         signature: str,
         secret: str,
     ) -> bool:
@@ -384,6 +364,7 @@ class TriggerService:
             return False
 
         import json
+
         payload_str = json.dumps(payload, sort_keys=True)
         expected = hmac.new(
             secret.encode(),
@@ -398,9 +379,7 @@ class TriggerService:
         if trigger.id in self._scheduled_tasks:
             self._scheduled_tasks[trigger.id].cancel()
 
-        task = asyncio.create_task(
-            self._schedule_loop(trigger)
-        )
+        task = asyncio.create_task(self._schedule_loop(trigger))
         self._scheduled_tasks[trigger.id] = task
 
     async def _schedule_loop(self, trigger: Trigger) -> None:
@@ -420,10 +399,7 @@ class TriggerService:
                 else:
                     delay = (next_run - now).total_seconds()
 
-                logger.debug(
-                    f"Schedule {trigger.id} aguardando {delay}s "
-                    f"para proxima execucao em {next_run}"
-                )
+                logger.debug(f"Schedule {trigger.id} aguardando {delay}s para proxima execucao em {next_run}")
 
                 await asyncio.sleep(delay)
 
@@ -443,7 +419,7 @@ class TriggerService:
                 logger.error(f"Erro no schedule {trigger.id}: {e}")
                 await asyncio.sleep(60)  # Aguarda antes de tentar novamente
 
-    def get_next_run_time(self, trigger: Trigger) -> Optional[datetime]:
+    def get_next_run_time(self, trigger: Trigger) -> datetime | None:
         """
         Calcula proxima execucao para trigger agendado.
 

@@ -102,6 +102,7 @@ export default function NotificacoesPage() {
       });
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce filter sync
   }, [selectedType, showOnlyUnread]);
 
   const handleRefresh = () => {

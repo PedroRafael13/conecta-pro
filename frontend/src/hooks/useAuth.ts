@@ -89,6 +89,9 @@ export function useAuth() {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
 
+      // Sincronizar cookie para o middleware de rota
+      document.cookie = `auth_token=${access_token}; path=/; max-age=${30 * 60}; SameSite=Lax; Secure`;
+
       // Buscar dados do usuário após login
       const userResponse = await api.get<User>('/api/v1/auth/me');
 
@@ -114,6 +117,7 @@ export function useAuth() {
     } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      document.cookie = 'auth_token=; path=/; max-age=0';
       setState({ user: null, isLoading: false, isAuthenticated: false });
       router.push('/login');
     }

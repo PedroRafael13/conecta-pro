@@ -2,20 +2,20 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.analytics_dashboard.models import (
+    AggregationType,
     DashboardConfig,
     DashboardWidget,
     DataSource,
-    AggregationType,
 )
 from modules.hr.analytics_dashboard.repositories import (
-    DashboardRepository,
     CacheRepository,
+    DashboardRepository,
 )
 from modules.hr.analytics_dashboard.schemas import (
     DashboardConfigCreate,
@@ -24,11 +24,11 @@ from modules.hr.analytics_dashboard.schemas import (
     DashboardWidgetUpdate,
     WidgetDataResponse,
 )
-from modules.hr.analytics_dashboard.services.metrics_aggregator_service import (
-    MetricsAggregatorService,
-)
 from modules.hr.analytics_dashboard.services.kpi_calculator_service import (
     KPICalculatorService,
+)
+from modules.hr.analytics_dashboard.services.metrics_aggregator_service import (
+    MetricsAggregatorService,
 )
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class DashboardService:
         user_id: UUID,
         include_widgets: bool = True,
         record_view: bool = True,
-    ) -> Optional[DashboardConfig]:
+    ) -> DashboardConfig | None:
         """Obtém dashboard com verificação de acesso."""
         dashboard = await self.dashboard_repo.get_dashboard_by_id(
             dashboard_id=dashboard_id,
@@ -113,7 +113,7 @@ class DashboardService:
         dashboard_id: UUID,
         data: DashboardConfigUpdate,
         user_id: UUID,
-    ) -> Optional[DashboardConfig]:
+    ) -> DashboardConfig | None:
         """Atualiza dashboard com verificação de permissão."""
         dashboard = await self.dashboard_repo.get_dashboard_by_id(dashboard_id)
 
@@ -146,7 +146,7 @@ class DashboardService:
         new_name: str,
         user_id: UUID,
         include_widgets: bool = True,
-    ) -> Optional[DashboardConfig]:
+    ) -> DashboardConfig | None:
         """Clona dashboard."""
         source = await self.dashboard_repo.get_dashboard_by_id(source_id)
 
@@ -186,7 +186,7 @@ class DashboardService:
         dashboard_id: UUID,
         data: DashboardWidgetCreate,
         user_id: UUID,
-    ) -> Optional[DashboardWidget]:
+    ) -> DashboardWidget | None:
         """Adiciona widget ao dashboard."""
         dashboard = await self.dashboard_repo.get_dashboard_by_id(dashboard_id)
 
@@ -202,7 +202,7 @@ class DashboardService:
         widget_id: UUID,
         data: DashboardWidgetUpdate,
         user_id: UUID,
-    ) -> Optional[DashboardWidget]:
+    ) -> DashboardWidget | None:
         """Atualiza widget."""
         widget = await self.dashboard_repo.get_widget_by_id(widget_id)
         if not widget:
@@ -237,7 +237,7 @@ class DashboardService:
     async def update_widget_positions(
         self,
         dashboard_id: UUID,
-        positions: List[dict],
+        positions: list[dict],
         user_id: UUID,
     ) -> bool:
         """Atualiza posições de múltiplos widgets."""
@@ -255,7 +255,7 @@ class DashboardService:
         user_id: UUID,
         filters: dict = None,
         force_refresh: bool = False,
-    ) -> Optional[WidgetDataResponse]:
+    ) -> WidgetDataResponse | None:
         """Obtém dados de um widget."""
         widget = await self.dashboard_repo.get_widget_by_id(widget_id)
         if not widget:
@@ -321,7 +321,7 @@ class DashboardService:
         self,
         dashboard_id: UUID,
         user_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Atualiza dados de todos os widgets do dashboard."""
         dashboard = await self.dashboard_repo.get_dashboard_by_id(dashboard_id)
 
@@ -345,24 +345,28 @@ class DashboardService:
                     force_refresh=True,
                 )
                 results["widgets_refreshed"] += 1
-                results["details"].append({
-                    "widget_id": str(widget.id),
-                    "status": "success",
-                })
+                results["details"].append(
+                    {
+                        "widget_id": str(widget.id),
+                        "status": "success",
+                    }
+                )
             except (ValueError, KeyError, TypeError, RuntimeError) as e:
                 results["widgets_failed"] += 1
-                results["details"].append({
-                    "widget_id": str(widget.id),
-                    "status": "failed",
-                    "error": str(e),
-                })
+                results["details"].append(
+                    {
+                        "widget_id": str(widget.id),
+                        "status": "failed",
+                        "error": str(e),
+                    }
+                )
 
         return results
 
     async def get_dashboard_templates(
         self,
         condominio_id: UUID = None,
-    ) -> List[DashboardConfig]:
+    ) -> list[DashboardConfig]:
         """Retorna templates de dashboard disponíveis."""
         dashboards, _ = await self.dashboard_repo.list_dashboards(
             condominio_id=condominio_id,

@@ -52,52 +52,52 @@ from fastapi import APIRouter
 # Importa routers dos controllers
 from .controllers import disciplinary_router
 
-# Cria router principal
-router = APIRouter()
-router.include_router(disciplinary_router)
-
 # Re-export models
 from .models import (
-    DisciplinaryAction,
-    DisciplinaryActionType,
-    DisciplinaryActionStatus,
-    ReasonCategory,
-    DisciplinaryTemplate,
     DigitalSignature,
+    DisciplinaryAction,
+    DisciplinaryActionStatus,
+    DisciplinaryActionType,
+    DisciplinaryTemplate,
+    ReasonCategory,
     SignerType,
-)
-
-# Re-export services
-from .services import (
-    DisciplinaryService,
-    TemplateService,
-    SignatureService,
-    DisciplinaryAdvisor,
-    get_disciplinary_service,
-    get_template_service,
-    get_signature_service,
-    get_disciplinary_advisor,
 )
 
 # Re-export repositories
 from .repositories import (
     DisciplinaryRepository,
-    TemplateRepository,
     SignatureRepository,
+    TemplateRepository,
 )
 
 # Re-export schemas
 from .schemas import (
     DisciplinaryActionCreate,
-    DisciplinaryActionUpdate,
-    DisciplinaryActionResponse,
     DisciplinaryActionListResponse,
+    DisciplinaryActionResponse,
+    DisciplinaryActionUpdate,
     DisciplinaryFilter,
-    TemplateCreate,
-    TemplateResponse,
     SignatureCreate,
     SignatureResponse,
+    TemplateCreate,
+    TemplateResponse,
 )
+
+# Re-export services
+from .services import (
+    DisciplinaryAdvisor,
+    DisciplinaryService,
+    SignatureService,
+    TemplateService,
+    get_disciplinary_advisor,
+    get_disciplinary_service,
+    get_signature_service,
+    get_template_service,
+)
+
+# Cria router principal
+router = APIRouter()
+router.include_router(disciplinary_router)
 
 __all__ = [
     # Router

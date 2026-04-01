@@ -3,8 +3,8 @@ Modelo Scale (Escala de Trabalho) para Operações.
 """
 
 from datetime import date, datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, func
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from .shift import Shift
 
 
-class ScaleType(str, Enum):
+class ScaleType(StrEnum):
     """Tipo de escala de trabalho."""
 
     SCALE_12X36 = "12x36"  # 12h trabalho, 36h descanso
@@ -31,7 +31,7 @@ class ScaleType(str, Enum):
     PERSONALIZADO = "personalizado"  # Escala customizada
 
 
-class ScaleStatus(str, Enum):
+class ScaleStatus(StrEnum):
     """Status da escala."""
 
     DRAFT = "draft"  # Rascunho
@@ -98,10 +98,10 @@ class Scale(Base):
     # Período
     month: Mapped[int] = mapped_column(Integer, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
-    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Métricas
     total_shifts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -111,7 +111,7 @@ class Scale(Base):
     estimated_cost: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
 
     # Configurações da escala (JSON)
-    config: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     """
     Exemplo de config:
     {
@@ -125,22 +125,22 @@ class Scale(Base):
     """
 
     # Observações
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Aprovação
-    approved_by: Mapped[Optional[str]] = mapped_column(
+    approved_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    approval_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    approval_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Publicação
-    published_by: Mapped[Optional[str]] = mapped_column(
+    published_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Campos de controle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -155,7 +155,7 @@ class Scale(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
@@ -166,7 +166,7 @@ class Scale(Base):
         back_populates="scales",
         lazy="noload",
     )
-    shifts: Mapped[List["Shift"]] = relationship(
+    shifts: Mapped[list["Shift"]] = relationship(
         "Shift",
         back_populates="scale",
         lazy="noload",

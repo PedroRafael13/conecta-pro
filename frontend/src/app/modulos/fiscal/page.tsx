@@ -1,6 +1,6 @@
 'use client';
 
-import { Landmark, FileText, Users, Database, FileSpreadsheet, FileCode, Award, RefreshCw, ArrowRight, AlertCircle } from 'lucide-react';
+import { Landmark, FileText, Users, Database, FileSpreadsheet, FileCode, Award, RefreshCw, ArrowRight, AlertCircle, Receipt } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,14 @@ export default function FiscalDashboardPage() {
   ];
 
   const navigationCards = [
+    {
+      title: 'NF-e',
+      description: 'Emissão e gestão de Notas Fiscais Eletrônicas (produtos)',
+      icon: Receipt,
+      href: '/modulos/financeiro/fiscal',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+    },
     {
       title: 'NFS-e',
       description: 'Emissao e gestao de Notas Fiscais de Servico Eletronica',

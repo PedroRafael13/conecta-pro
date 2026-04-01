@@ -7,12 +7,6 @@ Implementa:
 - Token bucket para controle de taxa
 """
 
-from .rate_limiter import (
-    RateLimiter,
-    LimiteServico,
-    LIMITES_SERVICOS,
-    get_rate_limiter,
-)
 from .celery_config import (
     CeleryConfig,
     TaskPriority,
@@ -23,6 +17,12 @@ from .queue_manager import (
     GerenciadorFilas,
     StatusFila,
     get_queue_manager,
+)
+from .rate_limiter import (
+    LIMITES_SERVICOS,
+    LimiteServico,
+    RateLimiter,
+    get_rate_limiter,
 )
 
 __all__ = [

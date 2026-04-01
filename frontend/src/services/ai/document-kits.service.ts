@@ -3,10 +3,10 @@
  * Análise inteligente de kits documentais: compliance, previsões, prioridades
  */
 
-import { getDocumentKits } from '@/types/generated/ai/document-kits/document-kits';
+import { customInstance } from '@/lib/axios-instance';
 import { EntityType } from '@/types/generated/ai/conectaPROAIBartoloAPI.schemas';
 
-const kitsApi = getDocumentKits();
+const BASE = '/api/v1/document-kits/ai';
 
 /**
  * Service para análise de kits documentais com IA
@@ -19,12 +19,10 @@ export class DocumentKitsAIService {
     entityType: EntityType,
     entityId: string,
     condominioId: string
-  ): Promise<any> {
-    return kitsApi.analyzeComplianceApiV1DocumentKitsAiComplianceEntityTypeEntityIdGet(
-      entityType,
-      entityId,
-      { condominio_id: condominioId }
-    );
+  ): Promise<unknown> {
+    return customInstance.get(`${BASE}/compliance/${entityType}/${entityId}`, {
+      params: { condominio_id: condominioId },
+    });
   }
 
   /**
@@ -33,10 +31,9 @@ export class DocumentKitsAIService {
   static async getExpiringDocuments(
     condominioId: string,
     daysAhead?: number
-  ): Promise<any> {
-    return kitsApi.getExpiringDocumentsApiV1DocumentKitsAiExpiringGet({
-      condominio_id: condominioId,
-      days_ahead: daysAhead,
+  ): Promise<unknown> {
+    return customInstance.get(`${BASE}/expiring`, {
+      params: { condominio_id: condominioId, days_ahead: daysAhead },
     });
   }
 
@@ -46,11 +43,10 @@ export class DocumentKitsAIService {
   static async predictStatus(
     assignmentId: string,
     condominioId: string
-  ): Promise<any> {
-    return kitsApi.predictCompletionApiV1DocumentKitsAiPredictAssignmentIdGet(
-      assignmentId,
-      { condominio_id: condominioId }
-    );
+  ): Promise<unknown> {
+    return customInstance.get(`${BASE}/predict/${assignmentId}`, {
+      params: { condominio_id: condominioId },
+    });
   }
 
   /**
@@ -59,10 +55,9 @@ export class DocumentKitsAIService {
   static async getPriorities(
     condominioId: string,
     limit?: number
-  ): Promise<any> {
-    return kitsApi.getPrioritiesApiV1DocumentKitsAiPrioritiesGet({
-      condominio_id: condominioId,
-      limit,
+  ): Promise<unknown> {
+    return customInstance.get(`${BASE}/priorities`, {
+      params: { condominio_id: condominioId, limit },
     });
   }
 
@@ -74,21 +69,23 @@ export class DocumentKitsAIService {
     entityType: EntityType,
     cargo?: string,
     departamento?: string
-  ): Promise<any> {
-    return kitsApi.suggestKitsApiV1DocumentKitsAiSuggestGet({
-      condominio_id: condominioId,
-      entity_type: entityType,
-      cargo,
-      departamento,
+  ): Promise<unknown> {
+    return customInstance.get(`${BASE}/suggest`, {
+      params: {
+        condominio_id: condominioId,
+        entity_type: entityType,
+        cargo,
+        departamento,
+      },
     });
   }
 
   /**
    * Analisa uso e padrões de documentação
    */
-  static async analyzeUsage(condominioId: string): Promise<any> {
-    return kitsApi.analyzeUsageApiV1DocumentKitsAiUsageGet({
-      condominio_id: condominioId,
+  static async analyzeUsage(condominioId: string): Promise<unknown> {
+    return customInstance.get(`${BASE}/usage`, {
+      params: { condominio_id: condominioId },
     });
   }
 }

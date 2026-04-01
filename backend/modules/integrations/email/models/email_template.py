@@ -3,9 +3,9 @@
 Sprint 32 - Automacoes Email.
 """
 
-import enum
 import re
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +23,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class TemplateCategory(str, enum.Enum):
+class TemplateCategory(StrEnum):
     """Categoria do template."""
 
     TRANSACTIONAL = "TRANSACTIONAL"  # Transacional (confirmacoes, recibos)
@@ -35,7 +35,7 @@ class TemplateCategory(str, enum.Enum):
     SUPPORT = "SUPPORT"  # Suporte ao cliente
 
 
-class TemplateStatus(str, enum.Enum):
+class TemplateStatus(StrEnum):
     """Status do template."""
 
     DRAFT = "DRAFT"  # Rascunho

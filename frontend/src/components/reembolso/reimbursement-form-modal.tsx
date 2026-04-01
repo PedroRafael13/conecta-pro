@@ -14,7 +14,7 @@ import type {
   ExpenseCategory,
 } from '@/types/reimbursement';
 import { EXPENSE_CATEGORY_LABELS } from '@/types/reimbursement';
-;
+import { reimbursementRequestService, reimbursementItemService } from '@/services/reimbursement';
 
 interface ReimbursementFormModalProps {
   request?: ReimbursementRequest | null;
@@ -38,7 +38,7 @@ const EMPTY_ITEM: ItemFormData = {
   category_type: 'outros',
   description: '',
   merchant: '',
-  expense_date: new Date().toISOString().split('T')[0],
+  expense_date: new Date().toISOString().split('T')[0] ?? '',
   amount: 0,
   document_number: '',
   notes: '',
@@ -59,8 +59,8 @@ export function ReimbursementFormModal({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    expense_date_start: new Date().toISOString().split('T')[0],
-    expense_date_end: new Date().toISOString().split('T')[0],
+    expense_date_start: new Date().toISOString().split('T')[0] ?? '',
+    expense_date_end: new Date().toISOString().split('T')[0] ?? '',
     cost_center: '',
     project: '',
     notes: '',
@@ -108,8 +108,8 @@ export function ReimbursementFormModal({
       setFormData({
         title: '',
         description: '',
-        expense_date_start: new Date().toISOString().split('T')[0],
-        expense_date_end: new Date().toISOString().split('T')[0],
+        expense_date_start: new Date().toISOString().split('T')[0] ?? '',
+        expense_date_end: new Date().toISOString().split('T')[0] ?? '',
         cost_center: '',
         project: '',
         notes: '',
@@ -137,7 +137,10 @@ export function ReimbursementFormModal({
   ) => {
     setItems((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      const current = updated[index];
+      if (current) {
+        updated[index] = { ...current, [field]: value };
+      }
       return updated;
     });
   };
@@ -191,7 +194,7 @@ export function ReimbursementFormModal({
 
       if (isEditing && request) {
         // Update existing request
-        await reimbursementService.update(request.id, {
+        await reimbursementRequestService.update(request.id, {
           title: formData.title,
           description: formData.description || undefined,
           expense_date_start: formData.expense_date_start,
@@ -208,10 +211,10 @@ export function ReimbursementFormModal({
         // Update items (simplified - delete and recreate)
         // In production, you'd want to diff and update individually
         for (const existingItem of request.items) {
-          await reimbursementService.deleteItem(request.id, existingItem.id);
+          await reimbursementItemService.delete(request.id, existingItem.id);
         }
         for (const newItem of itemsToSend) {
-          await reimbursementService.addItem(request.id, newItem);
+          await reimbursementItemService.create(request.id, newItem);
         }
       } else {
         // Create new request
@@ -230,7 +233,7 @@ export function ReimbursementFormModal({
           items: itemsToSend,
         };
 
-        await reimbursementService.create(createData);
+        await reimbursementRequestService.create(createData);
       }
 
       onSuccess();
@@ -246,8 +249,8 @@ export function ReimbursementFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Solicitacao' : 'Nova Solicitacao de Reembolso'}
-      description={isEditing ? `Editando ${request?.code}` : 'Preencha os dados da solicitacao'}
+      title={isEditing ? 'Editar Solicitação' : 'Nova Solicitação de Reembolso'}
+      description={isEditing ? `Editando ${request?.code}` : 'Preencha os dados da solicitação'}
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -274,7 +277,7 @@ export function ReimbursementFormModal({
                 onChange={handleChange}
                 placeholder="Ex: Despesas Janeiro 2026"
                 required
-              />
+               aria-label="Ex: Despesas Janeiro 2026" />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -286,7 +289,7 @@ export function ReimbursementFormModal({
                 value={formData.expense_date_start}
                 onChange={handleChange}
                 required
-              />
+               aria-label="Expense Date Start" />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -298,7 +301,7 @@ export function ReimbursementFormModal({
                 value={formData.expense_date_end}
                 onChange={handleChange}
                 required
-              />
+               aria-label="Expense Date End" />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -309,7 +312,7 @@ export function ReimbursementFormModal({
                 value={formData.cost_center}
                 onChange={handleChange}
                 placeholder="Centro de custo"
-              />
+               aria-label="Centro de custo" />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -320,7 +323,7 @@ export function ReimbursementFormModal({
                 value={formData.project}
                 onChange={handleChange}
                 placeholder="Projeto"
-              />
+               aria-label="Projeto" />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -333,7 +336,7 @@ export function ReimbursementFormModal({
                 rows={2}
                 placeholder="Descricao das despesas..."
                 className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-              />
+               aria-label="Descricao das despesas..." />
             </div>
           </div>
         </div>
@@ -473,7 +476,7 @@ export function ReimbursementFormModal({
                 onChange={handleChange}
                 placeholder="001"
                 maxLength={10}
-              />
+               aria-label="001" />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -485,7 +488,7 @@ export function ReimbursementFormModal({
                 onChange={handleChange}
                 placeholder="0001"
                 maxLength={10}
-              />
+               aria-label="0001" />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -497,7 +500,7 @@ export function ReimbursementFormModal({
                 onChange={handleChange}
                 placeholder="12345-6"
                 maxLength={20}
-              />
+               aria-label="12345-6" />
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -508,7 +511,7 @@ export function ReimbursementFormModal({
                 value={formData.pix_key}
                 onChange={handleChange}
                 placeholder="email@exemplo.com"
-              />
+               aria-label="email@exemplo.com" />
             </div>
           </div>
         </div>
@@ -525,7 +528,7 @@ export function ReimbursementFormModal({
             rows={2}
             placeholder="Observacoes adicionais..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-          />
+           aria-label="Observacoes adicionais..." />
         </div>
 
         <ModalFooter>
@@ -534,7 +537,7 @@ export function ReimbursementFormModal({
           </Button>
           <Button type="submit" variant="primary" disabled={isLoading}>
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isEditing ? 'Salvar Alteracoes' : 'Criar Solicitacao'}
+            {isEditing ? 'Salvar Alterações' : 'Criar Solicitação'}
           </Button>
         </ModalFooter>
       </form>

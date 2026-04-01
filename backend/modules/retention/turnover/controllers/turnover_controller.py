@@ -12,7 +12,6 @@ Seguranca:
 """
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -20,11 +19,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import (
     CurrentActiveUser,
-    require_permission,
     require_roles,
 )
 from core.database import get_db
-
 from modules.retention.turnover.models.turnover_models import (
     CategoriaFator,
     NivelRisco,
@@ -40,12 +37,10 @@ from modules.retention.turnover.schemas.turnover_schemas import (
     AlertResponse,
     AlertSummary,
     AlertVisualizarRequest,
-    DashboardFiltro,
     DashboardResponse,
     FatoresListResponse,
-    FatorAgregadoResponse,
-    FeaturesConfigResponse,
     FeatureConfig,
+    FeaturesConfigResponse,
     HistoricoResponse,
     PredictionFilter,
     PredictionListResponse,
@@ -58,11 +53,11 @@ from modules.retention.turnover.schemas.turnover_schemas import (
     RiskFactorResponse,
     RiskFactorSummary,
 )
+from modules.retention.turnover.services.risk_analyzer import RiskAnalyzer
 from modules.retention.turnover.services.turnover_predictor import (
     FEATURES_CONFIG,
     TurnoverPredictor,
 )
-from modules.retention.turnover.services.risk_analyzer import RiskAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +71,8 @@ router = APIRouter(
 # Helper Functions
 # =============================================================================
 
-def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
+
+def get_client_info(request: Request) -> tuple[str | None, str | None]:
     """Extrai IP e User-Agent do request."""
     ip = request.client.host if request.client else None
     user_agent = request.headers.get("User-Agent")
@@ -93,7 +89,7 @@ async def verificar_permissao_visualizacao(
         return
 
     # Verificar se pertence ao condominio
-    user_condominium = getattr(user, 'condominium_id', None)
+    user_condominium = getattr(user, "condominium_id", None)
     if user_condominium and str(user_condominium) != str(condominium_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -105,6 +101,7 @@ async def verificar_permissao_visualizacao(
 # Prediction Endpoints
 # =============================================================================
 
+
 @router.get(
     "/predictions",
     response_model=PredictionListResponse,
@@ -115,9 +112,9 @@ async def listar_predictions(
     request: Request,
     current_user: CurrentActiveUser,
     condominium_id: UUID = Query(..., description="ID do condominio"),
-    nivel: Optional[NivelRisco] = Query(None, description="Filtrar por nivel"),
-    score_minimo: Optional[float] = Query(None, ge=0, le=100),
-    score_maximo: Optional[float] = Query(None, ge=0, le=100),
+    nivel: NivelRisco | None = Query(None, description="Filtrar por nivel"),
+    score_minimo: float | None = Query(None, ge=0, le=100),
+    score_maximo: float | None = Query(None, ge=0, le=100),
     apenas_alerta: bool = Query(False, description="Apenas scores >= 70"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -279,7 +276,7 @@ async def recalcular_funcionario(
     funcionario_id: UUID,
     current_user: CurrentActiveUser,
     condominium_id: UUID = Query(..., description="ID do condominio"),
-    dados: Optional[RecalcularRequest] = None,
+    dados: RecalcularRequest | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> RecalcularResponse:
     """Recalcula risco de turnover para funcionario especifico."""
@@ -288,7 +285,6 @@ async def recalcular_funcionario(
     predictor = TurnoverPredictor(db)
     analyzer = RiskAnalyzer(db)
 
-    # TODO: Integrar com servico de funcionarios para obter dados reais
     # Por enquanto, usar dados mockados para demonstracao
     dados_funcionario = {
         "funcionario_id": str(funcionario_id),
@@ -347,18 +343,19 @@ async def recalcular_todos(
     request: Request,
     current_user: CurrentActiveUser,
     condominium_id: UUID = Query(..., description="ID do condominio"),
-    dados: Optional[RecalcularBatchRequest] = None,
+    dados: RecalcularBatchRequest | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> RecalcularBatchResponse:
     """Recalcula risco de turnover para todos os funcionarios."""
     predictor = TurnoverPredictor(db)
     analyzer = RiskAnalyzer(db)
 
-    # TODO: Integrar com servico de funcionarios para obter lista real
     # Por enquanto, usar dados mockados para demonstracao
     funcionarios_dados = [
         {
-            "funcionario_id": dados.funcionario_ids[0] if dados and dados.funcionario_ids else "550e8400-e29b-41d4-a716-446655440001",
+            "funcionario_id": dados.funcionario_ids[0]
+            if dados and dados.funcionario_ids
+            else "550e8400-e29b-41d4-a716-446655440001",
             "faltas_ultimo_mes": 2,
             "atrasos_ultimo_mes": 5,
             "ocorrencias_trimestre": 1,
@@ -409,6 +406,7 @@ async def recalcular_todos(
 # Alert Endpoints
 # =============================================================================
 
+
 @router.get(
     "/alerts",
     response_model=AlertListResponse,
@@ -419,8 +417,8 @@ async def listar_alerts(
     request: Request,
     current_user: CurrentActiveUser,
     condominium_id: UUID = Query(..., description="ID do condominio"),
-    tipo: Optional[TipoAlerta] = Query(None, description="Filtrar por tipo"),
-    visualizado: Optional[bool] = Query(None, description="Filtrar por status"),
+    tipo: TipoAlerta | None = Query(None, description="Filtrar por tipo"),
+    visualizado: bool | None = Query(None, description="Filtrar por status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -675,6 +673,7 @@ async def registrar_acao_alert(
 # Dashboard Endpoints
 # =============================================================================
 
+
 @router.get(
     "/dashboard",
     response_model=DashboardResponse,
@@ -685,7 +684,7 @@ async def get_dashboard(
     request: Request,
     current_user: CurrentActiveUser,
     condominium_id: UUID = Query(..., description="ID do condominio"),
-    setor_id: Optional[UUID] = Query(None, description="Filtrar por setor"),
+    setor_id: UUID | None = Query(None, description="Filtrar por setor"),
     db: AsyncSession = Depends(get_db),
 ) -> DashboardResponse:
     """Retorna dados do dashboard de turnover."""
@@ -724,6 +723,7 @@ async def get_dashboard(
 # Factors Endpoints
 # =============================================================================
 
+
 @router.get(
     "/factors",
     response_model=FatoresListResponse,
@@ -734,7 +734,7 @@ async def listar_fatores(
     request: Request,
     current_user: CurrentActiveUser,
     condominium_id: UUID = Query(..., description="ID do condominio"),
-    categoria: Optional[CategoriaFator] = Query(None, description="Filtrar categoria"),
+    categoria: CategoriaFator | None = Query(None, description="Filtrar categoria"),
     db: AsyncSession = Depends(get_db),
 ) -> FatoresListResponse:
     """Lista fatores de risco com estatisticas agregadas."""
@@ -768,6 +768,7 @@ async def listar_fatores(
 # =============================================================================
 # History Endpoints
 # =============================================================================
+
 
 @router.get(
     "/historico/{funcionario_id}",
@@ -819,6 +820,7 @@ async def get_historico(
 # =============================================================================
 # Configuration Endpoints
 # =============================================================================
+
 
 @router.get(
     "/config/features",

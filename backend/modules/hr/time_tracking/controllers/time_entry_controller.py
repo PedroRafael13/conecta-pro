@@ -2,35 +2,34 @@
 # pylint: disable=unused-argument
 
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
-from modules.hr.time_tracking.repositories import TimeEntryRepository
-from modules.hr.time_tracking.services import (
-    TimeCalculationService,
-    AnomalyDetectionService,
-)
-from modules.hr.time_tracking.schemas import (
-    TimeEntryCreate,
-    TimeEntryUpdate,
-    TimeEntryResponse,
-    TimeEntryListResponse,
-    TimeEntryFilter,
-    TimeEntryStats,
-    TimeEntryDaySummary,
-    TimeEntryManualAdjust,
-    TimeEntryApproval,
-)
+from core.database import get_db
 from modules.hr.time_tracking.models import (
-    EntryType,
-    EntryStatus,
-    RegistrationMethod,
     AnomalyType,
+    EntryStatus,
+    EntryType,
+    RegistrationMethod,
+)
+from modules.hr.time_tracking.repositories import TimeEntryRepository
+from modules.hr.time_tracking.schemas import (
+    TimeEntryApproval,
+    TimeEntryCreate,
+    TimeEntryDaySummary,
+    TimeEntryFilter,
+    TimeEntryListResponse,
+    TimeEntryManualAdjust,
+    TimeEntryResponse,
+    TimeEntryStats,
+    TimeEntryUpdate,
+)
+from modules.hr.time_tracking.services import (
+    AnomalyDetectionService,
+    TimeCalculationService,
 )
 
 router = APIRouter(
@@ -81,18 +80,18 @@ async def create_time_entry(
     summary="Listar registros de ponto",
 )
 async def list_time_entries(  # pylint: disable=too-many-locals
-    employee_id: Optional[str] = None,
-    entry_type: Optional[EntryType] = None,
-    entry_status: Optional[EntryStatus] = Query(None, alias="status"),
-    registration_method: Optional[RegistrationMethod] = None,
-    anomaly_type: Optional[AnomalyType] = None,
-    condominium_id: Optional[str] = None,
-    department_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    has_anomaly: Optional[bool] = None,
-    requires_approval: Optional[bool] = None,
-    is_manual_entry: Optional[bool] = None,
+    employee_id: str | None = None,
+    entry_type: EntryType | None = None,
+    entry_status: EntryStatus | None = Query(None, alias="status"),
+    registration_method: RegistrationMethod | None = None,
+    anomaly_type: AnomalyType | None = None,
+    condominium_id: str | None = None,
+    department_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    has_anomaly: bool | None = None,
+    requires_approval: bool | None = None,
+    is_manual_entry: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -127,10 +126,10 @@ async def list_time_entries(  # pylint: disable=too-many-locals
     summary="Estatísticas de registros",
 )
 async def get_time_entry_stats(
-    condominium_id: Optional[str] = None,
-    employee_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    condominium_id: str | None = None,
+    employee_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -153,7 +152,7 @@ async def get_time_entry_stats(
     summary="Registros pendentes de aprovação",
 )
 async def get_pending_approval(
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -173,9 +172,9 @@ async def get_pending_approval(
     summary="Registros com anomalias",
 )
 async def get_with_anomalies(
-    condominium_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    condominium_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -184,9 +183,7 @@ async def get_with_anomalies(
     """Lista registros com anomalias não resolvidas."""
     repo = TimeEntryRepository(db)
 
-    entries = await repo.get_with_anomalies(
-        condominium_id, date_from, date_to, skip, limit
-    )
+    entries = await repo.get_with_anomalies(condominium_id, date_from, date_to, skip, limit)
 
     return entries
 

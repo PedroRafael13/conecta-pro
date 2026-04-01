@@ -3,6 +3,7 @@ Controller (endpoints) para Allocation (Alocação Funcionário-Posto).
 """
 
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,7 +47,7 @@ async def create_allocation(
     Requer autenticação.
     """
     repo = AllocationRepository(db)
-    allocation = await repo.create(data)
+    allocation: Any = await repo.create(data)
 
     logger.info(
         "Allocation criada com sucesso",
@@ -95,6 +96,8 @@ async def list_allocations(  # pylint: disable=too-many-locals
         start_date_to=start_date_to,
     )
 
+    allocations: list[Any]
+    total: int
     allocations, total = await repo.list(filters=filters, page=page, page_size=page_size)
     total_pages = (total + page_size - 1) // page_size
 
@@ -128,6 +131,8 @@ async def get_current_allocations(
         status=AllocationStatus.ACTIVE,
     )
 
+    allocations: list[Any]
+    _: int
     allocations, _ = await repo.list(filters=filters, page=1, page_size=500)
 
     return [AllocationResponse.model_validate(a) for a in allocations]
@@ -142,12 +147,12 @@ async def get_available_employees(
     target_date: date,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """
     Lista funcionários disponíveis para alocação em um posto na data.
     """
     repo = AllocationRepository(db)
-    employees = await repo.get_available_employees(post_id, target_date)
+    employees: list[dict[str, Any]] = await repo.get_available_employees(post_id, target_date)
 
     return employees
 
@@ -173,6 +178,8 @@ async def get_allocations_by_post(
         is_current=None if include_inactive else True,
     )
 
+    allocations: list[Any]
+    _: int
     allocations, _ = await repo.list(filters=filters, page=1, page_size=500)
 
     return [AllocationResponse.model_validate(a) for a in allocations]
@@ -199,6 +206,8 @@ async def get_allocations_by_employee(
         is_current=None if include_inactive else True,
     )
 
+    allocations: list[Any]
+    _: int
     allocations, _ = await repo.list(filters=filters, page=1, page_size=500)
 
     return [AllocationResponse.model_validate(a) for a in allocations]
@@ -218,7 +227,7 @@ async def get_allocation(
     Busca alocação por ID.
     """
     repo = AllocationRepository(db)
-    allocation = await repo.get_by_id(allocation_id)
+    allocation: Any = await repo.get_by_id(allocation_id)
 
     if not allocation:
         raise HTTPException(
@@ -244,7 +253,7 @@ async def update_allocation(
     Atualiza uma alocação.
     """
     repo = AllocationRepository(db)
-    allocation = await repo.update(allocation_id, data)
+    allocation: Any = await repo.update(allocation_id, data)
 
     if not allocation:
         raise HTTPException(
@@ -277,7 +286,7 @@ async def terminate_allocation(
     Encerra uma alocação.
     """
     repo = AllocationRepository(db)
-    allocation = await repo.terminate(
+    allocation: Any = await repo.terminate(
         allocation_id,
         data.end_date,
         data.termination_reason,
@@ -314,7 +323,7 @@ async def delete_allocation(
     Remove uma alocação (soft delete).
     """
     repo = AllocationRepository(db)
-    deleted = await repo.delete(allocation_id)
+    deleted: bool = await repo.delete(allocation_id)
 
     if not deleted:
         raise HTTPException(
@@ -349,7 +358,7 @@ async def bulk_delete_allocations(
     Retorna contagem de sucessos e erros.
     """
     repo = AllocationRepository(db)
-    result = await repo.bulk_delete(data.allocation_ids)
+    result: dict[str, int] = await repo.bulk_delete(data.allocation_ids)
 
     logger.info(
         "Bulk delete de alocações",
@@ -382,7 +391,7 @@ async def bulk_update_allocations(
     Retorna contagem de sucessos e erros.
     """
     repo = AllocationRepository(db)
-    result = await repo.bulk_update(data.items)
+    result: dict[str, int] = await repo.bulk_update(data.items)
 
     logger.info(
         "Bulk update de alocações",

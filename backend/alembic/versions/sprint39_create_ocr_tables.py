@@ -16,10 +16,10 @@ Tabelas criadas:
 - ocr_validation_results: Resultados de validacao
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
+
+from alembic import op
 
 # revision identifiers
 revision = "sprint39_ocr"

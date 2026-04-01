@@ -6,10 +6,8 @@ coletando nome, tipo, endereco, turno, requisitos e armamento.
 """
 
 from datetime import datetime
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
 
 class PostoWizard(BaseWizard):
@@ -42,7 +40,6 @@ class PostoWizard(BaseWizard):
                 validation_rules={"min_length": 3, "max_length": 200},
                 help_text="Informe um nome descritivo para o posto.",
             ),
-
             # 2. Tipo do posto
             WizardStep(
                 id="tipo",
@@ -65,7 +62,6 @@ class PostoWizard(BaseWizard):
                 ],
                 help_text="Selecione o tipo de servico prestado no posto.",
             ),
-
             # 3. Endereco/Localizacao
             WizardStep(
                 id="endereco",
@@ -77,7 +73,6 @@ class PostoWizard(BaseWizard):
                 validation_rules={"min_length": 5, "max_length": 500},
                 help_text="Informe o endereco completo ou referencia de localizacao.",
             ),
-
             # 4. Cliente/Condominio
             WizardStep(
                 id="cliente",
@@ -89,7 +84,6 @@ class PostoWizard(BaseWizard):
                 validation_rules={"min_length": 2, "max_length": 200},
                 help_text="Informe o nome do cliente/condominio ou seu ID no sistema.",
             ),
-
             # 5. Turno
             WizardStep(
                 id="turno",
@@ -109,7 +103,6 @@ class PostoWizard(BaseWizard):
                 ],
                 help_text="Selecione o regime de horario do posto.",
             ),
-
             # 6. Efetivo minimo
             WizardStep(
                 id="efetivo_minimo",
@@ -121,7 +114,6 @@ class PostoWizard(BaseWizard):
                 validation_rules={"min_value": 1, "max_value": 50},
                 help_text="Informe a quantidade minima de funcionarios necessarios por turno.",
             ),
-
             # 7. Requisitos
             WizardStep(
                 id="requisitos",
@@ -143,7 +135,6 @@ class PostoWizard(BaseWizard):
                 ],
                 help_text="Selecione os requisitos obrigatorios para trabalhar neste posto.",
             ),
-
             # 8. Armamento (condicional)
             WizardStep(
                 id="armamento",
@@ -162,7 +153,6 @@ class PostoWizard(BaseWizard):
                 help_text="Selecione o armamento autorizado para o posto.",
                 skip_condition=lambda data: "Vigilancia Armada" not in (data.get("requisitos") or ""),
             ),
-
             # 9. Observacoes
             WizardStep(
                 id="observacoes",
@@ -173,7 +163,6 @@ class PostoWizard(BaseWizard):
                 required=False,
                 help_text="Instrucoes especiais, regras do posto, contatos de emergencia, etc.",
             ),
-
             # 10. Confirmacao
             WizardStep(
                 id="confirmacao",
@@ -283,11 +272,13 @@ class PostoWizard(BaseWizard):
         ]
 
         if armado:
-            steps.extend([
-                "Verificar documentacao de armamento (RA, CLCB)",
-                "Configurar controle de armamento no sistema",
-                "Registrar armas no livro de registro",
-            ])
+            steps.extend(
+                [
+                    "Verificar documentacao de armamento (RA, CLCB)",
+                    "Configurar controle de armamento no sistema",
+                    "Registrar armas no livro de registro",
+                ]
+            )
 
         if tipo in ("cftv",):
             steps.append("Configurar equipamentos de CFTV e monitoramento")
@@ -295,10 +286,12 @@ class PostoWizard(BaseWizard):
         if tipo in ("ronda_motorizada",):
             steps.append("Cadastrar veiculo e rota de ronda")
 
-        steps.extend([
-            "Configurar checklist de ronda (se aplicavel)",
-            "Treinar equipe sobre procedimentos do posto",
-        ])
+        steps.extend(
+            [
+                "Configurar checklist de ronda (se aplicavel)",
+                "Treinar equipe sobre procedimentos do posto",
+            ]
+        )
 
         return steps
 
@@ -307,31 +300,36 @@ class PostoWizard(BaseWizard):
         alerts = []
 
         if armado:
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    "Posto armado: Verificar se todos os vigilantes possuem "
-                    "CNV (Certificado Nacional de Vigilante) valido e reciclagem em dia."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        "Posto armado: Verificar se todos os vigilantes possuem "
+                        "CNV (Certificado Nacional de Vigilante) valido e reciclagem em dia."
+                    ),
+                }
+            )
 
         efetivo = data.get("efetivo_minimo", 1)
         if isinstance(efetivo, (int, float)) and efetivo >= 5:
-            alerts.append({
-                "tipo": "info",
-                "mensagem": (
-                    f"Efetivo de {int(efetivo)} funcionarios por turno. "
-                    "Considere incluir reservas tecnicas na escala."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": (
+                        f"Efetivo de {int(efetivo)} funcionarios por turno. "
+                        "Considere incluir reservas tecnicas na escala."
+                    ),
+                }
+            )
 
         if tipo == "portaria":
-            alerts.append({
-                "tipo": "info",
-                "mensagem": (
-                    "Posto de portaria: Configurar controle de acesso "
-                    "(biometria, facial, cartao) se disponivel."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": (
+                        "Posto de portaria: Configurar controle de acesso (biometria, facial, cartao) se disponivel."
+                    ),
+                }
+            )
 
         return alerts

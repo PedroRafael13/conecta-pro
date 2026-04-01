@@ -1,18 +1,17 @@
 """Repository para TimeSheet."""
 
-from datetime import date, datetime  # pylint: disable=unused-import
+import builtins
 from decimal import Decimal
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import TimeSheet, TimeSheetStatus
 from modules.hr.time_tracking.schemas import (
     TimeSheetCreate,
-    TimeSheetUpdate,
     TimeSheetFilter,
+    TimeSheetUpdate,
 )
 
 
@@ -38,7 +37,7 @@ class TimeSheetRepository:
         await self.db.refresh(sheet)
         return sheet
 
-    async def get_by_id(self, sheet_id: UUID) -> Optional[TimeSheet]:
+    async def get_by_id(self, sheet_id: UUID) -> TimeSheet | None:
         """Busca folha por ID."""
         result = await self.db.execute(
             select(TimeSheet).where(
@@ -48,7 +47,7 @@ class TimeSheetRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[TimeSheet]:
+    async def get_by_code(self, code: str) -> TimeSheet | None:
         """Busca folha por código."""
         result = await self.db.execute(
             select(TimeSheet).where(
@@ -63,7 +62,7 @@ class TimeSheetRepository:
         employee_id: str,
         reference_month: int,
         reference_year: int,
-    ) -> Optional[TimeSheet]:
+    ) -> TimeSheet | None:
         """Busca folha de um funcionário em um mês específico."""
         result = await self.db.execute(
             select(TimeSheet).where(
@@ -98,7 +97,7 @@ class TimeSheetRepository:
         filters: TimeSheetFilter = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[TimeSheet], int]:
+    ) -> tuple[list[TimeSheet], int]:
         """Lista folhas de ponto com filtros."""
         query = select(TimeSheet).where(TimeSheet.is_deleted.is_(False))
 
@@ -106,25 +105,17 @@ class TimeSheetRepository:
             if filters.employee_id:
                 query = query.where(TimeSheet.employee_id == filters.employee_id)
             if filters.reference_month:
-                query = query.where(
-                    TimeSheet.reference_month == filters.reference_month
-                )
+                query = query.where(TimeSheet.reference_month == filters.reference_month)
             if filters.reference_year:
-                query = query.where(
-                    TimeSheet.reference_year == filters.reference_year
-                )
+                query = query.where(TimeSheet.reference_year == filters.reference_year)
             if filters.status:
                 query = query.where(TimeSheet.status == filters.status)
             if filters.condominium_id:
-                query = query.where(
-                    TimeSheet.condominium_id == filters.condominium_id
-                )
+                query = query.where(TimeSheet.condominium_id == filters.condominium_id)
             if filters.department_id:
                 query = query.where(TimeSheet.department_id == filters.department_id)
             if filters.has_pending_issues is not None:
-                query = query.where(
-                    TimeSheet.has_pending_issues == filters.has_pending_issues
-                )
+                query = query.where(TimeSheet.has_pending_issues == filters.has_pending_issues)
             if filters.is_fully_approved is not None:
                 if filters.is_fully_approved:
                     query = query.where(
@@ -145,11 +136,15 @@ class TimeSheetRepository:
         total_result = await self.db.execute(count_query)
         total = total_result.scalar()
 
-        query = query.order_by(
-            TimeSheet.reference_year.desc(),
-            TimeSheet.reference_month.desc(),
-            TimeSheet.employee_name,
-        ).offset(skip).limit(limit)
+        query = (
+            query.order_by(
+                TimeSheet.reference_year.desc(),
+                TimeSheet.reference_month.desc(),
+                TimeSheet.employee_name,
+            )
+            .offset(skip)
+            .limit(limit)
+        )
 
         result = await self.db.execute(query)
         sheets = result.scalars().all()
@@ -162,7 +157,7 @@ class TimeSheetRepository:
         reference_year: int,
         condominium_id: str = None,
         department_id: str = None,
-    ) -> List[TimeSheet]:
+    ) -> builtins.list[TimeSheet]:
         """Busca todas as folhas de um período."""
         query = select(TimeSheet).where(
             TimeSheet.reference_month == reference_month,
@@ -182,7 +177,7 @@ class TimeSheetRepository:
         self,
         employee_id: str = None,
         condominium_id: str = None,
-    ) -> List[TimeSheet]:
+    ) -> builtins.list[TimeSheet]:
         """Busca folhas pendentes de aprovação do funcionário."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.ABERTO,
@@ -207,7 +202,7 @@ class TimeSheetRepository:
         self,
         condominium_id: str = None,
         department_id: str = None,
-    ) -> List[TimeSheet]:
+    ) -> builtins.list[TimeSheet]:
         """Busca folhas pendentes de aprovação do gestor."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.ABERTO,
@@ -232,7 +227,7 @@ class TimeSheetRepository:
     async def get_pending_hr_approval(
         self,
         condominium_id: str = None,
-    ) -> List[TimeSheet]:
+    ) -> builtins.list[TimeSheet]:
         """Busca folhas pendentes de aprovação do RH."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.ABERTO,
@@ -256,7 +251,7 @@ class TimeSheetRepository:
     async def get_ready_to_close(
         self,
         condominium_id: str = None,
-    ) -> List[TimeSheet]:
+    ) -> builtins.list[TimeSheet]:
         """Busca folhas prontas para fechamento."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.ABERTO,
@@ -281,7 +276,7 @@ class TimeSheetRepository:
     async def get_closed_not_sent(
         self,
         condominium_id: str = None,
-    ) -> List[TimeSheet]:
+    ) -> builtins.list[TimeSheet]:
         """Busca folhas fechadas não enviadas à folha de pagamento."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.FECHADO,
@@ -317,16 +312,12 @@ class TimeSheetRepository:
             base_where.append(TimeSheet.reference_year == reference_year)
 
         # Total
-        total_result = await self.db.execute(
-            select(func.count()).where(*base_where)
-        )
+        total_result = await self.db.execute(select(func.count()).where(*base_where))
         total = total_result.scalar() or 0
 
         # Por status
         status_result = await self.db.execute(
-            select(TimeSheet.status, func.count())
-            .where(*base_where)
-            .group_by(TimeSheet.status)
+            select(TimeSheet.status, func.count()).where(*base_where).group_by(TimeSheet.status)
         )
         by_status = {row[0].value: row[1] for row in status_result.all()}
 
@@ -340,41 +331,29 @@ class TimeSheetRepository:
         payroll_count = by_status.get(TimeSheetStatus.ENVIADO_FOLHA.value, 0)
 
         # Total horas extras
-        overtime_result = await self.db.execute(
-            select(func.sum(TimeSheet.overtime_total_minutes)).where(*base_where)
-        )
+        overtime_result = await self.db.execute(select(func.sum(TimeSheet.overtime_total_minutes)).where(*base_where))
         overtime_minutes = overtime_result.scalar() or 0
 
         # Total valor horas extras
         overtime_value_result = await self.db.execute(
-            select(
-                func.sum(TimeSheet.overtime_50_value + TimeSheet.overtime_100_value)
-            ).where(*base_where)
+            select(func.sum(TimeSheet.overtime_50_value + TimeSheet.overtime_100_value)).where(*base_where)
         )
         overtime_value = overtime_value_result.scalar() or Decimal("0")
 
         # Total deduções
-        deductions_result = await self.db.execute(
-            select(func.sum(TimeSheet.total_deduction_value)).where(*base_where)
-        )
+        deductions_result = await self.db.execute(select(func.sum(TimeSheet.total_deduction_value)).where(*base_where))
         deductions = deductions_result.scalar() or Decimal("0")
 
         # Média horas trabalhadas
-        avg_hours_result = await self.db.execute(
-            select(func.avg(TimeSheet.hours_worked_minutes)).where(*base_where)
-        )
+        avg_hours_result = await self.db.execute(select(func.avg(TimeSheet.hours_worked_minutes)).where(*base_where))
         avg_minutes = avg_hours_result.scalar() or 0
 
         # Total atrasos
-        late_result = await self.db.execute(
-            select(func.sum(TimeSheet.late_count)).where(*base_where)
-        )
+        late_result = await self.db.execute(select(func.sum(TimeSheet.late_count)).where(*base_where))
         late_count = late_result.scalar() or 0
 
         # Total faltas
-        absent_result = await self.db.execute(
-            select(func.sum(TimeSheet.absent_days)).where(*base_where)
-        )
+        absent_result = await self.db.execute(select(func.sum(TimeSheet.absent_days)).where(*base_where))
         absent_days = absent_result.scalar() or 0
 
         # Pendentes aprovação
@@ -409,20 +388,18 @@ class TimeSheetRepository:
 
     async def bulk_create(
         self,
-        employee_ids: List[str],
+        employee_ids: builtins.list[str],
         employee_data: dict,
         reference_month: int,
         reference_year: int,
         condominium_id: str = None,
         created_by_id: str = None,
-    ) -> List[TimeSheet]:
+    ) -> builtins.list[TimeSheet]:
         """Cria folhas de ponto em lote para vários funcionários."""
         sheets = []
 
         for emp_id in employee_ids:
-            existing = await self.get_by_employee_month(
-                emp_id, reference_month, reference_year
-            )
+            existing = await self.get_by_employee_month(emp_id, reference_month, reference_year)
             if existing:
                 continue
 
@@ -459,7 +436,7 @@ class TimeSheetRepository:
         reference_month: int,
         reference_year: int,
         condominium_id: str = None,
-    ) -> List[TimeSheet]:
+    ) -> builtins.list[TimeSheet]:
         """Busca folhas fechadas para exportação à folha de pagamento."""
         query = select(TimeSheet).where(
             TimeSheet.reference_month == reference_month,

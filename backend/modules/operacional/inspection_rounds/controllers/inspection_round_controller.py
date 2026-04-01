@@ -7,38 +7,39 @@ Date: 2026-01-23
 
 import logging
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser, get_current_active_user
 from core.database import get_db
-from ..services import (
-    InspectionRoundService,
-    InspectionRoundNotFoundError,
-    InspectionRoundValidationError,
-)
+
 from ..schemas import (
-    InspectionRoundCreate,
-    InspectionRoundUpdate,
-    InspectionRoundResponse,
-    InspectionRoundListResponse,
-    InspectionRoundSummary,
-    InspectionRoundFilter,
-    CheckpointCreate,
-    CheckpointUpdate,
-    CheckpointResponse,
-    StartRoundRequest,
-    CompleteRoundRequest,
-    RegisterOccurrenceRequest,
     ApplyDisciplinaryRequest,
+    CheckpointCreate,
+    CheckpointResponse,
+    CheckpointUpdate,
+    CompleteRoundRequest,
     InspectionDashboardStats,
+    InspectionRoundCreate,
+    InspectionRoundFilter,
+    InspectionRoundListResponse,
+    InspectionRoundResponse,
+    InspectionRoundSummary,
+    InspectionRoundUpdate,
+    RegisterOccurrenceRequest,
+    StartRoundRequest,
+)
+from ..services import (
+    InspectionRoundNotFoundError,
+    InspectionRoundService,
+    InspectionRoundValidationError,
 )
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 def get_inspection_service(db: AsyncSession = Depends(get_db)) -> InspectionRoundService:
@@ -60,6 +61,7 @@ def get_inspection_service(db: AsyncSession = Depends(get_db)) -> InspectionRoun
 )
 async def create_round(
     data: InspectionRoundCreate,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Cria uma nova ronda."""
@@ -85,19 +87,20 @@ async def create_round(
     summary="Listar rondas",
     description="Lista rondas com filtros e paginacao.",
 )
-async def list_rounds(
-    tenant_id: Optional[UUID] = Query(None, description="ID do tenant (opcional)"),
+async def list_rounds(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,
+    tenant_id: UUID | None = Query(None, description="ID do tenant (opcional)"),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(10, ge=1, le=100, description="Itens por página"),
     skip: int = Query(0, ge=0, description="Registros a pular"),
     limit: int = Query(100, ge=1, le=500, description="Limite de registros"),
-    inspector_id: Optional[UUID] = Query(None, description="Filtrar por inspetor"),
-    inspector_role: Optional[str] = Query(None, description="Filtrar por cargo"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Filtrar por status"),
-    start_date: Optional[datetime] = Query(None, description="Data inicial"),
-    end_date: Optional[datetime] = Query(None, description="Data final"),
-    has_occurrences: Optional[bool] = Query(None, description="Com ocorrencias"),
-    has_disciplinary_actions: Optional[bool] = Query(None, description="Com medidas disciplinares"),
+    inspector_id: UUID | None = Query(None, description="Filtrar por inspetor"),
+    inspector_role: str | None = Query(None, description="Filtrar por cargo"),
+    status_filter: str | None = Query(None, alias="status", description="Filtrar por status"),
+    start_date: datetime | None = Query(None, description="Data inicial"),
+    end_date: datetime | None = Query(None, description="Data final"),
+    has_occurrences: bool | None = Query(None, description="Com ocorrencias"),
+    has_disciplinary_actions: bool | None = Query(None, description="Com medidas disciplinares"),
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundListResponse:
     """Lista rondas com filtros."""
@@ -136,7 +139,8 @@ async def list_rounds(
     description="Retorna estatísticas de rondas de inspeção.",
 )
 async def get_stats(
-    tenant_id: Optional[UUID] = Query(None, description="ID do tenant (opcional)"),
+    current_user: CurrentActiveUser,
+    tenant_id: UUID | None = Query(None, description="ID do tenant (opcional)"),
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionDashboardStats:
     """Retorna estatísticas de rondas."""
@@ -151,9 +155,10 @@ async def get_stats(
     description="Retorna estatisticas do dashboard de rondas.",
 )
 async def get_dashboard(
-    tenant_id: Optional[UUID] = Query(None, description="ID do tenant (opcional)"),
-    start_date: Optional[datetime] = Query(None, description="Data inicial"),
-    end_date: Optional[datetime] = Query(None, description="Data final"),
+    current_user: CurrentActiveUser,
+    tenant_id: UUID | None = Query(None, description="ID do tenant (opcional)"),
+    _start_date: datetime | None = Query(None, description="Data inicial"),
+    _end_date: datetime | None = Query(None, description="Data final"),
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionDashboardStats:
     """Retorna estatisticas do dashboard."""
@@ -163,16 +168,17 @@ async def get_dashboard(
 
 @router.get(
     "/minhas-rondas",
-    response_model=List[InspectionRoundSummary],
+    response_model=list[InspectionRoundSummary],
     summary="Minhas rondas",
     description="Lista rondas do inspetor logado.",
 )
 async def get_my_rounds(
+    current_user: CurrentActiveUser,
     inspector_id: UUID = Query(..., description="ID do inspetor"),
     tenant_id: UUID = Query(..., description="ID do tenant"),
     limit: int = Query(50, ge=1, le=200),
     service: InspectionRoundService = Depends(get_inspection_service),
-) -> List[InspectionRoundSummary]:
+) -> list[InspectionRoundSummary]:
     """Lista rondas do inspetor."""
     rounds = service.get_rounds_by_inspector(str(inspector_id), str(tenant_id), limit)
     return [InspectionRoundSummary.model_validate(r) for r in rounds]
@@ -186,6 +192,7 @@ async def get_my_rounds(
 )
 async def get_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Busca ronda por ID."""
@@ -208,6 +215,7 @@ async def get_round(
 async def update_round(
     round_id: UUID,
     data: InspectionRoundUpdate,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Atualiza uma ronda."""
@@ -234,6 +242,7 @@ async def update_round(
 )
 async def delete_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ):
     """Remove uma ronda."""
@@ -261,10 +270,12 @@ async def delete_round(
     response_model=InspectionRoundResponse,
     summary="Iniciar ronda",
     description="Inicia uma ronda agendada.",
+    status_code=201,
 )
 async def start_round(
     round_id: UUID,
-    data: Optional[StartRoundRequest] = None,
+    current_user: CurrentActiveUser,
+    data: StartRoundRequest | None = None,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Inicia uma ronda."""
@@ -288,9 +299,11 @@ async def start_round(
     response_model=InspectionRoundResponse,
     summary="Pausar ronda",
     description="Pausa uma ronda em andamento.",
+    status_code=201,
 )
 async def pause_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Pausa uma ronda."""
@@ -314,9 +327,11 @@ async def pause_round(
     response_model=InspectionRoundResponse,
     summary="Retomar ronda",
     description="Retoma uma ronda pausada.",
+    status_code=201,
 )
 async def resume_round(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Retoma uma ronda pausada."""
@@ -340,10 +355,12 @@ async def resume_round(
     response_model=InspectionRoundResponse,
     summary="Concluir ronda",
     description="Conclui uma ronda em andamento.",
+    status_code=201,
 )
 async def complete_round(
     round_id: UUID,
-    data: Optional[CompleteRoundRequest] = None,
+    current_user: CurrentActiveUser,
+    data: CompleteRoundRequest | None = None,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Conclui uma ronda."""
@@ -367,10 +384,12 @@ async def complete_round(
     response_model=InspectionRoundResponse,
     summary="Cancelar ronda",
     description="Cancela uma ronda.",
+    status_code=201,
 )
 async def cancel_round(
     round_id: UUID,
-    reason: Optional[str] = Query(None, description="Motivo do cancelamento"),
+    current_user: CurrentActiveUser,
+    reason: str | None = Query(None, description="Motivo do cancelamento"),
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionRoundResponse:
     """Cancela uma ronda."""
@@ -404,6 +423,7 @@ async def cancel_round(
 async def create_checkpoint(
     round_id: UUID,
     data: CheckpointCreate,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> CheckpointResponse:
     """Cria um checkpoint."""
@@ -424,14 +444,15 @@ async def create_checkpoint(
 
 @router.get(
     "/{round_id}/checkpoints",
-    response_model=List[CheckpointResponse],
+    response_model=list[CheckpointResponse],
     summary="Listar checkpoints",
     description="Lista checkpoints de uma ronda.",
 )
 async def get_checkpoints(
     round_id: UUID,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
-) -> List[CheckpointResponse]:
+) -> list[CheckpointResponse]:
     """Lista checkpoints de uma ronda."""
     try:
         checkpoints = await service.get_checkpoints(str(round_id))
@@ -450,9 +471,10 @@ async def get_checkpoints(
     description="Atualiza um checkpoint.",
 )
 async def update_checkpoint(
-    round_id: UUID,
+    _round_id: UUID,
     checkpoint_id: UUID,
     data: CheckpointUpdate,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> CheckpointResponse:
     """Atualiza um checkpoint."""
@@ -481,6 +503,7 @@ async def update_checkpoint(
 async def register_occurrence(
     round_id: UUID,
     data: RegisterOccurrenceRequest,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> dict:
     """Registra uma ocorrencia durante a ronda."""
@@ -519,6 +542,7 @@ async def register_occurrence(
 async def apply_disciplinary_action(
     round_id: UUID,
     data: ApplyDisciplinaryRequest,
+    current_user: CurrentActiveUser,
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> dict:
     """Aplica medida disciplinar durante a ronda."""
@@ -527,7 +551,7 @@ async def apply_disciplinary_action(
         return {
             "checkpoint": CheckpointResponse.model_validate(checkpoint),
             "disciplinary_action": action_info,
-            "message": f"Medida disciplinar {action_info['disciplinary_action_code']} aplicada com sucesso",
+            "message": (f"Medida disciplinar {action_info['disciplinary_action_code']} aplicada com sucesso"),
         }
     except InspectionRoundNotFoundError as e:
         raise HTTPException(

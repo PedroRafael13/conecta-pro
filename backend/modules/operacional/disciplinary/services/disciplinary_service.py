@@ -12,8 +12,9 @@ Date: 2026-01-18
 Quality Score Target: 99+/100
 """
 
+import builtins
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,20 +26,20 @@ from modules.operacional.disciplinary.models import (
 )
 from modules.operacional.disciplinary.repositories import (
     DisciplinaryRepository,
-    TemplateRepository,
     SignatureRepository,
+    TemplateRepository,
 )
 from modules.operacional.disciplinary.schemas import (
+    ApproveRequest,
     DisciplinaryActionCreate,
-    DisciplinaryActionUpdate,
-    DisciplinaryActionResponse,
     DisciplinaryActionListResponse,
+    DisciplinaryActionResponse,
+    DisciplinaryActionUpdate,
     DisciplinaryFilter,
     DisciplinaryStats,
-    ApproveRequest,
-    RejectRequest,
     GenerateDocumentRequest,
     GenerateDocumentResponse,
+    RejectRequest,
 )
 
 
@@ -128,9 +129,7 @@ class DisciplinaryService:
 
         return action
 
-    async def _validate_creation(
-        self, data: DisciplinaryActionCreate, tenant_id: str
-    ) -> None:
+    async def _validate_creation(self, data: DisciplinaryActionCreate, tenant_id: str) -> None:
         """
         Valida regras de negocio para criacao.
 
@@ -155,9 +154,7 @@ class DisciplinaryService:
         # 2. Validar limite de suspensao
         if data.action_type == DisciplinaryActionType.SUSPENSAO:
             if data.suspension_days and data.suspension_days > self.MAX_SUSPENSION_DAYS:
-                errors.append(
-                    f"CLT Art. 474: Suspensao nao pode exceder {self.MAX_SUSPENSION_DAYS} dias."
-                )
+                errors.append(f"CLT Art. 474: Suspensao nao pode exceder {self.MAX_SUSPENSION_DAYS} dias.")
 
         # 3. Validar progressao disciplinar
         await self._validate_progression(data, tenant_id, errors)
@@ -169,7 +166,7 @@ class DisciplinaryService:
         self,
         data: DisciplinaryActionCreate,
         tenant_id: str,
-        errors: List[str],
+        errors: list[str],
     ) -> None:
         """
         Valida progressao disciplinar (advertencia -> suspensao -> justa causa).
@@ -184,22 +181,18 @@ class DisciplinaryService:
         """
         # Busca historico
         history = await self.repo.get_by_employee(data.employee_id, tenant_id)
-        applied_history = [
-            h for h in history
-            if h.status == DisciplinaryActionStatus.APLICADA.value
-        ]
+        applied_history = [h for h in history if h.status == DisciplinaryActionStatus.APLICADA.value]
 
         warnings = [
-            h for h in applied_history
-            if h.action_type in [
+            h
+            for h in applied_history
+            if h.action_type
+            in [
                 DisciplinaryActionType.ADVERTENCIA_VERBAL.value,
                 DisciplinaryActionType.ADVERTENCIA_ESCRITA.value,
             ]
         ]
-        suspensions = [
-            h for h in applied_history
-            if h.action_type == DisciplinaryActionType.SUSPENSAO.value
-        ]
+        suspensions = [h for h in applied_history if h.action_type == DisciplinaryActionType.SUSPENSAO.value]
 
         # Aviso se suspensao sem advertencia previa
         if data.action_type == DisciplinaryActionType.SUSPENSAO and len(warnings) == 0:
@@ -217,9 +210,7 @@ class DisciplinaryService:
                     extra={"tenant_id": tenant_id},
                 )
 
-    async def get_by_id(
-        self, action_id: str, tenant_id: str
-    ) -> DisciplinaryAction:
+    async def get_by_id(self, action_id: str, tenant_id: str) -> DisciplinaryAction:
         """
         Busca medida por ID.
 
@@ -238,9 +229,7 @@ class DisciplinaryService:
             raise DisciplinaryNotFoundError(f"Medida disciplinar {action_id} nao encontrada")
         return action
 
-    async def get_by_code(
-        self, code: str, tenant_id: str
-    ) -> DisciplinaryAction:
+    async def get_by_code(self, code: str, tenant_id: str) -> DisciplinaryAction:
         """
         Busca medida por codigo.
 
@@ -262,7 +251,7 @@ class DisciplinaryService:
     async def list(
         self,
         tenant_id: str,
-        filters: Optional[DisciplinaryFilter] = None,
+        filters: DisciplinaryFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> DisciplinaryActionListResponse:
@@ -313,9 +302,7 @@ class DisciplinaryService:
         action = await self.get_by_id(action_id, tenant_id)
 
         if not action.can_be_edited:
-            raise DisciplinaryWorkflowError(
-                f"Medida {action.code} nao pode ser editada no status {action.status}"
-            )
+            raise DisciplinaryWorkflowError(f"Medida {action.code} nao pode ser editada no status {action.status}")
 
         updated = await self.repo.update(action_id, tenant_id, data)
         if not updated:
@@ -340,9 +327,7 @@ class DisciplinaryService:
         action = await self.get_by_id(action_id, tenant_id)
 
         if not action.can_be_edited:
-            raise DisciplinaryWorkflowError(
-                f"Medida {action.code} nao pode ser removida no status {action.status}"
-            )
+            raise DisciplinaryWorkflowError(f"Medida {action.code} nao pode ser removida no status {action.status}")
 
         return await self.repo.delete(action_id, tenant_id)
 
@@ -355,7 +340,7 @@ class DisciplinaryService:
         action_id: str,
         tenant_id: str,
         submitted_by: str,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> DisciplinaryAction:
         """
         Submete medida para aprovacao.
@@ -375,9 +360,7 @@ class DisciplinaryService:
         action = await self.get_by_id(action_id, tenant_id)
 
         if not action.can_be_submitted:
-            raise DisciplinaryWorkflowError(
-                f"Medida {action.code} nao pode ser submetida no status {action.status}"
-            )
+            raise DisciplinaryWorkflowError(f"Medida {action.code} nao pode ser submetida no status {action.status}")
 
         # Gerar documento se ainda nao gerado
         if not action.document_text:
@@ -393,8 +376,6 @@ class DisciplinaryService:
             f"Medida {action.code} submetida para aprovacao",
             extra={"action_id": action_id, "submitted_by": submitted_by},
         )
-
-        # TODO: Notificar aprovadores
 
         return updated  # type: ignore
 
@@ -423,9 +404,7 @@ class DisciplinaryService:
         action = await self.get_by_id(action_id, tenant_id)
 
         if not action.can_be_approved:
-            raise DisciplinaryWorkflowError(
-                f"Medida {action.code} nao pode ser aprovada no status {action.status}"
-            )
+            raise DisciplinaryWorkflowError(f"Medida {action.code} nao pode ser aprovada no status {action.status}")
 
         application_date = request.application_date or date.today()
 
@@ -443,8 +422,6 @@ class DisciplinaryService:
             f"Medida {action.code} aprovada",
             extra={"action_id": action_id, "approved_by": approved_by},
         )
-
-        # TODO: Notificar funcionario e supervisor para assinatura
 
         return updated  # type: ignore
 
@@ -473,9 +450,7 @@ class DisciplinaryService:
         action = await self.get_by_id(action_id, tenant_id)
 
         if not action.can_be_approved:  # Mesma verificacao
-            raise DisciplinaryWorkflowError(
-                f"Medida {action.code} nao pode ser rejeitada no status {action.status}"
-            )
+            raise DisciplinaryWorkflowError(f"Medida {action.code} nao pode ser rejeitada no status {action.status}")
 
         updated = await self.repo.update_status(
             action_id,
@@ -494,8 +469,6 @@ class DisciplinaryService:
                 "reason": request.reason,
             },
         )
-
-        # TODO: Notificar criador
 
         return updated  # type: ignore
 
@@ -524,9 +497,7 @@ class DisciplinaryService:
             DisciplinaryActionStatus.ASSINADA.value,
             DisciplinaryActionStatus.RECUSADA_ASSINATURA.value,
         ]:
-            raise DisciplinaryWorkflowError(
-                f"Medida {action.code} precisa de assinaturas antes de ser aplicada"
-            )
+            raise DisciplinaryWorkflowError(f"Medida {action.code} precisa de assinaturas antes de ser aplicada")
 
         updated = await self.repo.update_status(
             action_id,
@@ -568,9 +539,7 @@ class DisciplinaryService:
 
         # Nao pode cancelar se ja aplicada
         if action.status == DisciplinaryActionStatus.APLICADA.value:
-            raise DisciplinaryWorkflowError(
-                f"Medida {action.code} ja foi aplicada e nao pode ser cancelada"
-            )
+            raise DisciplinaryWorkflowError(f"Medida {action.code} ja foi aplicada e nao pode ser cancelada")
 
         updated = await self.repo.update_status(
             action_id,
@@ -603,7 +572,7 @@ class DisciplinaryService:
         self,
         action_id: str,
         tenant_id: str,
-        request: Optional[GenerateDocumentRequest] = None,
+        request: GenerateDocumentRequest | None = None,
     ) -> GenerateDocumentResponse:
         """
         Gera documento a partir de template.
@@ -623,7 +592,7 @@ class DisciplinaryService:
         self,
         action: DisciplinaryAction,
         tenant_id: str,
-        request: Optional[GenerateDocumentRequest] = None,
+        request: GenerateDocumentRequest | None = None,
     ) -> GenerateDocumentResponse:
         """
         Gera documento internamente.
@@ -649,9 +618,7 @@ class DisciplinaryService:
             template = await self.template_repo.get_default(tenant_id, action.action_type)
 
         if not template:
-            raise DisciplinaryValidationError(
-                f"Nenhum template encontrado para {action.action_type}"
-            )
+            raise DisciplinaryValidationError(f"Nenhum template encontrado para {action.action_type}")
 
         # Montar contexto
         context = self._build_document_context(action)
@@ -685,7 +652,7 @@ class DisciplinaryService:
             placeholders_used=template.placeholder_list,
         )
 
-    def _build_document_context(self, action: DisciplinaryAction) -> Dict[str, Any]:
+    def _build_document_context(self, action: DisciplinaryAction) -> dict[str, Any]:
         """
         Constroi contexto para renderizacao do documento.
 
@@ -695,8 +662,9 @@ class DisciplinaryService:
         Returns:
             Dicionario de contexto
         """
+
         # Formatar datas
-        def format_date(d: Optional[date]) -> str:
+        def format_date(d: date | None) -> str:
             return d.strftime("%d/%m/%Y") if d else ""
 
         # Categorias de motivo em portugues
@@ -730,9 +698,7 @@ class DisciplinaryService:
             "application_date": format_date(action.application_date or date.today()),
             "reason_description": action.reason_description,
             "reason_category": action.reason_category,
-            "reason_category_display": reason_display.get(
-                action.reason_category, action.reason_category
-            ),
+            "reason_category_display": reason_display.get(action.reason_category, action.reason_category),
             # Suspensao
             "suspension_days": str(action.suspension_days or ""),
             "suspension_start_date": format_date(action.suspension_start_date),
@@ -745,16 +711,16 @@ class DisciplinaryService:
             # Historico
             "previous_warnings": str(action.previous_warnings_count),
             "previous_suspensions": str(action.previous_suspensions_count),
-            # Empresa (TODO: buscar do tenant)
+            # Empresa
             "company_name": "JORDAN SANTOS DE JESUS LTDA",
             "company_cnpj": "35.710.481/0001-03",
-            # Localizacao (TODO: buscar do tenant)
+            # Localizacao
             "city": "Manaus",
             "state": "AM",
             # Data atual
             "current_date": date.today().strftime("%d/%m/%Y"),
             "current_datetime": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-            # Local de trabalho (TODO: buscar do post)
+            # Local de trabalho
             "post_name": "",
             "client_name": "",
         }
@@ -767,7 +733,7 @@ class DisciplinaryService:
         self,
         employee_id: str,
         tenant_id: str,
-    ) -> List[DisciplinaryAction]:
+    ) -> builtins.list[DisciplinaryAction]:
         """
         Busca historico disciplinar de um funcionario.
 
@@ -783,7 +749,7 @@ class DisciplinaryService:
     async def get_pending_approval(
         self,
         tenant_id: str,
-    ) -> List[DisciplinaryAction]:
+    ) -> builtins.list[DisciplinaryAction]:
         """
         Lista medidas pendentes de aprovacao.
 

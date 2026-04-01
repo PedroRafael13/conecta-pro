@@ -30,6 +30,9 @@ Uso:
     app.include_router(router, prefix="/api/v1")
 """
 
+from modules.retention.turnover.controllers.turnover_controller import (
+    router,
+)
 from modules.retention.turnover.models.turnover_models import (
     AuditLogTurnover,
     CategoriaFator,
@@ -39,7 +42,9 @@ from modules.retention.turnover.models.turnover_models import (
     TipoAlerta,
     TurnoverPrediction,
 )
-
+from modules.retention.turnover.repositories.turnover_repository import (
+    TurnoverRepository,
+)
 from modules.retention.turnover.schemas.turnover_schemas import (
     AlertAcaoRequest,
     AlertCreate,
@@ -74,23 +79,13 @@ from modules.retention.turnover.schemas.turnover_schemas import (
     RiskFactorResponse,
     RiskFactorSummary,
 )
-
-from modules.retention.turnover.repositories.turnover_repository import (
-    TurnoverRepository,
+from modules.retention.turnover.services.risk_analyzer import (
+    RiskAnalyzer,
 )
-
 from modules.retention.turnover.services.turnover_predictor import (
     FEATURES_CONFIG,
     FeatureDefinition,
     TurnoverPredictor,
-)
-
-from modules.retention.turnover.services.risk_analyzer import (
-    RiskAnalyzer,
-)
-
-from modules.retention.turnover.controllers.turnover_controller import (
-    router,
 )
 
 __all__ = [

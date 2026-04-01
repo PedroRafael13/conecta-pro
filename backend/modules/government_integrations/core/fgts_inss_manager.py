@@ -11,7 +11,6 @@ Quality Score Target: 99+/100
 Compliance: Lei 8.036/1990 (FGTS), Lei 8.212/1991 (INSS)
 """
 
-import asyncio
 import hashlib
 import logging
 import re
@@ -19,25 +18,26 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
-from decimal import Decimal, ROUND_HALF_UP
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from decimal import ROUND_HALF_UP, Decimal
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
-    DateTime,
+    Column,
     Date,
-    Integer,
-    Numeric,
-    Text,
+    DateTime,
     ForeignKey,
-    Enum as SQLEnum,
     Index,
+    Numeric,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import declarative_base
 
 logger = logging.getLogger(__name__)
 
@@ -48,24 +48,28 @@ Base = declarative_base()
 # ENUMS
 # =============================================================================
 
-class TipoRecolhimento(str, Enum):
+
+class TipoRecolhimento(StrEnum):
     """Tipos de recolhimento FGTS."""
+
     MENSAL = "mensal"
     RESCISORIO = "rescisorio"
     RECURSAL = "recursal"
     PARCELAMENTO = "parcelamento"
 
 
-class CodigoRecolhimento(str, Enum):
+class CodigoRecolhimento(StrEnum):
     """Codigos de recolhimento FGTS."""
+
     RECOLHIMENTO_MENSAL = "115"  # Recolhimento ao FGTS
     RECOLHIMENTO_RESCISORIO = "418"  # Deposito rescisorio
     RECOLHIMENTO_RECURSAL = "604"  # Deposito recursal
     RECOLHIMENTO_DECLARATORIO = "145"  # Recolhimento declaratorio
 
 
-class ModalidadeSaque(str, Enum):
+class ModalidadeSaque(StrEnum):
     """Modalidades de saque FGTS."""
+
     DEMISSAO_SEM_JUSTA_CAUSA = "01"
     TERMINO_CONTRATO = "02"
     APOSENTADORIA = "03"
@@ -76,8 +80,9 @@ class ModalidadeSaque(str, Enum):
     CALAMIDADE = "08"
 
 
-class CategoriaContribuinte(str, Enum):
+class CategoriaContribuinte(StrEnum):
     """Categorias de contribuinte INSS."""
+
     EMPREGADO = "empregado"
     DOMESTICO = "domestico"
     CONTRIBUINTE_INDIVIDUAL = "contribuinte_individual"
@@ -86,8 +91,9 @@ class CategoriaContribuinte(str, Enum):
     MEI = "mei"
 
 
-class TipoGuia(str, Enum):
+class TipoGuia(StrEnum):
     """Tipos de guia de recolhimento."""
+
     GRF = "grf"  # Guia de Recolhimento do FGTS
     GRRF = "grrf"  # Guia de Recolhimento Rescisorio do FGTS
     GPS = "gps"  # Guia da Previdencia Social
@@ -95,8 +101,9 @@ class TipoGuia(str, Enum):
     DAE = "dae"  # Documento de Arrecadacao do eSocial
 
 
-class StatusGuia(str, Enum):
+class StatusGuia(StrEnum):
     """Status de guia de recolhimento."""
+
     GERADA = "gerada"
     PENDENTE = "pendente"
     PAGA = "paga"
@@ -104,15 +111,17 @@ class StatusGuia(str, Enum):
     CANCELADA = "cancelada"
 
 
-class StatusCertidao(str, Enum):
+class StatusCertidao(StrEnum):
     """Status de certidao."""
+
     NEGATIVA = "negativa"
     POSITIVA = "positiva"
     POSITIVA_EFEITO_NEGATIVA = "positiva_efeito_negativa"
 
 
-class TipoCertidao(str, Enum):
+class TipoCertidao(StrEnum):
     """Tipos de certidao."""
+
     CRF = "crf"  # Certificado de Regularidade do FGTS
     CND_INSS = "cnd_inss"  # Certidao Negativa de Debitos INSS
     CPEND = "cpend"  # Certidao Positiva com Efeito de Negativa
@@ -122,10 +131,11 @@ class TipoCertidao(str, Enum):
 # EXCEPTIONS
 # =============================================================================
 
+
 class FGTSINSSError(Exception):
     """Erro base para operacoes FGTS/INSS."""
 
-    def __init__(self, message: str, code: Optional[str] = None, details: Optional[Dict] = None):
+    def __init__(self, message: str, code: str | None = None, details: dict | None = None):
         super().__init__(message)
         self.code = code
         self.details = details or {}
@@ -133,21 +143,25 @@ class FGTSINSSError(Exception):
 
 class CalculoError(FGTSINSSError):
     """Erro no calculo de valores."""
+
     pass
 
 
 class GuiaError(FGTSINSSError):
     """Erro na geracao de guias."""
+
     pass
 
 
 class ConsultaError(FGTSINSSError):
     """Erro em consultas."""
+
     pass
 
 
 class TransmissaoError(FGTSINSSError):
     """Erro na transmissao de dados."""
+
     pass
 
 
@@ -155,11 +169,13 @@ class TransmissaoError(FGTSINSSError):
 # DATA CLASSES
 # =============================================================================
 
+
 @dataclass
 class TabelaINSS:
     """Tabela de contribuicao INSS (aliquotas progressivas)."""
+
     vigencia: date
-    faixas: List[Dict[str, Decimal]] = field(default_factory=list)
+    faixas: list[dict[str, Decimal]] = field(default_factory=list)
     teto: Decimal = Decimal("0")
 
     @classmethod
@@ -173,7 +189,7 @@ class TabelaINSS:
                 {"ate": Decimal("4000.03"), "aliquota": Decimal("12.0")},
                 {"ate": Decimal("7786.02"), "aliquota": Decimal("14.0")},
             ],
-            teto=Decimal("7786.02")
+            teto=Decimal("7786.02"),
         )
 
     @classmethod
@@ -187,29 +203,31 @@ class TabelaINSS:
                 {"ate": Decimal("4190.83"), "aliquota": Decimal("12.0")},
                 {"ate": Decimal("8157.41"), "aliquota": Decimal("14.0")},
             ],
-            teto=Decimal("8157.41")
+            teto=Decimal("8157.41"),
         )
 
 
 @dataclass
 class Trabalhador:
     """Dados do trabalhador."""
+
     id: str
     cpf: str
     pis_pasep: str
     nome: str
     data_admissao: date
-    data_nascimento: Optional[date] = None
+    data_nascimento: date | None = None
     categoria: CategoriaContribuinte = CategoriaContribuinte.EMPREGADO
-    cargo: Optional[str] = None
-    ctps_numero: Optional[str] = None
-    ctps_serie: Optional[str] = None
-    ctps_uf: Optional[str] = None
+    cargo: str | None = None
+    ctps_numero: str | None = None
+    ctps_serie: str | None = None
+    ctps_uf: str | None = None
 
 
 @dataclass
 class Remuneracao:
     """Dados de remuneracao do trabalhador."""
+
     trabalhador_id: str
     competencia: date  # Primeiro dia do mes
     salario_base: Decimal
@@ -226,13 +244,13 @@ class Remuneracao:
     def total_proventos(self) -> Decimal:
         """Calcula total de proventos."""
         return (
-            self.salario_base +
-            self.horas_extras +
-            self.adicional_noturno +
-            self.comissoes +
-            self.gratificacoes +
-            self.dsr +
-            self.outros
+            self.salario_base
+            + self.horas_extras
+            + self.adicional_noturno
+            + self.comissoes
+            + self.gratificacoes
+            + self.dsr
+            + self.outros
         )
 
     @property
@@ -249,6 +267,7 @@ class Remuneracao:
 @dataclass
 class CalculoFGTS:
     """Resultado do calculo FGTS."""
+
     trabalhador_id: str
     competencia: date
     base_calculo: Decimal
@@ -268,12 +287,13 @@ class CalculoFGTS:
 @dataclass
 class CalculoINSS:
     """Resultado do calculo INSS."""
+
     trabalhador_id: str
     competencia: date
     base_calculo: Decimal
     valor_contribuicao: Decimal
     aliquota_efetiva: Decimal
-    faixas_aplicadas: List[Dict] = field(default_factory=list)
+    faixas_aplicadas: list[dict] = field(default_factory=list)
     teto_aplicado: bool = False
     categoria: CategoriaContribuinte = CategoriaContribuinte.EMPREGADO
 
@@ -281,6 +301,7 @@ class CalculoINSS:
 @dataclass
 class Guia:
     """Guia de recolhimento."""
+
     id: str
     tipo: TipoGuia
     competencia: date
@@ -289,40 +310,42 @@ class Guia:
     valor_juros: Decimal = Decimal("0")
     valor_multa: Decimal = Decimal("0")
     valor_total: Decimal = Decimal("0")
-    codigo_barras: Optional[str] = None
-    linha_digitavel: Optional[str] = None
-    numero_documento: Optional[str] = None
+    codigo_barras: str | None = None
+    linha_digitavel: str | None = None
+    numero_documento: str | None = None
     status: StatusGuia = StatusGuia.GERADA
-    empresa_cnpj: Optional[str] = None
-    empresa_razao_social: Optional[str] = None
+    empresa_cnpj: str | None = None
+    empresa_razao_social: str | None = None
     data_geracao: datetime = field(default_factory=datetime.now)
-    data_pagamento: Optional[datetime] = None
-    trabalhadores: List[str] = field(default_factory=list)
-    detalhamento: Dict = field(default_factory=dict)
+    data_pagamento: datetime | None = None
+    trabalhadores: list[str] = field(default_factory=list)
+    detalhamento: dict = field(default_factory=dict)
 
 
 @dataclass
 class Certidao:
     """Certidao de regularidade."""
+
     id: str
     tipo: TipoCertidao
     status: StatusCertidao
     documento: str  # CNPJ ou CPF
-    razao_social: Optional[str] = None
+    razao_social: str | None = None
     data_emissao: datetime = field(default_factory=datetime.now)
     data_validade: datetime = field(default_factory=datetime.now)
-    codigo_controle: Optional[str] = None
-    observacoes: Optional[str] = None
-    pendencias: List[Dict] = field(default_factory=list)
+    codigo_controle: str | None = None
+    observacoes: str | None = None
+    pendencias: list[dict] = field(default_factory=list)
 
 
 @dataclass
 class ExtratoFGTS:
     """Extrato de conta FGTS."""
+
     pis_pasep: str
     empresa_cnpj: str
     saldo_total: Decimal
-    movimentacoes: List[Dict] = field(default_factory=list)
+    movimentacoes: list[dict] = field(default_factory=list)
     data_consulta: datetime = field(default_factory=datetime.now)
     conta_ativa: bool = True
 
@@ -331,8 +354,10 @@ class ExtratoFGTS:
 # MODELS SQLAlchemy
 # =============================================================================
 
+
 class GuiaRecolhimentoModel(Base):
     """Modelo de guia de recolhimento."""
+
     __tablename__ = "fgts_inss_guias"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -371,6 +396,7 @@ class GuiaRecolhimentoModel(Base):
 
 class RecolhimentoFGTSModel(Base):
     """Modelo de recolhimento FGTS individual."""
+
     __tablename__ = "fgts_recolhimentos"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -398,13 +424,12 @@ class RecolhimentoFGTSModel(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        Index("ix_fgts_trabalhador_competencia", "trabalhador_id", "competencia"),
-    )
+    __table_args__ = (Index("ix_fgts_trabalhador_competencia", "trabalhador_id", "competencia"),)
 
 
 class ContribuicaoINSSModel(Base):
     """Modelo de contribuicao INSS individual."""
+
     __tablename__ = "inss_contribuicoes"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -428,13 +453,12 @@ class ContribuicaoINSSModel(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        Index("ix_inss_trabalhador_competencia", "trabalhador_id", "competencia"),
-    )
+    __table_args__ = (Index("ix_inss_trabalhador_competencia", "trabalhador_id", "competencia"),)
 
 
 class CertidaoModel(Base):
     """Modelo de certidao emitida/consultada."""
+
     __tablename__ = "fgts_inss_certidoes"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -458,6 +482,7 @@ class CertidaoModel(Base):
 # CALCULATORS
 # =============================================================================
 
+
 class CalculadoraFGTS:
     """Calculadora de FGTS."""
 
@@ -470,10 +495,7 @@ class CalculadoraFGTS:
         self.logger = logging.getLogger(f"{__name__}.CalculadoraFGTS")
 
     def calcular_deposito_mensal(
-        self,
-        trabalhador: Trabalhador,
-        remuneracao: Remuneracao,
-        is_aprendiz: bool = False
+        self, trabalhador: Trabalhador, remuneracao: Remuneracao, is_aprendiz: bool = False
     ) -> CalculoFGTS:
         """
         Calcula deposito mensal do FGTS.
@@ -490,13 +512,10 @@ class CalculadoraFGTS:
             aliquota = self.ALIQUOTA_APRENDIZ if is_aprendiz else self.ALIQUOTA_PADRAO
             base = remuneracao.base_fgts
 
-            valor_deposito = (base * aliquota / Decimal("100")).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            valor_deposito = (base * aliquota / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
             self.logger.info(
-                f"FGTS calculado para {trabalhador.cpf}: "
-                f"base={base}, aliquota={aliquota}%, valor={valor_deposito}"
+                f"FGTS calculado para {trabalhador.cpf}: base={base}, aliquota={aliquota}%, valor={valor_deposito}"
             )
 
             return CalculoFGTS(
@@ -505,7 +524,7 @@ class CalculadoraFGTS:
                 base_calculo=base,
                 aliquota=aliquota,
                 valor_deposito=valor_deposito,
-                tipo=TipoRecolhimento.MENSAL
+                tipo=TipoRecolhimento.MENSAL,
             )
 
         except Exception as e:
@@ -517,9 +536,9 @@ class CalculadoraFGTS:
         trabalhador: Trabalhador,
         saldo_fgts: Decimal,
         motivo: ModalidadeSaque,
-        remuneracao_final: Optional[Remuneracao] = None,
+        remuneracao_final: Remuneracao | None = None,
         aviso_previo_indenizado: bool = False,
-        valor_aviso: Decimal = Decimal("0")
+        valor_aviso: Decimal = Decimal("0"),
     ) -> CalculoFGTS:
         """
         Calcula FGTS rescisorio.
@@ -566,8 +585,7 @@ class CalculadoraFGTS:
             saldo_final = saldo_fgts + valor_deposito
 
             self.logger.info(
-                f"FGTS rescisorio calculado: deposito={valor_deposito}, "
-                f"multa={valor_multa}, saldo_final={saldo_final}"
+                f"FGTS rescisorio calculado: deposito={valor_deposito}, multa={valor_multa}, saldo_final={saldo_final}"
             )
 
             return CalculoFGTS(
@@ -579,7 +597,7 @@ class CalculadoraFGTS:
                 valor_multa=valor_multa,
                 saldo_anterior=saldo_fgts,
                 saldo_atual=saldo_final,
-                tipo=TipoRecolhimento.RESCISORIO
+                tipo=TipoRecolhimento.RESCISORIO,
             )
 
         except Exception as e:
@@ -590,7 +608,7 @@ class CalculadoraFGTS:
         self,
         trabalhador: Trabalhador,
         valor_13: Decimal,
-        parcela: int = 2  # 1 ou 2 parcela
+        parcela: int = 2,  # 1 ou 2 parcela
     ) -> CalculoFGTS:
         """
         Calcula FGTS sobre 13o salario.
@@ -612,7 +630,7 @@ class CalculadoraFGTS:
                     base_calculo=Decimal("0"),
                     aliquota=self.ALIQUOTA_PADRAO,
                     valor_deposito=Decimal("0"),
-                    tipo=TipoRecolhimento.MENSAL
+                    tipo=TipoRecolhimento.MENSAL,
                 )
 
             valor_deposito = (valor_13 * self.ALIQUOTA_PADRAO / Decimal("100")).quantize(
@@ -625,7 +643,7 @@ class CalculadoraFGTS:
                 base_calculo=valor_13,
                 aliquota=self.ALIQUOTA_PADRAO,
                 valor_deposito=valor_deposito,
-                tipo=TipoRecolhimento.MENSAL
+                tipo=TipoRecolhimento.MENSAL,
             )
 
         except Exception as e:
@@ -636,7 +654,7 @@ class CalculadoraFGTS:
 class CalculadoraINSS:
     """Calculadora de contribuicoes INSS com aliquotas progressivas."""
 
-    def __init__(self, tabela: Optional[TabelaINSS] = None):
+    def __init__(self, tabela: TabelaINSS | None = None):
         self.logger = logging.getLogger(f"{__name__}.CalculadoraINSS")
         self.tabela = tabela or TabelaINSS.tabela_2025()
 
@@ -645,11 +663,7 @@ class CalculadoraINSS:
         self.tabela = tabela
         self.logger.info(f"Tabela INSS atualizada para vigencia {tabela.vigencia}")
 
-    def calcular_contribuicao(
-        self,
-        trabalhador: Trabalhador,
-        remuneracao: Remuneracao
-    ) -> CalculoINSS:
+    def calcular_contribuicao(self, trabalhador: Trabalhador, remuneracao: Remuneracao) -> CalculoINSS:
         """
         Calcula contribuicao INSS com aliquotas progressivas.
 
@@ -683,12 +697,14 @@ class CalculadoraINSS:
                     )
                     valor_total += valor_faixa
 
-                    faixas_aplicadas.append({
-                        "faixa_ate": str(limite),
-                        "aliquota": str(aliquota),
-                        "base_faixa": str(base_faixa),
-                        "valor": str(valor_faixa)
-                    })
+                    faixas_aplicadas.append(
+                        {
+                            "faixa_ate": str(limite),
+                            "aliquota": str(aliquota),
+                            "base_faixa": str(base_faixa),
+                            "valor": str(valor_faixa),
+                        }
+                    )
 
                 valor_anterior = limite
 
@@ -711,7 +727,7 @@ class CalculadoraINSS:
                 aliquota_efetiva=aliquota_efetiva,
                 faixas_aplicadas=faixas_aplicadas,
                 teto_aplicado=teto_aplicado,
-                categoria=trabalhador.categoria
+                categoria=trabalhador.categoria,
             )
 
         except Exception as e:
@@ -723,8 +739,8 @@ class CalculadoraINSS:
         folha_total: Decimal,
         rat: Decimal = Decimal("2.0"),
         fap: Decimal = Decimal("1.0"),
-        outras_entidades: Decimal = Decimal("5.8")
-    ) -> Dict[str, Decimal]:
+        outras_entidades: Decimal = Decimal("5.8"),
+    ) -> dict[str, Decimal]:
         """
         Calcula contribuicao patronal INSS.
 
@@ -745,9 +761,7 @@ class CalculadoraINSS:
 
             # RAT ajustado pelo FAP
             rat_ajustado = (rat * fap).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            valor_rat = (folha_total * rat_ajustado / Decimal("100")).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            valor_rat = (folha_total * rat_ajustado / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
             # Terceiros
             valor_terceiros = (folha_total * outras_entidades / Decimal("100")).quantize(
@@ -766,7 +780,7 @@ class CalculadoraINSS:
                 "valor_rat": valor_rat,
                 "outras_entidades": outras_entidades,
                 "valor_terceiros": valor_terceiros,
-                "total": total
+                "total": total,
             }
 
         except Exception as e:
@@ -777,6 +791,7 @@ class CalculadoraINSS:
 # =============================================================================
 # GUIA GENERATORS
 # =============================================================================
+
 
 class GeradorGuiaBase(ABC):
     """Base para geradores de guia."""
@@ -789,7 +804,7 @@ class GeradorGuiaBase(ABC):
         """Gera a guia."""
         pass
 
-    def _gerar_codigo_barras(self, dados: Dict) -> str:
+    def _gerar_codigo_barras(self, dados: dict) -> str:
         """Gera codigo de barras padrao FEBRABAN."""
         # Simplificado - implementacao real seguiria padrao FEBRABAN
         hash_dados = hashlib.sha256(str(dados).encode()).hexdigest()[:44]
@@ -825,11 +840,7 @@ class GeradorGRF(GeradorGuiaBase):
     """Gerador de GRF - Guia de Recolhimento do FGTS."""
 
     def gerar(
-        self,
-        empresa_cnpj: str,
-        empresa_razao_social: str,
-        competencia: date,
-        calculos: List[CalculoFGTS]
+        self, empresa_cnpj: str, empresa_razao_social: str, competencia: date, calculos: list[CalculoFGTS]
     ) -> Guia:
         """
         Gera GRF para recolhimento mensal.
@@ -852,7 +863,7 @@ class GeradorGRF(GeradorGuiaBase):
                 "cnpj": empresa_cnpj,
                 "competencia": competencia.isoformat(),
                 "valor": str(valor_total),
-                "qtd_trabalhadores": len(calculos)
+                "qtd_trabalhadores": len(calculos),
             }
 
             codigo_barras = self._gerar_codigo_barras(dados_guia)
@@ -874,13 +885,12 @@ class GeradorGRF(GeradorGuiaBase):
                 detalhamento={
                     "qtd_trabalhadores": len(calculos),
                     "soma_bases": str(sum(c.base_calculo for c in calculos)),
-                    "codigo_recolhimento": CodigoRecolhimento.RECOLHIMENTO_MENSAL.value
-                }
+                    "codigo_recolhimento": CodigoRecolhimento.RECOLHIMENTO_MENSAL.value,
+                },
             )
 
             self.logger.info(
-                f"GRF gerada: competencia={competencia}, "
-                f"valor={valor_total}, trabalhadores={len(calculos)}"
+                f"GRF gerada: competencia={competencia}, valor={valor_total}, trabalhadores={len(calculos)}"
             )
 
             return guia
@@ -899,7 +909,7 @@ class GeradorGRRF(GeradorGuiaBase):
         empresa_razao_social: str,
         calculo: CalculoFGTS,
         trabalhador: Trabalhador,
-        data_desligamento: date
+        data_desligamento: date,
     ) -> Guia:
         """
         Gera GRRF para rescisao.
@@ -923,7 +933,7 @@ class GeradorGRRF(GeradorGuiaBase):
                 "cnpj": empresa_cnpj,
                 "cpf": trabalhador.cpf,
                 "valor": str(valor_total),
-                "data_desligamento": data_desligamento.isoformat()
+                "data_desligamento": data_desligamento.isoformat(),
             }
 
             codigo_barras = self._gerar_codigo_barras(dados_guia)
@@ -951,14 +961,11 @@ class GeradorGRRF(GeradorGuiaBase):
                     "saldo_fgts": str(calculo.saldo_anterior),
                     "deposito_mes": str(calculo.valor_deposito),
                     "multa_40": str(calculo.valor_multa),
-                    "codigo_recolhimento": CodigoRecolhimento.RECOLHIMENTO_RESCISORIO.value
-                }
+                    "codigo_recolhimento": CodigoRecolhimento.RECOLHIMENTO_RESCISORIO.value,
+                },
             )
 
-            self.logger.info(
-                f"GRRF gerada: trabalhador={trabalhador.cpf}, "
-                f"valor_total={valor_total}"
-            )
+            self.logger.info(f"GRRF gerada: trabalhador={trabalhador.cpf}, valor_total={valor_total}")
 
             return guia
 
@@ -975,8 +982,8 @@ class GeradorGPS(GeradorGuiaBase):
         empresa_cnpj: str,
         empresa_razao_social: str,
         competencia: date,
-        contribuicoes_empregados: List[CalculoINSS],
-        contribuicao_patronal: Dict[str, Decimal]
+        contribuicoes_empregados: list[CalculoINSS],
+        contribuicao_patronal: dict[str, Decimal],
     ) -> Guia:
         """
         Gera GPS para recolhimento previdenciario.
@@ -1002,7 +1009,7 @@ class GeradorGPS(GeradorGuiaBase):
                 "tipo": "GPS",
                 "cnpj": empresa_cnpj,
                 "competencia": competencia.isoformat(),
-                "valor": str(valor_total)
+                "valor": str(valor_total),
             }
 
             codigo_barras = self._gerar_codigo_barras(dados_guia)
@@ -1028,14 +1035,11 @@ class GeradorGPS(GeradorGuiaBase):
                     "valor_rat": str(contribuicao_patronal.get("valor_rat", 0)),
                     "valor_terceiros": str(contribuicao_patronal.get("valor_terceiros", 0)),
                     "valor_patronal_total": str(valor_patronal),
-                    "codigo_pagamento": "2100"  # Empresas em geral
-                }
+                    "codigo_pagamento": "2100",  # Empresas em geral
+                },
             )
 
-            self.logger.info(
-                f"GPS gerada: competencia={competencia}, "
-                f"valor_total={valor_total}"
-            )
+            self.logger.info(f"GPS gerada: competencia={competencia}, valor_total={valor_total}")
 
             return guia
 
@@ -1047,6 +1051,7 @@ class GeradorGPS(GeradorGuiaBase):
 # =============================================================================
 # SERVICE PRINCIPAL
 # =============================================================================
+
 
 class FGTSINSSManager:
     """
@@ -1061,10 +1066,7 @@ class FGTSINSSManager:
     """
 
     def __init__(
-        self,
-        db_session: Optional[Any] = None,
-        tabela_inss: Optional[TabelaINSS] = None,
-        ambiente: str = "producao"
+        self, db_session: Any | None = None, tabela_inss: TabelaINSS | None = None, ambiente: str = "producao"
     ):
         """
         Inicializa o gerenciador.
@@ -1094,10 +1096,8 @@ class FGTSINSSManager:
     # -------------------------------------------------------------------------
 
     async def calcular_fgts_mensal(
-        self,
-        trabalhadores: List[Trabalhador],
-        remuneracoes: List[Remuneracao]
-    ) -> List[CalculoFGTS]:
+        self, trabalhadores: list[Trabalhador], remuneracoes: list[Remuneracao]
+    ) -> list[CalculoFGTS]:
         """
         Calcula FGTS mensal para lista de trabalhadores.
 
@@ -1125,9 +1125,9 @@ class FGTSINSSManager:
         trabalhador: Trabalhador,
         saldo_fgts: Decimal,
         motivo: ModalidadeSaque,
-        remuneracao_final: Optional[Remuneracao] = None,
+        remuneracao_final: Remuneracao | None = None,
         aviso_previo_indenizado: bool = False,
-        valor_aviso: Decimal = Decimal("0")
+        valor_aviso: Decimal = Decimal("0"),
     ) -> CalculoFGTS:
         """
         Calcula FGTS rescisorio.
@@ -1149,7 +1149,7 @@ class FGTSINSSManager:
             motivo=motivo,
             remuneracao_final=remuneracao_final,
             aviso_previo_indenizado=aviso_previo_indenizado,
-            valor_aviso=valor_aviso
+            valor_aviso=valor_aviso,
         )
 
     # -------------------------------------------------------------------------
@@ -1157,10 +1157,8 @@ class FGTSINSSManager:
     # -------------------------------------------------------------------------
 
     async def calcular_inss_mensal(
-        self,
-        trabalhadores: List[Trabalhador],
-        remuneracoes: List[Remuneracao]
-    ) -> List[CalculoINSS]:
+        self, trabalhadores: list[Trabalhador], remuneracoes: list[Remuneracao]
+    ) -> list[CalculoINSS]:
         """
         Calcula INSS mensal para lista de trabalhadores.
 
@@ -1184,11 +1182,8 @@ class FGTSINSSManager:
         return calculos
 
     async def calcular_inss_patronal(
-        self,
-        folha_total: Decimal,
-        rat: Decimal = Decimal("2.0"),
-        fap: Decimal = Decimal("1.0")
-    ) -> Dict[str, Decimal]:
+        self, folha_total: Decimal, rat: Decimal = Decimal("2.0"), fap: Decimal = Decimal("1.0")
+    ) -> dict[str, Decimal]:
         """
         Calcula contribuicao patronal INSS.
 
@@ -1200,22 +1195,14 @@ class FGTSINSSManager:
         Returns:
             Dicionario com valores
         """
-        return self.calc_inss.calcular_contribuicao_patronal(
-            folha_total=folha_total,
-            rat=rat,
-            fap=fap
-        )
+        return self.calc_inss.calcular_contribuicao_patronal(folha_total=folha_total, rat=rat, fap=fap)
 
     # -------------------------------------------------------------------------
     # GERACAO DE GUIAS
     # -------------------------------------------------------------------------
 
     async def gerar_grf(
-        self,
-        empresa_cnpj: str,
-        empresa_razao_social: str,
-        competencia: date,
-        calculos: List[CalculoFGTS]
+        self, empresa_cnpj: str, empresa_razao_social: str, competencia: date, calculos: list[CalculoFGTS]
     ) -> Guia:
         """
         Gera GRF para recolhimento mensal.
@@ -1233,7 +1220,7 @@ class FGTSINSSManager:
             empresa_cnpj=empresa_cnpj,
             empresa_razao_social=empresa_razao_social,
             competencia=competencia,
-            calculos=calculos
+            calculos=calculos,
         )
 
         if self.db:
@@ -1247,7 +1234,7 @@ class FGTSINSSManager:
         empresa_razao_social: str,
         calculo: CalculoFGTS,
         trabalhador: Trabalhador,
-        data_desligamento: date
+        data_desligamento: date,
     ) -> Guia:
         """
         Gera GRRF para rescisao.
@@ -1267,7 +1254,7 @@ class FGTSINSSManager:
             empresa_razao_social=empresa_razao_social,
             calculo=calculo,
             trabalhador=trabalhador,
-            data_desligamento=data_desligamento
+            data_desligamento=data_desligamento,
         )
 
         if self.db:
@@ -1280,10 +1267,10 @@ class FGTSINSSManager:
         empresa_cnpj: str,
         empresa_razao_social: str,
         competencia: date,
-        contribuicoes: List[CalculoINSS],
+        contribuicoes: list[CalculoINSS],
         folha_total: Decimal,
         rat: Decimal = Decimal("2.0"),
-        fap: Decimal = Decimal("1.0")
+        fap: Decimal = Decimal("1.0"),
     ) -> Guia:
         """
         Gera GPS para recolhimento previdenciario.
@@ -1307,7 +1294,7 @@ class FGTSINSSManager:
             empresa_razao_social=empresa_razao_social,
             competencia=competencia,
             contribuicoes_empregados=contribuicoes,
-            contribuicao_patronal=patronal
+            contribuicao_patronal=patronal,
         )
 
         if self.db:
@@ -1321,7 +1308,7 @@ class FGTSINSSManager:
         empregador_nome: str,
         trabalhador: Trabalhador,
         remuneracao: Remuneracao,
-        competencia: date
+        competencia: date,
     ) -> Guia:
         """
         Gera DAE - Documento de Arrecadacao eSocial (domesticos).
@@ -1357,11 +1344,7 @@ class FGTSINSSManager:
             )
 
             valor_total = (
-                fgts.valor_deposito +
-                inss_empregado.valor_contribuicao +
-                inss_patronal +
-                seguro_acidente +
-                fgts_multa
+                fgts.valor_deposito + inss_empregado.valor_contribuicao + inss_patronal + seguro_acidente + fgts_multa
             )
 
             vencimento = competencia.replace(day=1) + timedelta(days=37)
@@ -1372,7 +1355,7 @@ class FGTSINSSManager:
                 "cpf_empregador": empregador_cpf,
                 "cpf_trabalhador": trabalhador.cpf,
                 "competencia": competencia.isoformat(),
-                "valor": str(valor_total)
+                "valor": str(valor_total),
             }
 
             codigo_barras = self.gerador_grf._gerar_codigo_barras(dados_guia)
@@ -1399,16 +1382,14 @@ class FGTSINSSManager:
                     "inss_empregado": str(inss_empregado.valor_contribuicao),
                     "inss_patronal_8": str(inss_patronal),
                     "seguro_acidente_0_8": str(seguro_acidente),
-                    "base_calculo": str(remuneracao.total_proventos)
-                }
+                    "base_calculo": str(remuneracao.total_proventos),
+                },
             )
 
             if self.db:
                 await self._salvar_guia(guia)
 
-            self.logger.info(
-                f"DAE gerada: competencia={competencia}, valor={valor_total}"
-            )
+            self.logger.info(f"DAE gerada: competencia={competencia}, valor={valor_total}")
 
             return guia
 
@@ -1420,11 +1401,7 @@ class FGTSINSSManager:
     # CONSULTAS E CERTIDOES
     # -------------------------------------------------------------------------
 
-    async def consultar_extrato_fgts(
-        self,
-        pis_pasep: str,
-        empresa_cnpj: str
-    ) -> ExtratoFGTS:
+    async def consultar_extrato_fgts(self, pis_pasep: str, empresa_cnpj: str) -> ExtratoFGTS:
         """
         Consulta extrato FGTS via Conectividade Social.
 
@@ -1439,9 +1416,7 @@ class FGTSINSSManager:
             Em ambiente real, faria chamada ao Conectividade Social
         """
         try:
-            self.logger.info(
-                f"Consultando extrato FGTS: PIS={pis_pasep}, CNPJ={empresa_cnpj}"
-            )
+            self.logger.info(f"Consultando extrato FGTS: PIS={pis_pasep}, CNPJ={empresa_cnpj}")
 
             # Simulacao - em producao integraria com Conectividade Social
             if self.ambiente == "homologacao":
@@ -1450,26 +1425,13 @@ class FGTSINSSManager:
                     empresa_cnpj=empresa_cnpj,
                     saldo_total=Decimal("15432.67"),
                     movimentacoes=[
-                        {
-                            "data": "2025-12-07",
-                            "tipo": "Deposito",
-                            "valor": "450.00",
-                            "competencia": "2025-11"
-                        },
-                        {
-                            "data": "2025-11-07",
-                            "tipo": "Deposito",
-                            "valor": "450.00",
-                            "competencia": "2025-10"
-                        }
+                        {"data": "2025-12-07", "tipo": "Deposito", "valor": "450.00", "competencia": "2025-11"},
+                        {"data": "2025-11-07", "tipo": "Deposito", "valor": "450.00", "competencia": "2025-10"},
                     ],
-                    conta_ativa=True
+                    conta_ativa=True,
                 )
 
-            raise ConsultaError(
-                "Consulta ao Conectividade Social nao implementada",
-                code="NOT_IMPLEMENTED"
-            )
+            raise ConsultaError("Consulta ao Conectividade Social nao implementada", code="NOT_IMPLEMENTED")
 
         except FGTSINSSError:
             raise
@@ -1498,8 +1460,8 @@ class FGTSINSSManager:
                 documento=cnpj,
                 data_emissao=datetime.now(),
                 data_validade=datetime.now() + timedelta(days=30),
-                codigo_controle=hashlib.md5(f"CRF{cnpj}{datetime.now()}".encode()).hexdigest()[:20].upper(),
-                observacoes="Empresa regular perante o FGTS"
+                codigo_controle=hashlib.sha256(f"CRF{cnpj}{datetime.now()}".encode()).hexdigest()[:20].upper(),
+                observacoes="Empresa regular perante o FGTS",
             )
 
             if self.db:
@@ -1532,8 +1494,8 @@ class FGTSINSSManager:
                 documento=cnpj,
                 data_emissao=datetime.now(),
                 data_validade=datetime.now() + timedelta(days=180),
-                codigo_controle=hashlib.md5(f"CND{cnpj}{datetime.now()}".encode()).hexdigest()[:20].upper(),
-                observacoes="Nao constam debitos relativos a contribuicoes previdenciarias"
+                codigo_controle=hashlib.sha256(f"CND{cnpj}{datetime.now()}".encode()).hexdigest()[:20].upper(),
+                observacoes="Nao constam debitos relativos a contribuicoes previdenciarias",
             )
 
             if self.db:
@@ -1545,7 +1507,7 @@ class FGTSINSSManager:
             self.logger.error(f"Erro ao emitir CND INSS: {e}")
             raise ConsultaError(f"Erro na emissao da CND: {e}")
 
-    async def verificar_regularidade(self, cnpj: str) -> Dict[str, Any]:
+    async def verificar_regularidade(self, cnpj: str) -> dict[str, Any]:
         """
         Verifica regularidade fiscal (FGTS + INSS).
 
@@ -1559,14 +1521,8 @@ class FGTSINSSManager:
             crf = await self.emitir_crf(cnpj)
             cnd = await self.emitir_cnd_inss(cnpj)
 
-            regular_fgts = crf.status in [
-                StatusCertidao.NEGATIVA,
-                StatusCertidao.POSITIVA_EFEITO_NEGATIVA
-            ]
-            regular_inss = cnd.status in [
-                StatusCertidao.NEGATIVA,
-                StatusCertidao.POSITIVA_EFEITO_NEGATIVA
-            ]
+            regular_fgts = crf.status in [StatusCertidao.NEGATIVA, StatusCertidao.POSITIVA_EFEITO_NEGATIVA]
+            regular_inss = cnd.status in [StatusCertidao.NEGATIVA, StatusCertidao.POSITIVA_EFEITO_NEGATIVA]
 
             return {
                 "cnpj": cnpj,
@@ -1574,14 +1530,14 @@ class FGTSINSSManager:
                 "fgts": {
                     "status": crf.status.value,
                     "validade": crf.data_validade.isoformat(),
-                    "codigo_controle": crf.codigo_controle
+                    "codigo_controle": crf.codigo_controle,
                 },
                 "inss": {
                     "status": cnd.status.value,
                     "validade": cnd.data_validade.isoformat(),
-                    "codigo_controle": cnd.codigo_controle
+                    "codigo_controle": cnd.codigo_controle,
                 },
-                "data_consulta": datetime.now().isoformat()
+                "data_consulta": datetime.now().isoformat(),
             }
 
         except Exception as e:
@@ -1597,11 +1553,11 @@ class FGTSINSSManager:
         empresa_cnpj: str,
         empresa_razao_social: str,
         competencia: date,
-        trabalhadores: List[Trabalhador],
-        remuneracoes: List[Remuneracao],
+        trabalhadores: list[Trabalhador],
+        remuneracoes: list[Remuneracao],
         rat: Decimal = Decimal("2.0"),
-        fap: Decimal = Decimal("1.0")
-    ) -> Dict[str, Any]:
+        fap: Decimal = Decimal("1.0"),
+    ) -> dict[str, Any]:
         """
         Processa folha mensal completa (FGTS + INSS).
 
@@ -1637,7 +1593,7 @@ class FGTSINSSManager:
                 empresa_cnpj=empresa_cnpj,
                 empresa_razao_social=empresa_razao_social,
                 competencia=competencia,
-                calculos=calculos_fgts
+                calculos=calculos_fgts,
             )
 
             gps = await self.gerar_gps(
@@ -1647,7 +1603,7 @@ class FGTSINSSManager:
                 contribuicoes=calculos_inss,
                 folha_total=folha_total,
                 rat=rat,
-                fap=fap
+                fap=fap,
             )
 
             resultado = {
@@ -1662,8 +1618,8 @@ class FGTSINSSManager:
                         "numero": grf.numero_documento,
                         "valor": str(grf.valor_total),
                         "vencimento": grf.vencimento.isoformat(),
-                        "codigo_barras": grf.codigo_barras
-                    }
+                        "codigo_barras": grf.codigo_barras,
+                    },
                 },
                 "inss": {
                     "total_empregados": str(sum(c.valor_contribuicao for c in calculos_inss)),
@@ -1672,15 +1628,13 @@ class FGTSINSSManager:
                         "numero": gps.numero_documento,
                         "valor": str(gps.valor_total),
                         "vencimento": gps.vencimento.isoformat(),
-                        "codigo_barras": gps.codigo_barras
-                    }
+                        "codigo_barras": gps.codigo_barras,
+                    },
                 },
-                "processado_em": datetime.now().isoformat()
+                "processado_em": datetime.now().isoformat(),
             }
 
-            self.logger.info(
-                f"Folha processada: FGTS={grf.valor_total}, GPS={gps.valor_total}"
-            )
+            self.logger.info(f"Folha processada: FGTS={grf.valor_total}, GPS={gps.valor_total}")
 
             return resultado
 
@@ -1714,7 +1668,7 @@ class FGTSINSSManager:
                 empresa_razao_social=guia.empresa_razao_social,
                 status=guia.status,
                 trabalhadores=guia.trabalhadores,
-                detalhamento=guia.detalhamento
+                detalhamento=guia.detalhamento,
             )
             self.db.add(model)
             await self.db.commit()
@@ -1738,7 +1692,7 @@ class FGTSINSSManager:
                 data_validade=certidao.data_validade,
                 codigo_controle=certidao.codigo_controle,
                 observacoes=certidao.observacoes,
-                pendencias=certidao.pendencias
+                pendencias=certidao.pendencias,
             )
             self.db.add(model)
             await self.db.commit()
@@ -1751,7 +1705,7 @@ class FGTSINSSManager:
 # SINGLETON E FUNCOES AUXILIARES
 # =============================================================================
 
-_fgts_inss_manager: Optional[FGTSINSSManager] = None
+_fgts_inss_manager: FGTSINSSManager | None = None
 
 
 def get_fgts_inss_manager() -> FGTSINSSManager:
@@ -1763,9 +1717,7 @@ def get_fgts_inss_manager() -> FGTSINSSManager:
 
 
 def init_fgts_inss_manager(
-    db_session: Optional[Any] = None,
-    tabela_inss: Optional[TabelaINSS] = None,
-    ambiente: str = "producao"
+    db_session: Any | None = None, tabela_inss: TabelaINSS | None = None, ambiente: str = "producao"
 ) -> FGTSINSSManager:
     """
     Inicializa o singleton FGTSINSSManager.
@@ -1779,11 +1731,7 @@ def init_fgts_inss_manager(
         Instancia do FGTSINSSManager
     """
     global _fgts_inss_manager
-    _fgts_inss_manager = FGTSINSSManager(
-        db_session=db_session,
-        tabela_inss=tabela_inss,
-        ambiente=ambiente
-    )
+    _fgts_inss_manager = FGTSINSSManager(db_session=db_session, tabela_inss=tabela_inss, ambiente=ambiente)
     return _fgts_inss_manager
 
 
@@ -1830,7 +1778,7 @@ def formatar_pis_pasep(pis: str) -> str:
     return pis
 
 
-def calcular_aliquota_efetiva_inss(base: Decimal, tabela: Optional[TabelaINSS] = None) -> Decimal:
+def calcular_aliquota_efetiva_inss(base: Decimal, tabela: TabelaINSS | None = None) -> Decimal:
     """
     Calcula aliquota efetiva INSS para uma base.
 
@@ -1862,7 +1810,5 @@ def calcular_aliquota_efetiva_inss(base: Decimal, tabela: Optional[TabelaINSS] =
         valor_anterior = limite
 
     if base > 0:
-        return (valor_total / base * Decimal("100")).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        return (valor_total / base * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     return Decimal("0")

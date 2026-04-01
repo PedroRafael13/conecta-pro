@@ -13,8 +13,9 @@ Quality Score Target: 99+/100
 
 from __future__ import annotations
 
+import builtins
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import and_, func, or_, select
@@ -22,20 +23,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
 from modules.operacional.disciplinary.models import (
+    DigitalSignature,
     DisciplinaryAction,
     DisciplinaryActionStatus,
     DisciplinaryActionType,
     DisciplinaryTemplate,
-    DigitalSignature,
 )
 from modules.operacional.disciplinary.schemas import (
     DisciplinaryActionCreate,
     DisciplinaryActionUpdate,
     DisciplinaryFilter,
     DisciplinaryStats,
+    SignatureCreate,
     TemplateCreate,
     TemplateUpdate,
-    SignatureCreate,
 )
 
 
@@ -96,7 +97,7 @@ class DisciplinaryRepository:
         self,
         data: DisciplinaryActionCreate,
         tenant_id: str,
-        created_by: Optional[str] = None,
+        created_by: str | None = None,
     ) -> DisciplinaryAction:
         """
         Cria uma nova medida disciplinar.
@@ -112,9 +113,7 @@ class DisciplinaryRepository:
         code = await self._generate_code(data.action_type.value, tenant_id)
 
         # Busca historico do funcionario
-        previous_warnings, previous_suspensions = await self._get_employee_history(
-            tenant_id, data.employee_id
-        )
+        previous_warnings, previous_suspensions = await self._get_employee_history(tenant_id, data.employee_id)
 
         action = DisciplinaryAction(
             id=str(uuid4()),
@@ -163,9 +162,7 @@ class DisciplinaryRepository:
 
         return action
 
-    async def _get_employee_history(
-        self, tenant_id: str, employee_id: str
-    ) -> Tuple[int, int]:
+    async def _get_employee_history(self, tenant_id: str, employee_id: str) -> tuple[int, int]:
         """
         Busca historico disciplinar do funcionario.
 
@@ -183,10 +180,12 @@ class DisciplinaryRepository:
                     DisciplinaryAction.employee_id == employee_id,
                     DisciplinaryAction.is_active.is_(True),
                     DisciplinaryAction.status == DisciplinaryActionStatus.APLICADA.value,
-                    DisciplinaryAction.action_type.in_([
-                        DisciplinaryActionType.ADVERTENCIA_VERBAL.value,
-                        DisciplinaryActionType.ADVERTENCIA_ESCRITA.value,
-                    ]),
+                    DisciplinaryAction.action_type.in_(
+                        [
+                            DisciplinaryActionType.ADVERTENCIA_VERBAL.value,
+                            DisciplinaryActionType.ADVERTENCIA_ESCRITA.value,
+                        ]
+                    ),
                 )
             )
         )
@@ -207,9 +206,7 @@ class DisciplinaryRepository:
 
         return warnings, suspensions
 
-    async def get_by_id(
-        self, action_id: str, tenant_id: str
-    ) -> Optional[DisciplinaryAction]:
+    async def get_by_id(self, action_id: str, tenant_id: str) -> DisciplinaryAction | None:
         """
         Busca medida disciplinar por ID.
 
@@ -231,9 +228,7 @@ class DisciplinaryRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(
-        self, code: str, tenant_id: str
-    ) -> Optional[DisciplinaryAction]:
+    async def get_by_code(self, code: str, tenant_id: str) -> DisciplinaryAction | None:
         """
         Busca medida disciplinar por codigo.
 
@@ -258,10 +253,10 @@ class DisciplinaryRepository:
     async def list(
         self,
         tenant_id: str,
-        filters: Optional[DisciplinaryFilter] = None,
+        filters: DisciplinaryFilter | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[DisciplinaryAction], int]:
+    ) -> tuple[builtins.list[DisciplinaryAction], int]:
         """
         Lista medidas disciplinares com filtros e paginacao.
 
@@ -311,17 +306,13 @@ class DisciplinaryRepository:
             Query com filtros aplicados
         """
         if filters.action_type:
-            query = query.where(
-                DisciplinaryAction.action_type == filters.action_type.value
-            )
+            query = query.where(DisciplinaryAction.action_type == filters.action_type.value)
 
         if filters.status:
             query = query.where(DisciplinaryAction.status == filters.status.value)
 
         if filters.reason_category:
-            query = query.where(
-                DisciplinaryAction.reason_category == filters.reason_category.value
-            )
+            query = query.where(DisciplinaryAction.reason_category == filters.reason_category.value)
 
         if filters.employee_id:
             query = query.where(DisciplinaryAction.employee_id == filters.employee_id)
@@ -333,19 +324,13 @@ class DisciplinaryRepository:
             query = query.where(DisciplinaryAction.client_id == filters.client_id)
 
         if filters.incident_date_from:
-            query = query.where(
-                DisciplinaryAction.incident_date >= filters.incident_date_from
-            )
+            query = query.where(DisciplinaryAction.incident_date >= filters.incident_date_from)
 
         if filters.incident_date_to:
-            query = query.where(
-                DisciplinaryAction.incident_date <= filters.incident_date_to
-            )
+            query = query.where(DisciplinaryAction.incident_date <= filters.incident_date_to)
 
         if filters.created_at_from:
-            query = query.where(
-                DisciplinaryAction.created_at >= filters.created_at_from
-            )
+            query = query.where(DisciplinaryAction.created_at >= filters.created_at_from)
 
         if filters.created_at_to:
             query = query.where(DisciplinaryAction.created_at <= filters.created_at_to)
@@ -367,7 +352,7 @@ class DisciplinaryRepository:
         action_id: str,
         tenant_id: str,
         data: DisciplinaryActionUpdate,
-    ) -> Optional[DisciplinaryAction]:
+    ) -> DisciplinaryAction | None:
         """
         Atualiza uma medida disciplinar.
 
@@ -444,7 +429,7 @@ class DisciplinaryRepository:
         tenant_id: str,
         new_status: DisciplinaryActionStatus,
         **kwargs: Any,
-    ) -> Optional[DisciplinaryAction]:
+    ) -> DisciplinaryAction | None:
         """
         Atualiza status de uma medida disciplinar.
 
@@ -485,7 +470,7 @@ class DisciplinaryRepository:
         employee_id: str,
         tenant_id: str,
         include_inactive: bool = False,
-    ) -> List[DisciplinaryAction]:
+    ) -> builtins.list[DisciplinaryAction]:
         """
         Lista todas as medidas de um funcionario.
 
@@ -506,13 +491,11 @@ class DisciplinaryRepository:
             conditions.append(DisciplinaryAction.is_active.is_(True))
 
         result = await self.db.execute(
-            select(DisciplinaryAction)
-            .where(and_(*conditions))
-            .order_by(DisciplinaryAction.created_at.desc())
+            select(DisciplinaryAction).where(and_(*conditions)).order_by(DisciplinaryAction.created_at.desc())
         )
         return list(result.scalars().all())
 
-    async def get_pending_approval(self, tenant_id: str) -> List[DisciplinaryAction]:
+    async def get_pending_approval(self, tenant_id: str) -> builtins.list[DisciplinaryAction]:
         """
         Lista medidas pendentes de aprovacao.
 
@@ -551,9 +534,7 @@ class DisciplinaryRepository:
         )
 
         # Total
-        total_result = await self.db.execute(
-            select(func.count(DisciplinaryAction.id)).where(base_condition)
-        )
+        total_result = await self.db.execute(select(func.count(DisciplinaryAction.id)).where(base_condition))
         total = total_result.scalar() or 0
 
         # Por tipo
@@ -619,10 +600,12 @@ class DisciplinaryRepository:
                 and_(
                     base_condition,
                     DisciplinaryAction.status == DisciplinaryActionStatus.APLICADA.value,
-                    DisciplinaryAction.action_type.in_([
-                        DisciplinaryActionType.ADVERTENCIA_VERBAL.value,
-                        DisciplinaryActionType.ADVERTENCIA_ESCRITA.value,
-                    ]),
+                    DisciplinaryAction.action_type.in_(
+                        [
+                            DisciplinaryActionType.ADVERTENCIA_VERBAL.value,
+                            DisciplinaryActionType.ADVERTENCIA_ESCRITA.value,
+                        ]
+                    ),
                 )
             )
         )
@@ -670,7 +653,7 @@ class TemplateRepository:
         self,
         data: TemplateCreate,
         tenant_id: str,
-        created_by: Optional[str] = None,
+        created_by: str | None = None,
     ) -> DisciplinaryTemplate:
         """
         Cria um novo template.
@@ -724,9 +707,7 @@ class TemplateRepository:
         for template in templates:
             template.is_default = False
 
-    async def get_by_id(
-        self, template_id: str, tenant_id: str
-    ) -> Optional[DisciplinaryTemplate]:
+    async def get_by_id(self, template_id: str, tenant_id: str) -> DisciplinaryTemplate | None:
         """
         Busca template por ID.
 
@@ -748,9 +729,7 @@ class TemplateRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_default(
-        self, tenant_id: str, action_type: str
-    ) -> Optional[DisciplinaryTemplate]:
+    async def get_default(self, tenant_id: str, action_type: str) -> DisciplinaryTemplate | None:
         """
         Busca template padrao para um tipo de medida.
 
@@ -776,8 +755,8 @@ class TemplateRepository:
     async def list(
         self,
         tenant_id: str,
-        action_type: Optional[str] = None,
-    ) -> List[DisciplinaryTemplate]:
+        action_type: str | None = None,
+    ) -> builtins.list[DisciplinaryTemplate]:
         """
         Lista templates.
 
@@ -808,7 +787,7 @@ class TemplateRepository:
         template_id: str,
         tenant_id: str,
         data: TemplateUpdate,
-    ) -> Optional[DisciplinaryTemplate]:
+    ) -> DisciplinaryTemplate | None:
         """
         Atualiza um template.
 
@@ -925,7 +904,7 @@ class SignatureRepository:
         await self.db.refresh(signature)
 
         logger.info(
-            f"Assinatura digital criada",
+            "Assinatura digital criada",
             extra={
                 "signature_id": signature.id,
                 "signer_type": signature.signer_type,
@@ -936,9 +915,7 @@ class SignatureRepository:
 
         return signature
 
-    async def get_by_id(
-        self, signature_id: str, tenant_id: str
-    ) -> Optional[DigitalSignature]:
+    async def get_by_id(self, signature_id: str, tenant_id: str) -> DigitalSignature | None:
         """
         Busca assinatura por ID.
 
@@ -959,9 +936,7 @@ class SignatureRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_document(
-        self, document_type: str, document_id: str, tenant_id: str
-    ) -> List[DigitalSignature]:
+    async def get_by_document(self, document_type: str, document_id: str, tenant_id: str) -> list[DigitalSignature]:
         """
         Lista assinaturas de um documento.
 
@@ -986,9 +961,7 @@ class SignatureRepository:
         )
         return list(result.scalars().all())
 
-    async def invalidate(
-        self, signature_id: str, tenant_id: str, reason: str
-    ) -> Optional[DigitalSignature]:
+    async def invalidate(self, signature_id: str, tenant_id: str, reason: str) -> DigitalSignature | None:
         """
         Invalida uma assinatura.
 

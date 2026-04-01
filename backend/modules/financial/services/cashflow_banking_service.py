@@ -6,9 +6,8 @@ obtido via Open Banking para visao consolidada.
 
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, UTC
+from datetime import UTC, date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,11 +40,11 @@ class ConsolidatedBalance:
     total_available: Decimal = Decimal("0")
     total_blocked: Decimal = Decimal("0")
     total_balance: Decimal = Decimal("0")
-    accounts: Dict[str, AccountBalance] = field(default_factory=dict)
+    accounts: dict[str, AccountBalance] = field(default_factory=dict)
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-    errors: Dict[str, str] = field(default_factory=dict)
+    errors: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Converte para dicionario."""
         return {
             "total_available": float(self.total_available),
@@ -70,10 +69,10 @@ class CashFlowWithBalance:
     """Projecao de fluxo de caixa com saldo inicial real."""
 
     current_balance: ConsolidatedBalance
-    projections: List[CashFlowProjection]
-    alerts: List[Dict] = field(default_factory=list)
+    projections: list[CashFlowProjection]
+    alerts: list[dict] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Converte para dicionario."""
         return {
             "current_balance": self.current_balance.to_dict(),
@@ -98,7 +97,7 @@ class CashFlowBankingService:
     def __init__(
         self,
         session: AsyncSession,
-        banking_service: Optional[BankingService] = None,
+        banking_service: BankingService | None = None,
     ):
         """Inicializa o service.
 
@@ -109,7 +108,7 @@ class CashFlowBankingService:
         self.session = session
         self.cashflow_service = CashFlowService(session)
         self.banking_service = banking_service or BankingService()
-        self._account_configs: Dict[str, BankAccountConfig] = {}
+        self._account_configs: dict[str, BankAccountConfig] = {}
 
     def register_bank_account(
         self,
@@ -185,10 +184,10 @@ class CashFlowBankingService:
     async def get_projection_with_balance(
         self,
         condominio_id: UUID,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         group_by: str = "day",
-        low_balance_threshold: Optional[Decimal] = None,
+        low_balance_threshold: Decimal | None = None,
     ) -> CashFlowWithBalance:
         """Obtem projecao de fluxo de caixa com saldo real.
 
@@ -241,9 +240,9 @@ class CashFlowBankingService:
     def _generate_alerts(
         self,
         current_balance: ConsolidatedBalance,
-        projections: List[CashFlowProjection],
+        projections: list[CashFlowProjection],
         threshold: Decimal,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Gera alertas baseados no fluxo de caixa.
 
         Args:
@@ -254,7 +253,7 @@ class CashFlowBankingService:
         Returns:
             Lista de alertas.
         """
-        alerts: List[Dict] = []
+        alerts: list[dict] = []
 
         # Alerta se saldo atual ja esta baixo
         if current_balance.total_available < self.CRITICAL_BALANCE_THRESHOLD:
@@ -323,7 +322,7 @@ class CashFlowBankingService:
         self,
         condominio_id: UUID,
         min_surplus_days: int = 30,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Sugere investimentos baseado no fluxo de caixa.
 
         Analisa o fluxo de caixa e sugere quando ha
@@ -336,7 +335,7 @@ class CashFlowBankingService:
         Returns:
             Lista de sugestoes de investimento.
         """
-        suggestions: List[Dict] = []
+        suggestions: list[dict] = []
 
         # Obtem projecao completa
         result = await self.get_projection_with_balance(
@@ -367,9 +366,7 @@ class CashFlowBankingService:
             )
 
         # Analisa dias consecutivos com saldo alto
-        high_balance_days = sum(
-            1 for p in result.projections if p.cumulative_balance > reserve_needed
-        )
+        high_balance_days = sum(1 for p in result.projections if p.cumulative_balance > reserve_needed)
 
         if high_balance_days >= min_surplus_days:
             avg_surplus = sum(
@@ -382,10 +379,7 @@ class CashFlowBankingService:
                         "type": "RECURRING_SURPLUS",
                         "average_surplus": float(avg_surplus),
                         "days_with_surplus": high_balance_days,
-                        "suggestion": (
-                            "Padrao de excesso de caixa identificado. "
-                            "Considere investimento programado."
-                        ),
+                        "suggestion": ("Padrao de excesso de caixa identificado. Considere investimento programado."),
                     }
                 )
 
@@ -394,7 +388,7 @@ class CashFlowBankingService:
     async def get_dashboard_data(
         self,
         condominio_id: UUID,
-    ) -> Dict:
+    ) -> dict:
         """Retorna dados consolidados para dashboard.
 
         Combina todas as informacoes relevantes para

@@ -2,7 +2,6 @@
 
 import logging
 from datetime import date, datetime
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -143,17 +142,17 @@ async def create_product_category(
 
 @router.get(
     "/categories",
-    response_model=List[ProductCategoryResponse],
+    response_model=list[ProductCategoryResponse],
     summary="Listar categorias de produto",
 )
 async def list_product_categories(
     condominio_id: UUID,
-    parent_id: Optional[UUID] = Query(None, description="ID da categoria pai"),
+    parent_id: UUID | None = Query(None, description="ID da categoria pai"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
-) -> List[ProductCategoryResponse]:
+) -> list[ProductCategoryResponse]:
     """Lista categorias de produto."""
     repo = ProductCategoryRepository(session)
     categories = await repo.list(condominio_id, parent_id, skip, limit)
@@ -162,14 +161,14 @@ async def list_product_categories(
 
 @router.get(
     "/categories/tree",
-    response_model=List[ProductCategoryTreeResponse],
+    response_model=list[ProductCategoryTreeResponse],
     summary="Árvore de categorias",
 )
 async def get_category_tree(
     condominio_id: UUID,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
-) -> List[ProductCategoryTreeResponse]:
+) -> list[ProductCategoryTreeResponse]:
     """Retorna árvore completa de categorias."""
     repo = ProductCategoryRepository(session)
     categories = await repo.get_tree(condominio_id)
@@ -312,9 +311,9 @@ async def create_product(
 )
 async def list_products(  # pylint: disable=unused-argument
     condominio_id: UUID,
-    search: Optional[str] = Query(None, description="Busca por nome ou código"),
-    category_id: Optional[UUID] = Query(None, description="ID da categoria"),
-    status_filter: Optional[str] = Query(None, alias="status"),
+    search: str | None = Query(None, description="Busca por nome ou código"),
+    category_id: UUID | None = Query(None, description="ID da categoria"),
+    status_filter: str | None = Query(None, alias="status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
@@ -425,9 +424,7 @@ async def delete_product(
 
 
 @router.post(
-    "/products/{product_id}/block",
-    response_model=ProductResponse,
-    summary="Bloquear produto",
+    "/products/{product_id}/block", response_model=ProductResponse, summary="Bloquear produto", status_code=201
 )
 async def block_product(
     product_id: UUID,
@@ -486,13 +483,13 @@ async def create_requisition(
 )
 async def list_requisitions(
     condominio_id: UUID,
-    status_filter: Optional[List[str]] = Query(None, alias="status"),
-    priority: Optional[List[str]] = Query(None),
-    requester_id: Optional[UUID] = Query(None),
-    department: Optional[str] = Query(None),
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
-    search: Optional[str] = Query(None),
+    status_filter: list[str] | None = Query(None, alias="status"),
+    priority: list[str] | None = Query(None),
+    requester_id: UUID | None = Query(None),
+    department: str | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    search: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
@@ -593,6 +590,7 @@ async def update_requisition(
     "/requisitions/{requisition_id}/submit",
     response_model=PurchaseRequisitionResponse,
     summary="Submeter para aprovação",
+    status_code=201,
 )
 async def submit_requisition(
     requisition_id: UUID,
@@ -620,10 +618,11 @@ async def submit_requisition(
     "/requisitions/{requisition_id}/approve",
     response_model=PurchaseRequisitionResponse,
     summary="Aprovar requisição",
+    status_code=201,
 )
 async def approve_requisition(
     requisition_id: UUID,
-    data: Optional[RequisitionApproveRequest] = None,
+    data: RequisitionApproveRequest | None = None,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
 ) -> PurchaseRequisitionResponse:
@@ -649,6 +648,7 @@ async def approve_requisition(
     "/requisitions/{requisition_id}/reject",
     response_model=PurchaseRequisitionResponse,
     summary="Rejeitar requisição",
+    status_code=201,
 )
 async def reject_requisition(
     requisition_id: UUID,
@@ -677,6 +677,7 @@ async def reject_requisition(
     "/requisitions/{requisition_id}/cancel",
     response_model=PurchaseRequisitionResponse,
     summary="Cancelar requisição",
+    status_code=201,
 )
 async def cancel_requisition(
     requisition_id: UUID,
@@ -701,10 +702,7 @@ async def cancel_requisition(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post(
-    "/requisitions/{requisition_id}/analyze-risks",
-    summary="Analisar riscos da requisição",
-)
+@router.post("/requisitions/{requisition_id}/analyze-risks", summary="Analisar riscos da requisição", status_code=201)
 async def analyze_requisition_risks(
     requisition_id: UUID,
     session: AsyncSession = Depends(get_session),
@@ -761,10 +759,10 @@ async def create_quotation(
 )
 async def list_quotations(
     condominio_id: UUID,
-    status_filter: Optional[List[str]] = Query(None, alias="status"),
-    supplier_id: Optional[UUID] = Query(None),
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
+    status_filter: list[str] | None = Query(None, alias="status"),
+    supplier_id: UUID | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
@@ -773,9 +771,7 @@ async def list_quotations(
     """Lista cotações com filtros."""
     status_list = [QuotationStatus(s) for s in status_filter] if status_filter else None
     repo = PurchaseQuotationRepository(session)
-    quotations = await repo.list(
-        condominio_id, status_list, supplier_id, date_from, date_to, skip, limit
-    )
+    quotations = await repo.list(condominio_id, status_list, supplier_id, date_from, date_to, skip, limit)
     total = await repo.count(condominio_id, status_list)
     return PurchaseQuotationListResponse(
         items=[PurchaseQuotationResponse.model_validate(q) for q in quotations],
@@ -787,14 +783,14 @@ async def list_quotations(
 
 @router.get(
     "/quotations/by-requisition/{requisition_id}",
-    response_model=List[PurchaseQuotationResponse],
+    response_model=list[PurchaseQuotationResponse],
     summary="Listar cotações de uma requisição",
 )
 async def list_quotations_by_requisition(
     requisition_id: UUID,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
-) -> List[PurchaseQuotationResponse]:
+) -> list[PurchaseQuotationResponse]:
     """Lista cotações de uma requisição."""
     repo = PurchaseQuotationRepository(session)
     quotations = await repo.list_by_requisition(requisition_id)
@@ -899,6 +895,7 @@ async def update_quotation(
     "/quotations/{quotation_id}/score",
     response_model=PurchaseQuotationResponse,
     summary="Pontuar cotação",
+    status_code=201,
 )
 async def score_quotation(
     quotation_id: UUID,
@@ -931,10 +928,11 @@ async def score_quotation(
     "/quotations/{quotation_id}/select",
     response_model=PurchaseQuotationResponse,
     summary="Selecionar cotação",
+    status_code=201,
 )
 async def select_quotation(
     quotation_id: UUID,
-    data: Optional[QuotationSelectRequest] = None,
+    data: QuotationSelectRequest | None = None,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
 ) -> PurchaseQuotationResponse:
@@ -960,6 +958,7 @@ async def select_quotation(
     "/quotations/{quotation_id}/reject",
     response_model=PurchaseQuotationResponse,
     summary="Rejeitar cotação",
+    status_code=201,
 )
 async def reject_quotation(
     quotation_id: UUID,
@@ -1021,14 +1020,14 @@ async def create_order(
 )
 async def list_orders(  # pylint: disable=too-many-locals
     condominio_id: UUID,
-    status_filter: Optional[List[str]] = Query(None, alias="status"),
-    priority: Optional[List[str]] = Query(None),
-    supplier_id: Optional[UUID] = Query(None),
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
-    delivery_from: Optional[date] = Query(None),
-    delivery_to: Optional[date] = Query(None),
-    search: Optional[str] = Query(None),
+    status_filter: list[str] | None = Query(None, alias="status"),
+    priority: list[str] | None = Query(None),
+    supplier_id: UUID | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    delivery_from: date | None = Query(None),
+    delivery_to: date | None = Query(None),
+    search: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
@@ -1127,13 +1126,11 @@ async def update_order(
 
 
 @router.post(
-    "/orders/{order_id}/approve",
-    response_model=PurchaseOrderResponse,
-    summary="Aprovar ordem",
+    "/orders/{order_id}/approve", response_model=PurchaseOrderResponse, summary="Aprovar ordem", status_code=201
 )
 async def approve_order(  # pylint: disable=unused-argument
     order_id: UUID,
-    data: Optional[OrderApproveRequest] = None,
+    data: OrderApproveRequest | None = None,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
 ) -> PurchaseOrderResponse:
@@ -1155,9 +1152,7 @@ async def approve_order(  # pylint: disable=unused-argument
 
 
 @router.post(
-    "/orders/{order_id}/reject",
-    response_model=PurchaseOrderResponse,
-    summary="Rejeitar ordem",
+    "/orders/{order_id}/reject", response_model=PurchaseOrderResponse, summary="Rejeitar ordem", status_code=201
 )
 async def reject_order(
     order_id: UUID,
@@ -1186,6 +1181,7 @@ async def reject_order(
     "/orders/{order_id}/send",
     response_model=PurchaseOrderResponse,
     summary="Enviar ordem para fornecedor",
+    status_code=201,
 )
 async def send_order(
     order_id: UUID,
@@ -1213,10 +1209,11 @@ async def send_order(
     "/orders/{order_id}/confirm",
     response_model=PurchaseOrderResponse,
     summary="Confirmar ordem pelo fornecedor",
+    status_code=201,
 )
 async def confirm_order(
     order_id: UUID,
-    notes: Optional[str] = None,
+    notes: str | None = None,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
 ) -> PurchaseOrderResponse:
@@ -1238,9 +1235,7 @@ async def confirm_order(
 
 
 @router.post(
-    "/orders/{order_id}/cancel",
-    response_model=PurchaseOrderResponse,
-    summary="Cancelar ordem",
+    "/orders/{order_id}/cancel", response_model=PurchaseOrderResponse, summary="Cancelar ordem", status_code=201
 )
 async def cancel_order(
     order_id: UUID,
@@ -1302,14 +1297,14 @@ async def create_receipt(
 )
 async def list_receipts(  # pylint: disable=too-many-locals
     condominio_id: UUID,
-    status_filter: Optional[List[str]] = Query(None, alias="status"),
-    receipt_type: Optional[List[str]] = Query(None),
-    order_id: Optional[UUID] = Query(None),
-    supplier_id: Optional[UUID] = Query(None),
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
-    has_divergence: Optional[bool] = Query(None),
-    search: Optional[str] = Query(None),
+    status_filter: list[str] | None = Query(None, alias="status"),
+    receipt_type: list[str] | None = Query(None),
+    order_id: UUID | None = Query(None),
+    supplier_id: UUID | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    has_divergence: bool | None = Query(None),
+    search: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
@@ -1339,14 +1334,14 @@ async def list_receipts(  # pylint: disable=too-many-locals
 
 @router.get(
     "/receipts/by-order/{order_id}",
-    response_model=List[GoodsReceiptResponse],
+    response_model=list[GoodsReceiptResponse],
     summary="Listar recebimentos de uma ordem",
 )
 async def list_receipts_by_order(
     order_id: UUID,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
-) -> List[GoodsReceiptResponse]:
+) -> list[GoodsReceiptResponse]:
     """Lista recebimentos de uma ordem de compra."""
     repo = GoodsReceiptRepository(session)
     receipts = await repo.list_by_order(order_id)
@@ -1424,9 +1419,7 @@ async def update_receipt(
 
 
 @router.post(
-    "/receipts/{receipt_id}/inspect",
-    response_model=GoodsReceiptResponse,
-    summary="Realizar inspeção",
+    "/receipts/{receipt_id}/inspect", response_model=GoodsReceiptResponse, summary="Realizar inspeção", status_code=201
 )
 async def inspect_receipt(
     receipt_id: UUID,
@@ -1455,10 +1448,11 @@ async def inspect_receipt(
     "/receipts/{receipt_id}/approve",
     response_model=GoodsReceiptResponse,
     summary="Aprovar recebimento",
+    status_code=201,
 )
 async def approve_receipt(
     receipt_id: UUID,
-    _data: Optional[ReceiptApproveRequest] = None,
+    _data: ReceiptApproveRequest | None = None,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
 ) -> GoodsReceiptResponse:
@@ -1483,6 +1477,7 @@ async def approve_receipt(
     "/receipts/{receipt_id}/reject",
     response_model=GoodsReceiptResponse,
     summary="Rejeitar recebimento",
+    status_code=201,
 )
 async def reject_receipt(
     receipt_id: UUID,
@@ -1511,6 +1506,7 @@ async def reject_receipt(
     "/receipts/{receipt_id}/divergence",
     response_model=GoodsReceiptResponse,
     summary="Registrar divergência",
+    status_code=201,
 )
 async def register_divergence(
     receipt_id: UUID,
@@ -1536,9 +1532,7 @@ async def register_divergence(
 
 
 @router.post(
-    "/receipts/{receipt_id}/sign",
-    response_model=GoodsReceiptResponse,
-    summary="Assinar recebimento",
+    "/receipts/{receipt_id}/sign", response_model=GoodsReceiptResponse, summary="Assinar recebimento", status_code=201
 )
 async def sign_receipt(
     receipt_id: UUID,
@@ -1608,12 +1602,12 @@ async def get_my_approvals(
 )
 async def list_approvals(
     condominio_id: UUID,
-    status_filter: Optional[List[str]] = Query(None, alias="status"),
-    approval_type: Optional[List[str]] = Query(None),
-    approval_level: Optional[List[str]] = Query(None),
-    approver_id: Optional[UUID] = Query(None),
-    document_id: Optional[UUID] = Query(None),
-    is_overdue: Optional[bool] = Query(None),
+    status_filter: list[str] | None = Query(None, alias="status"),
+    approval_type: list[str] | None = Query(None),
+    approval_level: list[str] | None = Query(None),
+    approver_id: UUID | None = Query(None),
+    document_id: UUID | None = Query(None),
+    is_overdue: bool | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
@@ -1623,7 +1617,7 @@ async def list_approvals(
     filters = ApprovalFilter(
         status=[ApprovalStatus(s) for s in status_filter] if status_filter else None,
         approval_type=[ApprovalType(t) for t in approval_type] if approval_type else None,
-        approval_level=[ApprovalLevel(l) for l in approval_level] if approval_level else None,
+        approval_level=[ApprovalLevel(level) for level in approval_level] if approval_level else None,
         approver_id=approver_id,
         document_id=document_id,
         is_overdue=is_overdue,
@@ -1676,13 +1670,11 @@ async def get_approval(
 
 
 @router.post(
-    "/approvals/{approval_id}/approve",
-    response_model=PurchaseApprovalResponse,
-    summary="Aprovar",
+    "/approvals/{approval_id}/approve", response_model=PurchaseApprovalResponse, summary="Aprovar", status_code=201
 )
 async def approve_approval(
     approval_id: UUID,
-    data: Optional[ApprovalApproveRequest] = None,
+    data: ApprovalApproveRequest | None = None,
     session: AsyncSession = Depends(get_session),
     _current_user: dict = Depends(get_current_user),
 ) -> PurchaseApprovalResponse:
@@ -1710,9 +1702,7 @@ async def approve_approval(
 
 
 @router.post(
-    "/approvals/{approval_id}/reject",
-    response_model=PurchaseApprovalResponse,
-    summary="Rejeitar",
+    "/approvals/{approval_id}/reject", response_model=PurchaseApprovalResponse, summary="Rejeitar", status_code=201
 )
 async def reject_approval(
     approval_id: UUID,
@@ -1746,6 +1736,7 @@ async def reject_approval(
     "/approvals/{approval_id}/delegate",
     response_model=PurchaseApprovalResponse,
     summary="Delegar aprovação",
+    status_code=201,
 )
 async def delegate_approval(
     approval_id: UUID,
@@ -1779,6 +1770,7 @@ async def delegate_approval(
     "/approvals/{approval_id}/request-info",
     response_model=PurchaseApprovalResponse,
     summary="Solicitar informações",
+    status_code=201,
 )
 async def request_info(
     approval_id: UUID,
@@ -1812,6 +1804,7 @@ async def request_info(
     "/approvals/{approval_id}/provide-info",
     response_model=PurchaseApprovalResponse,
     summary="Fornecer informações",
+    status_code=201,
 )
 async def provide_info(
     approval_id: UUID,
@@ -1839,10 +1832,7 @@ async def provide_info(
 # ==================== AI Services ====================
 
 
-@router.post(
-    "/ai/suggest-suppliers",
-    summary="Sugerir fornecedores",
-)
+@router.post("/ai/suggest-suppliers", summary="Sugerir fornecedores", status_code=201)
 async def suggest_suppliers(
     condominio_id: UUID,
     product_description: str = Query(..., min_length=3),
@@ -1871,10 +1861,7 @@ async def analyze_supplier(
     return analysis
 
 
-@router.post(
-    "/ai/predict-demand",
-    summary="Prever demanda",
-)
+@router.post("/ai/predict-demand", summary="Prever demanda", status_code=201)
 async def predict_demand(
     product_id: UUID,
     months_ahead: int = Query(3, ge=1, le=12),

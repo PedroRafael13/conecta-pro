@@ -1,6 +1,6 @@
 """Sistema de Escalation Automático."""
 
+from .escalation_controller import router  # noqa: F401
 from .escalation_engine import EscalationEngine
-from .escalation_controller import EscalationController
 
-__all__ = ["EscalationEngine", "EscalationController"]
+__all__ = ["EscalationEngine", "router"]

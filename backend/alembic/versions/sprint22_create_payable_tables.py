@@ -13,9 +13,10 @@ Tabelas criadas:
 - payable_payments: Pagamentos
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers
 revision = "sprint22_payable"

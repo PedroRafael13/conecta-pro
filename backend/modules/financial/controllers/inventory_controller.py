@@ -4,13 +4,12 @@ import logging
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from core.auth.dependencies import get_current_user
-from core.database import get_db
+from core.database.session import get_sync_db_dependency
 from modules.financial.models.stock_inventory import (
     InventoryStatus,
     StockInventory,
@@ -69,18 +68,20 @@ router = APIRouter(prefix="/inventory", tags=["Estoque"])
 
 @router.get("/warehouses", response_model=list[WarehouseListResponse])
 async def list_warehouses(
-    item_status: Optional[WarehouseStatus] = Query(None, alias="status"),
-    warehouse_type: Optional[str] = None,
+    condominio_id: uuid.UUID | None = Query(None),
+    item_status: WarehouseStatus | None = Query(None, alias="status"),
+    warehouse_type: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[WarehouseListResponse]:
     """Lista armazéns."""
     try:
         repo = WarehouseRepository(db)
+        _cond_id = condominio_id or getattr(_current_user, "condominio_id", None)
         warehouses = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_cond_id,
             status=item_status,
             warehouse_type=warehouse_type,
             skip=skip,
@@ -97,7 +98,7 @@ async def list_warehouses(
 
 @router.get("/warehouses/stats", response_model=WarehouseStats)
 async def get_warehouse_stats(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> WarehouseStats:
     """Retorna estatísticas dos armazéns."""
@@ -116,7 +117,7 @@ async def get_warehouse_stats(
 @router.post("/warehouses", response_model=WarehouseResponse, status_code=201)
 async def create_warehouse(
     data: WarehouseCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> WarehouseResponse:
     """Cria um novo armazém."""
@@ -157,7 +158,7 @@ async def create_warehouse(
 @router.get("/warehouses/{warehouse_id}", response_model=WarehouseResponse)
 async def get_warehouse(
     warehouse_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> WarehouseResponse:
     """Busca armazém por ID."""
@@ -177,7 +178,7 @@ async def get_warehouse(
 async def update_warehouse(
     warehouse_id: uuid.UUID,
     data: WarehouseUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> WarehouseResponse:
     """Atualiza armazém."""
@@ -210,11 +211,11 @@ async def update_warehouse(
         ) from e
 
 
-@router.post("/warehouses/{warehouse_id}/block")
+@router.post("/warehouses/{warehouse_id}/block", status_code=201)
 async def block_warehouse(
     warehouse_id: uuid.UUID,
     reason: str = Query(..., min_length=1),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Bloqueia armazém."""
@@ -244,10 +245,10 @@ async def block_warehouse(
         ) from e
 
 
-@router.post("/warehouses/{warehouse_id}/unblock")
+@router.post("/warehouses/{warehouse_id}/unblock", status_code=201)
 async def unblock_warehouse(
     warehouse_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Desbloqueia armazém."""
@@ -284,14 +285,15 @@ async def unblock_warehouse(
 
 @router.get("/stock-items", response_model=list[StockItemListResponse])
 async def list_stock_items(
-    warehouse_id: Optional[uuid.UUID] = None,
-    product_id: Optional[uuid.UUID] = None,
-    item_status: Optional[StockItemStatus] = Query(None, alias="status"),
-    is_low_stock: Optional[bool] = None,
-    is_expired: Optional[bool] = None,
+    condominio_id: uuid.UUID | None = None,
+    warehouse_id: uuid.UUID | None = None,
+    product_id: uuid.UUID | None = None,
+    item_status: StockItemStatus | None = Query(None, alias="status"),
+    is_low_stock: bool | None = None,
+    is_expired: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[StockItemListResponse]:
     """Lista itens em estoque."""
@@ -301,17 +303,15 @@ async def list_stock_items(
         if warehouse_id:
             items = repo.list_by_warehouse(warehouse_id, item_status, skip, limit)
         elif product_id:
-            items = repo.list_by_product(
-                product_id, _current_user["condominio_id"], include_zero=True
-            )
+            items = repo.list_by_product(product_id, condominio_id, include_zero=True)
         elif is_low_stock:
-            items = repo.list_low_stock(_current_user["condominio_id"])
+            items = repo.list_low_stock(condominio_id)
         elif is_expired:
-            items = repo.list_expired(_current_user["condominio_id"])
+            items = repo.list_expired(condominio_id)
         else:
             # Lista geral - por armazém principal
             wh_repo = WarehouseRepository(db)
-            main_wh = wh_repo.get_main_warehouse(_current_user["condominio_id"])
+            main_wh = wh_repo.get_main_warehouse(condominio_id) if condominio_id else None
             if main_wh:
                 items = repo.list_by_warehouse(main_wh.id, item_status, skip, limit)
             else:
@@ -328,7 +328,7 @@ async def list_stock_items(
 
 @router.get("/stock-items/stats", response_model=StockStats)
 async def get_stock_stats(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> StockStats:
     """Retorna estatísticas de estoque."""
@@ -346,7 +346,7 @@ async def get_stock_stats(
 
 @router.get("/stock-items/low-stock", response_model=list[StockItemListResponse])
 async def list_low_stock_items(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[StockItemListResponse]:
     """Lista itens abaixo do estoque mínimo."""
@@ -365,7 +365,7 @@ async def list_low_stock_items(
 @router.get("/stock-items/expiring", response_model=list[StockItemListResponse])
 async def list_expiring_items(
     days: int = Query(30, ge=1, le=365),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[StockItemListResponse]:
     """Lista itens próximos do vencimento."""
@@ -384,7 +384,7 @@ async def list_expiring_items(
 @router.get("/stock-items/{item_id}", response_model=StockItemResponse)
 async def get_stock_item(
     item_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> StockItemResponse:
     """Busca item de estoque por ID."""
@@ -400,11 +400,11 @@ async def get_stock_item(
     return StockItemResponse.model_validate(item)
 
 
-@router.post("/stock-items/{item_id}/block")
+@router.post("/stock-items/{item_id}/block", status_code=201)
 async def block_stock_item(
     item_id: uuid.UUID,
     reason: str = Query(..., min_length=1),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Bloqueia item de estoque."""
@@ -434,10 +434,10 @@ async def block_stock_item(
         ) from e
 
 
-@router.post("/stock-items/{item_id}/unblock")
+@router.post("/stock-items/{item_id}/unblock", status_code=201)
 async def unblock_stock_item(
     item_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Desbloqueia item de estoque."""
@@ -474,15 +474,15 @@ async def unblock_stock_item(
 
 @router.get("/movements", response_model=list[StockMovementListResponse])
 async def list_movements(
-    warehouse_id: Optional[uuid.UUID] = None,
-    product_id: Optional[uuid.UUID] = None,
-    movement_type: Optional[MovementType] = None,
-    mov_status: Optional[MovementStatus] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    warehouse_id: uuid.UUID | None = None,
+    product_id: uuid.UUID | None = None,
+    movement_type: MovementType | None = None,
+    mov_status: MovementStatus | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[StockMovementListResponse]:
     """Lista movimentações de estoque."""
@@ -510,9 +510,9 @@ async def list_movements(
 
 @router.get("/movements/stats", response_model=MovementStats)
 async def get_movement_stats(
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    db: Session = Depends(get_db),
+    date_from: date | None = None,
+    date_to: date | None = None,
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> MovementStats:
     """Retorna estatísticas de movimentações."""
@@ -530,7 +530,7 @@ async def get_movement_stats(
 
 @router.get("/movements/pending", response_model=list[StockMovementListResponse])
 async def list_pending_movements(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[StockMovementListResponse]:
     """Lista movimentações pendentes."""
@@ -549,7 +549,7 @@ async def list_pending_movements(
 @router.post("/movements", response_model=StockMovementResponse, status_code=201)
 async def create_movement(
     data: StockMovementCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> StockMovementResponse:
     """Cria uma nova movimentação de estoque."""
@@ -592,7 +592,7 @@ async def create_movement(
 @router.get("/movements/{movement_id}", response_model=StockMovementResponse)
 async def get_movement(
     movement_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> StockMovementResponse:
     """Busca movimentação por ID."""
@@ -608,10 +608,10 @@ async def get_movement(
     return StockMovementResponse.model_validate(movement)
 
 
-@router.post("/movements/{movement_id}/confirm")
+@router.post("/movements/{movement_id}/confirm", status_code=201)
 async def confirm_movement(
     movement_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Confirma movimentação e atualiza estoque."""
@@ -685,10 +685,10 @@ async def confirm_movement(
         ) from e
 
 
-@router.post("/movements/{movement_id}/cancel")
+@router.post("/movements/{movement_id}/cancel", status_code=201)
 async def cancel_movement(
     movement_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Cancela movimentação."""
@@ -731,11 +731,11 @@ async def cancel_movement(
 
 @router.get("/inventories", response_model=list[StockInventoryListResponse])
 async def list_inventories(
-    warehouse_id: Optional[uuid.UUID] = None,
-    inv_status: Optional[InventoryStatus] = None,
+    warehouse_id: uuid.UUID | None = None,
+    inv_status: InventoryStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[StockInventoryListResponse]:
     """Lista inventários."""
@@ -759,7 +759,7 @@ async def list_inventories(
 
 @router.get("/inventories/stats", response_model=InventoryStats)
 async def get_inventory_stats(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> InventoryStats:
     """Retorna estatísticas de inventários."""
@@ -778,7 +778,7 @@ async def get_inventory_stats(
 @router.post("/inventories", response_model=StockInventoryResponse, status_code=201)
 async def create_inventory(
     data: StockInventoryCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> StockInventoryResponse:
     """Cria um novo inventário."""
@@ -817,7 +817,7 @@ async def create_inventory(
 @router.get("/inventories/{inventory_id}", response_model=StockInventoryResponse)
 async def get_inventory(
     inventory_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> StockInventoryResponse:
     """Busca inventário por ID."""
@@ -833,10 +833,10 @@ async def get_inventory(
     return StockInventoryResponse.model_validate(inventory)
 
 
-@router.post("/inventories/{inventory_id}/start")
+@router.post("/inventories/{inventory_id}/start", status_code=201)
 async def start_inventory(
     inventory_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Inicia inventário."""
@@ -872,10 +872,10 @@ async def start_inventory(
         ) from e
 
 
-@router.post("/inventories/{inventory_id}/finalize")
+@router.post("/inventories/{inventory_id}/finalize", status_code=201)
 async def finalize_inventory(
     inventory_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Finaliza inventário."""
@@ -913,12 +913,12 @@ async def finalize_inventory(
 
 @router.get("/reservations", response_model=list[StockReservationListResponse])
 async def list_reservations(
-    product_id: Optional[uuid.UUID] = None,
-    warehouse_id: Optional[uuid.UUID] = None,
-    res_status: Optional[ReservationStatus] = None,
+    product_id: uuid.UUID | None = None,
+    warehouse_id: uuid.UUID | None = None,
+    res_status: ReservationStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[StockReservationListResponse]:
     """Lista reservas de estoque."""
@@ -943,7 +943,7 @@ async def list_reservations(
 
 @router.get("/reservations/stats", response_model=ReservationStats)
 async def get_reservation_stats(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ReservationStats:
     """Retorna estatísticas de reservas."""
@@ -962,7 +962,7 @@ async def get_reservation_stats(
 @router.post("/reservations", response_model=StockReservationResponse, status_code=201)
 async def create_reservation(
     data: StockReservationCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> StockReservationResponse:
     """Cria uma nova reserva de estoque."""
@@ -1016,7 +1016,7 @@ async def create_reservation(
 @router.get("/reservations/{reservation_id}", response_model=StockReservationResponse)
 async def get_reservation(
     reservation_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> StockReservationResponse:
     """Busca reserva por ID."""
@@ -1032,11 +1032,11 @@ async def get_reservation(
     return StockReservationResponse.model_validate(reservation)
 
 
-@router.post("/reservations/{reservation_id}/release")
+@router.post("/reservations/{reservation_id}/release", status_code=201)
 async def release_reservation(
     reservation_id: uuid.UUID,
     data: StockReservationRelease,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Libera quantidade da reserva."""
@@ -1078,11 +1078,11 @@ async def release_reservation(
         ) from e
 
 
-@router.post("/reservations/{reservation_id}/cancel")
+@router.post("/reservations/{reservation_id}/cancel", status_code=201)
 async def cancel_reservation(
     reservation_id: uuid.UUID,
     reason: str = Query(..., min_length=1),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Cancela reserva."""

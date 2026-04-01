@@ -1,17 +1,17 @@
 """Contract Analysis Schemas."""
 
 from modules.ai.contract_analysis.schemas.contract_schemas import (
+    AlertListResponse,
+    ComplianceReport,
+    ContractAlertCreate,
+    ContractAlertResponse,
+    ContractAlertUpdate,
+    ContractAnalysisListResponse,
     ContractAnalysisRequest,
     ContractAnalysisResponse,
-    ContractAnalysisListResponse,
-    ExtractedClauseResponse,
-    ContractAlertResponse,
-    ContractAlertCreate,
-    ContractAlertUpdate,
     ContractSummary,
+    ExtractedClauseResponse,
     RiskAssessment,
-    ComplianceReport,
-    AlertListResponse,
 )
 
 __all__ = [

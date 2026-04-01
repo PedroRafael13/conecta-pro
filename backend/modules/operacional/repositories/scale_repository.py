@@ -4,11 +4,12 @@ Repository para operações de banco de dados com Scale.
 
 import calendar
 from datetime import date, datetime
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.logging import logger
 from modules.operacional.models.scale import Scale, ScaleStatus
@@ -31,7 +32,7 @@ class ScaleRepository:
         employee_id: str,
         start_date: date,
         end_date: date,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Verifica se funcionário tem conflitos de turno no período.
 
@@ -63,10 +64,12 @@ class ScaleRepository:
                 Shift.shift_date <= end_date,
                 Shift.is_active.is_(True),
                 # Considerar apenas turnos que não foram cancelados ou folgas
-                Shift.status.not_in([
-                    ShiftStatus.CANCELLED.value,
-                    ShiftStatus.OFF_DAY.value,
-                ])
+                Shift.status.not_in(
+                    [
+                        ShiftStatus.CANCELLED.value,
+                        ShiftStatus.OFF_DAY.value,
+                    ]
+                ),
             )
         )
 
@@ -79,15 +82,17 @@ class ScaleRepository:
         # Montar lista de conflitos
         conflicts = []
         for shift in existing_shifts:
-            conflicts.append({
-                "date": shift.shift_date,
-                "scale_id": shift.scale_id,
-                "shift_id": shift.id,
-                "post_id": shift.post_id,
-                "status": shift.status,
-                "start_time": shift.start_time,
-                "end_time": shift.end_time,
-            })
+            conflicts.append(
+                {
+                    "date": shift.shift_date,
+                    "scale_id": shift.scale_id,
+                    "shift_id": shift.id,
+                    "post_id": shift.post_id,
+                    "status": shift.status,
+                    "start_time": shift.start_time,
+                    "end_time": shift.end_time,
+                }
+            )
 
         logger.warning(
             "Conflitos de turno detectados",
@@ -100,7 +105,7 @@ class ScaleRepository:
 
         return conflicts
 
-    async def create(self, data: ScaleCreate, created_by: Optional[str] = None) -> Scale:
+    async def create(self, data: ScaleCreate, created_by: str | None = None) -> Scale:
         """
         Cria uma nova escala.
 
@@ -137,7 +142,7 @@ class ScaleRepository:
         logger.info(f"Scale criada: {scale.id}")
         return scale
 
-    async def get_by_id(self, scale_id: str) -> Optional[Scale]:
+    async def get_by_id(self, scale_id: str) -> Scale | None:
         """
         Busca escala por ID.
 
@@ -148,11 +153,11 @@ class ScaleRepository:
             Scale ou None
         """
         result = await self.db.execute(
-            select(Scale).where(Scale.id == scale_id, Scale.is_active.is_(True))
+            select(Scale).options(selectinload(Scale.shifts)).where(Scale.id == scale_id, Scale.is_active.is_(True))
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[Scale]:
+    async def get_by_code(self, code: str) -> Scale | None:
         """
         Busca escala por código.
 
@@ -162,12 +167,10 @@ class ScaleRepository:
         Returns:
             Scale ou None
         """
-        result = await self.db.execute(
-            select(Scale).where(Scale.code == code, Scale.is_active.is_(True))
-        )
+        result = await self.db.execute(select(Scale).where(Scale.code == code, Scale.is_active.is_(True)))
         return result.scalar_one_or_none()
 
-    async def get_by_post_and_period(self, post_id: str, month: int, year: int) -> Optional[Scale]:
+    async def get_by_post_and_period(self, post_id: str, month: int, year: int) -> Scale | None:
         """
         Busca escala por posto e período.
 
@@ -191,7 +194,7 @@ class ScaleRepository:
 
     async def list(
         self,
-        filters: Optional[ScaleFilter] = None,
+        filters: ScaleFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Scale], int]:
@@ -257,7 +260,7 @@ class ScaleRepository:
 
         return query
 
-    async def update(self, scale_id: str, data: ScaleUpdate) -> Optional[Scale]:
+    async def update(self, scale_id: str, data: ScaleUpdate) -> Scale | None:
         """
         Atualiza uma escala.
 
@@ -293,9 +296,7 @@ class ScaleRepository:
         logger.info(f"Scale atualizada: {scale.id}")
         return scale
 
-    async def approve(
-        self, scale_id: str, approved_by: str, notes: Optional[str] = None
-    ) -> Optional[Scale]:
+    async def approve(self, scale_id: str, approved_by: str, notes: str | None = None) -> Scale | None:
         """
         Aprova uma escala.
 
@@ -328,13 +329,7 @@ class ScaleRepository:
         logger.info(f"Scale aprovada: {scale.id}")
         return scale
 
-    async def reject(
-        self,
-        scale_id: str,
-        rejected_by: str,
-        reason: str,
-        notes: Optional[str] = None
-    ) -> Optional[Scale]:
+    async def reject(self, scale_id: str, rejected_by: str, reason: str, notes: str | None = None) -> Scale | None:
         """
         Rejeita uma escala em aprovação.
 
@@ -378,7 +373,7 @@ class ScaleRepository:
         )
         return scale
 
-    async def publish(self, scale_id: str, published_by: str) -> Optional[Scale]:
+    async def publish(self, scale_id: str, published_by: str) -> Scale | None:
         """
         Publica uma escala.
 
@@ -435,7 +430,7 @@ class ScaleRepository:
         logger.info(f"Scale deletada (soft): {scale.id}")
         return True
 
-    async def update_metrics(self, scale_id: str) -> Optional[Scale]:
+    async def update_metrics(self, scale_id: str) -> Scale | None:
         """
         Atualiza métricas da escala baseado nos turnos.
 
@@ -475,24 +470,18 @@ class ScaleRepository:
         from modules.operacional.schemas.scale import ScaleStats
 
         # Total de escalas ativas
-        total_result = await self.db.execute(
-            select(func.count(Scale.id)).where(Scale.is_active.is_(True))
-        )
+        total_result = await self.db.execute(select(func.count(Scale.id)).where(Scale.is_active.is_(True)))
         total = total_result.scalar() or 0
 
         # Por status
         status_result = await self.db.execute(
-            select(Scale.status, func.count(Scale.id))
-            .where(Scale.is_active.is_(True))
-            .group_by(Scale.status)
+            select(Scale.status, func.count(Scale.id)).where(Scale.is_active.is_(True)).group_by(Scale.status)
         )
         by_status = {row[0]: row[1] for row in status_result.fetchall()}
 
         # Por tipo
         type_result = await self.db.execute(
-            select(Scale.scale_type, func.count(Scale.id))
-            .where(Scale.is_active.is_(True))
-            .group_by(Scale.scale_type)
+            select(Scale.scale_type, func.count(Scale.id)).where(Scale.is_active.is_(True)).group_by(Scale.scale_type)
         )
         by_type = {row[0]: row[1] for row in type_result.fetchall()}
 
@@ -511,6 +500,7 @@ class ScaleRepository:
 
         # Taxa média de preenchimento
         from sqlalchemy import case
+
         fill_result = await self.db.execute(
             select(
                 func.avg(

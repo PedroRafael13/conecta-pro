@@ -6,21 +6,22 @@ Endpoints REST para mapeamento de riscos ocupacionais.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
+from core.database.session import get_sync_db_dependency
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.ppra import (
-    RiskMappingRequest,
-    RiskMappingUpdateRequest,
-    RiskMappingResponse,
-    OccupationalRiskResponse,
     ControlMeasureRequest,
-    ControlMeasureUpdateRequest,
     ControlMeasureResponse,
+    ControlMeasureUpdateRequest,
+    OccupationalRiskResponse,
+    RiskMappingRequest,
+    RiskMappingResponse,
+    RiskMappingUpdateRequest,
 )
 from modules.health_occupational.services.ppra_service import PPRAService
 
@@ -29,10 +30,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ppra", tags=["PPRA/PGR - Riscos Ocupacionais (NR-9)"])
 
 
-# Dependency para obter o service
-def get_ppra_service() -> PPRAService:
-    """Retorna instancia do PPRAService."""
-    return PPRAService()
+# Dependency para obter o service com DB session
+def get_ppra_service(db: Session = Depends(get_sync_db_dependency)) -> PPRAService:
+    """Retorna instancia do PPRAService com DB session."""
+    return PPRAService(db=db)
 
 
 # ==============================================================================
@@ -49,6 +50,7 @@ def get_ppra_service() -> PPRAService:
 )
 async def create_risk_mapping(
     request: RiskMappingRequest,
+    current_user: CurrentActiveUser,
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """
@@ -108,6 +110,7 @@ async def create_risk_mapping(
 )
 async def get_mapping(
     mapping_id: UUID,
+    current_user: CurrentActiveUser,
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """Busca mapeamento por ID."""
@@ -144,6 +147,7 @@ async def get_mapping(
 async def update_mapping(
     mapping_id: UUID,
     request: RiskMappingUpdateRequest,
+    current_user: CurrentActiveUser,
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """Atualiza mapeamento de riscos."""
@@ -181,8 +185,9 @@ async def update_mapping(
     summary="Lista mapeamentos de risco",
 )
 async def list_mappings(
-    setor: Optional[str] = Query(None, description="Filtrar por setor"),
-    ativo: Optional[bool] = Query(True, description="Filtrar por status"),
+    current_user: CurrentActiveUser,
+    setor: str | None = Query(None, description="Filtrar por setor"),
+    ativo: bool | None = Query(True, description="Filtrar por status"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     service: PPRAService = Depends(get_ppra_service),
@@ -200,10 +205,7 @@ async def list_mappings(
             success=True,
             message=f"Encontrados {result['total']} mapeamentos",
             data={
-                "mapeamentos": [
-                    RiskMappingResponse.model_validate(m).model_dump()
-                    for m in result["items"]
-                ],
+                "mapeamentos": [RiskMappingResponse.model_validate(m).model_dump() for m in result["items"]],
                 "total": result["total"],
                 "page": result["page"],
                 "size": result["size"],
@@ -231,6 +233,7 @@ async def list_mappings(
     description="Retorna riscos mapeados de um setor.",
 )
 async def get_sector_risks(
+    current_user: CurrentActiveUser,
     setor: str = Path(..., min_length=2, description="Nome do setor"),
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
@@ -265,6 +268,7 @@ async def get_sector_risks(
     description="Retorna riscos associados a uma funcao.",
 )
 async def get_function_risks(
+    current_user: CurrentActiveUser,
     funcao: str = Path(..., min_length=2, description="Nome da funcao"),
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
@@ -305,6 +309,7 @@ async def get_function_risks(
 )
 async def add_control_measure(
     request: ControlMeasureRequest,
+    current_user: CurrentActiveUser,
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """Adiciona medida de controle."""
@@ -343,6 +348,7 @@ async def add_control_measure(
 async def update_control_measure(
     measure_id: UUID,
     request: ControlMeasureUpdateRequest,
+    current_user: CurrentActiveUser,
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """Atualiza medida de controle."""
@@ -378,7 +384,8 @@ async def update_control_measure(
 )
 async def list_control_measures(
     mapping_id: UUID,
-    status_filter: Optional[str] = Query(None, description="Filtrar por status"),
+    current_user: CurrentActiveUser,
+    status_filter: str | None = Query(None, description="Filtrar por status"),
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """Lista medidas de controle de um mapeamento."""
@@ -416,6 +423,7 @@ async def list_control_measures(
     description="Retorna categorias de risco conforme NR-9.",
 )
 async def list_risk_categories(
+    current_user: CurrentActiveUser,
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """Lista categorias de risco ocupacional."""
@@ -440,6 +448,7 @@ async def list_risk_categories(
     summary="Estatisticas do PPRA",
 )
 async def get_statistics(
+    current_user: CurrentActiveUser,
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """Retorna estatisticas do PPRA."""

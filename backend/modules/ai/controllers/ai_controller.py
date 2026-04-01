@@ -4,17 +4,16 @@ Sprint 34 - AI Predictions.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from core.auth.dependencies import CurrentActiveUser, get_current_user
+from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_db
 from modules.ai.models.anomaly_log import AnomalySeverity, AnomalyStatus
 from modules.ai.models.ml_model import ModelStatus, ModelType
 from modules.ai.models.prediction import PredictionStatus, PredictionType
-from modules.ai.models.recommendation import RecommendationStatus, RecommendationType
+from modules.ai.models.recommendation import RecommendationType
 from modules.ai.repositories.ai_repository import AIRepository
 from modules.ai.schemas.ai_schemas import (
     AnomalyCreate,
@@ -89,10 +88,10 @@ async def create_prediction(
     summary="Lista previsoes",
 )
 async def list_predictions(
-    prediction_type: Optional[PredictionType] = None,
-    status_filter: Optional[PredictionStatus] = Query(None, alias="status"),
-    entity_type: Optional[str] = None,
-    entity_id: Optional[UUID] = None,
+    prediction_type: PredictionType | None = None,
+    status_filter: PredictionStatus | None = Query(None, alias="status"),
+    entity_type: str | None = None,
+    entity_id: UUID | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: CurrentActiveUser = ...,  # Required
@@ -147,6 +146,7 @@ async def get_prediction(
     "/predictions/{prediction_id}/feedback",
     response_model=PredictionResponse,
     summary="Adiciona feedback a previsao",
+    status_code=201,
 )
 async def add_prediction_feedback(
     prediction_id: UUID,
@@ -183,7 +183,7 @@ async def add_prediction_feedback(
 )
 async def get_prediction_stats(
     days: int = Query(30, ge=1, le=365),
-    prediction_type: Optional[PredictionType] = None,
+    prediction_type: PredictionType | None = None,
     current_user: CurrentActiveUser = ...,  # Required
     db=Depends(get_db),
 ) -> PredictionStatsResponse:
@@ -371,9 +371,9 @@ async def detect_anomaly(
     summary="Lista anomalias",
 )
 async def list_anomalies(
-    entity_type: Optional[str] = None,
-    severity: Optional[AnomalySeverity] = None,
-    status_filter: Optional[AnomalyStatus] = Query(None, alias="status"),
+    entity_type: str | None = None,
+    severity: AnomalySeverity | None = None,
+    status_filter: AnomalyStatus | None = Query(None, alias="status"),
     days: int = Query(30, ge=1, le=365),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -454,7 +454,7 @@ async def get_recommendations(
 async def list_recommendations_for_entity(
     entity_type: str,
     entity_id: UUID,
-    recommendation_type: Optional[RecommendationType] = None,
+    recommendation_type: RecommendationType | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=50),
     current_user: CurrentActiveUser = ...,  # Required
@@ -489,7 +489,7 @@ async def list_recommendations_for_entity(
 async def record_recommendation_interaction(
     recommendation_id: UUID,
     interaction_type: str = Query(..., description="shown, clicked, accepted, rejected"),
-    feedback: Optional[str] = None,
+    feedback: str | None = None,
     current_user: CurrentActiveUser = ...,  # Required
     db=Depends(get_db),
 ):
@@ -564,8 +564,8 @@ async def create_model(
     summary="Lista modelos",
 )
 async def list_models(
-    model_type: Optional[ModelType] = None,
-    status_filter: Optional[ModelStatus] = Query(None, alias="status"),
+    model_type: ModelType | None = None,
+    status_filter: ModelStatus | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: CurrentActiveUser = ...,  # Required
@@ -763,8 +763,8 @@ async def create_training_job(
     summary="Lista jobs de treinamento",
 )
 async def list_training_jobs(
-    model_id: Optional[UUID] = None,
-    status_filter: Optional[str] = Query(None, alias="status"),
+    model_id: UUID | None = None,
+    status_filter: str | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: CurrentActiveUser = ...,  # Required
@@ -885,7 +885,7 @@ async def create_feature_store(
     summary="Lista feature stores",
 )
 async def list_feature_stores(
-    entity_type: Optional[str] = None,
+    entity_type: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: CurrentActiveUser = ...,  # Required

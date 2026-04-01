@@ -2,19 +2,19 @@
 Repository para Visita.
 """
 
-from datetime import datetime, date, timedelta
-from typing import Optional, List, Tuple
+from datetime import date, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, or_, and_, select
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.campo.models.visita import Visita, TipoVisita, StatusVisita, ResultadoVisita
+from modules.campo.models.visita import StatusVisita, Visita
 from modules.campo.schemas.visita import (
     VisitaCreate,
-    VisitaUpdate,
-    VisitaFiltro,
     VisitaDashboardStats,
+    VisitaFiltro,
+    VisitaUpdate,
 )
 
 
@@ -76,18 +76,14 @@ class VisitaRepository:
         await self.db.refresh(visita)
         return visita
 
-    async def get_by_id(self, visita_id: UUID) -> Optional[Visita]:
+    async def get_by_id(self, visita_id: UUID) -> Visita | None:
         """Busca visita por ID."""
-        result = await self.db.execute(
-            select(Visita).where(Visita.id == visita_id)
-        )
+        result = await self.db.execute(select(Visita).where(Visita.id == visita_id))
         return result.scalar_one_or_none()
 
-    async def get_by_numero(self, numero: str) -> Optional[Visita]:
+    async def get_by_numero(self, numero: str) -> Visita | None:
         """Busca visita por numero."""
-        result = await self.db.execute(
-            select(Visita).where(Visita.numero == numero)
-        )
+        result = await self.db.execute(select(Visita).where(Visita.numero == numero))
         return result.scalar_one_or_none()
 
     async def update(self, visita: Visita, data: VisitaUpdate, updated_by: UUID = None) -> Visita:
@@ -95,10 +91,10 @@ class VisitaRepository:
         update_data = data.model_dump(exclude_unset=True)
 
         for field, value in update_data.items():
-            if field == "levantamento" and value and hasattr(value, 'model_dump'):
+            if field == "levantamento" and value and hasattr(value, "model_dump"):
                 value = value.model_dump()
             if field == "necessidades_identificadas" and value:
-                value = [n.model_dump() if hasattr(n, 'model_dump') else n for n in value]
+                value = [n.model_dump() if hasattr(n, "model_dump") else n for n in value]
             setattr(visita, field, value)
 
         visita.updated_by = updated_by
@@ -125,14 +121,14 @@ class VisitaRepository:
 
     async def list_all(
         self,
-        filtro: Optional[VisitaFiltro] = None,
+        filtro: VisitaFiltro | None = None,
         skip: int = 0,
         limit: int = 50,
         order_by: str = "data_visita",
         order_desc: bool = True,
-    ) -> Tuple[List[Visita], int]:
+    ) -> tuple[list[Visita], int]:
         """Lista visitas com filtros e paginacao."""
-        query = select(Visita).where(Visita.is_active == True)
+        query = select(Visita).where(Visita.is_active)
 
         if filtro:
             if filtro.tipo:
@@ -181,7 +177,8 @@ class VisitaRepository:
         total = total_result.scalar()
 
         # Ordenacao
-        order_column = getattr(Visita, order_by, Visita.data_visita)
+        _valid_order_column_cols = {c.key for c in sa_inspect(Visita).mapper.column_attrs}
+        order_column = getattr(Visita, order_by if order_by in _valid_order_column_cols else "data_visita")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:
@@ -196,60 +193,41 @@ class VisitaRepository:
     async def list_by_responsavel(
         self,
         responsavel_id: UUID,
-        data: Optional[date] = None,
+        data: date | None = None,
         apenas_agendadas: bool = False,
-    ) -> List[Visita]:
+    ) -> list[Visita]:
         """Lista visitas de um responsavel."""
-        query = select(Visita).where(
-            and_(
-                Visita.responsavel_id == responsavel_id,
-                Visita.is_active == True
-            )
-        )
+        query = select(Visita).where(and_(Visita.responsavel_id == responsavel_id, Visita.is_active))
 
         if data:
             query = query.where(Visita.data_visita == data)
 
         if apenas_agendadas:
-            query = query.where(
-                Visita.status.in_([StatusVisita.AGENDADA, StatusVisita.CONFIRMADA])
-            )
+            query = query.where(Visita.status.in_([StatusVisita.AGENDADA, StatusVisita.CONFIRMADA]))
 
         query = query.order_by(Visita.horario_inicio.asc())
 
         result = await self.db.execute(query)
         return result.scalars().all()
 
-    async def list_by_cliente(self, cliente_id: UUID, limit: int = 50) -> List[Visita]:
+    async def list_by_cliente(self, cliente_id: UUID, limit: int = 50) -> list[Visita]:
         """Lista visitas de um cliente."""
         result = await self.db.execute(
             select(Visita)
-            .where(
-                and_(
-                    Visita.cliente_id == cliente_id,
-                    Visita.is_active == True
-                )
-            )
+            .where(and_(Visita.cliente_id == cliente_id, Visita.is_active))
             .order_by(Visita.data_visita.desc())
             .limit(limit)
         )
         return result.scalars().all()
 
-    async def list_by_lead(self, lead_id: UUID) -> List[Visita]:
+    async def list_by_lead(self, lead_id: UUID) -> list[Visita]:
         """Lista visitas de um lead."""
         result = await self.db.execute(
-            select(Visita)
-            .where(
-                and_(
-                    Visita.lead_id == lead_id,
-                    Visita.is_active == True
-                )
-            )
-            .order_by(Visita.data_visita.desc())
+            select(Visita).where(and_(Visita.lead_id == lead_id, Visita.is_active)).order_by(Visita.data_visita.desc())
         )
         return result.scalars().all()
 
-    async def list_pendentes_confirmacao(self, dias_antecedencia: int = 2) -> List[Visita]:
+    async def list_pendentes_confirmacao(self, dias_antecedencia: int = 2) -> list[Visita]:
         """Lista visitas proximas que precisam confirmacao."""
         data_limite = date.today() + timedelta(days=dias_antecedencia)
         result = await self.db.execute(
@@ -257,10 +235,10 @@ class VisitaRepository:
             .where(
                 and_(
                     Visita.status == StatusVisita.AGENDADA,
-                    Visita.confirmada == False,
+                    not Visita.confirmada,
                     Visita.data_visita <= data_limite,
                     Visita.data_visita >= date.today(),
-                    Visita.is_active == True
+                    Visita.is_active,
                 )
             )
             .order_by(Visita.data_visita.asc())
@@ -273,14 +251,14 @@ class VisitaRepository:
 
     async def get_stats(
         self,
-        responsavel_id: Optional[UUID] = None,
+        responsavel_id: UUID | None = None,
         periodo_dias: int = 30,
     ) -> VisitaDashboardStats:
         """Obtem estatisticas de visitas."""
         hoje = date.today()
         inicio_periodo = hoje - timedelta(days=periodo_dias)
 
-        base_filter = [Visita.is_active == True]
+        base_filter = [Visita.is_active]
         if responsavel_id:
             base_filter.append(Visita.responsavel_id == responsavel_id)
 
@@ -288,13 +266,7 @@ class VisitaRepository:
         result = await self.db.execute(
             select(func.count())
             .select_from(Visita)
-            .where(
-                and_(
-                    *base_filter,
-                    Visita.status == StatusVisita.AGENDADA,
-                    Visita.data_visita >= hoje
-                )
-            )
+            .where(and_(*base_filter, Visita.status == StatusVisita.AGENDADA, Visita.data_visita >= hoje))
         )
         total_agendadas = result.scalar() or 0
 
@@ -302,13 +274,7 @@ class VisitaRepository:
         result = await self.db.execute(
             select(func.count())
             .select_from(Visita)
-            .where(
-                and_(
-                    *base_filter,
-                    Visita.status == StatusVisita.CONFIRMADA,
-                    Visita.data_visita >= hoje
-                )
-            )
+            .where(and_(*base_filter, Visita.status == StatusVisita.CONFIRMADA, Visita.data_visita >= hoje))
         )
         total_confirmadas = result.scalar() or 0
 
@@ -316,13 +282,7 @@ class VisitaRepository:
         result = await self.db.execute(
             select(func.count())
             .select_from(Visita)
-            .where(
-                and_(
-                    *base_filter,
-                    Visita.status == StatusVisita.REALIZADA,
-                    Visita.data_visita == hoje
-                )
-            )
+            .where(and_(*base_filter, Visita.status == StatusVisita.REALIZADA, Visita.data_visita == hoje))
         )
         total_realizadas_hoje = result.scalar() or 0
 
@@ -330,13 +290,7 @@ class VisitaRepository:
         result = await self.db.execute(
             select(func.count())
             .select_from(Visita)
-            .where(
-                and_(
-                    *base_filter,
-                    Visita.status == StatusVisita.REALIZADA,
-                    Visita.data_visita >= inicio_periodo
-                )
-            )
+            .where(and_(*base_filter, Visita.status == StatusVisita.REALIZADA, Visita.data_visita >= inicio_periodo))
         )
         total_realizadas_mes = result.scalar() or 0
 
@@ -344,13 +298,7 @@ class VisitaRepository:
         result = await self.db.execute(
             select(func.count())
             .select_from(Visita)
-            .where(
-                and_(
-                    *base_filter,
-                    Visita.status == StatusVisita.CANCELADA,
-                    Visita.data_visita >= inicio_periodo
-                )
-            )
+            .where(and_(*base_filter, Visita.status == StatusVisita.CANCELADA, Visita.data_visita >= inicio_periodo))
         )
         total_canceladas_mes = result.scalar() or 0
 
@@ -366,40 +314,32 @@ class VisitaRepository:
                 and_(
                     *base_filter,
                     Visita.status == StatusVisita.REALIZADA,
-                    Visita.proposta_gerada == True,
-                    Visita.data_visita >= inicio_periodo
+                    Visita.proposta_gerada,
+                    Visita.data_visita >= inicio_periodo,
                 )
             )
         )
         total_com_proposta = result.scalar() or 0
-        taxa_conversao_proposta = (total_com_proposta / total_realizadas_mes * 100) if total_realizadas_mes > 0 else None
+        taxa_conversao_proposta = (
+            (total_com_proposta / total_realizadas_mes * 100) if total_realizadas_mes > 0 else None
+        )
 
         # Taxa de conversao para contrato
         result = await self.db.execute(
             select(func.count())
             .select_from(Visita)
-            .where(
-                and_(
-                    *base_filter,
-                    Visita.contrato_fechado == True,
-                    Visita.data_visita >= inicio_periodo
-                )
-            )
+            .where(and_(*base_filter, Visita.contrato_fechado, Visita.data_visita >= inicio_periodo))
         )
         total_com_contrato = result.scalar() or 0
-        taxa_conversao_contrato = (total_com_contrato / total_realizadas_mes * 100) if total_realizadas_mes > 0 else None
+        taxa_conversao_contrato = (
+            (total_com_contrato / total_realizadas_mes * 100) if total_realizadas_mes > 0 else None
+        )
 
         # Interesse medio
         result = await self.db.execute(
             select(func.avg(Visita.interesse_nivel))
             .select_from(Visita)
-            .where(
-                and_(
-                    *base_filter,
-                    Visita.interesse_nivel.isnot(None),
-                    Visita.data_visita >= inicio_periodo
-                )
-            )
+            .where(and_(*base_filter, Visita.interesse_nivel.isnot(None), Visita.data_visita >= inicio_periodo))
         )
         interesse_medio = result.scalar()
 
@@ -423,10 +363,7 @@ class VisitaRepository:
         """Gera numero sequencial para visita."""
         ano = datetime.utcnow().year
 
-        result = await self.db.execute(
-            select(func.max(Visita.numero))
-            .where(Visita.numero.like(f"VIS-{ano}-%"))
-        )
+        result = await self.db.execute(select(func.max(Visita.numero)).where(Visita.numero.like(f"VIS-{ano}-%")))
         ultimo = result.scalar()
 
         if ultimo:

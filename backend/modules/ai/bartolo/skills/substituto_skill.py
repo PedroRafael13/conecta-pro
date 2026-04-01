@@ -3,7 +3,7 @@ Skill /substituto - Gerenciamento de substituicoes
 """
 
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -21,7 +21,7 @@ class SubstitutoSkill(BaseSkill):
     def __init__(self, data_connector: Optional["DataConnector"] = None):
         super().__init__(data_connector=data_connector)
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         if not command or command == "help":
             return {"response": self.get_help()}
 
@@ -39,7 +39,7 @@ class SubstitutoSkill(BaseSkill):
             return await handler(args, context)
         return {"response": f"Comando '{command}' nao reconhecido. Use /substituto help."}
 
-    async def _buscar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _buscar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Buscar substitutos - usa funcionarios de folga como candidatos"""
         if not args:
             return {"response": "**Uso:** `/substituto buscar <turno_id>`"}
@@ -61,7 +61,9 @@ class SubstitutoSkill(BaseSkill):
                             f"   - Cargo: {c.get('cargo', 'N/A')}"
                         )
 
-                    nomes_sugestao = [f"Notificar {c.get('nome', '').split()[0]}" for c in candidatos[:3] if c.get('nome')]
+                    nomes_sugestao = [
+                        f"Notificar {c.get('nome', '').split()[0]}" for c in candidatos[:3] if c.get("nome")
+                    ]
 
                     return {
                         "response": f"""**Buscando Substitutos para {turno_id}** (Dados Reais)
@@ -103,7 +105,7 @@ class SubstitutoSkill(BaseSkill):
             "suggestions": ["Notificar Carlos", "Notificar todos", "Ver mais opcoes"],
         }
 
-    async def _urgente(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _urgente(self, args: list[str], context: dict) -> dict[str, Any]:
         """Substituicao urgente - busca funcionarios disponiveis em tempo real"""
         posto = args[0] if args else "?"
 
@@ -148,7 +150,7 @@ Modo emergencia ativado!
             "suggestions": ["Notificar todos", "Ver lista primeiro"],
         }
 
-    async def _confirmar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _confirmar(self, args: list[str], context: dict) -> dict[str, Any]:
         if not args:
             return {"response": "**Uso:** `/substituto confirmar <id>`"}
         return {
@@ -156,7 +158,7 @@ Modo emergencia ativado!
             "data": {"confirmed": True, "id": args[0]},
         }
 
-    async def _pendentes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pendentes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar substituicoes pendentes - dados reais quando disponivel"""
 
         if self.has_data_connector:
@@ -173,10 +175,7 @@ Modo emergencia ativado!
                     # Sugestoes contextuais
                     suggestions = []
                     if result.data:
-                        sem_substituto = [
-                            s for s in result.data
-                            if s.get("substituto") == "A definir"
-                        ]
+                        sem_substituto = [s for s in result.data if s.get("substituto") == "A definir"]
                         if sem_substituto:
                             suggestions.append(f"/substituto buscar {sem_substituto[0].get('posto', 'turno')}")
                         suggestions.append("/substituto disponiveis")
@@ -199,7 +198,7 @@ Modo emergencia ativado!
             "suggestions": ["Ver #1", "Buscar para #2", "Confirmar #3"],
         }
 
-    async def _disponiveis(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _disponiveis(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar funcionarios disponiveis (de folga) para substituicao"""
 
         if self.has_data_connector:
@@ -230,7 +229,7 @@ Modo emergencia ativado!
             "suggestions": ["/substituto buscar", "/substituto urgente"],
         }
 
-    async def _historico(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _historico(self, args: list[str], context: dict) -> dict[str, Any]:
         return {
             "response": """**Historico de Substituicoes (30 dias)**
 

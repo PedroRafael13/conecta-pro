@@ -5,15 +5,7 @@ Sprint 37 - Push Notifications Mobile.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from uuid import UUID
-
-from modules.notifications.push.models import (
-    NotificationPriority,
-    NotificationStatus,
-    PushDevice,
-    PushNotification,
-)
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +18,12 @@ class FCMMessage:
         token: str,
         title: str,
         body: str,
-        image: Optional[str] = None,
-        data: Optional[Dict[str, str]] = None,
-        android: Optional[Dict[str, Any]] = None,
-        webpush: Optional[Dict[str, Any]] = None,
-        apns: Optional[Dict[str, Any]] = None,
-        fcm_options: Optional[Dict[str, Any]] = None,
+        image: str | None = None,
+        data: dict[str, str] | None = None,
+        android: dict[str, Any] | None = None,
+        webpush: dict[str, Any] | None = None,
+        apns: dict[str, Any] | None = None,
+        fcm_options: dict[str, Any] | None = None,
     ):
         self.token = token
         self.title = title
@@ -43,7 +35,7 @@ class FCMMessage:
         self.apns = apns
         self.fcm_options = fcm_options
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário FCM."""
         message = {
             "token": self.token,
@@ -74,15 +66,15 @@ class FCMMessage:
         return message
 
 
-class FCMResponse:
+class FCMResponse:  # noqa: B903
     """Resposta do FCM."""
 
     def __init__(
         self,
         success: bool,
-        message_id: Optional[str] = None,
-        error_code: Optional[str] = None,
-        error_message: Optional[str] = None,
+        message_id: str | None = None,
+        error_code: str | None = None,
+        error_message: str | None = None,
     ):
         self.success = success
         self.message_id = message_id
@@ -113,8 +105,8 @@ class FCMService:
     def __init__(
         self,
         project_id: str,
-        credentials_path: Optional[str] = None,
-        credentials_dict: Optional[Dict[str, Any]] = None,
+        credentials_path: str | None = None,
+        credentials_dict: dict[str, Any] | None = None,
     ):
         """Inicializa o serviço FCM.
 
@@ -199,13 +191,13 @@ class FCMService:
 
     def send_multicast(
         self,
-        tokens: List[str],
+        tokens: list[str],
         title: str,
         body: str,
-        image: Optional[str] = None,
-        data: Optional[Dict[str, str]] = None,
-        android: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        image: str | None = None,
+        data: dict[str, str] | None = None,
+        android: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Envia notificação para múltiplos tokens.
 
         Args:
@@ -257,11 +249,13 @@ class FCMService:
             # Simulação para desenvolvimento
             for token in tokens:
                 results["success_count"] += 1
-                results["responses"].append({
-                    "token": token,
-                    "success": True,
-                    "message_id": f"fcm_{datetime.utcnow().timestamp()}",
-                })
+                results["responses"].append(
+                    {
+                        "token": token,
+                        "success": True,
+                        "message_id": f"fcm_{datetime.utcnow().timestamp()}",
+                    }
+                )
 
             logger.info(
                 "FCM multicast: %d success, %d failed",
@@ -273,11 +267,13 @@ class FCMService:
             logger.error("FCM multicast error: %s", e)
             results["failure_count"] = len(tokens)
             for token in tokens:
-                results["responses"].append({
-                    "token": token,
-                    "success": False,
-                    "error": str(e),
-                })
+                results["responses"].append(
+                    {
+                        "token": token,
+                        "success": False,
+                        "error": str(e),
+                    }
+                )
 
         return results
 
@@ -286,8 +282,8 @@ class FCMService:
         topic: str,
         title: str,
         body: str,
-        image: Optional[str] = None,
-        data: Optional[Dict[str, str]] = None,
+        image: str | None = None,
+        data: dict[str, str] | None = None,
     ) -> FCMResponse:
         """Envia notificação para um tópico.
 
@@ -329,7 +325,7 @@ class FCMService:
                 error_message=str(e),
             )
 
-    def subscribe_to_topic(self, tokens: List[str], topic: str) -> Dict[str, Any]:
+    def subscribe_to_topic(self, tokens: list[str], topic: str) -> dict[str, Any]:
         """Inscreve dispositivos em um tópico.
 
         Args:
@@ -367,7 +363,7 @@ class FCMService:
                 "errors": [str(e)],
             }
 
-    def unsubscribe_from_topic(self, tokens: List[str], topic: str) -> Dict[str, Any]:
+    def unsubscribe_from_topic(self, tokens: list[str], topic: str) -> dict[str, Any]:
         """Remove dispositivos de um tópico.
 
         Args:
@@ -410,13 +406,13 @@ class FCMService:
         channel_id: str = "default",
         priority: str = "high",
         ttl: int = 86400,
-        collapse_key: Optional[str] = None,
-        color: Optional[str] = None,
-        icon: Optional[str] = None,
-        sound: Optional[str] = None,
-        tag: Optional[str] = None,
-        click_action: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        collapse_key: str | None = None,
+        color: str | None = None,
+        icon: str | None = None,
+        sound: str | None = None,
+        tag: str | None = None,
+        click_action: str | None = None,
+    ) -> dict[str, Any]:
         """Constrói configuração específica do Android.
 
         Args:
@@ -433,7 +429,7 @@ class FCMService:
         Returns:
             Configuração Android para FCM.
         """
-        config: Dict[str, Any] = {
+        config: dict[str, Any] = {
             "priority": priority,
             "ttl": f"{ttl}s",
             "notification": {

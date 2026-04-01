@@ -1,51 +1,54 @@
 """Controller para DocumentSignature."""
 
 import logging
-from typing import Optional, List
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.ged.services.document_signature_service import DocumentSignatureService
+from core.database import get_db
 from modules.ged.models.document_signature import SignatureStatus
 from modules.ged.schemas.document_signature import (
     DocumentSignatureCreate,
-    DocumentSignatureUpdate,
     DocumentSignatureResponse,
-    SignatureRequest,
+    DocumentSignatureUpdate,
     SignatureRefusalRequest,
+    SignatureRequest,
     SignatureStats,
 )
+from modules.ged.services.document_signature_service import DocumentSignatureService
+
+
+def _uid(current_user) -> str:
+    """Extrai user id de User object ou dict."""
+    return str(current_user.id) if hasattr(current_user, "id") else _uid(current_user)
 
 
 class BulkSignatureRequest(BaseModel):
     """Request para criação de assinaturas em lote."""
 
     document_id: str = Field(..., description="ID do documento")
-    signers: List[dict] = Field(..., description="Lista de signatários")
+    signers: list[dict] = Field(..., description="Lista de signatários")
 
 
 class SignatureRequestBody(BaseModel):
     """Request para solicitação de assinaturas."""
 
     document_id: str = Field(..., description="ID do documento")
-    signers: List[dict] = Field(..., description="Lista de signatários")
+    signers: list[dict] = Field(..., description="Lista de signatários")
     sequential: bool = Field(False, description="Assinar em sequência")
     deadline_days: int = Field(7, ge=1, le=90, description="Prazo em dias")
-    message: Optional[str] = Field(None, description="Mensagem para signatários")
+    message: str | None = Field(None, description="Mensagem para signatários")
+
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/document-signatures", tags=["GED - Assinaturas"])
 
 
-@router.post(
-    "/", response_model=DocumentSignatureResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=DocumentSignatureResponse, status_code=status.HTTP_201_CREATED)
 async def create_signature(
     data: DocumentSignatureCreate,
     db: AsyncSession = Depends(get_db),
@@ -54,12 +57,10 @@ async def create_signature(
     """Cria solicitação de assinatura."""
     service = DocumentSignatureService(db)
     try:
-        data.created_by = current_user["id"]
+        data.created_by = _uid(current_user)
         return await service.create(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error("Erro ao criar assinatura: %s", e)
         raise HTTPException(
@@ -68,20 +69,18 @@ async def create_signature(
         ) from e
 
 
-@router.post("/bulk", response_model=List[DocumentSignatureResponse])
+@router.post("/bulk", response_model=list[DocumentSignatureResponse], status_code=201)
 async def create_bulk_signatures(
     data: BulkSignatureRequest,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-) -> List[DocumentSignatureResponse]:
+) -> list[DocumentSignatureResponse]:
     """Cria múltiplas solicitações de assinatura."""
     service = DocumentSignatureService(db)
     try:
-        return await service.create_bulk(data.document_id, data.signers, current_user["id"])
+        return await service.create_bulk(data.document_id, data.signers, _uid(current_user))
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/{signature_id}", response_model=DocumentSignatureResponse)
@@ -94,9 +93,7 @@ async def get_signature(
     service = DocumentSignatureService(db)
     signature = await service.get_by_id(signature_id)
     if not signature:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada")
     return signature
 
 
@@ -109,9 +106,7 @@ async def get_by_token(
     service = DocumentSignatureService(db)
     signature = await service.get_by_token(token)
     if not signature:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada")
     return signature
 
 
@@ -126,9 +121,7 @@ async def update_signature(
     service = DocumentSignatureService(db)
     signature = await service.update(signature_id, data)
     if not signature:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada")
     return signature
 
 
@@ -147,61 +140,58 @@ async def delete_signature(
                 detail="Assinatura não encontrada",
             )
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.get("/document/{document_id}", response_model=List[DocumentSignatureResponse])
+@router.get("/document/{document_id}", response_model=list[DocumentSignatureResponse])
 async def get_by_document(
     document_id: str,
-    signature_status: Optional[SignatureStatus] = Query(None),
+    signature_status: SignatureStatus | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentSignatureResponse]:
+) -> list[DocumentSignatureResponse]:
     """Retorna assinaturas de um documento."""
     service = DocumentSignatureService(db)
     return await service.get_by_document(document_id, signature_status)
 
 
-@router.get(
-    "/document/{document_id}/pending", response_model=List[DocumentSignatureResponse]
-)
+@router.get("/document/{document_id}/pending", response_model=list[DocumentSignatureResponse])
 async def get_pending_by_document(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentSignatureResponse]:
+) -> list[DocumentSignatureResponse]:
     """Retorna assinaturas pendentes do documento."""
     service = DocumentSignatureService(db)
     return await service.get_pending_by_document(document_id)
 
 
-@router.get("/signer/list", response_model=List[DocumentSignatureResponse])
+@router.get("/signer", include_in_schema=False)
+@router.get("/signer/list", response_model=list[DocumentSignatureResponse])
 async def get_by_signer(
-    signature_status: Optional[SignatureStatus] = Query(None),
+    signature_status: SignatureStatus | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-) -> List[DocumentSignatureResponse]:
+) -> list[DocumentSignatureResponse]:
     """Retorna assinaturas do usuário."""
     service = DocumentSignatureService(db)
     return await service.get_by_signer(
-        signer_id=current_user["id"],
+        signer_id=_uid(current_user),
         status=signature_status,
     )
 
 
-@router.get("/signer/pending", response_model=List[DocumentSignatureResponse])
+@router.get("/signer/pending", response_model=list[DocumentSignatureResponse])
 async def get_pending_by_signer(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-) -> List[DocumentSignatureResponse]:
+) -> list[DocumentSignatureResponse]:
     """Retorna assinaturas pendentes do usuário."""
     service = DocumentSignatureService(db)
-    return await service.get_pending_by_signer(signer_id=current_user["id"])
+    return await service.get_pending_by_signer(signer_id=_uid(current_user))
 
 
-@router.post("/{signature_id}/sign", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/sign", response_model=DocumentSignatureResponse, status_code=201)
 async def sign(
     signature_id: str,
     data: SignatureRequest,
@@ -224,12 +214,10 @@ async def sign(
             )
         return signature
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{signature_id}/refuse", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/refuse", response_model=DocumentSignatureResponse, status_code=201)
 async def refuse(
     signature_id: str,
     data: SignatureRefusalRequest,
@@ -247,12 +235,10 @@ async def refuse(
             )
         return signature
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{signature_id}/cancel", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/cancel", response_model=DocumentSignatureResponse, status_code=201)
 async def cancel(
     signature_id: str,
     db: AsyncSession = Depends(get_db),
@@ -269,12 +255,10 @@ async def cancel(
             )
         return signature
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{signature_id}/verify", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/verify", response_model=DocumentSignatureResponse, status_code=201)
 async def verify(
     signature_id: str,
     db: AsyncSession = Depends(get_db),
@@ -291,12 +275,10 @@ async def verify(
             )
         return signature
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{signature_id}/notify", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/notify", response_model=DocumentSignatureResponse, status_code=201)
 async def send_notification(
     signature_id: str,
     db: AsyncSession = Depends(get_db),
@@ -306,13 +288,11 @@ async def send_notification(
     service = DocumentSignatureService(db)
     signature = await service.send_notification(signature_id)
     if not signature:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada")
     return signature
 
 
-@router.post("/{signature_id}/remind", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/remind", response_model=DocumentSignatureResponse, status_code=201)
 async def send_reminder(
     signature_id: str,
     db: AsyncSession = Depends(get_db),
@@ -322,13 +302,11 @@ async def send_reminder(
     service = DocumentSignatureService(db)
     signature = await service.send_reminder(signature_id)
     if not signature:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada")
     return signature
 
 
-@router.post("/{signature_id}/regenerate-token")
+@router.post("/{signature_id}/regenerate-token", status_code=201)
 async def regenerate_token(
     signature_id: str,
     expires_in_hours: int = Query(72, ge=1, le=720),
@@ -339,13 +317,11 @@ async def regenerate_token(
     service = DocumentSignatureService(db)
     token = await service.regenerate_token(signature_id, expires_in_hours)
     if not token:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada")
     return {"token": token}
 
 
-@router.post("/{signature_id}/extend", response_model=DocumentSignatureResponse)
+@router.post("/{signature_id}/extend", response_model=DocumentSignatureResponse, status_code=201)
 async def extend_deadline(
     signature_id: str,
     new_deadline: datetime = Query(...),
@@ -356,13 +332,11 @@ async def extend_deadline(
     service = DocumentSignatureService(db)
     signature = await service.extend_deadline(signature_id, new_deadline)
     if not signature:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada")
     return signature
 
 
-@router.post("/expire-overdue/run")
+@router.post("/expire-overdue/run", status_code=201)
 async def expire_overdue(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -373,14 +347,12 @@ async def expire_overdue(
     return {"expired_count": count}
 
 
-@router.get(
-    "/document/{document_id}/next", response_model=Optional[DocumentSignatureResponse]
-)
+@router.get("/document/{document_id}/next", response_model=DocumentSignatureResponse | None)
 async def get_next_in_sequence(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> Optional[DocumentSignatureResponse]:
+) -> DocumentSignatureResponse | None:
     """Retorna próxima assinatura na sequência."""
     service = DocumentSignatureService(db)
     return await service.get_next_in_sequence(document_id)
@@ -400,7 +372,7 @@ async def is_fully_signed(
 
 @router.get("/stats/summary", response_model=SignatureStats)
 async def get_stats(
-    document_id: Optional[str] = Query(None),
+    document_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> SignatureStats:
@@ -409,30 +381,28 @@ async def get_stats(
     return await service.get_stats(document_id)
 
 
-@router.post("/request", response_model=List[DocumentSignatureResponse])
+@router.post("/request", response_model=list[DocumentSignatureResponse], status_code=201)
 async def request_signatures(
     data: SignatureRequestBody,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-) -> List[DocumentSignatureResponse]:
+) -> list[DocumentSignatureResponse]:
     """Solicita assinaturas para documento."""
     service = DocumentSignatureService(db)
     try:
         return await service.request_signatures(
             document_id=data.document_id,
             signers=data.signers,
-            created_by=current_user["id"],
+            created_by=_uid(current_user),
             sequential=data.sequential,
             deadline_days=data.deadline_days,
             message=data.message,
         )
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/document/{document_id}/cancel-all")
+@router.post("/document/{document_id}/cancel-all", status_code=201)
 async def cancel_all_pending(
     document_id: str,
     db: AsyncSession = Depends(get_db),

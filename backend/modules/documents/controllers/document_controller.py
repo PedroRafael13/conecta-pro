@@ -6,19 +6,21 @@ OCR, extracao e validacao de dados.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, Field
 
-from ..models.document import Document, DocumentSource, DocumentStatus, DocumentType
-from ..models.extraction_template import TemplateCategory, TemplateStatus
+from core.auth.dependencies import CurrentActiveUser
+
+from ..models.document import DocumentSource, DocumentType
+from ..models.extraction_template import TemplateCategory
 from ..services.data_extractor import DataExtractor
-from ..services.document_classifier import ClassificationResult, DocumentClassifier
-from ..services.document_scanner import DocumentScanner, ScanConfig, ScanResult
+from ..services.document_classifier import DocumentClassifier
+from ..services.document_scanner import DocumentScanner, ScanConfig
 from ..services.ocr_engine import OCRConfig, OCREngine, OCRProvider
 from ..services.template_manager import TemplateManager
-from ..services.validation_engine import ValidationConfig, ValidationEngine
+from ..services.validation_engine import ValidationEngine
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +34,10 @@ class DocumentUploadResponse(BaseModel):
     """Resposta de upload de documento."""
 
     success: bool
-    document_id: Optional[str] = None
+    document_id: str | None = None
     status: str
     message: str
-    warnings: List[str] = []
+    warnings: list[str] = []
 
 
 class DocumentResponse(BaseModel):
@@ -47,8 +49,8 @@ class DocumentResponse(BaseModel):
     status: str
     confidence_score: float
     needs_review: bool
-    extracted_data: Dict[str, Any] = {}
-    processing_summary: Dict[str, Any] = {}
+    extracted_data: dict[str, Any] = {}
+    processing_summary: dict[str, Any] = {}
     created_at: str
 
 
@@ -57,9 +59,9 @@ class ClassificationResponse(BaseModel):
 
     document_type: str
     confidence: float
-    matched_keywords: List[str]
-    matched_patterns: List[str]
-    alternatives: List[Dict[str, Any]]
+    matched_keywords: list[str]
+    matched_patterns: list[str]
+    alternatives: list[dict[str, Any]]
 
 
 class ExtractionResponse(BaseModel):
@@ -67,7 +69,7 @@ class ExtractionResponse(BaseModel):
 
     document_id: str
     fields_extracted: int
-    fields: List[Dict[str, Any]]
+    fields: list[dict[str, Any]]
     confidence: float
 
 
@@ -80,19 +82,19 @@ class ValidationResponse(BaseModel):
     total_fields: int
     fields_passed: int
     fields_failed: int
-    errors: List[str]
-    warnings: List[str]
+    errors: list[str]
+    warnings: list[str]
 
 
 class TemplateRequest(BaseModel):
     """Request para criacao de template."""
 
     name: str = Field(..., min_length=3, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     document_type: str
     category: str = "other"
-    detection_keywords: List[str] = []
-    fields: List[Dict[str, Any]] = []
+    detection_keywords: list[str] = []
+    fields: list[dict[str, Any]] = []
 
 
 class TemplateResponse(BaseModel):
@@ -127,7 +129,7 @@ class ProcessingRequest(BaseModel):
     classify: bool = True
     extract: bool = True
     validate: bool = True
-    template_id: Optional[str] = None
+    template_id: str | None = None
 
 
 # ============ Dependencies ============
@@ -179,6 +181,7 @@ def get_template_manager() -> TemplateManager:
     summary="Upload de documento",
 )
 async def upload_document(
+    current_user: CurrentActiveUser,
     file: UploadFile = File(...),
     tenant_id: str = Query(..., description="ID do tenant"),
     source: str = Query("upload", description="Origem do documento"),
@@ -239,15 +242,16 @@ async def upload_document(
 
 @router.post(
     "/upload/batch",
-    response_model=List[DocumentUploadResponse],
+    response_model=list[DocumentUploadResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Upload de multiplos documentos",
 )
 async def upload_batch(
-    files: List[UploadFile] = File(...),
+    current_user: CurrentActiveUser,
+    files: list[UploadFile] = File(...),
     tenant_id: str = Query(...),
     scanner: DocumentScanner = Depends(get_scanner),
-) -> List[DocumentUploadResponse]:
+) -> list[DocumentUploadResponse]:
     """Upload de multiplos documentos em lote."""
     results = []
 
@@ -291,6 +295,7 @@ async def upload_batch(
 )
 async def run_ocr(
     document_id: str,
+    current_user: CurrentActiveUser,
     provider: str = Query("tesseract", description="Provider de OCR"),
     languages: str = Query("por,eng", description="Idiomas (separados por virgula)"),
     ocr_engine: OCREngine = Depends(get_ocr_engine),
@@ -302,20 +307,10 @@ async def run_ocr(
     - **provider**: Provider de OCR (tesseract, easyocr, google_vision)
     - **languages**: Lista de idiomas para OCR
     """
-    try:
-        # TODO: Buscar documento do banco
-        # Por enquanto, simular
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro no OCR: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Funcionalidade de OCR em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Classificacao ============
@@ -328,7 +323,8 @@ async def run_ocr(
 )
 async def classify_document(
     document_id: str,
-    classifier: DocumentClassifier = Depends(get_classifier),
+    current_user: CurrentActiveUser,
+    _classifier: DocumentClassifier = Depends(get_classifier),
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> ClassificationResponse:
     """
@@ -337,19 +333,10 @@ async def classify_document(
     Utiliza keywords, padroes e templates para identificar
     automaticamente o tipo do documento.
     """
-    try:
-        # TODO: Buscar documento e resultado OCR do banco
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro na classificacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Classificacao automatica de documentos em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Extracao ============
@@ -362,7 +349,8 @@ async def classify_document(
 )
 async def extract_data(
     document_id: str,
-    template_id: Optional[str] = Query(None, description="ID do template"),
+    current_user: CurrentActiveUser,
+    template_id: str | None = Query(None, description="ID do template"),
     extractor: DataExtractor = Depends(get_extractor),
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> ExtractionResponse:
@@ -372,19 +360,10 @@ async def extract_data(
     - **document_id**: ID do documento
     - **template_id**: Template especifico (opcional)
     """
-    try:
-        # TODO: Buscar documento e resultado OCR do banco
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro na extracao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Extracao de dados em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Validacao ============
@@ -397,6 +376,7 @@ async def extract_data(
 )
 async def validate_data(
     document_id: str,
+    current_user: CurrentActiveUser,
     validator: ValidationEngine = Depends(get_validator),
 ) -> ValidationResponse:
     """
@@ -405,19 +385,10 @@ async def validate_data(
     Aplica validadores de formato, regras de negocio
     e consistencia nos campos extraidos.
     """
-    try:
-        # TODO: Buscar documento e campos extraidos do banco
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro na validacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Validacao automatica em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Processamento Completo ============
@@ -431,8 +402,9 @@ async def validate_data(
 async def process_document(
     document_id: str,
     request: ProcessingRequest,
+    current_user: CurrentActiveUser,
     scanner: DocumentScanner = Depends(get_scanner),
-    classifier: DocumentClassifier = Depends(get_classifier),
+    _classifier: DocumentClassifier = Depends(get_classifier),
     extractor: DataExtractor = Depends(get_extractor),
     validator: ValidationEngine = Depends(get_validator),
     template_manager: TemplateManager = Depends(get_template_manager),
@@ -445,19 +417,10 @@ async def process_document(
     3. Extracao de dados (opcional)
     4. Validacao (opcional)
     """
-    try:
-        # TODO: Implementar pipeline completo
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro no processamento: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Pipeline de processamento de documentos em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Templates ============
@@ -465,15 +428,16 @@ async def process_document(
 
 @router.get(
     "/templates",
-    response_model=List[TemplateResponse],
+    response_model=list[TemplateResponse],
     summary="Listar templates",
 )
 async def list_templates(
-    category: Optional[str] = Query(None, description="Filtrar por categoria"),
-    document_type: Optional[str] = Query(None, description="Filtrar por tipo"),
+    current_user: CurrentActiveUser,
+    category: str | None = Query(None, description="Filtrar por categoria"),
+    document_type: str | None = Query(None, description="Filtrar por tipo"),
     include_builtin: bool = Query(True, description="Incluir templates builtin"),
     template_manager: TemplateManager = Depends(get_template_manager),
-) -> List[TemplateResponse]:
+) -> list[TemplateResponse]:
     """Lista templates de extracao disponiveis."""
     try:
         cat = TemplateCategory(category) if category else None
@@ -510,13 +474,14 @@ async def list_templates(
 
 @router.get(
     "/templates/{template_id}",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     summary="Obter template",
 )
 async def get_template(
     template_id: str,
+    current_user: CurrentActiveUser,
     template_manager: TemplateManager = Depends(get_template_manager),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Obtem detalhes de um template."""
     template = template_manager.get_template(template_id)
     if not template:
@@ -536,6 +501,7 @@ async def get_template(
 )
 async def create_template(
     request: TemplateRequest,
+    current_user: CurrentActiveUser,
     tenant_id: str = Query(...),
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> TemplateResponse:
@@ -599,6 +565,7 @@ async def create_template(
 )
 async def delete_template(
     template_id: str,
+    current_user: CurrentActiveUser,
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> None:
     """Remove um template customizado."""
@@ -622,48 +589,51 @@ async def delete_template(
 
 @router.get(
     "/types",
-    response_model=List[Dict[str, str]],
+    response_model=list[dict[str, str]],
     summary="Listar tipos de documentos",
 )
-async def list_document_types() -> List[Dict[str, str]]:
+async def list_document_types(current_user: CurrentActiveUser) -> list[dict[str, str]]:
     """Lista todos os tipos de documentos suportados."""
     return [{"type": t.value, "name": t.name} for t in DocumentType]
 
 
 @router.get(
     "/providers",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     summary="Listar providers OCR",
 )
 async def list_ocr_providers(
+    current_user: CurrentActiveUser,
     ocr_engine: OCREngine = Depends(get_ocr_engine),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Lista providers de OCR disponiveis."""
     return ocr_engine.get_provider_info()
 
 
 @router.get(
     "/stats",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     summary="Estatisticas de armazenamento",
 )
 async def get_storage_stats(
+    current_user: CurrentActiveUser,
     tenant_id: str = Query(...),
     scanner: DocumentScanner = Depends(get_scanner),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Obtem estatisticas de armazenamento do tenant."""
     return scanner.get_storage_stats(tenant_id)
 
 
 @router.post(
     "/validate/cpf",
-    response_model=Dict[str, bool],
+    response_model=dict[str, bool],
     summary="Validar CPF",
 )
 async def validate_cpf(
+    current_user: CurrentActiveUser,
     cpf: str = Query(..., description="CPF a validar"),
     validator: ValidationEngine = Depends(get_validator),
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Valida um CPF."""
     from ..models.validation_result import ValidationType
 
@@ -673,13 +643,14 @@ async def validate_cpf(
 
 @router.post(
     "/validate/cnpj",
-    response_model=Dict[str, bool],
+    response_model=dict[str, bool],
     summary="Validar CNPJ",
 )
 async def validate_cnpj(
+    current_user: CurrentActiveUser,
     cnpj: str = Query(..., description="CNPJ a validar"),
     validator: ValidationEngine = Depends(get_validator),
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Valida um CNPJ."""
     from ..models.validation_result import ValidationType
 

@@ -5,24 +5,23 @@ Report Controller - APIs dos Relatórios Departamentais
 Endpoints para gerar relatórios personalizados por departamento.
 
 Autor: Conecta PRO Team + Claude AI
-Data: 2026-01-10  
+Data: 2026-01-10
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from core.database import get_db
 from core.auth import get_current_user
+from core.database import get_db
 from core.models.user import User
 
-from .report_generator import DepartmentReportGenerator
 from ..dashboard.unified_dashboard import UnifiedDashboard
 from ..integration.module_integrator import ModuleIntegrator
-from ..models import Department
+from .report_generator import DepartmentReportGenerator
 
 router = APIRouter(prefix="/api/v1/department-reports", tags=["Department Reports"])
 
@@ -37,13 +36,13 @@ def get_report_service(db: Session = Depends(get_db)) -> DepartmentReportGenerat
 @router.get("/hr", summary="Relatório do RH")
 async def get_hr_report(
     current_user: User = Depends(get_current_user),
-    report_service: DepartmentReportGenerator = Depends(get_report_service)
-) -> Dict[str, Any]:
+    report_service: DepartmentReportGenerator = Depends(get_report_service),
+) -> dict[str, Any]:
     """
     Relatório completo do departamento de Recursos Humanos.
-    
+
     Inclui:
-    - Documentos faltantes de funcionários  
+    - Documentos faltantes de funcionários
     - Contratos vencendo
     - Exames médicos pendentes
     - Treinamentos em atraso
@@ -53,31 +52,29 @@ async def get_hr_report(
     try:
         if not _has_department_permission(current_user, "hr"):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado. Sem permissão para relatórios do RH."
+                status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado. Sem permissão para relatórios do RH."
             )
-        
+
         report = await report_service.generate_hr_report()
         report["generated_at"] = datetime.utcnow().isoformat()
         report["generated_by"] = str(current_user.id)
-        
+
         return JSONResponse(content=report)
-    
+
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar relatório do RH: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório do RH: {str(e)}"
         )
 
 
 @router.get("/commercial", summary="Relatório do Comercial")
 async def get_commercial_report(
     current_user: User = Depends(get_current_user),
-    report_service: DepartmentReportGenerator = Depends(get_report_service)
-) -> Dict[str, Any]:
+    report_service: DepartmentReportGenerator = Depends(get_report_service),
+) -> dict[str, Any]:
     """
     Relatório completo do departamento Comercial.
-    
+
     Inclui:
     - Orçamentos não enviados
     - Propostas atrasadas
@@ -90,29 +87,28 @@ async def get_commercial_report(
         if not _has_department_permission(current_user, "commercial"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado. Sem permissão para relatórios do Comercial."
+                detail="Acesso negado. Sem permissão para relatórios do Comercial.",
             )
-        
+
         report = await report_service.generate_commercial_report()
         report["generated_at"] = datetime.utcnow().isoformat()
-        
+
         return JSONResponse(content=report)
-    
+
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar relatório do Comercial: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório do Comercial: {str(e)}"
         )
 
 
 @router.get("/financial", summary="Relatório do Financeiro")
 async def get_financial_report(
     current_user: User = Depends(get_current_user),
-    report_service: DepartmentReportGenerator = Depends(get_report_service)
-) -> Dict[str, Any]:
+    report_service: DepartmentReportGenerator = Depends(get_report_service),
+) -> dict[str, Any]:
     """
     Relatório completo do departamento Financeiro.
-    
+
     Inclui:
     - Contas a pagar vencidas
     - Aprovações pendentes
@@ -125,29 +121,28 @@ async def get_financial_report(
         if not _has_department_permission(current_user, "financial"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado. Sem permissão para relatórios do Financeiro."
+                detail="Acesso negado. Sem permissão para relatórios do Financeiro.",
             )
-        
+
         report = await report_service.generate_financial_report()
         report["generated_at"] = datetime.utcnow().isoformat()
-        
+
         return JSONResponse(content=report)
-    
+
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar relatório do Financeiro: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório do Financeiro: {str(e)}"
         )
 
 
 @router.get("/facilities", summary="Relatório do Facilities")
 async def get_facilities_report(
     current_user: User = Depends(get_current_user),
-    report_service: DepartmentReportGenerator = Depends(get_report_service)
-) -> Dict[str, Any]:
+    report_service: DepartmentReportGenerator = Depends(get_report_service),
+) -> dict[str, Any]:
     """
     Relatório completo do departamento de Facilities.
-    
+
     Inclui:
     - Manutenções atrasadas
     - Inspeções pendentes
@@ -160,29 +155,28 @@ async def get_facilities_report(
         if not _has_department_permission(current_user, "facilities"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado. Sem permissão para relatórios do Facilities."
+                detail="Acesso negado. Sem permissão para relatórios do Facilities.",
             )
-        
+
         report = await report_service.generate_facilities_report()
         report["generated_at"] = datetime.utcnow().isoformat()
-        
+
         return JSONResponse(content=report)
-    
+
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar relatório do Facilities: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório do Facilities: {str(e)}"
         )
 
 
 @router.get("/executive-summary", summary="Resumo Executivo")
 async def get_executive_summary(
     current_user: User = Depends(get_current_user),
-    report_service: DepartmentReportGenerator = Depends(get_report_service)
-) -> Dict[str, Any]:
+    report_service: DepartmentReportGenerator = Depends(get_report_service),
+) -> dict[str, Any]:
     """
     Resumo executivo consolidado de todos os departamentos.
-    
+
     Visão de alto nível com:
     - Métricas consolidadas de todos os departamentos
     - Departamentos com mais problemas
@@ -193,75 +187,72 @@ async def get_executive_summary(
     try:
         if not _has_executive_permission(current_user):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado. Requer permissão executiva."
+                status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado. Requer permissão executiva."
             )
-        
+
         summary = await report_service.generate_executive_summary()
         summary["generated_at"] = datetime.utcnow().isoformat()
-        
+
         return JSONResponse(content=summary)
-    
+
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar resumo executivo: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar resumo executivo: {str(e)}"
         )
 
 
 @router.get("/all-departments", summary="Relatório Consolidado")
 async def get_all_departments_report(
     current_user: User = Depends(get_current_user),
-    report_service: DepartmentReportGenerator = Depends(get_report_service)
-) -> Dict[str, Any]:
+    report_service: DepartmentReportGenerator = Depends(get_report_service),
+) -> dict[str, Any]:
     """
     Relatório consolidado de todos os departamentos.
-    
+
     Gera relatórios individuais de cada departamento
     em um único documento consolidado.
     """
     try:
         if not _has_management_permission(current_user):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado. Requer permissão de gestão."
+                status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado. Requer permissão de gestão."
             )
-        
+
         # Gera relatórios de todos os departamentos
         reports = {
             "hr": await report_service.generate_hr_report(),
             "commercial": await report_service.generate_commercial_report(),
             "financial": await report_service.generate_financial_report(),
             "facilities": await report_service.generate_facilities_report(),
-            "executive_summary": await report_service.generate_executive_summary()
+            "executive_summary": await report_service.generate_executive_summary(),
         }
-        
+
         # Adiciona metadados
         consolidated_report = {
             "report_type": "consolidated",
             "generated_at": datetime.utcnow().isoformat(),
             "generated_by": str(current_user.id),
             "departments_included": ["hr", "commercial", "financial", "facilities"],
-            "reports": reports
+            "reports": reports,
         }
-        
+
         return JSONResponse(content=consolidated_report)
-    
+
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar relatório consolidado: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório consolidado: {str(e)}"
         )
 
 
 # Funções auxiliares de permissão
+
 
 def _has_department_permission(user: User, department: str) -> bool:
     """Verifica permissão para relatório departamental."""
     # Executivos veem todos os departamentos
     if _has_executive_permission(user):
         return True
-    
+
     # Usuário do próprio departamento
     user_dept = getattr(user, "department", "").lower()
     return user_dept == department.lower()

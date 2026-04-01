@@ -4,8 +4,8 @@ Repositories do modulo de Medidas Administrativas.
 
 from .disciplinary_repository import (
     DisciplinaryRepository,
-    TemplateRepository,
     SignatureRepository,
+    TemplateRepository,
 )
 
 __all__ = [

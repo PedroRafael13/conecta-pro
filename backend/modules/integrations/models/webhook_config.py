@@ -3,19 +3,16 @@ WebhookConfig Model - Configuração de Webhooks
 Sprint 32: API Gateway / Integrações
 """
 
-import enum
-import secrets
 import hashlib
 import hmac
+import secrets
 from datetime import datetime
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -24,8 +21,9 @@ if TYPE_CHECKING:
     from modules.integrations.models.integration_log import IntegrationLog
 
 
-class WebhookEvent(str, enum.Enum):
+class WebhookEvent(StrEnum):
     """Eventos que podem disparar webhooks."""
+
     # Clientes
     CLIENT_CREATED = "client.created"
     CLIENT_UPDATED = "client.updated"
@@ -55,23 +53,26 @@ class WebhookEvent(str, enum.Enum):
     SYNC_FAILED = "sync.failed"
 
 
-class WebhookStatus(str, enum.Enum):
+class WebhookStatus(StrEnum):
     """Status do webhook."""
+
     ACTIVE = "active"
     PAUSED = "paused"
     DISABLED = "disabled"
     FAILING = "failing"
 
 
-class WebhookFormat(str, enum.Enum):
+class WebhookFormat(StrEnum):
     """Formato do payload."""
+
     JSON = "json"
     XML = "xml"
     FORM = "form"
 
 
-class WebhookAuthType(str, enum.Enum):
+class WebhookAuthType(StrEnum):
     """Tipo de autenticação."""
+
     NONE = "none"
     BASIC = "basic"
     BEARER = "bearer"
@@ -85,6 +86,7 @@ class WebhookConfig(Base):
     Model para configuração de webhooks.
     Gerencia integrações via webhooks com sistemas externos.
     """
+
     __tablename__ = "webhook_configs"
 
     # Primary key
@@ -107,27 +109,15 @@ class WebhookConfig(Base):
     event_filters = Column(JSONB, nullable=True)  # Filtros adicionais
 
     # Status
-    status = Column(
-        Enum(WebhookStatus),
-        nullable=False,
-        default=WebhookStatus.ACTIVE
-    )
+    status = Column(Enum(WebhookStatus), nullable=False, default=WebhookStatus.ACTIVE)
 
     # Formato
     content_type = Column(String(100), nullable=False, default="application/json")
-    payload_format = Column(
-        Enum(WebhookFormat),
-        nullable=False,
-        default=WebhookFormat.JSON
-    )
+    payload_format = Column(Enum(WebhookFormat), nullable=False, default=WebhookFormat.JSON)
     payload_template = Column(Text, nullable=True)  # Template customizado
 
     # Autenticação
-    auth_type = Column(
-        Enum(WebhookAuthType),
-        nullable=False,
-        default=WebhookAuthType.HMAC
-    )
+    auth_type = Column(Enum(WebhookAuthType), nullable=False, default=WebhookAuthType.HMAC)
     auth_credentials = Column(JSONB, nullable=True)  # Credenciais criptografadas
 
     # Segurança
@@ -175,17 +165,13 @@ class WebhookConfig(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    logs: List["IntegrationLog"] = relationship(
-        "IntegrationLog",
-        back_populates="webhook",
-        foreign_keys="IntegrationLog.webhook_id"
+    logs: list["IntegrationLog"] = relationship(
+        "IntegrationLog", back_populates="webhook", foreign_keys="IntegrationLog.webhook_id"
     )
 
     # Índices
@@ -208,11 +194,7 @@ class WebhookConfig(Base):
         """Assina o payload com HMAC-SHA256."""
         if not self.secret_key:
             return ""
-        signature = hmac.new(
-            self.secret_key.encode(),
-            payload.encode(),
-            hashlib.sha256
-        ).hexdigest()
+        signature = hmac.new(self.secret_key.encode(), payload.encode(), hashlib.sha256).hexdigest()
         return f"sha256={signature}"
 
     def verify_signature(self, payload: str, signature: str) -> bool:
@@ -220,12 +202,7 @@ class WebhookConfig(Base):
         expected = self.sign_payload(payload)
         return hmac.compare_digest(expected, signature)
 
-    def record_delivery(
-        self,
-        success: bool,
-        response_time_ms: int,
-        error: Optional[str] = None
-    ) -> None:
+    def record_delivery(self, success: bool, response_time_ms: int, error: str | None = None) -> None:
         """Registra entrega de webhook."""
         self.total_deliveries += 1
         self.last_delivery_at = datetime.utcnow()
@@ -247,9 +224,7 @@ class WebhookConfig(Base):
 
         # Média móvel do tempo de resposta
         if self.avg_response_time_ms:
-            self.avg_response_time_ms = int(
-                (self.avg_response_time_ms + response_time_ms) / 2
-            )
+            self.avg_response_time_ms = int((self.avg_response_time_ms + response_time_ms) / 2)
         else:
             self.avg_response_time_ms = response_time_ms
 

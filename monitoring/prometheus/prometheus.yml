@@ -11,8 +11,8 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
-          # - alertmanager:9093
+        - targets:
+            - alertmanager:9093
 
 # Rule files
 rule_files:
@@ -25,25 +25,26 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # ERP Backend API
-  - job_name: 'erp-backend'
-    scrape_interval: 10s
-    static_configs:
-      - targets: ['localhost:8080']
-    metrics_path: /metrics
-    scheme: http
+  # ERP Backend API health probe (backend não expõe /metrics,
+  # usamos blackbox-style probe via node-exporter textfile ou desabilitamos)
+  # NOTA: job desabilitado — backend não tem endpoint /metrics
+  # Para monitorar uptime, usar health check externo ou blackbox exporter
+  # - job_name: 'erp-backend'
+  #   static_configs:
+  #     - targets: ['172.19.0.1:8080']
+  #   metrics_path: /metrics
 
-  # PostgreSQL (via postgres_exporter)
+  # PostgreSQL (via postgres_exporter, mesmo docker network)
   - job_name: 'postgres'
     static_configs:
-      - targets: ['localhost:9187']
+      - targets: ['erp-postgres-exporter:9187']
 
-  # Redis (via redis_exporter)
+  # Redis (via redis_exporter, mesmo docker network)
   - job_name: 'redis'
     static_configs:
-      - targets: ['localhost:9121']
+      - targets: ['erp-redis-exporter:9121']
 
-  # Node Exporter (metricas do sistema)
+  # Node Exporter (mesmo docker network)
   - job_name: 'node'
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ['erp-node-exporter:9100']

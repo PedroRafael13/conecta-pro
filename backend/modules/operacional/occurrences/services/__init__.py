@@ -1,15 +1,15 @@
 """Services do modulo de Ocorrencias."""
 
+from .occurrence_ai_analyzer import (
+    ClassificationResult,
+    OccurrenceAIAnalyzer,
+    PatternAnalysis,
+)
 from .occurrence_service import (
+    OccurrenceNotFoundError,
     OccurrenceService,
     OccurrenceServiceError,
-    OccurrenceNotFoundError,
     OccurrenceValidationError,
-)
-from .occurrence_ai_analyzer import (
-    OccurrenceAIAnalyzer,
-    ClassificationResult,
-    PatternAnalysis,
 )
 
 __all__ = [

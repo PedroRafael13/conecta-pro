@@ -1,36 +1,40 @@
 """
 Modulo de Automacao - Conecta PRO
-=================================
-Workflow engine para automacao de processos de negocio.
 
-Componentes:
-- Workflow Designer: Criacao visual de workflows
-- Workflow Engine: Execucao de workflows
-- Trigger Service: Gatilhos automaticos
-- Condition Evaluator: Avaliacao de condicoes
-- Action Executor: Execucao de acoes
+DEPRECATED: Use 'modules.gestao' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from modules.automation.workflow.controllers import router as workflow_router
-from modules.automation.workflow.models import (
-    Workflow,
-    WorkflowStep,
-    WorkflowTrigger,
-    WorkflowCondition,
-    WorkflowAction,
-    WorkflowExecution,
-    WorkflowStepExecution,
-    WorkflowLog,
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.automation' is deprecated. "
+    "Use 'modules.gestao' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
 )
-from modules.automation.workflow.services import (
-    WorkflowService,
+
+from modules.automation.workflow.controllers import router as workflow_router  # noqa: E402
+from modules.automation.workflow.models import (  # noqa: E402
+    Workflow,
+    WorkflowAction,
+    WorkflowCondition,
+    WorkflowExecution,
+    WorkflowLog,
+    WorkflowStep,
+    WorkflowStepExecution,
+    WorkflowTrigger,
+)
+from modules.automation.workflow.services import (  # noqa: E402
+    ActionExecutor,
+    ConditionEvaluator,
+    TriggerService,
+    WorkflowDesigner,
     WorkflowEngine,
     WorkflowExecutor,
-    WorkflowDesigner,
-    TriggerService,
-    ConditionEvaluator,
-    ActionExecutor,
     WorkflowScheduler,
+    WorkflowService,
 )
 
 __all__ = [

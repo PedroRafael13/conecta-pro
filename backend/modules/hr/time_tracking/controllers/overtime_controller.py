@@ -2,30 +2,29 @@
 # pylint: disable=unused-argument
 
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
+from core.database import get_db
+from modules.hr.time_tracking.models import OvertimeStatus, OvertimeType
 from modules.hr.time_tracking.repositories import OvertimeRepository
 from modules.hr.time_tracking.schemas import (
+    OvertimeApproval,
+    OvertimeCompensation,
     OvertimeCreate,
-    OvertimeUpdate,
-    OvertimeResponse,
-    OvertimeListResponse,
     OvertimeFilter,
+    OvertimeListResponse,
+    OvertimePayment,
+    OvertimePreApproval,
+    OvertimeRejection,
+    OvertimeResponse,
     OvertimeStats,
     OvertimeSummary,
-    OvertimePreApproval,
-    OvertimeApproval,
-    OvertimeRejection,
-    OvertimeCompensation,
-    OvertimePayment,
+    OvertimeUpdate,
 )
-from modules.hr.time_tracking.models import OvertimeType, OvertimeStatus
 
 router = APIRouter(
     prefix="/overtime",
@@ -63,17 +62,17 @@ async def create_overtime(
     summary="Listar horas extras",
 )
 async def list_overtime(  # pylint: disable=too-many-locals
-    employee_id: Optional[str] = None,
-    overtime_type: Optional[OvertimeType] = None,
-    overtime_status: Optional[OvertimeStatus] = Query(None, alias="status"),
-    condominium_id: Optional[str] = None,
-    department_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    is_approved: Optional[bool] = None,
-    is_compensated: Optional[bool] = None,
-    is_paid: Optional[bool] = None,
-    requires_pre_approval: Optional[bool] = None,
+    employee_id: str | None = None,
+    overtime_type: OvertimeType | None = None,
+    overtime_status: OvertimeStatus | None = Query(None, alias="status"),
+    condominium_id: str | None = None,
+    department_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    is_approved: bool | None = None,
+    is_compensated: bool | None = None,
+    is_paid: bool | None = None,
+    requires_pre_approval: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -107,10 +106,10 @@ async def list_overtime(  # pylint: disable=too-many-locals
     summary="Estatísticas de horas extras",
 )
 async def get_overtime_stats(
-    condominium_id: Optional[str] = None,
-    employee_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    condominium_id: str | None = None,
+    employee_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh", "gestor"])),
 ):
@@ -133,7 +132,7 @@ async def get_overtime_stats(
     summary="Horas extras pendentes de aprovação",
 )
 async def get_pending_approval(
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -153,8 +152,8 @@ async def get_pending_approval(
     summary="Horas extras pendentes de compensação",
 )
 async def get_pending_compensation(
-    employee_id: Optional[str] = None,
-    condominium_id: Optional[str] = None,
+    employee_id: str | None = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh"])),
 ):
@@ -172,7 +171,7 @@ async def get_pending_compensation(
     summary="Horas extras pendentes de pagamento",
 )
 async def get_pending_payment(
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh"])),
 ):
@@ -199,9 +198,7 @@ async def get_employee_summary(
     """Retorna resumo de horas extras do funcionário no mês."""
     repo = OvertimeRepository(db)
 
-    summary = await repo.get_employee_summary(
-        employee_id, reference_month, reference_year
-    )
+    summary = await repo.get_employee_summary(employee_id, reference_month, reference_year)
 
     return OvertimeSummary(**summary)
 
@@ -250,7 +247,7 @@ async def update_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status == OvertimeStatus.APROVADO:
+    if overtime.status == OvertimeStatus.APROVADA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Hora extra já aprovada não pode ser alterada",
@@ -322,7 +319,7 @@ async def approve_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status not in [OvertimeStatus.PENDENTE, OvertimeStatus.PRE_APROVADO]:
+    if overtime.status not in [OvertimeStatus.PENDENTE, OvertimeStatus.EM_ANALISE]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Hora extra com status '{overtime.status.value}' não pode ser aprovada",
@@ -362,7 +359,7 @@ async def reject_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status == OvertimeStatus.APROVADO:
+    if overtime.status == OvertimeStatus.APROVADA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Hora extra já aprovada não pode ser rejeitada",
@@ -401,7 +398,7 @@ async def compensate_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status != OvertimeStatus.APROVADO:
+    if overtime.status != OvertimeStatus.APROVADA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Apenas horas extras aprovadas podem ser compensadas",
@@ -445,7 +442,7 @@ async def mark_overtime_paid(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status != OvertimeStatus.APROVADO:
+    if overtime.status != OvertimeStatus.APROVADA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Apenas horas extras aprovadas podem ser marcadas como pagas",
@@ -488,7 +485,7 @@ async def delete_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status == OvertimeStatus.APROVADO and (overtime.is_paid or overtime.is_compensated):
+    if overtime.status == OvertimeStatus.APROVADA and (overtime.is_paid or overtime.is_compensated):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Não é possível excluir hora extra já paga ou compensada",

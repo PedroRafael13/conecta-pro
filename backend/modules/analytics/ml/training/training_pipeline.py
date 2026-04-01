@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import numpy as np
@@ -49,24 +49,24 @@ class SearchStrategy(Enum):
 class DataSplit:
     """Divisão de dados para treinamento."""
 
-    X_train: pd.DataFrame
-    X_val: pd.DataFrame
-    X_test: pd.DataFrame
+    x_train: pd.DataFrame
+    x_val: pd.DataFrame
+    x_test: pd.DataFrame
     y_train: pd.Series
     y_val: pd.Series
     y_test: pd.Series
 
     @property
     def train_size(self) -> int:
-        return len(self.X_train)
+        return len(self.x_train)
 
     @property
     def val_size(self) -> int:
-        return len(self.X_val)
+        return len(self.x_val)
 
     @property
     def test_size(self) -> int:
-        return len(self.X_test)
+        return len(self.x_test)
 
 
 @dataclass
@@ -106,8 +106,8 @@ class TrainingResult:
     training_time_seconds: float
     data_info: dict[str, Any]
     validation_scores: list[float]
-    feature_importance: Optional[dict[str, float]] = None
-    error_message: Optional[str] = None
+    feature_importance: dict[str, float] | None = None
+    error_message: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -126,7 +126,7 @@ class TrainingPipeline:
 
     def __init__(
         self,
-        model_registry: Optional[ModelRegistry] = None,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         """
         Inicializa o pipeline.
@@ -162,42 +162,41 @@ class TrainingPipeline:
         df = self._handle_missing(df, config)
 
         # Separar features e target
-        X = df[config.feature_columns].copy()
-        y = df[config.target_column].copy()
+        x_features = df[config.feature_columns].copy()
+        y_target = df[config.target_column].copy()
 
         # Tratar categorias
-        X = self._handle_categorical(X, config)
+        x_features = self._handle_categorical(x_features, config)
 
         # Escalar features
         if config.scale_features:
-            X = self._scale_features(X, config.model_name)
+            x_features = self._scale_features(x_features, config.model_name)
 
         # Dividir dados
-        X_temp, X_test, y_temp, y_test = train_test_split(
-            X, y,
+        x_temp, x_test, y_temp, y_test = train_test_split(
+            x_features,
+            y_target,
             test_size=config.test_size,
             random_state=config.random_state,
-            stratify=y if config.model_type == ModelType.CLASSIFICATION else None,
+            stratify=y_target if config.model_type == ModelType.CLASSIFICATION else None,
         )
 
         # Dividir treino e validação
         val_ratio = config.val_size / (1 - config.test_size)
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_temp, y_temp,
+        x_train, x_val, y_train, y_val = train_test_split(
+            x_temp,
+            y_temp,
             test_size=val_ratio,
             random_state=config.random_state,
             stratify=y_temp if config.model_type == ModelType.CLASSIFICATION else None,
         )
 
-        logger.info(
-            f"Dados preparados - Train: {len(X_train)}, "
-            f"Val: {len(X_val)}, Test: {len(X_test)}"
-        )
+        logger.info(f"Dados preparados - Train: {len(x_train)}, Val: {len(x_val)}, Test: {len(x_test)}")
 
         return DataSplit(
-            X_train=X_train,
-            X_val=X_val,
-            X_test=X_test,
+            x_train=x_train,
+            x_val=x_val,
+            x_test=x_test,
             y_train=y_train,
             y_val=y_val,
             y_test=y_test,
@@ -230,9 +229,7 @@ class TrainingPipeline:
         try:
             # Hyperparameter tuning
             if config.search_strategy != SearchStrategy.NONE:
-                model, best_params = self._tune_hyperparameters(
-                    model, data, config
-                )
+                model, best_params = self._tune_hyperparameters(model, data, config)
             else:
                 best_params = {}
 
@@ -240,15 +237,13 @@ class TrainingPipeline:
             cv_scores = self._cross_validate(model, data, config)
 
             # Treinar modelo final
-            model.fit(data.X_train, data.y_train)
+            model.fit(data.x_train, data.y_train)
 
             # Calcular métricas
             metrics = self._calculate_metrics(model, data, config)
 
             # Feature importance
-            feature_importance = self._get_feature_importance(
-                model, config.feature_columns
-            )
+            feature_importance = self._get_feature_importance(model, config.feature_columns)
 
             training_time = (datetime.utcnow() - start_time).total_seconds()
 
@@ -286,10 +281,7 @@ class TrainingPipeline:
                     target_column=config.target_column,
                 )
 
-            logger.info(
-                f"Treinamento concluído: {config.model_name} v{version} "
-                f"({training_time:.2f}s)"
-            )
+            logger.info(f"Treinamento concluído: {config.model_name} v{version} ({training_time:.2f}s)")
             return result
 
         except Exception as e:
@@ -301,9 +293,7 @@ class TrainingPipeline:
                 status="failed",
                 metrics=ModelMetrics(),
                 best_params={},
-                training_time_seconds=(
-                    datetime.utcnow() - start_time
-                ).total_seconds(),
+                training_time_seconds=(datetime.utcnow() - start_time).total_seconds(),
                 data_info={},
                 validation_scores=[],
                 error_message=str(e),
@@ -395,48 +385,42 @@ class TrainingPipeline:
 
     def _handle_categorical(
         self,
-        X: pd.DataFrame,
+        features: pd.DataFrame,
         config: TrainingConfig,
     ) -> pd.DataFrame:
         """Trata variáveis categóricas."""
-        categorical_cols = X.select_dtypes(include=["object", "category"]).columns
+        categorical_cols = features.select_dtypes(include=["object", "category"]).columns
 
         if len(categorical_cols) == 0:
-            return X
+            return features
 
         if config.handle_categorical == "label_encode":
             for col in categorical_cols:
                 if col not in self._encoders:
                     self._encoders[col] = LabelEncoder()
-                    X[col] = self._encoders[col].fit_transform(
-                        X[col].astype(str)
-                    )
+                    features[col] = self._encoders[col].fit_transform(features[col].astype(str))
                 else:
-                    X[col] = self._encoders[col].transform(X[col].astype(str))
+                    features[col] = self._encoders[col].transform(features[col].astype(str))
         elif config.handle_categorical == "one_hot":
-            X = pd.get_dummies(X, columns=categorical_cols)
+            features = pd.get_dummies(features, columns=categorical_cols)
 
-        return X
+        return features
 
     def _scale_features(
         self,
-        X: pd.DataFrame,
+        features: pd.DataFrame,
         model_name: str,
     ) -> pd.DataFrame:
         """Escala features numéricas."""
-        numeric_cols = X.select_dtypes(include=[np.number]).columns
+        numeric_cols = features.select_dtypes(include=[np.number]).columns
 
         if model_name not in self._scalers:
             self._scalers[model_name] = StandardScaler()
-            X[numeric_cols] = self._scalers[model_name].fit_transform(
-                X[numeric_cols]
-            )
+            features[numeric_cols] = self._scalers[model_name].fit_transform(features[numeric_cols])
         else:
-            X[numeric_cols] = self._scalers[model_name].transform(
-                X[numeric_cols]
-            )
+            features[numeric_cols] = self._scalers[model_name].transform(features[numeric_cols])
 
-        return X
+        return features
 
     def _tune_hyperparameters(
         self,
@@ -471,7 +455,7 @@ class TrainingPipeline:
         else:
             return model, {}
 
-        search.fit(data.X_train, data.y_train)
+        search.fit(data.x_train, data.y_train)
         logger.info(f"Melhores parâmetros: {search.best_params_}")
 
         return search.best_estimator_, search.best_params_
@@ -487,7 +471,7 @@ class TrainingPipeline:
 
         scores = cross_val_score(
             model,
-            data.X_train,
+            data.x_train,
             data.y_train,
             cv=config.cv_folds,
             scoring=scoring,
@@ -515,24 +499,18 @@ class TrainingPipeline:
             roc_auc_score,
         )
 
-        y_pred = model.predict(data.X_test)
+        y_pred = model.predict(data.x_test)
         metrics = ModelMetrics()
 
         if config.model_type == ModelType.CLASSIFICATION:
             metrics.accuracy = accuracy_score(data.y_test, y_pred)
-            metrics.precision = precision_score(
-                data.y_test, y_pred, average="weighted", zero_division=0
-            )
-            metrics.recall = recall_score(
-                data.y_test, y_pred, average="weighted", zero_division=0
-            )
-            metrics.f1_score = f1_score(
-                data.y_test, y_pred, average="weighted", zero_division=0
-            )
+            metrics.precision = precision_score(data.y_test, y_pred, average="weighted", zero_division=0)
+            metrics.recall = recall_score(data.y_test, y_pred, average="weighted", zero_division=0)
+            metrics.f1_score = f1_score(data.y_test, y_pred, average="weighted", zero_division=0)
 
             # AUC-ROC para binário
             if hasattr(model, "predict_proba") and len(np.unique(data.y_test)) == 2:
-                y_proba = model.predict_proba(data.X_test)[:, 1]
+                y_proba = model.predict_proba(data.x_test)[:, 1]
                 metrics.auc_roc = roc_auc_score(data.y_test, y_proba)
                 metrics.log_loss = log_loss(data.y_test, y_proba)
 
@@ -548,7 +526,7 @@ class TrainingPipeline:
         self,
         model: Any,
         feature_names: list[str],
-    ) -> Optional[dict[str, float]]:
+    ) -> dict[str, float] | None:
         """Extrai importância das features."""
         importance = None
 
@@ -560,15 +538,15 @@ class TrainingPipeline:
         if importance is not None and len(importance) == len(feature_names):
             # Normalizar
             importance = importance / importance.sum()
-            return dict(zip(feature_names, importance.tolist()))
+            return dict(zip(feature_names, importance.tolist(), strict=False))
 
         return None
 
-    def get_scaler(self, model_name: str) -> Optional[StandardScaler]:
+    def get_scaler(self, model_name: str) -> StandardScaler | None:
         """Obtém scaler usado no treinamento."""
         return self._scalers.get(model_name)
 
-    def get_encoder(self, column: str) -> Optional[LabelEncoder]:
+    def get_encoder(self, column: str) -> LabelEncoder | None:
         """Obtém encoder usado no treinamento."""
         return self._encoders.get(column)
 

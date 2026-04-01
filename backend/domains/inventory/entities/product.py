@@ -4,25 +4,19 @@ domains/inventory/entities/product.py - PRODUCT ENTITY
 Enterprise product entity with inventory management
 """
 
-from typing import Dict, List, Optional, Any, NewType
-from datetime import datetime, date
+from datetime import datetime
 from decimal import Decimal
+from typing import Any, NewType
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .enums import (
-    ProductType,
-    ProductStatus,
-    UnitOfMeasure,
-    InventoryValuationMethod,
-    ReorderPointStatus
-)
+from .enums import InventoryValuationMethod, ProductStatus, ProductType, ReorderPointStatus, UnitOfMeasure
 
 # Strong typing for domain identifiers
-ProductId = NewType('ProductId', UUID)
-CategoryId = NewType('CategoryId', UUID)
-SupplierId = NewType('SupplierId', UUID)
+ProductId = NewType("ProductId", UUID)
+CategoryId = NewType("CategoryId", UUID)
+SupplierId = NewType("SupplierId", UUID)
 
 
 class ProductDimensions(BaseModel):
@@ -34,7 +28,7 @@ class ProductDimensions(BaseModel):
     length_cm: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
     width_cm: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
     height_cm: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
-    cubic_weight: Optional[Decimal] = None
+    cubic_weight: Decimal | None = None
 
     @property
     def volume_cm3(self) -> Decimal:
@@ -86,8 +80,8 @@ class StockLevel(BaseModel):
     safety_stock: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
     lead_time_days: int = Field(default=0, ge=0)
 
-    @model_validator(mode='after')
-    def validate_levels(self) -> 'StockLevel':
+    @model_validator(mode="after")
+    def validate_levels(self) -> "StockLevel":
         """Valida niveis de estoque."""
         if self.maximum_stock > 0 and self.minimum_stock > self.maximum_stock:
             raise ValueError("Estoque minimo nao pode exceder estoque maximo")
@@ -102,14 +96,14 @@ class TaxClassification(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     ncm: str = Field(..., pattern=r"^\d{8}$")  # Nomenclatura Comum do Mercosul
-    cest: Optional[str] = Field(None, pattern=r"^\d{7}$")  # Codigo Especificador ST
+    cest: str | None = Field(None, pattern=r"^\d{7}$")  # Codigo Especificador ST
     cfop_sale: str = Field(default="5102", pattern=r"^\d{4}$")
     cfop_purchase: str = Field(default="1102", pattern=r"^\d{4}$")
     origin: str = Field(default="0", pattern=r"^[0-8]$")  # Origem da mercadoria
     icms_cst: str = Field(default="00", pattern=r"^\d{2,3}$")
     pis_cst: str = Field(default="01", pattern=r"^\d{2}$")
     cofins_cst: str = Field(default="01", pattern=r"^\d{2}$")
-    ipi_cst: Optional[str] = Field(None, pattern=r"^\d{2}$")
+    ipi_cst: str | None = Field(None, pattern=r"^\d{2}$")
 
 
 class ProductEntity(BaseModel):
@@ -120,64 +114,60 @@ class ProductEntity(BaseModel):
     controle de estoque e precificacao.
     """
 
-    model_config = ConfigDict(
-        use_enum_values=True,
-        validate_assignment=True
-    )
+    model_config = ConfigDict(use_enum_values=True, validate_assignment=True)
 
     # Identity
     product_id: UUID = Field(default_factory=uuid4)
     sku: str = Field(..., pattern=r"^[A-Z0-9\-]{3,30}$")
-    barcode: Optional[str] = Field(None, pattern=r"^\d{8,14}$")
-    internal_code: Optional[str] = None
+    barcode: str | None = Field(None, pattern=r"^\d{8,14}$")
+    internal_code: str | None = None
 
     # Basic Info
     name: str = Field(..., min_length=3, max_length=200)
-    short_name: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = Field(None, max_length=2000)
+    short_name: str | None = Field(None, max_length=50)
+    description: str | None = Field(None, max_length=2000)
     product_type: ProductType
     status: ProductStatus = Field(default=ProductStatus.ACTIVE)
 
     # Classification
     category_id: UUID
     category_name: str
-    subcategory_id: Optional[UUID] = None
-    subcategory_name: Optional[str] = None
-    brand: Optional[str] = Field(None, max_length=100)
-    manufacturer: Optional[str] = Field(None, max_length=100)
-    model: Optional[str] = Field(None, max_length=100)
+    subcategory_id: UUID | None = None
+    subcategory_name: str | None = None
+    brand: str | None = Field(None, max_length=100)
+    manufacturer: str | None = Field(None, max_length=100)
+    model: str | None = Field(None, max_length=100)
 
     # Units
     unit_of_measure: UnitOfMeasure
-    purchase_unit: Optional[UnitOfMeasure] = None
+    purchase_unit: UnitOfMeasure | None = None
     conversion_factor: Decimal = Field(default=Decimal("1"), gt=Decimal("0"))
 
     # Physical
-    dimensions: ProductDimensions = Field(default_factory=lambda: ProductDimensions(
-        weight_kg=Decimal("0"),
-        length_cm=Decimal("0"),
-        width_cm=Decimal("0"),
-        height_cm=Decimal("0")
-    ))
+    dimensions: ProductDimensions = Field(
+        default_factory=lambda: ProductDimensions(
+            weight_kg=Decimal("0"), length_cm=Decimal("0"), width_cm=Decimal("0"), height_cm=Decimal("0")
+        )
+    )
 
     # Pricing
     pricing: ProductPricing
 
     # Stock
-    stock_level: StockLevel = Field(default_factory=lambda: StockLevel(
-        minimum_stock=Decimal("0"),
-        maximum_stock=Decimal("0"),
-        reorder_point=Decimal("0"),
-        reorder_quantity=Decimal("0"),
-        safety_stock=Decimal("0"),
-        lead_time_days=0
-    ))
-    valuation_method: InventoryValuationMethod = Field(
-        default=InventoryValuationMethod.AVERAGE_COST
+    stock_level: StockLevel = Field(
+        default_factory=lambda: StockLevel(
+            minimum_stock=Decimal("0"),
+            maximum_stock=Decimal("0"),
+            reorder_point=Decimal("0"),
+            reorder_quantity=Decimal("0"),
+            safety_stock=Decimal("0"),
+            lead_time_days=0,
+        )
     )
+    valuation_method: InventoryValuationMethod = Field(default=InventoryValuationMethod.AVERAGE_COST)
     requires_batch: bool = Field(default=False)
     requires_serial: bool = Field(default=False)
-    shelf_life_days: Optional[int] = Field(None, ge=0)
+    shelf_life_days: int | None = Field(None, ge=0)
 
     # Current Stock (denormalized for performance)
     current_stock: Decimal = Field(default=Decimal("0"))
@@ -188,9 +178,9 @@ class ProductEntity(BaseModel):
     tax_classification: TaxClassification
 
     # Supplier
-    primary_supplier_id: Optional[UUID] = None
-    primary_supplier_name: Optional[str] = None
-    supplier_sku: Optional[str] = None
+    primary_supplier_id: UUID | None = None
+    primary_supplier_name: str | None = None
+    supplier_sku: str | None = None
 
     # Multi-tenant
     tenant_id: UUID
@@ -199,16 +189,16 @@ class ProductEntity(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: str
-    updated_by: Optional[str] = None
+    updated_by: str | None = None
 
     # Images
-    image_urls: List[str] = Field(default_factory=list)
+    image_urls: list[str] = Field(default_factory=list)
 
     # Tags
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
-    @model_validator(mode='after')
-    def validate_product(self) -> 'ProductEntity':
+    @model_validator(mode="after")
+    def validate_product(self) -> "ProductEntity":
         """Valida regras de negocio do produto."""
         # Valida que produto estocavel tem unidade de medida
         if ProductType(self.product_type).is_stockable():
@@ -217,7 +207,7 @@ class ProductEntity(BaseModel):
 
         # Atualiza estoque disponivel (usando object.__setattr__ para evitar recursao)
         available = self.current_stock - self.reserved_stock
-        object.__setattr__(self, 'available_stock', available)
+        object.__setattr__(self, "available_stock", available)
 
         # Valida controle de lote por tipo
         if ProductType(self.product_type).requires_batch() and not self.requires_batch:
@@ -249,8 +239,7 @@ class ProductEntity(BaseModel):
             return ReorderPointStatus.CRITICAL
         if self.available_stock < self.stock_level.reorder_point:
             return ReorderPointStatus.WARNING
-        if self.stock_level.maximum_stock > 0 and \
-           self.available_stock > self.stock_level.maximum_stock:
+        if self.stock_level.maximum_stock > 0 and self.available_stock > self.stock_level.maximum_stock:
             return ReorderPointStatus.OVERSTOCK
         return ReorderPointStatus.NORMAL
 
@@ -264,12 +253,7 @@ class ProductEntity(BaseModel):
         """Verifica se precisa repor."""
         return self.available_stock <= self.stock_level.reorder_point
 
-    def receive_stock(
-        self,
-        quantity: Decimal,
-        unit_cost: Decimal,
-        user_id: str
-    ) -> Decimal:
+    def receive_stock(self, quantity: Decimal, unit_cost: Decimal, user_id: str) -> Decimal:
         """Recebe estoque e atualiza custo medio."""
         if quantity <= 0:
             raise ValueError("Quantidade deve ser positiva")
@@ -292,7 +276,7 @@ class ProductEntity(BaseModel):
                 last_purchase_price=unit_cost,
                 sale_price=self.pricing.sale_price,
                 minimum_price=self.pricing.minimum_price,
-                currency=self.pricing.currency
+                currency=self.pricing.currency,
             )
 
         self.current_stock += quantity
@@ -302,19 +286,14 @@ class ProductEntity(BaseModel):
 
         return self.current_stock
 
-    def ship_stock(
-        self,
-        quantity: Decimal,
-        user_id: str
-    ) -> Decimal:
+    def ship_stock(self, quantity: Decimal, user_id: str) -> Decimal:
         """Expede estoque."""
         if quantity <= 0:
             raise ValueError("Quantidade deve ser positiva")
 
         if quantity > self.available_stock:
             raise ValueError(
-                f"Estoque disponivel insuficiente. "
-                f"Solicitado: {quantity}, Disponivel: {self.available_stock}"
+                f"Estoque disponivel insuficiente. Solicitado: {quantity}, Disponivel: {self.available_stock}"
             )
 
         self.current_stock -= quantity
@@ -324,11 +303,7 @@ class ProductEntity(BaseModel):
 
         return self.current_stock
 
-    def reserve_stock(
-        self,
-        quantity: Decimal,
-        user_id: str
-    ) -> bool:
+    def reserve_stock(self, quantity: Decimal, user_id: str) -> bool:
         """Reserva estoque."""
         if quantity <= 0:
             raise ValueError("Quantidade deve ser positiva")
@@ -343,11 +318,7 @@ class ProductEntity(BaseModel):
 
         return True
 
-    def release_reservation(
-        self,
-        quantity: Decimal,
-        user_id: str
-    ) -> bool:
+    def release_reservation(self, quantity: Decimal, user_id: str) -> bool:
         """Libera reserva de estoque."""
         if quantity <= 0:
             raise ValueError("Quantidade deve ser positiva")
@@ -362,12 +333,7 @@ class ProductEntity(BaseModel):
 
         return True
 
-    def adjust_stock(
-        self,
-        new_quantity: Decimal,
-        user_id: str,
-        reason: str
-    ) -> Decimal:
+    def adjust_stock(self, new_quantity: Decimal, user_id: str, reason: str) -> Decimal:
         """Ajusta estoque (inventario)."""
         difference = new_quantity - self.current_stock
 
@@ -380,10 +346,10 @@ class ProductEntity(BaseModel):
 
     def update_pricing(
         self,
-        cost_price: Optional[Decimal] = None,
-        sale_price: Optional[Decimal] = None,
-        minimum_price: Optional[Decimal] = None,
-        user_id: str = ""
+        cost_price: Decimal | None = None,
+        sale_price: Decimal | None = None,
+        minimum_price: Decimal | None = None,
+        user_id: str = "",
     ) -> None:
         """Atualiza precificacao."""
         new_pricing = ProductPricing(
@@ -392,7 +358,7 @@ class ProductEntity(BaseModel):
             last_purchase_price=self.pricing.last_purchase_price,
             sale_price=sale_price or self.pricing.sale_price,
             minimum_price=minimum_price or self.pricing.minimum_price,
-            currency=self.pricing.currency
+            currency=self.pricing.currency,
         )
 
         # Valida preco minimo
@@ -405,13 +371,13 @@ class ProductEntity(BaseModel):
 
     def update_stock_levels(
         self,
-        minimum_stock: Optional[Decimal] = None,
-        maximum_stock: Optional[Decimal] = None,
-        reorder_point: Optional[Decimal] = None,
-        reorder_quantity: Optional[Decimal] = None,
-        safety_stock: Optional[Decimal] = None,
-        lead_time_days: Optional[int] = None,
-        user_id: str = ""
+        minimum_stock: Decimal | None = None,
+        maximum_stock: Decimal | None = None,
+        reorder_point: Decimal | None = None,
+        reorder_quantity: Decimal | None = None,
+        safety_stock: Decimal | None = None,
+        lead_time_days: int | None = None,
+        user_id: str = "",
     ) -> None:
         """Atualiza niveis de estoque."""
         self.stock_level = StockLevel(
@@ -420,7 +386,7 @@ class ProductEntity(BaseModel):
             reorder_point=reorder_point if reorder_point is not None else self.stock_level.reorder_point,
             reorder_quantity=reorder_quantity if reorder_quantity is not None else self.stock_level.reorder_quantity,
             safety_stock=safety_stock if safety_stock is not None else self.stock_level.safety_stock,
-            lead_time_days=lead_time_days if lead_time_days is not None else self.stock_level.lead_time_days
+            lead_time_days=lead_time_days if lead_time_days is not None else self.stock_level.lead_time_days,
         )
         self.updated_at = datetime.utcnow()
         self.updated_by = user_id
@@ -450,7 +416,7 @@ class ProductEntity(BaseModel):
         """Gera SKU do produto."""
         return f"{category_code.upper()}-{sequence:06d}"
 
-    def to_summary(self) -> Dict[str, Any]:
+    def to_summary(self) -> dict[str, Any]:
         """Retorna resumo do produto."""
         return {
             "product_id": str(self.product_id),
@@ -462,5 +428,5 @@ class ProductEntity(BaseModel):
             "available_stock": str(self.available_stock),
             "stock_status": self.stock_status.value,
             "sale_price": str(self.pricing.sale_price),
-            "stock_value": str(self.stock_value)
+            "stock_value": str(self.stock_value),
         }

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     pass
 
 
-class SPEDTipo(str, Enum):
+class SPEDTipo(StrEnum):
     """Tipo de arquivo SPED."""
 
     EFD_ICMS_IPI = "efd_icms_ipi"  # EFD ICMS/IPI (Estadual)
@@ -28,7 +28,7 @@ class SPEDTipo(str, Enum):
     SPED_FISCAL = "sped_fiscal"  # Alias para EFD ICMS/IPI
 
 
-class SPEDStatus(str, Enum):
+class SPEDStatus(StrEnum):
     """Status do arquivo SPED."""
 
     RASCUNHO = "rascunho"
@@ -46,14 +46,14 @@ class SPEDStatus(str, Enum):
     RETIFICADO = "retificado"
 
 
-class SPEDFinalidade(str, Enum):
+class SPEDFinalidade(StrEnum):
     """Finalidade do arquivo SPED."""
 
     ORIGINAL = "0"
     RETIFICADOR = "1"
 
 
-class SPEDPerfil(str, Enum):
+class SPEDPerfil(StrEnum):
     """Perfil de apresentacao do SPED Fiscal."""
 
     A = "A"  # Maior detalhamento
@@ -61,7 +61,7 @@ class SPEDPerfil(str, Enum):
     C = "C"  # Menor detalhamento
 
 
-class ECDTipoECD(str, Enum):
+class ECDTipoECD(StrEnum):
     """Tipo de ECD."""
 
     LIVRO_DIARIO = "G"  # Livro Diario (completo sem escrituracao auxiliar)
@@ -71,7 +71,7 @@ class ECDTipoECD(str, Enum):
     LIVRO_BALANCETES = "B"  # Balancetes Diarios e Balancos
 
 
-class ECFFormaApuracao(str, Enum):
+class ECFFormaApuracao(StrEnum):
     """Forma de apuracao do IRPJ/CSLL."""
 
     LUCRO_REAL_ANUAL = "A"
@@ -130,9 +130,7 @@ class SPEDFile(Base):
     mensagem_retorno = Column(Text, nullable=True)
 
     # Retificacao
-    sped_retificado_id = Column(
-        PGUUID(as_uuid=True), nullable=True
-    )  # SPED que esta sendo retificado
+    sped_retificado_id = Column(PGUUID(as_uuid=True), nullable=True)  # SPED que esta sendo retificado
     nire = Column(String(20), nullable=True)  # Para ECD retificadora
 
     # Estatisticas (JSONB)
@@ -182,9 +180,7 @@ class SPEDRegistro(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "sped_registros"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    sped_file_id = Column(
-        PGUUID(as_uuid=True), ForeignKey("sped_files.id", ondelete="CASCADE"), nullable=False
-    )
+    sped_file_id = Column(PGUUID(as_uuid=True), ForeignKey("sped_files.id", ondelete="CASCADE"), nullable=False)
 
     # Identificacao
     bloco = Column(String(1), nullable=False)  # 0, C, D, E, etc.
@@ -217,9 +213,7 @@ class EFDICMSIPIResumo(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "efd_icms_ipi_resumos"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    sped_file_id = Column(
-        PGUUID(as_uuid=True), ForeignKey("sped_files.id", ondelete="CASCADE"), nullable=False
-    )
+    sped_file_id = Column(PGUUID(as_uuid=True), ForeignKey("sped_files.id", ondelete="CASCADE"), nullable=False)
     condominio_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
 
     # Periodo
@@ -281,9 +275,7 @@ class EFDContribuicoesResumo(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "efd_contribuicoes_resumos"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    sped_file_id = Column(
-        PGUUID(as_uuid=True), ForeignKey("sped_files.id", ondelete="CASCADE"), nullable=False
-    )
+    sped_file_id = Column(PGUUID(as_uuid=True), ForeignKey("sped_files.id", ondelete="CASCADE"), nullable=False)
     condominio_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
 
     # Periodo
@@ -334,9 +326,7 @@ class ECDResumo(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "ecd_resumos"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    sped_file_id = Column(
-        PGUUID(as_uuid=True), ForeignKey("sped_files.id", ondelete="CASCADE"), nullable=False
-    )
+    sped_file_id = Column(PGUUID(as_uuid=True), ForeignKey("sped_files.id", ondelete="CASCADE"), nullable=False)
     condominio_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
 
     # Periodo

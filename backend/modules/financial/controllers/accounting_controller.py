@@ -4,13 +4,12 @@ import logging
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from core.auth.dependencies import get_current_user
-from core.database import get_db
+from core.database.session import get_sync_db_dependency
 from modules.financial.models.accounting_account import (
     AccountClassification,
     AccountingAccount,
@@ -56,7 +55,6 @@ from modules.financial.schemas.accounting_schemas import (
     AccountTreeResponse,
     BalanceStats,
     ChartOfAccountsCreate,
-    ChartOfAccountsListResponse,
     ChartOfAccountsResponse,
     ChartOfAccountsUpdate,
     ChartStats,
@@ -91,26 +89,28 @@ router = APIRouter(prefix="/accounting", tags=["Contabilidade"])
 # =============================================================================
 
 
-@router.get("/charts", response_model=list[ChartOfAccountsListResponse])
+@router.get("/charts", response_model=list[ChartOfAccountsResponse])
 async def list_charts(
-    chart_type: Optional[ChartType] = None,
-    chart_status: Optional[ChartStatus] = None,
+    condominio_id: uuid.UUID | None = Query(None),
+    chart_type: ChartType | None = None,
+    chart_status: ChartStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
-) -> list[ChartOfAccountsListResponse]:
+) -> list[ChartOfAccountsResponse]:
     """Lista planos de contas."""
     try:
         repo = ChartOfAccountsRepository(db)
+        _cond_id = condominio_id or getattr(_current_user, "condominio_id", None)
         charts = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_cond_id,
             chart_type=chart_type,
             status=chart_status,
             skip=skip,
             limit=limit,
         )
-        return [ChartOfAccountsListResponse.model_validate(c) for c in charts]
+        return [ChartOfAccountsResponse.model_validate(c) for c in charts]
     except Exception as e:
         logger.error(f"Erro ao listar planos de contas: {e}")
         raise HTTPException(
@@ -121,12 +121,12 @@ async def list_charts(
 
 @router.get("/charts/active", response_model=ChartOfAccountsResponse)
 async def get_active_chart(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartOfAccountsResponse:
     """Retorna plano de contas ativo."""
     repo = ChartOfAccountsRepository(db)
-    chart = repo.get_active(_current_user["condominio_id"])
+    chart = repo.get_active(getattr(_current_user, "condominio_id", None))
 
     if not chart:
         raise HTTPException(
@@ -139,13 +139,13 @@ async def get_active_chart(
 
 @router.get("/charts/stats", response_model=ChartStats)
 async def get_chart_stats(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartStats:
     """Retorna estatisticas dos planos de contas."""
     try:
         repo = ChartOfAccountsRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"])
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None))
         return ChartStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -158,7 +158,7 @@ async def get_chart_stats(
 @router.post("/charts", response_model=ChartOfAccountsResponse, status_code=201)
 async def create_chart(
     data: ChartOfAccountsCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartOfAccountsResponse:
     """Cria um novo plano de contas."""
@@ -166,7 +166,7 @@ async def create_chart(
         repo = ChartOfAccountsRepository(db)
 
         # Verifica codigo duplicado
-        existing = repo.get_by_code(data.code, _current_user["condominio_id"])
+        existing = repo.get_by_code(data.code, getattr(_current_user, "condominio_id", None))
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -174,9 +174,9 @@ async def create_chart(
             )
 
         chart = ChartOfAccounts(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             status=ChartStatus.DRAFT,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"chart_type", "standard"}),
         )
 
@@ -204,14 +204,14 @@ async def create_chart(
 @router.get("/charts/{chart_id}", response_model=ChartOfAccountsResponse)
 async def get_chart(
     chart_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartOfAccountsResponse:
     """Busca plano de contas por ID."""
     repo = ChartOfAccountsRepository(db)
     chart = repo.get_by_id(chart_id)
 
-    if not chart or chart.condominio_id != _current_user["condominio_id"]:
+    if not chart or chart.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plano de contas nao encontrado",
@@ -224,7 +224,7 @@ async def get_chart(
 async def update_chart(
     chart_id: uuid.UUID,
     data: ChartOfAccountsUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartOfAccountsResponse:
     """Atualiza plano de contas."""
@@ -232,7 +232,7 @@ async def update_chart(
         repo = ChartOfAccountsRepository(db)
         chart = repo.get_by_id(chart_id)
 
-        if not chart or chart.condominio_id != _current_user["condominio_id"]:
+        if not chart or chart.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de contas nao encontrado",
@@ -242,7 +242,7 @@ async def update_chart(
         for field, value in update_data.items():
             setattr(chart, field, value)
 
-        chart.updated_by = _current_user["id"]
+        chart.updated_by = _current_user.id
         chart = repo.update(chart)
         db.commit()
 
@@ -258,10 +258,10 @@ async def update_chart(
         ) from e
 
 
-@router.post("/charts/{chart_id}/activate")
+@router.post("/charts/{chart_id}/activate", status_code=201)
 async def activate_chart(
     chart_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Ativa plano de contas."""
@@ -269,21 +269,21 @@ async def activate_chart(
         repo = ChartOfAccountsRepository(db)
         chart = repo.get_by_id(chart_id)
 
-        if not chart or chart.condominio_id != _current_user["condominio_id"]:
+        if not chart or chart.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de contas nao encontrado",
             )
 
         # Desativa plano ativo atual
-        current_active = repo.get_active(_current_user["condominio_id"])
+        current_active = repo.get_active(getattr(_current_user, "condominio_id", None))
         if current_active and current_active.id != chart.id:
             current_active.status = ChartStatus.INACTIVE
             repo.update(current_active)
 
         chart.status = ChartStatus.ACTIVE
         chart.activated_at = datetime.utcnow()
-        chart.activated_by = _current_user["id"]
+        chart.activated_by = _current_user.id
         repo.update(chart)
         db.commit()
 
@@ -306,19 +306,21 @@ async def activate_chart(
 
 @router.get("/accounts", response_model=list[AccountingAccountListResponse])
 async def list_accounts(
-    chart_id: uuid.UUID,
-    account_type: Optional[AccountType] = None,
-    nature: Optional[AccountNature] = None,
-    classification: Optional[AccountClassification] = None,
-    account_status: Optional[AccountStatus] = None,
-    parent_id: Optional[uuid.UUID] = None,
-    level: Optional[int] = None,
+    chart_id: uuid.UUID | None = None,
+    account_type: AccountType | None = None,
+    nature: AccountNature | None = None,
+    classification: AccountClassification | None = None,
+    account_status: AccountStatus | None = None,
+    parent_id: uuid.UUID | None = None,
+    level: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[AccountingAccountListResponse]:
     """Lista contas contabeis."""
+    if not chart_id:
+        return []
     try:
         repo = AccountingAccountRepository(db)
         accounts = repo.list_all(
@@ -344,7 +346,7 @@ async def list_accounts(
 @router.get("/accounts/tree", response_model=list[AccountTreeResponse])
 async def get_account_tree(
     chart_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[AccountTreeResponse]:
     """Retorna arvore hierarquica de contas."""
@@ -363,7 +365,7 @@ async def get_account_tree(
 @router.get("/accounts/stats", response_model=AccountStats)
 async def get_account_stats(
     chart_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountStats:
     """Retorna estatisticas das contas."""
@@ -382,7 +384,7 @@ async def get_account_stats(
 @router.post("/accounts", response_model=AccountingAccountResponse, status_code=201)
 async def create_account(
     data: AccountingAccountCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingAccountResponse:
     """Cria uma nova conta contabil."""
@@ -398,9 +400,9 @@ async def create_account(
             )
 
         account = AccountingAccount(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             status=AccountStatus.ACTIVE,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"account_type", "nature", "classification"}),
         )
 
@@ -430,14 +432,14 @@ async def create_account(
 @router.get("/accounts/{account_id}", response_model=AccountingAccountResponse)
 async def get_account(
     account_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingAccountResponse:
     """Busca conta contabil por ID."""
     repo = AccountingAccountRepository(db)
     account = repo.get_by_id(account_id)
 
-    if not account or account.condominio_id != _current_user["condominio_id"]:
+    if not account or account.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Conta nao encontrada",
@@ -450,7 +452,7 @@ async def get_account(
 async def update_account(
     account_id: uuid.UUID,
     data: AccountingAccountUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingAccountResponse:
     """Atualiza conta contabil."""
@@ -458,7 +460,7 @@ async def update_account(
         repo = AccountingAccountRepository(db)
         account = repo.get_by_id(account_id)
 
-        if not account or account.condominio_id != _current_user["condominio_id"]:
+        if not account or account.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conta nao encontrada",
@@ -468,7 +470,7 @@ async def update_account(
         for field, value in update_data.items():
             setattr(account, field, value)
 
-        account.updated_by = _current_user["id"]
+        account.updated_by = _current_user.id
         account = repo.update(account)
         db.commit()
 
@@ -487,9 +489,9 @@ async def update_account(
 @router.get("/accounts/{account_id}/balance")
 async def get_account_balance(
     account_id: uuid.UUID,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    db: Session = Depends(get_db),
+    date_from: date | None = None,
+    date_to: date | None = None,
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Retorna saldo de uma conta."""
@@ -498,7 +500,7 @@ async def get_account_balance(
         line_repo = JournalEntryLineRepository(db)
 
         account = acc_repo.get_by_id(account_id)
-        if not account or account.condominio_id != _current_user["condominio_id"]:
+        if not account or account.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conta nao encontrada",
@@ -529,19 +531,19 @@ async def get_account_balance(
 
 @router.get("/cost-centers", response_model=list[CostCenterListResponse])
 async def list_cost_centers(
-    center_type: Optional[CostCenterType] = None,
-    center_status: Optional[CostCenterStatus] = None,
-    parent_id: Optional[uuid.UUID] = None,
+    center_type: CostCenterType | None = None,
+    center_status: CostCenterStatus | None = None,
+    parent_id: uuid.UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[CostCenterListResponse]:
     """Lista centros de custo."""
     try:
         repo = CostCenterRepository(db)
         centers = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             center_type=center_type,
             status=center_status,
             parent_id=parent_id,
@@ -559,13 +561,13 @@ async def list_cost_centers(
 
 @router.get("/cost-centers/stats", response_model=CostCenterStats)
 async def get_cost_center_stats(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> CostCenterStats:
     """Retorna estatisticas dos centros de custo."""
     try:
         repo = CostCenterRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"])
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None))
         return CostCenterStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -578,7 +580,7 @@ async def get_cost_center_stats(
 @router.post("/cost-centers", response_model=CostCenterResponse, status_code=201)
 async def create_cost_center(
     data: CostCenterCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> CostCenterResponse:
     """Cria um novo centro de custo."""
@@ -586,7 +588,7 @@ async def create_cost_center(
         repo = CostCenterRepository(db)
 
         # Verifica codigo duplicado
-        existing = repo.get_by_code(data.code, _current_user["condominio_id"])
+        existing = repo.get_by_code(data.code, getattr(_current_user, "condominio_id", None))
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -594,9 +596,9 @@ async def create_cost_center(
             )
 
         center = CostCenter(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             status=CostCenterStatus.ACTIVE,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"center_type", "allocation_method"}),
         )
 
@@ -624,14 +626,14 @@ async def create_cost_center(
 @router.get("/cost-centers/{center_id}", response_model=CostCenterResponse)
 async def get_cost_center(
     center_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> CostCenterResponse:
     """Busca centro de custo por ID."""
     repo = CostCenterRepository(db)
     center = repo.get_by_id(center_id)
 
-    if not center or center.condominio_id != _current_user["condominio_id"]:
+    if not center or center.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Centro de custo nao encontrado",
@@ -644,7 +646,7 @@ async def get_cost_center(
 async def update_cost_center(
     center_id: uuid.UUID,
     data: CostCenterUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> CostCenterResponse:
     """Atualiza centro de custo."""
@@ -652,7 +654,7 @@ async def update_cost_center(
         repo = CostCenterRepository(db)
         center = repo.get_by_id(center_id)
 
-        if not center or center.condominio_id != _current_user["condominio_id"]:
+        if not center or center.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Centro de custo nao encontrado",
@@ -662,7 +664,7 @@ async def update_cost_center(
         for field, value in update_data.items():
             setattr(center, field, value)
 
-        center.updated_by = _current_user["id"]
+        center.updated_by = _current_user.id
         center = repo.update(center)
         db.commit()
 
@@ -685,19 +687,19 @@ async def update_cost_center(
 
 @router.get("/periods", response_model=list[AccountingPeriodListResponse])
 async def list_periods(
-    year: Optional[int] = None,
-    period_type: Optional[PeriodType] = None,
-    period_status: Optional[PeriodStatus] = None,
+    year: int | None = None,
+    period_type: PeriodType | None = None,
+    period_status: PeriodStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[AccountingPeriodListResponse]:
     """Lista periodos contabeis."""
     try:
         repo = AccountingPeriodRepository(db)
         periods = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             year=year,
             period_type=period_type,
             status=period_status,
@@ -715,12 +717,12 @@ async def list_periods(
 
 @router.get("/periods/current", response_model=AccountingPeriodResponse)
 async def get_current_period(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingPeriodResponse:
     """Retorna periodo contabil atual."""
     repo = AccountingPeriodRepository(db)
-    period = repo.get_current(_current_user["condominio_id"])
+    period = repo.get_current(getattr(_current_user, "condominio_id", None))
 
     if not period:
         raise HTTPException(
@@ -733,14 +735,14 @@ async def get_current_period(
 
 @router.get("/periods/stats", response_model=PeriodStats)
 async def get_period_stats(
-    year: Optional[int] = None,
-    db: Session = Depends(get_db),
+    year: int | None = None,
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> PeriodStats:
     """Retorna estatisticas dos periodos."""
     try:
         repo = AccountingPeriodRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"], year)
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None), year)
         return PeriodStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -753,7 +755,7 @@ async def get_period_stats(
 @router.post("/periods", response_model=AccountingPeriodResponse, status_code=201)
 async def create_period(
     data: AccountingPeriodCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingPeriodResponse:
     """Cria um novo periodo contabil."""
@@ -761,7 +763,7 @@ async def create_period(
         repo = AccountingPeriodRepository(db)
 
         # Verifica codigo duplicado
-        existing = repo.get_by_code(data.code, _current_user["condominio_id"])
+        existing = repo.get_by_code(data.code, getattr(_current_user, "condominio_id", None))
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -769,9 +771,9 @@ async def create_period(
             )
 
         period = AccountingPeriod(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             status=PeriodStatus.PENDING,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"period_type"}),
         )
 
@@ -797,14 +799,14 @@ async def create_period(
 @router.get("/periods/{period_id}", response_model=AccountingPeriodResponse)
 async def get_period(
     period_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingPeriodResponse:
     """Busca periodo por ID."""
     repo = AccountingPeriodRepository(db)
     period = repo.get_by_id(period_id)
 
-    if not period or period.condominio_id != _current_user["condominio_id"]:
+    if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Periodo nao encontrado",
@@ -813,10 +815,10 @@ async def get_period(
     return AccountingPeriodResponse.model_validate(period)
 
 
-@router.post("/periods/{period_id}/open")
+@router.post("/periods/{period_id}/open", status_code=201)
 async def open_period(
     period_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Abre periodo contabil."""
@@ -824,7 +826,7 @@ async def open_period(
         repo = AccountingPeriodRepository(db)
         period = repo.get_by_id(period_id)
 
-        if not period or period.condominio_id != _current_user["condominio_id"]:
+        if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Periodo nao encontrado",
@@ -837,7 +839,7 @@ async def open_period(
             )
 
         period.status = PeriodStatus.OPEN
-        period.opened_by = _current_user["id"]
+        period.opened_by = _current_user.id
         period.opened_at = datetime.utcnow()
         repo.update(period)
         db.commit()
@@ -854,11 +856,11 @@ async def open_period(
         ) from e
 
 
-@router.post("/periods/{period_id}/close")
+@router.post("/periods/{period_id}/close", status_code=201)
 async def close_period(
     period_id: uuid.UUID,
     data: PeriodCloseRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Fecha periodo contabil."""
@@ -866,7 +868,7 @@ async def close_period(
         repo = AccountingPeriodRepository(db)
         period = repo.get_by_id(period_id)
 
-        if not period or period.condominio_id != _current_user["condominio_id"]:
+        if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Periodo nao encontrado",
@@ -880,7 +882,7 @@ async def close_period(
 
         repo.close_period(
             period,
-            closed_by=_current_user["id"],
+            closed_by=_current_user.id,
             closing_type=data.closing_type,
             notes=data.notes,
         )
@@ -898,11 +900,11 @@ async def close_period(
         ) from e
 
 
-@router.post("/periods/{period_id}/reopen")
+@router.post("/periods/{period_id}/reopen", status_code=201)
 async def reopen_period(
     period_id: uuid.UUID,
     data: PeriodReopenRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Reabre periodo contabil."""
@@ -910,7 +912,7 @@ async def reopen_period(
         repo = AccountingPeriodRepository(db)
         period = repo.get_by_id(period_id)
 
-        if not period or period.condominio_id != _current_user["condominio_id"]:
+        if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Periodo nao encontrado",
@@ -924,7 +926,7 @@ async def reopen_period(
 
         repo.reopen_period(
             period,
-            reopened_by=_current_user["id"],
+            reopened_by=_current_user.id,
             reason=data.reason,
         )
         db.commit()
@@ -948,22 +950,22 @@ async def reopen_period(
 
 @router.get("/journal-entries", response_model=list[JournalEntryListResponse])
 async def list_journal_entries(
-    period_id: Optional[uuid.UUID] = None,
-    entry_type: Optional[EntryType] = None,
-    entry_status: Optional[EntryStatus] = None,
-    origin: Optional[EntryOrigin] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    period_id: uuid.UUID | None = None,
+    entry_type: EntryType | None = None,
+    entry_status: EntryStatus | None = None,
+    origin: EntryOrigin | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[JournalEntryListResponse]:
     """Lista lancamentos contabeis."""
     try:
         repo = JournalEntryRepository(db)
         entries = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             period_id=period_id,
             entry_type=entry_type,
             status=entry_status,
@@ -984,13 +986,13 @@ async def list_journal_entries(
 
 @router.get("/journal-entries/pending-approval", response_model=list[JournalEntryListResponse])
 async def list_pending_approval(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[JournalEntryListResponse]:
     """Lista lancamentos pendentes de aprovacao."""
     try:
         repo = JournalEntryRepository(db)
-        entries = repo.list_pending_approval(_current_user["condominio_id"])
+        entries = repo.list_pending_approval(getattr(_current_user, "condominio_id", None))
         return [JournalEntryListResponse.model_validate(e) for e in entries]
     except Exception as e:
         logger.error(f"Erro ao listar lancamentos: {e}")
@@ -1002,14 +1004,14 @@ async def list_pending_approval(
 
 @router.get("/journal-entries/stats", response_model=JournalStats)
 async def get_journal_stats(
-    period_id: Optional[uuid.UUID] = None,
-    db: Session = Depends(get_db),
+    period_id: uuid.UUID | None = None,
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalStats:
     """Retorna estatisticas dos lancamentos."""
     try:
         repo = JournalEntryRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"], period_id)
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None), period_id)
         return JournalStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -1022,7 +1024,7 @@ async def get_journal_stats(
 @router.post("/journal-entries", response_model=JournalEntryResponse, status_code=201)
 async def create_journal_entry(
     data: JournalEntryCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalEntryResponse:
     """Cria um novo lancamento contabil."""
@@ -1032,7 +1034,7 @@ async def create_journal_entry(
 
         # Verifica periodo
         period = period_repo.get_by_id(data.period_id)
-        if not period or period.condominio_id != _current_user["condominio_id"]:
+        if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Periodo nao encontrado",
@@ -1054,13 +1056,13 @@ async def create_journal_entry(
                 detail=f"Lancamento desbalanceado: Debito={total_debit}, Credito={total_credit}",
             )
 
-        entry_number = repo.generate_next_number(_current_user["condominio_id"])
+        entry_number = repo.generate_next_number(getattr(_current_user, "condominio_id", None))
 
         entry = JournalEntry(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             entry_number=entry_number,
             status=EntryStatus.DRAFT,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"entry_type", "origin", "lines"}),
         )
 
@@ -1097,14 +1099,14 @@ async def create_journal_entry(
 @router.get("/journal-entries/{entry_id}", response_model=JournalEntryResponse)
 async def get_journal_entry(
     entry_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalEntryResponse:
     """Busca lancamento por ID."""
     repo = JournalEntryRepository(db)
     entry = repo.get_by_id(entry_id)
 
-    if not entry or entry.condominio_id != _current_user["condominio_id"]:
+    if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lancamento nao encontrado",
@@ -1116,7 +1118,7 @@ async def get_journal_entry(
 @router.get("/journal-entries/{entry_id}/lines", response_model=list[JournalEntryLineResponse])
 async def get_entry_lines(
     entry_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[JournalEntryLineResponse]:
     """Lista partidas do lancamento."""
@@ -1124,7 +1126,7 @@ async def get_entry_lines(
     line_repo = JournalEntryLineRepository(db)
 
     entry = entry_repo.get_by_id(entry_id, include_lines=False)
-    if not entry or entry.condominio_id != _current_user["condominio_id"]:
+    if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lancamento nao encontrado",
@@ -1134,10 +1136,10 @@ async def get_entry_lines(
     return [JournalEntryLineResponse.model_validate(line) for line in lines]
 
 
-@router.post("/journal-entries/{entry_id}/post")
+@router.post("/journal-entries/{entry_id}/post", status_code=201)
 async def post_journal_entry(
     entry_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Contabiliza lancamento."""
@@ -1145,7 +1147,7 @@ async def post_journal_entry(
         repo = JournalEntryRepository(db)
         entry = repo.get_by_id(entry_id)
 
-        if not entry or entry.condominio_id != _current_user["condominio_id"]:
+        if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lancamento nao encontrado",
@@ -1157,7 +1159,7 @@ async def post_journal_entry(
                 detail="Lancamento nao pode ser contabilizado",
             )
 
-        repo.post_entry(entry, _current_user["id"])
+        repo.post_entry(entry, _current_user.id)
         db.commit()
 
         return {"message": "Lancamento contabilizado com sucesso"}
@@ -1172,11 +1174,11 @@ async def post_journal_entry(
         ) from e
 
 
-@router.post("/journal-entries/{entry_id}/approve")
+@router.post("/journal-entries/{entry_id}/approve", status_code=201)
 async def approve_journal_entry(
     entry_id: uuid.UUID,
     data: JournalEntryApprovalRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Aprova lancamento."""
@@ -1184,7 +1186,7 @@ async def approve_journal_entry(
         repo = JournalEntryRepository(db)
         entry = repo.get_by_id(entry_id)
 
-        if not entry or entry.condominio_id != _current_user["condominio_id"]:
+        if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lancamento nao encontrado",
@@ -1196,7 +1198,7 @@ async def approve_journal_entry(
                 detail="Lancamento nao pode ser aprovado",
             )
 
-        repo.approve_entry(entry, _current_user["id"], data.notes)
+        repo.approve_entry(entry, _current_user.id, data.notes)
         db.commit()
 
         return {"message": "Lancamento aprovado com sucesso"}
@@ -1211,11 +1213,11 @@ async def approve_journal_entry(
         ) from e
 
 
-@router.post("/journal-entries/{entry_id}/reject")
+@router.post("/journal-entries/{entry_id}/reject", status_code=201)
 async def reject_journal_entry(
     entry_id: uuid.UUID,
     reason: str = Query(..., min_length=1),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Rejeita lancamento."""
@@ -1223,7 +1225,7 @@ async def reject_journal_entry(
         repo = JournalEntryRepository(db)
         entry = repo.get_by_id(entry_id)
 
-        if not entry or entry.condominio_id != _current_user["condominio_id"]:
+        if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lancamento nao encontrado",
@@ -1235,7 +1237,7 @@ async def reject_journal_entry(
                 detail="Lancamento nao pode ser rejeitado",
             )
 
-        repo.reject_entry(entry, _current_user["id"], reason)
+        repo.reject_entry(entry, _current_user.id, reason)
         db.commit()
 
         return {"message": "Lancamento rejeitado"}
@@ -1250,11 +1252,11 @@ async def reject_journal_entry(
         ) from e
 
 
-@router.post("/journal-entries/{entry_id}/reverse", response_model=JournalEntryResponse)
+@router.post("/journal-entries/{entry_id}/reverse", response_model=JournalEntryResponse, status_code=201)
 async def reverse_journal_entry(
     entry_id: uuid.UUID,
     data: JournalEntryReversalRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalEntryResponse:
     """Estorna lancamento."""
@@ -1263,7 +1265,7 @@ async def reverse_journal_entry(
         line_repo = JournalEntryLineRepository(db)
 
         entry = repo.get_by_id(entry_id)
-        if not entry or entry.condominio_id != _current_user["condominio_id"]:
+        if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lancamento nao encontrado",
@@ -1276,10 +1278,10 @@ async def reverse_journal_entry(
             )
 
         # Cria lancamento de estorno
-        reversal_number = repo.generate_next_number(_current_user["condominio_id"])
+        reversal_number = repo.generate_next_number(getattr(_current_user, "condominio_id", None))
 
         reversal_entry = JournalEntry(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             period_id=entry.period_id,
             entry_number=reversal_number,
             description=f"Estorno de {entry.entry_number}: {data.reason}",
@@ -1289,7 +1291,7 @@ async def reverse_journal_entry(
             entry_date=data.reversal_date or date.today(),
             competence_date=entry.competence_date,
             is_reversal=True,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
         )
 
         # Inverte partidas
@@ -1333,20 +1335,20 @@ async def reverse_journal_entry(
 
 @router.get("/trial-balances", response_model=list[TrialBalanceListResponse])
 async def list_trial_balances(
-    chart_id: Optional[uuid.UUID] = None,
-    balance_type: Optional[BalanceType] = None,
-    balance_status: Optional[BalanceStatus] = None,
-    year: Optional[int] = None,
+    chart_id: uuid.UUID | None = None,
+    balance_type: BalanceType | None = None,
+    balance_status: BalanceStatus | None = None,
+    year: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[TrialBalanceListResponse]:
     """Lista balancetes."""
     try:
         repo = TrialBalanceRepository(db)
         balances = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             chart_id=chart_id,
             balance_type=balance_type,
             status=balance_status,
@@ -1365,12 +1367,12 @@ async def list_trial_balances(
 
 @router.get("/trial-balances/latest", response_model=TrialBalanceResponse)
 async def get_latest_balance(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> TrialBalanceResponse:
     """Retorna ultimo balancete."""
     repo = TrialBalanceRepository(db)
-    balance = repo.get_latest(_current_user["condominio_id"])
+    balance = repo.get_latest(getattr(_current_user, "condominio_id", None))
 
     if not balance:
         raise HTTPException(
@@ -1383,14 +1385,14 @@ async def get_latest_balance(
 
 @router.get("/trial-balances/stats", response_model=BalanceStats)
 async def get_balance_stats(
-    year: Optional[int] = None,
-    db: Session = Depends(get_db),
+    year: int | None = None,
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> BalanceStats:
     """Retorna estatisticas dos balancetes."""
     try:
         repo = TrialBalanceRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"], year)
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None), year)
         return BalanceStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -1403,7 +1405,7 @@ async def get_balance_stats(
 @router.post("/trial-balances", response_model=TrialBalanceResponse, status_code=201)
 async def create_trial_balance(
     data: TrialBalanceCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> TrialBalanceResponse:
     """Cria um novo balancete."""
@@ -1416,23 +1418,23 @@ async def create_trial_balance(
 
         # Verifica plano de contas
         chart = chart_repo.get_by_id(data.chart_id)
-        if not chart or chart.condominio_id != _current_user["condominio_id"]:
+        if not chart or chart.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de contas nao encontrado",
             )
 
         code = repo.generate_next_code(
-            _current_user["condominio_id"],
+            getattr(_current_user, "condominio_id", None),
             data.year,
             data.month or data.reference_date.month,
         )
 
         balance = TrialBalance(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             code=code,
             status=BalanceStatus.DRAFT,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"balance_type", "balance_period"}),
         )
 
@@ -1460,14 +1462,14 @@ async def create_trial_balance(
 @router.get("/trial-balances/{balance_id}", response_model=TrialBalanceResponse)
 async def get_trial_balance(
     balance_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> TrialBalanceResponse:
     """Busca balancete por ID."""
     repo = TrialBalanceRepository(db)
     balance = repo.get_by_id(balance_id)
 
-    if not balance or balance.condominio_id != _current_user["condominio_id"]:
+    if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Balancete nao encontrado",
@@ -1479,10 +1481,10 @@ async def get_trial_balance(
 @router.get("/trial-balances/{balance_id}/items", response_model=list[TrialBalanceItemResponse])
 async def get_balance_items(
     balance_id: uuid.UUID,
-    account_type: Optional[str] = None,
+    account_type: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(500, ge=1, le=1000),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[TrialBalanceItemResponse]:
     """Lista itens do balancete."""
@@ -1490,7 +1492,7 @@ async def get_balance_items(
     item_repo = TrialBalanceItemRepository(db)
 
     balance = balance_repo.get_by_id(balance_id)
-    if not balance or balance.condominio_id != _current_user["condominio_id"]:
+    if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Balancete nao encontrado",
@@ -1500,10 +1502,10 @@ async def get_balance_items(
     return [TrialBalanceItemResponse.model_validate(item) for item in items]
 
 
-@router.post("/trial-balances/{balance_id}/generate")
+@router.post("/trial-balances/{balance_id}/generate", status_code=201)
 async def generate_trial_balance(  # pylint: disable=too-many-locals
     balance_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Gera balancete a partir dos lancamentos."""
@@ -1514,7 +1516,7 @@ async def generate_trial_balance(  # pylint: disable=too-many-locals
         line_repo = JournalEntryLineRepository(db)
 
         balance = balance_repo.get_by_id(balance_id)
-        if not balance or balance.condominio_id != _current_user["condominio_id"]:
+        if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Balancete nao encontrado",
@@ -1577,7 +1579,7 @@ async def generate_trial_balance(  # pylint: disable=too-many-locals
         end_time = datetime.utcnow()
         balance.status = BalanceStatus.GENERATED
         balance.generated_at = end_time
-        balance.generated_by = _current_user["id"]
+        balance.generated_by = _current_user.id
         balance.generation_time_ms = int((end_time - start_time).total_seconds() * 1000)
         balance.total_accounts = len(items)
         balance.total_analytical = len(items)
@@ -1606,11 +1608,11 @@ async def generate_trial_balance(  # pylint: disable=too-many-locals
         ) from e
 
 
-@router.post("/trial-balances/{balance_id}/approve")
+@router.post("/trial-balances/{balance_id}/approve", status_code=201)
 async def approve_trial_balance(
     balance_id: uuid.UUID,
-    notes: Optional[str] = None,
-    db: Session = Depends(get_db),
+    notes: str | None = None,
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Aprova balancete."""
@@ -1618,7 +1620,7 @@ async def approve_trial_balance(
         repo = TrialBalanceRepository(db)
         balance = repo.get_by_id(balance_id)
 
-        if not balance or balance.condominio_id != _current_user["condominio_id"]:
+        if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Balancete nao encontrado",
@@ -1630,7 +1632,7 @@ async def approve_trial_balance(
                 detail="Balancete nao pode ser aprovado",
             )
 
-        repo.approve(balance, _current_user["id"], notes)
+        repo.approve(balance, _current_user.id, notes)
         db.commit()
 
         return {"message": "Balancete aprovado com sucesso"}
@@ -1645,10 +1647,10 @@ async def approve_trial_balance(
         ) from e
 
 
-@router.post("/trial-balances/{balance_id}/publish")
+@router.post("/trial-balances/{balance_id}/publish", status_code=201)
 async def publish_trial_balance(
     balance_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Publica balancete."""
@@ -1656,7 +1658,7 @@ async def publish_trial_balance(
         repo = TrialBalanceRepository(db)
         balance = repo.get_by_id(balance_id)
 
-        if not balance or balance.condominio_id != _current_user["condominio_id"]:
+        if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Balancete nao encontrado",
@@ -1668,7 +1670,7 @@ async def publish_trial_balance(
                 detail="Balancete nao pode ser publicado",
             )
 
-        repo.publish(balance, _current_user["id"])
+        repo.publish(balance, _current_user.id)
         db.commit()
 
         return {"message": "Balancete publicado com sucesso"}

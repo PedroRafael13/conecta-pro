@@ -6,6 +6,8 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.receita_federal import (
     ConsultaCNPJRequest,
@@ -26,7 +28,7 @@ router = APIRouter(prefix="/receita", tags=["Receita Federal"])
     summary="Valida CPF ou CNPJ",
     description="Valida se documento esta correto (digitos verificadores).",
 )
-async def validate_document(request: ValidateDocumentRequest) -> StandardResponse:
+async def validate_document(current_user: CurrentActiveUser, request: ValidateDocumentRequest) -> StandardResponse:
     """
     Valida CPF ou CNPJ.
 
@@ -63,7 +65,7 @@ async def validate_document(request: ValidateDocumentRequest) -> StandardRespons
     summary="Consulta situacao cadastral de CPF",
     description="Consulta situacao cadastral de CPF na Receita Federal.",
 )
-async def consult_cpf(request: ConsultaCPFRequest) -> StandardResponse:
+async def consult_cpf(current_user: CurrentActiveUser, request: ConsultaCPFRequest) -> StandardResponse:
     """
     Consulta CPF na Receita Federal.
 
@@ -108,7 +110,7 @@ async def consult_cpf(request: ConsultaCPFRequest) -> StandardResponse:
     summary="Consulta CNPJ na Receita Federal",
     description="Retorna dados cadastrais completos do CNPJ.",
 )
-async def consult_cnpj(request: ConsultaCNPJRequest) -> StandardResponse:
+async def consult_cnpj(current_user: CurrentActiveUser, request: ConsultaCNPJRequest) -> StandardResponse:
     """
     Consulta CNPJ na Receita Federal.
 

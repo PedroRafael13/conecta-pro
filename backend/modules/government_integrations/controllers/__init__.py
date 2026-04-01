@@ -22,30 +22,30 @@ Sprint 37: Adicionado Extraction Controller (Orquestracao de extracoes)
 
 from fastapi import APIRouter
 
-from .receita_federal_controller import router as receita_federal_router
-from .fgts_inss_controller import router as fgts_inss_router
-from .esocial_controller import router as esocial_router
-from .sefaz_controller import router as sefaz_router
-from .status_controller import router as status_router
 from .certificate_controller import router as certificate_router
-from .nfse_manaus_controller import router as nfse_manaus_router
-from .efd_reinf_controller import router as efd_reinf_router
-from .dctfweb_controller import router as dctfweb_router
-from .simples_nacional_controller import router as simples_nacional_router
-from .fgts_digital_controller import router as fgts_digital_router
-from .sped_fiscal_controller import router as sped_fiscal_router
-from .sped_contabil_controller import router as sped_contabil_router
-from .ecac_controller import router as ecac_router
 from .cte_controller import router as cte_router
-from .mdfe_controller import router as mdfe_router
-from .govbr_controller import router as govbr_router
-from .nfse_nacional_controller import router as nfse_nacional_router
-from .sync_controller import router as sync_router
-from .sefaz_am_controller import router as sefaz_am_router
-from .jobs_controller import router as jobs_router
 from .dashboard_controller import router as dashboard_router
+from .dctfweb_controller import router as dctfweb_router
+from .ecac_controller import router as ecac_router
+from .efd_reinf_controller import router as efd_reinf_router
+from .esocial_controller import router as esocial_router
 from .extraction_controller import router as extraction_router
+from .fgts_digital_controller import router as fgts_digital_router
+from .fgts_inss_controller import router as fgts_inss_router
+from .govbr_controller import router as govbr_router
+from .jobs_controller import router as jobs_router
+from .mdfe_controller import router as mdfe_router
 from .nfce_controller import router as nfce_router
+from .nfse_manaus_controller import router as nfse_manaus_router
+from .nfse_nacional_controller import router as nfse_nacional_router
+from .receita_federal_controller import router as receita_federal_router
+from .sefaz_am_controller import router as sefaz_am_router
+from .sefaz_controller import router as sefaz_router
+from .simples_nacional_controller import router as simples_nacional_router
+from .sped_contabil_controller import router as sped_contabil_router
+from .sped_fiscal_controller import router as sped_fiscal_router
+from .status_controller import router as status_router
+from .sync_controller import router as sync_router
 
 # Router principal que agrega todos os sub-routers
 router = APIRouter(prefix="/government", tags=["Government - Integracoes Governamentais"])

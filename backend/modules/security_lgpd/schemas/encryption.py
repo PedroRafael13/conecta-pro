@@ -2,7 +2,7 @@
 Schemas de criptografia do modulo de seguranca LGPD.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +27,7 @@ class EncryptDataRequest(BaseModel):
         description="Algoritmo de criptografia",
         pattern=r"^(aes-256-gcm|aes-256-cbc|fernet|chacha20-poly1305)$",
     )
-    key_id: Optional[str] = Field(
+    key_id: str | None = Field(
         default=None,
         description="ID da chave (usa default se nao informado)",
     )
@@ -56,7 +56,7 @@ class DecryptDataRequest(BaseModel):
         min_length=1,
         description="Dados criptografados em base64",
     )
-    key_id: Optional[str] = Field(
+    key_id: str | None = Field(
         default=None,
         description="ID da chave usada na criptografia",
     )
@@ -65,6 +65,6 @@ class DecryptDataRequest(BaseModel):
 class EncryptionResponse(BaseModel):
     """Response de operacoes de criptografia."""
 
-    encrypted: Dict[str, Any] = Field(..., description="Dados criptografados")
+    encrypted: dict[str, Any] = Field(..., description="Dados criptografados")
     algorithm: str = Field(..., description="Algoritmo utilizado")
     key_hint: str = Field(..., description="Hint da chave utilizada")

@@ -3,9 +3,7 @@
 import logging
 import os
 import uuid as uuid_lib
-from datetime import date
 from decimal import Decimal
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +13,6 @@ from modules.reimbursement.models import (
     ReimbursementCategory,
     ReimbursementItem,
     ReimbursementRequest,
-    ReimbursementStatus,
 )
 from modules.reimbursement.repositories.reimbursement_repository import (
     ReimbursementRepository,
@@ -66,7 +63,7 @@ class ReimbursementService:
         request_id: UUID,
         include_items: bool = True,
         include_attachments: bool = True,
-    ) -> Optional[ReimbursementRequest]:
+    ) -> ReimbursementRequest | None:
         """Busca solicitação por ID."""
         return await self.repo.get_request_by_id(
             request_id,
@@ -74,28 +71,28 @@ class ReimbursementService:
             include_attachments=include_attachments,
         )
 
-    async def get_request_by_code(self, code: str) -> Optional[ReimbursementRequest]:
+    async def get_request_by_code(self, code: str) -> ReimbursementRequest | None:
         """Busca solicitação por código."""
         return await self.repo.get_request_by_code(code)
 
     async def list_requests(
         self,
-        condominio_id: Optional[UUID],
-        filters: Optional[ReimbursementRequestFilter] = None,
+        condominio_id: UUID | None,
+        filters: ReimbursementRequestFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[ReimbursementRequest], int]:
+    ) -> tuple[list[ReimbursementRequest], int]:
         """Lista solicitações com filtros. Se condominio_id for None, lista todos."""
         return await self.repo.list_requests(condominio_id, filters, skip, limit)
 
     async def list_my_requests(
         self,
-        condominio_id: Optional[UUID],
+        condominio_id: UUID | None,
         requester_id: UUID,
-        filters: Optional[ReimbursementRequestFilter] = None,
+        filters: ReimbursementRequestFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[ReimbursementRequest], int]:
+    ) -> tuple[list[ReimbursementRequest], int]:
         """Lista solicitações do usuário."""
         if filters is None:
             filters = ReimbursementRequestFilter()
@@ -108,7 +105,7 @@ class ReimbursementService:
         request_id: UUID,
         data: ReimbursementRequestUpdate,
         user_id: UUID,
-    ) -> Optional[ReimbursementRequest]:
+    ) -> ReimbursementRequest | None:
         """Atualiza uma solicitação (apenas rascunho)."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -146,8 +143,8 @@ class ReimbursementService:
         self,
         request_id: UUID,
         user_id: UUID,
-        notes: Optional[str] = None,
-    ) -> Optional[ReimbursementRequest]:
+        notes: str | None = None,
+    ) -> ReimbursementRequest | None:
         """Submete solicitação para aprovação."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -170,8 +167,8 @@ class ReimbursementService:
         self,
         request_id: UUID,
         user_id: UUID,
-        reason: Optional[str] = None,
-    ) -> Optional[ReimbursementRequest]:
+        reason: str | None = None,
+    ) -> ReimbursementRequest | None:
         """Cancela uma solicitação."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -185,8 +182,8 @@ class ReimbursementService:
 
     async def get_stats(
         self,
-        condominio_id: Optional[UUID],
-        requester_id: Optional[UUID] = None,
+        condominio_id: UUID | None,
+        requester_id: UUID | None = None,
     ) -> ReimbursementRequestStats:
         """Retorna estatísticas. Se condominio_id for None, retorna stats de todos."""
         return await self.repo.get_stats(condominio_id, requester_id)
@@ -198,7 +195,7 @@ class ReimbursementService:
         request_id: UUID,
         data: ReimbursementItemCreate,
         user_id: UUID,
-    ) -> Optional[ReimbursementItem]:
+    ) -> ReimbursementItem | None:
         """Adiciona item a uma solicitação."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -223,7 +220,7 @@ class ReimbursementService:
         item_id: UUID,
         data: ReimbursementItemUpdate,
         user_id: UUID,
-    ) -> Optional[ReimbursementItem]:
+    ) -> ReimbursementItem | None:
         """Atualiza um item."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -284,7 +281,7 @@ class ReimbursementService:
         original_filename: str,
         mime_type: str,
         user_id: UUID,
-    ) -> Optional[ReimbursementAttachment]:
+    ) -> ReimbursementAttachment | None:
         """Adiciona anexo a uma solicitação."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -323,15 +320,15 @@ class ReimbursementService:
     async def list_attachments(
         self,
         request_id: UUID,
-        item_id: Optional[UUID] = None,
-    ) -> List[ReimbursementAttachment]:
+        item_id: UUID | None = None,
+    ) -> list[ReimbursementAttachment]:
         """Lista anexos de uma solicitação."""
         return await self.repo.list_attachments(request_id, item_id)
 
     async def get_attachment(
         self,
         attachment_id: UUID,
-    ) -> Optional[ReimbursementAttachment]:
+    ) -> ReimbursementAttachment | None:
         """Busca anexo por ID."""
         return await self.repo.get_attachment_by_id(attachment_id)
 
@@ -363,15 +360,15 @@ class ReimbursementService:
 
     async def list_categories(
         self,
-        condominio_id: Optional[UUID],
-    ) -> List[ReimbursementCategory]:
+        condominio_id: UUID | None,
+    ) -> list[ReimbursementCategory]:
         """Lista categorias de reembolso. Se condominio_id for None, lista todas."""
         return await self.repo.list_categories(condominio_id)
 
     async def get_category(
         self,
         category_id: UUID,
-    ) -> Optional[ReimbursementCategory]:
+    ) -> ReimbursementCategory | None:
         """Busca categoria por ID."""
         return await self.repo.get_category_by_id(category_id)
 
@@ -380,13 +377,13 @@ class ReimbursementService:
         condominio_id: UUID,
         code: str,
         name: str,
-        description: Optional[str] = None,
-        default_limit_per_request: Optional[Decimal] = None,
-        default_limit_monthly: Optional[Decimal] = None,
+        description: str | None = None,
+        default_limit_per_request: Decimal | None = None,
+        default_limit_monthly: Decimal | None = None,
         requires_receipt: bool = True,
-        auto_approve_below: Optional[Decimal] = None,
-        accounting_account: Optional[str] = None,
-        cost_center: Optional[str] = None,
+        auto_approve_below: Decimal | None = None,
+        accounting_account: str | None = None,
+        cost_center: str | None = None,
     ) -> ReimbursementCategory:
         """Cria uma categoria de reembolso."""
         category = await self.repo.create_category(

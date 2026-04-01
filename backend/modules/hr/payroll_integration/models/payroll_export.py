@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class ExportFormat(str, Enum):
+class ExportFormat(StrEnum):
     """Formato de exportação."""
 
     # Formatos de arquivo
@@ -38,7 +38,7 @@ class ExportFormat(str, Enum):
     ADP_TXT = "adp_txt"  # Layout ADP
 
 
-class ExportStatus(str, Enum):
+class ExportStatus(StrEnum):
     """Status da exportação."""
 
     PENDING = "pending"  # Aguardando

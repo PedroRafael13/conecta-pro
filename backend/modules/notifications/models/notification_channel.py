@@ -3,10 +3,9 @@
 Sprint 36 - Notification Hub.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -15,7 +14,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class ChannelType(str, enum.Enum):
+class ChannelType(StrEnum):
     """Tipos de canal de notificação."""
 
     EMAIL = "email"
@@ -30,7 +29,7 @@ class ChannelType(str, enum.Enum):
     VOICE = "voice"
 
 
-class ChannelStatus(str, enum.Enum):
+class ChannelStatus(StrEnum):
     """Status do canal."""
 
     ACTIVE = "active"
@@ -40,7 +39,7 @@ class ChannelStatus(str, enum.Enum):
     ERROR = "error"
 
 
-class ChannelProvider(str, enum.Enum):
+class ChannelProvider(StrEnum):
     """Provedores de canal."""
 
     # Email
@@ -158,12 +157,8 @@ class NotificationChannel(Base):
     created_by = Column(UUID(as_uuid=True))
     updated_by = Column(UUID(as_uuid=True))
 
-    # Relacionamentos (sem back_populates para evitar conflito com config.NotificationTemplate)
-    templates = relationship(
-        "NotificationTemplate",
-        foreign_keys="NotificationTemplate.channel_id",
-        viewonly=True,
-    )
+    # templates: removido — conflito com ConfigNotificationTemplate (extend_existing na mesma tabela).
+    # Acesse templates via query: session.query(NotificationTemplate).filter_by(channel_id=channel.id)
     queue_items = relationship(
         "NotificationQueue",
         back_populates="channel",

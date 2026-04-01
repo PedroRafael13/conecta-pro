@@ -192,7 +192,7 @@ class TestAccountEntity:
         with pytest.raises(ValueError, match="Nivel"):
             AccountEntity(
                 account_code="1.1.1.01",
-                account_name="X",
+                account_name="Conta Invalida",
                 account_type=AccountType.ASSET_CURRENT,
                 level=2,
                 tenant_id=TENANT_ID,
@@ -216,7 +216,7 @@ class TestChartOfAccounts:
         chart_of_accounts.add_account(active_account)
         dup = AccountEntity(
             account_code="1.1.1.01",
-            account_name="Dup",
+            account_name="Duplicado",
             account_type=AccountType.ASSET_CURRENT,
             level=4,
             is_analytical=True,
@@ -229,7 +229,7 @@ class TestChartOfAccounts:
     def test_reject_wrong_tenant(self, chart_of_accounts):
         acc = AccountEntity(
             account_code="1.1.1.01",
-            account_name="X",
+            account_name="Outro Tenant",
             account_type=AccountType.ASSET_CURRENT,
             level=4,
             is_analytical=True,
@@ -240,22 +240,24 @@ class TestChartOfAccounts:
             chart_of_accounts.add_account(acc)
 
     def test_reject_exceeding_max_level(self, chart_of_accounts):
-        acc = AccountEntity(
-            account_code="1.1.1.01.01.01",
-            account_name="Nivel6",
-            account_type=AccountType.ASSET_CURRENT,
-            level=6,
-            is_analytical=True,
-            tenant_id=TENANT_ID,
-            created_by=CREATED_BY,
-        )
-        with pytest.raises(ValueError, match="excede maximo"):
-            chart_of_accounts.add_account(acc)
+        # Pydantic valida level <= 5 antes da criação da entidade
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError) as exc_info:
+            AccountEntity(
+                account_code="1.1.1.01",
+                account_name="Nivel Seis Invalido",
+                account_type=AccountType.ASSET_CURRENT,
+                level=6,
+                is_analytical=True,
+                tenant_id=TENANT_ID,
+                created_by=CREATED_BY,
+            )
+        assert "less than or equal to 5" in str(exc_info.value)
 
     def test_get_children(self, chart_of_accounts):
         parent = AccountEntity(
             account_code="1.1",
-            account_name="AC",
+            account_name="Ativo Circ",
             account_type=AccountType.ASSET_CURRENT,
             level=2,
             is_analytical=False,
@@ -292,7 +294,7 @@ class TestChartOfAccounts:
     def test_calculate_synthetic_balances(self, chart_of_accounts):
         parent = AccountEntity(
             account_code="1.1",
-            account_name="AC",
+            account_name="Ativo Circ",
             account_type=AccountType.ASSET_CURRENT,
             level=2,
             is_analytical=False,
@@ -332,7 +334,7 @@ class TestChartOfAccounts:
         chart_of_accounts.add_account(
             AccountEntity(
                 account_code="1.1",
-                account_name="Circ",
+                account_name="Circulante",
                 account_type=AccountType.ASSET_CURRENT,
                 level=2,
                 is_analytical=True,

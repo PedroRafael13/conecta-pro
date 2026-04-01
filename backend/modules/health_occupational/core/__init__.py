@@ -8,35 +8,34 @@ Compliance: NR-7 (PCMSO), NR-6 (EPI), NR-9 (PPRA/PGR)
 """
 
 # Medical Exams (PCMSO - NR-7)
-from .medical_exams import (
-    ExamType,
-    ExamStatus,
-    FitnessResult,
-    ComplementaryExam,
-    MedicalExamError,
-    ExamRequirement,
-    OccupationalFunction,
-    ClinicPartner,
-    MedicalExam,
-)
-
 # EPI Management (NR-6)
 from .epi_management import (
-    EPICategory,
-    EPIStatus,
-    DeliveryStatus,
-    EPIManagementError,
     CACertificate,
+    DeliveryStatus,
+    EPICategory,
+    EPIManagementError,
+    EPIStatus,
+)
+from .medical_exams import (
+    ClinicPartner,
+    ComplementaryExam,
+    ExamRequirement,
+    ExamStatus,
+    ExamType,
+    FitnessResult,
+    MedicalExam,
+    MedicalExamError,
+    OccupationalFunction,
 )
 
 # Risk Mapping (PPRA/PGR - NR-9)
 from .risk_mapping import (
+    ControlType,
+    ExposureFrequency,
+    RiskAgent,
     RiskCategory,
     RiskLevel,
-    ExposureFrequency,
-    ControlType,
     RiskMappingError,
-    RiskAgent,
     RiskMeasurement,
 )
 

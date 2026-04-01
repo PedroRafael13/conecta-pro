@@ -3,9 +3,8 @@
 Sprint 34 - AI Predictions.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -14,7 +13,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class PredictionType(str, enum.Enum):
+class PredictionType(StrEnum):
     """Tipo de previsao."""
 
     CHURN = "CHURN"  # Previsao de churn
@@ -31,7 +30,7 @@ class PredictionType(str, enum.Enum):
     CLUSTER = "CLUSTER"  # Clusterizacao
 
 
-class PredictionStatus(str, enum.Enum):
+class PredictionStatus(StrEnum):
     """Status da previsao."""
 
     PENDING = "PENDING"  # Aguardando processamento
@@ -174,7 +173,7 @@ class Prediction(Base):
         return self.actual_value is not None or self.actual_label is not None
 
     @property
-    def accuracy(self) -> Optional[float]:
+    def accuracy(self) -> float | None:
         """Calcula precisao (para classificacao)."""
         if self.is_correct is not None:
             return 1.0 if self.is_correct else 0.0
@@ -182,11 +181,11 @@ class Prediction(Base):
 
     def complete(
         self,
-        value: Optional[float] = None,
-        label: Optional[str] = None,
-        confidence: Optional[float] = None,
-        probabilities: Optional[dict] = None,
-        processing_time_ms: Optional[int] = None,
+        value: float | None = None,
+        label: str | None = None,
+        confidence: float | None = None,
+        probabilities: dict | None = None,
+        processing_time_ms: int | None = None,
     ) -> None:
         """Marca previsao como concluida.
 
@@ -227,10 +226,10 @@ class Prediction(Base):
 
     def add_feedback(
         self,
-        actual_value: Optional[float] = None,
-        actual_label: Optional[str] = None,
-        user_id: Optional[str] = None,
-        notes: Optional[str] = None,
+        actual_value: float | None = None,
+        actual_label: str | None = None,
+        user_id: str | None = None,
+        notes: str | None = None,
     ) -> None:
         """Adiciona feedback real.
 
@@ -251,9 +250,7 @@ class Prediction(Base):
         if actual_value is not None and self.prediction_value is not None:
             self.absolute_error = abs(actual_value - self.prediction_value)
             if actual_value != 0:
-                self.percentage_error = (
-                    abs((actual_value - self.prediction_value) / actual_value) * 100
-                )
+                self.percentage_error = abs((actual_value - self.prediction_value) / actual_value) * 100
 
         # Verifica se esta correto para classificacao
         if actual_label is not None and self.prediction_label is not None:

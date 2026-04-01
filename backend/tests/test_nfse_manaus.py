@@ -4,28 +4,29 @@ Testes para NFS-e Manaus.
 Testes de integração para emissão, consulta e cancelamento de NFS-e.
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.nfse_manaus import (
+    NFSeManaus,
+    NFSeManausManager,
+    NFSeStatus,
+    Servico,
+    Tomador,
+)
 from modules.government_integrations.schemas.nfse_manaus import (
-    EmitirNFSeRequest,
-    TomadorRequest,
-    ServicoRequest,
     CancelarNFSeRequest,
-    NaturezaOperacaoEnum,
     CodigoCancelamentoEnum,
+    EmitirNFSeRequest,
+    NaturezaOperacaoEnum,
+    ServicoRequest,
+    TomadorRequest,
 )
 from modules.government_integrations.services.nfse_manaus_service import (
     NFSeManausService,
-)
-from modules.government_integrations.core.nfse_manaus import (
-    NFSeManausManager,
-    NFSeManaus,
-    Tomador,
-    Servico,
-    NFSeStatus,
 )
 
 
@@ -236,9 +237,7 @@ class TestNFSeManausManager:
     def test_montar_envelope_soap(self, manager):
         """Testa montagem de envelope SOAP."""
         envelope = manager._montar_envelope_soap(
-            "RecepcionarLoteRps",
-            "<cabecalho>test</cabecalho>",
-            "<dados>test</dados>"
+            "RecepcionarLoteRps", "<cabecalho>test</cabecalho>", "<dados>test</dados>"
         )
 
         assert "soap:Envelope" in envelope
@@ -271,14 +270,17 @@ class TestNFSeManausService:
     @pytest.fixture
     def service(self):
         """Cria instância do service para testes."""
-        with patch.dict('os.environ', {
-            'NFSE_MANAUS_CNPJ': '35710481000103',
-            'NFSE_MANAUS_USUARIO': '35710481000103',
-            'NFSE_MANAUS_SENHA': 'senha123',
-            'NFSE_MANAUS_ENVIRONMENT': 'homologacao',
-            'CERTIFICATE_PATH': '/nonexistent/cert.pfx',
-            'CERTIFICATE_PASSWORD': '',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "NFSE_MANAUS_CNPJ": "35710481000103",
+                "NFSE_MANAUS_USUARIO": "35710481000103",
+                "NFSE_MANAUS_SENHA": "senha123",
+                "NFSE_MANAUS_ENVIRONMENT": "homologacao",
+                "CERTIFICATE_PATH": "/nonexistent/cert.pfx",
+                "CERTIFICATE_PASSWORD": "",
+            },
+        ):
             return NFSeManausService()
 
     def test_service_init(self, service):
@@ -313,7 +315,7 @@ class TestNFSeManausService:
 
     def test_validar_conexao(self, service):
         """Testa validação de conexão."""
-        with patch('requests.get') as mock_get:
+        with patch("requests.get") as mock_get:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_get.return_value = mock_response
@@ -331,14 +333,15 @@ class TestNFSeEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         # Criar app de teste
         app = FastAPI()
 
         # Importar e incluir router
         from modules.government_integrations.controllers.nfse_manaus_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -360,7 +363,9 @@ class TestNFSeEndpoints:
 
     def test_validar_conexao_endpoint(self, client):
         """Testa endpoint de validação de conexão."""
-        with patch('modules.government_integrations.services.nfse_manaus_service.NFSeManausService.validar_conexao') as mock:
+        with patch(
+            "modules.government_integrations.services.nfse_manaus_service.NFSeManausService.validar_conexao"
+        ) as mock:
             mock.return_value = {
                 "ambiente": "homologacao",
                 "cnpj": "35710481000103",
@@ -379,7 +384,9 @@ class TestNFSeEndpoints:
 
     def test_emitir_nfse_endpoint(self, client):
         """Testa endpoint de emissão de NFS-e."""
-        with patch('modules.government_integrations.services.nfse_manaus_service.NFSeManausService.emitir_nfse') as mock:
+        with patch(
+            "modules.government_integrations.services.nfse_manaus_service.NFSeManausService.emitir_nfse"
+        ) as mock:
             mock.return_value = {
                 "numero_rps": "123456",
                 "numero_lote": "789012",
@@ -408,10 +415,7 @@ class TestNFSeEndpoints:
                 "optante_simples": True,
             }
 
-            response = client.post(
-                "/api/v1/government/nfse-manaus/emitir",
-                json=payload
-            )
+            response = client.post("/api/v1/government/nfse-manaus/emitir", json=payload)
 
             assert response.status_code == 202
             data = response.json()
@@ -420,7 +424,9 @@ class TestNFSeEndpoints:
 
     def test_cancelar_nfse_endpoint(self, client):
         """Testa endpoint de cancelamento de NFS-e."""
-        with patch('modules.government_integrations.services.nfse_manaus_service.NFSeManausService.cancelar_nfse') as mock:
+        with patch(
+            "modules.government_integrations.services.nfse_manaus_service.NFSeManausService.cancelar_nfse"
+        ) as mock:
             mock.return_value = {
                 "status": "simulado",
                 "numero_nfse": "123456",
@@ -432,10 +438,7 @@ class TestNFSeEndpoints:
                 "motivo": "Erro no valor",
             }
 
-            response = client.post(
-                "/api/v1/government/nfse-manaus/cancelar",
-                json=payload
-            )
+            response = client.post("/api/v1/government/nfse-manaus/cancelar", json=payload)
 
             assert response.status_code == 200
             data = response.json()

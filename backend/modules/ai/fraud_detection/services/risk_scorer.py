@@ -6,18 +6,18 @@ Servico para calculo de scores de risco de entidades.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
 
+from modules.ai.fraud_detection.models.fraud_alert import AlertStatus, FraudAlert
 from modules.ai.fraud_detection.models.risk_profile import (
-    RiskProfile,
     EntityType,
     RiskLevel,
+    RiskProfile,
 )
-from modules.ai.fraud_detection.models.fraud_alert import FraudAlert, AlertStatus
 
 logger = logging.getLogger(__name__)
 
@@ -43,25 +43,21 @@ class RiskScorer:
         "unusual_time": 5,
         "high_velocity": 15,
         "unusual_amount": 12,
-
         # Identidade
         "unverified_identity": 20,
         "multiple_accounts": 15,
         "suspicious_email": 10,
         "vpn_detected": 8,
-
         # Transacionais
         "high_risk_recipient": 20,
         "structuring_pattern": 25,
         "round_amounts": 5,
         "rapid_withdrawals": 18,
-
         # Historico
         "previous_fraud": 40,
         "previous_chargeback": 25,
         "account_suspended": 30,
         "linked_to_fraud": 35,
-
         # Rede
         "blacklisted_ip": 30,
         "tor_exit_node": 25,
@@ -89,9 +85,9 @@ class RiskScorer:
         self,
         entity_type: EntityType,
         entity_id: UUID,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         recalculate: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calcula score de risco para uma entidade.
 
@@ -141,15 +137,11 @@ class RiskScorer:
 
             # Calcular componentes
             behavior_score = await self._calculate_behavior_score(profile, context)
-            transaction_score = await self._calculate_transaction_score(
-                profile, context
-            )
+            transaction_score = await self._calculate_transaction_score(profile, context)
             velocity_score = await self._calculate_velocity_score(profile, context)
             identity_score = await self._calculate_identity_score(profile, context)
             network_score = await self._calculate_network_score(profile, context)
-            historical_score = await self._calculate_historical_score(
-                entity_type, entity_id
-            )
+            historical_score = await self._calculate_historical_score(entity_type, entity_id)
 
             result["component_scores"] = {
                 "behavior": behavior_score,
@@ -172,16 +164,12 @@ class RiskScorer:
 
             # Aplicar fatores de risco
             risk_factors = await self._identify_risk_factors(profile, context)
-            risk_adjustment = sum(
-                self.RISK_FACTORS.get(f["factor"], 0) for f in risk_factors
-            )
+            risk_adjustment = sum(self.RISK_FACTORS.get(f["factor"], 0) for f in risk_factors)
             result["risk_factors"] = risk_factors
 
             # Aplicar indicadores de confianca
             trust_indicators = await self._identify_trust_indicators(profile)
-            trust_adjustment = sum(
-                self.TRUST_INDICATORS.get(t["indicator"], 0) for t in trust_indicators
-            )
+            trust_adjustment = sum(self.TRUST_INDICATORS.get(t["indicator"], 0) for t in trust_indicators)
             result["trust_indicators"] = trust_indicators
 
             # Score final
@@ -189,17 +177,13 @@ class RiskScorer:
             final_score = max(0, min(100, final_score))  # Limitar 0-100
 
             result["risk_score"] = round(final_score, 2)
-            result["score_change"] = round(
-                final_score - (result["previous_score"] or 0), 2
-            )
+            result["score_change"] = round(final_score - (result["previous_score"] or 0), 2)
 
             # Determinar nivel de risco
             result["risk_level"] = self._determine_risk_level(final_score).value
 
             # Gerar recomendacoes
-            result["recommendations"] = await self._generate_recommendations(
-                result["risk_level"], risk_factors
-            )
+            result["recommendations"] = await self._generate_recommendations(result["risk_level"], risk_factors)
 
             # Atualizar perfil
             await self._update_profile(profile, result)
@@ -218,8 +202,8 @@ class RiskScorer:
     async def batch_calculate_scores(
         self,
         entity_type: EntityType,
-        entity_ids: List[UUID],
-    ) -> List[Dict[str, Any]]:
+        entity_ids: list[UUID],
+    ) -> list[dict[str, Any]]:
         """Calcula scores para multiplas entidades."""
         results = []
         for entity_id in entity_ids:
@@ -229,8 +213,8 @@ class RiskScorer:
 
     async def get_risk_summary(
         self,
-        entity_type: Optional[EntityType] = None,
-    ) -> Dict[str, Any]:
+        entity_type: EntityType | None = None,
+    ) -> dict[str, Any]:
         """Obtem resumo de distribuicao de risco."""
         query = self.db.query(RiskProfile)
 
@@ -256,9 +240,7 @@ class RiskScorer:
                 distribution["blocked"] += 1
 
         total = len(profiles)
-        avg_score = (
-            sum(p.risk_score for p in profiles) / total if total > 0 else 0
-        )
+        avg_score = sum(p.risk_score for p in profiles) / total if total > 0 else 0
 
         return {
             "total_profiles": total,
@@ -271,7 +253,7 @@ class RiskScorer:
     async def _calculate_behavior_score(
         self,
         profile: RiskProfile,
-        context: Optional[Dict[str, Any]],
+        context: dict[str, Any] | None,
     ) -> float:
         """Calcula score comportamental."""
         score = profile.behavior_score or 20  # Base
@@ -294,7 +276,7 @@ class RiskScorer:
     async def _calculate_transaction_score(
         self,
         profile: RiskProfile,
-        context: Optional[Dict[str, Any]],
+        context: dict[str, Any] | None,
     ) -> float:
         """Calcula score transacional."""
         score = profile.transaction_score or 15
@@ -324,7 +306,7 @@ class RiskScorer:
     async def _calculate_velocity_score(
         self,
         profile: RiskProfile,
-        context: Optional[Dict[str, Any]],
+        context: dict[str, Any] | None,
     ) -> float:
         """Calcula score de velocidade."""
         score = profile.velocity_score or 10
@@ -350,7 +332,7 @@ class RiskScorer:
     async def _calculate_identity_score(
         self,
         profile: RiskProfile,
-        context: Optional[Dict[str, Any]],
+        context: dict[str, Any] | None,
     ) -> float:
         """Calcula score de identidade."""
         score = 50 if not profile.identity_verified else 10
@@ -378,7 +360,7 @@ class RiskScorer:
     async def _calculate_network_score(
         self,
         profile: RiskProfile,
-        context: Optional[Dict[str, Any]],
+        context: dict[str, Any] | None,
     ) -> float:
         """Calcula score de rede (IP, dispositivo)."""
         score = profile.network_score or 20
@@ -446,8 +428,8 @@ class RiskScorer:
     async def _identify_risk_factors(
         self,
         profile: RiskProfile,
-        context: Optional[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        context: dict[str, Any] | None,
+    ) -> list[dict[str, Any]]:
         """Identifica fatores de risco presentes."""
         factors = []
 
@@ -481,7 +463,7 @@ class RiskScorer:
     async def _identify_trust_indicators(
         self,
         profile: RiskProfile,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Identifica indicadores de confianca."""
         indicators = []
 
@@ -490,9 +472,7 @@ class RiskScorer:
             if isinstance(i, dict):
                 indicators.append(i)
             else:
-                indicators.append(
-                    {"indicator": i, "weight": self.TRUST_INDICATORS.get(i, -5)}
-                )
+                indicators.append({"indicator": i, "weight": self.TRUST_INDICATORS.get(i, -5)})
 
         if profile.identity_verified:
             indicators.append({"indicator": "verified_identity", "weight": -15})
@@ -508,9 +488,7 @@ class RiskScorer:
 
         # Historico limpo
         if profile.total_alerts == 0 and profile.total_transactions > 10:
-            indicators.append(
-                {"indicator": "good_transaction_history", "weight": -12}
-            )
+            indicators.append({"indicator": "good_transaction_history", "weight": -12})
 
         return indicators
 
@@ -530,8 +508,8 @@ class RiskScorer:
     async def _generate_recommendations(
         self,
         risk_level: str,
-        risk_factors: List[Dict[str, Any]],
-    ) -> List[str]:
+        risk_factors: list[dict[str, Any]],
+    ) -> list[str]:
         """Gera recomendacoes baseadas no risco."""
         recommendations = []
 
@@ -590,7 +568,7 @@ class RiskScorer:
     async def _update_profile(
         self,
         profile: RiskProfile,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Atualiza perfil com novos scores."""
         try:
@@ -600,15 +578,11 @@ class RiskScorer:
 
             scores = result.get("component_scores", {})
             profile.behavior_score = scores.get("behavior", profile.behavior_score)
-            profile.transaction_score = scores.get(
-                "transaction", profile.transaction_score
-            )
+            profile.transaction_score = scores.get("transaction", profile.transaction_score)
             profile.velocity_score = scores.get("velocity", profile.velocity_score)
             profile.identity_score = scores.get("identity", profile.identity_score)
             profile.network_score = scores.get("network", profile.network_score)
-            profile.historical_score = scores.get(
-                "historical", profile.historical_score
-            )
+            profile.historical_score = scores.get("historical", profile.historical_score)
 
             profile.risk_factors = result.get("risk_factors", [])
             profile.trust_indicators = result.get("trust_indicators", [])

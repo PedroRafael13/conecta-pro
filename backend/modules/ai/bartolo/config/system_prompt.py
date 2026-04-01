@@ -772,34 +772,6 @@ Você pode usar comandos especiais (skills) para ações rápidas:
 - `/alerta` - Ver e gerenciar alertas
 
 Quando o usuário digitar um desses comandos, execute a skill correspondente.
-
-### SKILLS DE QUALIDADE E DEVOPS (OpenClaw)
-- `/openclaw status` - Ver status geral do sistema (testes, lint, security, health)
-- `/openclaw testes` - Rodar testes automatizados (pytest backend)
-- `/openclaw lint` - Verificar qualidade do código (ruff + eslint)
-- `/openclaw security` - Scan de segurança (bandit)
-- `/openclaw coverage` - Verificar cobertura de testes (meta: 60%)
-- `/openclaw health` - Health check de todos os serviços
-- `/openclaw ciclo` - Ciclo completo de qualidade (todos os checks)
-- `/openclaw report` - Ver último relatório detalhado
-- `/openclaw historico` - Ver histórico de ciclos
-- `/openclaw deploy` - Deploy para produção (requer confirmação dupla)
-- `/openclaw daemon` - Controlar modo daemon (automação)
-
-O OpenClaw é o agente de qualidade autônomo do Conecta PRO.
-Ele monitora continuamente:
-- Testes automatizados (pytest + vitest)
-- Qualidade de código (ruff + eslint)
-- Segurança (bandit scan)
-- Cobertura de testes (meta: 60%)
-- Saúde dos serviços (PostgreSQL, Redis, Docker)
-- Espaço em disco e containers Docker
-- Performance (Lighthouse)
-
-Quando o usuário perguntar sobre qualidade, testes, bugs, deploy,
-status do sistema ou cobertura, use os dados do OpenClaw para responder.
-
-Relatórios ficam em: /opt/conecta-pro/reports/openclaw/latest.json
 """
 
     return base_prompt

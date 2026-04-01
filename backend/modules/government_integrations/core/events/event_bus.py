@@ -4,14 +4,16 @@ Event Bus para Comunicação entre Módulos.
 Implementa padrão pub/sub para eventos do sistema.
 """
 
-from datetime import datetime
-from typing import Dict, Optional, Any, List, Callable, Type, Awaitable
-from dataclasses import dataclass, field
-from uuid import UUID, uuid4
-from abc import ABC, abstractmethod
 import asyncio
+import contextlib
 import json
 import logging
+from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
+from uuid import UUID, uuid4
 
 import redis.asyncio as redis
 
@@ -21,19 +23,20 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Event:
     """Evento base do sistema."""
+
     id: UUID = field(default_factory=uuid4)
     tipo: str = ""
-    tenant_id: Optional[UUID] = None
+    tenant_id: UUID | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
     origem: str = ""  # Módulo de origem
-    dados: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    dados: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     # Rastreabilidade
-    correlation_id: Optional[str] = None
-    causation_id: Optional[str] = None  # ID do evento que causou este
+    correlation_id: str | None = None
+    causation_id: str | None = None  # ID do evento que causou este
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -48,7 +51,7 @@ class Event:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Event":
+    def from_dict(cls, data: dict[str, Any]) -> "Event":
         """Cria evento a partir de dicionário."""
         return cls(
             id=UUID(data["id"]) if data.get("id") else uuid4(),
@@ -77,7 +80,7 @@ class EventHandler(ABC):
 
     @property
     @abstractmethod
-    def tipos_evento(self) -> List[str]:
+    def tipos_evento(self) -> list[str]:
         """Lista de tipos de evento que este handler processa."""
         pass
 
@@ -110,19 +113,15 @@ class EventBus:
     - Dead letter queue
     """
 
-    def __init__(
-        self,
-        redis_url: str = "redis://localhost:6379/2",
-        prefixo_canal: str = "gov_events"
-    ):
+    def __init__(self, redis_url: str = "redis://localhost:6379/2", prefixo_canal: str = "gov_events"):
         self._redis_url = redis_url
         self._prefixo = prefixo_canal
-        self._redis: Optional[redis.Redis] = None
-        self._pubsub: Optional[redis.client.PubSub] = None
-        self._handlers: Dict[str, List[EventHandler]] = {}
-        self._callbacks: Dict[str, List[Callable]] = {}
+        self._redis: redis.Redis | None = None
+        self._pubsub: redis.client.PubSub | None = None
+        self._handlers: dict[str, list[EventHandler]] = {}
+        self._callbacks: dict[str, list[Callable]] = {}
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
     async def _get_redis(self) -> redis.Redis:
         """Obtém conexão Redis."""
@@ -143,11 +142,7 @@ class EventBus:
             self._handlers[tipo].append(handler)
             logger.info(f"Handler registrado para evento: {tipo}")
 
-    def registrar_callback(
-        self,
-        tipo: str,
-        callback: Callable[[Event], Awaitable[bool]]
-    ):
+    def registrar_callback(self, tipo: str, callback: Callable[[Event], Awaitable[bool]]):
         """
         Registra callback simples para um tipo de evento.
 
@@ -159,11 +154,7 @@ class EventBus:
             self._callbacks[tipo] = []
         self._callbacks[tipo].append(callback)
 
-    async def publicar(
-        self,
-        evento: Event,
-        canal: Optional[str] = None
-    ) -> bool:
+    async def publicar(self, evento: Event, canal: str | None = None) -> bool:
         """
         Publica evento no barramento.
 
@@ -195,10 +186,7 @@ class EventBus:
             logger.error(f"Erro ao publicar evento: {e}")
             return False
 
-    async def publicar_muitos(
-        self,
-        eventos: List[Event]
-    ) -> int:
+    async def publicar_muitos(self, eventos: list[Event]) -> int:
         """
         Publica múltiplos eventos.
 
@@ -253,10 +241,8 @@ class EventBus:
 
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
             self._task = None
 
         logger.info("Consumidor parado")
@@ -265,10 +251,7 @@ class EventBus:
         """Loop de consumo de eventos."""
         while self._running:
             try:
-                message = await self._pubsub.get_message(
-                    ignore_subscribe_messages=True,
-                    timeout=1.0
-                )
+                message = await self._pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
 
                 if message and message.get("type") == "pmessage":
                     dados = message.get("data")
@@ -306,11 +289,7 @@ class EventBus:
             except Exception as e:
                 logger.error(f"Erro em callback para evento {evento.id}: {e}")
 
-    async def obter_historico(
-        self,
-        tipo: str,
-        limite: int = 100
-    ) -> List[Event]:
+    async def obter_historico(self, tipo: str, limite: int = 100) -> list[Event]:
         """
         Obtém histórico de eventos de um tipo.
 
@@ -334,7 +313,7 @@ class EventBus:
 
         return eventos
 
-    async def obter_estatisticas(self) -> Dict[str, Any]:
+    async def obter_estatisticas(self) -> dict[str, Any]:
         """Obtém estatísticas do event bus."""
         redis_client = await self._get_redis()
 
@@ -360,7 +339,7 @@ class EventBus:
 
 
 # Instância singleton
-_event_bus_instance: Optional[EventBus] = None
+_event_bus_instance: EventBus | None = None
 
 
 def get_event_bus() -> EventBus:

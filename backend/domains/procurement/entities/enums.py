@@ -4,11 +4,10 @@ domains/procurement/entities/enums.py - PROCUREMENT ENUMS
 Enterprise procurement status and type enumerations
 """
 
-from enum import Enum
-from typing import List
+from enum import StrEnum
 
 
-class ProcurementStatus(str, Enum):
+class ProcurementStatus(StrEnum):
     """Status da contratacao com fluxo empresarial completo."""
 
     PLANNING = "planning"
@@ -27,16 +26,21 @@ class ProcurementStatus(str, Enum):
     SUSPENDED = "suspended"
 
     @classmethod
-    def active_statuses(cls) -> List["ProcurementStatus"]:
+    def active_statuses(cls) -> list["ProcurementStatus"]:
         """Retorna status ativos."""
         return [
-            cls.PLANNING, cls.BUDGET_APPROVAL, cls.BIDDING_PROCESS,
-            cls.SUPPLIER_SELECTION, cls.CONTRACT_NEGOTIATION,
-            cls.CONTRACT_SIGNED, cls.DELIVERY_PHASE, cls.QUALITY_CONTROL
+            cls.PLANNING,
+            cls.BUDGET_APPROVAL,
+            cls.BIDDING_PROCESS,
+            cls.SUPPLIER_SELECTION,
+            cls.CONTRACT_NEGOTIATION,
+            cls.CONTRACT_SIGNED,
+            cls.DELIVERY_PHASE,
+            cls.QUALITY_CONTROL,
         ]
 
     @classmethod
-    def terminal_statuses(cls) -> List["ProcurementStatus"]:
+    def terminal_statuses(cls) -> list["ProcurementStatus"]:
         """Retorna status terminais."""
         return [cls.COMPLETED, cls.CANCELLED, cls.SUSPENDED]
 
@@ -60,12 +64,12 @@ class ProcurementStatus(str, Enum):
             self.PAID: 11,
             self.COMPLETED: 12,
             self.CANCELLED: 99,
-            self.SUSPENDED: 98
+            self.SUSPENDED: 98,
         }
         return order_map.get(self, 0)
 
 
-class ProcurementType(str, Enum):
+class ProcurementType(StrEnum):
     """Tipo de contratacao."""
 
     GOODS = "goods"
@@ -79,11 +83,7 @@ class ProcurementType(str, Enum):
 
     def requires_technical_evaluation(self) -> bool:
         """Verifica se requer avaliacao tecnica."""
-        return self in [
-            self.CONSTRUCTION,
-            self.CONSULTING,
-            self.IT_SERVICES
-        ]
+        return self in [self.CONSTRUCTION, self.CONSULTING, self.IT_SERVICES]
 
     def default_warranty_months(self) -> int:
         """Garantia padrao em meses por tipo."""
@@ -95,12 +95,12 @@ class ProcurementType(str, Enum):
             self.MAINTENANCE: 3,
             self.OUTSOURCING: 0,
             self.IT_SERVICES: 12,
-            self.LOGISTICS: 0
+            self.LOGISTICS: 0,
         }
         return warranty_map.get(self, 6)
 
 
-class ProcurementUrgency(str, Enum):
+class ProcurementUrgency(StrEnum):
     """Urgencia da contratacao."""
 
     ROUTINE = "routine"
@@ -110,12 +110,7 @@ class ProcurementUrgency(str, Enum):
 
     def max_duration_days(self) -> int:
         """Duracao maxima em dias por urgencia."""
-        duration_map = {
-            self.ROUTINE: 180,
-            self.URGENT: 60,
-            self.EMERGENCY: 30,
-            self.CRITICAL: 15
-        }
+        duration_map = {self.ROUTINE: 180, self.URGENT: 60, self.EMERGENCY: 30, self.CRITICAL: 15}
         return duration_map.get(self, 180)
 
     def requires_justification(self) -> bool:
@@ -123,7 +118,7 @@ class ProcurementUrgency(str, Enum):
         return self in [self.EMERGENCY, self.CRITICAL]
 
 
-class SupplierRisk(str, Enum):
+class SupplierRisk(StrEnum):
     """Nivel de risco do fornecedor."""
 
     LOW = "low"
@@ -133,16 +128,11 @@ class SupplierRisk(str, Enum):
 
     def max_contract_value(self) -> int:
         """Valor maximo de contrato por risco (em reais)."""
-        value_map = {
-            self.LOW: 10_000_000,
-            self.MEDIUM: 1_000_000,
-            self.HIGH: 100_000,
-            self.CRITICAL: 0
-        }
+        value_map = {self.LOW: 10_000_000, self.MEDIUM: 1_000_000, self.HIGH: 100_000, self.CRITICAL: 0}
         return value_map.get(self, 0)
 
 
-class PaymentTerms(str, Enum):
+class PaymentTerms(StrEnum):
     """Condicoes de pagamento."""
 
     ADVANCE = "advance"
@@ -155,7 +145,7 @@ class PaymentTerms(str, Enum):
     INSTALLMENTS = "installments"
 
 
-class ContractType(str, Enum):
+class ContractType(StrEnum):
     """Tipo de contrato."""
 
     FIXED_PRICE = "fixed_price"
@@ -166,7 +156,7 @@ class ContractType(str, Enum):
     MAINTENANCE_CONTRACT = "maintenance"
 
 
-class BiddingModality(str, Enum):
+class BiddingModality(StrEnum):
     """Modalidade de licitacao (Lei 8.666/93 e Lei 14.133/21)."""
 
     CONCORRENCIA = "concorrencia"

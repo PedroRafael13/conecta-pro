@@ -3,10 +3,9 @@ Repository para operações de banco de dados com TimeBank.
 """
 
 from datetime import date, datetime
-from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
@@ -42,7 +41,7 @@ class TimeBankRepository:
 
         return balance
 
-    async def create(self, data: TimeBankCreate, created_by: Optional[str] = None) -> TimeBank:
+    async def create(self, data: TimeBankCreate, created_by: str | None = None) -> TimeBank:
         """
         Cria uma nova entrada no banco de horas.
 
@@ -80,7 +79,7 @@ class TimeBankRepository:
         logger.info(f"TimeBank criado: {time_bank.id}")
         return time_bank
 
-    async def get_by_id(self, time_bank_id: str) -> Optional[TimeBank]:
+    async def get_by_id(self, time_bank_id: str) -> TimeBank | None:
         """
         Busca entrada por ID.
 
@@ -100,7 +99,7 @@ class TimeBankRepository:
 
     async def list(
         self,
-        filters: Optional[TimeBankFilter] = None,
+        filters: TimeBankFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[TimeBank], int]:
@@ -170,16 +169,14 @@ class TimeBankRepository:
                     )
                 )
             else:
-                query = query.where(
-                    TimeBank.expiration_date.is_(None) | (TimeBank.expiration_date >= today)
-                )
+                query = query.where(TimeBank.expiration_date.is_(None) | (TimeBank.expiration_date >= today))
 
         if filters.is_pending:
             query = query.where(TimeBank.status == TimeBankStatus.PENDING.value)
 
         return query
 
-    async def update(self, time_bank_id: str, data: TimeBankUpdate) -> Optional[TimeBank]:
+    async def update(self, time_bank_id: str, data: TimeBankUpdate) -> TimeBank | None:
         """
         Atualiza uma entrada.
 
@@ -214,8 +211,8 @@ class TimeBankRepository:
         self,
         time_bank_id: str,
         approved_by: str,
-        notes: Optional[str] = None,
-    ) -> Optional[TimeBank]:
+        notes: str | None = None,
+    ) -> TimeBank | None:
         """
         Aprova uma entrada.
 
@@ -259,7 +256,7 @@ class TimeBankRepository:
         time_bank_id: str,
         rejection_reason: str,
         approved_by: str,
-    ) -> Optional[TimeBank]:
+    ) -> TimeBank | None:
         """
         Rejeita uma entrada.
 
@@ -292,9 +289,9 @@ class TimeBankRepository:
         time_bank_id: str,
         hours: float = 0,  # pylint: disable=unused-argument
         compensation_date=None,  # pylint: disable=unused-argument
-        compensation_shift_id: Optional[str] = None,
-        notes: Optional[str] = None,  # pylint: disable=unused-argument
-    ) -> Optional[TimeBank]:
+        compensation_shift_id: str | None = None,
+        notes: str | None = None,  # pylint: disable=unused-argument
+    ) -> TimeBank | None:
         """
         Marca entrada como compensada.
 
@@ -410,3 +407,87 @@ class TimeBankRepository:
             expiring_soon=expiring_soon,
             entries_count=len(entries),
         )
+
+    async def get_stats(self, employee_id: str) -> dict:
+        """Retorna estatísticas resumidas do banco de horas de um funcionário."""
+        result = await self.db.execute(
+            select(
+                func.count(TimeBank.id).label("total_entries"),
+                func.sum(TimeBank.hours).label("total_hours"),
+            ).where(
+                TimeBank.employee_id == employee_id,
+                TimeBank.is_active.is_(True),
+            )
+        )
+        row = result.first()
+        return {
+            "total_entries": row.total_entries or 0,
+            "total_hours": float(row.total_hours or 0),
+        }
+
+    async def get_global_stats(self) -> dict:
+        """Retorna estatísticas globais do banco de horas (todos os funcionários)."""
+        from modules.operacional.models.time_bank import TimeBankEntryType
+
+        # Totais por tipo de entrada
+        result_types = await self.db.execute(
+            select(
+                TimeBank.entry_type,
+                func.sum(TimeBank.hours).label("total"),
+            )
+            .where(TimeBank.is_active.is_(True))
+            .group_by(TimeBank.entry_type)
+        )
+        by_type = {row.entry_type: float(row.total or 0) for row in result_types}
+
+        # Totais por status
+        result_status = await self.db.execute(
+            select(
+                TimeBank.status,
+                func.count(TimeBank.id).label("count"),
+            )
+            .where(TimeBank.is_active.is_(True))
+            .group_by(TimeBank.status)
+        )
+        by_status = {row.status: row.count for row in result_status}
+
+        # Funcionários únicos com saldo
+        result_emps = await self.db.execute(
+            select(func.count(func.distinct(TimeBank.employee_id))).where(TimeBank.is_active.is_(True))
+        )
+        total_employees = result_emps.scalar() or 0
+
+        # Saldo médio (créditos - débitos) por funcionário
+        result_balance = await self.db.execute(
+            select(
+                TimeBank.employee_id,
+                func.sum(
+                    case(
+                        (TimeBank.entry_type == TimeBankEntryType.CREDIT, TimeBank.hours),
+                        else_=0,
+                    )
+                ).label("credit"),
+                func.sum(
+                    case(
+                        (TimeBank.entry_type == TimeBankEntryType.DEBIT, TimeBank.hours),
+                        else_=0,
+                    )
+                ).label("debit"),
+            )
+            .where(TimeBank.is_active.is_(True))
+            .group_by(TimeBank.employee_id)
+        )
+        rows = result_balance.all()
+        avg_balance = sum(float(r.credit or 0) - float(r.debit or 0) for r in rows) / len(rows) if rows else 0.0
+
+        return {
+            "total_employees": total_employees,
+            "total_credit_hours": by_type.get(TimeBankEntryType.CREDIT, 0.0),
+            "total_debit_hours": by_type.get(TimeBankEntryType.DEBIT, 0.0),
+            "total_compensated_hours": by_type.get(TimeBankEntryType.COMPENSATION, 0.0),
+            "total_expired_hours": by_type.get(TimeBankEntryType.EXPIRATION, 0.0),
+            "total_pending_hours": by_type.get(TimeBankEntryType.ADJUSTMENT, 0.0),
+            "avg_balance": round(avg_balance, 2),
+            "by_status": by_status,
+            "by_entry_type": by_type,
+        }

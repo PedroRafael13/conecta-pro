@@ -78,9 +78,9 @@ export function ThemeProvider({
         applyTheme(defaultTheme);
       }
     } catch (error) {
-      console.error('Erro ao carregar tema do localStorage:', error);
       applyTheme(defaultTheme);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount
   }, []);
 
   // Listener para mudanças na preferência do sistema
@@ -102,6 +102,7 @@ export function ThemeProvider({
     // Fallback para navegadores antigos
     mediaQuery.addListener(handleChange);
     return () => mediaQuery.removeListener(handleChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- applyTheme is stable
   }, [theme]);
 
   // Função para atualizar tema
@@ -114,7 +115,6 @@ export function ThemeProvider({
       // TODO: Sincronizar com backend (preferências do usuário)
       // userPreferencesService.update({ theme: newTheme });
     } catch (error) {
-      console.error('Erro ao salvar tema:', error);
     }
   };
 

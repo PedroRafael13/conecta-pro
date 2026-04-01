@@ -3,7 +3,6 @@ Controller (endpoints) para Substitution (Substituição de Funcionário).
 """
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -70,16 +69,16 @@ async def list_substitutions(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    shift_id: Optional[str] = None,
-    post_id: Optional[str] = None,
-    original_employee_id: Optional[str] = None,
-    substitute_employee_id: Optional[str] = None,
-    status_filter: Optional[SubstitutionStatus] = Query(None, alias="status"),
-    reason: Optional[SubstitutionReason] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    is_pending: Optional[bool] = None,
-    has_substitute: Optional[bool] = None,
+    shift_id: str | None = None,
+    post_id: str | None = None,
+    original_employee_id: str | None = None,
+    substitute_employee_id: str | None = None,
+    status_filter: SubstitutionStatus | None = Query(None, alias="status"),
+    reason: SubstitutionReason | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    is_pending: bool | None = None,
+    has_substitute: bool | None = None,
 ) -> SubstitutionListResponse:
     """
     Lista substituições com filtros e paginação.
@@ -119,7 +118,7 @@ async def list_substitutions(  # pylint: disable=too-many-locals
 async def get_pending_substitutions(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    post_id: Optional[str] = None,
+    post_id: str | None = None,
 ) -> list[SubstitutionResponse]:
     """
     Lista substituições pendentes (aguardando confirmação).
@@ -180,7 +179,7 @@ async def get_substitutions_by_date(
     target_date: date,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    post_id: Optional[str] = None,
+    post_id: str | None = None,
 ) -> list[SubstitutionResponse]:
     """
     Lista substituições de uma data específica.

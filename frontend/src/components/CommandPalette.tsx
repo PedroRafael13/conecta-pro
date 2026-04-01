@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, FileText, Users, Calendar, AlertTriangle, Download, X } from 'lucide-react';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 ;
 
@@ -44,7 +44,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: <Users className="w-4 h-4" />,
       category: 'navigation',
       action: () => {
-        router.push('/modulos/operacional/colaboradores/novo');
+        router.push('/modulos/operacional/colaboradores?novo=1');
         onClose();
       },
     },
@@ -88,8 +88,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: <Download className="w-4 h-4" />,
       category: 'action',
       action: () => {
-        // Implementar lógica de exportação
-        console.log('Exportar dados');
+        // TODO: Implementar lógica de exportação
         onClose();
       },
     },
@@ -107,10 +106,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     });
   }, [commands, query]);
 
-  // Reset selected index quando filtros mudarem
+  // Reset selected index quando filtros mudarem - usando queueMicrotask
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [filteredCommands]);
+    queueMicrotask(() => {
+      setSelectedIndex(prev => prev >= filteredCommands.length ? 0 : prev);
+    });
+  }, [filteredCommands.length]);
 
   // Navegação com teclado
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -138,11 +139,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     }
   }, [filteredCommands, selectedIndex, onClose]);
 
-  // Auto-focus no input quando abrir
+  // Auto-focus no input quando abrir - usando queueMicrotask para evitar setState síncrono
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
+      queueMicrotask(() => {
+        setQuery('');
+        setSelectedIndex(0);
+      });
     }
   }, [isOpen]);
 
@@ -156,11 +159,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   // Agrupar comandos por categoria
   const groupedCommands = filteredCommands.reduce((acc, cmd) => {
-    if (!acc[cmd.category]) {
-      acc[cmd.category] = [];
-    }
-    acc[cmd.category]!.push(cmd);
-    return acc;
+    return {
+      ...acc,
+      [cmd.category]: [...(acc[cmd.category] || []), cmd],
+    };
   }, {} as Record<string, Command[]>);
 
   return (

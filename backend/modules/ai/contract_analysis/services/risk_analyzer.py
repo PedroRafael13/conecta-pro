@@ -5,19 +5,18 @@ Analisa riscos em contratos.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.ai.contract_analysis.models.contract_analysis import (
     ContractAnalysis,
-    RiskLevel,
     ContractType,
+    RiskLevel,
 )
 from modules.ai.contract_analysis.models.extracted_clause import (
-    ExtractedClause,
     ClauseType,
+    ExtractedClause,
 )
 from modules.ai.contract_analysis.repositories.contract_repository import (
     ContractAnalysisRepository,
@@ -115,10 +114,7 @@ class RiskAnalyzer:
         risk_factors.extend(clause_factors)
 
         # 2. Verificar clausulas faltantes
-        missing_risk, missing_factors = self._check_missing_clauses(
-            analysis.contract_type,
-            clauses
-        )
+        missing_risk, missing_factors = self._check_missing_clauses(analysis.contract_type, clauses)
         risk_score += missing_risk
         risk_factors.extend(missing_factors)
 
@@ -135,12 +131,14 @@ class RiskAnalyzer:
         # 5. Verificar renovacao automatica
         if analysis.has_auto_renewal:
             risk_score += 10
-            risk_factors.append({
-                "factor": "auto_renewal",
-                "impact": "medium",
-                "score": 10,
-                "description": "Contrato possui renovacao automatica",
-            })
+            risk_factors.append(
+                {
+                    "factor": "auto_renewal",
+                    "impact": "medium",
+                    "score": 10,
+                    "description": "Contrato possui renovacao automatica",
+                }
+            )
 
         # Normalizar score
         risk_score = min(100, risk_score)
@@ -157,10 +155,7 @@ class RiskAnalyzer:
             "recommendations": self._generate_recommendations(risk_factors),
         }
 
-    def _analyze_clause_risks(
-        self,
-        clauses: list[ExtractedClause]
-    ) -> tuple[float, list[dict]]:
+    def _analyze_clause_risks(self, clauses: list[ExtractedClause]) -> tuple[float, list[dict]]:
         """Analisa riscos das clausulas."""
         total_risk = 0
         factors = []
@@ -172,21 +167,21 @@ class RiskAnalyzer:
 
                 total_risk += adjusted_risk
 
-                factors.append({
-                    "factor": f"risky_clause_{clause.clause_type.value}",
-                    "impact": "high" if clause.risk_score >= 50 else "medium",
-                    "score": round(adjusted_risk, 1),
-                    "description": f"Clausula {clause.clause_number} apresenta risco",
-                    "clause_id": str(clause.id),
-                    "reasons": clause.risk_reasons,
-                })
+                factors.append(
+                    {
+                        "factor": f"risky_clause_{clause.clause_type.value}",
+                        "impact": "high" if clause.risk_score >= 50 else "medium",
+                        "score": round(adjusted_risk, 1),
+                        "description": f"Clausula {clause.clause_number} apresenta risco",
+                        "clause_id": str(clause.id),
+                        "reasons": clause.risk_reasons,
+                    }
+                )
 
         return total_risk, factors
 
     def _check_missing_clauses(
-        self,
-        contract_type: ContractType,
-        clauses: list[ExtractedClause]
+        self, contract_type: ContractType, clauses: list[ExtractedClause]
     ) -> tuple[float, list[dict]]:
         """Verifica clausulas faltantes."""
         total_risk = 0
@@ -200,19 +195,19 @@ class RiskAnalyzer:
                 risk = 15 if clause_type in (ClauseType.PENALTY, ClauseType.TERMINATION) else 10
                 total_risk += risk
 
-                factors.append({
-                    "factor": f"missing_clause_{clause_type.value}",
-                    "impact": "high" if risk >= 15 else "medium",
-                    "score": risk,
-                    "description": f"Clausula de {clause_type.value} nao encontrada",
-                })
+                factors.append(
+                    {
+                        "factor": f"missing_clause_{clause_type.value}",
+                        "impact": "high" if risk >= 15 else "medium",
+                        "score": risk,
+                        "description": f"Clausula de {clause_type.value} nao encontrada",
+                    }
+                )
 
         return total_risk, factors
 
     def _analyze_text_risks(
-        self,
-        analysis: ContractAnalysis,
-        clauses: list[ExtractedClause]
+        self, analysis: ContractAnalysis, clauses: list[ExtractedClause]
     ) -> tuple[float, list[dict]]:
         """Analisa riscos no texto."""
         total_risk = 0
@@ -224,12 +219,14 @@ class RiskAnalyzer:
         for indicator, risk_points in self.HIGH_RISK_INDICATORS.items():
             if indicator.lower() in full_text:
                 total_risk += risk_points
-                factors.append({
-                    "factor": f"text_risk_{indicator.replace(' ', '_')}",
-                    "impact": "high" if risk_points >= 15 else "medium",
-                    "score": risk_points,
-                    "description": f"Termo de risco encontrado: '{indicator}'",
-                })
+                factors.append(
+                    {
+                        "factor": f"text_risk_{indicator.replace(' ', '_')}",
+                        "impact": "high" if risk_points >= 15 else "medium",
+                        "score": risk_points,
+                        "description": f"Termo de risco encontrado: '{indicator}'",
+                    }
+                )
 
         return min(40, total_risk), factors  # Cap em 40
 
@@ -242,22 +239,26 @@ class RiskAnalyzer:
         if analysis.total_value and analysis.total_value > 100000:
             if not analysis.has_penalty_clause:
                 total_risk += 15
-                factors.append({
-                    "factor": "high_value_no_penalty",
-                    "impact": "high",
-                    "score": 15,
-                    "description": "Alto valor sem clausula de penalidade",
-                })
+                factors.append(
+                    {
+                        "factor": "high_value_no_penalty",
+                        "impact": "high",
+                        "score": 15,
+                        "description": "Alto valor sem clausula de penalidade",
+                    }
+                )
 
         # Prazo muito longo
         if analysis.notice_period_days and analysis.notice_period_days < 30:
             total_risk += 10
-            factors.append({
-                "factor": "short_notice_period",
-                "impact": "medium",
-                "score": 10,
-                "description": f"Aviso previo curto ({analysis.notice_period_days} dias)",
-            })
+            factors.append(
+                {
+                    "factor": "short_notice_period",
+                    "impact": "medium",
+                    "score": 10,
+                    "description": f"Aviso previo curto ({analysis.notice_period_days} dias)",
+                }
+            )
 
         return total_risk, factors
 
@@ -281,43 +282,28 @@ class RiskAnalyzer:
 
             if "missing_clause" in factor_name:
                 clause_type = factor_name.replace("missing_clause_", "")
-                recommendations.append(
-                    f"Adicionar clausula de {clause_type} ao contrato"
-                )
+                recommendations.append(f"Adicionar clausula de {clause_type} ao contrato")
 
             elif "risky_clause" in factor_name:
-                recommendations.append(
-                    f"Revisar clausula {factor.get('clause_id', '')} - apresenta risco"
-                )
+                recommendations.append(f"Revisar clausula {factor.get('clause_id', '')} - apresenta risco")
 
             elif "high_value_no_penalty" in factor_name:
-                recommendations.append(
-                    "Incluir clausula de penalidade devido ao alto valor"
-                )
+                recommendations.append("Incluir clausula de penalidade devido ao alto valor")
 
             elif "short_notice_period" in factor_name:
-                recommendations.append(
-                    "Negociar prazo de aviso previo maior"
-                )
+                recommendations.append("Negociar prazo de aviso previo maior")
 
             elif "auto_renewal" in factor_name:
-                recommendations.append(
-                    "Agendar revisao antes da renovacao automatica"
-                )
+                recommendations.append("Agendar revisao antes da renovacao automatica")
 
             elif "text_risk" in factor_name:
-                recommendations.append(
-                    f"Revisar termo: {factor.get('description', '')}"
-                )
+                recommendations.append(f"Revisar termo: {factor.get('description', '')}")
 
         return list(set(recommendations))[:10]  # Remover duplicatas, max 10
 
     def get_risk_summary(self, analysis_id: UUID) -> dict:
         """Retorna resumo de riscos de uma analise."""
-        analysis = self.repository.get_analysis(
-            analysis_id,
-            include_clauses=True
-        )
+        analysis = self.repository.get_analysis(analysis_id, include_clauses=True)
 
         if not analysis:
             return {"error": "Analise nao encontrada"}

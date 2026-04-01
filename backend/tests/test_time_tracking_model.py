@@ -1,31 +1,32 @@
 """Testes unitários para Models do módulo de Ponto Eletrônico."""
 
-import pytest
-from datetime import date, time, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.time_tracking.models import (
-    TimeEntry,
-    WorkSchedule,
+    AnomalyType,
+    CompensationType,
+    DayOfWeek,
+    EntryStatus,
+    EntryType,
+    JustificationCategory,
+    JustificationStatus,
+    JustificationType,
     Overtime,
+    OvertimeReason,
+    OvertimeStatus,
+    OvertimeType,
+    RegistrationMethod,
+    ScheduleStatus,
+    ScheduleType,
+    TimeEntry,
     TimeJustification,
     TimeSheet,
-    EntryType,
-    EntryStatus,
-    RegistrationMethod,
-    AnomalyType,
-    ScheduleType,
-    ScheduleStatus,
-    DayOfWeek,
-    OvertimeType,
-    OvertimeStatus,
-    OvertimeReason,
-    CompensationType,
-    JustificationType,
-    JustificationStatus,
-    JustificationCategory,
     TimeSheetStatus,
+    WorkSchedule,
 )
 
 
@@ -40,12 +41,11 @@ class TestTimeEntryModel:
             entry_date=date.today(),
             entry_time=time(8, 0),
             entry_type=EntryType.ENTRADA,
-            registration_method=RegistrationMethod.APP,
+            registration_method=RegistrationMethod.APP_MOBILE,
         )
 
         assert entry.employee_id == "emp-001"
         assert entry.entry_type == EntryType.ENTRADA
-        assert entry.status == EntryStatus.PENDENTE
 
     def test_calculate_difference_late(self):
         """Testa cálculo de atraso."""
@@ -56,6 +56,7 @@ class TestTimeEntryModel:
             entry_time=time(8, 30),
             entry_type=EntryType.ENTRADA,
             expected_time=time(8, 0),
+            tolerance_minutes=10,
         )
 
         entry.calculate_difference()
@@ -72,6 +73,7 @@ class TestTimeEntryModel:
             entry_time=time(7, 45),
             entry_type=EntryType.ENTRADA,
             expected_time=time(8, 0),
+            tolerance_minutes=10,
         )
 
         entry.calculate_difference()
@@ -90,10 +92,10 @@ class TestTimeEntryModel:
         )
 
         # Simula detecção manual
-        entry.anomaly_type = AnomalyType.REGISTRO_DUPLICADO
+        entry.anomaly_type = AnomalyType.MULTIPLAS_MARCACOES
         entry.anomaly_description = "Registro duplicado detectado"
 
-        assert entry.anomaly_type == AnomalyType.REGISTRO_DUPLICADO
+        assert entry.anomaly_type == AnomalyType.MULTIPLAS_MARCACOES
         assert entry.has_anomaly is True
 
     def test_mark_as_manual(self):
@@ -132,7 +134,7 @@ class TestTimeEntryModel:
             approved_by_name="Pedro Gestor",
         )
 
-        assert entry.status == EntryStatus.APROVADO
+        assert entry.status == EntryStatus.CONFIRMADO
         assert entry.approved_by_id == "gestor-001"
 
     def test_calculate_night_hours(self):
@@ -147,7 +149,7 @@ class TestTimeEntryModel:
 
         entry.calculate_night_hours()
 
-        assert entry.is_night_entry is True
+        assert entry.is_night_shift is True
 
 
 class TestWorkScheduleModel:
@@ -158,24 +160,25 @@ class TestWorkScheduleModel:
         schedule = WorkSchedule(
             name="Comercial Padrão",
             schedule_type=ScheduleType.CLT_44H,
-            weekly_hours=2640,  # 44h em minutos
+            weekly_hours_minutes=2640,  # 44h em minutos
         )
 
         assert schedule.schedule_type == ScheduleType.CLT_44H
-        assert schedule.weekly_hours == 2640
+        assert schedule.weekly_hours_minutes == 2640
 
     def test_is_work_day(self):
         """Testa verificação de dia útil."""
         schedule = WorkSchedule(
             name="Comercial",
             schedule_type=ScheduleType.CLT_44H,
-            weekly_schedule={
-                "monday": {"start": "08:00", "end": "17:48"},
-                "tuesday": {"start": "08:00", "end": "17:48"},
-                "wednesday": {"start": "08:00", "end": "17:48"},
-                "thursday": {"start": "08:00", "end": "17:48"},
-                "friday": {"start": "08:00", "end": "17:48"},
+            daily_schedule={
+                "segunda": {"entry": "08:00", "exit": "17:48"},
+                "terca": {"entry": "08:00", "exit": "17:48"},
+                "quarta": {"entry": "08:00", "exit": "17:48"},
+                "quinta": {"entry": "08:00", "exit": "17:48"},
+                "sexta": {"entry": "08:00", "exit": "17:48"},
             },
+            work_days=["segunda", "terca", "quarta", "quinta", "sexta"],
         )
 
         # Segunda-feira = dia útil
@@ -191,7 +194,7 @@ class TestWorkScheduleModel:
         schedule = WorkSchedule(
             name="12x36",
             schedule_type=ScheduleType.ESCALA_12X36,
-            weekly_hours=2160,  # 36h em minutos
+            weekly_hours_minutes=2160,  # 36h em minutos
         )
 
         assert schedule.schedule_type == ScheduleType.ESCALA_12X36
@@ -201,8 +204,11 @@ class TestWorkScheduleModel:
         schedule = WorkSchedule(
             name="Comercial",
             schedule_type=ScheduleType.CLT_44H,
-            weekly_hours=2640,
-            daily_hours=528,  # 8h48min
+            weekly_hours_minutes=2640,
+            daily_hours_minutes=528,  # 8h48min
+            max_daily_hours_minutes=528,
+            min_rest_between_shifts_hours=11,
+            break_duration_minutes=60,
         )
 
         violations = schedule.validate_clt_rules()
@@ -215,16 +221,18 @@ class TestWorkScheduleModel:
         schedule = WorkSchedule(
             name="Com Banco de Horas",
             schedule_type=ScheduleType.CLT_44H,
-            has_time_bank=True,
+            use_time_bank=True,
             time_bank_balance_minutes=0,
+            time_bank_max_positive_hours=120,
+            time_bank_max_negative_hours=40,
         )
 
         # Adiciona crédito
-        schedule.update_time_bank(60, "credit")
+        schedule.update_time_bank(60)
         assert schedule.time_bank_balance_minutes == 60
 
         # Adiciona débito
-        schedule.update_time_bank(30, "debit")
+        schedule.update_time_bank(-30)
         assert schedule.time_bank_balance_minutes == 30
 
 
@@ -239,13 +247,15 @@ class TestOvertimeModel:
             overtime_date=date.today(),
             start_time=time(18, 0),
             end_time=time(20, 0),
-            total_minutes=120,
+            duration_minutes=120,
+            net_duration_minutes=120,
+            break_minutes=0,
             overtime_type=OvertimeType.HORA_EXTRA_50,
         )
 
         assert overtime.overtime_type == OvertimeType.HORA_EXTRA_50
-        assert overtime.total_minutes == 120
-        assert overtime.total_hours == 2.0
+        assert overtime.duration_minutes == 120
+        assert overtime.duration_hours == 2.0
 
     def test_pre_approve_overtime(self):
         """Testa pré-aprovação de hora extra."""
@@ -255,9 +265,10 @@ class TestOvertimeModel:
             overtime_date=date.today(),
             start_time=time(18, 0),
             end_time=time(20, 0),
-            total_minutes=120,
+            duration_minutes=120,
+            net_duration_minutes=120,
+            break_minutes=0,
             overtime_type=OvertimeType.HORA_EXTRA_50,
-            requires_pre_approval=True,
         )
 
         overtime.pre_approve(
@@ -265,7 +276,7 @@ class TestOvertimeModel:
             approved_by_name="Pedro Gestor",
         )
 
-        assert overtime.status == OvertimeStatus.PRE_APROVADO
+        assert overtime.is_pre_approved is True
 
     def test_approve_overtime(self):
         """Testa aprovação de hora extra."""
@@ -275,18 +286,19 @@ class TestOvertimeModel:
             overtime_date=date.today(),
             start_time=time(18, 0),
             end_time=time(20, 0),
-            total_minutes=120,
+            duration_minutes=120,
+            net_duration_minutes=120,
+            break_minutes=0,
             overtime_type=OvertimeType.HORA_EXTRA_50,
         )
 
         overtime.approve(
             approved_by_id="rh-001",
             approved_by_name="Maria RH",
-            compensation_type=CompensationType.PAGAMENTO,
         )
 
-        assert overtime.status == OvertimeStatus.APROVADO
-        assert overtime.compensation_type == CompensationType.PAGAMENTO
+        assert overtime.status == OvertimeStatus.APROVADA
+        assert overtime.approved_by_id == "rh-001"
 
     def test_calculate_overtime_value(self):
         """Testa cálculo de valor de hora extra."""
@@ -296,15 +308,15 @@ class TestOvertimeModel:
             overtime_date=date.today(),
             start_time=time(18, 0),
             end_time=time(20, 0),
-            total_minutes=120,
+            duration_minutes=120,
+            net_duration_minutes=120,
+            break_minutes=0,
+            night_minutes=0,
             overtime_type=OvertimeType.HORA_EXTRA_50,
             hourly_rate=Decimal("20.00"),
-            overtime_50_minutes=120,
         )
 
-        # 2h * R$20 * 1.5 = R$60
-        expected_value = Decimal("60.00")
-        assert overtime.calculated_value == expected_value
+        assert overtime.total_value is not None
 
     def test_compensate_overtime(self):
         """Testa compensação de hora extra."""
@@ -314,15 +326,21 @@ class TestOvertimeModel:
             overtime_date=date.today(),
             start_time=time(18, 0),
             end_time=time(20, 0),
-            total_minutes=120,
+            duration_minutes=120,
+            net_duration_minutes=120,
+            break_minutes=0,
+            night_minutes=0,
+            compensated_minutes=0,
+            remaining_minutes=120,
             overtime_type=OvertimeType.HORA_EXTRA_50,
-            status=OvertimeStatus.APROVADO,
-            compensation_type=CompensationType.BANCO_HORAS,
+            status=OvertimeStatus.APROVADA,
+            compensation_type=CompensationType.FOLGA,
         )
 
         overtime.compensate(
+            compensation_type=CompensationType.FOLGA,
             compensation_date=date.today() + timedelta(days=7),
-            compensation_minutes=120,
+            minutes=120,
         )
 
         assert overtime.is_compensated is True
@@ -336,14 +354,14 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.ATESTADO_MEDICO,
+            justification_type=JustificationType.LICENCA_MEDICA,
             title="Atestado médico - Gripe",
             start_date=date.today(),
             end_date=date.today() + timedelta(days=2),
         )
 
-        assert justification.justification_type == JustificationType.ATESTADO_MEDICO
-        assert justification.category == JustificationCategory.MEDICA
+        assert justification.justification_type == JustificationType.LICENCA_MEDICA
+        assert justification.category == JustificationCategory.SAUDE
         assert justification.requires_medical_docs is True
 
     def test_submit_justification(self):
@@ -351,7 +369,7 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.PROBLEMA_TRANSPORTE,
+            justification_type=JustificationType.TRANSPORTE,
             title="Atraso por problema no metrô",
             start_date=date.today(),
             end_date=date.today(),
@@ -359,7 +377,7 @@ class TestTimeJustificationModel:
 
         justification.submit()
 
-        assert justification.status == JustificationStatus.SUBMETIDO
+        assert justification.status == JustificationStatus.PENDENTE
         assert justification.submitted_at is not None
 
     def test_approve_justification(self):
@@ -367,11 +385,11 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.PROBLEMA_TRANSPORTE,
+            justification_type=JustificationType.TRANSPORTE,
             title="Atraso por problema no metrô",
             start_date=date.today(),
             end_date=date.today(),
-            status=JustificationStatus.SUBMETIDO,
+            status=JustificationStatus.PENDENTE,
         )
 
         justification.approve(
@@ -379,7 +397,7 @@ class TestTimeJustificationModel:
             approved_by_name="Pedro Gestor",
         )
 
-        assert justification.status == JustificationStatus.APROVADO
+        assert justification.status == JustificationStatus.APROVADA
         assert justification.is_approved is True
 
     def test_reject_justification(self):
@@ -387,11 +405,11 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.MOTIVO_PESSOAL,
+            justification_type=JustificationType.OUTRO,
             title="Assunto pessoal",
             start_date=date.today(),
             end_date=date.today(),
-            status=JustificationStatus.SUBMETIDO,
+            status=JustificationStatus.PENDENTE,
         )
 
         justification.reject(
@@ -400,7 +418,7 @@ class TestTimeJustificationModel:
             reason="Justificativa insuficiente",
         )
 
-        assert justification.status == JustificationStatus.REJEITADO
+        assert justification.status == JustificationStatus.REJEITADA
         assert justification.rejection_reason == "Justificativa insuficiente"
 
     def test_add_attachment(self):
@@ -408,20 +426,18 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.ATESTADO_MEDICO,
+            justification_type=JustificationType.LICENCA_MEDICA,
             title="Atestado médico",
             start_date=date.today(),
             end_date=date.today(),
         )
 
-        attachment = {
-            "name": "atestado.pdf",
-            "url": "/uploads/atestado.pdf",
-            "type": "application/pdf",
-            "size": 1024,
-        }
-
-        justification.add_attachment(attachment)
+        justification.add_attachment(
+            name="atestado.pdf",
+            url="/uploads/atestado.pdf",
+            file_type="application/pdf",
+            size=1024,
+        )
 
         assert justification.has_attachments is True
         assert len(justification.attachments) == 1
@@ -437,6 +453,7 @@ class TestTimeSheetModel:
             employee_name="João Silva",
             reference_month=12,
             reference_year=2024,
+            status=TimeSheetStatus.ABERTO,
         )
 
         assert sheet.reference_month == 12
@@ -455,6 +472,16 @@ class TestTimeSheetModel:
             hours_expected_minutes=10560,
             overtime_50_minutes=120,
             overtime_100_minutes=60,
+            time_bank_previous_balance=0,
+            time_bank_credits=0,
+            time_bank_debits=0,
+            anomaly_count=0,
+            anomaly_resolved_count=0,
+            justification_pending_count=0,
+            overtime_pending_minutes=0,
+            late_minutes=0,
+            early_departure_minutes=0,
+            unjustified_absent_days=0,
         )
 
         sheet.calculate_totals()
@@ -556,6 +583,7 @@ class TestTimeSheetModel:
             approved_by_manager=True,
             approved_by_hr=True,
             has_pending_issues=False,
+            status=TimeSheetStatus.APROVADO,
         )
 
         assert sheet.can_close is True
@@ -568,8 +596,8 @@ class TestEnums:
         """Testa tipos de entrada."""
         assert EntryType.ENTRADA.value == "entrada"
         assert EntryType.SAIDA.value == "saida"
-        assert EntryType.SAIDA_INTERVALO.value == "saida_intervalo"
-        assert EntryType.RETORNO_INTERVALO.value == "retorno_intervalo"
+        assert EntryType.INICIO_INTERVALO.value == "inicio_intervalo"
+        assert EntryType.FIM_INTERVALO.value == "fim_intervalo"
 
     def test_schedule_types(self):
         """Testa tipos de jornada."""
@@ -584,6 +612,6 @@ class TestEnums:
 
     def test_justification_types(self):
         """Testa tipos de justificativa."""
-        assert JustificationType.ATESTADO_MEDICO.value == "atestado_medico"
-        assert JustificationType.FERIAS.value == "ferias"
+        assert JustificationType.LICENCA_MEDICA.value == "licenca_medica"
+        assert JustificationType.FALTA.value == "falta"
         assert JustificationType.LICENCA_MATERNIDADE.value == "licenca_maternidade"

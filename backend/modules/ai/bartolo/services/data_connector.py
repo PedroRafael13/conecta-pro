@@ -10,7 +10,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import func, select
@@ -43,7 +43,7 @@ from modules.operacional.repositories import (
 logger = logging.getLogger(__name__)
 
 
-class QueryType(str, Enum):
+class QueryType(StrEnum):
     """Tipos de consulta."""
 
     COUNT = "count"
@@ -68,11 +68,6 @@ class QueryType(str, Enum):
     MEDIDAS_PENDENTES = "medidas_pendentes"
     COMUNICADOS_ATIVOS = "comunicados_ativos"
     RONDAS_HOJE = "rondas_hoje"
-    # OpenClaw
-    OPENCLAW_STATUS = "openclaw_status"
-    OPENCLAW_REPORT = "openclaw_report"
-    OPENCLAW_HISTORY = "openclaw_history"
-    OPENCLAW_TRENDS = "openclaw_trends"
 
 
 @dataclass
@@ -121,10 +116,6 @@ class DataResult:
             QueryType.MEDIDAS_PENDENTES,
             QueryType.COMUNICADOS_ATIVOS,
             QueryType.RONDAS_HOJE,
-            QueryType.OPENCLAW_STATUS,
-            QueryType.OPENCLAW_REPORT,
-            QueryType.OPENCLAW_HISTORY,
-            QueryType.OPENCLAW_TRENDS,
         )
         if self.query_type in special_types:
             return self.message or str(self.data)
@@ -733,15 +724,6 @@ class DataConnector:
                 return await self._get_comunicados_ativos()
             elif query.query_type == QueryType.RONDAS_HOJE:
                 return await self._get_rondas_hoje()
-            # OpenClaw
-            elif query.query_type == QueryType.OPENCLAW_STATUS:
-                return await self._get_openclaw_status()
-            elif query.query_type == QueryType.OPENCLAW_REPORT:
-                return await self._get_openclaw_report()
-            elif query.query_type == QueryType.OPENCLAW_HISTORY:
-                return await self._get_openclaw_history()
-            elif query.query_type == QueryType.OPENCLAW_TRENDS:
-                return await self._get_openclaw_trends()
 
             if not self.db:
                 logger.warning("DB session não disponível, usando dados mock")
@@ -2863,209 +2845,6 @@ _Para detalhes, pergunte sobre itens específicos._"""
                 data=None,
                 message=f"Erro ao buscar rondas de hoje: {str(e)}",
                 executed_at=datetime.utcnow(),
-            )
-
-    async def _get_openclaw_status(self) -> DataResult:
-        """Retorna status geral do OpenClaw (último ciclo)"""
-        import json
-        from pathlib import Path
-
-        reports_dir = Path("/opt/conecta-pro/reports/openclaw")
-        latest = reports_dir / "latest.json"
-
-        if not latest.exists():
-            return DataResult(
-                success=False,
-                query_type=QueryType.OPENCLAW_STATUS,
-                entity="openclaw",
-                data=None,
-                message="Nenhum relatório OpenClaw encontrado",
-            )
-
-        try:
-            data = json.loads(latest.read_text())
-            status = data["overall_status"].upper()
-            counts = data["summary"]["status_counts"]
-            duration = data["duration_seconds"]
-
-            message = f"""**Status OpenClaw: {status}**
-
-Último ciclo: {data["cycle_id"]}
-Duração: {duration:.1f}s
-Resultados: {counts["pass"]} pass | {counts["fail"]} fail | {counts["warn"]} warn | {counts["skip"]} skip | {counts["error"]} error"""
-
-            return DataResult(
-                success=True,
-                query_type=QueryType.OPENCLAW_STATUS,
-                entity="openclaw",
-                data=data,
-                total_count=1,
-                message=message,
-            )
-        except Exception as e:
-            logger.warning(f"Erro ao buscar status OpenClaw: {e}")
-            return DataResult(
-                success=False,
-                query_type=QueryType.OPENCLAW_STATUS,
-                entity="openclaw",
-                data=None,
-                message="Erro ao ler status OpenClaw",
-            )
-
-    async def _get_openclaw_report(self) -> DataResult:
-        """Retorna último relatório detalhado do OpenClaw"""
-        import json
-        from pathlib import Path
-
-        reports_dir = Path("/opt/conecta-pro/reports/openclaw")
-        latest = reports_dir / "latest.json"
-
-        if not latest.exists():
-            return DataResult(
-                success=False,
-                query_type=QueryType.OPENCLAW_REPORT,
-                entity="openclaw",
-                data=None,
-                message="Nenhum relatório encontrado",
-            )
-
-        try:
-            data = json.loads(latest.read_text())
-            checks = data.get("checks", [])
-
-            lines = [f"**Relatório OpenClaw - {data['cycle_id']}**\n"]
-            for check in checks:
-                status = check.get("status", "unknown").upper()
-                emoji = {"PASS": "✅", "FAIL": "❌", "WARN": "⚠️", "SKIP": "⏭️", "ERROR": "🔴"}.get(status, "❓")
-                lines.append(f"{emoji} {check.get('name', 'Unknown')} ({check.get('duration_seconds', 0):.1f}s)")
-                if check.get("message"):
-                    lines.append(f"   └─ {check['message']}")
-
-            message = "\n".join(lines)
-
-            return DataResult(
-                success=True,
-                query_type=QueryType.OPENCLAW_REPORT,
-                entity="openclaw",
-                data=data,
-                total_count=len(checks),
-                message=message,
-            )
-        except Exception as e:
-            logger.warning(f"Erro ao buscar relatório OpenClaw: {e}")
-            return DataResult(
-                success=False,
-                query_type=QueryType.OPENCLAW_REPORT,
-                entity="openclaw",
-                data=None,
-                message="Erro ao ler relatório",
-            )
-
-    async def _get_openclaw_history(self, limit: int = 10) -> DataResult:
-        """Retorna histórico de ciclos do OpenClaw"""
-        import json
-        from pathlib import Path
-
-        reports_dir = Path("/opt/conecta-pro/reports/openclaw")
-        reports = sorted(reports_dir.glob("cycle_*.json"), reverse=True)[:limit]
-
-        if not reports:
-            return DataResult(
-                success=False,
-                query_type=QueryType.OPENCLAW_HISTORY,
-                entity="openclaw",
-                data=None,
-                message="Nenhum relatório histórico encontrado",
-            )
-
-        try:
-            lines = [f"**Últimos {len(reports)} Ciclos OpenClaw:**\n"]
-            history_data = []
-
-            for report_path in reports:
-                data = json.loads(report_path.read_text())
-                cycle_id = data.get("cycle_id", "N/A")
-                status = data.get("overall_status", "unknown").upper()
-                duration = data.get("duration_seconds", 0)
-
-                emoji = {"PASS": "✅", "FAIL": "❌", "WARN": "⚠️"}.get(status, "❓")
-                lines.append(f"{emoji} {cycle_id} - {status} ({duration:.1f}s)")
-
-                history_data.append(
-                    {
-                        "cycle_id": cycle_id,
-                        "status": status,
-                        "duration": duration,
-                    }
-                )
-
-            message = "\n".join(lines)
-
-            return DataResult(
-                success=True,
-                query_type=QueryType.OPENCLAW_HISTORY,
-                entity="openclaw",
-                data=history_data,
-                total_count=len(history_data),
-                message=message,
-            )
-        except Exception as e:
-            logger.warning(f"Erro ao buscar histórico OpenClaw: {e}")
-            return DataResult(
-                success=False,
-                query_type=QueryType.OPENCLAW_HISTORY,
-                entity="openclaw",
-                data=None,
-                message="Erro ao ler histórico",
-            )
-
-    async def _get_openclaw_trends(self) -> DataResult:
-        """Retorna tendências do OpenClaw (últimos 30 ciclos)"""
-        import json
-        from pathlib import Path
-
-        reports_dir = Path("/opt/conecta-pro/reports/openclaw")
-        reports = sorted(reports_dir.glob("cycle_*.json"), reverse=True)[:30]
-
-        if not reports:
-            return DataResult(
-                success=False,
-                query_type=QueryType.OPENCLAW_TRENDS,
-                entity="openclaw",
-                data=None,
-                message="Dados insuficientes para tendência",
-            )
-
-        try:
-            trends = []
-            for report_path in reports:
-                data = json.loads(report_path.read_text())
-                trends.append(
-                    {
-                        "cycle_id": data.get("cycle_id"),
-                        "status": data.get("overall_status"),
-                        "pass": data.get("summary", {}).get("status_counts", {}).get("pass", 0),
-                        "fail": data.get("summary", {}).get("status_counts", {}).get("fail", 0),
-                        "warn": data.get("summary", {}).get("status_counts", {}).get("warn", 0),
-                    }
-                )
-
-            return DataResult(
-                success=True,
-                query_type=QueryType.OPENCLAW_TRENDS,
-                entity="openclaw",
-                data=trends,
-                total_count=len(trends),
-                message=f"Tendências dos últimos {len(trends)} ciclos",
-            )
-        except Exception as e:
-            logger.warning(f"Erro ao buscar tendências OpenClaw: {e}")
-            return DataResult(
-                success=False,
-                query_type=QueryType.OPENCLAW_TRENDS,
-                entity="openclaw",
-                data=None,
-                message="Erro ao calcular tendências",
             )
 
     async def search_entity(

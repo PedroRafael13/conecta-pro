@@ -4,16 +4,17 @@ tests/modules/fase5/test_quality_framework.py - Quality Framework Tests
 Testes para Quality Framework
 """
 
-import pytest
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.fase5.quality_framework.validator import (
-    QualityValidator,
-    QualityReport,
-    QualityMetric,
+    IssueSeverity,
     QualityIssue,
-    IssueSeverity
+    QualityMetric,
+    QualityReport,
+    QualityValidator,
 )
 
 
@@ -24,8 +25,8 @@ class TestQualityValidator:
         """Deve criar validator."""
         validator = QualityValidator()
         assert validator is not None
-        assert hasattr(validator, 'validate')
-        assert hasattr(validator, 'get_summary')
+        assert hasattr(validator, "validate")
+        assert hasattr(validator, "get_summary")
 
     def test_thresholds_definidos(self):
         """Deve ter thresholds definidos."""
@@ -49,9 +50,9 @@ class TestQualityValidator:
             passed=True,
             metrics=[
                 QualityMetric(name="coverage", score=Decimal("95")),
-                QualityMetric(name="security", score=Decimal("96"))
+                QualityMetric(name="security", score=Decimal("96")),
             ],
-            issues=[]
+            issues=[],
         )
         summary = validator.get_summary(report)
 
@@ -68,12 +69,7 @@ class TestQualityReport:
     def test_criar_report(self):
         """Deve criar report valido."""
         report = QualityReport(
-            component="fase5",
-            phase="grand_finale",
-            overall_score=Decimal("99.5"),
-            passed=True,
-            metrics=[],
-            issues=[]
+            component="fase5", phase="grand_finale", overall_score=Decimal("99.5"), passed=True, metrics=[], issues=[]
         )
         assert report.report_id is not None
         assert report.validated_at is not None
@@ -81,24 +77,14 @@ class TestQualityReport:
     def test_report_passed(self):
         """Report deve passar com score alto."""
         report = QualityReport(
-            component="test",
-            phase="test",
-            overall_score=Decimal("99.5"),
-            passed=True,
-            metrics=[],
-            issues=[]
+            component="test", phase="test", overall_score=Decimal("99.5"), passed=True, metrics=[], issues=[]
         )
         assert report.passed is True
 
     def test_report_failed(self):
         """Report deve falhar com score baixo."""
         report = QualityReport(
-            component="test",
-            phase="test",
-            overall_score=Decimal("50"),
-            passed=False,
-            metrics=[],
-            issues=[]
+            component="test", phase="test", overall_score=Decimal("50"), passed=False, metrics=[], issues=[]
         )
         assert report.passed is False
 
@@ -113,8 +99,8 @@ class TestQualityReport:
             issues=[
                 QualityIssue(code="W001", message="Warning", severity=IssueSeverity.WARNING),
                 QualityIssue(code="C001", message="Critical", severity=IssueSeverity.CRITICAL),
-                QualityIssue(code="C002", message="Critical 2", severity=IssueSeverity.CRITICAL)
-            ]
+                QualityIssue(code="C002", message="Critical 2", severity=IssueSeverity.CRITICAL),
+            ],
         )
         assert report.critical_issues_count == 2
 
@@ -124,37 +110,23 @@ class TestQualityMetric:
 
     def test_criar_metrica(self):
         """Deve criar metrica valida."""
-        metric = QualityMetric(
-            name="code_coverage",
-            score=Decimal("95.5")
-        )
+        metric = QualityMetric(name="code_coverage", score=Decimal("95.5"))
         assert metric.name == "code_coverage"
         assert metric.score == Decimal("95.5")
 
     def test_metrica_peso_padrao(self):
         """Peso padrao deve ser 1."""
-        metric = QualityMetric(
-            name="test",
-            score=Decimal("90")
-        )
+        metric = QualityMetric(name="test", score=Decimal("90"))
         assert metric.weight == Decimal("1")
 
     def test_metrica_passed(self):
         """Deve verificar se passou threshold."""
-        metric = QualityMetric(
-            name="test",
-            score=Decimal("96"),
-            threshold=Decimal("95")
-        )
+        metric = QualityMetric(name="test", score=Decimal("96"), threshold=Decimal("95"))
         assert metric.passed is True
 
     def test_metrica_failed(self):
         """Deve verificar se falhou threshold."""
-        metric = QualityMetric(
-            name="test",
-            score=Decimal("90"),
-            threshold=Decimal("95")
-        )
+        metric = QualityMetric(name="test", score=Decimal("90"), threshold=Decimal("95"))
         assert metric.passed is False
 
 
@@ -163,11 +135,7 @@ class TestQualityIssue:
 
     def test_criar_issue(self):
         """Deve criar issue valida."""
-        issue = QualityIssue(
-            code="SEC001",
-            message="Vulnerabilidade detectada",
-            severity=IssueSeverity.CRITICAL
-        )
+        issue = QualityIssue(code="SEC001", message="Vulnerabilidade detectada", severity=IssueSeverity.CRITICAL)
         assert issue.code == "SEC001"
         assert issue.severity == IssueSeverity.CRITICAL
 
@@ -178,7 +146,7 @@ class TestQualityIssue:
             message="Funcao sem teste",
             severity=IssueSeverity.WARNING,
             file_path="src/module.py",
-            line_number=42
+            line_number=42,
         )
         assert issue.file_path == "src/module.py"
         assert issue.line_number == 42
@@ -186,10 +154,7 @@ class TestQualityIssue:
     def test_issue_com_sugestao(self):
         """Deve aceitar sugestao."""
         issue = QualityIssue(
-            code="DOC001",
-            message="Docstring ausente",
-            severity=IssueSeverity.INFO,
-            suggestion="Adicionar docstring"
+            code="DOC001", message="Docstring ausente", severity=IssueSeverity.INFO, suggestion="Adicionar docstring"
         )
         assert issue.suggestion is not None
 

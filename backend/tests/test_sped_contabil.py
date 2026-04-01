@@ -4,32 +4,33 @@ Testes para SPED Contábil.
 Testes unitários e de integração para SPED Contábil (ECD).
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
 from unittest.mock import Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.sped_contabil import (
+    ContaContabil,
+    DemonstrativoBalancoPatrimonial,
+    DemonstrativoDRE,
+    LancamentoContabil,
+    NaturezaConta,
+    SPEDContabilManager,
+    TipoConta,
+    TipoECD,
+)
 from modules.government_integrations.schemas.sped_contabil import (
-    ContaContabilRequest,
-    LancamentoContabilRequest,
     BalancoPatrimonialRequest,
+    ContaContabilRequest,
     DRERequest,
     GerarArquivoRequest,
+    LancamentoContabilRequest,
     NaturezaContaEnum,
     TipoContaEnum,
 )
 from modules.government_integrations.services.sped_contabil_service import (
     SPEDContabilService,
-)
-from modules.government_integrations.core.sped_contabil import (
-    SPEDContabilManager,
-    ContaContabil,
-    LancamentoContabil,
-    DemonstrativoBalancoPatrimonial,
-    DemonstrativoDRE,
-    TipoECD,
-    TipoConta,
-    NaturezaConta,
 )
 
 
@@ -188,10 +189,13 @@ class TestSPEDContabilService:
     @pytest.fixture
     def service(self):
         """Cria instância do service."""
-        with patch.dict('os.environ', {
-            'SPED_CNPJ': '35710481000103',
-            'EMPRESA_RAZAO_SOCIAL': 'Empresa Teste',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "SPED_CNPJ": "35710481000103",
+                "EMPRESA_RAZAO_SOCIAL": "Empresa Teste",
+            },
+        ):
             return SPEDContabilService()
 
     def test_service_init(self, service):
@@ -286,12 +290,13 @@ class TestSPEDContabilEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.sped_contabil_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -322,20 +327,9 @@ class TestSPEDContabilEndpoints:
 
     def test_adicionar_conta_endpoint(self, client):
         """Testa endpoint de adicionar conta."""
-        payload = {
-            "conta": {
-                "codigo": "1.1.01",
-                "descricao": "Caixa",
-                "tipo": "A",
-                "nivel": 3,
-                "natureza": "01"
-            }
-        }
+        payload = {"conta": {"codigo": "1.1.01", "descricao": "Caixa", "tipo": "A", "nivel": 3, "natureza": "01"}}
 
-        response = client.post(
-            "/api/v1/government/sped-contabil/conta",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-contabil/conta", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -350,14 +344,11 @@ class TestSPEDContabilEndpoints:
                 "conta_debito": "1.1.01",
                 "conta_credito": "3.1.01",
                 "valor": "10000.00",
-                "historico": "Receita de serviços"
+                "historico": "Receita de serviços",
             }
         }
 
-        response = client.post(
-            "/api/v1/government/sped-contabil/lancamento",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-contabil/lancamento", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -369,14 +360,11 @@ class TestSPEDContabilEndpoints:
             "balanco": {
                 "data_referencia": "2026-12-31",
                 "ativo_circulante": "500000.00",
-                "patrimonio_liquido": "500000.00"
+                "patrimonio_liquido": "500000.00",
             }
         }
 
-        response = client.post(
-            "/api/v1/government/sped-contabil/balanco",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-contabil/balanco", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -384,18 +372,9 @@ class TestSPEDContabilEndpoints:
 
     def test_definir_dre_endpoint(self, client):
         """Testa endpoint de definir DRE."""
-        payload = {
-            "dre": {
-                "periodo_inicio": "2026-01-01",
-                "periodo_fim": "2026-12-31",
-                "receita_bruta": "1200000.00"
-            }
-        }
+        payload = {"dre": {"periodo_inicio": "2026-01-01", "periodo_fim": "2026-12-31", "receita_bruta": "1200000.00"}}
 
-        response = client.post(
-            "/api/v1/government/sped-contabil/dre",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-contabil/dre", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -403,16 +382,9 @@ class TestSPEDContabilEndpoints:
 
     def test_gerar_arquivo_endpoint(self, client):
         """Testa endpoint de gerar arquivo."""
-        payload = {
-            "ano_referencia": 2026,
-            "periodo_inicio": "2026-01-01",
-            "periodo_fim": "2026-12-31"
-        }
+        payload = {"ano_referencia": 2026, "periodo_inicio": "2026-01-01", "periodo_fim": "2026-12-31"}
 
-        response = client.post(
-            "/api/v1/government/sped-contabil/gerar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-contabil/gerar", json=payload)
 
         assert response.status_code == 201
         data = response.json()

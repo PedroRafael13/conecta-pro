@@ -8,17 +8,17 @@ Fornece sincronizadores para extração e atualização de dados de:
 """
 
 from .base_sync import BaseSynchronizer, SyncConfig, SyncResult, SyncStatus
-from .sync_manager import SyncManager, ServicoGov
+
+# Estadual
+from .estadual.nfe_sync import NFeSynchronizer
 
 # Federal
 from .federal.esocial_sync import ESocialSynchronizer
 from .federal.receita_sync import ReceitaFederalSynchronizer
 
-# Estadual
-from .estadual.nfe_sync import NFeSynchronizer
-
 # Municipal
 from .municipal.nfse_manaus_sync import NFSeManausSynchronizer
+from .sync_manager import ServicoGov, SyncManager
 
 __all__ = [
     # Base

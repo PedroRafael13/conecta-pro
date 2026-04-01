@@ -118,6 +118,7 @@ export function BartoloChatWidget({
         },
       ]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, [greeting]);
 
   // Adiciona resposta do Bartolo quando recebe
@@ -178,7 +179,6 @@ export function BartoloChatWidget({
         module: module,
       });
     } catch (error) {
-      console.error('Error sending message:', error);
     }
   };
 
@@ -220,7 +220,6 @@ export function BartoloChatWidget({
       toast.success('Ação executada com sucesso!');
       setActionPreview(null);
     } catch (error) {
-      console.error('Error executing action:', error);
       toast.error('Erro ao executar ação. Tente novamente.');
     } finally {
       setIsExecutingAction(false);
@@ -240,7 +239,6 @@ export function BartoloChatWidget({
       toast.info('Ação cancelada');
       setActionPreview(null);
     } catch (error) {
-      console.error('Error canceling action:', error);
       setActionPreview(null);
     }
   };

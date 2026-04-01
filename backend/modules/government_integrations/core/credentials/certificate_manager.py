@@ -4,19 +4,18 @@ Gerenciador de Certificados Digitais.
 Gerencia certificados A1/A3 para assinatura de documentos fiscais.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List, Tuple
-from dataclasses import dataclass
-from enum import Enum
 import base64
 import logging
-import tempfile
 import os
+import tempfile
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
-from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
-from cryptography.hazmat.backends import default_backend
 
 from .vault_client import VaultClient, get_vault_client
 
@@ -25,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class TipoCertificado(Enum):
     """Tipos de certificado digital."""
+
     E_CNPJ = "e-cnpj"
     E_CPF = "e-cpf"
     NF_E = "nf-e"
@@ -34,6 +34,7 @@ class TipoCertificado(Enum):
 @dataclass
 class CertificadoInfo:
     """Informações de um certificado."""
+
     tenant_id: str
     tipo: TipoCertificado
     subject: str
@@ -42,8 +43,8 @@ class CertificadoInfo:
     validade_inicio: datetime
     validade_fim: datetime
     dias_restantes: int
-    cnpj_cpf: Optional[str]
-    razao_social: Optional[str]
+    cnpj_cpf: str | None
+    razao_social: str | None
     valido: bool
     alerta_expiracao: bool  # True se < 30 dias
 
@@ -62,16 +63,11 @@ class GerenciadorCertificados:
     # Dias para alertar antes da expiração
     DIAS_ALERTA_EXPIRACAO = 30
 
-    def __init__(self, vault_client: Optional[VaultClient] = None):
+    def __init__(self, vault_client: VaultClient | None = None):
         self.vault = vault_client or get_vault_client()
 
     async def importar_certificado(
-        self,
-        tenant_id: str,
-        tipo: TipoCertificado,
-        pfx_bytes: bytes,
-        senha: str,
-        metadata: Optional[Dict] = None
+        self, tenant_id: str, tipo: TipoCertificado, pfx_bytes: bytes, senha: str, metadata: dict | None = None
     ) -> CertificadoInfo:
         """
         Importa e armazena um certificado PFX.
@@ -118,19 +114,12 @@ class GerenciadorCertificados:
         if not sucesso:
             raise RuntimeError("Falha ao salvar certificado no Vault")
 
-        logger.info(
-            f"Certificado importado: {tenant_id}/{tipo.value} "
-            f"(válido até {info.validade_fim.date()})"
-        )
+        logger.info(f"Certificado importado: {tenant_id}/{tipo.value} (válido até {info.validade_fim.date()})")
 
         return info
 
     def _extrair_info_certificado(
-        self,
-        pfx_bytes: bytes,
-        senha: str,
-        tenant_id: str,
-        tipo: TipoCertificado
+        self, pfx_bytes: bytes, senha: str, tenant_id: str, tipo: TipoCertificado
     ) -> CertificadoInfo:
         """Extrai informações de um certificado PFX."""
         try:
@@ -181,7 +170,7 @@ class GerenciadorCertificados:
             logger.error(f"Erro ao extrair info do certificado: {e}")
             raise ValueError(f"Certificado inválido: {e}")
 
-    def _extrair_cnpj_cpf(self, subject: str) -> Optional[str]:
+    def _extrair_cnpj_cpf(self, subject: str) -> str | None:
         """Extrai CNPJ ou CPF do subject do certificado."""
         import re
 
@@ -203,7 +192,7 @@ class GerenciadorCertificados:
 
         return None
 
-    def _extrair_razao_social(self, subject: str) -> Optional[str]:
+    def _extrair_razao_social(self, subject: str) -> str | None:
         """Extrai razão social do subject do certificado."""
         import re
 
@@ -217,11 +206,7 @@ class GerenciadorCertificados:
 
         return None
 
-    async def obter_certificado(
-        self,
-        tenant_id: str,
-        tipo: TipoCertificado
-    ) -> Tuple[Optional[bytes], Optional[str]]:
+    async def obter_certificado(self, tenant_id: str, tipo: TipoCertificado) -> tuple[bytes | None, str | None]:
         """
         Obtém certificado PFX e senha.
 
@@ -248,11 +233,7 @@ class GerenciadorCertificados:
         pfx_bytes = base64.b64decode(pfx_base64)
         return pfx_bytes, senha
 
-    async def obter_info_certificado(
-        self,
-        tenant_id: str,
-        tipo: TipoCertificado
-    ) -> Optional[CertificadoInfo]:
+    async def obter_info_certificado(self, tenant_id: str, tipo: TipoCertificado) -> CertificadoInfo | None:
         """Obtém informações de um certificado sem retornar a chave privada."""
         pfx_bytes, senha = await self.obter_certificado(tenant_id, tipo)
 
@@ -265,10 +246,7 @@ class GerenciadorCertificados:
             logger.error(f"Erro ao obter info do certificado: {e}")
             return None
 
-    async def listar_certificados(
-        self,
-        tenant_id: str
-    ) -> List[CertificadoInfo]:
+    async def listar_certificados(self, tenant_id: str) -> list[CertificadoInfo]:
         """Lista todos os certificados de um tenant."""
         tipos = await self.vault.listar_certificados_tenant(tenant_id)
         certificados = []
@@ -285,10 +263,7 @@ class GerenciadorCertificados:
 
         return certificados
 
-    async def verificar_expiracao(
-        self,
-        tenant_id: Optional[str] = None
-    ) -> List[CertificadoInfo]:
+    async def verificar_expiracao(self, tenant_id: str | None = None) -> list[CertificadoInfo]:
         """
         Verifica certificados próximos da expiração.
 
@@ -310,20 +285,12 @@ class GerenciadorCertificados:
 
         return alertas
 
-    async def deletar_certificado(
-        self,
-        tenant_id: str,
-        tipo: TipoCertificado
-    ) -> bool:
+    async def deletar_certificado(self, tenant_id: str, tipo: TipoCertificado) -> bool:
         """Remove um certificado do Vault."""
         path = f"government/certificates/{tenant_id}/{tipo.value}"
         return await self.vault.deletar_secret(path)
 
-    async def criar_contexto_ssl(
-        self,
-        tenant_id: str,
-        tipo: TipoCertificado
-    ) -> Optional[Any]:
+    async def criar_contexto_ssl(self, tenant_id: str, tipo: TipoCertificado) -> Any | None:
         """
         Cria contexto SSL com certificado do tenant.
 
@@ -379,12 +346,7 @@ class GerenciadorCertificados:
             logger.error(f"Erro ao criar contexto SSL: {e}")
             return None
 
-    async def assinar_xml(
-        self,
-        tenant_id: str,
-        tipo: TipoCertificado,
-        xml_content: str
-    ) -> Optional[str]:
+    async def assinar_xml(self, tenant_id: str, tipo: TipoCertificado, xml_content: str) -> str | None:
         """
         Assina XML com certificado digital.
 
@@ -420,6 +382,7 @@ class GerenciadorCertificados:
 
             # Assinar
             from lxml import etree
+
             root = etree.fromstring(xml_content.encode("utf-8"))
             signed_root = signer.sign(
                 root,
@@ -437,10 +400,7 @@ class GerenciadorCertificados:
             logger.error(f"Erro ao assinar XML: {e}")
             return None
 
-    def gerar_relatorio_certificados(
-        self,
-        certificados: List[CertificadoInfo]
-    ) -> Dict[str, Any]:
+    def gerar_relatorio_certificados(self, certificados: list[CertificadoInfo]) -> dict[str, Any]:
         """Gera relatório de status dos certificados."""
         total = len(certificados)
         validos = [c for c in certificados if c.valido]

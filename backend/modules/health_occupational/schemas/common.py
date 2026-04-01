@@ -6,17 +6,17 @@ Schemas compartilhados entre os dominios.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from uuid import UUID
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 
 
 class StandardResponse(BaseModel):
     """Response padrao da API."""
+
     success: bool = Field(..., description="Sucesso da operacao")
     message: str = Field(..., description="Mensagem descritiva")
-    data: Optional[Dict[str, Any]] = Field(default=None, description="Dados retornados")
+    data: dict[str, Any] | None = Field(default=None, description="Dados retornados")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="Timestamp da resposta",
@@ -25,13 +25,15 @@ class StandardResponse(BaseModel):
 
 class PaginationParams(BaseModel):
     """Parametros de paginacao."""
+
     page: int = Field(default=1, ge=1, description="Numero da pagina")
     size: int = Field(default=20, ge=1, le=100, description="Itens por pagina")
 
 
 class PaginatedResponse(BaseModel):
     """Response com paginacao."""
-    items: List[Any]
+
+    items: list[Any]
     total: int
     page: int
     size: int
@@ -50,8 +52,9 @@ class PaginatedResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Response de erro."""
+
     success: bool = Field(default=False)
     message: str
-    error_code: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    error_code: str | None = None
+    details: dict[str, Any] | None = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)

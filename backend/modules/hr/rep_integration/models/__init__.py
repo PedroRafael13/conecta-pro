@@ -1,28 +1,28 @@
 """Models do módulo de Integração REP."""
 
-from .rep_device import (
-    REPDevice,
-    DeviceManufacturer,
-    DeviceModel,
-    DeviceStatus,
-    CommunicationProtocol,
-    AuthMethod,
-)
-from .rep_event import (
-    REPEvent,
-    EventType,
-    IdentificationMethod,
-    EventStatus,
-)
-from .rep_sync import (
-    REPSync,
-    SyncType,
-    SyncStatus,
-    SyncTrigger,
-)
 from .afd_record import (
     AFDRecord,
     AFDRecordType,
+)
+from .rep_device import (
+    AuthMethod,
+    CommunicationProtocol,
+    DeviceManufacturer,
+    DeviceModel,
+    DeviceStatus,
+    REPDevice,
+)
+from .rep_event import (
+    EventStatus,
+    EventType,
+    IdentificationMethod,
+    REPEvent,
+)
+from .rep_sync import (
+    REPSync,
+    SyncStatus,
+    SyncTrigger,
+    SyncType,
 )
 
 __all__ = [

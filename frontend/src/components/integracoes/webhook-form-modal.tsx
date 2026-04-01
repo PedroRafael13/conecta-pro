@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,15 @@ interface WebhookFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (webhook?: any) => ({
+  name: webhook?.name || '',
+  url: webhook?.url || '',
+  events: Array.isArray(webhook?.events) ? webhook.events.join(', ') : webhook?.events || '',
+  status: webhook?.status || 'active',
+  headers: webhook?.headers ? (typeof webhook.headers === 'string' ? webhook.headers : JSON.stringify(webhook.headers, null, 2)) : '',
+});
+
 export function WebhookFormModal({
   isOpen,
   onClose,
@@ -29,39 +38,26 @@ export function WebhookFormModal({
   isLoading,
 }: WebhookFormModalProps) {
   const isEditing = !!webhook;
-  const [form, setForm] = useState({
-    name: '',
-    url: '',
-    events: '',
-    status: 'active',
-    headers: '',
-  });
+
+  const formKey = useMemo(() => {
+    return webhook?.id || webhook?.codigo || 'new';
+  }, [webhook]);
+
+  const [form, setForm] = useState(createInitialForm(webhook));
 
   useEffect(() => {
-    if (webhook) {
-      setForm({
-        name: webhook.name || '',
-        url: webhook.url || '',
-        events: Array.isArray(webhook.events) ? webhook.events.join(', ') : webhook.events || '',
-        status: webhook.status || 'active',
-        headers: webhook.headers ? (typeof webhook.headers === 'string' ? webhook.headers : JSON.stringify(webhook.headers, null, 2)) : '',
-      });
-    } else {
-      setForm({
-        name: '',
-        url: '',
-        events: '',
-        status: 'active',
-        headers: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(webhook));
     }
-  }, [webhook, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     const eventsArray = form.events
       .split(',')
-      .map((e) => e.trim())
-      .filter((e) => e.length > 0);
+      .map((e: string) => e.trim())
+      .filter((e: string) => e.length > 0);
 
     let parsedHeaders: Record<string, string> | undefined;
     if (form.headers.trim()) {

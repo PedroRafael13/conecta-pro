@@ -3,10 +3,9 @@
 Sprint 39 - Document OCR.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +22,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from core.models.base import Base
 
 
-class ValidationStatus(str, enum.Enum):
+class ValidationStatus(StrEnum):
     """Status geral de validacao."""
 
     PENDING = "pending"  # Aguardando validacao
@@ -34,7 +33,7 @@ class ValidationStatus(str, enum.Enum):
     SKIPPED = "skipped"  # Validacao pulada
 
 
-class ValidationAction(str, enum.Enum):
+class ValidationAction(StrEnum):
     """Acao pos-validacao."""
 
     NONE = "none"  # Nenhuma acao
@@ -226,7 +225,7 @@ class ValidationResult(Base):
         code: str,
         message: str,
         severity: str = "error",
-        suggestion: Optional[str] = None,
+        suggestion: str | None = None,
     ) -> None:
         """Adiciona erro."""
         if self.errors is None:
@@ -250,11 +249,13 @@ class ValidationResult(Base):
         """Adiciona warning."""
         if self.warnings is None:
             self.warnings = []
-        self.warnings.append({
-            "field": field,
-            "code": code,
-            "message": message,
-        })
+        self.warnings.append(
+            {
+                "field": field,
+                "code": code,
+                "message": message,
+            }
+        )
 
     def add_auto_correction(
         self,
@@ -266,9 +267,11 @@ class ValidationResult(Base):
         """Adiciona correcao automatica."""
         if self.auto_corrections is None:
             self.auto_corrections = []
-        self.auto_corrections.append({
-            "field": field,
-            "original": original,
-            "corrected": corrected,
-            "reason": reason,
-        })
+        self.auto_corrections.append(
+            {
+                "field": field,
+                "original": original,
+                "corrected": corrected,
+                "reason": reason,
+            }
+        )

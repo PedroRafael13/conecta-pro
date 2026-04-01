@@ -6,7 +6,7 @@ Create Date: 2026-01-06
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -15,29 +15,38 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "ews001"
-down_revision: Union[str, None] = "a1b2c3d4e5f6"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "a1b2c3d4e5f6"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     # Criar enum types
     alert_level = postgresql.ENUM(
-        "green", "yellow", "orange", "red",
+        "green",
+        "yellow",
+        "orange",
+        "red",
         name="alertlevel",
         create_type=False,
     )
     alert_level.create(op.get_bind(), checkfirst=True)
 
     alert_status = postgresql.ENUM(
-        "active", "acknowledged", "resolved", "escalated", "suppressed",
+        "active",
+        "acknowledged",
+        "resolved",
+        "escalated",
+        "suppressed",
         name="alertstatus",
         create_type=False,
     )
     alert_status.create(op.get_bind(), checkfirst=True)
 
     threshold_type = postgresql.ENUM(
-        "upper", "lower", "range",
+        "upper",
+        "lower",
+        "range",
         name="thresholdtype",
         create_type=False,
     )
@@ -114,7 +123,11 @@ def upgrade() -> None:
         sa.Column(
             "status",
             postgresql.ENUM(
-                "active", "acknowledged", "resolved", "escalated", "suppressed",
+                "active",
+                "acknowledged",
+                "resolved",
+                "escalated",
+                "suppressed",
                 name="alertstatus",
                 create_type=False,
             ),

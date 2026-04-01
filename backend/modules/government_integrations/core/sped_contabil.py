@@ -18,19 +18,20 @@ Blocos do arquivo:
 - Bloco 9: Controle e Encerramento
 """
 
-import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, field
-from enum import Enum
 import hashlib
+import logging
+from dataclasses import dataclass
+from datetime import date
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class TipoECD(str, Enum):
+class TipoECD(StrEnum):
     """Tipo de ECD."""
+
     LIVRO_DIARIO_GERAL = "G"
     LIVRO_DIARIO_RESUMIDO = "R"
     LIVRO_DIARIO_AUXILIAR = "A"
@@ -38,8 +39,9 @@ class TipoECD(str, Enum):
     LIVRO_BALANCETES = "B"
 
 
-class NaturezaConta(str, Enum):
+class NaturezaConta(StrEnum):
     """Natureza da conta contábil."""
+
     ATIVO = "01"
     PASSIVO = "02"
     PATRIMONIO_LIQUIDO = "03"
@@ -47,14 +49,16 @@ class NaturezaConta(str, Enum):
     RESULTADO_DEVEDORA = "05"
 
 
-class IndicadorDC(str, Enum):
+class IndicadorDC(StrEnum):
     """Indicador de débito/crédito."""
+
     DEBITO = "D"
     CREDITO = "C"
 
 
-class TipoConta(str, Enum):
+class TipoConta(StrEnum):
     """Tipo de conta."""
+
     SINTETICA = "S"
     ANALITICA = "A"
 
@@ -62,13 +66,14 @@ class TipoConta(str, Enum):
 @dataclass
 class ContaContabil:
     """Conta do plano de contas."""
+
     codigo: str
     descricao: str
     tipo: TipoConta
     nivel: int
     natureza: NaturezaConta
-    codigo_pai: Optional[str] = None
-    codigo_referencial: Optional[str] = None  # Referencial da RFB
+    codigo_pai: str | None = None
+    codigo_referencial: str | None = None  # Referencial da RFB
     saldo_inicial_debito: Decimal = Decimal("0")
     saldo_inicial_credito: Decimal = Decimal("0")
 
@@ -76,19 +81,21 @@ class ContaContabil:
 @dataclass
 class LancamentoContabil:
     """Lançamento contábil."""
+
     numero: int
     data: date
     conta_debito: str
     conta_credito: str
     valor: Decimal
     historico: str
-    documento: Optional[str] = None
-    participante: Optional[str] = None
+    documento: str | None = None
+    participante: str | None = None
 
 
 @dataclass
 class SaldoPeriodico:
     """Saldo periódico de uma conta."""
+
     codigo_conta: str
     data_inicio: date
     data_fim: date
@@ -100,20 +107,20 @@ class SaldoPeriodico:
     @property
     def saldo_final_debito(self) -> Decimal:
         saldo = (
-            self.valor_saldo_inicial_debito +
-            self.valor_debitos -
-            self.valor_saldo_inicial_credito -
-            self.valor_creditos
+            self.valor_saldo_inicial_debito
+            + self.valor_debitos
+            - self.valor_saldo_inicial_credito
+            - self.valor_creditos
         )
         return max(Decimal("0"), saldo)
 
     @property
     def saldo_final_credito(self) -> Decimal:
         saldo = (
-            self.valor_saldo_inicial_credito +
-            self.valor_creditos -
-            self.valor_saldo_inicial_debito -
-            self.valor_debitos
+            self.valor_saldo_inicial_credito
+            + self.valor_creditos
+            - self.valor_saldo_inicial_debito
+            - self.valor_debitos
         )
         return max(Decimal("0"), saldo)
 
@@ -121,6 +128,7 @@ class SaldoPeriodico:
 @dataclass
 class DemonstrativoBalancoPatrimonial:
     """Balanço Patrimonial."""
+
     data_referencia: date
     ativo_circulante: Decimal = Decimal("0")
     ativo_nao_circulante: Decimal = Decimal("0")
@@ -140,6 +148,7 @@ class DemonstrativoBalancoPatrimonial:
 @dataclass
 class DemonstrativoDRE:
     """Demonstração do Resultado do Exercício."""
+
     periodo_inicio: date
     periodo_fim: date
     receita_bruta: Decimal = Decimal("0")
@@ -200,11 +209,11 @@ class SPEDContabilManager:
         self.tipo_ecd = tipo_ecd
 
         # Dados para geração
-        self.plano_contas: Dict[str, ContaContabil] = {}
-        self.lancamentos: List[LancamentoContabil] = []
-        self.saldos_periodicos: List[SaldoPeriodico] = []
-        self.balanco: Optional[DemonstrativoBalancoPatrimonial] = None
-        self.dre: Optional[DemonstrativoDRE] = None
+        self.plano_contas: dict[str, ContaContabil] = {}
+        self.lancamentos: list[LancamentoContabil] = []
+        self.saldos_periodicos: list[SaldoPeriodico] = []
+        self.balanco: DemonstrativoBalancoPatrimonial | None = None
+        self.dre: DemonstrativoDRE | None = None
 
     def adicionar_conta(self, conta: ContaContabil) -> None:
         """Adiciona conta ao plano de contas."""
@@ -214,11 +223,7 @@ class SPEDContabilManager:
         """Adiciona lançamento contábil."""
         self.lancamentos.append(lancamento)
 
-    def calcular_saldos(
-        self,
-        periodo_inicio: date,
-        periodo_fim: date
-    ) -> List[SaldoPeriodico]:
+    def calcular_saldos(self, periodo_inicio: date, periodo_fim: date) -> list[SaldoPeriodico]:
         """
         Calcula saldos periódicos das contas.
 
@@ -259,11 +264,7 @@ class SPEDContabilManager:
         return self.saldos_periodicos
 
     def gerar_arquivo(
-        self,
-        ano_referencia: int,
-        periodo_inicio: date,
-        periodo_fim: date,
-        numero_ordem: str = "00001"
+        self, ano_referencia: int, periodo_inicio: date, periodo_fim: date, numero_ordem: str = "00001"
     ) -> str:
         """
         Gera o arquivo SPED Contábil.
@@ -297,43 +298,38 @@ class SPEDContabilManager:
 
         return conteudo
 
-    def _gerar_bloco_0(
-        self,
-        ano: int,
-        dt_ini: date,
-        dt_fim: date,
-        num_ord: str,
-        contador: Dict
-    ) -> List[str]:
+    def _gerar_bloco_0(self, ano: int, dt_ini: date, dt_fim: date, _num_ord: str, contador: dict) -> list[str]:
         """Gera bloco 0 - Abertura e Identificação."""
         linhas = []
 
         # Registro 0000 - Abertura do Arquivo
-        r0000 = self._pipe([
-            "0000",
-            "LECD",
-            dt_ini.strftime("%d%m%Y"),
-            dt_fim.strftime("%d%m%Y"),
-            self.razao_social,
-            self.cnpj,
-            "",  # UF
-            "",  # IE
-            "",  # COD_MUN
-            "",  # IM
-            "0",  # IND_SIT_ESP
-            "0",  # IND_SIT_INI_PER
-            "0",  # IND_NIRE
-            "0",  # IND_FIN_ESC
-            "",  # COD_HASH_SUB
-            "0",  # IND_GRANDE_PORTE
-            "0",  # TIP_ECD
-            "",  # COD_SCP
-            "",  # IDENT_MF
-            "0",  # IND_ESC_CONS
-            "0",  # IND_CENTRALIZADA
-            "0",  # IND_MUDANÇA_PC
-            "0",  # COD_PLAN_REF
-        ])
+        r0000 = self._pipe(
+            [
+                "0000",
+                "LECD",
+                dt_ini.strftime("%d%m%Y"),
+                dt_fim.strftime("%d%m%Y"),
+                self.razao_social,
+                self.cnpj,
+                "",  # UF
+                "",  # IE
+                "",  # COD_MUN
+                "",  # IM
+                "0",  # IND_SIT_ESP
+                "0",  # IND_SIT_INI_PER
+                "0",  # IND_NIRE
+                "0",  # IND_FIN_ESC
+                "",  # COD_HASH_SUB
+                "0",  # IND_GRANDE_PORTE
+                "0",  # TIP_ECD
+                "",  # COD_SCP
+                "",  # IDENT_MF
+                "0",  # IND_ESC_CONS
+                "0",  # IND_CENTRALIZADA
+                "0",  # IND_MUDANÇA_PC
+                "0",  # COD_PLAN_REF
+            ]
+        )
         linhas.append(r0000)
         self._contar(contador, "0000")
 
@@ -356,7 +352,7 @@ class SPEDContabilManager:
 
         return linhas
 
-    def _gerar_bloco_i(self, dt_ini: date, dt_fim: date, contador: Dict) -> List[str]:
+    def _gerar_bloco_i(self, dt_ini: date, dt_fim: date, contador: dict) -> list[str]:
         """Gera bloco I - Lançamentos Contábeis."""
         linhas = []
 
@@ -365,11 +361,13 @@ class SPEDContabilManager:
         self._contar(contador, "I001")
 
         # Registro I010 - Identificação da Escrituração
-        r_i010 = self._pipe([
-            "I010",
-            "2",  # IND_ESC (2=Diário Geral)
-            "2.01.01",  # COD_VER_LC
-        ])
+        r_i010 = self._pipe(
+            [
+                "I010",
+                "2",  # IND_ESC (2=Diário Geral)
+                "2.01.01",  # COD_VER_LC
+            ]
+        )
         linhas.append(r_i010)
         self._contar(contador, "I010")
 
@@ -377,50 +375,58 @@ class SPEDContabilManager:
         # (opcional, não implementado)
 
         # Registro I015 - Identificação das Contas
-        for codigo, conta in sorted(self.plano_contas.items()):
-            r_i015 = self._pipe([
-                "I015",
-                conta.codigo,
-            ])
+        for _codigo, conta in sorted(self.plano_contas.items()):
+            r_i015 = self._pipe(
+                [
+                    "I015",
+                    conta.codigo,
+                ]
+            )
             linhas.append(r_i015)
             self._contar(contador, "I015")
 
         # Registro I030 - Termo de Abertura
-        r_i030 = self._pipe([
-            "I030",
-            "",  # DNRC_ABERT
-            str(len([l for l in self.lancamentos if dt_ini <= l.data <= dt_fim])),  # NUM_ORD
-            self.razao_social,
-            "",  # NUM_LINHA
-            dt_ini.strftime("%d%m%Y"),
-            dt_fim.strftime("%d%m%Y"),
-        ])
+        r_i030 = self._pipe(
+            [
+                "I030",
+                "",  # DNRC_ABERT
+                str(len([lanc for lanc in self.lancamentos if dt_ini <= lanc.data <= dt_fim])),  # NUM_ORD
+                self.razao_social,
+                "",  # NUM_LINHA
+                dt_ini.strftime("%d%m%Y"),
+                dt_fim.strftime("%d%m%Y"),
+            ]
+        )
         linhas.append(r_i030)
         self._contar(contador, "I030")
 
         # Registro I050 - Plano de Contas
-        for codigo, conta in sorted(self.plano_contas.items()):
-            r_i050 = self._pipe([
-                "I050",
-                dt_ini.strftime("%d%m%Y"),
-                conta.natureza.value,
-                "1",  # IND_CTA (1=Conta do Ativo/Passivo, 2=Conta de resultado)
-                str(conta.nivel),
-                conta.codigo,
-                conta.codigo_pai or "",
-                conta.descricao,
-            ])
+        for _codigo, conta in sorted(self.plano_contas.items()):
+            r_i050 = self._pipe(
+                [
+                    "I050",
+                    dt_ini.strftime("%d%m%Y"),
+                    conta.natureza.value,
+                    "1",  # IND_CTA (1=Conta do Ativo/Passivo, 2=Conta de resultado)
+                    str(conta.nivel),
+                    conta.codigo,
+                    conta.codigo_pai or "",
+                    conta.descricao,
+                ]
+            )
             linhas.append(r_i050)
             self._contar(contador, "I050")
 
             # Registro I051 - Plano de Contas Referencial
             if conta.codigo_referencial:
-                r_i051 = self._pipe([
-                    "I051",
-                    "",  # COD_ENT_REF
-                    "",  # COD_CCUS
-                    conta.codigo_referencial,
-                ])
+                r_i051 = self._pipe(
+                    [
+                        "I051",
+                        "",  # COD_ENT_REF
+                        "",  # COD_CCUS
+                        conta.codigo_referencial,
+                    ]
+                )
                 linhas.append(r_i051)
                 self._contar(contador, "I051")
 
@@ -430,79 +436,94 @@ class SPEDContabilManager:
 
         # Registro I150 - Saldos Periódicos
         for saldo in self.saldos_periodicos:
-            r_i150 = self._pipe([
-                "I150",
-                saldo.data_inicio.strftime("%d%m%Y"),
-                saldo.data_fim.strftime("%d%m%Y"),
-                str(saldo.valor_saldo_inicial_debito),
-                str(saldo.valor_saldo_inicial_credito),
-                str(saldo.valor_debitos),
-                str(saldo.valor_creditos),
-                str(saldo.saldo_final_debito),
-                str(saldo.saldo_final_credito),
-            ])
+            r_i150 = self._pipe(
+                [
+                    "I150",
+                    saldo.data_inicio.strftime("%d%m%Y"),
+                    saldo.data_fim.strftime("%d%m%Y"),
+                    str(saldo.valor_saldo_inicial_debito),
+                    str(saldo.valor_saldo_inicial_credito),
+                    str(saldo.valor_debitos),
+                    str(saldo.valor_creditos),
+                    str(saldo.saldo_final_debito),
+                    str(saldo.saldo_final_credito),
+                ]
+            )
             linhas.append(r_i150)
             self._contar(contador, "I150")
 
         # Registro I200/I250 - Lançamentos Contábeis
-        for i, lanc in enumerate(sorted(self.lancamentos, key=lambda x: (x.data, x.numero)), 1):
+        for _i, lanc in enumerate(sorted(self.lancamentos, key=lambda x: (x.data, x.numero)), 1):
             if dt_ini <= lanc.data <= dt_fim:
                 # I200 - Lançamento Contábil
-                r_i200 = self._pipe([
-                    "I200",
-                    str(lanc.numero),
-                    lanc.data.strftime("%d%m%Y"),
-                    str(lanc.valor),
-                    "N",  # IND_LCTO (N=Normal, E=Encerramento, X=Estorno)
-                ])
+                r_i200 = self._pipe(
+                    [
+                        "I200",
+                        str(lanc.numero),
+                        lanc.data.strftime("%d%m%Y"),
+                        str(lanc.valor),
+                        "N",  # IND_LCTO (N=Normal, E=Encerramento, X=Estorno)
+                    ]
+                )
                 linhas.append(r_i200)
                 self._contar(contador, "I200")
 
                 # I250 - Partidas do Lançamento
                 # Débito
-                r_i250_d = self._pipe([
-                    "I250",
-                    lanc.conta_debito,
-                    "",  # COD_CCUS
-                    str(lanc.valor),
-                    IndicadorDC.DEBITO.value,
-                    "",  # NUM_ARQ
-                    "",  # COD_HIST_PAD
-                    lanc.historico[:200],
-                    "",  # COD_PART
-                ])
+                r_i250_d = self._pipe(
+                    [
+                        "I250",
+                        lanc.conta_debito,
+                        "",  # COD_CCUS
+                        str(lanc.valor),
+                        IndicadorDC.DEBITO.value,
+                        "",  # NUM_ARQ
+                        "",  # COD_HIST_PAD
+                        lanc.historico[:200],
+                        "",  # COD_PART
+                    ]
+                )
                 linhas.append(r_i250_d)
                 self._contar(contador, "I250")
 
                 # Crédito
-                r_i250_c = self._pipe([
-                    "I250",
-                    lanc.conta_credito,
-                    "",  # COD_CCUS
-                    str(lanc.valor),
-                    IndicadorDC.CREDITO.value,
-                    "",  # NUM_ARQ
-                    "",  # COD_HIST_PAD
-                    lanc.historico[:200],
-                    "",  # COD_PART
-                ])
+                r_i250_c = self._pipe(
+                    [
+                        "I250",
+                        lanc.conta_credito,
+                        "",  # COD_CCUS
+                        str(lanc.valor),
+                        IndicadorDC.CREDITO.value,
+                        "",  # NUM_ARQ
+                        "",  # COD_HIST_PAD
+                        lanc.historico[:200],
+                        "",  # COD_PART
+                    ]
+                )
                 linhas.append(r_i250_c)
                 self._contar(contador, "I250")
 
         # Registro I350 - Saldos das Contas de Resultado
-        contas_resultado = [c for c in self.plano_contas.values()
-                          if c.natureza in [NaturezaConta.RESULTADO_CREDORA, NaturezaConta.RESULTADO_DEVEDORA]]
+        contas_resultado = [
+            c
+            for c in self.plano_contas.values()
+            if c.natureza in [NaturezaConta.RESULTADO_CREDORA, NaturezaConta.RESULTADO_DEVEDORA]
+        ]
 
         for conta in contas_resultado:
             saldo = next((s for s in self.saldos_periodicos if s.codigo_conta == conta.codigo), None)
             if saldo:
-                r_i350 = self._pipe([
-                    "I350",
-                    dt_fim.strftime("%d%m%Y"),
-                    conta.codigo,
-                    str(saldo.saldo_final_debito) if conta.natureza == NaturezaConta.RESULTADO_DEVEDORA else str(saldo.saldo_final_credito),
-                    "D" if conta.natureza == NaturezaConta.RESULTADO_DEVEDORA else "C",
-                ])
+                r_i350 = self._pipe(
+                    [
+                        "I350",
+                        dt_fim.strftime("%d%m%Y"),
+                        conta.codigo,
+                        str(saldo.saldo_final_debito)
+                        if conta.natureza == NaturezaConta.RESULTADO_DEVEDORA
+                        else str(saldo.saldo_final_credito),
+                        "D" if conta.natureza == NaturezaConta.RESULTADO_DEVEDORA else "C",
+                    ]
+                )
                 linhas.append(r_i350)
                 self._contar(contador, "I350")
 
@@ -513,7 +534,7 @@ class SPEDContabilManager:
 
         return linhas
 
-    def _gerar_bloco_j(self, data_ref: date, contador: Dict) -> List[str]:
+    def _gerar_bloco_j(self, data_ref: date, contador: dict) -> list[str]:
         """Gera bloco J - Demonstrações Contábeis."""
         linhas = []
 
@@ -523,159 +544,207 @@ class SPEDContabilManager:
         self._contar(contador, "J001")
 
         # J005 - Demonstrações Contábeis
-        r_j005 = self._pipe([
-            "J005",
-            data_ref.strftime("%d%m%Y"),
-            "01",  # ID_DEM (01=Balanço)
-            "BALANÇO PATRIMONIAL",
-        ])
+        r_j005 = self._pipe(
+            [
+                "J005",
+                data_ref.strftime("%d%m%Y"),
+                "01",  # ID_DEM (01=Balanço)
+                "BALANÇO PATRIMONIAL",
+            ]
+        )
         linhas.append(r_j005)
         self._contar(contador, "J005")
 
         if self.balanco:
             # J100 - Balanço Patrimonial
             # Ativo Circulante
-            linhas.append(self._pipe([
-                "J100",
-                "1",  # COD_AGL
-                "1",  # NIVEL_AGL
-                "ATIVO CIRCULANTE",
-                str(self.balanco.ativo_circulante),
-                "D",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J100",
+                        "1",  # COD_AGL
+                        "1",  # NIVEL_AGL
+                        "ATIVO CIRCULANTE",
+                        str(self.balanco.ativo_circulante),
+                        "D",
+                    ]
+                )
+            )
             self._contar(contador, "J100")
 
             # Ativo Não Circulante
-            linhas.append(self._pipe([
-                "J100",
-                "2",
-                "1",
-                "ATIVO NÃO CIRCULANTE",
-                str(self.balanco.ativo_nao_circulante),
-                "D",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J100",
+                        "2",
+                        "1",
+                        "ATIVO NÃO CIRCULANTE",
+                        str(self.balanco.ativo_nao_circulante),
+                        "D",
+                    ]
+                )
+            )
             self._contar(contador, "J100")
 
             # Passivo Circulante
-            linhas.append(self._pipe([
-                "J100",
-                "3",
-                "1",
-                "PASSIVO CIRCULANTE",
-                str(self.balanco.passivo_circulante),
-                "C",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J100",
+                        "3",
+                        "1",
+                        "PASSIVO CIRCULANTE",
+                        str(self.balanco.passivo_circulante),
+                        "C",
+                    ]
+                )
+            )
             self._contar(contador, "J100")
 
             # Passivo Não Circulante
-            linhas.append(self._pipe([
-                "J100",
-                "4",
-                "1",
-                "PASSIVO NÃO CIRCULANTE",
-                str(self.balanco.passivo_nao_circulante),
-                "C",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J100",
+                        "4",
+                        "1",
+                        "PASSIVO NÃO CIRCULANTE",
+                        str(self.balanco.passivo_nao_circulante),
+                        "C",
+                    ]
+                )
+            )
             self._contar(contador, "J100")
 
             # Patrimônio Líquido
-            linhas.append(self._pipe([
-                "J100",
-                "5",
-                "1",
-                "PATRIMÔNIO LÍQUIDO",
-                str(self.balanco.patrimonio_liquido),
-                "C",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J100",
+                        "5",
+                        "1",
+                        "PATRIMÔNIO LÍQUIDO",
+                        str(self.balanco.patrimonio_liquido),
+                        "C",
+                    ]
+                )
+            )
             self._contar(contador, "J100")
 
         if self.dre:
             # J150 - DRE
-            r_j005_dre = self._pipe([
-                "J005",
-                data_ref.strftime("%d%m%Y"),
-                "02",  # ID_DEM (02=DRE)
-                "DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO",
-            ])
+            r_j005_dre = self._pipe(
+                [
+                    "J005",
+                    data_ref.strftime("%d%m%Y"),
+                    "02",  # ID_DEM (02=DRE)
+                    "DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO",
+                ]
+            )
             linhas.append(r_j005_dre)
             self._contar(contador, "J005")
 
-            linhas.append(self._pipe([
-                "J150",
-                "1",
-                "1",
-                "RECEITA BRUTA",
-                str(self.dre.receita_bruta),
-                "C",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J150",
+                        "1",
+                        "1",
+                        "RECEITA BRUTA",
+                        str(self.dre.receita_bruta),
+                        "C",
+                    ]
+                )
+            )
             self._contar(contador, "J150")
 
-            linhas.append(self._pipe([
-                "J150",
-                "2",
-                "1",
-                "(-) DEDUÇÕES DA RECEITA",
-                str(self.dre.deducoes_receita),
-                "D",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J150",
+                        "2",
+                        "1",
+                        "(-) DEDUÇÕES DA RECEITA",
+                        str(self.dre.deducoes_receita),
+                        "D",
+                    ]
+                )
+            )
             self._contar(contador, "J150")
 
-            linhas.append(self._pipe([
-                "J150",
-                "3",
-                "1",
-                "(=) RECEITA LÍQUIDA",
-                str(self.dre.receita_liquida),
-                "C",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J150",
+                        "3",
+                        "1",
+                        "(=) RECEITA LÍQUIDA",
+                        str(self.dre.receita_liquida),
+                        "C",
+                    ]
+                )
+            )
             self._contar(contador, "J150")
 
-            linhas.append(self._pipe([
-                "J150",
-                "4",
-                "1",
-                "(-) CUSTOS",
-                str(self.dre.custos),
-                "D",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J150",
+                        "4",
+                        "1",
+                        "(-) CUSTOS",
+                        str(self.dre.custos),
+                        "D",
+                    ]
+                )
+            )
             self._contar(contador, "J150")
 
-            linhas.append(self._pipe([
-                "J150",
-                "5",
-                "1",
-                "(=) LUCRO/PREJUÍZO LÍQUIDO",
-                str(self.dre.lucro_liquido),
-                "C" if self.dre.lucro_liquido >= 0 else "D",
-            ]))
+            linhas.append(
+                self._pipe(
+                    [
+                        "J150",
+                        "5",
+                        "1",
+                        "(=) LUCRO/PREJUÍZO LÍQUIDO",
+                        str(self.dre.lucro_liquido),
+                        "C" if self.dre.lucro_liquido >= 0 else "D",
+                    ]
+                )
+            )
             self._contar(contador, "J150")
 
         # J900 - Termo de Encerramento
-        r_j900 = self._pipe([
-            "J900",
-            "",  # DNRC_ENCER
-            str(len(self.lancamentos)),
-            self.razao_social,
-        ])
+        r_j900 = self._pipe(
+            [
+                "J900",
+                "",  # DNRC_ENCER
+                str(len(self.lancamentos)),
+                self.razao_social,
+            ]
+        )
         linhas.append(r_j900)
         self._contar(contador, "J900")
 
         # J930 - Signatários
-        r_j930 = self._pipe([
-            "J930",
-            "",  # IDENT_NOM
-            "CONTADOR",
-            "",  # IDENT_CPF
-            "",  # IDENT_QUALIF
-            "",  # COD_ASSIN
-            "",  # IND_CRC
-            "",  # EMAIL
-            "",  # FONE
-            "",  # UF_CRC
-            "",  # NUM_SEQ_CRC
-            "",  # DT_CRC
-            "",  # IND_RESP_LEGAL
-        ])
+        r_j930 = self._pipe(
+            [
+                "J930",
+                "",  # IDENT_NOM
+                "CONTADOR",
+                "",  # IDENT_CPF
+                "",  # IDENT_QUALIF
+                "",  # COD_ASSIN
+                "",  # IND_CRC
+                "",  # EMAIL
+                "",  # FONE
+                "",  # UF_CRC
+                "",  # NUM_SEQ_CRC
+                "",  # DT_CRC
+                "",  # IND_RESP_LEGAL
+            ]
+        )
         linhas.append(r_j930)
         self._contar(contador, "J930")
 
@@ -686,7 +755,7 @@ class SPEDContabilManager:
 
         return linhas
 
-    def _gerar_bloco_9(self, contador: Dict) -> List[str]:
+    def _gerar_bloco_9(self, contador: dict) -> list[str]:
         """Gera bloco 9 - Controle e Encerramento."""
         linhas = []
 
@@ -715,17 +784,17 @@ class SPEDContabilManager:
 
         return linhas
 
-    def _pipe(self, campos: List[str]) -> str:
+    def _pipe(self, campos: list[str]) -> str:
         """Formata campos com separador pipe."""
         return "|" + "|".join(campos) + "|"
 
-    def _contar(self, contador: Dict, registro: str) -> None:
+    def _contar(self, contador: dict, registro: str) -> None:
         """Conta registros."""
         if registro not in contador["registros"]:
             contador["registros"][registro] = 0
         contador["registros"][registro] += 1
 
-    def validar_arquivo(self, conteudo: str) -> Dict[str, Any]:
+    def validar_arquivo(self, conteudo: str) -> dict[str, Any]:
         """
         Valida o arquivo SPED gerado.
 
@@ -758,5 +827,5 @@ class SPEDContabilManager:
             "erros": erros,
             "avisos": avisos,
             "total_registros": len(linhas),
-            "hash": hashlib.md5(conteudo.encode()).hexdigest(),
+            "hash": hashlib.sha256(conteudo.encode()).hexdigest(),
         }

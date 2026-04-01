@@ -4,26 +4,22 @@ Tasks de Monitoramento e Manutenção.
 Verifica disponibilidade de endpoints, certificados e reprocessa falhas.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
+from datetime import datetime
 
 from celery import shared_task
 
 from ..core.contingency import (
-    VerificadorDisponibilidade,
-    ComutadorEndpoints,
     MATRIZ_CONTINGENCIA_NFE,
+    ComutadorEndpoints,
+    VerificadorDisponibilidade,
 )
 from ..core.credentials import (
     GerenciadorCertificados,
     get_vault_client,
 )
-from ..core.errors import FilaReprocessamento
 from ..core.events import (
-    EventBus,
     EventoSistema,
     TipoEvento,
     get_event_bus,
@@ -68,16 +64,16 @@ def verificar_disponibilidade():
             resultados.append(resultado)
 
             if resultado.disponivel:
-                await comutador.registrar_sucesso(
-                    uf, "nfe", resultado.tempo_resposta_ms
-                )
+                await comutador.registrar_sucesso(uf, "nfe", resultado.tempo_resposta_ms)
             else:
                 await comutador.registrar_falha(uf, "nfe", resultado.erro or "Indisponível")
-                alertas.append({
-                    "uf": uf,
-                    "servico": "nfe",
-                    "erro": resultado.erro,
-                })
+                alertas.append(
+                    {
+                        "uf": uf,
+                        "servico": "nfe",
+                        "erro": resultado.erro,
+                    }
+                )
 
             # Pequeno delay entre verificações
             await asyncio.sleep(0.5)
@@ -87,13 +83,15 @@ def verificar_disponibilidade():
 
         # Publicar eventos de alerta
         for alerta in alertas:
-            await event_bus.publicar(EventoSistema(
-                tipo_evento=TipoEvento.ENDPOINT_INDISPONIVEL,
-                servico=alerta["servico"],
-                uf=alerta["uf"],
-                descricao=f"Endpoint indisponível: {alerta['erro']}",
-                severidade="warning",
-            ))
+            await event_bus.publicar(
+                EventoSistema(
+                    tipo_evento=TipoEvento.ENDPOINT_INDISPONIVEL,
+                    servico=alerta["servico"],
+                    uf=alerta["uf"],
+                    descricao=f"Endpoint indisponível: {alerta['erro']}",
+                    severidade="warning",
+                )
+            )
 
         return relatorio
 
@@ -135,25 +133,29 @@ def verificar_certificados():
 
             for cert in certificados:
                 if cert.alerta_expiracao:
-                    alertas.append({
-                        "tenant_id": str(tenant_id),
-                        "tipo": cert.tipo.value,
-                        "dias_restantes": cert.dias_restantes,
-                        "validade_fim": cert.validade_fim.isoformat(),
-                    })
+                    alertas.append(
+                        {
+                            "tenant_id": str(tenant_id),
+                            "tipo": cert.tipo.value,
+                            "dias_restantes": cert.dias_restantes,
+                            "validade_fim": cert.validade_fim.isoformat(),
+                        }
+                    )
 
                     # Publicar evento
-                    await event_bus.publicar(EventoSistema(
-                        tipo_evento=TipoEvento.CERTIFICADO_EXPIRANDO,
-                        tenant_id=tenant_id,
-                        servico=cert.tipo.value,
-                        descricao=f"Certificado expira em {cert.dias_restantes} dias",
-                        detalhes={
-                            "validade_fim": cert.validade_fim.isoformat(),
-                            "dias_restantes": cert.dias_restantes,
-                        },
-                        severidade="warning" if cert.dias_restantes > 7 else "critical",
-                    ))
+                    await event_bus.publicar(
+                        EventoSistema(
+                            tipo_evento=TipoEvento.CERTIFICADO_EXPIRANDO,
+                            tenant_id=tenant_id,
+                            servico=cert.tipo.value,
+                            descricao=f"Certificado expira em {cert.dias_restantes} dias",
+                            detalhes={
+                                "validade_fim": cert.validade_fim.isoformat(),
+                                "dias_restantes": cert.dias_restantes,
+                            },
+                            severidade="warning" if cert.dias_restantes > 7 else "critical",
+                        )
+                    )
 
         return {
             "verificados": len(tenants),
@@ -173,7 +175,7 @@ def verificar_certificados():
     name="government_integrations.tasks.reprocess.reprocessar_falhas",
     queue="gov.batch",
 )
-def reprocessar_falhas(max_items: int = 100):
+def reprocessar_falhas(_max_items: int = 100):
     """
     Reprocessa documentos que falharam anteriormente.
 
@@ -217,10 +219,7 @@ def reprocessar_falhas(max_items: int = 100):
 
     resultado = run_async(_reprocessar())
 
-    logger.info(
-        f"Reprocessamento concluído: {resultado['sucesso']} sucesso, "
-        f"{resultado['falhas']} falhas"
-    )
+    logger.info(f"Reprocessamento concluído: {resultado['sucesso']} sucesso, {resultado['falhas']} falhas")
 
     return resultado
 

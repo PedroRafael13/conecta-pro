@@ -1,22 +1,21 @@
 """Controller para contracheques/holerites."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_async_session
 from core.auth.dependencies import get_current_user, require_roles
-from modules.hr.employee_portal.services import PaySlipService
+from core.database import get_async_session
+from modules.hr.employee_portal.models import PaySlipType
 from modules.hr.employee_portal.schemas import (
+    PaySlipListResponse,
     PaySlipResponse,
     PaySlipSummary,
-    PaySlipListResponse,
 )
-from modules.hr.employee_portal.models import PaySlipType
+from modules.hr.employee_portal.services import PaySlipService
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +28,8 @@ router = APIRouter(prefix="/payslips", tags=["Portal - Contracheques"])
     summary="Listar contracheques",
 )
 async def list_payslips(
-    year: Optional[int] = Query(None, description="Filtrar por ano"),
-    payslip_type: Optional[PaySlipType] = Query(None, description="Tipo"),
+    year: int | None = Query(None, description="Filtrar por ano"),
+    payslip_type: PaySlipType | None = Query(None, description="Tipo"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_async_session),
@@ -134,11 +133,7 @@ async def download_payslip(
     )
 
 
-@router.post(
-    "/{payslip_id}/acknowledge",
-    response_model=PaySlipResponse,
-    summary="Dar ciência no contracheque",
-)
+@router.post("/{payslip_id}/acknowledge", response_model=PaySlipResponse, summary="Dar ciência no contracheque")
 async def acknowledge_payslip(
     payslip_id: UUID,
     db: AsyncSession = Depends(get_async_session),
@@ -158,11 +153,7 @@ async def acknowledge_payslip(
     return PaySlipResponse.model_validate(payslip)
 
 
-@router.post(
-    "/{payslip_id}/contest",
-    response_model=PaySlipResponse,
-    summary="Contestar contracheque",
-)
+@router.post("/{payslip_id}/contest", response_model=PaySlipResponse, summary="Contestar contracheque")
 async def contest_payslip(
     payslip_id: UUID,
     reason: str = Query(..., min_length=10, max_length=1000),

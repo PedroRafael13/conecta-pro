@@ -4,41 +4,42 @@ Testes para e-CAC - Centro Virtual de Atendimento ao Contribuinte.
 Testes unitarios e de integracao para o modulo e-CAC.
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.ecac import (
+    Certidao,
+    DebitoFiscal,
+    DeclaracaoConsultada,
+    EcacManager,
+    PendenciaFiscal,
+    ResultadoSituacaoFiscal,
+    SituacaoFiscal,
+    TipoCertidao,
+    TipoDeclaracaoConsulta,
+    TipoPendencia,
+)
 from modules.government_integrations.schemas.ecac import (
-    ConsultaSituacaoFiscalRequest,
     ConsultaDebitosRequest,
     ConsultaDeclaracoesRequest,
-    EmitirCertidaoRequest,
-    ValidarCertidaoRequest,
     ConsultaParcelamentosRequest,
-    SimularParcelamentoRequest,
     ConsultaProcessosRequest,
-    TipoCertidaoEnum,
-    SituacaoFiscalEnum,
-    TipoPendenciaEnum,
-    TipoDeclaracaoEnum,
+    ConsultaSituacaoFiscalRequest,
+    EmitirCertidaoRequest,
+    SimularParcelamentoRequest,
     SituacaoDebitoEnum,
+    SituacaoFiscalEnum,
     SituacaoProcessoEnum,
+    TipoCertidaoEnum,
+    TipoDeclaracaoEnum,
+    TipoPendenciaEnum,
+    ValidarCertidaoRequest,
 )
 from modules.government_integrations.services.ecac_service import (
     EcacService,
-)
-from modules.government_integrations.core.ecac import (
-    EcacManager,
-    TipoCertidao,
-    SituacaoFiscal,
-    TipoPendencia,
-    TipoDeclaracaoConsulta,
-    PendenciaFiscal,
-    DebitoFiscal,
-    Certidao,
-    DeclaracaoConsultada,
-    ResultadoSituacaoFiscal,
 )
 
 
@@ -47,16 +48,12 @@ class TestSchemas:
 
     def test_consulta_situacao_fiscal_request_valid(self):
         """Testa ConsultaSituacaoFiscalRequest valido."""
-        request = ConsultaSituacaoFiscalRequest(
-            cpf_cnpj="12345678000199"
-        )
+        request = ConsultaSituacaoFiscalRequest(cpf_cnpj="12345678000199")
         assert request.cpf_cnpj == "12345678000199"
 
     def test_consulta_situacao_fiscal_request_limpa_formatacao(self):
         """Testa limpeza de formatacao do CPF/CNPJ."""
-        request = ConsultaSituacaoFiscalRequest(
-            cpf_cnpj="12.345.678/0001-99"
-        )
+        request = ConsultaSituacaoFiscalRequest(cpf_cnpj="12.345.678/0001-99")
         assert request.cpf_cnpj == "12345678000199"
 
     def test_consulta_situacao_fiscal_request_opcional(self):
@@ -67,9 +64,7 @@ class TestSchemas:
     def test_consulta_debitos_request_valid(self):
         """Testa ConsultaDebitosRequest valido."""
         request = ConsultaDebitosRequest(
-            situacao=SituacaoDebitoEnum.ABERTO,
-            competencia_inicio="2025-01",
-            competencia_fim="2025-12"
+            situacao=SituacaoDebitoEnum.ABERTO, competencia_inicio="2025-01", competencia_fim="2025-12"
         )
         assert request.situacao == SituacaoDebitoEnum.ABERTO
         assert request.competencia_inicio == "2025-01"
@@ -82,70 +77,46 @@ class TestSchemas:
 
     def test_consulta_declaracoes_request_valid(self):
         """Testa ConsultaDeclaracoesRequest valido."""
-        request = ConsultaDeclaracoesRequest(
-            tipo=TipoDeclaracaoEnum.DCTFWEB,
-            exercicio_inicio=2025,
-            exercicio_fim=2026
-        )
+        request = ConsultaDeclaracoesRequest(tipo=TipoDeclaracaoEnum.DCTFWEB, exercicio_inicio=2025, exercicio_fim=2026)
         assert request.tipo == TipoDeclaracaoEnum.DCTFWEB
         assert request.exercicio_inicio == 2025
 
     def test_consulta_declaracoes_request_sem_fim(self):
         """Testa request sem exercicio final."""
-        request = ConsultaDeclaracoesRequest(
-            tipo=TipoDeclaracaoEnum.IRPF,
-            exercicio_inicio=2025
-        )
+        request = ConsultaDeclaracoesRequest(tipo=TipoDeclaracaoEnum.IRPF, exercicio_inicio=2025)
         assert request.exercicio_fim is None
 
     def test_emitir_certidao_request_valid(self):
         """Testa EmitirCertidaoRequest valido."""
-        request = EmitirCertidaoRequest(
-            finalidade="Licitacao publica",
-            cpf_cnpj="12345678000199"
-        )
+        request = EmitirCertidaoRequest(finalidade="Licitacao publica", cpf_cnpj="12345678000199")
         assert request.finalidade == "Licitacao publica"
 
     def test_emitir_certidao_request_limpa_cpf_cnpj(self):
         """Testa limpeza de CPF/CNPJ na emissao."""
-        request = EmitirCertidaoRequest(
-            cpf_cnpj="12.345.678/0001-99"
-        )
+        request = EmitirCertidaoRequest(cpf_cnpj="12.345.678/0001-99")
         assert request.cpf_cnpj == "12345678000199"
 
     def test_validar_certidao_request_valid(self):
         """Testa ValidarCertidaoRequest valido."""
-        request = ValidarCertidaoRequest(
-            numero="123456789",
-            codigo_controle="ABCD1234EFGH5678"
-        )
+        request = ValidarCertidaoRequest(numero="123456789", codigo_controle="ABCD1234EFGH5678")
         assert request.numero == "123456789"
         assert request.codigo_controle == "ABCD1234EFGH5678"
 
     def test_simular_parcelamento_request_valid(self):
         """Testa SimularParcelamentoRequest valido."""
-        request = SimularParcelamentoRequest(
-            debitos=["DEB001", "DEB002"],
-            quantidade_parcelas=12
-        )
+        request = SimularParcelamentoRequest(debitos=["DEB001", "DEB002"], quantidade_parcelas=12)
         assert len(request.debitos) == 2
         assert request.quantidade_parcelas == 12
 
     def test_simular_parcelamento_request_limite_parcelas(self):
         """Testa limite de parcelas (2 a 60)."""
         # Valido
-        request = SimularParcelamentoRequest(
-            debitos=["DEB001"],
-            quantidade_parcelas=60
-        )
+        request = SimularParcelamentoRequest(debitos=["DEB001"], quantidade_parcelas=60)
         assert request.quantidade_parcelas == 60
 
     def test_consulta_processos_request_valid(self):
         """Testa ConsultaProcessosRequest valido."""
-        request = ConsultaProcessosRequest(
-            situacao=SituacaoProcessoEnum.ATIVO,
-            numero_processo="12345.678901/2025-01"
-        )
+        request = ConsultaProcessosRequest(situacao=SituacaoProcessoEnum.ATIVO, numero_processo="12345.678901/2025-01")
         assert request.situacao == SituacaoProcessoEnum.ATIVO
 
     def test_enums_valores(self):
@@ -232,10 +203,7 @@ class TestEcacManager:
 
     def test_validar_certidao(self, manager):
         """Testa validacao de certidao."""
-        resultado = manager.validar_certidao(
-            numero="123456",
-            codigo_controle="ABCD1234"
-        )
+        resultado = manager.validar_certidao(numero="123456", codigo_controle="ABCD1234")
 
         assert resultado["numero"] == "123456"
         assert resultado["codigo_controle"] == "ABCD1234"
@@ -244,19 +212,14 @@ class TestEcacManager:
     def test_consultar_declaracoes(self, manager):
         """Testa consulta de declaracoes."""
         declaracoes = manager.consultar_declaracoes(
-            tipo=TipoDeclaracaoConsulta.DCTFWEB,
-            exercicio_inicio=2025,
-            exercicio_fim=2026
+            tipo=TipoDeclaracaoConsulta.DCTFWEB, exercicio_inicio=2025, exercicio_fim=2026
         )
 
         assert isinstance(declaracoes, list)
 
     def test_consultar_declaracoes_sem_fim(self, manager):
         """Testa consulta com apenas exercicio inicial."""
-        declaracoes = manager.consultar_declaracoes(
-            tipo=TipoDeclaracaoConsulta.IRPF,
-            exercicio_inicio=2025
-        )
+        declaracoes = manager.consultar_declaracoes(tipo=TipoDeclaracaoConsulta.IRPF, exercicio_inicio=2025)
 
         assert isinstance(declaracoes, list)
 
@@ -268,10 +231,7 @@ class TestEcacManager:
 
     def test_simular_parcelamento(self, manager):
         """Testa simulacao de parcelamento."""
-        resultado = manager.simular_parcelamento(
-            debitos=["DEB001", "DEB002"],
-            quantidade_parcelas=12
-        )
+        resultado = manager.simular_parcelamento(debitos=["DEB001", "DEB002"], quantidade_parcelas=12)
 
         assert resultado["debitos"] == ["DEB001", "DEB002"]
         assert resultado["quantidade_parcelas"] == 12
@@ -300,10 +260,13 @@ class TestEcacService:
     @pytest.fixture
     def service(self):
         """Cria instancia do service para testes."""
-        with patch.dict('os.environ', {
-            'ECAC_CPF_CNPJ': '35710481000103',
-            'CERTIFICATE_PATH': '',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "ECAC_CPF_CNPJ": "35710481000103",
+                "CERTIFICATE_PATH": "",
+            },
+        ):
             return EcacService()
 
     def test_service_init(self, service):
@@ -339,9 +302,7 @@ class TestEcacService:
     def test_consultar_debitos_com_filtros(self, service):
         """Testa consulta de debitos com filtros."""
         resultado = service.consultar_debitos(
-            situacao="aberto",
-            competencia_inicio="2025-01",
-            competencia_fim="2025-12"
+            situacao="aberto", competencia_inicio="2025-01", competencia_fim="2025-12"
         )
 
         assert resultado["filtros"]["situacao"] == "aberto"
@@ -363,10 +324,7 @@ class TestEcacService:
 
     def test_validar_certidao(self, service):
         """Testa validacao de certidao via service."""
-        resultado = service.validar_certidao(
-            numero="123456",
-            codigo_controle="ABCD1234"
-        )
+        resultado = service.validar_certidao(numero="123456", codigo_controle="ABCD1234")
 
         assert resultado["numero"] == "123456"
         assert resultado["valida"] is True
@@ -374,10 +332,7 @@ class TestEcacService:
 
     def test_consultar_declaracoes(self, service):
         """Testa consulta de declaracoes via service."""
-        resultado = service.consultar_declaracoes(
-            tipo="dctfweb",
-            exercicio_inicio=2025
-        )
+        resultado = service.consultar_declaracoes(tipo="dctfweb", exercicio_inicio=2025)
 
         assert resultado["cpf_cnpj"] == "35710481000103"
         assert resultado["tipo"] == "dctfweb"
@@ -385,11 +340,7 @@ class TestEcacService:
 
     def test_consultar_declaracoes_range(self, service):
         """Testa consulta de declaracoes com range."""
-        resultado = service.consultar_declaracoes(
-            tipo="irpf",
-            exercicio_inicio=2020,
-            exercicio_fim=2025
-        )
+        resultado = service.consultar_declaracoes(tipo="irpf", exercicio_inicio=2020, exercicio_fim=2025)
 
         assert resultado["exercicio_inicio"] == 2020
         assert resultado["exercicio_fim"] == 2025
@@ -410,10 +361,7 @@ class TestEcacService:
 
     def test_simular_parcelamento(self, service):
         """Testa simulacao de parcelamento via service."""
-        resultado = service.simular_parcelamento(
-            debitos=["DEB001", "DEB002", "DEB003"],
-            quantidade_parcelas=12
-        )
+        resultado = service.simular_parcelamento(debitos=["DEB001", "DEB002", "DEB003"], quantidade_parcelas=12)
 
         assert resultado["cpf_cnpj"] == "35710481000103"
         assert resultado["quantidade_debitos"] == 3
@@ -430,10 +378,7 @@ class TestEcacService:
 
     def test_consultar_processos_com_filtros(self, service):
         """Testa consulta de processos com filtros."""
-        resultado = service.consultar_processos(
-            situacao="ativo",
-            numero_processo="12345"
-        )
+        resultado = service.consultar_processos(situacao="ativo", numero_processo="12345")
 
         assert resultado["filtros"]["situacao"] == "ativo"
         assert resultado["filtros"]["numero_processo"] == "12345"
@@ -454,12 +399,13 @@ class TestEcacEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.ecac_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -484,10 +430,7 @@ class TestEcacEndpoints:
 
     def test_consultar_situacao_fiscal_com_documento(self, client):
         """Testa endpoint com documento especifico."""
-        response = client.get(
-            "/api/v1/government/ecac/situacao-fiscal",
-            params={"cpf_cnpj": "12345678901"}
-        )
+        response = client.get("/api/v1/government/ecac/situacao-fiscal", params={"cpf_cnpj": "12345678901"})
 
         assert response.status_code == 200
         data = response.json()
@@ -506,11 +449,7 @@ class TestEcacEndpoints:
         """Testa endpoint de debitos com filtros."""
         response = client.get(
             "/api/v1/government/ecac/debitos",
-            params={
-                "situacao": "aberto",
-                "competencia_inicio": "2025-01",
-                "competencia_fim": "2025-12"
-            }
+            params={"situacao": "aberto", "competencia_inicio": "2025-01", "competencia_fim": "2025-12"},
         )
 
         assert response.status_code == 200
@@ -520,11 +459,7 @@ class TestEcacEndpoints:
     def test_consultar_declaracoes_endpoint(self, client):
         """Testa endpoint de declaracoes."""
         response = client.get(
-            "/api/v1/government/ecac/declaracoes",
-            params={
-                "tipo": "dctfweb",
-                "exercicio_inicio": 2025
-            }
+            "/api/v1/government/ecac/declaracoes", params={"tipo": "dctfweb", "exercicio_inicio": 2025}
         )
 
         assert response.status_code == 200
@@ -536,11 +471,7 @@ class TestEcacEndpoints:
         """Testa endpoint de declaracoes com range."""
         response = client.get(
             "/api/v1/government/ecac/declaracoes",
-            params={
-                "tipo": "irpf",
-                "exercicio_inicio": 2020,
-                "exercicio_fim": 2025
-            }
+            params={"tipo": "irpf", "exercicio_inicio": 2020, "exercicio_fim": 2025},
         )
 
         assert response.status_code == 200
@@ -550,14 +481,9 @@ class TestEcacEndpoints:
 
     def test_emitir_certidao_endpoint(self, client):
         """Testa endpoint de emissao de certidao."""
-        payload = {
-            "finalidade": "Licitacao publica"
-        }
+        payload = {"finalidade": "Licitacao publica"}
 
-        response = client.post(
-            "/api/v1/government/ecac/certidao",
-            json=payload
-        )
+        response = client.post("/api/v1/government/ecac/certidao", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -566,15 +492,9 @@ class TestEcacEndpoints:
 
     def test_emitir_certidao_com_documento(self, client):
         """Testa emissao de certidao com documento especifico."""
-        payload = {
-            "finalidade": "Contratacao",
-            "cpf_cnpj": "12345678901"
-        }
+        payload = {"finalidade": "Contratacao", "cpf_cnpj": "12345678901"}
 
-        response = client.post(
-            "/api/v1/government/ecac/certidao",
-            json=payload
-        )
+        response = client.post("/api/v1/government/ecac/certidao", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -582,15 +502,9 @@ class TestEcacEndpoints:
 
     def test_validar_certidao_endpoint(self, client):
         """Testa endpoint de validacao de certidao."""
-        payload = {
-            "numero": "123456789",
-            "codigo_controle": "ABCD1234EFGH5678"
-        }
+        payload = {"numero": "123456789", "codigo_controle": "ABCD1234EFGH5678"}
 
-        response = client.post(
-            "/api/v1/government/ecac/validar-certidao",
-            json=payload
-        )
+        response = client.post("/api/v1/government/ecac/validar-certidao", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -608,10 +522,7 @@ class TestEcacEndpoints:
 
     def test_consultar_parcelamentos_com_filtro(self, client):
         """Testa endpoint de parcelamentos com filtro."""
-        response = client.get(
-            "/api/v1/government/ecac/parcelamentos",
-            params={"situacao": "ativo"}
-        )
+        response = client.get("/api/v1/government/ecac/parcelamentos", params={"situacao": "ativo"})
 
         assert response.status_code == 200
         data = response.json()
@@ -619,15 +530,9 @@ class TestEcacEndpoints:
 
     def test_simular_parcelamento_endpoint(self, client):
         """Testa endpoint de simulacao de parcelamento."""
-        payload = {
-            "debitos": ["DEB001", "DEB002", "DEB003"],
-            "quantidade_parcelas": 12
-        }
+        payload = {"debitos": ["DEB001", "DEB002", "DEB003"], "quantidade_parcelas": 12}
 
-        response = client.post(
-            "/api/v1/government/ecac/simular-parcelamento",
-            json=payload
-        )
+        response = client.post("/api/v1/government/ecac/simular-parcelamento", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -646,11 +551,7 @@ class TestEcacEndpoints:
     def test_consultar_processos_com_filtros(self, client):
         """Testa endpoint de processos com filtros."""
         response = client.get(
-            "/api/v1/government/ecac/processos",
-            params={
-                "situacao": "ativo",
-                "numero_processo": "12345"
-            }
+            "/api/v1/government/ecac/processos", params={"situacao": "ativo", "numero_processo": "12345"}
         )
 
         assert response.status_code == 200
@@ -663,13 +564,10 @@ class TestSingleton:
 
     def test_get_ecac_service_singleton(self):
         """Testa que get_ecac_service retorna singleton."""
-        from modules.government_integrations.services.ecac_service import (
-            get_ecac_service,
-            _ecac_service
-        )
-
         # Reset singleton
         import modules.government_integrations.services.ecac_service as module
+        from modules.government_integrations.services.ecac_service import _ecac_service, get_ecac_service
+
         module._ecac_service = None
 
         service1 = get_ecac_service()

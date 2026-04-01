@@ -62,7 +62,7 @@ export async function calcularINSS(
   params: CalculoINSSParams
 ): Promise<StandardResponse> {
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/fgts/calcular-inss',
+    '/api/v1/government/inss/calcular',
     {
       mes_referencia: params.mes_referencia,
       ano_referencia: params.ano_referencia,
@@ -79,7 +79,7 @@ export async function emitirDPS(
   params: EmissaoDPSParams
 ): Promise<StandardResponse> {
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/fgts/emitir-dps',
+    '/api/v1/government/fgts-digital/guia-mensal',
     {
       mes_competencia: params.mes_competencia,
       ano_competencia: params.ano_competencia,
@@ -98,7 +98,7 @@ export async function consultarExtrato(params: {
   periodo_final: string;
 }): Promise<StandardResponse> {
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/fgts/consultar-extrato',
+    '/api/v1/government/fgts-digital/extrato',
     {
       cpf: params.cpf,
       periodo_inicial: params.periodo_inicial,
@@ -116,7 +116,7 @@ export async function gerarGuiaMensal(params: {
   ano_referencia: number;
 }): Promise<Blob> {
   const { data } = await api.post(
-    '/api/v1/government/fgts/gerar-guia',
+    '/api/v1/government/fgts-digital/guia-mensal',
     {
       mes_referencia: params.mes_referencia,
       ano_referencia: params.ano_referencia,
@@ -136,7 +136,7 @@ export async function calcularApuracaoSimples(params: {
   anexo: string;
 }): Promise<StandardResponse> {
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/simples/calcular-apuracao',
+    '/api/v1/government/simples-nacional/simular',
     {
       mes_referencia: params.mes_referencia,
       ano_referencia: params.ano_referencia,
@@ -159,7 +159,7 @@ export async function calcularPGDASD(params: {
   }>;
 }): Promise<StandardResponse> {
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/simples/calcular-pgdas',
+    '/api/v1/government/simples-nacional/pgdasd',
     {
       mes_referencia: params.mes_referencia,
       ano_referencia: params.ano_referencia,
@@ -176,7 +176,7 @@ export async function gerarDAS(params: {
   mes_referencia: string;
   ano_referencia: number;
 }): Promise<Blob> {
-  const { data } = await api.post('/api/v1/government/simples/gerar-das', {
+  const { data } = await api.post('/api/v1/government/simples-nacional/das', {
     mes_referencia: params.mes_referencia,
     ano_referencia: params.ano_referencia,
   }, {
@@ -215,7 +215,7 @@ export async function calcularFatorR(params: {
   periodo_meses: number;
 }): Promise<StandardResponse> {
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/simples/calcular-fator-r',
+    '/api/v1/government/simples-nacional/fator-r',
     {
       receita_bruta: params.receita_bruta,
       folha_salarios: params.folha_salarios,
@@ -232,7 +232,7 @@ export async function consultarDebitosFGTS(params: {
   cnpj: string;
 }): Promise<StandardResponse> {
   const { data } = await api.get<StandardResponse>(
-    '/api/v1/government/fgts/debitos',
+    '/api/v1/government/fgts-digital/debitos',
     { params }
   );
   return data;
@@ -245,7 +245,7 @@ export async function consultarSituacaoSimples(params: {
   cnpj: string;
 }): Promise<StandardResponse> {
   const { data } = await api.get<StandardResponse>(
-    '/api/v1/government/simples/situacao',
+    '/api/v1/government/simples-nacional/opcao',
     { params }
   );
   return data;

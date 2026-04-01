@@ -12,7 +12,7 @@ Sprint 24 - Fluxo de Caixa
 - cashflow_forecasts: Previsões de fluxo de caixa
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -21,9 +21,9 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "c8f5a3b2d1e0"
-down_revision: Union[str, None] = "d32dc56bebba"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "d32dc56bebba"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -298,9 +298,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "reconciliation_status",
-            sa.Enum(
-                "pendente", "conciliado", "divergente", "ignorado", name="reconciliationstatus"
-            ),
+            sa.Enum("pendente", "conciliado", "divergente", "ignorado", name="reconciliationstatus"),
             nullable=False,
             server_default="pendente",
         ),
@@ -323,12 +321,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["transfer_to_account_id"], ["bank_accounts.id"]),
         sa.ForeignKeyConstraint(["transfer_from_account_id"], ["bank_accounts.id"]),
     )
-    op.create_index(
-        "ix_bank_transactions_bank_account_id", "bank_transactions", ["bank_account_id"]
-    )
-    op.create_index(
-        "ix_bank_transactions_transaction_date", "bank_transactions", ["transaction_date"]
-    )
+    op.create_index("ix_bank_transactions_bank_account_id", "bank_transactions", ["bank_account_id"])
+    op.create_index("ix_bank_transactions_transaction_date", "bank_transactions", ["transaction_date"])
     op.create_index("ix_bank_transactions_status", "bank_transactions", ["status"])
     op.create_index(
         "ix_bank_transactions_reconciliation_status",
@@ -388,12 +382,8 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["bank_account_id"], ["bank_accounts.id"]),
     )
-    op.create_index(
-        "ix_bank_reconciliations_bank_account_id", "bank_reconciliations", ["bank_account_id"]
-    )
-    op.create_index(
-        "ix_bank_reconciliations_period_start", "bank_reconciliations", ["period_start"]
-    )
+    op.create_index("ix_bank_reconciliations_bank_account_id", "bank_reconciliations", ["bank_account_id"])
+    op.create_index("ix_bank_reconciliations_period_start", "bank_reconciliations", ["period_start"])
     op.create_index("ix_bank_reconciliations_status", "bank_reconciliations", ["status"])
 
     # Add FK from bank_transactions to bank_reconciliations
@@ -509,17 +499,13 @@ def upgrade() -> None:
         sa.Column("period_end", sa.Date, nullable=False),
         sa.Column(
             "status",
-            sa.Enum(
-                "rascunho", "ativo", "revisado", "encerrado", "arquivado", name="forecaststatus"
-            ),
+            sa.Enum("rascunho", "ativo", "revisado", "encerrado", "arquivado", name="forecaststatus"),
             nullable=False,
             server_default="rascunho",
         ),
         sa.Column(
             "confidence",
-            sa.Enum(
-                "muito_baixa", "baixa", "media", "alta", "muito_alta", name="forecastconfidence"
-            ),
+            sa.Enum("muito_baixa", "baixa", "media", "alta", "muito_alta", name="forecastconfidence"),
             nullable=False,
             server_default="media",
         ),

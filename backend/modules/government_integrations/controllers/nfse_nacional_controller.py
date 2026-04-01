@@ -10,26 +10,21 @@ Documentacao: https://www.gov.br/nfse/pt-br/acesso-a-informacao/manuais
 
 import logging
 from datetime import datetime
-from typing import List
 
-from fastapi import APIRouter, HTTPException, Path, Query, status
+from fastapi import APIRouter, HTTPException, Path, status
+
+from core.auth.dependencies import CurrentActiveUser
 
 from ..schemas.common import StandardResponse
 from ..schemas.nfse_nacional import (
-    EmitirDPSRequest,
-    EmitirDPSResponse,
-    ConsultarDPSRequest,
-    ConsultarNFSeNacionalRequest,
-    ConsultarNFSeNacionalResponse,
     CancelarNFSeNacionalRequest,
     CancelarNFSeNacionalResponse,
-    SubstituirNFSeNacionalRequest,
-    StatusMigracaoResponse,
-    ComparacaoPadroesResponse,
-    MapeamentoServicoResponse,
-    StatusConexaoNacionalResponse,
-    EventoNFSeResponse,
     DPSStatusEnum,
+    EmitirDPSRequest,
+    EmitirDPSResponse,
+    StatusConexaoNacionalResponse,
+    StatusMigracaoResponse,
+    SubstituirNFSeNacionalRequest,
 )
 from ..services.nfse_nacional_service import get_nfse_nacional_service
 
@@ -51,7 +46,7 @@ router = APIRouter(prefix="/nfse-nacional", tags=["NFS-e Padrao Nacional"])
     Para emissoes atuais, use /nfse-manaus/emitir.
     """,
 )
-async def emitir_dps(request: EmitirDPSRequest) -> StandardResponse:
+async def emitir_dps(current_user: CurrentActiveUser, request: EmitirDPSRequest) -> StandardResponse:
     """
     Emite DPS (Declaracao de Prestacao de Servicos).
 
@@ -77,24 +72,38 @@ async def emitir_dps(request: EmitirDPSRequest) -> StandardResponse:
             tipo_tributacao=request.tipo_tributacao.value,
         )
 
+        # Resultado real do manager (pode conter xml_gerado, http_status, response, etc.)
+        status_dps = resultado.get("status", "preparacao")
+        sucesso = status_dps in ("aceita", "dry_run", "preparacao")
+
         response_data = EmitirDPSResponse(
             id_dps=resultado.get("id_dps"),
             numero_dps=resultado.get("numero_dps"),
-            status=DPSStatusEnum.PREPARACAO,
-            mensagem=resultado.get("mensagem"),
+            status=DPSStatusEnum.AUTORIZADA if status_dps == "aceita" else DPSStatusEnum.PREPARACAO,
+            mensagem=resultado.get("mensagem") or resultado.get("erro"),
             data_emissao=datetime.now(),
             valor_servico=request.servico.valor_servico,
             valor_iss=request.servico.valor_servico * request.servico.aliquota_iss,
             valor_liquido=resultado.get("valor_liquido"),
             tomador_cpf_cnpj=request.tomador.cpf_cnpj,
-            previsao_migracao=resultado.get("previsao_migracao", "2026"),
-            payload_json=resultado.get("payload_previsto"),
+            previsao_migracao=None,
+            payload_json=None,  # Dados extras vão no dict separado
         )
 
+        # Incluir dados da transmissão real
+        extra = {}
+        for k in ("http_status", "response", "xml_gerado", "xml_assinado", "xml_tamanho", "fonte", "erro"):
+            if k in resultado:
+                extra[k] = resultado[k]
+
+        resp_dict = response_data.model_dump()
+        resp_dict.update(extra)
+
         return StandardResponse(
-            success=True,
-            message="DPS preparada para migracao. Padrao Nacional ainda nao disponivel.",
-            data=response_data.model_dump(),
+            success=sucesso,
+            message=f"NFS-e Nacional: {status_dps}"
+            + (f" — HTTP {resultado.get('http_status')}" if resultado.get("http_status") else ""),
+            data=resp_dict,
         )
 
     except ValueError as e:
@@ -119,6 +128,7 @@ async def emitir_dps(request: EmitirDPSRequest) -> StandardResponse:
     description="Consulta DPS pelo ID. Em preparacao para migracao.",
 )
 async def consultar_dps(
+    current_user: CurrentActiveUser,
     id_dps: str = Path(..., description="ID da DPS"),
 ) -> StandardResponse:
     """
@@ -158,6 +168,7 @@ async def consultar_dps(
     description="Consulta NFS-e pelo numero nacional. Em preparacao para migracao.",
 )
 async def consultar_nfse(
+    current_user: CurrentActiveUser,
     numero_nfse: str = Path(..., description="Numero nacional da NFS-e"),
 ) -> StandardResponse:
     """
@@ -196,7 +207,7 @@ async def consultar_nfse(
     summary="Cancela NFS-e (Padrao Nacional)",
     description="Cancela uma NFS-e no Padrao Nacional. Em preparacao para migracao.",
 )
-async def cancelar_nfse(request: CancelarNFSeNacionalRequest) -> StandardResponse:
+async def cancelar_nfse(current_user: CurrentActiveUser, request: CancelarNFSeNacionalRequest) -> StandardResponse:
     """
     Cancela uma NFS-e no Padrao Nacional.
 
@@ -244,7 +255,7 @@ async def cancelar_nfse(request: CancelarNFSeNacionalRequest) -> StandardRespons
     summary="Substitui NFS-e (Padrao Nacional)",
     description="Substitui uma NFS-e no Padrao Nacional. Em preparacao para migracao.",
 )
-async def substituir_nfse(request: SubstituirNFSeNacionalRequest) -> StandardResponse:
+async def substituir_nfse(current_user: CurrentActiveUser, request: SubstituirNFSeNacionalRequest) -> StandardResponse:
     """
     Substitui uma NFS-e no Padrao Nacional.
 
@@ -287,6 +298,7 @@ async def substituir_nfse(request: SubstituirNFSeNacionalRequest) -> StandardRes
     description="Consulta eventos de uma NFS-e no Padrao Nacional.",
 )
 async def consultar_eventos(
+    current_user: CurrentActiveUser,
     numero_nfse: str = Path(..., description="Numero nacional da NFS-e"),
 ) -> StandardResponse:
     """
@@ -325,7 +337,7 @@ async def consultar_eventos(
     summary="Valida conexao e status",
     description="Verifica status da API e configuracao do Padrao Nacional.",
 )
-async def validar_conexao() -> StandardResponse:
+async def validar_conexao(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Valida conexao e status do Padrao Nacional.
 
@@ -374,7 +386,7 @@ async def validar_conexao() -> StandardResponse:
     summary="Status da migracao",
     description="Consulta o status da migracao para o Padrao Nacional.",
 )
-async def status_migracao() -> StandardResponse:
+async def status_migracao(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Consulta status da migracao para o Padrao Nacional.
 
@@ -423,7 +435,7 @@ async def status_migracao() -> StandardResponse:
     summary="Compara padroes ABRASF x Nacional",
     description="Compara caracteristicas entre o padrao atual (ABRASF) e o Padrao Nacional.",
 )
-async def comparar_padroes() -> StandardResponse:
+async def comparar_padroes(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Compara caracteristicas entre padroes.
 
@@ -459,7 +471,7 @@ async def comparar_padroes() -> StandardResponse:
     summary="Mapeamento de codigos de servico",
     description="Lista mapeamento de codigos ABRASF para NBS (Padrao Nacional).",
 )
-async def mapeamento_servicos() -> StandardResponse:
+async def mapeamento_servicos(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Obtem mapeamento de codigos de servico.
 
@@ -495,7 +507,7 @@ async def mapeamento_servicos() -> StandardResponse:
     summary="Lista codigos de servico NBS",
     description="Lista codigos de servico NBS disponiveis no Padrao Nacional.",
 )
-async def listar_codigos_servico() -> StandardResponse:
+async def listar_codigos_servico(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Lista codigos de servico NBS.
 
@@ -530,7 +542,7 @@ async def listar_codigos_servico() -> StandardResponse:
     summary="Informacoes do Padrao Nacional",
     description="Retorna informacoes gerais sobre o Padrao Nacional de NFS-e.",
 )
-async def info_padrao_nacional() -> StandardResponse:
+async def info_padrao_nacional(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Informacoes gerais do Padrao Nacional.
 

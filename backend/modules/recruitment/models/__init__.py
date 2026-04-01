@@ -1,82 +1,50 @@
-"""Models do módulo Recruitment."""
+"""Models do modulo Recruitment."""
 
-from .job_position import (
-    JobPosition,
-    PositionType,
-    PositionLevel,
-    PositionStatus,
-    WorkModel,
-    Department,
-)
+from .application import Application, ApplicationStatus, RejectionReason
 from .candidate import (
     Candidate,
-    CandidateStatus,
     CandidateSource,
+    CandidateStatus,
     Gender,
     MaritalStatus,
 )
-from .application import (
-    Application,
-    ApplicationStatus,
-    RejectionReason,
-)
-from .interview import (
-    Interview,
-    InterviewType,
-    InterviewStatus,
-    InterviewResult,
-)
-from .candidate_skill import (
-    CandidateSkill,
-    SkillCategory,
-    SkillLevel,
-)
-from .candidate_experience import (
-    CandidateExperience,
-    EmploymentType,
-    ExperienceLevel,
-)
-from .candidate_education import (
-    CandidateEducation,
-    EducationLevel,
-    EducationStatus,
-    StudyPeriod,
+from .candidate_education import CandidateEducation
+from .candidate_experience import CandidateExperience
+from .candidate_skill import CandidateSkill, SkillCategory, SkillLevel
+
+# Interview MUST be imported before Application (Application has relationship to Interview)
+from .interview import Interview, InterviewResult, InterviewStatus, InterviewType
+from .job_position import (
+    Department,
+    JobPosition,
+    PositionLevel,
+    PositionStatus,
+    PositionType,
+    WorkModel,
 )
 
 __all__ = [
-    # JobPosition
     "JobPosition",
     "PositionType",
     "PositionLevel",
     "PositionStatus",
     "WorkModel",
     "Department",
-    # Candidate
     "Candidate",
     "CandidateStatus",
     "CandidateSource",
     "Gender",
     "MaritalStatus",
-    # Application
     "Application",
     "ApplicationStatus",
     "RejectionReason",
-    # Interview
     "Interview",
     "InterviewType",
     "InterviewStatus",
     "InterviewResult",
-    # CandidateSkill
     "CandidateSkill",
     "SkillCategory",
     "SkillLevel",
-    # CandidateExperience
     "CandidateExperience",
-    "EmploymentType",
-    "ExperienceLevel",
-    # CandidateEducation
     "CandidateEducation",
-    "EducationLevel",
-    "EducationStatus",
-    "StudyPeriod",
 ]

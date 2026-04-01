@@ -71,12 +71,12 @@ export function useReimbursements(
 
   const allQuery = useReimbursementRequestsOrval(
     myOnly ? undefined : queryParams,
-    { query: { enabled: autoLoad && !myOnly } }
+    { enabled: autoLoad && !myOnly }
   );
 
   const myQuery = useMyReimbursementRequests(
     myOnly ? { page, page_size: pageSize, status: filters.status } : undefined,
-    { query: { enabled: autoLoad && myOnly } }
+    { enabled: autoLoad && myOnly }
   );
 
   const query = myOnly ? myQuery : allQuery;
@@ -131,7 +131,7 @@ export function useReimbursementStats(
   const { myOnly = false, autoLoad = true } = options;
 
   const query = useReimbursementStatsOrval(myOnly, {
-    query: { enabled: autoLoad },
+    enabled: autoLoad,
   });
 
   const refresh = useCallback(() => {
@@ -139,7 +139,7 @@ export function useReimbursementStats(
   }, [query]);
 
   return {
-    stats: (query.data as ReimbursementStats) ?? null,
+    stats: (query.data as unknown as ReimbursementStats) ?? null,
     isLoading: query.isLoading,
     error: query.error ? (query.error as Error).message || 'Erro ao carregar estatisticas' : null,
     refresh,
@@ -161,7 +161,7 @@ export function useReimbursementDetail(
   requestId: string | null
 ): UseReimbursementDetailResult {
   const query = useReimbursementRequest(requestId ?? '', {
-    query: { enabled: !!requestId },
+    enabled: !!requestId,
   });
 
   const refresh = useCallback(() => {
@@ -169,9 +169,9 @@ export function useReimbursementDetail(
   }, [query]);
 
   return {
-    request: (query.data as ReimbursementRequest) ?? null,
+    request: (query.data as unknown as ReimbursementRequest) ?? null,
     isLoading: query.isLoading,
-    error: query.error ? (query.error as Error).message || 'Erro ao carregar solicitacao' : null,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar solicitação' : null,
     refresh,
   };
 }
@@ -211,7 +211,7 @@ export function usePendingApprovals(
 
   const query = usePendingReimbursementApprovals(
     { page, page_size: pageSize, approval_level: approvalLevel },
-    { query: { enabled: autoLoad } }
+    { enabled: autoLoad }
   );
 
   const handleSetApprovalLevel = useCallback((level: string | undefined) => {
@@ -234,7 +234,7 @@ export function usePendingApprovals(
     pageSize,
     totalPages: (query.data as any)?.total_pages ?? 0,
     isLoading: query.isLoading,
-    error: query.error ? (query.error as Error).message || 'Erro ao carregar aprovacoes' : null,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar aprovações' : null,
     approvalLevel,
     setApprovalLevel: handleSetApprovalLevel,
     setPage,
@@ -299,7 +299,7 @@ export function useReadyForPayment(
 
   const query = useReadyForPaymentReimbursements(
     { page, page_size: pageSize },
-    { query: { enabled: autoLoad } }
+    { enabled: autoLoad }
   );
 
   const setPage = useCallback((p: number) => {

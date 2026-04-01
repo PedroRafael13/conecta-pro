@@ -2,32 +2,31 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.hr.analytics_dashboard.models import ReportStatus, ReportFormat
-from modules.hr.analytics_dashboard.schemas import (
-    ScheduledReportCreate,
-    ScheduledReportUpdate,
-    ScheduledReportResponse,
-    ReportRunResponse,
-)
+from core.database import get_db
+from modules.hr.analytics_dashboard.models import ReportFormat, ReportStatus
 from modules.hr.analytics_dashboard.repositories import ReportRepository
+from modules.hr.analytics_dashboard.schemas import (
+    ReportRunResponse,
+    ScheduledReportCreate,
+    ScheduledReportResponse,
+    ScheduledReportUpdate,
+)
 from modules.hr.analytics_dashboard.services import ReportGeneratorService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reports", tags=["Relatórios"])
 
 
-@router.get("/", response_model=List[ScheduledReportResponse])
+@router.get("", response_model=list[ScheduledReportResponse])
 async def list_reports(
-    report_type: Optional[str] = Query(None),
-    report_status: Optional[ReportStatus] = Query(None, alias="status"),
+    report_type: str | None = Query(None),
+    report_status: ReportStatus | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -45,7 +44,7 @@ async def list_reports(
     return reports
 
 
-@router.post("/", response_model=ScheduledReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ScheduledReportResponse, status_code=status.HTTP_201_CREATED)
 async def create_report(
     data: ScheduledReportCreate,
     db: AsyncSession = Depends(get_db),
@@ -159,9 +158,9 @@ async def delete_report(
 @router.post("/{report_id}/run", response_model=ReportRunResponse)
 async def run_report(
     report_id: UUID,
-    period_start: Optional[datetime] = Query(None),
-    period_end: Optional[datetime] = Query(None),
-    output_format: Optional[ReportFormat] = Query(None),
+    period_start: datetime | None = Query(None),
+    period_end: datetime | None = Query(None),
+    output_format: ReportFormat | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):

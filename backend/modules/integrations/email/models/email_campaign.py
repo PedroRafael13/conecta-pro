@@ -3,9 +3,9 @@
 Sprint 32 - Automacoes Email.
 """
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -24,7 +24,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class CampaignType(str, enum.Enum):
+class CampaignType(StrEnum):
     """Tipo de campanha."""
 
     REGULAR = "REGULAR"  # Campanha unica
@@ -34,7 +34,7 @@ class CampaignType(str, enum.Enum):
     TRANSACTIONAL = "TRANSACTIONAL"  # Transacional
 
 
-class CampaignStatus(str, enum.Enum):
+class CampaignStatus(StrEnum):
     """Status da campanha."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -46,7 +46,7 @@ class CampaignStatus(str, enum.Enum):
     COMPLETED = "COMPLETED"  # Concluida
 
 
-class TriggerType(str, enum.Enum):
+class TriggerType(StrEnum):
     """Tipo de trigger para campanhas automatizadas."""
 
     SIGNUP = "SIGNUP"  # Novo cadastro

@@ -1,22 +1,22 @@
 """Schemas do modulo de conversacao."""
 
 from modules.ai.conversation.schemas.chat_schemas import (
-    # Session schemas
-    ChatSessionCreate,
-    ChatSessionUpdate,
-    ChatSessionResponse,
-    ChatSessionListResponse,
+    ActionItem,
     # Message schemas
     ChatMessageCreate,
-    ChatMessageResponse,
     ChatMessageListResponse,
+    ChatMessageResponse,
+    # Session schemas
+    ChatSessionCreate,
+    ChatSessionListResponse,
+    ChatSessionResponse,
+    ChatSessionUpdate,
+    ConversationResponse,
     MessageFeedback,
     # Request/Response schemas
     SendMessageRequest,
     SendMessageResponse,
-    ConversationResponse,
     SuggestionItem,
-    ActionItem,
 )
 
 __all__ = [

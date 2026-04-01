@@ -8,10 +8,9 @@ Autenticação: OAuth2 + mTLS (certificado digital)
 """
 
 import logging
+import ssl
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
-import ssl
 
 import httpx
 
@@ -66,7 +65,7 @@ class InterAdapter(BaseBankingAdapter):
     def __init__(self, credentials: BankCredentials) -> None:
         """Inicializa adapter Inter."""
         super().__init__(credentials)
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Retorna cliente HTTP com certificado mTLS."""
@@ -99,13 +98,15 @@ class InterAdapter(BaseBankingAdapter):
             client = await self._get_client()
 
             # Monta scopes necessários
-            scopes = " ".join([
-                self.SCOPES["extrato"],
-                self.SCOPES["saldo"],
-                self.SCOPES["pix"],
-                self.SCOPES["boleto"],
-                self.SCOPES["pagamento"],
-            ])
+            scopes = " ".join(
+                [
+                    self.SCOPES["extrato"],
+                    self.SCOPES["saldo"],
+                    self.SCOPES["pix"],
+                    self.SCOPES["boleto"],
+                    self.SCOPES["pagamento"],
+                ]
+            )
 
             response = await client.post(
                 "/oauth/v2/token",
@@ -210,14 +211,16 @@ class InterAdapter(BaseBankingAdapter):
             elif "BOLETO" in tipo:
                 tx_type = TransactionType.BOLETO
 
-            transactions.append(BankTransaction(
-                transaction_id=item.get("idTransacao", ""),
-                date=datetime.fromisoformat(item.get("dataEntrada", "")),
-                amount=self._parse_amount(item.get("valor", 0)),
-                transaction_type=tx_type,
-                description=item.get("descricao", ""),
-                balance_after=self._parse_amount(item.get("saldo", 0)) if item.get("saldo") else None,
-            ))
+            transactions.append(
+                BankTransaction(
+                    transaction_id=item.get("idTransacao", ""),
+                    date=datetime.fromisoformat(item.get("dataEntrada", "")),
+                    amount=self._parse_amount(item.get("valor", 0)),
+                    transaction_type=tx_type,
+                    description=item.get("descricao", ""),
+                    balance_after=self._parse_amount(item.get("saldo", 0)) if item.get("saldo") else None,
+                )
+            )
 
         return BankStatement(
             account_agency=self.credentials.agency or "",
@@ -296,7 +299,7 @@ class InterAdapter(BaseBankingAdapter):
     async def validate_pix_key(
         self,
         key: str,
-    ) -> Optional[PixKey]:
+    ) -> PixKey | None:
         """Valida chave PIX."""
         try:
             data = await self._request(
@@ -321,7 +324,7 @@ class InterAdapter(BaseBankingAdapter):
         self,
         pix_key: str,
         amount: Decimal,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> PaymentResponse:
         """Inicia transferência PIX."""
         data = await self._request(
@@ -374,6 +377,47 @@ class InterAdapter(BaseBankingAdapter):
             "digitable_line": data.get("linhaDigitavel", ""),
             "pdf_url": data.get("pdfBoleto", ""),
             "pix_qrcode": data.get("pixCopiaECola", ""),
+        }
+
+    async def generate_pix_charge(
+        self,
+        amount: Decimal,
+        description: str,
+        chave_pix: str = "35710481000103",
+        payer_name: str | None = None,
+        payer_document: str | None = None,
+        expiracao_segundos: int = 86400,
+    ) -> dict:
+        """Gera cobrança PIX imediata (cob) via Banco Inter."""
+        import random
+        import string
+
+        # txid: alfanumérico, max 35 chars
+        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))  # noqa: S311
+        txid = f"CON{datetime.now().strftime('%Y%m%d%H%M%S')}{suffix}"
+
+        body: dict = {
+            "calendario": {"expiracao": expiracao_segundos},
+            "valor": {"original": f"{float(amount):.2f}"},
+            "chave": chave_pix,
+            "solicitacaoPagador": description[:140] if description else "Cobrança Conecta Mais",
+        }
+        if payer_name:
+            body["devedor"] = {"nome": payer_name}
+            if payer_document:
+                cpf_cnpj = payer_document.replace(".", "").replace("-", "").replace("/", "")
+                if len(cpf_cnpj) == 11:
+                    body["devedor"]["cpf"] = cpf_cnpj
+                else:
+                    body["devedor"]["cnpj"] = cpf_cnpj
+
+        data = await self._request("PUT", f"/pix/v2/cob/{txid}", json=body)
+
+        return {
+            "charge_id": data.get("txid", txid),
+            "pix_copy_paste": data.get("pixCopiaECola", ""),
+            "pix_qrcode": data.get("location", ""),
+            "amount": float(amount),
         }
 
     async def close(self) -> None:

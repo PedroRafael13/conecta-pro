@@ -19,11 +19,9 @@ Author: Conecta PRO Team
 Date: 2026-01-29
 """
 
-from datetime import datetime, date
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+from datetime import date
+
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
 
 class DisciplinarWizard(BaseWizard):
@@ -65,7 +63,6 @@ class DisciplinarWizard(BaseWizard):
                     "O tipo deve ser proporcional a gravidade da infracao."
                 ),
             ),
-
             # === Step 2: Funcionario ===
             WizardStep(
                 id="funcionario",
@@ -77,7 +74,6 @@ class DisciplinarWizard(BaseWizard):
                 validation_rules={"min_length": 3, "max_length": 255},
                 help_text="Informe o nome completo conforme registro no sistema.",
             ),
-
             # === Step 3: Motivo/Infracao ===
             WizardStep(
                 id="motivo",
@@ -102,11 +98,9 @@ class DisciplinarWizard(BaseWizard):
                     "Outros",
                 ],
                 help_text=(
-                    "Categorias baseadas no Art. 482 da CLT. "
-                    "Selecione a categoria mais adequada para a infracao."
+                    "Categorias baseadas no Art. 482 da CLT. Selecione a categoria mais adequada para a infracao."
                 ),
             ),
-
             # === Step 4: Descricao Detalhada ===
             WizardStep(
                 id="descricao",
@@ -127,7 +121,6 @@ class DisciplinarWizard(BaseWizard):
                     "as 19h, sem apresentar justificativa ou atestado medico.'"
                 ),
             ),
-
             # === Step 5: Evidencias ===
             WizardStep(
                 id="evidencias",
@@ -135,8 +128,7 @@ class DisciplinarWizard(BaseWizard):
                 description="Evidencias que comprovam a infracao",
                 step_type=StepType.TEXT_INPUT,
                 question=(
-                    "Quais evidencias comprovam a infracao? "
-                    "(relatorios, registros de ponto, depoimentos, cameras, etc)"
+                    "Quais evidencias comprovam a infracao? (relatorios, registros de ponto, depoimentos, cameras, etc)"
                 ),
                 required=True,
                 validation_rules={"min_length": 5, "max_length": 2000},
@@ -147,7 +139,6 @@ class DisciplinarWizard(BaseWizard):
                     "boletim de ocorrencia, etc."
                 ),
             ),
-
             # === Step 6: Ocorrencia Vinculada (Opcional) ===
             WizardStep(
                 id="ocorrencia_vinculada",
@@ -155,8 +146,7 @@ class DisciplinarWizard(BaseWizard):
                 description="Vincular a uma ocorrencia existente no sistema",
                 step_type=StepType.TEXT_INPUT,
                 question=(
-                    "Deseja vincular a uma ocorrencia existente? "
-                    "Informe o codigo da ocorrencia ou 'nao' para pular."
+                    "Deseja vincular a uma ocorrencia existente? Informe o codigo da ocorrencia ou 'nao' para pular."
                 ),
                 required=False,
                 help_text=(
@@ -165,17 +155,13 @@ class DisciplinarWizard(BaseWizard):
                     "Exemplo: OC-2026-00001. Digite 'nao' para pular."
                 ),
             ),
-
             # === Step 7: Medida Corretiva ===
             WizardStep(
                 id="medida_corretiva",
                 name="Medida Corretiva",
                 description="Medida corretiva proposta para o funcionario",
                 step_type=StepType.TEXT_INPUT,
-                question=(
-                    "Qual a medida corretiva proposta? "
-                    "O que o funcionario deve fazer para evitar reincidencia?"
-                ),
+                question=("Qual a medida corretiva proposta? O que o funcionario deve fazer para evitar reincidencia?"),
                 required=True,
                 validation_rules={"min_length": 5, "max_length": 1000},
                 help_text=(
@@ -185,7 +171,6 @@ class DisciplinarWizard(BaseWizard):
                     "supervisor, plano de melhoria de conduta, etc."
                 ),
             ),
-
             # === Step 8: Prazo (Condicional - apenas para suspensao) ===
             WizardStep(
                 id="prazo",
@@ -205,11 +190,8 @@ class DisciplinarWizard(BaseWizard):
                     "o prazo para a medida corretiva. "
                     "Digite '0' ou 'pular' se nao aplicavel."
                 ),
-                skip_condition=lambda data: data.get("tipo_acao") not in [
-                    "Suspensao", "3", "suspensao"
-                ],
+                skip_condition=lambda data: data.get("tipo_acao") not in ["Suspensao", "3", "suspensao"],
             ),
-
             # === Step 9: Confirmacao ===
             WizardStep(
                 id="confirmacao",
@@ -340,56 +322,68 @@ class DisciplinarWizard(BaseWizard):
                 try:
                     dias = int(float(prazo))
                     if dias > 30:
-                        alerts.append({
-                            "tipo": "error",
-                            "mensagem": f"Suspensao de {dias} dias excede limite de 30 dias (CLT Art. 474)",
-                        })
+                        alerts.append(
+                            {
+                                "tipo": "error",
+                                "mensagem": f"Suspensao de {dias} dias excede limite de 30 dias (CLT Art. 474)",
+                            }
+                        )
                     elif dias > 15:
-                        alerts.append({
-                            "tipo": "warning",
-                            "mensagem": f"Suspensao de {dias} dias e longa. Verifique proporcionalidade.",
-                        })
+                        alerts.append(
+                            {
+                                "tipo": "warning",
+                                "mensagem": f"Suspensao de {dias} dias e longa. Verifique proporcionalidade.",
+                            }
+                        )
                 except (ValueError, TypeError):
                     pass
 
         # Alerta de justa causa
         if tipo_acao == "Demissao por Justa Causa":
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    "Demissao por justa causa requer comprovacao robusta. "
-                    "Verifique se ha historico de medidas previas e evidencias solidas."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        "Demissao por justa causa requer comprovacao robusta. "
+                        "Verifique se ha historico de medidas previas e evidencias solidas."
+                    ),
+                }
+            )
 
         # Alerta de descricao curta
         descricao = data.get("descricao", "")
         if descricao and len(descricao) < 50:
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    "Descricao muito curta. Uma descricao detalhada "
-                    "e fundamental para a validade juridica da medida."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        "Descricao muito curta. Uma descricao detalhada "
+                        "e fundamental para a validade juridica da medida."
+                    ),
+                }
+            )
 
         # Alerta de evidencias
         evidencias = data.get("evidencias", "")
         if evidencias and len(evidencias) < 20:
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    "Poucas evidencias informadas. Recomenda-se listar "
-                    "todas as provas disponiveis (registros, depoimentos, imagens, etc)."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        "Poucas evidencias informadas. Recomenda-se listar "
+                        "todas as provas disponiveis (registros, depoimentos, imagens, etc)."
+                    ),
+                }
+            )
 
         # Alerta de confirmacao negativa
         confirmacao = data.get("confirmacao")
         if confirmacao is False:
-            alerts.append({
-                "tipo": "info",
-                "mensagem": "Criacao da medida cancelada pelo usuario.",
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": "Criacao da medida cancelada pelo usuario.",
+                }
+            )
 
         return alerts

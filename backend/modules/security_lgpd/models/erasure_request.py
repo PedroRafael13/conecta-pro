@@ -2,17 +2,17 @@
 Model de Solicitacao de Exclusao de Dados (Direito ao Esquecimento).
 """
 
-import enum
 import uuid
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import Column, DateTime, Enum, String, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models import Base
 
 
-class ErasureStatus(str, enum.Enum):
+class ErasureStatus(StrEnum):
     """Status da solicitacao de exclusao."""
 
     PENDING = "pending"
@@ -22,7 +22,7 @@ class ErasureStatus(str, enum.Enum):
     PARTIAL = "partial"
 
 
-class ErasureScope(str, enum.Enum):
+class ErasureScope(StrEnum):
     """Escopo da exclusao de dados."""
 
     ALL = "all"

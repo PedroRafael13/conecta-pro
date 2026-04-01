@@ -3,8 +3,23 @@
 Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade.
 """
 
+# Custeio por contrato
 # Contas a Pagar
 # Fluxo de Caixa
+from modules.financial.models.accounting_account import (
+    AccountClassification,
+    AccountingAccount,
+    AccountNature,
+    AccountStatus,
+    AccountType,
+    SpedAccountNature,
+)
+from modules.financial.models.accounting_period import (
+    AccountingPeriod,
+    ClosingType,
+    PeriodStatus,
+    PeriodType,
+)
 from modules.financial.models.bank_account import (
     BankAccount,
     BankAccountStatus,
@@ -14,20 +29,20 @@ from modules.financial.models.bank_account import (
 from modules.financial.models.bank_reconciliation import (
     BankReconciliation,
     ReconciliationPeriodType,
+    ReconciliationStatus,
 )
 from modules.financial.models.bank_reconciliation import (
-    ReconciliationStatus,
     ReconciliationStatus as BankReconciliationStatus,
 )
-from modules.financial.models.bank_transaction import BankTransaction
 from modules.financial.models.bank_transaction import (
-    ReconciliationStatus as TransactionReconciliationStatus,
-)
-from modules.financial.models.bank_transaction import (
+    BankTransaction,
     TransactionCategory,
     TransactionOrigin,
     TransactionStatus,
     TransactionType,
+)
+from modules.financial.models.bank_transaction import (
+    ReconciliationStatus as TransactionReconciliationStatus,
 )
 
 # Contas a Receber
@@ -51,7 +66,46 @@ from modules.financial.models.cashflow_forecast import (
     ForecastPeriodType,
     ForecastStatus,
 )
+from modules.financial.models.cfop_ncm import (
+    CFOP,
+    NCM,
+    CFOPGrupo,
+    CFOPNatureza,
+    CFOPTipo,
+    RetencaoFederal,
+)
+
+# Contabilidade
+from modules.financial.models.chart_of_accounts import (
+    ChartOfAccounts,
+    ChartStandard,
+    ChartStatus,
+    ChartType,
+)
+from modules.financial.models.contract_cost import ContractCost, ServiceType
+from modules.financial.models.cost_center import (
+    AllocationMethod,
+    CostCenter,
+    CostCenterStatus,
+    CostCenterType,
+)
+from modules.financial.models.custo_contrato_portaria_remota import CustoContratoPortariaRemota
+from modules.financial.models.custo_contrato_seg_eletronica import CustoContratoSegEletronica
+from modules.financial.models.custo_posto_jardinagem import CustoPostoJardinagem
+from modules.financial.models.custo_posto_limpeza import CustoPostoLimpeza
+
+# Custeio detalhado por tipo de serviço (Phase 3)
+from modules.financial.models.custo_posto_portaria import CustoPostoPortaria
 from modules.financial.models.customer import Customer, CustomerStatus, CustomerType
+from modules.financial.models.fiscal_obligation import (
+    FiscalObligation,
+    ObrigacaoFrequencia,
+    ObrigacaoStatus,
+    ObrigacaoTipo,
+    SimplesNacionalDAS,
+    SUFRAMAConfig,
+    SUFRAMAOperacao,
+)
 
 # Compras
 from modules.financial.models.goods_receipt import (
@@ -60,6 +114,31 @@ from modules.financial.models.goods_receipt import (
     InspectionResult,
     ReceiptStatus,
     ReceiptType,
+)
+from modules.financial.models.journal_entry import (
+    EntryOrigin,
+    EntryStatus,
+    EntryType,
+    JournalEntry,
+    JournalEntryLine,
+)
+from modules.financial.models.nfe import (
+    NFe,
+    NFeFinalidade,
+    NFeFormaPagamento,
+    NFeItem,
+    NFeModalidadeFrete,
+    NFeStatus,
+    NFeTipo,
+)
+from modules.financial.models.nfse import (
+    CodigoServico,
+    NFSe,
+    NFSeLayoutPadrao,
+    NFSeLote,
+    NFSeNaturezaOperacao,
+    NFSeRegimeEspecial,
+    NFSeStatus,
 )
 from modules.financial.models.payable_account import (
     PayableAccount,
@@ -125,6 +204,18 @@ from modules.financial.models.receivable_installment import ReceivableInstallmen
 from modules.financial.models.receivable_payment import PaymentOrigin as ReceivablePaymentOrigin
 from modules.financial.models.receivable_payment import PaymentStatus as ReceivablePaymentStatus
 from modules.financial.models.receivable_payment import ReceivablePayment
+from modules.financial.models.sped_file import (
+    ECDResumo,
+    ECDTipoECD,
+    EFDContribuicoesResumo,
+    EFDICMSIPIResumo,
+    SPEDFile,
+    SPEDFinalidade,
+    SPEDPerfil,
+    SPEDRegistro,
+    SPEDStatus,
+    SPEDTipo,
+)
 
 # Estoque
 from modules.financial.models.stock_inventory import (
@@ -154,46 +245,18 @@ from modules.financial.models.supplier import (
     SupplierStatus,
     SupplierType,
 )
-from modules.financial.models.warehouse import (
-    StorageType,
-    Warehouse,
-    WarehouseStatus,
-    WarehouseType,
-)
 
-# Contabilidade
-from modules.financial.models.chart_of_accounts import (
-    ChartOfAccounts,
-    ChartStandard,
-    ChartStatus,
-    ChartType,
-)
-from modules.financial.models.accounting_account import (
-    AccountClassification,
-    AccountingAccount,
-    AccountNature,
-    AccountStatus,
-    AccountType,
-    SpedAccountNature,
-)
-from modules.financial.models.cost_center import (
-    AllocationMethod,
-    CostCenter,
-    CostCenterStatus,
-    CostCenterType,
-)
-from modules.financial.models.accounting_period import (
-    AccountingPeriod,
-    ClosingType,
-    PeriodStatus,
-    PeriodType,
-)
-from modules.financial.models.journal_entry import (
-    EntryOrigin,
-    EntryStatus,
-    EntryType,
-    JournalEntry,
-    JournalEntryLine,
+# Fiscal
+from modules.financial.models.tax_configuration import (
+    ICMSCSOSN,
+    ICMSCST,
+    ICMSModalidadeBC,
+    ICMSOrigin,
+    SimplesNacionalConfig,
+    TaxConfiguration,
+    TaxRegime,
+    TaxTable,
+    TaxType,
 )
 from modules.financial.models.trial_balance import (
     BalancePeriod,
@@ -202,68 +265,23 @@ from modules.financial.models.trial_balance import (
     TrialBalance,
     TrialBalanceItem,
 )
-
-# Fiscal
-from modules.financial.models.tax_configuration import (
-    ICMSModalidadeBC,
-    ICMSOrigin,
-    ICMSCST,
-    ICMSCSOSN,
-    SimplesNacionalConfig,
-    TaxConfiguration,
-    TaxRegime,
-    TaxTable,
-    TaxType,
-)
-from modules.financial.models.nfe import (
-    NFe,
-    NFeItem,
-    NFeFinalidade,
-    NFeFormaPagamento,
-    NFeModalidadeFrete,
-    NFeStatus,
-    NFeTipo,
-)
-from modules.financial.models.nfse import (
-    CodigoServico,
-    NFSe,
-    NFSeLote,
-    NFSeLayoutPadrao,
-    NFSeNaturezaOperacao,
-    NFSeRegimeEspecial,
-    NFSeStatus,
-)
-from modules.financial.models.sped_file import (
-    ECDResumo,
-    ECDTipoECD,
-    EFDContribuicoesResumo,
-    EFDICMSIPIResumo,
-    SPEDFile,
-    SPEDFinalidade,
-    SPEDPerfil,
-    SPEDRegistro,
-    SPEDStatus,
-    SPEDTipo,
-)
-from modules.financial.models.fiscal_obligation import (
-    FiscalObligation,
-    ObrigacaoFrequencia,
-    ObrigacaoStatus,
-    ObrigacaoTipo,
-    SimplesNacionalDAS,
-    SUFRAMAConfig,
-    SUFRAMAOperacao,
-)
-from modules.financial.models.cfop_ncm import (
-    CFOP,
-    CFOPGrupo,
-    CFOPNatureza,
-    CFOPTipo,
-    NCM,
-    RetencaoFederal,
+from modules.financial.models.warehouse import (
+    StorageType,
+    Warehouse,
+    WarehouseStatus,
+    WarehouseType,
 )
 
 __all__ = [
+    # === Custeio por Contrato ===
+    "ContractCost",
+    "ServiceType",
+    # === Custeio Detalhado por Tipo (Phase 3) ===
+    "CustoPostoPortaria",
+    "CustoPostoLimpeza",
+    "CustoPostoJardinagem",
+    "CustoContratoSegEletronica",
+    "CustoContratoPortariaRemota",
     # === Contas a Pagar ===
     # Supplier
     "Supplier",

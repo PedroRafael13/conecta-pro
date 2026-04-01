@@ -1,25 +1,25 @@
 """Allocation Service - Serviço de Alocação e Rateio de Custos."""
 
-from datetime import date, datetime
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Optional
-from uuid import UUID
 import logging
+from datetime import date, datetime
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
+from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.costing.models import (
-    CostDriver,
     CostActivity,
-    CostPool,
-    CostObject,
     CostAllocation,
+    CostDriver,
+    CostObject,
+    CostPool,
 )
 from modules.financial.costing.models.cost_allocation import (
+    AllocationMethod,
     AllocationStatus,
     AllocationType,
-    AllocationMethod,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,8 +45,8 @@ class AllocationService:
         pool_id: UUID,
         activity_allocations: list[dict[str, Any]],
         data_alocacao: date,
-        user_id: Optional[UUID] = None,
-        descricao: Optional[str] = None,
+        user_id: UUID | None = None,
+        descricao: str | None = None,
         auto_execute: bool = False,
     ) -> list[CostAllocation]:
         """Aloca custos de um pool para múltiplas atividades.
@@ -82,14 +82,10 @@ class AllocationService:
             # Determina valor a alocar
             if "valor" in alloc_data:
                 valor = Decimal(str(alloc_data["valor"]))
-                percentual = (valor / pool.valor_total * 100).quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                )
+                percentual = (valor / pool.valor_total * 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             elif "percentual" in alloc_data:
                 percentual = Decimal(str(alloc_data["percentual"]))
-                valor = (pool.valor_total * percentual / 100).quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                )
+                valor = (pool.valor_total * percentual / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             else:
                 raise ValueError("Necessário informar 'valor' ou 'percentual'")
 
@@ -104,10 +100,7 @@ class AllocationService:
                 destino_id=activity_id,
                 valor_alocado=valor,
                 percentual_alocado=percentual,
-                driver_id=(
-                    UUID(alloc_data["driver_id"])
-                    if alloc_data.get("driver_id") else pool.driver_id
-                ),
+                driver_id=(UUID(alloc_data["driver_id"]) if alloc_data.get("driver_id") else pool.driver_id),
                 driver_quantidade=Decimal(str(alloc_data.get("driver_quantidade", 0))),
                 data_alocacao=data_alocacao,
                 periodo_inicio=data_alocacao.replace(day=1),
@@ -129,10 +122,7 @@ class AllocationService:
 
         await self.session.flush()
 
-        logger.info(
-            f"Criadas {len(allocations)} alocações do pool {pool.codigo}. "
-            f"Total: R$ {total_allocated:,.2f}"
-        )
+        logger.info(f"Criadas {len(allocations)} alocações do pool {pool.codigo}. Total: R$ {total_allocated:,.2f}")
         return allocations
 
     async def allocate_activity_to_objects(  # pylint: disable=too-many-locals
@@ -140,8 +130,8 @@ class AllocationService:
         activity_id: UUID,
         object_allocations: list[dict[str, Any]],
         data_alocacao: date,
-        user_id: Optional[UUID] = None,
-        descricao: Optional[str] = None,
+        user_id: UUID | None = None,
+        descricao: str | None = None,
         auto_execute: bool = False,
     ) -> list[CostAllocation]:
         """Aloca custos de uma atividade para múltiplos objetos de custo.
@@ -164,9 +154,7 @@ class AllocationService:
         # Calcula custo total da atividade (direto + alocado)
         activity_total = activity.custo_direto or Decimal("0")
 
-        alloc_query = select(
-            func.sum(CostAllocation.valor_alocado)
-        ).where(
+        alloc_query = select(func.sum(CostAllocation.valor_alocado)).where(
             CostAllocation.destino_id == activity_id,
             CostAllocation.tipo == AllocationType.POOL_TO_ACTIVITY,
             CostAllocation.status == AllocationStatus.EXECUTED,
@@ -191,14 +179,10 @@ class AllocationService:
             # Determina valor a alocar
             if "valor" in alloc_data:
                 valor = Decimal(str(alloc_data["valor"]))
-                percentual = (valor / activity_total * 100).quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                )
+                percentual = (valor / activity_total * 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             elif "percentual" in alloc_data:
                 percentual = Decimal(str(alloc_data["percentual"]))
-                valor = (activity_total * percentual / 100).quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                )
+                valor = (activity_total * percentual / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             else:
                 raise ValueError("Necessário informar 'valor' ou 'percentual'")
 
@@ -213,10 +197,7 @@ class AllocationService:
                 destino_id=object_id,
                 valor_alocado=valor,
                 percentual_alocado=percentual,
-                driver_id=(
-                    UUID(alloc_data["driver_id"])
-                    if alloc_data.get("driver_id") else activity.driver_id
-                ),
+                driver_id=(UUID(alloc_data["driver_id"]) if alloc_data.get("driver_id") else activity.driver_id),
                 driver_quantidade=Decimal(str(alloc_data.get("driver_quantidade", 0))),
                 data_alocacao=data_alocacao,
                 periodo_inicio=data_alocacao.replace(day=1),
@@ -239,8 +220,7 @@ class AllocationService:
         await self.session.flush()
 
         logger.info(
-            f"Criadas {len(allocations)} alocações da atividade {activity.codigo}. "
-            f"Total: R$ {total_allocated:,.2f}"
+            f"Criadas {len(allocations)} alocações da atividade {activity.codigo}. Total: R$ {total_allocated:,.2f}"
         )
         return allocations
 
@@ -251,7 +231,7 @@ class AllocationService:
         driver_id: UUID,
         destinos: list[dict[str, Any]],
         data_alocacao: date,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
         auto_execute: bool = False,
     ) -> list[CostAllocation]:
         """Aloca custos proporcionalmente ao consumo de um driver.
@@ -303,12 +283,8 @@ class AllocationService:
         for dest in destinos:
             destino_id = UUID(dest["destino_id"])
             driver_qty = Decimal(str(dest["driver_quantidade"]))
-            valor = (taxa_driver * driver_qty).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
-            percentual = (driver_qty / total_driver * 100).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            valor = (taxa_driver * driver_qty).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            percentual = (driver_qty / total_driver * 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
             # Determina tipo de destino
             if alloc_type == AllocationType.POOL_TO_ACTIVITY:
@@ -318,10 +294,7 @@ class AllocationService:
 
             allocation = CostAllocation(
                 condominio_id=origem.condominio_id,
-                codigo=(
-                    f"ALLOC-DRV-{driver.codigo}-"
-                    f"{data_alocacao.strftime('%Y%m%d')}-{destino_id.hex[:8]}"
-                ),
+                codigo=(f"ALLOC-DRV-{driver.codigo}-{data_alocacao.strftime('%Y%m%d')}-{destino_id.hex[:8]}"),
                 tipo=alloc_type,
                 metodo=AllocationMethod.DRIVER_BASED,
                 origem_tipo=origem_tipo,
@@ -353,8 +326,7 @@ class AllocationService:
         await self.session.flush()
 
         logger.info(
-            f"Criadas {len(allocations)} alocações por driver {driver.codigo}. "
-            f"Taxa: R$ {taxa_driver:,.4f}/unidade"
+            f"Criadas {len(allocations)} alocações por driver {driver.codigo}. Taxa: R$ {taxa_driver:,.4f}/unidade"
         )
         return allocations
 
@@ -364,7 +336,7 @@ class AllocationService:
         origem_id: UUID,
         destino_ids: list[UUID],
         data_alocacao: date,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
         auto_execute: bool = False,
     ) -> list[CostAllocation]:
         """Aloca custos igualmente entre destinos.
@@ -406,19 +378,14 @@ class AllocationService:
 
         # Calcula valor por destino
         n_destinos = len(destino_ids)
-        valor_por_destino = (valor_total / n_destinos).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        valor_por_destino = (valor_total / n_destinos).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         percentual = Decimal("100") / n_destinos
 
         allocations = []
         for destino_id in destino_ids:
             allocation = CostAllocation(
                 condominio_id=origem.condominio_id,
-                codigo=(
-                    f"ALLOC-EQ-{origem.codigo}-"
-                    f"{data_alocacao.strftime('%Y%m%d')}-{destino_id.hex[:8]}"
-                ),
+                codigo=(f"ALLOC-EQ-{origem.codigo}-{data_alocacao.strftime('%Y%m%d')}-{destino_id.hex[:8]}"),
                 tipo=alloc_type,
                 metodo=AllocationMethod.EQUAL,
                 origem_tipo=origem_tipo,
@@ -446,17 +413,14 @@ class AllocationService:
 
         await self.session.flush()
 
-        logger.info(
-            f"Criadas {len(allocations)} alocações iguais. "
-            f"Valor por destino: R$ {valor_por_destino:,.2f}"
-        )
+        logger.info(f"Criadas {len(allocations)} alocações iguais. Valor por destino: R$ {valor_por_destino:,.2f}")
         return allocations
 
     async def approve_allocation(
         self,
         allocation_id: UUID,
         user_id: UUID,
-        observacao: Optional[str] = None,
+        observacao: str | None = None,
     ) -> CostAllocation:
         """Aprova uma alocação pendente.
 
@@ -473,10 +437,7 @@ class AllocationService:
             raise ValueError(f"Alocação {allocation_id} não encontrada")
 
         if allocation.status != AllocationStatus.PENDING:
-            raise ValueError(
-                f"Alocação {allocation_id} não está pendente. "
-                f"Status atual: {allocation.status.value}"
-            )
+            raise ValueError(f"Alocação {allocation_id} não está pendente. Status atual: {allocation.status.value}")
 
         allocation.status = AllocationStatus.APPROVED
         allocation.aprovado_por = user_id
@@ -509,8 +470,7 @@ class AllocationService:
 
         if allocation.status not in [AllocationStatus.PENDING, AllocationStatus.APPROVED]:
             raise ValueError(
-                f"Alocação {allocation_id} não pode ser executada. "
-                f"Status atual: {allocation.status.value}"
+                f"Alocação {allocation_id} não pode ser executada. Status atual: {allocation.status.value}"
             )
 
         allocation.status = AllocationStatus.EXECUTED
@@ -525,10 +485,7 @@ class AllocationService:
 
         await self.session.flush()
 
-        logger.info(
-            f"Alocação {allocation_id} executada. "
-            f"Valor: R$ {allocation.valor_alocado:,.2f}"
-        )
+        logger.info(f"Alocação {allocation_id} executada. Valor: R$ {allocation.valor_alocado:,.2f}")
         return allocation
 
     async def reverse_allocation(
@@ -552,10 +509,7 @@ class AllocationService:
             raise ValueError(f"Alocação {allocation_id} não encontrada")
 
         if original.status != AllocationStatus.EXECUTED:
-            raise ValueError(
-                f"Apenas alocações executadas podem ser revertidas. "
-                f"Status atual: {original.status.value}"
-            )
+            raise ValueError(f"Apenas alocações executadas podem ser revertidas. Status atual: {original.status.value}")
 
         # Marca original como revertida
         original.status = AllocationStatus.REVERSED
@@ -598,10 +552,7 @@ class AllocationService:
         self.session.add(reversal)
         await self.session.flush()
 
-        logger.info(
-            f"Alocação {allocation_id} revertida. "
-            f"Reversão: {reversal.id}"
-        )
+        logger.info(f"Alocação {allocation_id} revertida. Reversão: {reversal.id}")
         return reversal
 
     async def batch_execute(
@@ -624,15 +575,19 @@ class AllocationService:
         for alloc_id in allocation_ids:
             try:
                 allocation = await self.execute_allocation(alloc_id, user_id)
-                executed.append({
-                    "id": str(allocation.id),
-                    "valor": float(allocation.valor_alocado),
-                })
+                executed.append(
+                    {
+                        "id": str(allocation.id),
+                        "valor": float(allocation.valor_alocado),
+                    }
+                )
             except (ValueError, TypeError, RuntimeError) as e:
-                failed.append({
-                    "id": str(alloc_id),
-                    "erro": str(e),
-                })
+                failed.append(
+                    {
+                        "id": str(alloc_id),
+                        "erro": str(e),
+                    }
+                )
 
         await self.session.commit()
 
@@ -647,10 +602,7 @@ class AllocationService:
             "detalhes_falhas": failed,
         }
 
-        logger.info(
-            f"Lote executado: {len(executed)}/{len(allocation_ids)} alocações. "
-            f"Total: R$ {total_executed:,.2f}"
-        )
+        logger.info(f"Lote executado: {len(executed)}/{len(allocation_ids)} alocações. Total: R$ {total_executed:,.2f}")
         return result
 
     async def get_allocation_summary(  # pylint: disable=too-many-locals
@@ -670,16 +622,20 @@ class AllocationService:
             Resumo das alocações
         """
         # Por status
-        status_query = select(
-            CostAllocation.status,
-            func.count(CostAllocation.id).label("count"),
-            func.sum(CostAllocation.valor_alocado).label("total"),
-        ).where(
-            CostAllocation.condominio_id == condominio_id,
-            CostAllocation.data_alocacao >= periodo_inicio,
-            CostAllocation.data_alocacao <= periodo_fim,
-            CostAllocation.valor_alocado > 0,  # Exclui reversões
-        ).group_by(CostAllocation.status)
+        status_query = (
+            select(
+                CostAllocation.status,
+                func.count(CostAllocation.id).label("count"),
+                func.sum(CostAllocation.valor_alocado).label("total"),
+            )
+            .where(
+                CostAllocation.condominio_id == condominio_id,
+                CostAllocation.data_alocacao >= periodo_inicio,
+                CostAllocation.data_alocacao <= periodo_fim,
+                CostAllocation.valor_alocado > 0,  # Exclui reversões
+            )
+            .group_by(CostAllocation.status)
+        )
 
         status_result = await self.session.execute(status_query)
         by_status = {
@@ -691,17 +647,21 @@ class AllocationService:
         }
 
         # Por tipo
-        type_query = select(
-            CostAllocation.tipo,
-            func.count(CostAllocation.id).label("count"),
-            func.sum(CostAllocation.valor_alocado).label("total"),
-        ).where(
-            CostAllocation.condominio_id == condominio_id,
-            CostAllocation.data_alocacao >= periodo_inicio,
-            CostAllocation.data_alocacao <= periodo_fim,
-            CostAllocation.status == AllocationStatus.EXECUTED,
-            CostAllocation.valor_alocado > 0,
-        ).group_by(CostAllocation.tipo)
+        type_query = (
+            select(
+                CostAllocation.tipo,
+                func.count(CostAllocation.id).label("count"),
+                func.sum(CostAllocation.valor_alocado).label("total"),
+            )
+            .where(
+                CostAllocation.condominio_id == condominio_id,
+                CostAllocation.data_alocacao >= periodo_inicio,
+                CostAllocation.data_alocacao <= periodo_fim,
+                CostAllocation.status == AllocationStatus.EXECUTED,
+                CostAllocation.valor_alocado > 0,
+            )
+            .group_by(CostAllocation.tipo)
+        )
 
         type_result = await self.session.execute(type_query)
         by_type = {
@@ -713,17 +673,21 @@ class AllocationService:
         }
 
         # Por método
-        method_query = select(
-            CostAllocation.metodo,
-            func.count(CostAllocation.id).label("count"),
-            func.sum(CostAllocation.valor_alocado).label("total"),
-        ).where(
-            CostAllocation.condominio_id == condominio_id,
-            CostAllocation.data_alocacao >= periodo_inicio,
-            CostAllocation.data_alocacao <= periodo_fim,
-            CostAllocation.status == AllocationStatus.EXECUTED,
-            CostAllocation.valor_alocado > 0,
-        ).group_by(CostAllocation.metodo)
+        method_query = (
+            select(
+                CostAllocation.metodo,
+                func.count(CostAllocation.id).label("count"),
+                func.sum(CostAllocation.valor_alocado).label("total"),
+            )
+            .where(
+                CostAllocation.condominio_id == condominio_id,
+                CostAllocation.data_alocacao >= periodo_inicio,
+                CostAllocation.data_alocacao <= periodo_fim,
+                CostAllocation.status == AllocationStatus.EXECUTED,
+                CostAllocation.valor_alocado > 0,
+            )
+            .group_by(CostAllocation.metodo)
+        )
 
         method_result = await self.session.execute(method_query)
         by_method = {

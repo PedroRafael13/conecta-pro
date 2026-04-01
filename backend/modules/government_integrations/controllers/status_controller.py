@@ -3,16 +3,17 @@ Controller para status e health check das integrações governamentais.
 """
 
 from datetime import datetime
-from typing import Any, Dict
-from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, status
 
-from ..schemas.common import StandardResponse
+from core.auth.dependencies import CurrentActiveUser
 from core.config.credentials import (
     get_government_credentials,
     is_certificate_configured,
 )
+
+from ..schemas.common import StandardResponse
 
 router = APIRouter(tags=["Status"])
 
@@ -24,7 +25,7 @@ router = APIRouter(tags=["Status"])
     summary="Status das integracoes governamentais",
     description="Retorna status de todas as integracoes.",
 )
-async def get_government_status() -> StandardResponse:
+async def get_government_status(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Retorna status das integrações governamentais.
 
@@ -83,12 +84,12 @@ async def get_government_status() -> StandardResponse:
 
 @router.get(
     "/health",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     status_code=status.HTTP_200_OK,
     summary="Health check",
     description="Verifica saude do modulo.",
 )
-async def health_check() -> Dict[str, Any]:
+async def health_check(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Health check do módulo.
 

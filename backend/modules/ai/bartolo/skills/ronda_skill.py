@@ -18,7 +18,7 @@ Date: 2026-01-29
 """
 
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -48,14 +48,22 @@ class RondaSkill(BaseSkill):
     name = "ronda"
     description = "Gerenciamento de rondas de inspecao"
     commands = [
-        "hoje", "andamento", "stats", "inspetor", "resultado",
-        "checkpoint", "checkpoints", "pausar", "retomar", "help",
+        "hoje",
+        "andamento",
+        "stats",
+        "inspetor",
+        "resultado",
+        "checkpoint",
+        "checkpoints",
+        "pausar",
+        "retomar",
+        "help",
     ]
 
     def __init__(self, data_connector: Optional["DataConnector"] = None):
         super().__init__(data_connector=data_connector)
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando de ronda."""
         try:
             if not command or command == "help":
@@ -88,7 +96,7 @@ class RondaSkill(BaseSkill):
                 "suggestions": ["/ronda help"],
             }
 
-    async def _hoje(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _hoje(self, args: list[str], context: dict) -> dict[str, Any]:
         """Lista rondas agendadas para hoje."""
         if self.has_data_connector:
             try:
@@ -116,6 +124,7 @@ class RondaSkill(BaseSkill):
 
         # Fallback estatico
         from datetime import datetime
+
         hoje = datetime.utcnow().strftime("%d/%m/%Y")
         return {
             "response": f"""**Rondas Agendadas para Hoje ({hoje})**
@@ -126,7 +135,7 @@ Use `/ronda stats` para ver as estatisticas gerais.""",
             "suggestions": ["/ronda stats", "/ronda andamento"],
         }
 
-    async def _andamento(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _andamento(self, args: list[str], context: dict) -> dict[str, Any]:
         """Lista rondas em andamento."""
         if self.has_data_connector:
             try:
@@ -162,7 +171,7 @@ Use `/ronda hoje` para ver as rondas agendadas para hoje.""",
             "suggestions": ["/ronda hoje", "/ronda stats"],
         }
 
-    async def _stats(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _stats(self, args: list[str], context: dict) -> dict[str, Any]:
         """Exibe estatisticas de rondas por status."""
         if self.has_data_connector:
             try:
@@ -194,7 +203,7 @@ Use `/ronda hoje` para ver as rondas agendadas para hoje.""",
             "suggestions": ["/ronda hoje", "/ronda andamento"],
         }
 
-    async def _inspetor(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _inspetor(self, args: list[str], context: dict) -> dict[str, Any]:
         """Lista rondas de um inspetor especifico."""
         if not args:
             return {
@@ -240,7 +249,7 @@ Verifique se o nome esta correto e tente novamente.""",
             "suggestions": ["/ronda stats", "/ronda hoje"],
         }
 
-    async def _resultado(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _resultado(self, args: list[str], context: dict) -> dict[str, Any]:
         """Exibe resultado/relatorio de uma ronda."""
         if not args:
             return {
@@ -273,7 +282,7 @@ Verifique se o codigo esta correto e se a ronda foi concluida.""",
             "suggestions": ["/ronda hoje", "/ronda stats"],
         }
 
-    async def _checkpoint(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _checkpoint(self, args: list[str], context: dict) -> dict[str, Any]:
         """Registra checkpoint em posto durante ronda."""
         if len(args) < 2:
             return {
@@ -339,7 +348,7 @@ Verifique se o codigo esta correto e se a ronda foi concluida.""",
             "suggestions": ["/ronda andamento", "/ronda help"],
         }
 
-    async def _checkpoints(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _checkpoints(self, args: list[str], context: dict) -> dict[str, Any]:
         """Lista checkpoints de uma ronda."""
         if not args:
             return {
@@ -386,7 +395,7 @@ Verifique se o codigo esta correto e se a ronda foi concluida.""",
             "suggestions": ["/ronda andamento", "/ronda help"],
         }
 
-    async def _pausar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pausar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Pausa uma ronda em andamento."""
         if not args:
             return {
@@ -433,7 +442,7 @@ Verifique se o codigo esta correto e se a ronda foi concluida.""",
             "suggestions": ["/ronda andamento", "/ronda help"],
         }
 
-    async def _retomar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _retomar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Retoma uma ronda pausada."""
         if not args:
             return {

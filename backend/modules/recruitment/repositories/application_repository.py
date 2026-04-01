@@ -2,9 +2,9 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -15,8 +15,8 @@ from modules.recruitment.models.application import (
 )
 from modules.recruitment.schemas.application import (
     ApplicationCreate,
-    ApplicationUpdate,
     ApplicationFilter,
+    ApplicationUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,56 +36,49 @@ class ApplicationRepository:
         await self.session.flush()
         return application
 
-    async def get_by_id(self, application_id: str) -> Optional[Application]:
+    async def get_by_id(self, application_id: str) -> Application | None:
         """Busca candidatura por ID."""
         result = await self.session.execute(
             select(Application).where(
                 and_(
                     Application.id == application_id,
-                    Application.deleted_at.is_(None),
+                    Application.is_deleted.is_(False),
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_id_with_relations(
-        self, application_id: str
-    ) -> Optional[Application]:
+    async def get_by_id_with_relations(self, application_id: str) -> Application | None:
         """Busca candidatura por ID com relacionamentos."""
         result = await self.session.execute(
             select(Application)
             .options(
                 selectinload(Application.job_position),
                 selectinload(Application.candidate),
-                selectinload(Application.interviews),
             )
             .where(
                 and_(
                     Application.id == application_id,
-                    Application.deleted_at.is_(None),
+                    Application.is_deleted.is_(False),
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_candidate_and_position(
-        self, candidate_id: str, position_id: str
-    ) -> Optional[Application]:
+    async def get_by_candidate_and_position(self, candidate_id: str, position_id: str) -> Application | None:
         """Busca candidatura por candidato e vaga."""
         result = await self.session.execute(
             select(Application).where(
                 and_(
                     Application.candidate_id == candidate_id,
                     Application.job_position_id == position_id,
-                    Application.deleted_at.is_(None),
+                    Application.is_deleted.is_(False),
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, application_id: str, data: ApplicationUpdate
-    ) -> Optional[Application]:
+    async def update(self, application_id: str, data: ApplicationUpdate) -> Application | None:
         """Atualiza uma candidatura."""
         application = await self.get_by_id(application_id)
         if not application:
@@ -93,9 +86,10 @@ class ApplicationRepository:
 
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
-            setattr(application, field, value)
+            if hasattr(application, field):
+                setattr(application, field, value)
 
-        application.last_update_at = datetime.utcnow()
+        application.updated_at = datetime.utcnow()
         await self.session.flush()
         return application
 
@@ -105,42 +99,36 @@ class ApplicationRepository:
         if not application:
             return False
 
-        application.soft_delete()
+        application.is_active = False
+        application.updated_at = datetime.utcnow()
         await self.session.flush()
         return True
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[ApplicationFilter] = None,
+        filters: ApplicationFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "applied_at",
         order_desc: bool = True,
-    ) -> Tuple[List[Application], int]:
+    ) -> tuple[list[Application], int]:
         """Lista candidaturas com filtros e paginação."""
-        query = select(Application).where(Application.deleted_at.is_(None))
+        query = select(Application).where(Application.is_deleted.is_(False))
 
         if filters:
             if filters.job_position_id:
-                query = query.where(
-                    Application.job_position_id == filters.job_position_id
-                )
+                query = query.where(Application.job_position_id == filters.job_position_id)
             if filters.candidate_id:
                 query = query.where(Application.candidate_id == filters.candidate_id)
             if filters.status:
                 query = query.where(Application.status == filters.status)
-            if filters.is_favorite is not None:
-                query = query.where(Application.is_favorite == filters.is_favorite)
-            if filters.is_shortlisted is not None:
-                query = query.where(Application.is_shortlisted == filters.is_shortlisted)
+            # is_favorite and is_shortlisted don't exist in DB — skip
             if filters.min_score:
-                query = query.where(Application.final_score >= filters.min_score)
+                query = query.where(Application.ai_match_score >= filters.min_score)
             if filters.max_score:
-                query = query.where(Application.final_score <= filters.max_score)
-            if filters.assigned_recruiter_id:
-                query = query.where(
-                    Application.assigned_recruiter_id == filters.assigned_recruiter_id
-                )
+                query = query.where(Application.ai_match_score <= filters.max_score)
+            if filters.assigned_to_id:
+                query = query.where(Application.assigned_to_id == filters.assigned_to_id)
             if filters.applied_after:
                 query = query.where(Application.applied_at >= filters.applied_after)
             if filters.applied_before:
@@ -152,7 +140,8 @@ class ApplicationRepository:
         total = total_result.scalar() or 0
 
         # Ordenação
-        order_column = getattr(Application, order_by, Application.applied_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(Application).mapper.column_attrs}
+        order_column = getattr(Application, order_by if order_by in _valid_order_column_cols else "applied_at")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:
@@ -172,20 +161,19 @@ class ApplicationRepository:
         status: ApplicationStatus = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[Application]:
+    ) -> list[Application]:
         """Retorna candidaturas de uma vaga."""
         query = select(Application).where(
             and_(
                 Application.job_position_id == position_id,
-                Application.deleted_at.is_(None),
+                Application.is_deleted.is_(False),
             )
         )
         if status:
             query = query.where(Application.status == status)
 
         query = query.order_by(
-            Application.is_favorite.desc(),
-            Application.final_score.desc().nulls_last(),
+            Application.ai_match_score.desc().nulls_last(),
             Application.applied_at.desc(),
         )
         query = query.offset(skip).limit(limit)
@@ -193,16 +181,14 @@ class ApplicationRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_candidate(
-        self, candidate_id: str, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_by_candidate(self, candidate_id: str, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas de um candidato."""
         query = (
             select(Application)
             .where(
                 and_(
                     Application.candidate_id == candidate_id,
-                    Application.deleted_at.is_(None),
+                    Application.is_deleted.is_(False),
                 )
             )
             .order_by(Application.applied_at.desc())
@@ -213,9 +199,7 @@ class ApplicationRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_active(
-        self, position_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_active(self, position_id: str = None, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas ativas."""
         inactive_statuses = [
             ApplicationStatus.TRIAGEM_REPROVADO,
@@ -228,7 +212,7 @@ class ApplicationRepository:
         query = select(Application).where(
             and_(
                 Application.status.notin_(inactive_statuses),
-                Application.deleted_at.is_(None),
+                Application.is_deleted.is_(False),
             )
         )
         if position_id:
@@ -240,52 +224,26 @@ class ApplicationRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_shortlisted(
-        self, position_id: str, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
-        """Retorna candidaturas na lista restrita."""
-        query = (
-            select(Application)
-            .where(
-                and_(
-                    Application.job_position_id == position_id,
-                    Application.is_shortlisted.is_(True),
-                    Application.deleted_at.is_(None),
-                )
-            )
-            .order_by(Application.final_score.desc().nulls_last())
-            .offset(skip)
-            .limit(limit)
-        )
+    async def get_shortlisted(self, position_id: str, skip: int = 0, limit: int = 50) -> list[Application]:
+        """Retorna candidaturas na lista restrita.
 
-        result = await self.session.execute(query)
-        return list(result.scalars().all())
+        DB nao possui coluna is_shortlisted — retorna lista vazia.
+        """
+        return []
 
-    async def get_favorites(
-        self, position_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
-        """Retorna candidaturas favoritas."""
-        query = select(Application).where(
-            and_(
-                Application.is_favorite.is_(True),
-                Application.deleted_at.is_(None),
-            )
-        )
-        if position_id:
-            query = query.where(Application.job_position_id == position_id)
+    async def get_favorites(self, position_id: str = None, skip: int = 0, limit: int = 50) -> list[Application]:
+        """Retorna candidaturas favoritas.
 
-        query = query.order_by(Application.applied_at.desc())
-        query = query.offset(skip).limit(limit)
-
-        result = await self.session.execute(query)
-        return list(result.scalars().all())
+        DB nao possui coluna is_favorite — retorna lista vazia.
+        """
+        return []
 
     async def advance_stage(
         self,
         application_id: str,
         new_status: ApplicationStatus,
         notes: str = None,
-    ) -> Optional[Application]:
+    ) -> Application | None:
         """Avança candidatura de estágio."""
         application = await self.get_by_id(application_id)
         if application:
@@ -299,45 +257,34 @@ class ApplicationRepository:
         reason: RejectionReason,
         details: str = None,
         rejected_by: str = None,
-    ) -> Optional[Application]:
+    ) -> Application | None:
         """Rejeita candidatura."""
         application = await self.get_by_id(application_id)
         if application:
-            application.reject(reason, details, rejected_by)
+            application.reject(reason, details, rejected_by=rejected_by)
             await self.session.flush()
         return application
 
-    async def hire(
-        self, application_id: str, start_date: datetime = None
-    ) -> Optional[Application]:
+    async def hire(self, application_id: str, start_date: datetime = None) -> Application | None:
         """Contrata candidato."""
         application = await self.get_by_id(application_id)
         if application:
-            application.hire(start_date)
+            application.hire()
             await self.session.flush()
         return application
 
     async def update_ranking(self, position_id: str) -> None:
-        """Atualiza ranking das candidaturas."""
-        applications = await self.get_active(position_id)
+        """Atualiza ranking das candidaturas.
 
-        # Ordena por score final
-        sorted_apps = sorted(
-            applications,
-            key=lambda a: a.final_score or 0,
-            reverse=True,
-        )
-
-        for rank, app in enumerate(sorted_apps, 1):
-            app.ranking_position = rank
-
-        await self.session.flush()
+        DB nao possui coluna ranking_position — ordena por ai_match_score apenas.
+        """
+        return  # Noop: ranking_position nao existe no banco — ordenação via ai_match_score
 
     async def get_stats(  # pylint: disable=too-many-locals
         self, position_id: str = None
     ) -> dict:
         """Retorna estatísticas."""
-        query = select(Application).where(Application.deleted_at.is_(None))
+        query = select(Application).where(Application.is_deleted.is_(False))
         if position_id:
             query = query.where(Application.job_position_id == position_id)
 
@@ -384,7 +331,7 @@ class ApplicationRepository:
 
             if app.status == ApplicationStatus.CONTRATADO:
                 stats["hired"] += 1
-                if app.hired_at:
+                if app.hired_at and app.applied_at:
                     days = (app.hired_at - app.applied_at).days
                     total_hire_days += days
                     hire_count += 1
@@ -395,14 +342,16 @@ class ApplicationRepository:
             if app.status in in_process_statuses:
                 stats["in_process"] += 1
 
-            status_key = app.status.value
+            status_key = app.status or "unknown"
+            if hasattr(status_key, "value"):
+                status_key = status_key.value
             stats["by_status"][status_key] = stats["by_status"].get(status_key, 0) + 1
 
-            stage_key = str(app.current_stage)
+            stage_key = str(app.current_step or app.step_order or "unknown")
             stats["by_stage"][stage_key] = stats["by_stage"].get(stage_key, 0) + 1
 
-            if app.final_score:
-                total_score += app.final_score
+            if app.ai_match_score:
+                total_score += float(app.ai_match_score)
                 score_count += 1
 
         if score_count > 0:
@@ -412,8 +361,6 @@ class ApplicationRepository:
             stats["avg_time_to_hire_days"] = round(total_hire_days / hire_count, 1)
 
         if applications:
-            stats["conversion_rate"] = round(
-                (stats["hired"] / len(applications)) * 100, 1
-            )
+            stats["conversion_rate"] = round((stats["hired"] / len(applications)) * 100, 1)
 
         return stats

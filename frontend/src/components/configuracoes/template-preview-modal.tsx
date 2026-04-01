@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,27 +28,38 @@ export function TemplatePreviewModal({
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
 
-  useEffect(() => {
-    if (template) {
-      // Extract variables from all template content
-      const allContent = [
-        template.email_subject,
-        template.body_html,
-        template.body_text,
-        template.sms_body,
-        template.push_title,
-        template.push_body,
-        template.in_app_title,
-        template.in_app_body,
-      ].filter(Boolean).join(' ');
+  // Extract variables from template when it changes
+  const extractedVariables = useMemo(() => {
+    if (!template) return [];
 
-      const vars = extractTemplateVariables(allContent);
+    const allContent = [
+      template.email_subject,
+      template.body_html,
+      template.body_text,
+      template.sms_body,
+      template.push_title,
+      template.push_body,
+      template.in_app_title,
+      template.in_app_body,
+    ].filter(Boolean).join(' ');
+
+    return extractTemplateVariables(allContent);
+  }, [template]);
+
+  useEffect(() => {
+    if (extractedVariables.length > 0) {
       const initial: Record<string, string> = {};
-      vars.forEach((v) => { initial[v] = ''; });
+      extractedVariables.forEach((v) => { initial[v] = variables[v] || ''; });
+
       setVariables(initial);
-      setResult(null);
+    } else {
+
+      setVariables({});
     }
-  }, [template, isOpen]);
+
+    setResult(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [extractedVariables.join(','), isOpen]);
 
   if (!template) return null;
 
@@ -116,7 +128,7 @@ export function TemplatePreviewModal({
                 <Label className="text-xs text-muted-foreground">HTML</Label>
                 <div
                   className="border rounded p-3 bg-white text-sm mt-1 max-h-[300px] overflow-auto"
-                  dangerouslySetInnerHTML={{ __html: String(result.body_html) }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(String(result.body_html)) }}
                 />
               </div>
             ) : null}

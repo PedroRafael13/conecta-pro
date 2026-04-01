@@ -4,11 +4,11 @@ Sprint 32: API Gateway / Integrações
 """
 # pylint: disable=too-many-locals,too-many-return-statements
 
+import hashlib
 import json
 import logging
-import hashlib
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,19 +16,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.integrations.models import (
     APIEndpoint,
     APIKey,
-    IntegrationLog,
-    SyncQueue,
-    EndpointStatus,
     APIKeyStatus,
-    WebhookStatus,
-    LogType,
+    EndpointStatus,
+    ExternalSystem,
+    IntegrationLog,
     LogLevel,
     LogStatus,
-    SyncStatus,
-    SyncPriority,
-    SyncEntityType,
-    ExternalSystem,
+    LogType,
     SyncDirection,
+    SyncEntityType,
+    SyncPriority,
+    SyncQueue,
+    SyncStatus,
+    WebhookStatus,
 )
 from modules.integrations.repositories import IntegrationRepository
 from modules.integrations.schemas import (
@@ -36,11 +36,11 @@ from modules.integrations.schemas import (
     APIEndpointUpdate,
     APIKeyCreate,
     APIKeyUpdate,
-    SyncQueueCreate,
-    SyncQueueStats,
     IntegrationDashboard,
     IntegrationHealthCheck,
     IntegrationLogResponse,
+    SyncQueueCreate,
+    SyncQueueStats,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,58 +56,39 @@ class IntegrationService:
 
     # ==================== API Endpoint ====================
 
-    async def create_endpoint(
-        self,
-        data: APIEndpointCreate,
-        user_id: Optional[UUID] = None
-    ) -> APIEndpoint:
+    async def create_endpoint(self, data: APIEndpointCreate, user_id: UUID | None = None) -> APIEndpoint:
         """Cria um novo endpoint de API."""
         # Verifica se já existe
-        existing = await self.repository.get_endpoint_by_path_method(
-            data.path, data.method.value
-        )
+        existing = await self.repository.get_endpoint_by_path_method(data.path, data.method.value)
         if existing:
-            raise ValueError(
-                f"Endpoint {data.method.value} {data.path} já existe"
-            )
+            raise ValueError(f"Endpoint {data.method.value} {data.path} já existe")
 
-        endpoint = APIEndpoint(
-            **data.model_dump(),
-            created_by=user_id,
-            updated_by=user_id
-        )
+        endpoint = APIEndpoint(**data.model_dump(), created_by=user_id, updated_by=user_id)
 
         return await self.repository.create_endpoint(endpoint)
 
-    async def get_endpoint(self, endpoint_id: UUID) -> Optional[APIEndpoint]:
+    async def get_endpoint(self, endpoint_id: UUID) -> APIEndpoint | None:
         """Busca endpoint por ID."""
         return await self.repository.get_endpoint_by_id(endpoint_id)
 
     async def list_endpoints(
         self,
-        status: Optional[EndpointStatus] = None,
-        category: Optional[str] = None,
-        version: Optional[str] = None,
+        status: EndpointStatus | None = None,
+        category: str | None = None,
+        version: str | None = None,
         page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[APIEndpoint], int, int]:
+        page_size: int = 50,
+    ) -> tuple[list[APIEndpoint], int, int]:
         """Lista endpoints com paginação."""
         skip = (page - 1) * page_size
         endpoints, total = await self.repository.list_endpoints(
-            status=status,
-            category=category,
-            version=version,
-            skip=skip,
-            limit=page_size
+            status=status, category=category, version=version, skip=skip, limit=page_size
         )
         pages = (total + page_size - 1) // page_size
         return endpoints, total, pages
 
     async def update_endpoint(
-        self,
-        endpoint_id: UUID,
-        data: APIEndpointUpdate,
-        user_id: Optional[UUID] = None
+        self, endpoint_id: UUID, data: APIEndpointUpdate, user_id: UUID | None = None
     ) -> APIEndpoint:
         """Atualiza endpoint."""
         endpoint = await self.get_endpoint(endpoint_id)
@@ -127,10 +108,7 @@ class IntegrationService:
         return await self.repository.delete_endpoint(endpoint_id)
 
     async def deprecate_endpoint(
-        self,
-        endpoint_id: UUID,
-        replacement_id: Optional[UUID] = None,
-        sunset_date: Optional[datetime] = None
+        self, endpoint_id: UUID, replacement_id: UUID | None = None, sunset_date: datetime | None = None
     ) -> APIEndpoint:
         """Deprecia um endpoint."""
         endpoint = await self.get_endpoint(endpoint_id)
@@ -148,10 +126,10 @@ class IntegrationService:
         endpoint_id: UUID,
         success: bool,
         response_time_ms: int,
-        api_key_id: Optional[UUID] = None,
-        client_ip: Optional[str] = None,
-        status_code: Optional[int] = None,
-        error_message: Optional[str] = None
+        api_key_id: UUID | None = None,
+        client_ip: str | None = None,
+        status_code: int | None = None,
+        error_message: str | None = None,
     ) -> None:
         """Registra chamada a um endpoint."""
         endpoint = await self.get_endpoint(endpoint_id)
@@ -168,17 +146,13 @@ class IntegrationService:
             status_code=status_code or (200 if success else 500),
             duration_ms=response_time_ms,
             client_ip=client_ip or "unknown",
-            error_message=error_message
+            error_message=error_message,
         )
         await self.repository.create_log(log)
 
     # ==================== API Key ====================
 
-    async def create_api_key(
-        self,
-        data: APIKeyCreate,
-        user_id: Optional[UUID] = None
-    ) -> Tuple[APIKey, str]:
+    async def create_api_key(self, data: APIKeyCreate, user_id: UUID | None = None) -> tuple[APIKey, str]:
         """
         Cria uma nova chave de API.
         Retorna: (APIKey, chave_completa)
@@ -192,7 +166,7 @@ class IntegrationService:
             key_hash=key_hash,
             key_hint=hint,
             created_by=user_id,
-            updated_by=user_id
+            updated_by=user_id,
         )
 
         created = await self.repository.create_api_key(api_key)
@@ -204,22 +178,19 @@ class IntegrationService:
             level=LogLevel.INFO,
             status=LogStatus.SUCCESS,
             action="api_key_created",
-            metadata={"key_name": data.name}
+            metadata={"key_name": data.name},
         )
         await self.repository.create_log(log)
 
         return created, raw_key
 
-    async def get_api_key(self, key_id: UUID) -> Optional[APIKey]:
+    async def get_api_key(self, key_id: UUID) -> APIKey | None:
         """Busca API Key por ID."""
         return await self.repository.get_api_key_by_id(key_id)
 
     async def verify_api_key(
-        self,
-        key: str,
-        required_scope: Optional[str] = None,
-        client_ip: Optional[str] = None
-    ) -> Tuple[bool, Optional[APIKey], str]:
+        self, key: str, required_scope: str | None = None, client_ip: str | None = None
+    ) -> tuple[bool, APIKey | None, str]:
         """
         Verifica uma chave de API.
         Retorna: (válida, APIKey, mensagem)
@@ -238,10 +209,7 @@ class IntegrationService:
         # Verifica IP
         if client_ip and not api_key.check_ip_allowed(client_ip):
             log = IntegrationLog.create_auth_log(
-                api_key_id=str(api_key.id),
-                success=False,
-                client_ip=client_ip,
-                reason="IP não permitido"
+                api_key_id=str(api_key.id), success=False, client_ip=client_ip, reason="IP não permitido"
             )
             await self.repository.create_log(log)
             return False, api_key, "IP não autorizado"
@@ -253,7 +221,7 @@ class IntegrationService:
                 api_key_id=str(api_key.id),
                 client_ip=client_ip or "unknown",
                 limit_remaining=0,
-                reset_at=datetime.utcnow() + timedelta(minutes=1)
+                reset_at=datetime.utcnow() + timedelta(minutes=1),
             )
             await self.repository.create_log(log)
             return False, api_key, reason
@@ -270,32 +238,22 @@ class IntegrationService:
 
     async def list_api_keys(
         self,
-        client_id: Optional[UUID] = None,
-        user_id: Optional[UUID] = None,
-        status: Optional[APIKeyStatus] = None,
-        key_type: Optional[str] = None,
+        client_id: UUID | None = None,
+        user_id: UUID | None = None,
+        status: APIKeyStatus | None = None,
+        key_type: str | None = None,
         page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[APIKey], int, int]:
+        page_size: int = 50,
+    ) -> tuple[list[APIKey], int, int]:
         """Lista API Keys com paginação."""
         skip = (page - 1) * page_size
         keys, total = await self.repository.list_api_keys(
-            client_id=client_id,
-            user_id=user_id,
-            status=status,
-            key_type=key_type,
-            skip=skip,
-            limit=page_size
+            client_id=client_id, user_id=user_id, status=status, key_type=key_type, skip=skip, limit=page_size
         )
         pages = (total + page_size - 1) // page_size
         return keys, total, pages
 
-    async def update_api_key(
-        self,
-        key_id: UUID,
-        data: APIKeyUpdate,
-        user_id: Optional[UUID] = None
-    ) -> APIKey:
+    async def update_api_key(self, key_id: UUID, data: APIKeyUpdate, user_id: UUID | None = None) -> APIKey:
         """Atualiza API Key."""
         api_key = await self.get_api_key(key_id)
         if not api_key:
@@ -309,21 +267,13 @@ class IntegrationService:
 
         return await self.repository.update_api_key(api_key)
 
-    async def revoke_api_key(
-        self,
-        key_id: UUID,
-        reason: Optional[str] = None,
-        user_id: Optional[UUID] = None
-    ) -> APIKey:
+    async def revoke_api_key(self, key_id: UUID, reason: str | None = None, user_id: UUID | None = None) -> APIKey:
         """Revoga uma API Key."""
         api_key = await self.get_api_key(key_id)
         if not api_key:
             raise ValueError("API Key não encontrada")
 
-        api_key.revoke(
-            revoked_by=str(user_id) if user_id else None,
-            reason=reason
-        )
+        api_key.revoke(revoked_by=str(user_id) if user_id else None, reason=reason)
 
         result = await self.repository.update_api_key(api_key)
 
@@ -334,7 +284,7 @@ class IntegrationService:
             level=LogLevel.WARNING,
             status=LogStatus.SUCCESS,
             action="api_key_revoked",
-            metadata={"reason": reason}
+            metadata={"reason": reason},
         )
         await self.repository.create_log(log)
 
@@ -355,7 +305,7 @@ class IntegrationService:
                 log_type=LogType.SYSTEM,
                 level=LogLevel.INFO,
                 status=LogStatus.SUCCESS,
-                action="api_key_expired"
+                action="api_key_expired",
             )
             await self.repository.create_log(log)
 
@@ -364,11 +314,7 @@ class IntegrationService:
 
     # ==================== Sync Queue ====================
 
-    async def queue_sync(
-        self,
-        data: SyncQueueCreate,
-        user_id: Optional[UUID] = None
-    ) -> SyncQueue:
+    async def queue_sync(self, data: SyncQueueCreate, user_id: UUID | None = None) -> SyncQueue:
         """Adiciona item à fila de sincronização."""
         # Calcula hash do payload
         payload_hash = None
@@ -376,21 +322,13 @@ class IntegrationService:
             payload_str = json.dumps(data.payload, sort_keys=True)
             payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
 
-        item = SyncQueue(
-            **data.model_dump(),
-            payload_hash=payload_hash,
-            created_by=user_id,
-            updated_by=user_id
-        )
+        item = SyncQueue(**data.model_dump(), payload_hash=payload_hash, created_by=user_id, updated_by=user_id)
 
         return await self.repository.create_sync_item(item)
 
     async def queue_sync_batch(
-        self,
-        items_data: List[SyncQueueCreate],
-        batch_id: Optional[UUID] = None,
-        user_id: Optional[UUID] = None
-    ) -> List[SyncQueue]:
+        self, items_data: list[SyncQueueCreate], batch_id: UUID | None = None, user_id: UUID | None = None
+    ) -> list[SyncQueue]:
         """Adiciona múltiplos itens à fila."""
         if not batch_id:
             batch_id = uuid4()
@@ -407,32 +345,23 @@ class IntegrationService:
                 batch_id=batch_id,
                 payload_hash=payload_hash,
                 created_by=user_id,
-                updated_by=user_id
+                updated_by=user_id,
             )
             items.append(item)
 
         return await self.repository.create_sync_batch(items)
 
-    async def get_sync_item(self, item_id: UUID) -> Optional[SyncQueue]:
+    async def get_sync_item(self, item_id: UUID) -> SyncQueue | None:
         """Busca item da fila."""
         return await self.repository.get_sync_item_by_id(item_id)
 
     async def get_next_sync_items(
-        self,
-        limit: int = 10,
-        external_system: Optional[ExternalSystem] = None
-    ) -> List[SyncQueue]:
+        self, limit: int = 10, external_system: ExternalSystem | None = None
+    ) -> list[SyncQueue]:
         """Busca próximos itens para processar."""
-        return await self.repository.get_next_sync_items(
-            limit=limit,
-            external_system=external_system
-        )
+        return await self.repository.get_next_sync_items(limit=limit, external_system=external_system)
 
-    async def process_sync_item(
-        self,
-        item_id: UUID,
-        worker_id: str
-    ) -> SyncQueue:
+    async def process_sync_item(self, item_id: UUID, worker_id: str) -> SyncQueue:
         """Marca item como em processamento."""
         item = await self.get_sync_item(item_id)
         if not item:
@@ -445,10 +374,7 @@ class IntegrationService:
         return await self.repository.update_sync_item(item)
 
     async def complete_sync_success(
-        self,
-        item_id: UUID,
-        external_id: Optional[str] = None,
-        response: Optional[dict] = None
+        self, item_id: UUID, external_id: str | None = None, response: dict | None = None
     ) -> SyncQueue:
         """Marca item como completado com sucesso."""
         item = await self.get_sync_item(item_id)
@@ -466,10 +392,7 @@ class IntegrationService:
             status=LogStatus.SUCCESS,
             action="sync_completed",
             duration_ms=item.processing_time_ms,
-            metadata={
-                "entity_type": item.entity_type.value,
-                "external_system": item.external_system.value
-            }
+            metadata={"entity_type": item.entity_type.value, "external_system": item.external_system.value},
         )
         await self.repository.create_log(log)
 
@@ -480,8 +403,8 @@ class IntegrationService:
         item_id: UUID,
         error_code: str,
         error_message: str,
-        error_details: Optional[dict] = None,
-        status_code: Optional[int] = None
+        error_details: dict | None = None,
+        status_code: int | None = None,
     ) -> SyncQueue:
         """Marca item como falha."""
         item = await self.get_sync_item(item_id)
@@ -504,8 +427,8 @@ class IntegrationService:
             metadata={
                 "entity_type": item.entity_type.value,
                 "external_system": item.external_system.value,
-                "retry_count": item.retry_count
-            }
+                "retry_count": item.retry_count,
+            },
         )
         await self.repository.create_log(log)
 
@@ -513,15 +436,15 @@ class IntegrationService:
 
     async def list_sync_items(
         self,
-        status: Optional[SyncStatus] = None,
-        priority: Optional[SyncPriority] = None,
-        entity_type: Optional[SyncEntityType] = None,
-        external_system: Optional[ExternalSystem] = None,
-        direction: Optional[SyncDirection] = None,
-        batch_id: Optional[UUID] = None,
+        status: SyncStatus | None = None,
+        priority: SyncPriority | None = None,
+        entity_type: SyncEntityType | None = None,
+        external_system: ExternalSystem | None = None,
+        direction: SyncDirection | None = None,
+        batch_id: UUID | None = None,
         page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[SyncQueue], int, int]:
+        page_size: int = 50,
+    ) -> tuple[list[SyncQueue], int, int]:
         """Lista itens da fila com paginação."""
         skip = (page - 1) * page_size
         items, total = await self.repository.list_sync_items(
@@ -532,20 +455,16 @@ class IntegrationService:
             direction=direction,
             batch_id=batch_id,
             skip=skip,
-            limit=page_size
+            limit=page_size,
         )
         pages = (total + page_size - 1) // page_size
         return items, total, pages
 
-    async def get_sync_stats(self) -> Dict[str, Any]:
+    async def get_sync_stats(self) -> dict[str, Any]:
         """Obtém estatísticas da fila."""
         return await self.repository.get_sync_stats()
 
-    async def cancel_sync_item(
-        self,
-        item_id: UUID,
-        reason: Optional[str] = None
-    ) -> SyncQueue:
+    async def cancel_sync_item(self, item_id: UUID, reason: str | None = None) -> SyncQueue:
         """Cancela item da fila."""
         item = await self.get_sync_item(item_id)
         if not item:
@@ -570,22 +489,17 @@ class IntegrationService:
         # API Endpoints
         endpoints, total_endpoints = await self.repository.list_endpoints(limit=1000)
         active_endpoints = len([e for e in endpoints if e.status == EndpointStatus.ACTIVE])
-        deprecated_endpoints = len(
-            [e for e in endpoints if e.status == EndpointStatus.DEPRECATED]
-        )
+        deprecated_endpoints = len([e for e in endpoints if e.status == EndpointStatus.DEPRECATED])
 
         # Calcula chamadas do dia
         total_calls = sum(e.total_calls for e in endpoints)
         successful_calls = sum(e.successful_calls for e in endpoints)
-        api_success_rate = (
-            (successful_calls / total_calls * 100) if total_calls > 0 else 100.0
-        )
-        avg_response = sum(
-            e.avg_response_time_ms or 0 for e in endpoints if e.avg_response_time_ms
-        )
+        api_success_rate = (successful_calls / total_calls * 100) if total_calls > 0 else 100.0
+        avg_response = sum(e.avg_response_time_ms or 0 for e in endpoints if e.avg_response_time_ms)
         avg_response_time = (
             avg_response // len([e for e in endpoints if e.avg_response_time_ms])
-            if any(e.avg_response_time_ms for e in endpoints) else None
+            if any(e.avg_response_time_ms for e in endpoints)
+            else None
         )
 
         # API Keys
@@ -601,10 +515,7 @@ class IntegrationService:
 
         total_deliveries = sum(w.total_deliveries for w in webhooks)
         successful_deliveries = sum(w.successful_deliveries for w in webhooks)
-        webhook_rate = (
-            (successful_deliveries / total_deliveries * 100)
-            if total_deliveries > 0 else 100.0
-        )
+        webhook_rate = (successful_deliveries / total_deliveries * 100) if total_deliveries > 0 else 100.0
 
         # Sync Stats
         sync_stats_data = await self.get_sync_stats()
@@ -618,15 +529,12 @@ class IntegrationService:
             requires_review=sync_stats_data.get("requires_review", 0),
             by_entity_type=sync_stats_data.get("by_entity_type", {}),
             by_external_system=sync_stats_data.get("by_external_system", {}),
-            avg_processing_time_ms=sync_stats_data.get("avg_processing_time_ms")
+            avg_processing_time_ms=sync_stats_data.get("avg_processing_time_ms"),
         )
 
         # Recent errors
         recent_errors_data = await self.repository.get_recent_errors(hours=24, limit=5)
-        recent_errors = [
-            IntegrationLogResponse.model_validate(log)
-            for log in recent_errors_data
-        ]
+        recent_errors = [IntegrationLogResponse.model_validate(log) for log in recent_errors_data]
 
         # Health
         health = "healthy"
@@ -652,7 +560,7 @@ class IntegrationService:
             webhook_delivery_rate=round(webhook_rate, 2),
             sync_stats=sync_stats,
             recent_errors=recent_errors,
-            overall_health=health
+            overall_health=health,
         )
 
     async def get_health_check(self) -> IntegrationHealthCheck:
@@ -687,5 +595,5 @@ class IntegrationService:
             webhooks=webhook_health,
             sync_queue=sync_health,
             external_systems={},
-            last_check_at=datetime.utcnow()
+            last_check_at=datetime.utcnow(),
         )

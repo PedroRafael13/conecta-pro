@@ -1,11 +1,10 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 
 interface CashflowFormModalProps {
   isOpen: boolean;
@@ -36,6 +35,15 @@ const CATEGORIES = [
   'Outros',
 ];
 
+const getDefaultFormData = (): CashflowFormData => ({
+  description: '',
+  entry_type: 'income',
+  amount: 0,
+  date: new Date().toISOString().split('T')[0] ?? '',
+  category: '',
+  observacoes: '',
+});
+
 export function CashflowFormModal({
   isOpen,
   onClose,
@@ -43,29 +51,20 @@ export function CashflowFormModal({
   isLoading = false,
 }: CashflowFormModalProps) {
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CashflowFormData>({
-    description: '',
-    entry_type: 'income',
-    amount: 0,
-    date: new Date().toISOString().split('T')[0] ?? '',
-    category: '',
-    observacoes: '',
-  });
+  const [formData, setFormData] = useState<CashflowFormData>(getDefaultFormData());
 
-  // Reset form ao abrir/fechar
+  // Reset form when modal opens
+  const resetForm = useCallback(() => {
+    setFormData(getDefaultFormData());
+    setError(null);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        description: '',
-        entry_type: 'income',
-        amount: 0,
-        date: new Date().toISOString().split('T')[0] ?? '',
-        category: '',
-        observacoes: '',
-      });
-      setError(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -130,7 +129,7 @@ export function CashflowFormModal({
             onChange={handleChange}
             placeholder="Ex: Pagamento de fornecedor X"
             required
-          />
+           aria-label="Ex: Pagamento de fornecedor X" />
         </div>
 
         {/* Tipo e Valor */}
@@ -145,7 +144,7 @@ export function CashflowFormModal({
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
               required
-            >
+             aria-label="Entry Type">
               <option value="income">Entrada</option>
               <option value="expense">Saida</option>
             </select>
@@ -163,7 +162,7 @@ export function CashflowFormModal({
               min={0.01}
               step={0.01}
               required
-            />
+             aria-label="0,00" />
           </div>
         </div>
 
@@ -179,7 +178,7 @@ export function CashflowFormModal({
               value={formData.date}
               onChange={handleChange}
               required
-            />
+             aria-label="Date" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -190,7 +189,7 @@ export function CashflowFormModal({
               value={formData.category}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-            >
+             aria-label="Category">
               <option value="">Selecione...</option>
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -213,7 +212,7 @@ export function CashflowFormModal({
             rows={3}
             placeholder="Observacoes adicionais sobre o lancamento..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-          />
+           aria-label="Observacoes adicionais sobre o lancamento..." />
         </div>
 
         <ModalFooter>

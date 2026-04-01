@@ -1,8 +1,8 @@
 """Cost Allocation model - Registro de Alocações de Custo."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from modules.financial.costing.models.cost_pool import CostPool
 
 
-class AllocationType(str, enum.Enum):
+class AllocationType(StrEnum):
     """Tipo de alocação."""
 
     POOL_TO_ACTIVITY = "POOL_TO_ACTIVITY"  # Pool -> Atividade (1º estágio ABC)
@@ -42,7 +42,7 @@ class AllocationType(str, enum.Enum):
     REVERSAL = "REVERSAL"  # Estorno
 
 
-class AllocationStatus(str, enum.Enum):
+class AllocationStatus(StrEnum):
     """Status da alocação."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -53,7 +53,7 @@ class AllocationStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"  # Cancelada
 
 
-class AllocationMethod(str, enum.Enum):
+class AllocationMethod(StrEnum):
     """Método de cálculo da alocação."""
 
     DRIVER_BASED = "DRIVER_BASED"  # Baseado em direcionador

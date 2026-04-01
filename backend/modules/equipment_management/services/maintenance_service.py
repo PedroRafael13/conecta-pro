@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,25 +49,21 @@ class MaintenanceService:
         await self.session.commit()
         return MaintenanceResponse.model_validate(maintenance)
 
-    async def get_by_id(
-        self, maintenance_id: str | UUID
-    ) -> Optional[MaintenanceResponse]:
+    async def get_by_id(self, maintenance_id: str | UUID) -> MaintenanceResponse | None:
         """Busca manutenção por ID."""
         maintenance = await self.repository.get_by_id(maintenance_id)
         if not maintenance:
             return None
         return MaintenanceResponse.model_validate(maintenance)
 
-    async def get_by_code(self, code: str) -> Optional[MaintenanceResponse]:
+    async def get_by_code(self, code: str) -> MaintenanceResponse | None:
         """Busca manutenção por código."""
         maintenance = await self.repository.get_by_code(code)
         if not maintenance:
             return None
         return MaintenanceResponse.model_validate(maintenance)
 
-    async def update(
-        self, maintenance_id: str | UUID, data: MaintenanceUpdate
-    ) -> Optional[MaintenanceResponse]:
+    async def update(self, maintenance_id: str | UUID, data: MaintenanceUpdate) -> MaintenanceResponse | None:
         """Atualiza uma manutenção."""
         maintenance = await self.repository.update(maintenance_id, data)
         if not maintenance:
@@ -85,14 +80,12 @@ class MaintenanceService:
 
     async def list_with_filters(
         self,
-        filters: Optional[MaintenanceFilter] = None,
+        filters: MaintenanceFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> MaintenanceListResponse:
         """Lista manutenções com filtros."""
-        items, total = await self.repository.list_with_filters(
-            filters=filters, page=page, page_size=page_size
-        )
+        items, total = await self.repository.list_with_filters(filters=filters, page=page, page_size=page_size)
 
         total_pages = (total + page_size - 1) // page_size
 
@@ -114,18 +107,12 @@ class MaintenanceService:
         items = await self.repository.get_by_client(client_id)
         return [MaintenanceResponse.model_validate(item) for item in items]
 
-    async def get_by_technician(
-        self, technician_id: str, include_completed: bool = False
-    ) -> list[MaintenanceResponse]:
+    async def get_by_technician(self, technician_id: str, include_completed: bool = False) -> list[MaintenanceResponse]:
         """Lista manutenções de um técnico."""
-        items = await self.repository.get_by_technician(
-            technician_id, include_completed
-        )
+        items = await self.repository.get_by_technician(technician_id, include_completed)
         return [MaintenanceResponse.model_validate(item) for item in items]
 
-    async def get_scheduled_for_date(
-        self, date: datetime
-    ) -> list[MaintenanceResponse]:
+    async def get_scheduled_for_date(self, date: datetime) -> list[MaintenanceResponse]:
         """Lista manutenções agendadas para uma data."""
         items = await self.repository.get_scheduled_for_date(date)
         return [MaintenanceResponse.model_validate(item) for item in items]
@@ -145,18 +132,14 @@ class MaintenanceService:
         items = await self.repository.get_needing_followup()
         return [MaintenanceResponse.model_validate(item) for item in items]
 
-    async def start(
-        self, maintenance_id: str | UUID
-    ) -> Optional[MaintenanceResponse]:
+    async def start(self, maintenance_id: str | UUID) -> MaintenanceResponse | None:
         """Inicia uma manutenção e atualiza status do equipamento."""
         maintenance = await self.repository.get_by_id(maintenance_id)
         if not maintenance:
             return None
 
         # Atualizar status do equipamento para manutenção
-        equipment = await self.equipment_repository.get_by_id(
-            maintenance.equipment_id
-        )
+        equipment = await self.equipment_repository.get_by_id(maintenance.equipment_id)
         if equipment:
             equipment.send_to_maintenance()
 
@@ -168,17 +151,15 @@ class MaintenanceService:
         self,
         maintenance_id: str | UUID,
         problem_resolved: bool = True,
-        equipment_status_after: Optional[str] = None,
-    ) -> Optional[MaintenanceResponse]:
+        equipment_status_after: str | None = None,
+    ) -> MaintenanceResponse | None:
         """Conclui uma manutenção e atualiza equipamento."""
         maintenance = await self.repository.get_by_id(maintenance_id)
         if not maintenance:
             return None
 
         # Retornar equipamento da manutenção
-        equipment = await self.equipment_repository.get_by_id(
-            maintenance.equipment_id
-        )
+        equipment = await self.equipment_repository.get_by_id(maintenance.equipment_id)
         if equipment:
             equipment.return_from_maintenance()
             if maintenance.next_maintenance_date:
@@ -186,9 +167,7 @@ class MaintenanceService:
             equipment.last_maintenance_at = datetime.utcnow()
             equipment.total_maintenances = (equipment.total_maintenances or 0) + 1
 
-        maintenance = await self.repository.complete(
-            maintenance_id, problem_resolved, equipment_status_after
-        )
+        maintenance = await self.repository.complete(maintenance_id, problem_resolved, equipment_status_after)
 
         # Se é recorrente, criar próxima manutenção
         if maintenance.is_recurring:
@@ -197,9 +176,7 @@ class MaintenanceService:
         await self.session.commit()
         return MaintenanceResponse.model_validate(maintenance)
 
-    async def cancel(
-        self, maintenance_id: str | UUID
-    ) -> Optional[MaintenanceResponse]:
+    async def cancel(self, maintenance_id: str | UUID) -> MaintenanceResponse | None:
         """Cancela uma manutenção."""
         maintenance = await self.repository.get_by_id(maintenance_id)
         if not maintenance:
@@ -207,9 +184,7 @@ class MaintenanceService:
 
         # Se equipamento estava em manutenção, retornar
         if maintenance.status == MaintenanceStatus.IN_PROGRESS:
-            equipment = await self.equipment_repository.get_by_id(
-                maintenance.equipment_id
-            )
+            equipment = await self.equipment_repository.get_by_id(maintenance.equipment_id)
             if equipment:
                 equipment.return_from_maintenance()
 
@@ -217,13 +192,9 @@ class MaintenanceService:
         await self.session.commit()
         return MaintenanceResponse.model_validate(maintenance)
 
-    async def mark_waiting_parts(
-        self, maintenance_id: str | UUID, parts_requested: list
-    ) -> Optional[MaintenanceResponse]:
+    async def mark_waiting_parts(self, maintenance_id: str | UUID, parts_requested: list) -> MaintenanceResponse | None:
         """Marca como aguardando peças."""
-        maintenance = await self.repository.mark_waiting_parts(
-            maintenance_id, parts_requested
-        )
+        maintenance = await self.repository.mark_waiting_parts(maintenance_id, parts_requested)
         if not maintenance:
             return None
         await self.session.commit()
@@ -233,14 +204,12 @@ class MaintenanceService:
         self,
         maintenance_id: str | UUID,
         part_name: str,
-        part_code: Optional[str] = None,
+        part_code: str | None = None,
         quantity: int = 1,
         unit_cost: float = 0.0,
-    ) -> Optional[MaintenanceResponse]:
+    ) -> MaintenanceResponse | None:
         """Adiciona peça substituída."""
-        maintenance = await self.repository.add_part_replaced(
-            maintenance_id, part_name, part_code, quantity, unit_cost
-        )
+        maintenance = await self.repository.add_part_replaced(maintenance_id, part_name, part_code, quantity, unit_cost)
         if not maintenance:
             return None
         await self.session.commit()
@@ -248,11 +217,9 @@ class MaintenanceService:
 
     async def sign_by_client(
         self, maintenance_id: str | UUID, signed_by: str, signature: str
-    ) -> Optional[MaintenanceResponse]:
+    ) -> MaintenanceResponse | None:
         """Registra assinatura do cliente."""
-        maintenance = await self.repository.sign_by_client(
-            maintenance_id, signed_by, signature
-        )
+        maintenance = await self.repository.sign_by_client(maintenance_id, signed_by, signature)
         if not maintenance:
             return None
         await self.session.commit()
@@ -260,9 +227,9 @@ class MaintenanceService:
 
     async def get_stats(
         self,
-        client_id: Optional[str] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
+        client_id: str | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
     ) -> MaintenanceStats:
         """Obtém estatísticas de manutenções."""
         return await self.repository.get_stats(client_id, date_from, date_to)
@@ -272,7 +239,7 @@ class MaintenanceService:
         maintenance_id: str | UUID,
         technician_id: str,
         technician_name: str,
-    ) -> Optional[MaintenanceResponse]:
+    ) -> MaintenanceResponse | None:
         """Atribui técnico à manutenção."""
         update_data = MaintenanceUpdate(
             technician_id=technician_id,
@@ -285,8 +252,8 @@ class MaintenanceService:
         return MaintenanceResponse.model_validate(maintenance)
 
     async def schedule_preventive(
-        self, equipment_id: str, interval_days: int, checklist_template_id: Optional[str] = None
-    ) -> Optional[MaintenanceResponse]:
+        self, equipment_id: str, interval_days: int, checklist_template_id: str | None = None
+    ) -> MaintenanceResponse | None:
         """Agenda manutenção preventiva para equipamento."""
         equipment = await self.equipment_repository.get_by_id(equipment_id)
         if not equipment:
@@ -316,9 +283,7 @@ class MaintenanceService:
         await self.session.commit()
         return MaintenanceResponse.model_validate(maintenance)
 
-    async def get_equipment_maintenance_history(
-        self, equipment_id: str, limit: int = 10
-    ) -> list[MaintenanceResponse]:
+    async def get_equipment_maintenance_history(self, equipment_id: str, limit: int = 10) -> list[MaintenanceResponse]:
         """Obtém histórico de manutenções de um equipamento."""
         items = await self.repository.get_by_equipment(equipment_id)
         return [MaintenanceResponse.model_validate(item) for item in items[:limit]]

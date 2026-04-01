@@ -3,33 +3,33 @@ Controller para Ordem de Servico.
 """
 
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from modules.campo.services.ordem_servico_service import OrdemServicoService
+from modules.campo.models.ordem_servico import OrigemOS, PrioridadeOS, StatusOS, TipoOS
 from modules.campo.schemas.ordem_servico import (
     OrdemServicoCreate,
-    OrdemServicoUpdate,
-    OrdemServicoRead,
     OrdemServicoListItem,
+    OrdemServicoRead,
+    OrdemServicoUpdate,
     OSAgendarRequest,
+    OSAssinaturaRequest,
+    OSAvaliacaoRequest,
+    OSCancelarRequest,
     OSCheckinRequest,
     OSCheckoutRequest,
     OSConcluirRequest,
-    OSCancelarRequest,
-    OSReagendarRequest,
-    OSAvaliacaoRequest,
-    OSAssinaturaRequest,
-    OSFotoRequest,
-    OSFiltro,
-    OSPaginatedResponse,
     OSDashboardStats,
+    OSFiltro,
+    OSFotoRequest,
+    OSPaginatedResponse,
+    OSReagendarRequest,
 )
-from modules.campo.models.ordem_servico import TipoOS, StatusOS, PrioridadeOS, OrigemOS
+from modules.campo.services.ordem_servico_service import OrdemServicoService
 
 router = APIRouter()
 
@@ -43,9 +43,11 @@ def get_service(db: AsyncSession = Depends(get_db)) -> OrdemServicoService:
 # CRUD
 # =============================================================================
 
+
 @router.post("/", response_model=OrdemServicoRead, status_code=status.HTTP_201_CREATED)
 async def criar_os(
     data: OrdemServicoCreate,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Cria uma nova Ordem de Servico."""
@@ -55,18 +57,19 @@ async def criar_os(
 
 @router.get("/", response_model=OSPaginatedResponse)
 async def listar_os(
-    tipo: Optional[TipoOS] = None,
-    status_os: Optional[StatusOS] = Query(None, alias="status"),
-    prioridade: Optional[PrioridadeOS] = None,
-    origem: Optional[OrigemOS] = None,
-    cliente_id: Optional[UUID] = None,
-    tecnico_id: Optional[UUID] = None,
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
-    cidade: Optional[str] = None,
-    estado: Optional[str] = None,
-    sla_vencido: Optional[bool] = None,
-    busca: Optional[str] = None,
+    current_user: CurrentActiveUser,
+    tipo: TipoOS | None = None,
+    status_os: StatusOS | None = Query(None, alias="status"),
+    prioridade: PrioridadeOS | None = None,
+    origem: OrigemOS | None = None,
+    cliente_id: UUID | None = None,
+    tecnico_id: UUID | None = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
+    cidade: str | None = None,
+    estado: str | None = None,
+    sla_vencido: bool | None = None,
+    busca: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     service: OrdemServicoService = Depends(get_service),
@@ -91,6 +94,7 @@ async def listar_os(
 
 @router.get("/atrasadas", response_model=list[OrdemServicoListItem])
 async def listar_os_atrasadas(
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Lista OS com SLA vencido."""
@@ -101,7 +105,8 @@ async def listar_os_atrasadas(
 @router.get("/tecnico/{tecnico_id}", response_model=list[OrdemServicoListItem])
 async def listar_os_tecnico(
     tecnico_id: UUID,
-    data: Optional[date] = None,
+    current_user: CurrentActiveUser,
+    data: date | None = None,
     apenas_abertas: bool = False,
     service: OrdemServicoService = Depends(get_service),
 ):
@@ -113,6 +118,7 @@ async def listar_os_tecnico(
 @router.get("/cliente/{cliente_id}", response_model=list[OrdemServicoListItem])
 async def listar_os_cliente(
     cliente_id: UUID,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Lista OS de um cliente."""
@@ -122,8 +128,9 @@ async def listar_os_cliente(
 
 @router.get("/dashboard", response_model=OSDashboardStats)
 async def obter_dashboard(
-    cliente_id: Optional[UUID] = None,
-    tecnico_id: Optional[UUID] = None,
+    current_user: CurrentActiveUser,
+    cliente_id: UUID | None = None,
+    tecnico_id: UUID | None = None,
     periodo_dias: int = Query(30, ge=1, le=365),
     service: OrdemServicoService = Depends(get_service),
 ):
@@ -134,6 +141,7 @@ async def obter_dashboard(
 @router.get("/{os_id}", response_model=OrdemServicoRead)
 async def obter_os(
     os_id: UUID,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Obtem detalhes de uma OS."""
@@ -146,6 +154,7 @@ async def obter_os(
 @router.get("/numero/{numero}", response_model=OrdemServicoRead)
 async def obter_os_por_numero(
     numero: str,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Obtem OS por numero."""
@@ -159,6 +168,7 @@ async def obter_os_por_numero(
 async def atualizar_os(
     os_id: UUID,
     data: OrdemServicoUpdate,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Atualiza uma OS."""
@@ -171,6 +181,7 @@ async def atualizar_os(
 @router.delete("/{os_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def excluir_os(
     os_id: UUID,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Exclui uma OS."""
@@ -183,10 +194,12 @@ async def excluir_os(
 # ACOES DO FLUXO
 # =============================================================================
 
+
 @router.post("/{os_id}/agendar", response_model=OrdemServicoRead)
 async def agendar_os(
     os_id: UUID,
     data: OSAgendarRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Agenda uma OS."""
@@ -208,6 +221,7 @@ async def agendar_os(
 @router.post("/{os_id}/iniciar-deslocamento", response_model=OrdemServicoRead)
 async def iniciar_deslocamento(
     os_id: UUID,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Marca inicio do deslocamento."""
@@ -224,6 +238,7 @@ async def iniciar_deslocamento(
 async def fazer_checkin(
     os_id: UUID,
     data: OSCheckinRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Registra check-in no local."""
@@ -240,6 +255,7 @@ async def fazer_checkin(
 async def fazer_checkout(
     os_id: UUID,
     data: OSCheckoutRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Registra check-out do local."""
@@ -255,7 +271,8 @@ async def fazer_checkout(
 @router.post("/{os_id}/pausar", response_model=OrdemServicoRead)
 async def pausar_os(
     os_id: UUID,
-    motivo: Optional[str] = None,
+    current_user: CurrentActiveUser,
+    motivo: str | None = None,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Pausa uma OS em andamento."""
@@ -271,6 +288,7 @@ async def pausar_os(
 @router.post("/{os_id}/retomar", response_model=OrdemServicoRead)
 async def retomar_os(
     os_id: UUID,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Retoma uma OS pausada."""
@@ -287,6 +305,7 @@ async def retomar_os(
 async def concluir_os(
     os_id: UUID,
     data: OSConcluirRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Conclui uma OS."""
@@ -303,11 +322,11 @@ async def concluir_os(
 async def cancelar_os(
     os_id: UUID,
     data: OSCancelarRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Cancela uma OS."""
     try:
-        # TODO: Obter usuario atual do token
         cancelado_por = None
         os = await service.cancelar_os(os_id, data.motivo, cancelado_por)
         if not os:
@@ -321,6 +340,7 @@ async def cancelar_os(
 async def reagendar_os(
     os_id: UUID,
     data: OSReagendarRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Reagenda uma OS."""
@@ -337,10 +357,12 @@ async def reagendar_os(
 # AVALIACAO E ASSINATURA
 # =============================================================================
 
+
 @router.post("/{os_id}/avaliacao", response_model=OrdemServicoRead)
 async def registrar_avaliacao(
     os_id: UUID,
     data: OSAvaliacaoRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Registra avaliacao do cliente."""
@@ -357,6 +379,7 @@ async def registrar_avaliacao(
 async def registrar_assinatura(
     os_id: UUID,
     data: OSAssinaturaRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Registra assinatura do cliente."""
@@ -366,10 +389,11 @@ async def registrar_assinatura(
     return OrdemServicoRead.model_validate(os)
 
 
-@router.post("/{os_id}/foto", response_model=OrdemServicoRead)
+@router.post("/{os_id}/foto", response_model=OrdemServicoRead, status_code=201)
 async def adicionar_foto(
     os_id: UUID,
     data: OSFotoRequest,
+    current_user: CurrentActiveUser,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Adiciona foto a OS."""

@@ -4,23 +4,21 @@ Task Model - Sprint 49.
 Define modelos para tarefas e dependências.
 """
 
-import enum
 import uuid
-from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Integer,
-    Float, ForeignKey, Enum
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class TaskStatusEnum(str, enum.Enum):
+class TaskStatusEnum(StrEnum):
     """Status da tarefa."""
+
     BACKLOG = "BACKLOG"
     TODO = "TODO"
     IN_PROGRESS = "IN_PROGRESS"
@@ -31,8 +29,9 @@ class TaskStatusEnum(str, enum.Enum):
     ON_HOLD = "ON_HOLD"
 
 
-class TaskPriorityEnum(str, enum.Enum):
+class TaskPriorityEnum(StrEnum):
     """Prioridade da tarefa."""
+
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -40,8 +39,9 @@ class TaskPriorityEnum(str, enum.Enum):
     NONE = "NONE"
 
 
-class TaskTypeEnum(str, enum.Enum):
+class TaskTypeEnum(StrEnum):
     """Tipo de tarefa."""
+
     TASK = "TASK"
     BUG = "BUG"
     FEATURE = "FEATURE"
@@ -56,8 +56,9 @@ class TaskTypeEnum(str, enum.Enum):
     FOLLOW_UP = "FOLLOW_UP"
 
 
-class DependencyTypeEnum(str, enum.Enum):
+class DependencyTypeEnum(StrEnum):
     """Tipo de dependência."""
+
     BLOCKS = "BLOCKS"
     BLOCKED_BY = "BLOCKED_BY"
     RELATES_TO = "RELATES_TO"
@@ -77,21 +78,9 @@ class Task(Base):
     description = Column(Text)
 
     # Tipo e status
-    task_type = Column(
-        Enum(TaskTypeEnum),
-        nullable=False,
-        default=TaskTypeEnum.TASK
-    )
-    status = Column(
-        Enum(TaskStatusEnum),
-        nullable=False,
-        default=TaskStatusEnum.TODO
-    )
-    priority = Column(
-        Enum(TaskPriorityEnum),
-        nullable=False,
-        default=TaskPriorityEnum.MEDIUM
-    )
+    task_type = Column(Enum(TaskTypeEnum), nullable=False, default=TaskTypeEnum.TASK)
+    status = Column(Enum(TaskStatusEnum), nullable=False, default=TaskStatusEnum.TODO)
+    priority = Column(Enum(TaskPriorityEnum), nullable=False, default=TaskPriorityEnum.MEDIUM)
 
     # Priorização IA
     ai_priority_score = Column(Float)  # 0-100
@@ -188,7 +177,7 @@ class Task(Base):
     ativo = Column(Boolean, default=True)
 
     # Relationships
-    subtasks = relationship("Task", backref="parent", remote_side=[id], foreign_keys=[parent_task_id])
+    subtasks = relationship("Task", backref="parent", remote_side=[id], foreign_keys=[parent_task_id])  # noqa: A003
     dependencies = relationship("TaskDependency", foreign_keys="TaskDependency.task_id", back_populates="task")
 
     def start_task(self):
@@ -232,11 +221,7 @@ class Task(Base):
         """Adiciona item ao checklist."""
         if self.checklist is None:
             self.checklist = []
-        self.checklist.append({
-            "item": item,
-            "completed": False,
-            "added_at": datetime.utcnow().isoformat()
-        })
+        self.checklist.append({"item": item, "completed": False, "added_at": datetime.utcnow().isoformat()})
         self.checklist_total = len(self.checklist)
         self._update_progress_from_checklist()
 
@@ -263,29 +248,29 @@ class Task(Base):
         """Altera prioridade."""
         old_priority = self.priority
         self.priority = new_priority
-        self._log_activity("priority_changed", f"Priority changed from {old_priority} to {new_priority}", {"reason": reason})
+        self._log_activity(
+            "priority_changed", f"Priority changed from {old_priority} to {new_priority}", {"reason": reason}
+        )
 
     def add_ai_suggestion(self, suggestion_type: str, suggestion: str, confidence: float):
         """Adiciona sugestão da IA."""
         if self.ai_suggestions is None:
             self.ai_suggestions = []
-        self.ai_suggestions.append({
-            "type": suggestion_type,
-            "suggestion": suggestion,
-            "confidence": confidence,
-            "created_at": datetime.utcnow().isoformat(),
-            "applied": False
-        })
+        self.ai_suggestions.append(
+            {
+                "type": suggestion_type,
+                "suggestion": suggestion,
+                "confidence": confidence,
+                "created_at": datetime.utcnow().isoformat(),
+                "applied": False,
+            }
+        )
 
-    def _log_activity(self, action: str, description: str, extra: Dict[str, Any] = None):
+    def _log_activity(self, action: str, description: str, extra: dict[str, Any] = None):
         """Registra atividade."""
         if self.activity_log is None:
             self.activity_log = []
-        log_entry = {
-            "action": action,
-            "description": description,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        log_entry = {"action": action, "description": description, "timestamp": datetime.utcnow().isoformat()}
         if extra:
             log_entry["extra"] = extra
         self.activity_log.append(log_entry)
@@ -356,11 +341,7 @@ class TaskDependency(Base):
     task_id = Column(UUID(as_uuid=True), ForeignKey("ai_tasks.id"), nullable=False)
     related_task_id = Column(UUID(as_uuid=True), ForeignKey("ai_tasks.id"), nullable=False)
 
-    dependency_type = Column(
-        Enum(DependencyTypeEnum),
-        nullable=False,
-        default=DependencyTypeEnum.RELATES_TO
-    )
+    dependency_type = Column(Enum(DependencyTypeEnum), nullable=False, default=DependencyTypeEnum.RELATES_TO)
 
     # Metadados
     description = Column(Text)

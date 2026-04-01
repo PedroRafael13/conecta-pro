@@ -230,282 +230,9 @@ async def get_employee_history(
     return [DisciplinaryActionResponse.model_validate(a) for a in actions]
 
 
-@router.get(
-    "/medidas-administrativas/{action_id}",
-    response_model=DisciplinaryActionDetailResponse,
-    summary="Buscar medida por ID",
-    description="Busca uma medida disciplinar pelo ID",
-)
-async def get_disciplinary_action(
-    action_id: str,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> DisciplinaryActionDetailResponse:
-    """Busca medida disciplinar por ID."""
-    try:
-        service = get_disciplinary_service(db)
-        action = await service.get_by_id(action_id, get_tenant_id(current_user))
-        return DisciplinaryActionDetailResponse.model_validate(action)
-
-    except DisciplinaryNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Medida disciplinar nao encontrada",
-        )
-
-
-@router.patch(
-    "/medidas-administrativas/{action_id}",
-    response_model=DisciplinaryActionResponse,
-    summary="Atualizar medida",
-    description="Atualiza uma medida disciplinar (apenas em rascunho ou rejeitada)",
-)
-async def update_disciplinary_action(
-    action_id: str,
-    data: DisciplinaryActionUpdate,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> DisciplinaryActionResponse:
-    """Atualiza uma medida disciplinar."""
-    try:
-        service = get_disciplinary_service(db)
-        action = await service.update(
-            action_id=action_id,
-            tenant_id=get_tenant_id(current_user),
-            data=data,
-        )
-
-        logger.info(
-            "Medida disciplinar atualizada com sucesso",
-            action="update_disciplinary_action",
-            action_id=str(action_id),
-            action_code=action.code,
-            user_id=str(current_user.id),
-        )
-
-        return DisciplinaryActionResponse.model_validate(action)
-
-    except DisciplinaryNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Medida disciplinar nao encontrada",
-        )
-    except DisciplinaryWorkflowError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
-
-
-@router.delete(
-    "/medidas-administrativas/{action_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Remover medida",
-    description="Remove uma medida disciplinar (soft delete)",
-)
-async def delete_disciplinary_action(
-    action_id: str,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> None:
-    """Remove uma medida disciplinar."""
-    try:
-        service = get_disciplinary_service(db)
-        await service.delete(action_id, get_tenant_id(current_user))
-
-        logger.info(
-            "Medida disciplinar removida com sucesso",
-            action="delete_disciplinary_action",
-            action_id=str(action_id),
-            user_id=str(current_user.id),
-        )
-
-    except DisciplinaryNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Medida disciplinar nao encontrada",
-        )
-    except DisciplinaryWorkflowError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
-
-
 # =============================================================================
-# WORKFLOW
+# ROTAS ESTATICAS - devem vir ANTES de /{action_id}
 # =============================================================================
-
-
-@router.post(
-    "/medidas-administrativas/{action_id}/submeter",
-    response_model=DisciplinaryActionResponse,
-    summary="Submeter para aprovacao",
-    description="Submete medida disciplinar para aprovacao",
-)
-async def submit_for_approval(
-    action_id: str,
-    request: SubmitForApprovalRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> DisciplinaryActionResponse:
-    """Submete medida para aprovacao."""
-    try:
-        service = get_disciplinary_service(db)
-        action = await service.submit_for_approval(
-            action_id=action_id,
-            tenant_id=get_tenant_id(current_user),
-            submitted_by=current_user.id,
-            notes=request.notes,
-        )
-
-        return DisciplinaryActionResponse.model_validate(action)
-
-    except DisciplinaryNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Medida disciplinar nao encontrada",
-        )
-    except DisciplinaryWorkflowError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
-
-
-@router.post(
-    "/medidas-administrativas/{action_id}/aprovar",
-    response_model=DisciplinaryActionResponse,
-    summary="Aprovar medida",
-    description="Aprova uma medida disciplinar pendente",
-)
-async def approve_action(
-    action_id: str,
-    request: ApproveRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> DisciplinaryActionResponse:
-    """Aprova uma medida disciplinar."""
-    try:
-        service = get_disciplinary_service(db)
-        action = await service.approve(
-            action_id=action_id,
-            tenant_id=get_tenant_id(current_user),
-            approved_by=current_user.id,
-            request=request,
-        )
-
-        return DisciplinaryActionResponse.model_validate(action)
-
-    except DisciplinaryNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Medida disciplinar nao encontrada",
-        )
-    except DisciplinaryWorkflowError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
-
-
-@router.post(
-    "/medidas-administrativas/{action_id}/rejeitar",
-    response_model=DisciplinaryActionResponse,
-    summary="Rejeitar medida",
-    description="Rejeita uma medida disciplinar pendente",
-)
-async def reject_action(
-    action_id: str,
-    request: RejectRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> DisciplinaryActionResponse:
-    """Rejeita uma medida disciplinar."""
-    try:
-        service = get_disciplinary_service(db)
-        action = await service.reject(
-            action_id=action_id,
-            tenant_id=get_tenant_id(current_user),
-            rejected_by=current_user.id,
-            request=request,
-        )
-
-        return DisciplinaryActionResponse.model_validate(action)
-
-    except DisciplinaryNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Medida disciplinar nao encontrada",
-        )
-    except DisciplinaryWorkflowError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
-
-
-@router.post(
-    "/medidas-administrativas/{action_id}/assinar",
-    response_model=SignatureResponse,
-    summary="Assinar documento",
-    description="Registra assinatura digital no documento",
-)
-async def sign_document(
-    action_id: str,
-    request: SignRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> SignatureResponse:
-    """Registra assinatura digital."""
-    try:
-        service = get_signature_service(db)
-        signature = await service.sign_document(
-            action_id=action_id,
-            tenant_id=get_tenant_id(current_user),
-            signer_id=str(current_user.id),
-            signer_name=current_user.name or current_user.email,
-            signer_cpf=getattr(current_user, "cpf", None),
-            request=request,
-        )
-
-        return SignatureResponse.model_validate(signature)
-
-    except SignatureValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
-
-
-@router.post(
-    "/medidas-administrativas/{action_id}/recusar-assinatura",
-    response_model=DisciplinaryActionResponse,
-    summary="Registrar recusa de assinatura",
-    description="Registra recusa de assinatura do funcionario com testemunhas",
-)
-async def refuse_signature(
-    action_id: str,
-    request: RefuseSignRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> DisciplinaryActionResponse:
-    """Registra recusa de assinatura."""
-    try:
-        service = get_signature_service(db)
-        action = await service.refuse_signature(
-            action_id=action_id,
-            tenant_id=get_tenant_id(current_user),
-            request=request,
-        )
-
-        return DisciplinaryActionResponse.model_validate(action)
-
-    except SignatureValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
 
 
 @router.post(
@@ -513,6 +240,7 @@ async def refuse_signature(
     response_model=GenerateDocumentResponse,
     summary="Gerar documento",
     description="Gera documento a partir de template",
+    status_code=201,
 )
 async def generate_document(
     current_user: CurrentActiveUser,
@@ -542,7 +270,7 @@ async def generate_document(
 
 
 # =============================================================================
-# TEMPLATES
+# TEMPLATES — estáticas antes de /{action_id}
 # =============================================================================
 
 
@@ -664,6 +392,350 @@ async def delete_template(
 
 
 # =============================================================================
+# IA - RECOMENDACOES — estáticas antes de /{action_id}
+# =============================================================================
+
+
+@router.post(
+    "/medidas-administrativas/ia/recomendar",
+    response_model=RecommendationResponse,
+    summary="Obter recomendacao de medida",
+    description="Utiliza IA para recomendar tipo de medida baseado no historico",
+    status_code=201,
+)
+async def get_recommendation(
+    request: RecommendationRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> RecommendationResponse:
+    """Obtem recomendacao de medida disciplinar."""
+    advisor = get_disciplinary_advisor(db)
+    return await advisor.recommend_action(request, get_tenant_id(current_user))
+
+
+@router.post(
+    "/medidas-administrativas/ia/validar-conformidade",
+    response_model=LegalComplianceResponse,
+    summary="Validar conformidade legal",
+    description="Valida conformidade da medida com CLT",
+    status_code=201,
+)
+async def validate_compliance(
+    request: LegalComplianceRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> LegalComplianceResponse:
+    """Valida conformidade legal da medida."""
+    advisor = get_disciplinary_advisor(db)
+    return await advisor.validate_legal_compliance(request, get_tenant_id(current_user))
+
+
+@router.post(
+    "/medidas-administrativas/ia/verificar-proporcionalidade",
+    response_model=ProportionalityCheckResponse,
+    summary="Verificar proporcionalidade",
+    description="Verifica se medida e proporcional ao historico",
+    status_code=201,
+)
+async def check_proportionality(
+    request: ProportionalityCheckRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> ProportionalityCheckResponse:
+    """Verifica proporcionalidade da medida."""
+    advisor = get_disciplinary_advisor(db)
+    return await advisor.check_proportionality(request)
+
+
+# =============================================================================
+# ROTAS DINAMICAS — /{action_id} por último
+# =============================================================================
+
+
+@router.get(
+    "/medidas-administrativas/{action_id}",
+    response_model=DisciplinaryActionDetailResponse,
+    summary="Buscar medida por ID",
+    description="Busca uma medida disciplinar pelo ID",
+)
+async def get_disciplinary_action(
+    action_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> DisciplinaryActionDetailResponse:
+    """Busca medida disciplinar por ID."""
+    try:
+        service = get_disciplinary_service(db)
+        action = await service.get_by_id(action_id, get_tenant_id(current_user))
+        return DisciplinaryActionDetailResponse.model_validate(action)
+
+    except DisciplinaryNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medida disciplinar nao encontrada",
+        )
+
+
+@router.patch(
+    "/medidas-administrativas/{action_id}",
+    response_model=DisciplinaryActionResponse,
+    summary="Atualizar medida",
+    description="Atualiza uma medida disciplinar (apenas em rascunho ou rejeitada)",
+)
+async def update_disciplinary_action(
+    action_id: str,
+    data: DisciplinaryActionUpdate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> DisciplinaryActionResponse:
+    """Atualiza uma medida disciplinar."""
+    try:
+        service = get_disciplinary_service(db)
+        action = await service.update(
+            action_id=action_id,
+            tenant_id=get_tenant_id(current_user),
+            data=data,
+        )
+
+        logger.info(
+            "Medida disciplinar atualizada com sucesso",
+            action="update_disciplinary_action",
+            action_id=str(action_id),
+            action_code=action.code,
+            user_id=str(current_user.id),
+        )
+
+        return DisciplinaryActionResponse.model_validate(action)
+
+    except DisciplinaryNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medida disciplinar nao encontrada",
+        )
+    except DisciplinaryWorkflowError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+@router.delete(
+    "/medidas-administrativas/{action_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remover medida",
+    description="Remove uma medida disciplinar (soft delete)",
+)
+async def delete_disciplinary_action(
+    action_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Remove uma medida disciplinar."""
+    try:
+        service = get_disciplinary_service(db)
+        await service.delete(action_id, get_tenant_id(current_user))
+
+        logger.info(
+            "Medida disciplinar removida com sucesso",
+            action="delete_disciplinary_action",
+            action_id=str(action_id),
+            user_id=str(current_user.id),
+        )
+
+    except DisciplinaryNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medida disciplinar nao encontrada",
+        )
+    except DisciplinaryWorkflowError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+# =============================================================================
+# WORKFLOW
+# =============================================================================
+
+
+@router.post(
+    "/medidas-administrativas/{action_id}/submeter",
+    response_model=DisciplinaryActionResponse,
+    summary="Submeter para aprovacao",
+    description="Submete medida disciplinar para aprovacao",
+    status_code=201,
+)
+async def submit_for_approval(
+    action_id: str,
+    request: SubmitForApprovalRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> DisciplinaryActionResponse:
+    """Submete medida para aprovacao."""
+    try:
+        service = get_disciplinary_service(db)
+        action = await service.submit_for_approval(
+            action_id=action_id,
+            tenant_id=get_tenant_id(current_user),
+            submitted_by=current_user.id,
+            notes=request.notes,
+        )
+
+        return DisciplinaryActionResponse.model_validate(action)
+
+    except DisciplinaryNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medida disciplinar nao encontrada",
+        )
+    except DisciplinaryWorkflowError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+@router.post(
+    "/medidas-administrativas/{action_id}/aprovar",
+    response_model=DisciplinaryActionResponse,
+    summary="Aprovar medida",
+    description="Aprova uma medida disciplinar pendente",
+    status_code=201,
+)
+async def approve_action(
+    action_id: str,
+    request: ApproveRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> DisciplinaryActionResponse:
+    """Aprova uma medida disciplinar."""
+    try:
+        service = get_disciplinary_service(db)
+        action = await service.approve(
+            action_id=action_id,
+            tenant_id=get_tenant_id(current_user),
+            approved_by=current_user.id,
+            request=request,
+        )
+
+        return DisciplinaryActionResponse.model_validate(action)
+
+    except DisciplinaryNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medida disciplinar nao encontrada",
+        )
+    except DisciplinaryWorkflowError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+@router.post(
+    "/medidas-administrativas/{action_id}/rejeitar",
+    response_model=DisciplinaryActionResponse,
+    summary="Rejeitar medida",
+    description="Rejeita uma medida disciplinar pendente",
+    status_code=201,
+)
+async def reject_action(
+    action_id: str,
+    request: RejectRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> DisciplinaryActionResponse:
+    """Rejeita uma medida disciplinar."""
+    try:
+        service = get_disciplinary_service(db)
+        action = await service.reject(
+            action_id=action_id,
+            tenant_id=get_tenant_id(current_user),
+            rejected_by=current_user.id,
+            request=request,
+        )
+
+        return DisciplinaryActionResponse.model_validate(action)
+
+    except DisciplinaryNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medida disciplinar nao encontrada",
+        )
+    except DisciplinaryWorkflowError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+@router.post(
+    "/medidas-administrativas/{action_id}/assinar",
+    response_model=SignatureResponse,
+    summary="Assinar documento",
+    description="Registra assinatura digital no documento",
+    status_code=201,
+)
+async def sign_document(
+    action_id: str,
+    request: SignRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> SignatureResponse:
+    """Registra assinatura digital."""
+    try:
+        service = get_signature_service(db)
+        signature = await service.sign_document(
+            action_id=action_id,
+            tenant_id=get_tenant_id(current_user),
+            signer_id=str(current_user.id),
+            signer_name=current_user.name or current_user.email,
+            signer_cpf=getattr(current_user, "cpf", None),
+            request=request,
+        )
+
+        return SignatureResponse.model_validate(signature)
+
+    except SignatureValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+@router.post(
+    "/medidas-administrativas/{action_id}/recusar-assinatura",
+    response_model=DisciplinaryActionResponse,
+    summary="Registrar recusa de assinatura",
+    description="Registra recusa de assinatura do funcionario com testemunhas",
+    status_code=201,
+)
+async def refuse_signature(
+    action_id: str,
+    request: RefuseSignRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> DisciplinaryActionResponse:
+    """Registra recusa de assinatura."""
+    try:
+        service = get_signature_service(db)
+        action = await service.refuse_signature(
+            action_id=action_id,
+            tenant_id=get_tenant_id(current_user),
+            request=request,
+        )
+
+        return DisciplinaryActionResponse.model_validate(action)
+
+    except SignatureValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+# =============================================================================
 # ASSINATURAS
 # =============================================================================
 
@@ -673,6 +745,7 @@ async def delete_template(
     response_model=SignatureVerifyResponse,
     summary="Verificar assinatura",
     description="Verifica validade de uma assinatura digital",
+    status_code=201,
 )
 async def verify_signature(
     request: SignatureVerifyRequest,
@@ -683,30 +756,6 @@ async def verify_signature(
     try:
         service = get_signature_service(db)
         return await service.verify_signature(request, get_tenant_id(current_user))
-
-    except SignatureNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Assinatura nao encontrada",
-        )
-
-
-@router.get(
-    "/assinaturas/{signature_id}",
-    response_model=SignatureResponse,
-    summary="Buscar assinatura",
-    description="Busca uma assinatura por ID",
-)
-async def get_signature(
-    signature_id: str,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> SignatureResponse:
-    """Busca assinatura por ID."""
-    try:
-        service = get_signature_service(db)
-        signature = await service.get_by_id(signature_id, get_tenant_id(current_user))
-        return SignatureResponse.model_validate(signature)
 
     except SignatureNotFoundError:
         raise HTTPException(
@@ -732,54 +781,25 @@ async def get_document_signatures(
     return [SignatureResponse.model_validate(s) for s in signatures]
 
 
-# =============================================================================
-# IA - RECOMENDACOES
-# =============================================================================
-
-
-@router.post(
-    "/medidas-administrativas/ia/recomendar",
-    response_model=RecommendationResponse,
-    summary="Obter recomendacao de medida",
-    description="Utiliza IA para recomendar tipo de medida baseado no historico",
+@router.get(
+    "/assinaturas/{signature_id}",
+    response_model=SignatureResponse,
+    summary="Buscar assinatura",
+    description="Busca uma assinatura por ID",
 )
-async def get_recommendation(
-    request: RecommendationRequest,
+async def get_signature(
+    signature_id: str,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> RecommendationResponse:
-    """Obtem recomendacao de medida disciplinar."""
-    advisor = get_disciplinary_advisor(db)
-    return await advisor.recommend_action(request, get_tenant_id(current_user))
+) -> SignatureResponse:
+    """Busca assinatura por ID."""
+    try:
+        service = get_signature_service(db)
+        signature = await service.get_by_id(signature_id, get_tenant_id(current_user))
+        return SignatureResponse.model_validate(signature)
 
-
-@router.post(
-    "/medidas-administrativas/ia/validar-conformidade",
-    response_model=LegalComplianceResponse,
-    summary="Validar conformidade legal",
-    description="Valida conformidade da medida com CLT",
-)
-async def validate_compliance(
-    request: LegalComplianceRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> LegalComplianceResponse:
-    """Valida conformidade legal da medida."""
-    advisor = get_disciplinary_advisor(db)
-    return await advisor.validate_legal_compliance(request, get_tenant_id(current_user))
-
-
-@router.post(
-    "/medidas-administrativas/ia/verificar-proporcionalidade",
-    response_model=ProportionalityCheckResponse,
-    summary="Verificar proporcionalidade",
-    description="Verifica se medida e proporcional ao historico",
-)
-async def check_proportionality(
-    request: ProportionalityCheckRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> ProportionalityCheckResponse:
-    """Verifica proporcionalidade da medida."""
-    advisor = get_disciplinary_advisor(db)
-    return await advisor.check_proportionality(request)
+    except SignatureNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assinatura nao encontrada",
+        )

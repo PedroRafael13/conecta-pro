@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { FileWarning, Search, Plus, Eye, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, RefreshCw, Clock, FileSignature, AlertTriangle, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,9 +13,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDisciplinary, useDisciplinaryStats } from '@/hooks/useDisciplinary';
 import { useDeleteDisciplinaryAction } from '@/hooks/operacional/useDisciplinary';
 import { getErrorMessage } from '@/lib/api';
-import { DisciplinaryFormModal } from '@/components/operacional/disciplinary-form-modal';
-import { DisciplinaryDetailModal } from '@/components/operacional/disciplinary-detail-modal';
-import { DisciplinarySignatureModal } from '@/components/operacional/disciplinary-signature-modal';
+const DisciplinaryFormModal = dynamic(() => import('@/components/operacional/disciplinary-form-modal').then(m => m.DisciplinaryFormModal), { ssr: false });
+const DisciplinaryDetailModal = dynamic(() => import('@/components/operacional/disciplinary-detail-modal').then(m => m.DisciplinaryDetailModal), { ssr: false });
+const DisciplinarySignatureModal = dynamic(() => import('@/components/operacional/disciplinary-signature-modal').then(m => m.DisciplinarySignatureModal), { ssr: false });
 import type {
   DisciplinaryAction,
   DisciplinaryActionStatus,
@@ -79,6 +80,7 @@ export default function DisciplinarPage() {
       });
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce filter sync
   }, [searchTerm, selectedStatus, selectedType]);
 
   // Handlers
@@ -235,7 +237,7 @@ export default function DisciplinarPage() {
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
                   {stats?.pending_approval || 0}
                 </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Pend. Aprovacao</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Pend. Aprovação</p>
               </div>
             </div>
           </div>
@@ -574,7 +576,7 @@ export default function DisciplinarPage() {
         }}
         onConfirm={handleDelete}
         title="Excluir Processo"
-        message={`Tem certeza que deseja excluir o processo ${selectedAction?.code}? Esta acao nao pode ser desfeita.${deleteError ? ` Erro: ${deleteError}` : ''}`}
+        message={`Tem certeza que deseja excluir o processo ${selectedAction?.code}? Esta ação não pode ser desfeita.${deleteError ? ` Erro: ${deleteError}` : ''}`}
         confirmText="Excluir"
         isLoading={isDeleting}
         variant="danger"

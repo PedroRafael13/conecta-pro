@@ -4,38 +4,35 @@ Model de Edital (Tender) - Licitacoes Publicas
 """
 
 import uuid
-from datetime import datetime, date
-from decimal import Decimal
-from enum import Enum
-from typing import Optional, List
+from datetime import datetime
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Numeric, Integer, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models import Base
 
 
-class TenderStatus(str, Enum):
+class TenderStatus(StrEnum):
     """Status do edital."""
-    DRAFT = "draft"                      # Rascunho
-    PUBLISHED = "published"              # Publicado
-    OPEN = "open"                        # Aberto para propostas
-    SUSPENDED = "suspended"              # Suspenso
-    CANCELED = "canceled"                # Cancelado
-    UNDER_ANALYSIS = "under_analysis"    # Em analise
-    ADJUDICATED = "adjudicated"          # Adjudicado
-    HOMOLOGATED = "homologated"          # Homologado
-    DESERTED = "deserted"                # Deserto
-    FAILED = "failed"                    # Fracassado
-    COMPLETED = "completed"              # Concluido
+
+    DRAFT = "draft"  # Rascunho
+    PUBLISHED = "published"  # Publicado
+    OPEN = "open"  # Aberto para propostas
+    SUSPENDED = "suspended"  # Suspenso
+    CANCELED = "canceled"  # Cancelado
+    UNDER_ANALYSIS = "under_analysis"  # Em analise
+    ADJUDICATED = "adjudicated"  # Adjudicado
+    HOMOLOGATED = "homologated"  # Homologado
+    DESERTED = "deserted"  # Deserto
+    FAILED = "failed"  # Fracassado
+    COMPLETED = "completed"  # Concluido
 
 
-class BiddingModality(str, Enum):
+class BiddingModality(StrEnum):
     """Modalidade de licitacao (Lei 8.666/93 e Lei 14.133/21)."""
+
     CONCORRENCIA = "concorrencia"
     TOMADA_PRECOS = "tomada_precos"
     CONVITE = "convite"
@@ -49,8 +46,9 @@ class BiddingModality(str, Enum):
     CONCORRENCIA_INTERNACIONAL = "concorrencia_internacional"
 
 
-class BiddingCriteria(str, Enum):
+class BiddingCriteria(StrEnum):
     """Criterio de julgamento."""
+
     MENOR_PRECO = "menor_preco"
     MAIOR_DESCONTO = "maior_desconto"
     MELHOR_TECNICA = "melhor_tecnica"
@@ -66,6 +64,7 @@ class Tender(Base):
     Representa um processo licitatorio completo com todas as informacoes
     necessarias para participacao e acompanhamento.
     """
+
     __tablename__ = "bidding_tenders"
 
     # Identificacao
@@ -85,7 +84,7 @@ class Tender(Base):
     modalidade = Column(String(50), nullable=False, index=True)
     criterio_julgamento = Column(String(50), nullable=False, default=BiddingCriteria.MENOR_PRECO.value)
     tipo_contratacao = Column(String(50), nullable=True)  # obras, servicos, compras
-    regime_execucao = Column(String(50), nullable=True)   # empreitada, tarefa, etc
+    regime_execucao = Column(String(50), nullable=True)  # empreitada, tarefa, etc
 
     # Objeto
     objeto = Column(Text, nullable=False)
@@ -123,7 +122,7 @@ class Tender(Base):
     tags = Column(JSONB, default=list)
 
     # Requisitos e documentos
-    requisitos = Column(JSONB, default=list)           # Lista de requisitos
+    requisitos = Column(JSONB, default=list)  # Lista de requisitos
     documentos_exigidos = Column(JSONB, default=list)  # Documentos necessarios
 
     # Anexos e arquivos
@@ -146,10 +145,10 @@ class Tender(Base):
 
     # Indices compostos
     __table_args__ = (
-        Index('idx_tender_orgao_ano', 'orgao_cnpj', 'ano'),
-        Index('idx_tender_modalidade_status', 'modalidade', 'status'),
-        Index('idx_tender_uf_segmento', 'orgao_uf', 'segmento'),
-        Index('idx_tender_participando', 'participando', 'status'),
+        Index("idx_tender_orgao_ano", "orgao_cnpj", "ano"),
+        Index("idx_tender_modalidade_status", "modalidade", "status"),
+        Index("idx_tender_uf_segmento", "orgao_uf", "segmento"),
+        Index("idx_tender_participando", "participando", "status"),
     )
 
     def __repr__(self) -> str:
@@ -172,7 +171,7 @@ class Tender(Base):
         return datetime.utcnow() < self.data_impugnacao_limite
 
     @property
-    def dias_para_abertura(self) -> Optional[int]:
+    def dias_para_abertura(self) -> int | None:
         """Dias restantes para abertura."""
         if not self.data_abertura:
             return None
@@ -186,6 +185,7 @@ class TenderDocument(Base):
 
     Armazena os anexos e documentos relacionados ao edital.
     """
+
     __tablename__ = "bidding_tender_documents"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

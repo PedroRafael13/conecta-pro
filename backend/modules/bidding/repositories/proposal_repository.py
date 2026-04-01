@@ -3,13 +3,13 @@ Repository de Proposta - Licitacoes
 ===================================
 """
 
+import builtins
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from modules.bidding.models.proposal import BiddingProposal, BiddingProposalItem, ProposalStatus
@@ -24,45 +24,36 @@ class ProposalRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    async def get_by_id(self, proposal_id: UUID) -> Optional[BiddingProposal]:
+    async def get_by_id(self, proposal_id: UUID) -> BiddingProposal | None:
         """Busca proposta por ID."""
         result = await self.db.execute(
-            select(BiddingProposal).where(
-                BiddingProposal.id == proposal_id,
-                BiddingProposal.ativo == True
-            )
+            select(BiddingProposal).where(BiddingProposal.id == proposal_id, BiddingProposal.ativo)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_tender(self, tender_id: UUID) -> List[BiddingProposal]:
+    async def get_by_tender(self, tender_id: UUID) -> list[BiddingProposal]:
         """Lista propostas de um edital."""
         result = await self.db.execute(
-            select(BiddingProposal).where(
-                BiddingProposal.tender_id == tender_id,
-                BiddingProposal.ativo == True
-            ).order_by(BiddingProposal.versao.desc())
+            select(BiddingProposal)
+            .where(BiddingProposal.tender_id == tender_id, BiddingProposal.ativo)
+            .order_by(BiddingProposal.versao.desc())
         )
         return list(result.scalars().all())
 
-    async def get_latest_by_tender(self, tender_id: UUID) -> Optional[BiddingProposal]:
+    async def get_latest_by_tender(self, tender_id: UUID) -> BiddingProposal | None:
         """Busca proposta mais recente de um edital."""
         result = await self.db.execute(
-            select(BiddingProposal).where(
-                BiddingProposal.tender_id == tender_id,
-                BiddingProposal.ativo == True
-            ).order_by(BiddingProposal.versao.desc())
+            select(BiddingProposal)
+            .where(BiddingProposal.tender_id == tender_id, BiddingProposal.ativo)
+            .order_by(BiddingProposal.versao.desc())
         )
         return result.scalar_one_or_none()
 
     async def list(
-        self,
-        tender_id: UUID = None,
-        status: str = None,
-        page: int = 1,
-        size: int = 50
-    ) -> Tuple[List[BiddingProposal], int]:
+        self, tender_id: UUID = None, status: str = None, page: int = 1, size: int = 50
+    ) -> tuple[list[BiddingProposal], int]:
         """Lista propostas com filtros."""
-        query = select(BiddingProposal).where(BiddingProposal.ativo == True)
+        query = select(BiddingProposal).where(BiddingProposal.ativo)
 
         if tender_id:
             query = query.where(BiddingProposal.tender_id == tender_id)
@@ -85,23 +76,15 @@ class ProposalRepository:
 
         return items, total
 
-    async def create(
-        self,
-        data: ProposalCreate,
-        user_id: UUID = None
-    ) -> BiddingProposal:
+    async def create(self, data: ProposalCreate, user_id: UUID = None) -> BiddingProposal:
         """Cria nova proposta."""
         # Verifica versao
         existing = await self.get_latest_by_tender(data.tender_id)
         versao = (existing.versao + 1) if existing else 1
 
         # Cria proposta
-        proposal_data = data.model_dump(exclude={'itens'})
-        proposal = BiddingProposal(
-            **proposal_data,
-            versao=versao,
-            created_by=user_id
-        )
+        proposal_data = data.model_dump(exclude={"itens"})
+        proposal = BiddingProposal(**proposal_data, versao=versao, created_by=user_id)
 
         self.db.add(proposal)
         await self.db.commit()
@@ -113,7 +96,7 @@ class ProposalRepository:
                 item = BiddingProposalItem(
                     proposal_id=proposal.id,
                     **item_data.model_dump(),
-                    valor_total=item_data.quantidade * item_data.valor_unitario
+                    valor_total=item_data.quantidade * item_data.valor_unitario,
                 )
                 self.db.add(item)
             await self.db.commit()
@@ -121,12 +104,7 @@ class ProposalRepository:
         logger.info(f"Proposta criada: {proposal.numero} v{proposal.versao}")
         return proposal
 
-    async def update(
-        self,
-        proposal_id: UUID,
-        data: ProposalUpdate,
-        user_id: UUID = None
-    ) -> Optional[BiddingProposal]:
+    async def update(self, proposal_id: UUID, data: ProposalUpdate, user_id: UUID = None) -> BiddingProposal | None:
         """Atualiza proposta existente."""
         proposal = await self.get_by_id(proposal_id)
         if not proposal:
@@ -137,7 +115,7 @@ class ProposalRepository:
             logger.warning(f"Tentativa de editar proposta com status {proposal.status}")
             return None
 
-        update_data = data.model_dump(exclude_unset=True, exclude={'itens'})
+        update_data = data.model_dump(exclude_unset=True, exclude={"itens"})
         for field, value in update_data.items():
             setattr(proposal, field, value)
 
@@ -148,9 +126,7 @@ class ProposalRepository:
         if data.itens is not None:
             # Remove itens antigos
             await self.db.execute(
-                BiddingProposalItem.__table__.delete().where(
-                    BiddingProposalItem.proposal_id == proposal_id
-                )
+                BiddingProposalItem.__table__.delete().where(BiddingProposalItem.proposal_id == proposal_id)
             )
 
             # Adiciona novos itens
@@ -158,7 +134,7 @@ class ProposalRepository:
                 item = BiddingProposalItem(
                     proposal_id=proposal.id,
                     **item_data.model_dump(),
-                    valor_total=item_data.quantidade * item_data.valor_unitario
+                    valor_total=item_data.quantidade * item_data.valor_unitario,
                 )
                 self.db.add(item)
 
@@ -179,7 +155,7 @@ class ProposalRepository:
         logger.info(f"Proposta removida: {proposal.numero} v{proposal.versao}")
         return True
 
-    async def submit(self, proposal_id: UUID) -> Optional[BiddingProposal]:
+    async def submit(self, proposal_id: UUID) -> BiddingProposal | None:
         """Marca proposta como enviada."""
         proposal = await self.get_by_id(proposal_id)
         if not proposal:
@@ -197,12 +173,8 @@ class ProposalRepository:
         return proposal
 
     async def register_result(
-        self,
-        proposal_id: UUID,
-        status: str,
-        posicao: int = None,
-        valor_final: Decimal = None
-    ) -> Optional[BiddingProposal]:
+        self, proposal_id: UUID, status: str, posicao: int = None, valor_final: Decimal = None
+    ) -> BiddingProposal | None:
         """Registra resultado da proposta."""
         proposal = await self.get_by_id(proposal_id)
         if not proposal:
@@ -218,11 +190,7 @@ class ProposalRepository:
         logger.info(f"Resultado registrado: {proposal.numero} - {status}")
         return proposal
 
-    async def add_lance(
-        self,
-        proposal_id: UUID,
-        valor: Decimal
-    ) -> Optional[BiddingProposal]:
+    async def add_lance(self, proposal_id: UUID, valor: Decimal) -> BiddingProposal | None:
         """Adiciona lance ao historico (pregao)."""
         proposal = await self.get_by_id(proposal_id)
         if not proposal:
@@ -234,13 +202,12 @@ class ProposalRepository:
         logger.info(f"Lance adicionado: {proposal.numero} - R$ {valor}")
         return proposal
 
-    async def get_vencedoras(self) -> List[BiddingProposal]:
+    async def get_vencedoras(self) -> builtins.list[BiddingProposal]:
         """Lista propostas vencedoras."""
         result = await self.db.execute(
-            select(BiddingProposal).where(
-                BiddingProposal.status == ProposalStatus.WINNER.value,
-                BiddingProposal.ativo == True
-            ).order_by(BiddingProposal.data_resultado.desc())
+            select(BiddingProposal)
+            .where(BiddingProposal.status == ProposalStatus.WINNER.value, BiddingProposal.ativo)
+            .order_by(BiddingProposal.data_resultado.desc())
         )
         return list(result.scalars().all())
 
@@ -248,12 +215,12 @@ class ProposalRepository:
         """Conta propostas por status."""
         result = await self.db.execute(
             select(BiddingProposal.status, func.count(BiddingProposal.id))
-            .where(BiddingProposal.ativo == True)
+            .where(BiddingProposal.ativo)
             .group_by(BiddingProposal.status)
         )
         return {row[0]: row[1] for row in result.all()}
 
-    async def get_items(self, proposal_id: UUID) -> List[BiddingProposalItem]:
+    async def get_items(self, proposal_id: UUID) -> builtins.list[BiddingProposalItem]:
         """Lista itens de uma proposta."""
         result = await self.db.execute(
             select(BiddingProposalItem)

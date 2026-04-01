@@ -1,11 +1,10 @@
 """Repository para AFDRecord."""
 
 import hashlib
-from datetime import datetime, date
-from typing import Optional, List, Tuple
+from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import select, func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.rep_integration.models import (
@@ -95,18 +94,16 @@ class AFDRecordRepository:
         await self.db.refresh(record)
         return record
 
-    async def get_by_id(self, record_id: UUID) -> Optional[AFDRecord]:
+    async def get_by_id(self, record_id: UUID) -> AFDRecord | None:
         """Busca registro por ID."""
-        result = await self.db.execute(
-            select(AFDRecord).where(AFDRecord.id == record_id)
-        )
+        result = await self.db.execute(select(AFDRecord).where(AFDRecord.id == record_id))
         return result.scalar_one_or_none()
 
     async def get_by_device_nsr(
         self,
         device_id: UUID,
         nsr: int,
-    ) -> Optional[AFDRecord]:
+    ) -> AFDRecord | None:
         """Busca registro por dispositivo e NSR."""
         result = await self.db.execute(
             select(AFDRecord).where(
@@ -121,7 +118,7 @@ class AFDRecordRepository:
         filters: AFDRecordFilter,
         page: int = 1,
         page_size: int = 100,
-    ) -> Tuple[List[AFDRecord], int]:
+    ) -> tuple[list[AFDRecord], int]:
         """Lista registros com filtros e paginação."""
         query = select(AFDRecord)
 
@@ -167,16 +164,18 @@ class AFDRecordRepository:
         device_id: UUID,
         start_date: date,
         end_date: date,
-    ) -> List[AFDRecord]:
+    ) -> list[AFDRecord]:
         """Retorna registros para exportação AFD."""
         result = await self.db.execute(
-            select(AFDRecord).where(
+            select(AFDRecord)
+            .where(
                 AFDRecord.device_id == device_id,
                 AFDRecord.record_type == AFDRecordType.TIME_RECORD.value,
                 AFDRecord.record_date >= start_date,
                 AFDRecord.record_date <= end_date,
                 AFDRecord.is_valid.is_(True),
-            ).order_by(AFDRecord.nsr)
+            )
+            .order_by(AFDRecord.nsr)
         )
         return list(result.scalars().all())
 
@@ -241,7 +240,7 @@ class AFDRecordRepository:
 
     async def mark_as_exported(
         self,
-        record_ids: List[UUID],
+        record_ids: list[UUID],
         export_file_id: UUID = None,
     ) -> int:
         """Marca registros como exportados."""
@@ -307,13 +306,9 @@ class AFDRecordRepository:
             "record_type": record_type,
         }
 
-    async def get_last_nsr(self, device_id: UUID) -> Optional[int]:
+    async def get_last_nsr(self, device_id: UUID) -> int | None:
         """Retorna último NSR do dispositivo."""
-        result = await self.db.execute(
-            select(func.max(AFDRecord.nsr)).where(
-                AFDRecord.device_id == device_id
-            )
-        )
+        result = await self.db.execute(select(func.max(AFDRecord.nsr)).where(AFDRecord.device_id == device_id))
         return result.scalar()
 
     async def get_statistics(
@@ -330,22 +325,15 @@ class AFDRecordRepository:
 
         # Total
         total_result = await self.db.execute(
-            select(func.count()).where(*base_where) if base_where
-            else select(func.count())
+            select(func.count()).where(*base_where) if base_where else select(func.count())
         )
         total = total_result.scalar() or 0
 
         # Por tipo
         type_result = await self.db.execute(
-            select(
-                AFDRecord.record_type,
-                func.count(AFDRecord.id)
-            )
-            .where(*base_where) if base_where else select(
-                AFDRecord.record_type,
-                func.count(AFDRecord.id)
-            )
-            .group_by(AFDRecord.record_type)
+            select(AFDRecord.record_type, func.count(AFDRecord.id)).where(*base_where)
+            if base_where
+            else select(AFDRecord.record_type, func.count(AFDRecord.id)).group_by(AFDRecord.record_type)
         )
         by_type = {row[0]: row[1] for row in type_result.all()}
 
@@ -354,9 +342,9 @@ class AFDRecordRepository:
             select(func.count()).where(
                 *base_where,
                 AFDRecord.is_exported.is_(True),
-            ) if base_where else select(func.count()).where(
-                AFDRecord.is_exported.is_(True)
             )
+            if base_where
+            else select(func.count()).where(AFDRecord.is_exported.is_(True))
         )
         exported = exported_result.scalar() or 0
 
@@ -365,9 +353,9 @@ class AFDRecordRepository:
             select(func.count()).where(
                 *base_where,
                 AFDRecord.is_valid.is_(False),
-            ) if base_where else select(func.count()).where(
-                AFDRecord.is_valid.is_(False)
             )
+            if base_where
+            else select(func.count()).where(AFDRecord.is_valid.is_(False))
         )
         invalid = invalid_result.scalar() or 0
 

@@ -4,17 +4,17 @@ Task Prioritizer Service - Sprint 49.
 Serviço de priorização inteligente de tarefas.
 """
 
-from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
 import uuid
+from datetime import datetime
+from typing import Any
 
 from modules.ai.meeting_assistant.models import (
+    DependencyTypeEnum,
     Task,
     TaskDependency,
-    TaskStatusEnum,
     TaskPriorityEnum,
+    TaskStatusEnum,
     TaskTypeEnum,
-    DependencyTypeEnum,
 )
 from modules.ai.meeting_assistant.schemas import TaskPrioritySuggestion
 
@@ -30,10 +30,10 @@ class TaskPrioritizer:
             "visibility": 0.10,
             "age": 0.10,
             "effort": 0.10,
-            "context": 0.05
+            "context": 0.05,
         }
 
-    def calculate_priority(self, task: Task, dependencies: List[TaskDependency] = None) -> Dict[str, Any]:
+    def calculate_priority(self, task: Task, dependencies: list[TaskDependency] = None) -> dict[str, Any]:
         """
         Calcula prioridade de uma tarefa.
 
@@ -83,10 +83,7 @@ class TaskPrioritizer:
         factors["context"] = {"has_context": bool(task.context)}
 
         # Calcula score final ponderado
-        final_score = sum(
-            scores[factor] * self.weights[factor]
-            for factor in scores
-        )
+        final_score = sum(scores[factor] * self.weights[factor] for factor in scores)
 
         # Normaliza para 0-100
         final_score = min(100, max(0, final_score))
@@ -98,14 +95,12 @@ class TaskPrioritizer:
             "score": round(final_score, 2),
             "suggested_priority": suggested_priority,
             "factors": factors,
-            "scores": scores
+            "scores": scores,
         }
 
     def prioritize_tasks(
-        self,
-        tasks: List[Task],
-        dependencies_map: Dict[uuid.UUID, List[TaskDependency]] = None
-    ) -> List[TaskPrioritySuggestion]:
+        self, tasks: list[Task], dependencies_map: dict[uuid.UUID, list[TaskDependency]] = None
+    ) -> list[TaskPrioritySuggestion]:
         """
         Prioriza lista de tarefas.
 
@@ -129,7 +124,7 @@ class TaskPrioritizer:
                 suggested_priority=result["suggested_priority"],
                 priority_score=result["score"],
                 factors=result["factors"],
-                recommendation=self._generate_recommendation(task, result)
+                recommendation=self._generate_recommendation(task, result),
             )
             suggestions.append(suggestion)
 
@@ -167,7 +162,7 @@ class TaskPrioritizer:
         else:
             return 30
 
-    def _get_deadline_factor(self, task: Task) -> Dict[str, Any]:
+    def _get_deadline_factor(self, task: Task) -> dict[str, Any]:
         """Retorna fator de prazo."""
         if not task.due_date:
             return {"has_deadline": False}
@@ -179,10 +174,10 @@ class TaskPrioritizer:
             "has_deadline": True,
             "due_date": task.due_date.isoformat(),
             "days_until_due": days_until,
-            "is_overdue": days_until < 0
+            "is_overdue": days_until < 0,
         }
 
-    def _calculate_dependency_score(self, task: Task, dependencies: List[TaskDependency] = None) -> float:
+    def _calculate_dependency_score(self, task: Task, dependencies: list[TaskDependency] = None) -> float:
         """Calcula score baseado em dependências."""
         if task.is_blocked:
             return 20  # Baixa prioridade se bloqueado
@@ -205,12 +200,12 @@ class TaskPrioritizer:
         score = 50 + (blocking_count * 15) - (blocked_by_count * 10)
         return min(100, max(0, score))
 
-    def _get_dependency_factor(self, task: Task, dependencies: List[TaskDependency] = None) -> Dict[str, Any]:
+    def _get_dependency_factor(self, task: Task, dependencies: list[TaskDependency] = None) -> dict[str, Any]:
         """Retorna fator de dependências."""
         return {
             "is_blocked": task.is_blocked,
             "blocked_reason": task.blocked_reason,
-            "dependency_count": len(dependencies) if dependencies else 0
+            "dependency_count": len(dependencies) if dependencies else 0,
         }
 
     def _calculate_type_score(self, task: Task) -> float:
@@ -227,7 +222,7 @@ class TaskPrioritizer:
             TaskTypeEnum.TASK: 50,
             TaskTypeEnum.STORY: 55,
             TaskTypeEnum.EPIC: 45,
-            TaskTypeEnum.SUBTASK: 50
+            TaskTypeEnum.SUBTASK: 50,
         }
         return type_scores.get(task.task_type, 50)
 
@@ -246,12 +241,12 @@ class TaskPrioritizer:
 
         return min(100, score)
 
-    def _get_visibility_factor(self, task: Task) -> Dict[str, Any]:
+    def _get_visibility_factor(self, task: Task) -> dict[str, Any]:
         """Retorna fator de visibilidade."""
         return {
             "watcher_count": len(task.watchers) if task.watchers else 0,
             "has_project": bool(task.project_id),
-            "comments_count": task.comments_count or 0
+            "comments_count": task.comments_count or 0,
         }
 
     def _calculate_age_score(self, task: Task) -> float:
@@ -267,14 +262,10 @@ class TaskPrioritizer:
         else:
             return 40
 
-    def _get_age_factor(self, task: Task) -> Dict[str, Any]:
+    def _get_age_factor(self, task: Task) -> dict[str, Any]:
         """Retorna fator de idade."""
         age_days = (datetime.utcnow() - task.created_at).days
-        return {
-            "created_at": task.created_at.isoformat(),
-            "age_days": age_days,
-            "is_stale": age_days > 14
-        }
+        return {"created_at": task.created_at.isoformat(), "age_days": age_days, "is_stale": age_days > 14}
 
     def _calculate_effort_score(self, task: Task) -> float:
         """Calcula score baseado no esforço estimado."""
@@ -289,13 +280,13 @@ class TaskPrioritizer:
         else:
             return 40  # Tarefas grandes
 
-    def _get_effort_factor(self, task: Task) -> Dict[str, Any]:
+    def _get_effort_factor(self, task: Task) -> dict[str, Any]:
         """Retorna fator de esforço."""
         return {
             "estimated_hours": task.estimated_hours,
             "actual_hours": task.actual_hours,
             "story_points": task.story_points,
-            "progress": task.progress_percentage
+            "progress": task.progress_percentage,
         }
 
     def _calculate_context_score(self, task: Task) -> float:
@@ -329,7 +320,7 @@ class TaskPrioritizer:
         else:
             return TaskPriorityEnum.NONE
 
-    def _generate_recommendation(self, task: Task, result: Dict[str, Any]) -> str:
+    def _generate_recommendation(self, task: Task, result: dict[str, Any]) -> str:
         """Gera recomendação textual."""
         recommendations = []
 
@@ -360,12 +351,7 @@ class TaskPrioritizer:
 
         return "; ".join(recommendations)
 
-    def suggest_next_tasks(
-        self,
-        tasks: List[Task],
-        assignee_id: uuid.UUID = None,
-        limit: int = 5
-    ) -> List[Task]:
+    def suggest_next_tasks(self, tasks: list[Task], assignee_id: uuid.UUID = None, limit: int = 5) -> list[Task]:
         """
         Sugere próximas tarefas a serem trabalhadas.
 
@@ -374,7 +360,8 @@ class TaskPrioritizer:
         """
         # Filtra tarefas elegíveis
         eligible = [
-            t for t in tasks
+            t
+            for t in tasks
             if t.status in [TaskStatusEnum.TODO, TaskStatusEnum.BACKLOG]
             and not t.is_blocked
             and (assignee_id is None or t.assignee_id == assignee_id)
@@ -384,7 +371,4 @@ class TaskPrioritizer:
         suggestions = self.prioritize_tasks(eligible)
 
         # Retorna top N
-        return [
-            next(t for t in tasks if t.id == s.task_id)
-            for s in suggestions[:limit]
-        ]
+        return [next(t for t in tasks if t.id == s.task_id) for s in suggestions[:limit]]

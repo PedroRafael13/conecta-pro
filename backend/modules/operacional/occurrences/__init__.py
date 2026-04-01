@@ -21,34 +21,32 @@ Estrutura:
 - controllers/: Endpoints FastAPI
 """
 
-from fastapi import APIRouter
+# Controllers
+from .controllers import occurrence_router
 
 # Models
 from .models import (
     Occurrence,
-    OccurrenceStatus,
     OccurrenceCategory,
     OccurrenceSeverity,
+    OccurrenceStatus,
     OccurrenceType,
-)
-
-# Schemas
-from .schemas import (
-    OccurrenceCreate,
-    OccurrenceUpdate,
-    OccurrenceResolve,
-    OccurrenceResponse,
-    OccurrenceListResponse,
-    OccurrenceFilter,
-    OccurrenceStats,
-    AttachmentSchema,
 )
 
 # Repository
 from .repositories import OccurrenceRepository
 
-# Controllers
-from .controllers import occurrence_router
+# Schemas
+from .schemas import (
+    AttachmentSchema,
+    OccurrenceCreate,
+    OccurrenceFilter,
+    OccurrenceListResponse,
+    OccurrenceResolve,
+    OccurrenceResponse,
+    OccurrenceStats,
+    OccurrenceUpdate,
+)
 
 __all__ = [
     # Router

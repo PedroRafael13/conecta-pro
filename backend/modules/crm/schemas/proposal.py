@@ -3,7 +3,6 @@ Schemas Pydantic para Proposal.
 """
 
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -14,16 +13,15 @@ from modules.crm.models.proposal import (
     ProposalType,
 )
 
-
 # ============== ProposalItem Schemas ==============
 
 
 class ProposalItemBase(BaseModel):
     """Schema base para item de proposta."""
 
-    code: Optional[str] = Field(None, max_length=50)
+    code: str | None = Field(None, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     unit: str = Field(default="un", max_length=20)
     quantity: float = Field(default=1.0, ge=0)
     unit_price: float = Field(default=0.0, ge=0)
@@ -40,15 +38,15 @@ class ProposalItemCreate(ProposalItemBase):
 class ProposalItemUpdate(BaseModel):
     """Schema para atualizacao de item."""
 
-    code: Optional[str] = Field(None, max_length=50)
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    unit: Optional[str] = Field(None, max_length=20)
-    quantity: Optional[float] = Field(None, ge=0)
-    unit_price: Optional[float] = Field(None, ge=0)
-    discount_percent: Optional[float] = Field(None, ge=0, le=100)
-    is_optional: Optional[bool] = None
-    sort_order: Optional[int] = None
+    code: str | None = Field(None, max_length=50)
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    unit: str | None = Field(None, max_length=20)
+    quantity: float | None = Field(None, ge=0)
+    unit_price: float | None = Field(None, ge=0)
+    discount_percent: float | None = Field(None, ge=0, le=100)
+    is_optional: bool | None = None
+    sort_order: int | None = None
 
 
 class ProposalItemResponse(ProposalItemBase):
@@ -74,11 +72,11 @@ class ProposalTemplateBase(BaseModel):
     """Schema base para template."""
 
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
-    default_title: Optional[str] = Field(None, max_length=255)
-    default_description: Optional[str] = None
-    terms_conditions: Optional[str] = None
-    payment_terms: Optional[str] = None
+    description: str | None = None
+    default_title: str | None = Field(None, max_length=255)
+    default_description: str | None = None
+    terms_conditions: str | None = None
+    payment_terms: str | None = None
     validity_days: int = Field(default=30, ge=1, le=365)
     proposal_type: ProposalType = ProposalType.SERVICE
 
@@ -86,27 +84,27 @@ class ProposalTemplateBase(BaseModel):
 class ProposalTemplateCreate(ProposalTemplateBase):
     """Schema para criacao de template."""
 
-    header_html: Optional[str] = None
-    footer_html: Optional[str] = None
-    css_styles: Optional[str] = None
+    header_html: str | None = None
+    footer_html: str | None = None
+    css_styles: str | None = None
     is_default: bool = False
 
 
 class ProposalTemplateUpdate(BaseModel):
     """Schema para atualizacao de template."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-    description: Optional[str] = None
-    default_title: Optional[str] = Field(None, max_length=255)
-    default_description: Optional[str] = None
-    terms_conditions: Optional[str] = None
-    payment_terms: Optional[str] = None
-    validity_days: Optional[int] = Field(None, ge=1, le=365)
-    proposal_type: Optional[ProposalType] = None
-    header_html: Optional[str] = None
-    footer_html: Optional[str] = None
-    css_styles: Optional[str] = None
-    is_default: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=100)
+    description: str | None = None
+    default_title: str | None = Field(None, max_length=255)
+    default_description: str | None = None
+    terms_conditions: str | None = None
+    payment_terms: str | None = None
+    validity_days: int | None = Field(None, ge=1, le=365)
+    proposal_type: ProposalType | None = None
+    header_html: str | None = None
+    footer_html: str | None = None
+    css_styles: str | None = None
+    is_default: bool | None = None
 
 
 class ProposalTemplateResponse(ProposalTemplateBase):
@@ -115,9 +113,9 @@ class ProposalTemplateResponse(ProposalTemplateBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    header_html: Optional[str]
-    footer_html: Optional[str]
-    css_styles: Optional[str]
+    header_html: str | None
+    footer_html: str | None
+    css_styles: str | None
     is_default: bool
     is_active: bool
     created_at: datetime
@@ -131,38 +129,38 @@ class ProposalBase(BaseModel):
     """Schema base para proposta."""
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     proposal_type: ProposalType = ProposalType.SERVICE
 
     # Cliente
     client_name: str = Field(..., min_length=1, max_length=255)
     client_email: EmailStr
-    client_phone: Optional[str] = Field(None, max_length=20)
-    client_company: Optional[str] = Field(None, max_length=255)
-    client_document: Optional[str] = Field(None, max_length=20)
-    client_address: Optional[str] = None
+    client_phone: str | None = Field(None, max_length=20)
+    client_company: str | None = Field(None, max_length=255)
+    client_document: str | None = Field(None, max_length=20)
+    client_address: str | None = None
 
     # Condicoes
-    terms_conditions: Optional[str] = None
-    payment_terms: Optional[str] = None
-    payment_conditions: Optional[str] = Field(None, max_length=255)
+    terms_conditions: str | None = None
+    payment_terms: str | None = None
+    payment_conditions: str | None = Field(None, max_length=255)
     installments: int = Field(default=1, ge=1, le=120)
-    notes: Optional[str] = None
+    notes: str | None = None
 
     # Datas
-    valid_until: Optional[date] = None
+    valid_until: date | None = None
 
 
 class ProposalCreate(ProposalBase):
     """Schema para criacao de proposta."""
 
-    opportunity_id: Optional[str] = None
-    template_id: Optional[str] = None
+    opportunity_id: str | None = None
+    template_id: str | None = None
 
     # Desconto global
-    discount_type: Optional[DiscountType] = None
+    discount_type: DiscountType | None = None
     discount_value: float = Field(default=0.0, ge=0)
-    discount_reason: Optional[str] = Field(None, max_length=255)
+    discount_reason: str | None = Field(None, max_length=255)
     taxes: float = Field(default=0.0, ge=0)
 
     # Itens (opcional na criacao)
@@ -173,58 +171,58 @@ class ProposalCreateFromOpportunity(BaseModel):
     """Schema para criar proposta a partir de opportunity."""
 
     opportunity_id: str
-    template_id: Optional[str] = None
+    template_id: str | None = None
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    valid_until: Optional[date] = None
+    description: str | None = None
+    valid_until: date | None = None
     items: list[ProposalItemCreate] = []
 
 
 class ProposalUpdate(BaseModel):
     """Schema para atualizacao de proposta."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    proposal_type: Optional[ProposalType] = None
+    title: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    proposal_type: ProposalType | None = None
 
     # Cliente
-    client_name: Optional[str] = Field(None, min_length=1, max_length=255)
-    client_email: Optional[EmailStr] = None
-    client_phone: Optional[str] = Field(None, max_length=20)
-    client_company: Optional[str] = Field(None, max_length=255)
-    client_document: Optional[str] = Field(None, max_length=20)
-    client_address: Optional[str] = None
+    client_name: str | None = Field(None, min_length=1, max_length=255)
+    client_email: EmailStr | None = None
+    client_phone: str | None = Field(None, max_length=20)
+    client_company: str | None = Field(None, max_length=255)
+    client_document: str | None = Field(None, max_length=20)
+    client_address: str | None = None
 
     # Condicoes
-    terms_conditions: Optional[str] = None
-    payment_terms: Optional[str] = None
-    payment_conditions: Optional[str] = Field(None, max_length=255)
-    installments: Optional[int] = Field(None, ge=1, le=120)
-    notes: Optional[str] = None
+    terms_conditions: str | None = None
+    payment_terms: str | None = None
+    payment_conditions: str | None = Field(None, max_length=255)
+    installments: int | None = Field(None, ge=1, le=120)
+    notes: str | None = None
 
     # Datas
-    valid_until: Optional[date] = None
+    valid_until: date | None = None
 
     # Desconto
-    discount_type: Optional[DiscountType] = None
-    discount_value: Optional[float] = Field(None, ge=0)
-    discount_reason: Optional[str] = Field(None, max_length=255)
-    taxes: Optional[float] = Field(None, ge=0)
+    discount_type: DiscountType | None = None
+    discount_value: float | None = Field(None, ge=0)
+    discount_reason: str | None = Field(None, max_length=255)
+    taxes: float | None = Field(None, ge=0)
 
 
 class ProposalStatusUpdate(BaseModel):
     """Schema para atualizacao de status."""
 
     status: ProposalStatus
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ProposalSend(BaseModel):
     """Schema para enviar proposta."""
 
-    recipient_email: Optional[EmailStr] = None  # Se diferente do client_email
-    subject: Optional[str] = None
-    message: Optional[str] = None
+    recipient_email: EmailStr | None = None  # Se diferente do client_email
+    subject: str | None = None
+    message: str | None = None
     cc_emails: list[str] = []
 
 
@@ -232,15 +230,15 @@ class ProposalApprovalRequest(BaseModel):
     """Schema para solicitar aprovacao."""
 
     action: ApprovalAction
-    comments: Optional[str] = None
+    comments: str | None = None
 
 
 class ProposalClientResponse(BaseModel):
     """Schema para resposta do cliente."""
 
     accepted: bool
-    feedback: Optional[str] = None
-    signature: Optional[str] = None  # Base64 da assinatura
+    feedback: str | None = None
+    signature: str | None = None  # Base64 da assinatura
 
 
 class ProposalResponse(BaseModel):
@@ -251,56 +249,56 @@ class ProposalResponse(BaseModel):
     id: str
     number: str
     version: int
-    parent_id: Optional[str]
+    parent_id: str | None
 
     # Relacionamentos
-    opportunity_id: Optional[str]
-    template_id: Optional[str]
+    opportunity_id: str | None
+    template_id: str | None
 
     # Cliente
     client_name: str
     client_email: str
-    client_phone: Optional[str]
-    client_company: Optional[str]
-    client_document: Optional[str]
-    client_address: Optional[str]
+    client_phone: str | None
+    client_company: str | None
+    client_document: str | None
+    client_address: str | None
 
     # Conteudo
     title: str
-    description: Optional[str]
+    description: str | None
     proposal_type: ProposalType
-    terms_conditions: Optional[str]
-    notes: Optional[str]
+    terms_conditions: str | None
+    notes: str | None
 
     # Valores
     subtotal: float
-    discount_type: Optional[DiscountType]
+    discount_type: DiscountType | None
     discount_value: float
-    discount_reason: Optional[str]
+    discount_reason: str | None
     discount_amount: float
     taxes: float
     total: float
 
     # Pagamento
-    payment_terms: Optional[str]
-    payment_conditions: Optional[str]
+    payment_terms: str | None
+    payment_conditions: str | None
     installments: int
 
     # Datas
     issue_date: date
-    valid_until: Optional[date]
-    sent_at: Optional[datetime]
-    viewed_at: Optional[datetime]
-    responded_at: Optional[datetime]
+    valid_until: date | None
+    sent_at: datetime | None
+    viewed_at: datetime | None
+    responded_at: datetime | None
 
     # Status
     status: ProposalStatus
-    rejection_reason: Optional[str]
+    rejection_reason: str | None
 
     # Responsaveis
-    created_by_id: Optional[str]
-    approved_by_id: Optional[str]
-    approved_at: Optional[datetime]
+    created_by_id: str | None
+    approved_by_id: str | None
+    approved_at: datetime | None
 
     # Propriedades calculadas
     is_draft: bool
@@ -310,7 +308,7 @@ class ProposalResponse(BaseModel):
     is_closed: bool
     is_accepted: bool
     is_expired: bool
-    days_until_expiry: Optional[int]
+    days_until_expiry: int | None
     item_count: int
 
     # Controle
@@ -338,17 +336,17 @@ class ProposalListResponse(BaseModel):
 class ProposalFilter(BaseModel):
     """Schema para filtros de busca."""
 
-    status: Optional[ProposalStatus] = None
-    proposal_type: Optional[ProposalType] = None
-    opportunity_id: Optional[str] = None
-    created_by_id: Optional[str] = None
-    is_expired: Optional[bool] = None
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    client_name: Optional[str] = None
-    search: Optional[str] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
+    status: ProposalStatus | None = None
+    proposal_type: ProposalType | None = None
+    opportunity_id: str | None = None
+    created_by_id: str | None = None
+    is_expired: bool | None = None
+    min_value: float | None = None
+    max_value: float | None = None
+    client_name: str | None = None
+    search: str | None = None
+    date_from: date | None = None
+    date_to: date | None = None
 
 
 class ProposalStats(BaseModel):
@@ -381,7 +379,7 @@ class ProposalApprovalResponse(BaseModel):
 
     id: str
     proposal_id: str
-    user_id: Optional[str]
+    user_id: str | None
     action: ApprovalAction
-    comments: Optional[str]
+    comments: str | None
     created_at: datetime

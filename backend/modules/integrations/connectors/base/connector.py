@@ -5,67 +5,69 @@ Sprint 33: Integration Framework
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, Dict, Any, List, AsyncIterator, TypeVar, Generic
+from typing import Any, TypeVar
 from uuid import UUID
 
 from modules.integrations.connectors.base.auth import AuthStrategy
-from modules.integrations.connectors.base.http_client import (
-    IntegrationHTTPClient,
-    HTTPClientConfig
-)
-from modules.integrations.connectors.base.rate_limiter import RateLimiter
 from modules.integrations.connectors.base.exceptions import ConnectorError
+from modules.integrations.connectors.base.http_client import HTTPClientConfig, IntegrationHTTPClient
+from modules.integrations.connectors.base.rate_limiter import RateLimiter
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass
 class ConnectorCapabilities:
     """Capacidades do conector."""
+
     supports_incremental_sync: bool = True
     supports_full_sync: bool = True
     supports_webhooks: bool = False
     supports_write: bool = False
     supports_delete: bool = False
-    supported_entities: List[str] = field(default_factory=list)
-    rate_limit_per_second: Optional[float] = None
-    rate_limit_per_minute: Optional[float] = None
+    supported_entities: list[str] = field(default_factory=list)
+    rate_limit_per_second: float | None = None
+    rate_limit_per_minute: float | None = None
 
 
 @dataclass
-class SyncResult(Generic[T]):
+class SyncResult[T]:
     """Resultado de uma operação de sync."""
+
     success: bool
-    data: Optional[List[T]] = None
-    cursor: Optional[str] = None
+    data: list[T] | None = None
+    cursor: str | None = None
     has_more: bool = False
-    total_count: Optional[int] = None
-    errors: List[Dict[str, Any]] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    total_count: int | None = None
+    errors: list[dict[str, Any]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class EntityResult:
     """Resultado de operação em uma entidade."""
+
     success: bool
-    external_id: Optional[str] = None
-    internal_id: Optional[UUID] = None
+    external_id: str | None = None
+    internal_id: UUID | None = None
     action: str = "none"  # created, updated, deleted, skipped
-    error: Optional[str] = None
-    data: Optional[Dict[str, Any]] = None
+    error: str | None = None
+    data: dict[str, Any] | None = None
 
 
 @dataclass
 class HealthCheckResult:
     """Resultado do health check."""
+
     healthy: bool
     latency_ms: int
-    message: Optional[str] = None
-    details: Dict[str, Any] = field(default_factory=dict)
+    message: str | None = None
+    details: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -80,11 +82,7 @@ class BaseConnector(ABC):
     VERSION: str = "1.0.0"
 
     def __init__(
-        self,
-        account_id: UUID,
-        tenant_id: UUID,
-        credentials: Dict[str, Any],
-        config: Optional[Dict[str, Any]] = None
+        self, account_id: UUID, tenant_id: UUID, credentials: dict[str, Any], config: dict[str, Any] | None = None
     ):
         """
         Inicializa o conector.
@@ -101,10 +99,10 @@ class BaseConnector(ABC):
         self.config = config or {}
 
         # Cliente HTTP (criado no setup)
-        self._http_client: Optional[IntegrationHTTPClient] = None
+        self._http_client: IntegrationHTTPClient | None = None
 
         # Auth strategy (criado no setup)
-        self._auth: Optional[AuthStrategy] = None
+        self._auth: AuthStrategy | None = None
 
         # Estado
         self._initialized = False
@@ -131,7 +129,7 @@ class BaseConnector(ABC):
         return RateLimiter(
             requests_per_second=caps.rate_limit_per_second,
             requests_per_minute=caps.rate_limit_per_minute,
-            name=self.NAME
+            name=self.NAME,
         )
 
     def _create_http_config(self) -> HTTPClientConfig:
@@ -145,7 +143,7 @@ class BaseConnector(ABC):
             headers={
                 "User-Agent": f"ConectaPRO-Integration/{self.VERSION}",
                 "Accept": "application/json",
-            }
+            },
         )
 
     async def setup(self) -> None:
@@ -167,10 +165,7 @@ class BaseConnector(ABC):
             rate_limiter = self._create_rate_limiter()
 
             self._http_client = IntegrationHTTPClient(
-                config=http_config,
-                auth=self._auth,
-                rate_limiter=rate_limiter,
-                connector_name=self.NAME
+                config=http_config, auth=self._auth, rate_limiter=rate_limiter, connector_name=self.NAME
             )
 
             # Setup adicional (pode ser sobrescrito)
@@ -181,14 +176,12 @@ class BaseConnector(ABC):
 
         except Exception as e:
             logger.error(f"[{self.NAME}] Falha ao inicializar: {e}")
-            raise ConnectorError(
-                f"Falha ao inicializar conector: {e}",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Falha ao inicializar conector: {e}", connector=self.NAME)
 
+    @abstractmethod
     async def _on_setup(self) -> None:
         """Hook para setup adicional. Pode ser sobrescrito."""
-        pass
+        ...
 
     async def teardown(self) -> None:
         """Finaliza o conector."""
@@ -210,10 +203,7 @@ class BaseConnector(ABC):
     def _ensure_initialized(self) -> None:
         """Verifica se está inicializado."""
         if not self._initialized:
-            raise ConnectorError(
-                "Conector não inicializado. Chame setup() primeiro.",
-                connector=self.NAME
-            )
+            raise ConnectorError("Conector não inicializado. Chame setup() primeiro.", connector=self.NAME)
 
     @property
     def http(self) -> IntegrationHTTPClient:
@@ -237,10 +227,10 @@ class BaseConnector(ABC):
     async def fetch_entities(
         self,
         entity_type: str,
-        cursor: Optional[str] = None,
-        updated_since: Optional[datetime] = None,
+        cursor: str | None = None,
+        updated_since: datetime | None = None,
         page_size: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str, Any] | None = None,
     ) -> SyncResult:
         """
         Busca entidades do sistema externo.
@@ -260,9 +250,9 @@ class BaseConnector(ABC):
     async def fetch_all_entities(
         self,
         entity_type: str,
-        updated_since: Optional[datetime] = None,
+        updated_since: datetime | None = None,
         page_size: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str, Any] | None = None,
     ) -> AsyncIterator[SyncResult]:
         """
         Generator que busca todas as entidades com paginação automática.
@@ -282,7 +272,7 @@ class BaseConnector(ABC):
                 cursor=cursor,
                 updated_since=updated_since,
                 page_size=page_size,
-                filters=filters
+                filters=filters,
             )
 
             yield result
@@ -293,11 +283,7 @@ class BaseConnector(ABC):
             cursor = result.cursor
 
     @abstractmethod
-    async def fetch_entity_by_id(
-        self,
-        entity_type: str,
-        external_id: str
-    ) -> Optional[Dict[str, Any]]:
+    async def fetch_entity_by_id(self, entity_type: str, external_id: str) -> dict[str, Any] | None:
         """
         Busca uma entidade específica pelo ID externo.
 
@@ -312,11 +298,7 @@ class BaseConnector(ABC):
 
     # ==================== Write Operations ====================
 
-    async def create_entity(
-        self,
-        entity_type: str,
-        data: Dict[str, Any]
-    ) -> EntityResult:
+    async def create_entity(self, entity_type: str, data: dict[str, Any]) -> EntityResult:
         """
         Cria entidade no sistema externo.
 
@@ -328,18 +310,10 @@ class BaseConnector(ABC):
             EntityResult com ID externo criado
         """
         if not self.capabilities.supports_write:
-            raise ConnectorError(
-                f"Conector {self.NAME} não suporta escrita",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Conector {self.NAME} não suporta escrita", connector=self.NAME)
         raise NotImplementedError()
 
-    async def update_entity(
-        self,
-        entity_type: str,
-        external_id: str,
-        data: Dict[str, Any]
-    ) -> EntityResult:
+    async def update_entity(self, entity_type: str, external_id: str, data: dict[str, Any]) -> EntityResult:
         """
         Atualiza entidade no sistema externo.
 
@@ -352,17 +326,10 @@ class BaseConnector(ABC):
             EntityResult com resultado
         """
         if not self.capabilities.supports_write:
-            raise ConnectorError(
-                f"Conector {self.NAME} não suporta escrita",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Conector {self.NAME} não suporta escrita", connector=self.NAME)
         raise NotImplementedError()
 
-    async def delete_entity(
-        self,
-        entity_type: str,
-        external_id: str
-    ) -> EntityResult:
+    async def delete_entity(self, entity_type: str, external_id: str) -> EntityResult:
         """
         Remove entidade no sistema externo.
 
@@ -374,19 +341,12 @@ class BaseConnector(ABC):
             EntityResult com resultado
         """
         if not self.capabilities.supports_delete:
-            raise ConnectorError(
-                f"Conector {self.NAME} não suporta deleção",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Conector {self.NAME} não suporta deleção", connector=self.NAME)
         raise NotImplementedError()
 
     # ==================== Webhook Operations ====================
 
-    async def validate_webhook(
-        self,
-        headers: Dict[str, str],
-        body: bytes
-    ) -> bool:
+    async def validate_webhook(self, headers: dict[str, str], body: bytes) -> bool:
         """
         Valida assinatura de webhook.
 
@@ -398,17 +358,10 @@ class BaseConnector(ABC):
             True se válido
         """
         if not self.capabilities.supports_webhooks:
-            raise ConnectorError(
-                f"Conector {self.NAME} não suporta webhooks",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Conector {self.NAME} não suporta webhooks", connector=self.NAME)
         raise NotImplementedError()
 
-    async def process_webhook(
-        self,
-        event_type: str,
-        payload: Dict[str, Any]
-    ) -> List[EntityResult]:
+    async def process_webhook(self, event_type: str, payload: dict[str, Any]) -> list[EntityResult]:
         """
         Processa payload de webhook.
 
@@ -420,21 +373,18 @@ class BaseConnector(ABC):
             Lista de EntityResult com entidades afetadas
         """
         if not self.capabilities.supports_webhooks:
-            raise ConnectorError(
-                f"Conector {self.NAME} não suporta webhooks",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Conector {self.NAME} não suporta webhooks", connector=self.NAME)
         raise NotImplementedError()
 
     # ==================== Utilities ====================
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Retorna métricas do conector."""
         if self._http_client:
             return self._http_client.get_metrics()
         return {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Retorna informações do conector."""
         return {
             "name": self.NAME,

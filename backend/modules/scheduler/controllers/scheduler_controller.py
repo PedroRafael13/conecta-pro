@@ -5,7 +5,6 @@ Sprint 35 - Task Scheduler.
 
 import logging
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -80,12 +79,12 @@ def create_task(
     summary="Listar tarefas",
 )
 def list_tasks(
-    status: Optional[TaskStatus] = None,
-    category: Optional[TaskCategory] = None,
-    task_type: Optional[TaskType] = None,
-    queue_name: Optional[str] = None,
-    tags: Optional[str] = Query(None, description="Tags separadas por vírgula"),
-    search: Optional[str] = None,
+    status: TaskStatus | None = None,
+    category: TaskCategory | None = None,
+    task_type: TaskType | None = None,
+    queue_name: str | None = None,
+    tags: str | None = Query(None, description="Tags separadas por vírgula"),
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     current_user=Depends(get_current_active_user),
@@ -216,7 +215,7 @@ def pause_task(
 )
 def trigger_task(
     task_id: UUID,
-    data: Optional[TriggerTaskRequest] = None,
+    data: TriggerTaskRequest | None = None,
     current_user=Depends(get_current_active_user),
     service: SchedulerService = Depends(get_scheduler_service),
     db: Session = Depends(get_db),
@@ -268,10 +267,10 @@ def get_task_stats(
     summary="Listar execuções",
 )
 def list_executions(
-    task_id: Optional[UUID] = None,
-    status: Optional[ExecutionStatus] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    task_id: UUID | None = None,
+    status: ExecutionStatus | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     current_user=Depends(get_current_active_user),
@@ -317,7 +316,7 @@ def get_execution(
 )
 def get_execution_logs(
     execution_id: UUID,
-    level: Optional[str] = None,
+    level: str | None = None,
     limit: int = Query(100, ge=1, le=1000),
     current_user=Depends(get_current_active_user),
     service: SchedulerService = Depends(get_scheduler_service),
@@ -388,7 +387,7 @@ def enqueue_item(
 )
 def list_queue_items(
     queue_name: str = "default",
-    status: Optional[str] = None,
+    status: str | None = None,
     limit: int = Query(50, ge=1, le=100),
     current_user=Depends(get_current_active_user),
     db: Session = Depends(get_db),
@@ -472,8 +471,8 @@ def delete_queue_item(
     summary="Listar workers",
 )
 def list_workers(
-    status: Optional[str] = None,
-    queue_name: Optional[str] = None,
+    status: str | None = None,
+    queue_name: str | None = None,
     current_user=Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):

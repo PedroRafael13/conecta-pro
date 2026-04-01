@@ -27,49 +27,49 @@ from fastapi import APIRouter
 
 # Importar routers dos controllers
 from modules.health_occupational.controllers import (
-    pcmso_router,
-    ppra_router,
     epi_router,
     health_router,
+    pcmso_router,
+    ppra_router,
 )
 
 # Importar models para registro no SQLAlchemy
 from modules.health_occupational.models import (
-    # PCMSO
-    MedicalExam,
     ASO,
-    ComplementaryExam,
-    ExamType,
-    ExamStatus,
-    FitnessResult,
-    # PPRA
-    RiskMapping,
-    OccupationalRisk,
-    ControlMeasure,
-    RiskCategory,
-    RiskLevel,
-    RiskAgent,
     # EPI
     EPI,
+    ComplementaryExam,
+    ControlMeasure,
+    DeliveryReason,
+    EPICategory,
     EPIDelivery,
     EPIInventory,
-    EPICategory,
     EPIStatus,
-    DeliveryReason,
-)
-
-# Importar services
-from modules.health_occupational.services import (
-    PCMSOService,
-    PPRAService,
-    EPIService,
+    ExamStatus,
+    ExamType,
+    FitnessResult,
+    # PCMSO
+    MedicalExam,
+    OccupationalRisk,
+    RiskAgent,
+    RiskCategory,
+    RiskLevel,
+    # PPRA
+    RiskMapping,
 )
 
 # Importar repositories
 from modules.health_occupational.repositories import (
+    EPIRepository,
     PCMSORepository,
     PPRARepository,
-    EPIRepository,
+)
+
+# Importar services
+from modules.health_occupational.services import (
+    EPIService,
+    PCMSOService,
+    PPRAService,
 )
 
 # Criar router principal do modulo
@@ -126,3 +126,13 @@ __all__ = [
 
 __version__ = "2.0.0"
 __author__ = "Conecta PRO Team"
+
+# Registrar subscribers de eventos RH na inicialização
+try:
+    from modules.health_occupational.integrations.hr_events import register_hr_event_subscribers
+
+    register_hr_event_subscribers()
+except Exception as _e:
+    import logging as _log
+
+    _log.getLogger(__name__).warning("Health Occupational: falha ao registrar subscribers: %s", _e)

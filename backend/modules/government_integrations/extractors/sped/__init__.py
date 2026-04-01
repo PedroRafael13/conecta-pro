@@ -6,8 +6,8 @@ Inclui:
 - SPED Contábil (ECD)
 """
 
-from .sped_fiscal_extractor import ExtratorSPEDFiscal
 from .sped_contabil_extractor import ExtratorSPEDContabil
+from .sped_fiscal_extractor import ExtratorSPEDFiscal
 
 __all__ = [
     "ExtratorSPEDFiscal",

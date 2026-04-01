@@ -3,22 +3,19 @@ ComplianceRule Model - Regras de Compliance
 Sprint 33: Auditoria e Compliance
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class ComplianceFramework(str, enum.Enum):
+class ComplianceFramework(StrEnum):
     """Framework de compliance."""
+
     LGPD = "lgpd"
     GDPR = "gdpr"
     SOX = "sox"
@@ -32,8 +29,9 @@ class ComplianceFramework(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class RuleCategory(str, enum.Enum):
+class RuleCategory(StrEnum):
     """Categoria da regra."""
+
     DATA_PRIVACY = "data_privacy"
     DATA_PROTECTION = "data_protection"
     ACCESS_CONTROL = "access_control"
@@ -50,16 +48,18 @@ class RuleCategory(str, enum.Enum):
     REPORTING = "reporting"
 
 
-class RuleSeverity(str, enum.Enum):
+class RuleSeverity(StrEnum):
     """Severidade da regra."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
 
-class RuleStatus(str, enum.Enum):
+class RuleStatus(StrEnum):
     """Status da regra."""
+
     DRAFT = "draft"
     ACTIVE = "active"
     DEPRECATED = "deprecated"
@@ -71,6 +71,7 @@ class ComplianceRule(Base):
     Model para regras de compliance.
     Define requisitos regulatórios e políticas internas.
     """
+
     __tablename__ = "compliance_rules"
 
     # Primary key
@@ -164,9 +165,7 @@ class ComplianceRule(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -178,11 +177,7 @@ class ComplianceRule(Base):
         Index("ix_compliance_rules_status", "status"),
         Index("ix_compliance_rules_severity", "severity"),
         Index("ix_compliance_rules_ativo", "ativo"),
-        Index(
-            "ix_compliance_rules_framework_status",
-            "framework",
-            "status"
-        ),
+        Index("ix_compliance_rules_framework_status", "framework", "status"),
     )
 
     def __repr__(self) -> str:
@@ -195,7 +190,7 @@ class ComplianceRule(Base):
             self.effective_from = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
-    def deprecate(self, replacement_code: Optional[str] = None) -> None:
+    def deprecate(self, replacement_code: str | None = None) -> None:
         """Deprecia a regra."""
         self.status = RuleStatus.DEPRECATED
         if replacement_code:
@@ -203,14 +198,14 @@ class ComplianceRule(Base):
             self.metadata["replaced_by"] = replacement_code
         self.updated_at = datetime.utcnow()
 
-    def disable(self, reason: Optional[str] = None) -> None:
+    def disable(self, reason: str | None = None) -> None:
         """Desabilita a regra."""
         self.status = RuleStatus.DISABLED
         if reason:
             self.notes = f"Desabilitada: {reason}"
         self.updated_at = datetime.utcnow()
 
-    def approve(self, approver_id: str, notes: Optional[str] = None) -> None:
+    def approve(self, approver_id: str, notes: str | None = None) -> None:
         """Aprova a regra."""
         self.approved_by = approver_id
         self.approved_at = datetime.utcnow()

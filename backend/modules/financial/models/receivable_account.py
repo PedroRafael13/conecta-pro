@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from modules.financial.models.receivable_installment import ReceivableInstallment
 
 
-class ReceivableStatus(str, Enum):
+class ReceivableStatus(StrEnum):
     """Status da conta a receber."""
 
     PENDENTE = "pendente"  # Aguardando vencimento
@@ -43,7 +43,7 @@ class ReceivableStatus(str, Enum):
     BAIXADA = "baixada"  # Baixada (perda)
 
 
-class ReceivableType(str, Enum):
+class ReceivableType(StrEnum):
     """Tipo de conta a receber."""
 
     AVULSA = "avulsa"  # Conta avulsa
@@ -53,7 +53,7 @@ class ReceivableType(str, Enum):
     ACORDO = "acordo"  # Acordo de divida
 
 
-class ReceivablePriority(str, Enum):
+class ReceivablePriority(StrEnum):
     """Prioridade de cobranca."""
 
     BAIXA = "baixa"
@@ -62,7 +62,7 @@ class ReceivablePriority(str, Enum):
     URGENTE = "urgente"
 
 
-class RecurrenceType(str, Enum):
+class RecurrenceType(StrEnum):
     """Tipo de recorrencia."""
 
     MENSAL = "mensal"

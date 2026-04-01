@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -14,32 +14,32 @@ class ProductBase(BaseModel):
     """Schema base para produto."""
 
     name: str = Field(..., min_length=1, max_length=200)
-    short_name: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = None
-    technical_specs: Optional[str] = None
+    short_name: str | None = Field(None, max_length=50)
+    description: str | None = None
+    technical_specs: str | None = None
     product_type: ProductType = ProductType.PRODUTO
-    code: Optional[str] = Field(None, max_length=50)
-    barcode: Optional[str] = Field(None, max_length=50)
+    code: str | None = Field(None, max_length=50)
+    barcode: str | None = Field(None, max_length=50)
     unit_of_measure: UnitOfMeasure = UnitOfMeasure.UNIDADE
     conversion_factor: Decimal = Decimal("1")
-    category_id: Optional[UUID] = None
-    reference_price: Optional[Decimal] = Field(None, ge=0)
+    category_id: UUID | None = None
+    reference_price: Decimal | None = Field(None, ge=0)
     min_stock: Decimal = Decimal("0")
-    max_stock: Optional[Decimal] = Field(None, ge=0)
-    reorder_point: Optional[Decimal] = Field(None, ge=0)
-    lead_time_days: Optional[str] = None
-    ncm: Optional[str] = Field(None, max_length=10)
-    cest: Optional[str] = Field(None, max_length=10)
-    origin: Optional[str] = Field(None, max_length=5)
-    cfop_default: Optional[str] = Field(None, max_length=10)
-    preferred_supplier_id: Optional[UUID] = None
-    image_url: Optional[str] = Field(None, max_length=500)
-    brand: Optional[str] = Field(None, max_length=100)
-    manufacturer: Optional[str] = Field(None, max_length=100)
-    model: Optional[str] = Field(None, max_length=100)
-    tags: List[str] = []
-    attributes: Dict[str, Any] = {}
-    notes: Optional[str] = None
+    max_stock: Decimal | None = Field(None, ge=0)
+    reorder_point: Decimal | None = Field(None, ge=0)
+    lead_time_days: str | None = None
+    ncm: str | None = Field(None, max_length=10)
+    cest: str | None = Field(None, max_length=10)
+    origin: str | None = Field(None, max_length=5)
+    cfop_default: str | None = Field(None, max_length=10)
+    preferred_supplier_id: UUID | None = None
+    image_url: str | None = Field(None, max_length=500)
+    brand: str | None = Field(None, max_length=100)
+    manufacturer: str | None = Field(None, max_length=100)
+    model: str | None = Field(None, max_length=100)
+    tags: list[str] = []
+    attributes: dict[str, Any] = {}
+    notes: str | None = None
 
 
 class ProductCreate(ProductBase):
@@ -51,30 +51,30 @@ class ProductCreate(ProductBase):
 class ProductUpdate(BaseModel):
     """Schema para atualizar produto."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    short_name: Optional[str] = None
-    description: Optional[str] = None
-    technical_specs: Optional[str] = None
-    product_type: Optional[ProductType] = None
-    status: Optional[ProductStatus] = None
-    code: Optional[str] = None
-    barcode: Optional[str] = None
-    unit_of_measure: Optional[UnitOfMeasure] = None
-    category_id: Optional[UUID] = None
-    reference_price: Optional[Decimal] = None
-    min_stock: Optional[Decimal] = None
-    max_stock: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
-    lead_time_days: Optional[str] = None
-    ncm: Optional[str] = None
-    preferred_supplier_id: Optional[UUID] = None
-    image_url: Optional[str] = None
-    brand: Optional[str] = None
-    manufacturer: Optional[str] = None
-    model: Optional[str] = None
-    tags: Optional[List[str]] = None
-    attributes: Optional[Dict[str, Any]] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    short_name: str | None = None
+    description: str | None = None
+    technical_specs: str | None = None
+    product_type: ProductType | None = None
+    status: ProductStatus | None = None
+    code: str | None = None
+    barcode: str | None = None
+    unit_of_measure: UnitOfMeasure | None = None
+    category_id: UUID | None = None
+    reference_price: Decimal | None = None
+    min_stock: Decimal | None = None
+    max_stock: Decimal | None = None
+    reorder_point: Decimal | None = None
+    lead_time_days: str | None = None
+    ncm: str | None = None
+    preferred_supplier_id: UUID | None = None
+    image_url: str | None = None
+    brand: str | None = None
+    manufacturer: str | None = None
+    model: str | None = None
+    tags: list[str] | None = None
+    attributes: dict[str, Any] | None = None
+    notes: str | None = None
 
 
 class ProductResponse(ProductBase):
@@ -83,15 +83,15 @@ class ProductResponse(ProductBase):
     id: UUID
     condominio_id: UUID
     status: ProductStatus
-    last_purchase_price: Optional[Decimal] = None
-    average_price: Optional[Decimal] = None
-    min_price: Optional[Decimal] = None
-    max_price: Optional[Decimal] = None
+    last_purchase_price: Decimal | None = None
+    average_price: Decimal | None = None
+    min_price: Decimal | None = None
+    max_price: Decimal | None = None
     total_purchases: str = "0"
-    last_purchase_at: Optional[datetime] = None
+    last_purchase_at: datetime | None = None
     is_blocked: bool = False
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
@@ -102,7 +102,7 @@ class ProductResponse(ProductBase):
 class ProductListResponse(BaseModel):
     """Schema de resposta para lista de produtos."""
 
-    items: List[ProductResponse]
+    items: list[ProductResponse]
     total: int
     page: int = 1
     page_size: int = 50
@@ -114,8 +114,8 @@ class ProductStats(BaseModel):
     total_products: int = 0
     active_products: int = 0
     blocked_products: int = 0
-    by_type: Dict[str, int] = {}
-    by_category: Dict[str, int] = {}
+    by_type: dict[str, int] = {}
+    by_category: dict[str, int] = {}
     low_stock_count: int = 0
 
 
@@ -129,8 +129,8 @@ class ProductPriceHistory(BaseModel):
     """Histórico de preços do produto."""
 
     product_id: UUID
-    prices: List[Dict[str, Any]] = []
-    min_price: Optional[Decimal] = None
-    max_price: Optional[Decimal] = None
-    average_price: Optional[Decimal] = None
-    price_variation: Optional[Decimal] = None
+    prices: list[dict[str, Any]] = []
+    min_price: Decimal | None = None
+    max_price: Decimal | None = None
+    average_price: Decimal | None = None
+    price_variation: Decimal | None = None

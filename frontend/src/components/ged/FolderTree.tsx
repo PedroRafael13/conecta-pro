@@ -25,6 +25,7 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
 
   useEffect(() => {
     loadTree();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, []);
 
   const loadTree = async () => {
@@ -35,7 +36,6 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
       const treeData = buildTree(response);
       setTree(treeData);
     } catch (error) {
-      console.error('Erro ao carregar árvore de pastas:', error);
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
 
   const buildTree = (folders: Folder[]): TreeNode[] => {
     const map = new Map<string, TreeNode>();
-    const roots: TreeNode[] = [];
+    const rootIds: string[] = [];
 
     // Criar nodes
     folders.forEach((folder) => {
@@ -56,15 +56,16 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
 
     // Construir hierarquia
     folders.forEach((folder) => {
-      const node = map.get(folder.id)!;
       if (folder.parent_id && map.has(folder.parent_id)) {
-        map.get(folder.parent_id)!.children.push(node);
+        const parentNode = map.get(folder.parent_id)!;
+        const childNode = map.get(folder.id)!;
+        parentNode.children.push(childNode);
       } else {
-        roots.push(node);
+        rootIds.push(folder.id);
       }
     });
 
-    return roots;
+    return rootIds.map((id) => map.get(id)!);
   };
 
   const toggleExpand = (nodeId: string) => {

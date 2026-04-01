@@ -16,23 +16,20 @@ SPED:
 - EFD-REINF: Retenções na fonte e informações da contribuição previdenciária
 """
 
+import hashlib
+import logging
 import re
 import ssl
-import json
-import logging
 import tempfile
-import hashlib
-import base64
-import aiohttp
-import asyncio
-from lxml import etree
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Dict, List, Optional, Any, Tuple
-from io import StringIO, BytesIO
+from enum import StrEnum
+from io import StringIO
+from typing import Any
 
+import aiohttp
+from lxml import etree
 from signxml import XMLSigner, methods
 
 logger = logging.getLogger(__name__)
@@ -42,8 +39,10 @@ logger = logging.getLogger(__name__)
 # EFD-ICMS/IPI (SPED Fiscal)
 # =============================================================================
 
-class EFDICMSBloco(str, Enum):
+
+class EFDICMSBloco(StrEnum):
     """Blocos do EFD-ICMS/IPI."""
+
     BLOCO_0 = "0"  # Abertura, Identificação e Referências
     BLOCO_C = "C"  # Documentos Fiscais I - Mercadorias
     BLOCO_D = "D"  # Documentos Fiscais II - Serviços
@@ -58,8 +57,9 @@ class EFDICMSBloco(str, Enum):
 @dataclass
 class Registro0000:
     """Registro 0000 - Abertura do Arquivo Digital."""
+
     cod_ver: str = "018"  # Versão do leiaute
-    cod_fin: str = "0"    # 0=Original, 1=Substituto
+    cod_fin: str = "0"  # 0=Original, 1=Substituto
     dt_ini: date = None
     dt_fin: date = None
     nome: str = ""
@@ -71,13 +71,13 @@ class Registro0000:
     im: str = ""
     suframa: str = ""
     ind_perfil: str = "A"  # Perfil A, B ou C
-    ind_ativ: str = "1"    # 1=Industrial/Equiparado, 0=Outros
+    ind_ativ: str = "1"  # 1=Industrial/Equiparado, 0=Outros
 
     def to_line(self) -> str:
         """Gera linha do registro."""
         dt_ini_str = self.dt_ini.strftime("%d%m%Y") if self.dt_ini else ""
         dt_fin_str = self.dt_fin.strftime("%d%m%Y") if self.dt_fin else ""
-        cnpj = re.sub(r'[^\d]', '', self.cnpj)
+        cnpj = re.sub(r"[^\d]", "", self.cnpj)
 
         return f"|0000|{self.cod_ver}|{self.cod_fin}|{dt_ini_str}|{dt_fin_str}|{self.nome}|{cnpj}|{self.cpf}|{self.uf}|{self.ie}|{self.cod_mun}|{self.im}|{self.suframa}|{self.ind_perfil}|{self.ind_ativ}|"
 
@@ -85,6 +85,7 @@ class Registro0000:
 @dataclass
 class Registro0001:
     """Registro 0001 - Abertura do Bloco 0."""
+
     ind_mov: str = "0"  # 0=Com dados, 1=Sem dados
 
     def to_line(self) -> str:
@@ -94,6 +95,7 @@ class Registro0001:
 @dataclass
 class Registro0990:
     """Registro 0990 - Encerramento do Bloco 0."""
+
     qtd_lin_0: int = 0
 
     def to_line(self) -> str:
@@ -103,6 +105,7 @@ class Registro0990:
 @dataclass
 class RegistroC001:
     """Registro C001 - Abertura do Bloco C."""
+
     ind_mov: str = "0"
 
     def to_line(self) -> str:
@@ -112,16 +115,17 @@ class RegistroC001:
 @dataclass
 class RegistroC100:
     """Registro C100 - Documento Fiscal (NF-e, NF)."""
-    ind_oper: str = ""    # 0=Entrada, 1=Saída
-    ind_emit: str = ""    # 0=Própria, 1=Terceiros
-    cod_part: str = ""    # Código participante
-    cod_mod: str = "55"   # Modelo (55=NF-e)
-    cod_sit: str = "00"   # Situação (00=Regular)
+
+    ind_oper: str = ""  # 0=Entrada, 1=Saída
+    ind_emit: str = ""  # 0=Própria, 1=Terceiros
+    cod_part: str = ""  # Código participante
+    cod_mod: str = "55"  # Modelo (55=NF-e)
+    cod_sit: str = "00"  # Situação (00=Regular)
     ser: str = ""
     num_doc: str = ""
     chv_nfe: str = ""
     dt_doc: date = None
-    dt_e_s: date = None   # Data entrada/saída
+    dt_e_s: date = None  # Data entrada/saída
     vl_doc: Decimal = Decimal("0")
     ind_pgto: str = "0"
     vl_desc: Decimal = Decimal("0")
@@ -159,6 +163,7 @@ class RegistroC100:
 @dataclass
 class RegistroC990:
     """Registro C990 - Encerramento do Bloco C."""
+
     qtd_lin_c: int = 0
 
     def to_line(self) -> str:
@@ -168,6 +173,7 @@ class RegistroC990:
 @dataclass
 class Registro9001:
     """Registro 9001 - Abertura do Bloco 9."""
+
     ind_mov: str = "0"
 
     def to_line(self) -> str:
@@ -177,6 +183,7 @@ class Registro9001:
 @dataclass
 class Registro9900:
     """Registro 9900 - Registros do arquivo."""
+
     reg_blc: str = ""
     qtd_reg_blc: int = 0
 
@@ -187,6 +194,7 @@ class Registro9900:
 @dataclass
 class Registro9990:
     """Registro 9990 - Encerramento do Bloco 9."""
+
     qtd_lin_9: int = 0
 
     def to_line(self) -> str:
@@ -196,6 +204,7 @@ class Registro9990:
 @dataclass
 class Registro9999:
     """Registro 9999 - Encerramento do arquivo."""
+
     qtd_lin: int = 0
 
     def to_line(self) -> str:
@@ -206,8 +215,8 @@ class EFDICMSIPIBuilder:
     """Builder de arquivo EFD-ICMS/IPI."""
 
     def __init__(self):
-        self.registros: List[Any] = []
-        self.contadores: Dict[str, int] = {}
+        self.registros: list[Any] = []
+        self.contadores: dict[str, int] = {}
 
     def add_registro(self, registro: Any):
         """Adiciona registro ao arquivo."""
@@ -229,9 +238,11 @@ class EFDICMSIPIBuilder:
 # EFD-Contribuições (PIS/COFINS)
 # =============================================================================
 
+
 @dataclass
 class EFDContrib0000:
     """Registro 0000 - Abertura do Arquivo EFD-Contribuições."""
+
     cod_ver: str = "006"  # Versão do leiaute
     tipo_escrit: str = "0"  # 0=Original
     ind_sit_esp: str = ""
@@ -249,7 +260,7 @@ class EFDContrib0000:
     def to_line(self) -> str:
         dt_ini_str = self.dt_ini.strftime("%d%m%Y") if self.dt_ini else ""
         dt_fin_str = self.dt_fin.strftime("%d%m%Y") if self.dt_fin else ""
-        cnpj = re.sub(r'[^\d]', '', self.cnpj)
+        cnpj = re.sub(r"[^\d]", "", self.cnpj)
 
         return f"|0000|{self.cod_ver}|{self.tipo_escrit}|{self.ind_sit_esp}|{self.num_rec_anterior}|{dt_ini_str}|{dt_fin_str}|{self.nome}|{cnpj}|{self.uf}|{self.cod_mun}|{self.suframa}|{self.ind_nat_pj}|{self.ind_ativ}|"
 
@@ -258,7 +269,7 @@ class EFDContribuicoesBuilder:
     """Builder de arquivo EFD-Contribuições."""
 
     def __init__(self):
-        self.registros: List[Any] = []
+        self.registros: list[Any] = []
 
     def add_registro(self, registro: Any):
         """Adiciona registro ao arquivo."""
@@ -269,7 +280,7 @@ class EFDContribuicoesBuilder:
         output = StringIO()
 
         for registro in self.registros:
-            if hasattr(registro, 'to_line'):
+            if hasattr(registro, "to_line"):
                 output.write(registro.to_line() + "\n")
 
         return output.getvalue()
@@ -291,8 +302,9 @@ REINF_ENDPOINTS = {
 }
 
 
-class TipoEventoREINF(str, Enum):
+class TipoEventoREINF(StrEnum):
     """Tipos de eventos REINF."""
+
     R1000 = "R-1000"  # Informações do Contribuinte
     R1050 = "R-1050"  # Tabela de Entidades Ligadas
     R1070 = "R-1070"  # Tabela de Processos Administrativos/Judiciais
@@ -317,6 +329,7 @@ class TipoEventoREINF(str, Enum):
 @dataclass
 class ContribuinteREINF:
     """Dados do contribuinte REINF."""
+
     tipo_inscricao: str  # 1=CNPJ, 2=CPF
     numero_inscricao: str
     razao_social: str
@@ -331,6 +344,7 @@ class ContribuinteREINF:
 @dataclass
 class ServicoTomadoREINF:
     """Serviço tomado com retenção (R-2010)."""
+
     tipo_inscricao_prestador: str
     numero_inscricao_prestador: str
     razao_social_prestador: str
@@ -346,12 +360,13 @@ class ServicoTomadoREINF:
 @dataclass
 class EventoREINF:
     """Evento REINF."""
+
     tipo: TipoEventoREINF
     contribuinte: ContribuinteREINF
     periodo_apuracao: str  # AAAA-MM
-    dados_especificos: Dict[str, Any] = field(default_factory=dict)
-    protocolo: Optional[str] = None
-    numero_recibo: Optional[str] = None
+    dados_especificos: dict[str, Any] = field(default_factory=dict)
+    protocolo: str | None = None
+    numero_recibo: str | None = None
 
 
 class REINFXMLBuilder:
@@ -362,8 +377,8 @@ class REINFXMLBuilder:
 
     def build_r1000(self, contribuinte: ContribuinteREINF, ambiente: str = "2") -> str:
         """Constrói R-1000 - Informações do Contribuinte."""
-        import xml.etree.ElementTree as ET
-        from xml.dom import minidom
+        import xml.etree.ElementTree as ET  # noqa: S405
+        from xml.dom import minidom  # noqa: S408
 
         root = ET.Element("Reinf", xmlns=self.NAMESPACE)
         evt = ET.SubElement(root, "evtInfoContri")
@@ -375,7 +390,7 @@ class REINFXMLBuilder:
 
         ide_contrib = ET.SubElement(evt, "ideContri")
         ET.SubElement(ide_contrib, "tpInsc").text = contribuinte.tipo_inscricao
-        ET.SubElement(ide_contrib, "nrInsc").text = re.sub(r'[^\d]', '', contribuinte.numero_inscricao)[:8]
+        ET.SubElement(ide_contrib, "nrInsc").text = re.sub(r"[^\d]", "", contribuinte.numero_inscricao)[:8]
 
         info = ET.SubElement(evt, "infoContri")
         inclusao = ET.SubElement(info, "inclusao")
@@ -390,19 +405,15 @@ class REINFXMLBuilder:
         ET.SubElement(info_cad, "indAcordoIsenMulta").text = contribuinte.ind_acordo_isenção_multa
         ET.SubElement(info_cad, "indSitPJ").text = contribuinte.situacao_pj
 
-        rough = ET.tostring(root, encoding='unicode')
-        return minidom.parseString(rough).toprettyxml(indent="  ")
+        rough = ET.tostring(root, encoding="unicode")
+        return minidom.parseString(rough).toprettyxml(indent="  ")  # noqa: S318 - Apenas formata XML gerado internamente
 
     def build_r2010(
-        self,
-        contribuinte: ContribuinteREINF,
-        servico: ServicoTomadoREINF,
-        periodo: str,
-        ambiente: str = "2"
+        self, contribuinte: ContribuinteREINF, servico: ServicoTomadoREINF, periodo: str, ambiente: str = "2"
     ) -> str:
         """Constrói R-2010 - Retenção Serviços Tomados."""
-        import xml.etree.ElementTree as ET
-        from xml.dom import minidom
+        import xml.etree.ElementTree as ET  # noqa: S405
+        from xml.dom import minidom  # noqa: S408
 
         root = ET.Element("Reinf", xmlns=self.NAMESPACE)
         evt = ET.SubElement(root, "evtServTom")
@@ -416,15 +427,15 @@ class REINFXMLBuilder:
 
         ide_contrib = ET.SubElement(evt, "ideContri")
         ET.SubElement(ide_contrib, "tpInsc").text = contribuinte.tipo_inscricao
-        ET.SubElement(ide_contrib, "nrInsc").text = re.sub(r'[^\d]', '', contribuinte.numero_inscricao)[:8]
+        ET.SubElement(ide_contrib, "nrInsc").text = re.sub(r"[^\d]", "", contribuinte.numero_inscricao)[:8]
 
         info_serv = ET.SubElement(evt, "infoServTom")
         ide_estab = ET.SubElement(info_serv, "ideEstabObra")
         ET.SubElement(ide_estab, "tpInscEstab").text = "1"
-        ET.SubElement(ide_estab, "nrInscEstab").text = re.sub(r'[^\d]', '', contribuinte.numero_inscricao)
+        ET.SubElement(ide_estab, "nrInscEstab").text = re.sub(r"[^\d]", "", contribuinte.numero_inscricao)
 
         ide_prest = ET.SubElement(ide_estab, "idePrestServ")
-        ET.SubElement(ide_prest, "cnpjPrestador").text = re.sub(r'[^\d]', '', servico.numero_inscricao_prestador)
+        ET.SubElement(ide_prest, "cnpjPrestador").text = re.sub(r"[^\d]", "", servico.numero_inscricao_prestador)
         ET.SubElement(ide_prest, "vlrTotalBruto").text = f"{servico.valor_bruto:.2f}"
         ET.SubElement(ide_prest, "vlrTotalBaseRet").text = f"{servico.valor_bruto:.2f}"
         ET.SubElement(ide_prest, "vlrTotalRetPrinc").text = f"{servico.valor_retencao_previdenciaria:.2f}"
@@ -432,19 +443,20 @@ class REINFXMLBuilder:
         ET.SubElement(ide_prest, "vlrTotalNRetPrinc").text = f"{servico.valor_nao_retido:.2f}"
         ET.SubElement(ide_prest, "vlrTotalNRetAdworking").text = "0.00"
 
-        rough = ET.tostring(root, encoding='unicode')
-        return minidom.parseString(rough).toprettyxml(indent="  ")
+        rough = ET.tostring(root, encoding="unicode")
+        return minidom.parseString(rough).toprettyxml(indent="  ")  # noqa: S318 - Apenas formata XML gerado internamente
 
 
 @dataclass
 class SPEDResult:
     """Resultado de operação SPED."""
+
     sucesso: bool
     mensagem: str
-    arquivo: Optional[str] = None
-    xml: Optional[str] = None
-    protocolo: Optional[str] = None
-    numero_recibo: Optional[str] = None
+    arquivo: str | None = None
+    xml: str | None = None
+    protocolo: str | None = None
+    numero_recibo: str | None = None
 
 
 class SPEDManager:
@@ -460,8 +472,8 @@ class SPEDManager:
     def __init__(
         self,
         ambiente: str = "2",
-        cert_path: Optional[str] = None,
-        cert_password: Optional[str] = None,
+        cert_path: str | None = None,
+        cert_password: str | None = None,
     ):
         """Inicializa o gerenciador SPED."""
         self.ambiente = ambiente
@@ -492,15 +504,17 @@ class SPEDManager:
         builder = EFDICMSIPIBuilder()
 
         # Registro 0000 - Abertura
-        builder.add_registro(Registro0000(
-            dt_ini=data_inicio,
-            dt_fin=data_fim,
-            nome=empresa_nome,
-            cnpj=empresa_cnpj,
-            uf=empresa_uf,
-            ie=empresa_ie,
-            cod_mun=empresa_municipio,
-        ))
+        builder.add_registro(
+            Registro0000(
+                dt_ini=data_inicio,
+                dt_fin=data_fim,
+                nome=empresa_nome,
+                cnpj=empresa_cnpj,
+                uf=empresa_uf,
+                ie=empresa_ie,
+                cod_mun=empresa_municipio,
+            )
+        )
 
         # Registro 0001 - Abertura Bloco 0
         builder.add_registro(Registro0001(ind_mov="0"))
@@ -517,27 +531,29 @@ class SPEDManager:
         valor_icms: Decimal,
     ):
         """Adiciona NF-e ao EFD-ICMS/IPI."""
-        builder.add_registro(RegistroC100(
-            ind_oper=tipo_operacao,
-            ind_emit="0" if tipo_operacao == "1" else "1",
-            cod_mod="55",
-            chv_nfe=chave_nfe,
-            num_doc=chave_nfe[25:34],
-            ser=chave_nfe[22:25],
-            dt_doc=data_documento,
-            dt_e_s=data_documento,
-            vl_doc=valor_total,
-            vl_merc=valor_total,
-            vl_bc_icms=valor_total,
-            vl_icms=valor_icms,
-        ))
+        builder.add_registro(
+            RegistroC100(
+                ind_oper=tipo_operacao,
+                ind_emit="0" if tipo_operacao == "1" else "1",
+                cod_mod="55",
+                chv_nfe=chave_nfe,
+                num_doc=chave_nfe[25:34],
+                ser=chave_nfe[22:25],
+                dt_doc=data_documento,
+                dt_e_s=data_documento,
+                vl_doc=valor_total,
+                vl_merc=valor_total,
+                vl_bc_icms=valor_total,
+                vl_icms=valor_icms,
+            )
+        )
 
     def finalizar_efd_icms(self, builder: EFDICMSIPIBuilder) -> str:
         """Finaliza e gera arquivo EFD-ICMS/IPI."""
         # Encerrar blocos
-        builder.add_registro(Registro0990(qtd_lin_0=builder.contadores.get('Registro0000', 0) + 2))
+        builder.add_registro(Registro0990(qtd_lin_0=builder.contadores.get("Registro0000", 0) + 2))
         builder.add_registro(RegistroC001(ind_mov="0"))
-        builder.add_registro(RegistroC990(qtd_lin_c=builder.contadores.get('RegistroC100', 0) + 2))
+        builder.add_registro(RegistroC990(qtd_lin_c=builder.contadores.get("RegistroC100", 0) + 2))
         builder.add_registro(Registro9001(ind_mov="0"))
         builder.add_registro(Registro9990(qtd_lin_9=3))
         builder.add_registro(Registro9999(qtd_lin=len(builder.registros) + 1))
@@ -553,10 +569,7 @@ class SPEDManager:
         return self.reinf_builder.build_r1000(contribuinte, self.ambiente)
 
     def criar_evento_reinf_r2010(
-        self,
-        contribuinte: ContribuinteREINF,
-        servico: ServicoTomadoREINF,
-        periodo: str
+        self, contribuinte: ContribuinteREINF, servico: ServicoTomadoREINF, periodo: str
     ) -> str:
         """Cria evento R-2010 - Retenção Serviços Tomados."""
         return self.reinf_builder.build_r2010(contribuinte, servico, periodo, self.ambiente)
@@ -576,11 +589,11 @@ class SPEDManager:
                 cert_pem = cert_manager.get_certificate_pem()
                 key_pem = cert_manager.get_private_key_pem()
 
-                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as cert_file:
+                with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as cert_file:
                     cert_file.write(cert_pem)
                     cert_file_path = cert_file.name
 
-                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as key_file:
+                with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as key_file:
                     key_file.write(key_pem)
                     key_file_path = key_file.name
 
@@ -588,6 +601,7 @@ class SPEDManager:
 
                 # Cleanup
                 import os
+
                 os.unlink(cert_file_path)
                 os.unlink(key_file_path)
 
@@ -614,25 +628,25 @@ class SPEDManager:
         cert_manager.load()
 
         # Parse XML
-        xml_bytes = xml_evento.encode('utf-8') if isinstance(xml_evento, str) else xml_evento
+        xml_bytes = xml_evento.encode("utf-8") if isinstance(xml_evento, str) else xml_evento
         # Remove XML declaration se presente
-        xml_str = xml_bytes.decode('utf-8')
-        if xml_str.startswith('<?xml'):
-            xml_str = xml_str.split('?>', 1)[1].strip()
-        xml_bytes = xml_str.encode('utf-8')
+        xml_str = xml_bytes.decode("utf-8")
+        if xml_str.startswith("<?xml"):
+            xml_str = xml_str.split("?>", 1)[1].strip()
+        xml_bytes = xml_str.encode("utf-8")
 
         root = etree.fromstring(xml_bytes)
 
         # Encontra elemento a assinar (primeiro elemento filho de Reinf)
-        reinf_ns = root.nsmap.get(None, "http://www.reinf.esocial.gov.br/schemas/evt")
+        root.nsmap.get(None, "http://www.reinf.esocial.gov.br/schemas/evt")
 
         # Procura elemento de evento
         for child in root:
-            if 'evt' in child.tag.lower():
+            if "evt" in child.tag.lower():
                 # Adiciona Id se não existir
-                if child.get('id') is None:
-                    id_evento = f"ID{hashlib.md5(etree.tostring(child)).hexdigest()[:32].upper()}"
-                    child.set('id', id_evento)
+                if child.get("id") is None:
+                    id_evento = f"ID{hashlib.sha256(etree.tostring(child)).hexdigest()[:32].upper()}"
+                    child.set("id", id_evento)
                 break
 
         # Assina
@@ -640,18 +654,18 @@ class SPEDManager:
             method=methods.enveloped,
             signature_algorithm="rsa-sha256",
             digest_algorithm="sha256",
-            c14n_algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
+            c14n_algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
         )
 
         signed_root = signer.sign(
             root,
             key=cert_manager._private_key_crypto,
-            cert=[cert_manager._x509_cert]  # signxml espera lista de certificados
+            cert=[cert_manager._x509_cert],  # signxml espera lista de certificados
         )
 
-        return etree.tostring(signed_root, encoding='unicode', pretty_print=False)
+        return etree.tostring(signed_root, encoding="unicode", pretty_print=False)
 
-    def _criar_lote_reinf(self, eventos_assinados: List[str]) -> str:
+    def _criar_lote_reinf(self, eventos_assinados: list[str]) -> str:
         """Cria lote de eventos REINF para envio."""
         # Namespace REINF
         ns = "http://www.reinf.esocial.gov.br/schemas/envioLoteEventosAssincrono/v1_00_00"
@@ -671,20 +685,16 @@ class SPEDManager:
         for idx, evt_xml in enumerate(eventos_assinados):
             evento = etree.SubElement(eventos, f"{{{ns}}}evento")
             # ID conforme padrão: ID + tipo inscrição + nr inscrição + sequencial
-            evento.set("Id", f"ID1357104810001{idx+1:05d}")
+            evento.set("Id", f"ID1357104810001{idx + 1:05d}")
 
             # Parse evento e adiciona como subelemento
-            evt_root = etree.fromstring(evt_xml.encode('utf-8'))
+            evt_root = etree.fromstring(evt_xml.encode("utf-8"))
             evento.append(evt_root)
 
-        xml_str = etree.tostring(root, encoding='unicode')
+        xml_str = etree.tostring(root, encoding="unicode")
         return f'<?xml version="1.0" encoding="UTF-8"?>{xml_str}'
 
-    async def enviar_lote_reinf(
-        self,
-        eventos: List[str],
-        assinar: bool = True
-    ) -> SPEDResult:
+    async def enviar_lote_reinf(self, eventos: list[str], assinar: bool = True) -> SPEDResult:
         """
         Envia lote de eventos REINF.
 
@@ -719,48 +729,40 @@ class SPEDManager:
             ssl_context = self._get_ssl_context()
 
             # Headers
-            headers = {
-                "Content-Type": "application/xml",
-                "Accept": "application/xml"
-            }
+            headers = {"Content-Type": "application/xml", "Accept": "application/xml"}
 
             # Envia requisição
             connector = aiohttp.TCPConnector(ssl=ssl_context)
-            async with aiohttp.ClientSession(connector=connector) as session:
-                async with session.post(
-                    endpoint,
-                    data=lote_xml.encode('utf-8'),
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=60)
-                ) as response:
-                    response_text = await response.text()
+            async with (
+                aiohttp.ClientSession(connector=connector) as session,
+                session.post(
+                    endpoint, data=lote_xml.encode("utf-8"), headers=headers, timeout=aiohttp.ClientTimeout(total=60)
+                ) as response,
+            ):
+                response_text = await response.text()
 
-                    logger.info(f"Resposta REINF: HTTP {response.status}")
-                    logger.debug(f"Resposta body: {response_text[:500]}...")
+                logger.info(f"Resposta REINF: HTTP {response.status}")
+                logger.debug(f"Resposta body: {response_text[:500]}...")
 
-                    if response.status in (200, 201, 202):
-                        # Parse resposta
-                        resultado = self._parse_resposta_reinf(response_text)
-                        return resultado
-                    else:
-                        return SPEDResult(
-                            sucesso=False,
-                            mensagem=f"Erro HTTP {response.status}: {response_text}",
-                            xml=lote_xml
-                        )
+                if response.status in (200, 201, 202):
+                    # Parse resposta
+                    resultado = self._parse_resposta_reinf(response_text)
+                    return resultado
+                else:
+                    return SPEDResult(
+                        sucesso=False, mensagem=f"Erro HTTP {response.status}: {response_text}", xml=lote_xml
+                    )
 
         except Exception as e:
             logger.error(f"Erro ao enviar lote REINF: {e}", exc_info=True)
             return SPEDResult(
-                sucesso=False,
-                mensagem=f"Erro ao enviar: {str(e)}",
-                xml=lote_xml if 'lote_xml' in locals() else None
+                sucesso=False, mensagem=f"Erro ao enviar: {str(e)}", xml=lote_xml if "lote_xml" in locals() else None
             )
 
     def _parse_resposta_reinf(self, response_xml: str) -> SPEDResult:
         """Parse da resposta do webservice REINF."""
         try:
-            root = etree.fromstring(response_xml.encode('utf-8'))
+            root = etree.fromstring(response_xml.encode("utf-8"))
 
             # Busca elementos de resposta
             # Namespace pode variar
@@ -782,25 +784,14 @@ class SPEDManager:
                     sucesso = cod_status == "1"
 
                     return SPEDResult(
-                        sucesso=sucesso,
-                        mensagem=f"Status {cod_status}: {mensagem}",
-                        protocolo=prot,
-                        xml=response_xml
+                        sucesso=sucesso, mensagem=f"Status {cod_status}: {mensagem}", protocolo=prot, xml=response_xml
                     )
 
             # Tenta parse genérico
-            return SPEDResult(
-                sucesso=True,
-                mensagem="Resposta recebida (parse parcial)",
-                xml=response_xml
-            )
+            return SPEDResult(sucesso=True, mensagem="Resposta recebida (parse parcial)", xml=response_xml)
 
         except Exception as e:
-            return SPEDResult(
-                sucesso=False,
-                mensagem=f"Erro ao processar resposta: {e}",
-                xml=response_xml
-            )
+            return SPEDResult(sucesso=False, mensagem=f"Erro ao processar resposta: {e}", xml=response_xml)
 
     async def consultar_lote_reinf(self, protocolo: str) -> SPEDResult:
         """
@@ -818,15 +809,15 @@ class SPEDManager:
             endpoint = REINF_ENDPOINTS[ambiente_key]["consulta"]
 
             # Monta XML de consulta
-            nsmap = {
-                None: "http://www.reinf.esocial.gov.br/schemas/consultaLoteEventos/v1_00_00"
-            }
+            nsmap = {None: "http://www.reinf.esocial.gov.br/schemas/consultaLoteEventos/v1_00_00"}
 
-            root = etree.Element("{http://www.reinf.esocial.gov.br/schemas/consultaLoteEventos/v1_00_00}Reinf", nsmap=nsmap)
+            root = etree.Element(
+                "{http://www.reinf.esocial.gov.br/schemas/consultaLoteEventos/v1_00_00}Reinf", nsmap=nsmap
+            )
             consulta = etree.SubElement(root, "consultaLoteEventos")
             etree.SubElement(consulta, "protocoloEnvio").text = protocolo
 
-            consulta_str = etree.tostring(root, encoding='unicode')
+            consulta_str = etree.tostring(root, encoding="unicode")
             consulta_xml = f'<?xml version="1.0" encoding="UTF-8"?>{consulta_str}'
 
             logger.info(f"Consultando lote REINF protocolo {protocolo}")
@@ -834,37 +825,30 @@ class SPEDManager:
             # Configura SSL
             ssl_context = self._get_ssl_context()
 
-            headers = {
-                "Content-Type": "application/xml",
-                "Accept": "application/xml"
-            }
+            headers = {"Content-Type": "application/xml", "Accept": "application/xml"}
 
             connector = aiohttp.TCPConnector(ssl=ssl_context)
-            async with aiohttp.ClientSession(connector=connector) as session:
-                async with session.post(
+            async with (
+                aiohttp.ClientSession(connector=connector) as session,
+                session.post(
                     endpoint,
-                    data=consulta_xml.encode('utf-8'),
+                    data=consulta_xml.encode("utf-8"),
                     headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=60)
-                ) as response:
-                    response_text = await response.text()
+                    timeout=aiohttp.ClientTimeout(total=60),
+                ) as response,
+            ):
+                response_text = await response.text()
 
-                    logger.info(f"Resposta consulta REINF: HTTP {response.status}")
+                logger.info(f"Resposta consulta REINF: HTTP {response.status}")
 
-                    if response.status == 200:
-                        return self._parse_resposta_reinf(response_text)
-                    else:
-                        return SPEDResult(
-                            sucesso=False,
-                            mensagem=f"Erro HTTP {response.status}: {response_text}"
-                        )
+                if response.status == 200:
+                    return self._parse_resposta_reinf(response_text)
+                else:
+                    return SPEDResult(sucesso=False, mensagem=f"Erro HTTP {response.status}: {response_text}")
 
         except Exception as e:
             logger.error(f"Erro ao consultar lote REINF: {e}", exc_info=True)
-            return SPEDResult(
-                sucesso=False,
-                mensagem=f"Erro na consulta: {str(e)}"
-            )
+            return SPEDResult(sucesso=False, mensagem=f"Erro na consulta: {str(e)}")
 
     async def enviar_reinf(self, xml_evento: str) -> SPEDResult:
         """

@@ -1,20 +1,17 @@
 """Schemas Pydantic para Diaristas."""
 
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.operacional.diaristas.models.diarist import (
-    DiaristType,
     AssignmentType,
-    RecurrenceType,
     PaymentMethod,
+    RecurrenceType,
     Weekday,
 )
-
 
 # === Diarist Schemas ===
 
@@ -24,39 +21,39 @@ class DiaristBase(BaseModel):
 
     nome: str = Field(..., min_length=2, max_length=200)
     cpf: str = Field(..., min_length=11, max_length=14)
-    rg: Optional[str] = Field(None, max_length=20)
-    data_nascimento: Optional[date] = None
+    rg: str | None = Field(None, max_length=20)
+    data_nascimento: date | None = None
 
-    email: Optional[str] = Field(None, max_length=255)
-    telefone: Optional[str] = Field(None, max_length=20)
-    telefone_emergencia: Optional[str] = Field(None, max_length=20)
-    foto_url: Optional[str] = Field(None, max_length=500)
+    email: str | None = Field(None, max_length=255)
+    telefone: str | None = Field(None, max_length=20)
+    telefone_emergencia: str | None = Field(None, max_length=20)
+    foto_url: str | None = Field(None, max_length=500)
 
-    endereco: Optional[str] = Field(None, max_length=500)
-    cidade: Optional[str] = Field(None, max_length=100)
-    estado: Optional[str] = Field(None, max_length=2)
-    cep: Optional[str] = Field(None, max_length=10)
+    endereco: str | None = Field(None, max_length=500)
+    cidade: str | None = Field(None, max_length=100)
+    estado: str | None = Field(None, max_length=2)
+    cep: str | None = Field(None, max_length=10)
 
-    tipos_servico: Optional[List[str]] = Field(default_factory=list)
-    especialidades: Optional[List[str]] = Field(default_factory=list)
-    experiencia_anos: Optional[int] = Field(0, ge=0)
-    referencias: Optional[dict] = Field(default_factory=dict)
-    documentos: Optional[dict] = Field(default_factory=dict)
+    tipos_servico: list[str] | None = Field(default_factory=list)
+    especialidades: list[str] | None = Field(default_factory=list)
+    experiencia_anos: int | None = Field(0, ge=0)
+    referencias: dict | None = Field(default_factory=dict)
+    documentos: dict | None = Field(default_factory=dict)
 
-    dias_disponiveis: Optional[List[str]] = Field(default_factory=list)
-    hora_inicio_disponivel: Optional[time] = Field(default=time(8, 0))
-    hora_fim_disponivel: Optional[time] = Field(default=time(17, 0))
-    aceita_hora_extra: Optional[bool] = True
+    dias_disponiveis: list[str] | None = Field(default_factory=list)
+    hora_inicio_disponivel: time | None = Field(default=time(8, 0))
+    hora_fim_disponivel: time | None = Field(default=time(17, 0))
+    aceita_hora_extra: bool | None = True
 
-    valor_hora: Optional[Decimal] = Field(None, ge=0)
+    valor_hora: Decimal | None = Field(None, ge=0)
     valor_diaria: Decimal = Field(..., ge=0)
-    valor_hora_extra: Optional[Decimal] = Field(Decimal("25.00"), ge=0)
+    valor_hora_extra: Decimal | None = Field(Decimal("25.00"), ge=0)
 
-    banco: Optional[str] = Field(None, max_length=100)
-    agencia: Optional[str] = Field(None, max_length=20)
-    conta: Optional[str] = Field(None, max_length=30)
-    tipo_conta: Optional[str] = Field(None, max_length=20)
-    pix: Optional[str] = Field(None, max_length=100)
+    banco: str | None = Field(None, max_length=100)
+    agencia: str | None = Field(None, max_length=20)
+    conta: str | None = Field(None, max_length=30)
+    tipo_conta: str | None = Field(None, max_length=20)
+    pix: str | None = Field(None, max_length=100)
 
 
 class DiaristCreate(DiaristBase):
@@ -68,39 +65,39 @@ class DiaristCreate(DiaristBase):
 class DiaristUpdate(BaseModel):
     """Schema de atualizacao de Diarista."""
 
-    nome: Optional[str] = Field(None, min_length=2, max_length=200)
-    data_nascimento: Optional[date] = None
+    nome: str | None = Field(None, min_length=2, max_length=200)
+    data_nascimento: date | None = None
 
-    email: Optional[str] = Field(None, max_length=255)
-    telefone: Optional[str] = Field(None, max_length=20)
-    telefone_emergencia: Optional[str] = Field(None, max_length=20)
-    foto_url: Optional[str] = Field(None, max_length=500)
+    email: str | None = Field(None, max_length=255)
+    telefone: str | None = Field(None, max_length=20)
+    telefone_emergencia: str | None = Field(None, max_length=20)
+    foto_url: str | None = Field(None, max_length=500)
 
-    endereco: Optional[str] = Field(None, max_length=500)
-    cidade: Optional[str] = Field(None, max_length=100)
-    estado: Optional[str] = Field(None, max_length=2)
-    cep: Optional[str] = Field(None, max_length=10)
+    endereco: str | None = Field(None, max_length=500)
+    cidade: str | None = Field(None, max_length=100)
+    estado: str | None = Field(None, max_length=2)
+    cep: str | None = Field(None, max_length=10)
 
-    tipos_servico: Optional[List[str]] = None
-    especialidades: Optional[List[str]] = None
-    experiencia_anos: Optional[int] = Field(None, ge=0)
-    referencias: Optional[dict] = None
-    documentos: Optional[dict] = None
+    tipos_servico: list[str] | None = None
+    especialidades: list[str] | None = None
+    experiencia_anos: int | None = Field(None, ge=0)
+    referencias: dict | None = None
+    documentos: dict | None = None
 
-    dias_disponiveis: Optional[List[str]] = None
-    hora_inicio_disponivel: Optional[time] = None
-    hora_fim_disponivel: Optional[time] = None
-    aceita_hora_extra: Optional[bool] = None
+    dias_disponiveis: list[str] | None = None
+    hora_inicio_disponivel: time | None = None
+    hora_fim_disponivel: time | None = None
+    aceita_hora_extra: bool | None = None
 
-    valor_hora: Optional[Decimal] = Field(None, ge=0)
-    valor_diaria: Optional[Decimal] = Field(None, ge=0)
-    valor_hora_extra: Optional[Decimal] = Field(None, ge=0)
+    valor_hora: Decimal | None = Field(None, ge=0)
+    valor_diaria: Decimal | None = Field(None, ge=0)
+    valor_hora_extra: Decimal | None = Field(None, ge=0)
 
-    banco: Optional[str] = Field(None, max_length=100)
-    agencia: Optional[str] = Field(None, max_length=20)
-    conta: Optional[str] = Field(None, max_length=30)
-    tipo_conta: Optional[str] = Field(None, max_length=20)
-    pix: Optional[str] = Field(None, max_length=100)
+    banco: str | None = Field(None, max_length=100)
+    agencia: str | None = Field(None, max_length=20)
+    conta: str | None = Field(None, max_length=30)
+    tipo_conta: str | None = Field(None, max_length=20)
+    pix: str | None = Field(None, max_length=100)
 
 
 class DiaristResponse(BaseModel):
@@ -110,44 +107,44 @@ class DiaristResponse(BaseModel):
 
     id: UUID
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
     ativo: bool = True
 
     nome: str
     cpf: str
-    rg: Optional[str] = None
-    data_nascimento: Optional[date] = None
+    rg: str | None = None
+    data_nascimento: date | None = None
 
-    telefone: Optional[str] = None
-    telefone_emergencia: Optional[str] = None
-    email: Optional[str] = None
-    foto_url: Optional[str] = None
+    telefone: str | None = None
+    telefone_emergencia: str | None = None
+    email: str | None = None
+    foto_url: str | None = None
 
-    endereco: Optional[str] = None
-    cidade: Optional[str] = None
-    estado: Optional[str] = None
-    cep: Optional[str] = None
+    endereco: str | None = None
+    cidade: str | None = None
+    estado: str | None = None
+    cep: str | None = None
 
-    tipos_servico: List[str] = []
-    especialidades: List[str] = []
+    tipos_servico: list[str] = []
+    especialidades: list[str] = []
     experiencia_anos: int = 0
     referencias: dict = {}
     documentos: dict = {}
 
-    dias_disponiveis: List[str] = []
-    hora_inicio_disponivel: Optional[time] = None
-    hora_fim_disponivel: Optional[time] = None
+    dias_disponiveis: list[str] = []
+    hora_inicio_disponivel: time | None = None
+    hora_fim_disponivel: time | None = None
     aceita_hora_extra: bool = True
 
-    valor_hora: Optional[Decimal] = None
+    valor_hora: Decimal | None = None
     valor_diaria: Decimal
-    valor_hora_extra: Optional[Decimal] = None
+    valor_hora_extra: Decimal | None = None
 
-    banco: Optional[str] = None
-    agencia: Optional[str] = None
-    conta: Optional[str] = None
-    tipo_conta: Optional[str] = None
-    pix: Optional[str] = None
+    banco: str | None = None
+    agencia: str | None = None
+    conta: str | None = None
+    tipo_conta: str | None = None
+    pix: str | None = None
 
     status: str
 
@@ -159,7 +156,7 @@ class DiaristResponse(BaseModel):
 class DiaristListResponse(BaseModel):
     """Schema de lista de diaristas."""
 
-    items: List[DiaristResponse]
+    items: list[DiaristResponse]
     total: int
     page: int
     page_size: int
@@ -188,31 +185,31 @@ class DiaristAssignmentBase(BaseModel):
     diarist_id: UUID
     tipo: AssignmentType = AssignmentType.AVULSO
     servico_tipo: str = Field(..., max_length=50)
-    servico_descricao: Optional[str] = None
-    local_servico: Optional[str] = Field(None, max_length=200)
-    unidade_id: Optional[UUID] = None
-    area_comum: Optional[str] = Field(None, max_length=100)
+    servico_descricao: str | None = None
+    local_servico: str | None = Field(None, max_length=200)
+    unidade_id: UUID | None = None
+    area_comum: str | None = Field(None, max_length=100)
 
     data_inicio: date
-    data_fim: Optional[date] = None
-    horario_inicio: Optional[time] = Field(default=time(8, 0))
-    horario_fim: Optional[time] = Field(default=time(17, 0))
-    carga_horaria: Optional[int] = Field(8, ge=1, le=12)
+    data_fim: date | None = None
+    horario_inicio: time | None = Field(default=time(8, 0))
+    horario_fim: time | None = Field(default=time(17, 0))
+    carga_horaria: int | None = Field(8, ge=1, le=12)
 
     recorrencia: RecurrenceType = RecurrenceType.NENHUMA
-    dias_semana: Optional[List[Weekday]] = Field(default_factory=list)
-    intervalo_dias: Optional[int] = Field(None, ge=1)
-    total_ocorrencias: Optional[int] = Field(None, ge=1)
+    dias_semana: list[Weekday] | None = Field(default_factory=list)
+    intervalo_dias: int | None = Field(None, ge=1)
+    total_ocorrencias: int | None = Field(None, ge=1)
 
     valor_acordado: Decimal = Field(..., ge=0)
-    valor_adicional: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    desconto: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    forma_pagamento: Optional[PaymentMethod] = None
+    valor_adicional: Decimal | None = Field(Decimal("0"), ge=0)
+    desconto: Decimal | None = Field(Decimal("0"), ge=0)
+    forma_pagamento: PaymentMethod | None = None
 
-    contratante_nome: Optional[str] = Field(None, max_length=200)
-    instrucoes: Optional[str] = None
-    observacoes: Optional[str] = None
-    materiais_necessarios: Optional[List[str]] = Field(default_factory=list)
+    contratante_nome: str | None = Field(None, max_length=200)
+    instrucoes: str | None = None
+    observacoes: str | None = None
+    materiais_necessarios: list[str] | None = Field(default_factory=list)
 
 
 class DiaristAssignmentCreate(DiaristAssignmentBase):
@@ -224,22 +221,22 @@ class DiaristAssignmentCreate(DiaristAssignmentBase):
 class DiaristAssignmentUpdate(BaseModel):
     """Schema de atualizacao de Alocacao."""
 
-    servico_descricao: Optional[str] = None
-    local_servico: Optional[str] = Field(None, max_length=200)
-    unidade_id: Optional[UUID] = None
-    area_comum: Optional[str] = Field(None, max_length=100)
+    servico_descricao: str | None = None
+    local_servico: str | None = Field(None, max_length=200)
+    unidade_id: UUID | None = None
+    area_comum: str | None = Field(None, max_length=100)
 
-    data_fim: Optional[date] = None
-    horario_inicio: Optional[time] = None
-    horario_fim: Optional[time] = None
-    carga_horaria: Optional[int] = Field(None, ge=1, le=12)
+    data_fim: date | None = None
+    horario_inicio: time | None = None
+    horario_fim: time | None = None
+    carga_horaria: int | None = Field(None, ge=1, le=12)
 
-    valor_adicional: Optional[Decimal] = Field(None, ge=0)
-    desconto: Optional[Decimal] = Field(None, ge=0)
+    valor_adicional: Decimal | None = Field(None, ge=0)
+    desconto: Decimal | None = Field(None, ge=0)
 
-    instrucoes: Optional[str] = None
-    observacoes: Optional[str] = None
-    materiais_necessarios: Optional[List[str]] = None
+    instrucoes: str | None = None
+    observacoes: str | None = None
+    materiais_necessarios: list[str] | None = None
 
 
 class DiaristAssignmentResponse(BaseModel):
@@ -254,37 +251,37 @@ class DiaristAssignmentResponse(BaseModel):
     status: str
 
     servico_tipo: str
-    servico_descricao: Optional[str] = None
-    local_servico: Optional[str] = None
-    unidade_id: Optional[UUID] = None
-    area_comum: Optional[str] = None
+    servico_descricao: str | None = None
+    local_servico: str | None = None
+    unidade_id: UUID | None = None
+    area_comum: str | None = None
 
     data_inicio: date
-    data_fim: Optional[date] = None
-    horario_inicio: Optional[time] = None
-    horario_fim: Optional[time] = None
+    data_fim: date | None = None
+    horario_inicio: time | None = None
+    horario_fim: time | None = None
     carga_horaria: int = 8
 
     recorrencia: str
-    dias_semana: List[str] = []
-    total_ocorrencias: Optional[int] = None
+    dias_semana: list[str] = []
+    total_ocorrencias: int | None = None
     ocorrencias_realizadas: int = 0
 
     valor_acordado: Decimal
     valor_adicional: Decimal = Decimal("0")
     desconto: Decimal = Decimal("0")
-    valor_total: Optional[Decimal] = None
-    forma_pagamento: Optional[str] = None
+    valor_total: Decimal | None = None
+    forma_pagamento: str | None = None
 
-    contratante_nome: Optional[str] = None
-    aprovado_at: Optional[datetime] = None
+    contratante_nome: str | None = None
+    aprovado_at: datetime | None = None
 
-    instrucoes: Optional[str] = None
-    observacoes: Optional[str] = None
-    materiais_necessarios: List[str] = []
+    instrucoes: str | None = None
+    observacoes: str | None = None
+    materiais_necessarios: list[str] = []
 
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
 
 # === Schedule Schemas ===
@@ -294,15 +291,15 @@ class DiaristScheduleBase(BaseModel):
     """Schema base de Agenda. Campos alinhados com tabela diarist_schedules."""
 
     diarist_id: UUID
-    assignment_id: Optional[UUID] = None
-    condominio_id: Optional[UUID] = None
-    unidade_id: Optional[UUID] = None
+    assignment_id: UUID | None = None
+    condominio_id: UUID | None = None
+    unidade_id: UUID | None = None
     data_trabalho: date
-    hora_inicio: Optional[time] = time(8, 0)
-    hora_fim: Optional[time] = time(17, 0)
-    valor_previsto: Optional[Decimal] = Field(None, ge=0)
-    tarefas: Optional[List[str]] = Field(default_factory=list)
-    observacoes: Optional[str] = None
+    hora_inicio: time | None = time(8, 0)
+    hora_fim: time | None = time(17, 0)
+    valor_previsto: Decimal | None = Field(None, ge=0)
+    tarefas: list[str] | None = Field(default_factory=list)
+    observacoes: str | None = None
 
 
 class DiaristScheduleCreate(DiaristScheduleBase):
@@ -314,17 +311,17 @@ class DiaristScheduleCreate(DiaristScheduleBase):
 class DiaristScheduleUpdate(BaseModel):
     """Schema de atualizacao de Agenda."""
 
-    hora_inicio: Optional[time] = None
-    hora_fim: Optional[time] = None
+    hora_inicio: time | None = None
+    hora_fim: time | None = None
 
-    servico_descricao: Optional[str] = None
-    local_servico: Optional[str] = Field(None, max_length=200)
-    tarefas: Optional[List[str]] = None
+    servico_descricao: str | None = None
+    local_servico: str | None = Field(None, max_length=200)
+    tarefas: list[str] | None = None
 
-    valor_base: Optional[Decimal] = Field(None, ge=0)
-    valor_adicional: Optional[Decimal] = Field(None, ge=0)
-    valor_desconto: Optional[Decimal] = Field(None, ge=0)
-    observacoes: Optional[str] = None
+    valor_base: Decimal | None = Field(None, ge=0)
+    valor_adicional: Decimal | None = Field(None, ge=0)
+    valor_desconto: Decimal | None = Field(None, ge=0)
+    observacoes: str | None = None
 
 
 class DiaristScheduleResponse(BaseModel):
@@ -339,49 +336,49 @@ class DiaristScheduleResponse(BaseModel):
     id: UUID
     condominio_id: UUID
     diarist_id: UUID
-    assignment_id: Optional[UUID] = None
+    assignment_id: UUID | None = None
 
     # Campos reais do banco
     data_trabalho: date
-    hora_inicio: Optional[time] = None
-    hora_fim: Optional[time] = None
+    hora_inicio: time | None = None
+    hora_fim: time | None = None
 
-    checkin_real: Optional[datetime] = None
-    checkout_real: Optional[datetime] = None
+    checkin_real: datetime | None = None
+    checkout_real: datetime | None = None
 
     status: str
 
     # Financeiro
-    valor_previsto: Optional[Decimal] = None
-    valor_final: Optional[Decimal] = None
+    valor_previsto: Decimal | None = None
+    valor_final: Decimal | None = None
 
     # Tarefas
-    tarefas: Optional[List[str]] = []
-    observacoes: Optional[str] = None
+    tarefas: list[str] | None = []
+    observacoes: str | None = None
 
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
 
 class CheckinRequest(BaseModel):
     """Schema de check-in."""
 
     schedule_id: UUID
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    foto_url: Optional[str] = Field(None, max_length=500)
+    latitude: float | None = None
+    longitude: float | None = None
+    foto_url: str | None = Field(None, max_length=500)
 
 
 class CheckoutRequest(BaseModel):
     """Schema de check-out."""
 
     schedule_id: UUID
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    foto_url: Optional[str] = Field(None, max_length=500)
-    tarefas_concluidas: Optional[List[str]] = Field(default_factory=list)
-    ocorrencias: Optional[List[dict]] = Field(default_factory=list)
-    materiais_usados: Optional[List[dict]] = Field(default_factory=list)
+    latitude: float | None = None
+    longitude: float | None = None
+    foto_url: str | None = Field(None, max_length=500)
+    tarefas_concluidas: list[str] | None = Field(default_factory=list)
+    ocorrencias: list[dict] | None = Field(default_factory=list)
+    materiais_usados: list[dict] | None = Field(default_factory=list)
 
 
 # === Payment Schemas ===
@@ -391,31 +388,31 @@ class DiaristPaymentBase(BaseModel):
     """Schema base de Pagamento."""
 
     diarist_id: UUID
-    assignment_id: Optional[UUID] = None
+    assignment_id: UUID | None = None
 
     periodo_inicio: date
     periodo_fim: date
-    competencia: Optional[str] = Field(None, max_length=7)
+    competencia: str | None = Field(None, max_length=7)
 
     valor_diarias: Decimal = Field(..., ge=0)
-    quantidade_diarias: Optional[int] = Field(0, ge=0)
-    valor_horas_extras: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    quantidade_horas_extras: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    valor_adicional: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    descricao_adicional: Optional[str] = None
-    valor_desconto: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    descricao_desconto: Optional[str] = None
+    quantidade_diarias: int | None = Field(0, ge=0)
+    valor_horas_extras: Decimal | None = Field(Decimal("0"), ge=0)
+    quantidade_horas_extras: Decimal | None = Field(Decimal("0"), ge=0)
+    valor_adicional: Decimal | None = Field(Decimal("0"), ge=0)
+    descricao_adicional: str | None = None
+    valor_desconto: Decimal | None = Field(Decimal("0"), ge=0)
+    descricao_desconto: str | None = None
 
-    inss_retido: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    iss_retido: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    irrf_retido: Optional[Decimal] = Field(Decimal("0"), ge=0)
-    outras_retencoes: Optional[Decimal] = Field(Decimal("0"), ge=0)
+    inss_retido: Decimal | None = Field(Decimal("0"), ge=0)
+    iss_retido: Decimal | None = Field(Decimal("0"), ge=0)
+    irrf_retido: Decimal | None = Field(Decimal("0"), ge=0)
+    outras_retencoes: Decimal | None = Field(Decimal("0"), ge=0)
 
-    forma_pagamento: Optional[PaymentMethod] = None
-    data_vencimento: Optional[date] = None
-    observacoes: Optional[str] = None
+    forma_pagamento: PaymentMethod | None = None
+    data_vencimento: date | None = None
+    observacoes: str | None = None
 
-    schedules_ids: Optional[List[UUID]] = Field(default_factory=list)
+    schedules_ids: list[UUID] | None = Field(default_factory=list)
 
 
 class DiaristPaymentCreate(DiaristPaymentBase):
@@ -427,18 +424,18 @@ class DiaristPaymentCreate(DiaristPaymentBase):
 class DiaristPaymentUpdate(BaseModel):
     """Schema de atualizacao de Pagamento."""
 
-    valor_adicional: Optional[Decimal] = Field(None, ge=0)
-    descricao_adicional: Optional[str] = None
-    valor_desconto: Optional[Decimal] = Field(None, ge=0)
-    descricao_desconto: Optional[str] = None
+    valor_adicional: Decimal | None = Field(None, ge=0)
+    descricao_adicional: str | None = None
+    valor_desconto: Decimal | None = Field(None, ge=0)
+    descricao_desconto: str | None = None
 
-    inss_retido: Optional[Decimal] = Field(None, ge=0)
-    iss_retido: Optional[Decimal] = Field(None, ge=0)
-    irrf_retido: Optional[Decimal] = Field(None, ge=0)
-    outras_retencoes: Optional[Decimal] = Field(None, ge=0)
+    inss_retido: Decimal | None = Field(None, ge=0)
+    iss_retido: Decimal | None = Field(None, ge=0)
+    irrf_retido: Decimal | None = Field(None, ge=0)
+    outras_retencoes: Decimal | None = Field(None, ge=0)
 
-    data_vencimento: Optional[date] = None
-    observacoes: Optional[str] = None
+    data_vencimento: date | None = None
+    observacoes: str | None = None
 
 
 class DiaristPaymentResponse(BaseModel):
@@ -449,11 +446,11 @@ class DiaristPaymentResponse(BaseModel):
     id: UUID
     condominio_id: UUID
     diarist_id: UUID
-    assignment_id: Optional[UUID] = None
+    assignment_id: UUID | None = None
 
     periodo_inicio: date
     periodo_fim: date
-    competencia: Optional[str] = None
+    competencia: str | None = None
 
     valor_diarias: Decimal
     quantidade_diarias: int = 0
@@ -461,8 +458,8 @@ class DiaristPaymentResponse(BaseModel):
     quantidade_horas_extras: Decimal = Decimal("0")
     valor_adicional: Decimal = Decimal("0")
     valor_desconto: Decimal = Decimal("0")
-    valor_bruto: Optional[Decimal] = None
-    valor_liquido: Optional[Decimal] = None
+    valor_bruto: Decimal | None = None
+    valor_liquido: Decimal | None = None
 
     inss_retido: Decimal = Decimal("0")
     iss_retido: Decimal = Decimal("0")
@@ -470,16 +467,16 @@ class DiaristPaymentResponse(BaseModel):
     outras_retencoes: Decimal = Decimal("0")
 
     status: str
-    forma_pagamento: Optional[str] = None
-    data_vencimento: Optional[date] = None
-    data_pagamento: Optional[date] = None
-    comprovante_url: Optional[str] = None
+    forma_pagamento: str | None = None
+    data_vencimento: date | None = None
+    data_pagamento: date | None = None
+    comprovante_url: str | None = None
 
-    aprovado_at: Optional[datetime] = None
-    observacoes: Optional[str] = None
+    aprovado_at: datetime | None = None
+    observacoes: str | None = None
 
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
 
 # === Evaluation Schemas ===
@@ -489,29 +486,29 @@ class DiaristEvaluationBase(BaseModel):
     """Schema base de Avaliacao."""
 
     diarist_id: UUID
-    schedule_id: Optional[UUID] = None
+    schedule_id: UUID | None = None
 
-    avaliador_nome: Optional[str] = Field(None, max_length=200)
-    avaliador_tipo: Optional[str] = Field(None, max_length=50)
+    avaliador_nome: str | None = Field(None, max_length=200)
+    avaliador_tipo: str | None = Field(None, max_length=50)
 
     nota_geral: int = Field(..., ge=1, le=5)
-    nota_pontualidade: Optional[int] = Field(None, ge=1, le=5)
-    nota_qualidade: Optional[int] = Field(None, ge=1, le=5)
-    nota_profissionalismo: Optional[int] = Field(None, ge=1, le=5)
-    nota_comunicacao: Optional[int] = Field(None, ge=1, le=5)
-    nota_cuidado: Optional[int] = Field(None, ge=1, le=5)
+    nota_pontualidade: int | None = Field(None, ge=1, le=5)
+    nota_qualidade: int | None = Field(None, ge=1, le=5)
+    nota_profissionalismo: int | None = Field(None, ge=1, le=5)
+    nota_comunicacao: int | None = Field(None, ge=1, le=5)
+    nota_cuidado: int | None = Field(None, ge=1, le=5)
 
-    comentario: Optional[str] = None
-    pontos_positivos: Optional[List[str]] = Field(default_factory=list)
-    pontos_melhorar: Optional[List[str]] = Field(default_factory=list)
+    comentario: str | None = None
+    pontos_positivos: list[str] | None = Field(default_factory=list)
+    pontos_melhorar: list[str] | None = Field(default_factory=list)
 
-    recomendaria: Optional[bool] = True
-    contrataria_novamente: Optional[bool] = True
+    recomendaria: bool | None = True
+    contrataria_novamente: bool | None = True
 
-    servico_tipo: Optional[str] = Field(None, max_length=50)
-    data_servico: Optional[date] = None
+    servico_tipo: str | None = Field(None, max_length=50)
+    data_servico: date | None = None
 
-    is_anonima: Optional[bool] = False
+    is_anonima: bool | None = False
 
 
 class DiaristEvaluationCreate(DiaristEvaluationBase):
@@ -529,33 +526,33 @@ class DiaristEvaluationResponse(BaseModel):
     id: UUID
     condominio_id: UUID
     diarist_id: UUID
-    schedule_id: Optional[UUID] = None
+    schedule_id: UUID | None = None
 
-    avaliador_nome: Optional[str] = None
-    avaliador_tipo: Optional[str] = None
+    avaliador_nome: str | None = None
+    avaliador_tipo: str | None = None
 
     nota_geral: int
-    nota_pontualidade: Optional[int] = None
-    nota_qualidade: Optional[int] = None
-    nota_profissionalismo: Optional[int] = None
-    nota_comunicacao: Optional[int] = None
-    nota_cuidado: Optional[int] = None
+    nota_pontualidade: int | None = None
+    nota_qualidade: int | None = None
+    nota_profissionalismo: int | None = None
+    nota_comunicacao: int | None = None
+    nota_cuidado: int | None = None
 
-    comentario: Optional[str] = None
-    pontos_positivos: List[str] = []
-    pontos_melhorar: List[str] = []
+    comentario: str | None = None
+    pontos_positivos: list[str] = []
+    pontos_melhorar: list[str] = []
 
     recomendaria: bool = True
     contrataria_novamente: bool = True
 
-    servico_tipo: Optional[str] = None
-    data_servico: Optional[date] = None
+    servico_tipo: str | None = None
+    data_servico: date | None = None
 
     is_publicada: bool = True
     is_anonima: bool = False
 
-    resposta: Optional[str] = None
-    resposta_at: Optional[datetime] = None
+    resposta: str | None = None
+    resposta_at: datetime | None = None
 
     created_at: datetime
 
@@ -586,7 +583,7 @@ class DiaristAvailabilityResponse(BaseModel):
     horario_inicio: time
     horario_fim: time
     disponivel: bool
-    motivo: Optional[str] = None
+    motivo: str | None = None
 
 
 class DiaristPerformanceResponse(BaseModel):
@@ -602,16 +599,16 @@ class DiaristPerformanceResponse(BaseModel):
     media_avaliacao: float
     total_recebido: float
     tendencia: str
-    recomendacoes: List[str]
+    recomendacoes: list[str]
 
 
 class ScheduleOptimizationResponse(BaseModel):
     """Schema de otimizacao de agenda."""
 
     data: date
-    sugestoes: List[dict]
-    conflitos: List[dict]
-    recomendacoes: List[str]
+    sugestoes: list[dict]
+    conflitos: list[dict]
+    recomendacoes: list[str]
 
 
 # === Batch Schedule Schemas ===
@@ -624,9 +621,9 @@ class BatchScheduleItem(BaseModel):
     horario_inicio: str = Field(default="08:00", max_length=5)
     horario_fim: str = Field(default="17:00", max_length=5)
     servico_tipo: str = Field(default="limpeza", max_length=50)
-    servico_descricao: Optional[str] = None
-    local_servico: Optional[str] = Field(None, max_length=200)
-    observacoes: Optional[str] = None
+    servico_descricao: str | None = None
+    local_servico: str | None = Field(None, max_length=200)
+    observacoes: str | None = None
 
 
 class BatchScheduleCreate(BaseModel):
@@ -634,7 +631,7 @@ class BatchScheduleCreate(BaseModel):
 
     condominio_id: UUID
     data: date
-    items: List[BatchScheduleItem] = Field(..., min_length=1)
+    items: list[BatchScheduleItem] = Field(..., min_length=1)
 
 
 class BatchScheduleResponse(BaseModel):
@@ -642,8 +639,8 @@ class BatchScheduleResponse(BaseModel):
 
     total_criados: int = 0
     total_erros: int = 0
-    erros: List[str] = []
-    schedules: List[DiaristScheduleResponse] = []
+    erros: list[str] = []
+    schedules: list[DiaristScheduleResponse] = []
 
 
 # === Payroll (Fechamento de Folha) Schemas ===
@@ -663,10 +660,10 @@ class PayrollDiaristItem(BaseModel):
     valor_bruto: Decimal = Decimal("0")
     inss_retido: Decimal = Decimal("0")
     valor_liquido: Decimal = Decimal("0")
-    pix: Optional[str] = None
-    banco: Optional[str] = None
-    agencia: Optional[str] = None
-    conta: Optional[str] = None
+    pix: str | None = None
+    banco: str | None = None
+    agencia: str | None = None
+    conta: str | None = None
 
 
 class PayrollReportResponse(BaseModel):
@@ -680,7 +677,7 @@ class PayrollReportResponse(BaseModel):
     valor_bruto_total: Decimal = Decimal("0")
     inss_total: Decimal = Decimal("0")
     valor_liquido_total: Decimal = Decimal("0")
-    items: List[PayrollDiaristItem] = []
+    items: list[PayrollDiaristItem] = []
 
 
 class PayrollGenerateRequest(BaseModel):
@@ -688,5 +685,5 @@ class PayrollGenerateRequest(BaseModel):
 
     condominio_id: UUID
     competencia: str = Field(..., min_length=7, max_length=7)  # YYYY-MM
-    diarist_ids: Optional[List[UUID]] = None  # filtro opcional
-    forma_pagamento: Optional[str] = Field(None, max_length=30)
+    diarist_ids: list[UUID] | None = None  # filtro opcional
+    forma_pagamento: str | None = Field(None, max_length=30)

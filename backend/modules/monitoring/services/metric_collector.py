@@ -7,13 +7,14 @@ Coleta metricas do sistema de forma periodica.
 import asyncio
 import os
 import time
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import psutil
 
 from core.logging import logger
-from core.monitoring import set_gauge, observe_histogram
+from core.monitoring import observe_histogram, set_gauge
 
 
 class MetricCollectorService:
@@ -29,9 +30,9 @@ class MetricCollectorService:
 
     def __init__(self):
         self._running = False
-        self._collectors: List[Callable] = []
-        self._metrics: Dict[str, Any] = {}
-        self._last_collection: Optional[datetime] = None
+        self._collectors: list[Callable] = []
+        self._metrics: dict[str, Any] = {}
+        self._last_collection: datetime | None = None
         self._collection_interval = 15  # segundos
 
         # Registrar coletores padrao
@@ -39,17 +40,19 @@ class MetricCollectorService:
 
     def _register_default_collectors(self) -> None:
         """Registra coletores padrao."""
-        self._collectors.extend([
-            self._collect_system_metrics,
-            self._collect_process_metrics,
-        ])
+        self._collectors.extend(
+            [
+                self._collect_system_metrics,
+                self._collect_process_metrics,
+            ]
+        )
 
     def register_collector(self, collector: Callable) -> None:
         """Registra um novo coletor de metricas."""
         self._collectors.append(collector)
         logger.debug(f"Coletor registrado: {collector.__name__}")
 
-    async def collect_all(self) -> Dict[str, Any]:
+    async def collect_all(self) -> dict[str, Any]:
         """
         Executa todos os coletores e retorna metricas.
 
@@ -82,7 +85,7 @@ class MetricCollectorService:
 
         return metrics
 
-    def _collect_system_metrics(self) -> Dict[str, float]:
+    def _collect_system_metrics(self) -> dict[str, float]:
         """Coleta metricas do sistema operacional."""
         metrics = {}
 
@@ -121,15 +124,15 @@ class MetricCollectorService:
                 net_io = psutil.net_io_counters()
                 metrics["network_bytes_sent"] = net_io.bytes_sent
                 metrics["network_bytes_recv"] = net_io.bytes_recv
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Erro ao coletar métricas de rede: {e}")
 
         except Exception as e:
             logger.error(f"Erro coletando metricas do sistema: {e}")
 
         return metrics
 
-    def _collect_process_metrics(self) -> Dict[str, float]:
+    def _collect_process_metrics(self) -> dict[str, float]:
         """Coleta metricas do processo atual."""
         metrics = {}
 
@@ -191,20 +194,20 @@ class MetricCollectorService:
         self._running = False
         logger.info("Coleta de metricas parada")
 
-    def get_latest_metrics(self) -> Dict[str, Any]:
+    def get_latest_metrics(self) -> dict[str, Any]:
         """Retorna metricas mais recentes."""
         return {
             "metrics": self._metrics,
             "last_collection": self._last_collection.isoformat() if self._last_collection else None,
         }
 
-    def get_metric(self, name: str) -> Optional[float]:
+    def get_metric(self, name: str) -> float | None:
         """Retorna valor de uma metrica especifica."""
         return self._metrics.get(name)
 
 
 # Instancia global
-_collector: Optional[MetricCollectorService] = None
+_collector: MetricCollectorService | None = None
 
 
 def get_metric_collector() -> MetricCollectorService:

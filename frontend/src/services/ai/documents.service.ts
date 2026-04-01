@@ -3,9 +3,9 @@
  * Análise inteligente de documentos: OCR, classificação, extração
  */
 
-import { getGedDocumentos } from '@/types/generated/ai/ged-documentos/ged-documentos';
+import { customInstance } from '@/lib/axios-instance';
 
-const documentsApi = getGedDocumentos();
+const BASE = '/api/v1/ged/documents/ai';
 
 /**
  * Service para análise de documentos com IA
@@ -17,11 +17,10 @@ export class DocumentsAIService {
   static async analyzeWithOCR(
     documentId: string,
     ocrText: string
-  ): Promise<any> {
-    return documentsApi.analyzeOcrApiV1GedDocumentsDocumentIdAiAnalyzeOcrPost(
-      documentId,
-      { ocr_text: ocrText }
-    );
+  ): Promise<unknown> {
+    return customInstance.post(`/api/v1/ged/documents/${documentId}/ai/analyze-ocr`, {
+      ocr_text: ocrText,
+    });
   }
 
   /**
@@ -30,8 +29,8 @@ export class DocumentsAIService {
   static async classifyDocument(
     text: string,
     fileName?: string
-  ): Promise<any> {
-    return documentsApi.classifyDocumentApiV1GedDocumentsAiClassifyPost({
+  ): Promise<unknown> {
+    return customInstance.post(`${BASE}/classify`, {
       text,
       file_name: fileName,
     });
@@ -44,8 +43,8 @@ export class DocumentsAIService {
     checksum: string,
     title: string,
     condominiumId?: string
-  ): Promise<any> {
-    return documentsApi.checkDuplicatesApiV1GedDocumentsAiCheckDuplicatesPost({
+  ): Promise<unknown> {
+    return customInstance.post(`${BASE}/check-duplicates`, {
       checksum,
       title,
       condominium_id: condominiumId,
@@ -55,8 +54,8 @@ export class DocumentsAIService {
   /**
    * Extrai palavras-chave de documentos
    */
-  static async extractKeywords(text: string, maxKeywords?: number): Promise<any> {
-    return documentsApi.extractKeywordsApiV1GedDocumentsAiExtractKeywordsPost({
+  static async extractKeywords(text: string, maxKeywords?: number): Promise<unknown> {
+    return customInstance.post(`${BASE}/extract-keywords`, {
       text,
       max_keywords: maxKeywords,
     });
@@ -65,9 +64,9 @@ export class DocumentsAIService {
   /**
    * Obtém insights sobre documentos
    */
-  static async getInsights(condominiumId?: string): Promise<any> {
-    return documentsApi.getInsightsApiV1GedDocumentsAiInsightsGet({
-      condominium_id: condominiumId,
+  static async getInsights(condominiumId?: string): Promise<unknown> {
+    return customInstance.get(`${BASE}/insights`, {
+      params: { condominium_id: condominiumId },
     });
   }
 
@@ -77,19 +76,18 @@ export class DocumentsAIService {
   static async analyzeTrends(
     condominiumId?: string,
     days?: number
-  ): Promise<any> {
-    return documentsApi.getTrendsApiV1GedDocumentsAiTrendsGet({
-      condominium_id: condominiumId,
-      days,
+  ): Promise<unknown> {
+    return customInstance.get(`${BASE}/trends`, {
+      params: { condominium_id: condominiumId, days },
     });
   }
 
   /**
    * Dashboard de métricas de documentos
    */
-  static async getDashboard(condominiumId?: string): Promise<any> {
-    return documentsApi.getAiDashboardApiV1GedDocumentsAiDashboardGet({
-      condominium_id: condominiumId,
+  static async getDashboard(condominiumId?: string): Promise<unknown> {
+    return customInstance.get(`${BASE}/dashboard`, {
+      params: { condominium_id: condominiumId },
     });
   }
 }

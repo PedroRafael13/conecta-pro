@@ -391,10 +391,7 @@ class TestDREServiceBuildLines:
             cost_center_breakdown={},
         )
 
-        revenue_lines = [
-            line for line in lines
-            if line.group_type == DREGroupType.RECEITA_BRUTA and not line.is_total
-        ]
+        revenue_lines = [line for line in lines if line.group_type == DREGroupType.RECEITA_BRUTA and not line.is_total]
         assert len(revenue_lines) == 1
         assert revenue_lines[0].current_value == Decimal("10000.00")
         assert revenue_lines[0].previous_value == Decimal("8000.00")

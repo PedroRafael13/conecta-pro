@@ -4,24 +4,25 @@ Fila de Reprocessamento para documentos com erro.
 Gerencia documentos que falharam e precisam ser reprocessados.
 """
 
-from datetime import datetime, timedelta
-from enum import Enum
-from uuid import UUID, uuid4
-from typing import Optional, List, Dict, Any
-from dataclasses import dataclass
 import json
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .error_classifier import ErroIntegracao, CategoriaErro
+from .error_classifier import CategoriaErro, ErroIntegracao
 
 logger = logging.getLogger(__name__)
 
 
 class StatusReprocessamento(Enum):
     """Status de item na fila de reprocessamento."""
+
     PENDENTE = "pendente"
     EM_PROCESSAMENTO = "em_processamento"
     SUCESSO = "sucesso"
@@ -31,18 +32,19 @@ class StatusReprocessamento(Enum):
 @dataclass
 class ItemReprocessamento:
     """Item na fila de reprocessamento."""
+
     id: UUID
     tipo_documento: str
     documento_id: UUID
     tenant_id: str
     status: StatusReprocessamento
     tentativas: int
-    proxima_tentativa: Optional[datetime]
-    ultimo_erro: Optional[Dict[str, Any]]
-    dados_originais: Dict[str, Any]
+    proxima_tentativa: datetime | None
+    ultimo_erro: dict[str, Any] | None
+    dados_originais: dict[str, Any]
     created_at: datetime
-    updated_at: Optional[datetime]
-    worker_id: Optional[str]
+    updated_at: datetime | None
+    worker_id: str | None
 
 
 class FilaReprocessamento:
@@ -67,7 +69,7 @@ class FilaReprocessamento:
         documento_id: UUID,
         tenant_id: str,
         erro: ErroIntegracao,
-        dados_originais: Dict[str, Any]
+        dados_originais: dict[str, Any],
     ) -> UUID:
         """
         Adiciona documento à fila de reprocessamento.
@@ -89,16 +91,13 @@ class FilaReprocessamento:
         if tentativa_atual >= cls.MAX_TENTATIVAS:
             status = StatusReprocessamento.FALHA_PERMANENTE
             proxima_tentativa = None
-            logger.error(
-                f"Documento {documento_id} marcado como falha permanente "
-                f"após {tentativa_atual} tentativas"
-            )
+            logger.error(f"Documento {documento_id} marcado como falha permanente após {tentativa_atual} tentativas")
         else:
             status = StatusReprocessamento.PENDENTE
 
             # Calcular delay com multiplicador por categoria
             multiplier = cls.DELAY_MULTIPLIERS.get(erro.categoria, 1.0)
-            delay = cls.INTERVALO_BASE * (2 ** tentativa_atual) * multiplier
+            delay = cls.INTERVALO_BASE * (2**tentativa_atual) * multiplier
             proxima_tentativa = datetime.utcnow() + delay
 
         item_id = uuid4()
@@ -130,7 +129,7 @@ class FilaReprocessamento:
                 "proxima": proxima_tentativa,
                 "erro": json.dumps(erro.to_dict()),
                 "dados": json.dumps(dados_originais),
-            }
+            },
         )
 
         logger.info(
@@ -142,12 +141,8 @@ class FilaReprocessamento:
 
     @classmethod
     async def obter_pendentes(
-        cls,
-        db_session: AsyncSession,
-        worker_id: str,
-        limite: int = 10,
-        tipo_documento: Optional[str] = None
-    ) -> List[ItemReprocessamento]:
+        cls, db_session: AsyncSession, worker_id: str, limite: int = 10, tipo_documento: str | None = None
+    ) -> list[ItemReprocessamento]:
         """
         Obtém itens pendentes para processamento.
 
@@ -185,18 +180,14 @@ class FilaReprocessamento:
                 "worker": worker_id,
                 "limite": limite,
                 "tipo": tipo_documento,
-            }
+            },
         )
 
         rows = result.fetchall()
         return [cls._row_to_item(row) for row in rows]
 
     @classmethod
-    async def marcar_sucesso(
-        cls,
-        db_session: AsyncSession,
-        item_id: UUID
-    ):
+    async def marcar_sucesso(cls, db_session: AsyncSession, item_id: UUID):
         """Marca item como processado com sucesso."""
         await db_session.execute(
             text("""
@@ -207,18 +198,13 @@ class FilaReprocessamento:
             {
                 "id": item_id,
                 "status": StatusReprocessamento.SUCESSO.value,
-            }
+            },
         )
 
         logger.info(f"Item {item_id} processado com sucesso")
 
     @classmethod
-    async def marcar_falha(
-        cls,
-        db_session: AsyncSession,
-        item_id: UUID,
-        erro: ErroIntegracao
-    ):
+    async def marcar_falha(cls, db_session: AsyncSession, item_id: UUID, erro: ErroIntegracao):
         """
         Marca item como falha e reagenda se possível.
 
@@ -226,8 +212,7 @@ class FilaReprocessamento:
         """
         # Obter item atual
         result = await db_session.execute(
-            text("SELECT tentativas FROM fila_reprocessamento WHERE id = :id"),
-            {"id": item_id}
+            text("SELECT tentativas FROM fila_reprocessamento WHERE id = :id"), {"id": item_id}
         )
         row = result.fetchone()
         if not row:
@@ -249,13 +234,13 @@ class FilaReprocessamento:
                     "status": StatusReprocessamento.FALHA_PERMANENTE.value,
                     "tent": tentativas,
                     "erro": json.dumps(erro.to_dict()),
-                }
+                },
             )
             logger.error(f"Item {item_id} marcado como falha permanente")
         else:
             # Reagendar
             multiplier = cls.DELAY_MULTIPLIERS.get(erro.categoria, 1.0)
-            delay = cls.INTERVALO_BASE * (2 ** tentativas) * multiplier
+            delay = cls.INTERVALO_BASE * (2**tentativas) * multiplier
             proxima = datetime.utcnow() + delay
 
             await db_session.execute(
@@ -272,19 +257,12 @@ class FilaReprocessamento:
                     "tent": tentativas,
                     "proxima": proxima,
                     "erro": json.dumps(erro.to_dict()),
-                }
+                },
             )
-            logger.warning(
-                f"Item {item_id} reagendado para {proxima} "
-                f"(tentativa {tentativas})"
-            )
+            logger.warning(f"Item {item_id} reagendado para {proxima} (tentativa {tentativas})")
 
     @classmethod
-    async def obter_estatisticas(
-        cls,
-        db_session: AsyncSession,
-        tenant_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def obter_estatisticas(cls, db_session: AsyncSession, tenant_id: str | None = None) -> dict[str, Any]:
         """Obtém estatísticas da fila de reprocessamento."""
         filtro = "WHERE tenant_id = :tenant_id" if tenant_id else ""
 
@@ -299,7 +277,7 @@ class FilaReprocessamento:
             {filtro}
             GROUP BY status, tipo_documento
             """),
-            {"tenant_id": tenant_id} if tenant_id else {}
+            {"tenant_id": tenant_id} if tenant_id else {},
         )
 
         stats = {}
@@ -316,11 +294,7 @@ class FilaReprocessamento:
         return stats
 
     @classmethod
-    async def limpar_antigos(
-        cls,
-        db_session: AsyncSession,
-        dias: int = 30
-    ) -> int:
+    async def limpar_antigos(cls, db_session: AsyncSession, dias: int = 30) -> int:
         """
         Remove itens antigos processados com sucesso.
 
@@ -340,7 +314,7 @@ class FilaReprocessamento:
             {
                 "sucesso": StatusReprocessamento.SUCESSO.value,
                 "dias": dias,
-            }
+            },
         )
 
         count = resultado.rowcount

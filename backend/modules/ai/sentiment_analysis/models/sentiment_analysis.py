@@ -4,29 +4,27 @@ Sentiment Analysis Model - Sprint 46
 Model para armazenar analises de sentimento de textos.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
-    Float,
-    Integer,
     Boolean,
+    Column,
     DateTime,
     Enum,
-    ForeignKey,
+    Float,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class SentimentType(str, enum.Enum):
+class SentimentType(StrEnum):
     """Tipos de sentimento."""
 
     VERY_POSITIVE = "very_positive"
@@ -37,7 +35,7 @@ class SentimentType(str, enum.Enum):
     MIXED = "mixed"
 
 
-class EmotionType(str, enum.Enum):
+class EmotionType(StrEnum):
     """Tipos de emocao detectada."""
 
     JOY = "joy"
@@ -57,7 +55,7 @@ class EmotionType(str, enum.Enum):
     URGENCY = "urgency"
 
 
-class SourceType(str, enum.Enum):
+class SourceType(StrEnum):
     """Tipo de fonte do texto."""
 
     TICKET = "ticket"
@@ -76,7 +74,7 @@ class SourceType(str, enum.Enum):
     OTHER = "other"
 
 
-class AnalysisStatus(str, enum.Enum):
+class AnalysisStatus(StrEnum):
     """Status da analise."""
 
     PENDING = "pending"
@@ -256,29 +254,31 @@ class SentimentAnalysis(Base):
         if self.aspects is None:
             self.aspects = []
 
-        self.aspects.append({
-            "aspect": aspect,
-            "sentiment": sentiment,
-            "score": score,
-            "mentions": mentions,
-            "detected_at": datetime.utcnow().isoformat(),
-        })
+        self.aspects.append(
+            {
+                "aspect": aspect,
+                "sentiment": sentiment,
+                "score": score,
+                "mentions": mentions,
+                "detected_at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def add_keyword(self, keyword: str, frequency: int = 1) -> None:
         """Adiciona palavra-chave."""
         if self.keywords is None:
             self.keywords = []
 
-        existing = next(
-            (k for k in self.keywords if k.get("word") == keyword), None
-        )
+        existing = next((k for k in self.keywords if k.get("word") == keyword), None)
         if existing:
             existing["frequency"] = existing.get("frequency", 0) + frequency
         else:
-            self.keywords.append({
-                "word": keyword,
-                "frequency": frequency,
-            })
+            self.keywords.append(
+                {
+                    "word": keyword,
+                    "frequency": frequency,
+                }
+            )
 
     def set_emotion_score(self, emotion: EmotionType, score: float) -> None:
         """Define score de emocao."""
@@ -289,8 +289,8 @@ class SentimentAnalysis(Base):
     def mark_reviewed(
         self,
         reviewer_id: UUID,
-        corrected_sentiment: Optional[SentimentType] = None,
-        notes: Optional[str] = None,
+        corrected_sentiment: SentimentType | None = None,
+        notes: str | None = None,
     ) -> None:
         """Marca como revisado."""
         self.is_reviewed = True
@@ -324,7 +324,7 @@ class SentimentAnalysis(Base):
 
         return min(10, max(1, priority))
 
-    def to_summary(self) -> Dict[str, Any]:
+    def to_summary(self) -> dict[str, Any]:
         """Retorna resumo da analise."""
         return {
             "id": str(self.id),

@@ -3,8 +3,8 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from modules.financial.models.bank_account import BankAccount
 
 
-class TransactionType(str, Enum):
+class TransactionType(StrEnum):
     """Tipo de movimentacao."""
 
     CREDITO = "credito"  # Entrada de dinheiro
@@ -36,7 +36,7 @@ class TransactionType(str, Enum):
     ESTORNO = "estorno"  # Estorno de operacao
 
 
-class TransactionCategory(str, Enum):
+class TransactionCategory(StrEnum):
     """Categoria da movimentacao."""
 
     # Receitas
@@ -71,7 +71,7 @@ class TransactionCategory(str, Enum):
     NAO_IDENTIFICADO = "nao_identificado"
 
 
-class TransactionStatus(str, Enum):
+class TransactionStatus(StrEnum):
     """Status da movimentacao."""
 
     PENDENTE = "pendente"
@@ -80,7 +80,7 @@ class TransactionStatus(str, Enum):
     ESTORNADA = "estornada"
 
 
-class ReconciliationStatus(str, Enum):
+class ReconciliationStatus(StrEnum):
     """Status de conciliacao."""
 
     PENDENTE = "pendente"
@@ -89,7 +89,7 @@ class ReconciliationStatus(str, Enum):
     IGNORADA = "ignorada"
 
 
-class TransactionOrigin(str, Enum):
+class TransactionOrigin(StrEnum):
     """Origem da movimentacao."""
 
     MANUAL = "manual"  # Lancamento manual
@@ -119,9 +119,7 @@ class BankTransaction(Base):
 
     # Tipo e categoria
     transaction_type = Column(String(30), nullable=False)
-    category = Column(
-        String(50), nullable=False, default=TransactionCategory.NAO_IDENTIFICADO.value
-    )
+    category = Column(String(50), nullable=False, default=TransactionCategory.NAO_IDENTIFICADO.value)
     status = Column(String(20), nullable=False, default=TransactionStatus.CONFIRMADA.value)
 
     # Valores
@@ -283,7 +281,7 @@ class BankTransaction(Base):
         self.reversed_transaction_id = reversal_id
         self.reversal_reason = reason
 
-    def reconcile(self, user_id: uuid.UUID, note: Optional[str] = None) -> None:
+    def reconcile(self, user_id: uuid.UUID, note: str | None = None) -> None:
         """Marca como conciliada."""
         self.reconciliation_status = ReconciliationStatus.CONCILIADA.value
         self.reconciled_at = datetime.utcnow()

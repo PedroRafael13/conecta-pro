@@ -3,7 +3,7 @@ Skill /alerta - Central de alertas
 """
 
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -21,7 +21,7 @@ class AlertaSkill(BaseSkill):
     def __init__(self, data_connector: Optional["DataConnector"] = None):
         super().__init__(data_connector=data_connector)
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         if not command or command == "help":
             return await self._todos(context)
 
@@ -35,7 +35,7 @@ class AlertaSkill(BaseSkill):
         handler = handlers.get(command, self._todos)
         return await handler(context)
 
-    async def _todos(self, context: Dict) -> Dict[str, Any]:
+    async def _todos(self, context: dict) -> dict[str, Any]:
         """Central de alertas - dados reais quando disponivel"""
 
         if self.has_data_connector:
@@ -47,7 +47,7 @@ class AlertaSkill(BaseSkill):
                     cob_result = await self.data_connector._get_cobertura_critica()
 
                     alertas = result.data or []
-                    total_alertas = len(alertas)
+                    len(alertas)
 
                     # Conta categorias
                     criticos = []
@@ -69,24 +69,30 @@ class AlertaSkill(BaseSkill):
                         atrasos_count = atrasos_result.total_count
                         graves = sum(1 for a in atrasos_result.data if a.get("atraso_minutos", 0) > 15)
                         if graves > 0:
-                            altos.append({
-                                "mensagem": f"{graves} atrasos > 15min hoje",
-                                "tipo": "atraso",
-                            })
+                            altos.append(
+                                {
+                                    "mensagem": f"{graves} atrasos > 15min hoje",
+                                    "tipo": "atraso",
+                                }
+                            )
                         elif atrasos_count > 0:
-                            medios.append({
-                                "mensagem": f"{atrasos_count} atrasos registrados hoje",
-                                "tipo": "atraso",
-                            })
+                            medios.append(
+                                {
+                                    "mensagem": f"{atrasos_count} atrasos registrados hoje",
+                                    "tipo": "atraso",
+                                }
+                            )
 
                     # Adiciona cobertura critica como alerta
                     if cob_result.success and cob_result.data:
                         cob_count = cob_result.total_count
                         if cob_count > 0:
-                            criticos.append({
-                                "mensagem": f"{cob_count} postos com cobertura < 80%",
-                                "tipo": "cobertura",
-                            })
+                            criticos.append(
+                                {
+                                    "mensagem": f"{cob_count} postos com cobertura < 80%",
+                                    "tipo": "cobertura",
+                                }
+                            )
 
                     # Monta resposta formatada
                     total = len(criticos) + len(altos) + len(medios)
@@ -137,7 +143,7 @@ class AlertaSkill(BaseSkill):
             "suggestions": ["/alerta urgente", "/alerta cobertura", "/alerta documentos"],
         }
 
-    async def _cobertura(self, context: Dict) -> Dict[str, Any]:
+    async def _cobertura(self, context: dict) -> dict[str, Any]:
         """Alertas de cobertura - dados reais quando disponivel"""
 
         if self.has_data_connector:
@@ -149,10 +155,7 @@ class AlertaSkill(BaseSkill):
                         for p in result.data[:10]:
                             cobertura = p.get("cobertura", 0)
                             icon = "[X]" if cobertura < 60 else "[!]"
-                            lines.append(
-                                f"- {p.get('nome', 'N/A')} ({p.get('codigo', '')}): "
-                                f"{cobertura}% {icon}"
-                            )
+                            lines.append(f"- {p.get('nome', 'N/A')} ({p.get('codigo', '')}): {cobertura}% {icon}")
                         return {
                             "response": f"""**Alertas de Cobertura** (Dados Reais)
 
@@ -172,11 +175,13 @@ class AlertaSkill(BaseSkill):
         # Fallback estatico
         return {"response": "**Alertas de Cobertura**\n\n- Centro-001: 45% [X]\n- Norte-003: 75% [!]"}
 
-    async def _documentos(self, context: Dict) -> Dict[str, Any]:
+    async def _documentos(self, context: dict) -> dict[str, Any]:
         """Documentos vencendo - estatico por enquanto"""
-        return {"response": "**Documentos Vencendo**\n\n- Joao: ASO em 3 dias\n- Maria: CNH em 5 dias\n- Carlos: NR em 7 dias"}
+        return {
+            "response": "**Documentos Vencendo**\n\n- Joao: ASO em 3 dias\n- Maria: CNH em 5 dias\n- Carlos: NR em 7 dias"
+        }
 
-    async def _atrasos(self, context: Dict) -> Dict[str, Any]:
+    async def _atrasos(self, context: dict) -> dict[str, Any]:
         """Atrasos de hoje - dados reais quando disponivel"""
 
         if self.has_data_connector:
@@ -197,7 +202,7 @@ class AlertaSkill(BaseSkill):
         # Fallback estatico
         return {"response": "**Atrasos de Hoje**\n\n- Joao Silva: +45min [X]\n- Ana Paula: +32min [!]"}
 
-    async def _urgente(self, context: Dict) -> Dict[str, Any]:
+    async def _urgente(self, context: dict) -> dict[str, Any]:
         """Alertas urgentes - dados reais quando disponivel"""
 
         if self.has_data_connector:

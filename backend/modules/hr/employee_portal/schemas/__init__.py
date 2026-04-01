@@ -1,61 +1,61 @@
 """Schemas do Portal do Funcionário."""
 
+from modules.hr.employee_portal.schemas.document import (
+    DocumentAcknowledgeRequest,
+    DocumentCreate,
+    DocumentFilterRequest,
+    DocumentListResponse,
+    DocumentResponse,
+    DocumentSignRequest,
+    DocumentSummary,
+    DocumentUpdate,
+)
+from modules.hr.employee_portal.schemas.notification import (
+    NotificationCreate,
+    NotificationListResponse,
+    NotificationMarkReadRequest,
+    NotificationPreferencesUpdate,
+    NotificationResponse,
+    NotificationSummary,
+    UnreadCountResponse,
+)
 from modules.hr.employee_portal.schemas.payslip import (
+    PaySlipContestRequest,
     PaySlipCreate,
-    PaySlipUpdate,
+    PaySlipDeductionItem,
+    PaySlipEarningItem,
+    PaySlipListResponse,
     PaySlipResponse,
     PaySlipSummary,
-    PaySlipListResponse,
-    PaySlipContestRequest,
-    PaySlipEarningItem,
-    PaySlipDeductionItem,
+    PaySlipUpdate,
+)
+from modules.hr.employee_portal.schemas.preferences import (
+    DashboardConfigSchema,
+    DashboardSettingsUpdate,
+    DeviceInfo,
+    NotificationConfigSchema,
+    PreferencesCreate,
+    PreferencesResponse,
+    PreferencesUpdate,
+    PrivacyConfigSchema,
+    PrivacySettingsUpdate,
+    SecurityConfigSchema,
+    ThemeConfigSchema,
+    TwoFactorSetupResponse,
 )
 from modules.hr.employee_portal.schemas.vacation import (
-    VacationPeriodCreate,
-    VacationPeriodResponse,
-    VacationPeriodSummary,
-    VacationRequestCreate,
-    VacationRequestUpdate,
-    VacationRequestResponse,
-    VacationRequestSummary,
-    VacationRequestListResponse,
     VacationApprovalRequest,
     VacationBalanceResponse,
     VacationCalculationRequest,
     VacationCalculationResponse,
-)
-from modules.hr.employee_portal.schemas.document import (
-    DocumentCreate,
-    DocumentUpdate,
-    DocumentResponse,
-    DocumentSummary,
-    DocumentListResponse,
-    DocumentAcknowledgeRequest,
-    DocumentSignRequest,
-    DocumentFilterRequest,
-)
-from modules.hr.employee_portal.schemas.notification import (
-    NotificationCreate,
-    NotificationResponse,
-    NotificationSummary,
-    NotificationListResponse,
-    NotificationMarkReadRequest,
-    NotificationPreferencesUpdate,
-    UnreadCountResponse,
-)
-from modules.hr.employee_portal.schemas.preferences import (
-    PreferencesCreate,
-    PreferencesUpdate,
-    PreferencesResponse,
-    ThemeConfigSchema,
-    NotificationConfigSchema,
-    DashboardConfigSchema,
-    PrivacyConfigSchema,
-    SecurityConfigSchema,
-    PrivacySettingsUpdate,
-    DashboardSettingsUpdate,
-    DeviceInfo,
-    TwoFactorSetupResponse,
+    VacationPeriodCreate,
+    VacationPeriodResponse,
+    VacationPeriodSummary,
+    VacationRequestCreate,
+    VacationRequestListResponse,
+    VacationRequestResponse,
+    VacationRequestSummary,
+    VacationRequestUpdate,
 )
 
 __all__ = [

@@ -12,79 +12,125 @@ Módulo de agendamento de tarefas com:
 - Histórico de execuções
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "sprint35_scheduler"
-down_revision: Union[str, None] = "sprint34_ai_predictions"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "sprint34_ai_predictions"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Create scheduler tables."""
     # Criar ENUMs
     task_status_enum = postgresql.ENUM(
-        "draft", "active", "paused", "disabled", "completed", "failed", "expired",
+        "draft",
+        "active",
+        "paused",
+        "disabled",
+        "completed",
+        "failed",
+        "expired",
         name="task_status",
         create_type=False,
     )
     task_status_enum.create(op.get_bind(), checkfirst=True)
 
     task_type_enum = postgresql.ENUM(
-        "cron", "interval", "once", "event", "dependency", "manual",
+        "cron",
+        "interval",
+        "once",
+        "event",
+        "dependency",
+        "manual",
         name="task_type",
         create_type=False,
     )
     task_type_enum.create(op.get_bind(), checkfirst=True)
 
     task_category_enum = postgresql.ENUM(
-        "system", "backup", "cleanup", "sync", "report", "notification",
-        "ai", "integration", "maintenance", "workflow", "custom",
+        "system",
+        "backup",
+        "cleanup",
+        "sync",
+        "report",
+        "notification",
+        "ai",
+        "integration",
+        "maintenance",
+        "workflow",
+        "custom",
         name="task_category",
         create_type=False,
     )
     task_category_enum.create(op.get_bind(), checkfirst=True)
 
     execution_status_enum = postgresql.ENUM(
-        "pending", "queued", "running", "success", "failed",
-        "timeout", "cancelled", "skipped", "retry",
+        "pending",
+        "queued",
+        "running",
+        "success",
+        "failed",
+        "timeout",
+        "cancelled",
+        "skipped",
+        "retry",
         name="execution_status",
         create_type=False,
     )
     execution_status_enum.create(op.get_bind(), checkfirst=True)
 
     queue_status_enum = postgresql.ENUM(
-        "pending", "claimed", "processing", "completed",
-        "failed", "dead", "cancelled", "deferred",
+        "pending",
+        "claimed",
+        "processing",
+        "completed",
+        "failed",
+        "dead",
+        "cancelled",
+        "deferred",
         name="queue_status",
         create_type=False,
     )
     queue_status_enum.create(op.get_bind(), checkfirst=True)
 
     queue_priority_enum = postgresql.ENUM(
-        "critical", "high", "normal", "low", "background",
+        "critical",
+        "high",
+        "normal",
+        "low",
+        "background",
         name="queue_priority",
         create_type=False,
     )
     queue_priority_enum.create(op.get_bind(), checkfirst=True)
 
     worker_status_enum = postgresql.ENUM(
-        "starting", "idle", "busy", "paused", "draining",
-        "stopping", "stopped", "offline", "error",
+        "starting",
+        "idle",
+        "busy",
+        "paused",
+        "draining",
+        "stopping",
+        "stopped",
+        "offline",
+        "error",
         name="worker_status",
         create_type=False,
     )
     worker_status_enum.create(op.get_bind(), checkfirst=True)
 
     lock_status_enum = postgresql.ENUM(
-        "acquired", "released", "expired", "stolen",
+        "acquired",
+        "released",
+        "expired",
+        "stolen",
         name="lock_status",
         create_type=False,
     )
@@ -109,8 +155,7 @@ def upgrade() -> None:
         sa.Column("interval_seconds", sa.Integer),
         sa.Column("interval_type", sa.String(20)),
         sa.Column("scheduled_at", sa.DateTime),
-        sa.Column("depends_on_task_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_tasks.id")),
+        sa.Column("depends_on_task_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("scheduler_tasks.id")),
         sa.Column("dependency_condition", sa.String(20)),
         sa.Column("valid_from", sa.DateTime),
         sa.Column("valid_until", sa.DateTime),
@@ -221,14 +266,17 @@ def upgrade() -> None:
         "scheduler_executions",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("task_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_tasks.id", ondelete="CASCADE"),
-                  nullable=False, index=True),
+        sa.Column(
+            "task_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("scheduler_tasks.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("execution_number", sa.Integer, nullable=False),
         sa.Column("run_id", sa.String(50), unique=True, index=True),
         sa.Column("status", execution_status_enum, nullable=False, server_default="pending"),
-        sa.Column("worker_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_workers.id")),
+        sa.Column("worker_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("scheduler_workers.id")),
         sa.Column("worker_hostname", sa.String(200)),
         sa.Column("worker_pid", sa.Integer),
         # Timing
@@ -282,9 +330,13 @@ def upgrade() -> None:
     op.create_table(
         "scheduler_execution_logs",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("execution_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_executions.id", ondelete="CASCADE"),
-                  nullable=False, index=True),
+        sa.Column(
+            "execution_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("scheduler_executions.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("timestamp", sa.DateTime, server_default=sa.func.now(), index=True),
         sa.Column("level", sa.String(20), nullable=False),
         sa.Column("message", sa.Text, nullable=False),
@@ -299,17 +351,12 @@ def upgrade() -> None:
         "scheduler_queue",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("queue_name", sa.String(100), nullable=False, index=True,
-                  server_default="'default'"),
+        sa.Column("queue_name", sa.String(100), nullable=False, index=True, server_default="'default'"),
         sa.Column("message_id", sa.String(100), unique=True, index=True),
-        sa.Column("task_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_tasks.id")),
-        sa.Column("execution_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_executions.id")),
-        sa.Column("status", queue_status_enum, nullable=False, index=True,
-                  server_default="pending"),
-        sa.Column("priority", queue_priority_enum, nullable=False,
-                  server_default="normal"),
+        sa.Column("task_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("scheduler_tasks.id")),
+        sa.Column("execution_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("scheduler_executions.id")),
+        sa.Column("status", queue_status_enum, nullable=False, index=True, server_default="pending"),
+        sa.Column("priority", queue_priority_enum, nullable=False, server_default="normal"),
         sa.Column("priority_value", sa.Integer, server_default="5", index=True),
         sa.Column("handler", sa.String(200), nullable=False),
         sa.Column("handler_module", sa.String(200)),
@@ -329,8 +376,7 @@ def upgrade() -> None:
         sa.Column("timeout_seconds", sa.Integer, server_default="3600"),
         sa.Column("visibility_timeout_seconds", sa.Integer, server_default="300"),
         # Claim
-        sa.Column("claimed_by", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_workers.id")),
+        sa.Column("claimed_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("scheduler_workers.id")),
         sa.Column("claimed_at", sa.DateTime),
         sa.Column("claim_expires_at", sa.DateTime),
         # Timing
@@ -367,10 +413,8 @@ def upgrade() -> None:
         sa.Column("owner_id", sa.String(200), nullable=False),
         sa.Column("owner_hostname", sa.String(200)),
         sa.Column("owner_pid", sa.Integer),
-        sa.Column("task_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_tasks.id")),
-        sa.Column("execution_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_executions.id")),
+        sa.Column("task_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("scheduler_tasks.id")),
+        sa.Column("execution_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("scheduler_executions.id")),
         sa.Column("acquired_at", sa.DateTime, server_default=sa.func.now()),
         sa.Column("expires_at", sa.DateTime, nullable=False),
         sa.Column("ttl_seconds", sa.Integer, server_default="3600"),
@@ -391,9 +435,13 @@ def upgrade() -> None:
     op.create_table(
         "scheduler_lock_waiters",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("lock_id", postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey("scheduler_locks.id", ondelete="CASCADE"),
-                  nullable=False, index=True),
+        sa.Column(
+            "lock_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("scheduler_locks.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("waiter_id", sa.String(200), nullable=False),
         sa.Column("waiter_hostname", sa.String(200)),
         sa.Column("waiter_pid", sa.Integer),

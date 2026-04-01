@@ -7,12 +7,12 @@ incluindo texto, linhas, palavras, blocos e coordenadas.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 
-class OCRProvider(str, Enum):
+class OCRProvider(StrEnum):
     """Provedores de OCR suportados."""
 
     TESSERACT = "tesseract"
@@ -24,7 +24,7 @@ class OCRProvider(str, Enum):
     CUSTOM = "custom"
 
 
-class TextOrientation(str, Enum):
+class TextOrientation(StrEnum):
     """Orientacao do texto."""
 
     HORIZONTAL = "horizontal"
@@ -32,7 +32,7 @@ class TextOrientation(str, Enum):
     ROTATED = "rotated"
 
 
-class BlockType(str, Enum):
+class BlockType(StrEnum):
     """Tipo de bloco de texto."""
 
     TEXT = "text"
@@ -68,7 +68,7 @@ class BoundingBox:
         return self.y + self.height
 
     @property
-    def center(self) -> Tuple[int, int]:
+    def center(self) -> tuple[int, int]:
         """Centro da caixa."""
         return (self.x + self.width // 2, self.y + self.height // 2)
 
@@ -83,14 +83,9 @@ class BoundingBox:
 
     def overlaps(self, other: "BoundingBox") -> bool:
         """Verifica se sobrepoe com outra caixa."""
-        return not (
-            self.x2 < other.x
-            or self.x > other.x2
-            or self.y2 < other.y
-            or self.y > other.y2
-        )
+        return not (self.x2 < other.x or self.x > other.x2 or self.y2 < other.y or self.y > other.y2)
 
-    def to_dict(self) -> Dict[str, int]:
+    def to_dict(self) -> dict[str, int]:
         """Converte para dicionario."""
         return {
             "x": self.x,
@@ -107,12 +102,12 @@ class OCRWord:
     id: str = field(default_factory=lambda: str(uuid4()))
     text: str = ""
     confidence: float = 0.0
-    bounding_box: Optional[BoundingBox] = None
-    language: Optional[str] = None
+    bounding_box: BoundingBox | None = None
+    language: str | None = None
     is_numeric: bool = False
     is_currency: bool = False
     is_date: bool = False
-    font_size: Optional[int] = None
+    font_size: int | None = None
     is_bold: bool = False
     is_italic: bool = False
 
@@ -122,11 +117,9 @@ class OCRWord:
             # Detectar numerico
             self.is_numeric = self.text.replace(".", "").replace(",", "").isdigit()
             # Detectar moeda
-            self.is_currency = any(
-                c in self.text for c in ["R$", "$", "€", "£", "¥"]
-            )
+            self.is_currency = any(c in self.text for c in ["R$", "$", "€", "£", "¥"])
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "id": self.id,
@@ -145,8 +138,8 @@ class OCRLine:
     id: str = field(default_factory=lambda: str(uuid4()))
     text: str = ""
     confidence: float = 0.0
-    bounding_box: Optional[BoundingBox] = None
-    words: List[OCRWord] = field(default_factory=list)
+    bounding_box: BoundingBox | None = None
+    words: list[OCRWord] = field(default_factory=list)
     line_number: int = 0
     is_header: bool = False
     is_footer: bool = False
@@ -170,7 +163,7 @@ class OCRLine:
             return separator.join(w.text for w in self.words)
         return self.text
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "id": self.id,
@@ -191,19 +184,19 @@ class OCRBlock:
     block_type: BlockType = BlockType.TEXT
     text: str = ""
     confidence: float = 0.0
-    bounding_box: Optional[BoundingBox] = None
-    lines: List[OCRLine] = field(default_factory=list)
+    bounding_box: BoundingBox | None = None
+    lines: list[OCRLine] = field(default_factory=list)
     page_number: int = 1
     block_number: int = 0
 
     # Para tabelas
-    rows: Optional[int] = None
-    columns: Optional[int] = None
-    cells: Optional[List[List[str]]] = None
+    rows: int | None = None
+    columns: int | None = None
+    cells: list[list[str]] | None = None
 
     # Para codigos
-    barcode_type: Optional[str] = None  # CODE128, EAN13, QR, etc
-    barcode_value: Optional[str] = None
+    barcode_type: str | None = None  # CODE128, EAN13, QR, etc
+    barcode_value: str | None = None
 
     @property
     def line_count(self) -> int:
@@ -216,7 +209,7 @@ class OCRBlock:
             return separator.join(line.get_text() for line in self.lines)
         return self.text
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         result = {
             "id": self.id,
@@ -248,11 +241,11 @@ class OCRPage:
     page_number: int = 1
     width: int = 0
     height: int = 0
-    blocks: List[OCRBlock] = field(default_factory=list)
+    blocks: list[OCRBlock] = field(default_factory=list)
     text: str = ""
     confidence: float = 0.0
-    orientation: Optional[float] = None  # Angulo de rotacao
-    language: Optional[str] = None
+    orientation: float | None = None  # Angulo de rotacao
+    language: str | None = None
 
     @property
     def block_count(self) -> int:
@@ -270,19 +263,15 @@ class OCRPage:
             return "\n\n".join(block.get_text() for block in self.blocks)
         return self.text
 
-    def get_tables(self) -> List[OCRBlock]:
+    def get_tables(self) -> list[OCRBlock]:
         """Obtem blocos de tabela."""
         return [b for b in self.blocks if b.block_type == BlockType.TABLE]
 
-    def get_barcodes(self) -> List[OCRBlock]:
+    def get_barcodes(self) -> list[OCRBlock]:
         """Obtem blocos de codigo de barras."""
-        return [
-            b
-            for b in self.blocks
-            if b.block_type in [BlockType.BARCODE, BlockType.QR_CODE]
-        ]
+        return [b for b in self.blocks if b.block_type in [BlockType.BARCODE, BlockType.QR_CODE]]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "page_number": self.page_number,
@@ -317,17 +306,17 @@ class OCRResult:
     id: str = field(default_factory=lambda: str(uuid4()))
     document_id: str = ""
     provider: OCRProvider = OCRProvider.TESSERACT
-    provider_version: Optional[str] = None
+    provider_version: str | None = None
 
     # Resultados
-    pages: List[OCRPage] = field(default_factory=list)
+    pages: list[OCRPage] = field(default_factory=list)
     full_text: str = ""
     confidence: float = 0.0
 
     # Deteccao de idioma
     language: str = "pt"
     language_confidence: float = 0.0
-    detected_languages: List[str] = field(default_factory=list)
+    detected_languages: list[str] = field(default_factory=list)
 
     # Estatisticas
     total_blocks: int = 0
@@ -346,10 +335,10 @@ class OCRResult:
     preprocessing_time_ms: int = 0
 
     # Raw response do provider
-    raw_response: Optional[Dict[str, Any]] = None
+    raw_response: dict[str, Any] | None = None
 
     # Metadados
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.utcnow)
 
     def __post_init__(self) -> None:
@@ -388,14 +377,14 @@ class OCRResult:
             return self.full_text
         return "\n\n".join(page.get_text() for page in self.pages)
 
-    def get_page(self, page_number: int) -> Optional[OCRPage]:
+    def get_page(self, page_number: int) -> OCRPage | None:
         """Obtem pagina por numero."""
         for page in self.pages:
             if page.page_number == page_number:
                 return page
         return None
 
-    def search_text(self, query: str, case_sensitive: bool = False) -> List[OCRWord]:
+    def search_text(self, query: str, case_sensitive: bool = False) -> list[OCRWord]:
         """Busca texto no documento."""
         results = []
         search_query = query if case_sensitive else query.lower()
@@ -410,7 +399,7 @@ class OCRResult:
 
         return results
 
-    def get_lines_containing(self, text: str) -> List[OCRLine]:
+    def get_lines_containing(self, text: str) -> list[OCRLine]:
         """Obtem linhas contendo texto."""
         results = []
         search_text = text.lower()
@@ -423,9 +412,7 @@ class OCRResult:
 
         return results
 
-    def get_text_near(
-        self, x: int, y: int, radius: int = 50
-    ) -> List[Tuple[OCRWord, int]]:
+    def get_text_near(self, x: int, y: int, radius: int = 50) -> list[tuple[OCRWord, int]]:
         """Obtem palavras proximas a uma coordenada."""
         results = []
 
@@ -435,22 +422,20 @@ class OCRResult:
                     for word in line.words:
                         if word.bounding_box:
                             center = word.bounding_box.center
-                            distance = (
-                                (center[0] - x) ** 2 + (center[1] - y) ** 2
-                            ) ** 0.5
+                            distance = ((center[0] - x) ** 2 + (center[1] - y) ** 2) ** 0.5
                             if distance <= radius:
                                 results.append((word, int(distance)))
 
         return sorted(results, key=lambda x: x[1])
 
-    def get_all_tables(self) -> List[OCRBlock]:
+    def get_all_tables(self) -> list[OCRBlock]:
         """Obtem todas as tabelas do documento."""
         tables = []
         for page in self.pages:
             tables.extend(page.get_tables())
         return tables
 
-    def get_all_barcodes(self) -> List[Dict[str, Any]]:
+    def get_all_barcodes(self) -> list[dict[str, Any]]:
         """Obtem todos os codigos de barra."""
         barcodes = []
         for page in self.pages:
@@ -464,7 +449,7 @@ class OCRResult:
                 )
         return barcodes
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Obtem estatisticas do OCR."""
         return {
             "provider": self.provider.value,
@@ -480,7 +465,7 @@ class OCRResult:
             "processing_time_ms": self.processing_time_ms,
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "id": self.id,

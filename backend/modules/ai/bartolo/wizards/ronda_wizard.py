@@ -17,11 +17,12 @@ Author: Conecta PRO Team
 Date: 2026-01-29
 """
 
+import logging
 from datetime import datetime
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+
+logger = logging.getLogger(__name__)
+
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep  # noqa: E402
 
 
 class RondaWizard(BaseWizard):
@@ -67,7 +68,6 @@ class RondaWizard(BaseWizard):
                     "Fim de Semana/Feriado: Inspecao em dias especiais."
                 ),
             ),
-
             # 2. Area/Setor
             WizardStep(
                 id="area",
@@ -82,7 +82,6 @@ class RondaWizard(BaseWizard):
                     "Exemplos: Portaria Principal, Bloco A, Area Externa, Estacionamento."
                 ),
             ),
-
             # 3. Inspetor Responsavel
             WizardStep(
                 id="inspetor",
@@ -92,12 +91,8 @@ class RondaWizard(BaseWizard):
                 question="Qual o nome do inspetor responsavel pela ronda?",
                 required=True,
                 validation_rules={"min_length": 5, "max_length": 200},
-                help_text=(
-                    "Informe o nome completo do inspetor, supervisor, gerente "
-                    "ou lider que realizara a ronda."
-                ),
+                help_text=("Informe o nome completo do inspetor, supervisor, gerente ou lider que realizara a ronda."),
             ),
-
             # 4. Data e Hora de Agendamento
             WizardStep(
                 id="data_agendamento",
@@ -112,17 +107,13 @@ class RondaWizard(BaseWizard):
                     "Exemplo: 30/01/2026 08:00"
                 ),
             ),
-
             # 5. Pontos de Verificacao (Checkpoints)
             WizardStep(
                 id="checkpoints",
                 name="Pontos de Verificacao",
                 description="Lista de pontos a serem verificados durante a ronda",
                 step_type=StepType.TEXT_INPUT,
-                question=(
-                    "Quais os pontos de verificacao da ronda?\n"
-                    "(Separe por virgula ou linha)"
-                ),
+                question=("Quais os pontos de verificacao da ronda?\n(Separe por virgula ou linha)"),
                 required=True,
                 validation_rules={"min_length": 5, "max_length": 1000},
                 help_text=(
@@ -135,7 +126,6 @@ class RondaWizard(BaseWizard):
                     "  Inspecionar area externa"
                 ),
             ),
-
             # 6. Observacoes (opcional)
             WizardStep(
                 id="observacoes",
@@ -150,7 +140,6 @@ class RondaWizard(BaseWizard):
                     "Exemplos: alarme desativado no bloco B, portao lateral em manutencao."
                 ),
             ),
-
             # 7. Confirmacao (revisao dos dados)
             WizardStep(
                 id="confirmacao",
@@ -210,22 +199,28 @@ class RondaWizard(BaseWizard):
         # Verificar tipo emergencial
         tipo = data.get("tipo_ronda", "")
         if tipo == "Emergencial":
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": "Ronda emergencial - prioridade alta. Notificar supervisao imediatamente.",
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": "Ronda emergencial - prioridade alta. Notificar supervisao imediatamente.",
+                }
+            )
 
         # Verificar quantidade de checkpoints
         if len(checkpoints_list) == 0:
-            alerts.append({
-                "tipo": "error",
-                "mensagem": "Nenhum ponto de verificacao definido. A ronda precisa de pelo menos 1 checkpoint.",
-            })
+            alerts.append(
+                {
+                    "tipo": "error",
+                    "mensagem": "Nenhum ponto de verificacao definido. A ronda precisa de pelo menos 1 checkpoint.",
+                }
+            )
         elif len(checkpoints_list) > 20:
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": f"{len(checkpoints_list)} checkpoints definidos. Considere dividir em mais de uma ronda.",
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": f"{len(checkpoints_list)} checkpoints definidos. Considere dividir em mais de uma ronda.",
+                }
+            )
 
         # Verificar data de agendamento
         data_str = data.get("data_agendamento", "")
@@ -236,28 +231,34 @@ class RondaWizard(BaseWizard):
                     try:
                         dt = datetime.strptime(data_str, fmt)
                         if dt < datetime.utcnow():
-                            alerts.append({
-                                "tipo": "warning",
-                                "mensagem": "Data de agendamento no passado. Verifique se esta correto.",
-                            })
+                            alerts.append(
+                                {
+                                    "tipo": "warning",
+                                    "mensagem": "Data de agendamento no passado. Verifique se esta correto.",
+                                }
+                            )
                         break
                     except ValueError:
                         continue
             except Exception:
-                pass
+                logger.debug("Erro ao analisar data/hora do agendamento")
 
         # Verificar ronda noturna
         if tipo == "Noturna":
-            alerts.append({
-                "tipo": "info",
-                "mensagem": "Ronda noturna - verificar se inspetor possui autorizacao para trabalho noturno.",
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": "Ronda noturna - verificar se inspetor possui autorizacao para trabalho noturno.",
+                }
+            )
 
         # Verificar ronda fim de semana
         if tipo == "Fim de Semana/Feriado":
-            alerts.append({
-                "tipo": "info",
-                "mensagem": "Ronda em dia especial - verificar adicional de plantao e autorizacao.",
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": "Ronda em dia especial - verificar adicional de plantao e autorizacao.",
+                }
+            )
 
         return alerts

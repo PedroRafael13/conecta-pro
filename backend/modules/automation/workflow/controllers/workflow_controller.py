@@ -4,7 +4,6 @@ Sprint 33 - Workflow Engine (Unificado).
 """
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,13 +11,14 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.automation.workflow.models import (
+    ExecutionStatus,
     Workflow,
     WorkflowCategory,
     WorkflowExecution,
     WorkflowStatus,
-    ExecutionStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,32 +28,37 @@ router = APIRouter()
 
 # ==================== Schemas ====================
 
+
 class WorkflowBase(BaseModel):
     """Schema base para workflow."""
+
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     category: WorkflowCategory = WorkflowCategory.CUSTOM
     priority: str = "NORMAL"
-    tags: Optional[List[str]] = None
+    tags: list[str] | None = None
 
 
 class WorkflowCreate(WorkflowBase):
     """Schema para criar workflow."""
+
     tenant_id: str
 
 
 class WorkflowUpdate(BaseModel):
     """Schema para atualizar workflow."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[WorkflowCategory] = None
-    workflow_status: Optional[WorkflowStatus] = Field(None, alias="status")
-    priority: Optional[str] = None
-    tags: Optional[List[str]] = None
+
+    name: str | None = None
+    description: str | None = None
+    category: WorkflowCategory | None = None
+    workflow_status: WorkflowStatus | None = Field(None, alias="status")
+    priority: str | None = None
+    tags: list[str] | None = None
 
 
 class WorkflowResponse(WorkflowBase):
     """Schema de resposta para workflow."""
+
     id: UUID
     tenant_id: UUID
     status: WorkflowStatus
@@ -68,16 +73,17 @@ class WorkflowResponse(WorkflowBase):
 
 class ExecutionResponse(BaseModel):
     """Schema de resposta para execucao."""
+
     id: UUID
     workflow_id: UUID
-    workflow_name: Optional[str]
+    workflow_name: str | None
     status: ExecutionStatus
     success: bool
     steps_total: int
     steps_completed: int
     steps_failed: int
-    execution_time_ms: Optional[int]
-    error_message: Optional[str]
+    execution_time_ms: int | None
+    error_message: str | None
 
     class Config:
         from_attributes = True
@@ -85,15 +91,17 @@ class ExecutionResponse(BaseModel):
 
 # ==================== Endpoints ====================
 
-@router.get("/", response_model=List[WorkflowResponse])
+
+@router.get("/", response_model=list[WorkflowResponse])
 async def list_workflows(
+    current_user: CurrentActiveUser,
     tenant_id: str = Query(..., description="ID do tenant"),
-    workflow_status: Optional[WorkflowStatus] = Query(None, alias="status"),
-    category: Optional[WorkflowCategory] = None,
+    workflow_status: WorkflowStatus | None = Query(None, alias="status"),
+    category: WorkflowCategory | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> List[WorkflowResponse]:
+) -> list[WorkflowResponse]:
     """Lista workflows do tenant."""
     try:
         query = select(Workflow).filter(Workflow.tenant_id == tenant_id)
@@ -110,15 +118,13 @@ async def list_workflows(
         return workflows
     except Exception as e:
         logger.error(f"Erro ao listar workflows: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao listar workflows"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar workflows")
 
 
 @router.get("/{workflow_id}", response_model=WorkflowResponse)
 async def get_workflow(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Obtem workflow por ID."""
@@ -126,16 +132,14 @@ async def get_workflow(
     result = await db.execute(query)
     workflow = result.scalar_one_or_none()
     if not workflow:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Workflow nao encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow nao encontrado")
     return workflow
 
 
 @router.post("/", response_model=WorkflowResponse, status_code=status.HTTP_201_CREATED)
 async def create_workflow(
     data: WorkflowCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Cria novo workflow."""
@@ -156,16 +160,14 @@ async def create_workflow(
     except Exception as e:
         await db.rollback()
         logger.error(f"Erro ao criar workflow: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao criar workflow"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar workflow")
 
 
 @router.patch("/{workflow_id}", response_model=WorkflowResponse)
 async def update_workflow(
     workflow_id: UUID,
     data: WorkflowUpdate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Atualiza workflow."""
@@ -173,10 +175,7 @@ async def update_workflow(
     result = await db.execute(query)
     workflow = result.scalar_one_or_none()
     if not workflow:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Workflow nao encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow nao encontrado")
 
     try:
         update_data = data.model_dump(exclude_unset=True, by_alias=False)
@@ -192,15 +191,13 @@ async def update_workflow(
     except Exception as e:
         await db.rollback()
         logger.error(f"Erro ao atualizar workflow: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao atualizar workflow"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao atualizar workflow")
 
 
 @router.delete("/{workflow_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_workflow(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Remove workflow."""
@@ -208,10 +205,7 @@ async def delete_workflow(
     result = await db.execute(query)
     workflow = result.scalar_one_or_none()
     if not workflow:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Workflow nao encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow nao encontrado")
 
     try:
         await db.delete(workflow)
@@ -220,15 +214,13 @@ async def delete_workflow(
     except Exception as e:
         await db.rollback()
         logger.error(f"Erro ao remover workflow: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao remover workflow"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao remover workflow")
 
 
 @router.post("/{workflow_id}/activate", response_model=WorkflowResponse)
 async def activate_workflow(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Ativa workflow."""
@@ -236,10 +228,7 @@ async def activate_workflow(
     result = await db.execute(query)
     workflow = result.scalar_one_or_none()
     if not workflow:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Workflow nao encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow nao encontrado")
 
     workflow.activate()
     await db.commit()
@@ -251,6 +240,7 @@ async def activate_workflow(
 @router.post("/{workflow_id}/deactivate", response_model=WorkflowResponse)
 async def deactivate_workflow(
     workflow_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Desativa workflow."""
@@ -258,10 +248,7 @@ async def deactivate_workflow(
     result = await db.execute(query)
     workflow = result.scalar_one_or_none()
     if not workflow:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Workflow nao encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow nao encontrado")
 
     workflow.deactivate()
     await db.commit()
@@ -270,14 +257,15 @@ async def deactivate_workflow(
     return workflow
 
 
-@router.get("/{workflow_id}/executions", response_model=List[ExecutionResponse])
+@router.get("/{workflow_id}/executions", response_model=list[ExecutionResponse])
 async def list_executions(
     workflow_id: UUID,
-    execution_status: Optional[ExecutionStatus] = Query(None, alias="status"),
+    current_user: CurrentActiveUser,
+    execution_status: ExecutionStatus | None = Query(None, alias="status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> List[ExecutionResponse]:
+) -> list[ExecutionResponse]:
     """Lista execucoes do workflow."""
     query = select(WorkflowExecution).filter(WorkflowExecution.workflow_id == workflow_id)
 
@@ -293,6 +281,7 @@ async def list_executions(
 @router.post("/executions/{execution_id}/cancel")
 async def cancel_execution(
     execution_id: UUID,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ):
     """Cancela execucao."""
@@ -300,16 +289,10 @@ async def cancel_execution(
     result = await db.execute(query)
     execution = result.scalar_one_or_none()
     if not execution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Execucao nao encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Execucao nao encontrada")
 
     if execution.status not in [ExecutionStatus.PENDING, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Execucao nao pode ser cancelada"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Execucao nao pode ser cancelada")
 
     execution.status = ExecutionStatus.CANCELLED
     await db.commit()

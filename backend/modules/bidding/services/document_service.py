@@ -3,18 +3,20 @@ Service de Documento da Empresa - Licitacoes
 ============================================
 """
 
+import builtins
 import logging
-from datetime import datetime, date
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from modules.bidding.models.company_document import CompanyDocument, DocumentStatus, DocumentType
 from modules.bidding.repositories.document_repository import DocumentRepository
-from modules.bidding.models.company_document import CompanyDocument, DocumentType, DocumentStatus
 from modules.bidding.schemas.document import (
-    CompanyDocumentCreate, CompanyDocumentUpdate, CompanyDocumentResponse,
-    DocumentExpiringResponse, DocumentTypeInfo
+    CompanyDocumentCreate,
+    CompanyDocumentResponse,
+    CompanyDocumentUpdate,
+    DocumentExpiringResponse,
+    DocumentTypeInfo,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,14 +49,14 @@ class DocumentService:
         self.db = db
         self.repository = DocumentRepository(db)
 
-    async def get(self, document_id: UUID) -> Optional[CompanyDocumentResponse]:
+    async def get(self, document_id: UUID) -> CompanyDocumentResponse | None:
         """Busca documento por ID."""
         doc = await self.repository.get_by_id(document_id)
         if not doc:
             return None
         return self._to_response(doc)
 
-    async def get_by_tipo(self, tipo: str) -> Optional[CompanyDocumentResponse]:
+    async def get_by_tipo(self, tipo: str) -> CompanyDocumentResponse | None:
         """Busca documento mais recente por tipo."""
         doc = await self.repository.get_by_tipo(tipo)
         if not doc:
@@ -62,31 +64,20 @@ class DocumentService:
         return self._to_response(doc)
 
     async def list(
-        self,
-        tipo: str = None,
-        status: str = None,
-        page: int = 1,
-        size: int = 50
-    ) -> Tuple[List[CompanyDocumentResponse], int]:
+        self, tipo: str = None, status: str = None, page: int = 1, size: int = 50
+    ) -> tuple[list[CompanyDocumentResponse], int]:
         """Lista documentos."""
         items, total = await self.repository.list(tipo, status, page, size)
         return [self._to_response(d) for d in items], total
 
-    async def create(
-        self,
-        data: CompanyDocumentCreate,
-        user_id: UUID = None
-    ) -> CompanyDocumentResponse:
+    async def create(self, data: CompanyDocumentCreate, user_id: UUID = None) -> CompanyDocumentResponse:
         """Cria novo documento."""
         doc = await self.repository.create(data, user_id)
         return self._to_response(doc)
 
     async def update(
-        self,
-        document_id: UUID,
-        data: CompanyDocumentUpdate,
-        user_id: UUID = None
-    ) -> Optional[CompanyDocumentResponse]:
+        self, document_id: UUID, data: CompanyDocumentUpdate, user_id: UUID = None
+    ) -> CompanyDocumentResponse | None:
         """Atualiza documento."""
         doc = await self.repository.update(document_id, data, user_id)
         if not doc:
@@ -107,7 +98,7 @@ class DocumentService:
             documentos_vencidos=[self._to_response(d) for d in expired],
             total_vencendo=len(expiring),
             total_vencidos=len(expired),
-            dias_alerta=days
+            dias_alerta=days,
         )
 
     async def verificar_habilitacao(self) -> dict:
@@ -120,7 +111,7 @@ class DocumentService:
             "documentos_ok": [],
             "documentos_pendentes": [],
             "documentos_vencidos": [],
-            "documentos_vencendo": []
+            "documentos_vencendo": [],
         }
 
         for tipo_obrigatorio in self.DOCUMENTOS_OBRIGATORIOS:
@@ -141,7 +132,7 @@ class DocumentService:
 
         return resultado
 
-    async def get_tipos_documento(self) -> List[DocumentTypeInfo]:
+    async def get_tipos_documento(self) -> builtins.list[DocumentTypeInfo]:
         """Retorna informacoes sobre tipos de documento."""
         tipos = []
         for doc_type in DocumentType:
@@ -149,13 +140,10 @@ class DocumentService:
                 tipo=doc_type.value,
                 nome=doc_type.name.replace("_", " ").title(),
                 descricao=self._get_descricao_tipo(doc_type),
-                renovacao_automatica_disponivel=doc_type in [
-                    DocumentType.CND_FEDERAL,
-                    DocumentType.CND_TRABALHISTA,
-                    DocumentType.CRF_FGTS
-                ],
+                renovacao_automatica_disponivel=doc_type
+                in [DocumentType.CND_FEDERAL, DocumentType.CND_TRABALHISTA, DocumentType.CRF_FGTS],
                 validade_padrao_dias=self.VALIDADE_PADRAO.get(doc_type.value),
-                obrigatorio_licitacao=doc_type in self.DOCUMENTOS_OBRIGATORIOS
+                obrigatorio_licitacao=doc_type in self.DOCUMENTOS_OBRIGATORIOS,
             )
             tipos.append(tipo)
         return tipos
@@ -175,7 +163,7 @@ class DocumentService:
             "documentos_vencendo": len(expiring),
             "documentos_vencidos": len(expired),
             "por_status": contagem,
-            "percentual_regularidade": (validos / total * 100) if total > 0 else 0
+            "percentual_regularidade": (validos / total * 100) if total > 0 else 0,
         }
 
     async def atualizar_todos_status(self) -> int:
@@ -208,7 +196,7 @@ class DocumentService:
             dias_para_vencer=doc.dias_para_vencer,
             esta_vencendo=doc.esta_vencendo,
             created_at=doc.created_at,
-            updated_at=doc.updated_at
+            updated_at=doc.updated_at,
         )
 
     def _get_descricao_tipo(self, tipo: DocumentType) -> str:

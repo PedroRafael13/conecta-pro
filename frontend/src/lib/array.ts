@@ -15,11 +15,10 @@ export const groupBy = <T>(
 
   return array.reduce((acc, item) => {
     const key = keyGetter(item);
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(item);
-    return acc;
+    return {
+      ...acc,
+      [key]: [...(acc[key] || []), item],
+    };
   }, {} as Record<string | number, T[]>);
 };
 
@@ -276,14 +275,21 @@ export const removeAt = <T>(array: T[], index: number): T[] => {
 };
 
 /**
- * Remove um elemento específico do array
+ * Remove um elemento específico do array (apenas a primeira ocorrência)
  */
 export const removeItem = <T>(array: T[], item: T): T[] => {
   if (!array || !Array.isArray(array)) {
     return [];
   }
 
-  return array.filter((i) => i !== item);
+  const index = array.indexOf(item);
+  if (index === -1) {
+    return [...array];
+  }
+
+  const result = [...array];
+  result.splice(index, 1);
+  return result;
 };
 
 /**

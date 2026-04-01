@@ -11,13 +11,16 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-priority
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app worker --hostname=priority@%h --queues=gov.esocial,gov.fgts --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -42,13 +45,16 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-sefaz
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app worker --hostname=sefaz@%h --queues=gov.sefaz.nfe,gov.sefaz.cte,gov.sefaz.mdfe --concurrency=3 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -73,13 +79,16 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-nfse
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app worker --hostname=nfse@%h --queues=gov.nfse --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -104,13 +113,16 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-batch
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app worker --hostname=batch@%h --queues=gov.batch --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -135,15 +147,18 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-integrations
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app worker --hostname=integrations@%h --queues=integrations,webhooks,maintenance --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/1
       LOG_LEVEL: INFO
       SOLIDES_API_TOKEN: ${SOLIDES_API_TOKEN}
       SOLIDES_WEBHOOK_SECRET: ${SOLIDES_WEBHOOK_SECRET}
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -168,13 +183,16 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-operacional
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app worker --hostname=operacional@%h --queues=operacional --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -198,15 +216,18 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-beat
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app beat --loglevel=INFO --schedule=/var/run/celery/celerybeat-schedule
     user: root
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/1
       LOG_LEVEL: INFO
       C_FORCE_ROOT: "true"
+      DATABASE_POOL_SIZE: 2
+      DATABASE_MAX_OVERFLOW: 3
     depends_on:
       redis:
         condition: service_healthy
@@ -231,15 +252,40 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-flower
     restart: unless-stopped
-    command: celery -A celery_app flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+    # CORRECAO F8: Removido --broker_api (flag exclusiva de RabbitMQ, invalida para Redis
+    # e causa falha silenciosa de inspecao). Adicionado --timeout=10 para workers lentos,
+    # --purge_offline_workers=60 para limpar workers mortos e --persistent=True para
+    # manter estado entre restarts. O broker URL e passado via variavel de ambiente.
+    command: >
+      celery -A celery_app flower
+      --port=5555
+      --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+      --timeout=10
+      --purge_offline_workers=60
+      --persistent=True
+      --db=/tmp/flower.db
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}@redis:6379/0
     ports:
       - "5555:5555"
     depends_on:
       redis:
         condition: service_healthy
+      celery-batch:
+        condition: service_started
+      celery-priority:
+        condition: service_started
+      celery-integrations:
+        condition: service_started
+      celery-operacional:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5555/healthcheck > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - conecta-pro-network
 

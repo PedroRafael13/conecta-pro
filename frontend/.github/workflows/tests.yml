@@ -1,0 +1,444 @@
+name: 🧪 Testes - CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Tipo de teste'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - unit
+          - e2e
+          - smoke
+
+env:
+  NODE_VERSION: '20'
+  PLAYWRIGHT_VERSION: '1.50.0'
+
+jobs:
+  # ===========================================
+  # JOB: Setup e Dependências
+  # ===========================================
+  setup:
+    name: 📦 Setup
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Cache dependências
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 📥 Instalar dependências
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: 📥 Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+      - name: 📥 Instalar Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+  # ===========================================
+  # JOB: Lint e Type Check
+  # ===========================================
+  lint:
+    name: 🔍 Lint & Type Check
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Restaurar cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: 📥 Instalar dependências
+        run: npm ci
+
+      - name: 🔍 Executar ESLint
+        run: npm run lint
+
+      - name: 📘 Executar Type Check
+        run: npm run type-check
+
+      - name: 💅 Verificar formatação
+        run: npm run format:check
+
+  # ===========================================
+  # JOB: Testes Unitários
+  # ===========================================
+  unit-tests:
+    name: 🧪 Testes Unitários
+    runs-on: ubuntu-latest
+    needs: [setup, lint]
+    if: ${{ github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'unit' || github.event.inputs.test_type == '' }}
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Restaurar cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: 📥 Instalar dependências
+        run: npm ci
+
+      - name: 🧪 Executar testes unitários
+        run: npm run test:run -- --reporter=verbose
+
+      - name: 📊 Gerar relatório de cobertura
+        run: npm run test:coverage
+
+      - name: 📤 Upload relatório de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # ===========================================
+  # JOB: Build da Aplicação
+  # ===========================================
+  build:
+    name: 🏗️ Build
+    runs-on: ubuntu-latest
+    needs: [setup, lint]
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Restaurar cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: 📥 Instalar dependências
+        run: npm ci
+
+      - name: 🏗️ Build da aplicação
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+
+      - name: 📤 Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: .next/
+          retention-days: 1
+
+  # ===========================================
+  # JOB: Testes E2E - Smoke
+  # ===========================================
+  e2e-smoke:
+    name: 🎭 Testes E2E - Smoke
+    runs-on: ubuntu-latest
+    needs: [build, unit-tests]
+    if: ${{ github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'smoke' || github.event.inputs.test_type == '' }}
+    timeout-minutes: 20
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Restaurar cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: 📥 Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+      - name: 📥 Instalar dependências
+        run: npm ci
+
+      - name: 📥 Instalar Playwright browsers
+        run: npx playwright install chromium
+
+      - name: 📥 Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: .next/
+
+      - name: 🎭 Executar smoke tests
+        run: npx playwright test e2e/login.spec.ts e2e/dashboard/ --reporter=list
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL || 'http://localhost:3000' }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+
+  # ===========================================
+  # JOB: Testes E2E - Módulos Críticos
+  # ===========================================
+  e2e-critical:
+    name: 🎭 Testes E2E - Críticos
+    runs-on: ubuntu-latest
+    needs: e2e-smoke
+    if: ${{ github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'e2e' || github.event.inputs.test_type == '' }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - crm
+          - operacional
+          - financial
+          - documentos
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Restaurar cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: 📥 Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+      - name: 📥 Instalar dependências
+        run: npm ci
+
+      - name: 📥 Instalar Playwright browsers
+        run: npx playwright install chromium
+
+      - name: 📥 Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: .next/
+
+      - name: 🎭 Executar testes E2E - ${{ matrix.module }}
+        run: |
+          if [ "${{ matrix.module }}" = "financial" ]; then
+            npx playwright test e2e/financial-*.spec.ts --reporter=list
+          else
+            npx playwright test e2e/${{ matrix.module }}/ --reporter=list
+          fi
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL || 'http://localhost:3000' }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+
+      - name: 📤 Upload resultados de testes
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.module }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # ===========================================
+  # JOB: Testes E2E - Módulos Secundários
+  # ===========================================
+  e2e-secondary:
+    name: 🎭 Testes E2E - Secundários
+    runs-on: ubuntu-latest
+    needs: e2e-critical
+    if: ${{ github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'e2e' }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - recrutamento
+          - configuracoes
+          - servicos
+          - agendador
+          - automacoes
+          - campo
+          - seguranca
+          - equipamentos
+          - integracoes
+          - analytics
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Restaurar cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: 📥 Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+      - name: 📥 Instalar dependências
+        run: npm ci
+
+      - name: 📥 Instalar Playwright browsers
+        run: npx playwright install chromium
+
+      - name: 📥 Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: .next/
+
+      - name: 🎭 Executar testes E2E - ${{ matrix.module }}
+        run: npx playwright test e2e/${{ matrix.module }}/ --reporter=list
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL || 'http://localhost:3000' }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+
+      - name: 📤 Upload resultados de testes
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.module }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # ===========================================
+  # JOB: Relatório Consolidado
+  # ===========================================
+  report:
+    name: 📊 Relatório Consolidado
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-smoke, e2e-critical, e2e-secondary]
+    if: always()
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 📥 Download todos os artefatos
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: 📊 Resumo dos Testes
+        run: |
+          echo "## 📊 Resumo dos Testes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎭 E2E Smoke | ${{ needs.e2e-smoke.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎭 E2E Critical | ${{ needs.e2e-critical.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎭 E2E Secondary | ${{ needs.e2e-secondary.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: ✅ Verificar Status
+        if: |
+          needs.unit-tests.result == 'failure' ||
+          needs.e2e-smoke.result == 'failure' ||
+          needs.e2e-critical.result == 'failure'
+        run: |
+          echo "❌ Alguns testes falharam!"
+          exit 1
+
+      - name: 🎉 Sucesso
+        run: |
+          echo "✅ Todos os testes passaram!"
+
+  # ===========================================
+  # JOB: Notificação
+  # ===========================================
+  notify:
+    name: 🔔 Notificação
+    runs-on: ubuntu-latest
+    needs: [report]
+    if: always()
+    steps:
+      - name: 🔔 Notificar Slack (Sucesso)
+        if: needs.report.result == 'success'
+        run: |
+          echo "✅ Testes passaram! Notificando Slack..."
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+          #   -H 'Content-Type: application/json' \
+          #   -d '{"text":"✅ Testes Conecta PRO passaram com sucesso!"}'
+
+      - name: 🔔 Notificar Slack (Falha)
+        if: needs.report.result == 'failure'
+        run: |
+          echo "❌ Testes falharam! Notificando Slack..."
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+          #   -H 'Content-Type: application/json' \
+          #   -d '{"text":"❌ Testes Conecta PRO falharam! Verifique o relatório."}'

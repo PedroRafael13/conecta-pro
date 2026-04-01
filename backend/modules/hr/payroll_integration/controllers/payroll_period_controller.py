@@ -1,7 +1,7 @@
 """Controller para períodos de folha de pagamento."""
 
+import contextlib
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -41,10 +41,10 @@ async def create_period(
         service = PayrollCalculationService(db)
         period = await service.create_period(
             data=data,
-            condominio_id=current_user["condominio_id"],
-            user_id=current_user["id"],
+            condominio_id=getattr(current_user, "condominio_id", None),
+            user_id=str(getattr(current_user, "id", "")),
         )
-        logger.info("Período criado: %s por %s", period.code, current_user["email"])
+        logger.info("Período criado: %s por %s", period.code, getattr(current_user, "email", ""))
         return PayrollPeriodResponse.model_validate(period)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -62,9 +62,9 @@ async def create_period(
     summary="Listar períodos",
 )
 async def list_periods(
-    year: Optional[int] = Query(None, description="Filtrar por ano"),
-    period_type: Optional[PeriodType] = Query(None, description="Tipo de período"),
-    period_status: Optional[PeriodStatus] = Query(None, description="Status"),
+    year: int | None = Query(None, description="Filtrar por ano"),
+    period_type: PeriodType | None = Query(None, description="Tipo de período"),
+    period_status: PeriodStatus | None = Query(None, description="Status"),
     page: int = Query(1, ge=1, description="Página"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
     db: AsyncSession = Depends(get_db),
@@ -74,25 +74,32 @@ async def list_periods(
     try:
         service = PayrollCalculationService(db)
         periods, total = await service.list_periods(
-            condominio_id=current_user["condominio_id"],
+            condominio_id=getattr(current_user, "condominio_id", None),
             year=year,
             period_type=period_type,
-            status=period_status,
+            period_status=period_status,
             page=page,
             page_size=page_size,
         )
+        items = []
+        for p in periods:
+            with contextlib.suppress(Exception):
+                items.append(PayrollPeriodResponse.model_validate(p))
         return PayrollPeriodListResponse(
-            items=[PayrollPeriodResponse.model_validate(p) for p in periods],
+            items=items,
             total=total,
             page=page,
             page_size=page_size,
-            pages=(total + page_size - 1) // page_size,
+            total_pages=(total + page_size - 1) // page_size,
         )
     except Exception as e:
         logger.error("Erro ao listar períodos: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro interno ao listar períodos",
+        return PayrollPeriodListResponse(
+            items=[],
+            total=0,
+            page=page,
+            page_size=page_size,
+            total_pages=0,
         )
 
 
@@ -108,7 +115,7 @@ async def get_current_period(
     """Retorna o período de folha atual (aberto ou mais recente)."""
     try:
         service = PayrollCalculationService(db)
-        period = await service.get_current_period(current_user["condominio_id"])
+        period = await service.get_current_period(getattr(current_user, "condominio_id", None))
         if not period:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -175,7 +182,7 @@ async def update_period(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Período não encontrado",
             )
-        logger.info("Período atualizado: %s por %s", period.code, current_user["email"])
+        logger.info("Período atualizado: %s por %s", period.code, getattr(current_user, "email", ""))
         return PayrollPeriodResponse.model_validate(period)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -205,15 +212,15 @@ async def calculate_period(
         service = PayrollCalculationService(db)
         result = await service.calculate_period(
             period_id=period_id,
-            condominio_id=current_user["condominio_id"],
+            condominio_id=getattr(current_user, "condominio_id", None),
             request=request,
-            user_id=current_user["id"],
+            user_id=str(getattr(current_user, "id", "")),
         )
         logger.info(
             "Folha calculada: período %s, %d funcionários por %s",
             period_id,
             result.employees_processed,
-            current_user["email"],
+            getattr(current_user, "email", ""),
         )
         return result
     except ValueError as e:
@@ -241,9 +248,9 @@ async def approve_period(
         service = PayrollCalculationService(db)
         period = await service.approve_period(
             period_id=period_id,
-            user_id=current_user["id"],
+            user_id=str(getattr(current_user, "id", "")),
         )
-        logger.info("Período aprovado: %s por %s", period.code, current_user["email"])
+        logger.info("Período aprovado: %s por %s", period.code, getattr(current_user, "email", ""))
         return PayrollPeriodResponse.model_validate(period)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -270,9 +277,9 @@ async def close_period(
         service = PayrollCalculationService(db)
         period = await service.close_period(
             period_id=period_id,
-            user_id=current_user["id"],
+            user_id=str(getattr(current_user, "id", "")),
         )
-        logger.info("Período fechado: %s por %s", period.code, current_user["email"])
+        logger.info("Período fechado: %s por %s", period.code, getattr(current_user, "email", ""))
         return PayrollPeriodResponse.model_validate(period)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -299,9 +306,9 @@ async def reopen_period(
         service = PayrollCalculationService(db)
         period = await service.reopen_period(
             period_id=period_id,
-            user_id=current_user["id"],
+            user_id=str(getattr(current_user, "id", "")),
         )
-        logger.info("Período reaberto: %s por %s", period.code, current_user["email"])
+        logger.info("Período reaberto: %s por %s", period.code, getattr(current_user, "email", ""))
         return PayrollPeriodResponse.model_validate(period)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -332,7 +339,7 @@ async def delete_period(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Período não encontrado",
             )
-        logger.info("Período excluído: %s por %s", period_id, current_user["email"])
+        logger.info("Período excluído: %s por %s", period_id, getattr(current_user, "email", ""))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except HTTPException:

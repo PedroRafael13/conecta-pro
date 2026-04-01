@@ -6,50 +6,51 @@ Sprint 33: Auditoria e Compliance
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.audit.models import (
-    AuditLog,
-    ComplianceRule,
-    ComplianceCheck,
-    DataRetention,
     AccessHistory,
+    AccessType,
     AuditAction,
     AuditCategory,
-    AuditSeverity,
+    AuditLog,
     AuditResult,
-    RuleStatus,
-    RuleSeverity,
-    CheckStatus,
+    AuditSeverity,
     CheckResult,
+    CheckStatus,
     CheckType,
-    RetentionStatus,
+    ComplianceCheck,
+    ComplianceRule,
     DataCategory,
-    RetentionPeriod,
+    DataRetention,
     RetentionAction,
-    AccessType,
-    AccessResult as AccessResultEnum,
+    RetentionPeriod,
+    RetentionStatus,
     RiskLevel,
+    RuleSeverity,
+    RuleStatus,
 )
+from modules.audit.models import (
+    AccessResult as AccessResultEnum,
+)
+from modules.audit.repositories import AuditRepository
 from modules.audit.schemas import (
-    AuditLogCreate,
-    AuditLogStats,
-    ComplianceRuleCreate,
-    ComplianceRuleUpdate,
-    ComplianceCheckCreate,
-    DataRetentionCreate,
-    DataRetentionUpdate,
-    DataRetentionExecution,
     AccessHistoryCreate,
     AccessHistoryStats,
     AuditDashboard,
+    AuditLogCreate,
+    AuditLogStats,
+    ComplianceCheckCreate,
     ComplianceOverview,
+    ComplianceRuleCreate,
+    ComplianceRuleUpdate,
+    DataRetentionCreate,
+    DataRetentionExecution,
+    DataRetentionUpdate,
     SecurityOverview,
 )
-from modules.audit.repositories import AuditRepository
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +64,7 @@ class AuditService:
 
     # ==================== AuditLog ====================
 
-    async def create_audit_log(
-        self,
-        data: AuditLogCreate,
-        correlation_id: Optional[str] = None
-    ) -> AuditLog:
+    async def create_audit_log(self, data: AuditLogCreate, correlation_id: str | None = None) -> AuditLog:
         """Cria um log de auditoria."""
         log = AuditLog.create_event(
             action=AuditAction(data.action),
@@ -85,7 +82,7 @@ class AuditService:
             new_values=data.new_values,
             metadata=data.metadata,
             tags=data.tags,
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
         )
 
         # Detecta campos alterados
@@ -109,12 +106,7 @@ class AuditService:
         created = await self.repository.create_audit_log(log)
         await self.db.commit()
 
-        logger.info(
-            "Audit log created: %s - %s by %s",
-            created.event_id,
-            data.action,
-            data.user_email
-        )
+        logger.info("Audit log created: %s - %s by %s", created.event_id, data.action, data.user_email)
         return created
 
     async def log_action(
@@ -122,12 +114,12 @@ class AuditService:
         action: str,
         category: str,
         description: str,
-        user_id: Optional[str] = None,
-        user_email: Optional[str] = None,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        **kwargs
+        user_id: str | None = None,
+        user_email: str | None = None,
+        entity_type: str | None = None,
+        entity_id: str | None = None,
+        ip_address: str | None = None,
+        **kwargs,
     ) -> AuditLog:
         """Helper para logar ações rapidamente."""
         data = AuditLogCreate(
@@ -139,30 +131,30 @@ class AuditService:
             entity_type=entity_type,
             entity_id=UUID(entity_id) if entity_id else None,
             ip_address=ip_address,
-            **kwargs
+            **kwargs,
         )
         return await self.create_audit_log(data)
 
-    async def get_audit_log(self, log_id: UUID) -> Optional[AuditLog]:
+    async def get_audit_log(self, log_id: UUID) -> AuditLog | None:
         """Busca log por ID."""
         return await self.repository.get_audit_log(log_id)
 
     async def list_audit_logs(
         self,
-        action: Optional[str] = None,
-        category: Optional[str] = None,
-        severity: Optional[str] = None,
-        result: Optional[str] = None,
-        user_id: Optional[UUID] = None,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        requires_review: Optional[bool] = None,
-        search: Optional[str] = None,
+        action: str | None = None,
+        category: str | None = None,
+        severity: str | None = None,
+        result: str | None = None,
+        user_id: UUID | None = None,
+        entity_type: str | None = None,
+        entity_id: UUID | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        requires_review: bool | None = None,
+        search: str | None = None,
         page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[AuditLog], int]:
+        page_size: int = 50,
+    ) -> tuple[list[AuditLog], int]:
         """Lista logs de auditoria."""
         skip = (page - 1) * page_size
         return await self.repository.list_audit_logs(
@@ -178,24 +170,17 @@ class AuditService:
             requires_review=requires_review,
             search=search,
             skip=skip,
-            limit=page_size
+            limit=page_size,
         )
 
     async def get_audit_stats(
-        self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        self, start_date: datetime | None = None, end_date: datetime | None = None
     ) -> AuditLogStats:
         """Retorna estatísticas de auditoria."""
         stats = await self.repository.get_audit_stats(start_date, end_date)
         return AuditLogStats(**stats)
 
-    async def complete_review(
-        self,
-        log_id: UUID,
-        reviewer_id: str,
-        notes: Optional[str] = None
-    ) -> AuditLog:
+    async def complete_review(self, log_id: UUID, reviewer_id: str, notes: str | None = None) -> AuditLog:
         """Completa revisão de um log."""
         log = await self.repository.get_audit_log(log_id)
         if not log:
@@ -207,11 +192,7 @@ class AuditService:
 
     # ==================== ComplianceRule ====================
 
-    async def create_compliance_rule(
-        self,
-        data: ComplianceRuleCreate,
-        user_id: Optional[str] = None
-    ) -> ComplianceRule:
+    async def create_compliance_rule(self, data: ComplianceRuleCreate, user_id: str | None = None) -> ComplianceRule:
         """Cria uma regra de compliance."""
         # Verifica se código já existe
         existing = await self.repository.get_compliance_rule_by_code(data.code)
@@ -240,7 +221,7 @@ class AuditService:
             remediation_deadline_days=data.remediation_deadline_days,
             documentation_url=data.documentation_url,
             tags=data.tags,
-            created_by=user_id
+            created_by=user_id,
         )
 
         created = await self.repository.create_compliance_rule(rule)
@@ -249,19 +230,19 @@ class AuditService:
         logger.info("Compliance rule created: %s", created.code)
         return created
 
-    async def get_compliance_rule(self, rule_id: UUID) -> Optional[ComplianceRule]:
+    async def get_compliance_rule(self, rule_id: UUID) -> ComplianceRule | None:
         """Busca regra por ID."""
         return await self.repository.get_compliance_rule(rule_id)
 
     async def list_compliance_rules(
         self,
-        framework: Optional[str] = None,
-        category: Optional[str] = None,
-        status: Optional[str] = None,
-        severity: Optional[str] = None,
+        framework: str | None = None,
+        category: str | None = None,
+        status: str | None = None,
+        severity: str | None = None,
         page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[ComplianceRule], int]:
+        page_size: int = 50,
+    ) -> tuple[list[ComplianceRule], int]:
         """Lista regras de compliance."""
         skip = (page - 1) * page_size
         return await self.repository.list_compliance_rules(
@@ -270,14 +251,11 @@ class AuditService:
             status=RuleStatus(status) if status else None,
             severity=RuleSeverity(severity) if severity else None,
             skip=skip,
-            limit=page_size
+            limit=page_size,
         )
 
     async def update_compliance_rule(
-        self,
-        rule_id: UUID,
-        data: ComplianceRuleUpdate,
-        user_id: Optional[str] = None
+        self, rule_id: UUID, data: ComplianceRuleUpdate, user_id: str | None = None
     ) -> ComplianceRule:
         """Atualiza uma regra de compliance."""
         rule = await self.repository.get_compliance_rule(rule_id)
@@ -321,20 +299,14 @@ class AuditService:
 
     # ==================== ComplianceCheck ====================
 
-    async def create_compliance_check(
-        self,
-        data: ComplianceCheckCreate,
-        user_id: Optional[str] = None
-    ) -> ComplianceCheck:
+    async def create_compliance_check(self, data: ComplianceCheckCreate, user_id: str | None = None) -> ComplianceCheck:
         """Cria uma verificação de compliance."""
         rule = await self.repository.get_compliance_rule(data.rule_id)
         if not rule:
             raise ValueError(f"Regra {data.rule_id} não encontrada")
 
         check = ComplianceCheck.create_check(
-            rule_id=str(data.rule_id),
-            check_type=CheckType(data.check_type),
-            executed_by=user_id
+            rule_id=str(data.rule_id), check_type=CheckType(data.check_type), executed_by=user_id
         )
         check.scope_description = data.scope_description
         check.scheduled_at = data.scheduled_at
@@ -346,22 +318,22 @@ class AuditService:
         logger.info("Compliance check created: %s for rule %s", created.check_number, rule.code)
         return created
 
-    async def get_compliance_check(self, check_id: UUID) -> Optional[ComplianceCheck]:
+    async def get_compliance_check(self, check_id: UUID) -> ComplianceCheck | None:
         """Busca verificação por ID."""
         return await self.repository.get_compliance_check(check_id)
 
     async def list_compliance_checks(
         self,
-        rule_id: Optional[UUID] = None,
-        status: Optional[str] = None,
-        result: Optional[str] = None,
-        requires_review: Optional[bool] = None,
-        remediation_required: Optional[bool] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        rule_id: UUID | None = None,
+        status: str | None = None,
+        result: str | None = None,
+        requires_review: bool | None = None,
+        remediation_required: bool | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[ComplianceCheck], int]:
+        page_size: int = 50,
+    ) -> tuple[list[ComplianceCheck], int]:
         """Lista verificações de compliance."""
         skip = (page - 1) * page_size
         return await self.repository.list_compliance_checks(
@@ -373,7 +345,7 @@ class AuditService:
             start_date=start_date,
             end_date=end_date,
             skip=skip,
-            limit=page_size
+            limit=page_size,
         )
 
     async def start_check(self, check_id: UUID, executor_id: str) -> ComplianceCheck:
@@ -387,10 +359,7 @@ class AuditService:
         return check
 
     async def complete_check_compliant(
-        self,
-        check_id: UUID,
-        evidence: Optional[dict] = None,
-        notes: Optional[str] = None
+        self, check_id: UUID, evidence: dict | None = None, notes: str | None = None
     ) -> ComplianceCheck:
         """Marca verificação como conforme."""
         check = await self.repository.get_compliance_check(check_id)
@@ -408,10 +377,7 @@ class AuditService:
         return check
 
     async def complete_check_non_compliant(
-        self,
-        check_id: UUID,
-        violations: list,
-        remediation_deadline_days: Optional[int] = None
+        self, check_id: UUID, violations: list, remediation_deadline_days: int | None = None
     ) -> ComplianceCheck:
         """Marca verificação como não conforme."""
         check = await self.repository.get_compliance_check(check_id)
@@ -422,11 +388,7 @@ class AuditService:
         if remediation_deadline_days:
             deadline = datetime.utcnow() + timedelta(days=remediation_deadline_days)
 
-        check.complete_non_compliant(
-            violations=violations,
-            remediation_required=True,
-            remediation_deadline=deadline
-        )
+        check.complete_non_compliant(violations=violations, remediation_required=True, remediation_deadline=deadline)
 
         # Atualiza métricas da regra
         rule = await self.repository.get_compliance_rule(check.rule_id)
@@ -438,11 +400,7 @@ class AuditService:
 
     # ==================== DataRetention ====================
 
-    async def create_data_retention(
-        self,
-        data: DataRetentionCreate,
-        user_id: Optional[str] = None
-    ) -> DataRetention:
+    async def create_data_retention(self, data: DataRetentionCreate, user_id: str | None = None) -> DataRetention:
         """Cria uma política de retenção."""
         existing = await self.repository.get_data_retention_by_code(data.code)
         if existing:
@@ -456,9 +414,7 @@ class AuditService:
             retention_period=RetentionPeriod(data.retention_period),
             retention_days=data.retention_days,
             expiration_action=RetentionAction(data.expiration_action),
-            secondary_action=(
-                RetentionAction(data.secondary_action) if data.secondary_action else None
-            ),
+            secondary_action=(RetentionAction(data.secondary_action) if data.secondary_action else None),
             entity_types=data.entity_types,
             table_names=data.table_names,
             compliance_framework=data.compliance_framework,
@@ -470,7 +426,7 @@ class AuditService:
             notify_recipients=data.notify_recipients,
             schedule_cron=data.schedule_cron,
             tags=data.tags,
-            created_by=user_id
+            created_by=user_id,
         )
 
         created = await self.repository.create_data_retention(policy)
@@ -479,18 +435,18 @@ class AuditService:
         logger.info("Data retention policy created: %s", created.code)
         return created
 
-    async def get_data_retention(self, policy_id: UUID) -> Optional[DataRetention]:
+    async def get_data_retention(self, policy_id: UUID) -> DataRetention | None:
         """Busca política por ID."""
         return await self.repository.get_data_retention(policy_id)
 
     async def list_data_retention_policies(
         self,
-        data_category: Optional[str] = None,
-        status: Optional[str] = None,
-        schedule_enabled: Optional[bool] = None,
+        data_category: str | None = None,
+        status: str | None = None,
+        schedule_enabled: bool | None = None,
         page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[DataRetention], int]:
+        page_size: int = 50,
+    ) -> tuple[list[DataRetention], int]:
         """Lista políticas de retenção."""
         skip = (page - 1) * page_size
         return await self.repository.list_data_retention_policies(
@@ -498,14 +454,11 @@ class AuditService:
             status=RetentionStatus(status) if status else None,
             schedule_enabled=schedule_enabled,
             skip=skip,
-            limit=page_size
+            limit=page_size,
         )
 
     async def update_data_retention(
-        self,
-        policy_id: UUID,
-        data: DataRetentionUpdate,
-        user_id: Optional[str] = None
+        self, policy_id: UUID, data: DataRetentionUpdate, user_id: str | None = None
     ) -> DataRetention:
         """Atualiza uma política de retenção."""
         policy = await self.repository.get_data_retention(policy_id)
@@ -530,10 +483,7 @@ class AuditService:
         await self.db.commit()
         return updated
 
-    async def execute_retention_policy(
-        self,
-        policy_id: UUID
-    ) -> DataRetentionExecution:
+    async def execute_retention_policy(self, policy_id: UUID) -> DataRetentionExecution:
         """Executa uma política de retenção."""
         policy = await self.repository.get_data_retention(policy_id)
         if not policy:
@@ -559,7 +509,7 @@ class AuditService:
                 deleted=deleted,
                 archived=archived,
                 anonymized=anonymized,
-                storage_freed=storage_freed
+                storage_freed=storage_freed,
             )
             await self.db.commit()
 
@@ -575,7 +525,7 @@ class AuditService:
                 records_anonymized=anonymized,
                 storage_freed_bytes=storage_freed,
                 duration_seconds=duration,
-                success=True
+                success=True,
             )
 
         except Exception as e:
@@ -609,7 +559,7 @@ class AuditService:
             auth_method=data.auth_method,
             mfa_used=data.mfa_used,
             device_fingerprint=data.device_fingerprint,
-            metadata=data.metadata
+            metadata=data.metadata,
         )
 
         # Calcula risco
@@ -618,21 +568,11 @@ class AuditService:
         created = await self.repository.create_access_history(access)
         await self.db.commit()
 
-        logger.debug(
-            "Access recorded: %s - %s from %s",
-            data.access_type,
-            data.result,
-            data.ip_address
-        )
+        logger.debug("Access recorded: %s - %s from %s", data.access_type, data.result, data.ip_address)
         return created
 
     async def record_login(
-        self,
-        user_id: str,
-        user_email: str,
-        ip_address: str,
-        success: bool,
-        **kwargs
+        self, user_id: str, user_email: str, ip_address: str, success: bool, **kwargs
     ) -> AccessHistory:
         """Helper para registrar login."""
         data = AccessHistoryCreate(
@@ -641,28 +581,28 @@ class AuditService:
             user_id=UUID(user_id),
             user_email=user_email,
             ip_address=ip_address,
-            **kwargs
+            **kwargs,
         )
         return await self.record_access(data)
 
-    async def get_access_history(self, access_id: UUID) -> Optional[AccessHistory]:
+    async def get_access_history(self, access_id: UUID) -> AccessHistory | None:
         """Busca registro por ID."""
         return await self.repository.get_access_history(access_id)
 
     async def list_access_history(
         self,
-        access_type: Optional[str] = None,
-        result: Optional[str] = None,
-        user_id: Optional[UUID] = None,
-        ip_address: Optional[str] = None,
-        risk_level: Optional[str] = None,
-        anomaly_detected: Optional[bool] = None,
-        requires_review: Optional[bool] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        access_type: str | None = None,
+        result: str | None = None,
+        user_id: UUID | None = None,
+        ip_address: str | None = None,
+        risk_level: str | None = None,
+        anomaly_detected: bool | None = None,
+        requires_review: bool | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[AccessHistory], int]:
+        page_size: int = 50,
+    ) -> tuple[list[AccessHistory], int]:
         """Lista registros de acesso."""
         skip = (page - 1) * page_size
         return await self.repository.list_access_history(
@@ -676,23 +616,17 @@ class AuditService:
             start_date=start_date,
             end_date=end_date,
             skip=skip,
-            limit=page_size
+            limit=page_size,
         )
 
     async def get_access_stats(
-        self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        self, start_date: datetime | None = None, end_date: datetime | None = None
     ) -> AccessHistoryStats:
         """Retorna estatísticas de acessos."""
         stats = await self.repository.get_access_stats(start_date, end_date)
         return AccessHistoryStats(**stats)
 
-    async def get_user_access_history(
-        self,
-        user_id: UUID,
-        limit: int = 50
-    ) -> List[AccessHistory]:
+    async def get_user_access_history(self, user_id: UUID, limit: int = 50) -> list[AccessHistory]:
         """Busca histórico de acessos de um usuário."""
         return await self.repository.get_user_access_history(user_id, limit)
 
@@ -712,7 +646,7 @@ class AuditService:
             recent_events=[],  # Converteria para response
             recent_accesses=[],
             alerts=[],
-            trends={}
+            trends={},
         )
 
     async def get_compliance_overview(self) -> ComplianceOverview:
@@ -732,5 +666,5 @@ class AuditService:
             high_risk_sessions=stats.high_risk_accesses,
             mfa_adoption_rate=0.0,
             alerts_triggered=0,
-            pending_investigations=stats.pending_reviews
+            pending_investigations=stats.pending_reviews,
         )

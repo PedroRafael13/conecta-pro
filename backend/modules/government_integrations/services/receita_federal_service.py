@@ -3,19 +3,15 @@ Service para integrações com Receita Federal.
 """
 
 import logging
-import sys
 from datetime import date
-from typing import Dict, Any
-
-
+from typing import Any
 
 # Imports relativos do módulo pai
 from modules.government_integrations.utils import (
-    get_receita_service,
-    validar_cpf,
-    validar_cnpj,
-    formatar_cpf,
     formatar_cnpj,
+    formatar_cpf,
+    validar_cnpj,
+    validar_cpf,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,7 +21,7 @@ class ReceitaFederalApiService:
     """Service para operações com Receita Federal."""
 
     @staticmethod
-    def validar_documento(documento: str, tipo: str) -> Dict[str, Any]:
+    def validar_documento(documento: str, tipo: str) -> dict[str, Any]:
         """
         Valida CPF ou CNPJ.
 
@@ -53,7 +49,7 @@ class ReceitaFederalApiService:
         }
 
     @staticmethod
-    def consultar_cpf(cpf: str, data_nascimento: date) -> Dict[str, Any]:
+    def consultar_cpf(cpf: str, data_nascimento: date) -> dict[str, Any]:
         """
         Consulta CPF na Receita Federal.
 
@@ -72,22 +68,16 @@ class ReceitaFederalApiService:
         if not validar_cpf(cpf_limpo):
             raise ValueError("CPF invalido")
 
-        receita_service = get_receita_service()
-        resultado = receita_service.consultar_cpf(
-            cpf=cpf_limpo,
-            data_nascimento=data_nascimento,
-        )
-
+        # Receita Federal não tem API pública para consulta de CPF
         return {
             "cpf": formatar_cpf(cpf_limpo),
-            "situacao": resultado.get("situacao"),
-            "nome": resultado.get("nome"),
-            "data_inscricao": resultado.get("data_inscricao"),
-            "digito_verificador": resultado.get("digito_verificador"),
+            "status": "indisponivel",
+            "fonte": "nao_consultado",
+            "aviso": "Receita Federal não tem API pública. Consultar via e-CAC ou Gov.br.",
         }
 
     @staticmethod
-    def consultar_cnpj(cnpj: str) -> Dict[str, Any]:
+    def consultar_cnpj(cnpj: str) -> dict[str, Any]:
         """
         Consulta CNPJ na Receita Federal.
 
@@ -105,17 +95,10 @@ class ReceitaFederalApiService:
         if not validar_cnpj(cnpj_limpo):
             raise ValueError("CNPJ invalido")
 
-        receita_service = get_receita_service()
-        resultado = receita_service.consultar_cnpj(cnpj=cnpj_limpo)
-
+        # Receita Federal não tem API pública para consulta de CNPJ
         return {
             "cnpj": formatar_cnpj(cnpj_limpo),
-            "razao_social": resultado.get("razao_social"),
-            "nome_fantasia": resultado.get("nome_fantasia"),
-            "situacao_cadastral": resultado.get("situacao_cadastral"),
-            "data_situacao": resultado.get("data_situacao"),
-            "cnae_principal": resultado.get("cnae_principal"),
-            "endereco": resultado.get("endereco"),
-            "porte": resultado.get("porte"),
-            "natureza_juridica": resultado.get("natureza_juridica"),
+            "status": "indisponivel",
+            "fonte": "nao_consultado",
+            "aviso": "Receita Federal não tem API pública. Consultar via e-CAC ou Gov.br.",
         }

@@ -2,13 +2,13 @@
 
 import logging
 import re
-from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 from difflib import SequenceMatcher
+from typing import Any
 
-from modules.recruitment.models.job_position import JobPosition
 from modules.recruitment.models.candidate import Candidate
 from modules.recruitment.models.candidate_skill import CandidateSkill, SkillLevel
+from modules.recruitment.models.job_position import JobPosition
 
 logger = logging.getLogger(__name__)
 
@@ -37,17 +37,40 @@ class RecruitmentAIService:
     def __init__(self):
         """Inicializa o serviço de IA."""
         self.stop_words = {
-            "de", "da", "do", "em", "para", "com", "por", "uma", "um",
-            "os", "as", "no", "na", "ao", "aos", "das", "dos", "que",
-            "e", "ou", "se", "mais", "também", "como", "ser", "ter",
+            "de",
+            "da",
+            "do",
+            "em",
+            "para",
+            "com",
+            "por",
+            "uma",
+            "um",
+            "os",
+            "as",
+            "no",
+            "na",
+            "ao",
+            "aos",
+            "das",
+            "dos",
+            "que",
+            "e",
+            "ou",
+            "se",
+            "mais",
+            "também",
+            "como",
+            "ser",
+            "ter",
         }
 
     async def calculate_matching_score(
         self,
         candidate: Candidate,
         position: JobPosition,
-        candidate_skills: List[CandidateSkill] = None,
-    ) -> Dict[str, Any]:
+        candidate_skills: list[CandidateSkill] = None,
+    ) -> dict[str, Any]:
         """
         Calcula score de matching entre candidato e vaga.
 
@@ -65,9 +88,7 @@ class RecruitmentAIService:
         details = {}
 
         # 1. Match de Skills (35%)
-        skills_result = await self._calculate_skills_match(
-            candidate, position, candidate_skills
-        )
+        skills_result = await self._calculate_skills_match(candidate, position, candidate_skills)
         scores["skills_match"] = skills_result["score"]
         details["skills"] = skills_result
 
@@ -97,9 +118,7 @@ class RecruitmentAIService:
         details["availability"] = availability_result
 
         # Calcula score final ponderado
-        final_score = sum(
-            score * self.WEIGHTS[key] for key, score in scores.items()
-        )
+        final_score = sum(score * self.WEIGHTS[key] for key, score in scores.items())
 
         return {
             "final_score": round(final_score * 100, 1),
@@ -113,11 +132,11 @@ class RecruitmentAIService:
         self,
         candidate: Candidate,
         position: JobPosition,
-        candidate_skills: List[CandidateSkill] = None,
-    ) -> Dict[str, Any]:
+        candidate_skills: list[CandidateSkill] = None,
+    ) -> dict[str, Any]:
         """Calcula match de habilidades."""
-        required_skills = set(s.lower() for s in (position.required_skills or []))
-        desired_skills = set(s.lower() for s in (position.desired_skills or []))
+        required_skills = {s.lower() for s in (position.required_skills or [])}
+        desired_skills = {s.lower() for s in (position.desired_skills or [])}
 
         if not required_skills and not desired_skills:
             return {"score": 0.5, "matched": [], "missing": [], "bonus": []}
@@ -130,9 +149,7 @@ class RecruitmentAIService:
             for skill in candidate_skills:
                 name = skill.name.lower()
                 candidate_skill_names.add(name)
-                skill_levels[name] = self.SKILL_LEVEL_SCORES.get(
-                    skill.level, 0.5
-                )
+                skill_levels[name] = self.SKILL_LEVEL_SCORES.get(skill.level, 0.5)
 
         # Adiciona tags do candidato
         if candidate.tags:
@@ -148,11 +165,13 @@ class RecruitmentAIService:
             match = self._find_skill_match(skill, candidate_skill_names)
             if match:
                 level_score = skill_levels.get(match, 0.5)
-                matched_required.append({
-                    "skill": skill,
-                    "matched_with": match,
-                    "level_score": level_score,
-                })
+                matched_required.append(
+                    {
+                        "skill": skill,
+                        "matched_with": match,
+                        "level_score": level_score,
+                    }
+                )
             else:
                 missing_required.append(skill)
 
@@ -160,20 +179,20 @@ class RecruitmentAIService:
             if skill not in required_skills:
                 match = self._find_skill_match(skill, candidate_skill_names)
                 if match:
-                    matched_desired.append({
-                        "skill": skill,
-                        "matched_with": match,
-                    })
+                    matched_desired.append(
+                        {
+                            "skill": skill,
+                            "matched_with": match,
+                        }
+                    )
 
         # Calcula score
         if required_skills:
             required_score = len(matched_required) / len(required_skills)
             # Ajusta pelo nível de proficiência
             if matched_required:
-                avg_level = sum(
-                    m["level_score"] for m in matched_required
-                ) / len(matched_required)
-                required_score *= (0.5 + 0.5 * avg_level)
+                avg_level = sum(m["level_score"] for m in matched_required) / len(matched_required)
+                required_score *= 0.5 + 0.5 * avg_level
         else:
             required_score = 0.5
 
@@ -190,15 +209,10 @@ class RecruitmentAIService:
             "matched_required": matched_required,
             "missing_required": missing_required,
             "matched_desired": matched_desired,
-            "required_coverage": (
-                len(matched_required) / len(required_skills) * 100
-                if required_skills else 100
-            ),
+            "required_coverage": (len(matched_required) / len(required_skills) * 100 if required_skills else 100),
         }
 
-    def _find_skill_match(
-        self, skill: str, candidate_skills: set
-    ) -> Optional[str]:
+    def _find_skill_match(self, skill: str, candidate_skills: set) -> str | None:
         """Encontra match de skill usando similaridade."""
         skill_lower = skill.lower()
 
@@ -222,7 +236,7 @@ class RecruitmentAIService:
         self,
         candidate: Candidate,
         position: JobPosition,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calcula match de experiência."""
         required_years = position.experience_min or 0
         candidate_years = candidate.years_experience or 0
@@ -253,7 +267,7 @@ class RecruitmentAIService:
         self,
         candidate: Candidate,
         position: JobPosition,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calcula match de educação."""
         # Mapeia níveis de educação para scores
         education_levels = {
@@ -307,7 +321,7 @@ class RecruitmentAIService:
         self,
         candidate: Candidate,
         position: JobPosition,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calcula compatibilidade salarial."""
         candidate_expectation = candidate.salary_expectation
         position_min = position.salary_min
@@ -360,7 +374,7 @@ class RecruitmentAIService:
         self,
         candidate: Candidate,
         position: JobPosition,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calcula compatibilidade de localização."""
         # Trabalho remoto é sempre compatível
         if position.work_model and position.work_model.value == "remoto":
@@ -397,7 +411,7 @@ class RecruitmentAIService:
         self,
         candidate: Candidate,
         position: JobPosition,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calcula compatibilidade de disponibilidade."""
         if position.is_urgent and not candidate.available_immediately:
             return {
@@ -430,7 +444,7 @@ class RecruitmentAIService:
             "urgent_position": position.is_urgent,
         }
 
-    def _get_recommendation(self, score: float) -> Dict[str, Any]:
+    def _get_recommendation(self, score: float) -> dict[str, Any]:
         """Gera recomendação baseada no score."""
         if score >= 0.85:
             return {
@@ -465,9 +479,9 @@ class RecruitmentAIService:
 
     async def rank_candidates(
         self,
-        candidates: List[Tuple[Candidate, List[CandidateSkill]]],
+        candidates: list[tuple[Candidate, list[CandidateSkill]]],
         position: JobPosition,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Rankeia lista de candidatos para uma vaga.
 
@@ -477,16 +491,16 @@ class RecruitmentAIService:
         rankings = []
 
         for candidate, skills in candidates:
-            result = await self.calculate_matching_score(
-                candidate, position, skills
+            result = await self.calculate_matching_score(candidate, position, skills)
+            rankings.append(
+                {
+                    "candidate_id": str(candidate.id),
+                    "candidate_name": candidate.name,
+                    "final_score": result["final_score"],
+                    "recommendation": result["recommendation"]["level"],
+                    "scores": result["scores"],
+                }
             )
-            rankings.append({
-                "candidate_id": str(candidate.id),
-                "candidate_name": candidate.name,
-                "final_score": result["final_score"],
-                "recommendation": result["recommendation"]["level"],
-                "scores": result["scores"],
-            })
 
         # Ordena por score decrescente
         rankings.sort(key=lambda x: x["final_score"], reverse=True)
@@ -499,7 +513,7 @@ class RecruitmentAIService:
 
     async def parse_resume(  # pylint: disable=too-many-branches,too-many-locals
         self, resume_text: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extrai informações do currículo.
 
@@ -521,12 +535,38 @@ class RecruitmentAIService:
 
         # Extrai skills comuns
         common_skills = [
-            "python", "javascript", "java", "react", "angular", "vue",
-            "node", "sql", "postgresql", "mysql", "mongodb", "redis",
-            "docker", "kubernetes", "aws", "azure", "gcp", "linux",
-            "git", "agile", "scrum", "excel", "power bi", "tableau",
-            "machine learning", "deep learning", "data science",
-            "fastapi", "django", "flask", "spring", "typescript",
+            "python",
+            "javascript",
+            "java",
+            "react",
+            "angular",
+            "vue",
+            "node",
+            "sql",
+            "postgresql",
+            "mysql",
+            "mongodb",
+            "redis",
+            "docker",
+            "kubernetes",
+            "aws",
+            "azure",
+            "gcp",
+            "linux",
+            "git",
+            "agile",
+            "scrum",
+            "excel",
+            "power bi",
+            "tableau",
+            "machine learning",
+            "deep learning",
+            "data science",
+            "fastapi",
+            "django",
+            "flask",
+            "spring",
+            "typescript",
         ]
 
         for skill in common_skills:
@@ -589,10 +629,10 @@ class RecruitmentAIService:
     async def suggest_positions(
         self,
         candidate: Candidate,
-        positions: List[JobPosition],
-        candidate_skills: List[CandidateSkill] = None,
+        positions: list[JobPosition],
+        candidate_skills: list[CandidateSkill] = None,
         limit: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Sugere vagas compatíveis para um candidato.
 
@@ -602,28 +642,28 @@ class RecruitmentAIService:
         suggestions = []
 
         for position in positions:
-            result = await self.calculate_matching_score(
-                candidate, position, candidate_skills
-            )
+            result = await self.calculate_matching_score(candidate, position, candidate_skills)
 
             if result["final_score"] >= 40:  # Mínimo 40% de compatibilidade
-                suggestions.append({
-                    "position_id": str(position.id),
-                    "position_title": position.title,
-                    "position_code": position.code,
-                    "department": position.department.value,
-                    "matching_score": result["final_score"],
-                    "recommendation": result["recommendation"]["level"],
-                    "key_matches": self._get_key_matches(result),
-                    "gaps": self._get_gaps(result),
-                })
+                suggestions.append(
+                    {
+                        "position_id": str(position.id),
+                        "position_title": position.title,
+                        "position_code": position.code,
+                        "department": position.department.value,
+                        "matching_score": result["final_score"],
+                        "recommendation": result["recommendation"]["level"],
+                        "key_matches": self._get_key_matches(result),
+                        "gaps": self._get_gaps(result),
+                    }
+                )
 
         # Ordena por score
         suggestions.sort(key=lambda x: x["matching_score"], reverse=True)
 
         return suggestions[:limit]
 
-    def _get_key_matches(self, result: Dict) -> List[str]:
+    def _get_key_matches(self, result: dict) -> list[str]:
         """Extrai principais pontos de match."""
         matches = []
         details = result.get("details", {})
@@ -645,7 +685,7 @@ class RecruitmentAIService:
 
         return matches
 
-    def _get_gaps(self, result: Dict) -> List[str]:
+    def _get_gaps(self, result: dict) -> list[str]:
         """Identifica gaps do candidato."""
         gaps = []
         details = result.get("details", {})
@@ -673,8 +713,8 @@ class RecruitmentAIService:
         self,
         candidate: Candidate,  # pylint: disable=unused-argument
         position: JobPosition,
-        matching_result: Dict = None,
-    ) -> List[Dict[str, Any]]:
+        matching_result: dict = None,
+    ) -> list[dict[str, Any]]:
         """
         Gera sugestões de perguntas para entrevista.
 
@@ -686,32 +726,30 @@ class RecruitmentAIService:
         # Perguntas técnicas baseadas em skills requeridas
         required_skills = position.required_skills or []
         for skill in required_skills[:5]:
-            questions.append({
-                "category": "tecnica",
-                "skill": skill,
-                "question": f"Descreva sua experiência com {skill}. "
-                           f"Pode dar um exemplo de projeto onde utilizou?",
-                "objective": f"Avaliar profundidade de conhecimento em {skill}",
-            })
+            questions.append(
+                {
+                    "category": "tecnica",
+                    "skill": skill,
+                    "question": f"Descreva sua experiência com {skill}. Pode dar um exemplo de projeto onde utilizou?",
+                    "objective": f"Avaliar profundidade de conhecimento em {skill}",
+                }
+            )
 
         # Perguntas comportamentais
         behavioral_questions = [
             {
                 "category": "comportamental",
-                "question": "Conte sobre um desafio significativo que enfrentou "
-                           "em um projeto e como resolveu.",
+                "question": "Conte sobre um desafio significativo que enfrentou em um projeto e como resolveu.",
                 "objective": "Avaliar resolução de problemas e resiliência",
             },
             {
                 "category": "comportamental",
-                "question": "Como você lida com prazos apertados e múltiplas "
-                           "prioridades?",
+                "question": "Como você lida com prazos apertados e múltiplas prioridades?",
                 "objective": "Avaliar gestão de tempo e stress",
             },
             {
                 "category": "comportamental",
-                "question": "Descreva uma situação em que teve que trabalhar "
-                           "com alguém difícil. Como lidou?",
+                "question": "Descreva uma situação em que teve que trabalhar com alguém difícil. Como lidou?",
                 "objective": "Avaliar habilidades interpessoais",
             },
         ]
@@ -722,24 +760,29 @@ class RecruitmentAIService:
             gaps = matching_result.get("details", {})
 
             if not gaps.get("experience", {}).get("meets_requirement"):
-                questions.append({
-                    "category": "experiencia",
-                    "question": "Sua experiência é menor que o requisito. "
-                               "Como pretende compensar isso?",
-                    "objective": "Avaliar capacidade de aprendizado rápido",
-                })
+                questions.append(
+                    {
+                        "category": "experiencia",
+                        "question": "Sua experiência é menor que o requisito. Como pretende compensar isso?",
+                        "objective": "Avaliar capacidade de aprendizado rápido",
+                    }
+                )
 
         # Perguntas sobre motivação
-        questions.append({
-            "category": "motivacao",
-            "question": f"O que te atraiu para a vaga de {position.title}?",
-            "objective": "Avaliar alinhamento com a posição",
-        })
+        questions.append(
+            {
+                "category": "motivacao",
+                "question": f"O que te atraiu para a vaga de {position.title}?",
+                "objective": "Avaliar alinhamento com a posição",
+            }
+        )
 
-        questions.append({
-            "category": "motivacao",
-            "question": "Onde você se vê profissionalmente em 3-5 anos?",
-            "objective": "Avaliar planos de carreira e fit com a empresa",
-        })
+        questions.append(
+            {
+                "category": "motivacao",
+                "question": "Onde você se vê profissionalmente em 3-5 anos?",
+                "objective": "Avaliar planos de carreira e fit com a empresa",
+            }
+        )
 
         return questions

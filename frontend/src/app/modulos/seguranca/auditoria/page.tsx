@@ -99,6 +99,7 @@ export default function AuditoriaLGPDPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // Debounce para filtros
+
   useEffect(() => {
     const timer = setTimeout(() => {
       const params: any = {
@@ -112,14 +113,17 @@ export default function AuditoriaLGPDPage() {
       if (startDate) params.start_date = new Date(startDate).toISOString();
       if (endDate) params.end_date = new Date(endDate).toISOString();
 
+
       setQueryParams(params);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [searchTerm, selectedAction, selectedResource, startDate, endDate, page]);
 
+
   // Reset pagina ao alterar filtros
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
     setPage(1);
   }, [searchTerm, selectedAction, selectedResource, startDate, endDate]);
 
@@ -210,7 +214,7 @@ export default function AuditoriaLGPDPage() {
 
             {/* Action filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedAction} onValueChange={setSelectedAction}>
+              <Select value={selectedAction} onValueChange={setSelectedAction} aria-label="Selected Action">
                 <SelectTrigger>
                   <SelectValue placeholder="Acao" />
                 </SelectTrigger>
@@ -227,7 +231,7 @@ export default function AuditoriaLGPDPage() {
 
             {/* Resource filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedResource} onValueChange={setSelectedResource}>
+              <Select value={selectedResource} onValueChange={setSelectedResource} aria-label="Selected Resource">
                 <SelectTrigger>
                   <SelectValue placeholder="Recurso" />
                 </SelectTrigger>

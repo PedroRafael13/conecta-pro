@@ -25,9 +25,9 @@ from .base import (
 )
 from .bb import BBAdapter
 from .bradesco import BradescoAdapter
-from .itau import ItauAdapter
-from .inter import InterAdapter
 from .cora import CoraAdapter
+from .inter import InterAdapter
+from .itau import ItauAdapter
 
 __all__ = [
     # Base

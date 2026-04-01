@@ -4,23 +4,18 @@ domains/financial/entities/journal_entry.py - JOURNAL ENTRY
 Enterprise double-entry journal entry with full audit trail
 """
 
-from typing import Dict, List, Optional, Any, NewType
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any, NewType
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .enums import (
-    JournalEntryType,
-    JournalEntryStatus,
-    TransactionSource,
-    ReconciliationStatus
-)
+from .enums import JournalEntryStatus, JournalEntryType, ReconciliationStatus, TransactionSource
 
 # Strong typing for domain identifiers
-JournalEntryId = NewType('JournalEntryId', UUID)
-JournalLineId = NewType('JournalLineId', UUID)
+JournalEntryId = NewType("JournalEntryId", UUID)
+JournalLineId = NewType("JournalLineId", UUID)
 
 
 class JournalLine(BaseModel):
@@ -43,21 +38,19 @@ class JournalLine(BaseModel):
 
     # Details
     description: str = Field(..., min_length=3, max_length=500)
-    cost_center_id: Optional[UUID] = None
-    cost_center_code: Optional[str] = None
-    project_id: Optional[UUID] = None
-    project_code: Optional[str] = None
+    cost_center_id: UUID | None = None
+    cost_center_code: str | None = None
+    project_id: UUID | None = None
+    project_code: str | None = None
 
     # Reconciliation
-    reconciliation_status: ReconciliationStatus = Field(
-        default=ReconciliationStatus.NOT_RECONCILED
-    )
-    reconciled_at: Optional[datetime] = None
-    reconciled_by: Optional[str] = None
-    bank_statement_id: Optional[UUID] = None
+    reconciliation_status: ReconciliationStatus = Field(default=ReconciliationStatus.NOT_RECONCILED)
+    reconciled_at: datetime | None = None
+    reconciled_by: str | None = None
+    bank_statement_id: UUID | None = None
 
-    @model_validator(mode='after')
-    def validate_line(self) -> 'JournalLine':
+    @model_validator(mode="after")
+    def validate_line(self) -> "JournalLine":
         """Valida que linha tem debito OU credito (nao ambos)."""
         has_debit = self.debit_amount > 0
         has_credit = self.credit_amount > 0
@@ -98,10 +91,10 @@ class JournalEntryAudit(BaseModel):
     action: str
     user_id: str
     user_name: str
-    previous_status: Optional[str] = None
-    new_status: Optional[str] = None
-    details: Dict[str, Any] = Field(default_factory=dict)
-    ip_address: Optional[str] = None
+    previous_status: str | None = None
+    new_status: str | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+    ip_address: str | None = None
 
 
 class JournalEntryEntity(BaseModel):
@@ -112,36 +105,33 @@ class JournalEntryEntity(BaseModel):
     e trilha de auditoria.
     """
 
-    model_config = ConfigDict(
-        use_enum_values=True,
-        validate_assignment=True
-    )
+    model_config = ConfigDict(use_enum_values=True, validate_assignment=True)
 
     # Identity
     entry_id: UUID = Field(default_factory=uuid4)
     entry_number: str = Field(..., pattern=r"^LC-\d{4}-\d{8}$")
-    batch_id: Optional[UUID] = None
+    batch_id: UUID | None = None
 
     # Classification
     entry_type: JournalEntryType
     status: JournalEntryStatus = Field(default=JournalEntryStatus.DRAFT)
     source: TransactionSource = Field(default=TransactionSource.MANUAL)
-    source_document_id: Optional[UUID] = None
-    source_document_number: Optional[str] = None
+    source_document_id: UUID | None = None
+    source_document_number: str | None = None
 
     # Dates
     entry_date: date
-    posting_date: Optional[date] = None
+    posting_date: date | None = None
     period_month: int = Field(..., ge=1, le=12)
     period_year: int = Field(..., ge=2020, le=2035)
 
     # Header
     description: str = Field(..., min_length=10, max_length=1000)
-    reference: Optional[str] = Field(None, max_length=100)
-    memo: Optional[str] = Field(None, max_length=2000)
+    reference: str | None = Field(None, max_length=100)
+    memo: str | None = Field(None, max_length=2000)
 
     # Lines
-    lines: List[JournalLine] = Field(..., min_length=2)
+    lines: list[JournalLine] = Field(..., min_length=2)
 
     # Totals (calculated)
     total_debits: Decimal = Field(default=Decimal("0"))
@@ -150,38 +140,37 @@ class JournalEntryEntity(BaseModel):
 
     # Reversal
     is_reversal: bool = Field(default=False)
-    reversed_entry_id: Optional[UUID] = None
-    reversal_entry_id: Optional[UUID] = None
-    reversal_reason: Optional[str] = None
+    reversed_entry_id: UUID | None = None
+    reversal_entry_id: UUID | None = None
+    reversal_reason: str | None = None
 
     # Multi-tenant
     tenant_id: UUID
 
     # Audit
-    audit_trail: List[JournalEntryAudit] = Field(default_factory=list)
+    audit_trail: list[JournalEntryAudit] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: str
-    updated_by: Optional[str] = None
-    approved_by: Optional[str] = None
-    approved_at: Optional[datetime] = None
-    posted_by: Optional[str] = None
-    posted_at: Optional[datetime] = None
+    updated_by: str | None = None
+    approved_by: str | None = None
+    approved_at: datetime | None = None
+    posted_by: str | None = None
+    posted_at: datetime | None = None
 
-    @model_validator(mode='after')
-    def validate_entry(self) -> 'JournalEntryEntity':
+    @model_validator(mode="after")
+    def validate_entry(self) -> "JournalEntryEntity":
         """Valida regras da partida dobrada."""
         # Calcula totais (usando object.__setattr__ para evitar recursao)
         total_d = sum(line.debit_amount for line in self.lines)
         total_c = sum(line.credit_amount for line in self.lines)
-        object.__setattr__(self, 'total_debits', total_d)
-        object.__setattr__(self, 'total_credits', total_c)
+        object.__setattr__(self, "total_debits", total_d)
+        object.__setattr__(self, "total_credits", total_c)
 
         # Valida balanceamento (partida dobrada)
         if self.total_debits != self.total_credits:
             raise ValueError(
-                f"Lancamento desbalanceado: Debitos ({self.total_debits}) != "
-                f"Creditos ({self.total_credits})"
+                f"Lancamento desbalanceado: Debitos ({self.total_debits}) != Creditos ({self.total_credits})"
             )
 
         # Valida minimo de linhas
@@ -196,8 +185,7 @@ class JournalEntryEntity(BaseModel):
             raise ValueError("Lancamento deve ter pelo menos um debito e um credito")
 
         # Valida data vs periodo
-        if self.entry_date.month != self.period_month or \
-           self.entry_date.year != self.period_year:
+        if self.entry_date.month != self.period_month or self.entry_date.year != self.period_year:
             raise ValueError("Data do lancamento deve estar no periodo informado")
 
         # Valida estorno
@@ -223,8 +211,10 @@ class JournalEntryEntity(BaseModel):
         self._add_audit_entry(
             action="submitted_for_approval",
             user_id=user_id,
-            previous_status=previous_status.value if isinstance(previous_status, JournalEntryStatus) else previous_status,
-            new_status=self.status.value if isinstance(self.status, JournalEntryStatus) else self.status
+            previous_status=previous_status.value
+            if isinstance(previous_status, JournalEntryStatus)
+            else previous_status,
+            new_status=self.status.value if isinstance(self.status, JournalEntryStatus) else self.status,
         )
 
         return True
@@ -249,8 +239,10 @@ class JournalEntryEntity(BaseModel):
             action="approved",
             user_id=approver_id,
             user_name=approver_name,
-            previous_status=previous_status.value if isinstance(previous_status, JournalEntryStatus) else previous_status,
-            new_status=self.status.value if isinstance(self.status, JournalEntryStatus) else self.status
+            previous_status=previous_status.value
+            if isinstance(previous_status, JournalEntryStatus)
+            else previous_status,
+            new_status=self.status.value if isinstance(self.status, JournalEntryStatus) else self.status,
         )
 
         return True
@@ -268,9 +260,11 @@ class JournalEntryEntity(BaseModel):
         self._add_audit_entry(
             action="rejected",
             user_id=rejector_id,
-            previous_status=previous_status.value if isinstance(previous_status, JournalEntryStatus) else previous_status,
+            previous_status=previous_status.value
+            if isinstance(previous_status, JournalEntryStatus)
+            else previous_status,
             new_status=self.status.value if isinstance(self.status, JournalEntryStatus) else self.status,
-            details={"reason": reason}
+            details={"reason": reason},
         )
 
         return True
@@ -292,18 +286,15 @@ class JournalEntryEntity(BaseModel):
             action="posted",
             user_id=poster_id,
             user_name=poster_name,
-            previous_status=previous_status.value if isinstance(previous_status, JournalEntryStatus) else previous_status,
-            new_status=self.status.value if isinstance(self.status, JournalEntryStatus) else self.status
+            previous_status=previous_status.value
+            if isinstance(previous_status, JournalEntryStatus)
+            else previous_status,
+            new_status=self.status.value if isinstance(self.status, JournalEntryStatus) else self.status,
         )
 
         return True
 
-    def create_reversal(
-        self,
-        user_id: str,
-        reason: str,
-        reversal_date: date
-    ) -> 'JournalEntryEntity':
+    def create_reversal(self, user_id: str, reason: str, reversal_date: date) -> "JournalEntryEntity":
         """Cria lancamento de estorno."""
         if self.status != JournalEntryStatus.POSTED:
             raise ValueError("Apenas lancamentos contabilizados podem ser estornados")
@@ -324,7 +315,7 @@ class JournalEntryEntity(BaseModel):
                 cost_center_id=line.cost_center_id,
                 cost_center_code=line.cost_center_code,
                 project_id=line.project_id,
-                project_code=line.project_code
+                project_code=line.project_code,
             )
             reversed_lines.append(reversed_line)
 
@@ -345,7 +336,7 @@ class JournalEntryEntity(BaseModel):
             is_reversal=True,
             reversed_entry_id=self.entry_id,
             tenant_id=self.tenant_id,
-            created_by=user_id
+            created_by=user_id,
         )
 
         return reversal_entry
@@ -384,9 +375,9 @@ class JournalEntryEntity(BaseModel):
         action: str,
         user_id: str,
         user_name: str = "",
-        previous_status: Optional[str] = None,
-        new_status: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        previous_status: str | None = None,
+        new_status: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         """Adiciona entrada no audit trail."""
         entry = JournalEntryAudit(
@@ -395,7 +386,7 @@ class JournalEntryEntity(BaseModel):
             user_name=user_name,
             previous_status=previous_status,
             new_status=new_status,
-            details=details or {}
+            details=details or {},
         )
         self.audit_trail.append(entry)
 
@@ -417,29 +408,26 @@ class JournalEntryEntity(BaseModel):
     @property
     def can_be_reversed(self) -> bool:
         """Verifica se pode ser estornado."""
-        return (
-            JournalEntryStatus(self.status).can_reverse() and
-            self.reversal_entry_id is None
-        )
+        return JournalEntryStatus(self.status).can_reverse() and self.reversal_entry_id is None
 
-    def get_debit_lines(self) -> List[JournalLine]:
+    def get_debit_lines(self) -> list[JournalLine]:
         """Retorna linhas de debito."""
         return [line for line in self.lines if line.is_debit]
 
-    def get_credit_lines(self) -> List[JournalLine]:
+    def get_credit_lines(self) -> list[JournalLine]:
         """Retorna linhas de credito."""
         return [line for line in self.lines if line.is_credit]
 
-    def get_accounts_affected(self) -> List[UUID]:
+    def get_accounts_affected(self) -> list[UUID]:
         """Retorna IDs das contas afetadas."""
-        return list(set(line.account_id for line in self.lines))
+        return list({line.account_id for line in self.lines})
 
     @staticmethod
     def generate_entry_number(year: int, sequence: int) -> str:
         """Gera numero do lancamento."""
         return f"LC-{year}-{sequence:08d}"
 
-    def to_summary(self) -> Dict[str, Any]:
+    def to_summary(self) -> dict[str, Any]:
         """Retorna resumo do lancamento."""
         return {
             "entry_id": str(self.entry_id),
@@ -450,5 +438,5 @@ class JournalEntryEntity(BaseModel):
             "total_credits": str(self.total_credits),
             "status": self.status,
             "lines_count": len(self.lines),
-            "is_balanced": self.is_balanced
+            "is_balanced": self.is_balanced,
         }

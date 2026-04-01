@@ -4,16 +4,14 @@ Sistema de permissoes para o modulo operacional.
 Define roles, permissoes e decorators para controle de acesso.
 """
 
-from enum import Enum
-from functools import wraps
-from typing import Callable, List, Union
+from enum import StrEnum
 
 from fastapi import Depends, HTTPException, status
 
 from core.auth.dependencies import CurrentActiveUser
 
 
-class OperacionalRole(str, Enum):
+class OperacionalRole(StrEnum):
     """Roles do modulo operacional."""
 
     ADMINISTRADOR = "administrador"
@@ -35,7 +33,7 @@ ROLE_POWER = {
 }
 
 
-class Permission(str, Enum):
+class Permission(StrEnum):
     """Permissoes do modulo operacional."""
 
     # Postos
@@ -346,7 +344,7 @@ def require_operacional_permission(*permissions: Permission):
     Dependency factory para validar permissoes do modulo operacional.
 
     Uso:
-        @router.get("/", dependencies=[Depends(require_operacional_permission(Permission.POSTS_VIEW))])
+        @router.get("", dependencies=[Depends(require_operacional_permission(Permission.POSTS_VIEW))])
         async def list_posts(): ...
 
     Args:
@@ -386,7 +384,7 @@ def require_minimum_role(minimum_role: OperacionalRole):
     Usa a hierarquia de poder para comparacao.
 
     Uso:
-        @router.get("/", dependencies=[Depends(require_minimum_role(OperacionalRole.SUPERVISOR))])
+        @router.get("", dependencies=[Depends(require_minimum_role(OperacionalRole.SUPERVISOR))])
         async def supervisor_endpoint(): ...
 
     Args:

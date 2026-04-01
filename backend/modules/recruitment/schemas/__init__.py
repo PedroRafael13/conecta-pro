@@ -1,89 +1,69 @@
-"""Schemas do módulo Recruitment."""
+"""Schemas do modulo Recruitment."""
 
-from .job_position import (
-    JobPositionBase,
-    JobPositionCreate,
-    JobPositionUpdate,
-    JobPositionResponse,
-    JobPositionListResponse,
-    JobPositionFilter,
-    JobPositionStats,
-    JobPositionPublish,
-    SelectionStage,
+from .application import (
+    ApplicationAdvance,
+    ApplicationBulkAction,
+    ApplicationCreate,
+    ApplicationFilter,
+    ApplicationHire,
+    ApplicationListResponse,
+    ApplicationProposal,
+    ApplicationReject,
+    ApplicationResponse,
+    ApplicationStats,
+    ApplicationUpdate,
 )
 from .candidate import (
-    CandidateBase,
-    CandidateCreate,
-    CandidateUpdate,
-    CandidateResponse,
-    CandidateListResponse,
-    CandidateFilter,
-    CandidateStats,
     CandidateBlock,
+    CandidateCreate,
+    CandidateFilter,
     CandidateImport,
-    LanguageInfo,
-)
-from .application import (
-    ApplicationBase,
-    ApplicationCreate,
-    ApplicationUpdate,
-    ApplicationResponse,
-    ApplicationListResponse,
-    ApplicationFilter,
-    ApplicationStats,
-    ApplicationAdvance,
-    ApplicationReject,
-    ApplicationProposal,
-    ApplicationHire,
-    ApplicationBulkAction,
-)
-from .interview import (
-    InterviewBase,
-    InterviewCreate,
-    InterviewUpdate,
-    InterviewResponse,
-    InterviewListResponse,
-    InterviewFilter,
-    InterviewStats,
-    InterviewComplete,
-    InterviewReschedule,
-    InterviewCancel,
-    InterviewEvaluation,
-    InterviewSlot,
-    InterviewCalendar,
-)
-from .candidate_skill import (
-    CandidateSkillBase,
-    CandidateSkillCreate,
-    CandidateSkillUpdate,
-    CandidateSkillResponse,
-    CandidateSkillListResponse,
-    CandidateSkillFilter,
-    CertificationAdd,
-)
-from .candidate_experience import (
-    CandidateExperienceBase,
-    CandidateExperienceCreate,
-    CandidateExperienceUpdate,
-    CandidateExperienceResponse,
-    CandidateExperienceListResponse,
-    CandidateExperienceFilter,
-    ReferenceInfo,
+    CandidateListResponse,
+    CandidateResponse,
+    CandidateStats,
+    CandidateUpdate,
 )
 from .candidate_education import (
-    CandidateEducationBase,
     CandidateEducationCreate,
-    CandidateEducationUpdate,
     CandidateEducationResponse,
-    CandidateEducationListResponse,
-    CandidateEducationFilter,
-    ThesisInfo,
-    ExchangeInfo,
+    CandidateEducationUpdate,
+)
+from .candidate_experience import (
+    CandidateExperienceCreate,
+    CandidateExperienceResponse,
+    CandidateExperienceUpdate,
+)
+from .candidate_skill import (
+    CandidateSkillCreate,
+    CandidateSkillResponse,
+    CandidateSkillUpdate,
+)
+from .interview import (
+    InterviewCalendar,
+    InterviewCancel,
+    InterviewComplete,
+    InterviewCreate,
+    InterviewEvaluation,
+    InterviewFilter,
+    InterviewListResponse,
+    InterviewReschedule,
+    InterviewResponse,
+    InterviewSlot,
+    InterviewStats,
+    InterviewUpdate,
+)
+from .job_position import (
+    JobPositionCreate,
+    JobPositionFilter,
+    JobPositionListResponse,
+    JobPositionPublish,
+    JobPositionResponse,
+    JobPositionStats,
+    JobPositionUpdate,
 )
 
 __all__ = [
     # JobPosition
-    "JobPositionBase",
     "JobPositionCreate",
     "JobPositionUpdate",
     "JobPositionResponse",
@@ -91,9 +71,7 @@ __all__ = [
     "JobPositionFilter",
     "JobPositionStats",
     "JobPositionPublish",
-    "SelectionStage",
     # Candidate
-    "CandidateBase",
     "CandidateCreate",
     "CandidateUpdate",
     "CandidateResponse",
@@ -102,9 +80,7 @@ __all__ = [
     "CandidateStats",
     "CandidateBlock",
     "CandidateImport",
-    "LanguageInfo",
     # Application
-    "ApplicationBase",
     "ApplicationCreate",
     "ApplicationUpdate",
     "ApplicationResponse",
@@ -117,7 +93,6 @@ __all__ = [
     "ApplicationHire",
     "ApplicationBulkAction",
     # Interview
-    "InterviewBase",
     "InterviewCreate",
     "InterviewUpdate",
     "InterviewResponse",
@@ -131,28 +106,15 @@ __all__ = [
     "InterviewSlot",
     "InterviewCalendar",
     # CandidateSkill
-    "CandidateSkillBase",
     "CandidateSkillCreate",
     "CandidateSkillUpdate",
     "CandidateSkillResponse",
-    "CandidateSkillListResponse",
-    "CandidateSkillFilter",
-    "CertificationAdd",
     # CandidateExperience
-    "CandidateExperienceBase",
     "CandidateExperienceCreate",
     "CandidateExperienceUpdate",
     "CandidateExperienceResponse",
-    "CandidateExperienceListResponse",
-    "CandidateExperienceFilter",
-    "ReferenceInfo",
     # CandidateEducation
-    "CandidateEducationBase",
     "CandidateEducationCreate",
     "CandidateEducationUpdate",
     "CandidateEducationResponse",
-    "CandidateEducationListResponse",
-    "CandidateEducationFilter",
-    "ThesisInfo",
-    "ExchangeInfo",
 ]

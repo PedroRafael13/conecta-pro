@@ -1,6 +1,6 @@
 """Dashboard Unificado de Pendências."""
 
+from .dashboard_controller import router  # noqa: F401
 from .unified_dashboard import UnifiedDashboard
-from .dashboard_controller import DashboardController
 
-__all__ = ["UnifiedDashboard", "DashboardController"]
+__all__ = ["UnifiedDashboard", "router"]

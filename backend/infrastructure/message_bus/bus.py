@@ -14,33 +14,24 @@ Implementacao de um message bus in-memory com suporte a:
 """
 
 import asyncio
+import contextlib
 import logging
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from enum import Enum
+from datetime import datetime
+from enum import Enum, StrEnum
 from typing import (
     Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Set,
-    Type,
     TypeVar,
-    Union,
 )
-
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 
-class MessageType(str, Enum):
+class MessageType(StrEnum):
     """Tipos de mensagem suportados pelo bus.
 
     Attributes:
@@ -72,7 +63,7 @@ class MessagePriority(int, Enum):
     CRITICAL = 3
 
 
-class MessageStatus(str, Enum):
+class MessageStatus(StrEnum):
     """Status de processamento de mensagem.
 
     Attributes:
@@ -115,20 +106,20 @@ class Message:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     type: MessageType = MessageType.EVENT
     topic: str = ""
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
     priority: MessagePriority = MessagePriority.NORMAL
-    source_phase: Optional[int] = None
-    target_phase: Optional[int] = None
-    correlation_id: Optional[str] = None
-    causation_id: Optional[str] = None
+    source_phase: int | None = None
+    target_phase: int | None = None
+    correlation_id: str | None = None
+    causation_id: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
-    processed_at: Optional[datetime] = None
+    processed_at: datetime | None = None
     status: MessageStatus = MessageStatus.PENDING
     retry_count: int = 0
     max_retries: int = 3
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte mensagem para dicionário.
 
         Returns:
@@ -158,7 +149,7 @@ T = TypeVar("T")
 R = TypeVar("R")
 
 # Tipo para funções handler
-HandlerFunc = Callable[[Message], Awaitable[Optional[Any]]]
+HandlerFunc = Callable[[Message], Awaitable[Any | None]]
 
 
 class Handler(ABC):
@@ -168,7 +159,7 @@ class Handler(ABC):
     """
 
     @abstractmethod
-    async def handle(self, message: Message) -> Optional[Any]:
+    async def handle(self, message: Message) -> Any | None:
         """Processa uma mensagem.
 
         Args:
@@ -195,8 +186,8 @@ class Subscriber:
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     topic: str = ""
-    handler: Optional[Union[HandlerFunc, Handler]] = None
-    filter_func: Optional[Callable[[Message], bool]] = None
+    handler: HandlerFunc | Handler | None = None
+    filter_func: Callable[[Message], bool] | None = None
     active: bool = True
     created_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -213,9 +204,9 @@ class MessageBusMetrics:
         self.messages_processed: int = 0
         self.messages_failed: int = 0
         self.messages_dead_letter: int = 0
-        self.processing_times: List[float] = []
-        self.topic_counts: Dict[str, int] = defaultdict(int)
-        self.phase_counts: Dict[int, int] = defaultdict(int)
+        self.processing_times: list[float] = []
+        self.topic_counts: dict[str, int] = defaultdict(int)
+        self.phase_counts: dict[int, int] = defaultdict(int)
 
     def record_publish(self, message: Message) -> None:
         """Registra publicação de mensagem.
@@ -248,26 +239,20 @@ class MessageBusMetrics:
         """Registra envio para dead letter queue."""
         self.messages_dead_letter += 1
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estatísticas atuais.
 
         Returns:
             Dict com estatísticas do bus.
         """
-        avg_time = (
-            sum(self.processing_times) / len(self.processing_times)
-            if self.processing_times
-            else 0
-        )
+        avg_time = sum(self.processing_times) / len(self.processing_times) if self.processing_times else 0
         return {
             "messages_published": self.messages_published,
             "messages_processed": self.messages_processed,
             "messages_failed": self.messages_failed,
             "messages_dead_letter": self.messages_dead_letter,
             "success_rate": (
-                self.messages_processed / self.messages_published * 100
-                if self.messages_published > 0
-                else 100
+                self.messages_processed / self.messages_published * 100 if self.messages_published > 0 else 100
             ),
             "avg_processing_time_ms": avg_time * 1000,
             "topic_counts": dict(self.topic_counts),
@@ -316,13 +301,11 @@ class MessageBus:
             processing_timeout: Timeout para processamento em segundos.
             enable_dead_letter: Habilitar dead letter queue.
         """
-        self._subscribers: Dict[str, List[Subscriber]] = defaultdict(list)
-        self._handlers: Dict[str, Handler] = {}
-        self._queue: asyncio.PriorityQueue[tuple] = asyncio.PriorityQueue(
-            maxsize=max_queue_size
-        )
-        self._dead_letter: List[Message] = []
-        self._pending_messages: Dict[str, Message] = {}
+        self._subscribers: dict[str, list[Subscriber]] = defaultdict(list)
+        self._handlers: dict[str, Handler] = {}
+        self._queue: asyncio.PriorityQueue[tuple] = asyncio.PriorityQueue(maxsize=max_queue_size)
+        self._dead_letter: list[Message] = []
+        self._pending_messages: dict[str, Message] = {}
         self._metrics = MessageBusMetrics()
 
         self._max_queue_size = max_queue_size
@@ -330,7 +313,7 @@ class MessageBus:
         self._enable_dead_letter = enable_dead_letter
 
         self._running = False
-        self._processor_task: Optional[asyncio.Task] = None
+        self._processor_task: asyncio.Task | None = None
         self._lock = asyncio.Lock()
 
         logger.info(
@@ -361,10 +344,8 @@ class MessageBus:
 
         if self._processor_task:
             self._processor_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._processor_task
-            except asyncio.CancelledError:
-                pass
 
         logger.info("MessageBus parado")
 
@@ -413,8 +394,8 @@ class MessageBus:
     def subscribe(
         self,
         topic: str,
-        handler: Union[HandlerFunc, Handler],
-        filter_func: Optional[Callable[[Message], bool]] = None,
+        handler: HandlerFunc | Handler,
+        filter_func: Callable[[Message], bool] | None = None,
     ) -> str:
         """Registra um subscriber para um tópico.
 
@@ -486,7 +467,7 @@ class MessageBus:
                         self._queue.get(),
                         timeout=1.0,
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
 
                 # Processar mensagem
@@ -539,7 +520,7 @@ class MessageBus:
                             timeout=self._processing_timeout,
                         )
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.warning(
                         "Timeout ao processar mensagem: id=%s, subscriber=%s",
                         message.id,
@@ -597,7 +578,7 @@ class MessageBus:
             # Remover de pending
             self._pending_messages.pop(message.id, None)
 
-    def _find_subscribers(self, topic: str) -> List[Subscriber]:
+    def _find_subscribers(self, topic: str) -> list[Subscriber]:
         """Encontra subscribers para um tópico.
 
         Suporta wildcards:
@@ -610,13 +591,11 @@ class MessageBus:
         Returns:
             Lista de subscribers relevantes.
         """
-        matching: List[Subscriber] = []
+        matching: list[Subscriber] = []
 
         # Match exato
         if topic in self._subscribers:
-            matching.extend(
-                s for s in self._subscribers[topic] if s.active
-            )
+            matching.extend(s for s in self._subscribers[topic] if s.active)
 
         # Match com wildcards
         topic_parts = topic.split(".")
@@ -632,8 +611,8 @@ class MessageBus:
 
     def _match_wildcard(
         self,
-        topic_parts: List[str],
-        pattern_parts: List[str],
+        topic_parts: list[str],
+        pattern_parts: list[str],
     ) -> bool:
         """Verifica se um tópico corresponde a um padrão com wildcards.
 
@@ -650,7 +629,7 @@ class MessageBus:
                 return len(topic_parts) >= len(pattern_parts) - 1
             return False
 
-        for tp, pp in zip(topic_parts, pattern_parts):
+        for tp, pp in zip(topic_parts, pattern_parts, strict=False):
             if pp == "*":
                 continue
             if tp != pp:
@@ -658,7 +637,7 @@ class MessageBus:
 
         return True
 
-    def get_dead_letter_messages(self) -> List[Message]:
+    def get_dead_letter_messages(self) -> list[Message]:
         """Retorna mensagens da dead letter queue.
 
         Returns:
@@ -676,7 +655,7 @@ class MessageBus:
         self._dead_letter.clear()
         return count
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Retorna métricas do bus.
 
         Returns:
@@ -687,14 +666,12 @@ class MessageBus:
             "queue_size": self._queue.qsize(),
             "pending_messages": len(self._pending_messages),
             "dead_letter_count": len(self._dead_letter),
-            "subscribers_count": sum(
-                len(subs) for subs in self._subscribers.values()
-            ),
+            "subscribers_count": sum(len(subs) for subs in self._subscribers.values()),
             "topics_count": len(self._subscribers),
             "running": self._running,
         }
 
-    def get_health(self) -> Dict[str, Any]:
+    def get_health(self) -> dict[str, Any]:
         """Retorna status de saúde do bus.
 
         Returns:
@@ -719,7 +696,7 @@ class MessageBus:
 
 
 # Instância singleton
-_message_bus: Optional[MessageBus] = None
+_message_bus: MessageBus | None = None
 
 
 def get_message_bus() -> MessageBus:

@@ -1,16 +1,16 @@
 """Repository para DocumentTag."""
 
 import logging
-from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_, or_, insert, delete
+from sqlalchemy import and_, delete, func, insert, or_, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_tag import DocumentTag, TagType, document_tag_association
 from modules.ged.schemas.document_tag import (
     DocumentTagCreate,
-    DocumentTagUpdate,
     DocumentTagFilter,
+    DocumentTagUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,16 +33,12 @@ class DocumentTagRepository:
         await self.session.flush()
         return tag
 
-    async def get_by_id(self, tag_id: str) -> Optional[DocumentTag]:
+    async def get_by_id(self, tag_id: str) -> DocumentTag | None:
         """Busca tag por ID."""
-        result = await self.session.execute(
-            select(DocumentTag).where(DocumentTag.id == tag_id)
-        )
+        result = await self.session.execute(select(DocumentTag).where(DocumentTag.id == tag_id))
         return result.scalar_one_or_none()
 
-    async def get_by_slug(
-        self, slug: str, condominium_id: str = None
-    ) -> Optional[DocumentTag]:
+    async def get_by_slug(self, slug: str, condominium_id: str = None) -> DocumentTag | None:
         """Busca tag por slug."""
         query = select(DocumentTag).where(DocumentTag.slug == slug)
         if condominium_id:
@@ -55,9 +51,7 @@ class DocumentTagRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_name(
-        self, name: str, condominium_id: str = None
-    ) -> Optional[DocumentTag]:
+    async def get_by_name(self, name: str, condominium_id: str = None) -> DocumentTag | None:
         """Busca tag por nome."""
         query = select(DocumentTag).where(DocumentTag.name == name)
         if condominium_id:
@@ -70,9 +64,7 @@ class DocumentTagRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def update(
-        self, tag_id: str, data: DocumentTagUpdate
-    ) -> Optional[DocumentTag]:
+    async def update(self, tag_id: str, data: DocumentTagUpdate) -> DocumentTag | None:
         """Atualiza uma tag."""
         tag = await self.get_by_id(tag_id)
         if not tag:
@@ -100,14 +92,24 @@ class DocumentTagRepository:
         await self.session.flush()
         return True
 
+    async def soft_delete(self, tag_id: str) -> bool:
+        """Desativa tag (soft delete)."""
+        tag = await self.get_by_id(tag_id)
+        if not tag or tag.is_system:
+            return False
+
+        tag.deactivate()
+        await self.session.flush()
+        return True
+
     async def list_with_filters(
         self,
-        filters: Optional[DocumentTagFilter] = None,
+        filters: DocumentTagFilter | None = None,
         skip: int = 0,
         limit: int = 50,
         order_by: str = "name",
         order_desc: bool = False,
-    ) -> Tuple[List[DocumentTag], int]:
+    ) -> tuple[list[DocumentTag], int]:
         """Lista tags com filtros e paginação."""
         query = select(DocumentTag)
 
@@ -142,7 +144,8 @@ class DocumentTagRepository:
         total = total_result.scalar() or 0
 
         # Ordenação
-        order_column = getattr(DocumentTag, order_by, DocumentTag.name)
+        _valid_order_column_cols = {c.key for c in sa_inspect(DocumentTag).mapper.column_attrs}
+        order_column = getattr(DocumentTag, order_by if order_by in _valid_order_column_cols else "name")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:
@@ -156,7 +159,20 @@ class DocumentTagRepository:
 
         return list(tags), total
 
-    async def get_root_tags(self, condominium_id: str = None) -> List[DocumentTag]:
+    async def get_tree(self, condominium_id: str = None) -> list[DocumentTag]:
+        """Retorna todas as tags para montagem de arvore."""
+        query = select(DocumentTag).where(DocumentTag.is_active.is_(True))
+        if condominium_id:
+            query = query.where(
+                or_(
+                    DocumentTag.condominium_id == condominium_id,
+                    DocumentTag.is_global.is_(True),
+                )
+            )
+        result = await self.session.execute(query.order_by(DocumentTag.order, DocumentTag.name))
+        return list(result.scalars().all())
+
+    async def get_root_tags(self, condominium_id: str = None) -> list[DocumentTag]:
         """Retorna tags raiz (sem pai)."""
         query = select(DocumentTag).where(
             and_(
@@ -175,7 +191,7 @@ class DocumentTagRepository:
         result = await self.session.execute(query.order_by(DocumentTag.order, DocumentTag.name))
         return list(result.scalars().all())
 
-    async def get_children(self, tag_id: str) -> List[DocumentTag]:
+    async def get_children(self, tag_id: str) -> list[DocumentTag]:
         """Retorna tags filhas."""
         query = (
             select(DocumentTag)
@@ -190,9 +206,7 @@ class DocumentTagRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_type(
-        self, tag_type: TagType, condominium_id: str = None
-    ) -> List[DocumentTag]:
+    async def get_by_type(self, tag_type: TagType, condominium_id: str = None) -> list[DocumentTag]:
         """Retorna tags por tipo."""
         query = select(DocumentTag).where(
             and_(
@@ -211,9 +225,7 @@ class DocumentTagRepository:
         result = await self.session.execute(query.order_by(DocumentTag.name))
         return list(result.scalars().all())
 
-    async def assign_to_document(
-        self, document_id: str, tag_id: str, created_by: str
-    ) -> bool:
+    async def assign_to_document(self, document_id: str, tag_id: str, created_by: str) -> bool:
         """Atribui tag a documento."""
         tag = await self.get_by_id(tag_id)
         if not tag:
@@ -246,7 +258,7 @@ class DocumentTagRepository:
         await self.session.flush()
         return True
 
-    async def get_document_tags(self, document_id: str) -> List[DocumentTag]:
+    async def get_document_tags(self, document_id: str) -> list[DocumentTag]:
         """Retorna tags de um documento."""
         query = (
             select(DocumentTag)
@@ -257,9 +269,7 @@ class DocumentTagRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_documents_by_tag(
-        self, tag_id: str, skip: int = 0, limit: int = 50
-    ) -> List[str]:
+    async def get_documents_by_tag(self, tag_id: str, skip: int = 0, limit: int = 50) -> list[str]:
         """Retorna IDs de documentos com a tag."""
         query = (
             select(document_tag_association.c.document_id)
@@ -270,7 +280,18 @@ class DocumentTagRepository:
         result = await self.session.execute(query)
         return [row[0] for row in result.fetchall()]
 
-    async def deactivate(self, tag_id: str) -> Optional[DocumentTag]:
+    async def is_associated(self, tag_id: str, document_id: str) -> bool:
+        """Verifica se uma tag está associada a um documento."""
+        query = select(document_tag_association).where(
+            and_(
+                document_tag_association.c.tag_id == tag_id,
+                document_tag_association.c.document_id == document_id,
+            )
+        )
+        result = await self.session.execute(query)
+        return result.first() is not None
+
+    async def deactivate(self, tag_id: str) -> DocumentTag | None:
         """Desativa tag."""
         tag = await self.get_by_id(tag_id)
         if not tag or tag.is_system:
@@ -279,7 +300,7 @@ class DocumentTagRepository:
         await self.session.flush()
         return tag
 
-    async def activate(self, tag_id: str) -> Optional[DocumentTag]:
+    async def activate(self, tag_id: str) -> DocumentTag | None:
         """Ativa tag."""
         tag = await self.get_by_id(tag_id)
         if not tag:
@@ -288,9 +309,7 @@ class DocumentTagRepository:
         await self.session.flush()
         return tag
 
-    async def get_most_used(
-        self, condominium_id: str = None, limit: int = 10
-    ) -> List[DocumentTag]:
+    async def get_most_used(self, condominium_id: str = None, limit: int = 10) -> list[DocumentTag]:
         """Retorna tags mais usadas."""
         query = select(DocumentTag).where(DocumentTag.is_active.is_(True))
         if condominium_id:
@@ -304,7 +323,7 @@ class DocumentTagRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_recently_used(self, limit: int = 10) -> List[DocumentTag]:
+    async def get_recently_used(self, limit: int = 10) -> list[DocumentTag]:
         """Retorna tags usadas recentemente."""
         query = (
             select(DocumentTag)
@@ -320,9 +339,7 @@ class DocumentTagRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def search(
-        self, query_str: str, condominium_id: str = None, limit: int = 10
-    ) -> List[DocumentTag]:
+    async def search(self, query_str: str, condominium_id: str = None, limit: int = 10) -> list[DocumentTag]:
         """Busca tags por texto."""
         search_term = f"%{query_str}%"
         query = (
@@ -380,8 +397,6 @@ class DocumentTagRepository:
 
         # Top 5 mais usadas
         sorted_tags = sorted(tags, key=lambda t: t.usage_count, reverse=True)[:5]
-        stats["most_used"] = [
-            {"id": t.id, "name": t.name, "count": t.usage_count} for t in sorted_tags
-        ]
+        stats["most_used"] = [{"id": t.id, "name": t.name, "count": t.usage_count} for t in sorted_tags]
 
         return stats

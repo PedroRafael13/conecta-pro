@@ -91,6 +91,84 @@ class EnhancedActionDetector(ActionDetector):
         logger.info(f"Patterns expandidos: {sum(len(p) for p in expanded.values())} total")
         return expanded
 
+    # Palavras que indicam CONSULTA (não ação de criação)
+    _QUERY_INDICATORS = {
+        "qual",
+        "quais",
+        "ver",
+        "listar",
+        "mostrar",
+        "mostra",
+        "me mostra",
+        "quero ver",
+        "hoje",
+        "esta semana",
+        "publicadas",
+        "ativas",
+        "vigentes",
+        "existe",
+        "tem",
+        "como esta",
+        "como estao",
+        "quantos",
+        "quantas",
+    }
+
+    # ActionTypes de CRIAÇÃO (devem ser bloqueados se há query indicator)
+    _CREATE_ACTIONS = {
+        "create_scale",
+        "create_shift",
+        "create_post",
+        "create_occurrence",
+        "create_disciplinary",
+        "create_round",
+        "create_diarist",
+        "schedule_diarist",
+        "create_announcement",
+        "create_substitution",
+        "allocate_employee",
+    }
+
+    def _is_query_not_action(self, message: str) -> bool:
+        """Retorna True se NAO deve disparar acao CREATE.
+
+        Regra: sem palavra de criacao explicita = consulta.
+        Palavra solta ('escala', 'posto') nunca cria nada.
+        """
+        msg_lower = message.lower()
+        words = msg_lower.split()
+        create_words = {
+            "criar",
+            "cria",
+            "crie",
+            "novo",
+            "nova",
+            "novos",
+            "novas",
+            "gerar",
+            "gera",
+            "gere",
+            "cadastrar",
+            "cadastra",
+            "cadastre",
+            "adicionar",
+            "adiciona",
+            "adicione",
+            "registrar",
+            "registra",
+            "montar",
+            "monta",
+            "monte",
+            "incluir",
+            "inclua",
+            "inserir",
+            "lancar",
+            "lanca",
+            "lance",
+        }
+        has_create = any(w in create_words for w in words)
+        return not has_create
+
     def detect(self, message: str, user_id: str, session_id: str) -> ActionRequest | None:
         """
         Detecta ação com suporte avançado a NLP.
@@ -100,31 +178,48 @@ class EnhancedActionDetector(ActionDetector):
         2. Pattern matching com fuzzy
         3. Fallback LLM (se disponível)
 
-        Args:
-            message: Mensagem do usuário
-            user_id: ID do usuário
-            session_id: ID da sessão
-
-        Returns:
-            ActionRequest se detectou, None caso contrário
+        GUARD: se mensagem tem indicadores de consulta (qual, ver, mostrar,
+        hoje) sem indicadores de criação (criar, nova), rejeita ações CREATE.
         """
+        # GUARD: consultas não devem virar ações de criação
+        is_query = self._is_query_not_action(message)
+
         # 1. Tentar detecção padrão primeiro (mais rápido)
         result = super().detect(message, user_id, session_id)
         if result and result.confidence >= 0.8:
+            if is_query and result.action_type.value in self._CREATE_ACTIONS:
+                logger.info(
+                    "GUARD: bloqueou %s para consulta '%s'",
+                    result.action_type.value,
+                    message[:50],
+                )
+                return None
             return result
 
         # 2. Tentar com patterns expandidos
         fuzzy_result = self._detect_with_fuzzy(message, user_id, session_id)
         if fuzzy_result:
+            if is_query and fuzzy_result.action_type.value in self._CREATE_ACTIONS:
+                logger.info(
+                    "GUARD: bloqueou fuzzy %s para consulta '%s'",
+                    fuzzy_result.action_type.value,
+                    message[:50],
+                )
+                return None
             return fuzzy_result
 
         # 3. Fallback LLM se disponível
         if self.llm_provider:
             llm_result = self._detect_with_llm(message, user_id, session_id)
             if llm_result:
+                if is_query and llm_result.action_type.value in self._CREATE_ACTIONS:
+                    return None
                 return llm_result
 
-        return result  # Retornar resultado original mesmo que baixa confiança
+        # Guard no fallback final também
+        if result and is_query and result.action_type.value in self._CREATE_ACTIONS:
+            return None
+        return result
 
     def _detect_with_fuzzy(self, message: str, user_id: str, session_id: str) -> ActionRequest | None:
         """
@@ -284,8 +379,6 @@ parameters: {{"param": "value"}}
             ActionType.APPROVE_SCALE: "Aprovar escala pendente",
             ActionType.ALLOCATE_EMPLOYEE: "Alocar funcionário em posto",
             ActionType.GENERATE_REPORT: "Gerar relatório",
-            ActionType.OPENCLAW_RUN_TESTS: "Executar testes de qualidade",
-            ActionType.OPENCLAW_RUN_FULL_CYCLE: "Executar verificação completa OpenClaw",
             # Adicionar mais conforme necessário
         }
         return descriptions.get(action_type, action_type.value.replace("_", " "))

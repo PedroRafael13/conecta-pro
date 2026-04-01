@@ -9,7 +9,7 @@ import hashlib
 import hmac
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -75,8 +75,8 @@ class ItauAdapter(BaseBankingAdapter):
     def __init__(self, credentials: BankCredentials) -> None:
         """Inicializa adapter Itau."""
         super().__init__(credentials)
-        self._client: Optional[httpx.AsyncClient] = None
-        self._account_id: Optional[str] = None
+        self._client: httpx.AsyncClient | None = None
+        self._account_id: str | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Retorna cliente HTTP configurado."""
@@ -181,8 +181,8 @@ class ItauAdapter(BaseBankingAdapter):
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict] = None,
-        params: Optional[dict] = None,
+        data: dict | None = None,
+        params: dict | None = None,
     ) -> dict[str, Any]:
         """Faz requisicao autenticada."""
         await self.ensure_authenticated()
@@ -285,9 +285,7 @@ class ItauAdapter(BaseBankingAdapter):
             blocked=blocked,
             total=available + blocked,
             currency=data.get("data", {}).get("currency", "BRL"),
-            updated_at=datetime.fromisoformat(
-                data.get("data", {}).get("updateDateTime", datetime.now().isoformat())
-            ),
+            updated_at=datetime.fromisoformat(data.get("data", {}).get("updateDateTime", datetime.now().isoformat())),
         )
 
     async def get_statement(
@@ -338,9 +336,7 @@ class ItauAdapter(BaseBankingAdapter):
 
         return BankTransaction(
             transaction_id=tx_item.get("transactionId", ""),
-            date=datetime.fromisoformat(
-                tx_item.get("transactionDateTime", datetime.now().isoformat())
-            ),
+            date=datetime.fromisoformat(tx_item.get("transactionDateTime", datetime.now().isoformat())),
             amount=self._parse_amount(tx_item.get("amount", 0)),
             transaction_type=tx_type,
             description=tx_item.get("transactionName", ""),
@@ -349,9 +345,7 @@ class ItauAdapter(BaseBankingAdapter):
             counterpart_document=tx_item.get("completedAuthorisedPaymentType", {}).get("document"),
             counterpart_bank=tx_item.get("completedAuthorisedPaymentType", {}).get("bankCode"),
             counterpart_agency=tx_item.get("completedAuthorisedPaymentType", {}).get("branchCode"),
-            counterpart_account=tx_item.get("completedAuthorisedPaymentType", {}).get(
-                "accountNumber"
-            ),
+            counterpart_account=tx_item.get("completedAuthorisedPaymentType", {}).get("accountNumber"),
             reference=tx_item.get("endToEndIdentification"),
         )
 
@@ -486,7 +480,7 @@ class ItauAdapter(BaseBankingAdapter):
     async def validate_pix_key(
         self,
         key: str,
-    ) -> Optional[PixKey]:
+    ) -> PixKey | None:
         """Valida chave PIX."""
         endpoint = f"{self.PIX_ENDPOINT}/dict/v1/dict/{key}"
 
@@ -514,7 +508,7 @@ class ItauAdapter(BaseBankingAdapter):
         self,
         pix_key: str,
         amount: Decimal,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> PaymentResponse:
         """Inicia transferencia PIX."""
         # Primeiro valida a chave

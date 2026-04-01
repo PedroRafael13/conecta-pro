@@ -1,10 +1,9 @@
 """Schemas Pydantic para REPSync."""
 
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class REPSyncBase(BaseModel):
@@ -25,24 +24,24 @@ class REPSyncCreate(REPSyncBase):
 
     device_id: UUID
     condominio_id: UUID
-    triggered_by: Optional[UUID] = None
-    events_from_datetime: Optional[datetime] = None
-    events_to_datetime: Optional[datetime] = None
+    triggered_by: UUID | None = None
+    events_from_datetime: datetime | None = None
+    events_to_datetime: datetime | None = None
 
 
 class REPSyncUpdate(BaseModel):
     """Schema para atualizar REPSync."""
 
-    status: Optional[str] = None
-    total_items: Optional[int] = None
-    processed_items: Optional[int] = None
-    success_items: Optional[int] = None
-    error_items: Optional[int] = None
-    skipped_items: Optional[int] = None
-    last_nsr_after: Optional[int] = None
-    error_message: Optional[str] = None
-    error_code: Optional[str] = None
-    error_details: Optional[dict] = None
+    status: str | None = None
+    total_items: int | None = None
+    processed_items: int | None = None
+    success_items: int | None = None
+    error_items: int | None = None
+    skipped_items: int | None = None
+    last_nsr_after: int | None = None
+    error_message: str | None = None
+    error_code: str | None = None
+    error_details: dict | None = None
 
 
 class REPSyncResponse(REPSyncBase):
@@ -54,20 +53,20 @@ class REPSyncResponse(REPSyncBase):
     device_id: UUID
     condominio_id: UUID
     status: str
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    duration_seconds: Optional[int] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    duration_seconds: int | None = None
     total_items: int
     processed_items: int
     success_items: int
     error_items: int
     skipped_items: int
-    last_nsr_before: Optional[int] = None
-    last_nsr_after: Optional[int] = None
-    events_from_datetime: Optional[datetime] = None
-    events_to_datetime: Optional[datetime] = None
-    error_message: Optional[str] = None
-    error_code: Optional[str] = None
+    last_nsr_before: int | None = None
+    last_nsr_after: int | None = None
+    events_from_datetime: datetime | None = None
+    events_to_datetime: datetime | None = None
+    error_message: str | None = None
+    error_code: str | None = None
     retry_count: int
     bytes_transferred: int
     api_calls_made: int
@@ -91,7 +90,7 @@ class REPSyncResponse(REPSyncBase):
 class REPSyncList(BaseModel):
     """Schema para lista de sincronizações."""
 
-    items: List[REPSyncResponse]
+    items: list[REPSyncResponse]
     total: int
     page: int
     page_size: int
@@ -101,14 +100,14 @@ class REPSyncList(BaseModel):
 class REPSyncFilter(BaseModel):
     """Filtros para busca de sincronizações."""
 
-    device_id: Optional[UUID] = None
-    condominio_id: Optional[UUID] = None
-    sync_type: Optional[str] = None
-    status: Optional[str] = None
-    trigger: Optional[str] = None
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
-    has_errors: Optional[bool] = None
+    device_id: UUID | None = None
+    condominio_id: UUID | None = None
+    sync_type: str | None = None
+    status: str | None = None
+    trigger: str | None = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+    has_errors: bool | None = None
 
 
 class REPSyncStart(BaseModel):
@@ -119,15 +118,15 @@ class REPSyncStart(BaseModel):
         default="events_pull",
         description="Tipo de sincronização",
     )
-    from_datetime: Optional[datetime] = Field(
+    from_datetime: datetime | None = Field(
         default=None,
         description="Data/hora inicial para buscar eventos",
     )
-    to_datetime: Optional[datetime] = Field(
+    to_datetime: datetime | None = Field(
         default=None,
         description="Data/hora final para buscar eventos",
     )
-    from_nsr: Optional[int] = Field(
+    from_nsr: int | None = Field(
         default=None,
         description="NSR inicial para buscar eventos",
     )
@@ -147,10 +146,10 @@ class REPSyncProgress(BaseModel):
     total_items: int
     success_items: int
     error_items: int
-    elapsed_seconds: Optional[int] = None
-    estimated_remaining_seconds: Optional[int] = None
-    current_nsr: Optional[int] = None
-    last_error: Optional[str] = None
+    elapsed_seconds: int | None = None
+    estimated_remaining_seconds: int | None = None
+    current_nsr: int | None = None
+    last_error: str | None = None
 
 
 class REPSyncResult(BaseModel):
@@ -165,8 +164,8 @@ class REPSyncResult(BaseModel):
     skipped_items: int
     success_rate: float
     new_events_count: int
-    last_nsr: Optional[int] = None
-    errors: Optional[List[dict]] = None
+    last_nsr: int | None = None
+    errors: list[dict] | None = None
 
 
 class REPSyncSchedule(BaseModel):
@@ -180,12 +179,12 @@ class REPSyncSchedule(BaseModel):
         le=86400,
     )
     sync_type: str = "events_pull"
-    start_time: Optional[str] = Field(
+    start_time: str | None = Field(
         default=None,
         description="Hora de início (HH:MM)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
-    end_time: Optional[str] = Field(
+    end_time: str | None = Field(
         default=None,
         description="Hora de fim (HH:MM)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",

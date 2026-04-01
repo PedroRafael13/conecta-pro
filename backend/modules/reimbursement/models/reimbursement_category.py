@@ -2,7 +2,6 @@
 
 import uuid
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import (
     Boolean,
@@ -69,7 +68,7 @@ class ReimbursementCategory(Base):
     def __repr__(self) -> str:
         return f"<ReimbursementCategory {self.code} - {self.name}>"
 
-    def check_limit(self, amount: Decimal, request_total: Decimal = Decimal("0.00")) -> tuple[bool, Optional[str]]:
+    def check_limit(self, amount: Decimal, request_total: Decimal = Decimal("0.00")) -> tuple[bool, str | None]:
         """
         Verifica se o valor está dentro do limite.
 
@@ -95,7 +94,9 @@ class ReimbursementCategory(Base):
             "code": self.code,
             "name": self.name,
             "description": self.description,
-            "default_limit_per_request": float(self.default_limit_per_request) if self.default_limit_per_request else None,
+            "default_limit_per_request": float(self.default_limit_per_request)
+            if self.default_limit_per_request
+            else None,
             "default_limit_monthly": float(self.default_limit_monthly) if self.default_limit_monthly else None,
             "requires_receipt": self.requires_receipt,
             "auto_approve_below": float(self.auto_approve_below) if self.auto_approve_below else None,

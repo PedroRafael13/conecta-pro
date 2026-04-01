@@ -3,33 +3,33 @@ AI Email Assistant Schemas - Sprint 54.
 """
 
 from modules.ai.email_assistant.schemas.email_schemas import (
-    # Enums
-    EmailStatusEnum,
+    EmailAnalysisRequest,
+    # Dashboard
+    EmailAssistantDashboard,
     EmailCategoryEnum,
-    EmailPriorityEnum,
-    EmailSentimentEnum,
+    EmailClassificationResult,
     # Email
     EmailCreate,
-    EmailUpdate,
-    EmailResponse,
     EmailListResponse,
-    EmailClassificationResult,
-    EmailAnalysisRequest,
+    EmailPriorityEnum,
+    EmailResponse,
     # Response
     EmailResponseCreate,
     EmailResponseOut,
-    GenerateReplyRequest,
-    GenerateReplyResponse,
-    # Template
-    EmailTemplateCreate,
-    EmailTemplateUpdate,
-    EmailTemplateResponse,
     # Rule
     EmailRuleCreate,
-    EmailRuleUpdate,
     EmailRuleResponse,
-    # Dashboard
-    EmailAssistantDashboard,
+    EmailRuleUpdate,
+    EmailSentimentEnum,
+    # Enums
+    EmailStatusEnum,
+    # Template
+    EmailTemplateCreate,
+    EmailTemplateResponse,
+    EmailTemplateUpdate,
+    EmailUpdate,
+    GenerateReplyRequest,
+    GenerateReplyResponse,
 )
 
 __all__ = [

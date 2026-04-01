@@ -4,34 +4,34 @@ Testes unitarios para models do BI Dashboard Financeiro.
 Sprint 30 - Business Intelligence Dashboard
 """
 
-from datetime import datetime, date, timedelta, UTC
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
 import pytest
 
+from modules.financial.bi_dashboard.models.dashboard_config import (
+    DashboardLayout,
+    DashboardStatus,
+    DashboardType,
+    FinancialDashboard,
+    RefreshInterval,
+)
 from modules.financial.bi_dashboard.models.kpi_definition import (
+    AlertLevel,
     FinancialKPI,
     KPICategory,
     KPIFrequency,
     KPIStatus,
     KPITrend,
-    AlertLevel,
-)
-from modules.financial.bi_dashboard.models.dashboard_config import (
-    FinancialDashboard,
-    DashboardType,
-    DashboardStatus,
-    DashboardLayout,
-    RefreshInterval,
 )
 from modules.financial.bi_dashboard.models.scheduled_report import (
-    ScheduledReport,
-    ReportType,
+    DeliveryMethod,
     ReportFormat,
     ReportFrequency,
     ReportStatus,
-    DeliveryMethod,
+    ReportType,
+    ScheduledReport,
 )
 
 
@@ -90,6 +90,7 @@ class TestFinancialKPI:
             unidade="",
             is_percentage=False,
             casas_decimais=2,
+            historico_dias=365,
         )
 
     def test_kpi_repr(self, sample_kpi):
@@ -335,7 +336,7 @@ class TestFinancialDashboard:
 
     def test_widget_count_empty(self, sample_dashboard):
         """Testa contagem de widgets vazio."""
-        sample_dashboard.widgets = None
+        sample_dashboard.widgets = []
         assert sample_dashboard.widget_count == 0
 
     def test_refresh_seconds_mapping(self, sample_dashboard):

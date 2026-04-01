@@ -4,33 +4,34 @@ Testes para SPED Fiscal.
 Testes unitários e de integração para SPED Fiscal (EFD ICMS/IPI).
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
 from unittest.mock import Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.sped_fiscal import (
+    ApuracaoICMS,
+    DocumentoFiscal,
+    FinalidadeArquivo,
+    Inventario,
+    Participante,
+    PerfilArquivo,
+    Produto,
+    SPEDFiscalManager,
+)
 from modules.government_integrations.schemas.sped_fiscal import (
+    CalcularApuracaoRequest,
+    DocumentoFiscalRequest,
+    FinalidadeArquivoEnum,
+    GerarArquivoRequest,
+    InventarioRequest,
     ParticipanteRequest,
     ProdutoRequest,
-    DocumentoFiscalRequest,
-    InventarioRequest,
-    GerarArquivoRequest,
-    CalcularApuracaoRequest,
-    FinalidadeArquivoEnum,
     TipoItemEnum,
 )
 from modules.government_integrations.services.sped_fiscal_service import (
     SPEDFiscalService,
-)
-from modules.government_integrations.core.sped_fiscal import (
-    SPEDFiscalManager,
-    Participante,
-    Produto,
-    DocumentoFiscal,
-    Inventario,
-    ApuracaoICMS,
-    FinalidadeArquivo,
-    PerfilArquivo,
 )
 
 
@@ -236,12 +237,15 @@ class TestSPEDFiscalService:
     @pytest.fixture
     def service(self):
         """Cria instância do service."""
-        with patch.dict('os.environ', {
-            'SPED_CNPJ': '35710481000103',
-            'EMPRESA_RAZAO_SOCIAL': 'Empresa Teste',
-            'EMPRESA_IE': '123456789',
-            'EMPRESA_UF': 'SP',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "SPED_CNPJ": "35710481000103",
+                "EMPRESA_RAZAO_SOCIAL": "Empresa Teste",
+                "EMPRESA_IE": "123456789",
+                "EMPRESA_UF": "SP",
+            },
+        ):
             return SPEDFiscalService()
 
     def test_service_init(self, service):
@@ -346,12 +350,13 @@ class TestSPEDFiscalEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.sped_fiscal_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -375,18 +380,9 @@ class TestSPEDFiscalEndpoints:
 
     def test_adicionar_participante_endpoint(self, client):
         """Testa endpoint de adicionar participante."""
-        payload = {
-            "participante": {
-                "codigo": "FORN001",
-                "nome": "Fornecedor Teste",
-                "cnpj_cpf": "12345678000190"
-            }
-        }
+        payload = {"participante": {"codigo": "FORN001", "nome": "Fornecedor Teste", "cnpj_cpf": "12345678000190"}}
 
-        response = client.post(
-            "/api/v1/government/sped-fiscal/participante",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-fiscal/participante", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -394,17 +390,9 @@ class TestSPEDFiscalEndpoints:
 
     def test_adicionar_produto_endpoint(self, client):
         """Testa endpoint de adicionar produto."""
-        payload = {
-            "produto": {
-                "codigo": "PROD001",
-                "descricao": "Produto Teste"
-            }
-        }
+        payload = {"produto": {"codigo": "PROD001", "descricao": "Produto Teste"}}
 
-        response = client.post(
-            "/api/v1/government/sped-fiscal/produto",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-fiscal/produto", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -422,14 +410,11 @@ class TestSPEDFiscalEndpoints:
                 "data_entrada_saida": "2026-01-15",
                 "codigo_participante": "FORN001",
                 "valor_total": "10000.00",
-                "cfop": "1102"
+                "cfop": "1102",
             }
         }
 
-        response = client.post(
-            "/api/v1/government/sped-fiscal/documento",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-fiscal/documento", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -437,16 +422,9 @@ class TestSPEDFiscalEndpoints:
 
     def test_gerar_arquivo_endpoint(self, client):
         """Testa endpoint de gerar arquivo."""
-        payload = {
-            "periodo_inicio": "2026-01-01",
-            "periodo_fim": "2026-01-31",
-            "finalidade": "0"
-        }
+        payload = {"periodo_inicio": "2026-01-01", "periodo_fim": "2026-01-31", "finalidade": "0"}
 
-        response = client.post(
-            "/api/v1/government/sped-fiscal/gerar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-fiscal/gerar", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -468,15 +446,12 @@ class TestSPEDFiscalEndpoints:
                     "codigo_participante": "FORN001",
                     "valor_total": "10000.00",
                     "valor_icms": "1800.00",
-                    "cfop": "1102"
+                    "cfop": "1102",
                 }
-            ]
+            ],
         }
 
-        response = client.post(
-            "/api/v1/government/sped-fiscal/apuracao",
-            json=payload
-        )
+        response = client.post("/api/v1/government/sped-fiscal/apuracao", json=payload)
 
         assert response.status_code == 200
         data = response.json()

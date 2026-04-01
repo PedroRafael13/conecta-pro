@@ -3,22 +3,19 @@ SyncRun Model - Histórico de Execuções de Sincronização
 Sprint 33: Integration Framework
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index, ForeignKey
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class SyncRunStatus(str, enum.Enum):
+class SyncRunStatus(StrEnum):
     """Status da execução de sync."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -28,8 +25,9 @@ class SyncRunStatus(str, enum.Enum):
     TIMEOUT = "timeout"
 
 
-class SyncRunMode(str, enum.Enum):
+class SyncRunMode(StrEnum):
     """Modo de sincronização."""
+
     FULL = "full"
     INCREMENTAL = "incremental"
     DELTA = "delta"
@@ -38,8 +36,9 @@ class SyncRunMode(str, enum.Enum):
     RECOVERY = "recovery"
 
 
-class SyncRunTrigger(str, enum.Enum):
+class SyncRunTrigger(StrEnum):
     """O que disparou a sync."""
+
     SCHEDULED = "scheduled"
     MANUAL = "manual"
     WEBHOOK = "webhook"
@@ -53,6 +52,7 @@ class SyncRun(Base):
     Model para histórico de execuções de sincronização.
     Cada sync run registra métricas, erros e estado.
     """
+
     __tablename__ = "sync_runs"
 
     # Primary key
@@ -61,10 +61,7 @@ class SyncRun(Base):
     # Referências
     tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     account_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("integration_accounts.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("integration_accounts.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Identificação
@@ -74,16 +71,8 @@ class SyncRun(Base):
 
     # Tipo e Modo
     connector_type = Column(String(50), nullable=False)
-    mode = Column(
-        Enum(SyncRunMode),
-        nullable=False,
-        default=SyncRunMode.INCREMENTAL
-    )
-    trigger = Column(
-        Enum(SyncRunTrigger),
-        nullable=False,
-        default=SyncRunTrigger.SCHEDULED
-    )
+    mode = Column(Enum(SyncRunMode), nullable=False, default=SyncRunMode.INCREMENTAL)
+    trigger = Column(Enum(SyncRunTrigger), nullable=False, default=SyncRunTrigger.SCHEDULED)
     triggered_by = Column(UUID(as_uuid=True), nullable=True)  # User ID se manual
 
     # Entidades
@@ -91,11 +80,7 @@ class SyncRun(Base):
     entity_filters = Column(JSONB, nullable=True)  # Filtros aplicados
 
     # Status
-    status = Column(
-        Enum(SyncRunStatus),
-        nullable=False,
-        default=SyncRunStatus.PENDING
-    )
+    status = Column(Enum(SyncRunStatus), nullable=False, default=SyncRunStatus.PENDING)
     status_message = Column(Text, nullable=True)
 
     # Timing
@@ -153,9 +138,7 @@ class SyncRun(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Índices
     __table_args__ = (
@@ -166,23 +149,15 @@ class SyncRun(Base):
         Index("ix_sync_runs_correlation_id", "correlation_id"),
         Index("ix_sync_runs_started_at", "started_at"),
         Index("ix_sync_runs_completed_at", "completed_at"),
-        Index(
-            "ix_sync_runs_tenant_status",
-            "tenant_id",
-            "status"
-        ),
-        Index(
-            "ix_sync_runs_account_status",
-            "account_id",
-            "status"
-        ),
+        Index("ix_sync_runs_tenant_status", "tenant_id", "status"),
+        Index("ix_sync_runs_account_status", "account_id", "status"),
         Index("ix_sync_runs_ativo", "ativo"),
     )
 
     def __repr__(self) -> str:
         return f"<SyncRun {self.connector_type} {self.status.value}>"
 
-    def start(self, worker_id: str, worker_host: Optional[str] = None) -> None:
+    def start(self, worker_id: str, worker_host: str | None = None) -> None:
         """Inicia a execução."""
         self.status = SyncRunStatus.RUNNING
         self.started_at = datetime.utcnow()
@@ -190,7 +165,7 @@ class SyncRun(Base):
         self.worker_host = worker_host
         self.updated_at = datetime.utcnow()
 
-    def complete_success(self, summary: Optional[dict] = None) -> None:
+    def complete_success(self, summary: dict | None = None) -> None:
         """Marca como completado com sucesso."""
         self.status = SyncRunStatus.COMPLETED
         self.completed_at = datetime.utcnow()
@@ -201,12 +176,7 @@ class SyncRun(Base):
             self.result_summary = summary
         self.updated_at = datetime.utcnow()
 
-    def complete_failed(
-        self,
-        error_code: str,
-        error_message: str,
-        error_details: Optional[dict] = None
-    ) -> None:
+    def complete_failed(self, error_code: str, error_message: str, error_details: dict | None = None) -> None:
         """Marca como falha."""
         self.status = SyncRunStatus.FAILED
         self.completed_at = datetime.utcnow()
@@ -219,11 +189,7 @@ class SyncRun(Base):
             self.error_details = error_details
         self.updated_at = datetime.utcnow()
 
-    def complete_partial(
-        self,
-        summary: Optional[dict] = None,
-        warnings: Optional[list] = None
-    ) -> None:
+    def complete_partial(self, summary: dict | None = None, warnings: list | None = None) -> None:
         """Marca como parcialmente completado."""
         self.status = SyncRunStatus.PARTIAL
         self.completed_at = datetime.utcnow()
@@ -247,7 +213,7 @@ class SyncRun(Base):
         self.error_message = f"Execução excedeu {self.timeout_seconds}s"
         self.updated_at = datetime.utcnow()
 
-    def cancel(self, reason: Optional[str] = None) -> None:
+    def cancel(self, reason: str | None = None) -> None:
         """Cancela a execução."""
         self.status = SyncRunStatus.CANCELLED
         self.completed_at = datetime.utcnow()
@@ -265,7 +231,7 @@ class SyncRun(Base):
         updated: int = 0,
         deleted: int = 0,
         skipped: int = 0,
-        failed: int = 0
+        failed: int = 0,
     ) -> None:
         """Incrementa contadores de itens."""
         self.items_processed += processed
@@ -277,11 +243,7 @@ class SyncRun(Base):
         self.updated_at = datetime.utcnow()
 
     def increment_api_metrics(
-        self,
-        requests: int = 1,
-        success: bool = True,
-        latency_ms: int = 0,
-        rate_limited: bool = False
+        self, requests: int = 1, success: bool = True, latency_ms: int = 0, rate_limited: bool = False
     ) -> None:
         """Incrementa métricas de API."""
         self.api_requests_total += requests
@@ -294,12 +256,7 @@ class SyncRun(Base):
         self.api_total_latency_ms += latency_ms
         self.updated_at = datetime.utcnow()
 
-    def save_checkpoint(
-        self,
-        cursor: Optional[str] = None,
-        last_id: Optional[str] = None,
-        data: Optional[dict] = None
-    ) -> None:
+    def save_checkpoint(self, cursor: str | None = None, last_id: str | None = None, data: dict | None = None) -> None:
         """Salva checkpoint para recovery."""
         if cursor:
             self.last_cursor = cursor
@@ -314,20 +271,14 @@ class SyncRun(Base):
         """Adiciona erro ao log."""
         if not self.errors_log:
             self.errors_log = []
-        self.errors_log.append({
-            **error,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        self.errors_log.append({**error, "timestamp": datetime.utcnow().isoformat()})
         self.updated_at = datetime.utcnow()
 
     def add_warning(self, warning: str) -> None:
         """Adiciona aviso."""
         if not self.warnings:
             self.warnings = []
-        self.warnings.append({
-            "message": warning,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        self.warnings.append({"message": warning, "timestamp": datetime.utcnow().isoformat()})
         self.updated_at = datetime.utcnow()
 
     @property
@@ -343,7 +294,7 @@ class SyncRun(Base):
             SyncRunStatus.FAILED,
             SyncRunStatus.CANCELLED,
             SyncRunStatus.PARTIAL,
-            SyncRunStatus.TIMEOUT
+            SyncRunStatus.TIMEOUT,
         ]
 
     @property

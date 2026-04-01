@@ -2,11 +2,11 @@
 Repository para operações de banco de dados com Commission.
 """
 
+import builtins
 from datetime import date, datetime, timedelta
-from typing import List, Optional, Tuple
 from uuid import uuid4
 
-from sqlalchemy import func, or_, select, and_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -44,18 +44,14 @@ class CommissionRepository:
         """Gera próximo número de referência."""
         year = date.today().year
         result = await self.db.execute(
-            select(func.count(Commission.id)).where(
-                Commission.reference_number.like(f"COM-{year}-%")
-            )
+            select(func.count(Commission.id)).where(Commission.reference_number.like(f"COM-{year}-%"))
         )
         count = result.scalar() or 0
         return self.service.generate_reference_number(count + 1)
 
     # ==================== Commission Rules ====================
 
-    async def create_rule(
-        self, data: CommissionRuleCreate, created_by_id: Optional[str] = None
-    ) -> CommissionRule:
+    async def create_rule(self, data: CommissionRuleCreate, created_by_id: str | None = None) -> CommissionRule:
         """
         Cria uma nova regra de comissão.
 
@@ -77,19 +73,13 @@ class CommissionRepository:
             min_value=data.min_value,
             max_value=data.max_value,
             progressive_scale=(
-                json.dumps([t.model_dump() for t in data.progressive_scale])
-                if data.progressive_scale
-                else None
+                json.dumps([t.model_dump() for t in data.progressive_scale]) if data.progressive_scale else None
             ),
             trigger=data.trigger.value,
             trigger_delay_days=data.trigger_delay_days,
             applies_to_all=data.applies_to_all,
-            product_categories=(
-                json.dumps(data.product_categories) if data.product_categories else None
-            ),
-            service_types=(
-                json.dumps(data.service_types) if data.service_types else None
-            ),
+            product_categories=(json.dumps(data.product_categories) if data.product_categories else None),
+            service_types=(json.dumps(data.service_types) if data.service_types else None),
             min_sale_value=data.min_sale_value,
             max_sale_value=data.max_sale_value,
             valid_from=data.valid_from,
@@ -106,7 +96,7 @@ class CommissionRepository:
         logger.info(f"CommissionRule criada: {rule.id} ({rule.name})")
         return rule
 
-    async def get_rule_by_id(self, rule_id: str) -> Optional[CommissionRule]:
+    async def get_rule_by_id(self, rule_id: str) -> CommissionRule | None:
         """Busca regra por ID."""
         result = await self.db.execute(
             select(CommissionRule).where(
@@ -118,7 +108,7 @@ class CommissionRepository:
 
     async def list_rules(
         self, active_only: bool = True, skip: int = 0, limit: int = 100
-    ) -> Tuple[List[CommissionRule], int]:
+    ) -> tuple[list[CommissionRule], int]:
         """Lista todas as regras."""
         query = select(CommissionRule)
         count_query = select(func.count(CommissionRule.id))
@@ -137,9 +127,7 @@ class CommissionRepository:
 
         return rules, total
 
-    async def update_rule(
-        self, rule_id: str, data: CommissionRuleUpdate
-    ) -> Optional[CommissionRule]:
+    async def update_rule(self, rule_id: str, data: CommissionRuleUpdate) -> CommissionRule | None:
         """Atualiza regra de comissão."""
         import json  # pylint: disable=import-outside-toplevel
 
@@ -178,9 +166,7 @@ class CommissionRepository:
         logger.info(f"CommissionRule desativada: {rule_id}")
         return True
 
-    async def get_valid_rules(
-        self, seller_id: Optional[str] = None
-    ) -> List[CommissionRule]:
+    async def get_valid_rules(self, seller_id: str | None = None) -> list[CommissionRule]:
         """Busca regras válidas, opcionalmente específicas do vendedor."""
         today = date.today()
         query = select(CommissionRule).where(
@@ -223,9 +209,7 @@ class CommissionRepository:
 
     # ==================== Seller Commission Rules ====================
 
-    async def assign_rule_to_seller(
-        self, data: SellerCommissionRuleCreate
-    ) -> SellerCommissionRule:
+    async def assign_rule_to_seller(self, data: SellerCommissionRuleCreate) -> SellerCommissionRule:
         """Associa regra a vendedor."""
         seller_rule = SellerCommissionRule(
             id=str(uuid4()),
@@ -244,9 +228,7 @@ class CommissionRepository:
         logger.info(f"Regra {data.rule_id} atribuída ao vendedor {data.seller_id}")
         return seller_rule
 
-    async def get_seller_custom_rate(
-        self, seller_id: str, rule_id: str
-    ) -> Optional[float]:
+    async def get_seller_custom_rate(self, seller_id: str, rule_id: str) -> float | None:
         """Busca taxa customizada do vendedor para uma regra."""
         today = date.today()
         result = await self.db.execute(
@@ -266,9 +248,7 @@ class CommissionRepository:
 
     # ==================== Commissions ====================
 
-    async def create(
-        self, data: CommissionCreate, created_by_id: Optional[str] = None
-    ) -> Commission:
+    async def create(self, data: CommissionCreate, created_by_id: str | None = None) -> Commission:
         """
         Cria uma nova comissão.
 
@@ -342,7 +322,7 @@ class CommissionRepository:
         logger.info(f"Commission criada: {commission.id} ({commission.reference_number})")
         return commission
 
-    async def get_by_id(self, commission_id: str) -> Optional[Commission]:
+    async def get_by_id(self, commission_id: str) -> Commission | None:
         """Busca comissão por ID com pagamentos."""
         result = await self.db.execute(
             select(Commission)
@@ -354,7 +334,7 @@ class CommissionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_reference(self, reference_number: str) -> Optional[Commission]:
+    async def get_by_reference(self, reference_number: str) -> Commission | None:
         """Busca comissão por número de referência."""
         result = await self.db.execute(
             select(Commission).where(
@@ -366,10 +346,10 @@ class CommissionRepository:
 
     async def list(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[CommissionFilter] = None,
+        filters: CommissionFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[Commission], int]:
+    ) -> tuple[list[Commission], int]:
         """Lista comissões com filtros."""
         query = select(Commission).where(Commission.is_active.is_(True))
         count_query = select(func.count(Commission.id)).where(Commission.is_active.is_(True))
@@ -427,9 +407,7 @@ class CommissionRepository:
 
         return commissions, total
 
-    async def update(
-        self, commission_id: str, data: CommissionUpdate
-    ) -> Optional[Commission]:
+    async def update(self, commission_id: str, data: CommissionUpdate) -> Commission | None:
         """Atualiza comissão."""
         commission = await self.get_by_id(commission_id)
         if not commission:
@@ -455,9 +433,9 @@ class CommissionRepository:
         self,
         commission_id: str,
         status: CommissionStatus,
-        approved_by_id: Optional[str] = None,
-        notes: Optional[str] = None,
-    ) -> Optional[Commission]:
+        approved_by_id: str | None = None,
+        notes: str | None = None,
+    ) -> Commission | None:
         """Atualiza status da comissão."""
         commission = await self.get_by_id(commission_id)
         if not commission:
@@ -498,8 +476,8 @@ class CommissionRepository:
     # ==================== Payments ====================
 
     async def create_payment(
-        self, data: CommissionPaymentCreate, created_by_id: Optional[str] = None
-    ) -> Optional[CommissionPayment]:
+        self, data: CommissionPaymentCreate, created_by_id: str | None = None
+    ) -> CommissionPayment | None:
         """Cria pagamento de comissão."""
         commission = await self.get_by_id(data.commission_id)
         if not commission:
@@ -507,9 +485,7 @@ class CommissionRepository:
 
         # Verificar se não excede o valor pendente
         if data.amount > commission.pending_amount:
-            logger.warning(
-                f"Tentativa de pagamento {data.amount} excede pendente {commission.pending_amount}"
-            )
+            logger.warning(f"Tentativa de pagamento {data.amount} excede pendente {commission.pending_amount}")
             return None
 
         payment = CommissionPayment(
@@ -534,12 +510,10 @@ class CommissionRepository:
         return payment
 
     async def confirm_payment(
-        self, payment_id: str, confirmed_by_id: str, notes: Optional[str] = None
-    ) -> Optional[CommissionPayment]:
+        self, payment_id: str, confirmed_by_id: str, notes: str | None = None
+    ) -> CommissionPayment | None:
         """Confirma pagamento."""
-        result = await self.db.execute(
-            select(CommissionPayment).where(CommissionPayment.id == payment_id)
-        )
+        result = await self.db.execute(select(CommissionPayment).where(CommissionPayment.id == payment_id))
         payment = result.scalar_one_or_none()
         if not payment:
             return None
@@ -564,9 +538,7 @@ class CommissionRepository:
 
     # ==================== Summaries ====================
 
-    async def get_or_create_summary(
-        self, seller_id: str, year: int, month: int
-    ) -> CommissionSummary:
+    async def get_or_create_summary(self, seller_id: str, year: int, month: int) -> CommissionSummary:
         """Busca ou cria resumo mensal."""
         result = await self.db.execute(
             select(CommissionSummary).where(
@@ -597,9 +569,7 @@ class CommissionRepository:
 
         return summary
 
-    async def update_summary(
-        self, seller_id: str, year: int, month: int
-    ) -> CommissionSummary:
+    async def update_summary(self, seller_id: str, year: int, month: int) -> CommissionSummary:
         """Atualiza resumo mensal com dados das comissões."""
         summary = await self.get_or_create_summary(seller_id, year, month)
 
@@ -627,9 +597,7 @@ class CommissionRepository:
 
         return summary
 
-    async def list_summaries(
-        self, filters: Optional[CommissionSummaryFilter] = None
-    ) -> List[CommissionSummary]:
+    async def list_summaries(self, filters: CommissionSummaryFilter | None = None) -> builtins.list[CommissionSummary]:
         """Lista resumos mensais."""
         query = select(CommissionSummary)
 
@@ -651,9 +619,7 @@ class CommissionRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def close_summary(
-        self, seller_id: str, year: int, month: int
-    ) -> Optional[CommissionSummary]:
+    async def close_summary(self, seller_id: str, year: int, month: int) -> CommissionSummary | None:
         """Fecha resumo mensal (não permite mais alterações)."""
         summary = await self.get_or_create_summary(seller_id, year, month)
 
@@ -669,8 +635,8 @@ class CommissionRepository:
     # ==================== Statistics ====================
 
     async def get_all_for_stats(
-        self, date_from: Optional[date] = None, date_to: Optional[date] = None
-    ) -> List[Commission]:
+        self, date_from: date | None = None, date_to: date | None = None
+    ) -> builtins.list[Commission]:
         """Busca todas as comissões para cálculo de estatísticas."""
         query = select(Commission).where(Commission.is_active.is_(True))
 

@@ -2,12 +2,16 @@
 Endpoints de autenticacao.
 """
 
+# pylint: disable=unused-argument,import-outside-toplevel,broad-exception-caught
+# pylint: disable=too-many-branches,too-many-return-statements,too-many-locals
+# pylint: disable=redefined-outer-name,reimported
+
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
@@ -21,7 +25,7 @@ from core.database import get_db
 from core.logging import logger
 from core.models import User
 from core.rate_limit import limiter
-from core.schemas.auth import Token, TokenRefresh
+from core.schemas.auth import ForgotPasswordRequest, ResetPasswordRequest, Token, TokenRefresh
 from core.schemas.user import UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -39,6 +43,7 @@ FRONTEND_URL = getattr(settings, "FRONTEND_URL", "https://erp.conectamais.pro")
 @limiter.limit("5/minute")
 async def register(
     request: Request,
+    response: Response,
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
@@ -71,13 +76,14 @@ async def register(
     return UserResponse.model_validate(user)
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 @limiter.limit("5/minute")
 async def login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
-) -> Token:
+) -> dict:
     """Autentica usuario e retorna tokens."""
     # Buscar usuario (username = email)
     result = await db.execute(select(User).where(User.email == form_data.username))
@@ -102,25 +108,35 @@ async def login(
     user.last_login = datetime.utcnow().isoformat()
     await db.commit()
 
-    # Gerar tokens
+    # Gerar tokens — incluir condominio_id no payload para fallback JWT
+    extra: dict = {"email": user.email, "role": user.role}
+    if getattr(user, "condominio_id", None):
+        extra["condominio_id"] = str(user.condominio_id)
     access_token = create_access_token(
         subject=str(user.id),
-        extra_data={"email": user.email, "role": user.role},
+        extra_data=extra,
     )
     user_refresh_token = create_refresh_token(subject=str(user.id))
 
     logger.info(f"Login bem-sucedido: {user.email}")
-    return Token(
-        access_token=access_token,
-        refresh_token=user_refresh_token,
-        token_type="bearer",  # noqa: S106
-    )
+    return {
+        "access_token": access_token,
+        "refresh_token": user_refresh_token,
+        "token_type": "Bearer",
+        "user": {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+        },
+    }
 
 
 @router.post("/refresh", response_model=Token)
 @limiter.limit("10/minute")
 async def refresh_token(
     request: Request,
+    response: Response,
     token_data: TokenRefresh,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
@@ -145,10 +161,13 @@ async def refresh_token(
                 detail="Usuario nao encontrado ou inativo",
             )
 
-        # Gerar novos tokens
+        # Gerar novos tokens — incluir condominio_id no payload
+        extra_refresh: dict = {"email": user.email, "role": user.role}
+        if getattr(user, "condominio_id", None):
+            extra_refresh["condominio_id"] = str(user.condominio_id)
         access_token = create_access_token(
             subject=str(user.id),
-            extra_data={"email": user.email, "role": user.role},
+            extra_data=extra_refresh,
         )
         new_refresh_token = create_refresh_token(subject=str(user.id))
 
@@ -156,7 +175,7 @@ async def refresh_token(
         return Token(
             access_token=access_token,
             refresh_token=new_refresh_token,
-            token_type="bearer",  # noqa: S106
+            token_type="Bearer",  # noqa: S106
         )
 
     except Exception as e:
@@ -171,6 +190,7 @@ async def refresh_token(
 @limiter.limit("10/minute")
 async def logout(
     request: Request,
+    response: Response,
     current_user: User = Depends(get_current_active_user),
 ):
     """Revoga o token JWT atual (logout)."""
@@ -204,6 +224,113 @@ async def get_current_user_info(
 ) -> UserResponse:
     """Retorna informacoes do usuario atual."""
     return UserResponse.model_validate(current_user)
+
+
+# =============================================================================
+# Password Reset Endpoints
+# =============================================================================
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    response: Response,
+    body: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Solicita reset de senha — envia email com token."""
+    # Sempre retorna 200 para nao vazar se email existe
+    result = await db.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+
+    if user and user.is_active:
+        # Gerar token de reset (JWT curto, 30 min)
+        from core.auth.jwt import create_access_token
+
+        reset_token = create_access_token(
+            subject=str(user.id),
+            extra_data={"type": "password_reset", "email": user.email},
+            expires_delta=timedelta(minutes=30),
+        )
+
+        # Salvar token no Redis para invalidacao unica
+        try:
+            from core.cache.redis import cache_set
+
+            await cache_set(f"password_reset:{reset_token}", str(user.id), ttl=1800)
+        except Exception as e:
+            logger.warning(f"Falha ao salvar reset token no Redis: {e}")
+
+        # Enviar email
+        from core.mailer import build_reset_password_email, send_email
+
+        reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
+        html = build_reset_password_email(user.name or user.email.split("@")[0], reset_url)
+        await send_email(user.email, "Redefinir senha — Conecta PRO", html)
+
+        logger.info(f"Reset de senha solicitado para: {user.email}")
+    else:
+        logger.info(f"Reset solicitado para email inexistente/inativo: {body.email}")
+
+    return {"message": "Se o email estiver cadastrado, você receberá as instruções de recuperação."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    response: Response,
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Redefine senha usando token recebido por email."""
+    from core.auth.jwt import decode_token
+    from core.cache.redis import cache_delete, cache_get
+
+    try:
+        payload = decode_token(body.token)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido ou expirado",
+        )
+
+    if payload.get("type") != "password_reset":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido",
+        )
+
+    # Verificar uso unico via Redis
+    try:
+        stored = await cache_get(f"password_reset:{body.token}")
+        if not stored:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token já utilizado ou expirado",
+            )
+        await cache_delete(f"password_reset:{body.token}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Falha ao verificar reset token no Redis: {e}")
+
+    user_id = payload.get("sub")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Usuário não encontrado",
+        )
+
+    user.password_hash = get_password_hash(body.new_password)
+    await db.commit()
+
+    logger.info(f"Senha redefinida com sucesso: {user.email}")
+    return {"message": "Senha redefinida com sucesso. Faça login com a nova senha."}
 
 
 # =============================================================================
@@ -361,7 +488,7 @@ async def google_callback(
             {
                 "access_token": jwt_access_token,
                 "refresh_token": jwt_refresh_token,
-                "token_type": "bearer",
+                "token_type": "Bearer",
             }
         )
 

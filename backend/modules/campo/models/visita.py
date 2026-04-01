@@ -6,28 +6,24 @@ Gestao de Visitas Tecnicas e Comerciais.
 Utilizado por tecnicos e vendedores para atendimentos externos.
 """
 
-from datetime import date, time, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
-from enum import Enum as PyEnum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, Integer, Date, Time, DateTime,
-    ForeignKey, Enum, Numeric, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text, Time
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models.base import Base
-
 
 # =============================================================================
 # ENUMS
 # =============================================================================
 
-class TipoVisita(str, PyEnum):
+
+class TipoVisita(StrEnum):
     """Tipo de Visita."""
+
     TECNICA = "tecnica"
     COMERCIAL = "comercial"
     VISTORIA = "vistoria"
@@ -39,8 +35,9 @@ class TipoVisita(str, PyEnum):
     OUTRO = "outro"
 
 
-class StatusVisita(str, PyEnum):
+class StatusVisita(StrEnum):
     """Status da Visita."""
+
     RASCUNHO = "rascunho"
     AGENDADA = "agendada"
     CONFIRMADA = "confirmada"
@@ -51,8 +48,9 @@ class StatusVisita(str, PyEnum):
     NAO_COMPARECEU = "nao_compareceu"
 
 
-class ResultadoVisita(str, PyEnum):
+class ResultadoVisita(StrEnum):
     """Resultado da Visita."""
+
     SUCESSO = "sucesso"
     PARCIAL = "parcial"
     SEM_SUCESSO = "sem_sucesso"
@@ -62,16 +60,18 @@ class ResultadoVisita(str, PyEnum):
     AGUARDANDO_RETORNO = "aguardando_retorno"
 
 
-class TipoResponsavel(str, PyEnum):
+class TipoResponsavel(StrEnum):
     """Tipo de responsavel pela visita."""
+
     TECNICO = "tecnico"
     VENDEDOR = "vendedor"
     SUPERVISOR = "supervisor"
     CONSULTOR = "consultor"
 
 
-class OrigemVisita(str, PyEnum):
+class OrigemVisita(StrEnum):
     """Origem da visita."""
+
     LEAD = "lead"
     CLIENTE = "cliente"
     INDICACAO = "indicacao"
@@ -84,6 +84,7 @@ class OrigemVisita(str, PyEnum):
 # MODEL
 # =============================================================================
 
+
 class Visita(Base):
     """
     Visita Tecnica ou Comercial.
@@ -94,12 +95,13 @@ class Visita(Base):
     - Acompanhamento pos-venda
     - Demonstracoes de produtos/servicos
     """
+
     __tablename__ = "visitas"
     __table_args__ = (
         Index("ix_visita_responsavel_data", "responsavel_id", "data_visita"),
         Index("ix_visita_cliente_status", "cliente_id", "status"),
         Index("ix_visita_data", "data_visita"),
-        {}
+        {},
     )
 
     # =========================================================================
@@ -443,12 +445,7 @@ class Visita(Base):
 
     def adicionar_foto(self, url: str, descricao: str = None, tipo: str = "geral"):
         """Adiciona foto a visita."""
-        foto = {
-            "url": url,
-            "descricao": descricao,
-            "tipo": tipo,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        foto = {"url": url, "descricao": descricao, "tipo": tipo, "timestamp": datetime.utcnow().isoformat()}
         if not self.fotos:
             self.fotos = []
         self.fotos.append(foto)
@@ -466,7 +463,7 @@ class Visita(Base):
             "descricao": descricao,
             "prioridade": prioridade,
             "estimativa_valor": float(estimativa) if estimativa else None,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
         if not self.necessidades_identificadas:
             self.necessidades_identificadas = []

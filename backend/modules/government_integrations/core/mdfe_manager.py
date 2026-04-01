@@ -15,21 +15,22 @@ MDF-e:
 - Vincula NF-e/CT-e ao veiculo/condutor
 """
 
-import re
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
-from enum import Enum
-from typing import Dict, List, Optional, Any
-from uuid import UUID, uuid4
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
+import re
 import ssl
 import time
+import xml.etree.ElementTree as ET  # noqa: N817, S405
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
+from decimal import Decimal
+from enum import StrEnum
+from uuid import UUID, uuid4
+from xml.dom import minidom  # noqa: S408
+from xml.etree.ElementTree import Element  # noqa: S405
 
 try:
     import httpx
+
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
@@ -59,38 +60,63 @@ MDFE_ENDPOINTS = {
 
 # Codigo IBGE UFs
 UF_CODIGO_IBGE = {
-    "AC": "12", "AL": "27", "AM": "13", "AP": "16", "BA": "29",
-    "CE": "23", "DF": "53", "ES": "32", "GO": "52", "MA": "21",
-    "MG": "31", "MS": "50", "MT": "51", "PA": "15", "PB": "25",
-    "PE": "26", "PI": "22", "PR": "41", "RJ": "33", "RN": "24",
-    "RO": "11", "RR": "14", "RS": "43", "SC": "42", "SE": "28",
-    "SP": "35", "TO": "17",
+    "AC": "12",
+    "AL": "27",
+    "AM": "13",
+    "AP": "16",
+    "BA": "29",
+    "CE": "23",
+    "DF": "53",
+    "ES": "32",
+    "GO": "52",
+    "MA": "21",
+    "MG": "31",
+    "MS": "50",
+    "MT": "51",
+    "PA": "15",
+    "PB": "25",
+    "PE": "26",
+    "PI": "22",
+    "PR": "41",
+    "RJ": "33",
+    "RN": "24",
+    "RO": "11",
+    "RR": "14",
+    "RS": "43",
+    "SC": "42",
+    "SE": "28",
+    "SP": "35",
+    "TO": "17",
 }
 
 
-class TipoEmitente(str, Enum):
+class TipoEmitente(StrEnum):
     """Tipo de emitente do MDF-e."""
+
     PRESTADOR_SERVICO_TRANSPORTE = "1"  # Transportador
-    TRANSPORTADOR_CARGA_PROPRIA = "2"   # Emitente NF-e transportando
+    TRANSPORTADOR_CARGA_PROPRIA = "2"  # Emitente NF-e transportando
 
 
-class ModalTransporte(str, Enum):
+class ModalTransporte(StrEnum):
     """Modal de transporte."""
+
     RODOVIARIO = "1"
     AEREO = "2"
     AQUAVIARIO = "3"
     FERROVIARIO = "4"
 
 
-class TipoTransportador(str, Enum):
+class TipoTransportador(StrEnum):
     """Tipo de transportador."""
+
     ETC = "1"  # Empresa de Transporte de Carga
     TAC = "2"  # Transportador Autonomo de Carga
     CTC = "3"  # Cooperativa de Transporte de Carga
 
 
-class TipoCarroceria(str, Enum):
+class TipoCarroceria(StrEnum):
     """Tipo de carroceria."""
+
     NAO_APLICAVEL = "00"
     ABERTA = "01"
     FECHADA = "02"
@@ -99,8 +125,9 @@ class TipoCarroceria(str, Enum):
     SIDER = "05"
 
 
-class TipoRodado(str, Enum):
+class TipoRodado(StrEnum):
     """Tipo de rodado."""
+
     TRUCK = "01"
     TOCO = "02"
     CAVALO_MECANICO = "03"
@@ -112,6 +139,7 @@ class TipoRodado(str, Enum):
 @dataclass
 class Endereco:
     """Endereco."""
+
     logradouro: str
     numero: str
     bairro: str
@@ -119,15 +147,16 @@ class Endereco:
     uf: str
     cep: str
     codigo_municipio: str
-    complemento: Optional[str] = None
+    complemento: str | None = None
 
 
 @dataclass
 class Emitente:
     """Dados do emitente do MDF-e."""
+
     cnpj: str
     razao_social: str
-    nome_fantasia: Optional[str]
+    nome_fantasia: str | None
     inscricao_estadual: str
     endereco: Endereco
 
@@ -135,8 +164,9 @@ class Emitente:
 @dataclass
 class Veiculo:
     """Dados do veiculo."""
+
     placa: str
-    renavam: Optional[str] = None
+    renavam: str | None = None
     tara: int = 0  # Peso do veiculo vazio em KG
     capacidade_kg: int = 0
     capacidade_m3: int = 0
@@ -148,6 +178,7 @@ class Veiculo:
 @dataclass
 class Condutor:
     """Dados do condutor."""
+
     cpf: str
     nome: str
 
@@ -155,14 +186,16 @@ class Condutor:
 @dataclass
 class DocumentoVinculado:
     """Documento fiscal vinculado ao MDF-e (NF-e ou CT-e)."""
+
     chave_acesso: str
     tipo: str = "NFe"  # NFe ou CTe
-    segundo_codigo_barras: Optional[str] = None
+    segundo_codigo_barras: str | None = None
 
 
 @dataclass
 class Municipio:
     """Municipio de carregamento/descarregamento."""
+
     codigo_ibge: str
     nome: str
 
@@ -170,6 +203,7 @@ class Municipio:
 @dataclass
 class MDFe:
     """Manifesto Eletronico de Documentos Fiscais."""
+
     id: UUID = field(default_factory=uuid4)
     numero: int = 0
     serie: int = 1
@@ -179,18 +213,18 @@ class MDFe:
 
     emitente: Emitente = None
     veiculo_tracao: Veiculo = None
-    veiculos_reboque: List[Veiculo] = field(default_factory=list)
-    condutores: List[Condutor] = field(default_factory=list)
+    veiculos_reboque: list[Veiculo] = field(default_factory=list)
+    condutores: list[Condutor] = field(default_factory=list)
 
     # Percurso
     uf_inicio: str = ""
     uf_fim: str = ""
-    municipios_carregamento: List[Municipio] = field(default_factory=list)
-    municipios_descarregamento: List[Municipio] = field(default_factory=list)
-    ufs_percurso: List[str] = field(default_factory=list)  # UFs intermediarias
+    municipios_carregamento: list[Municipio] = field(default_factory=list)
+    municipios_descarregamento: list[Municipio] = field(default_factory=list)
+    ufs_percurso: list[str] = field(default_factory=list)  # UFs intermediarias
 
     # Documentos
-    documentos: List[DocumentoVinculado] = field(default_factory=list)
+    documentos: list[DocumentoVinculado] = field(default_factory=list)
 
     # Totais
     quantidade_cte: int = 0
@@ -204,16 +238,16 @@ class MDFe:
     data_inicio_viagem: datetime = None
 
     # Chave e protocolo
-    chave_acesso: Optional[str] = None
-    protocolo: Optional[str] = None
+    chave_acesso: str | None = None
+    protocolo: str | None = None
     status: str = "draft"
 
     # RNTRC
-    rntrc: Optional[str] = None  # Registro Nacional Transportadores Rodoviarios
+    rntrc: str | None = None  # Registro Nacional Transportadores Rodoviarios
 
     def __post_init__(self):
         if self.data_emissao is None:
-            self.data_emissao = datetime.now(timezone.utc)
+            self.data_emissao = datetime.now(UTC)
         if self.data_inicio_viagem is None:
             self.data_inicio_viagem = self.data_emissao
 
@@ -221,7 +255,7 @@ class MDFe:
         """Gera a chave de acesso do MDF-e (44 digitos)."""
         uf_code = UF_CODIGO_IBGE.get(self.emitente.endereco.uf, "13")
         aamm = self.data_emissao.strftime("%y%m")
-        cnpj = re.sub(r'[^\d]', '', self.emitente.cnpj).zfill(14)
+        cnpj = re.sub(r"[^\d]", "", self.emitente.cnpj).zfill(14)
         modelo = "58"
         serie = str(self.serie).zfill(3)
         numero = str(self.numero).zfill(9)
@@ -271,7 +305,9 @@ class MDFeXMLBuilder:
         ET.SubElement(ide, "cUF").text = uf_code
         ET.SubElement(ide, "tpAmb").text = ambiente
         ET.SubElement(ide, "tpEmit").text = mdfe.tipo_emitente.value
-        ET.SubElement(ide, "tpTransp").text = mdfe.tipo_transportador.value if mdfe.modal == ModalTransporte.RODOVIARIO else None
+        ET.SubElement(ide, "tpTransp").text = (
+            mdfe.tipo_transportador.value if mdfe.modal == ModalTransporte.RODOVIARIO else None
+        )
         ET.SubElement(ide, "mod").text = "58"
         ET.SubElement(ide, "serie").text = str(mdfe.serie)
         ET.SubElement(ide, "nMDF").text = str(mdfe.numero)
@@ -312,7 +348,7 @@ class MDFeXMLBuilder:
 
         # emit - Emitente
         emit = ET.SubElement(inf, "emit")
-        ET.SubElement(emit, "CNPJ").text = re.sub(r'[^\d]', '', mdfe.emitente.cnpj)
+        ET.SubElement(emit, "CNPJ").text = re.sub(r"[^\d]", "", mdfe.emitente.cnpj)
         ET.SubElement(emit, "IE").text = mdfe.emitente.inscricao_estadual
         if ambiente == "2":
             ET.SubElement(emit, "xNome").text = "MDF-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
@@ -348,7 +384,7 @@ class MDFeXMLBuilder:
                 for condutor in mdfe.condutores:
                     cond = ET.SubElement(vt, "condutor")
                     ET.SubElement(cond, "xNome").text = condutor.nome
-                    ET.SubElement(cond, "CPF").text = re.sub(r'[^\d]', '', condutor.cpf)
+                    ET.SubElement(cond, "CPF").text = re.sub(r"[^\d]", "", condutor.cpf)
 
             # Veiculos reboque
             for reboque in mdfe.veiculos_reboque:
@@ -395,14 +431,14 @@ class MDFeXMLBuilder:
 
         # infRespTec
         inf_resp_tec = ET.SubElement(inf, "infRespTec")
-        ET.SubElement(inf_resp_tec, "CNPJ").text = re.sub(r'[^\d]', '', mdfe.emitente.cnpj)
+        ET.SubElement(inf_resp_tec, "CNPJ").text = re.sub(r"[^\d]", "", mdfe.emitente.cnpj)
         ET.SubElement(inf_resp_tec, "xContato").text = "Suporte Tecnico"
         ET.SubElement(inf_resp_tec, "email").text = "suporte@conectapro.com.br"
         ET.SubElement(inf_resp_tec, "fone").text = "92999999999"
 
         return self._prettify(root)
 
-    def _add_endereco(self, parent: ET.Element, tag: str, endereco: Endereco) -> None:
+    def _add_endereco(self, parent: Element, tag: str, endereco: Endereco) -> None:
         """Adiciona endereco ao XML."""
         end = ET.SubElement(parent, tag)
         ET.SubElement(end, "xLgr").text = endereco.logradouro
@@ -412,25 +448,26 @@ class MDFeXMLBuilder:
         ET.SubElement(end, "xBairro").text = endereco.bairro
         ET.SubElement(end, "cMun").text = endereco.codigo_municipio
         ET.SubElement(end, "xMun").text = endereco.cidade
-        ET.SubElement(end, "CEP").text = re.sub(r'[^\d]', '', endereco.cep)
+        ET.SubElement(end, "CEP").text = re.sub(r"[^\d]", "", endereco.cep)
         ET.SubElement(end, "UF").text = endereco.uf
 
-    def _prettify(self, elem: ET.Element) -> str:
+    def _prettify(self, elem: Element) -> str:
         """Formata XML."""
-        rough_string = ET.tostring(elem, encoding='unicode')
-        reparsed = minidom.parseString(rough_string)
+        rough_string = ET.tostring(elem, encoding="unicode")
+        reparsed = minidom.parseString(rough_string)  # noqa: S318 - Apenas formata XML gerado internamente
         return reparsed.toprettyxml(indent="  ")
 
 
 @dataclass
 class MDFeResult:
     """Resultado de operacao com MDF-e."""
+
     sucesso: bool
     mensagem: str
-    status_code: Optional[str] = None
-    protocolo: Optional[str] = None
-    chave_acesso: Optional[str] = None
-    xml_retorno: Optional[str] = None
+    status_code: str | None = None
+    protocolo: str | None = None
+    chave_acesso: str | None = None
+    xml_retorno: str | None = None
     tempo_resposta: float = 0.0
 
 
@@ -445,8 +482,8 @@ class MDFeTransmitter:
         self,
         uf: str,
         ambiente: str = "2",
-        cert_path: Optional[str] = None,
-        cert_password: Optional[str] = None,
+        cert_path: str | None = None,
+        cert_password: str | None = None,
     ):
         """Inicializa o transmissor de MDF-e."""
         self.uf = uf
@@ -463,7 +500,9 @@ class MDFeTransmitter:
         self._cert_pem_path = None
         self._key_pem_path = None
 
-        logger.info(f"MDFeTransmitter inicializado: UF={uf}, Ambiente={'Producao' if ambiente == '1' else 'Homologacao'}")
+        logger.info(
+            f"MDFeTransmitter inicializado: UF={uf}, Ambiente={'Producao' if ambiente == '1' else 'Homologacao'}"
+        )
 
     async def status_servico(self) -> MDFeResult:
         """Consulta status do servico."""
@@ -474,39 +513,39 @@ class MDFeTransmitter:
             if not url:
                 return MDFeResult(sucesso=False, mensagem="Endpoint nao configurado")
 
-            cod_uf = UF_CODIGO_IBGE.get(self.uf, "13")
+            UF_CODIGO_IBGE.get(self.uf, "13")
             wsdl_ns = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeStatusServico"
 
             envelope = (
                 f'<?xml version="1.0" encoding="UTF-8"?>'
                 f'<soap12:Envelope xmlns:soap12="{self.NS_SOAP12}">'
-                f'<soap12:Body>'
+                f"<soap12:Body>"
                 f'<mdfeDadosMsg xmlns="{wsdl_ns}">'
                 f'<consStatServMDFe xmlns="{self.NS_MDFE}" versao="{self.VERSION}">'
-                f'<tpAmb>{self.ambiente}</tpAmb>'
-                f'<xServ>STATUS</xServ>'
-                f'</consStatServMDFe>'
-                f'</mdfeDadosMsg>'
-                f'</soap12:Body>'
-                f'</soap12:Envelope>'
+                f"<tpAmb>{self.ambiente}</tpAmb>"
+                f"<xServ>STATUS</xServ>"
+                f"</consStatServMDFe>"
+                f"</mdfeDadosMsg>"
+                f"</soap12:Body>"
+                f"</soap12:Envelope>"
             )
 
             client = await self._get_client()
             response = await client.post(
                 url,
-                content=envelope.encode('utf-8'),
+                content=envelope.encode("utf-8"),
                 headers={
                     "Content-Type": "application/soap+xml; charset=utf-8",
-                    "SOAPAction": f"{wsdl_ns}/mdfeStatusServico"
-                }
+                    "SOAPAction": f"{wsdl_ns}/mdfeStatusServico",
+                },
             )
 
             tempo = time.time() - start_time
 
             if response.status_code == 200:
                 xml_retorno = response.text
-                cstat_match = re.search(r'<cStat>(\d+)</cStat>', xml_retorno)
-                xmotivo_match = re.search(r'<xMotivo>([^<]+)</xMotivo>', xml_retorno)
+                cstat_match = re.search(r"<cStat>(\d+)</cStat>", xml_retorno)
+                xmotivo_match = re.search(r"<xMotivo>([^<]+)</xMotivo>", xml_retorno)
 
                 cstat = cstat_match.group(1) if cstat_match else "0"
                 xmotivo = xmotivo_match.group(1) if xmotivo_match else "Resposta invalida"
@@ -516,7 +555,7 @@ class MDFeTransmitter:
                     mensagem=xmotivo,
                     status_code=cstat,
                     xml_retorno=xml_retorno,
-                    tempo_resposta=tempo
+                    tempo_resposta=tempo,
                 )
             else:
                 return MDFeResult(sucesso=False, mensagem=f"Erro HTTP {response.status_code}", tempo_resposta=tempo)
@@ -535,27 +574,27 @@ class MDFeTransmitter:
                 return MDFeResult(sucesso=False, mensagem="Endpoint nao configurado")
 
             wsdl_ns = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc"
-            xml_mdfe = re.sub(r'<\?xml[^>]+\?>\s*', '', xml_assinado)
+            xml_mdfe = re.sub(r"<\?xml[^>]+\?>\s*", "", xml_assinado)
 
             envelope = (
                 f'<?xml version="1.0" encoding="UTF-8"?>'
                 f'<soap12:Envelope xmlns:soap12="{self.NS_SOAP12}">'
-                f'<soap12:Body>'
+                f"<soap12:Body>"
                 f'<mdfeDadosMsg xmlns="{wsdl_ns}">'
-                f'{xml_mdfe}'
-                f'</mdfeDadosMsg>'
-                f'</soap12:Body>'
-                f'</soap12:Envelope>'
+                f"{xml_mdfe}"
+                f"</mdfeDadosMsg>"
+                f"</soap12:Body>"
+                f"</soap12:Envelope>"
             )
 
             client = await self._get_client()
             response = await client.post(
                 url,
-                content=envelope.encode('utf-8'),
+                content=envelope.encode("utf-8"),
                 headers={
                     "Content-Type": "application/soap+xml; charset=utf-8",
-                    "SOAPAction": f"{wsdl_ns}/mdfeRecepcaoSinc"
-                }
+                    "SOAPAction": f"{wsdl_ns}/mdfeRecepcaoSinc",
+                },
             )
 
             tempo = time.time() - start_time
@@ -563,10 +602,10 @@ class MDFeTransmitter:
             if response.status_code == 200:
                 xml_retorno = response.text
 
-                cstat_match = re.search(r'<cStat>(\d+)</cStat>', xml_retorno)
-                xmotivo_match = re.search(r'<xMotivo>([^<]+)</xMotivo>', xml_retorno)
-                nprot_match = re.search(r'<nProt>(\d+)</nProt>', xml_retorno)
-                chave_match = re.search(r'<chMDFe>(\d{44})</chMDFe>', xml_retorno)
+                cstat_match = re.search(r"<cStat>(\d+)</cStat>", xml_retorno)
+                xmotivo_match = re.search(r"<xMotivo>([^<]+)</xMotivo>", xml_retorno)
+                nprot_match = re.search(r"<nProt>(\d+)</nProt>", xml_retorno)
+                chave_match = re.search(r"<chMDFe>(\d{44})</chMDFe>", xml_retorno)
 
                 cstat = cstat_match.group(1) if cstat_match else "0"
                 xmotivo = xmotivo_match.group(1) if xmotivo_match else "Resposta invalida"
@@ -580,7 +619,7 @@ class MDFeTransmitter:
                     protocolo=protocolo,
                     chave_acesso=chave,
                     xml_retorno=xml_retorno,
-                    tempo_resposta=tempo
+                    tempo_resposta=tempo,
                 )
             else:
                 return MDFeResult(sucesso=False, mensagem=f"Erro HTTP {response.status_code}", tempo_resposta=tempo)
@@ -608,50 +647,48 @@ class MDFeTransmitter:
             evento_xml = (
                 f'<eventoMDFe xmlns="{self.NS_MDFE}" versao="{self.VERSION}">'
                 f'<infEvento Id="ID110111{chave_acesso}01">'
-                f'<cOrgao>{UF_CODIGO_IBGE.get(uf, "13")}</cOrgao>'
-                f'<tpAmb>{self.ambiente}</tpAmb>'
-                f'<CNPJ>{chave_acesso[6:20]}</CNPJ>'
-                f'<chMDFe>{chave_acesso}</chMDFe>'
-                f'<dhEvento>{dh_evento}</dhEvento>'
-                f'<tpEvento>110111</tpEvento>'
-                f'<nSeqEvento>1</nSeqEvento>'
+                f"<cOrgao>{UF_CODIGO_IBGE.get(uf, '13')}</cOrgao>"
+                f"<tpAmb>{self.ambiente}</tpAmb>"
+                f"<CNPJ>{chave_acesso[6:20]}</CNPJ>"
+                f"<chMDFe>{chave_acesso}</chMDFe>"
+                f"<dhEvento>{dh_evento}</dhEvento>"
+                f"<tpEvento>110111</tpEvento>"
+                f"<nSeqEvento>1</nSeqEvento>"
                 f'<detEvento versaoEvento="{self.VERSION}">'
-                f'<evEncMDFe>'
-                f'<descEvento>Encerramento</descEvento>'
-                f'<nProt>{protocolo}</nProt>'
-                f'<dtEnc>{datetime.now().strftime("%Y-%m-%d")}</dtEnc>'
-                f'<cUF>{UF_CODIGO_IBGE.get(uf, "13")}</cUF>'
-                f'<cMun>{codigo_municipio}</cMun>'
-                f'</evEncMDFe>'
-                f'</detEvento>'
-                f'</infEvento>'
-                f'</eventoMDFe>'
+                f"<evEncMDFe>"
+                f"<descEvento>Encerramento</descEvento>"
+                f"<nProt>{protocolo}</nProt>"
+                f"<dtEnc>{datetime.now().strftime('%Y-%m-%d')}</dtEnc>"
+                f"<cUF>{UF_CODIGO_IBGE.get(uf, '13')}</cUF>"
+                f"<cMun>{codigo_municipio}</cMun>"
+                f"</evEncMDFe>"
+                f"</detEvento>"
+                f"</infEvento>"
+                f"</eventoMDFe>"
             )
 
             envelope = (
                 f'<?xml version="1.0" encoding="UTF-8"?>'
                 f'<soap12:Envelope xmlns:soap12="{self.NS_SOAP12}">'
-                f'<soap12:Body>'
+                f"<soap12:Body>"
                 f'<mdfeDadosMsg xmlns="{wsdl_ns}">'
-                f'{evento_xml}'
-                f'</mdfeDadosMsg>'
-                f'</soap12:Body>'
-                f'</soap12:Envelope>'
+                f"{evento_xml}"
+                f"</mdfeDadosMsg>"
+                f"</soap12:Body>"
+                f"</soap12:Envelope>"
             )
 
             client = await self._get_client()
             response = await client.post(
-                url,
-                content=envelope.encode('utf-8'),
-                headers={"Content-Type": "application/soap+xml; charset=utf-8"}
+                url, content=envelope.encode("utf-8"), headers={"Content-Type": "application/soap+xml; charset=utf-8"}
             )
 
             tempo = time.time() - start_time
 
             if response.status_code == 200:
                 xml_retorno = response.text
-                cstat_match = re.search(r'<cStat>(\d+)</cStat>', xml_retorno)
-                xmotivo_match = re.search(r'<xMotivo>([^<]+)</xMotivo>', xml_retorno)
+                cstat_match = re.search(r"<cStat>(\d+)</cStat>", xml_retorno)
+                xmotivo_match = re.search(r"<xMotivo>([^<]+)</xMotivo>", xml_retorno)
 
                 cstat = cstat_match.group(1) if cstat_match else "0"
                 xmotivo = xmotivo_match.group(1) if xmotivo_match else "Resposta invalida"
@@ -662,7 +699,7 @@ class MDFeTransmitter:
                     status_code=cstat,
                     chave_acesso=chave_acesso,
                     xml_retorno=xml_retorno,
-                    tempo_resposta=tempo
+                    tempo_resposta=tempo,
                 )
             else:
                 return MDFeResult(sucesso=False, mensagem=f"Erro HTTP {response.status_code}", tempo_resposta=tempo)
@@ -682,14 +719,15 @@ class MDFeTransmitter:
 
             if self.cert_path:
                 from .certificate_manager import CertificateManager
+
                 cert_manager = CertificateManager(pfx_path=self.cert_path, password=self.cert_password)
                 cert_manager.load()
 
-                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as f:
+                with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as f:
                     f.write(cert_manager.get_certificate_pem())
                     self._cert_pem_path = f.name
 
-                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as f:
+                with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as f:
                     f.write(cert_manager.get_private_key_pem())
                     self._key_pem_path = f.name
 
@@ -706,6 +744,7 @@ class MDFeTransmitter:
             self._client = None
 
         import os
+
         if self._cert_pem_path and os.path.exists(self._cert_pem_path):
             os.unlink(self._cert_pem_path)
         if self._key_pem_path and os.path.exists(self._key_pem_path):

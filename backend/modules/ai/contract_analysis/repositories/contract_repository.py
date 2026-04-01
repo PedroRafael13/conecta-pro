@@ -6,28 +6,27 @@ Repository para acesso a dados de analise de contratos.
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
+from modules.ai.contract_analysis.models.contract_alert import (
+    AlertPriority,
+    AlertStatus,
+    AlertType,
+    ContractAlert,
+)
 from modules.ai.contract_analysis.models.contract_analysis import (
-    ContractAnalysis,
     AnalysisStatus,
+    ContractAnalysis,
     ContractType,
     RiskLevel,
 )
 from modules.ai.contract_analysis.models.extracted_clause import (
-    ExtractedClause,
-    ClauseType,
     ClauseImportance,
-)
-from modules.ai.contract_analysis.models.contract_alert import (
-    ContractAlert,
-    AlertType,
-    AlertStatus,
-    AlertPriority,
+    ClauseType,
+    ExtractedClause,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,11 +57,9 @@ class ContractAnalysisRepository:
         analysis_id: UUID,
         include_clauses: bool = False,
         include_alerts: bool = False,
-    ) -> Optional[ContractAnalysis]:
+    ) -> ContractAnalysis | None:
         """Busca analise por ID."""
-        query = self.db.query(ContractAnalysis).filter(
-            ContractAnalysis.id == analysis_id
-        )
+        query = self.db.query(ContractAnalysis).filter(ContractAnalysis.id == analysis_id)
 
         if include_clauses:
             query = query.options(joinedload(ContractAnalysis.clauses))
@@ -76,25 +73,25 @@ class ContractAnalysisRepository:
         self,
         contract_id: UUID,
         latest_only: bool = True,
-    ) -> Optional[ContractAnalysis]:
+    ) -> ContractAnalysis | None:
         """Busca analise por ID do contrato."""
         query = self.db.query(ContractAnalysis).filter(
             ContractAnalysis.contract_id == contract_id,
-            ContractAnalysis.is_active == True,
+            ContractAnalysis.is_active,
         )
 
         if latest_only:
-            query = query.filter(ContractAnalysis.is_latest == True)
+            query = query.filter(ContractAnalysis.is_latest)
 
         return query.order_by(desc(ContractAnalysis.created_at)).first()
 
     def get_analyses(
         self,
-        status: Optional[AnalysisStatus] = None,
-        contract_type: Optional[ContractType] = None,
-        risk_level: Optional[RiskLevel] = None,
-        expiring_in_days: Optional[int] = None,
-        requires_review: Optional[bool] = None,
+        status: AnalysisStatus | None = None,
+        contract_type: ContractType | None = None,
+        risk_level: RiskLevel | None = None,
+        expiring_in_days: int | None = None,
+        requires_review: bool | None = None,
         is_active: bool = True,
         page: int = 1,
         page_size: int = 20,
@@ -118,7 +115,7 @@ class ContractAnalysisRepository:
             expiry_date = date.today() + timedelta(days=expiring_in_days)
             query = query.filter(
                 and_(
-                    ContractAnalysis.end_date != None,
+                    ContractAnalysis.end_date is not None,
                     ContractAnalysis.end_date <= expiry_date,
                     ContractAnalysis.end_date >= date.today(),
                 )
@@ -128,20 +125,11 @@ class ContractAnalysisRepository:
             query = query.filter(ContractAnalysis.requires_review == requires_review)
 
         total = query.count()
-        items = (
-            query.order_by(desc(ContractAnalysis.created_at))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+        items = query.order_by(desc(ContractAnalysis.created_at)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
-    def update_analysis(
-        self,
-        analysis_id: UUID,
-        data: dict
-    ) -> Optional[ContractAnalysis]:
+    def update_analysis(self, analysis_id: UUID, data: dict) -> ContractAnalysis | None:
         """Atualiza analise."""
         analysis = self.get_analysis(analysis_id)
         if not analysis:
@@ -175,18 +163,11 @@ class ContractAnalysisRepository:
     # Extracted Clauses
     # ============================================================
 
-    def add_clauses(
-        self,
-        analysis_id: UUID,
-        clauses: list[dict]
-    ) -> list[ExtractedClause]:
+    def add_clauses(self, analysis_id: UUID, clauses: list[dict]) -> list[ExtractedClause]:
         """Adiciona clausulas a analise."""
         extracted = []
         for clause_data in clauses:
-            clause = ExtractedClause(
-                analysis_id=analysis_id,
-                **clause_data
-            )
+            clause = ExtractedClause(analysis_id=analysis_id, **clause_data)
             self.db.add(clause)
             extracted.append(clause)
 
@@ -196,14 +177,12 @@ class ContractAnalysisRepository:
     def get_clauses(
         self,
         analysis_id: UUID,
-        clause_type: Optional[ClauseType] = None,
-        importance: Optional[ClauseImportance] = None,
-        is_risky: Optional[bool] = None,
+        clause_type: ClauseType | None = None,
+        importance: ClauseImportance | None = None,
+        is_risky: bool | None = None,
     ) -> list[ExtractedClause]:
         """Busca clausulas de uma analise."""
-        query = self.db.query(ExtractedClause).filter(
-            ExtractedClause.analysis_id == analysis_id
-        )
+        query = self.db.query(ExtractedClause).filter(ExtractedClause.analysis_id == analysis_id)
 
         if clause_type:
             query = query.filter(ExtractedClause.clause_type == clause_type)
@@ -216,13 +195,11 @@ class ContractAnalysisRepository:
 
         return query.order_by(ExtractedClause.page_number, ExtractedClause.start_position).all()
 
-    def get_clause(self, clause_id: UUID) -> Optional[ExtractedClause]:
+    def get_clause(self, clause_id: UUID) -> ExtractedClause | None:
         """Busca clausula por ID."""
-        return self.db.query(ExtractedClause).filter(
-            ExtractedClause.id == clause_id
-        ).first()
+        return self.db.query(ExtractedClause).filter(ExtractedClause.id == clause_id).first()
 
-    def update_clause(self, clause_id: UUID, data: dict) -> Optional[ExtractedClause]:
+    def update_clause(self, clause_id: UUID, data: dict) -> ExtractedClause | None:
         """Atualiza clausula."""
         clause = self.get_clause(clause_id)
         if not clause:
@@ -260,22 +237,20 @@ class ContractAnalysisRepository:
         self.db.commit()
         return created
 
-    def get_alert(self, alert_id: UUID) -> Optional[ContractAlert]:
+    def get_alert(self, alert_id: UUID) -> ContractAlert | None:
         """Busca alerta por ID."""
-        return self.db.query(ContractAlert).filter(
-            ContractAlert.id == alert_id
-        ).first()
+        return self.db.query(ContractAlert).filter(ContractAlert.id == alert_id).first()
 
     def get_alerts(
         self,
-        contract_id: Optional[UUID] = None,
-        analysis_id: Optional[UUID] = None,
-        alert_type: Optional[AlertType] = None,
-        status: Optional[AlertStatus] = None,
-        priority: Optional[AlertPriority] = None,
+        contract_id: UUID | None = None,
+        analysis_id: UUID | None = None,
+        alert_type: AlertType | None = None,
+        status: AlertStatus | None = None,
+        priority: AlertPriority | None = None,
         is_active: bool = True,
-        is_overdue: Optional[bool] = None,
-        assigned_to: Optional[UUID] = None,
+        is_overdue: bool | None = None,
+        assigned_to: UUID | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[ContractAlert], int]:
@@ -307,19 +282,21 @@ class ContractAnalysisRepository:
             if is_overdue:
                 query = query.filter(
                     and_(
-                        ContractAlert.due_date != None,
+                        ContractAlert.due_date is not None,
                         ContractAlert.due_date < date.today(),
-                        ContractAlert.status.in_([
-                            AlertStatus.PENDING,
-                            AlertStatus.ACKNOWLEDGED,
-                            AlertStatus.IN_PROGRESS,
-                        ]),
+                        ContractAlert.status.in_(
+                            [
+                                AlertStatus.PENDING,
+                                AlertStatus.ACKNOWLEDGED,
+                                AlertStatus.IN_PROGRESS,
+                            ]
+                        ),
                     )
                 )
             else:
                 query = query.filter(
                     or_(
-                        ContractAlert.due_date == None,
+                        ContractAlert.due_date is None,
                         ContractAlert.due_date >= date.today(),
                     )
                 )
@@ -337,7 +314,7 @@ class ContractAnalysisRepository:
 
         return items, total
 
-    def update_alert(self, alert_id: UUID, data: dict) -> Optional[ContractAlert]:
+    def update_alert(self, alert_id: UUID, data: dict) -> ContractAlert | None:
         """Atualiza alerta."""
         alert = self.get_alert(alert_id)
         if not alert:
@@ -356,8 +333,8 @@ class ContractAnalysisRepository:
         self,
         alert_id: UUID,
         user_id: UUID,
-        notes: Optional[str] = None,
-    ) -> Optional[ContractAlert]:
+        notes: str | None = None,
+    ) -> ContractAlert | None:
         """Resolve um alerta."""
         alert = self.get_alert(alert_id)
         if not alert:
@@ -368,14 +345,16 @@ class ContractAnalysisRepository:
         self.db.refresh(alert)
         return alert
 
-    def get_pending_alerts_count(self, contract_id: Optional[UUID] = None) -> int:
+    def get_pending_alerts_count(self, contract_id: UUID | None = None) -> int:
         """Conta alertas pendentes."""
         query = self.db.query(func.count(ContractAlert.id)).filter(
-            ContractAlert.is_active == True,
-            ContractAlert.status.in_([
-                AlertStatus.PENDING,
-                AlertStatus.ACKNOWLEDGED,
-            ]),
+            ContractAlert.is_active,
+            ContractAlert.status.in_(
+                [
+                    AlertStatus.PENDING,
+                    AlertStatus.ACKNOWLEDGED,
+                ]
+            ),
         )
 
         if contract_id:
@@ -395,8 +374,8 @@ class ContractAnalysisRepository:
                 func.count(ContractAnalysis.id).label("count"),
             )
             .filter(
-                ContractAnalysis.is_active == True,
-                ContractAnalysis.is_latest == True,
+                ContractAnalysis.is_active,
+                ContractAnalysis.is_latest,
             )
             .group_by(ContractAnalysis.risk_level)
             .all()
@@ -412,8 +391,8 @@ class ContractAnalysisRepository:
                 func.count(ContractAnalysis.id).label("count"),
             )
             .filter(
-                ContractAnalysis.is_active == True,
-                ContractAnalysis.is_latest == True,
+                ContractAnalysis.is_active,
+                ContractAnalysis.is_latest,
             )
             .group_by(ContractAnalysis.contract_type)
             .all()
@@ -428,9 +407,9 @@ class ContractAnalysisRepository:
         return (
             self.db.query(ContractAnalysis)
             .filter(
-                ContractAnalysis.is_active == True,
-                ContractAnalysis.is_latest == True,
-                ContractAnalysis.end_date != None,
+                ContractAnalysis.is_active,
+                ContractAnalysis.is_latest,
+                ContractAnalysis.end_date is not None,
                 ContractAnalysis.end_date <= expiry_date,
                 ContractAnalysis.end_date >= date.today(),
             )
@@ -446,7 +425,7 @@ class ContractAnalysisRepository:
                 func.avg(ContractAnalysis.compliance_score).label("avg_compliance"),
             )
             .filter(
-                ContractAnalysis.is_active == True,
+                ContractAnalysis.is_active,
                 ContractAnalysis.status == AnalysisStatus.COMPLETED,
             )
             .first()

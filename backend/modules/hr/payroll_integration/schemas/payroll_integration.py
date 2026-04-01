@@ -1,7 +1,6 @@
 """Schemas para integração com sistemas externos."""
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -18,21 +17,21 @@ class ESocialConfigSchema(BaseModel):
     )
     tipo_inscricao: int = Field(default=1, ge=1, le=2)
     nr_inscricao: str = Field(..., min_length=11, max_length=14)
-    transmissor_cnpj: Optional[str] = Field(None, min_length=14, max_length=14)
+    transmissor_cnpj: str | None = Field(None, min_length=14, max_length=14)
     certificado_tipo: str = Field(default="A1", pattern="^(A1|A3)$")
-    certificado_path: Optional[str] = None
-    procurador_cnpj: Optional[str] = Field(None, min_length=14, max_length=14)
+    certificado_path: str | None = None
+    procurador_cnpj: str | None = Field(None, min_length=14, max_length=14)
 
 
 class CredentialsSchema(BaseModel):
     """Schema para credenciais (entrada)."""
 
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
-    api_key: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
-    certificate_password: Optional[str] = None
+    client_id: str | None = None
+    client_secret: str | None = None
+    api_key: str | None = None
+    username: str | None = None
+    password: str | None = None
+    certificate_password: str | None = None
 
 
 class SyncConfigSchema(BaseModel):
@@ -44,7 +43,7 @@ class SyncConfigSchema(BaseModel):
         default="export",
         pattern="^(import|export|both)$",
     )
-    sync_events: List[str] = Field(default_factory=list)
+    sync_events: list[str] = Field(default_factory=list)
     batch_size: int = Field(default=100, ge=1, le=1000)
 
 
@@ -52,44 +51,44 @@ class PayrollIntegrationBase(BaseModel):
     """Schema base para integração."""
 
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     integration_type: IntegrationType
-    endpoint_url: Optional[str] = Field(None, max_length=500)
-    api_version: Optional[str] = Field(None, max_length=20)
-    auth_type: Optional[str] = Field(
+    endpoint_url: str | None = Field(None, max_length=500)
+    api_version: str | None = Field(None, max_length=20)
+    auth_type: str | None = Field(
         None,
         pattern="^(oauth2|basic|certificate|apikey)$",
     )
-    webhook_url: Optional[str] = Field(None, max_length=500)
-    webhook_events: Optional[List[str]] = Field(default_factory=list)
+    webhook_url: str | None = Field(None, max_length=500)
+    webhook_events: list[str] | None = Field(default_factory=list)
 
 
 class PayrollIntegrationCreate(PayrollIntegrationBase):
     """Schema para criação de integração."""
 
-    credentials: Optional[CredentialsSchema] = None
-    esocial_config: Optional[ESocialConfigSchema] = None
-    field_mapping: Optional[dict] = Field(default_factory=dict)
-    rubrica_mapping: Optional[dict] = Field(default_factory=dict)
-    sync_config: Optional[SyncConfigSchema] = None
+    credentials: CredentialsSchema | None = None
+    esocial_config: ESocialConfigSchema | None = None
+    field_mapping: dict | None = Field(default_factory=dict)
+    rubrica_mapping: dict | None = Field(default_factory=dict)
+    sync_config: SyncConfigSchema | None = None
 
 
 class PayrollIntegrationUpdate(BaseModel):
     """Schema para atualização de integração."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-    description: Optional[str] = None
-    endpoint_url: Optional[str] = Field(None, max_length=500)
-    api_version: Optional[str] = Field(None, max_length=20)
-    auth_type: Optional[str] = None
-    credentials: Optional[CredentialsSchema] = None
-    esocial_config: Optional[ESocialConfigSchema] = None
-    field_mapping: Optional[dict] = None
-    rubrica_mapping: Optional[dict] = None
-    sync_config: Optional[SyncConfigSchema] = None
-    webhook_url: Optional[str] = Field(None, max_length=500)
-    webhook_events: Optional[List[str]] = None
-    status: Optional[IntegrationStatus] = None
+    name: str | None = Field(None, min_length=1, max_length=100)
+    description: str | None = None
+    endpoint_url: str | None = Field(None, max_length=500)
+    api_version: str | None = Field(None, max_length=20)
+    auth_type: str | None = None
+    credentials: CredentialsSchema | None = None
+    esocial_config: ESocialConfigSchema | None = None
+    field_mapping: dict | None = None
+    rubrica_mapping: dict | None = None
+    sync_config: SyncConfigSchema | None = None
+    webhook_url: str | None = Field(None, max_length=500)
+    webhook_events: list[str] | None = None
+    status: IntegrationStatus | None = None
 
 
 class PayrollIntegrationResponse(BaseModel):
@@ -98,31 +97,31 @@ class PayrollIntegrationResponse(BaseModel):
     id: UUID
     condominio_id: UUID
     name: str
-    description: Optional[str]
+    description: str | None
     integration_type: str
-    endpoint_url: Optional[str]
-    api_version: Optional[str]
-    auth_type: Optional[str]
-    esocial_config: Optional[dict]
-    field_mapping: Optional[dict]
-    rubrica_mapping: Optional[dict]
-    sync_config: Optional[dict]
+    endpoint_url: str | None
+    api_version: str | None
+    auth_type: str | None
+    esocial_config: dict | None
+    field_mapping: dict | None
+    rubrica_mapping: dict | None
+    sync_config: dict | None
     status: str
-    last_sync_at: Optional[datetime]
-    last_sync_status: Optional[str]
-    last_sync_message: Optional[str]
+    last_sync_at: datetime | None
+    last_sync_status: str | None
+    last_sync_message: str | None
     last_sync_records: int
     total_syncs: int
     successful_syncs: int
     failed_syncs: int
     success_rate: float
-    webhook_url: Optional[str]
-    webhook_events: Optional[List[str]]
+    webhook_url: str | None
+    webhook_events: list[str] | None
     is_active: bool
     is_esocial: bool
     needs_certificate: bool
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -134,9 +133,9 @@ class IntegrationSyncRequest(BaseModel):
         default="full",
         pattern="^(full|incremental|specific)$",
     )
-    period_ids: Optional[List[UUID]] = None
-    employee_ids: Optional[List[UUID]] = None
-    event_types: Optional[List[str]] = None
+    period_ids: list[UUID] | None = None
+    employee_ids: list[UUID] | None = None
+    event_types: list[str] | None = None
     force: bool = False
 
 
@@ -147,13 +146,13 @@ class IntegrationSyncResponse(BaseModel):
     sync_id: UUID
     status: str
     started_at: datetime
-    completed_at: Optional[datetime]
-    duration_ms: Optional[int]
+    completed_at: datetime | None
+    duration_ms: int | None
     records_processed: int
     records_success: int
     records_failed: int
-    errors: List[dict] = Field(default_factory=list)
-    warnings: List[dict] = Field(default_factory=list)
+    errors: list[dict] = Field(default_factory=list)
+    warnings: list[dict] = Field(default_factory=list)
 
 
 class IntegrationTestRequest(BaseModel):
@@ -171,7 +170,7 @@ class IntegrationTestResponse(BaseModel):
     success: bool
     test_type: str
     message: str
-    details: Optional[dict] = None
+    details: dict | None = None
     duration_ms: int
 
 
@@ -180,20 +179,20 @@ class RubricaMappingEntry(BaseModel):
 
     internal_code: str = Field(..., min_length=1, max_length=20)
     external_code: str = Field(..., min_length=1, max_length=20)
-    external_name: Optional[str] = None
+    external_name: str | None = None
 
 
 class BulkRubricaMappingRequest(BaseModel):
     """Request para mapeamento em lote de rubricas."""
 
-    mappings: List[RubricaMappingEntry]
+    mappings: list[RubricaMappingEntry]
 
     @field_validator("mappings")
     @classmethod
     def validate_mappings(
         cls,
-        v: List[RubricaMappingEntry],
-    ) -> List[RubricaMappingEntry]:
+        v: list[RubricaMappingEntry],
+    ) -> list[RubricaMappingEntry]:
         """Valida lista de mapeamentos."""
         if not v:
             raise ValueError("Lista de mapeamentos não pode estar vazia")

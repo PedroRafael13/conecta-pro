@@ -177,20 +177,6 @@ export {
   useReadyForPayment
 } from './useReimbursement';
 
-/**
- * Fiscal de Diaristas
- * Cálculo de retenções, RPA, documentos fiscais
- */
-export { diaristFiscalService } from '@/lib/services/diarist-fiscal';
-export type {
-  RetencoesResponse,
-  DocumentoFiscal,
-  RelatorioRetencoesResponse,
-  RelatorioDiaristaResponse,
-  TabelaINSS,
-  TabelaIRRF,
-} from '@/lib/services/diarist-fiscal';
-
 // ============================================================================
 // MÓDULO CRM - GESTÃO DE LEADS
 // ============================================================================

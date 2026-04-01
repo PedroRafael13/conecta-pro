@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,14 @@ interface ContractAddendumModalProps {
   isLoading?: boolean;
 }
 
+const defaultFormData = {
+  tipo_aditivo: 'prazo',
+  novo_valor: 0,
+  nova_data_fim: '',
+  justificativa: '',
+  data_aditivo: '',
+};
+
 export function ContractAddendumModal({
   isOpen,
   onClose,
@@ -36,25 +44,19 @@ export function ContractAddendumModal({
   contractId,
   isLoading,
 }: ContractAddendumModalProps) {
-  const [formData, setFormData] = useState({
-    tipo_aditivo: 'prazo',
-    novo_valor: 0,
-    nova_data_fim: '',
-    justificativa: '',
-    data_aditivo: '',
-  });
+  const [formData, setFormData] = useState(defaultFormData);
+
+  // Reset form when modal closes
+  const resetForm = useCallback(() => {
+    setFormData(defaultFormData);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
-      setFormData({
-        tipo_aditivo: 'prazo',
-        novo_valor: 0,
-        nova_data_fim: '',
-        justificativa: '',
-        data_aditivo: '',
-      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -3,8 +3,8 @@ Skill /ocorrencia - Gerenciamento de ocorrencias via comando slash.
 """
 
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
 from datetime import date
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -30,8 +30,16 @@ class OcorrenciaSkill(BaseSkill):
     name = "ocorrencia"
     description = "Gerenciamento de ocorrencias disciplinares"
     commands = [
-        "resumo", "abertas", "graves", "posto", "stats",
-        "anexo", "anexos", "comentar", "comentarios", "historico",
+        "resumo",
+        "abertas",
+        "graves",
+        "posto",
+        "stats",
+        "anexo",
+        "anexos",
+        "comentar",
+        "comentarios",
+        "historico",
         "help",
     ]
 
@@ -39,7 +47,7 @@ class OcorrenciaSkill(BaseSkill):
         super().__init__(data_connector=data_connector)
         self.db = db
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando de ocorrencia."""
 
         if not command or command == "help":
@@ -67,7 +75,7 @@ class OcorrenciaSkill(BaseSkill):
             "suggestions": self.commands[:4],
         }
 
-    async def _resumo(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _resumo(self, args: list[str], context: dict) -> dict[str, Any]:
         """Resumo geral de ocorrencias."""
         # Tentar dados reais via DataConnector
         if self.has_data_connector:
@@ -75,27 +83,18 @@ class OcorrenciaSkill(BaseSkill):
                 result = await self.data_connector._get_ocorrencias_abertas()
                 if result.success and result.data:
                     total = result.total_count
-                    graves = sum(
-                        1 for o in result.data
-                        if o.get("severidade") in ("grave", "gravissima")
-                    )
-                    em_analise = sum(
-                        1 for o in result.data
-                        if o.get("status") == "em_analise"
-                    )
-                    abertas = sum(
-                        1 for o in result.data
-                        if o.get("status") == "aberta"
-                    )
+                    graves = sum(1 for o in result.data if o.get("severidade") in ("grave", "gravissima"))
+                    em_analise = sum(1 for o in result.data if o.get("status") == "em_analise")
+                    abertas = sum(1 for o in result.data if o.get("status") == "aberta")
 
                     response = f"""📋 **RESUMO DE OCORRENCIAS**
 
 **Ocorrencias Pendentes:** {total}
 - Abertas: **{abertas}**
 - Em Analise: **{em_analise}**
-- Graves/Gravissimas: **{graves}** {'🚨' if graves > 0 else '✅'}
+- Graves/Gravissimas: **{graves}** {"🚨" if graves > 0 else "✅"}
 
-{'🚨 **ATENCAO:** Ha ocorrencias graves pendentes de resolucao!' if graves > 0 else '✅ Nenhuma ocorrencia grave pendente.'}
+{"🚨 **ATENCAO:** Ha ocorrencias graves pendentes de resolucao!" if graves > 0 else "✅ Nenhuma ocorrencia grave pendente."}
 
 Use `/ocorrencia abertas` para ver a lista completa.
 Use `/ocorrencia stats` para estatisticas detalhadas."""
@@ -130,7 +129,7 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
             "suggestions": ["/ocorrencia abertas", "/ocorrencia graves", "/ocorrencia stats"],
         }
 
-    async def _abertas(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _abertas(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar ocorrencias abertas."""
         if self.has_data_connector:
             try:
@@ -148,7 +147,7 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
                 logger.warning(f"Erro ao buscar ocorrencias abertas: {e}")
 
         # Fallback estatico
-        today = date.today().strftime('%d/%m/%Y')
+        today = date.today().strftime("%d/%m/%Y")
         return {
             "response": f"""📋 **OCORRENCIAS ABERTAS** (3)
 
@@ -165,16 +164,13 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
             "suggestions": ["/ocorrencia graves", "/ocorrencia stats", "/ocorrencia help"],
         }
 
-    async def _graves(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _graves(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar ocorrencias graves e criticas."""
         if self.has_data_connector:
             try:
                 result = await self.data_connector._get_ocorrencias_abertas()
                 if result.success and result.data:
-                    graves = [
-                        o for o in result.data
-                        if o.get("severidade") in ("grave", "gravissima")
-                    ]
+                    graves = [o for o in result.data if o.get("severidade") in ("grave", "gravissima")]
 
                     if graves:
                         lines = []
@@ -203,7 +199,7 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
                 logger.warning(f"Erro ao buscar ocorrencias graves: {e}")
 
         # Fallback estatico
-        today = date.today().strftime('%d/%m/%Y')
+        today = date.today().strftime("%d/%m/%Y")
         return {
             "response": f"""🚨 **OCORRENCIAS GRAVES/GRAVISSIMAS** (2)
 
@@ -217,7 +213,7 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
             "suggestions": ["/ocorrencia abertas", "/ocorrencia stats", "/ocorrencia help"],
         }
 
-    async def _posto(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _posto(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ocorrencias de um posto especifico."""
         if not args:
             return {
@@ -242,9 +238,13 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
                     if ocorrencias:
                         lines = []
                         for o in ocorrencias[:15]:
-                            sev_icon = {"leve": "🟡", "moderada": "🟠", "grave": "🔴", "gravissima": "🚨"}.get(o.severity, "⚪")
-                            occurred = o.occurred_at.strftime('%d/%m/%Y') if o.occurred_at else 'N/A'
-                            status_label = {"aberta": "Aberta", "em_analise": "Analise", "resolvida": "Resolvida"}.get(o.status, o.status)
+                            sev_icon = {"leve": "🟡", "moderada": "🟠", "grave": "🔴", "gravissima": "🚨"}.get(
+                                o.severity, "⚪"
+                            )
+                            occurred = o.occurred_at.strftime("%d/%m/%Y") if o.occurred_at else "N/A"
+                            status_label = {"aberta": "Aberta", "em_analise": "Analise", "resolvida": "Resolvida"}.get(
+                                o.status, o.status
+                            )
                             lines.append(f"- {sev_icon} **{o.code}** - {o.title} | {status_label} | {occurred}")
 
                         response = f"""📍 **OCORRENCIAS - {post_code}** ({post.name})
@@ -269,7 +269,7 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
                 logger.warning(f"Erro ao buscar ocorrencias do posto: {e}")
 
         # Fallback estatico
-        today = date.today().strftime('%d/%m/%Y')
+        today = date.today().strftime("%d/%m/%Y")
         return {
             "response": f"""📍 **OCORRENCIAS - {post_code}**
 
@@ -282,11 +282,12 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
             "suggestions": ["/ocorrencia stats", "/ocorrencia abertas"],
         }
 
-    async def _stats(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _stats(self, args: list[str], context: dict) -> dict[str, Any]:
         """Estatisticas de ocorrencias."""
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
+
                 repo = OccurrenceRepository(self.db)
                 stats = await repo.get_stats()
 
@@ -323,17 +324,17 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
 | Abertas | {stats.open} |
 | Em Analise | {stats.in_analysis} |
 | Resolvidas | {stats.resolved} |
-| Graves | {stats.severe} {'🚨' if stats.severe > 0 else ''} |
+| Graves | {stats.severe} {"🚨" if stats.severe > 0 else ""} |
 | Tempo Medio Resolucao | {avg_time} |
 
 **Por Severidade:**
-{chr(10).join(sev_lines) if sev_lines else '  Nenhum dado'}
+{chr(10).join(sev_lines) if sev_lines else "  Nenhum dado"}
 
 **Por Tipo (Top 5):**
-{chr(10).join(tipo_lines) if tipo_lines else '  Nenhum dado'}
+{chr(10).join(tipo_lines) if tipo_lines else "  Nenhum dado"}
 
 **Por Categoria:**
-{chr(10).join(cat_lines) if cat_lines else '  Nenhum dado'}"""
+{chr(10).join(cat_lines) if cat_lines else "  Nenhum dado"}"""
 
                     return {
                         "response": response,
@@ -388,7 +389,7 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
     # ANEXOS E COMENTARIOS
     # ==================================================================
 
-    async def _adicionar_anexo(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _adicionar_anexo(self, args: list[str], context: dict) -> dict[str, Any]:
         """Adicionar anexo/evidencia a uma ocorrencia."""
         if len(args) < 2:
             return {
@@ -402,6 +403,7 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
+
                 repo = OccurrenceRepository(self.db)
 
                 # Buscar pelo ID ou codigo
@@ -409,7 +411,9 @@ Use `/ocorrencia stats` para estatisticas detalhadas.""",
                 if not occurrence:
                     # Tenta buscar por codigo
                     from sqlalchemy import select
+
                     from modules.operacional.occurrences.models.occurrence import Occurrence
+
                     result = await self.db.execute(
                         select(Occurrence).where(
                             Occurrence.code == ocorrencia_id.upper(),
@@ -470,7 +474,7 @@ _Acao simulada. Conecte ao banco para registro real._""",
             "suggestions": [f"/ocorrencia anexos {ocorrencia_id}"],
         }
 
-    async def _listar_anexos(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _listar_anexos(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar anexos de uma ocorrencia."""
         if not args:
             return {
@@ -482,10 +486,11 @@ _Acao simulada. Conecte ao banco para registro real._""",
 
         if self.has_data_connector and self.db:
             try:
-                from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
-                from modules.operacional.occurrences.models.occurrence_attachment import OccurrenceAttachment
-                from modules.operacional.occurrences.models.occurrence import Occurrence
                 from sqlalchemy import select
+
+                from modules.operacional.occurrences.models.occurrence import Occurrence
+                from modules.operacional.occurrences.models.occurrence_attachment import OccurrenceAttachment
+                from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
 
                 repo = OccurrenceRepository(self.db)
 
@@ -508,10 +513,12 @@ _Acao simulada. Conecte ao banco para registro real._""",
 
                 # Buscar anexos do model OccurrenceAttachment
                 att_result = await self.db.execute(
-                    select(OccurrenceAttachment).where(
+                    select(OccurrenceAttachment)
+                    .where(
                         OccurrenceAttachment.occurrence_id == occurrence.id,
                         OccurrenceAttachment.is_active.is_(True),
-                    ).order_by(OccurrenceAttachment.uploaded_at.desc())
+                    )
+                    .order_by(OccurrenceAttachment.uploaded_at.desc())
                 )
                 attachments_db = list(att_result.scalars().all())
 
@@ -534,7 +541,7 @@ _Acao simulada. Conecte ao banco para registro real._""",
                 for idx, att in enumerate(attachments_db, 1):
                     icon = type_icons.get(att.file_type, "📎")
                     size_str = f"{att.file_size_kb:.0f} KB" if att.file_size_kb else "N/A"
-                    uploaded = att.uploaded_at.strftime('%d/%m/%Y %H:%M') if att.uploaded_at else 'N/A'
+                    uploaded = att.uploaded_at.strftime("%d/%m/%Y %H:%M") if att.uploaded_at else "N/A"
                     desc = att.description or att.file_name
                     lines.append(f"| {idx} | {icon} {att.file_type} | {desc[:30]} | {size_str} | {uploaded} |")
 
@@ -542,7 +549,9 @@ _Acao simulada. Conecte ao banco para registro real._""",
                 for idx_offset, jatt in enumerate(json_attachments, len(attachments_db) + 1):
                     desc = jatt.get("description", jatt.get("name", "N/A"))
                     uploaded = jatt.get("uploaded_at", "N/A")
-                    lines.append(f"| {idx_offset} | 📎 {jatt.get('type', 'N/A')} | {desc[:30]} | N/A | {uploaded[:16] if isinstance(uploaded, str) else 'N/A'} |")
+                    lines.append(
+                        f"| {idx_offset} | 📎 {jatt.get('type', 'N/A')} | {desc[:30]} | N/A | {uploaded[:16] if isinstance(uploaded, str) else 'N/A'} |"
+                    )
 
                 return {
                     "response": f"""📎 **ANEXOS DA OCORRENCIA** {occurrence.code}
@@ -584,7 +593,7 @@ _Dados ilustrativos._""",
             ],
         }
 
-    async def _adicionar_comentario(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _adicionar_comentario(self, args: list[str], context: dict) -> dict[str, Any]:
         """Adicionar comentario a uma ocorrencia."""
         if len(args) < 2:
             return {
@@ -597,11 +606,13 @@ _Dados ilustrativos._""",
 
         if self.has_data_connector and self.db:
             try:
-                from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
+                from uuid import uuid4
+
+                from sqlalchemy import func, select
+
                 from modules.operacional.occurrences.models.occurrence import Occurrence
                 from modules.operacional.occurrences.models.occurrence_comment import OccurrenceComment
-                from sqlalchemy import select, func
-                from uuid import uuid4
+                from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
 
                 repo = OccurrenceRepository(self.db)
 
@@ -681,7 +692,7 @@ _Acao simulada. Conecte ao banco para registro real._""",
             "suggestions": [f"/ocorrencia comentarios {ocorrencia_id}"],
         }
 
-    async def _listar_comentarios(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _listar_comentarios(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar comentarios de uma ocorrencia."""
         if not args:
             return {
@@ -693,10 +704,11 @@ _Acao simulada. Conecte ao banco para registro real._""",
 
         if self.has_data_connector and self.db:
             try:
-                from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
+                from sqlalchemy import select
+
                 from modules.operacional.occurrences.models.occurrence import Occurrence
                 from modules.operacional.occurrences.models.occurrence_comment import OccurrenceComment
-                from sqlalchemy import select
+                from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
 
                 repo = OccurrenceRepository(self.db)
 
@@ -719,10 +731,12 @@ _Acao simulada. Conecte ao banco para registro real._""",
 
                 # Buscar comentarios
                 comments_result = await self.db.execute(
-                    select(OccurrenceComment).where(
+                    select(OccurrenceComment)
+                    .where(
                         OccurrenceComment.occurrence_id == occurrence.id,
                         OccurrenceComment.is_active.is_(True),
-                    ).order_by(OccurrenceComment.created_at.desc())
+                    )
+                    .order_by(OccurrenceComment.created_at.desc())
                 )
                 comments = list(comments_result.scalars().all())
 
@@ -738,7 +752,7 @@ _Acao simulada. Conecte ao banco para registro real._""",
                 lines = []
                 for idx, c in enumerate(comments[:20], 1):
                     author = c.author_name or c.author_id[:8]
-                    created = c.created_at.strftime('%d/%m/%Y %H:%M') if c.created_at else 'N/A'
+                    created = c.created_at.strftime("%d/%m/%Y %H:%M") if c.created_at else "N/A"
                     internal = "[INTERNO]" if c.is_internal else ""
                     edited = "(editado)" if c.is_edited else ""
                     preview = c.preview
@@ -752,7 +766,7 @@ _Acao simulada. Conecte ao banco para registro real._""",
 
 {chr(10).join(lines)}
 
-{'*Exibindo os primeiros 20 comentarios.*' if len(comments) > 20 else ''}""",
+{"*Exibindo os primeiros 20 comentarios.*" if len(comments) > 20 else ""}""",
                     "data": {
                         "ocorrencia_id": occurrence.id,
                         "ocorrencia_code": occurrence.code,
@@ -767,7 +781,7 @@ _Acao simulada. Conecte ao banco para registro real._""",
                 logger.warning(f"Erro ao listar comentarios: {e}")
 
         # Fallback estatico
-        today = date.today().strftime('%d/%m/%Y')
+        today = date.today().strftime("%d/%m/%Y")
         return {
             "response": f"""💬 **COMENTARIOS DA OCORRENCIA** {ocorrencia_id}
 
@@ -789,7 +803,7 @@ _Dados ilustrativos._""",
             ],
         }
 
-    async def _historico_funcionario(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _historico_funcionario(self, args: list[str], context: dict) -> dict[str, Any]:
         """Historico de ocorrencias de um funcionario."""
         if not args:
             return {
@@ -801,15 +815,18 @@ _Dados ilustrativos._""",
 
         if self.has_data_connector and self.db:
             try:
+                from sqlalchemy import select
+
                 from modules.operacional.occurrences.models.occurrence import Occurrence
-                from sqlalchemy import select, func
 
                 # Buscar ocorrencias do funcionario
                 result = await self.db.execute(
-                    select(Occurrence).where(
+                    select(Occurrence)
+                    .where(
                         Occurrence.employee_id == funcionario_id,
                         Occurrence.is_active.is_(True),
-                    ).order_by(Occurrence.occurred_at.desc())
+                    )
+                    .order_by(Occurrence.occurred_at.desc())
                 )
                 ocorrencias = list(result.scalars().all())
 
@@ -827,19 +844,27 @@ _Dados ilustrativos._""",
                 graves = sum(1 for o in ocorrencias if o.is_severe)
 
                 # Por severidade
-                sev_count: Dict[str, int] = {}
+                sev_count: dict[str, int] = {}
                 for o in ocorrencias:
                     sev_count[o.severity] = sev_count.get(o.severity, 0) + 1
 
                 sev_icons = {"leve": "🟡", "moderada": "🟠", "grave": "🔴", "gravissima": "🚨"}
-                sev_lines = [f"  {sev_icons.get(s, '⚪')} {s.title()}: **{c}**" for s, c in sorted(sev_count.items(), key=lambda x: x[1], reverse=True)]
+                sev_lines = [
+                    f"  {sev_icons.get(s, '⚪')} {s.title()}: **{c}**"
+                    for s, c in sorted(sev_count.items(), key=lambda x: x[1], reverse=True)
+                ]
 
                 # Ultimas ocorrencias
                 lines = []
                 for o in ocorrencias[:10]:
                     sev_icon = sev_icons.get(o.severity, "⚪")
-                    occurred = o.occurred_at.strftime('%d/%m/%Y') if o.occurred_at else 'N/A'
-                    status_label = {"aberta": "Aberta", "em_analise": "Analise", "resolvida": "Resolvida", "arquivada": "Arquivada"}.get(o.status, o.status)
+                    occurred = o.occurred_at.strftime("%d/%m/%Y") if o.occurred_at else "N/A"
+                    status_label = {
+                        "aberta": "Aberta",
+                        "em_analise": "Analise",
+                        "resolvida": "Resolvida",
+                        "arquivada": "Arquivada",
+                    }.get(o.status, o.status)
                     lines.append(f"| {sev_icon} {o.code} | {o.title[:30]} | {status_label} | {occurred} |")
 
                 reincidente_alert = ""
@@ -858,7 +883,7 @@ _Dados ilustrativos._""",
 | Abertas | {abertas} |
 | Em Analise | {em_analise} |
 | Resolvidas | {resolvidas} |
-| Graves/Gravissimas | {graves} {'🚨' if graves > 0 else ''} |
+| Graves/Gravissimas | {graves} {"🚨" if graves > 0 else ""} |
 
 **Por Severidade:**
 {chr(10).join(sev_lines)}
@@ -869,7 +894,7 @@ _Dados ilustrativos._""",
 |------------|--------|--------|------|
 {chr(10).join(lines)}
 
-{'*Exibindo as 10 mais recentes.*' if total > 10 else ''}{reincidente_alert}""",
+{"*Exibindo as 10 mais recentes.*" if total > 10 else ""}{reincidente_alert}""",
                     "data": {
                         "funcionario_id": funcionario_id,
                         "total": total,
@@ -883,7 +908,7 @@ _Dados ilustrativos._""",
                 logger.warning(f"Erro ao buscar historico do funcionario: {e}")
 
         # Fallback estatico
-        today = date.today().strftime('%d/%m/%Y')
+        today = date.today().strftime("%d/%m/%Y")
         return {
             "response": f"""📋 **HISTORICO DO FUNCIONARIO** {funcionario_id[:12]}...
 

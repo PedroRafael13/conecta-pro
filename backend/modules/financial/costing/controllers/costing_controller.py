@@ -3,7 +3,6 @@
 import logging
 from datetime import date
 from datetime import datetime as dt
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -12,54 +11,54 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user, require_permissions
 from core.database import get_db
+from modules.financial.costing.models import CostAnalysis
 from modules.financial.costing.repositories import (
-    CostDriverRepository,
     CostActivityRepository,
-    CostPoolRepository,
-    CostObjectRepository,
     CostAllocationRepository,
     CostAnalysisRepository,
+    CostDriverRepository,
+    CostObjectRepository,
+    CostPoolRepository,
 )
-from modules.financial.costing.models import CostAnalysis
 from modules.financial.costing.schemas import (
-    # Cost Driver
-    CostDriverCreate,
-    CostDriverUpdate,
-    CostDriverResponse,
-    CostDriverFilter,
+    ABCDashboard,
+    AllocationSummary,
     # Cost Activity
     CostActivityCreate,
-    CostActivityUpdate,
-    CostActivityResponse,
     CostActivityFilter,
-    # Cost Pool
-    CostPoolCreate,
-    CostPoolUpdate,
-    CostPoolResponse,
-    CostPoolFilter,
-    CostPoolAddCost,
-    # Cost Object
-    CostObjectCreate,
-    CostObjectUpdate,
-    CostObjectResponse,
-    CostObjectFilter,
-    CostObjectAddDirectCost,
+    CostActivityResponse,
+    CostActivityUpdate,
+    CostAllocationApprove,
+    CostAllocationBatch,
     # Cost Allocation
     CostAllocationCreate,
-    CostAllocationResponse,
     CostAllocationFilter,
-    CostAllocationApprove,
+    CostAllocationResponse,
     CostAllocationReverse,
-    CostAllocationBatch,
+    CostAnalysisFilter,
     # Cost Analysis
     CostAnalysisResponse,
-    CostAnalysisFilter,
     CostAnalysisRun,
+    # Cost Driver
+    CostDriverCreate,
+    CostDriverFilter,
+    CostDriverResponse,
+    CostDriverUpdate,
     # Statistics
     CostingStats,
-    ABCDashboard,
+    CostObjectAddDirectCost,
+    # Cost Object
+    CostObjectCreate,
+    CostObjectFilter,
+    CostObjectResponse,
+    CostObjectUpdate,
+    CostPoolAddCost,
+    # Cost Pool
+    CostPoolCreate,
+    CostPoolFilter,
+    CostPoolResponse,
+    CostPoolUpdate,
     CostTrend,
-    AllocationSummary,
 )
 from modules.financial.costing.services import (
     ABCService,
@@ -76,14 +75,15 @@ router = APIRouter(prefix="/costing", tags=["Costing - Custeio ABC"])
 # COST DRIVER ENDPOINTS
 # ============================================================
 
+
 @router.get("/drivers", response_model=list[CostDriverResponse])
 async def list_drivers(
-    condominio_id: Optional[UUID] = None,
-    codigo: Optional[str] = None,
-    nome: Optional[str] = None,
-    tipo: Optional[str] = None,
-    status: Optional[str] = None,
-    ativo: Optional[bool] = True,
+    condominio_id: UUID | None = None,
+    codigo: str | None = None,
+    nome: str | None = None,
+    tipo: str | None = None,
+    status: str | None = None,
+    ativo: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -137,8 +137,7 @@ async def get_driver(  # pylint: disable=unused-argument
     driver = await repo.get(driver_id)
     if not driver:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Driver {driver_id} não encontrado"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Driver {driver_id} não encontrado"
         )
     return CostDriverResponse.model_validate(driver)
 
@@ -155,8 +154,7 @@ async def update_driver(
     driver = await repo.update(driver_id, data)  # pylint: disable=too-many-function-args
     if not driver:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Driver {driver_id} não encontrado"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Driver {driver_id} não encontrado"
         )
     await db.commit()
 
@@ -175,8 +173,7 @@ async def delete_driver(
     success = await repo.soft_delete(driver_id)
     if not success:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Driver {driver_id} não encontrado"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Driver {driver_id} não encontrado"
         )
     await db.commit()
     logger.info(f"Cost Driver removido: {driver_id} por {current_user.id}")
@@ -184,15 +181,13 @@ async def delete_driver(
 
 @router.get("/drivers/stats", response_model=dict)
 async def get_driver_stats(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> dict:
     """Obtém estatísticas dos cost drivers."""
     repo = CostDriverRepository(db)
-    stats = await repo.get_statistics(
-        condominio_id=condominio_id or current_user.condominio_id
-    )
+    stats = await repo.get_statistics(condominio_id=condominio_id or current_user.condominio_id)
     return stats
 
 
@@ -200,14 +195,15 @@ async def get_driver_stats(
 # COST ACTIVITY ENDPOINTS
 # ============================================================
 
+
 @router.get("/activities", response_model=list[CostActivityResponse])
 async def list_activities(
-    condominio_id: Optional[UUID] = None,
-    codigo: Optional[str] = None,
-    nome: Optional[str] = None,
-    nivel: Optional[str] = None,
-    status: Optional[str] = None,
-    ativo: Optional[bool] = True,
+    condominio_id: UUID | None = None,
+    codigo: str | None = None,
+    nome: str | None = None,
+    nivel: str | None = None,
+    status: str | None = None,
+    ativo: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -261,8 +257,7 @@ async def get_activity(  # pylint: disable=unused-argument
     activity = await repo.get(activity_id)
     if not activity:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Activity {activity_id} não encontrada"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Activity {activity_id} não encontrada"
         )
     return CostActivityResponse.model_validate(activity)
 
@@ -280,8 +275,7 @@ async def update_activity(
     activity = await repo.update(activity_id, data)
     if not activity:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Activity {activity_id} não encontrada"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Activity {activity_id} não encontrada"
         )
     await db.commit()
 
@@ -300,8 +294,7 @@ async def delete_activity(
     success = await repo.soft_delete(activity_id)
     if not success:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Activity {activity_id} não encontrada"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Activity {activity_id} não encontrada"
         )
     await db.commit()
     logger.info(f"Cost Activity removida: {activity_id} por {current_user.id}")
@@ -311,14 +304,15 @@ async def delete_activity(
 # COST POOL ENDPOINTS
 # ============================================================
 
+
 @router.get("/pools", response_model=list[CostPoolResponse])
 async def list_pools(
-    condominio_id: Optional[UUID] = None,
-    codigo: Optional[str] = None,
-    nome: Optional[str] = None,
-    tipo: Optional[str] = None,
-    status: Optional[str] = None,
-    ativo: Optional[bool] = True,
+    condominio_id: UUID | None = None,
+    codigo: str | None = None,
+    nome: str | None = None,
+    tipo: str | None = None,
+    status: str | None = None,
+    ativo: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -367,10 +361,7 @@ async def get_pool(  # pylint: disable=unused-argument
     repo = CostPoolRepository(db)
     pool = await repo.get(pool_id)
     if not pool:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Pool {pool_id} não encontrado"
-        )
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Pool {pool_id} não encontrado")
     return CostPoolResponse.model_validate(pool)
 
 
@@ -386,10 +377,7 @@ async def update_pool(
     # pylint: disable=too-many-function-args
     pool = await repo.update(pool_id, data)
     if not pool:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Pool {pool_id} não encontrado"
-        )
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Pool {pool_id} não encontrado")
     await db.commit()
 
     logger.info(f"Cost Pool atualizado: {pool_id} por {current_user.id}")
@@ -406,15 +394,12 @@ async def delete_pool(
     repo = CostPoolRepository(db)
     success = await repo.soft_delete(pool_id)
     if not success:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Pool {pool_id} não encontrado"
-        )
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Pool {pool_id} não encontrado")
     await db.commit()
     logger.info(f"Cost Pool removido: {pool_id} por {current_user.id}")
 
 
-@router.post("/pools/{pool_id}/add-cost", response_model=CostPoolResponse)
+@router.post("/pools/{pool_id}/add-cost", response_model=CostPoolResponse, status_code=201)
 async def add_cost_to_pool(  # pylint: disable=unused-argument
     pool_id: UUID,
     data: CostPoolAddCost,
@@ -425,10 +410,7 @@ async def add_cost_to_pool(  # pylint: disable=unused-argument
     repo = CostPoolRepository(db)
     pool = await repo.add_cost(pool_id, data.valor, data.descricao)
     if not pool:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Pool {pool_id} não encontrado"
-        )
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Pool {pool_id} não encontrado")
     await db.commit()
 
     logger.info(f"Custo adicionado ao pool {pool_id}: R$ {data.valor}")
@@ -452,14 +434,15 @@ async def get_pool_distribution(  # pylint: disable=unused-argument
 # COST OBJECT ENDPOINTS
 # ============================================================
 
+
 @router.get("/objects", response_model=list[CostObjectResponse])
 async def list_objects(
-    condominio_id: Optional[UUID] = None,
-    codigo: Optional[str] = None,
-    nome: Optional[str] = None,
-    tipo: Optional[str] = None,
-    lucrativo: Optional[bool] = None,
-    ativo: Optional[bool] = True,
+    condominio_id: UUID | None = None,
+    codigo: str | None = None,
+    nome: str | None = None,
+    tipo: str | None = None,
+    lucrativo: bool | None = None,
+    ativo: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -513,8 +496,7 @@ async def get_object(  # pylint: disable=unused-argument
     obj = await repo.get(object_id)
     if not obj:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Object {object_id} não encontrado"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Object {object_id} não encontrado"
         )
     return CostObjectResponse.model_validate(obj)
 
@@ -532,8 +514,7 @@ async def update_object(
     obj = await repo.update(object_id, data)
     if not obj:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Object {object_id} não encontrado"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Object {object_id} não encontrado"
         )
     await db.commit()
 
@@ -552,14 +533,13 @@ async def delete_object(
     success = await repo.soft_delete(object_id)
     if not success:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Object {object_id} não encontrado"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Object {object_id} não encontrado"
         )
     await db.commit()
     logger.info(f"Cost Object removido: {object_id} por {current_user.id}")
 
 
-@router.post("/objects/{object_id}/add-direct-cost", response_model=CostObjectResponse)
+@router.post("/objects/{object_id}/add-direct-cost", response_model=CostObjectResponse, status_code=201)
 async def add_direct_cost(  # pylint: disable=unused-argument
     object_id: UUID,
     data: CostObjectAddDirectCost,
@@ -571,8 +551,7 @@ async def add_direct_cost(  # pylint: disable=unused-argument
     obj = await repo.add_direct_cost(object_id, data.valor, data.descricao)
     if not obj:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Object {object_id} não encontrado"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Object {object_id} não encontrado"
         )
     await db.commit()
 
@@ -593,7 +572,7 @@ async def get_break_even(  # pylint: disable=unused-argument
 
 @router.get("/objects/ranking/profitability")
 async def get_profitability_ranking(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -608,15 +587,13 @@ async def get_profitability_ranking(
 
 @router.get("/objects/unprofitable")
 async def get_unprofitable_objects(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> list[CostObjectResponse]:
     """Lista objetos não lucrativos."""
     repo = CostObjectRepository(db)
-    objects = await repo.get_unprofitable(
-        condominio_id=condominio_id or current_user.condominio_id
-    )
+    objects = await repo.get_unprofitable(condominio_id=condominio_id or current_user.condominio_id)
     return [CostObjectResponse.model_validate(o) for o in objects]
 
 
@@ -624,15 +601,16 @@ async def get_unprofitable_objects(
 # COST ALLOCATION ENDPOINTS
 # ============================================================
 
+
 @router.get("/allocations", response_model=list[CostAllocationResponse])
 async def list_allocations(
-    condominio_id: Optional[UUID] = None,
-    tipo: Optional[str] = None,
-    status: Optional[str] = None,
-    origem_id: Optional[UUID] = None,
-    destino_id: Optional[UUID] = None,
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
+    condominio_id: UUID | None = None,
+    tipo: str | None = None,
+    status: str | None = None,
+    origem_id: UUID | None = None,
+    destino_id: UUID | None = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -688,13 +666,12 @@ async def get_allocation(  # pylint: disable=unused-argument
     allocation = await repo.get(allocation_id)
     if not allocation:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Allocation {allocation_id} não encontrada"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Allocation {allocation_id} não encontrada"
         )
     return CostAllocationResponse.model_validate(allocation)
 
 
-@router.post("/allocations/{allocation_id}/approve", response_model=CostAllocationResponse)
+@router.post("/allocations/{allocation_id}/approve", response_model=CostAllocationResponse, status_code=201)
 async def approve_allocation(
     allocation_id: UUID,
     data: CostAllocationApprove,
@@ -714,7 +691,7 @@ async def approve_allocation(
     return CostAllocationResponse.model_validate(allocation)
 
 
-@router.post("/allocations/{allocation_id}/execute", response_model=CostAllocationResponse)
+@router.post("/allocations/{allocation_id}/execute", response_model=CostAllocationResponse, status_code=201)
 async def execute_allocation(
     allocation_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -729,7 +706,7 @@ async def execute_allocation(
     return CostAllocationResponse.model_validate(allocation)
 
 
-@router.post("/allocations/{allocation_id}/reverse", response_model=CostAllocationResponse)
+@router.post("/allocations/{allocation_id}/reverse", response_model=CostAllocationResponse, status_code=201)
 async def reverse_allocation(
     allocation_id: UUID,
     data: CostAllocationReverse,
@@ -749,7 +726,7 @@ async def reverse_allocation(
     return CostAllocationResponse.model_validate(reversal)
 
 
-@router.post("/allocations/batch-execute")
+@router.post("/allocations/batch-execute", status_code=201)
 async def batch_execute_allocations(
     data: CostAllocationBatch,
     db: AsyncSession = Depends(get_db),
@@ -763,7 +740,7 @@ async def batch_execute_allocations(
     return result
 
 
-@router.post("/allocations/pool-to-activities")
+@router.post("/allocations/pool-to-activities", status_code=201)
 async def allocate_pool_to_activities(
     pool_id: UUID,
     allocations: list[dict],
@@ -786,7 +763,7 @@ async def allocate_pool_to_activities(
     return [CostAllocationResponse.model_validate(a) for a in created]
 
 
-@router.post("/allocations/activity-to-objects")
+@router.post("/allocations/activity-to-objects", status_code=201)
 async def allocate_activity_to_objects(
     activity_id: UUID,
     allocations: list[dict],
@@ -809,7 +786,7 @@ async def allocate_activity_to_objects(
     return [CostAllocationResponse.model_validate(a) for a in created]
 
 
-@router.post("/allocations/by-driver")
+@router.post("/allocations/by-driver", status_code=201)
 async def allocate_by_driver(
     origem_tipo: str,
     origem_id: UUID,
@@ -838,7 +815,7 @@ async def allocate_by_driver(
 
 @router.get("/allocations/summary", response_model=AllocationSummary)
 async def get_allocation_summary(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     periodo_inicio: date = Query(...),
     periodo_fim: date = Query(...),
     db: AsyncSession = Depends(get_db),
@@ -858,11 +835,12 @@ async def get_allocation_summary(
 # COST ANALYSIS ENDPOINTS
 # ============================================================
 
+
 @router.get("/analyses", response_model=list[CostAnalysisResponse])
 async def list_analyses(
-    condominio_id: Optional[UUID] = None,
-    tipo: Optional[str] = None,
-    status: Optional[str] = None,
+    condominio_id: UUID | None = None,
+    tipo: str | None = None,
+    status: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -890,13 +868,12 @@ async def get_analysis(  # pylint: disable=unused-argument
     analysis = await repo.get(analysis_id)
     if not analysis:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail=f"Cost Analysis {analysis_id} não encontrada"
+            status_code=http_status.HTTP_404_NOT_FOUND, detail=f"Cost Analysis {analysis_id} não encontrada"
         )
     return CostAnalysisResponse.model_validate(analysis)
 
 
-@router.post("/analyses/run-abc", response_model=dict)
+@router.post("/analyses/run-abc", response_model=dict, status_code=201)
 async def run_abc_costing(
     data: CostAnalysisRun,
     db: AsyncSession = Depends(get_db),
@@ -916,7 +893,7 @@ async def run_abc_costing(
     return result
 
 
-@router.post("/analyses/run-ai", response_model=dict)
+@router.post("/analyses/run-ai", response_model=dict, status_code=201)
 async def run_ai_analysis(
     data: CostAnalysisRun,
     db: AsyncSession = Depends(get_db),
@@ -954,8 +931,8 @@ async def run_ai_analysis(
 
 @router.get("/analyses/profitability")
 async def analyze_profitability(
-    condominio_id: Optional[UUID] = None,
-    object_ids: Optional[list[UUID]] = Query(None),
+    condominio_id: UUID | None = None,
+    object_ids: list[UUID] | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> dict:
@@ -969,21 +946,19 @@ async def analyze_profitability(
 
 @router.get("/analyses/idle-capacity")
 async def analyze_idle_capacity(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> dict:
     """Analisa capacidade ociosa dos drivers."""
     service = CostAIService(db)
-    return await service.analyze_idle_capacity(
-        condominio_id=condominio_id or current_user.condominio_id
-    )
+    return await service.analyze_idle_capacity(condominio_id=condominio_id or current_user.condominio_id)
 
 
 @router.get("/analyses/anomalies")
 async def detect_anomalies(
-    condominio_id: Optional[UUID] = None,
-    period: Optional[str] = None,
+    condominio_id: UUID | None = None,
+    period: str | None = None,
     z_score_threshold: float = Query(2.0),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -999,20 +974,18 @@ async def detect_anomalies(
 
 @router.get("/analyses/optimization-suggestions")
 async def get_optimization_suggestions(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> list[dict]:
     """Obtém sugestões de otimização de custos."""
     service = CostAIService(db)
-    return await service.suggest_cost_optimization(
-        condominio_id=condominio_id or current_user.condominio_id
-    )
+    return await service.suggest_cost_optimization(condominio_id=condominio_id or current_user.condominio_id)
 
 
 @router.get("/analyses/forecast")
 async def forecast_costs(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     periods_ahead: int = Query(3, ge=1, le=12),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -1029,11 +1002,12 @@ async def forecast_costs(
 # DASHBOARD & STATISTICS ENDPOINTS
 # ============================================================
 
+
 @router.get("/dashboard", response_model=ABCDashboard)
 async def get_dashboard(  # pylint: disable=too-many-locals,unused-argument
-    condominio_id: Optional[UUID] = None,
-    periodo_inicio: Optional[date] = None,
-    periodo_fim: Optional[date] = None,
+    condominio_id: UUID | None = None,
+    periodo_inicio: date | None = None,
+    periodo_fim: date | None = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> ABCDashboard:
@@ -1071,7 +1045,7 @@ async def get_dashboard(  # pylint: disable=too-many-locals,unused-argument
 
 @router.get("/stats", response_model=CostingStats)
 async def get_stats(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> CostingStats:
@@ -1097,7 +1071,7 @@ async def get_stats(
 
 @router.get("/trends", response_model=list[CostTrend])
 async def get_cost_trends(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     meses: int = Query(12, ge=1, le=36),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),

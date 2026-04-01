@@ -4,27 +4,27 @@ Feedback Insight Model - Sprint 46
 Model para insights e recomendacoes baseados em feedback.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
-    Float,
-    Integer,
     Boolean,
+    Column,
     DateTime,
     Enum,
+    Float,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class InsightType(str, enum.Enum):
+class InsightType(StrEnum):
     """Tipos de insight."""
 
     # Sentimento
@@ -65,7 +65,7 @@ class InsightType(str, enum.Enum):
     TEAM_RECOGNITION = "team_recognition"
 
 
-class InsightPriority(str, enum.Enum):
+class InsightPriority(StrEnum):
     """Prioridade do insight."""
 
     CRITICAL = "critical"
@@ -75,7 +75,7 @@ class InsightPriority(str, enum.Enum):
     INFO = "info"
 
 
-class InsightStatus(str, enum.Enum):
+class InsightStatus(StrEnum):
     """Status do insight."""
 
     NEW = "new"
@@ -291,20 +291,22 @@ class FeedbackInsight(Base):
         expected_impact: str,
         effort: str = "medium",
         priority: int = 1,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         """Adiciona recomendacao."""
         if self.recommendations is None:
             self.recommendations = []
 
-        self.recommendations.append({
-            "action": action,
-            "expected_impact": expected_impact,
-            "effort": effort,  # low, medium, high
-            "priority": priority,
-            "details": details or {},
-            "added_at": datetime.utcnow().isoformat(),
-        })
+        self.recommendations.append(
+            {
+                "action": action,
+                "expected_impact": expected_impact,
+                "effort": effort,  # low, medium, high
+                "priority": priority,
+                "details": details or {},
+                "added_at": datetime.utcnow().isoformat(),
+            }
+        )
 
         # Ordenar por prioridade
         self.recommendations.sort(key=lambda x: x.get("priority", 99))
@@ -314,7 +316,7 @@ class FeedbackInsight(Base):
         text: str,
         sentiment: str,
         source: str,
-        analysis_id: Optional[str] = None,
+        analysis_id: str | None = None,
     ) -> None:
         """Adiciona exemplo de suporte."""
         if self.supporting_data is None:
@@ -323,24 +325,28 @@ class FeedbackInsight(Base):
         if "sample_feedback" not in self.supporting_data:
             self.supporting_data["sample_feedback"] = []
 
-        self.supporting_data["sample_feedback"].append({
-            "text": text[:500],  # Limitar tamanho
-            "sentiment": sentiment,
-            "source": source,
-            "analysis_id": analysis_id,
-        })
+        self.supporting_data["sample_feedback"].append(
+            {
+                "text": text[:500],  # Limitar tamanho
+                "sentiment": sentiment,
+                "source": source,
+                "analysis_id": analysis_id,
+            }
+        )
 
     def acknowledge(self, user_id: UUID) -> None:
         """Marca como reconhecido."""
         self.status = InsightStatus.ACKNOWLEDGED
         self.actions_taken = self.actions_taken or []
-        self.actions_taken.append({
-            "action": "acknowledged",
-            "by": str(user_id),
-            "at": datetime.utcnow().isoformat(),
-        })
+        self.actions_taken.append(
+            {
+                "action": "acknowledged",
+                "by": str(user_id),
+                "at": datetime.utcnow().isoformat(),
+            }
+        )
 
-    def assign(self, user_id: UUID, team: Optional[str] = None) -> None:
+    def assign(self, user_id: UUID, team: str | None = None) -> None:
         """Atribui insight."""
         self.assigned_to = user_id
         self.assigned_at = datetime.utcnow()
@@ -352,7 +358,7 @@ class FeedbackInsight(Base):
         self,
         user_id: UUID,
         outcome: str,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> None:
         """Resolve insight."""
         self.resolved_by = user_id
@@ -362,22 +368,24 @@ class FeedbackInsight(Base):
             self.resolution_notes = notes
         self.status = InsightStatus.IMPLEMENTED
 
-    def dismiss(self, user_id: UUID, reason: Optional[str] = None) -> None:
+    def dismiss(self, user_id: UUID, reason: str | None = None) -> None:
         """Descarta insight."""
         self.status = InsightStatus.DISMISSED
         self.actions_taken = self.actions_taken or []
-        self.actions_taken.append({
-            "action": "dismissed",
-            "by": str(user_id),
-            "reason": reason,
-            "at": datetime.utcnow().isoformat(),
-        })
+        self.actions_taken.append(
+            {
+                "action": "dismissed",
+                "by": str(user_id),
+                "reason": reason,
+                "at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def add_feedback(
         self,
         was_useful: bool,
-        rating: Optional[int] = None,
-        notes: Optional[str] = None,
+        rating: int | None = None,
+        notes: str | None = None,
     ) -> None:
         """Adiciona feedback sobre o insight."""
         self.was_useful = was_useful
@@ -386,7 +394,7 @@ class FeedbackInsight(Base):
         if notes:
             self.feedback_notes = notes
 
-    def to_summary(self) -> Dict[str, Any]:
+    def to_summary(self) -> dict[str, Any]:
         """Retorna resumo do insight."""
         return {
             "id": str(self.id),

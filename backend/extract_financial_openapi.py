@@ -14,33 +14,33 @@ sys.path.insert(0, str(Path(__file__).parent))
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
-# Import all financial routers
-from modules.financial.controllers import (
-    # Contas a Pagar
-    supplier_router,
-    payable_router,
-    # Contas a Receber
-    customer_router,
-    receivable_category_router,
-    receivable_router,
-    billing_rule_router,
-    # Fluxo de Caixa
-    bank_account_router,
-    bank_transaction_router,
-    bank_reconciliation_router,
-    cashflow_router,
-    # Compras
-    purchase_router,
-    # Estoque
-    inventory_router,
-    # Contabilidade
-    accounting_router,
-    # Fiscal
-    fiscal_router,
-)
-
 # Submodulos
 from modules.financial.bi_dashboard.controllers import router as bi_dashboard_router
+
+# Import all financial routers
+from modules.financial.controllers import (
+    # Contabilidade
+    accounting_router,
+    # Fluxo de Caixa
+    bank_account_router,
+    bank_reconciliation_router,
+    bank_transaction_router,
+    billing_rule_router,
+    cashflow_router,
+    # Contas a Receber
+    customer_router,
+    # Fiscal
+    fiscal_router,
+    # Estoque
+    inventory_router,
+    payable_router,
+    # Compras
+    purchase_router,
+    receivable_category_router,
+    receivable_router,
+    # Contas a Pagar
+    supplier_router,
+)
 from modules.financial.costing import router as costing_router
 
 
@@ -63,14 +63,28 @@ def extract_financial_openapi():
 
     # Contas a Receber (Customers + Receivables)
     app.include_router(customer_router, prefix="/api/v1/financial/customers", tags=["Financial - Customers"])
-    app.include_router(receivable_category_router, prefix="/api/v1/financial/receivable-categories", tags=["Financial - Receivable Categories"])
+    app.include_router(
+        receivable_category_router,
+        prefix="/api/v1/financial/receivable-categories",
+        tags=["Financial - Receivable Categories"],
+    )
     app.include_router(receivable_router, prefix="/api/v1/financial/receivables", tags=["Financial - Receivables"])
-    app.include_router(billing_rule_router, prefix="/api/v1/financial/billing-rules", tags=["Financial - Billing Rules"])
+    app.include_router(
+        billing_rule_router, prefix="/api/v1/financial/billing-rules", tags=["Financial - Billing Rules"]
+    )
 
     # Fluxo de Caixa (Banks + Cashflow)
-    app.include_router(bank_account_router, prefix="/api/v1/financial/bank-accounts", tags=["Financial - Bank Accounts"])
-    app.include_router(bank_transaction_router, prefix="/api/v1/financial/bank-transactions", tags=["Financial - Bank Transactions"])
-    app.include_router(bank_reconciliation_router, prefix="/api/v1/financial/bank-reconciliation", tags=["Financial - Bank Reconciliation"])
+    app.include_router(
+        bank_account_router, prefix="/api/v1/financial/bank-accounts", tags=["Financial - Bank Accounts"]
+    )
+    app.include_router(
+        bank_transaction_router, prefix="/api/v1/financial/bank-transactions", tags=["Financial - Bank Transactions"]
+    )
+    app.include_router(
+        bank_reconciliation_router,
+        prefix="/api/v1/financial/bank-reconciliation",
+        tags=["Financial - Bank Reconciliation"],
+    )
     app.include_router(cashflow_router, prefix="/api/v1/financial/cashflow", tags=["Financial - Cashflow"])
 
     # Compras (Purchase)
@@ -101,17 +115,17 @@ def extract_financial_openapi():
     )
 
     # Count endpoints
-    endpoint_count = len([route for route in app.routes if hasattr(route, 'methods')])
+    endpoint_count = len([route for route in app.routes if hasattr(route, "methods")])
     print(f"\n✅ Total de endpoints extraídos: {endpoint_count}")
 
     # Count by tag
     print("\n📊 Endpoints por submódulo:")
-    paths = openapi_schema.get('paths', {})
+    paths = openapi_schema.get("paths", {})
     tag_counts = {}
     for path_data in paths.values():
         for method_data in path_data.values():
-            if isinstance(method_data, dict) and 'tags' in method_data:
-                for tag in method_data['tags']:
+            if isinstance(method_data, dict) and "tags" in method_data:
+                for tag in method_data["tags"]:
                     tag_counts[tag] = tag_counts.get(tag, 0) + 1
 
     for tag, count in sorted(tag_counts.items()):
@@ -119,7 +133,7 @@ def extract_financial_openapi():
 
     # Save to file
     output_file = Path(__file__).parent / "openapi-financial.json"
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(openapi_schema, f, indent=2, ensure_ascii=False)
 
     print(f"\n✅ OpenAPI spec salvo em: {output_file}")
@@ -135,5 +149,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Erro ao extrair OpenAPI: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

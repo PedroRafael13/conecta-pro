@@ -9,9 +9,9 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
-from decimal import Decimal
+from collections.abc import AsyncGenerator
+from datetime import date, datetime, timedelta
+from typing import Any
 
 from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
 
@@ -66,7 +66,7 @@ class ESocialSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai eventos eSocial do webservice.
 
@@ -78,10 +78,7 @@ class ESocialSynchronizer(BaseSynchronizer):
         """
         cnpj = self._normalizar_cnpj(config.cnpj_empresa)
 
-        logger.info(
-            f"[eSocial] Extraindo eventos - CNPJ: {cnpj}, "
-            f"Periodo: {config.data_inicial} a {config.data_final}"
-        )
+        logger.info(f"[eSocial] Extraindo eventos - CNPJ: {cnpj}, Periodo: {config.data_inicial} a {config.data_final}")
 
         # 1. Consultar eventos enviados
         async for evento in self._consultar_eventos_enviados(cnpj, config):
@@ -99,7 +96,7 @@ class ESocialSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta eventos enviados."""
         try:
             if not self.esocial_transmitter:
@@ -138,7 +135,7 @@ class ESocialSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta totalizadores S-5001, S-5003, etc."""
         try:
             if not self.esocial_transmitter:
@@ -177,7 +174,7 @@ class ESocialSynchronizer(BaseSynchronizer):
     async def _atualizar_status_pendentes(
         self,
         cnpj: str,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Atualiza status de eventos pendentes no banco."""
         try:
             # Buscar eventos pendentes no banco local
@@ -206,14 +203,14 @@ class ESocialSynchronizer(BaseSynchronizer):
         except Exception as e:
             logger.error(f"[eSocial] Erro atualizando status: {e}")
 
-    async def _buscar_eventos_pendentes(self, cnpj: str) -> List[Dict]:
+    async def _buscar_eventos_pendentes(self, cnpj: str) -> list[dict]:
         """Busca eventos pendentes no banco local."""
         # Implementacao depende do modelo real
         return []
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """
@@ -239,18 +236,16 @@ class ESocialSynchronizer(BaseSynchronizer):
 
     async def _salvar_evento(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva ou atualiza evento no banco."""
-        from ..models.sync_models import EventoESocial, TipoEventoESocial, StatusEventoESocial
+        from ..models.sync_models import EventoESocial, StatusEventoESocial, TipoEventoESocial
 
         id_evento = registro.get("id")
 
         # Verificar se existe
-        existente = self.db.query(EventoESocial).filter(
-            EventoESocial.id_evento == id_evento
-        ).first()
+        existente = self.db.query(EventoESocial).filter(EventoESocial.id_evento == id_evento).first()
 
         # Mapear status
         status_map = {
@@ -262,10 +257,7 @@ class ESocialSynchronizer(BaseSynchronizer):
 
         if existente:
             # Atualizar
-            existente.status = status_map.get(
-                registro.get("status", "pendente"),
-                StatusEventoESocial.PENDENTE
-            )
+            existente.status = status_map.get(registro.get("status", "pendente"), StatusEventoESocial.PENDENTE)
             existente.recibo = registro.get("recibo")
             existente.data_processamento = datetime.utcnow()
             existente.updated_at = datetime.utcnow()
@@ -286,10 +278,7 @@ class ESocialSynchronizer(BaseSynchronizer):
                 matricula=registro.get("matricula"),
                 periodo_apuracao=registro.get("periodo_apuracao"),
                 data_evento=registro.get("data") or date.today(),
-                status=status_map.get(
-                    registro.get("status", "pendente"),
-                    StatusEventoESocial.PENDENTE
-                ),
+                status=status_map.get(registro.get("status", "pendente"), StatusEventoESocial.PENDENTE),
                 protocolo_envio=registro.get("protocolo"),
                 recibo=registro.get("recibo"),
                 dados_evento=registro.get("dados", {}),
@@ -301,33 +290,31 @@ class ESocialSynchronizer(BaseSynchronizer):
 
     async def _salvar_totalizador(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva totalizador no banco."""
         # Totalizadores sao armazenados como eventos especiais
-        return await self._salvar_evento({
-            **registro,
-            "tipo": "evento",
-        }, config)
+        return await self._salvar_evento(
+            {
+                **registro,
+                "tipo": "evento",
+            },
+            config,
+        )
 
-    async def _atualizar_evento(self, registro: Dict[str, Any]) -> bool:
+    async def _atualizar_evento(self, registro: dict[str, Any]) -> bool:
         """Atualiza status de evento existente."""
         from ..models.sync_models import EventoESocial, StatusEventoESocial
 
-        evento = self.db.query(EventoESocial).filter(
-            EventoESocial.id == registro.get("id")
-        ).first()
+        evento = self.db.query(EventoESocial).filter(EventoESocial.id == registro.get("id")).first()
 
         if evento:
             status_map = {
                 "aceito": StatusEventoESocial.ACEITO,
                 "rejeitado": StatusEventoESocial.REJEITADO,
             }
-            evento.status = status_map.get(
-                registro.get("status"),
-                evento.status
-            )
+            evento.status = status_map.get(registro.get("status"), evento.status)
             evento.recibo = registro.get("recibo") or evento.recibo
             evento.mensagem_erro = registro.get("mensagem_erro")
             evento.data_processamento = datetime.utcnow()
@@ -335,15 +322,20 @@ class ESocialSynchronizer(BaseSynchronizer):
 
         return False
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao do eSocial."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
@@ -406,7 +398,7 @@ class ESocialSynchronizer(BaseSynchronizer):
         )
         return await self.sincronizar(config)
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """
         Obtem resumo dos eventos sincronizados.
 
@@ -416,24 +408,25 @@ class ESocialSynchronizer(BaseSynchronizer):
         Returns:
             Dict com resumo
         """
-        from ..models.sync_models import EventoESocial, StatusEventoESocial
         from sqlalchemy import func
 
+        from ..models.sync_models import EventoESocial
+
         # Contar por status
-        por_status = self.db.query(
-            EventoESocial.status,
-            func.count(EventoESocial.id)
-        ).filter(
-            EventoESocial.cnpj_empresa == cnpj
-        ).group_by(EventoESocial.status).all()
+        por_status = (
+            self.db.query(EventoESocial.status, func.count(EventoESocial.id))
+            .filter(EventoESocial.cnpj_empresa == cnpj)
+            .group_by(EventoESocial.status)
+            .all()
+        )
 
         # Contar por tipo
-        por_tipo = self.db.query(
-            EventoESocial.tipo_evento,
-            func.count(EventoESocial.id)
-        ).filter(
-            EventoESocial.cnpj_empresa == cnpj
-        ).group_by(EventoESocial.tipo_evento).all()
+        por_tipo = (
+            self.db.query(EventoESocial.tipo_evento, func.count(EventoESocial.id))
+            .filter(EventoESocial.cnpj_empresa == cnpj)
+            .group_by(EventoESocial.tipo_evento)
+            .all()
+        )
 
         return {
             "total_eventos": sum(c for _, c in por_status),

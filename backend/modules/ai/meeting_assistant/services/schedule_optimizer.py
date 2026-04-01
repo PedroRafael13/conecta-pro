@@ -4,12 +4,12 @@ Schedule Optimizer Service - Sprint 49.
 Serviço de otimização de agendamento de reuniões.
 """
 
-from datetime import datetime, timedelta, time
-from typing import List, Dict, Any, Optional, Tuple
 import uuid
+from datetime import datetime, time, timedelta
+from typing import Any
 
-from modules.ai.meeting_assistant.models import Meeting, MeetingParticipant, MeetingStatusEnum
-from modules.ai.meeting_assistant.schemas import TimeSlot, ScheduleSuggestionRequest
+from modules.ai.meeting_assistant.models import Meeting, MeetingStatusEnum
+from modules.ai.meeting_assistant.schemas import ScheduleSuggestionRequest, TimeSlot
 
 
 class ScheduleOptimizer:
@@ -21,16 +21,11 @@ class ScheduleOptimizer:
         self.lunch_start = time(12, 0)
         self.lunch_end = time(13, 0)
         self.min_break_minutes = 15  # Intervalo mínimo entre reuniões
-        self.preferred_times = {
-            "morning": (time(9, 0), time(11, 0)),
-            "afternoon": (time(14, 0), time(17, 0))
-        }
+        self.preferred_times = {"morning": (time(9, 0), time(11, 0)), "afternoon": (time(14, 0), time(17, 0))}
 
     def find_optimal_slots(
-        self,
-        request: ScheduleSuggestionRequest,
-        existing_meetings: List[Meeting]
-    ) -> List[TimeSlot]:
+        self, request: ScheduleSuggestionRequest, existing_meetings: list[Meeting]
+    ) -> list[TimeSlot]:
         """
         Encontra slots ótimos para agendamento.
 
@@ -51,7 +46,7 @@ class ScheduleOptimizer:
             end_date=end_date,
             duration_minutes=request.duration_minutes,
             preferred_times=request.preferred_times,
-            avoid_times=request.avoid_times
+            avoid_times=request.avoid_times,
         )
 
         # Avalia cada slot
@@ -62,30 +57,32 @@ class ScheduleOptimizer:
                 existing_meetings=existing_meetings,
                 participant_ids=request.participant_ids,
                 meeting_type=request.meeting_type,
-                priority=request.priority
+                priority=request.priority,
             )
 
             if score > 0:  # Slot viável
-                scored_slots.append(TimeSlot(
-                    start=slot[0],
-                    end=slot[1],
-                    score=score,
-                    reason=self._get_score_reason(score),
-                    conflicts=conflicts
-                ))
+                scored_slots.append(
+                    TimeSlot(
+                        start=slot[0],
+                        end=slot[1],
+                        score=score,
+                        reason=self._get_score_reason(score),
+                        conflicts=conflicts,
+                    )
+                )
 
         # Ordena por score e retorna top N
         scored_slots.sort(key=lambda x: x.score, reverse=True)
-        return scored_slots[:request.max_suggestions]
+        return scored_slots[: request.max_suggestions]
 
     def _generate_candidate_slots(
         self,
         start_date: datetime,
         end_date: datetime,
         duration_minutes: int,
-        preferred_times: List[str] = None,
-        avoid_times: List[str] = None
-    ) -> List[Tuple[datetime, datetime]]:
+        preferred_times: list[str] = None,
+        avoid_times: list[str] = None,
+    ) -> list[tuple[datetime, datetime]]:
         """Gera slots candidatos."""
         slots = []
         current_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -115,12 +112,12 @@ class ScheduleOptimizer:
 
     def _evaluate_slot(
         self,
-        slot: Tuple[datetime, datetime],
-        existing_meetings: List[Meeting],
-        participant_ids: List[uuid.UUID],
+        slot: tuple[datetime, datetime],
+        existing_meetings: list[Meeting],
+        participant_ids: list[uuid.UUID],
         meeting_type: str,
-        priority: int
-    ) -> Tuple[float, List[str]]:
+        priority: int,
+    ) -> tuple[float, list[str]]:
         """
         Avalia um slot e retorna score e conflitos.
 
@@ -171,13 +168,7 @@ class ScheduleOptimizer:
 
         return score, conflicts
 
-    def _has_overlap(
-        self,
-        start1: datetime,
-        end1: datetime,
-        start2: datetime,
-        end2: datetime
-    ) -> bool:
+    def _has_overlap(self, start1: datetime, end1: datetime, start2: datetime, end2: datetime) -> bool:
         """Verifica se dois períodos se sobrepõem."""
         # Adiciona buffer de intervalo mínimo
         buffer = timedelta(minutes=self.min_break_minutes)
@@ -185,21 +176,16 @@ class ScheduleOptimizer:
 
     def _is_lunch_time(self, start: datetime, end: datetime) -> bool:
         """Verifica se o período inclui horário de almoço."""
-        return (start.time() < self.lunch_end and end.time() > self.lunch_start)
+        return start.time() < self.lunch_end and end.time() > self.lunch_start
 
     def _is_preferred_time(self, t: time) -> bool:
         """Verifica se é horário preferencial."""
-        for period_name, (start, end) in self.preferred_times.items():
+        for _period_name, (start, end) in self.preferred_times.items():
             if start <= t <= end:
                 return True
         return False
 
-    def _should_avoid(
-        self,
-        start: datetime,
-        end: datetime,
-        avoid_times: List[str] = None
-    ) -> bool:
+    def _should_avoid(self, start: datetime, end: datetime, avoid_times: list[str] = None) -> bool:
         """Verifica se deve evitar este horário."""
         if not avoid_times:
             return False
@@ -227,11 +213,8 @@ class ScheduleOptimizer:
             return "Horário com muitos conflitos"
 
     def suggest_reschedule(
-        self,
-        meeting: Meeting,
-        existing_meetings: List[Meeting],
-        reason: str = None
-    ) -> List[TimeSlot]:
+        self, meeting: Meeting, existing_meetings: list[Meeting], reason: str = None
+    ) -> list[TimeSlot]:
         """
         Sugere horários alternativos para reagendamento.
 
@@ -251,7 +234,7 @@ class ScheduleOptimizer:
             preferred_start_date=datetime.utcnow(),
             meeting_type=meeting.meeting_type,
             priority=meeting.priority,
-            max_suggestions=5
+            max_suggestions=5,
         )
 
         # Remove a própria reunião da lista de existentes
@@ -260,12 +243,8 @@ class ScheduleOptimizer:
         return self.find_optimal_slots(request, other_meetings)
 
     def check_availability(
-        self,
-        participant_ids: List[uuid.UUID],
-        start: datetime,
-        end: datetime,
-        existing_meetings: List[Meeting]
-    ) -> Dict[str, Any]:
+        self, participant_ids: list[uuid.UUID], start: datetime, end: datetime, existing_meetings: list[Meeting]
+    ) -> dict[str, Any]:
         """
         Verifica disponibilidade para um horário específico.
 
@@ -284,23 +263,23 @@ class ScheduleOptimizer:
                 if conflicting:
                     if meeting.status in [MeetingStatusEnum.CONFIRMED, MeetingStatusEnum.IN_PROGRESS]:
                         available = False
-                        conflicts.append({
-                            "meeting_id": str(meeting.id),
-                            "title": meeting.title,
-                            "start": meeting.scheduled_start.isoformat(),
-                            "end": meeting.scheduled_end.isoformat(),
-                            "participants_affected": [str(p) for p in conflicting]
-                        })
+                        conflicts.append(
+                            {
+                                "meeting_id": str(meeting.id),
+                                "title": meeting.title,
+                                "start": meeting.scheduled_start.isoformat(),
+                                "end": meeting.scheduled_end.isoformat(),
+                                "participants_affected": [str(p) for p in conflicting],
+                            }
+                        )
                     else:
-                        partial_conflicts.append({
-                            "meeting_id": str(meeting.id),
-                            "title": meeting.title,
-                            "status": meeting.status.value
-                        })
+                        partial_conflicts.append(
+                            {"meeting_id": str(meeting.id), "title": meeting.title, "status": meeting.status.value}
+                        )
 
         return {
             "available": available,
             "conflicts": conflicts,
             "partial_conflicts": partial_conflicts,
-            "recommendation": "Horário disponível" if available else "Existem conflitos"
+            "recommendation": "Horário disponível" if available else "Existem conflitos",
         }

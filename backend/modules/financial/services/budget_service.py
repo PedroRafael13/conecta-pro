@@ -7,11 +7,10 @@ Responsável por:
 - Relatórios de execução orçamentária
 """
 
-import enum
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -22,7 +21,7 @@ from modules.financial.models.cost_center import CostCenter
 from modules.financial.models.journal_entry import EntryStatus, JournalEntry, JournalEntryLine
 
 
-class BudgetPeriodType(str, enum.Enum):
+class BudgetPeriodType(StrEnum):
     """Tipo de período orçamentário."""
 
     MONTHLY = "MONTHLY"  # Mensal
@@ -31,7 +30,7 @@ class BudgetPeriodType(str, enum.Enum):
     ANNUAL = "ANNUAL"  # Anual
 
 
-class BudgetStatus(str, enum.Enum):
+class BudgetStatus(StrEnum):
     """Status do orçamento."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -41,7 +40,7 @@ class BudgetStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"  # Cancelado
 
 
-class BudgetVarianceType(str, enum.Enum):
+class BudgetVarianceType(StrEnum):
     """Tipo de variação orçamentária."""
 
     FAVORABLE = "FAVORABLE"  # Favorável (gastou menos)
@@ -53,10 +52,10 @@ class BudgetVarianceType(str, enum.Enum):
 class BudgetLineItem:
     """Item de linha do orçamento."""
 
-    account_id: Optional[UUID] = None
+    account_id: UUID | None = None
     account_code: str = ""
     account_name: str = ""
-    cost_center_id: Optional[UUID] = None
+    cost_center_id: UUID | None = None
     cost_center_code: str = ""
     cost_center_name: str = ""
 
@@ -83,17 +82,36 @@ class BudgetLineItem:
     def calculate_total(self) -> None:
         """Calcula total orçado."""
         self.total_budgeted = (
-            self.jan + self.feb + self.mar + self.apr +
-            self.may + self.jun + self.jul + self.aug +
-            self.sep + self.oct + self.nov + self.dec
+            self.jan
+            + self.feb
+            + self.mar
+            + self.apr
+            + self.may
+            + self.jun
+            + self.jul
+            + self.aug
+            + self.sep
+            + self.oct
+            + self.nov
+            + self.dec
         )
 
     def get_month_value(self, month: int) -> Decimal:
         """Obtém valor orçado de um mês."""
         months = [
-            None, self.jan, self.feb, self.mar, self.apr,
-            self.may, self.jun, self.jul, self.aug,
-            self.sep, self.oct, self.nov, self.dec
+            None,
+            self.jan,
+            self.feb,
+            self.mar,
+            self.apr,
+            self.may,
+            self.jun,
+            self.jul,
+            self.aug,
+            self.sep,
+            self.oct,
+            self.nov,
+            self.dec,
         ]
         return months[month] if 1 <= month <= 12 else Decimal("0")
 
@@ -102,10 +120,10 @@ class BudgetLineItem:
 class BudgetExecution:
     """Execução orçamentária de um item."""
 
-    account_id: Optional[UUID] = None
+    account_id: UUID | None = None
     account_code: str = ""
     account_name: str = ""
-    cost_center_id: Optional[UUID] = None
+    cost_center_id: UUID | None = None
     cost_center_code: str = ""
 
     budgeted: Decimal = Decimal("0")
@@ -263,9 +281,7 @@ class BudgetService:
 
             if base_on_previous:
                 # Busca valores do ano anterior
-                previous = await self._get_previous_year_values(
-                    account.id, year - 1
-                )
+                previous = await self._get_previous_year_values(account.id, year - 1)
                 adjustment = Decimal("1") + (adjustment_pct / Decimal("100"))
 
                 item.jan = previous.get(1, Decimal("0")) * adjustment
@@ -292,7 +308,7 @@ class BudgetService:
         condominio_id: UUID,
         year: int,
         month: int,
-        cost_center_id: Optional[UUID] = None,
+        cost_center_id: UUID | None = None,
     ) -> BudgetExecutionReport:
         """Obtém relatório de execução orçamentária.
 
@@ -324,9 +340,7 @@ class BudgetService:
             )
 
             # Busca realizado no mês
-            realized = await self._get_realized_amount(
-                cost_center.id, year, month
-            )
+            realized = await self._get_realized_amount(cost_center.id, year, month)
             execution.realized = realized
             execution.calculate_variance()
 
@@ -377,12 +391,14 @@ class BudgetService:
                 execution.budgeted += budgeted
                 execution.realized += realized
 
-                execution.monthly_detail.append({
-                    "month": month,
-                    "budgeted": budgeted,
-                    "realized": realized,
-                    "variance": budgeted - realized,
-                })
+                execution.monthly_detail.append(
+                    {
+                        "month": month,
+                        "budgeted": budgeted,
+                        "realized": realized,
+                        "variance": budgeted - realized,
+                    }
+                )
 
             execution.calculate_variance()
             report.executions.append(execution)
@@ -428,17 +444,16 @@ class BudgetService:
             realized = await self._get_realized_amount(cost_center_id, year, month)
             budgeted = cost_center.budget_monthly
 
-            monthly_data.append({
-                "month": month,
-                "month_name": self._get_month_name(month),
-                "budgeted": budgeted,
-                "realized": realized,
-                "variance": budgeted - realized,
-                "variance_pct": (
-                    ((budgeted - realized) / budgeted * 100)
-                    if budgeted > 0 else Decimal("0")
-                ),
-            })
+            monthly_data.append(
+                {
+                    "month": month,
+                    "month_name": self._get_month_name(month),
+                    "budgeted": budgeted,
+                    "realized": realized,
+                    "variance": budgeted - realized,
+                    "variance_pct": (((budgeted - realized) / budgeted * 100) if budgeted > 0 else Decimal("0")),
+                }
+            )
 
             total_budgeted += budgeted
             total_realized += realized
@@ -490,16 +505,12 @@ class BudgetService:
 
         # Percentuais
         if exec1.total_budgeted > Decimal("0"):
-            comparison["budget_variation_pct"] = (
-                (comparison["budget_variation"] / exec1.total_budgeted) * 100
-            )
+            comparison["budget_variation_pct"] = (comparison["budget_variation"] / exec1.total_budgeted) * 100
         else:
             comparison["budget_variation_pct"] = Decimal("0")
 
         if exec1.total_realized > Decimal("0"):
-            comparison["realized_variation_pct"] = (
-                (comparison["realized_variation"] / exec1.total_realized) * 100
-            )
+            comparison["realized_variation_pct"] = (comparison["realized_variation"] / exec1.total_realized) * 100
         else:
             comparison["realized_variation_pct"] = Decimal("0")
 
@@ -509,7 +520,7 @@ class BudgetService:
         self,
         cost_center_id: UUID,
         budget_annual: Decimal,
-        budget_monthly: Optional[Decimal] = None,
+        budget_monthly: Decimal | None = None,
     ) -> dict:
         """Atualiza orçamento de um centro de custo.
 
@@ -529,12 +540,8 @@ class BudgetService:
             return {"success": False, "error": "Centro de custo não encontrado"}
 
         cost_center.budget_annual = budget_annual
-        cost_center.budget_monthly = (
-            budget_monthly if budget_monthly else budget_annual / Decimal("12")
-        )
-        cost_center.budget_available = (
-            cost_center.budget_annual - cost_center.budget_used
-        )
+        cost_center.budget_monthly = budget_monthly if budget_monthly else budget_annual / Decimal("12")
+        cost_center.budget_available = cost_center.budget_annual - cost_center.budget_used
 
         await self.session.commit()
 
@@ -553,17 +560,23 @@ class BudgetService:
         condominio_id: UUID,
     ) -> list[AccountingAccount]:
         """Busca contas para orçamento (despesas e receitas)."""
-        query = select(AccountingAccount).where(
-            and_(
-                AccountingAccount.condominio_id == condominio_id,
-                AccountingAccount.account_type.in_([
-                    AccountType.EXPENSE,
-                    AccountType.REVENUE,
-                    AccountType.COST,
-                ]),
-                AccountingAccount.active.is_(True),
+        query = (
+            select(AccountingAccount)
+            .where(
+                and_(
+                    AccountingAccount.condominio_id == condominio_id,
+                    AccountingAccount.account_type.in_(
+                        [
+                            AccountType.EXPENSE,
+                            AccountType.REVENUE,
+                            AccountType.COST,
+                        ]
+                    ),
+                    AccountingAccount.active.is_(True),
+                )
             )
-        ).order_by(AccountingAccount.code)
+            .order_by(AccountingAccount.code)
+        )
 
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -571,7 +584,7 @@ class BudgetService:
     async def _get_cost_centers(
         self,
         condominio_id: UUID,
-        cost_center_id: Optional[UUID] = None,
+        cost_center_id: UUID | None = None,
     ) -> list[CostCenter]:
         """Busca centros de custo."""
         query = select(CostCenter).where(
@@ -683,8 +696,18 @@ class BudgetService:
     def _get_month_name(month: int) -> str:
         """Retorna nome do mês."""
         months = [
-            "", "Janeiro", "Fevereiro", "Março", "Abril",
-            "Maio", "Junho", "Julho", "Agosto",
-            "Setembro", "Outubro", "Novembro", "Dezembro",
+            "",
+            "Janeiro",
+            "Fevereiro",
+            "Março",
+            "Abril",
+            "Maio",
+            "Junho",
+            "Julho",
+            "Agosto",
+            "Setembro",
+            "Outubro",
+            "Novembro",
+            "Dezembro",
         ]
         return months[month] if 1 <= month <= 12 else ""

@@ -1,0 +1,196 @@
+"""
+Modelo KitDocument — Documento individual dentro de um Kit.
+
+Cada documento pode ser um contracheque, folha de ponto, certidão,
+guia de recolhimento, ASO, etc. Pode ser gerado automaticamente
+por outros módulos ou incluído manualmente.
+"""
+
+from datetime import datetime
+from enum import StrEnum
+from uuid import uuid4
+
+from sqlalchemy import BigInteger, Boolean, DateTime, String, Text, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from core.database import Base
+
+
+class DocumentType(StrEnum):
+    """Tipos de documento suportados pelo GED."""
+
+    # Documentos do funcionário (mensais)
+    CONTRACHEQUE = "contracheque"
+    FOLHA_PONTO = "folha_ponto"
+    COMPROVANTE_VT = "comprovante_vt"
+    COMPROVANTE_VA = "comprovante_va"
+    COMPROVANTE_VR = "comprovante_vr"
+
+    # Documentos disciplinares
+    ADVERTENCIA = "advertencia"
+    SUSPENSAO = "suspensao"
+
+    # Documentos de saúde
+    ATESTADO_MEDICO = "atestado_medico"
+
+    # Eventos trabalhistas
+    FERIAS = "ferias"
+    RESCISAO = "rescisao"
+
+    # Certidões negativas da empresa
+    CND_FEDERAL = "cnd_federal"
+    CND_ESTADUAL = "cnd_estadual"
+    CND_MUNICIPAL = "cnd_municipal"
+    CRF_FGTS = "crf_fgts"
+    CNDT_TRABALHISTA = "cndt_trabalhista"
+
+    # Guias de recolhimento
+    GFIP_SEFIP = "gfip_sefip"
+    GRF_FGTS = "grf_fgts"
+    GPS_INSS = "gps_inss"
+
+    # Documentos admissionais/contratuais
+    CONTRATO_TRABALHO = "contrato_trabalho"
+    ASO_ADMISSIONAL = "aso_admissional"
+    ASO_PERIODICO = "aso_periodico"
+    ASO_DEMISSIONAL = "aso_demissional"
+
+    # Documentos fiscais e operacionais
+    NFS_SERVICO = "nfs_servico"
+    ESCALA_MES = "escala_mes"
+
+    # Genérico
+    OUTRO = "outro"
+
+
+class SourceModule(StrEnum):
+    """Módulo de origem do documento."""
+
+    DP = "dp"
+    RH = "rh"
+    FISCAL = "fiscal"
+    OPERACOES = "operacoes"
+    MANUAL = "manual"
+
+
+class KitDocument(Base):
+    """Documento individual pertencente a um kit documental.
+
+    Pode representar um documento por funcionário (ex: contracheque)
+    ou um documento da empresa (ex: CND federal).
+    """
+
+    __tablename__ = "ged_kit_documents"
+
+    id: Mapped[str] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+    kit_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=False,
+        index=True,
+        comment="FK para ged_document_kits.id",
+    )
+    employee_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+        index=True,
+        comment="FK para employees.id (nulo para docs da empresa)",
+    )
+
+    # Tipo e identificação
+    document_type: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        index=True,
+        comment="Tipo do documento (contracheque, folha_ponto, etc.)",
+    )
+    document_name: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+        comment="Nome de exibição do documento",
+    )
+
+    # Arquivo
+    file_path: Mapped[str | None] = mapped_column(
+        String(1000),
+        nullable=True,
+        comment="Caminho no storage (local ou S3)",
+    )
+    file_size_bytes: Mapped[int | None] = mapped_column(
+        BigInteger,
+        nullable=True,
+        comment="Tamanho do arquivo em bytes",
+    )
+    mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        default="application/pdf",
+        comment="MIME type do arquivo",
+    )
+
+    # Assinatura
+    is_signed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment="Se o documento foi assinado digitalmente",
+    )
+    signed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    signed_by: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+        comment="FK para employees.id — quem assinou",
+    )
+    signature_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        comment="Hash SHA-256 do arquivo assinado",
+    )
+
+    # Rastreabilidade de origem
+    source_module: Mapped[str] = mapped_column(
+        String(20),
+        default=SourceModule.MANUAL,
+        nullable=False,
+        comment="Módulo que gerou o documento (dp, rh, fiscal, operacoes, manual)",
+    )
+    source_record_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+        comment="ID do registro de origem no módulo fonte",
+    )
+    auto_generated: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment="Se foi gerado automaticamente por integração entre módulos",
+    )
+
+    # Observações
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Audit
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<KitDocument(id={self.id}, type={self.document_type}, "
+            f"name={self.document_name}, signed={self.is_signed})>"
+        )

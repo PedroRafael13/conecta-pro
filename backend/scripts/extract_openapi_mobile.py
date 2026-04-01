@@ -31,6 +31,7 @@ def extract_mobile_openapi():
     # Import dentro da função para evitar erros de inicialização
     try:
         from fastapi.openapi.utils import get_openapi
+
         from main import app
     except Exception as e:
         print(f"❌ Erro ao importar: {e}")
@@ -47,59 +48,62 @@ def extract_mobile_openapi():
         print(f"⚠️  Erro ao gerar OpenAPI completo, tentando alternativa: {e}")
         # Alternativa: gerar schema vazio e popular manualmente
         openapi_schema = {
-            'openapi': '3.1.0',
-            'info': {'title': 'Conecta PRO API', 'version': '1.0.0'},
-            'paths': {},
-            'components': {'schemas': {}, 'securitySchemes': {}}
+            "openapi": "3.1.0",
+            "info": {"title": "Conecta PRO API", "version": "1.0.0"},
+            "paths": {},
+            "components": {"schemas": {}, "securitySchemes": {}},
         }
 
     # Filtrar apenas paths /mobile
-    mobile_paths = {
-        path: spec
-        for path, spec in openapi_schema.get('paths', {}).items()
-        if '/mobile' in path.lower()
-    }
+    mobile_paths = {path: spec for path, spec in openapi_schema.get("paths", {}).items() if "/mobile" in path.lower()}
 
     print(f"✓ Encontrados {len(mobile_paths)} endpoints mobile")
 
     # Identificar schemas relevantes
-    all_schemas = openapi_schema.get('components', {}).get('schemas', {})
+    all_schemas = openapi_schema.get("components", {}).get("schemas", {})
 
     # Keywords para identificar schemas mobile
     mobile_keywords = [
-        'Mobile', 'Device', 'Batch', 'Offline', 'Sync',
-        'Push', 'Notification', 'QuickAction', 'RecentActivity',
-        'DashboardSummary', 'HealthCheck', 'BroadcastNotification'
+        "Mobile",
+        "Device",
+        "Batch",
+        "Offline",
+        "Sync",
+        "Push",
+        "Notification",
+        "QuickAction",
+        "RecentActivity",
+        "DashboardSummary",
+        "HealthCheck",
+        "BroadcastNotification",
     ]
 
     mobile_schemas = {
-        name: schema
-        for name, schema in all_schemas.items()
-        if any(keyword in name for keyword in mobile_keywords)
+        name: schema for name, schema in all_schemas.items() if any(keyword in name for keyword in mobile_keywords)
     }
 
     print(f"✓ Encontrados {len(mobile_schemas)} schemas mobile")
 
     # Construir OpenAPI spec mobile
     mobile_openapi = {
-        'openapi': openapi_schema.get('openapi', '3.1.0'),
-        'info': {
-            'title': 'Conecta PRO - Mobile API',
-            'version': openapi_schema.get('info', {}).get('version', '1.0.0'),
-            'description': 'APIs nativas para dispositivos móveis com sync offline e push notifications'
+        "openapi": openapi_schema.get("openapi", "3.1.0"),
+        "info": {
+            "title": "Conecta PRO - Mobile API",
+            "version": openapi_schema.get("info", {}).get("version", "1.0.0"),
+            "description": "APIs nativas para dispositivos móveis com sync offline e push notifications",
         },
-        'paths': mobile_paths,
-        'components': {
-            'schemas': mobile_schemas,
-            'securitySchemes': openapi_schema.get('components', {}).get('securitySchemes', {})
+        "paths": mobile_paths,
+        "components": {
+            "schemas": mobile_schemas,
+            "securitySchemes": openapi_schema.get("components", {}).get("securitySchemes", {}),
         },
-        'security': openapi_schema.get('security', [])
+        "security": openapi_schema.get("security", []),
     }
 
     # Salvar arquivo
-    output_file = Path(__file__).parent.parent / 'openapi-mobile.json'
+    output_file = Path(__file__).parent.parent / "openapi-mobile.json"
 
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(mobile_openapi, f, indent=2, ensure_ascii=False)
 
     print(f"✓ OpenAPI salvo em: {output_file}")
@@ -110,7 +114,7 @@ def extract_mobile_openapi():
         print("\nEndpoints extraídos:")
         for i, path in enumerate(sorted(mobile_paths.keys()), 1):
             methods = list(mobile_paths[path].keys())
-            methods = [m.upper() for m in methods if m != 'parameters']
+            methods = [m.upper() for m in methods if m != "parameters"]
             print(f"  {i:2d}. {', '.join(methods):8s} {path}")
     else:
         print("\n⚠️  Nenhum endpoint mobile encontrado!")
@@ -118,7 +122,7 @@ def extract_mobile_openapi():
     return mobile_openapi
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         spec = extract_mobile_openapi()
         print("\n✅ Extração concluída com sucesso!")
@@ -126,5 +130,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"\n❌ Erro na extração: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

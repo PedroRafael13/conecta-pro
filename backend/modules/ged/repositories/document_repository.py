@@ -2,14 +2,14 @@
 
 import logging
 from datetime import date, timedelta
-from typing import Optional, List, Tuple
 from uuid import uuid4
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document import Document, DocumentStatus
-from modules.ged.schemas.document import DocumentCreate, DocumentUpdate, DocumentFilter
+from modules.ged.schemas.document import DocumentCreate, DocumentFilter, DocumentUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -35,30 +35,22 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
-    async def get_by_id(self, document_id: str) -> Optional[Document]:
+    async def get_by_id(self, document_id: str) -> Document | None:
         """Busca documento por ID."""
-        result = await self.session.execute(
-            select(Document).where(Document.id == document_id)
-        )
+        result = await self.session.execute(select(Document).where(Document.id == document_id))
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[Document]:
+    async def get_by_code(self, code: str) -> Document | None:
         """Busca documento por código."""
-        result = await self.session.execute(
-            select(Document).where(Document.code == code)
-        )
+        result = await self.session.execute(select(Document).where(Document.code == code))
         return result.scalar_one_or_none()
 
-    async def get_by_checksum(self, checksum: str) -> Optional[Document]:
+    async def get_by_checksum(self, checksum: str) -> Document | None:
         """Busca documento por checksum."""
-        result = await self.session.execute(
-            select(Document).where(Document.checksum == checksum)
-        )
+        result = await self.session.execute(select(Document).where(Document.checksum == checksum))
         return result.scalar_one_or_none()
 
-    async def update(
-        self, document_id: str, data: DocumentUpdate
-    ) -> Optional[Document]:
+    async def update(self, document_id: str, data: DocumentUpdate) -> Document | None:
         """Atualiza um documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -82,12 +74,12 @@ class DocumentRepository:
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[DocumentFilter] = None,
+        filters: DocumentFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[Document], int]:
+    ) -> tuple[list[Document], int]:
         """Lista documentos com filtros e paginação."""
         query = select(Document).where(Document.status != DocumentStatus.EXCLUIDO)
 
@@ -115,13 +107,9 @@ class DocumentRepository:
             if filters.is_signed is not None:
                 query = query.where(Document.is_signed == filters.is_signed)
             if filters.requires_approval is not None:
-                query = query.where(
-                    Document.requires_approval == filters.requires_approval
-                )
+                query = query.where(Document.requires_approval == filters.requires_approval)
             if filters.requires_signature is not None:
-                query = query.where(
-                    Document.requires_signature == filters.requires_signature
-                )
+                query = query.where(Document.requires_signature == filters.requires_signature)
             if filters.search:
                 search_term = f"%{filters.search}%"
                 query = query.where(
@@ -144,7 +132,8 @@ class DocumentRepository:
         total = total_result.scalar() or 0
 
         # Ordenação
-        order_column = getattr(Document, order_by, Document.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(Document).mapper.column_attrs}
+        order_column = getattr(Document, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:
@@ -158,9 +147,7 @@ class DocumentRepository:
 
         return list(documents), total
 
-    async def get_by_folder(
-        self, folder_id: str, skip: int = 0, limit: int = 50
-    ) -> List[Document]:
+    async def get_by_folder(self, folder_id: str, skip: int = 0, limit: int = 50) -> list[Document]:
         """Retorna documentos de uma pasta."""
         query = (
             select(Document)
@@ -177,13 +164,9 @@ class DocumentRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_pending_approval(
-        self, condominium_id: str = None, skip: int = 0, limit: int = 20
-    ) -> List[Document]:
+    async def get_pending_approval(self, condominium_id: str = None, skip: int = 0, limit: int = 20) -> list[Document]:
         """Retorna documentos pendentes de aprovação."""
-        query = select(Document).where(
-            Document.status == DocumentStatus.PENDENTE_APROVACAO
-        )
+        query = select(Document).where(Document.status == DocumentStatus.PENDENTE_APROVACAO)
         if condominium_id:
             query = query.where(Document.condominium_id == condominium_id)
 
@@ -191,9 +174,7 @@ class DocumentRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_pending_signature(
-        self, condominium_id: str = None, skip: int = 0, limit: int = 20
-    ) -> List[Document]:
+    async def get_pending_signature(self, condominium_id: str = None, skip: int = 0, limit: int = 20) -> list[Document]:
         """Retorna documentos pendentes de assinatura."""
         query = select(Document).where(
             and_(
@@ -209,9 +190,7 @@ class DocumentRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_expired(
-        self, condominium_id: str = None, skip: int = 0, limit: int = 20
-    ) -> List[Document]:
+    async def get_expired(self, condominium_id: str = None, skip: int = 0, limit: int = 20) -> list[Document]:
         """Retorna documentos expirados."""
         query = select(Document).where(Document.status == DocumentStatus.EXPIRADO)
         if condominium_id:
@@ -221,9 +200,7 @@ class DocumentRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_expiring_soon(
-        self, days: int = 30, condominium_id: str = None
-    ) -> List[Document]:
+    async def get_expiring_soon(self, days: int = 30, condominium_id: str = None) -> list[Document]:
         """Retorna documentos prestes a expirar."""
         expiry_date = date.today() + timedelta(days=days)
         query = select(Document).where(
@@ -231,9 +208,7 @@ class DocumentRepository:
                 Document.valid_until <= expiry_date,
                 Document.valid_until >= date.today(),
                 Document.is_perpetual.is_(False),
-                Document.status.notin_(
-                    [DocumentStatus.EXCLUIDO, DocumentStatus.EXPIRADO]
-                ),
+                Document.status.notin_([DocumentStatus.EXCLUIDO, DocumentStatus.EXPIRADO]),
             )
         )
         if condominium_id:
@@ -242,9 +217,7 @@ class DocumentRepository:
         result = await self.session.execute(query.order_by(Document.valid_until.asc()))
         return list(result.scalars().all())
 
-    async def approve(
-        self, document_id: str, approved_by: str
-    ) -> Optional[Document]:
+    async def approve(self, document_id: str, approved_by: str) -> Document | None:
         """Aprova documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -253,9 +226,7 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
-    async def reject(
-        self, document_id: str, reason: str
-    ) -> Optional[Document]:
+    async def reject(self, document_id: str, reason: str) -> Document | None:
         """Rejeita documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -264,7 +235,7 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
-    async def publish(self, document_id: str) -> Optional[Document]:
+    async def publish(self, document_id: str) -> Document | None:
         """Publica documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -273,9 +244,7 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
-    async def archive(
-        self, document_id: str, archived_by: str
-    ) -> Optional[Document]:
+    async def archive(self, document_id: str, archived_by: str) -> Document | None:
         """Arquiva documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -284,7 +253,7 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
-    async def unarchive(self, document_id: str) -> Optional[Document]:
+    async def unarchive(self, document_id: str) -> Document | None:
         """Desarquiva documento."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -293,9 +262,7 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
-    async def move(
-        self, document_id: str, folder_id: str
-    ) -> Optional[Document]:
+    async def move(self, document_id: str, folder_id: str) -> Document | None:
         """Move documento para outra pasta."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -318,9 +285,7 @@ class DocumentRepository:
             document.increment_download()
             await self.session.flush()
 
-    async def set_ocr_result(
-        self, document_id: str, text: str, confidence: float
-    ) -> Optional[Document]:
+    async def set_ocr_result(self, document_id: str, text: str, confidence: float) -> Document | None:
         """Define resultado do OCR."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -329,9 +294,7 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
-    async def mark_as_indexed(
-        self, document_id: str, keywords: List[str] = None
-    ) -> Optional[Document]:
+    async def mark_as_indexed(self, document_id: str, keywords: list[str] = None) -> Document | None:
         """Marca como indexado."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -340,9 +303,7 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
-    async def search_fulltext(
-        self, query: str, condominium_id: str = None, limit: int = 20
-    ) -> List[Document]:
+    async def search_fulltext(self, query: str, condominium_id: str = None, limit: int = 20) -> list[Document]:
         """Busca full-text em documentos."""
         search_term = f"%{query}%"
         stmt = select(Document).where(
@@ -359,9 +320,7 @@ class DocumentRepository:
         if condominium_id:
             stmt = stmt.where(Document.condominium_id == condominium_id)
 
-        result = await self.session.execute(
-            stmt.order_by(Document.view_count.desc()).limit(limit)
-        )
+        result = await self.session.execute(stmt.order_by(Document.view_count.desc()).limit(limit))
         return list(result.scalars().all())
 
     async def get_stats(self, condominium_id: str = None) -> dict:
@@ -407,9 +366,7 @@ class DocumentRepository:
 
             # Por confidencialidade
             conf_val = doc.confidentiality.value
-            stats["by_confidentiality"][conf_val] = (
-                stats["by_confidentiality"].get(conf_val, 0) + 1
-            )
+            stats["by_confidentiality"][conf_val] = stats["by_confidentiality"].get(conf_val, 0) + 1
 
             # Tamanho
             stats["total_size_bytes"] += doc.file_size_bytes

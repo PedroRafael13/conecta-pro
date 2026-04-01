@@ -5,18 +5,15 @@ Schemas PCMSO (NR-7) - Exames Medicos e ASO
 Schemas Pydantic para endpoints PCMSO.
 """
 
-from datetime import datetime, date
-from typing import List, Optional
+from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
-
-from modules.health_occupational.models.pcmso import ExamType, ExamStatus, FitnessResult
-
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ==============================================================================
 # Medical Exam Schemas
 # ==============================================================================
+
 
 class MedicalExamRequest(BaseModel):
     """Request para agendamento de exame medico."""
@@ -28,7 +25,7 @@ class MedicalExamRequest(BaseModel):
         pattern=r"^(admissional|periodico|retorno_trabalho|mudanca_funcao|demissional)$",
     )
     data_agendamento: date = Field(..., description="Data do agendamento")
-    hora_agendamento: Optional[str] = Field(
+    hora_agendamento: str | None = Field(
         None,
         pattern=r"^\d{2}:\d{2}$",
         description="Hora do agendamento (HH:MM)",
@@ -45,22 +42,22 @@ class MedicalExamRequest(BaseModel):
         max_length=100,
         description="Setor de trabalho",
     )
-    riscos: List[str] = Field(
+    riscos: list[str] = Field(
         default_factory=list,
         description="Riscos ocupacionais da funcao",
     )
-    exames_complementares: List[str] = Field(
+    exames_complementares: list[str] = Field(
         default_factory=list,
         description="Exames complementares (hemograma, audiometria, etc)",
     )
-    local_realizacao: Optional[str] = Field(
+    local_realizacao: str | None = Field(
         None,
         max_length=200,
         description="Local de realizacao do exame",
     )
-    observacoes: Optional[str] = Field(None, description="Observacoes adicionais")
+    observacoes: str | None = Field(None, description="Observacoes adicionais")
 
-    @field_validator('data_agendamento')
+    @field_validator("data_agendamento")
     @classmethod
     def validar_data_agendamento(cls, v: date) -> date:
         if v < date.today():
@@ -71,19 +68,20 @@ class MedicalExamRequest(BaseModel):
 class MedicalExamUpdateRequest(BaseModel):
     """Request para atualizacao de exame medico."""
 
-    data_agendamento: Optional[date] = None
-    hora_agendamento: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
-    local_realizacao: Optional[str] = None
-    status: Optional[str] = Field(
+    data_agendamento: date | None = None
+    hora_agendamento: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
+    local_realizacao: str | None = None
+    status: str | None = Field(
         None,
         pattern=r"^(agendado|confirmado|realizado|cancelado|nao_compareceu)$",
     )
-    data_realizacao: Optional[datetime] = None
-    observacoes: Optional[str] = None
+    data_realizacao: datetime | None = None
+    observacoes: str | None = None
 
 
 class MedicalExamResponse(BaseModel):
     """Response de exame medico."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -92,23 +90,24 @@ class MedicalExamResponse(BaseModel):
     status: str
     funcao: str
     setor: str
-    riscos: List[str]
+    riscos: list[str]
     data_agendamento: date
-    hora_agendamento: Optional[str] = None
-    data_realizacao: Optional[datetime] = None
-    local_realizacao: Optional[str] = None
-    exames_complementares: List[str]
-    observacoes: Optional[str] = None
+    hora_agendamento: str | None = None
+    data_realizacao: datetime | None = None
+    local_realizacao: str | None = None
+    exames_complementares: list[str]
+    observacoes: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     # Campos calculados
-    esta_pendente: Optional[bool] = None
+    esta_pendente: bool | None = None
 
 
 class MedicalExamListResponse(BaseModel):
     """Response de lista de exames."""
-    items: List[MedicalExamResponse]
+
+    items: list[MedicalExamResponse]
     total: int
     page: int = 1
     size: int = 20
@@ -117,6 +116,7 @@ class MedicalExamListResponse(BaseModel):
 # ==============================================================================
 # ASO Schemas
 # ==============================================================================
+
 
 class ASORequest(BaseModel):
     """Request para emissao de ASO."""
@@ -127,7 +127,7 @@ class ASORequest(BaseModel):
         description="Resultado do exame",
         pattern=r"^(apto|inapto|apto_com_restricoes)$",
     )
-    restricoes: Optional[List[str]] = Field(
+    restricoes: list[str] | None = Field(
         default=None,
         description="Restricoes (se apto com restricoes)",
     )
@@ -156,11 +156,11 @@ class ASORequest(BaseModel):
         description="UF do CRM",
     )
 
-    @field_validator('restricoes')
+    @field_validator("restricoes")
     @classmethod
     def validar_restricoes(cls, v, info):
-        resultado = info.data.get('resultado')
-        if resultado == 'apto_com_restricoes' and not v:
+        resultado = info.data.get("resultado")
+        if resultado == "apto_com_restricoes" and not v:
             raise ValueError("Restricoes sao obrigatorias para resultado 'apto_com_restricoes'")
         return v
 
@@ -168,44 +168,46 @@ class ASORequest(BaseModel):
 class ASOUpdateRequest(BaseModel):
     """Request para atualizacao de ASO."""
 
-    restricoes: Optional[List[str]] = None
-    assinatura_funcionario: Optional[bool] = None
-    cancelado: Optional[bool] = None
-    motivo_cancelamento: Optional[str] = None
+    restricoes: list[str] | None = None
+    assinatura_funcionario: bool | None = None
+    cancelado: bool | None = None
+    motivo_cancelamento: str | None = None
 
 
 class ASOResponse(BaseModel):
     """Response de ASO."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     exame_id: UUID
     resultado: str
-    restricoes: List[str]
+    restricoes: list[str]
     data_emissao: datetime
     validade_dias: int
     data_vencimento: date
     medico_responsavel: str
     crm: str
-    uf_crm: Optional[str] = None
-    numero_aso: Optional[str] = None
-    documento_url: Optional[str] = None
+    uf_crm: str | None = None
+    numero_aso: str | None = None
+    documento_url: str | None = None
     assinatura_medico: bool
     assinatura_funcionario: bool
-    data_assinatura_funcionario: Optional[datetime] = None
+    data_assinatura_funcionario: datetime | None = None
     ativo: bool
     cancelado: bool
-    motivo_cancelamento: Optional[str] = None
+    motivo_cancelamento: str | None = None
     created_at: datetime
 
     # Campos calculados
-    esta_vencido: Optional[bool] = None
-    dias_para_vencer: Optional[int] = None
+    esta_vencido: bool | None = None
+    dias_para_vencer: int | None = None
 
 
 class ASOListResponse(BaseModel):
     """Response de lista de ASOs."""
-    items: List[ASOResponse]
+
+    items: list[ASOResponse]
     total: int
     page: int = 1
     size: int = 20
@@ -213,8 +215,9 @@ class ASOListResponse(BaseModel):
 
 class ASOVencimentoResponse(BaseModel):
     """Response para ASOs a vencer."""
+
     funcionario_id: UUID
-    funcionario_nome: Optional[str] = None
+    funcionario_nome: str | None = None
     aso_id: UUID
     data_vencimento: date
     dias_para_vencer: int
@@ -225,41 +228,43 @@ class ASOVencimentoResponse(BaseModel):
 # Complementary Exam Schemas
 # ==============================================================================
 
+
 class ComplementaryExamRequest(BaseModel):
     """Request para exame complementar."""
 
     exame_principal_id: UUID = Field(..., description="ID do exame principal")
     nome: str = Field(..., min_length=2, max_length=100, description="Nome do exame")
-    codigo: Optional[str] = Field(None, max_length=20, description="Codigo TUSS")
-    laboratorio: Optional[str] = Field(None, max_length=200)
+    codigo: str | None = Field(None, max_length=20, description="Codigo TUSS")
+    laboratorio: str | None = Field(None, max_length=200)
 
 
 class ComplementaryExamUpdateRequest(BaseModel):
     """Request para atualizacao de exame complementar."""
 
-    data_realizacao: Optional[datetime] = None
-    laboratorio: Optional[str] = None
-    resultado: Optional[str] = None
-    resultado_arquivo_url: Optional[str] = None
-    valores_referencia: Optional[dict] = None
-    normal: Optional[bool] = None
-    status: Optional[str] = None
+    data_realizacao: datetime | None = None
+    laboratorio: str | None = None
+    resultado: str | None = None
+    resultado_arquivo_url: str | None = None
+    valores_referencia: dict | None = None
+    normal: bool | None = None
+    status: str | None = None
 
 
 class ComplementaryExamResponse(BaseModel):
     """Response de exame complementar."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     exame_principal_id: UUID
     nome: str
-    codigo: Optional[str] = None
+    codigo: str | None = None
     data_solicitacao: date
-    data_realizacao: Optional[datetime] = None
-    laboratorio: Optional[str] = None
-    resultado: Optional[str] = None
-    resultado_arquivo_url: Optional[str] = None
+    data_realizacao: datetime | None = None
+    laboratorio: str | None = None
+    resultado: str | None = None
+    resultado_arquivo_url: str | None = None
     valores_referencia: dict
-    normal: Optional[bool] = None
+    normal: bool | None = None
     status: str
     created_at: datetime

@@ -2,16 +2,18 @@
 DiaristaAgent - Agente especialista em diaristas
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, date, timedelta
-from enum import Enum
+import contextlib
 import logging
+from datetime import date, datetime, timedelta
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class DiaristaIntent(str, Enum):
+class DiaristaIntent(StrEnum):
     """Intents relacionados a diaristas"""
+
     VER_DIARISTAS = "ver_diaristas"
     DIARISTA_DETALHES = "diarista_detalhes"
     DIARISTAS_DISPONIVEIS = "diaristas_disponiveis"
@@ -52,101 +54,147 @@ class DiaristaAgent:
         (r"(?:nota|notas|pontuar)\s+(?:da?\s+)?diarista", DiaristaIntent.AVALIAR),
         (r"avaliar\s+(?:servico|trabalho)\s+(?:da?\s+)?diarista", DiaristaIntent.AVALIAR),
         (r"diarista\s+(?:avaliar|avaliacao)", DiaristaIntent.AVALIAR),
-
         # ==================================================================
         # VER_AVALIACOES - Historico de avaliacoes
         # ==================================================================
-        (r"(?:ver|veja|mostrar|mostre|exibir|listar)\s+(?:as?\s+)?avaliac[oõ]es\s+(?:da?\s+)?diarista", DiaristaIntent.VER_AVALIACOES),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|listar)\s+(?:as?\s+)?avaliac[oõ]es\s+(?:da?\s+)?diarista",
+            DiaristaIntent.VER_AVALIACOES,
+        ),
         (r"(?:historico|hist[oó]rico)\s+(?:de\s+)?avaliac[oõ]es\s+(?:da?\s+)?diarista", DiaristaIntent.VER_AVALIACOES),
         (r"avaliac[oõ]es\s+(?:da?\s+)?diarista", DiaristaIntent.VER_AVALIACOES),
-        (r"(?:como|qual)\s+(?:esta|e|eh|sao)\s+(?:as?\s+)?avaliac[oõ]es?\s+(?:da?\s+)?diarista", DiaristaIntent.VER_AVALIACOES),
+        (
+            r"(?:como|qual)\s+(?:esta|e|eh|sao)\s+(?:as?\s+)?avaliac[oõ]es?\s+(?:da?\s+)?diarista",
+            DiaristaIntent.VER_AVALIACOES,
+        ),
         (r"diarista\s+avaliac[oõ]es", DiaristaIntent.VER_AVALIACOES),
-
         # ==================================================================
         # GERAR_PAGAMENTO - Gerar pagamento para diarista
         # ==================================================================
         (r"(?:gerar|criar|emitir)\s+pagamento\s+(?:da?\s+|para\s+)?diarista", DiaristaIntent.GERAR_PAGAMENTO),
         (r"pagamento\s+(?:da?\s+)?diarista\s+(?:gerar|criar|emitir)", DiaristaIntent.GERAR_PAGAMENTO),
-        (r"(?:gerar|criar)\s+(?:folha|recibo)\s+(?:de\s+)?pagamento\s+(?:da?\s+)?diarista", DiaristaIntent.GERAR_PAGAMENTO),
+        (
+            r"(?:gerar|criar)\s+(?:folha|recibo)\s+(?:de\s+)?pagamento\s+(?:da?\s+)?diarista",
+            DiaristaIntent.GERAR_PAGAMENTO,
+        ),
         (r"(?:fechar|fechamento)\s+(?:folha|pagamento)\s+(?:da?\s+)?diarista", DiaristaIntent.GERAR_PAGAMENTO),
-
         # ==================================================================
         # APROVAR_PAGAMENTO - Aprovar pagamento pendente
         # ==================================================================
         (r"(?:aprovar|autorizar|liberar)\s+pagamento\s+(?:da?\s+|para\s+)?diarista", DiaristaIntent.APROVAR_PAGAMENTO),
         (r"pagamento\s+(?:da?\s+)?diarista\s+(?:aprovar|autorizar|liberar)", DiaristaIntent.APROVAR_PAGAMENTO),
         (r"(?:aprovar|autorizar)\s+(?:o\s+)?pagamento\s+(?:id|numero|num)", DiaristaIntent.APROVAR_PAGAMENTO),
-
         # ==================================================================
         # VER_PAGAMENTOS - Ver pagamentos pendentes/realizados
         # ==================================================================
-        (r"(?:ver|veja|mostrar|mostre|exibir|listar)\s+(?:os?\s+)?pagamentos?\s+(?:da?\s+|de\s+)?diarista", DiaristaIntent.VER_PAGAMENTOS),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|listar)\s+(?:os?\s+)?pagamentos?\s+(?:da?\s+|de\s+)?diarista",
+            DiaristaIntent.VER_PAGAMENTOS,
+        ),
         (r"pagamentos?\s+(?:da?\s+|de\s+)?diarista", DiaristaIntent.VER_PAGAMENTOS),
-        (r"(?:pagamentos?|financeiro)\s+(?:pendentes?|realizados?|pagos?|cancelados?)\s+(?:da?\s+)?diarista", DiaristaIntent.VER_PAGAMENTOS),
+        (
+            r"(?:pagamentos?|financeiro)\s+(?:pendentes?|realizados?|pagos?|cancelados?)\s+(?:da?\s+)?diarista",
+            DiaristaIntent.VER_PAGAMENTOS,
+        ),
         (r"diarista\s+pagamentos?", DiaristaIntent.VER_PAGAMENTOS),
         (r"(?:quais|quantos)\s+pagamentos?\s+(?:da?\s+)?diarista", DiaristaIntent.VER_PAGAMENTOS),
-
         # ==================================================================
         # VER_AGENDA_DETALHADA - Agenda com check-ins/outs e status
         # ==================================================================
-        (r"(?:agenda|cronograma)\s+(?:detalhad[oa]|complet[oa])\s+(?:da?\s+)?diarista", DiaristaIntent.VER_AGENDA_DETALHADA),
-        (r"(?:ver|veja|mostrar|mostre)\s+(?:a?\s+)?agenda\s+(?:detalhad[oa]\s+)?(?:da?\s+)?diarista", DiaristaIntent.VER_AGENDA_DETALHADA),
-        (r"(?:check-?ins?|checkins?)\s+(?:e\s+)?(?:check-?outs?|checkouts?)\s+(?:da?\s+)?diarista", DiaristaIntent.VER_AGENDA_DETALHADA),
+        (
+            r"(?:agenda|cronograma)\s+(?:detalhad[oa]|complet[oa])\s+(?:da?\s+)?diarista",
+            DiaristaIntent.VER_AGENDA_DETALHADA,
+        ),
+        (
+            r"(?:ver|veja|mostrar|mostre)\s+(?:a?\s+)?agenda\s+(?:detalhad[oa]\s+)?(?:da?\s+)?diarista",
+            DiaristaIntent.VER_AGENDA_DETALHADA,
+        ),
+        (
+            r"(?:check-?ins?|checkins?)\s+(?:e\s+)?(?:check-?outs?|checkouts?)\s+(?:da?\s+)?diarista",
+            DiaristaIntent.VER_AGENDA_DETALHADA,
+        ),
         (r"diarista\s+agenda\s+(?:detalhad[oa]|complet[oa])", DiaristaIntent.VER_AGENDA_DETALHADA),
-        (r"(?:historico|hist[oó]rico)\s+(?:de\s+)?(?:agenda|presenca|frequencia)\s+(?:da?\s+)?diarista", DiaristaIntent.VER_AGENDA_DETALHADA),
-
+        (
+            r"(?:historico|hist[oó]rico)\s+(?:de\s+)?(?:agenda|presenca|frequencia)\s+(?:da?\s+)?diarista",
+            DiaristaIntent.VER_AGENDA_DETALHADA,
+        ),
         # ==================================================================
         # REGISTRAR_DIARISTA - Antes de VER_DIARISTAS (mais especifico)
         # ==================================================================
-        (r"(?:registrar|cadastrar|cadastra|adicionar|adiciona|criar|crie|cria|incluir|inclua)\s+(?:uma?\s+)?(?:nova?\s+)?diarista", DiaristaIntent.REGISTRAR_DIARISTA),
+        (
+            r"(?:registrar|cadastrar|cadastra|adicionar|adiciona|criar|crie|cria|incluir|inclua)\s+(?:uma?\s+)?(?:nova?\s+)?diarista",
+            DiaristaIntent.REGISTRAR_DIARISTA,
+        ),
         (r"(?:nova?\s+)?diarista\s+(?:nova?|cadastro|registro)", DiaristaIntent.REGISTRAR_DIARISTA),
-        (r"(?:quero|preciso)\s+(?:registrar|cadastrar|adicionar)\s+(?:uma?\s+)?diarista", DiaristaIntent.REGISTRAR_DIARISTA),
-
+        (
+            r"(?:quero|preciso)\s+(?:registrar|cadastrar|adicionar)\s+(?:uma?\s+)?diarista",
+            DiaristaIntent.REGISTRAR_DIARISTA,
+        ),
         # ==================================================================
         # DIARISTA_DETALHES - Antes de VER_DIARISTAS (mais especifico)
         # ==================================================================
-        (r"(?:detalhe|detalhes|info|informacoes?|dados?|perfil)\s+(?:da?\s+)?diarista", DiaristaIntent.DIARISTA_DETALHES),
+        (
+            r"(?:detalhe|detalhes|info|informacoes?|dados?|perfil)\s+(?:da?\s+)?diarista",
+            DiaristaIntent.DIARISTA_DETALHES,
+        ),
         (r"(?:ver|veja|mostrar|mostre|exibir|exiba)\s+(?:a?\s+)?diarista\s+\w+", DiaristaIntent.DIARISTA_DETALHES),
         (r"diarista\s+(?:cpf|nome|id)\s*[:=]?\s*\w+", DiaristaIntent.DIARISTA_DETALHES),
         (r"(?:quem\s+e|quem\s+eh|sobre)\s+(?:a\s+)?diarista", DiaristaIntent.DIARISTA_DETALHES),
         (r"(?:buscar|procurar)\s+diarista\s+\w+", DiaristaIntent.DIARISTA_DETALHES),
-
         # ==================================================================
         # DIARISTAS_ESCALADOS - escalados hoje/semana
         # ==================================================================
-        (r"(?:diaristas?|quem)\s+(?:escalad[oa]s?|alocad[oa]s?|agendad[oa]s?)\s+(?:para\s+)?hoje", DiaristaIntent.DIARISTAS_ESCALADOS),
-        (r"(?:diaristas?|quem)\s+(?:escalad[oa]s?|alocad[oa]s?|agendad[oa]s?)\s+(?:para\s+)?(?:esta|essa|da)\s+semana", DiaristaIntent.DIARISTAS_ESCALADOS),
+        (
+            r"(?:diaristas?|quem)\s+(?:escalad[oa]s?|alocad[oa]s?|agendad[oa]s?)\s+(?:para\s+)?hoje",
+            DiaristaIntent.DIARISTAS_ESCALADOS,
+        ),
+        (
+            r"(?:diaristas?|quem)\s+(?:escalad[oa]s?|alocad[oa]s?|agendad[oa]s?)\s+(?:para\s+)?(?:esta|essa|da)\s+semana",
+            DiaristaIntent.DIARISTAS_ESCALADOS,
+        ),
         (r"(?:diaristas?|quem)\s+(?:trabalha|trabalham|vem|vao)\s+hoje", DiaristaIntent.DIARISTAS_ESCALADOS),
-        (r"(?:diaristas?|quem)\s+(?:trabalha|trabalham|vem|vao)\s+(?:esta|essa)\s+semana", DiaristaIntent.DIARISTAS_ESCALADOS),
+        (
+            r"(?:diaristas?|quem)\s+(?:trabalha|trabalham|vem|vao)\s+(?:esta|essa)\s+semana",
+            DiaristaIntent.DIARISTAS_ESCALADOS,
+        ),
         (r"(?:agenda|escala|programacao)\s+(?:de\s+)?diaristas?\s+(?:de\s+)?hoje", DiaristaIntent.DIARISTAS_ESCALADOS),
-        (r"(?:agenda|escala|programacao)\s+(?:de\s+)?diaristas?\s+(?:da\s+)?semana", DiaristaIntent.DIARISTAS_ESCALADOS),
+        (
+            r"(?:agenda|escala|programacao)\s+(?:de\s+)?diaristas?\s+(?:da\s+)?semana",
+            DiaristaIntent.DIARISTAS_ESCALADOS,
+        ),
         (r"(?:quem|quais)\s+(?:sao\s+)?(?:as?\s+)?diaristas?\s+(?:de\s+)?hoje", DiaristaIntent.DIARISTAS_ESCALADOS),
         (r"diaristas?\s+(?:do\s+)?dia", DiaristaIntent.DIARISTAS_ESCALADOS),
-
         # ==================================================================
         # DIARISTAS_DISPONIVEIS - disponiveis para trabalho
         # ==================================================================
         (r"diaristas?\s+(?:disponive[li]s?|livres?|desocupad[oa]s?)", DiaristaIntent.DIARISTAS_DISPONIVEIS),
         (r"(?:quem|quais)\s+(?:diaristas?\s+)?(?:esta|estao)\s+disponive[li]s?", DiaristaIntent.DIARISTAS_DISPONIVEIS),
         (r"(?:tem|ha|há)\s+diaristas?\s+disponive[li]s?", DiaristaIntent.DIARISTAS_DISPONIVEIS),
-        (r"(?:preciso|precisamos)\s+(?:de\s+)?(?:uma?\s+)?diarista\s+(?:para|disponivel)", DiaristaIntent.DIARISTAS_DISPONIVEIS),
+        (
+            r"(?:preciso|precisamos)\s+(?:de\s+)?(?:uma?\s+)?diarista\s+(?:para|disponivel)",
+            DiaristaIntent.DIARISTAS_DISPONIVEIS,
+        ),
         (r"(?:buscar|procurar|encontrar)\s+diaristas?\s+disponive[li]s?", DiaristaIntent.DIARISTAS_DISPONIVEIS),
         (r"diaristas?\s+(?:para|pra)\s+(?:hoje|amanha|semana|trabalhar)", DiaristaIntent.DIARISTAS_DISPONIVEIS),
-
         # ==================================================================
         # ESTATISTICAS - stats gerais
         # ==================================================================
-        (r"(?:estatisticas?|stats?|metricas?|indicadores?|numeros?|dados?)\s+(?:de\s+|das?\s+)?diaristas?", DiaristaIntent.ESTATISTICAS),
+        (
+            r"(?:estatisticas?|stats?|metricas?|indicadores?|numeros?|dados?)\s+(?:de\s+|das?\s+)?diaristas?",
+            DiaristaIntent.ESTATISTICAS,
+        ),
         (r"(?:resumo|dashboard|painel|visao\s+geral)\s+(?:de\s+|das?\s+)?diaristas?", DiaristaIntent.ESTATISTICAS),
         (r"(?:quantas?|quantos?|total)\s+(?:de\s+)?diaristas?", DiaristaIntent.ESTATISTICAS),
         (r"diaristas?\s+(?:em\s+)?(?:numeros?|estatisticas?|stats?|resumo)", DiaristaIntent.ESTATISTICAS),
         (r"(?:ranking|top|melhores)\s+diaristas?", DiaristaIntent.ESTATISTICAS),
         (r"(?:gastos?|custo|investimento)\s+(?:com\s+)?diaristas?", DiaristaIntent.ESTATISTICAS),
-
         # ==================================================================
         # VER_DIARISTAS - listar (mais generico, por ultimo)
         # ==================================================================
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:as?\s+|os?\s+)?diaristas?", DiaristaIntent.VER_DIARISTAS),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:as?\s+|os?\s+)?diaristas?",
+            DiaristaIntent.VER_DIARISTAS,
+        ),
         (r"(?:quais|quem)\s+(?:sao\s+)?(?:as?\s+)?diaristas?", DiaristaIntent.VER_DIARISTAS),
         (r"(?:lista|listagem|relacao)\s+(?:de\s+)?diaristas?", DiaristaIntent.VER_DIARISTAS),
         (r"diaristas?\s+(?:ativ[oa]s?|cadastrad[oa]s?|registrad[oa]s?)", DiaristaIntent.VER_DIARISTAS),
@@ -161,6 +209,7 @@ class DiaristaAgent:
         if db and not diarist_repo:
             try:
                 from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
+
                 self.diarist_repo = DiaristRepository(db)
             except Exception as e:
                 logger.warning(f"Nao foi possivel criar DiaristRepository: {e}")
@@ -169,12 +218,13 @@ class DiaristaAgent:
         if db and not data_connector:
             try:
                 from modules.ai.bartolo.services.data_connector import DataConnector
+
                 self.data_connector = DataConnector(db)
             except Exception as e:
                 logger.warning(f"Nao foi possivel criar DataConnector: {e}")
                 self.data_connector = None
 
-    async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def process(self, message: str, context: dict[str, Any] = None) -> dict[str, Any]:
         """
         Processa uma mensagem relacionada a diaristas.
 
@@ -211,9 +261,10 @@ class DiaristaAgent:
         else:
             return await self._handle_default(message, context)
 
-    def _detect_intent(self, message: str) -> Optional[DiaristaIntent]:
+    def _detect_intent(self, message: str) -> DiaristaIntent | None:
         """Detecta o intent da mensagem"""
         import re
+
         message_lower = message.lower()
 
         for pattern, intent in self.INTENT_PATTERNS:
@@ -221,11 +272,12 @@ class DiaristaAgent:
                 return intent
         return None
 
-    async def _handle_ver_diaristas(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_diaristas(self, message: str, context: dict) -> dict[str, Any]:
         """Lista diaristas ativos usando DiaristRepository"""
         if self.diarist_repo:
             try:
                 from modules.operacional.diaristas.models.diarist import DiaristStatus
+
                 diaristas = await self.diarist_repo.list_all(
                     status=DiaristStatus.ATIVO,
                     limit=20,
@@ -237,9 +289,7 @@ class DiaristaAgent:
                         tipos = ", ".join(d.tipos_servico or []) or "N/A"
                         avaliacao = f"{float(d.avaliacao_media or 0):.1f}" if d.avaliacao_media else "N/A"
                         valor = f"R$ {float(d.valor_diaria or 0):,.2f}"
-                        lines.append(
-                            f"| {i} | {d.nome} | {tipos} | {avaliacao} | {valor} | {d.status} |"
-                        )
+                        lines.append(f"| {i} | {d.nome} | {tipos} | {avaliacao} | {valor} | {d.status} |")
 
                     tabela = "\n".join(lines)
                     response = f"""**Diaristas Ativas ({len(diaristas)})**
@@ -299,7 +349,7 @@ class DiaristaAgent:
             "suggestions": ["/diarista disponiveis", "/diarista stats", "/diarista help"],
         }
 
-    async def _handle_diarista_detalhes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_diarista_detalhes(self, message: str, context: dict) -> dict[str, Any]:
         """Detalhe de um diarista especifico"""
         import re
 
@@ -346,8 +396,8 @@ class DiaristaAgent:
 **CPF:** {diarista.cpf}
 **Status:** {diarista.status}
 **Idade:** {idade_str}
-**Telefone:** {diarista.telefone or 'N/A'}
-**Email:** {diarista.email or 'N/A'}
+**Telefone:** {diarista.telefone or "N/A"}
+**Email:** {diarista.email or "N/A"}
 
 **Profissional:**
 - **Tipos de servico:** {tipos}
@@ -356,8 +406,8 @@ class DiaristaAgent:
 
 **Disponibilidade:**
 - **Dias:** {dias}
-- **Horario:** {diarista.hora_inicio_disponivel or '08:00'} - {diarista.hora_fim_disponivel or '17:00'}
-- **Aceita hora extra:** {'Sim' if diarista.aceita_hora_extra else 'Nao'}
+- **Horario:** {diarista.hora_inicio_disponivel or "08:00"} - {diarista.hora_fim_disponivel or "17:00"}
+- **Aceita hora extra:** {"Sim" if diarista.aceita_hora_extra else "Nao"}
 
 **Financeiro:**
 - **Valor diaria:** R$ {float(diarista.valor_diaria or 0):,.2f}
@@ -403,7 +453,7 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
             "suggestions": ["/diarista listar", "/diarista help"],
         }
 
-    async def _handle_diaristas_disponiveis(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_diaristas_disponiveis(self, message: str, context: dict) -> dict[str, Any]:
         """Diaristas disponiveis para trabalho"""
         import re
 
@@ -427,10 +477,8 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
 
                 tipo_enum = None
                 if tipo_servico:
-                    try:
+                    with contextlib.suppress(ValueError):
                         tipo_enum = DiaristType(tipo_servico)
-                    except ValueError:
-                        pass
 
                 disponiveis = await self.diarist_repo.get_available_diarists(
                     data=data_busca,
@@ -443,13 +491,11 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
                         tipos = ", ".join(d.tipos_servico or []) or "N/A"
                         avaliacao = f"{float(d.avaliacao_media or 0):.1f}" if d.avaliacao_media else "N/A"
                         valor = f"R$ {float(d.valor_diaria or 0):,.2f}"
-                        lines.append(
-                            f"| {i} | {d.nome} | {tipos} | {avaliacao} | {valor} |"
-                        )
+                        lines.append(f"| {i} | {d.nome} | {tipos} | {avaliacao} | {valor} |")
 
                     tabela = "\n".join(lines)
                     filtro_info = f" (tipo: {tipo_servico})" if tipo_servico else ""
-                    response = f"""**Diaristas Disponiveis - {data_busca.strftime('%d/%m/%Y')}{filtro_info}**
+                    response = f"""**Diaristas Disponiveis - {data_busca.strftime("%d/%m/%Y")}{filtro_info}**
 
 | # | Nome | Tipo | Avaliacao | Diaria |
 |---|------|------|-----------|--------|
@@ -502,7 +548,7 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
 
         # Fallback estatico
         return {
-            "response": f"""**Diaristas Disponiveis - {data_busca.strftime('%d/%m/%Y')}**
+            "response": f"""**Diaristas Disponiveis - {data_busca.strftime("%d/%m/%Y")}**
 
 | # | Nome | Tipo | Avaliacao | Diaria |
 |---|------|------|-----------|--------|
@@ -515,7 +561,7 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
             "suggestions": ["/diarista escalados", "/diarista listar"],
         }
 
-    async def _handle_diaristas_escalados(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_diaristas_escalados(self, message: str, context: dict) -> dict[str, Any]:
         """Diaristas escalados hoje ou na semana"""
         import re
 
@@ -537,8 +583,6 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
 
         if self.diarist_repo:
             try:
-                from modules.operacional.diaristas.models.diarist import ScheduleStatus
-
                 schedules = await self.diarist_repo.list_schedules(
                     data_inicio=data_inicio,
                     data_fim=data_fim,
@@ -548,21 +592,20 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
                 # Filtrar apenas ativos (AGENDADO, CONFIRMADO, EM_ANDAMENTO)
                 ativos_status = {"AGENDADO", "CONFIRMADO", "EM_ANDAMENTO"}
                 schedules_ativos = [
-                    s for s in schedules
-                    if (s.status.value if hasattr(s.status, 'value') else str(s.status)) in ativos_status
+                    s
+                    for s in schedules
+                    if (s.status.value if hasattr(s.status, "value") else str(s.status)) in ativos_status
                 ]
 
                 if schedules_ativos:
                     lines = []
                     for i, s in enumerate(schedules_ativos[:20], 1):
                         nome = s.diarist.nome if s.diarist else "N/A"
-                        data_str = s.data_trabalho.strftime('%d/%m') if s.data_trabalho else "N/A"
-                        hora_ini = s.hora_inicio.strftime('%H:%M') if s.hora_inicio else "08:00"
-                        hora_fim = s.hora_fim.strftime('%H:%M') if s.hora_fim else "17:00"
-                        status_str = s.status.value if hasattr(s.status, 'value') else str(s.status)
-                        lines.append(
-                            f"| {i} | {nome} | {data_str} | {hora_ini}-{hora_fim} | {status_str} |"
-                        )
+                        data_str = s.data_trabalho.strftime("%d/%m") if s.data_trabalho else "N/A"
+                        hora_ini = s.hora_inicio.strftime("%H:%M") if s.hora_inicio else "08:00"
+                        hora_fim = s.hora_fim.strftime("%H:%M") if s.hora_fim else "17:00"
+                        status_str = s.status.value if hasattr(s.status, "value") else str(s.status)
+                        lines.append(f"| {i} | {nome} | {data_str} | {hora_ini}-{hora_fim} | {status_str} |")
 
                     tabela = "\n".join(lines)
                     response = f"""**Diaristas Escalados - {periodo_label}**
@@ -582,7 +625,7 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
                                     "id": str(s.id),
                                     "diarist_nome": s.diarist.nome if s.diarist else "N/A",
                                     "data_trabalho": s.data_trabalho.isoformat() if s.data_trabalho else None,
-                                    "status": s.status.value if hasattr(s.status, 'value') else str(s.status),
+                                    "status": s.status.value if hasattr(s.status, "value") else str(s.status),
                                 }
                                 for s in schedules_ativos
                             ],
@@ -611,8 +654,8 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
 
 | # | Nome | Data | Horario | Status |
 |---|------|------|---------|--------|
-| 1 | Maria Silva | {hoje.strftime('%d/%m')} | 08:00-17:00 | CONFIRMADO |
-| 2 | Ana Souza | {hoje.strftime('%d/%m')} | 08:00-12:00 | AGENDADO |
+| 1 | Maria Silva | {hoje.strftime("%d/%m")} | 08:00-17:00 | CONFIRMADO |
+| 2 | Ana Souza | {hoje.strftime("%d/%m")} | 08:00-12:00 | AGENDADO |
 
 *Dados ilustrativos - conecte ao banco para dados reais.*""",
             "intent": DiaristaIntent.DIARISTAS_ESCALADOS.value,
@@ -620,7 +663,7 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
             "suggestions": ["/diarista disponiveis", "/diarista listar"],
         }
 
-    async def _handle_estatisticas(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_estatisticas(self, message: str, context: dict) -> dict[str, Any]:
         """Estatisticas gerais de diaristas"""
         if self.diarist_repo:
             try:
@@ -639,9 +682,7 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
                 top_lines = []
                 for i, t in enumerate(top, 1):
                     d = t["diarist"]
-                    top_lines.append(
-                        f"| {i} | {d.nome} | {t['avaliacao_media']:.1f} | {t['total_servicos']} |"
-                    )
+                    top_lines.append(f"| {i} | {d.nome} | {t['avaliacao_media']:.1f} | {t['total_servicos']} |")
 
                 top_tabela = "\n".join(top_lines) if top_lines else "| - | Sem dados | - | - |"
 
@@ -653,11 +694,11 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
 - Inativas: **{total_inativos}**
 
 **Ultimos 30 dias:**
-- Total agendamentos: **{stats.get('agendamentos', {}).get('total', 0)}**
-- Concluidos: **{stats.get('agendamentos', {}).get('concluidos', 0)}**
-- Taxa conclusao: **{stats.get('agendamentos', {}).get('taxa_conclusao', 0):.1f}%**
-- Gastos total: **R$ {stats.get('gastos_total', 0):,.2f}**
-- Media avaliacoes: **{stats.get('media_avaliacoes', 0):.1f}/5.0**
+- Total agendamentos: **{stats.get("agendamentos", {}).get("total", 0)}**
+- Concluidos: **{stats.get("agendamentos", {}).get("concluidos", 0)}**
+- Taxa conclusao: **{stats.get("agendamentos", {}).get("taxa_conclusao", 0):.1f}%**
+- Gastos total: **R$ {stats.get("gastos_total", 0):,.2f}**
+- Media avaliacoes: **{stats.get("media_avaliacoes", 0):.1f}/5.0**
 
 **Ranking - Melhores Diaristas:**
 
@@ -705,7 +746,7 @@ Ou use `/diarista listar` para ver todas as diaristas.""",
             "suggestions": ["/diarista listar", "/diarista disponiveis"],
         }
 
-    async def _handle_registrar_diarista(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_registrar_diarista(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona para action de registro de diarista"""
         return {
             "response": """**Registrar Nova Diarista**
@@ -737,7 +778,7 @@ Informe os dados ou confirme para prosseguir com o cadastro.""",
             ],
         }
 
-    async def _handle_avaliar(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_avaliar(self, message: str, context: dict) -> dict[str, Any]:
         """Iniciar avaliacao de diarista apos trabalho"""
         import re
 
@@ -755,19 +796,16 @@ Informe os dados ou confirme para prosseguir com o cadastro.""",
 
         if self.diarist_repo and diarist_id:
             try:
-                from uuid import UUID as UUIDType
-                diarista = await self.diarist_repo.get_by_id(UUIDType(diarist_id))
+                from uuid import UUID
+
+                diarista = await self.diarist_repo.get_by_id(UUID(diarist_id))
 
                 if diarista:
                     # Se schedule_id fornecido, verificar se existe avaliacao
                     avaliacao_existente = None
                     if schedule_id:
-                        try:
-                            avaliacao_existente = await self.diarist_repo.get_evaluation_by_schedule(
-                                UUIDType(schedule_id)
-                            )
-                        except Exception:
-                            pass
+                        with contextlib.suppress(Exception):
+                            avaliacao_existente = await self.diarist_repo.get_evaluation_by_schedule(UUID(schedule_id))
 
                     if avaliacao_existente:
                         return {
@@ -835,7 +873,7 @@ Ou use `/diarista listar` para ver as diaristas.""",
             "suggestions": ["/diarista listar", "/diarista escalados", "/diarista help"],
         }
 
-    async def _handle_ver_avaliacoes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_avaliacoes(self, message: str, context: dict) -> dict[str, Any]:
         """Ver historico de avaliacoes de diarista"""
         import re
 
@@ -861,11 +899,11 @@ Ou use `/diarista listar` para ver as diaristas.""",
 
         if self.diarist_repo:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
 
                 diarista = None
                 if diarist_id:
-                    diarista = await self.diarist_repo.get_by_id(UUIDType(diarist_id))
+                    diarista = await self.diarist_repo.get_by_id(UUID(diarist_id))
                 elif nome_busca:
                     diaristas = await self.diarist_repo.list_all(search=nome_busca, limit=1)
                     if diaristas:
@@ -873,14 +911,12 @@ Ou use `/diarista listar` para ver as diaristas.""",
                         diarist_id = str(diarista.id)
 
                 if diarista:
-                    avaliacoes = await self.diarist_repo.list_evaluations(
-                        diarist_id=diarista.id, limit=20
-                    )
+                    avaliacoes = await self.diarist_repo.list_evaluations(diarist_id=diarista.id, limit=20)
 
                     if avaliacoes:
                         lines = []
                         for i, av in enumerate(avaliacoes[:15], 1):
-                            data_str = av.created_at.strftime('%d/%m/%Y') if av.created_at else "N/A"
+                            data_str = av.created_at.strftime("%d/%m/%Y") if av.created_at else "N/A"
                             pont = av.nota_pontualidade or "-"
                             qual = av.nota_qualidade or "-"
                             comp = av.nota_comportamento or "-"
@@ -946,7 +982,7 @@ Ou use `/diarista listar` para ver as diaristas.""",
             "suggestions": ["/diarista listar", "/diarista help"],
         }
 
-    async def _handle_gerar_pagamento(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_gerar_pagamento(self, message: str, context: dict) -> dict[str, Any]:
         """Gerar pagamento para diarista em periodo"""
         import re
 
@@ -974,9 +1010,9 @@ Ou use `/diarista listar` para ver as diaristas.""",
 
         if self.diarist_repo and diarist_id:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
 
-                diarista = await self.diarist_repo.get_by_id(UUIDType(diarist_id))
+                diarista = await self.diarist_repo.get_by_id(UUID(diarist_id))
 
                 if diarista:
                     # Buscar schedules concluidos no periodo
@@ -987,15 +1023,15 @@ Ou use `/diarista listar` para ver as diaristas.""",
                     else:
                         data_fim = date(int(ano), int(mes) + 1, 1) - timedelta(days=1)
 
-                    from modules.operacional.diaristas.models.diarist import ScheduleStatus as SchedStatus
                     schedules = await self.diarist_repo.list_schedules(
                         diarist_id=diarista.id,
                         data_inicio=data_inicio,
                         data_fim=data_fim,
                     )
                     concluidos = [
-                        s for s in schedules
-                        if (s.status.value if hasattr(s.status, 'value') else str(s.status)) == "CONCLUIDO"
+                        s
+                        for s in schedules
+                        if (s.status.value if hasattr(s.status, "value") else str(s.status)) == "CONCLUIDO"
                     ]
 
                     qtd = len(concluidos)
@@ -1012,7 +1048,7 @@ Ou use `/diarista listar` para ver as diaristas.""",
                     return {
                         "response": f"""**Gerar Pagamento - {diarista.nome}**
 
-**Periodo:** {periodo} ({data_inicio.strftime('%d/%m')} a {data_fim.strftime('%d/%m/%Y')})
+**Periodo:** {periodo} ({data_inicio.strftime("%d/%m")} a {data_fim.strftime("%d/%m/%Y")})
 
 **Resumo:**
 - Diarias concluidas: **{qtd}**
@@ -1079,7 +1115,7 @@ Ou use `/diarista listar` para ver as diaristas.""",
             "suggestions": ["/diarista listar", "/diarista pagamentos", "/diarista help"],
         }
 
-    async def _handle_ver_pagamentos(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_pagamentos(self, message: str, context: dict) -> dict[str, Any]:
         """Ver pagamentos pendentes/realizados de diarista"""
         import re
 
@@ -1102,16 +1138,15 @@ Ou use `/diarista listar` para ver as diaristas.""",
 
         if self.diarist_repo:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
+
                 from modules.operacional.diaristas.models.diarist import PaymentStatus
 
-                diarist_uuid = UUIDType(diarist_id) if diarist_id else None
+                diarist_uuid = UUID(diarist_id) if diarist_id else None
                 status_enum = None
                 if status_filtro:
-                    try:
+                    with contextlib.suppress(ValueError):
                         status_enum = PaymentStatus(status_filtro)
-                    except ValueError:
-                        pass
 
                 pagamentos = await self.diarist_repo.list_payments(
                     diarist_id=diarist_uuid,
@@ -1125,11 +1160,15 @@ Ou use `/diarista listar` para ver as diaristas.""",
                     total_liquido = 0
                     for i, p in enumerate(pagamentos[:15], 1):
                         nome = p.diarist.nome if p.diarist else "N/A"
-                        ref = p.data_referencia.strftime('%m/%Y') if p.data_referencia else "N/A"
+                        ref = p.data_referencia.strftime("%m/%Y") if p.data_referencia else "N/A"
                         bruto = float(p.valor_bruto or 0)
                         liquido = float(p.valor_liquido or 0)
-                        status_str = p.status if isinstance(p.status, str) else (p.status.value if hasattr(p.status, 'value') else str(p.status))
-                        venc = p.data_vencimento.strftime('%d/%m') if p.data_vencimento else "N/A"
+                        status_str = (
+                            p.status
+                            if isinstance(p.status, str)
+                            else (p.status.value if hasattr(p.status, "value") else str(p.status))
+                        )
+                        venc = p.data_vencimento.strftime("%d/%m") if p.data_vencimento else "N/A"
                         total_bruto += bruto
                         total_liquido += liquido
                         lines.append(
@@ -1159,7 +1198,9 @@ Ou use `/diarista listar` para ver as diaristas.""",
                                     "diarist_nome": p.diarist.nome if p.diarist else "N/A",
                                     "valor_bruto": float(p.valor_bruto or 0),
                                     "valor_liquido": float(p.valor_liquido or 0),
-                                    "status": p.status if isinstance(p.status, str) else (p.status.value if hasattr(p.status, 'value') else str(p.status)),
+                                    "status": p.status
+                                    if isinstance(p.status, str)
+                                    else (p.status.value if hasattr(p.status, "value") else str(p.status)),
                                 }
                                 for p in pagamentos
                             ],
@@ -1195,7 +1236,7 @@ Ou use `/diarista listar` para ver as diaristas.""",
             "suggestions": ["/diarista listar", "/diarista stats"],
         }
 
-    async def _handle_aprovar_pagamento(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_aprovar_pagamento(self, message: str, context: dict) -> dict[str, Any]:
         """Aprovar pagamento pendente de diarista"""
         import re
 
@@ -1209,13 +1250,16 @@ Ou use `/diarista listar` para ver as diaristas.""",
 
         if self.diarist_repo and pagamento_id:
             try:
-                from uuid import UUID as UUIDType
-                from modules.operacional.diaristas.models.diarist import PaymentStatus
+                from uuid import UUID
 
-                pagamento = await self.diarist_repo.get_payment_by_id(UUIDType(pagamento_id))
+                pagamento = await self.diarist_repo.get_payment_by_id(UUID(pagamento_id))
 
                 if pagamento:
-                    status_str = pagamento.status if isinstance(pagamento.status, str) else (pagamento.status.value if hasattr(pagamento.status, 'value') else str(pagamento.status))
+                    status_str = (
+                        pagamento.status
+                        if isinstance(pagamento.status, str)
+                        else (pagamento.status.value if hasattr(pagamento.status, "value") else str(pagamento.status))
+                    )
                     nome = pagamento.diarist.nome if pagamento.diarist else "N/A"
 
                     if status_str != "PENDENTE":
@@ -1228,8 +1272,13 @@ Ou use `/diarista listar` para ver as diaristas.""",
 
                     bruto = float(pagamento.valor_bruto or 0)
                     liquido = float(pagamento.valor_liquido or 0)
-                    ref = pagamento.data_referencia.strftime('%m/%Y') if pagamento.data_referencia else "N/A"
-                    retencoes = float(pagamento.retencao_inss or 0) + float(pagamento.retencao_iss or 0) + float(pagamento.retencao_irrf or 0) + float(pagamento.outros_descontos or 0)
+                    ref = pagamento.data_referencia.strftime("%m/%Y") if pagamento.data_referencia else "N/A"
+                    retencoes = (
+                        float(pagamento.retencao_inss or 0)
+                        + float(pagamento.retencao_iss or 0)
+                        + float(pagamento.retencao_irrf or 0)
+                        + float(pagamento.outros_descontos or 0)
+                    )
 
                     return {
                         "response": f"""**Aprovar Pagamento**
@@ -1239,7 +1288,7 @@ Ou use `/diarista listar` para ver as diaristas.""",
 **Valor bruto:** R$ {bruto:,.2f}
 **Retencoes:** R$ {retencoes:,.2f}
 **Valor liquido:** R$ {liquido:,.2f}
-**Vencimento:** {pagamento.data_vencimento.strftime('%d/%m/%Y') if pagamento.data_vencimento else 'N/A'}
+**Vencimento:** {pagamento.data_vencimento.strftime("%d/%m/%Y") if pagamento.data_vencimento else "N/A"}
 
 Confirme para aprovar este pagamento.""",
                         "intent": DiaristaIntent.APROVAR_PAGAMENTO.value,
@@ -1281,7 +1330,7 @@ Ou use `/diarista pagamentos pendentes` para ver os pendentes.""",
             "suggestions": ["/diarista pagamentos pendentes", "/diarista help"],
         }
 
-    async def _handle_ver_agenda_detalhada(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_agenda_detalhada(self, message: str, context: dict) -> dict[str, Any]:
         """Ver agenda detalhada com check-ins/outs e status"""
         import re
 
@@ -1331,9 +1380,9 @@ Ou use `/diarista pagamentos pendentes` para ver os pendentes.""",
 
         if self.diarist_repo:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
 
-                diarist_uuid = UUIDType(diarist_id) if diarist_id else None
+                diarist_uuid = UUID(diarist_id) if diarist_id else None
 
                 schedules = await self.diarist_repo.list_schedules(
                     diarist_id=diarist_uuid,
@@ -1348,13 +1397,17 @@ Ou use `/diarista pagamentos pendentes` para ver os pendentes.""",
                     total_faltas = 0
                     for i, s in enumerate(schedules[:30], 1):
                         nome = s.diarist.nome if s.diarist else "N/A"
-                        data_str = s.data_trabalho.strftime('%d/%m') if s.data_trabalho else "N/A"
-                        hora_ini = s.hora_inicio.strftime('%H:%M') if s.hora_inicio else "08:00"
-                        hora_fim = s.hora_fim.strftime('%H:%M') if s.hora_fim else "17:00"
-                        status_str = s.status if isinstance(s.status, str) else (s.status.value if hasattr(s.status, 'value') else str(s.status))
+                        data_str = s.data_trabalho.strftime("%d/%m") if s.data_trabalho else "N/A"
+                        hora_ini = s.hora_inicio.strftime("%H:%M") if s.hora_inicio else "08:00"
+                        hora_fim = s.hora_fim.strftime("%H:%M") if s.hora_fim else "17:00"
+                        status_str = (
+                            s.status
+                            if isinstance(s.status, str)
+                            else (s.status.value if hasattr(s.status, "value") else str(s.status))
+                        )
 
-                        checkin_str = s.checkin_real.strftime('%H:%M') if s.checkin_real else "-"
-                        checkout_str = s.checkout_real.strftime('%H:%M') if s.checkout_real else "-"
+                        checkin_str = s.checkin_real.strftime("%H:%M") if s.checkin_real else "-"
+                        checkout_str = s.checkout_real.strftime("%H:%M") if s.checkout_real else "-"
 
                         duracao = "-"
                         if s.checkin_real and s.checkout_real:
@@ -1394,7 +1447,9 @@ Ou use `/diarista pagamentos pendentes` para ver os pendentes.""",
                                     "id": str(s.id),
                                     "diarist_nome": s.diarist.nome if s.diarist else "N/A",
                                     "data_trabalho": s.data_trabalho.isoformat() if s.data_trabalho else None,
-                                    "status": s.status if isinstance(s.status, str) else (s.status.value if hasattr(s.status, 'value') else str(s.status)),
+                                    "status": s.status
+                                    if isinstance(s.status, str)
+                                    else (s.status.value if hasattr(s.status, "value") else str(s.status)),
                                     "checkin": s.checkin_real.isoformat() if s.checkin_real else None,
                                     "checkout": s.checkout_real.isoformat() if s.checkout_real else None,
                                 }
@@ -1423,8 +1478,8 @@ Ou use `/diarista pagamentos pendentes` para ver os pendentes.""",
 
 | # | Diarista | Data | Horario | Check-in | Check-out | Duracao | Status |
 |---|----------|------|---------|----------|-----------|---------|--------|
-| 1 | Maria Silva | {hoje.strftime('%d/%m')} | 08:00-17:00 | 07:55 | 17:10 | 9h15 | CONCLUIDO |
-| 2 | Ana Souza | {hoje.strftime('%d/%m')} | 08:00-12:00 | 08:10 | - | - | EM_ANDAMENTO |
+| 1 | Maria Silva | {hoje.strftime("%d/%m")} | 08:00-17:00 | 07:55 | 17:10 | 9h15 | CONCLUIDO |
+| 2 | Ana Souza | {hoje.strftime("%d/%m")} | 08:00-12:00 | 08:10 | - | - | EM_ANDAMENTO |
 
 *Dados ilustrativos - conecte ao banco para dados reais.*""",
             "intent": DiaristaIntent.VER_AGENDA_DETALHADA.value,
@@ -1432,11 +1487,11 @@ Ou use `/diarista pagamentos pendentes` para ver os pendentes.""",
             "suggestions": ["/diarista escalados", "/diarista disponiveis"],
         }
 
-    async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
+    async def _handle_default(self, message: str, context: dict) -> dict[str, Any] | None:
         """Handler padrao - retorna None para permitir que DataConnector processe"""
         return None
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Retorna lista de capabilities do agente"""
         return [
             "Listar diaristas ativas",

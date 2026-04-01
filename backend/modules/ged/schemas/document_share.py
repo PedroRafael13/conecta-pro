@@ -1,23 +1,23 @@
 """Schemas Pydantic para DocumentShare."""
 
 from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
-from modules.ged.models.document_share import ShareType, ShareStatus
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from modules.ged.models.document_share import ShareStatus, ShareType
 
 
 class DocumentShareBase(BaseModel):
     """Schema base de DocumentShare."""
 
     share_type: ShareType = Field(default=ShareType.USUARIO)
-    permissions: List[str] = Field(default=["visualizar"])
+    permissions: list[str] = Field(default=["visualizar"])
     can_reshare: bool = False
-    max_downloads: Optional[int] = Field(None, ge=1)
-    max_views: Optional[int] = Field(None, ge=1)
-    expires_at: Optional[datetime] = None
+    max_downloads: int | None = Field(None, ge=1)
+    max_views: int | None = Field(None, ge=1)
+    expires_at: datetime | None = None
     is_perpetual: bool = False
-    message: Optional[str] = Field(None, max_length=1000)
+    message: str | None = Field(None, max_length=1000)
     password_protected: bool = False
 
 
@@ -25,23 +25,23 @@ class DocumentShareCreate(DocumentShareBase):
     """Schema para criar DocumentShare."""
 
     document_id: str
-    shared_with_id: Optional[str] = None
-    shared_with_email: Optional[EmailStr] = None
-    shared_with_name: Optional[str] = Field(None, max_length=255)
+    shared_with_id: str | None = None
+    shared_with_email: EmailStr | None = None
+    shared_with_name: str | None = Field(None, max_length=255)
     shared_by: str
-    password: Optional[str] = Field(None, min_length=4, max_length=50)
+    password: str | None = Field(None, min_length=4, max_length=50)
 
 
 class DocumentShareUpdate(BaseModel):
     """Schema para atualizar DocumentShare."""
 
-    permissions: Optional[List[str]] = None
-    can_reshare: Optional[bool] = None
-    max_downloads: Optional[int] = Field(None, ge=1)
-    max_views: Optional[int] = Field(None, ge=1)
-    expires_at: Optional[datetime] = None
-    is_perpetual: Optional[bool] = None
-    message: Optional[str] = Field(None, max_length=1000)
+    permissions: list[str] | None = None
+    can_reshare: bool | None = None
+    max_downloads: int | None = Field(None, ge=1)
+    max_views: int | None = Field(None, ge=1)
+    expires_at: datetime | None = None
+    is_perpetual: bool | None = None
+    message: str | None = Field(None, max_length=1000)
 
 
 class DocumentShareResponse(BaseModel):
@@ -52,46 +52,46 @@ class DocumentShareResponse(BaseModel):
     id: str
     document_id: str
     share_type: ShareType
-    shared_with_id: Optional[str]
-    shared_with_email: Optional[str]
-    shared_with_name: Optional[str]
-    permissions: List[str]
+    shared_with_id: str | None
+    shared_with_email: str | None
+    shared_with_name: str | None
+    permissions: list[str]
     can_reshare: bool
     status: ShareStatus
-    share_link: Optional[str]
-    share_token: Optional[str]
+    share_link: str | None
+    share_token: str | None
     password_protected: bool
-    max_downloads: Optional[int]
+    max_downloads: int | None
     download_count: int
-    max_views: Optional[int]
+    max_views: int | None
     view_count: int
-    expires_at: Optional[datetime]
+    expires_at: datetime | None
     is_perpetual: bool
-    message: Optional[str]
+    message: str | None
     notification_sent: bool
-    notification_sent_at: Optional[datetime]
-    first_accessed_at: Optional[datetime]
-    last_accessed_at: Optional[datetime]
+    notification_sent_at: datetime | None
+    first_accessed_at: datetime | None
+    last_accessed_at: datetime | None
     access_count: int
     created_at: datetime
     updated_at: datetime
-    revoked_at: Optional[datetime]
+    revoked_at: datetime | None
     shared_by: str
-    revoked_by: Optional[str]
+    revoked_by: str | None
 
     # Computed
     is_active: bool
     is_expired: bool
     is_download_limit_reached: bool
     is_view_limit_reached: bool
-    remaining_downloads: Optional[int]
-    remaining_views: Optional[int]
+    remaining_downloads: int | None
+    remaining_views: int | None
 
 
 class DocumentShareListResponse(BaseModel):
     """Schema de lista de DocumentShares."""
 
-    items: List[DocumentShareResponse]
+    items: list[DocumentShareResponse]
     total: int
     page: int
     page_size: int
@@ -101,22 +101,22 @@ class DocumentShareListResponse(BaseModel):
 class DocumentShareFilter(BaseModel):
     """Schema de filtro de DocumentShares."""
 
-    document_id: Optional[str] = None
-    share_type: Optional[ShareType] = None
-    status: Optional[ShareStatus] = None
-    shared_with_id: Optional[str] = None
-    shared_by: Optional[str] = None
-    is_expired: Optional[bool] = None
+    document_id: str | None = None
+    share_type: ShareType | None = None
+    status: ShareStatus | None = None
+    shared_with_id: str | None = None
+    shared_by: str | None = None
+    is_expired: bool | None = None
 
 
 class DocumentShareLinkRequest(BaseModel):
     """Schema para gerar link de compartilhamento."""
 
     expires_in_hours: int = Field(default=72, ge=1, le=8760)  # Max 1 ano
-    max_downloads: Optional[int] = Field(None, ge=1)
-    max_views: Optional[int] = Field(None, ge=1)
-    password: Optional[str] = Field(None, min_length=4, max_length=50)
-    message: Optional[str] = Field(None, max_length=1000)
+    max_downloads: int | None = Field(None, ge=1)
+    max_views: int | None = Field(None, ge=1)
+    password: str | None = Field(None, min_length=4, max_length=50)
+    message: str | None = Field(None, max_length=1000)
 
 
 class DocumentShareLinkResponse(BaseModel):
@@ -133,7 +133,7 @@ class DocumentShareAccessRequest(BaseModel):
     """Schema para acessar compartilhamento."""
 
     token: str
-    password: Optional[str] = None
+    password: str | None = None
 
 
 class DocumentShareStats(BaseModel):

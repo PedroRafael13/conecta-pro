@@ -3,10 +3,9 @@
 Sprint 35 - Task Scheduler.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -14,7 +13,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models.base import Base
 
 
-class QueueStatus(str, enum.Enum):
+class QueueStatus(StrEnum):
     """Status do item na fila."""
 
     PENDING = "pending"  # Aguardando processamento
@@ -27,7 +26,7 @@ class QueueStatus(str, enum.Enum):
     DEFERRED = "deferred"  # Adiado
 
 
-class QueuePriority(str, enum.Enum):
+class QueuePriority(StrEnum):
     """Prioridade na fila."""
 
     CRITICAL = "critical"  # Prioridade máxima (1)
@@ -150,7 +149,7 @@ class TaskQueue(Base):
         return self.attempt < self.max_attempts
 
     @property
-    def wait_time_seconds(self) -> Optional[float]:
+    def wait_time_seconds(self) -> float | None:
         """Tempo de espera na fila."""
         if self.started_at:
             return (self.started_at - self.enqueued_at).total_seconds()

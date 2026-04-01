@@ -10,31 +10,23 @@ e a base de dados do Conecta PRO, incluindo:
 - Auditoria de sincronizacao
 """
 
-from datetime import datetime, date
-from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, TypedDict
-from uuid import UUID, uuid4
 import logging
+from datetime import date, datetime
+from enum import StrEnum
+from typing import Any, TypedDict
+from uuid import UUID, uuid4
 
-from sqlalchemy import select, update, and_, or_
+from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from modules.integrations.connectors.solides.schemas import (
-    SolidesColaborador,
-    SituacaoColaborador,
-    TipoContrato,
-)
 from modules.integrations.connectors.solides.mappers import (
-    solides_colaborador_to_employee,
     compute_solides_entity_hash,
     detect_changes,
+    solides_colaborador_to_employee,
 )
 from modules.integrations.connectors.solides.models import (
     SolidesEntityMapping,
     SyncSource,
-    SyncStatus,
     create_or_update_mapping,
     get_entity_mapping,
 )
@@ -42,8 +34,9 @@ from modules.integrations.connectors.solides.models import (
 logger = logging.getLogger(__name__)
 
 
-class SyncAction(str, Enum):
+class SyncAction(StrEnum):
     """Acoes possiveis durante sincronizacao."""
+
     CREATED = "created"
     UPDATED = "updated"
     SKIPPED = "skipped"
@@ -53,17 +46,19 @@ class SyncAction(str, Enum):
 
 class SyncEmployeeResult(TypedDict):
     """Resultado da sincronizacao de um funcionario."""
+
     action: str
-    funcionario_id: Optional[str]
+    funcionario_id: str | None
     solides_id: str
-    cpf: Optional[str]
+    cpf: str | None
     name: str
-    changes: Optional[Dict[str, Any]]
-    error: Optional[str]
+    changes: dict[str, Any] | None
+    error: str | None
 
 
 class SyncSummary(TypedDict):
     """Resumo da sincronizacao."""
+
     total_processed: int
     created: int
     updated: int
@@ -71,7 +66,7 @@ class SyncSummary(TypedDict):
     conflicts: int
     errors: int
     duration_seconds: float
-    details: List[SyncEmployeeResult]
+    details: list[SyncEmployeeResult]
 
 
 class SolidesIntegrationService:
@@ -92,30 +87,30 @@ class SolidesIntegrationService:
         ...     print(f"Sincronizados: {result['created'] + result['updated']}")
     """
 
-    # Mapeamento de campos Solides -> Funcionario Conecta PRO
+    # Mapeamento de campos Solides -> Employee (tabela employees)
     FIELD_MAPPING = {
         # Dados pessoais
-        "nome": "nome_completo",
+        "nome": "nome",
         "email": "email",
         "cpf": "cpf",
         "rg": "rg",
         "data_nascimento": "data_nascimento",
-        "sexo": "genero",
+        "sexo": "sexo",
         "estado_civil": "estado_civil",
         "telefone": "telefone",
         "celular": "celular",
         # Endereco
-        "endereco.logradouro": "endereco_logradouro",
-        "endereco.numero": "endereco_numero",
-        "endereco.complemento": "endereco_complemento",
-        "endereco.bairro": "endereco_bairro",
-        "endereco.cidade": "endereco_cidade",
-        "endereco.estado": "endereco_uf",
-        "endereco.cep": "endereco_cep",
+        "endereco.logradouro": "logradouro",
+        "endereco.numero": "numero",
+        "endereco.complemento": "complemento",
+        "endereco.bairro": "bairro",
+        "endereco.cidade": "cidade",
+        "endereco.estado": "uf",
+        "endereco.cep": "cep",
         # Dados profissionais
         "matricula": "matricula",
-        "cargo.nome": "cargo_nome",
-        "departamento.nome": "departamento_nome",
+        "cargo.nome": "cargo",
+        "departamento.nome": "departamento",
         "gestor_nome": "gestor_nome",
         "data_admissao": "data_admissao",
         "data_demissao": "data_demissao",
@@ -156,11 +151,7 @@ class SolidesIntegrationService:
             "errors": 0,
         }
 
-    async def sync_employee(
-        self,
-        solides_data: Dict[str, Any],
-        force_update: bool = False
-    ) -> SyncEmployeeResult:
+    async def sync_employee(self, solides_data: dict[str, Any], force_update: bool = False) -> SyncEmployeeResult:
         """
         Sincroniza um funcionario do Solides para Conecta PRO.
 
@@ -182,10 +173,7 @@ class SolidesIntegrationService:
         cpf = self._clean_cpf(solides_data.get("cpf"))
         nome = solides_data.get("nome", "Desconhecido")
 
-        logger.debug(
-            f"[SolidesIntegration] Sincronizando funcionario: "
-            f"solides_id={solides_id}, cpf={cpf}, nome={nome}"
-        )
+        logger.debug(f"[SolidesIntegration] Sincronizando funcionario: solides_id={solides_id}, cpf={cpf}, nome={nome}")
 
         # Validar dados obrigatorios
         if not solides_data.get("nome"):
@@ -197,7 +185,7 @@ class SolidesIntegrationService:
                 cpf=cpf,
                 name=nome,
                 changes=None,
-                error="Campo obrigatorio 'nome' ausente"
+                error="Campo obrigatorio 'nome' ausente",
             )
 
         if not cpf:
@@ -209,7 +197,7 @@ class SolidesIntegrationService:
                 cpf=None,
                 name=nome,
                 changes=None,
-                error="Campo obrigatorio 'cpf' ausente"
+                error="Campo obrigatorio 'cpf' ausente",
             )
 
         try:
@@ -218,20 +206,13 @@ class SolidesIntegrationService:
 
             if funcionario:
                 # Atualizar existente
-                return await self._update_employee(
-                    funcionario,
-                    solides_data,
-                    force_update
-                )
+                return await self._update_employee(funcionario, solides_data, force_update)
             else:
                 # Criar novo
                 return await self._create_employee(solides_data)
 
         except Exception as e:
-            logger.error(
-                f"[SolidesIntegration] Erro sincronizando {nome}: {e}",
-                exc_info=True
-            )
+            logger.error(f"[SolidesIntegration] Erro sincronizando {nome}: {e}", exc_info=True)
             return SyncEmployeeResult(
                 action=SyncAction.ERROR.value,
                 funcionario_id=None,
@@ -239,14 +220,10 @@ class SolidesIntegrationService:
                 cpf=cpf,
                 name=nome,
                 changes=None,
-                error=str(e)
+                error=str(e),
             )
 
-    async def sync_all_employees(
-        self,
-        employees: List[Dict[str, Any]],
-        batch_size: int = 50
-    ) -> SyncSummary:
+    async def sync_all_employees(self, employees: list[dict[str, Any]], batch_size: int = 50) -> SyncSummary:
         """
         Sincroniza todos os funcionarios em lote.
 
@@ -261,12 +238,11 @@ class SolidesIntegrationService:
             SyncSummary com estatisticas da sincronizacao
         """
         start_time = datetime.utcnow()
-        results: List[SyncEmployeeResult] = []
+        results: list[SyncEmployeeResult] = []
 
         total = len(employees)
         logger.info(
-            f"[SolidesIntegration] Iniciando sincronizacao de {total} funcionarios "
-            f"para condominio {self.condominio_id}"
+            f"[SolidesIntegration] Iniciando sincronizacao de {total} funcionarios para condominio {self.condominio_id}"
         )
 
         # Reset stats
@@ -290,9 +266,7 @@ class SolidesIntegrationService:
             # Commit em batches
             if i % batch_size == 0:
                 await self.db.commit()
-                logger.debug(
-                    f"[SolidesIntegration] Processados {i}/{total} funcionarios"
-                )
+                logger.debug(f"[SolidesIntegration] Processados {i}/{total} funcionarios")
 
         # Commit final
         await self.db.commit()
@@ -315,10 +289,10 @@ class SolidesIntegrationService:
             conflicts=self._stats["conflicts"],
             errors=self._stats["errors"],
             duration_seconds=duration,
-            details=results
+            details=results,
         )
 
-    async def get_sync_status(self) -> Dict[str, Any]:
+    async def get_sync_status(self) -> dict[str, Any]:
         """
         Retorna status da sincronizacao de funcionarios.
 
@@ -335,7 +309,7 @@ class SolidesIntegrationService:
             and_(
                 SolidesEntityMapping.condominio_id == self.condominio_id,
                 SolidesEntityMapping.entity_type == "colaboradores",
-                SolidesEntityMapping.is_active == True
+                SolidesEntityMapping.is_active,
             )
         )
         result = await self.db.execute(stmt)
@@ -345,10 +319,7 @@ class SolidesIntegrationService:
         last_sync = None
 
         if mappings:
-            last_sync = max(
-                (m.last_synced_at for m in mappings if m.last_synced_at),
-                default=None
-            )
+            last_sync = max((m.last_synced_at for m in mappings if m.last_synced_at), default=None)
 
         # Contar funcionarios locais sem mapeamento
         # (implementar conforme modelo Funcionario existir)
@@ -364,14 +335,10 @@ class SolidesIntegrationService:
             "mapping_stats": {
                 "active": sum(1 for m in mappings if m.is_active),
                 "inactive": sum(1 for m in mappings if not m.is_active),
-            }
+            },
         }
 
-    async def _find_existing_employee(
-        self,
-        solides_id: str,
-        cpf: str
-    ) -> Optional[Dict[str, Any]]:
+    async def _find_existing_employee(self, solides_id: str, cpf: str) -> dict[str, Any] | None:
         """
         Busca funcionario existente por solides_id ou CPF.
 
@@ -386,12 +353,7 @@ class SolidesIntegrationService:
         """
         # 1. Buscar por mapeamento Solides
         if solides_id:
-            mapping = get_entity_mapping(
-                self.db,
-                self.condominio_id,
-                "colaboradores",
-                solides_id=solides_id
-            )
+            mapping = get_entity_mapping(self.db, self.condominio_id, "colaboradores", solides_id=solides_id)
             if mapping and mapping.conecta_id:
                 funcionario = await self._load_employee_by_id(mapping.conecta_id)
                 if funcionario:
@@ -405,7 +367,7 @@ class SolidesIntegrationService:
 
         return None
 
-    async def _load_employee_by_id(self, employee_id: UUID) -> Optional[Dict[str, Any]]:
+    async def _load_employee_by_id(self, employee_id: UUID) -> dict[str, Any] | None:
         """
         Carrega funcionario pelo ID.
 
@@ -415,33 +377,18 @@ class SolidesIntegrationService:
         Returns:
             Dict com dados ou None
         """
-        # Implementacao depende do modelo Funcionario existente
-        # Exemplo usando query direta:
-        try:
-            from modules.hr.models import Funcionario  # type: ignore
+        from modules.operacional.models.employee import Employee
 
-            stmt = select(Funcionario).where(
-                and_(
-                    Funcionario.id == employee_id,
-                    Funcionario.condominio_id == self.condominio_id
-                )
-            )
-            result = await self.db.execute(stmt)
-            func = result.scalar_one_or_none()
+        stmt = select(Employee).where(Employee.id == employee_id)
+        result = await self.db.execute(stmt)
+        emp = result.scalar_one_or_none()
 
-            if func:
-                return self._employee_to_dict(func)
-        except ImportError:
-            logger.warning(
-                "[SolidesIntegration] Modelo Funcionario nao encontrado, "
-                "usando tabela generica"
-            )
-            # Fallback para query direta na tabela
-            pass
+        if emp:
+            return self._employee_to_dict(emp)
 
         return None
 
-    async def _load_employee_by_cpf(self, cpf: str) -> Optional[Dict[str, Any]]:
+    async def _load_employee_by_cpf(self, cpf: str) -> dict[str, Any] | None:
         """
         Carrega funcionario pelo CPF.
 
@@ -451,29 +398,18 @@ class SolidesIntegrationService:
         Returns:
             Dict com dados ou None
         """
-        try:
-            from modules.hr.models import Funcionario  # type: ignore
+        from modules.operacional.models.employee import Employee
 
-            stmt = select(Funcionario).where(
-                and_(
-                    Funcionario.cpf == cpf,
-                    Funcionario.condominio_id == self.condominio_id
-                )
-            )
-            result = await self.db.execute(stmt)
-            func = result.scalar_one_or_none()
+        stmt = select(Employee).where(Employee.cpf == cpf)
+        result = await self.db.execute(stmt)
+        emp = result.scalar_one_or_none()
 
-            if func:
-                return self._employee_to_dict(func)
-        except ImportError:
-            pass
+        if emp:
+            return self._employee_to_dict(emp)
 
         return None
 
-    async def _create_employee(
-        self,
-        solides_data: Dict[str, Any]
-    ) -> SyncEmployeeResult:
+    async def _create_employee(self, solides_data: dict[str, Any]) -> SyncEmployeeResult:
         """
         Cria novo funcionario a partir dos dados do Solides.
 
@@ -488,22 +424,21 @@ class SolidesIntegrationService:
         nome = solides_data.get("nome", "")
 
         # Mapear dados do Solides para formato interno
-        employee_data = solides_colaborador_to_employee(
-            solides_data,
-            self.condominio_id
-        )
+        employee_data = solides_colaborador_to_employee(solides_data, self.condominio_id)
 
         # Adicionar campos de controle
         employee_id = uuid4()
-        employee_data.update({
-            "id": employee_id,
-            "solides_id": solides_id,
-            "sync_source": SyncSource.SOLIDES.value,
-            "last_synced_at": datetime.utcnow(),
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "is_active": True,
-        })
+        employee_data.update(
+            {
+                "id": employee_id,
+                "solides_id": solides_id,
+                "sync_source": SyncSource.SOLIDES.value,
+                "last_synced_at": datetime.utcnow(),
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+                "is_active": True,
+            }
+        )
 
         try:
             # Criar funcionario
@@ -519,12 +454,10 @@ class SolidesIntegrationService:
                     solides_id,
                     employee_id,
                     sync_source=SyncSource.SOLIDES,
-                    data_hash=compute_solides_entity_hash("colaboradores", solides_data)
+                    data_hash=compute_solides_entity_hash("colaboradores", solides_data),
                 )
 
-                logger.info(
-                    f"[SolidesIntegration] Funcionario criado: {nome} (ID: {employee_id})"
-                )
+                logger.info(f"[SolidesIntegration] Funcionario criado: {nome} (ID: {employee_id})")
 
                 return SyncEmployeeResult(
                     action=SyncAction.CREATED.value,
@@ -533,7 +466,7 @@ class SolidesIntegrationService:
                     cpf=cpf,
                     name=nome,
                     changes=None,
-                    error=None
+                    error=None,
                 )
 
         except Exception as e:
@@ -547,14 +480,11 @@ class SolidesIntegrationService:
             cpf=cpf,
             name=nome,
             changes=None,
-            error="Falha ao inserir funcionario"
+            error="Falha ao inserir funcionario",
         )
 
     async def _update_employee(
-        self,
-        existing: Dict[str, Any],
-        solides_data: Dict[str, Any],
-        force_update: bool = False
+        self, existing: dict[str, Any], solides_data: dict[str, Any], force_update: bool = False
     ) -> SyncEmployeeResult:
         """
         Atualiza funcionario existente com dados do Solides.
@@ -587,7 +517,7 @@ class SolidesIntegrationService:
                 cpf=cpf,
                 name=nome,
                 changes=None,
-                error=None
+                error=None,
             )
 
         # Mapear dados novos
@@ -604,15 +534,17 @@ class SolidesIntegrationService:
                 cpf=cpf,
                 name=nome,
                 changes=None,
-                error=None
+                error=None,
             )
 
         # Atualizar dados
-        new_data.update({
-            "updated_at": datetime.utcnow(),
-            "sync_source": SyncSource.SOLIDES.value,
-            "last_synced_at": datetime.utcnow(),
-        })
+        new_data.update(
+            {
+                "updated_at": datetime.utcnow(),
+                "sync_source": SyncSource.SOLIDES.value,
+                "last_synced_at": datetime.utcnow(),
+            }
+        )
 
         try:
             await self._update_employee_record(employee_id, new_data)
@@ -625,13 +557,10 @@ class SolidesIntegrationService:
                 solides_id,
                 employee_id,
                 sync_source=SyncSource.SOLIDES,
-                data_hash=new_hash
+                data_hash=new_hash,
             )
 
-            logger.info(
-                f"[SolidesIntegration] Funcionario atualizado: {nome} "
-                f"(campos: {list(changes.keys())})"
-            )
+            logger.info(f"[SolidesIntegration] Funcionario atualizado: {nome} (campos: {list(changes.keys())})")
 
             return SyncEmployeeResult(
                 action=SyncAction.UPDATED.value,
@@ -640,19 +569,16 @@ class SolidesIntegrationService:
                 cpf=cpf,
                 name=nome,
                 changes=changes,
-                error=None
+                error=None,
             )
 
         except Exception as e:
             logger.error(f"[SolidesIntegration] Erro atualizando funcionario: {e}")
             raise
 
-    async def _insert_employee(self, data: Dict[str, Any]) -> bool:
+    async def _insert_employee(self, data: dict[str, Any]) -> bool:
         """
         Insere funcionario no banco de dados.
-
-        Implementacao generica que pode ser adaptada para o modelo
-        especifico do projeto.
 
         Args:
             data: Dados do funcionario a inserir
@@ -660,28 +586,14 @@ class SolidesIntegrationService:
         Returns:
             True se inserido com sucesso
         """
-        try:
-            from modules.hr.models import Funcionario  # type: ignore
+        from modules.operacional.models.employee import Employee
 
-            funcionario = Funcionario(**self._prepare_insert_data(data))
-            self.db.add(funcionario)
-            await self.db.flush()
-            return True
+        employee = Employee(**self._prepare_insert_data(data))
+        self.db.add(employee)
+        await self.db.flush()
+        return True
 
-        except ImportError:
-            # Se modelo nao existe, tenta insert direto
-            logger.warning(
-                "[SolidesIntegration] Modelo Funcionario nao disponivel, "
-                "pulando insercao"
-            )
-            # Aqui poderia fazer insert direto na tabela se necessario
-            return False
-
-    async def _update_employee_record(
-        self,
-        employee_id: UUID,
-        data: Dict[str, Any]
-    ) -> bool:
+    async def _update_employee_record(self, employee_id: UUID, data: dict[str, Any]) -> bool:
         """
         Atualiza registro de funcionario no banco.
 
@@ -692,25 +604,13 @@ class SolidesIntegrationService:
         Returns:
             True se atualizado com sucesso
         """
-        try:
-            from modules.hr.models import Funcionario  # type: ignore
+        from modules.operacional.models.employee import Employee
 
-            stmt = (
-                update(Funcionario)
-                .where(Funcionario.id == employee_id)
-                .values(**self._prepare_update_data(data))
-            )
-            await self.db.execute(stmt)
-            return True
+        stmt = update(Employee).where(Employee.id == employee_id).values(**self._prepare_update_data(data))
+        await self.db.execute(stmt)
+        return True
 
-        except ImportError:
-            logger.warning(
-                "[SolidesIntegration] Modelo Funcionario nao disponivel, "
-                "pulando atualizacao"
-            )
-            return False
-
-    def _prepare_insert_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_insert_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Prepara dados para insercao, removendo campos nao mapeados.
 
@@ -720,24 +620,62 @@ class SolidesIntegrationService:
         Returns:
             Dados filtrados para insercao
         """
-        # Campos validos para o modelo Funcionario
+        # Campos validos do modelo Employee (tabela employees)
         valid_fields = {
-            "id", "condominio_id", "nome_completo", "email", "cpf", "rg",
-            "data_nascimento", "genero", "estado_civil", "telefone", "celular",
-            "endereco_logradouro", "endereco_numero", "endereco_complemento",
-            "endereco_bairro", "endereco_cidade", "endereco_uf", "endereco_cep",
-            "matricula", "cargo_nome", "cargo_id", "departamento_nome",
-            "departamento_id", "gestor_nome", "gestor_id", "data_admissao",
-            "data_demissao", "tipo_contrato", "regime_trabalho", "jornada_trabalho",
-            "salario_base", "ctps_numero", "ctps_serie", "ctps_uf", "pis",
-            "titulo_eleitor", "certificado_reservista", "foto_url", "status",
-            "solides_id", "sync_source", "last_synced_at", "created_at",
-            "updated_at", "is_active", "extra_data"
+            "id",
+            "solides_id",
+            "matricula",
+            "nome",
+            "nome_social",
+            "cpf",
+            "rg",
+            "data_nascimento",
+            "sexo",
+            "estado_civil",
+            "email",
+            "telefone",
+            "celular",
+            "cep",
+            "logradouro",
+            "numero",
+            "complemento",
+            "bairro",
+            "cidade",
+            "uf",
+            "cargo",
+            "cargo_id",
+            "departamento",
+            "departamento_id",
+            "centro_custo",
+            "gestor_id",
+            "gestor_nome",
+            "data_admissao",
+            "data_demissao",
+            "tipo_contrato",
+            "regime_trabalho",
+            "jornada_trabalho",
+            "salario_base",
+            "ctps_numero",
+            "ctps_serie",
+            "ctps_uf",
+            "pis",
+            "titulo_eleitor",
+            "certificado_reservista",
+            "foto_url",
+            "status",
+            "is_active",
+            "perfil_disc",
+            "dependentes",
+            "dados_adicionais",
+            "sync_source",
+            "last_synced_at",
+            "created_at",
+            "updated_at",
         }
 
         return {k: v for k, v in data.items() if k in valid_fields and v is not None}
 
-    def _prepare_update_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_update_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Prepara dados para atualizacao.
 
@@ -753,34 +691,47 @@ class SolidesIntegrationService:
         prepared = self._prepare_insert_data(data)
         return {k: v for k, v in prepared.items() if k not in readonly_fields}
 
-    def _employee_to_dict(self, employee: Any) -> Dict[str, Any]:
+    def _employee_to_dict(self, employee: Any) -> dict[str, Any]:
         """
-        Converte objeto Funcionario para dicionario.
+        Converte objeto Employee para dicionario.
 
         Args:
-            employee: Objeto do modelo Funcionario
+            employee: Objeto do modelo Employee
 
         Returns:
             Dict com atributos do funcionario
         """
         return {
             "id": employee.id,
-            "condominio_id": employee.condominio_id,
-            "nome_completo": getattr(employee, "nome_completo", None),
+            "nome": getattr(employee, "nome", None),
             "email": getattr(employee, "email", None),
             "cpf": getattr(employee, "cpf", None),
+            "rg": getattr(employee, "rg", None),
+            "sexo": getattr(employee, "sexo", None),
+            "estado_civil": getattr(employee, "estado_civil", None),
+            "telefone": getattr(employee, "telefone", None),
+            "celular": getattr(employee, "celular", None),
             "data_nascimento": getattr(employee, "data_nascimento", None),
+            "matricula": getattr(employee, "matricula", None),
+            "cargo": getattr(employee, "cargo", None),
+            "departamento": getattr(employee, "departamento", None),
+            "gestor_nome": getattr(employee, "gestor_nome", None),
             "data_admissao": getattr(employee, "data_admissao", None),
             "data_demissao": getattr(employee, "data_demissao", None),
+            "tipo_contrato": getattr(employee, "tipo_contrato", None),
+            "regime_trabalho": getattr(employee, "regime_trabalho", None),
+            "jornada_trabalho": getattr(employee, "jornada_trabalho", None),
+            "salario_base": getattr(employee, "salario_base", None),
             "status": getattr(employee, "status", None),
             "solides_id": getattr(employee, "solides_id", None),
-            "data_hash": getattr(employee, "data_hash", None),
+            "sync_source": getattr(employee, "sync_source", None),
+            "last_synced_at": getattr(employee, "last_synced_at", None),
             "created_at": getattr(employee, "created_at", None),
             "updated_at": getattr(employee, "updated_at", None),
         }
 
     @staticmethod
-    def _clean_cpf(cpf: Optional[str]) -> Optional[str]:
+    def _clean_cpf(cpf: str | None) -> str | None:
         """
         Remove formatacao do CPF, mantendo apenas digitos.
 
@@ -795,7 +746,7 @@ class SolidesIntegrationService:
         return "".join(filter(str.isdigit, cpf))
 
     @staticmethod
-    def _parse_date(date_val: Any) -> Optional[date]:
+    def _parse_date(date_val: Any) -> date | None:
         """
         Faz parse de data em varios formatos.
 
@@ -826,10 +777,8 @@ class SolidesIntegrationService:
 
 # ==================== FACTORY FUNCTIONS ====================
 
-def get_integration_service(
-    db: AsyncSession,
-    condominio_id: UUID
-) -> SolidesIntegrationService:
+
+def get_integration_service(db: AsyncSession, condominio_id: UUID) -> SolidesIntegrationService:
     """
     Factory para criar servico de integracao.
 
@@ -848,9 +797,7 @@ def get_integration_service(
 
 
 async def sync_employees_from_solides(
-    db: AsyncSession,
-    condominio_id: UUID,
-    employees_data: List[Dict[str, Any]]
+    db: AsyncSession, condominio_id: UUID, employees_data: list[dict[str, Any]]
 ) -> SyncSummary:
     """
     Funcao de conveniencia para sincronizar funcionarios.

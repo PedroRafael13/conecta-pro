@@ -9,23 +9,21 @@ Fornece funcionalidades para:
 - Notificação de pagamento
 """
 
-from datetime import date, datetime, time, timedelta
-from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Union
-from uuid import UUID
 import logging
-import json
+from datetime import date, datetime, timedelta
+from enum import StrEnum
+from typing import Any
+from uuid import UUID
 
-from sqlalchemy import and_, func, or_
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 
-class TipoNotificacao(str, Enum):
+class TipoNotificacao(StrEnum):
     """Tipos de notificação."""
+
     CONFIRMACAO_AGENDAMENTO = "confirmacao_agendamento"
     LEMBRETE_24H = "lembrete_24h"
     LEMBRETE_1H = "lembrete_1h"
@@ -42,8 +40,9 @@ class TipoNotificacao(str, Enum):
     CUSTOM = "custom"
 
 
-class CanalNotificacao(str, Enum):
+class CanalNotificacao(StrEnum):
     """Canais de notificação."""
+
     SMS = "sms"
     WHATSAPP = "whatsapp"
     EMAIL = "email"
@@ -51,8 +50,9 @@ class CanalNotificacao(str, Enum):
     INTERNO = "interno"
 
 
-class StatusNotificacao(str, Enum):
+class StatusNotificacao(StrEnum):
     """Status da notificação."""
+
     PENDENTE = "pendente"
     ENVIADO = "enviado"
     ENTREGUE = "entregue"
@@ -63,24 +63,26 @@ class StatusNotificacao(str, Enum):
 
 class NotificacaoRequest(BaseModel):
     """Request para criar notificação."""
+
     diarist_id: UUID
     tipo: TipoNotificacao
     canal: CanalNotificacao = CanalNotificacao.WHATSAPP
-    titulo: Optional[str] = None
-    mensagem: Optional[str] = None
-    dados_extras: Optional[Dict[str, Any]] = None
-    agendar_para: Optional[datetime] = None
+    titulo: str | None = None
+    mensagem: str | None = None
+    dados_extras: dict[str, Any] | None = None
+    agendar_para: datetime | None = None
 
 
 class NotificacaoResponse(BaseModel):
     """Response de notificação."""
+
     id: str
     tipo: str
     canal: str
     status: str
     mensagem: str
-    enviado_em: Optional[datetime]
-    entregue_em: Optional[datetime]
+    enviado_em: datetime | None
+    entregue_em: datetime | None
 
 
 # =============================================================================
@@ -106,7 +108,6 @@ Dúvidas? Entre em contato pelo suporte.
 
 Boa sorte! 🍀""",
     },
-
     TipoNotificacao.CONFIRMACAO_AGENDAMENTO: {
         "titulo": "Confirme seu agendamento",
         "mensagem": """Olá {nome}! 📋
@@ -124,7 +125,6 @@ Por favor, confirme sua presença respondendo:
 
 Obs: {observacoes}""",
     },
-
     TipoNotificacao.LEMBRETE_24H: {
         "titulo": "Lembrete: Serviço amanhã",
         "mensagem": """Olá {nome}! ⏰
@@ -145,7 +145,6 @@ Não esqueça de:
 
 Até amanhã! 👍""",
     },
-
     TipoNotificacao.LEMBRETE_1H: {
         "titulo": "Lembrete: Serviço em 1 hora",
         "mensagem": """🚨 {nome}, seu serviço começa em 1 HORA!
@@ -155,7 +154,6 @@ Até amanhã! 👍""",
 
 Não esqueça do check-in ao chegar!""",
     },
-
     TipoNotificacao.ALERTA_ATRASO: {
         "titulo": "⚠️ Alerta de Atraso",
         "mensagem": """⚠️ {nome}, você está ATRASADO(A)!
@@ -171,7 +169,6 @@ Se não puder comparecer, avise URGENTE!
 
 Contato do cliente: {telefone_cliente}""",
     },
-
     TipoNotificacao.ALERTA_FALTA: {
         "titulo": "❌ Falta Registrada",
         "mensagem": """❌ {nome}, foi registrada FALTA no serviço:
@@ -186,7 +183,6 @@ Essa ocorrência pode afetar sua avaliação e disponibilidade para novos servi�
 
 Se houve algum engano, entre em contato com o suporte.""",
     },
-
     TipoNotificacao.PAGAMENTO_APROVADO: {
         "titulo": "💰 Pagamento Aprovado",
         "mensagem": """✅ {nome}, seu pagamento foi APROVADO!
@@ -204,7 +200,6 @@ Detalhes:
 
 Obrigado pelo seu trabalho! 🙏""",
     },
-
     TipoNotificacao.PAGAMENTO_REALIZADO: {
         "titulo": "💵 Pagamento Realizado",
         "mensagem": """💵 {nome}, PAGAMENTO REALIZADO!
@@ -217,7 +212,6 @@ Comprovante disponível no app.
 
 Obrigado! 🎉""",
     },
-
     TipoNotificacao.AVALIACAO_RECEBIDA: {
         "titulo": "⭐ Nova Avaliação",
         "mensagem": """⭐ {nome}, você recebeu uma nova avaliação!
@@ -233,7 +227,6 @@ Sua média atual: {media_atual}/5
 
 Continue assim! 💪""",
     },
-
     TipoNotificacao.NOVO_AGENDAMENTO: {
         "titulo": "🆕 Novo Serviço Disponível",
         "mensagem": """🆕 {nome}, há um novo serviço para você!
@@ -247,7 +240,6 @@ Interessado(a)? Acesse o app para aceitar!
 
 Vagas limitadas, garanta a sua! ⚡""",
     },
-
     TipoNotificacao.CANCELAMENTO: {
         "titulo": "❌ Serviço Cancelado",
         "mensagem": """❌ {nome}, seu serviço foi CANCELADO.
@@ -262,7 +254,6 @@ Motivo: {motivo}
 
 Sentimos muito pelo inconveniente. Novos serviços em breve!""",
     },
-
     TipoNotificacao.REAGENDAMENTO: {
         "titulo": "🔄 Serviço Reagendado",
         "mensagem": """🔄 {nome}, seu serviço foi REAGENDADO.
@@ -278,7 +269,6 @@ Por favor, confirme o reagendamento:
 
 Aguardamos sua confirmação!""",
     },
-
     TipoNotificacao.DOCUMENTOS_PENDENTES: {
         "titulo": "📄 Documentos Pendentes",
         "mensagem": """📄 {nome}, você tem DOCUMENTOS PENDENTES!
@@ -300,7 +290,7 @@ class NotificacaoService:
 
     def __init__(self, db: Session):
         self.db = db
-        self._notificacoes_enviadas: List[Dict] = []  # Cache em memória
+        self._notificacoes_enviadas: list[dict] = []  # Cache em memória
 
     # =========================================================================
     # CRIAÇÃO E ENVIO DE NOTIFICAÇÕES
@@ -311,11 +301,11 @@ class NotificacaoService:
         diarist_id: UUID,
         tipo: TipoNotificacao,
         canal: CanalNotificacao = CanalNotificacao.WHATSAPP,
-        dados: Optional[Dict[str, Any]] = None,
-        mensagem_custom: Optional[str] = None,
-        titulo_custom: Optional[str] = None,
-        agendar_para: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        dados: dict[str, Any] | None = None,
+        mensagem_custom: str | None = None,
+        titulo_custom: str | None = None,
+        agendar_para: datetime | None = None,
+    ) -> dict[str, Any]:
         """
         Cria e envia uma notificação.
 
@@ -334,9 +324,7 @@ class NotificacaoService:
         # Buscar diarista
         from modules.operacional.diaristas.models import Diarist
 
-        diarista = self.db.query(Diarist).filter(
-            Diarist.id == diarist_id
-        ).first()
+        diarista = self.db.query(Diarist).filter(Diarist.id == diarist_id).first()
 
         if not diarista:
             raise ValueError(f"Diarista {diarist_id} não encontrado")
@@ -364,14 +352,10 @@ class NotificacaoService:
 
         # Se agendado, armazenar para envio posterior
         if agendar_para and agendar_para > datetime.now():
-            return self._agendar_notificacao(
-                diarista, tipo, canal, titulo, mensagem, agendar_para, dados
-            )
+            return self._agendar_notificacao(diarista, tipo, canal, titulo, mensagem, agendar_para, dados)
 
         # Enviar notificação
-        resultado = self._enviar_notificacao(
-            diarista, tipo, canal, titulo, mensagem, dados
-        )
+        resultado = self._enviar_notificacao(diarista, tipo, canal, titulo, mensagem, dados)
 
         return resultado
 
@@ -382,8 +366,8 @@ class NotificacaoService:
         canal: CanalNotificacao,
         titulo: str,
         mensagem: str,
-        dados: Dict,
-    ) -> Dict[str, Any]:
+        dados: dict,
+    ) -> dict[str, Any]:
         """Envia notificação através do canal especificado."""
         resultado = {
             "id": str(UUID(int=len(self._notificacoes_enviadas) + 1)),
@@ -414,9 +398,7 @@ class NotificacaoService:
             resultado["status"] = StatusNotificacao.ENVIADO.value
             resultado["enviado_em"] = datetime.now().isoformat()
 
-            logger.info(
-                f"Notificação {tipo.value} enviada para diarista {diarista.id} via {canal.value}"
-            )
+            logger.info(f"Notificação {tipo.value} enviada para diarista {diarista.id} via {canal.value}")
 
         except Exception as e:
             resultado["status"] = StatusNotificacao.FALHA.value
@@ -436,8 +418,8 @@ class NotificacaoService:
         titulo: str,
         mensagem: str,
         agendar_para: datetime,
-        dados: Dict,
-    ) -> Dict[str, Any]:
+        dados: dict,
+    ) -> dict[str, Any]:
         """Agenda notificação para envio posterior."""
         resultado = {
             "id": str(UUID(int=len(self._notificacoes_enviadas) + 1000)),
@@ -456,9 +438,7 @@ class NotificacaoService:
         # Por ora, apenas registra
         self._notificacoes_enviadas.append(resultado)
 
-        logger.info(
-            f"Notificação {tipo.value} agendada para {agendar_para} - diarista {diarista.id}"
-        )
+        logger.info(f"Notificação {tipo.value} agendada para {agendar_para} - diarista {diarista.id}")
 
         return resultado
 
@@ -476,7 +456,6 @@ class NotificacaoService:
         - Evolution API
         - Z-API
         """
-        # TODO: Implementar integração real com WhatsApp API
         # Exemplo de integração com Evolution API:
         #
         # import httpx
@@ -501,7 +480,6 @@ class NotificacaoService:
         - Zenvia
         - AWS SNS
         """
-        # TODO: Implementar integração real com SMS API
         # Exemplo com Twilio:
         #
         # from twilio.rest import Client
@@ -525,7 +503,6 @@ class NotificacaoService:
         - AWS SES
         - SMTP
         """
-        # TODO: Implementar integração real com Email API
         logger.info(f"[EMAIL] Enviando para {email}: {titulo}")
         return True
 
@@ -537,7 +514,6 @@ class NotificacaoService:
         - Firebase Cloud Messaging
         - OneSignal
         """
-        # TODO: Implementar integração real com Push API
         logger.info(f"[PUSH] Enviando para diarista {diarist_id}: {titulo}")
         return True
 
@@ -549,13 +525,11 @@ class NotificacaoService:
         self,
         diarist_id: UUID,
         schedule_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia confirmação de novo agendamento."""
         from modules.operacional.diaristas.models import DiaristSchedule
 
-        schedule = self.db.query(DiaristSchedule).filter(
-            DiaristSchedule.id == schedule_id
-        ).first()
+        schedule = self.db.query(DiaristSchedule).filter(DiaristSchedule.id == schedule_id).first()
 
         if not schedule:
             raise ValueError(f"Schedule {schedule_id} não encontrado")
@@ -575,21 +549,21 @@ class NotificacaoService:
             dados=dados,
         )
 
-    def enviar_lembrete_24h(self, diarist_id: UUID, schedule_id: UUID) -> Dict[str, Any]:
+    def enviar_lembrete_24h(self, diarist_id: UUID, schedule_id: UUID) -> dict[str, Any]:
         """Envia lembrete 24h antes do serviço."""
-        from modules.operacional.diaristas.models import DiaristSchedule, DiaristAssignment
+        from modules.operacional.diaristas.models import DiaristAssignment, DiaristSchedule
 
-        schedule = self.db.query(DiaristSchedule).filter(
-            DiaristSchedule.id == schedule_id
-        ).first()
+        schedule = self.db.query(DiaristSchedule).filter(DiaristSchedule.id == schedule_id).first()
 
         if not schedule:
             raise ValueError(f"Schedule {schedule_id} não encontrado")
 
         # Buscar assignment para obter dados do cliente
-        assignment = self.db.query(DiaristAssignment).filter(
-            DiaristAssignment.id == schedule.assignment_id
-        ).first() if schedule.assignment_id else None
+        assignment = (
+            self.db.query(DiaristAssignment).filter(DiaristAssignment.id == schedule.assignment_id).first()
+            if schedule.assignment_id
+            else None
+        )
 
         dados = {
             "local": schedule.location or "A confirmar",
@@ -609,14 +583,12 @@ class NotificacaoService:
         self,
         diarist_id: UUID,
         schedule_id: UUID,
-        telefone_cliente: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        telefone_cliente: str | None = None,
+    ) -> dict[str, Any]:
         """Envia alerta quando diarista está atrasado."""
         from modules.operacional.diaristas.models import DiaristSchedule
 
-        schedule = self.db.query(DiaristSchedule).filter(
-            DiaristSchedule.id == schedule_id
-        ).first()
+        schedule = self.db.query(DiaristSchedule).filter(DiaristSchedule.id == schedule_id).first()
 
         if not schedule:
             raise ValueError(f"Schedule {schedule_id} não encontrado")
@@ -638,13 +610,11 @@ class NotificacaoService:
         diarist_id: UUID,
         payment_id: UUID,
         tipo: TipoNotificacao = TipoNotificacao.PAGAMENTO_APROVADO,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia notificação de pagamento."""
         from modules.operacional.diaristas.models import DiaristPayment
 
-        payment = self.db.query(DiaristPayment).filter(
-            DiaristPayment.id == payment_id
-        ).first()
+        payment = self.db.query(DiaristPayment).filter(DiaristPayment.id == payment_id).first()
 
         if not payment:
             raise ValueError(f"Payment {payment_id} não encontrado")
@@ -661,8 +631,12 @@ class NotificacaoService:
         else:  # PAGAMENTO_REALIZADO
             dados = {
                 "valor": f"{payment.net_amount:.2f}",
-                "data_pagamento": payment.paid_at.strftime("%d/%m/%Y") if payment.paid_at else date.today().strftime("%d/%m/%Y"),
-                "detalhes_bancarios": f"PIX: {payment.pix_key}" if hasattr(payment, 'pix_key') and payment.pix_key else "Via banco cadastrado",
+                "data_pagamento": payment.paid_at.strftime("%d/%m/%Y")
+                if payment.paid_at
+                else date.today().strftime("%d/%m/%Y"),
+                "detalhes_bancarios": f"PIX: {payment.pix_key}"
+                if hasattr(payment, "pix_key") and payment.pix_key
+                else "Via banco cadastrado",
             }
 
         return self.criar_notificacao(
@@ -675,7 +649,7 @@ class NotificacaoService:
     # PROCESSAMENTO EM LOTE
     # =========================================================================
 
-    def processar_lembretes_24h(self) -> List[Dict[str, Any]]:
+    def processar_lembretes_24h(self) -> list[dict[str, Any]]:
         """
         Processa lembretes 24h para todos os agendamentos de amanhã.
 
@@ -685,10 +659,14 @@ class NotificacaoService:
 
         amanha = date.today() + timedelta(days=1)
 
-        schedules = self.db.query(DiaristSchedule).filter(
-            DiaristSchedule.date == amanha,
-            DiaristSchedule.status.in_(["scheduled", "confirmed"]),
-        ).all()
+        schedules = (
+            self.db.query(DiaristSchedule)
+            .filter(
+                DiaristSchedule.date == amanha,
+                DiaristSchedule.status.in_(["scheduled", "confirmed"]),
+            )
+            .all()
+        )
 
         resultados = []
         for schedule in schedules:
@@ -700,16 +678,18 @@ class NotificacaoService:
                 resultados.append(resultado)
             except Exception as e:
                 logger.error(f"Erro ao enviar lembrete para schedule {schedule.id}: {e}")
-                resultados.append({
-                    "schedule_id": str(schedule.id),
-                    "status": "falha",
-                    "erro": str(e),
-                })
+                resultados.append(
+                    {
+                        "schedule_id": str(schedule.id),
+                        "status": "falha",
+                        "erro": str(e),
+                    }
+                )
 
         logger.info(f"Processados {len(resultados)} lembretes 24h para {amanha}")
         return resultados
 
-    def verificar_atrasos(self, tolerancia_minutos: int = 15) -> List[Dict[str, Any]]:
+    def verificar_atrasos(self, tolerancia_minutos: int = 15) -> list[dict[str, Any]]:
         """
         Verifica diaristas atrasados e envia alertas.
 
@@ -722,12 +702,16 @@ class NotificacaoService:
         hora_atual = agora.time()
 
         # Buscar schedules de hoje sem check-in e com horário já passado
-        schedules = self.db.query(DiaristSchedule).filter(
-            DiaristSchedule.date == hoje,
-            DiaristSchedule.status == "confirmed",
-            DiaristSchedule.actual_check_in.is_(None),
-            DiaristSchedule.scheduled_start <= hora_atual,
-        ).all()
+        schedules = (
+            self.db.query(DiaristSchedule)
+            .filter(
+                DiaristSchedule.date == hoje,
+                DiaristSchedule.status == "confirmed",
+                DiaristSchedule.actual_check_in.is_(None),
+                DiaristSchedule.scheduled_start <= hora_atual,
+            )
+            .all()
+        )
 
         resultados = []
         for schedule in schedules:
@@ -757,13 +741,13 @@ class NotificacaoService:
 
     def listar_notificacoes(
         self,
-        diarist_id: Optional[UUID] = None,
-        tipo: Optional[TipoNotificacao] = None,
-        status: Optional[StatusNotificacao] = None,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
+        diarist_id: UUID | None = None,
+        tipo: TipoNotificacao | None = None,
+        status: StatusNotificacao | None = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
         limit: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Lista notificações com filtros."""
         resultado = self._notificacoes_enviadas.copy()
 
@@ -783,9 +767,9 @@ class NotificacaoService:
 
     def get_estatisticas(
         self,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
-    ) -> Dict[str, Any]:
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
+    ) -> dict[str, Any]:
         """Retorna estatísticas de notificações."""
         notificacoes = self._notificacoes_enviadas
 

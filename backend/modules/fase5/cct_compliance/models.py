@@ -4,20 +4,14 @@ modules/fase5/cct_compliance/models.py - CCT Models
 Modelos de dados para compliance CCT SINDCOND 2026
 """
 
-from typing import Dict, List, Optional, Any
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID, uuid4
-from pydantic import BaseModel, Field, ConfigDict
 
-from .enums import (
-    TipoCargo,
-    TipoJornada,
-    TipoBeneficio,
-    StatusValidacao,
-    GrauInsalubridade,
-    GrauPericulosidade
-)
+from pydantic import BaseModel, ConfigDict, Field
+
+from .enums import StatusValidacao, TipoBeneficio, TipoCargo, TipoJornada
 
 
 class SalarioBase(BaseModel):
@@ -36,9 +30,7 @@ class SalarioBase(BaseModel):
     @property
     def salario_com_reajuste(self) -> Decimal:
         """Calcula salario com reajuste."""
-        return (self.piso_salarial * (1 + self.reajuste_percentual / 100)).quantize(
-            Decimal("0.01")
-        )
+        return (self.piso_salarial * (1 + self.reajuste_percentual / 100)).quantize(Decimal("0.01"))
 
 
 class Beneficio(BaseModel):
@@ -47,8 +39,8 @@ class Beneficio(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     tipo: TipoBeneficio
-    valor_diario: Optional[Decimal] = None
-    valor_mensal: Optional[Decimal] = None
+    valor_diario: Decimal | None = None
+    valor_mensal: Decimal | None = None
     obrigatorio: bool = True
     descricao: str = ""
 
@@ -79,9 +71,7 @@ class JornadaTrabalho(BaseModel):
     @property
     def carga_horaria_mensal(self) -> Decimal:
         """Calcula carga horaria mensal."""
-        return (Decimal(str(self.horas_semanais)) * Decimal("4.33")).quantize(
-            Decimal("0.01")
-        )
+        return (Decimal(str(self.horas_semanais)) * Decimal("4.33")).quantize(Decimal("0.01"))
 
 
 class CargoSINDCOND(BaseModel):
@@ -97,11 +87,11 @@ class CargoSINDCOND(BaseModel):
     salario_base: SalarioBase
 
     # Jornada
-    jornadas_permitidas: List[TipoJornada]
+    jornadas_permitidas: list[TipoJornada]
     jornada_padrao: TipoJornada
 
     # Beneficios obrigatorios
-    beneficios_obrigatorios: List[TipoBeneficio]
+    beneficios_obrigatorios: list[TipoBeneficio]
 
     # Adicionais
     permite_insalubridade: bool = False
@@ -120,7 +110,7 @@ class ValidacaoCCT(BaseModel):
     """Resultado de validacao CCT."""
 
     validacao_id: UUID = Field(default_factory=uuid4)
-    funcionario_id: Optional[UUID] = None
+    funcionario_id: UUID | None = None
     cargo: TipoCargo
     data_validacao: datetime = Field(default_factory=datetime.utcnow)
 
@@ -135,22 +125,22 @@ class ValidacaoCCT(BaseModel):
     diferenca_salario: Decimal = Field(default=Decimal("0"))
 
     jornada_conforme: bool = False
-    jornada_informada: Optional[TipoJornada] = None
+    jornada_informada: TipoJornada | None = None
 
     beneficios_conformes: bool = False
-    beneficios_faltantes: List[TipoBeneficio] = Field(default_factory=list)
+    beneficios_faltantes: list[TipoBeneficio] = Field(default_factory=list)
 
     # Alertas e recomendacoes
-    alertas: List[str] = Field(default_factory=list)
-    recomendacoes: List[str] = Field(default_factory=list)
+    alertas: list[str] = Field(default_factory=list)
+    recomendacoes: list[str] = Field(default_factory=list)
 
     # Detalhes
-    detalhes: Dict[str, Any] = Field(default_factory=dict)
+    detalhes: dict[str, Any] = Field(default_factory=dict)
 
     def calcular_score(self) -> None:
         """Calcula score de conformidade."""
         pontos = Decimal("0")
-        peso_total = Decimal("100")
+        Decimal("100")
 
         # Salario: 40 pontos
         if self.salario_conforme:
@@ -176,14 +166,13 @@ class ValidacaoCCT(BaseModel):
 
 
 # Tabela de Pisos Salariais SINDCOND 2026 (com reajuste de 7.1%)
-TABELA_PISOS_SINDCOND_2026: Dict[TipoCargo, Decimal] = {
+TABELA_PISOS_SINDCOND_2026: dict[TipoCargo, Decimal] = {
     # Portaria
     TipoCargo.PORTEIRO: Decimal("1847.12"),
     TipoCargo.PORTEIRO_LIDER: Decimal("2124.19"),
     TipoCargo.CONTROLADOR_ACESSO: Decimal("1847.12"),
     TipoCargo.VIGIA: Decimal("1724.51"),
     TipoCargo.VIGILANTE: Decimal("2456.78"),
-
     # Limpeza
     TipoCargo.ZELADOR: Decimal("1970.23"),
     TipoCargo.FAXINEIRO: Decimal("1601.90"),
@@ -191,7 +180,6 @@ TABELA_PISOS_SINDCOND_2026: Dict[TipoCargo, Decimal] = {
     TipoCargo.ENCARREGADO_LIMPEZA: Decimal("2247.30"),
     TipoCargo.JARDINEIRO: Decimal("1724.51"),
     TipoCargo.PISCINEIRO: Decimal("1847.12"),
-
     # Manutencao
     TipoCargo.AUXILIAR_MANUTENCAO: Decimal("1724.51"),
     TipoCargo.ELETRICISTA: Decimal("2370.41"),
@@ -199,27 +187,23 @@ TABELA_PISOS_SINDCOND_2026: Dict[TipoCargo, Decimal] = {
     TipoCargo.PINTOR: Decimal("1970.23"),
     TipoCargo.PEDREIRO: Decimal("2124.19"),
     TipoCargo.MARCENEIRO: Decimal("2124.19"),
-
     # Administrativo
     TipoCargo.SINDICO_PROFISSIONAL: Decimal("4500.00"),
     TipoCargo.GERENTE_PREDIAL: Decimal("3800.00"),
     TipoCargo.AUXILIAR_ADMINISTRATIVO: Decimal("1847.12"),
     TipoCargo.RECEPCIONISTA: Decimal("1724.51"),
     TipoCargo.SECRETARIA: Decimal("1970.23"),
-
     # Especializado
     TipoCargo.ASCENSORISTA: Decimal("1847.12"),
     TipoCargo.GARAGISTA: Decimal("1724.51"),
     TipoCargo.MANOBRISTA: Decimal("1847.12"),
     TipoCargo.FOLGUISTA: Decimal("1724.51"),
     TipoCargo.MOTORISTA: Decimal("2247.30"),
-
     # Supervisao
     TipoCargo.SUPERVISOR_PORTARIA: Decimal("2616.63"),
     TipoCargo.SUPERVISOR_LIMPEZA: Decimal("2493.52"),
     TipoCargo.SUPERVISOR_MANUTENCAO: Decimal("2739.74"),
     TipoCargo.ENCARREGADO_GERAL: Decimal("2862.85"),
-
     # Outros
     TipoCargo.CASEIRO: Decimal("1847.12"),
     TipoCargo.GOVERNANTA: Decimal("2247.30"),
@@ -228,27 +212,23 @@ TABELA_PISOS_SINDCOND_2026: Dict[TipoCargo, Decimal] = {
 }
 
 # Beneficios obrigatorios CCT 2026
-BENEFICIOS_CCT_2026: Dict[TipoBeneficio, Beneficio] = {
+BENEFICIOS_CCT_2026: dict[TipoBeneficio, Beneficio] = {
     TipoBeneficio.VALE_ALIMENTACAO: Beneficio(
         tipo=TipoBeneficio.VALE_ALIMENTACAO,
         valor_diario=Decimal("22.00"),
         obrigatorio=True,
-        descricao="Vale alimentacao R$ 22,00/dia trabalhado"
+        descricao="Vale alimentacao R$ 22,00/dia trabalhado",
     ),
     TipoBeneficio.CESTA_BASICA: Beneficio(
         tipo=TipoBeneficio.CESTA_BASICA,
         valor_mensal=Decimal("18.00"),
         obrigatorio=True,
-        descricao="Auxilio cesta basica R$ 18,00/mes"
+        descricao="Auxilio cesta basica R$ 18,00/mes",
     ),
     TipoBeneficio.VALE_TRANSPORTE: Beneficio(
-        tipo=TipoBeneficio.VALE_TRANSPORTE,
-        obrigatorio=True,
-        descricao="Vale transporte conforme legislacao"
+        tipo=TipoBeneficio.VALE_TRANSPORTE, obrigatorio=True, descricao="Vale transporte conforme legislacao"
     ),
     TipoBeneficio.SEGURO_VIDA: Beneficio(
-        tipo=TipoBeneficio.SEGURO_VIDA,
-        obrigatorio=True,
-        descricao="Seguro de vida em grupo"
+        tipo=TipoBeneficio.SEGURO_VIDA, obrigatorio=True, descricao="Seguro de vida em grupo"
     ),
 }

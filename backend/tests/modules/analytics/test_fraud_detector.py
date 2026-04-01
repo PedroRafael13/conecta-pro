@@ -1,23 +1,23 @@
 """Testes para o Fraud Detector."""
 
-import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import numpy as np
+import pytest
 
-from modules.analytics.models.fraud.fraud_detector import (
-    FraudDetector,
-    FraudAlert,
-    FraudType,
-    FraudRiskLevel,
-    AlertStatus,
-    RuleViolation,
-    FraudIndicator,
-    FraudAnalytics,
-)
 from modules.analytics.ml.registry.model_registry import ModelRegistry
+from modules.analytics.models.fraud.fraud_detector import (
+    AlertStatus,
+    FraudAlert,
+    FraudAnalytics,
+    FraudDetector,
+    FraudIndicator,
+    FraudRiskLevel,
+    FraudType,
+    RuleViolation,
+)
 
 
 @pytest.fixture
@@ -172,9 +172,7 @@ class TestRuleChecking:
 
         # Pode ter algumas violações menores, mas não as principais
         critical_rules = ["R001", "R002", "R003"]
-        critical_violations = [
-            v for v in violations if v.rule_id in critical_rules
-        ]
+        critical_violations = [v for v in violations if v.rule_id in critical_rules]
         assert len(critical_violations) == 0
 
 
@@ -199,10 +197,7 @@ class TestSessionAnalysis:
         alert = await fraud_detector.analyze_user_session(mock_db, session)
 
         # Assert
-        assert any(
-            i.indicator_type == "new_device"
-            for i in alert.indicators
-        )
+        assert any(i.indicator_type == "new_device" for i in alert.indicators)
 
     @pytest.mark.asyncio
     async def test_analyze_location_anomaly(
@@ -222,10 +217,7 @@ class TestSessionAnalysis:
         alert = await fraud_detector.analyze_user_session(mock_db, session)
 
         # Assert
-        assert any(
-            i.indicator_type == "location_anomaly"
-            for i in alert.indicators
-        )
+        assert any(i.indicator_type == "location_anomaly" for i in alert.indicators)
         assert alert.risk_score > 40
 
     @pytest.mark.asyncio
@@ -245,10 +237,7 @@ class TestSessionAnalysis:
         alert = await fraud_detector.analyze_user_session(mock_db, session)
 
         # Assert
-        assert any(
-            i.indicator_type == "failed_attempts"
-            for i in alert.indicators
-        )
+        assert any(i.indicator_type == "failed_attempts" for i in alert.indicators)
 
 
 class TestRiskClassification:
@@ -359,11 +348,14 @@ class TestAlertManagement:
         """Deve retornar alertas abertos."""
         # Arrange - criar alguns alertas
         for i in range(5):
-            await fraud_detector.analyze_transaction(mock_db, {
-                "id": f"tx_{i}",
-                "user_id": 1,
-                "amount": 15000,
-            })
+            await fraud_detector.analyze_transaction(
+                mock_db,
+                {
+                    "id": f"tx_{i}",
+                    "user_id": 1,
+                    "amount": 15000,
+                },
+            )
 
         # Act
         open_alerts = fraud_detector.get_open_alerts(limit=10)

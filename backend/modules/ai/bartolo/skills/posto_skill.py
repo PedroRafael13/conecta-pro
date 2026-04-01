@@ -3,7 +3,7 @@ Skill /posto - Gerenciamento de postos de trabalho via comando
 """
 
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -35,7 +35,7 @@ class PostoSkill(BaseSkill):
         super().__init__(data_connector=data_connector)
         self.db = db
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando de posto."""
 
         if not command or command == "help":
@@ -60,14 +60,14 @@ class PostoSkill(BaseSkill):
             "suggestions": self.commands[:4],
         }
 
-    async def _listar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _listar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar postos com filtros opcionais."""
         # Tenta buscar dados reais
         if self.db:
             try:
+                from modules.operacional.models.post import PostStatus, PostType
                 from modules.operacional.repositories.post_repository import PostRepository
                 from modules.operacional.schemas.post import PostFilter
-                from modules.operacional.models.post import PostStatus, PostType, ShiftType
 
                 repo = PostRepository(self.db)
 
@@ -110,8 +110,10 @@ class PostoSkill(BaseSkill):
                     lines = []
                     for p in posts[:15]:
                         status_icon = {
-                            "active": "🟢", "inactive": "🔴",
-                            "temporary": "🟡", "suspended": "⚫",
+                            "active": "🟢",
+                            "inactive": "🔴",
+                            "temporary": "🟡",
+                            "suspended": "⚫",
                         }.get(p.status, "⚪")
                         lines.append(
                             f"- {status_icon} **{p.code}** - {p.name} | "
@@ -152,7 +154,7 @@ Use `/posto ver POST-XXXX` para detalhes.""",
             "suggestions": ["/posto stats", "/posto cobertura", "/posto help"],
         }
 
-    async def _ver(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _ver(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ver detalhes de um posto."""
         if not args:
             return {
@@ -173,12 +175,14 @@ Use `/posto ver POST-XXXX` para detalhes.""",
 
                 if post:
                     status_label = {
-                        "active": "Ativo 🟢", "inactive": "Inativo 🔴",
-                        "temporary": "Temporario 🟡", "suspended": "Suspenso ⚫",
+                        "active": "Ativo 🟢",
+                        "inactive": "Inativo 🔴",
+                        "temporary": "Temporario 🟡",
+                        "suspended": "Suspenso ⚫",
                     }.get(post.status, post.status)
 
-                    shift_start = post.shift_start_time.strftime('%H:%M') if post.shift_start_time else 'N/A'
-                    shift_end = post.shift_end_time.strftime('%H:%M') if post.shift_end_time else 'N/A'
+                    shift_start = post.shift_start_time.strftime("%H:%M") if post.shift_start_time else "N/A"
+                    shift_end = post.shift_end_time.strftime("%H:%M") if post.shift_end_time else "N/A"
 
                     req_items = []
                     if post.requires_armed:
@@ -200,11 +204,11 @@ Use `/posto ver POST-XXXX` para detalhes.""",
 | Custo mensal | R$ {post.monthly_cost:,.2f} |
 | Valor hora | R$ {post.hourly_rate:,.2f} |
 | Requisitos | {requisitos} |
-| Endereco | {post.address or 'N/A'} |
-| Cidade | {post.city or 'N/A'}/{post.state or 'N/A'} |
+| Endereco | {post.address or "N/A"} |
+| Cidade | {post.city or "N/A"}/{post.state or "N/A"} |
 
-**Descricao:** {post.description or 'N/A'}
-**Supervisor:** {post.supervisor_name or 'N/A'} ({post.supervisor_phone or 'N/A'})"""
+**Descricao:** {post.description or "N/A"}
+**Supervisor:** {post.supervisor_name or "N/A"} ({post.supervisor_phone or "N/A"})"""
 
                     return {
                         "response": response,
@@ -249,7 +253,7 @@ Use `/posto ver POST-XXXX` para detalhes.""",
             ],
         }
 
-    async def _criar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _criar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Criar novo posto."""
         if not args:
             return {
@@ -269,7 +273,20 @@ Use `/posto ver POST-XXXX` para detalhes.""",
         # Se o nome tem mais palavras antes do tipo, juntar
         tipo = "vigilante"
         turno = "diurno"
-        tipos_validos = ["vigilante", "porteiro", "recepcionista", "controlador_acesso", "supervisor", "lider", "rondante", "monitoramento", "manutencao", "servicos_gerais", "jardinagem", "portaria"]
+        tipos_validos = [
+            "vigilante",
+            "porteiro",
+            "recepcionista",
+            "controlador_acesso",
+            "supervisor",
+            "lider",
+            "rondante",
+            "monitoramento",
+            "manutencao",
+            "servicos_gerais",
+            "jardinagem",
+            "portaria",
+        ]
         turnos_validos = ["diurno", "noturno", "manha", "tarde", "noite", "administrativo", "12x36", "integral"]
 
         nome_parts = []
@@ -312,7 +329,7 @@ Use `/posto ver POST-XXXX` para detalhes.""",
             ],
         }
 
-    async def _atualizar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _atualizar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Atualizar posto existente."""
         if not args:
             return {
@@ -350,7 +367,7 @@ Informe os campos a atualizar:
             "response": f"""✏️ **Atualizar Posto {code}**
 
 Campos para atualizacao:
-{chr(10).join(f'- {c}' for c in campos)}
+{chr(10).join(f"- {c}" for c in campos)}
 
 **Confirmar atualizacao?**""",
             "data": {"codigo": code, "campos": campos},
@@ -365,7 +382,7 @@ Campos para atualizacao:
             ],
         }
 
-    async def _requisitos(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _requisitos(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ver requisitos de um posto."""
         if not args:
             return {
@@ -452,7 +469,7 @@ Campos para atualizacao:
             "suggestions": [f"/posto ver {code}", f"/posto cobertura {code}", "/posto listar"],
         }
 
-    async def _stats(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _stats(self, args: list[str], context: dict) -> dict[str, Any]:
         """Estatisticas dos postos."""
         if self.db:
             try:
@@ -462,9 +479,11 @@ Campos para atualizacao:
                 stats = await repo.get_stats()
 
                 if stats.total > 0:
-                    cobertura_pct = round(
-                        (stats.total_allocated / stats.total_headcount) * 100, 1
-                    ) if stats.total_headcount > 0 else 0
+                    cobertura_pct = (
+                        round((stats.total_allocated / stats.total_headcount) * 100, 1)
+                        if stats.total_headcount > 0
+                        else 0
+                    )
 
                     # Top tipos
                     tipo_lines = []
@@ -484,7 +503,7 @@ Campos para atualizacao:
 **Por Tipo:**
 | Tipo | Qtd |
 |------|-----|
-{chr(10).join(tipo_lines) if tipo_lines else '| - | 0 |'}"""
+{chr(10).join(tipo_lines) if tipo_lines else "| - | 0 |"}"""
 
                     return {
                         "response": response,
@@ -504,9 +523,9 @@ Campos para atualizacao:
                 result = await self.data_connector._get_main_kpis()
                 if result.success and result.data:
                     kpis = result.data
-                    efetivo = kpis.get('efetivo_alocado', 0)
-                    requerido = kpis.get('efetivo_requerido', 0)
-                    custo = kpis.get('custo_mensal_total', 0)
+                    efetivo = kpis.get("efetivo_alocado", 0)
+                    requerido = kpis.get("efetivo_requerido", 0)
+                    custo = kpis.get("custo_mensal_total", 0)
                     cobertura = round((efetivo / requerido) * 100, 1) if requerido > 0 else 0
 
                     return {
@@ -551,7 +570,7 @@ Campos para atualizacao:
             "suggestions": ["/posto cobertura", "/posto listar", "/posto help"],
         }
 
-    async def _cobertura(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _cobertura(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ver cobertura dos postos."""
         code = None
         if args:
@@ -569,9 +588,11 @@ Campos para atualizacao:
                     # Cobertura de posto especifico
                     post = await repo.get_by_code(code)
                     if post:
-                        cob_pct = round(
-                            (post.current_headcount / post.required_headcount) * 100, 1
-                        ) if post.required_headcount > 0 else 0
+                        cob_pct = (
+                            round((post.current_headcount / post.required_headcount) * 100, 1)
+                            if post.required_headcount > 0
+                            else 0
+                        )
                         icon = "🟢" if cob_pct >= 80 else "🟡" if cob_pct >= 50 else "🔴"
 
                         response = f"""{icon} **COBERTURA - {post.code}** ({post.name})

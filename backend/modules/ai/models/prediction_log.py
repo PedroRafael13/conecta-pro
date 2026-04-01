@@ -109,8 +109,4 @@ class PredictionLog(Base):
         """Retorna tempo total."""
         if self.total_time_ms:
             return self.total_time_ms
-        return (
-            (self.preprocessing_time_ms or 0)
-            + (self.inference_time_ms or 0)
-            + (self.postprocessing_time_ms or 0)
-        )
+        return (self.preprocessing_time_ms or 0) + (self.inference_time_ms or 0) + (self.postprocessing_time_ms or 0)

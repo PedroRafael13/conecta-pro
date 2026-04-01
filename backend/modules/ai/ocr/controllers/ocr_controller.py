@@ -20,6 +20,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 
+from core.auth.dependencies import CurrentActiveUser
 from core.security.file_validator import ocr_file_validator
 from modules.ai.ocr.models.document_scan import DocumentScanStatus, DocumentScanType
 from modules.ai.ocr.schemas.ocr_schemas import (
@@ -68,6 +69,7 @@ _validations: dict = {}
     summary="Upload de documento",
 )
 async def upload_document(
+    current_user: CurrentActiveUser,
     file: UploadFile = File(...),
     document_type: DocumentScanType | None = None,
     template_id: str | None = None,
@@ -131,6 +133,7 @@ async def upload_document(
 )
 async def process_document(
     scan_id: str,
+    current_user: CurrentActiveUser,
     request: ProcessDocumentRequest | None = None,
 ):
     """Processa documento com OCR.
@@ -279,7 +282,7 @@ async def process_document(
     "/batch",
     summary="Processamento em lote",
 )
-async def batch_process(request: BatchProcessRequest):
+async def batch_process(current_user: CurrentActiveUser, request: BatchProcessRequest):
     """Processa multiplos documentos em lote.
 
     Args:
@@ -335,6 +338,7 @@ async def batch_process(request: BatchProcessRequest):
     summary="Lista scans",
 )
 async def list_scans(
+    current_user: CurrentActiveUser,
     status: DocumentScanStatus | None = None,
     document_type: DocumentScanType | None = None,
     requires_review: bool | None = None,
@@ -391,7 +395,7 @@ async def list_scans(
     response_model=DocumentScanResponse,
     summary="Detalhes do scan",
 )
-async def get_scan(scan_id: str):
+async def get_scan(current_user: CurrentActiveUser, scan_id: str):
     """Obtem detalhes de um scan.
 
     Args:
@@ -416,7 +420,7 @@ async def get_scan(scan_id: str):
     response_model=DocumentScanResponse,
     summary="Atualiza scan",
 )
-async def update_scan(scan_id: str, update: DocumentScanUpdate):
+async def update_scan(scan_id: str, current_user: CurrentActiveUser, update: DocumentScanUpdate):
     """Atualiza dados de um scan.
 
     Args:
@@ -451,7 +455,7 @@ async def update_scan(scan_id: str, update: DocumentScanUpdate):
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove scan",
 )
-async def delete_scan(scan_id: str):
+async def delete_scan(current_user: CurrentActiveUser, scan_id: str):
     """Remove um scan.
 
     Args:
@@ -479,7 +483,7 @@ async def delete_scan(scan_id: str):
     response_model=list[ExtractedFieldResponse],
     summary="Lista campos extraidos",
 )
-async def get_extracted_fields(scan_id: str):
+async def get_extracted_fields(current_user: CurrentActiveUser, scan_id: str):
     """Lista campos extraidos de um scan.
 
     Args:
@@ -507,6 +511,7 @@ async def correct_field(
     scan_id: str,
     field_id: str,
     correction: ExtractedFieldCorrection,
+    current_user: CurrentActiveUser,
 ):
     """Corrige valor de um campo extraido.
 
@@ -554,7 +559,7 @@ async def correct_field(
     response_model=ValidationResultResponse,
     summary="Resultado de validacao",
 )
-async def get_validation_result(scan_id: str):
+async def get_validation_result(current_user: CurrentActiveUser, scan_id: str):
     """Obtem resultado de validacao de um scan.
 
     Args:
@@ -584,7 +589,7 @@ async def get_validation_result(scan_id: str):
     response_model=ValidationResultResponse,
     summary="Revalida documento",
 )
-async def revalidate_document(scan_id: str):
+async def revalidate_document(current_user: CurrentActiveUser, scan_id: str):
     """Revalida campos de um documento (apos correcoes).
 
     Args:
@@ -640,7 +645,7 @@ async def revalidate_document(scan_id: str):
     status_code=status.HTTP_201_CREATED,
     summary="Cria template",
 )
-async def create_template(template: DocumentTemplateCreate):
+async def create_template(current_user: CurrentActiveUser, template: DocumentTemplateCreate):
     """Cria template de documento.
 
     Args:
@@ -689,6 +694,7 @@ async def create_template(template: DocumentTemplateCreate):
     summary="Lista templates",
 )
 async def list_templates(
+    current_user: CurrentActiveUser,
     document_type: DocumentScanType | None = None,
     active: bool | None = True,
 ):
@@ -719,7 +725,7 @@ async def list_templates(
     response_model=DocumentTemplateResponse,
     summary="Detalhes do template",
 )
-async def get_template(template_id: str):
+async def get_template(current_user: CurrentActiveUser, template_id: str):
     """Obtem detalhes de um template.
 
     Args:
@@ -748,7 +754,7 @@ async def get_template(template_id: str):
     "/stats",
     summary="Estatisticas OCR",
 )
-async def get_stats():
+async def get_stats(current_user: CurrentActiveUser):
     """Retorna estatisticas do servico OCR.
 
     Returns:

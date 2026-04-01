@@ -6,10 +6,8 @@ coletando tipo, titulo, conteudo, prioridade e destinatarios.
 """
 
 from datetime import datetime
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
 
 class ComunicadoWizard(BaseWizard):
@@ -60,7 +58,6 @@ class ComunicadoWizard(BaseWizard):
                     "- Urgente: Comunicado urgente"
                 ),
             ),
-
             # 2. Titulo
             WizardStep(
                 id="titulo",
@@ -72,7 +69,6 @@ class ComunicadoWizard(BaseWizard):
                 validation_rules={"min_length": 5, "max_length": 200},
                 help_text="Informe um titulo claro e objetivo. Ex: 'Alteracao de procedimento de acesso'",
             ),
-
             # 3. Conteudo
             WizardStep(
                 id="conteudo",
@@ -84,7 +80,6 @@ class ComunicadoWizard(BaseWizard):
                 validation_rules={"min_length": 10, "max_length": 5000},
                 help_text="Escreva o conteudo completo do comunicado. Seja claro e objetivo.",
             ),
-
             # 4. Prioridade
             WizardStep(
                 id="prioridade",
@@ -107,7 +102,6 @@ class ComunicadoWizard(BaseWizard):
                     "- Urgente: Notificacao push imediata"
                 ),
             ),
-
             # 5. Destinatarios
             WizardStep(
                 id="destinatarios",
@@ -125,7 +119,6 @@ class ComunicadoWizard(BaseWizard):
                 ],
                 help_text="Selecione o grupo de destinatarios do comunicado.",
             ),
-
             # 6. Detalhe destinatarios (condicional)
             WizardStep(
                 id="destinatarios_detalhe",
@@ -136,12 +129,14 @@ class ComunicadoWizard(BaseWizard):
                 required=False,
                 validation_rules={"min_length": 2, "max_length": 500},
                 help_text="Informe os nomes, IDs ou postos separados por virgula.",
-                skip_condition=lambda data: data.get("destinatarios") in (
-                    "Todos os funcionarios",
-                    "Apenas supervisores/gestores",
+                skip_condition=lambda data: (
+                    data.get("destinatarios")
+                    in (
+                        "Todos os funcionarios",
+                        "Apenas supervisores/gestores",
+                    )
                 ),
             ),
-
             # 7. Requer confirmacao de leitura
             WizardStep(
                 id="requer_confirmacao",
@@ -159,7 +154,6 @@ class ComunicadoWizard(BaseWizard):
                     "Recomendado para comunicados importantes."
                 ),
             ),
-
             # 8. Publicacao
             WizardStep(
                 id="publicacao",
@@ -175,7 +169,6 @@ class ComunicadoWizard(BaseWizard):
                 ],
                 help_text="Escolha quando o comunicado sera publicado e enviado.",
             ),
-
             # 9. Data agendamento (condicional)
             WizardStep(
                 id="data_agendamento",
@@ -188,7 +181,6 @@ class ComunicadoWizard(BaseWizard):
                 help_text="Formato: DD/MM/AAAA HH:MM",
                 skip_condition=lambda data: data.get("publicacao") != "Agendar publicacao",
             ),
-
             # 10. Confirmacao
             WizardStep(
                 id="confirmacao",
@@ -290,28 +282,36 @@ class ComunicadoWizard(BaseWizard):
         steps = []
 
         if pub_action == "publish":
-            steps.extend([
-                "Comunicado sera publicado imediatamente",
-                "Destinatarios serao notificados",
-            ])
+            steps.extend(
+                [
+                    "Comunicado sera publicado imediatamente",
+                    "Destinatarios serao notificados",
+                ]
+            )
             if prioridade in ("alta", "urgente"):
                 steps.append("Notificacao push sera enviada com prioridade")
         elif pub_action == "draft":
-            steps.extend([
-                "Comunicado salvo como rascunho",
-                "Revisar e editar antes de publicar",
-                "Publicar quando estiver pronto",
-            ])
+            steps.extend(
+                [
+                    "Comunicado salvo como rascunho",
+                    "Revisar e editar antes de publicar",
+                    "Publicar quando estiver pronto",
+                ]
+            )
         elif pub_action == "schedule":
-            steps.extend([
-                "Comunicado sera publicado na data agendada",
-                "Verificar se a data de agendamento esta correta",
-            ])
+            steps.extend(
+                [
+                    "Comunicado sera publicado na data agendada",
+                    "Verificar se a data de agendamento esta correta",
+                ]
+            )
 
-        steps.extend([
-            "Acompanhar metricas de leitura",
-            "Verificar confirmacoes de leitura (se habilitado)",
-        ])
+        steps.extend(
+            [
+                "Acompanhar metricas de leitura",
+                "Verificar confirmacoes de leitura (se habilitado)",
+            ]
+        )
 
         return steps
 
@@ -320,28 +320,34 @@ class ComunicadoWizard(BaseWizard):
         alerts = []
 
         if prioridade == "urgente":
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    "Comunicado URGENTE: Notificacao push sera enviada imediatamente "
-                    "a todos os destinatarios. Certifique-se do conteudo."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        "Comunicado URGENTE: Notificacao push sera enviada imediatamente "
+                        "a todos os destinatarios. Certifique-se do conteudo."
+                    ),
+                }
+            )
 
         if not requer_ack and prioridade in ("alta", "urgente"):
-            alerts.append({
-                "tipo": "info",
-                "mensagem": (
-                    "Comunicado de alta prioridade sem confirmacao de leitura. "
-                    "Considere habilitar para garantir ciencia de todos."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": (
+                        "Comunicado de alta prioridade sem confirmacao de leitura. "
+                        "Considere habilitar para garantir ciencia de todos."
+                    ),
+                }
+            )
 
         dest = data.get("destinatarios", "")
         if dest == "Todos os funcionarios":
-            alerts.append({
-                "tipo": "info",
-                "mensagem": "Comunicado sera enviado para TODOS os funcionarios do sistema.",
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": "Comunicado sera enviado para TODOS os funcionarios do sistema.",
+                }
+            )
 
         return alerts

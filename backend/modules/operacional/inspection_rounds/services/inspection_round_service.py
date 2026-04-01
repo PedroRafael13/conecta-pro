@@ -5,34 +5,28 @@ Author: Conecta PRO Team
 Date: 2026-01-23
 """
 
+import builtins
 import logging
 from datetime import datetime
-from typing import List, Optional, Tuple
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import (
+    InspectionCheckpoint,
     InspectionRound,
     InspectionRoundStatus,
     InspectorRole,
-    InspectionCheckpoint,
-    CheckpointType,
-    CheckpointStatus,
 )
 from ..repositories import InspectionRoundRepository
 from ..schemas import (
-    InspectionRoundCreate,
-    InspectionRoundUpdate,
-    InspectionRoundFilter,
     CheckpointCreate,
-    CheckpointUpdate,
-    StartRoundRequest,
     CompleteRoundRequest,
-    RegisterOccurrenceRequest,
-    ApplyDisciplinaryRequest,
     InspectionDashboardStats,
+    InspectionRoundCreate,
+    InspectionRoundFilter,
+    InspectionRoundUpdate,
     InspectorStats,
+    StartRoundRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,11 +34,13 @@ logger = logging.getLogger(__name__)
 
 class InspectionRoundNotFoundError(Exception):
     """Ronda nao encontrada."""
+
     pass
 
 
 class InspectionRoundValidationError(Exception):
     """Erro de validacao."""
+
     pass
 
 
@@ -63,9 +59,7 @@ class InspectionRoundService:
         """Cria uma nova ronda de inspecao."""
         valid_roles = [r.value for r in InspectorRole]
         if data.inspector_role not in valid_roles:
-            raise InspectionRoundValidationError(
-                f"Cargo invalido. Valores validos: {valid_roles}"
-            )
+            raise InspectionRoundValidationError(f"Cargo invalido. Valores validos: {valid_roles}")
 
         year = datetime.utcnow().year
         sequence = await self.repository.get_next_sequence(str(data.tenant_id), year)
@@ -105,11 +99,11 @@ class InspectionRoundService:
 
     async def list(
         self,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
         skip: int = 0,
         limit: int = 100,
-        filters: Optional[InspectionRoundFilter] = None,
-    ) -> Tuple[List[InspectionRound], int]:
+        filters: InspectionRoundFilter | None = None,
+    ) -> tuple[list[InspectionRound], int]:
         """Lista rondas com filtros."""
         return await self.repository.list(tenant_id, skip, limit, filters)
 
@@ -121,9 +115,7 @@ class InspectionRoundService:
             InspectionRoundStatus.AGENDADA.value,
             InspectionRoundStatus.PAUSADA.value,
         ]:
-            raise InspectionRoundValidationError(
-                "Ronda nao pode ser editada no status atual"
-            )
+            raise InspectionRoundValidationError("Ronda nao pode ser editada no status atual")
 
         if data.scheduled_date is not None:
             inspection_round.scheduled_date = data.scheduled_date
@@ -141,9 +133,7 @@ class InspectionRoundService:
         inspection_round = await self.get_by_id(round_id)
 
         if inspection_round.status == InspectionRoundStatus.EM_ANDAMENTO.value:
-            raise InspectionRoundValidationError(
-                "Nao e possivel deletar ronda em andamento"
-            )
+            raise InspectionRoundValidationError("Nao e possivel deletar ronda em andamento")
 
         await self.repository.delete(inspection_round)
         logger.info(f"Ronda deletada: {inspection_round.code}")
@@ -155,7 +145,7 @@ class InspectionRoundService:
     async def start_round(
         self,
         round_id: str,
-        data: Optional[StartRoundRequest] = None,
+        data: StartRoundRequest | None = None,
     ) -> InspectionRound:
         """Inicia uma ronda."""
         inspection_round = await self.get_by_id(round_id)
@@ -164,9 +154,7 @@ class InspectionRoundService:
             InspectionRoundStatus.AGENDADA.value,
             InspectionRoundStatus.PAUSADA.value,
         ]:
-            raise InspectionRoundValidationError(
-                f"Ronda no status '{inspection_round.status}' nao pode ser iniciada"
-            )
+            raise InspectionRoundValidationError(f"Ronda no status '{inspection_round.status}' nao pode ser iniciada")
 
         latitude = data.latitude if data else None
         longitude = data.longitude if data else None
@@ -206,7 +194,7 @@ class InspectionRoundService:
     async def complete_round(
         self,
         round_id: str,
-        data: Optional[CompleteRoundRequest] = None,
+        data: CompleteRoundRequest | None = None,
     ) -> InspectionRound:
         """Conclui uma ronda."""
         inspection_round = await self.get_by_id(round_id)
@@ -225,13 +213,10 @@ class InspectionRoundService:
 
         await self.repository.update(inspection_round)
 
-        logger.info(
-            f"Ronda concluida: {inspection_round.code} - "
-            f"{inspection_round.total_occurrences} ocorrencias"
-        )
+        logger.info(f"Ronda concluida: {inspection_round.code} - {inspection_round.total_occurrences} ocorrencias")
         return inspection_round
 
-    async def cancel_round(self, round_id: str, reason: Optional[str] = None) -> InspectionRound:
+    async def cancel_round(self, round_id: str, reason: str | None = None) -> InspectionRound:
         """Cancela uma ronda."""
         inspection_round = await self.get_by_id(round_id)
 
@@ -290,7 +275,7 @@ class InspectionRoundService:
         logger.info(f"Checkpoint criado na ronda {inspection_round.code}")
         return checkpoint
 
-    async def get_checkpoints(self, round_id: str) -> List[InspectionCheckpoint]:
+    async def get_checkpoints(self, round_id: str) -> builtins.list[InspectionCheckpoint]:
         """Lista checkpoints de uma ronda."""
         return await self.repository.get_checkpoints_by_round(round_id)
 
@@ -298,7 +283,7 @@ class InspectionRoundService:
     # ESTATISTICAS
     # ==========================================================================
 
-    async def get_dashboard_stats(self, tenant_id: Optional[str] = None) -> InspectionDashboardStats:
+    async def get_dashboard_stats(self, tenant_id: str | None = None) -> InspectionDashboardStats:
         """Retorna estatisticas do dashboard."""
         status_counts = await self.repository.count_by_status(tenant_id)
         in_progress = await self.repository.get_rounds_in_progress(tenant_id)
@@ -327,7 +312,7 @@ class InspectionRoundService:
             top_infraction_categories=[],
         )
 
-    async def get_inspector_stats(self, tenant_id: str, limit: int = 10) -> List[InspectorStats]:
+    async def get_inspector_stats(self, tenant_id: str, limit: int = 10) -> builtins.list[InspectorStats]:
         """Retorna estatisticas por inspetor."""
         stats = await self.repository.get_stats_by_inspector(tenant_id, limit)
         return [InspectorStats(**s) for s in stats]

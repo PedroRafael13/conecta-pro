@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-;
+import { useCondominio } from '@/contexts/CondominioContext';
 import {
   useReceivables,
   useReceivableDashboard,
@@ -37,6 +37,8 @@ import {
 } from '@/hooks/financial/useFinancial';
 import { ReceivableFormModal } from '@/components/financeiro/receivable-form-modal';
 import { ReceivableDetailModal } from '@/components/financeiro/receivable-detail-modal';
+import type { ReceivableAccountListResponse } from '@/types/generated/financial/models/receivableAccountListResponse';
+import type { ReceivableAccountCreate } from '@/types/generated/financial/models/receivableAccountCreate';
 
 const formatCurrency = (value: number | null | undefined) =>
   (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -66,6 +68,7 @@ const getStatusBadge = (status?: string | null) => {
 };
 
 export default function ContasReceberPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [customerFilter, setCustomerFilter] = useState('');
@@ -86,7 +89,7 @@ export default function ContasReceberPage() {
     error: queryError,
     refetch,
   } = useReceivables({
-    condominio_id: '',
+    condominio_id: condominioId,
     skip,
     limit,
     ...(search ? { search } : {}),
@@ -96,9 +99,9 @@ export default function ContasReceberPage() {
   const { data: dashboard } = useReceivableDashboard();
   const { mutateAsync: createReceivable, isPending: creating } = useCreateReceivable();
 
-  const receivables: any[] = Array.isArray(receivablesData)
-    ? receivablesData
-    : (receivablesData as any)?.data || [];
+  const receivables: ReceivableAccountListResponse[] = Array.isArray(receivablesData)
+    ? (receivablesData as ReceivableAccountListResponse[])
+    : ((receivablesData as { data?: ReceivableAccountListResponse[] })?.data ?? []);
 
   // Filter locally by customer if set
   const filteredReceivables = receivables.filter((item: any) => {
@@ -131,36 +134,33 @@ export default function ContasReceberPage() {
     setReceiveModalOpen(true);
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: ReceivableAccountCreate) => {
     try {
       await createReceivable({ data });
       setFormModalOpen(false);
       setSelectedReceivable(null);
-      // refetch() removido - mutations já invalidam queries automaticamente
     } catch (err) {
-      console.error('Erro ao salvar conta a receber:', err);
+      void err;
     }
   };
 
   const handleDelete = async () => {
-    // Cancel the receivable (soft delete via status change)
     setDeleteModalOpen(false);
     setSelectedReceivable(null);
-    // refetch() removido - mutations já invalidam queries automaticamente
   };
 
   const handleReceive = async () => {
-    // Register the reception
     setReceiveModalOpen(false);
     setSelectedReceivable(null);
-    // refetch() removido - mutations já invalidam queries automaticamente
   };
 
+  type ReceivableStats = { total_count?: number; overdue_count?: number };
+  const dashboardTyped = dashboard as ReceivableStats | undefined;
   const stats = {
-    total: (dashboard as any)?.total || 0,
-    due_today: (dashboard as any)?.due_today || 0,
-    overdue: (dashboard as any)?.overdue || 0,
-    received: (dashboard as any)?.paid || (dashboard as any)?.received || 0,
+    total: dashboardTyped?.total_count ?? 0,
+    due_today: 0,
+    overdue: dashboardTyped?.overdue_count ?? 0,
+    received: 0,
   };
 
   return (

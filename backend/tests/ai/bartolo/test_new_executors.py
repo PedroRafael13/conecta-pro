@@ -16,26 +16,28 @@ Date: 2026-01-30
 """
 
 import sys
-sys.path.insert(0, '/app')
+
+sys.path.insert(0, "/app")
+
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime
 
-from modules.ai.bartolo.actions.action_schemas import ActionRequest, ActionPreview, ActionResult
-from modules.ai.bartolo.actions.action_types import ActionType, ActionCategory, ActionStatus
-from modules.ai.bartolo.actions.executors.substitution_executor import SubstitutionActionExecutor
+from modules.ai.bartolo.actions.action_schemas import ActionPreview, ActionRequest, ActionResult
+from modules.ai.bartolo.actions.action_types import ActionCategory, ActionStatus, ActionType
 from modules.ai.bartolo.actions.executors.notification_executor import NotificationActionExecutor
 from modules.ai.bartolo.actions.executors.report_executor import (
-    ReportActionExecutor,
-    REPORT_TYPES,
     EXPORT_FORMATS,
+    REPORT_TYPES,
+    ReportActionExecutor,
 )
-
+from modules.ai.bartolo.actions.executors.substitution_executor import SubstitutionActionExecutor
 
 # =============================================================================
 # Fixtures compartilhadas
 # =============================================================================
+
 
 @pytest.fixture
 def mock_db():
@@ -65,6 +67,7 @@ def report_executor(mock_db):
 # =============================================================================
 # Helpers
 # =============================================================================
+
 
 def _make_request(
     action_type: ActionType,
@@ -121,6 +124,7 @@ def _report_request(parameters: dict, message: str = "gerar relatorio") -> Actio
 # TestSubstitutionActionExecutor
 # =============================================================================
 
+
 class TestSubstitutionActionExecutor:
     """Testes para SubstitutionActionExecutor."""
 
@@ -143,14 +147,16 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_all_parameters(self, substitution_executor):
         """Testa create_preview com todos os parametros preenchidos."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-            "post_code": "POST-101",
-            "start_date": "2026-02-01",
-            "end_date": "2026-02-15",
-            "reason": "Ferias do titular",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+                "post_code": "POST-101",
+                "start_date": "2026-02-01",
+                "end_date": "2026-02-15",
+                "reason": "Ferias do titular",
+            }
+        )
 
         preview = await substitution_executor.create_preview(request)
 
@@ -171,10 +177,12 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_missing_employee_id_warning(self, substitution_executor):
         """Testa que preview gera warning quando employee_id esta ausente."""
-        request = _substitution_request({
-            "substitute_id": "EMP-002",
-            "post_code": "POST-101",
-        })
+        request = _substitution_request(
+            {
+                "substitute_id": "EMP-002",
+                "post_code": "POST-101",
+            }
+        )
 
         preview = await substitution_executor.create_preview(request)
 
@@ -184,10 +192,12 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_missing_substitute_id_warning(self, substitution_executor):
         """Testa que preview gera warning quando substitute_id esta ausente."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "post_code": "POST-101",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "post_code": "POST-101",
+            }
+        )
 
         preview = await substitution_executor.create_preview(request)
 
@@ -197,10 +207,12 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_missing_start_date_warning(self, substitution_executor):
         """Testa que preview gera warning quando start_date esta ausente."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+            }
+        )
 
         preview = await substitution_executor.create_preview(request)
 
@@ -209,11 +221,13 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_missing_end_date_warning(self, substitution_executor):
         """Testa que preview gera warning quando end_date esta ausente."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-            "start_date": "2026-02-01",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+                "start_date": "2026-02-01",
+            }
+        )
 
         preview = await substitution_executor.create_preview(request)
 
@@ -222,11 +236,13 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_affected_entities(self, substitution_executor):
         """Testa que affected_entities inclui titular e substituto."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-            "post_code": "POST-101",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+                "post_code": "POST-101",
+            }
+        )
 
         preview = await substitution_executor.create_preview(request)
 
@@ -240,10 +256,12 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_qualification_warning(self, substitution_executor):
         """Testa que preview gera warning de qualificacao quando ambos IDs presentes."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+            }
+        )
 
         preview = await substitution_executor.create_preview(request)
 
@@ -304,14 +322,16 @@ class TestSubstitutionActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.substitution_executor._HAS_SUBSTITUICAO_REPO", False)
     async def test_execute_valid_parameters(self, substitution_executor):
         """Testa execute com parametros validos retorna COMPLETED."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-            "post_code": "POST-101",
-            "start_date": "2026-02-01",
-            "end_date": "2026-02-15",
-            "reason": "Ferias",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+                "post_code": "POST-101",
+                "start_date": "2026-02-01",
+                "end_date": "2026-02-15",
+                "reason": "Ferias",
+            }
+        )
 
         result = await substitution_executor.execute(request, "action-001")
 
@@ -327,9 +347,11 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_execute_missing_employee_id_raises(self, substitution_executor):
         """Testa que execute sem employee_id retorna FAILED (ValueError capturada)."""
-        request = _substitution_request({
-            "substitute_id": "EMP-002",
-        })
+        request = _substitution_request(
+            {
+                "substitute_id": "EMP-002",
+            }
+        )
 
         result = await substitution_executor.execute(request, "action-002")
 
@@ -341,9 +363,11 @@ class TestSubstitutionActionExecutor:
     @pytest.mark.asyncio
     async def test_execute_missing_substitute_id_raises(self, substitution_executor):
         """Testa que execute sem substitute_id retorna FAILED (ValueError capturada)."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+            }
+        )
 
         result = await substitution_executor.execute(request, "action-003")
 
@@ -356,10 +380,12 @@ class TestSubstitutionActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.substitution_executor._HAS_SUBSTITUICAO_REPO", False)
     async def test_execute_result_has_affected_entities(self, substitution_executor):
         """Testa que resultado de execute inclui affected_entities."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+            }
+        )
 
         result = await substitution_executor.execute(request, "action-004")
 
@@ -372,10 +398,12 @@ class TestSubstitutionActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.substitution_executor._HAS_SUBSTITUICAO_REPO", False)
     async def test_execute_result_timing(self, substitution_executor):
         """Testa que resultado tem timestamps e duracao."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+            }
+        )
 
         result = await substitution_executor.execute(request, "action-005")
 
@@ -388,10 +416,12 @@ class TestSubstitutionActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.substitution_executor._HAS_SUBSTITUICAO_REPO", False)
     async def test_execute_default_reason(self, substitution_executor):
         """Testa que reason padrao e aplicado quando nao fornecido."""
-        request = _substitution_request({
-            "employee_id": "EMP-001",
-            "substitute_id": "EMP-002",
-        })
+        request = _substitution_request(
+            {
+                "employee_id": "EMP-001",
+                "substitute_id": "EMP-002",
+            }
+        )
 
         result = await substitution_executor.execute(request, "action-006")
 
@@ -401,6 +431,7 @@ class TestSubstitutionActionExecutor:
 # =============================================================================
 # TestNotificationActionExecutor
 # =============================================================================
+
 
 class TestNotificationActionExecutor:
     """Testes para NotificationActionExecutor."""
@@ -424,14 +455,16 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_all_parameters(self, notification_executor):
         """Testa create_preview com todos os parametros preenchidos."""
-        request = _notification_request({
-            "title": "Alerta de Seguranca",
-            "message": "Verificar posto central imediatamente",
-            "channel": "push",
-            "target_type": "user",
-            "target_ids": ["user-1", "user-2"],
-            "priority": "normal",
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta de Seguranca",
+                "message": "Verificar posto central imediatamente",
+                "channel": "push",
+                "target_type": "user",
+                "target_ids": ["user-1", "user-2"],
+                "priority": "normal",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -448,10 +481,12 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_missing_title_warning(self, notification_executor):
         """Testa que preview gera warning quando titulo ausente."""
-        request = _notification_request({
-            "message": "Corpo da mensagem",
-            "channel": "push",
-        })
+        request = _notification_request(
+            {
+                "message": "Corpo da mensagem",
+                "channel": "push",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -460,10 +495,12 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_missing_message_warning(self, notification_executor):
         """Testa que preview gera warning quando mensagem ausente."""
-        request = _notification_request({
-            "title": "Alerta",
-            "channel": "push",
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta",
+                "channel": "push",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -472,12 +509,14 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_target_type_all_warning(self, notification_executor):
         """Testa que preview gera warning para target_type 'all'."""
-        request = _notification_request({
-            "title": "Aviso Geral",
-            "message": "Reuniao amanha",
-            "channel": "push",
-            "target_type": "all",
-        })
+        request = _notification_request(
+            {
+                "title": "Aviso Geral",
+                "message": "Reuniao amanha",
+                "channel": "push",
+                "target_type": "all",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -487,13 +526,15 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_sms_channel_cost_warning(self, notification_executor):
         """Testa que preview gera warning de custo para canal SMS."""
-        request = _notification_request({
-            "title": "Alerta SMS",
-            "message": "Verificar posto",
-            "channel": "sms",
-            "target_type": "user",
-            "target_ids": ["user-1"],
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta SMS",
+                "message": "Verificar posto",
+                "channel": "sms",
+                "target_type": "user",
+                "target_ids": ["user-1"],
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -502,13 +543,15 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_all_channel_cost_warning(self, notification_executor):
         """Testa que preview gera warning de custo para canal 'all' (inclui SMS)."""
-        request = _notification_request({
-            "title": "Alerta",
-            "message": "Mensagem urgente",
-            "channel": "all",
-            "target_type": "user",
-            "target_ids": ["user-1"],
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta",
+                "message": "Mensagem urgente",
+                "channel": "all",
+                "target_type": "user",
+                "target_ids": ["user-1"],
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -517,11 +560,13 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_invalid_channel_warning(self, notification_executor):
         """Testa que preview gera warning para canal invalido."""
-        request = _notification_request({
-            "title": "Alerta",
-            "message": "Mensagem",
-            "channel": "telegram",
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta",
+                "message": "Mensagem",
+                "channel": "telegram",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -530,12 +575,14 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_high_priority_warning(self, notification_executor):
         """Testa que preview gera warning para prioridade alta."""
-        request = _notification_request({
-            "title": "Emergencia",
-            "message": "Evacuacao imediata",
-            "channel": "push",
-            "priority": "urgente",
-        })
+        request = _notification_request(
+            {
+                "title": "Emergencia",
+                "message": "Evacuacao imediata",
+                "channel": "push",
+                "priority": "urgente",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -545,13 +592,15 @@ class TestNotificationActionExecutor:
     async def test_create_preview_target_ids_count(self, notification_executor):
         """Testa que preview mostra contagem de destinatarios."""
         target_ids = [f"user-{i}" for i in range(10)]
-        request = _notification_request({
-            "title": "Aviso",
-            "message": "Corpo",
-            "channel": "push",
-            "target_type": "user",
-            "target_ids": target_ids,
-        })
+        request = _notification_request(
+            {
+                "title": "Aviso",
+                "message": "Corpo",
+                "channel": "push",
+                "target_type": "user",
+                "target_ids": target_ids,
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -563,13 +612,15 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_role_target(self, notification_executor):
         """Testa preview com target_type 'role'."""
-        request = _notification_request({
-            "title": "Aviso Supervisores",
-            "message": "Reuniao amanha",
-            "channel": "email",
-            "target_type": "role",
-            "target_roles": ["supervisor", "gerente"],
-        })
+        request = _notification_request(
+            {
+                "title": "Aviso Supervisores",
+                "message": "Reuniao amanha",
+                "channel": "email",
+                "target_type": "role",
+                "target_roles": ["supervisor", "gerente"],
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -579,11 +630,13 @@ class TestNotificationActionExecutor:
     async def test_create_preview_long_message_truncated(self, notification_executor):
         """Testa que mensagem longa e truncada no preview."""
         long_msg = "A" * 200
-        request = _notification_request({
-            "title": "Aviso",
-            "message": long_msg,
-            "channel": "push",
-        })
+        request = _notification_request(
+            {
+                "title": "Aviso",
+                "message": long_msg,
+                "channel": "push",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -594,10 +647,12 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_title_format_with_title(self, notification_executor):
         """Testa formato do titulo do preview quando titulo da notificacao presente."""
-        request = _notification_request({
-            "title": "Alerta Seguranca",
-            "message": "Corpo",
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta Seguranca",
+                "message": "Corpo",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -607,9 +662,11 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_title_format_without_title(self, notification_executor):
         """Testa formato do titulo do preview quando titulo ausente."""
-        request = _notification_request({
-            "message": "Corpo",
-        })
+        request = _notification_request(
+            {
+                "message": "Corpo",
+            }
+        )
 
         preview = await notification_executor.create_preview(request)
 
@@ -635,14 +692,16 @@ class TestNotificationActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.notification_executor._HAS_PUSH_SERVICE", False)
     async def test_execute_valid_parameters(self, notification_executor):
         """Testa execute com parametros validos retorna COMPLETED."""
-        request = _notification_request({
-            "title": "Alerta",
-            "message": "Verificar posto central",
-            "channel": "push",
-            "target_type": "user",
-            "target_ids": ["user-1", "user-2"],
-            "priority": "normal",
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta",
+                "message": "Verificar posto central",
+                "channel": "push",
+                "target_type": "user",
+                "target_ids": ["user-1", "user-2"],
+                "priority": "normal",
+            }
+        )
 
         result = await notification_executor.execute(request, "action-101")
 
@@ -657,10 +716,12 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_execute_missing_title_raises(self, notification_executor):
         """Testa que execute sem titulo retorna FAILED (ValueError capturada)."""
-        request = _notification_request({
-            "message": "Corpo da mensagem",
-            "channel": "push",
-        })
+        request = _notification_request(
+            {
+                "message": "Corpo da mensagem",
+                "channel": "push",
+            }
+        )
 
         result = await notification_executor.execute(request, "action-102")
 
@@ -672,10 +733,12 @@ class TestNotificationActionExecutor:
     @pytest.mark.asyncio
     async def test_execute_missing_message_raises(self, notification_executor):
         """Testa que execute sem mensagem retorna FAILED (ValueError capturada)."""
-        request = _notification_request({
-            "title": "Alerta",
-            "channel": "push",
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta",
+                "channel": "push",
+            }
+        )
 
         result = await notification_executor.execute(request, "action-103")
 
@@ -689,11 +752,13 @@ class TestNotificationActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.notification_executor._HAS_PUSH_SERVICE", False)
     async def test_execute_result_timing(self, notification_executor):
         """Testa que resultado tem timestamps e duracao."""
-        request = _notification_request({
-            "title": "Alerta",
-            "message": "Mensagem",
-            "channel": "push",
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta",
+                "message": "Mensagem",
+                "channel": "push",
+            }
+        )
 
         result = await notification_executor.execute(request, "action-104")
 
@@ -707,12 +772,14 @@ class TestNotificationActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.notification_executor._HAS_PUSH_SERVICE", False)
     async def test_execute_fallback_creates_notification_id(self, notification_executor):
         """Testa que fallback cria notification_id."""
-        request = _notification_request({
-            "title": "Alerta",
-            "message": "Mensagem",
-            "channel": "push",
-            "target_ids": ["user-1"],
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta",
+                "message": "Mensagem",
+                "channel": "push",
+                "target_ids": ["user-1"],
+            }
+        )
 
         result = await notification_executor.execute(request, "action-105")
 
@@ -723,11 +790,13 @@ class TestNotificationActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.notification_executor._HAS_PUSH_SERVICE", False)
     async def test_execute_affected_entities(self, notification_executor):
         """Testa que affected_entities inclui notificacoes."""
-        request = _notification_request({
-            "title": "Alerta",
-            "message": "Mensagem",
-            "channel": "push",
-        })
+        request = _notification_request(
+            {
+                "title": "Alerta",
+                "message": "Mensagem",
+                "channel": "push",
+            }
+        )
 
         result = await notification_executor.execute(request, "action-106")
 
@@ -739,12 +808,14 @@ class TestNotificationActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.notification_executor._HAS_PUSH_SERVICE", False)
     async def test_execute_no_target_ids_still_succeeds(self, notification_executor):
         """Testa que execute sem target_ids (fallback) ainda retorna sucesso."""
-        request = _notification_request({
-            "title": "Aviso Geral",
-            "message": "Corpo",
-            "channel": "push",
-            "target_type": "all",
-        })
+        request = _notification_request(
+            {
+                "title": "Aviso Geral",
+                "message": "Corpo",
+                "channel": "push",
+                "target_type": "all",
+            }
+        )
 
         result = await notification_executor.execute(request, "action-107")
 
@@ -755,6 +826,7 @@ class TestNotificationActionExecutor:
 # =============================================================================
 # TestReportActionExecutor
 # =============================================================================
+
 
 class TestReportActionExecutor:
     """Testes para ReportActionExecutor."""
@@ -778,9 +850,17 @@ class TestReportActionExecutor:
     def test_report_types_has_all_expected_types(self):
         """Testa que REPORT_TYPES contem todos os tipos esperados."""
         expected = [
-            "horas_extras", "custos", "banco_horas", "substituicoes",
-            "disciplinar", "ocorrencias", "diaristas", "rondas",
-            "postos", "escalas", "geral",
+            "horas_extras",
+            "custos",
+            "banco_horas",
+            "substituicoes",
+            "disciplinar",
+            "ocorrencias",
+            "diaristas",
+            "rondas",
+            "postos",
+            "escalas",
+            "geral",
         ]
         for report_type in expected:
             assert report_type in REPORT_TYPES, f"Tipo '{report_type}' ausente em REPORT_TYPES"
@@ -824,12 +904,14 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_valid_report_type(self, report_executor):
         """Testa create_preview com tipo de relatorio valido."""
-        request = _report_request({
-            "report_type": "horas_extras",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-            "format": "pdf",
-        })
+        request = _report_request(
+            {
+                "report_type": "horas_extras",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+                "format": "pdf",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -845,11 +927,13 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_unknown_report_type_warning(self, report_executor):
         """Testa que preview gera warning para tipo desconhecido."""
-        request = _report_request({
-            "report_type": "tipo_inexistente",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-        })
+        request = _report_request(
+            {
+                "report_type": "tipo_inexistente",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -860,10 +944,12 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_missing_period_start_warning(self, report_executor):
         """Testa que preview gera warning quando period_start ausente (tipo que requer)."""
-        request = _report_request({
-            "report_type": "horas_extras",
-            "period_end": "2026-01-31",
-        })
+        request = _report_request(
+            {
+                "report_type": "horas_extras",
+                "period_end": "2026-01-31",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -872,10 +958,12 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_missing_period_end_warning(self, report_executor):
         """Testa que preview gera warning quando period_end ausente (tipo que requer)."""
-        request = _report_request({
-            "report_type": "custos",
-            "period_start": "2026-01-01",
-        })
+        request = _report_request(
+            {
+                "report_type": "custos",
+                "period_start": "2026-01-01",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -884,25 +972,31 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_postos_no_period_warning(self, report_executor):
         """Testa que tipo 'postos' nao requer periodo (sem warning)."""
-        request = _report_request({
-            "report_type": "postos",
-        })
+        request = _report_request(
+            {
+                "report_type": "postos",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
         # "postos" tem required_params vazio, nao deve ter warning de periodo
-        period_warnings = [w for w in preview.warnings if "periodo" in w.lower() or "inicio" in w.lower() or "fim" in w.lower()]
+        period_warnings = [
+            w for w in preview.warnings if "periodo" in w.lower() or "inicio" in w.lower() or "fim" in w.lower()
+        ]
         assert len(period_warnings) == 0
 
     @pytest.mark.asyncio
     async def test_create_preview_with_post_filter(self, report_executor):
         """Testa preview com filtro por posto."""
-        request = _report_request({
-            "report_type": "geral",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-            "post_code": "POST-101",
-        })
+        request = _report_request(
+            {
+                "report_type": "geral",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+                "post_code": "POST-101",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -913,12 +1007,14 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_with_employee_filter(self, report_executor):
         """Testa preview com filtro por funcionario."""
-        request = _report_request({
-            "report_type": "horas_extras",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-            "employee_id": "EMP-001",
-        })
+        request = _report_request(
+            {
+                "report_type": "horas_extras",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+                "employee_id": "EMP-001",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -929,12 +1025,14 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_invalid_format_warning(self, report_executor):
         """Testa que preview gera warning para formato invalido."""
-        request = _report_request({
-            "report_type": "geral",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-            "format": "docx",
-        })
+        request = _report_request(
+            {
+                "report_type": "geral",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+                "format": "docx",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -943,11 +1041,13 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_geral_no_filter_warning(self, report_executor):
         """Testa que relatorio geral sem filtros gera warning de demora."""
-        request = _report_request({
-            "report_type": "geral",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-        })
+        request = _report_request(
+            {
+                "report_type": "geral",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -956,12 +1056,14 @@ class TestReportActionExecutor:
     @pytest.mark.asyncio
     async def test_create_preview_geral_with_filter_no_delay_warning(self, report_executor):
         """Testa que relatorio geral com filtro nao gera warning de demora."""
-        request = _report_request({
-            "report_type": "geral",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-            "post_code": "POST-101",
-        })
+        request = _report_request(
+            {
+                "report_type": "geral",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+                "post_code": "POST-101",
+            }
+        )
 
         preview = await report_executor.create_preview(request)
 
@@ -988,12 +1090,14 @@ class TestReportActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.report_executor._HAS_EXPORT_SERVICE", False)
     async def test_execute_valid_parameters(self, report_executor):
         """Testa execute com parametros validos retorna COMPLETED."""
-        request = _report_request({
-            "report_type": "horas_extras",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-            "format": "pdf",
-        })
+        request = _report_request(
+            {
+                "report_type": "horas_extras",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+                "format": "pdf",
+            }
+        )
 
         result = await report_executor.execute(request, "action-201")
 
@@ -1010,11 +1114,13 @@ class TestReportActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.report_executor._HAS_EXPORT_SERVICE", False)
     async def test_execute_fallback_generates_data(self, report_executor):
         """Testa que fallback gera dados de demonstracao."""
-        request = _report_request({
-            "report_type": "custos",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-        })
+        request = _report_request(
+            {
+                "report_type": "custos",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+            }
+        )
 
         result = await report_executor.execute(request, "action-202")
 
@@ -1029,11 +1135,13 @@ class TestReportActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.report_executor._HAS_EXPORT_SERVICE", False)
     async def test_execute_result_timing(self, report_executor):
         """Testa que resultado tem timestamps e duracao."""
-        request = _report_request({
-            "report_type": "geral",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-        })
+        request = _report_request(
+            {
+                "report_type": "geral",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+            }
+        )
 
         result = await report_executor.execute(request, "action-203")
 
@@ -1047,11 +1155,13 @@ class TestReportActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.report_executor._HAS_EXPORT_SERVICE", False)
     async def test_execute_affected_entities(self, report_executor):
         """Testa que resultado inclui affected_entities com report."""
-        request = _report_request({
-            "report_type": "ocorrencias",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-        })
+        request = _report_request(
+            {
+                "report_type": "ocorrencias",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+            }
+        )
 
         result = await report_executor.execute(request, "action-204")
 
@@ -1063,9 +1173,11 @@ class TestReportActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.report_executor._HAS_EXPORT_SERVICE", False)
     async def test_execute_unknown_type_fallback_to_geral(self, report_executor):
         """Testa que tipo desconhecido faz fallback para geral no execute."""
-        request = _report_request({
-            "report_type": "desconhecido",
-        })
+        request = _report_request(
+            {
+                "report_type": "desconhecido",
+            }
+        )
 
         result = await report_executor.execute(request, "action-205")
 
@@ -1078,14 +1190,16 @@ class TestReportActionExecutor:
     @patch("modules.ai.bartolo.actions.executors.report_executor._HAS_EXPORT_SERVICE", False)
     async def test_execute_result_details_structure(self, report_executor):
         """Testa estrutura completa dos details no resultado."""
-        request = _report_request({
-            "report_type": "banco_horas",
-            "period_start": "2026-01-01",
-            "period_end": "2026-01-31",
-            "post_code": "POST-101",
-            "employee_id": "EMP-001",
-            "format": "xlsx",
-        })
+        request = _report_request(
+            {
+                "report_type": "banco_horas",
+                "period_start": "2026-01-01",
+                "period_end": "2026-01-31",
+                "post_code": "POST-101",
+                "employee_id": "EMP-001",
+                "format": "xlsx",
+            }
+        )
 
         result = await report_executor.execute(request, "action-206")
 

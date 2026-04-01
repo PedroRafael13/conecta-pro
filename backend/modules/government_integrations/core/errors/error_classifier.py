@@ -4,44 +4,46 @@ Classificador de Erros para Integrações Governamentais.
 Categoriza erros e determina ações apropriadas.
 """
 
-from enum import Enum
-from dataclasses import dataclass, field
-from typing import Optional, Dict, List, Any
-from datetime import datetime
 import logging
 import re
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class CategoriaErro(Enum):
     """Categorias de erro para tratamento diferenciado."""
-    AUTENTICACAO = "autenticacao"      # Token/certificado inválido
-    CERTIFICADO = "certificado"        # Certificado vencido/inválido
-    TIMEOUT = "timeout"                # Serviço não respondeu
-    INDISPONIVEL = "indisponivel"      # Serviço fora do ar
-    SCHEMA = "schema"                  # XML/dados inválidos
-    NEGOCIO = "negocio"                # Regra de negócio violada
-    REDE = "rede"                      # Erro de conexão
-    RATE_LIMIT = "rate_limit"          # Limite de requisições excedido
-    DESCONHECIDO = "desconhecido"      # Outros
+
+    AUTENTICACAO = "autenticacao"  # Token/certificado inválido
+    CERTIFICADO = "certificado"  # Certificado vencido/inválido
+    TIMEOUT = "timeout"  # Serviço não respondeu
+    INDISPONIVEL = "indisponivel"  # Serviço fora do ar
+    SCHEMA = "schema"  # XML/dados inválidos
+    NEGOCIO = "negocio"  # Regra de negócio violada
+    REDE = "rede"  # Erro de conexão
+    RATE_LIMIT = "rate_limit"  # Limite de requisições excedido
+    DESCONHECIDO = "desconhecido"  # Outros
 
 
 @dataclass
 class ErroIntegracao:
     """Estrutura padronizada de erro."""
+
     categoria: CategoriaErro
     codigo: str
     mensagem: str
     servico: str
     tentativas: int = 0
     pode_retentar: bool = True
-    acao_recomendada: Optional[str] = None
-    dados_adicionais: Optional[Dict[str, Any]] = None
+    acao_recomendada: str | None = None
+    dados_adicionais: dict[str, Any] | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    correlation_id: Optional[str] = None
+    correlation_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "categoria": self.categoria.value,
@@ -61,49 +63,96 @@ class ClassificadorErros:
     """Classifica erros e determina ação apropriada."""
 
     # Padrões de erro por categoria
-    PADROES_ERRO: Dict[CategoriaErro, List[str]] = {
+    PADROES_ERRO: dict[CategoriaErro, list[str]] = {
         CategoriaErro.AUTENTICACAO: [
-            "token expired", "invalid_token", "unauthorized",
-            "401", "403", "token inválido", "sessão expirada",
-            "authentication failed", "invalid credentials",
-            "access denied", "not authenticated",
+            "token expired",
+            "invalid_token",
+            "unauthorized",
+            "401",
+            "403",
+            "token inválido",
+            "sessão expirada",
+            "authentication failed",
+            "invalid credentials",
+            "access denied",
+            "not authenticated",
         ],
         CategoriaErro.CERTIFICADO: [
-            "certificate", "ssl", "x509", "certificado vencido",
-            "bad certificate", "certificate expired", "cert_error",
-            "ssl_error", "handshake", "pkcs", "pfx",
+            "certificate",
+            "ssl",
+            "x509",
+            "certificado vencido",
+            "bad certificate",
+            "certificate expired",
+            "cert_error",
+            "ssl_error",
+            "handshake",
+            "pkcs",
+            "pfx",
         ],
         CategoriaErro.TIMEOUT: [
-            "timeout", "timed out", "tempo limite", "deadline exceeded",
-            "request timeout", "connection timeout", "read timeout",
+            "timeout",
+            "timed out",
+            "tempo limite",
+            "deadline exceeded",
+            "request timeout",
+            "connection timeout",
+            "read timeout",
         ],
         CategoriaErro.INDISPONIVEL: [
-            "503", "502", "504", "service unavailable",
-            "connection refused", "host unreachable", "server error",
-            "temporarily unavailable", "maintenance",
+            "503",
+            "502",
+            "504",
+            "service unavailable",
+            "connection refused",
+            "host unreachable",
+            "server error",
+            "temporarily unavailable",
+            "maintenance",
         ],
         CategoriaErro.SCHEMA: [
-            "xml", "xsd", "schema", "validation", "parse error",
-            "malformed", "invalid format", "invalid xml",
-            "namespace", "element not found",
+            "xml",
+            "xsd",
+            "schema",
+            "validation",
+            "parse error",
+            "malformed",
+            "invalid format",
+            "invalid xml",
+            "namespace",
+            "element not found",
         ],
         CategoriaErro.NEGOCIO: [
-            "rejeição", "rejeitado", "não autorizado",
-            "duplicado", "já existe", "não encontrado",
-            "regra de negócio", "business rule", "invalid data",
+            "rejeição",
+            "rejeitado",
+            "não autorizado",
+            "duplicado",
+            "já existe",
+            "não encontrado",
+            "regra de negócio",
+            "business rule",
+            "invalid data",
         ],
         CategoriaErro.RATE_LIMIT: [
-            "429", "rate limit", "too many requests",
-            "quota exceeded", "throttling", "limit exceeded",
+            "429",
+            "rate limit",
+            "too many requests",
+            "quota exceeded",
+            "throttling",
+            "limit exceeded",
         ],
         CategoriaErro.REDE: [
-            "connection error", "network", "dns",
-            "host not found", "socket", "connection reset",
+            "connection error",
+            "network",
+            "dns",
+            "host not found",
+            "socket",
+            "connection reset",
         ],
     }
 
     # Ações recomendadas por categoria
-    ACOES_RECOMENDADAS: Dict[CategoriaErro, str] = {
+    ACOES_RECOMENDADAS: dict[CategoriaErro, str] = {
         CategoriaErro.AUTENTICACAO: "Renovar token automaticamente",
         CategoriaErro.CERTIFICADO: "CRÍTICO: Suspender serviço e alertar admin",
         CategoriaErro.TIMEOUT: "Aplicar retry com backoff exponencial",
@@ -125,11 +174,7 @@ class ClassificadorErros:
 
     @classmethod
     def classificar(
-        cls,
-        erro: Exception,
-        servico: str,
-        tentativas: int = 0,
-        correlation_id: Optional[str] = None
+        cls, erro: Exception, servico: str, tentativas: int = 0, correlation_id: str | None = None
     ) -> ErroIntegracao:
         """
         Classifica erro e retorna estrutura padronizada.
@@ -177,14 +222,14 @@ class ClassificadorErros:
         )
 
     @classmethod
-    def _extrair_codigo_http(cls, erro_str: str) -> Optional[int]:
+    def _extrair_codigo_http(cls, erro_str: str) -> int | None:
         """Extrai código HTTP da mensagem de erro."""
         # Padrões comuns: "HTTP 500", "status 404", "code: 503"
         patterns = [
-            r'http[s]?\s*(\d{3})',
-            r'status[:\s]+(\d{3})',
-            r'code[:\s]+(\d{3})',
-            r'\b([45]\d{2})\b',
+            r"http[s]?\s*(\d{3})",
+            r"status[:\s]+(\d{3})",
+            r"code[:\s]+(\d{3})",
+            r"\b([45]\d{2})\b",
         ]
         for pattern in patterns:
             match = re.search(pattern, erro_str, re.IGNORECASE)
@@ -193,15 +238,9 @@ class ClassificadorErros:
         return None
 
     @classmethod
-    def _classificar_por_http(
-        cls,
-        http_code: int,
-        categoria_atual: CategoriaErro
-    ) -> CategoriaErro:
+    def _classificar_por_http(cls, http_code: int, categoria_atual: CategoriaErro) -> CategoriaErro:
         """Classifica ou refina categoria baseado em código HTTP."""
-        if http_code == 401:
-            return CategoriaErro.AUTENTICACAO
-        elif http_code == 403:
+        if http_code == 401 or http_code == 403:
             return CategoriaErro.AUTENTICACAO
         elif http_code == 404:
             return CategoriaErro.NEGOCIO
@@ -216,11 +255,7 @@ class ClassificadorErros:
         return categoria_atual
 
     @classmethod
-    def _extrair_dados_adicionais(
-        cls,
-        erro: Exception,
-        erro_str: str
-    ) -> Optional[Dict[str, Any]]:
+    def _extrair_dados_adicionais(cls, erro: Exception, erro_str: str) -> dict[str, Any] | None:
         """Extrai dados adicionais do erro para diagnóstico."""
         dados = {}
 
@@ -230,19 +265,19 @@ class ClassificadorErros:
             dados["http_code"] = http_code
 
         # Código SEFAZ/eSocial
-        codigo_sefaz = re.search(r'cstat[:\s]*(\d+)', erro_str, re.IGNORECASE)
+        codigo_sefaz = re.search(r"cstat[:\s]*(\d+)", erro_str, re.IGNORECASE)
         if codigo_sefaz:
             dados["codigo_sefaz"] = codigo_sefaz.group(1)
 
         # Mensagem original do serviço
-        xmotivo = re.search(r'xmotivo[:\s]*([^<\n]+)', erro_str, re.IGNORECASE)
+        xmotivo = re.search(r"xmotivo[:\s]*([^<\n]+)", erro_str, re.IGNORECASE)
         if xmotivo:
             dados["mensagem_servico"] = xmotivo.group(1).strip()
 
         # Atributos específicos da exceção
-        if hasattr(erro, 'response'):
+        if hasattr(erro, "response"):
             dados["response_type"] = type(erro.response).__name__
-        if hasattr(erro, 'request'):
+        if hasattr(erro, "request"):
             dados["request_type"] = type(erro.request).__name__
 
         return dados if dados else None
@@ -272,11 +307,7 @@ class ClassificadorErros:
             CategoriaErro.TIMEOUT,
         }
 
-    def classificar_erro_http(
-        self,
-        status_code: int,
-        response_body: str
-    ) -> Dict[str, Any]:
+    def classificar_erro_http(self, status_code: int, response_body: str) -> dict[str, Any]:
         """
         Classifica erro HTTP e determina se deve fazer retry.
 

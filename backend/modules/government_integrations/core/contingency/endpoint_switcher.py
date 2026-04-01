@@ -4,17 +4,14 @@ Comutador de Endpoints.
 Gerencia troca automática entre endpoints principal e contingência.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
 import asyncio
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
 
 from .uf_matrix import (
     MatrizContingencia,
-    ConfigUF,
-    ENDPOINTS_CENTRALIZADOS,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class StatusEndpoint(Enum):
     """Status de um endpoint."""
+
     DISPONIVEL = "disponivel"
     INDISPONIVEL = "indisponivel"
     DEGRADADO = "degradado"  # Lento mas funcionando
@@ -31,17 +29,19 @@ class StatusEndpoint(Enum):
 @dataclass
 class EstadoEndpoint:
     """Estado de um endpoint."""
+
     status: StatusEndpoint = StatusEndpoint.DESCONHECIDO
-    ultima_verificacao: Optional[datetime] = None
+    ultima_verificacao: datetime | None = None
     falhas_consecutivas: int = 0
     tempo_medio_resposta: float = 0.0
-    ultima_falha: Optional[datetime] = None
-    motivo_falha: Optional[str] = None
+    ultima_falha: datetime | None = None
+    motivo_falha: str | None = None
 
 
 @dataclass
 class ConfiguracaoComutacao:
     """Configuração do comutador de endpoints."""
+
     # Número de falhas para marcar como indisponível
     falhas_para_indisponivel: int = 3
     # Tempo para considerar endpoint recuperado (minutos)
@@ -55,22 +55,17 @@ class ConfiguracaoComutacao:
 class ComutadorEndpoints:
     """Gerencia comutação entre endpoints principal e contingência."""
 
-    def __init__(self, config: Optional[ConfiguracaoComutacao] = None):
+    def __init__(self, config: ConfiguracaoComutacao | None = None):
         self.config = config or ConfiguracaoComutacao()
-        self._estados: Dict[str, EstadoEndpoint] = {}
-        self._usando_contingencia: Dict[str, bool] = {}
+        self._estados: dict[str, EstadoEndpoint] = {}
+        self._usando_contingencia: dict[str, bool] = {}
         self._lock = asyncio.Lock()
 
     def _gerar_chave(self, uf: str, tipo_doc: str) -> str:
         """Gera chave única para UF + tipo de documento."""
         return f"{uf.upper()}:{tipo_doc.lower()}"
 
-    async def obter_endpoint(
-        self,
-        uf: str,
-        tipo_documento: str,
-        servico: str
-    ) -> Tuple[str, bool]:
+    async def obter_endpoint(self, uf: str, tipo_documento: str, servico: str) -> tuple[str, bool]:
         """
         Obtém endpoint ativo para UF e tipo de documento.
 
@@ -120,12 +115,7 @@ class ComutadorEndpoints:
 
         return url, usando_contingencia
 
-    async def registrar_sucesso(
-        self,
-        uf: str,
-        tipo_documento: str,
-        tempo_resposta_ms: float
-    ):
+    async def registrar_sucesso(self, uf: str, tipo_documento: str, tempo_resposta_ms: float):
         """
         Registra sucesso de requisição.
 
@@ -148,10 +138,7 @@ class ComutadorEndpoints:
             if estado.tempo_medio_resposta == 0:
                 estado.tempo_medio_resposta = tempo_resposta_ms
             else:
-                estado.tempo_medio_resposta = (
-                    estado.tempo_medio_resposta * 0.7 +
-                    tempo_resposta_ms * 0.3
-                )
+                estado.tempo_medio_resposta = estado.tempo_medio_resposta * 0.7 + tempo_resposta_ms * 0.3
 
             # Verificar degradação
             if tempo_resposta_ms > self.config.limite_degradacao_ms:
@@ -161,18 +148,10 @@ class ComutadorEndpoints:
 
             # Se estava em contingência e principal voltou, registrar
             if self._usando_contingencia.get(chave, False):
-                logger.info(
-                    f"Endpoint principal restaurado: {chave} "
-                    f"(tempo: {tempo_resposta_ms:.0f}ms)"
-                )
+                logger.info(f"Endpoint principal restaurado: {chave} (tempo: {tempo_resposta_ms:.0f}ms)")
                 self._usando_contingencia[chave] = False
 
-    async def registrar_falha(
-        self,
-        uf: str,
-        tipo_documento: str,
-        motivo: str
-    ) -> bool:
+    async def registrar_falha(self, uf: str, tipo_documento: str, motivo: str) -> bool:
         """
         Registra falha de requisição.
 
@@ -204,20 +183,14 @@ class ComutadorEndpoints:
                 if config.contingencia and not self._usando_contingencia.get(chave, False):
                     self._usando_contingencia[chave] = True
                     logger.warning(
-                        f"Ativando contingência para {chave}: {motivo}. "
-                        f"Falhas: {estado.falhas_consecutivas}"
+                        f"Ativando contingência para {chave}: {motivo}. Falhas: {estado.falhas_consecutivas}"
                     )
 
             self._estados[chave] = estado
 
             return self._usando_contingencia.get(chave, False)
 
-    async def forcar_contingencia(
-        self,
-        uf: str,
-        tipo_documento: str,
-        motivo: str = "Forçado manualmente"
-    ):
+    async def forcar_contingencia(self, uf: str, tipo_documento: str, motivo: str = "Forçado manualmente"):
         """Força uso de contingência para UF."""
         chave = self._gerar_chave(uf, tipo_documento)
 
@@ -244,11 +217,7 @@ class ComutadorEndpoints:
 
         logger.info(f"Contingência desativada para {chave}")
 
-    def obter_status(
-        self,
-        uf: str,
-        tipo_documento: str
-    ) -> Dict:
+    def obter_status(self, uf: str, tipo_documento: str) -> dict:
         """Obtém status atual do endpoint."""
         chave = self._gerar_chave(uf, tipo_documento)
         estado = self._estados.get(chave, EstadoEndpoint())
@@ -265,7 +234,7 @@ class ComutadorEndpoints:
             "motivo_falha": estado.motivo_falha,
         }
 
-    def obter_todos_status(self) -> Dict[str, Dict]:
+    def obter_todos_status(self) -> dict[str, dict]:
         """Obtém status de todos os endpoints monitorados."""
         resultado = {}
         for chave, estado in self._estados.items():
@@ -291,7 +260,7 @@ class ComutadorEndpoints:
 
 
 # Instância singleton
-_comutador_instance: Optional[ComutadorEndpoints] = None
+_comutador_instance: ComutadorEndpoints | None = None
 
 
 def get_comutador() -> ComutadorEndpoints:

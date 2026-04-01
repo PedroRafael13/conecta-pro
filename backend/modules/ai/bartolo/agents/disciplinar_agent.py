@@ -12,16 +12,17 @@ Author: Conecta PRO Team
 Date: 2026-01-29
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, date
-from enum import Enum
 import logging
+from datetime import date
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class DisciplinarIntent(str, Enum):
+class DisciplinarIntent(StrEnum):
     """Intents relacionados a medidas disciplinares."""
+
     VER_MEDIDAS = "ver_medidas"
     MEDIDA_DETALHES = "medida_detalhes"
     MEDIDAS_PENDENTES = "medidas_pendentes"
@@ -55,77 +56,144 @@ class DisciplinarAgent:
         # ==================================================================
         # APROVAR_MEDIDA - Antes de MEDIDAS_PENDENTES
         # ==================================================================
-        (r"(?:aprovar|aprove|aprova)\s+(?:a\s+)?(?:medida|advertencia|suspensao|acao)\s+(?:disciplinar\s+)?(?:ADV|SUS|JCA|MED)[\-\s]?\d+", DisciplinarIntent.APROVAR_MEDIDA),
-        (r"(?:aprovar|aprove|aprova)\s+(?:a\s+)?(?:medida|advertencia|suspensao|acao)", DisciplinarIntent.APROVAR_MEDIDA),
+        (
+            r"(?:aprovar|aprove|aprova)\s+(?:a\s+)?(?:medida|advertencia|suspensao|acao)\s+(?:disciplinar\s+)?(?:ADV|SUS|JCA|MED)[\-\s]?\d+",
+            DisciplinarIntent.APROVAR_MEDIDA,
+        ),
+        (
+            r"(?:aprovar|aprove|aprova)\s+(?:a\s+)?(?:medida|advertencia|suspensao|acao)",
+            DisciplinarIntent.APROVAR_MEDIDA,
+        ),
         (r"(?:autorizar|autorize)\s+(?:a\s+)?(?:medida|advertencia|suspensao)", DisciplinarIntent.APROVAR_MEDIDA),
-
         # ==================================================================
         # REJEITAR_MEDIDA
         # ==================================================================
-        (r"(?:rejeitar|rejeite|rejeita|recusar|recuse)\s+(?:a\s+)?(?:medida|advertencia|suspensao|acao)\s+(?:disciplinar\s+)?(?:ADV|SUS|JCA|MED)[\-\s]?\d+", DisciplinarIntent.REJEITAR_MEDIDA),
-        (r"(?:rejeitar|rejeite|rejeita|recusar|recuse)\s+(?:a\s+)?(?:medida|advertencia|suspensao|acao)", DisciplinarIntent.REJEITAR_MEDIDA),
+        (
+            r"(?:rejeitar|rejeite|rejeita|recusar|recuse)\s+(?:a\s+)?(?:medida|advertencia|suspensao|acao)\s+(?:disciplinar\s+)?(?:ADV|SUS|JCA|MED)[\-\s]?\d+",
+            DisciplinarIntent.REJEITAR_MEDIDA,
+        ),
+        (
+            r"(?:rejeitar|rejeite|rejeita|recusar|recuse)\s+(?:a\s+)?(?:medida|advertencia|suspensao|acao)",
+            DisciplinarIntent.REJEITAR_MEDIDA,
+        ),
         (r"(?:negar|negue)\s+(?:a\s+)?(?:medida|advertencia|suspensao)", DisciplinarIntent.REJEITAR_MEDIDA),
-
         # ==================================================================
         # CRIAR_MEDIDA
         # ==================================================================
-        (r"(?:criar|crie|cria|aplicar|aplique|aplica|registrar|registre)\s+(?:uma?\s+)?(?:nova\s+)?(?:medida|advertencia|suspensao|acao)\s*(?:disciplinar)?", DisciplinarIntent.CRIAR_MEDIDA),
+        (
+            r"(?:criar|crie|cria|aplicar|aplique|aplica|registrar|registre)\s+(?:uma?\s+)?(?:nova\s+)?(?:medida|advertencia|suspensao|acao)\s*(?:disciplinar)?",
+            DisciplinarIntent.CRIAR_MEDIDA,
+        ),
         (r"(?:nova|novo)\s+(?:medida|advertencia|suspensao|acao)\s*(?:disciplinar)?", DisciplinarIntent.CRIAR_MEDIDA),
-        (r"(?:aplicar|aplique|aplica)\s+(?:uma?\s+)?(?:advertencia|suspensao|justa\s+causa)", DisciplinarIntent.CRIAR_MEDIDA),
+        (
+            r"(?:aplicar|aplique|aplica)\s+(?:uma?\s+)?(?:advertencia|suspensao|justa\s+causa)",
+            DisciplinarIntent.CRIAR_MEDIDA,
+        ),
         (r"(?:dar|de)\s+(?:uma?\s+)?(?:advertencia|suspensao)", DisciplinarIntent.CRIAR_MEDIDA),
-        (r"(?:advertir|suspender|demitir)\s+(?:o?\s+)?(?:funcionario|colaborador|empregado)", DisciplinarIntent.CRIAR_MEDIDA),
-        (r"(?:preciso|quero|necessito)\s+(?:criar|aplicar|dar)\s+(?:uma?\s+)?(?:medida|advertencia|suspensao)", DisciplinarIntent.CRIAR_MEDIDA),
-
+        (
+            r"(?:advertir|suspender|demitir)\s+(?:o?\s+)?(?:funcionario|colaborador|empregado)",
+            DisciplinarIntent.CRIAR_MEDIDA,
+        ),
+        (
+            r"(?:preciso|quero|necessito)\s+(?:criar|aplicar|dar)\s+(?:uma?\s+)?(?:medida|advertencia|suspensao)",
+            DisciplinarIntent.CRIAR_MEDIDA,
+        ),
         # ==================================================================
         # VALIDAR_CLT
         # ==================================================================
         (r"(?:validar|valide|validacao)\s+(?:de\s+)?(?:conformidade\s+)?(?:CLT|clt)", DisciplinarIntent.VALIDAR_CLT),
-        (r"(?:verificar|verifique)\s+(?:a\s+)?(?:conformidade|legalidade|validade)\s+(?:da\s+)?(?:medida|advertencia|suspensao)", DisciplinarIntent.VALIDAR_CLT),
-        (r"(?:esta|e)\s+(?:conforme|de\s+acordo\s+com|dentro)\s+(?:a\s+|da\s+)?(?:CLT|clt|lei)", DisciplinarIntent.VALIDAR_CLT),
+        (
+            r"(?:verificar|verifique)\s+(?:a\s+)?(?:conformidade|legalidade|validade)\s+(?:da\s+)?(?:medida|advertencia|suspensao)",
+            DisciplinarIntent.VALIDAR_CLT,
+        ),
+        (
+            r"(?:esta|e)\s+(?:conforme|de\s+acordo\s+com|dentro)\s+(?:a\s+|da\s+)?(?:CLT|clt|lei)",
+            DisciplinarIntent.VALIDAR_CLT,
+        ),
         (r"(?:proporcionalidade|progressao)\s+(?:da\s+)?(?:medida|pena|sancao)", DisciplinarIntent.VALIDAR_CLT),
-        (r"(?:medida|advertencia|suspensao)\s+(?:esta\s+)?(?:legal|correta|proporcional|adequada)", DisciplinarIntent.VALIDAR_CLT),
+        (
+            r"(?:medida|advertencia|suspensao)\s+(?:esta\s+)?(?:legal|correta|proporcional|adequada)",
+            DisciplinarIntent.VALIDAR_CLT,
+        ),
         (r"(?:CLT|clt)\s+(?:art|artigo)", DisciplinarIntent.VALIDAR_CLT),
-
         # ==================================================================
         # MEDIDA_DETALHES - Antes de VER_MEDIDAS
         # ==================================================================
-        (r"(?:detalhe|detalhes|detalhar|info|informacoes?)\s+(?:da\s+|sobre\s+)?(?:medida|advertencia|suspensao)\s+(?:ADV|SUS|JCA|MED)[\-\s]?\d+", DisciplinarIntent.MEDIDA_DETALHES),
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba)\s+(?:a\s+)?(?:medida|advertencia|suspensao)\s+(?:ADV|SUS|JCA|MED)[\-\s]?\d+", DisciplinarIntent.MEDIDA_DETALHES),
+        (
+            r"(?:detalhe|detalhes|detalhar|info|informacoes?)\s+(?:da\s+|sobre\s+)?(?:medida|advertencia|suspensao)\s+(?:ADV|SUS|JCA|MED)[\-\s]?\d+",
+            DisciplinarIntent.MEDIDA_DETALHES,
+        ),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba)\s+(?:a\s+)?(?:medida|advertencia|suspensao)\s+(?:ADV|SUS|JCA|MED)[\-\s]?\d+",
+            DisciplinarIntent.MEDIDA_DETALHES,
+        ),
         (r"(?:ADV|SUS|JCA|MED)[\-\s]?\d{4}[\-\s]?\d+", DisciplinarIntent.MEDIDA_DETALHES),
-
         # ==================================================================
         # MEDIDAS_PENDENTES
         # ==================================================================
-        (r"(?:medidas?|acoes?|advertencias?|suspensoes?)\s+pendentes?\s+(?:de\s+)?(?:aprovacao)?", DisciplinarIntent.MEDIDAS_PENDENTES),
+        (
+            r"(?:medidas?|acoes?|advertencias?|suspensoes?)\s+pendentes?\s+(?:de\s+)?(?:aprovacao)?",
+            DisciplinarIntent.MEDIDAS_PENDENTES,
+        ),
         (r"pendentes?\s+(?:de\s+)?(?:aprovacao|analise)\s+(?:disciplinar)?", DisciplinarIntent.MEDIDAS_PENDENTES),
-        (r"(?:o\s+que\s+)?(?:tem|ha|há)\s+(?:para|pra)\s+(?:aprovar|analisar)\s+(?:em\s+)?(?:disciplinar|medidas?)", DisciplinarIntent.MEDIDAS_PENDENTES),
-        (r"(?:fila|lista)\s+(?:de\s+)?(?:aprovacao|aprovacoes)\s+(?:disciplinar|disciplinares)?", DisciplinarIntent.MEDIDAS_PENDENTES),
+        (
+            r"(?:o\s+que\s+)?(?:tem|ha|há)\s+(?:para|pra)\s+(?:aprovar|analisar)\s+(?:em\s+)?(?:disciplinar|medidas?)",
+            DisciplinarIntent.MEDIDAS_PENDENTES,
+        ),
+        (
+            r"(?:fila|lista)\s+(?:de\s+)?(?:aprovacao|aprovacoes)\s+(?:disciplinar|disciplinares)?",
+            DisciplinarIntent.MEDIDAS_PENDENTES,
+        ),
         (r"(?:aguardando|esperando)\s+(?:aprovacao|analise)\s+(?:disciplinar)?", DisciplinarIntent.MEDIDAS_PENDENTES),
-
         # ==================================================================
         # HISTORICO_FUNCIONARIO
         # ==================================================================
-        (r"(?:historico|histórico)\s+(?:disciplinar\s+)?(?:do?\s+)?(?:funcionario|colaborador|empregado)", DisciplinarIntent.HISTORICO_FUNCIONARIO),
-        (r"(?:historico|histórico)\s+(?:de\s+)?(?:medidas?|advertencias?|suspensoes?)\s+(?:do?\s+)?", DisciplinarIntent.HISTORICO_FUNCIONARIO),
-        (r"(?:medidas?|advertencias?|suspensoes?)\s+(?:do?\s+)?(?:funcionario|colaborador|empregado)", DisciplinarIntent.HISTORICO_FUNCIONARIO),
-        (r"(?:quantas?|quais?)\s+(?:medidas?|advertencias?|suspensoes?)\s+(?:o?\s+)?(?:funcionario|colaborador)", DisciplinarIntent.HISTORICO_FUNCIONARIO),
+        (
+            r"(?:historico|histórico)\s+(?:disciplinar\s+)?(?:do?\s+)?(?:funcionario|colaborador|empregado)",
+            DisciplinarIntent.HISTORICO_FUNCIONARIO,
+        ),
+        (
+            r"(?:historico|histórico)\s+(?:de\s+)?(?:medidas?|advertencias?|suspensoes?)\s+(?:do?\s+)?",
+            DisciplinarIntent.HISTORICO_FUNCIONARIO,
+        ),
+        (
+            r"(?:medidas?|advertencias?|suspensoes?)\s+(?:do?\s+)?(?:funcionario|colaborador|empregado)",
+            DisciplinarIntent.HISTORICO_FUNCIONARIO,
+        ),
+        (
+            r"(?:quantas?|quais?)\s+(?:medidas?|advertencias?|suspensoes?)\s+(?:o?\s+)?(?:funcionario|colaborador)",
+            DisciplinarIntent.HISTORICO_FUNCIONARIO,
+        ),
         (r"(?:ficha|prontuario)\s+(?:disciplinar\s+)?(?:do?\s+)?", DisciplinarIntent.HISTORICO_FUNCIONARIO),
-
         # ==================================================================
         # ESTATISTICAS
         # ==================================================================
-        (r"(?:estatisticas?|stats?|numeros?|indicadores?|dashboard)\s+(?:de\s+|das?\s+)?(?:medidas?\s+)?(?:disciplinar|disciplinares)?", DisciplinarIntent.ESTATISTICAS),
+        (
+            r"(?:estatisticas?|stats?|numeros?|indicadores?|dashboard)\s+(?:de\s+|das?\s+)?(?:medidas?\s+)?(?:disciplinar|disciplinares)?",
+            DisciplinarIntent.ESTATISTICAS,
+        ),
         (r"(?:quantas?|quantos?)\s+(?:medidas?|advertencias?|suspensoes?)", DisciplinarIntent.ESTATISTICAS),
-        (r"(?:resumo|panorama|visao\s+geral)\s+(?:das?\s+)?(?:medidas?\s+)?(?:disciplinar|disciplinares)?", DisciplinarIntent.ESTATISTICAS),
+        (
+            r"(?:resumo|panorama|visao\s+geral)\s+(?:das?\s+)?(?:medidas?\s+)?(?:disciplinar|disciplinares)?",
+            DisciplinarIntent.ESTATISTICAS,
+        ),
         (r"(?:total|totais?)\s+(?:de\s+)?(?:medidas?|advertencias?|suspensoes?)", DisciplinarIntent.ESTATISTICAS),
-
         # ==================================================================
         # VER_MEDIDAS - Mais generico por ultimo
         # ==================================================================
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:as?\s+)?(?:medidas?|acoes?)\s*(?:disciplinar|disciplinares)?", DisciplinarIntent.VER_MEDIDAS),
-        (r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:as?\s+)?(?:advertencias?|suspensoes?)", DisciplinarIntent.VER_MEDIDAS),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:as?\s+)?(?:medidas?|acoes?)\s*(?:disciplinar|disciplinares)?",
+            DisciplinarIntent.VER_MEDIDAS,
+        ),
+        (
+            r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:as?\s+)?(?:advertencias?|suspensoes?)",
+            DisciplinarIntent.VER_MEDIDAS,
+        ),
         (r"(?:medidas?|acoes?)\s+(?:disciplinar|disciplinares)", DisciplinarIntent.VER_MEDIDAS),
-        (r"(?:quais?)\s+(?:as?\s+)?(?:medidas?|acoes?)\s*(?:disciplinar|disciplinares)?", DisciplinarIntent.VER_MEDIDAS),
+        (
+            r"(?:quais?)\s+(?:as?\s+)?(?:medidas?|acoes?)\s*(?:disciplinar|disciplinares)?",
+            DisciplinarIntent.VER_MEDIDAS,
+        ),
     ]
 
     # Tipos de medida disciplinar
@@ -150,12 +218,13 @@ class DisciplinarAgent:
         if db and not data_connector:
             try:
                 from modules.ai.bartolo.services.data_connector import DataConnector
+
                 self.data_connector = DataConnector(db)
             except Exception as e:
                 logger.warning(f"Nao foi possivel criar DataConnector: {e}")
                 self.data_connector = None
 
-    async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def process(self, message: str, context: dict[str, Any] = None) -> dict[str, Any]:
         """
         Processa uma mensagem relacionada a medidas disciplinares.
 
@@ -199,9 +268,10 @@ class DisciplinarAgent:
                 "suggestions": ["Ver medidas disciplinares", "Medidas pendentes", "Ajuda"],
             }
 
-    def _detect_intent(self, message: str) -> Optional[DisciplinarIntent]:
+    def _detect_intent(self, message: str) -> DisciplinarIntent | None:
         """Detecta o intent da mensagem."""
         import re
+
         message_lower = message.lower()
 
         for pattern, intent in self.INTENT_PATTERNS:
@@ -209,11 +279,12 @@ class DisciplinarAgent:
                 return intent
         return None
 
-    async def _handle_ver_medidas(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_medidas(self, message: str, context: dict) -> dict[str, Any]:
         """Lista medidas disciplinares usando dados reais ou fallback."""
         if self.data_connector:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -264,7 +335,7 @@ Use `/disciplina pendentes` para ver apenas as pendentes de aprovacao.""",
             "suggestions": ["Medidas pendentes", "Estatisticas", "Criar medida"],
         }
 
-    async def _handle_medida_detalhes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_medida_detalhes(self, message: str, context: dict) -> dict[str, Any]:
         """Exibe detalhes de uma medida disciplinar especifica."""
         import re
 
@@ -275,6 +346,7 @@ Use `/disciplina pendentes` para ver apenas as pendentes de aprovacao.""",
         if self.data_connector and code:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -287,8 +359,8 @@ Use `/disciplina pendentes` para ver apenas as pendentes de aprovacao.""",
 **Tipo:** {tipo}
 **Status:** {action.status_display_name}
 **Funcionario:** {action.employee_name} ({action.employee_cpf})
-**Cargo:** {action.employee_position or 'N/A'}
-**Data do Incidente:** {action.incident_date.strftime('%d/%m/%Y')}
+**Cargo:** {action.employee_position or "N/A"}
+**Data do Incidente:** {action.incident_date.strftime("%d/%m/%Y")}
 **Motivo:** {action.reason_description}
 
 **Historico do Funcionario:**
@@ -296,7 +368,7 @@ Use `/disciplina pendentes` para ver apenas as pendentes de aprovacao.""",
 - Suspensoes anteriores: {action.previous_suspensions_count}
 
 **Aprovacao:**
-- Requer aprovacao: {'Sim' if action.requires_approval else 'Nao'}
+- Requer aprovacao: {"Sim" if action.requires_approval else "Nao"}
 - Status: {action.status_display_name}"""
 
                         if action.approved_at:
@@ -345,11 +417,12 @@ Use `/disciplina pendentes` para ver apenas as pendentes de aprovacao.""",
             "suggestions": ["Aprovar medida", "Rejeitar medida", "Ver medidas"],
         }
 
-    async def _handle_medidas_pendentes(self, context: Dict) -> Dict[str, Any]:
+    async def _handle_medidas_pendentes(self, context: dict) -> dict[str, Any]:
         """Lista medidas pendentes de aprovacao."""
         if self.data_connector:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -375,7 +448,9 @@ Use `/disciplina pendentes` para ver apenas as pendentes de aprovacao.""",
 
 Selecione uma medida para aprovar ou rejeitar."""
                     else:
-                        response = "**Medidas Pendentes de Aprovacao**\n\nNenhuma medida pendente de aprovacao no momento."
+                        response = (
+                            "**Medidas Pendentes de Aprovacao**\n\nNenhuma medida pendente de aprovacao no momento."
+                        )
 
                     return {
                         "response": response,
@@ -401,7 +476,7 @@ Selecione uma medida para aprovar ou rejeitar.""",
             "suggestions": ["Aprovar ADV-2026-00002", "Rejeitar SUS-2026-00001", "Ver detalhes"],
         }
 
-    async def _handle_historico_funcionario(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_historico_funcionario(self, message: str, context: dict) -> dict[str, Any]:
         """Consulta historico disciplinar de um funcionario."""
         import re
 
@@ -409,7 +484,8 @@ Selecione uma medida para aprovar ou rejeitar.""",
         employee_name = None
         name_match = re.search(
             r"(?:funcionario|colaborador|empregado|de)\s+([A-Za-z\u00C0-\u017F\s]{3,}?)(?:\s*$|\s+(?:nos?|desde|de|com))",
-            message, re.IGNORECASE
+            message,
+            re.IGNORECASE,
         )
         if name_match:
             employee_name = name_match.group(1).strip()
@@ -417,6 +493,7 @@ Selecione uma medida para aprovar ou rejeitar.""",
         if self.data_connector and context.get("tenant_id"):
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
                 employee_id = context.get("employee_id")
@@ -437,10 +514,12 @@ Selecione uma medida para aprovar ou rejeitar.""",
                         tabela = "\n".join(lines)
 
                         # Contadores
-                        adv_count = sum(1 for a in history if a.action_type in ["advertencia_verbal", "advertencia_escrita"]
-                                        and a.status == "aplicada")
-                        sus_count = sum(1 for a in history if a.action_type == "suspensao"
-                                        and a.status == "aplicada")
+                        adv_count = sum(
+                            1
+                            for a in history
+                            if a.action_type in ["advertencia_verbal", "advertencia_escrita"] and a.status == "aplicada"
+                        )
+                        sus_count = sum(1 for a in history if a.action_type == "suspensao" and a.status == "aplicada")
 
                         response = f"""**Historico Disciplinar - {nome}**
 
@@ -484,11 +563,12 @@ Selecione uma medida para aprovar ou rejeitar.""",
             "suggestions": ["Criar suspensao", "Validar CLT", "Ver medidas"],
         }
 
-    async def _handle_estatisticas(self, context: Dict) -> Dict[str, Any]:
+    async def _handle_estatisticas(self, context: dict) -> dict[str, Any]:
         """Exibe estatisticas de medidas disciplinares."""
         if self.data_connector:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -504,7 +584,9 @@ Selecione uma medida para aprovar ou rejeitar.""",
 
                     # Formatar por motivo
                     motivo_lines = []
-                    for motivo_key, count in sorted(stats.by_reason_category.items(), key=lambda x: x[1], reverse=True)[:5]:
+                    for motivo_key, count in sorted(stats.by_reason_category.items(), key=lambda x: x[1], reverse=True)[
+                        :5
+                    ]:
                         motivo_lines.append(f"| {motivo_key.replace('_', ' ').title()} | {count} |")
                     motivo_tabela = "\n".join(motivo_lines) if motivo_lines else "| Nenhum registro | 0 |"
 
@@ -580,7 +662,7 @@ Selecione uma medida para aprovar ou rejeitar.""",
             "suggestions": ["Ver pendentes", "Historico funcionario", "Criar medida"],
         }
 
-    async def _handle_criar_medida(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_criar_medida(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona para o wizard de criacao de medida disciplinar."""
         import re
 
@@ -648,7 +730,7 @@ Selecione o tipo ou descreva a situacao para que eu recomende a medida adequada.
             ],
         }
 
-    async def _handle_aprovar_medida(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_aprovar_medida(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona para action de aprovacao de medida."""
         import re
 
@@ -684,10 +766,12 @@ Use `/disciplina pendentes` para ver as medidas aguardando aprovacao."""
                     "target": "disciplinary",
                     "data": {"code": code, "action": "approve"},
                 },
-            ] if code else [],
+            ]
+            if code
+            else [],
         }
 
-    async def _handle_rejeitar_medida(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_rejeitar_medida(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona para action de rejeicao de medida."""
         import re
 
@@ -723,10 +807,12 @@ Use `/disciplina pendentes` para ver as medidas aguardando aprovacao."""
                     "target": "disciplinary",
                     "data": {"code": code, "action": "reject"},
                 },
-            ] if code else [],
+            ]
+            if code
+            else [],
         }
 
-    async def _handle_validar_clt(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_validar_clt(self, message: str, context: dict) -> dict[str, Any]:
         """Valida conformidade CLT de uma medida ou situacao disciplinar."""
         import re
 
@@ -737,6 +823,7 @@ Use `/disciplina pendentes` para ver as medidas aguardando aprovacao."""
         if self.data_connector and code:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -751,7 +838,9 @@ Use `/disciplina pendentes` para ver as medidas aguardando aprovacao."""
                         if dias_desde <= 30:
                             validacoes.append(f"[OK] Imediaticidade: {dias_desde} dias desde o incidente (max 30)")
                         else:
-                            alertas.append(f"[ALERTA] Imediaticidade: {dias_desde} dias desde o incidente (max recomendado: 30)")
+                            alertas.append(
+                                f"[ALERTA] Imediaticidade: {dias_desde} dias desde o incidente (max recomendado: 30)"
+                            )
 
                         # Proporcionalidade
                         if action.action_type == "suspensao" and action.previous_warnings_count == 0:
@@ -764,9 +853,13 @@ Use `/disciplina pendentes` para ver as medidas aguardando aprovacao."""
                         # Suspensao max 30 dias
                         if action.action_type == "suspensao":
                             if action.suspension_days and action.suspension_days <= 30:
-                                validacoes.append(f"[OK] Suspensao: {action.suspension_days} dias (max 30 CLT Art. 474)")
+                                validacoes.append(
+                                    f"[OK] Suspensao: {action.suspension_days} dias (max 30 CLT Art. 474)"
+                                )
                             elif action.suspension_days and action.suspension_days > 30:
-                                alertas.append(f"[ERRO] Suspensao: {action.suspension_days} dias excede limite de 30 (CLT Art. 474)")
+                                alertas.append(
+                                    f"[ERRO] Suspensao: {action.suspension_days} dias excede limite de 30 (CLT Art. 474)"
+                                )
 
                         # Non bis in idem
                         validacoes.append("[OK] Non bis in idem: Verificacao de duplicidade OK")
@@ -828,11 +921,11 @@ Para validar uma medida disciplinar, informe o codigo (ex: ADV-2026-00001).
             "suggestions": ["Ver medidas", "Criar medida", "Ver pendentes"],
         }
 
-    async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
+    async def _handle_default(self, message: str, context: dict) -> dict[str, Any] | None:
         """Handler padrao - retorna None para permitir que outros processem."""
         return None
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Retorna lista de capabilities do agente."""
         return [
             "Listar medidas disciplinares",

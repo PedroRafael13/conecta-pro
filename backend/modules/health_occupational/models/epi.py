@@ -6,36 +6,34 @@ Modelos para gerenciamento de EPIs e entregas.
 """
 
 import uuid
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional
+from datetime import date, datetime
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Integer, ForeignKey, Index, Float
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models import Base
 
 
-class EPICategory(str, Enum):
+class EPICategory(StrEnum):
     """Categorias de EPI conforme NR-6."""
-    CABECA = "cabeca"                       # A - Protecao da cabeca
-    OLHOS = "olhos"                         # B - Protecao dos olhos
-    FACE = "face"                           # C - Protecao da face
-    AUDITIVO = "auditivo"                   # D - Protecao auditiva
-    RESPIRATORIO = "respiratorio"           # E - Protecao respiratoria
-    TRONCO = "tronco"                       # F - Protecao do tronco
+
+    CABECA = "cabeca"  # A - Protecao da cabeca
+    OLHOS = "olhos"  # B - Protecao dos olhos
+    FACE = "face"  # C - Protecao da face
+    AUDITIVO = "auditivo"  # D - Protecao auditiva
+    RESPIRATORIO = "respiratorio"  # E - Protecao respiratoria
+    TRONCO = "tronco"  # F - Protecao do tronco
     MEMBROS_SUPERIORES = "membros_superiores"  # G - Membros superiores
     MEMBROS_INFERIORES = "membros_inferiores"  # H - Membros inferiores
-    CORPO_INTEIRO = "corpo_inteiro"         # I - Corpo inteiro
-    QUEDAS = "quedas"                       # J - Protecao contra quedas
+    CORPO_INTEIRO = "corpo_inteiro"  # I - Corpo inteiro
+    QUEDAS = "quedas"  # J - Protecao contra quedas
 
 
-class EPIStatus(str, Enum):
+class EPIStatus(StrEnum):
     """Status do EPI no inventario."""
+
     DISPONIVEL = "disponivel"
     ENTREGUE = "entregue"
     EM_USO = "em_uso"
@@ -44,8 +42,9 @@ class EPIStatus(str, Enum):
     DESCARTADO = "descartado"
 
 
-class DeliveryReason(str, Enum):
+class DeliveryReason(StrEnum):
     """Motivos de entrega de EPI."""
+
     ADMISSAO = "admissao"
     SUBSTITUICAO = "substituicao"
     DESGASTE = "desgaste"
@@ -61,7 +60,8 @@ class EPI(Base):
 
     Modelo base para tipos de EPIs disponiveis.
     """
-    __tablename__ = "health_epis"
+
+    __tablename__ = "health_epi_catalog"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -107,13 +107,13 @@ class EPI(Base):
     created_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    entregas = relationship("EPIDelivery", back_populates="epi")
-    estoque = relationship("EPIInventory", back_populates="epi", uselist=False)
+    entregas = relationship("EPIDelivery", back_populates="epi", foreign_keys="[EPIDelivery.epi_id]")
+    estoque = relationship("EPIInventory", back_populates="epi", uselist=False, foreign_keys="[EPIInventory.epi_id]")
 
     # Indices
     __table_args__ = (
-        Index('idx_epi_categoria_ativo', 'categoria', 'ativo'),
-        Index('idx_epi_ca', 'ca_number'),
+        Index("idx_epi_categoria_ativo", "categoria", "ativo"),
+        Index("idx_epi_ca", "ca_number"),
     )
 
     def __repr__(self) -> str:
@@ -133,12 +133,13 @@ class EPIDelivery(Base):
 
     Registro de entrega de EPI para funcionario.
     """
+
     __tablename__ = "health_epi_deliveries"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Referencias
-    epi_id = Column(UUID(as_uuid=True), ForeignKey("health_epis.id"), nullable=False, index=True)
+    epi_id = Column(UUID(as_uuid=True), ForeignKey("health_epi_catalog.id"), nullable=False, index=True)
     funcionario_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
     # Dados da entrega
@@ -182,9 +183,9 @@ class EPIDelivery(Base):
 
     # Indices
     __table_args__ = (
-        Index('idx_delivery_funcionario', 'funcionario_id'),
-        Index('idx_delivery_data', 'data_entrega'),
-        Index('idx_delivery_epi_funcionario', 'epi_id', 'funcionario_id'),
+        Index("idx_delivery_funcionario", "funcionario_id"),
+        Index("idx_delivery_data", "data_entrega"),
+        Index("idx_delivery_epi_funcionario", "epi_id", "funcionario_id"),
     )
 
     def __repr__(self) -> str:
@@ -198,7 +199,7 @@ class EPIDelivery(Base):
         return date.today() > self.data_validade
 
     @property
-    def dias_para_vencer(self) -> Optional[int]:
+    def dias_para_vencer(self) -> int | None:
         """Dias restantes para vencimento."""
         if not self.data_validade:
             return None
@@ -212,10 +213,11 @@ class EPIInventory(Base):
 
     Controle de estoque de cada tipo de EPI.
     """
+
     __tablename__ = "health_epi_inventory"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    epi_id = Column(UUID(as_uuid=True), ForeignKey("health_epis.id"), nullable=False, unique=True)
+    epi_id = Column(UUID(as_uuid=True), ForeignKey("health_epi_catalog.id"), nullable=False, unique=True)
 
     # Quantidades
     quantidade_atual = Column(Integer, nullable=False, default=0)
@@ -253,7 +255,7 @@ class EPIInventory(Base):
         return self.quantidade_atual < self.quantidade_minima
 
     @property
-    def percentual_estoque(self) -> Optional[float]:
+    def percentual_estoque(self) -> float | None:
         """Percentual do estoque em relacao ao maximo."""
         if not self.quantidade_maxima:
             return None

@@ -118,7 +118,7 @@ class TestUserSchemas:
         user = UserCreate(
             email="test@example.com",
             name="Test User",
-            password="StrongPass123",
+            password="StrongPass123!@#",
             role=UserRole.OPERATOR,
         )
 
@@ -134,8 +134,9 @@ class TestUserSchemas:
                 password="weak",  # muito curta
             )
 
-        # Mensagem pode ser em inglês (Pydantic) ou português (validator)
-        assert "8" in str(exc_info.value)
+        # Verifica erro de tamanho mínimo (12 caracteres)
+        error_msg = str(exc_info.value)
+        assert "12" in error_msg or "at least" in error_msg.lower()
 
     def test_user_create_no_uppercase(self):
         """Testa senha sem maiúsculas."""
@@ -143,10 +144,10 @@ class TestUserSchemas:
             UserCreate(
                 email="test@example.com",
                 name="Test User",
-                password="password123",  # sem maiúscula
+                password="password123!",  # sem maiúscula, mas 13 chars
             )
 
-        assert "maiúscula" in str(exc_info.value)
+        assert "maiúscula" in str(exc_info.value).lower() or "uppercase" in str(exc_info.value).lower()
 
     def test_user_create_no_lowercase(self):
         """Testa senha sem minúsculas."""
@@ -154,10 +155,10 @@ class TestUserSchemas:
             UserCreate(
                 email="test@example.com",
                 name="Test User",
-                password="PASSWORD123",  # sem minúscula
+                password="PASSWORD123!",  # sem minúscula, mas 13 chars
             )
 
-        assert "minúscula" in str(exc_info.value)
+        assert "minúscula" in str(exc_info.value).lower() or "lowercase" in str(exc_info.value).lower()
 
     def test_user_create_no_number(self):
         """Testa senha sem números."""

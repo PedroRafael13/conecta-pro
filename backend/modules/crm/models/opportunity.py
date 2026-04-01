@@ -3,7 +3,7 @@ Modelo Opportunity para gestão do funil de vendas.
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
@@ -23,12 +23,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.base import Base
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from core.models import User
     from modules.crm.models.lead import Lead
 
 
-class OpportunityStage(str, Enum):
+class OpportunityStage(StrEnum):
     """Estágios do funil de vendas."""
 
     QUALIFICATION = "qualification"  # Qualificação inicial
@@ -39,7 +39,7 @@ class OpportunityStage(str, Enum):
     CLOSED_LOST = "closed_lost"  # Fechado - Perdido
 
 
-class OpportunityPriority(str, Enum):
+class OpportunityPriority(StrEnum):
     """Prioridade da oportunidade."""
 
     LOW = "low"
@@ -48,7 +48,7 @@ class OpportunityPriority(str, Enum):
     CRITICAL = "critical"
 
 
-class LossReason(str, Enum):
+class LossReason(StrEnum):
     """Motivo de perda da oportunidade."""
 
     PRICE = "price"  # Preço
@@ -94,10 +94,10 @@ class Opportunity(Base):
 
     # Dados básicos
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Origem
-    lead_id: Mapped[Optional[str]] = mapped_column(
+    lead_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("leads.id", ondelete="SET NULL"),
         nullable=True,
@@ -107,8 +107,8 @@ class Opportunity(Base):
     # Dados do cliente (copiados do Lead ou preenchidos manualmente)
     contact_name: Mapped[str] = mapped_column(String(255), nullable=False)
     contact_email: Mapped[str] = mapped_column(String(255), nullable=False)
-    contact_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    company_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Estágio e prioridade
     stage: Mapped[str] = mapped_column(
@@ -128,11 +128,11 @@ class Opportunity(Base):
     probability: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
 
     # Datas
-    expected_close_date: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True)
-    actual_close_date: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True)
+    expected_close_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
+    actual_close_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
 
     # Responsável
-    owner_id: Mapped[Optional[str]] = mapped_column(
+    owner_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
@@ -140,13 +140,13 @@ class Opportunity(Base):
     )
 
     # Dados de fechamento
-    loss_reason: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    competitor: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    win_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    loss_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    loss_reason: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    competitor: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    win_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    loss_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Observações gerais
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Campos de controle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

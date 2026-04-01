@@ -7,8 +7,8 @@ Execute com: python -m pytest tests/test_nfe_transmitter.py -v -s
 
 import asyncio
 import logging
-import sys
 import os
+import sys
 from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
@@ -18,25 +18,25 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
+from modules.government_integrations.core.certificate_manager import CertificateManager
 from modules.government_integrations.core.nfe_transmitter import (
     NFETransmitter,
     ResultadoTransmissao,
     init_nfe_transmitter,
 )
 from modules.government_integrations.core.sefaz_manager import (
+    Destinatario,
+    DocumentStatus,
+    DocumentType,
     Emitente,
     Endereco,
-    Destinatario,
-    Produto,
+    NFEXMLBuilder,
+    NotaFiscal,
+    OperationType,
     Pagamento,
     PaymentType,
-    OperationType,
-    NotaFiscal,
-    DocumentType,
-    DocumentStatus,
-    NFEXMLBuilder,
+    Produto,
 )
-from modules.government_integrations.core.certificate_manager import CertificateManager
 from modules.government_integrations.core.xml_signer import NFEXMLSigner
 
 logging.basicConfig(level=logging.DEBUG)
@@ -148,12 +148,12 @@ class TestNFETransmitter:
         envelope = transmitter._criar_envelope_autorizacao(xml_nfe, sincrono=True)
 
         # Verificar estrutura do envelope
-        assert 'soap12:Envelope' in envelope
-        assert 'nfeAutorizacaoLote' in envelope
-        assert 'enviNFe' in envelope
-        assert 'idLote' in envelope
-        assert 'indSinc' in envelope
-        assert '<indSinc>1</indSinc>' in envelope  # Síncrono
+        assert "soap12:Envelope" in envelope
+        assert "NFeAutorizacao4" in envelope
+        assert "enviNFe" in envelope
+        assert "idLote" in envelope
+        assert "indSinc" in envelope
+        assert "<indSinc>1</indSinc>" in envelope  # Síncrono
 
         logger.info("Envelope criado com sucesso")
         logger.debug(envelope[:500])
@@ -263,7 +263,7 @@ async def test_status_servico_standalone():
 
     resultado = await transmitter.consultar_status_servico()
 
-    print(f"\nResultado:")
+    print("\nResultado:")
     print(f"  Sucesso: {resultado.sucesso}")
     print(f"  Status: {resultado.status_code}")
     print(f"  Motivo: {resultado.motivo}")

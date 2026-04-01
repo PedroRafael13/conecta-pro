@@ -1,0 +1,75 @@
+# AlertManager Configuration - ERP Conecta Mais
+# ==============================================
+# Versão: v0.27.0
+# NOTA: Este arquivo é um TEMPLATE. A config real é gerada pelo entrypoint.sh
+# usando variáveis de ambiente do .env (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID).
+# NÃO colocar secrets aqui — usar variáveis de ambiente.
+
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@conectamais.pro'
+  telegram_api_url: 'https://api.telegram.org'
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  receiver: 'default-webhook'
+  group_by: ['alertname', 'severity', 'job']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-webhook'
+      repeat_interval: 1h
+      continue: true
+    - match:
+        severity: warning
+      receiver: 'default-webhook'
+      group_wait: 1m
+      repeat_interval: 8h
+    - match:
+        severity: info
+      receiver: 'default-webhook'
+      group_wait: 5m
+      repeat_interval: 24h
+
+receivers:
+  # OpenClaw webhook ONLY — Telegram removido do Alertmanager para evitar
+  # notificações duplicadas. O OpenClaw é responsável por:
+  # 1. Diagnosticar o alerta
+  # 2. Tentar remediação automática
+  # 3. Enviar notificação Telegram com contexto (diagnóstico + ações)
+  # 4. Suprimir falsos positivos (não notifica)
+  # 5. Throttle: max 1 msg/alerta a cada 5min, max 10/hora
+  - name: 'default-webhook'
+    webhook_configs:
+      - url: 'http://conecta-pro-backend:8080/api/v1/ai/openclaw/alert-webhook'
+        send_resolved: true
+
+  - name: 'critical-webhook'
+    webhook_configs:
+      - url: 'http://conecta-pro-backend:8080/api/v1/ai/openclaw/alert-webhook'
+        send_resolved: true
+
+  # Email (opcional)
+  - name: 'email-alerts'
+    email_configs:
+      - to: 'admin@conectamais.pro'
+        headers:
+          Subject: '[ALERTA] {{ .GroupLabels.alertname }}'
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'job']
+  - source_match:
+      alertname: 'InstanceDown'
+    target_match:
+      alertname: 'HighLatency'
+    equal: ['job']

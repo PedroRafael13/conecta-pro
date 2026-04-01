@@ -1,16 +1,14 @@
 """Signature Request model for requesting signatures on documents."""
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, List
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
     Enum,
-    Float,
     ForeignKey,
     Integer,
     String,
@@ -22,7 +20,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class RequestStatus(str, enum.Enum):
+class RequestStatus(StrEnum):
     """Status of signature request."""
 
     DRAFT = "draft"
@@ -37,7 +35,7 @@ class RequestStatus(str, enum.Enum):
     COMPLETED = "completed"
 
 
-class RequestPriority(str, enum.Enum):
+class RequestPriority(StrEnum):
     """Priority of signature request."""
 
     LOW = "low"
@@ -46,7 +44,7 @@ class RequestPriority(str, enum.Enum):
     URGENT = "urgent"
 
 
-class SignaturePurpose(str, enum.Enum):
+class SignaturePurpose(StrEnum):
     """Purpose of signature."""
 
     APPROVAL = "approval"
@@ -59,7 +57,7 @@ class SignaturePurpose(str, enum.Enum):
     CONTRACT = "contract"
 
 
-class ReminderFrequency(str, enum.Enum):
+class ReminderFrequency(StrEnum):
     """Reminder frequency."""
 
     NONE = "none"

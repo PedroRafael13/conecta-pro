@@ -3,8 +3,8 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from modules.financial.models.receivable_account import ReceivableAccount
 
 
-class CustomerType(str, Enum):
+class CustomerType(StrEnum):
     """Tipo de cliente."""
 
     MORADOR = "morador"  # Morador do condominio
@@ -35,7 +35,7 @@ class CustomerType(str, Enum):
     EMPRESA = "empresa"  # Empresa
 
 
-class CustomerStatus(str, Enum):
+class CustomerStatus(StrEnum):
     """Status do cliente."""
 
     ATIVO = "ativo"
@@ -117,7 +117,7 @@ class Customer(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    receivable_accounts: List["ReceivableAccount"] = relationship(
+    receivable_accounts: list["ReceivableAccount"] = relationship(
         "ReceivableAccount",
         back_populates="customer",
     )

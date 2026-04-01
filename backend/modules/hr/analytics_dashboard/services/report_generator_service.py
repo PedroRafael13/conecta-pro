@@ -4,17 +4,17 @@ import csv
 import io
 import json
 import logging
-import random
+import random  # noqa: S311
 from datetime import datetime, timedelta
-from typing import Dict, Any
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.analytics_dashboard.models import (
-    ScheduledReport,
-    ReportType,
     ReportFormat,
+    ReportType,
+    ScheduledReport,
 )
 from modules.hr.analytics_dashboard.repositories import ReportRepository
 from modules.hr.analytics_dashboard.schemas import (
@@ -96,7 +96,7 @@ class ReportGeneratorService:
                 completed_at=completed_at,
             )
 
-        except (ValueError, KeyError, TypeError, RuntimeError, IOError) as e:
+        except (OSError, ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao gerar relatório %s: %s", report.id, e)
 
             completed_at = datetime.utcnow()
@@ -135,9 +135,7 @@ class ReportGeneratorService:
         elif report.period_type == "previous_week":
             # Início da semana passada
             days_since_monday = now.weekday()
-            end = now.replace(
-                hour=0, minute=0, second=0, microsecond=0
-            ) - timedelta(days=days_since_monday)
+            end = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days_since_monday)
             start = end - timedelta(weeks=1)
 
         elif report.period_type == "previous_month":
@@ -174,7 +172,7 @@ class ReportGeneratorService:
         report: ScheduledReport,
         period_start: datetime,
         period_end: datetime,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Coleta dados para o relatório."""
         # Simulação de coleta de dados baseado no tipo de relatório
         data = {
@@ -187,62 +185,60 @@ class ReportGeneratorService:
 
         if report.report_type == ReportType.ATTENDANCE.value:
             data["summary"] = {
-                "total_employees": random.randint(80, 120),
-                "present_days": random.randint(1800, 2200),
-                "absent_days": random.randint(50, 100),
-                "late_entries": random.randint(30, 80),
-                "attendance_rate": round(random.uniform(94, 98), 2),
+                "total_employees": random.randint(80, 120),  # noqa: S311
+                "present_days": random.randint(1800, 2200),  # noqa: S311
+                "absent_days": random.randint(50, 100),  # noqa: S311
+                "late_entries": random.randint(30, 80),  # noqa: S311
+                "attendance_rate": round(random.uniform(94, 98), 2),  # noqa: S311
             }
             data["details"] = [
                 {
                     "employee_id": f"emp_{i}",
                     "name": f"Funcionário {i}",
-                    "department": random.choice(["TI", "RH", "Financeiro"]),
-                    "present_days": random.randint(18, 22),
-                    "absent_days": random.randint(0, 3),
-                    "late_count": random.randint(0, 5),
+                    "department": random.choice(["TI", "RH", "Financeiro"]),  # noqa: S311
+                    "present_days": random.randint(18, 22),  # noqa: S311
+                    "absent_days": random.randint(0, 3),  # noqa: S311
+                    "late_count": random.randint(0, 5),  # noqa: S311
                 }
                 for i in range(1, 21)
             ]
 
         elif report.report_type == ReportType.OVERTIME.value:
             data["summary"] = {
-                "total_overtime_hours": round(random.uniform(200, 500), 1),
-                "total_cost": round(random.uniform(15000, 35000), 2),
-                "employees_with_overtime": random.randint(30, 60),
-                "avg_overtime_per_employee": round(random.uniform(5, 15), 1),
+                "total_overtime_hours": round(random.uniform(200, 500), 1),  # noqa: S311
+                "total_cost": round(random.uniform(15000, 35000), 2),  # noqa: S311
+                "employees_with_overtime": random.randint(30, 60),  # noqa: S311
+                "avg_overtime_per_employee": round(random.uniform(5, 15), 1),  # noqa: S311
             }
             data["by_department"] = [
                 {
                     "department": dept,
-                    "hours": round(random.uniform(30, 100), 1),
-                    "cost": round(random.uniform(2000, 8000), 2),
+                    "hours": round(random.uniform(30, 100), 1),  # noqa: S311
+                    "cost": round(random.uniform(2000, 8000), 2),  # noqa: S311
                 }
                 for dept in ["TI", "RH", "Financeiro", "Operações"]
             ]
 
         elif report.report_type == ReportType.COMPLIANCE.value:
             data["summary"] = {
-                "compliance_rate": round(random.uniform(95, 100), 2),
-                "violations_count": random.randint(0, 10),
-                "warnings_count": random.randint(5, 20),
+                "compliance_rate": round(random.uniform(95, 100), 2),  # noqa: S311
+                "violations_count": random.randint(0, 10),  # noqa: S311
+                "warnings_count": random.randint(5, 20),  # noqa: S311
             }
             data["violations"] = [
                 {
-                    "type": random.choice([
-                        "intervalo_minimo", "jornada_maxima", "descanso_semanal"]),
-                    "employee_id": f"emp_{random.randint(1, 100)}",
-                    "date": (
-                        period_start + timedelta(days=random.randint(0, 30))
-                    ).isoformat(),
+                    "type": random.choice(["intervalo_minimo", "jornada_maxima", "descanso_semanal"]),  # noqa: S311
+                    "employee_id": f"emp_{random.randint(1, 100)}",  # noqa: S311
+                    "date": (period_start + timedelta(days=random.randint(0, 30))).isoformat(),  # noqa: S311
                     "description": "Violacao de regra CLT",
-                } for _ in range(random.randint(0, 5))
+                }
+                for _ in range(random.randint(0, 5))  # noqa: S311
             ]
 
         else:
             # Relatório genérico
             data["summary"] = {
-                "records_count": random.randint(100, 500),
+                "records_count": random.randint(100, 500),  # noqa: S311
                 "status": "completed",
             }
 
@@ -251,7 +247,7 @@ class ReportGeneratorService:
     async def _generate_file(
         self,
         report: ScheduledReport,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         output_format: ReportFormat,
     ) -> tuple:
         """Gera arquivo do relatório."""
@@ -265,12 +261,12 @@ class ReportGeneratorService:
             return self._generate_pdf(data, report)
         return self._generate_json(data)
 
-    def _generate_json(self, data: Dict[str, Any]) -> tuple:
+    def _generate_json(self, data: dict[str, Any]) -> tuple:
         """Gera arquivo JSON."""
         content = json.dumps(data, indent=2, ensure_ascii=False)
         return content.encode("utf-8"), len(content)
 
-    def _generate_csv(self, data: Dict[str, Any]) -> tuple:
+    def _generate_csv(self, data: dict[str, Any]) -> tuple:
         """Gera arquivo CSV."""
 
         output = io.StringIO()
@@ -290,14 +286,14 @@ class ReportGeneratorService:
         content = output.getvalue()
         return content.encode("utf-8"), len(content)
 
-    def _generate_excel(self, data: Dict[str, Any], report_name: str) -> tuple:
+    def _generate_excel(self, data: dict[str, Any], report_name: str) -> tuple:
         """Gera arquivo Excel."""
         # Simulação - em produção usaria openpyxl ou xlsxwriter
         content = f"Excel file content for: {report_name}\n"
         content += f"Data: {data}\n"
         return content.encode("utf-8"), len(content)
 
-    def _generate_pdf(self, data: Dict[str, Any], report: ScheduledReport) -> tuple:
+    def _generate_pdf(self, data: dict[str, Any], report: ScheduledReport) -> tuple:
         """Gera arquivo PDF."""
         # Simulação - em produção usaria reportlab ou weasyprint
         content = f"PDF Report: {report.name}\n"
@@ -329,7 +325,7 @@ class ReportGeneratorService:
         logger.info("Enviando relatório %s para: %s", report.name, report.recipients)
         return True
 
-    async def process_due_reports(self) -> Dict[str, Any]:
+    async def process_due_reports(self) -> dict[str, Any]:
         """Processa relatórios pendentes."""
         reports = await self.report_repo.get_due_reports(limit=10)
 
@@ -353,13 +349,15 @@ class ReportGeneratorService:
                 else:
                     results["failed"] += 1
 
-                results["details"].append({
-                    "report_id": str(report.id),
-                    "name": report.name,
-                    "status": result.status,
-                })
+                results["details"].append(
+                    {
+                        "report_id": str(report.id),
+                        "name": report.name,
+                        "status": result.status,
+                    }
+                )
 
-            except (ValueError, KeyError, TypeError, RuntimeError, IOError) as e:
+            except (OSError, ValueError, KeyError, TypeError, RuntimeError) as e:
                 logger.error("Erro ao processar relatório %s: %s", report.id, e)
                 results["failed"] += 1
 

@@ -24,20 +24,20 @@ from modules.ai.bartolo.config.identity import (
     BartoloConfig,
 )
 from modules.ai.bartolo.config.modules import (
-    MODULE_PROMPTS,
     MODULE_CAPABILITIES,
+    MODULE_PROMPTS,
     get_module_prompt,
 )
 from modules.ai.bartolo.config.user_profiles import (
     USER_PROFILES,
     get_profile_context,
 )
+from modules.ai.bartolo.controllers.bartolo_controller import bartolo_router
 from modules.ai.bartolo.services.bartolo_engine import BartoloEngine
-from modules.ai.bartolo.services.profile_service import ProfileService
 from modules.ai.bartolo.services.data_connector import DataConnector
 from modules.ai.bartolo.services.learning_service import LearningService
+from modules.ai.bartolo.services.profile_service import ProfileService
 from modules.ai.bartolo.wizards.wizard_manager import WizardManager
-from modules.ai.bartolo.controllers.bartolo_controller import bartolo_router
 
 __all__ = [
     # Config

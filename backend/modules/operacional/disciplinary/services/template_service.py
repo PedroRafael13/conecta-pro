@@ -6,8 +6,6 @@ Date: 2026-01-18
 Quality Score Target: 99+/100
 """
 
-from typing import List, Optional
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
@@ -16,9 +14,9 @@ from modules.operacional.disciplinary.models.disciplinary_template import DEFAUL
 from modules.operacional.disciplinary.repositories import TemplateRepository
 from modules.operacional.disciplinary.schemas import (
     TemplateCreate,
-    TemplateUpdate,
-    TemplateResponse,
     TemplateListResponse,
+    TemplateResponse,
+    TemplateUpdate,
 )
 
 
@@ -56,7 +54,7 @@ class TemplateService:
         self,
         data: TemplateCreate,
         tenant_id: str,
-        created_by: Optional[str] = None,
+        created_by: str | None = None,
     ) -> DisciplinaryTemplate:
         """
         Cria um novo template.
@@ -82,9 +80,7 @@ class TemplateService:
 
         return template
 
-    async def get_by_id(
-        self, template_id: str, tenant_id: str
-    ) -> DisciplinaryTemplate:
+    async def get_by_id(self, template_id: str, tenant_id: str) -> DisciplinaryTemplate:
         """
         Busca template por ID.
 
@@ -103,9 +99,7 @@ class TemplateService:
             raise TemplateNotFoundError(f"Template {template_id} nao encontrado")
         return template
 
-    async def get_default(
-        self, tenant_id: str, action_type: str
-    ) -> Optional[DisciplinaryTemplate]:
+    async def get_default(self, tenant_id: str, action_type: str) -> DisciplinaryTemplate | None:
         """
         Busca template padrao para um tipo.
 
@@ -121,7 +115,7 @@ class TemplateService:
     async def list(
         self,
         tenant_id: str,
-        action_type: Optional[str] = None,
+        action_type: str | None = None,
     ) -> TemplateListResponse:
         """
         Lista templates.
@@ -196,7 +190,7 @@ class TemplateService:
 
         return True
 
-    async def initialize_defaults(self, tenant_id: str, created_by: Optional[str] = None) -> int:
+    async def initialize_defaults(self, tenant_id: str, created_by: str | None = None) -> int:
         """
         Inicializa templates padrao para um tenant.
 
@@ -251,9 +245,7 @@ class TemplateService:
         """
         return DisciplinaryTemplate.get_available_placeholders()
 
-    def preview_render(
-        self, content: str, sample_context: Optional[dict[str, str]] = None
-    ) -> str:
+    def preview_render(self, content: str, sample_context: dict[str, str] | None = None) -> str:
         """
         Pre-visualiza renderizacao de template.
 

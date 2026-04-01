@@ -4,27 +4,30 @@ Email Model - Sprint 54.
 Modelo para emails processados pelo assistente de IA.
 """
 
+import uuid
+from datetime import datetime
+from enum import StrEnum
+
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
     Boolean,
+    Column,
     DateTime,
-    Integer,
     Float,
     ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
-import uuid
-import enum
 
 from core.models.base import Base
 
 
-class EmailStatusEnum(str, enum.Enum):
+class EmailStatusEnum(StrEnum):
     """Status do email."""
 
     RECEIVED = "received"
@@ -36,7 +39,7 @@ class EmailStatusEnum(str, enum.Enum):
     DELETED = "deleted"
 
 
-class EmailCategoryEnum(str, enum.Enum):
+class EmailCategoryEnum(StrEnum):
     """Categoria do email."""
 
     SUPPORT = "support"
@@ -53,7 +56,7 @@ class EmailCategoryEnum(str, enum.Enum):
     OTHER = "other"
 
 
-class EmailPriorityEnum(str, enum.Enum):
+class EmailPriorityEnum(StrEnum):
     """Prioridade do email."""
 
     CRITICAL = "critical"
@@ -63,7 +66,7 @@ class EmailPriorityEnum(str, enum.Enum):
     NONE = "none"
 
 
-class EmailSentimentEnum(str, enum.Enum):
+class EmailSentimentEnum(StrEnum):
     """Sentimento do email."""
 
     VERY_NEGATIVE = "very_negative"
@@ -194,9 +197,7 @@ class Email(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relationships
@@ -255,9 +256,7 @@ class EmailResponse(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     email = relationship("Email", back_populates="responses")
@@ -266,7 +265,7 @@ class EmailResponse(Base):
         return f"<EmailResponse {self.id}>"
 
 
-class EmailTemplate(Base):
+class AIEmailTemplate(Base):
     """
     Modelo de Template de Email.
 
@@ -314,9 +313,7 @@ class EmailTemplate(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
@@ -374,9 +371,7 @@ class EmailRule(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 

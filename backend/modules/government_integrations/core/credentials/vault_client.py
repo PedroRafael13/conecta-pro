@@ -4,24 +4,30 @@ Cliente HashiCorp Vault para Gerenciamento de Secrets.
 Fornece acesso seguro a credenciais e certificados.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from dataclasses import dataclass
 import asyncio
 import logging
 import os
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any
 
 try:
     import hvac
-    from hvac.exceptions import VaultError, InvalidPath
+    from hvac.exceptions import VaultError
+
     HVAC_AVAILABLE = True
 except ImportError:
     HVAC_AVAILABLE = False
     hvac = None
+
     class VaultError(Exception):
         pass
-    class InvalidPath(Exception):
+
+    class InvalidPathError(Exception):
+        """Erro quando caminho não é encontrado no Vault."""
+
         pass
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +35,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class VaultConfig:
     """Configuração do Vault."""
+
     url: str = "http://localhost:8200"
-    token: Optional[str] = None
-    role_id: Optional[str] = None
-    secret_id: Optional[str] = None
-    namespace: Optional[str] = None
+    token: str | None = None
+    role_id: str | None = None
+    secret_id: str | None = None
+    namespace: str | None = None
     mount_point: str = "secret"
     verify_ssl: bool = True
 
@@ -66,13 +73,13 @@ class VaultClient:
     - Renovação automática de token
     """
 
-    def __init__(self, config: Optional[VaultConfig] = None):
+    def __init__(self, config: VaultConfig | None = None):
         if not HVAC_AVAILABLE:
             logger.warning("hvac não instalado. VaultClient não estará funcional.")
         self.config = config or VaultConfig.from_env()
         self._client = None
-        self._cache: Dict[str, Dict] = {}
-        self._cache_expiry: Dict[str, datetime] = {}
+        self._cache: dict[str, dict] = {}
+        self._cache_expiry: dict[str, datetime] = {}
         self._lock = asyncio.Lock()
 
     async def _get_client(self):
@@ -112,12 +119,7 @@ class VaultClient:
 
             return self._client
 
-    async def ler_secret(
-        self,
-        path: str,
-        use_cache: bool = True,
-        cache_ttl: int = 300
-    ) -> Optional[Dict[str, Any]]:
+    async def ler_secret(self, path: str, use_cache: bool = True, cache_ttl: int = 300) -> dict[str, Any] | None:
         """
         Lê um secret do Vault.
 
@@ -154,7 +156,7 @@ class VaultClient:
             logger.debug(f"Secret lido: {path}")
             return data
 
-        except InvalidPath:
+        except InvalidPathError:
             logger.warning(f"Secret não encontrado: {path}")
             return None
 
@@ -162,12 +164,7 @@ class VaultClient:
             logger.error(f"Erro ao ler secret {path}: {e}")
             raise
 
-    async def escrever_secret(
-        self,
-        path: str,
-        data: Dict[str, Any],
-        cas: Optional[int] = None
-    ) -> bool:
+    async def escrever_secret(self, path: str, data: dict[str, Any], cas: int | None = None) -> bool:
         """
         Escreve um secret no Vault.
 
@@ -221,7 +218,7 @@ class VaultClient:
             logger.error(f"Erro ao deletar secret {path}: {e}")
             return False
 
-    async def listar_secrets(self, path: str) -> List[str]:
+    async def listar_secrets(self, path: str) -> list[str]:
         """Lista secrets em um path."""
         try:
             client = await self._get_client()
@@ -231,7 +228,7 @@ class VaultClient:
             )
             return response.get("data", {}).get("keys", [])
 
-        except InvalidPath:
+        except InvalidPathError:
             return []
 
         except Exception as e:
@@ -240,11 +237,7 @@ class VaultClient:
 
     # Métodos específicos para integrações governamentais
 
-    async def obter_certificado(
-        self,
-        tenant_id: str,
-        tipo: str = "e-cnpj"
-    ) -> Optional[Dict[str, Any]]:
+    async def obter_certificado(self, tenant_id: str, tipo: str = "e-cnpj") -> dict[str, Any] | None:
         """
         Obtém certificado digital do tenant.
 
@@ -259,13 +252,7 @@ class VaultClient:
         return await self.ler_secret(path, cache_ttl=60)
 
     async def salvar_certificado(
-        self,
-        tenant_id: str,
-        tipo: str,
-        pfx_base64: str,
-        senha: str,
-        validade: datetime,
-        metadata: Optional[Dict] = None
+        self, tenant_id: str, tipo: str, pfx_base64: str, senha: str, validade: datetime, metadata: dict | None = None
     ) -> bool:
         """
         Salva certificado digital no Vault.
@@ -291,11 +278,7 @@ class VaultClient:
         }
         return await self.escrever_secret(path, data)
 
-    async def obter_credencial_servico(
-        self,
-        tenant_id: str,
-        servico: str
-    ) -> Optional[Dict[str, Any]]:
+    async def obter_credencial_servico(self, tenant_id: str, servico: str) -> dict[str, Any] | None:
         """
         Obtém credencial para um serviço governamental.
 
@@ -309,12 +292,7 @@ class VaultClient:
         path = f"{self.config.path_credenciais}/{tenant_id}/{servico}"
         return await self.ler_secret(path, cache_ttl=300)
 
-    async def salvar_credencial_servico(
-        self,
-        tenant_id: str,
-        servico: str,
-        credenciais: Dict[str, Any]
-    ) -> bool:
+    async def salvar_credencial_servico(self, tenant_id: str, servico: str, credenciais: dict[str, Any]) -> bool:
         """
         Salva credencial de serviço no Vault.
 
@@ -333,28 +311,22 @@ class VaultClient:
         }
         return await self.escrever_secret(path, data)
 
-    async def listar_certificados_tenant(
-        self,
-        tenant_id: str
-    ) -> List[str]:
+    async def listar_certificados_tenant(self, tenant_id: str) -> list[str]:
         """Lista certificados de um tenant."""
         path = f"{self.config.path_certificados}/{tenant_id}"
         return await self.listar_secrets(path)
 
-    async def listar_credenciais_tenant(
-        self,
-        tenant_id: str
-    ) -> List[str]:
+    async def listar_credenciais_tenant(self, tenant_id: str) -> list[str]:
         """Lista credenciais de um tenant."""
         path = f"{self.config.path_credenciais}/{tenant_id}"
         return await self.listar_secrets(path)
 
-    async def obter_config_global(self, chave: str) -> Optional[Dict[str, Any]]:
+    async def obter_config_global(self, chave: str) -> dict[str, Any] | None:
         """Obtém configuração global do sistema."""
         path = f"{self.config.path_config}/{chave}"
         return await self.ler_secret(path)
 
-    async def healthcheck(self) -> Dict[str, Any]:
+    async def healthcheck(self) -> dict[str, Any]:
         """Verifica saúde da conexão com Vault."""
         try:
             client = await self._get_client()
@@ -381,7 +353,7 @@ class VaultClient:
 
 
 # Instância singleton
-_vault_client_instance: Optional[VaultClient] = None
+_vault_client_instance: VaultClient | None = None
 
 
 def get_vault_client() -> VaultClient:

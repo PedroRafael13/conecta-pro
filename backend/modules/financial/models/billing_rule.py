@@ -2,11 +2,9 @@
 
 import uuid
 from datetime import date, datetime, time
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from dateutil.relativedelta import relativedelta
-
 from sqlalchemy import (
     Boolean,
     Column,
@@ -25,7 +23,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class BillingType(str, Enum):
+class BillingType(StrEnum):
     """Tipo de cobranca."""
 
     TAXA_CONDOMINIAL = "taxa_condominial"  # Taxa mensal
@@ -39,7 +37,7 @@ class BillingType(str, Enum):
     RATEIO_EXTRA = "rateio_extra"  # Rateio extraordinario
 
 
-class BillingFrequency(str, Enum):
+class BillingFrequency(StrEnum):
     """Frequencia de cobranca."""
 
     MENSAL = "mensal"
@@ -50,7 +48,7 @@ class BillingFrequency(str, Enum):
     AVULSO = "avulso"  # Cobranca unica
 
 
-class NotificationType(str, Enum):
+class NotificationType(StrEnum):
     """Tipo de notificacao."""
 
     EMAIL = "email"
@@ -59,7 +57,7 @@ class NotificationType(str, Enum):
     PUSH = "push"
 
 
-class BillingRuleStatus(str, Enum):
+class BillingRuleStatus(StrEnum):
     """Status da regra."""
 
     ATIVA = "ativa"
@@ -202,7 +200,7 @@ class BillingRule(Base):
             return False
         return date.today().day == self.generation_day
 
-    def calculate_due_date(self, reference_date: Optional[date] = None) -> date:
+    def calculate_due_date(self, reference_date: date | None = None) -> date:
         """Calcula data de vencimento."""
         if reference_date is None:
             reference_date = date.today()
@@ -220,7 +218,7 @@ class BillingRule(Base):
 
         return date(due_year, due_month, day)
 
-    def calculate_value(self, unit_data: Optional[dict] = None) -> float:
+    def calculate_value(self, unit_data: dict | None = None) -> float:
         """Calcula valor da cobranca."""
         if self.value_type == "fixo":
             return float(self.base_value)
@@ -252,7 +250,7 @@ class BillingRule(Base):
         self,
         success_count: int,
         error_count: int,
-        details: Optional[list] = None,
+        details: list | None = None,
     ) -> None:
         """Registra execucao da regra."""
         self.last_run_at = datetime.utcnow()

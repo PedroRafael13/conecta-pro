@@ -7,8 +7,7 @@ tendencias e anomalias.
 
 import logging
 from collections import defaultdict
-from datetime import date, datetime, timedelta
-from typing import Optional
+from datetime import date
 from uuid import UUID
 
 import numpy as np
@@ -39,15 +38,22 @@ class DemandAnalyzer:
     """
 
     # Nomes dos dias da semana
-    WEEKDAYS = [
-        "monday", "tuesday", "wednesday", "thursday",
-        "friday", "saturday", "sunday"
-    ]
+    WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
     # Nomes dos meses
     MONTHS = [
-        "january", "february", "march", "april", "may", "june",
-        "july", "august", "september", "october", "november", "december"
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
     ]
 
     def __init__(self, db: Session):
@@ -60,7 +66,7 @@ class DemandAnalyzer:
         product_id: UUID,
         product_info: dict,
         historical_data: list[dict],
-        analyzed_by: Optional[UUID] = None,
+        analyzed_by: UUID | None = None,
     ) -> DemandPattern:
         """
         Analisa padrao de demanda de um produto.
@@ -77,10 +83,7 @@ class DemandAnalyzer:
         logger.info(f"Analisando padrao de demanda: {product_id}")
 
         if len(historical_data) < 14:
-            raise ValueError(
-                f"Dados insuficientes: {len(historical_data)} pontos. "
-                "Minimo: 14 pontos para analise."
-            )
+            raise ValueError(f"Dados insuficientes: {len(historical_data)} pontos. Minimo: 14 pontos para analise.")
 
         # Ordenar dados por data
         sorted_data = sorted(historical_data, key=lambda x: x["date"])
@@ -108,9 +111,7 @@ class DemandAnalyzer:
             seasonality_info = self._analyze_seasonality(dates, values)
 
             # Classificar padrao
-            pattern_type, confidence = self._classify_pattern(
-                values, trend_info, seasonality_info
-            )
+            pattern_type, confidence = self._classify_pattern(values, trend_info, seasonality_info)
 
             # Detectar anomalias
             anomaly_info = self._detect_anomalies(dates, values, stats)
@@ -120,19 +121,13 @@ class DemandAnalyzer:
             monthly_dist = self._calculate_monthly_distribution(dates, values)
 
             # Calcular previsibilidade
-            predictability = self._calculate_predictability(
-                stats, trend_info, seasonality_info
-            )
+            predictability = self._calculate_predictability(stats, trend_info, seasonality_info)
 
             # Gerar recomendacoes
-            recommendations = self._generate_recommendations(
-                pattern_type, trend_info, seasonality_info, stats
-            )
+            recommendations = self._generate_recommendations(pattern_type, trend_info, seasonality_info, stats)
 
             # Gerar insights
-            insights = self._generate_insights(
-                pattern_type, trend_info, seasonality_info, anomaly_info
-            )
+            insights = self._generate_insights(pattern_type, trend_info, seasonality_info, anomaly_info)
 
             # Atualizar padrao
             update_data = {
@@ -233,11 +228,7 @@ class DemandAnalyzer:
             "strength": round(float(max(0, r_squared)), 2),
         }
 
-    def _analyze_seasonality(
-        self,
-        dates: list[date],
-        values: np.ndarray
-    ) -> dict:
+    def _analyze_seasonality(self, dates: list[date], values: np.ndarray) -> dict:
         """Analisa sazonalidade dos dados."""
         n = len(values)
 
@@ -322,11 +313,7 @@ class DemandAnalyzer:
 
         return max(0, min(1, autocorr))
 
-    def _identify_peak_periods(
-        self,
-        dates: list[date],
-        values: np.ndarray
-    ) -> list[dict]:
+    def _identify_peak_periods(self, dates: list[date], values: np.ndarray) -> list[dict]:
         """Identifica periodos de pico."""
         if len(values) < 30:
             return []
@@ -338,7 +325,7 @@ class DemandAnalyzer:
 
         # Agrupar por mes
         monthly_data = defaultdict(list)
-        for d, v in zip(dates, values):
+        for d, v in zip(dates, values, strict=False):
             key = f"{d.year}-{d.month:02d}"
             monthly_data[key].append(v)
 
@@ -347,20 +334,19 @@ class DemandAnalyzer:
             month_mean = np.mean(month_values)
             if month_mean > threshold:
                 year, month = month_key.split("-")
-                peaks.append({
-                    "period": month_key,
-                    "month": int(month),
-                    "avg_demand": round(float(month_mean), 2),
-                    "above_mean_pct": round((month_mean / mean - 1) * 100, 1),
-                })
+                peaks.append(
+                    {
+                        "period": month_key,
+                        "month": int(month),
+                        "avg_demand": round(float(month_mean), 2),
+                        "above_mean_pct": round((month_mean / mean - 1) * 100, 1),
+                    }
+                )
 
         return sorted(peaks, key=lambda x: x["avg_demand"], reverse=True)[:5]
 
     def _classify_pattern(
-        self,
-        values: np.ndarray,
-        trend_info: dict,
-        seasonality_info: dict
+        self, values: np.ndarray, trend_info: dict, seasonality_info: dict
     ) -> tuple[PatternType, float]:
         """Classifica tipo de padrao."""
         cv = (np.std(values) / np.mean(values)) if np.mean(values) > 0 else 0
@@ -394,12 +380,7 @@ class DemandAnalyzer:
 
         return PatternType.CONSTANT, 60.0
 
-    def _detect_anomalies(
-        self,
-        dates: list[date],
-        values: np.ndarray,
-        stats: dict
-    ) -> dict:
+    def _detect_anomalies(self, dates: list[date], values: np.ndarray, stats: dict) -> dict:
         """Detecta anomalias nos dados."""
         mean = stats["mean"]
         std = stats["std"]
@@ -410,16 +391,18 @@ class DemandAnalyzer:
         anomaly_dates = []
         total_impact = 0.0
 
-        for i, (d, v) in enumerate(zip(dates, values)):
+        for _i, (d, v) in enumerate(zip(dates, values, strict=False)):
             if std > 0:
                 z_score = abs(v - mean) / std
                 if z_score > threshold:
-                    anomaly_dates.append({
-                        "date": d.isoformat(),
-                        "value": float(v),
-                        "z_score": round(z_score, 2),
-                        "type": "spike" if v > mean else "drop",
-                    })
+                    anomaly_dates.append(
+                        {
+                            "date": d.isoformat(),
+                            "value": float(v),
+                            "z_score": round(z_score, 2),
+                            "type": "spike" if v > mean else "drop",
+                        }
+                    )
                     total_impact += abs(v - mean)
 
         # Calcular impacto percentual
@@ -432,16 +415,12 @@ class DemandAnalyzer:
             "impact": round(impact_pct, 2),
         }
 
-    def _calculate_weekday_distribution(
-        self,
-        dates: list[date],
-        values: np.ndarray
-    ) -> dict:
+    def _calculate_weekday_distribution(self, dates: list[date], values: np.ndarray) -> dict:
         """Calcula distribuicao por dia da semana."""
         day_totals = defaultdict(float)
         day_counts = defaultdict(int)
 
-        for d, v in zip(dates, values):
+        for d, v in zip(dates, values, strict=False):
             day = self.WEEKDAYS[d.weekday()]
             day_totals[day] += v
             day_counts[day] += 1
@@ -450,22 +429,14 @@ class DemandAnalyzer:
         if total == 0:
             return {}
 
-        return {
-            day: round(day_totals[day] / total, 4)
-            for day in self.WEEKDAYS
-            if day_counts[day] > 0
-        }
+        return {day: round(day_totals[day] / total, 4) for day in self.WEEKDAYS if day_counts[day] > 0}
 
-    def _calculate_monthly_distribution(
-        self,
-        dates: list[date],
-        values: np.ndarray
-    ) -> dict:
+    def _calculate_monthly_distribution(self, dates: list[date], values: np.ndarray) -> dict:
         """Calcula distribuicao por mes."""
         month_totals = defaultdict(float)
         month_counts = defaultdict(int)
 
-        for d, v in zip(dates, values):
+        for d, v in zip(dates, values, strict=False):
             month = self.MONTHS[d.month - 1]
             month_totals[month] += v
             month_counts[month] += 1
@@ -474,18 +445,9 @@ class DemandAnalyzer:
         if total == 0:
             return {}
 
-        return {
-            month: round(month_totals[month] / total, 4)
-            for month in self.MONTHS
-            if month_counts[month] > 0
-        }
+        return {month: round(month_totals[month] / total, 4) for month in self.MONTHS if month_counts[month] > 0}
 
-    def _calculate_predictability(
-        self,
-        stats: dict,
-        trend_info: dict,
-        seasonality_info: dict
-    ) -> float:
+    def _calculate_predictability(self, stats: dict, trend_info: dict, seasonality_info: dict) -> float:
         """Calcula score de previsibilidade (0-100)."""
         # Fatores que aumentam previsibilidade
         score = 50.0  # Base
@@ -522,11 +484,7 @@ class DemandAnalyzer:
         return max(0, min(100, round(score, 1)))
 
     def _generate_recommendations(
-        self,
-        pattern_type: PatternType,
-        trend_info: dict,
-        seasonality_info: dict,
-        stats: dict
+        self, pattern_type: PatternType, trend_info: dict, seasonality_info: dict, stats: dict
     ) -> dict:
         """Gera recomendacoes baseadas no padrao."""
         # Modelo recomendado
@@ -567,50 +525,54 @@ class DemandAnalyzer:
         }
 
     def _generate_insights(
-        self,
-        pattern_type: PatternType,
-        trend_info: dict,
-        seasonality_info: dict,
-        anomaly_info: dict
+        self, pattern_type: PatternType, trend_info: dict, seasonality_info: dict, anomaly_info: dict
     ) -> list[dict]:
         """Gera insights sobre o padrao."""
         insights = []
 
         # Insight sobre tipo de padrao
-        insights.append({
-            "type": "pattern",
-            "title": f"Padrao {pattern_type.value}",
-            "description": self._get_pattern_description(pattern_type),
-            "importance": "high",
-        })
+        insights.append(
+            {
+                "type": "pattern",
+                "title": f"Padrao {pattern_type.value}",
+                "description": self._get_pattern_description(pattern_type),
+                "importance": "high",
+            }
+        )
 
         # Insight sobre tendencia
         if trend_info["direction"] != TrendDirection.STABLE:
             direction = "crescente" if trend_info["direction"] == TrendDirection.INCREASING else "decrescente"
-            insights.append({
-                "type": "trend",
-                "title": f"Tendencia {direction}",
-                "description": f"Demanda com tendencia {direction} ({trend_info['slope']*100:.1f}% ao ano)",
-                "importance": "high" if trend_info["strength"] >= 0.5 else "medium",
-            })
+            insights.append(
+                {
+                    "type": "trend",
+                    "title": f"Tendencia {direction}",
+                    "description": f"Demanda com tendencia {direction} ({trend_info['slope'] * 100:.1f}% ao ano)",
+                    "importance": "high" if trend_info["strength"] >= 0.5 else "medium",
+                }
+            )
 
         # Insight sobre sazonalidade
         if seasonality_info["type"] != SeasonalityType.NONE:
-            insights.append({
-                "type": "seasonality",
-                "title": f"Sazonalidade {seasonality_info['type'].value}",
-                "description": f"Padrao sazonal identificado com forca de {seasonality_info['strength']*100:.0f}%",
-                "importance": "medium",
-            })
+            insights.append(
+                {
+                    "type": "seasonality",
+                    "title": f"Sazonalidade {seasonality_info['type'].value}",
+                    "description": f"Padrao sazonal identificado com forca de {seasonality_info['strength'] * 100:.0f}%",
+                    "importance": "medium",
+                }
+            )
 
         # Insight sobre anomalias
         if anomaly_info["count"] > 0:
-            insights.append({
-                "type": "anomaly",
-                "title": f"{anomaly_info['count']} anomalias detectadas",
-                "description": f"Impacto de {anomaly_info['impact']:.1f}% no total",
-                "importance": "low" if anomaly_info["count"] < 5 else "medium",
-            })
+            insights.append(
+                {
+                    "type": "anomaly",
+                    "title": f"{anomaly_info['count']} anomalias detectadas",
+                    "description": f"Impacto de {anomaly_info['impact']:.1f}% no total",
+                    "importance": "low" if anomaly_info["count"] < 5 else "medium",
+                }
+            )
 
         return insights
 
@@ -626,10 +588,10 @@ class DemandAnalyzer:
         }
         return descriptions.get(pattern_type, "Padrao identificado.")
 
-    def get_pattern(self, pattern_id: UUID) -> Optional[DemandPattern]:
+    def get_pattern(self, pattern_id: UUID) -> DemandPattern | None:
         """Busca padrao por ID."""
         return self.repository.get_demand_pattern(pattern_id)
 
-    def get_latest_pattern(self, product_id: UUID) -> Optional[DemandPattern]:
+    def get_latest_pattern(self, product_id: UUID) -> DemandPattern | None:
         """Busca padrao mais recente para produto."""
         return self.repository.get_latest_demand_pattern(product_id)

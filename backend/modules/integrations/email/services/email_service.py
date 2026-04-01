@@ -8,11 +8,10 @@ Responsavel por:
 - Webhooks de providers
 """
 
-import enum
 import re
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Optional
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -30,7 +29,7 @@ from modules.integrations.email.models.email_template import EmailTemplate
 from modules.integrations.email.models.email_tracking import EmailTracking, TrackingEventType
 
 
-class SendResult(str, enum.Enum):
+class SendResult(StrEnum):
     """Resultado do envio."""
 
     SUCCESS = "SUCCESS"  # Enviado com sucesso
@@ -49,9 +48,9 @@ class SendResponse:
     """Resposta de envio de email."""
 
     result: SendResult
-    queue_id: Optional[UUID] = None
-    message_id: Optional[str] = None
-    error_message: Optional[str] = None
+    queue_id: UUID | None = None
+    message_id: str | None = None
+    error_message: str | None = None
 
     @property
     def success(self) -> bool:
@@ -133,16 +132,14 @@ class TrackingPixel:
 
     queue_id: UUID
     tenant_id: UUID
-    campaign_id: Optional[UUID] = None
+    campaign_id: UUID | None = None
 
 
 class EmailService:
     """Servico de Email."""
 
     # Regex para validacao de email
-    EMAIL_REGEX = re.compile(
-        r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    )
+    EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
     def __init__(self, session: AsyncSession):
         """Inicializa o servico.
@@ -159,16 +156,16 @@ class EmailService:
         to_email: str,
         subject: str,
         html_content: str,
-        to_name: Optional[str] = None,
-        text_content: Optional[str] = None,
-        from_email: Optional[str] = None,
-        from_name: Optional[str] = None,
-        reply_to: Optional[str] = None,
-        template_id: Optional[UUID] = None,
-        campaign_id: Optional[UUID] = None,
-        variables: Optional[dict] = None,
+        to_name: str | None = None,
+        text_content: str | None = None,
+        from_email: str | None = None,
+        from_name: str | None = None,
+        reply_to: str | None = None,
+        template_id: UUID | None = None,
+        campaign_id: UUID | None = None,
+        variables: dict | None = None,
         priority: EmailPriority = EmailPriority.NORMAL,
-        scheduled_at: Optional[datetime] = None,
+        scheduled_at: datetime | None = None,
     ) -> SendResponse:
         """Envia ou enfileira um email.
 
@@ -263,10 +260,10 @@ class EmailService:
         template_id: UUID,
         to_email: str,
         variables: dict,
-        to_name: Optional[str] = None,
-        campaign_id: Optional[UUID] = None,
+        to_name: str | None = None,
+        campaign_id: UUID | None = None,
         priority: EmailPriority = EmailPriority.NORMAL,
-        scheduled_at: Optional[datetime] = None,
+        scheduled_at: datetime | None = None,
     ) -> SendResponse:
         """Envia email usando template.
 
@@ -331,8 +328,7 @@ class EmailService:
                 and_(
                     EmailQueue.config_id == config_id,
                     EmailQueue.status == EmailStatus.QUEUED,
-                    (EmailQueue.scheduled_at.is_(None))
-                    | (EmailQueue.scheduled_at <= datetime.utcnow()),
+                    (EmailQueue.scheduled_at.is_(None)) | (EmailQueue.scheduled_at <= datetime.utcnow()),
                 )
             )
             .order_by(EmailQueue.priority.desc(), EmailQueue.created_at.asc())
@@ -440,29 +436,23 @@ class EmailService:
         tracking_counts = {row[0]: row[1] for row in tracking_result.all()}
 
         # Unique opens e clicks
-        unique_opens_query = (
-            select(func.count(func.distinct(EmailTracking.queue_id)))
-            .where(
-                and_(
-                    EmailTracking.tenant_id == tenant_id,
-                    EmailTracking.event_type == TrackingEventType.OPENED,
-                    EmailTracking.event_timestamp >= start_dt,
-                    EmailTracking.event_timestamp <= end_dt,
-                )
+        unique_opens_query = select(func.count(func.distinct(EmailTracking.queue_id))).where(
+            and_(
+                EmailTracking.tenant_id == tenant_id,
+                EmailTracking.event_type == TrackingEventType.OPENED,
+                EmailTracking.event_timestamp >= start_dt,
+                EmailTracking.event_timestamp <= end_dt,
             )
         )
         unique_opens_result = await self.session.execute(unique_opens_query)
         unique_opens = unique_opens_result.scalar() or 0
 
-        unique_clicks_query = (
-            select(func.count(func.distinct(EmailTracking.queue_id)))
-            .where(
-                and_(
-                    EmailTracking.tenant_id == tenant_id,
-                    EmailTracking.event_type == TrackingEventType.CLICKED,
-                    EmailTracking.event_timestamp >= start_dt,
-                    EmailTracking.event_timestamp <= end_dt,
-                )
+        unique_clicks_query = select(func.count(func.distinct(EmailTracking.queue_id))).where(
+            and_(
+                EmailTracking.tenant_id == tenant_id,
+                EmailTracking.event_type == TrackingEventType.CLICKED,
+                EmailTracking.event_timestamp >= start_dt,
+                EmailTracking.event_timestamp <= end_dt,
             )
         )
         unique_clicks_result = await self.session.execute(unique_clicks_query)
@@ -485,8 +475,8 @@ class EmailService:
     async def track_open(
         self,
         queue_id: UUID,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
     ) -> bool:
         """Registra abertura de email.
 
@@ -523,9 +513,9 @@ class EmailService:
         self,
         queue_id: UUID,
         clicked_url: str,
-        link_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        link_id: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
     ) -> bool:
         """Registra clique em link.
 
@@ -613,8 +603,8 @@ class EmailService:
         self,
         tenant_id: UUID,
         email: str,
-        token: Optional[str] = None,
-        reason: Optional[str] = None,
+        token: str | None = None,
+        reason: str | None = None,
     ) -> bool:
         """Descadastra email.
 
@@ -654,25 +644,25 @@ class EmailService:
 
     # --- Metodos privados ---
 
-    async def _get_config(self, config_id: UUID) -> Optional[EmailConfig]:
+    async def _get_config(self, config_id: UUID) -> EmailConfig | None:
         """Busca configuracao."""
         query = select(EmailConfig).where(EmailConfig.id == config_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def _get_template(self, template_id: UUID) -> Optional[EmailTemplate]:
+    async def _get_template(self, template_id: UUID) -> EmailTemplate | None:
         """Busca template."""
         query = select(EmailTemplate).where(EmailTemplate.id == template_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def _get_queue_entry(self, queue_id: UUID) -> Optional[EmailQueue]:
+    async def _get_queue_entry(self, queue_id: UUID) -> EmailQueue | None:
         """Busca entrada na fila."""
         query = select(EmailQueue).where(EmailQueue.id == queue_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def _get_by_message_id(self, message_id: str) -> Optional[EmailQueue]:
+    async def _get_by_message_id(self, message_id: str) -> EmailQueue | None:
         """Busca por message_id do provedor."""
         query = select(EmailQueue).where(EmailQueue.provider_message_id == message_id)
         result = await self.session.execute(query)
@@ -682,7 +672,7 @@ class EmailService:
         self,
         tenant_id: UUID,
         email: str,
-    ) -> Optional[EmailSubscription]:
+    ) -> EmailSubscription | None:
         """Busca inscricao."""
         email_hash = EmailSubscription.hash_email(email)
         query = select(EmailSubscription).where(
@@ -727,7 +717,7 @@ class EmailService:
             subscription.unsubscribe("Via webhook")
 
     @staticmethod
-    def _extract_message_id(provider: str, payload: dict) -> Optional[str]:
+    def _extract_message_id(provider: str, payload: dict) -> str | None:
         """Extrai message_id do payload de webhook."""
         if provider == "sendgrid":
             return payload.get("sg_message_id")
@@ -738,7 +728,7 @@ class EmailService:
         return payload.get("message_id")
 
     @staticmethod
-    def _extract_event_type(provider: str, payload: dict) -> Optional[str]:
+    def _extract_event_type(provider: str, payload: dict) -> str | None:
         """Extrai tipo de evento do payload de webhook."""
         event_map = {
             "delivered": "delivered",
@@ -755,9 +745,7 @@ class EmailService:
             "unsubscribed": "unsubscribed",
         }
 
-        if provider == "sendgrid":
-            event = payload.get("event", "").lower()
-        elif provider == "mailgun":
+        if provider == "sendgrid" or provider == "mailgun":
             event = payload.get("event", "").lower()
         elif provider == "aws_ses":
             event = payload.get("eventType", "").lower()

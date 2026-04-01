@@ -2,22 +2,21 @@
 Service para Visita.
 """
 
-from datetime import datetime, date, time
+from datetime import date, time
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.campo.models.visita import Visita, StatusVisita, ResultadoVisita
+from modules.campo.models.visita import ResultadoVisita, StatusVisita, Visita
 from modules.campo.repositories.visita_repository import VisitaRepository
 from modules.campo.schemas.visita import (
     VisitaCreate,
-    VisitaUpdate,
-    VisitaFiltro,
-    VisitaPaginatedResponse,
     VisitaDashboardStats,
+    VisitaFiltro,
     VisitaListItem,
+    VisitaPaginatedResponse,
+    VisitaUpdate,
 )
 
 
@@ -37,15 +36,15 @@ class VisitaService:
         """Cria uma nova visita."""
         return await self.repository.create(data, created_by)
 
-    async def obter_visita(self, visita_id: UUID) -> Optional[Visita]:
+    async def obter_visita(self, visita_id: UUID) -> Visita | None:
         """Obtem visita por ID."""
         return await self.repository.get_by_id(visita_id)
 
-    async def obter_visita_por_numero(self, numero: str) -> Optional[Visita]:
+    async def obter_visita_por_numero(self, numero: str) -> Visita | None:
         """Obtem visita por numero."""
         return await self.repository.get_by_numero(numero)
 
-    async def atualizar_visita(self, visita_id: UUID, data: VisitaUpdate, updated_by: UUID = None) -> Optional[Visita]:
+    async def atualizar_visita(self, visita_id: UUID, data: VisitaUpdate, updated_by: UUID = None) -> Visita | None:
         """Atualiza uma visita."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -65,7 +64,7 @@ class VisitaService:
 
     async def listar_visitas(
         self,
-        filtro: Optional[VisitaFiltro] = None,
+        filtro: VisitaFiltro | None = None,
         page: int = 1,
         page_size: int = 50,
     ) -> VisitaPaginatedResponse:
@@ -84,21 +83,21 @@ class VisitaService:
     async def listar_visitas_responsavel(
         self,
         responsavel_id: UUID,
-        data: Optional[date] = None,
+        data: date | None = None,
         apenas_agendadas: bool = False,
-    ) -> List[Visita]:
+    ) -> list[Visita]:
         """Lista visitas de um responsavel."""
         return await self.repository.list_by_responsavel(responsavel_id, data, apenas_agendadas)
 
-    async def listar_visitas_cliente(self, cliente_id: UUID) -> List[Visita]:
+    async def listar_visitas_cliente(self, cliente_id: UUID) -> list[Visita]:
         """Lista visitas de um cliente."""
         return await self.repository.list_by_cliente(cliente_id)
 
-    async def listar_visitas_lead(self, lead_id: UUID) -> List[Visita]:
+    async def listar_visitas_lead(self, lead_id: UUID) -> list[Visita]:
         """Lista visitas de um lead."""
         return await self.repository.list_by_lead(lead_id)
 
-    async def listar_pendentes_confirmacao(self) -> List[Visita]:
+    async def listar_pendentes_confirmacao(self) -> list[Visita]:
         """Lista visitas que precisam confirmacao."""
         return await self.repository.list_pendentes_confirmacao()
 
@@ -110,7 +109,7 @@ class VisitaService:
         self,
         visita_id: UUID,
         confirmado_por: str = None,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Confirma uma visita."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -124,7 +123,7 @@ class VisitaService:
         await self.db.refresh(visita)
         return visita
 
-    async def iniciar_deslocamento(self, visita_id: UUID) -> Optional[Visita]:
+    async def iniciar_deslocamento(self, visita_id: UUID) -> Visita | None:
         """Marca inicio do deslocamento."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -143,7 +142,7 @@ class VisitaService:
         visita_id: UUID,
         latitude: float = None,
         longitude: float = None,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Registra check-in no local."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -162,7 +161,7 @@ class VisitaService:
         visita_id: UUID,
         latitude: float = None,
         longitude: float = None,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Registra check-out do local."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -179,7 +178,7 @@ class VisitaService:
         resultado: ResultadoVisita,
         descricao: str = None,
         proximos_passos: str = None,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Registra resultado da visita."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -195,7 +194,7 @@ class VisitaService:
         visita_id: UUID,
         motivo: str,
         cancelado_por: UUID,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Cancela uma visita."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -215,7 +214,7 @@ class VisitaService:
         nova_data: date,
         novo_horario: time,
         motivo: str,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Reagenda uma visita."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -237,8 +236,8 @@ class VisitaService:
         self,
         visita_id: UUID,
         nivel: int,
-        servicos: List[dict] = None,
-    ) -> Optional[Visita]:
+        servicos: list[dict] = None,
+    ) -> Visita | None:
         """Registra nivel de interesse."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -257,7 +256,7 @@ class VisitaService:
         visita_id: UUID,
         proposta_id: UUID,
         valor: Decimal,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Vincula proposta gerada a visita."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -273,7 +272,7 @@ class VisitaService:
         visita_id: UUID,
         contrato_id: UUID,
         valor: Decimal,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Registra fechamento de contrato."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -289,7 +288,7 @@ class VisitaService:
         visita_id: UUID,
         motivo: str,
         concorrente: str = None,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Registra motivo de nao fechamento."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -308,7 +307,7 @@ class VisitaService:
         self,
         visita_id: UUID,
         dados: dict,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Adiciona dados de levantamento tecnico."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -326,7 +325,7 @@ class VisitaService:
         descricao: str,
         prioridade: int = 3,
         estimativa: Decimal = None,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Adiciona necessidade identificada."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -347,7 +346,7 @@ class VisitaService:
         data: date,
         tipo: str,
         observacoes: str = None,
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Agenda follow-up."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:
@@ -368,7 +367,7 @@ class VisitaService:
         url: str,
         descricao: str = None,
         tipo: str = "geral",
-    ) -> Optional[Visita]:
+    ) -> Visita | None:
         """Adiciona foto a visita."""
         visita = await self.repository.get_by_id(visita_id)
         if not visita:

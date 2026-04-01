@@ -4,12 +4,13 @@ Sprint 33: Integration Framework
 """
 
 import base64
-import httpx
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from typing import Any
+
+import httpx
 
 from modules.integrations.connectors.base.exceptions import (
     AuthenticationError,
@@ -46,7 +47,7 @@ class AuthStrategy(ABC):
         pass
 
     @abstractmethod
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self) -> dict[str, str]:
         """Retorna headers de autenticação."""
         pass
 
@@ -62,6 +63,7 @@ class APIKeyAuth(AuthStrategy):
     Autenticação via API Key.
     Suporta header ou query parameter.
     """
+
     api_key: str
     header_name: str = "Authorization"
     header_prefix: str = "Bearer"
@@ -90,7 +92,7 @@ class APIKeyAuth(AuthStrategy):
         """API keys não expiram normalmente."""
         return False
 
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self) -> dict[str, str]:
         """Retorna headers de autenticação."""
         if self.use_query_param:
             return {}
@@ -110,6 +112,7 @@ class APIKeyAuth(AuthStrategy):
 @dataclass
 class BasicAuth(AuthStrategy):
     """Autenticação Basic (username:password)."""
+
     username: str
     password: str
 
@@ -130,7 +133,7 @@ class BasicAuth(AuthStrategy):
         """Basic auth não expira."""
         return False
 
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self) -> dict[str, str]:
         """Retorna headers de autenticação."""
         return {"Authorization": f"Basic {self._get_basic_token()}"}
 
@@ -145,17 +148,18 @@ class OAuth2ClientCredentials(AuthStrategy):
     Autenticação OAuth2 Client Credentials.
     Gerencia tokens automaticamente com refresh.
     """
+
     client_id: str
     client_secret: str
     token_url: str
-    scopes: Optional[List[str]] = None
-    extra_params: Optional[Dict[str, str]] = None
+    scopes: list[str] | None = None
+    extra_params: dict[str, str] | None = None
 
     # Estado do token (gerenciado internamente)
-    _access_token: Optional[str] = None
-    _refresh_token: Optional[str] = None
-    _expires_at: Optional[datetime] = None
-    _token_type: str = "Bearer"
+    _access_token: str | None = None
+    _refresh_token: str | None = None
+    _expires_at: datetime | None = None
+    _token_type: str = "Bearer"  # noqa: S105
 
     async def authenticate(self, client: httpx.AsyncClient) -> None:
         """Obtém token e aplica ao cliente."""
@@ -189,16 +193,11 @@ class OAuth2ClientCredentials(AuthStrategy):
 
         async with httpx.AsyncClient() as http_client:
             try:
-                response = await http_client.post(
-                    self.token_url,
-                    data=data,
-                    timeout=30.0
-                )
+                response = await http_client.post(self.token_url, data=data, timeout=30.0)
 
                 if response.status_code != 200:
                     raise AuthenticationError(
-                        f"Falha ao obter token: {response.status_code}",
-                        details={"response": response.text}
+                        f"Falha ao obter token: {response.status_code}", details={"response": response.text}
                     )
 
                 token_data = response.json()
@@ -207,11 +206,9 @@ class OAuth2ClientCredentials(AuthStrategy):
                 logger.info("OAuth2: Token obtido com sucesso")
 
             except httpx.RequestError as e:
-                raise AuthenticationError(
-                    f"Erro de conexão ao obter token: {str(e)}"
-                )
+                raise AuthenticationError(f"Erro de conexão ao obter token: {str(e)}")
 
-    def _parse_token_response(self, data: Dict[str, Any]) -> None:
+    def _parse_token_response(self, data: dict[str, Any]) -> None:
         """Parseia resposta do token."""
         self._access_token = data.get("access_token")
         if not self._access_token:
@@ -258,23 +255,17 @@ class OAuth2ClientCredentials(AuthStrategy):
         }
 
         async with httpx.AsyncClient() as http_client:
-            response = await http_client.post(
-                self.token_url,
-                data=data,
-                timeout=30.0
-            )
+            response = await http_client.post(self.token_url, data=data, timeout=30.0)
 
             if response.status_code != 200:
-                raise AuthenticationError(
-                    f"Falha ao renovar token: {response.status_code}"
-                )
+                raise AuthenticationError(f"Falha ao renovar token: {response.status_code}")
 
             token_data = response.json()
             self._parse_token_response(token_data)
 
             logger.info("OAuth2: Token renovado com sucesso")
 
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self) -> dict[str, str]:
         """Retorna headers de autenticação."""
         if not self._access_token:
             return {}
@@ -286,16 +277,16 @@ class OAuth2ClientCredentials(AuthStrategy):
             return True
         return datetime.utcnow() >= self._expires_at
 
-    def get_token(self) -> Optional[str]:
+    def get_token(self) -> str | None:
         """Retorna access token atual."""
         return self._access_token
 
     def set_tokens(
         self,
         access_token: str,
-        refresh_token: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
-        token_type: str = "Bearer"
+        refresh_token: str | None = None,
+        expires_at: datetime | None = None,
+        token_type: str = "Bearer",  # noqa: S107
     ) -> None:
         """Define tokens manualmente (útil para carregar do banco)."""
         self._access_token = access_token
@@ -310,18 +301,19 @@ class OAuth2AuthorizationCode(AuthStrategy):
     Autenticação OAuth2 Authorization Code.
     Para fluxos que requerem autorização do usuário.
     """
+
     client_id: str
     client_secret: str
     authorization_url: str
     token_url: str
     redirect_uri: str
-    scopes: Optional[List[str]] = None
+    scopes: list[str] | None = None
 
     # Estado do token
-    _access_token: Optional[str] = None
-    _refresh_token: Optional[str] = None
-    _expires_at: Optional[datetime] = None
-    _token_type: str = "Bearer"
+    _access_token: str | None = None
+    _refresh_token: str | None = None
+    _expires_at: datetime | None = None
+    _token_type: str = "Bearer"  # noqa: S105
 
     def get_authorization_url(self, state: str) -> str:
         """
@@ -362,16 +354,11 @@ class OAuth2AuthorizationCode(AuthStrategy):
         }
 
         async with httpx.AsyncClient() as http_client:
-            response = await http_client.post(
-                self.token_url,
-                data=data,
-                timeout=30.0
-            )
+            response = await http_client.post(self.token_url, data=data, timeout=30.0)
 
             if response.status_code != 200:
                 raise AuthenticationError(
-                    f"Falha ao trocar código: {response.status_code}",
-                    details={"response": response.text}
+                    f"Falha ao trocar código: {response.status_code}", details={"response": response.text}
                 )
 
             token_data = response.json()
@@ -387,9 +374,7 @@ class OAuth2AuthorizationCode(AuthStrategy):
     async def authenticate(self, client: httpx.AsyncClient) -> None:
         """Aplica token ao cliente."""
         if not self._access_token:
-            raise AuthenticationError(
-                "Token não disponível. Execute exchange_code primeiro."
-            )
+            raise AuthenticationError("Token não disponível. Execute exchange_code primeiro.")
 
         if self.is_expired():
             await self.refresh_if_needed(client)
@@ -412,11 +397,7 @@ class OAuth2AuthorizationCode(AuthStrategy):
         }
 
         async with httpx.AsyncClient() as http_client:
-            response = await http_client.post(
-                self.token_url,
-                data=data,
-                timeout=30.0
-            )
+            response = await http_client.post(self.token_url, data=data, timeout=30.0)
 
             if response.status_code != 200:
                 raise TokenExpiredError("Falha ao renovar token")
@@ -432,7 +413,7 @@ class OAuth2AuthorizationCode(AuthStrategy):
         client.headers["Authorization"] = f"{self._token_type} {self._access_token}"
         return True
 
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self) -> dict[str, str]:
         """Retorna headers de autenticação."""
         if not self._access_token:
             return {}
@@ -445,10 +426,7 @@ class OAuth2AuthorizationCode(AuthStrategy):
         return datetime.utcnow() >= self._expires_at
 
     def set_tokens(
-        self,
-        access_token: str,
-        refresh_token: Optional[str] = None,
-        expires_at: Optional[datetime] = None
+        self, access_token: str, refresh_token: str | None = None, expires_at: datetime | None = None
     ) -> None:
         """Define tokens manualmente."""
         self._access_token = access_token

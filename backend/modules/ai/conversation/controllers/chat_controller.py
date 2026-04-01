@@ -1,7 +1,7 @@
 """Controller de Chat - Endpoints da API de IA Conversacional."""
 
 import logging
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_active_user
 from core.database.session import get_db
-from modules.ai.conversation.models.chat_message import IntentCategory, MessageType
 from modules.ai.conversation.repositories.message_repository import (
     ChatMessageRepository,
 )
@@ -541,9 +540,7 @@ async def get_stats(
             total_sessions=stats["total_sessions"],
             total_messages=stats["total_messages"],
             avg_messages_per_session=(
-                stats["total_messages"] / stats["total_sessions"]
-                if stats["total_sessions"] > 0
-                else 0
+                stats["total_messages"] / stats["total_sessions"] if stats["total_sessions"] > 0 else 0
             ),
         )
 

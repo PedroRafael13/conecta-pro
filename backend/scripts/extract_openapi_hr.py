@@ -4,8 +4,8 @@ Script para extrair OpenAPI spec do módulo HR
 Gera hr.openapi.json com todos os 236 endpoints dos 6 submódulos
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add backend to path
@@ -18,7 +18,11 @@ from fastapi.openapi.utils import get_openapi
 # Analytics Dashboard
 from modules.hr.analytics_dashboard.controllers import (
     dashboard_router as analytics_dashboard_router,
+)
+from modules.hr.analytics_dashboard.controllers import (
     kpi_router as analytics_kpi_router,
+)
+from modules.hr.analytics_dashboard.controllers import (
     report_router as analytics_report_router,
 )
 
@@ -26,12 +30,18 @@ from modules.hr.analytics_dashboard.controllers import (
 from modules.hr.employee_portal.controllers import (
     router as employee_portal_router,
 )
+from modules.hr.mobile_time_clock.controllers import (
+    checkin_router as mobile_checkin_router,
+)
 
 # Mobile Time Clock
 from modules.hr.mobile_time_clock.controllers import (
     device_router as mobile_device_router,
-    checkin_router as mobile_checkin_router,
+)
+from modules.hr.mobile_time_clock.controllers import (
     geofence_router as mobile_geofence_router,
+)
+from modules.hr.mobile_time_clock.controllers import (
     offline_router as mobile_offline_router,
 )
 
@@ -67,22 +77,17 @@ def extract_hr_openapi():
         (analytics_dashboard_router, "/api/v1/hr/analytics/dashboards", ["HR Analytics - Dashboards"]),
         (analytics_kpi_router, "/api/v1/hr/analytics/kpis", ["HR Analytics - KPIs"]),
         (analytics_report_router, "/api/v1/hr/analytics/reports", ["HR Analytics - Reports"]),
-
         # Employee Portal
         (employee_portal_router, "/api/v1/hr/portal", ["HR Portal - Employee Portal"]),
-
         # Mobile Time Clock
         (mobile_device_router, "/api/v1/hr/mobile/devices", ["HR Mobile - Devices"]),
         (mobile_checkin_router, "/api/v1/hr/mobile/checkins", ["HR Mobile - Check-ins"]),
         (mobile_geofence_router, "/api/v1/hr/mobile/geofences", ["HR Mobile - Geofencing"]),
         (mobile_offline_router, "/api/v1/hr/mobile/offline", ["HR Mobile - Offline Sync"]),
-
         # Payroll Integration
         (payroll_router, "/api/v1/hr/payroll", ["HR Payroll - Integration"]),
-
         # REP Integration
         (rep_router, "/api/v1/hr/rep", ["HR REP - Integration"]),
-
         # Time Tracking
         (time_tracking_router, "/api/v1/hr/time-tracking", ["HR Time Tracking"]),
     ]
@@ -107,7 +112,7 @@ def extract_hr_openapi():
 
     # Count endpoints
     total_endpoints = sum(len(methods) for methods in openapi_schema.get("paths", {}).values())
-    print(f"✅ OpenAPI spec HR gerado com sucesso!")
+    print("✅ OpenAPI spec HR gerado com sucesso!")
     print(f"📊 Total de paths: {len(openapi_schema.get('paths', {}))}")
     print(f"📊 Total de endpoints: {total_endpoints}")
 
@@ -157,5 +162,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Erro ao extrair OpenAPI spec: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

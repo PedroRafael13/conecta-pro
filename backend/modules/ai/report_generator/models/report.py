@@ -6,19 +6,21 @@ Armazena relatórios gerados com dados, insights e exportações.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -26,7 +28,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class ReportTypeEnum(str, Enum):
+class ReportTypeEnum(StrEnum):
     """Tipos de relatório."""
 
     # Operacionais
@@ -58,7 +60,7 @@ class ReportTypeEnum(str, Enum):
     AD_HOC = "ad_hoc"
 
 
-class ReportStatusEnum(str, Enum):
+class ReportStatusEnum(StrEnum):
     """Status do relatório."""
 
     DRAFT = "draft"
@@ -69,7 +71,7 @@ class ReportStatusEnum(str, Enum):
     EXPIRED = "expired"
 
 
-class ReportFormatEnum(str, Enum):
+class ReportFormatEnum(StrEnum):
     """Formatos de exportação."""
 
     PDF = "pdf"
@@ -81,7 +83,7 @@ class ReportFormatEnum(str, Enum):
     POWERPOINT = "powerpoint"
 
 
-class ReportPriorityEnum(str, Enum):
+class ReportPriorityEnum(StrEnum):
     """Prioridade do relatório."""
 
     LOW = "low"
@@ -103,23 +105,17 @@ class Report(Base):
 
     # Classificação
     report_type = Column(
-        SQLEnum(ReportTypeEnum, name="report_type_enum"),
-        nullable=False,
-        default=ReportTypeEnum.SUMMARY
+        SQLEnum(ReportTypeEnum, name="report_type_enum"), nullable=False, default=ReportTypeEnum.SUMMARY
     )
     category = Column(String(100), nullable=True, index=True)
     tags = Column(JSONB, default=list)
 
     # Status
     status = Column(
-        SQLEnum(ReportStatusEnum, name="report_status_enum"),
-        nullable=False,
-        default=ReportStatusEnum.DRAFT
+        SQLEnum(ReportStatusEnum, name="report_status_enum"), nullable=False, default=ReportStatusEnum.DRAFT
     )
     priority = Column(
-        SQLEnum(ReportPriorityEnum, name="report_priority_enum"),
-        nullable=False,
-        default=ReportPriorityEnum.NORMAL
+        SQLEnum(ReportPriorityEnum, name="report_priority_enum"), nullable=False, default=ReportPriorityEnum.NORMAL
     )
 
     # Template
@@ -235,24 +231,20 @@ class Report(Base):
     @property
     def overall_quality_score(self) -> float:
         """Score geral de qualidade do relatório."""
-        scores = [
-            self.data_quality_score,
-            self.completeness_score,
-            self.accuracy_score
-        ]
+        scores = [self.data_quality_score, self.completeness_score, self.accuracy_score]
         valid_scores = [s for s in scores if s > 0]
         if not valid_scores:
             return 0.0
         return sum(valid_scores) / len(valid_scores)
 
-    def add_insight(self, insight: Dict[str, Any]) -> None:
+    def add_insight(self, insight: dict[str, Any]) -> None:
         """Adiciona um insight ao relatório."""
         if not self.insights:
             self.insights = []
         insight["added_at"] = datetime.utcnow().isoformat()
         self.insights.append(insight)
 
-    def add_recommendation(self, recommendation: Dict[str, Any]) -> None:
+    def add_recommendation(self, recommendation: dict[str, Any]) -> None:
         """Adiciona uma recomendação ao relatório."""
         if not self.recommendations:
             self.recommendations = []
@@ -271,7 +263,7 @@ class Report(Base):
         if format_type not in self.exported_formats:
             self.exported_formats.append(format_type)
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self) -> dict[str, Any]:
         """Converte para dicionário resumido."""
         return {
             "id": str(self.id),

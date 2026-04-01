@@ -119,7 +119,7 @@ export default function FinanceiroRelatorioPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Select value={periodo} onValueChange={setPeriodo}>
+              <Select value={periodo} onValueChange={setPeriodo} aria-label="Periodo">
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Período" />
                 </SelectTrigger>

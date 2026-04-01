@@ -6,27 +6,28 @@ Registra issues de qualidade detectados em dados.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class IssueSeverityEnum(str, Enum):
+class IssueSeverityEnum(StrEnum):
     """Severidade do issue."""
 
     CRITICAL = "critical"
@@ -36,7 +37,7 @@ class IssueSeverityEnum(str, Enum):
     INFO = "info"
 
 
-class IssueStatusEnum(str, Enum):
+class IssueStatusEnum(StrEnum):
     """Status do issue."""
 
     OPEN = "open"
@@ -48,7 +49,7 @@ class IssueStatusEnum(str, Enum):
     WONT_FIX = "wont_fix"
 
 
-class IssueTypeEnum(str, Enum):
+class IssueTypeEnum(StrEnum):
     """Tipo de issue."""
 
     # Completeness
@@ -104,20 +105,11 @@ class DataQualityIssue(Base):
     rule_code = Column(String(100), nullable=True)
 
     # Tipo e severidade
-    issue_type = Column(
-        SQLEnum(IssueTypeEnum, name="dq_issue_type_enum"),
-        nullable=False
-    )
+    issue_type = Column(SQLEnum(IssueTypeEnum, name="dq_issue_type_enum"), nullable=False)
     severity = Column(
-        SQLEnum(IssueSeverityEnum, name="dq_issue_severity_enum"),
-        nullable=False,
-        default=IssueSeverityEnum.MEDIUM
+        SQLEnum(IssueSeverityEnum, name="dq_issue_severity_enum"), nullable=False, default=IssueSeverityEnum.MEDIUM
     )
-    status = Column(
-        SQLEnum(IssueStatusEnum, name="dq_issue_status_enum"),
-        nullable=False,
-        default=IssueStatusEnum.OPEN
-    )
+    status = Column(SQLEnum(IssueStatusEnum, name="dq_issue_status_enum"), nullable=False, default=IssueStatusEnum.OPEN)
 
     # Localização do problema
     entity_type = Column(String(100), nullable=False)
@@ -189,11 +181,7 @@ class DataQualityIssue(Base):
     @property
     def is_open(self) -> bool:
         """Verifica se o issue está aberto."""
-        return self.status in [
-            IssueStatusEnum.OPEN,
-            IssueStatusEnum.ACKNOWLEDGED,
-            IssueStatusEnum.IN_PROGRESS
-        ]
+        return self.status in [IssueStatusEnum.OPEN, IssueStatusEnum.ACKNOWLEDGED, IssueStatusEnum.IN_PROGRESS]
 
     @property
     def is_resolved(self) -> bool:
@@ -202,7 +190,7 @@ class DataQualityIssue(Base):
             IssueStatusEnum.FIXED,
             IssueStatusEnum.IGNORED,
             IssueStatusEnum.FALSE_POSITIVE,
-            IssueStatusEnum.WONT_FIX
+            IssueStatusEnum.WONT_FIX,
         ]
 
     @property
@@ -223,12 +211,7 @@ class DataQualityIssue(Base):
         if user_id:
             self.assigned_to = user_id
 
-    def mark_fixed(
-        self,
-        user_id: uuid.UUID = None,
-        notes: str = None,
-        auto: bool = False
-    ) -> None:
+    def mark_fixed(self, user_id: uuid.UUID = None, notes: str = None, auto: bool = False) -> None:
         """Marca como corrigido."""
         self.status = IssueStatusEnum.FIXED
         self.resolved_at = datetime.utcnow()
@@ -261,7 +244,7 @@ class DataQualityIssue(Base):
         self.last_detected_at = datetime.utcnow()
         self.is_recurring = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -282,7 +265,7 @@ class DataQualityIssue(Base):
             "created_at": self.created_at.isoformat(),
         }
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self) -> dict[str, Any]:
         """Converte para dicionário resumido."""
         return {
             "id": str(self.id),

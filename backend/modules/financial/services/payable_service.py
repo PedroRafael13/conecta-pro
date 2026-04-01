@@ -3,11 +3,9 @@
 import logging
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
@@ -62,17 +60,17 @@ class PayableService:
         logger.info(f"Conta criada com sucesso: {account.id}")
         return account
 
-    async def get_account(self, account_id: UUID) -> Optional[PayableAccount]:
+    async def get_account(self, account_id: UUID) -> PayableAccount | None:
         """Busca conta por ID."""
         return await self.account_repo.get_by_id(account_id)
 
     async def list_accounts(
         self,
         condominio_id: UUID,
-        filters: Optional[PayableAccountFilter] = None,
+        filters: PayableAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[PayableAccount], int]:
+    ) -> tuple[list[PayableAccount], int]:
         """Lista contas com filtros e paginação."""
         accounts = await self.account_repo.list(condominio_id, filters, skip, limit)
         total = await self.account_repo.count(condominio_id, filters)
@@ -83,7 +81,7 @@ class PayableService:
         account_id: UUID,
         data: PayableAccountUpdate,
         user_id: UUID,  # pylint: disable=unused-argument
-    ) -> Optional[PayableAccount]:
+    ) -> PayableAccount | None:
         """Atualiza uma conta a pagar."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -123,8 +121,8 @@ class PayableService:
         self,
         account_id: UUID,
         user_id: UUID,
-        notes: Optional[str] = None,
-    ) -> Optional[PayableAccount]:
+        notes: str | None = None,
+    ) -> PayableAccount | None:
         """Aprova uma conta para pagamento."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -145,7 +143,7 @@ class PayableService:
         self,
         request: PayableBulkApproveRequest,
         user_id: UUID,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Aprova múltiplas contas."""
         success_count = 0
         error_count = 0
@@ -168,7 +166,7 @@ class PayableService:
         account_id: UUID,
         user_id: UUID,  # pylint: disable=unused-argument
         reason: str,
-    ) -> Optional[PayableAccount]:
+    ) -> PayableAccount | None:
         """Rejeita uma conta."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -190,7 +188,7 @@ class PayableService:
         account_id: UUID,
         request: PayableScheduleRequest,
         user_id: UUID,
-    ) -> Optional[PayableAccount]:
+    ) -> PayableAccount | None:
         """Agenda pagamento de uma conta."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -239,16 +237,24 @@ class PayableService:
         self,
         request: PayableBulkPaymentRequest,
         user_id: UUID,
-    ) -> Tuple[int, int, List[UUID]]:
+    ) -> tuple[int, int, list[UUID]]:
         """Processa pagamento em lote."""
+        from sqlalchemy import select as sa_select
+
         success_count = 0
         error_count = 0
         payment_ids = []
 
+        # 1 query para buscar todas as parcelas — evita N+1
+        result = await self.session.execute(
+            sa_select(PayableInstallment).where(PayableInstallment.id.in_(request.installment_ids))
+        )
+        installments_map = {str(inst.id): inst for inst in result.scalars().all()}
+
         for installment_id in request.installment_ids:
             try:
-                # Busca parcela para obter valor
-                installment = await self.installment_repo.get_by_id(installment_id)
+                # Parcela já carregada em memória — sem query adicional
+                installment = installments_map.get(str(installment_id))
                 if not installment:
                     error_count += 1
                     continue
@@ -275,7 +281,7 @@ class PayableService:
         payment_id: UUID,
         request: PayablePaymentReverseRequest,
         user_id: UUID,
-    ) -> Optional[PayablePayment]:
+    ) -> PayablePayment | None:
         """Estorna um pagamento."""
         payment = await self.payment_repo.get_by_id(payment_id)
         if not payment:
@@ -309,7 +315,7 @@ class PayableService:
         payment_id: UUID,
         request: PayablePaymentReconcileRequest,
         user_id: UUID,
-    ) -> Optional[PayablePayment]:
+    ) -> PayablePayment | None:
         """Reconcilia pagamento com extrato bancário."""
         payment = await self.payment_repo.get_by_id(payment_id)
         if not payment:
@@ -330,14 +336,14 @@ class PayableService:
     async def get_installment(
         self,
         installment_id: UUID,
-    ) -> Optional[PayableInstallment]:
+    ) -> PayableInstallment | None:
         """Busca parcela por ID."""
         return await self.installment_repo.get_by_id(installment_id)
 
     async def list_installments(
         self,
         account_id: UUID,
-    ) -> List[PayableInstallment]:
+    ) -> list[PayableInstallment]:
         """Lista parcelas de uma conta."""
         return await self.installment_repo.list_by_account(account_id)
 
@@ -345,7 +351,7 @@ class PayableService:
         self,
         installment_id: UUID,
         data: PayableInstallmentUpdate,
-    ) -> Optional[PayableInstallment]:
+    ) -> PayableInstallment | None:
         """Atualiza uma parcela."""
         installment = await self.installment_repo.get_by_id(installment_id)
         if not installment:
@@ -363,7 +369,7 @@ class PayableService:
         installment_id: UUID,
         request: PayableInstallmentRenegotiateRequest,
         user_id: UUID,  # pylint: disable=unused-argument
-    ) -> Optional[PayableInstallment]:
+    ) -> PayableInstallment | None:
         """Renegocia uma parcela."""
         installment = await self.installment_repo.get_by_id(installment_id)
         if not installment:
@@ -388,7 +394,7 @@ class PayableService:
         self,
         condominio_id: UUID,
         limit: int = 100,
-    ) -> List[PayableAccount]:
+    ) -> list[PayableAccount]:
         """Retorna contas vencidas."""
         return await self.account_repo.get_overdue(condominio_id, limit)
 
@@ -397,23 +403,23 @@ class PayableService:
         condominio_id: UUID,
         days: int = 7,
         limit: int = 100,
-    ) -> List[PayableAccount]:
+    ) -> list[PayableAccount]:
         """Retorna contas a vencer nos próximos dias."""
         return await self.account_repo.get_due_soon(condominio_id, days, limit)
 
     async def get_pending_installments(
         self,
         condominio_id: UUID,
-        due_date_start: Optional[date] = None,
-        due_date_end: Optional[date] = None,
-    ) -> List[PayableInstallment]:
+        due_date_start: date | None = None,
+        due_date_end: date | None = None,
+    ) -> list[PayableInstallment]:
         """Retorna parcelas pendentes."""
         return await self.installment_repo.get_pending(condominio_id, due_date_start, due_date_end)
 
     async def get_pending_reconciliation(
         self,
         condominio_id: UUID,
-    ) -> List[PayablePayment]:
+    ) -> list[PayablePayment]:
         """Retorna pagamentos pendentes de reconciliação."""
         return await self.payment_repo.get_pending_reconciliation(condominio_id)
 
@@ -422,8 +428,8 @@ class PayableService:
     async def process_recurring_accounts(
         self,
         condominio_id: UUID,
-        reference_date: Optional[date] = None,
-    ) -> List[PayableAccount]:
+        reference_date: date | None = None,
+    ) -> list[PayableAccount]:
         """Processa contas recorrentes e gera novas."""
         if reference_date is None:
             reference_date = date.today()
@@ -475,7 +481,7 @@ class PayableService:
         self,
         recurrence_type: str,
         last_date: date,
-    ) -> Optional[date]:
+    ) -> date | None:
         """Calcula próxima data de recorrência."""
         recurrence_map = {
             "DIARIO": relativedelta(days=1),

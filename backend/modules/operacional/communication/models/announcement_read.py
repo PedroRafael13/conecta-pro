@@ -9,7 +9,7 @@ Quality Score Target: 99+/100
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import DateTime, ForeignKey, String, func
@@ -82,36 +82,33 @@ class AnnouncementRead(Base):
         nullable=False,
         comment="Data/hora em que o usuario visualizou o comunicado",
     )
-    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(
+    acknowledged_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="Data/hora em que o usuario confirmou a leitura",
     )
 
     # Metadados de Rastreamento
-    ip_address: Mapped[Optional[str]] = mapped_column(
+    ip_address: Mapped[str | None] = mapped_column(
         String(45),
         nullable=True,
         comment="Endereco IP do usuario (IPv4 ou IPv6)",
     )
-    user_agent: Mapped[Optional[str]] = mapped_column(
+    user_agent: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="User-Agent do navegador/aplicativo",
     )
 
     # Relacionamento
-    announcement: Mapped["Announcement"] = relationship(
+    announcement: Mapped[Announcement] = relationship(
         "Announcement",
         back_populates="reads",
     )
 
     def __repr__(self) -> str:
         """Representacao string da leitura."""
-        return (
-            f"<AnnouncementRead announcement={self.announcement_id[:8]}... "
-            f"user={self.user_id[:8]}...>"
-        )
+        return f"<AnnouncementRead announcement={self.announcement_id[:8]}... user={self.user_id[:8]}...>"
 
     @property
     def is_acknowledged(self) -> bool:
@@ -119,7 +116,7 @@ class AnnouncementRead(Base):
         return self.acknowledged_at is not None
 
     @property
-    def time_to_read(self) -> Optional[float]:
+    def time_to_read(self) -> float | None:
         """
         Calcula tempo entre criacao do comunicado e leitura (em segundos).
 
@@ -132,7 +129,7 @@ class AnnouncementRead(Base):
         return delta.total_seconds()
 
     @property
-    def time_to_acknowledge(self) -> Optional[float]:
+    def time_to_acknowledge(self) -> float | None:
         """
         Calcula tempo entre leitura e confirmacao (em segundos).
 
@@ -154,9 +151,9 @@ class AnnouncementRead(Base):
         cls,
         announcement_id: str,
         user_id: str,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-    ) -> "AnnouncementRead":
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+    ) -> AnnouncementRead:
         """
         Factory method para criar registro de leitura.
 

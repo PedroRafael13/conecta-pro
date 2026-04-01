@@ -7,6 +7,9 @@ Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilida
 # Contabilidade
 from modules.financial.controllers.accounting_controller import router as accounting_router
 
+# AI Command Center
+from modules.financial.controllers.ai_controller import router as financial_ai_router
+
 # Contas a Pagar
 # Fluxo de Caixa
 from modules.financial.controllers.bank_account_controller import router as bank_account_router
@@ -22,6 +25,9 @@ from modules.financial.controllers.billing_rule_controller import router as bill
 from modules.financial.controllers.cashflow_controller import router as cashflow_router
 from modules.financial.controllers.customer_controller import router as customer_router
 
+# Fiscal
+from modules.financial.controllers.fiscal_controller import router as fiscal_router
+
 # Estoque
 from modules.financial.controllers.inventory_controller import router as inventory_router
 from modules.financial.controllers.payable_controller import router as payable_router
@@ -32,10 +38,8 @@ from modules.financial.controllers.receivable_category_controller import (
     router as receivable_category_router,
 )
 from modules.financial.controllers.receivable_controller import router as receivable_router
+from modules.financial.controllers.relatorios_controller import router as relatorios_router
 from modules.financial.controllers.supplier_controller import router as supplier_router
-
-# Fiscal
-from modules.financial.controllers.fiscal_controller import router as fiscal_router
 
 __all__ = [
     # Contas a Pagar
@@ -59,4 +63,8 @@ __all__ = [
     "accounting_router",
     # Fiscal
     "fiscal_router",
+    # AI Command Center
+    "financial_ai_router",
+    # Relatórios (DRE, Balancete, Orçamento, Custeio)
+    "relatorios_router",
 ]

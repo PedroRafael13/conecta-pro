@@ -1,7 +1,7 @@
 """Model para anexos/comprovantes de reembolso."""
 
 import uuid
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -21,11 +21,11 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 if TYPE_CHECKING:
-    from modules.reimbursement.models.reimbursement_request import ReimbursementRequest
     from modules.reimbursement.models.reimbursement_item import ReimbursementItem
+    from modules.reimbursement.models.reimbursement_request import ReimbursementRequest
 
 
-class AttachmentType(str, Enum):
+class AttachmentType(StrEnum):
     """Tipo de anexo."""
 
     NOTA_FISCAL = "nota_fiscal"

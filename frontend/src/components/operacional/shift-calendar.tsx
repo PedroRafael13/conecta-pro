@@ -108,7 +108,7 @@ export function ShiftCalendar({
       };
 
       stats.total++;
-      stats.shifts.push(shift);
+      stats.shifts = [...stats.shifts, shift];
 
       if (shift.status === 'completed') stats.completed++;
       if (shift.status === 'scheduled' || shift.status === 'in_progress') stats.scheduled++;

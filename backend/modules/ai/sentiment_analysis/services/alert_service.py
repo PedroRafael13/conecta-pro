@@ -6,21 +6,21 @@ Servico para gerenciamento de alertas baseados em regras de sentimento.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai.sentiment_analysis.models import (
+    RuleAction,
+    RuleCategory,
     SentimentAnalysis,
     SentimentRule,
-    RuleCategory,
-    RuleAction,
 )
 from modules.ai.sentiment_analysis.repositories import SentimentRepository
 from modules.ai.sentiment_analysis.schemas import (
-    SentimentRuleCreate,
     RuleEvaluationResult,
+    SentimentRuleCreate,
 )
 
 logger = logging.getLogger(__name__)
@@ -49,9 +49,7 @@ class SentimentAlertService:
             "description": "Alerta quando cliente demonstra intencao de cancelar",
             "category": RuleCategory.CHURN,
             "priority": 95,
-            "conditions": [
-                {"field": "has_intent_to_leave", "operator": "is_true", "value": True}
-            ],
+            "conditions": [{"field": "has_intent_to_leave", "operator": "is_true", "value": True}],
             "primary_action": RuleAction.ESCALATE,
             "secondary_actions": [RuleAction.NOTIFY_EMAIL, RuleAction.CREATE_TICKET],
             "is_system": True,
@@ -62,9 +60,7 @@ class SentimentAlertService:
             "description": "Alerta para feedbacks com alta urgencia",
             "category": RuleCategory.URGENCY,
             "priority": 90,
-            "conditions": [
-                {"field": "urgency_level", "operator": "greater_than_or_equal", "value": 7}
-            ],
+            "conditions": [{"field": "urgency_level", "operator": "greater_than_or_equal", "value": 7}],
             "primary_action": RuleAction.ALERT,
             "secondary_actions": [RuleAction.PRIORITY_BOOST],
             "is_system": True,
@@ -75,9 +71,7 @@ class SentimentAlertService:
             "description": "Alerta quando reclamacao e identificada",
             "category": RuleCategory.SENTIMENT,
             "priority": 70,
-            "conditions": [
-                {"field": "has_complaint", "operator": "is_true", "value": True}
-            ],
+            "conditions": [{"field": "has_complaint", "operator": "is_true", "value": True}],
             "sentiment_threshold": -20,
             "primary_action": RuleAction.TAG,
             "action_config": {"tag": {"tags": ["reclamacao", "requer_atencao"]}},
@@ -101,9 +95,7 @@ class SentimentAlertService:
             "description": "Alerta para respostas NPS de detratores (0-6)",
             "category": RuleCategory.SENTIMENT,
             "priority": 75,
-            "conditions": [
-                {"field": "nps_score", "operator": "less_than_or_equal", "value": 6}
-            ],
+            "conditions": [{"field": "nps_score", "operator": "less_than_or_equal", "value": 6}],
             "primary_action": RuleAction.TAG,
             "secondary_actions": [RuleAction.LOG],
             "action_config": {"tag": {"tags": ["nps_detrator"]}},
@@ -137,7 +129,7 @@ class SentimentAlertService:
         self.session = session
         self.repository = SentimentRepository(session)
 
-    async def initialize_default_rules(self) -> List[SentimentRule]:
+    async def initialize_default_rules(self) -> list[SentimentRule]:
         """Inicializa regras padrao do sistema."""
         created_rules = []
 
@@ -154,7 +146,7 @@ class SentimentAlertService:
     async def evaluate_analysis(
         self,
         analysis: SentimentAnalysis,
-    ) -> List[RuleEvaluationResult]:
+    ) -> list[RuleEvaluationResult]:
         """
         Avalia todas as regras ativas para uma analise.
 
@@ -196,17 +188,15 @@ class SentimentAlertService:
                 # Incrementar contador
                 await self.repository.increment_rule_trigger(rule.id)
 
-                logger.info(
-                    f"Regra {rule.code} acionada para analise {analysis.id}"
-                )
+                logger.info(f"Regra {rule.code} acionada para analise {analysis.id}")
 
         return results
 
     async def execute_actions(
         self,
-        results: List[RuleEvaluationResult],
+        results: list[RuleEvaluationResult],
         analysis: SentimentAnalysis,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Executa acoes das regras acionadas.
 
@@ -235,21 +225,22 @@ class SentimentAlertService:
                         analysis=analysis,
                         rule_code=result.rule_code,
                     )
-                    executed_actions.append({
-                        "rule": result.rule_code,
-                        "action": action_type,
-                        "result": action_result,
-                    })
-                except Exception as e:
-                    errors.append({
-                        "rule": result.rule_code,
-                        "action": action_type,
-                        "error": str(e),
-                    })
-                    logger.error(
-                        f"Erro ao executar acao {action_type} da regra "
-                        f"{result.rule_code}: {e}"
+                    executed_actions.append(
+                        {
+                            "rule": result.rule_code,
+                            "action": action_type,
+                            "result": action_result,
+                        }
                     )
+                except Exception as e:
+                    errors.append(
+                        {
+                            "rule": result.rule_code,
+                            "action": action_type,
+                            "error": str(e),
+                        }
+                    )
+                    logger.error(f"Erro ao executar acao {action_type} da regra {result.rule_code}: {e}")
 
         return {
             "total_rules_triggered": len(results),
@@ -261,10 +252,10 @@ class SentimentAlertService:
     async def _execute_action(
         self,
         action_type: str,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Executa uma acao especifica."""
         action_handlers = {
             "alert": self._action_alert,
@@ -286,106 +277,91 @@ class SentimentAlertService:
 
     async def _action_alert(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria alerta."""
         # Em producao, integraria com sistema de alertas
-        logger.warning(
-            f"[ALERT] Regra {rule_code} - Analise {analysis.id} - "
-            f"Score: {analysis.sentiment_score}"
-        )
+        logger.warning(f"[ALERT] Regra {rule_code} - Analise {analysis.id} - Score: {analysis.sentiment_score}")
         return {"alert_created": True, "rule": rule_code}
 
     async def _action_escalate(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Escalona para nivel superior."""
         escalation_level = config.get("level", "supervisor")
-        logger.warning(
-            f"[ESCALATION] Regra {rule_code} - Escalando para {escalation_level}"
-        )
+        logger.warning(f"[ESCALATION] Regra {rule_code} - Escalando para {escalation_level}")
         return {"escalated": True, "level": escalation_level}
 
     async def _action_notify_email(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia notificacao por email."""
         recipients = config.get("recipients", [])
         # Em producao, integraria com servico de email
-        logger.info(
-            f"[EMAIL] Regra {rule_code} - Notificando: {recipients}"
-        )
+        logger.info(f"[EMAIL] Regra {rule_code} - Notificando: {recipients}")
         return {"email_sent": True, "recipients": recipients}
 
     async def _action_notify_sms(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia notificacao por SMS."""
         recipients = config.get("recipients", [])
-        logger.info(
-            f"[SMS] Regra {rule_code} - Notificando: {recipients}"
-        )
+        logger.info(f"[SMS] Regra {rule_code} - Notificando: {recipients}")
         return {"sms_sent": True, "recipients": recipients}
 
     async def _action_notify_slack(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia notificacao para Slack."""
         channel = config.get("channel", "#alerts")
-        logger.info(
-            f"[SLACK] Regra {rule_code} - Canal: {channel}"
-        )
+        logger.info(f"[SLACK] Regra {rule_code} - Canal: {channel}")
         return {"slack_sent": True, "channel": channel}
 
     async def _action_create_ticket(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria ticket de atendimento."""
         queue = config.get("queue", "default")
         priority = config.get("priority", "normal")
         # Em producao, integraria com sistema de tickets
-        logger.info(
-            f"[TICKET] Regra {rule_code} - Fila: {queue}, Prioridade: {priority}"
-        )
+        logger.info(f"[TICKET] Regra {rule_code} - Fila: {queue}, Prioridade: {priority}")
         return {"ticket_created": True, "queue": queue, "priority": priority}
 
     async def _action_assign_agent(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Atribui a um agente especifico."""
         agent_id = config.get("agent_id")
         team = config.get("team")
-        logger.info(
-            f"[ASSIGN] Regra {rule_code} - Agente: {agent_id}, Team: {team}"
-        )
+        logger.info(f"[ASSIGN] Regra {rule_code} - Agente: {agent_id}, Team: {team}")
         return {"assigned": True, "agent_id": agent_id, "team": team}
 
     async def _action_tag(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Adiciona tags a analise."""
         tags = config.get("tags", [])
         current_tags = analysis.tags or []
@@ -398,10 +374,10 @@ class SentimentAlertService:
 
     async def _action_priority_boost(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Aumenta prioridade da analise."""
         boost = config.get("boost", 2)
         # Em producao, ajustaria prioridade no sistema
@@ -410,10 +386,10 @@ class SentimentAlertService:
 
     async def _action_auto_respond(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia resposta automatica."""
         template = config.get("template", "default")
         # Em producao, enviaria resposta via canal apropriado
@@ -422,10 +398,10 @@ class SentimentAlertService:
 
     async def _action_trigger_workflow(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Dispara workflow externo."""
         workflow_id = config.get("workflow_id")
         # Em producao, integraria com sistema de workflows
@@ -434,10 +410,10 @@ class SentimentAlertService:
 
     async def _action_log(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         analysis: SentimentAnalysis,
         rule_code: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Apenas registra em log."""
         message = config.get("message", f"Regra {rule_code} acionada")
         logger.info(f"[LOG] {message} - Analise: {analysis.id}")
@@ -455,9 +431,7 @@ class SentimentAlertService:
         if not rule.last_triggered_at:
             return True
 
-        cooldown_end = rule.last_triggered_at + timedelta(
-            minutes=rule.cooldown_minutes
-        )
+        cooldown_end = rule.last_triggered_at + timedelta(minutes=rule.cooldown_minutes)
 
         if datetime.utcnow() < cooldown_end:
             # Se cooldown por cliente, verificar se e o mesmo cliente
@@ -468,7 +442,7 @@ class SentimentAlertService:
 
         return True
 
-    def _analysis_to_dict(self, analysis: SentimentAnalysis) -> Dict[str, Any]:
+    def _analysis_to_dict(self, analysis: SentimentAnalysis) -> dict[str, Any]:
         """Converte analise para dicionario."""
         return {
             "sentiment_score": analysis.sentiment_score,
@@ -492,7 +466,7 @@ class SentimentAlertService:
     async def create_rule(
         self,
         data: SentimentRuleCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> SentimentRule:
         """Cria nova regra."""
         rule = SentimentRule(
@@ -539,9 +513,9 @@ class SentimentAlertService:
     async def update_rule(
         self,
         rule_id: UUID,
-        updates: Dict[str, Any],
-        user_id: Optional[UUID] = None,
-    ) -> Optional[SentimentRule]:
+        updates: dict[str, Any],
+        user_id: UUID | None = None,
+    ) -> SentimentRule | None:
         """Atualiza regra."""
         rule = await self.repository.get_rule(rule_id)
         if not rule:
@@ -563,7 +537,7 @@ class SentimentAlertService:
         self,
         rule_id: UUID,
         is_active: bool,
-    ) -> Optional[SentimentRule]:
+    ) -> SentimentRule | None:
         """Ativa/desativa regra."""
         return await self.repository.update_rule(rule_id, is_active=is_active)
 
@@ -571,7 +545,7 @@ class SentimentAlertService:
         self,
         rule_id: UUID,
         is_correct: bool,
-    ) -> Optional[SentimentRule]:
+    ) -> SentimentRule | None:
         """Registra feedback de precisao da regra."""
         rule = await self.repository.get_rule(rule_id)
         if not rule:
@@ -581,7 +555,7 @@ class SentimentAlertService:
         await self.repository.update_rule(rule_id)
         return rule
 
-    async def get_rule_stats(self) -> Dict[str, Any]:
+    async def get_rule_stats(self) -> dict[str, Any]:
         """Retorna estatisticas das regras."""
         rules, total = await self.repository.list_rules(page_size=1000)
 

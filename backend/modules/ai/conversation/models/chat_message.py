@@ -1,8 +1,8 @@
 """Model de mensagem de chat."""
 
-from datetime import datetime, UTC
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from modules.ai.conversation.models.chat_session import ChatSession
 
 
-class MessageType(str, Enum):
+class MessageType(StrEnum):
     """Tipo de mensagem."""
 
     USER = "user"
@@ -35,7 +35,7 @@ class MessageType(str, Enum):
     SUGGESTION = "suggestion"  # Sugestoes da IA
 
 
-class MessageStatus(str, Enum):
+class MessageStatus(StrEnum):
     """Status da mensagem."""
 
     PENDING = "pending"
@@ -45,7 +45,7 @@ class MessageStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class IntentCategory(str, Enum):
+class IntentCategory(StrEnum):
     """Categorias de intencao."""
 
     HELP_NAVIGATION = "help_navigation"
@@ -124,9 +124,7 @@ class ChatMessage(Base):
 
     def __repr__(self) -> str:
         """Representacao string."""
-        content_preview = (
-            self.content[:50] + "..." if len(self.content) > 50 else self.content
-        )
+        content_preview = self.content[:50] + "..." if len(self.content) > 50 else self.content
         return f"<ChatMessage(id={self.id}, type={self.message_type}, content='{content_preview}')>"
 
     def to_dict(self) -> dict:
@@ -150,16 +148,14 @@ class ChatMessage(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
-    def mark_as_helpful(self, rating: int = 5, feedback: Optional[str] = None) -> None:
+    def mark_as_helpful(self, rating: int = 5, feedback: str | None = None) -> None:
         """Marca mensagem como util."""
         self.was_helpful = True
         self.user_rating = min(max(rating, 1), 5)  # Clamp 1-5
         if feedback:
             self.user_feedback = feedback
 
-    def mark_as_not_helpful(
-        self, rating: int = 1, feedback: Optional[str] = None
-    ) -> None:
+    def mark_as_not_helpful(self, rating: int = 1, feedback: str | None = None) -> None:
         """Marca mensagem como nao util."""
         self.was_helpful = False
         self.user_rating = min(max(rating, 1), 5)

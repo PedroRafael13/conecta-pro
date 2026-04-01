@@ -1,18 +1,19 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { MapPin, Search, Plus, Filter, Eye, Edit2, Trash2, Users, Clock, ArrowLeft, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
 import { usePosts, useDeletePost } from '@/hooks/operacional/usePosts';
 import { getErrorMessage } from '@/lib/api';
-import { PostDetailModal } from '@/components/operacional/post-detail-modal';
-import { PostFormModal } from '@/components/operacional/post-form-modal';
+
+const PostDetailModal = dynamic(() => import('@/components/operacional/post-detail-modal').then(m => m.PostDetailModal), { ssr: false });
+const PostFormModal = dynamic(() => import('@/components/operacional/post-form-modal').then(m => m.PostFormModal), { ssr: false });
 import { ResponsiveTable, Column } from '@/components/ResponsiveTable';
 import { ExportButton } from '@/components/ui/export-button';
 import { formatDataForExport } from '@/utils/export';
@@ -23,13 +24,29 @@ import {
   SHIFT_TYPE_LABELS,
 } from '@/types/operacional';
 
+interface PostFilters {
+  search?: string;
+  post_type?: PostType;
+  status?: PostStatus;
+  shift_type?: ShiftType;
+  requires_armed?: boolean;
+  requires_vehicle?: boolean;
+}
+
+interface PostStats {
+  total: number;
+  filled: number;
+  with_vacancy: number;
+  total_headcount: number;
+}
+
 export default function PostosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const {
     data: postsData,
     isLoading,
-    error,
+    error: queryError,
     refetch: refresh,
   } = usePosts();
 
@@ -44,9 +61,14 @@ export default function PostosPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const totalPages = Math.ceil(total / pageSize);
-  const [filters, setFilters] = useState({});
-  const stats = null;
-  const refreshStats = () => {};
+  const [filters, setFilters] = useState<PostFilters>({});
+
+  const stats: PostStats | null = posts.length > 0 ? {
+    total: total,
+    filled: posts.filter((p: Post) => p.status === 'active').length,
+    with_vacancy: posts.filter((p: Post) => p.status !== 'active').length,
+    total_headcount: posts.reduce((sum: number, p: Post) => sum + (p.required_headcount || 0), 0),
+  } : null;
   const deletePostMutation = useDeletePost();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -126,7 +148,6 @@ export default function PostosPage() {
       setShowDeleteModal(false);
       setSelectedPost(null);
       refresh();
-      refreshStats();
     } catch (err) {
       setDeleteError(getErrorMessage(err));
     } finally {
@@ -136,7 +157,6 @@ export default function PostosPage() {
 
   const handleFormSuccess = () => {
     refresh();
-    refreshStats();
   };
 
   if (authLoading) {
@@ -284,7 +304,7 @@ export default function PostosPage() {
               </span>
             )}
           </Button>
-          <Button variant="outline" onClick={refresh} disabled={isLoading}>
+          <Button variant="outline" onClick={() => refresh()} disabled={isLoading}>
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
           <ExportButton
@@ -414,11 +434,11 @@ export default function PostosPage() {
         )}
 
         {/* Error state */}
-        {error && (
+        {queryError && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
-            <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refresh} className="ml-auto">
+            <p className="text-red-500">{queryError.detail?.[0]?.msg ?? 'Erro ao carregar postos'}</p>
+            <Button variant="outline" size="sm" onClick={() => refresh()} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -434,7 +454,7 @@ export default function PostosPage() {
         )}
 
         {/* Posts Table */}
-        {!isLoading && !error && (
+        {!isLoading && !queryError && (
           <>
             <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
               <div className="overflow-x-auto">

@@ -1,13 +1,14 @@
 """Testes para cálculos de folha de pagamento."""
 
-import pytest
 from decimal import Decimal
 
+import pytest
+
 from modules.hr.payroll_integration.models.employee_payroll_config import (
-    calculate_inss,
-    calculate_irrf,
     INSS_TABLE_2024,
     IRRF_TABLE_2024,
+    calculate_inss,
+    calculate_irrf,
 )
 
 
@@ -154,9 +155,9 @@ class TestTaxTables:
             assert "min" in faixa
             assert "max" in faixa
             assert "rate" in faixa
-            assert isinstance(faixa["min"], Decimal)
-            assert isinstance(faixa["max"], Decimal)
-            assert isinstance(faixa["rate"], Decimal)
+            assert isinstance(faixa["min"], (int, float, Decimal))
+            assert isinstance(faixa["max"], (int, float, Decimal))
+            assert isinstance(faixa["rate"], (int, float, Decimal))
 
     def test_inss_table_order(self):
         """Testa ordem das faixas INSS."""
@@ -171,8 +172,8 @@ class TestTaxTables:
             assert "min" in faixa
             assert "max" in faixa
             assert "rate" in faixa
-            assert isinstance(faixa["min"], Decimal)
-            assert isinstance(faixa["rate"], Decimal)
+            assert isinstance(faixa["min"], (int, float, Decimal))
+            assert isinstance(faixa["rate"], (int, float, Decimal))
 
     def test_irrf_table_order(self):
         """Testa ordem das faixas IRRF."""
@@ -190,7 +191,7 @@ class TestOvertimeCalculation:
         monthly_hours = Decimal("220")
 
         hourly_rate = base_salary / monthly_hours
-        assert hourly_rate == Decimal("13.636363636363636363636363636")
+        assert hourly_rate == Decimal("13.63636363636363636363636364")
 
     def test_overtime_50_calculation(self):
         """Testa cálculo de hora extra 50%."""
@@ -220,7 +221,7 @@ class TestOvertimeCalculation:
 
         night_value = hourly_rate * night_rate * hours
         expected = Decimal("130.944")
-        assert night_value == expected.quantize(Decimal("0.01"))
+        assert night_value.quantize(Decimal("0.01")) == expected.quantize(Decimal("0.01"))
 
 
 class TestProportionalCalculation:

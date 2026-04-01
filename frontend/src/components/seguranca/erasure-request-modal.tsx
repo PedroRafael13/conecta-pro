@@ -71,7 +71,7 @@ export function ErasureRequestModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={typeLabels[erasureType] || 'Nova Solicitacao'}
+      title={typeLabels[erasureType] || 'Nova Solicitação'}
       description={typeDescriptions[erasureType]}
       size="lg"
     >
@@ -83,7 +83,7 @@ export function ErasureRequestModal({
               <p className="font-semibold">Atencao: Acao irreversivel</p>
               <p className="mt-1">
                 A exclusao completa remove permanentemente todos os dados do
-                titular. Esta acao nao pode ser desfeita.
+                titular. Esta ação não pode ser desfeita.
               </p>
             </div>
           </div>
@@ -122,7 +122,7 @@ export function ErasureRequestModal({
             onChange={(e) =>
               setFormData({ ...formData, reason: e.target.value })
             }
-            placeholder="Descreva o motivo da solicitacao de exclusao (minimo 10 caracteres)"
+            placeholder="Descreva o motivo da solicitação de exclusão (minimo 10 caracteres)"
             rows={3}
           />
           {formData.reason.length > 0 && formData.reason.length < 10 && (
@@ -142,7 +142,7 @@ export function ErasureRequestModal({
           />
           <Label htmlFor="erasure-confirm" className="text-sm font-normal cursor-pointer">
             Confirmo que esta acao e irreversivel e que os dados do titular
-            serao permanentemente removidos conforme a LGPD Art. 18.
+            serão permanentemente removidos conforme a LGPD Art. 18.
           </Label>
         </div>
       </div>

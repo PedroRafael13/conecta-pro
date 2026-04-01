@@ -4,31 +4,32 @@ Testes para Gov.br - Plataforma de Login Unico do Governo Federal.
 Testes unitarios e de integracao para o modulo Gov.br.
 """
 
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
-from modules.government_integrations.schemas.govbr import (
-    GerarUrlAutorizacaoRequest,
-    TrocarCodigoRequest,
-    RenovarTokenRequest,
-    ObterDadosUsuarioRequest,
-    ValidarTokenRequest,
-    GerarUrlLogoutRequest,
-    ObterEmpresasRequest,
-    NivelAutenticacaoEnum,
-    AmbienteGovBrEnum,
-    TipoDocumentoEnum,
-)
-from modules.government_integrations.services.govbr_service import (
-    GovBrService,
-)
+import pytest
+
 from modules.government_integrations.core.govbr import (
     GovBrManager,
     NivelAutenticacao,
     TipoDocumento,
-    UsuarioGovBr,
     TokenGovBr,
+    UsuarioGovBr,
+)
+from modules.government_integrations.schemas.govbr import (
+    AmbienteGovBrEnum,
+    GerarUrlAutorizacaoRequest,
+    GerarUrlLogoutRequest,
+    NivelAutenticacaoEnum,
+    ObterDadosUsuarioRequest,
+    ObterEmpresasRequest,
+    RenovarTokenRequest,
+    TipoDocumentoEnum,
+    TrocarCodigoRequest,
+    ValidarTokenRequest,
+)
+from modules.government_integrations.services.govbr_service import (
+    GovBrService,
 )
 
 
@@ -38,8 +39,7 @@ class TestSchemas:
     def test_gerar_url_autorizacao_request_valid(self):
         """Testa GerarUrlAutorizacaoRequest valido."""
         request = GerarUrlAutorizacaoRequest(
-            scopes=["openid", "email", "profile"],
-            nivel_minimo=NivelAutenticacaoEnum.PRATA
+            scopes=["openid", "email", "profile"], nivel_minimo=NivelAutenticacaoEnum.PRATA
         )
         assert request.scopes == ["openid", "email", "profile"]
         assert request.nivel_minimo == NivelAutenticacaoEnum.PRATA
@@ -52,17 +52,13 @@ class TestSchemas:
 
     def test_gerar_url_autorizacao_request_com_empresa(self):
         """Testa request com scope govbr_empresa."""
-        request = GerarUrlAutorizacaoRequest(
-            scopes=["openid", "govbr_empresa"]
-        )
+        request = GerarUrlAutorizacaoRequest(scopes=["openid", "govbr_empresa"])
         assert "govbr_empresa" in request.scopes
 
     def test_trocar_codigo_request_valid(self):
         """Testa TrocarCodigoRequest valido."""
         request = TrocarCodigoRequest(
-            code="abc123def456",
-            state="random_state_string",
-            code_verifier="pkce_verifier_string"
+            code="abc123def456", state="random_state_string", code_verifier="pkce_verifier_string"
         )
         assert request.code == "abc123def456"
         assert request.state == "random_state_string"
@@ -70,33 +66,23 @@ class TestSchemas:
 
     def test_trocar_codigo_request_sem_verifier(self):
         """Testa request sem code_verifier."""
-        request = TrocarCodigoRequest(
-            code="abc123",
-            state="state123"
-        )
+        request = TrocarCodigoRequest(code="abc123", state="state123")
         assert request.code_verifier is None
 
     def test_renovar_token_request_valid(self):
         """Testa RenovarTokenRequest valido."""
-        request = RenovarTokenRequest(
-            refresh_token="refresh_token_string"
-        )
+        request = RenovarTokenRequest(refresh_token="refresh_token_string")
         assert request.refresh_token == "refresh_token_string"
 
     def test_obter_dados_usuario_request_valid(self):
         """Testa ObterDadosUsuarioRequest valido."""
-        request = ObterDadosUsuarioRequest(
-            access_token="access_token_string"
-        )
+        request = ObterDadosUsuarioRequest(access_token="access_token_string")
         assert request.access_token == "access_token_string"
 
     def test_validar_token_request_valid(self):
         """Testa ValidarTokenRequest valido."""
         request = ValidarTokenRequest(
-            access_token="access_token_string",
-            token_type="Bearer",
-            expires_in=3600,
-            scope="openid email profile"
+            access_token="access_token_string", token_type="Bearer", expires_in=3600, scope="openid email profile"
         )
         assert request.access_token == "access_token_string"
         assert request.token_type == "Bearer"
@@ -104,9 +90,7 @@ class TestSchemas:
 
     def test_validar_token_request_defaults(self):
         """Testa defaults do ValidarTokenRequest."""
-        request = ValidarTokenRequest(
-            access_token="token"
-        )
+        request = ValidarTokenRequest(access_token="token")
         assert request.token_type == "Bearer"
         assert request.expires_in == 0
         assert request.scope is None
@@ -114,26 +98,19 @@ class TestSchemas:
     def test_gerar_url_logout_request_valid(self):
         """Testa GerarUrlLogoutRequest valido."""
         request = GerarUrlLogoutRequest(
-            id_token="id_token_string",
-            post_logout_redirect_uri="https://app.example.com/logout"
+            id_token="id_token_string", post_logout_redirect_uri="https://app.example.com/logout"
         )
         assert request.id_token == "id_token_string"
         assert request.post_logout_redirect_uri == "https://app.example.com/logout"
 
     def test_gerar_url_logout_request_sem_redirect(self):
         """Testa request sem redirect_uri."""
-        request = GerarUrlLogoutRequest(
-            id_token="id_token"
-        )
+        request = GerarUrlLogoutRequest(id_token="id_token")
         assert request.post_logout_redirect_uri is None
 
     def test_obter_empresas_request_valid(self):
         """Testa ObterEmpresasRequest valido."""
-        request = ObterEmpresasRequest(
-            access_token="token",
-            token_type="Bearer",
-            scope="openid govbr_empresa"
-        )
+        request = ObterEmpresasRequest(access_token="token", token_type="Bearer", scope="openid govbr_empresa")
         assert request.access_token == "token"
         assert request.scope == "openid govbr_empresa"
 
@@ -203,18 +180,14 @@ class TestGovBrManager:
 
     def test_gerar_url_autorizacao_com_scopes(self, manager):
         """Testa URL com scopes personalizados."""
-        resultado = manager.gerar_url_autorizacao(
-            scopes=["openid", "email", "govbr_empresa"]
-        )
+        resultado = manager.gerar_url_autorizacao(scopes=["openid", "email", "govbr_empresa"])
 
         assert "openid" in resultado["url"]
         assert "email" in resultado["url"]
 
     def test_gerar_url_autorizacao_com_nivel_minimo(self, manager):
         """Testa URL com nivel minimo."""
-        resultado = manager.gerar_url_autorizacao(
-            nivel_minimo=NivelAutenticacao.OURO
-        )
+        resultado = manager.gerar_url_autorizacao(nivel_minimo=NivelAutenticacao.OURO)
 
         assert "acr_values=" in resultado["url"]
 
@@ -292,8 +265,7 @@ class TestGovBrManager:
     def test_gerar_url_logout(self, manager):
         """Testa geracao de URL de logout."""
         url = manager.gerar_url_logout(
-            id_token="test_id_token",
-            post_logout_redirect_uri="https://app.example.com/logout"
+            id_token="test_id_token", post_logout_redirect_uri="https://app.example.com/logout"
         )
 
         assert manager.ENDPOINT_LOGOUT in url
@@ -401,12 +373,15 @@ class TestGovBrService:
     @pytest.fixture
     def service(self):
         """Cria instancia do service para testes."""
-        with patch.dict('os.environ', {
-            'GOVBR_CLIENT_ID': 'test_client_id',
-            'GOVBR_CLIENT_SECRET': 'test_client_secret',
-            'GOVBR_REDIRECT_URI': 'https://app.example.com/callback',
-            'GOVBR_AMBIENTE': 'staging',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "GOVBR_CLIENT_ID": "test_client_id",
+                "GOVBR_CLIENT_SECRET": "test_client_secret",
+                "GOVBR_REDIRECT_URI": "https://app.example.com/callback",
+                "GOVBR_AMBIENTE": "staging",
+            },
+        ):
             return GovBrService()
 
     def test_service_init(self, service):
@@ -424,26 +399,20 @@ class TestGovBrService:
 
     def test_gerar_url_autorizacao_com_scopes(self, service):
         """Testa geracao de URL com scopes."""
-        resultado = service.gerar_url_autorizacao(
-            scopes=["openid", "email", "govbr_empresa"]
-        )
+        resultado = service.gerar_url_autorizacao(scopes=["openid", "email", "govbr_empresa"])
 
         assert "url" in resultado
 
     def test_gerar_url_autorizacao_com_nivel(self, service):
         """Testa geracao de URL com nivel minimo."""
-        resultado = service.gerar_url_autorizacao(
-            nivel_minimo="2"
-        )
+        resultado = service.gerar_url_autorizacao(nivel_minimo="2")
 
         assert "url" in resultado
 
     def test_gerar_url_autorizacao_nivel_invalido(self, service):
         """Testa geracao de URL com nivel invalido."""
         # Nao deve lancar erro, apenas ignorar nivel invalido
-        resultado = service.gerar_url_autorizacao(
-            nivel_minimo="999"
-        )
+        resultado = service.gerar_url_autorizacao(nivel_minimo="999")
 
         assert "url" in resultado
 
@@ -493,9 +462,7 @@ class TestGovBrService:
 
     def test_renovar_token(self, service):
         """Testa renovacao de token."""
-        resultado = service.renovar_token(
-            refresh_token="test_refresh_token"
-        )
+        resultado = service.renovar_token(refresh_token="test_refresh_token")
 
         assert "access_token" in resultado
         assert "data_obtencao" in resultado
@@ -570,12 +537,13 @@ class TestGovBrEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.govbr_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -592,14 +560,9 @@ class TestGovBrEndpoints:
 
     def test_gerar_url_autorizacao_post(self, client):
         """Testa endpoint POST de autorizacao."""
-        payload = {
-            "scopes": ["openid", "email", "profile"]
-        }
+        payload = {"scopes": ["openid", "email", "profile"]}
 
-        response = client.post(
-            "/api/v1/government/govbr/autorizar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/govbr/autorizar", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -609,15 +572,9 @@ class TestGovBrEndpoints:
 
     def test_gerar_url_autorizacao_post_com_nivel(self, client):
         """Testa endpoint POST com nivel minimo."""
-        payload = {
-            "scopes": ["openid", "email"],
-            "nivel_minimo": "2"
-        }
+        payload = {"scopes": ["openid", "email"], "nivel_minimo": "2"}
 
-        response = client.post(
-            "/api/v1/government/govbr/autorizar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/govbr/autorizar", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -625,10 +582,7 @@ class TestGovBrEndpoints:
 
     def test_gerar_url_autorizacao_get(self, client):
         """Testa endpoint GET de autorizacao."""
-        response = client.get(
-            "/api/v1/government/govbr/autorizar",
-            params={"scopes": "openid,email,profile"}
-        )
+        response = client.get("/api/v1/government/govbr/autorizar", params={"scopes": "openid,email,profile"})
 
         assert response.status_code == 200
         data = response.json()
@@ -638,11 +592,7 @@ class TestGovBrEndpoints:
     def test_gerar_url_autorizacao_get_com_nivel(self, client):
         """Testa endpoint GET com nivel minimo."""
         response = client.get(
-            "/api/v1/government/govbr/autorizar",
-            params={
-                "scopes": "openid,email",
-                "nivel_minimo": "3"
-            }
+            "/api/v1/government/govbr/autorizar", params={"scopes": "openid,email", "nivel_minimo": "3"}
         )
 
         assert response.status_code == 200
@@ -657,16 +607,9 @@ class TestGovBrEndpoints:
         state = auth_data["state"]
         code_verifier = auth_data.get("code_verifier", "test_verifier")
 
-        payload = {
-            "code": "test_code",
-            "state": state,
-            "code_verifier": code_verifier
-        }
+        payload = {"code": "test_code", "state": state, "code_verifier": code_verifier}
 
-        response = client.post(
-            "/api/v1/government/govbr/callback",
-            json=payload
-        )
+        response = client.post("/api/v1/government/govbr/callback", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -679,13 +622,7 @@ class TestGovBrEndpoints:
         auth_response = client.get("/api/v1/government/govbr/autorizar")
         state = auth_response.json()["data"]["state"]
 
-        response = client.get(
-            "/api/v1/government/govbr/callback",
-            params={
-                "code": "test_code",
-                "state": state
-            }
-        )
+        response = client.get("/api/v1/government/govbr/callback", params={"code": "test_code", "state": state})
 
         assert response.status_code == 200
         data = response.json()
@@ -693,14 +630,9 @@ class TestGovBrEndpoints:
 
     def test_renovar_token_endpoint(self, client):
         """Testa endpoint de renovacao de token."""
-        payload = {
-            "refresh_token": "test_refresh_token"
-        }
+        payload = {"refresh_token": "test_refresh_token"}
 
-        response = client.post(
-            "/api/v1/government/govbr/renovar-token",
-            json=payload
-        )
+        response = client.post("/api/v1/government/govbr/renovar-token", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -709,14 +641,9 @@ class TestGovBrEndpoints:
 
     def test_obter_usuario_endpoint(self, client):
         """Testa endpoint de dados do usuario."""
-        payload = {
-            "access_token": "test_access_token"
-        }
+        payload = {"access_token": "test_access_token"}
 
-        response = client.post(
-            "/api/v1/government/govbr/usuario",
-            json=payload
-        )
+        response = client.post("/api/v1/government/govbr/usuario", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -726,17 +653,9 @@ class TestGovBrEndpoints:
 
     def test_validar_token_endpoint(self, client):
         """Testa endpoint de validacao de token."""
-        payload = {
-            "access_token": "test_token",
-            "token_type": "Bearer",
-            "expires_in": 3600,
-            "scope": "openid email"
-        }
+        payload = {"access_token": "test_token", "token_type": "Bearer", "expires_in": 3600, "scope": "openid email"}
 
-        response = client.post(
-            "/api/v1/government/govbr/validar-token",
-            json=payload
-        )
+        response = client.post("/api/v1/government/govbr/validar-token", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -745,15 +664,9 @@ class TestGovBrEndpoints:
 
     def test_logout_endpoint(self, client):
         """Testa endpoint de logout."""
-        payload = {
-            "id_token": "test_id_token",
-            "post_logout_redirect_uri": "https://app.example.com/logout"
-        }
+        payload = {"id_token": "test_id_token", "post_logout_redirect_uri": "https://app.example.com/logout"}
 
-        response = client.post(
-            "/api/v1/government/govbr/logout",
-            json=payload
-        )
+        response = client.post("/api/v1/government/govbr/logout", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -762,15 +675,9 @@ class TestGovBrEndpoints:
 
     def test_empresas_endpoint(self, client):
         """Testa endpoint de empresas vinculadas."""
-        payload = {
-            "access_token": "test_token",
-            "scope": "openid govbr_empresa"
-        }
+        payload = {"access_token": "test_token", "scope": "openid govbr_empresa"}
 
-        response = client.post(
-            "/api/v1/government/govbr/empresas",
-            json=payload
-        )
+        response = client.post("/api/v1/government/govbr/empresas", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -789,10 +696,7 @@ class TestGovBrEndpoints:
 
     def test_limpar_pendentes_endpoint(self, client):
         """Testa endpoint de limpeza de pendentes."""
-        response = client.post(
-            "/api/v1/government/govbr/limpar-pendentes",
-            params={"max_age_minutes": 15}
-        )
+        response = client.post("/api/v1/government/govbr/limpar-pendentes", params={"max_age_minutes": 15})
 
         assert response.status_code == 200
         data = response.json()
@@ -805,13 +709,10 @@ class TestSingleton:
 
     def test_get_govbr_service_singleton(self):
         """Testa que get_govbr_service retorna singleton."""
-        from modules.government_integrations.services.govbr_service import (
-            get_govbr_service,
-            _govbr_service
-        )
-
         # Reset singleton
         import modules.government_integrations.services.govbr_service as module
+        from modules.government_integrations.services.govbr_service import _govbr_service, get_govbr_service
+
         module._govbr_service = None
 
         service1 = get_govbr_service()

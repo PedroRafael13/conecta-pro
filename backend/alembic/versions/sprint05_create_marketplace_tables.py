@@ -6,10 +6,10 @@ Create Date: 2025-01-07
 
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
+
+from alembic import op
 
 # revision identifiers
 revision = "sprint05_marketplace"

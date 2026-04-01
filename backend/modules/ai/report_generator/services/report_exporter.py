@@ -4,11 +4,12 @@ Report Exporter - Exportação de relatórios.
 Exporta relatórios para diferentes formatos (PDF, Excel, CSV, etc.).
 """
 
-import io
 import json
 import logging
+import os
+import tempfile
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -36,8 +37,8 @@ class ReportExporter:
         include_data: bool = True,
         page_size: str = "A4",
         orientation: str = "portrait",
-        password: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        password: str | None = None,
+    ) -> dict[str, Any]:
         """
         Exporta relatório para o formato especificado.
 
@@ -74,14 +75,14 @@ class ReportExporter:
         page_size: str,
         orientation: str,
         include_charts: bool,
-        password: Optional[str],
-    ) -> Dict[str, Any]:
+        password: str | None,
+    ) -> dict[str, Any]:
         """Exporta para PDF."""
         # Simulação - em produção usaria biblioteca como ReportLab ou WeasyPrint
-        content = self._generate_pdf_content(report, include_charts)
+        self._generate_pdf_content(report, include_charts)
 
         filename = f"{report.code}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pdf"
-        file_path = f"/tmp/reports/{filename}"
+        file_path = os.path.join(tempfile.gettempdir(), "reports", filename)
 
         # Simulação de tamanho
         file_size = len(json.dumps(report.data or {})) * 2
@@ -97,25 +98,27 @@ class ReportExporter:
             "generated_at": datetime.utcnow().isoformat(),
         }
 
-    def _export_excel(self, report: Report, include_data: bool) -> Dict[str, Any]:
+    def _export_excel(self, report: Report, include_data: bool) -> dict[str, Any]:
         """Exporta para Excel."""
         # Simulação - em produção usaria openpyxl ou xlsxwriter
         filename = f"{report.code}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        file_path = f"/tmp/reports/{filename}"
+        file_path = os.path.join(tempfile.gettempdir(), "reports", filename)
 
         # Prepara dados para Excel
         sheets = []
 
         # Sheet de resumo
-        sheets.append({
-            "name": "Resumo",
-            "data": [
-                ["Relatório", report.name],
-                ["Código", report.code],
-                ["Período", report.period_description],
-                ["Gerado em", report.generated_at.strftime("%d/%m/%Y %H:%M") if report.generated_at else ""],
-            ]
-        })
+        sheets.append(
+            {
+                "name": "Resumo",
+                "data": [
+                    ["Relatório", report.name],
+                    ["Código", report.code],
+                    ["Período", report.period_description],
+                    ["Gerado em", report.generated_at.strftime("%d/%m/%Y %H:%M") if report.generated_at else ""],
+                ],
+            }
+        )
 
         # Sheet de métricas
         if report.metrics:
@@ -128,12 +131,14 @@ class ReportExporter:
         if report.insights:
             insights_data = [["Tipo", "Categoria", "Título", "Descrição"]]
             for insight in report.insights:
-                insights_data.append([
-                    insight.get("type", ""),
-                    insight.get("category", ""),
-                    insight.get("title", ""),
-                    insight.get("description", ""),
-                ])
+                insights_data.append(
+                    [
+                        insight.get("type", ""),
+                        insight.get("category", ""),
+                        insight.get("title", ""),
+                        insight.get("description", ""),
+                    ]
+                )
             sheets.append({"name": "Insights", "data": insights_data})
 
         # Sheet de dados brutos
@@ -153,10 +158,10 @@ class ReportExporter:
             "generated_at": datetime.utcnow().isoformat(),
         }
 
-    def _export_csv(self, report: Report) -> Dict[str, Any]:
+    def _export_csv(self, report: Report) -> dict[str, Any]:
         """Exporta para CSV."""
         filename = f"{report.code}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
-        file_path = f"/tmp/reports/{filename}"
+        file_path = os.path.join(tempfile.gettempdir(), "reports", filename)
 
         # Gera CSV das métricas
         lines = ["Métrica,Valor"]
@@ -176,10 +181,10 @@ class ReportExporter:
             "generated_at": datetime.utcnow().isoformat(),
         }
 
-    def _export_json(self, report: Report) -> Dict[str, Any]:
+    def _export_json(self, report: Report) -> dict[str, Any]:
         """Exporta para JSON."""
         filename = f"{report.code}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
-        file_path = f"/tmp/reports/{filename}"
+        file_path = os.path.join(tempfile.gettempdir(), "reports", filename)
 
         export_data = {
             "report": {
@@ -212,10 +217,10 @@ class ReportExporter:
             "generated_at": datetime.utcnow().isoformat(),
         }
 
-    def _export_html(self, report: Report, include_charts: bool) -> Dict[str, Any]:
+    def _export_html(self, report: Report, include_charts: bool) -> dict[str, Any]:
         """Exporta para HTML."""
         filename = f"{report.code}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.html"
-        file_path = f"/tmp/reports/{filename}"
+        file_path = os.path.join(tempfile.gettempdir(), "reports", filename)
 
         html_content = self._generate_html_content(report, include_charts)
         file_size = len(html_content.encode("utf-8"))
@@ -260,7 +265,7 @@ class ReportExporter:
     <h1>{report.name}</h1>
     <p><strong>Código:</strong> {report.code}</p>
     <p><strong>Período:</strong> {report.period_description}</p>
-    <p><strong>Gerado em:</strong> {report.generated_at.strftime('%d/%m/%Y %H:%M') if report.generated_at else 'N/A'}</p>
+    <p><strong>Gerado em:</strong> {report.generated_at.strftime("%d/%m/%Y %H:%M") if report.generated_at else "N/A"}</p>
 
     <h2>Métricas</h2>
     <div class="metrics">
@@ -286,11 +291,13 @@ class ReportExporter:
         if report.insights:
             for insight in report.insights:
                 insight_type = insight.get("type", "positive")
-                css_class = "warning" if insight_type == "warning" else ("negative" if insight_type == "negative" else "")
+                css_class = (
+                    "warning" if insight_type == "warning" else ("negative" if insight_type == "negative" else "")
+                )
                 html += f"""
     <div class="insight {css_class}">
-        <strong>{insight.get('title', '')}</strong><br>
-        {insight.get('description', '')}
+        <strong>{insight.get("title", "")}</strong><br>
+        {insight.get("description", "")}
     </div>
 """
 
@@ -350,7 +357,7 @@ class ReportExporter:
 
         return base_pages
 
-    def get_supported_formats(self) -> List[Dict[str, Any]]:
+    def get_supported_formats(self) -> list[dict[str, Any]]:
         """Retorna formatos de exportação suportados."""
         return [
             {

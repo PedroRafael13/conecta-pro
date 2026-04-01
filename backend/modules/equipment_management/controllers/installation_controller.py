@@ -2,11 +2,11 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.equipment_management.schemas.installation import (
     InstallationCreate,
@@ -29,11 +29,10 @@ async def get_service(db: AsyncSession = Depends(get_db)) -> InstallationService
     return InstallationService(db)
 
 
-@router.post(
-    "/", response_model=InstallationResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=InstallationResponse, status_code=status.HTTP_201_CREATED)
 async def create_installation(
     data: InstallationCreate,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Cria uma nova instalação."""
@@ -49,17 +48,18 @@ async def create_installation(
         )
 
 
-@router.get("/", response_model=InstallationListResponse)
+@router.get("", response_model=InstallationListResponse)
 async def list_installations(
-    search: Optional[str] = Query(None),
-    status_filter: Optional[str] = Query(None, alias="status"),
-    client_id: Optional[str] = Query(None),
-    technician_id: Optional[str] = Query(None),
-    priority: Optional[str] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
-    is_overdue: Optional[bool] = Query(None),
-    has_acceptance: Optional[bool] = Query(None),
+    current_user: CurrentActiveUser,
+    search: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    client_id: str | None = Query(None),
+    technician_id: str | None = Query(None),
+    priority: str | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    is_overdue: bool | None = Query(None),
+    has_acceptance: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: InstallationService = Depends(get_service),
@@ -81,6 +81,7 @@ async def list_installations(
 
 @router.get("/overdue", response_model=list[InstallationResponse])
 async def get_overdue(
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> list[InstallationResponse]:
     """Lista instalações atrasadas."""
@@ -89,6 +90,7 @@ async def get_overdue(
 
 @router.get("/pending-acceptance", response_model=list[InstallationResponse])
 async def get_pending_acceptance(
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> list[InstallationResponse]:
     """Lista instalações aguardando aceite."""
@@ -98,6 +100,7 @@ async def get_pending_acceptance(
 @router.get("/by-date/{date}", response_model=list[InstallationResponse])
 async def get_by_date(
     date: datetime,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> list[InstallationResponse]:
     """Lista instalações agendadas para uma data."""
@@ -107,6 +110,7 @@ async def get_by_date(
 @router.get("/by-client/{client_id}", response_model=list[InstallationResponse])
 async def get_by_client(
     client_id: str,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> list[InstallationResponse]:
     """Lista instalações de um cliente."""
@@ -116,6 +120,7 @@ async def get_by_client(
 @router.get("/by-technician/{technician_id}", response_model=list[InstallationResponse])
 async def get_by_technician(
     technician_id: str,
+    current_user: CurrentActiveUser,
     include_completed: bool = Query(False),
     service: InstallationService = Depends(get_service),
 ) -> list[InstallationResponse]:
@@ -127,6 +132,7 @@ async def get_by_technician(
 async def get_technician_schedule(
     technician_id: str,
     date: datetime,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> list[InstallationResponse]:
     """Obtém agenda do técnico para uma data."""
@@ -137,6 +143,7 @@ async def get_technician_schedule(
 async def get_stats(
     date_from: datetime,
     date_to: datetime,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> dict:
     """Estatísticas de instalações por período."""
@@ -146,6 +153,7 @@ async def get_stats(
 @router.get("/code/{code}", response_model=InstallationResponse)
 async def get_by_code(
     code: str,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Busca instalação por código."""
@@ -161,6 +169,7 @@ async def get_by_code(
 @router.get("/{installation_id}", response_model=InstallationResponse)
 async def get_installation(
     installation_id: str,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Busca instalação por ID."""
@@ -177,6 +186,7 @@ async def get_installation(
 async def update_installation(
     installation_id: str,
     data: InstallationUpdate,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Atualiza uma instalação."""
@@ -192,6 +202,7 @@ async def update_installation(
 @router.delete("/{installation_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_installation(
     installation_id: str,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> None:
     """Remove uma instalação (soft delete)."""
@@ -203,9 +214,10 @@ async def delete_installation(
         )
 
 
-@router.post("/{installation_id}/start", response_model=InstallationResponse)
+@router.post("/{installation_id}/start", response_model=InstallationResponse, status_code=201)
 async def start_installation(
     installation_id: str,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Inicia uma instalação."""
@@ -218,10 +230,11 @@ async def start_installation(
     return installation
 
 
-@router.post("/{installation_id}/complete", response_model=InstallationResponse)
+@router.post("/{installation_id}/complete", response_model=InstallationResponse, status_code=201)
 async def complete_installation(
     installation_id: str,
-    technical_report: Optional[str] = None,
+    current_user: CurrentActiveUser,
+    technical_report: str | None = None,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Conclui uma instalação."""
@@ -234,10 +247,11 @@ async def complete_installation(
     return installation
 
 
-@router.post("/{installation_id}/cancel", response_model=InstallationResponse)
+@router.post("/{installation_id}/cancel", response_model=InstallationResponse, status_code=201)
 async def cancel_installation(
     installation_id: str,
     reason: str,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Cancela uma instalação."""
@@ -250,11 +264,12 @@ async def cancel_installation(
     return installation
 
 
-@router.post("/{installation_id}/reschedule", response_model=InstallationResponse)
+@router.post("/{installation_id}/reschedule", response_model=InstallationResponse, status_code=201)
 async def reschedule_installation(
     installation_id: str,
     new_date: datetime,
-    reason: Optional[str] = None,
+    current_user: CurrentActiveUser,
+    reason: str | None = None,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Reagenda uma instalação."""
@@ -267,10 +282,11 @@ async def reschedule_installation(
     return installation
 
 
-@router.post("/{installation_id}/accept", response_model=InstallationResponse)
+@router.post("/{installation_id}/accept", response_model=InstallationResponse, status_code=201)
 async def accept_installation(
     installation_id: str,
     accepted_by: str,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Registra aceite do cliente."""
@@ -283,10 +299,11 @@ async def accept_installation(
     return installation
 
 
-@router.post("/{installation_id}/photo", response_model=InstallationResponse)
+@router.post("/{installation_id}/photo", response_model=InstallationResponse, status_code=201)
 async def add_photo(
     installation_id: str,
     photo_url: str,
+    current_user: CurrentActiveUser,
     photo_type: str = "after",
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
@@ -300,17 +317,16 @@ async def add_photo(
     return installation
 
 
-@router.post("/{installation_id}/assign-technician", response_model=InstallationResponse)
+@router.post("/{installation_id}/assign-technician", response_model=InstallationResponse, status_code=201)
 async def assign_technician(
     installation_id: str,
     technician_id: str,
     technician_name: str,
+    current_user: CurrentActiveUser,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Atribui técnico à instalação."""
-    installation = await service.assign_technician(
-        installation_id, technician_id, technician_name
-    )
+    installation = await service.assign_technician(installation_id, technician_id, technician_name)
     if not installation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, X, Loader2, User, MapPin, Calendar, FileText, Users } from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 ;
 import { useGlobalSearch } from '@/hooks/search/useGlobalSearch';
@@ -43,7 +43,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     { enabled: debouncedQuery.length >= 1 }
   );
 
-  const results = data?.results || [];
+  const results = useMemo(() => data?.results || [], [data?.results]);
   const tookMs = data?.took_ms || 0;
 
   // Navegação com teclado
@@ -73,11 +73,13 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }
   }, [results, selectedIndex, router, onClose]);
 
-  // Reset quando abrir/fechar
+  // Reset quando abrir/fechar - usando queueMicrotask
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
+      queueMicrotask(() => {
+        setQuery('');
+        setSelectedIndex(0);
+      });
     }
   }, [isOpen]);
 
@@ -85,11 +87,10 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
   // Agrupar resultados por tipo
   const groupedResults = results.reduce((acc, result) => {
-    if (!acc[result.type]) {
-      acc[result.type] = [];
-    }
-    acc[result.type]!.push(result);
-    return acc;
+    return {
+      ...acc,
+      [result.type]: [...(acc[result.type] || []), result],
+    };
   }, {} as Record<string, SearchResult[]>);
 
   return (

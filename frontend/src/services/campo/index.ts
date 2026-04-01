@@ -10,12 +10,6 @@ import { checklistService } from './checklistService';
 import { roteirizacaoService } from './roteirizacaoService';
 import { estoqueService } from './estoqueService';
 import { campoServiceMain } from './campoService';
-import {
-  guardianAccessLogService,
-  guardianOccurrenceService,
-  guardianEquipmentService,
-  guardianSyncService,
-} from './guardianService';
 import { monitoringService } from './monitoringService';
 import { securityAuditService } from './securityAuditService';
 
@@ -43,18 +37,6 @@ export { estoqueService, EstoqueService } from './estoqueService';
 // Campo Service Principal
 export { campoServiceMain, CampoServiceMain } from './campoService';
 
-// Guardian Services
-export {
-  guardianAccessLogService,
-  guardianOccurrenceService,
-  guardianEquipmentService,
-  guardianSyncService,
-  GuardianAccessLogService,
-  GuardianOccurrenceService,
-  GuardianEquipmentService,
-  GuardianSyncService,
-} from './guardianService';
-
 // Monitoring
 export { monitoringService, MonitoringService } from './monitoringService';
 
@@ -74,12 +56,6 @@ export const campoServices = {
   roteirizacao: roteirizacaoService,
   estoque: estoqueService,
   campo: campoServiceMain,
-  guardian: {
-    accessLog: guardianAccessLogService,
-    occurrence: guardianOccurrenceService,
-    equipment: guardianEquipmentService,
-    sync: guardianSyncService,
-  },
   monitoring: monitoringService,
   securityAudit: securityAuditService,
 };

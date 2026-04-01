@@ -9,11 +9,12 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai dados da EFD-Reinf.
 
@@ -70,10 +71,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
         """
         cnpj = self._normalizar_cnpj(config.cnpj_empresa)
 
-        logger.info(
-            f"[EFD-Reinf] Extraindo dados - CNPJ: {cnpj}, "
-            f"Periodo: {config.data_inicial} a {config.data_final}"
-        )
+        logger.info(f"[EFD-Reinf] Extraindo dados - CNPJ: {cnpj}, Periodo: {config.data_inicial} a {config.data_final}")
 
         # 1. Eventos enviados
         async for evento in self._consultar_eventos_enviados(cnpj, config):
@@ -91,7 +89,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta eventos EFD-Reinf enviados."""
         try:
             if not self.reinf_transmitter:
@@ -110,9 +108,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
                     "tipo": "evento_reinf",
                     "id_evento": evento.get("id"),
                     "tipo_evento": evento.get("tipo"),
-                    "descricao_evento": self.TIPOS_EVENTOS.get(
-                        evento.get("tipo"), evento.get("descricao")
-                    ),
+                    "descricao_evento": self.TIPOS_EVENTOS.get(evento.get("tipo"), evento.get("descricao")),
                     "periodo_apuracao": evento.get("periodo"),
                     "data_envio": self._parse_data(evento.get("data_envio")),
                     "status": evento.get("status"),
@@ -130,7 +126,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta totalizadores R-9001, R-9005, etc."""
         try:
             if not self.reinf_transmitter:
@@ -175,7 +171,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta retencoes na fonte."""
         try:
             if not self.reinf_transmitter:
@@ -212,7 +208,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -229,7 +225,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
 
     async def _salvar_evento(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva evento EFD-Reinf."""
@@ -237,9 +233,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
 
         id_evento = registro.get("id_evento")
 
-        existente = self.db.query(EventoReinf).filter(
-            EventoReinf.id_evento == id_evento
-        ).first()
+        existente = self.db.query(EventoReinf).filter(EventoReinf.id_evento == id_evento).first()
 
         status_map = {
             "aceito": StatusEventoReinf.ACEITO,
@@ -272,7 +266,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
 
     async def _salvar_totalizador(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva totalizador EFD-Reinf."""
@@ -281,11 +275,15 @@ class EFDReinfSynchronizer(BaseSynchronizer):
         periodo = registro.get("periodo_apuracao")
         tipo = registro.get("tipo_evento")
 
-        existente = self.db.query(TotalizadorReinf).filter(
-            TotalizadorReinf.cnpj_empresa == config.cnpj_empresa,
-            TotalizadorReinf.periodo_apuracao == periodo,
-            TotalizadorReinf.tipo_evento == tipo,
-        ).first()
+        existente = (
+            self.db.query(TotalizadorReinf)
+            .filter(
+                TotalizadorReinf.cnpj_empresa == config.cnpj_empresa,
+                TotalizadorReinf.periodo_apuracao == periodo,
+                TotalizadorReinf.tipo_evento == tipo,
+            )
+            .first()
+        )
 
         if existente:
             existente.base_calculo_cp = Decimal(str(registro.get("base_calculo_cp") or 0))
@@ -314,7 +312,7 @@ class EFDReinfSynchronizer(BaseSynchronizer):
 
     async def _salvar_retencao(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva retencao na fonte."""
@@ -324,12 +322,16 @@ class EFDReinfSynchronizer(BaseSynchronizer):
         numero_nf = registro.get("numero_nf")
         periodo = registro.get("periodo_apuracao")
 
-        existente = self.db.query(RetencaoReinf).filter(
-            RetencaoReinf.cnpj_empresa == config.cnpj_empresa,
-            RetencaoReinf.cnpj_prestador == cnpj_prestador,
-            RetencaoReinf.numero_nf == numero_nf,
-            RetencaoReinf.periodo_apuracao == periodo,
-        ).first()
+        existente = (
+            self.db.query(RetencaoReinf)
+            .filter(
+                RetencaoReinf.cnpj_empresa == config.cnpj_empresa,
+                RetencaoReinf.cnpj_prestador == cnpj_prestador,
+                RetencaoReinf.numero_nf == numero_nf,
+                RetencaoReinf.periodo_apuracao == periodo,
+            )
+            .first()
+        )
 
         if existente:
             return False
@@ -355,36 +357,40 @@ class EFDReinfSynchronizer(BaseSynchronizer):
         self.db.add(novo)
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao da EFD-Reinf."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo dos dados EFD-Reinf."""
-        from ..models.sync_models import EventoReinf, TotalizadorReinf
         from sqlalchemy import func
 
-        total_eventos = self.db.query(EventoReinf).filter(
-            EventoReinf.cnpj_empresa == cnpj
-        ).count()
+        from ..models.sync_models import EventoReinf
 
-        por_tipo = self.db.query(
-            EventoReinf.tipo_evento,
-            func.count(EventoReinf.id)
-        ).filter(
-            EventoReinf.cnpj_empresa == cnpj
-        ).group_by(EventoReinf.tipo_evento).all()
+        total_eventos = self.db.query(EventoReinf).filter(EventoReinf.cnpj_empresa == cnpj).count()
+
+        por_tipo = (
+            self.db.query(EventoReinf.tipo_evento, func.count(EventoReinf.id))
+            .filter(EventoReinf.cnpj_empresa == cnpj)
+            .group_by(EventoReinf.tipo_evento)
+            .all()
+        )
 
         return {
             "total_eventos": total_eventos,
-            "por_tipo": {t: c for t, c in por_tipo},
+            "por_tipo": dict(por_tipo),
             "ultima_sincronizacao": self._obter_ultima_sincronizacao(cnpj),
         }

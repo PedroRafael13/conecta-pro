@@ -6,7 +6,7 @@ Serviço de limpeza e padronização de dados.
 
 import re
 import unicodedata
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 class DataCleaner:
@@ -30,11 +30,8 @@ class DataCleaner:
         }
 
     def clean_record(
-        self,
-        data: Dict[str, Any],
-        field_operations: Dict[str, List[str]] = None,
-        default_operations: List[str] = None
-    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+        self, data: dict[str, Any], field_operations: dict[str, list[str]] = None, default_operations: list[str] = None
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """
         Limpa e padroniza registro.
 
@@ -63,19 +60,16 @@ class DataCleaner:
                 if cleaner:
                     result = cleaner(new_value)
                     if result != new_value:
-                        changes.append({
-                            "field": field,
-                            "operation": op,
-                            "original": str(new_value),
-                            "cleaned": str(result)
-                        })
+                        changes.append(
+                            {"field": field, "operation": op, "original": str(new_value), "cleaned": str(result)}
+                        )
                         new_value = result
 
             cleaned_data[field] = new_value
 
         return cleaned_data, changes
 
-    def clean_value(self, value: Any, operations: List[str]) -> Any:
+    def clean_value(self, value: Any, operations: list[str]) -> Any:
         """Limpa valor individual."""
         if value is None:
             return None
@@ -109,20 +103,20 @@ class DataCleaner:
         """Normaliza caracteres Unicode."""
         if isinstance(value, str):
             # Remove acentos
-            nfkd = unicodedata.normalize('NFKD', value)
-            return ''.join(c for c in nfkd if not unicodedata.combining(c))
+            nfkd = unicodedata.normalize("NFKD", value)
+            return "".join(c for c in nfkd if not unicodedata.combining(c))
         return value
 
     def _remove_special_chars(self, value: Any) -> Any:
         """Remove caracteres especiais."""
         if isinstance(value, str):
-            return re.sub(r'[^\w\s@.\-]', '', value)
+            return re.sub(r"[^\w\s@.\-]", "", value)
         return value
 
     def _remove_duplicate_spaces(self, value: Any) -> Any:
         """Remove espaços duplicados."""
         if isinstance(value, str):
-            return re.sub(r'\s+', ' ', value).strip()
+            return re.sub(r"\s+", " ", value).strip()
         return value
 
     def _capitalize(self, value: Any) -> Any:
@@ -135,7 +129,7 @@ class DataCleaner:
         """Converte para Title Case."""
         if isinstance(value, str):
             # Palavras que devem ficar em minúsculas
-            exceptions = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'para', 'com']
+            exceptions = ["de", "da", "do", "das", "dos", "e", "em", "para", "com"]
             words = value.lower().split()
             result = []
             for i, word in enumerate(words):
@@ -143,14 +137,14 @@ class DataCleaner:
                     result.append(word.capitalize())
                 else:
                     result.append(word)
-            return ' '.join(result)
+            return " ".join(result)
         return value
 
     def _format_cpf(self, value: Any) -> Any:
         """Formata CPF."""
         if value is None:
             return None
-        digits = re.sub(r'\D', '', str(value))
+        digits = re.sub(r"\D", "", str(value))
         if len(digits) == 11:
             return f"{digits[:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:]}"
         return value
@@ -159,7 +153,7 @@ class DataCleaner:
         """Formata CNPJ."""
         if value is None:
             return None
-        digits = re.sub(r'\D', '', str(value))
+        digits = re.sub(r"\D", "", str(value))
         if len(digits) == 14:
             return f"{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:]}"
         return value
@@ -168,7 +162,7 @@ class DataCleaner:
         """Formata telefone brasileiro."""
         if value is None:
             return None
-        digits = re.sub(r'\D', '', str(value))
+        digits = re.sub(r"\D", "", str(value))
         if len(digits) == 11:
             return f"({digits[:2]}) {digits[2:7]}-{digits[7:]}"
         elif len(digits) == 10:
@@ -179,7 +173,7 @@ class DataCleaner:
         """Formata CEP."""
         if value is None:
             return None
-        digits = re.sub(r'\D', '', str(value))
+        digits = re.sub(r"\D", "", str(value))
         if len(digits) == 8:
             return f"{digits[:5]}-{digits[5:]}"
         return value
@@ -190,7 +184,7 @@ class DataCleaner:
             return value.lower().strip()
         return value
 
-    def suggest_cleaning_operations(self, field_name: str, sample_values: List[Any]) -> List[str]:
+    def suggest_cleaning_operations(self, field_name: str, sample_values: list[Any]) -> list[str]:
         """Sugere operações de limpeza para campo."""
         suggestions = ["trim"]
         field_lower = field_name.lower()
@@ -210,10 +204,7 @@ class DataCleaner:
             suggestions.extend(["title_case", "remove_duplicates_spaces"])
 
         # Análise de sample
-        has_extra_spaces = any(
-            isinstance(v, str) and '  ' in v
-            for v in sample_values if v
-        )
+        has_extra_spaces = any(isinstance(v, str) and "  " in v for v in sample_values if v)
         if has_extra_spaces:
             suggestions.append("remove_duplicates_spaces")
 

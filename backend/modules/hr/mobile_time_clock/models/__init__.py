@@ -1,28 +1,28 @@
 """Models do módulo Mobile Time Clock."""
 
-from .mobile_device import (
-    MobileDevice,
-    DevicePlatform,
-    DeviceStatus,
-    BiometricCapability,
-)
-from .mobile_checkin import (
-    MobileCheckIn,
-    CheckInType,
-    CheckInStatus,
-    ValidationMethod,
-    LocationAccuracy,
-)
 from .geofence_zone import (
     GeofenceZone,
-    ZoneType,
     ZoneCategory,
     ZoneStatus,
+    ZoneType,
+)
+from .mobile_checkin import (
+    CheckInStatus,
+    CheckInType,
+    LocationAccuracy,
+    MobileCheckIn,
+    ValidationMethod,
+)
+from .mobile_device import (
+    BiometricCapability,
+    DevicePlatform,
+    DeviceStatus,
+    MobileDevice,
 )
 from .offline_queue import (
     OfflineQueue,
-    QueueStatus,
     QueuePriority,
+    QueueStatus,
 )
 
 __all__ = [

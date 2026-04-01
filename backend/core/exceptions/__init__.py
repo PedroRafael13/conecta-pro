@@ -3,10 +3,10 @@ Exceptions customizadas e handlers globais.
 """
 
 from .handlers import (
-    NotFoundError,
-    ConflictError,
-    ValidationError,
     BusinessRuleError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
     setup_exception_handlers,
 )
 

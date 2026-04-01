@@ -3,8 +3,8 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from modules.financial.models.warehouse import Warehouse
 
 
-class StockItemStatus(str, Enum):
+class StockItemStatus(StrEnum):
     """Status do item em estoque."""
 
     DISPONIVEL = "disponivel"
@@ -29,7 +29,7 @@ class StockItemStatus(str, Enum):
     EM_TRANSFERENCIA = "em_transferencia"
 
 
-class CostingMethod(str, Enum):
+class CostingMethod(StrEnum):
     """Método de custeio."""
 
     CUSTO_MEDIO = "custo_medio"
@@ -42,7 +42,7 @@ class CostingMethod(str, Enum):
 class StockItem(Base):
     """Item em estoque (saldo por produto + armazém + lote)."""
 
-    __tablename__ = "stock_items"
+    __tablename__ = "fin_stock_items"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
@@ -63,7 +63,7 @@ class StockItem(Base):
     # Armazém
     warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=False,
         index=True,
     )
@@ -172,11 +172,7 @@ class StockItem(Base):
     @property
     def is_available(self) -> bool:
         """Verifica se está disponível."""
-        return (
-            self.status == StockItemStatus.DISPONIVEL.value
-            and self.quantity_available > 0
-            and not self.is_blocked
-        )
+        return self.status == StockItemStatus.DISPONIVEL.value and self.quantity_available > 0 and not self.is_blocked
 
     @property
     def is_low_stock(self) -> bool:
@@ -207,7 +203,7 @@ class StockItem(Base):
         return False
 
     @property
-    def days_to_expiry(self) -> Optional[int]:
+    def days_to_expiry(self) -> int | None:
         """Dias até vencer."""
         if self.expiry_date:
             delta = self.expiry_date - datetime.utcnow().date()

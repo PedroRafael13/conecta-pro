@@ -101,8 +101,8 @@ export function useCreateLead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
     },
-    onError: (error) => {
-      console.error('Erro ao criar lead:', error instanceof Error ? error.message : error);
+    onError: () => {
+      // error handled by React Query
     },
   });
 }
@@ -123,8 +123,8 @@ export function useUpdateLead() {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
     },
-    onError: (error) => {
-      console.error('Erro ao atualizar lead:', error instanceof Error ? error.message : error);
+    onError: () => {
+      // error handled by React Query
     },
   });
 }
@@ -143,8 +143,8 @@ export function useDeleteLead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
     },
-    onError: (error) => {
-      console.error('Erro ao deletar lead:', error instanceof Error ? error.message : error);
+    onError: () => {
+      // error handled by React Query
     },
   });
 }

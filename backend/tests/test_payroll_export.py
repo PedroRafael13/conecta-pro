@@ -1,14 +1,15 @@
 """Testes para exportação de folha de pagamento."""
 
-import pytest
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.payroll_integration.models import (
-    PayrollExport,
     ExportFormat,
     ExportStatus,
+    PayrollExport,
 )
 
 
@@ -81,6 +82,8 @@ class TestPayrollExportModel:
             name="Exportação Dezembro 2024",
             export_format=ExportFormat.CSV.value,
             status=ExportStatus.FAILED.value,
+            retry_count=0,
+            max_retries=3,
         )
 
         assert export.can_retry is True
@@ -101,7 +104,7 @@ class TestPayrollExportModel:
             status=ExportStatus.COMPLETED.value,
             transmission_id="PROTO-20241231120000",
             receipt_number="REC-PROTO-20241231120000",
-            transmitted_at=datetime.utcnow(),
+            transmission_date=datetime.utcnow(),
         )
 
         assert export.export_format == ExportFormat.ESOCIAL_XML.value

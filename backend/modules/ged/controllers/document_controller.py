@@ -3,8 +3,10 @@
 import hashlib
 import logging
 from pathlib import Path
+from typing import Any
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,7 +37,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["GED - Documentos"])
 
 
-@router.post("/", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def create_document(
     data: DocumentCreate,
     db: AsyncSession = Depends(get_db),
@@ -44,7 +46,7 @@ async def create_document(
     """Cria um novo documento."""
     service = DocumentService(db)
     try:
-        data.created_by = current_user["id"]
+        data.created_by = str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
         return await service.create(data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -58,6 +60,7 @@ async def create_document(
 
 @router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     title: str = Form(...),
     folder_id: str = Form(...),
@@ -106,12 +109,20 @@ async def upload_document(
             file_size_bytes=len(content),
             mime_type=file.content_type or "application/octet-stream",
             checksum=checksum,
-            owner_id=current_user["id"],
-            created_by=current_user["id"],
+            owner_id=str(current_user.id) if hasattr(current_user, "id") else current_user["id"],
+            created_by=str(current_user.id) if hasattr(current_user, "id") else current_user["id"],
         )
 
         logger.info(f"Upload realizado: {file.filename} ({len(content)} bytes)")
-        return await service.create(document_data)
+        result = await service.create(document_data)
+
+        # Disparar processamento IA em background (nao bloqueia resposta)
+        from modules.ged.tasks.ai_processing import process_document_ai
+
+        background_tasks.add_task(process_document_ai, str(result.id))
+        logger.info("IA Background agendado para documento %s", result.id)
+
+        return result
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -123,15 +134,79 @@ async def upload_document(
         ) from e
 
 
+@router.get("/search")
+async def search_documents(
+    q: str = Query("", description="Texto de busca"),
+    document_type: str | None = Query(None),
+    category: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Busca documentos por texto, tipo, categoria ou status."""
+    from sqlalchemy import text as sql_text
+
+    conditions = ["1=1"]
+    params: dict[str, Any] = {"limit": limit}
+
+    if q and q.strip():
+        conditions.append(
+            "(LOWER(title) LIKE :q OR LOWER(description) LIKE :q "
+            "OR LOWER(file_name) LIKE :q OR LOWER(ocr_text) LIKE :q)"
+        )
+        params["q"] = f"%{q.lower()}%"
+    if document_type:
+        conditions.append("document_type = :dtype")
+        params["dtype"] = document_type
+    if category:
+        conditions.append("category = :cat")
+        params["cat"] = category
+    if status_filter:
+        conditions.append("status = :st")
+        params["st"] = status_filter
+
+    where = " AND ".join(conditions)
+    result = await db.execute(
+        sql_text(
+            f"SELECT id, code, title, file_name, document_type, category, "
+            f"status, file_size_bytes, created_at "
+            f"FROM ged_documents WHERE {where} "
+            f"ORDER BY created_at DESC LIMIT :limit"
+        ),
+        params,
+    )
+    rows = result.mappings().all()
+
+    return {
+        "total": len(rows),
+        "query": q,
+        "items": [
+            {
+                "id": str(r["id"]),
+                "code": r["code"],
+                "title": r["title"],
+                "file_name": r["file_name"],
+                "document_type": r["document_type"],
+                "category": r["category"],
+                "status": r["status"],
+                "file_size_bytes": r["file_size_bytes"],
+                "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Busca documento por ID."""
     service = DocumentService(db)
-    document = await service.get_by_id(document_id)
+    document = await service.get_by_id(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -153,14 +228,14 @@ async def get_document_by_code(
 
 @router.put("/{document_id}", response_model=DocumentResponse)
 async def update_document(
-    document_id: str,
+    document_id: UUID,
     data: DocumentUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Atualiza documento."""
     service = DocumentService(db)
-    document = await service.update(document_id, data)
+    document = await service.update(str(document_id), data)
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -168,17 +243,18 @@ async def update_document(
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
     """Remove documento."""
     service = DocumentService(db)
-    if not await service.delete(document_id):
+    if not await service.delete(str(document_id)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
 
-@router.get("/", response_model=DocumentListResponse)
+@router.get("", response_model=DocumentListResponse)
+@router.get("/", response_model=DocumentListResponse, include_in_schema=False)
 async def list_documents(
     folder_id: str | None = Query(None),
     condominium_id: str | None = Query(None),
@@ -208,7 +284,7 @@ async def list_documents(
 
 @router.get("/folder/{folder_id}", response_model=list[DocumentResponse])
 async def get_by_folder(
-    folder_id: str,
+    folder_id: UUID,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -216,7 +292,7 @@ async def get_by_folder(
 ) -> list[DocumentResponse]:
     """Retorna documentos de uma pasta."""
     service = DocumentService(db)
-    return await service.get_by_folder(folder_id, page, page_size)
+    return await service.get_by_folder(str(folder_id), page, page_size)
 
 
 @router.get("/pending/approval", response_model=list[DocumentResponse])
@@ -245,6 +321,7 @@ async def get_pending_signature(
     return await service.get_pending_signature(condominium_id, page, page_size)
 
 
+@router.get("/expired", include_in_schema=False)
 @router.get("/expired/list", response_model=list[DocumentResponse])
 async def get_expired(
     condominium_id: str | None = Query(None),
@@ -270,80 +347,84 @@ async def get_expiring_soon(
     return await service.get_expiring_soon(days, condominium_id)
 
 
-@router.post("/{document_id}/approve", response_model=DocumentResponse)
+@router.post("/{document_id}/approve", response_model=DocumentResponse, status_code=201)
 async def approve_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> DocumentResponse:
     """Aprova documento."""
     service = DocumentService(db)
-    document = await service.approve(document_id, current_user["id"])
+    document = await service.approve(
+        str(document_id), str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
+    )
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
-@router.post("/{document_id}/reject", response_model=DocumentResponse)
+@router.post("/{document_id}/reject", response_model=DocumentResponse, status_code=201)
 async def reject_document(
-    document_id: str,
+    document_id: UUID,
     reason: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Rejeita documento."""
     service = DocumentService(db)
-    document = await service.reject(document_id, reason)
+    document = await service.reject(str(document_id), reason)
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
-@router.post("/{document_id}/publish", response_model=DocumentResponse)
+@router.post("/{document_id}/publish", response_model=DocumentResponse, status_code=201)
 async def publish_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Publica documento."""
     service = DocumentService(db)
-    document = await service.publish(document_id)
+    document = await service.publish(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
-@router.post("/{document_id}/archive", response_model=DocumentResponse)
+@router.post("/{document_id}/archive", response_model=DocumentResponse, status_code=201)
 async def archive_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> DocumentResponse:
     """Arquiva documento."""
     service = DocumentService(db)
-    document = await service.archive(document_id, current_user["id"])
+    document = await service.archive(
+        str(document_id), str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
+    )
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
-@router.post("/{document_id}/unarchive", response_model=DocumentResponse)
+@router.post("/{document_id}/unarchive", response_model=DocumentResponse, status_code=201)
 async def unarchive_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Desarquiva documento."""
     service = DocumentService(db)
-    document = await service.unarchive(document_id)
+    document = await service.unarchive(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
-@router.post("/{document_id}/move", response_model=DocumentResponse)
+@router.post("/{document_id}/move", response_model=DocumentResponse, status_code=201)
 async def move_document(
-    document_id: str,
+    document_id: UUID,
     folder_id: str = Query(...),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -351,7 +432,7 @@ async def move_document(
     """Move documento para outra pasta."""
     service = DocumentService(db)
     try:
-        document = await service.move(document_id, folder_id)
+        document = await service.move(str(document_id), folder_id)
         if not document:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -362,29 +443,29 @@ async def move_document(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{document_id}/view", response_model=DocumentResponse)
+@router.post("/{document_id}/view", response_model=DocumentResponse, status_code=201)
 async def view_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Registra visualização."""
     service = DocumentService(db)
-    document = await service.view(document_id)
+    document = await service.view(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
-@router.post("/{document_id}/download", response_model=DocumentResponse)
+@router.post("/{document_id}/download", response_model=DocumentResponse, status_code=201)
 async def register_download(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Registra download."""
     service = DocumentService(db)
-    document = await service.download(document_id)
+    document = await service.download(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -392,13 +473,13 @@ async def register_download(
 
 @router.get("/{document_id}/download")
 async def download_file(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> FileResponse:
     """Faz download do arquivo do documento."""
     service = DocumentService(db)
-    document = await service.get_by_id(document_id)
+    document = await service.get_by_id(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
@@ -407,7 +488,7 @@ async def download_file(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Arquivo não encontrado no sistema")
 
     # Registra o download
-    await service.download(document_id)
+    await service.download(str(document_id))
 
     return FileResponse(
         path=str(file_path),
@@ -418,13 +499,13 @@ async def download_file(
 
 @router.get("/{document_id}/preview")
 async def get_preview_url(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, str]:
     """Retorna URL de preview do documento."""
     service = DocumentService(db)
-    document = await service.get_by_id(document_id)
+    document = await service.get_by_id(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
@@ -438,18 +519,18 @@ async def get_preview_url(
 
 @router.get("/{document_id}/view-url")
 async def get_view_url(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, str]:
     """Retorna URL de visualização do documento."""
     service = DocumentService(db)
-    document = await service.get_by_id(document_id)
+    document = await service.get_by_id(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
     # Registra a visualização
-    await service.view(document_id)
+    await service.view(str(document_id))
 
     # URL para visualização (pode ser adaptado para viewer específico por tipo)
     view_url = f"/api/v1/ged/documents/{document_id}/download"
@@ -458,7 +539,7 @@ async def get_view_url(
 
 
 @router.get("/search/query", response_model=list[DocumentResponse])
-async def search_documents(
+async def search_documents_by_query(
     query: str = Query(..., min_length=2),
     condominium_id: str | None = Query(None),
     limit: int = Query(20, ge=1, le=100),
@@ -481,23 +562,23 @@ async def get_stats(
     return await service.get_stats(condominium_id)
 
 
-@router.post("/{document_id}/submit-approval", response_model=DocumentResponse)
+@router.post("/{document_id}/submit-approval", response_model=DocumentResponse, status_code=201)
 async def submit_for_approval(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Submete documento para aprovação."""
     service = DocumentService(db)
-    document = await service.submit_for_approval(document_id)
+    document = await service.submit_for_approval(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
-@router.post("/{document_id}/new-version", response_model=DocumentResponse)
+@router.post("/{document_id}/new-version", response_model=DocumentResponse, status_code=201)
 async def create_new_version(
-    document_id: str,
+    document_id: UUID,
     data: DocumentUploadRequest,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -505,13 +586,13 @@ async def create_new_version(
     """Cria nova versão do documento."""
     service = DocumentService(db)
     document = await service.create_new_version(
-        document_id=document_id,
+        document_id=str(document_id),
         file_name=data.file_name,
         file_path=data.file_path,
         file_size_bytes=data.file_size_bytes,
         mime_type=data.mime_type,
         checksum=data.checksum,
-        created_by=current_user["id"],
+        created_by=str(current_user.id) if hasattr(current_user, "id") else current_user["id"],
         change_summary=data.change_summary,
     )
     if not document:
@@ -519,11 +600,11 @@ async def create_new_version(
     return document
 
 
-@router.post("/check-expiry/run")
+@router.post("/check-expiry/run", status_code=201)
 async def check_expiry(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, int]:
     """Verifica e marca documentos expirados."""
     service = DocumentService(db)
     count = await service.check_expiry()
@@ -531,52 +612,52 @@ async def check_expiry(
 
 
 # Endpoints de IA
-@router.post("/ai/classify")
+@router.post("/ai/classify", status_code=201)
 async def classify_document(
     text: str = Query(..., min_length=10),
     file_name: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Classifica documento usando IA."""
     service = DocumentAIService(db)
     return await service.classify_document(text, file_name)
 
 
-@router.post("/{document_id}/ai/analyze-ocr", response_model=DocumentOCRResult)
+@router.post("/{document_id}/ai/analyze-ocr", response_model=DocumentOCRResult, status_code=201)
 async def analyze_ocr(
-    document_id: str,
+    document_id: UUID,
     ocr_text: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentOCRResult:
     """Analisa texto OCR do documento."""
     service = DocumentAIService(db)
-    result = await service.analyze_ocr_text(document_id, ocr_text)
+    result = await service.analyze_ocr_text(str(document_id), ocr_text)
     return DocumentOCRResult(**result)
 
 
-@router.post("/ai/extract-keywords")
+@router.post("/ai/extract-keywords", status_code=201)
 async def extract_keywords(
     text: str = Query(..., min_length=10),
     max_keywords: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, list[str]]:
     """Extrai palavras-chave do texto."""
     service = DocumentAIService(db)
     keywords = await service.extract_keywords(text, max_keywords)
     return {"keywords": keywords}
 
 
-@router.post("/ai/check-duplicates")
+@router.post("/ai/check-duplicates", status_code=201)
 async def check_duplicates(
     checksum: str = Query(...),
     title: str = Query(...),
     condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Verifica documentos duplicados."""
     service = DocumentAIService(db)
     return await service.find_duplicates(checksum, title, condominium_id)
@@ -587,7 +668,7 @@ async def get_insights(
     condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Retorna insights sobre documentos."""
     service = DocumentAIService(db)
     return await service.get_insights(condominium_id)
@@ -599,7 +680,7 @@ async def get_trends(
     days: int = Query(30, ge=7, le=365),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Retorna tendências de documentos."""
     service = DocumentAIService(db)
     return await service.get_trends(condominium_id, days)
@@ -610,7 +691,7 @@ async def get_ai_dashboard(
     condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Retorna dashboard com IA."""
     service = DocumentAIService(db)
     return await service.get_dashboard(condominium_id)

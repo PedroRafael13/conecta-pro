@@ -136,15 +136,15 @@ export default function AprovacoesPage() {
                 </div>
                 <div>
                   <h1 className="text-lg font-semibold text-[hsl(var(--foreground))]">
-                    Aprovacoes Pendentes
+                    Aprovações Pendentes
                   </h1>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    {total} solicitacoes aguardando
+                    {total} solicitações aguardando
                   </p>
                 </div>
               </div>
             </div>
-            <Button variant="outline" onClick={refresh} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={refresh} disabled={isLoading}>
               <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
@@ -239,7 +239,7 @@ export default function AprovacoesPage() {
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-500">{error || approvalError}</p>
-            <Button variant="outline" size="sm" onClick={refresh} className="ml-auto">
+            <Button type="button" variant="outline" size="sm" onClick={refresh} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -331,10 +331,10 @@ export default function AprovacoesPage() {
               <div className="text-center py-12 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl">
                 <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                  Nenhuma aprovacao pendente
+                  Nenhuma aprovação pendente
                 </h3>
                 <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                  Todas as solicitacoes foram processadas
+                  Todas as solicitações foram processadas
                 </p>
               </div>
             )}
@@ -344,7 +344,7 @@ export default function AprovacoesPage() {
               <div className="flex items-center justify-between mt-4">
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">
                   Mostrando {(page - 1) * pageSize + 1} a{' '}
-                  {Math.min(page * pageSize, total)} de {total} solicitacoes
+                  {Math.min(page * pageSize, total)} de {total} solicitações
                 </p>
                 <div className="flex items-center gap-2">
                   <Button

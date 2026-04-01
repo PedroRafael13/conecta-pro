@@ -4,21 +4,23 @@ Intelligence Hub Controller - API REST da Central de IA
 Endpoints para interagir com a Central de Inteligência Artificial do Conecta PRO
 """
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
-from fastapi.responses import JSONResponse
-from typing import Dict, List, Any, Optional
-from datetime import datetime
-import uuid
 import logging
+import uuid
+from datetime import datetime
+from typing import Any
 
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 
-# Importar componentes da Central de IA
-from ..unified_ai_engine import UnifiedAIEngine, AIInput, PredictionContext
+from core.auth.dependencies import CurrentActiveUser
+
 from ..cross_module_analytics import CrossModuleAnalytics
-from ..predictive_orchestra import PredictiveOrchestra, PredictionRequest, PredictionPriority
-from ..insight_distributor import InsightDistributor, Insight, InsightType, InsightPriority
+from ..insight_distributor import Insight, InsightDistributor, InsightPriority, InsightType
 from ..module_integration_manager import ModuleIntegrationManager
+from ..predictive_orchestra import PredictionPriority, PredictionRequest, PredictiveOrchestra
+
+# Importar componentes da Central de IA
+from ..unified_ai_engine import AIInput, PredictionContext, UnifiedAIEngine
 
 logger = logging.getLogger(__name__)
 
@@ -37,23 +39,24 @@ router = APIRouter(prefix="/intelligence-hub", tags=["Intelligence Hub - Central
 # SCHEMAS PYDANTIC
 # =============================================================================
 
+
 class AIRequestSchema(BaseModel):
     module_name: str = Field(..., description="Nome do módulo")
     data_type: str = Field(..., description="Tipo de dados")
-    data: Dict[str, Any] = Field(..., description="Dados para análise")
+    data: dict[str, Any] = Field(..., description="Dados para análise")
     context: str = Field(default="real_time", description="Contexto da predição")
-    user_id: Optional[str] = Field(None, description="ID do usuário")
+    user_id: str | None = Field(None, description="ID do usuário")
     tenant_id: str = Field(..., description="ID do tenant")
 
 
 class PredictionRequestSchema(BaseModel):
     module_name: str = Field(..., description="Nome do módulo")
     data_type: str = Field(..., description="Tipo de dados")
-    data: Dict[str, Any] = Field(..., description="Dados para predição")
+    data: dict[str, Any] = Field(..., description="Dados para predição")
     priority: str = Field(default="normal", description="Prioridade (low, normal, high, critical, emergency)")
     tenant_id: str = Field(..., description="ID do tenant")
-    user_id: Optional[str] = Field(None, description="ID do usuário")
-    deadline: Optional[str] = Field(None, description="Deadline ISO format")
+    user_id: str | None = Field(None, description="ID do usuário")
+    deadline: str | None = Field(None, description="Deadline ISO format")
 
 
 class InsightSchema(BaseModel):
@@ -62,10 +65,10 @@ class InsightSchema(BaseModel):
     source_module: str = Field(..., description="Módulo de origem")
     title: str = Field(..., description="Título")
     content: str = Field(..., description="Conteúdo")
-    data: Dict[str, Any] = Field(..., description="Dados do insight")
+    data: dict[str, Any] = Field(..., description="Dados do insight")
     tenant_id: str = Field(..., description="ID do tenant")
-    target_modules: List[str] = Field(default=[], description="Módulos alvo")
-    target_users: List[str] = Field(default=[], description="Usuários alvo")
+    target_modules: list[str] = Field(default=[], description="Módulos alvo")
+    target_users: list[str] = Field(default=[], description="Usuários alvo")
 
 
 class ModuleHealthResponse(BaseModel):
@@ -73,15 +76,16 @@ class ModuleHealthResponse(BaseModel):
     status: str
     last_check: str
     response_time: float
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 # =============================================================================
 # ENDPOINTS DA CENTRAL DE IA
 # =============================================================================
 
+
 @router.get("/health", summary="Health Check da Central de IA")
-async def health_check():
+async def health_check(current_user: CurrentActiveUser):
     """Verifica saúde geral da Central de IA"""
     try:
         # Verificar todos os componentes
@@ -90,28 +94,24 @@ async def health_check():
         orchestra_health = await orchestra.health_check()
         distributor_health = await distributor.health_check()
         integration_health = await integration_manager.health_check()
-        
+
         overall_status = "healthy"
         components = {
             "ai_engine": ai_health,
             "analytics": analytics_health,
             "orchestra": orchestra_health,
             "distributor": distributor_health,
-            "integration_manager": integration_health
+            "integration_manager": integration_health,
         }
-        
-        return {
-            "status": overall_status,
-            "timestamp": datetime.now().isoformat(),
-            "components": components
-        }
+
+        return {"status": overall_status, "timestamp": datetime.now().isoformat(), "components": components}
     except Exception as e:
         logger.error(f"Erro no health check: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/ai/predict", summary="Fazer Predição com IA")
-async def make_ai_prediction(request: AIRequestSchema):
+async def make_ai_prediction(current_user: CurrentActiveUser, request: AIRequestSchema):
     """Faz uma predição usando o motor central de IA"""
     try:
         # Converter para AIInput
@@ -122,12 +122,12 @@ async def make_ai_prediction(request: AIRequestSchema):
             context=PredictionContext(request.context),
             timestamp=datetime.now(),
             user_id=request.user_id,
-            tenant_id=request.tenant_id
+            tenant_id=request.tenant_id,
         )
-        
+
         # Processar com IA
         result = await ai_engine.process_ai_request(ai_input)
-        
+
         return {
             "prediction": result.prediction,
             "confidence": result.confidence,
@@ -135,16 +135,16 @@ async def make_ai_prediction(request: AIRequestSchema):
             "processing_time": result.processing_time,
             "insights": result.insights,
             "recommendations": result.recommendations,
-            "metadata": result.metadata
+            "metadata": result.metadata,
         }
-        
+
     except Exception as e:
         logger.error(f"Erro na predição: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/predictions/submit", summary="Submeter Predição para Fila")
-async def submit_prediction(request: PredictionRequestSchema):
+async def submit_prediction(current_user: CurrentActiveUser, request: PredictionRequestSchema):
     """Submete uma predição para a fila do orquestrador"""
     try:
         # Converter prioridade
@@ -153,11 +153,11 @@ async def submit_prediction(request: PredictionRequestSchema):
             "normal": PredictionPriority.NORMAL,
             "high": PredictionPriority.HIGH,
             "critical": PredictionPriority.CRITICAL,
-            "emergency": PredictionPriority.EMERGENCY
+            "emergency": PredictionPriority.EMERGENCY,
         }
-        
+
         priority = priority_map.get(request.priority, PredictionPriority.NORMAL)
-        
+
         # Criar requisição
         pred_request = PredictionRequest(
             id=str(uuid.uuid4()),
@@ -167,35 +167,35 @@ async def submit_prediction(request: PredictionRequestSchema):
             priority=priority,
             tenant_id=request.tenant_id,
             user_id=request.user_id,
-            deadline=datetime.fromisoformat(request.deadline) if request.deadline else None
+            deadline=datetime.fromisoformat(request.deadline) if request.deadline else None,
         )
-        
+
         # Submeter
         prediction_id = await orchestra.submit_prediction(pred_request)
-        
+
         return {
             "prediction_id": prediction_id,
             "status": "submitted",
             "priority": request.priority,
-            "estimated_completion": "Será processado conforme a fila"
+            "estimated_completion": "Será processado conforme a fila",
         }
-        
+
     except Exception as e:
         logger.error(f"Erro ao submeter predição: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/predictions/{prediction_id}/status", summary="Status de Predição")
-async def get_prediction_status(prediction_id: str):
+async def get_prediction_status(current_user: CurrentActiveUser, prediction_id: str):
     """Obtém status de uma predição específica"""
     try:
         status = await orchestra.get_prediction_status(prediction_id)
-        
+
         if not status:
             raise HTTPException(status_code=404, detail="Predição não encontrada")
-        
+
         return status
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -204,52 +204,54 @@ async def get_prediction_status(prediction_id: str):
 
 
 @router.get("/analytics/correlations", summary="Análises Cross-Module")
-async def get_module_correlations(tenant_id: str, timeframe_days: int = 30):
+async def get_module_correlations(tenant_id: str, current_user: CurrentActiveUser, timeframe_days: int = 30):
     """Obtém correlações entre módulos"""
     try:
         correlations = await analytics.analyze_all_correlations(tenant_id, timeframe_days)
-        
+
         # Serializar correlações
         correlation_data = []
         for corr in correlations:
-            correlation_data.append({
-                "module_a": corr.module_a,
-                "module_b": corr.module_b,
-                "correlation_type": corr.correlation_type.value,
-                "strength": corr.strength,
-                "confidence": corr.confidence,
-                "insights": corr.insights,
-                "impact_areas": corr.impact_areas,
-                "timestamp": corr.timestamp.isoformat()
-            })
-        
+            correlation_data.append(
+                {
+                    "module_a": corr.module_a,
+                    "module_b": corr.module_b,
+                    "correlation_type": corr.correlation_type.value,
+                    "strength": corr.strength,
+                    "confidence": corr.confidence,
+                    "insights": corr.insights,
+                    "impact_areas": corr.impact_areas,
+                    "timestamp": corr.timestamp.isoformat(),
+                }
+            )
+
         return {
             "tenant_id": tenant_id,
             "timeframe_days": timeframe_days,
             "total_correlations": len(correlation_data),
             "correlations": correlation_data,
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Erro nas análises de correlação: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/analytics/insights", summary="Insights Integrados")
-async def get_integrated_insights(tenant_id: str):
+async def get_integrated_insights(current_user: CurrentActiveUser, tenant_id: str):
     """Obtém insights integrados cross-module"""
     try:
         insights = await analytics.generate_integrated_insights(tenant_id)
         return insights
-        
+
     except Exception as e:
         logger.error(f"Erro ao gerar insights: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/insights/distribute", summary="Distribuir Insight")
-async def distribute_insight(insight_data: InsightSchema):
+async def distribute_insight(current_user: CurrentActiveUser, insight_data: InsightSchema):
     """Distribui um insight para módulos e usuários relevantes"""
     try:
         # Converter para Insight
@@ -263,89 +265,85 @@ async def distribute_insight(insight_data: InsightSchema):
             data=insight_data.data,
             tenant_id=insight_data.tenant_id,
             target_modules=insight_data.target_modules,
-            target_users=insight_data.target_users
+            target_users=insight_data.target_users,
         )
-        
+
         # Distribuir
         result = await distributor.distribute_insight(insight)
-        
+
         return result
-        
+
     except Exception as e:
         logger.error(f"Erro na distribuição de insight: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/modules/health", summary="Saúde dos Módulos")
-async def get_modules_health():
+async def get_modules_health(current_user: CurrentActiveUser):
     """Obtém saúde de todos os módulos integrados"""
     try:
         health = await integration_manager.get_all_modules_health()
         return health
-        
+
     except Exception as e:
         logger.error(f"Erro ao obter saúde dos módulos: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/modules/{module_name}/health", summary="Saúde de Módulo Específico")
-async def get_module_health(module_name: str):
+async def get_module_health(current_user: CurrentActiveUser, module_name: str):
     """Obtém saúde de um módulo específico"""
     try:
         health = await integration_manager.get_module_health(module_name)
         return health
-        
+
     except Exception as e:
         logger.error(f"Erro ao obter saúde do módulo {module_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/modules/discover", summary="Auto-descobrir Módulos")
-async def discover_modules(background_tasks: BackgroundTasks):
+async def discover_modules(current_user: CurrentActiveUser, background_tasks: BackgroundTasks):
     """Executa auto-descoberta de módulos"""
     try:
         # Executar em background para não bloquear
         background_tasks.add_task(integration_manager.auto_discover_modules)
-        
-        return {
-            "message": "Auto-descoberta iniciada",
-            "status": "running",
-            "timestamp": datetime.now().isoformat()
-        }
-        
+
+        return {"message": "Auto-descoberta iniciada", "status": "running", "timestamp": datetime.now().isoformat()}
+
     except Exception as e:
         logger.error(f"Erro na auto-descoberta: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/queue/status", summary="Status da Fila de Predições")
-async def get_queue_status():
+async def get_queue_status(current_user: CurrentActiveUser):
     """Obtém status da fila de predições"""
     try:
         status = await orchestra.get_queue_status()
         return status
-        
+
     except Exception as e:
         logger.error(f"Erro ao obter status da fila: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/stats", summary="Estatísticas da Central IA")
-async def get_intelligence_hub_stats():
+async def get_intelligence_hub_stats(current_user: CurrentActiveUser):
     """Obtém estatísticas gerais da Central de IA"""
     try:
         # Coletar estatísticas de todos os componentes
         orchestra_stats = await orchestra.get_queue_status()
         integration_stats = await integration_manager.get_integration_stats()
-        
+
         return {
             "timestamp": datetime.now().isoformat(),
             "orchestra": orchestra_stats,
             "integration": integration_stats,
             "modules_monitored": len(integration_manager.modules),
-            "version": "1.0.0"
+            "version": "1.0.0",
         }
-        
+
     except Exception as e:
         logger.error(f"Erro ao obter estatísticas: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -355,20 +353,21 @@ async def get_intelligence_hub_stats():
 # INICIALIZAÇÃO DOS COMPONENTES
 # =============================================================================
 
+
 @router.on_event("startup")
 async def startup_intelligence_hub():
     """Inicializa componentes da Central de IA"""
     try:
         logger.info("Iniciando Central de IA...")
-        
+
         # Iniciar orquestrador
         await orchestra.start()
-        
+
         # Iniciar gerenciador de integração
         await integration_manager.start()
-        
+
         logger.info("Central de IA iniciada com sucesso!")
-        
+
     except Exception as e:
         logger.error(f"Erro na inicialização da Central de IA: {e}")
 
@@ -378,14 +377,14 @@ async def shutdown_intelligence_hub():
     """Para componentes da Central de IA"""
     try:
         logger.info("Parando Central de IA...")
-        
+
         # Parar orquestrador
         await orchestra.stop()
-        
+
         # Parar gerenciador de integração
         await integration_manager.stop()
-        
+
         logger.info("Central de IA parada com sucesso!")
-        
+
     except Exception as e:
         logger.error(f"Erro ao parar Central de IA: {e}")

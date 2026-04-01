@@ -8,7 +8,6 @@ Endpoints para:
 - Metricas em tempo real
 """
 
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -21,13 +20,12 @@ from core.logging import logger
 from ..models.alert import AlertLevel
 from ..schemas.alert_schemas import (
     AlertAcknowledge,
-    AlertResponse,
     AlertResolve,
+    AlertResponse,
     AlertsListResponse,
     AlertStats,
 )
 from ..schemas.dashboard_schemas import (
-    DashboardResponse,
     SystemHealthResponse,
 )
 from ..schemas.threshold_schemas import (
@@ -100,7 +98,7 @@ async def get_current_metrics(
 
 @router.get("/alerts", response_model=AlertsListResponse)
 async def list_alerts(
-    level: Optional[AlertLevel] = Query(None, description="Filtrar por nivel"),
+    level: AlertLevel | None = Query(None, description="Filtrar por nivel"),
     active_only: bool = Query(True, description="Apenas alertas ativos"),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -206,9 +204,9 @@ async def get_alert_statistics(
 # ============================================================
 
 
-@router.get("/thresholds", response_model=List[ThresholdResponse])
+@router.get("/thresholds", response_model=list[ThresholdResponse])
 async def list_thresholds(
-    category: Optional[str] = Query(None),
+    category: str | None = Query(None),
     enabled_only: bool = Query(False),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),

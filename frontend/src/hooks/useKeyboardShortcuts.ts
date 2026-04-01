@@ -72,7 +72,9 @@ export function useKeyboardShortcuts({ shortcuts, enabled = true }: UseKeyboardS
     };
   }, [enabled, handleKeyDown]);
 
-  return { shortcuts: shortcutsRef.current };
+  // Não retornamos shortcutsRef.current aqui para evitar acesso a ref durante render
+  // Os shortcuts são passados como parâmetro, então o caller já tem acesso
+  return { shortcuts };
 }
 
 /**

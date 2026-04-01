@@ -1,33 +1,36 @@
 """Controller para DocumentShare."""
 
 import logging
-from typing import Optional, List
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.ged.services.document_share_service import DocumentShareService
-from modules.ged.models.document_share import ShareType, SharePermission
+from core.database import get_db
+from modules.ged.models.document_share import SharePermission, ShareType
 from modules.ged.schemas.document_share import (
     DocumentShareCreate,
-    DocumentShareUpdate,
     DocumentShareFilter,
-    DocumentShareResponse,
-    DocumentShareListResponse,
     DocumentShareLinkRequest,
+    DocumentShareListResponse,
+    DocumentShareResponse,
+    DocumentShareUpdate,
 )
+from modules.ged.services.document_share_service import DocumentShareService
+
+
+def _uid(current_user) -> str:
+    """Extrai user id de User object ou dict."""
+    return str(current_user.id) if hasattr(current_user, "id") else _uid(current_user)
+
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/document-shares", tags=["GED - Compartilhamento"])
 
 
-@router.post(
-    "/", response_model=DocumentShareResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=DocumentShareResponse, status_code=status.HTTP_201_CREATED)
 async def create_share(
     data: DocumentShareCreate,
     db: AsyncSession = Depends(get_db),
@@ -36,12 +39,10 @@ async def create_share(
     """Cria compartilhamento."""
     service = DocumentShareService(db)
     try:
-        data.shared_by = current_user["id"]
+        data.shared_by = _uid(current_user)
         return await service.create(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error("Erro ao criar compartilhamento: %s", e)
         raise HTTPException(
@@ -100,11 +101,11 @@ async def delete_share(
         )
 
 
-@router.get("/", response_model=DocumentShareListResponse)
+@router.get("", response_model=DocumentShareListResponse)
 async def list_shares(
-    document_id: Optional[str] = Query(None),
-    share_type: Optional[ShareType] = Query(None),
-    is_active: Optional[bool] = Query(None),
+    document_id: str | None = Query(None),
+    share_type: ShareType | None = Query(None),
+    is_active: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     order_by: str = Query("created_at"),
@@ -122,46 +123,48 @@ async def list_shares(
     return await service.list(filters, page, page_size, order_by, order_desc)
 
 
-@router.get("/document/{document_id}", response_model=List[DocumentShareResponse])
+@router.get("/document/{document_id}", response_model=list[DocumentShareResponse])
 async def get_by_document(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentShareResponse]:
+) -> list[DocumentShareResponse]:
     """Retorna compartilhamentos de um documento."""
     service = DocumentShareService(db)
     return await service.get_by_document(document_id)
 
 
-@router.get("/owner/list", response_model=List[DocumentShareResponse])
+@router.get("/owner", include_in_schema=False)
+@router.get("/owner/list", response_model=list[DocumentShareResponse])
 async def get_by_owner(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-) -> List[DocumentShareResponse]:
+) -> list[DocumentShareResponse]:
     """Retorna compartilhamentos criados pelo usuário."""
     service = DocumentShareService(db)
-    return await service.get_by_owner(current_user["id"], page, page_size)
+    return await service.get_by_owner(_uid(current_user), page, page_size)
 
 
-@router.get("/recipient/list", response_model=List[DocumentShareResponse])
+@router.get("/recipient", include_in_schema=False)
+@router.get("/recipient/list", response_model=list[DocumentShareResponse])
 async def get_by_recipient(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-) -> List[DocumentShareResponse]:
+) -> list[DocumentShareResponse]:
     """Retorna compartilhamentos recebidos pelo usuário."""
     service = DocumentShareService(db)
     return await service.get_by_recipient(
-        recipient_id=current_user["id"],
+        recipient_id=_uid(current_user),
         page=page,
         page_size=page_size,
     )
 
 
-@router.post("/public-link", response_model=DocumentShareResponse)
+@router.post("/public-link", response_model=DocumentShareResponse, status_code=201)
 async def create_public_link(
     data: DocumentShareLinkRequest,
     db: AsyncSession = Depends(get_db),
@@ -170,18 +173,16 @@ async def create_public_link(
     """Cria link público para documento."""
     service = DocumentShareService(db)
     try:
-        data.shared_by = current_user["id"]
+        data.shared_by = _uid(current_user)
         return await service.create_public_link(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/link/{token}/access", response_model=DocumentShareResponse)
 async def access_by_link(
     token: str,
-    password: Optional[str] = Query(None),
+    password: str | None = Query(None),
     request: Request = None,
     db: AsyncSession = Depends(get_db),
 ) -> DocumentShareResponse:
@@ -198,12 +199,10 @@ async def access_by_link(
             user_agent=user_agent,
         )
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/{share_id}/revoke", response_model=DocumentShareResponse)
+@router.post("/{share_id}/revoke", response_model=DocumentShareResponse, status_code=201)
 async def revoke_share(
     share_id: str,
     db: AsyncSession = Depends(get_db),
@@ -220,7 +219,7 @@ async def revoke_share(
     return share
 
 
-@router.post("/{share_id}/accept", response_model=DocumentShareResponse)
+@router.post("/{share_id}/accept", response_model=DocumentShareResponse, status_code=201)
 async def accept_share(
     share_id: str,
     db: AsyncSession = Depends(get_db),
@@ -228,7 +227,7 @@ async def accept_share(
 ) -> DocumentShareResponse:
     """Aceita compartilhamento."""
     service = DocumentShareService(db)
-    share = await service.accept(share_id, current_user["id"])
+    share = await service.accept(share_id, _uid(current_user))
     if not share:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -237,10 +236,10 @@ async def accept_share(
     return share
 
 
-@router.post("/{share_id}/reject", response_model=DocumentShareResponse)
+@router.post("/{share_id}/reject", response_model=DocumentShareResponse, status_code=201)
 async def reject_share(
     share_id: str,
-    reason: Optional[str] = Query(None),
+    reason: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentShareResponse:
@@ -255,7 +254,7 @@ async def reject_share(
     return share
 
 
-@router.post("/{share_id}/extend", response_model=DocumentShareResponse)
+@router.post("/{share_id}/extend", response_model=DocumentShareResponse, status_code=201)
 async def extend_expiry(
     share_id: str,
     new_expiry: datetime = Query(...),
@@ -273,7 +272,7 @@ async def extend_expiry(
     return share
 
 
-@router.post("/{share_id}/permission", response_model=DocumentShareResponse)
+@router.post("/{share_id}/permission", response_model=DocumentShareResponse, status_code=201)
 async def update_permission(
     share_id: str,
     permission: SharePermission = Query(...),
@@ -291,7 +290,7 @@ async def update_permission(
     return share
 
 
-@router.post("/{share_id}/regenerate-token")
+@router.post("/{share_id}/regenerate-token", status_code=201)
 async def regenerate_token(
     share_id: str,
     db: AsyncSession = Depends(get_db),
@@ -308,7 +307,7 @@ async def regenerate_token(
     return {"token": token}
 
 
-@router.post("/{share_id}/set-password", response_model=DocumentShareResponse)
+@router.post("/{share_id}/set-password", response_model=DocumentShareResponse, status_code=201)
 async def set_password(
     share_id: str,
     password: str = Query(..., min_length=4),
@@ -326,7 +325,7 @@ async def set_password(
     return share
 
 
-@router.post("/{share_id}/remove-password", response_model=DocumentShareResponse)
+@router.post("/{share_id}/remove-password", response_model=DocumentShareResponse, status_code=201)
 async def remove_password(
     share_id: str,
     db: AsyncSession = Depends(get_db),
@@ -343,7 +342,7 @@ async def remove_password(
     return share
 
 
-@router.post("/expire-overdue/run")
+@router.post("/expire-overdue/run", status_code=201)
 async def expire_overdue(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -368,7 +367,7 @@ async def get_access_log(
 
 @router.get("/stats/summary")
 async def get_stats(
-    document_id: Optional[str] = Query(None),
+    document_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:

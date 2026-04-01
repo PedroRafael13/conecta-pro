@@ -3,9 +3,9 @@
 Sprint 33 - Workflow Engine (Unificado).
 """
 
-import enum
 import re
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import (
@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class ConditionType(str, enum.Enum):
+class ConditionType(StrEnum):
     """Tipo de condicao."""
 
     SIMPLE = "SIMPLE"  # Comparacao simples
@@ -31,7 +31,7 @@ class ConditionType(str, enum.Enum):
     FUNCTION = "FUNCTION"  # Funcao predefinida
 
 
-class ConditionOperator(str, enum.Enum):
+class ConditionOperator(StrEnum):
     """Operadores de comparacao."""
 
     # Igualdade
@@ -72,7 +72,7 @@ class ConditionOperator(str, enum.Enum):
     BETWEEN = "between"
 
 
-class LogicalOperator(str, enum.Enum):
+class LogicalOperator(StrEnum):
     """Operadores logicos."""
 
     AND = "AND"
@@ -180,11 +180,7 @@ class WorkflowCondition(Base):
         value_field = self.simple_condition.get("value_field", "")
 
         field_value = self._get_field_value(field, context)
-        compare_value = (
-            self._get_field_value(value_field, context)
-            if value_field
-            else value
-        )
+        compare_value = self._get_field_value(value_field, context) if value_field else value
 
         return self._apply_operator(field_value, operator, compare_value)
 
@@ -276,7 +272,7 @@ class WorkflowCondition(Base):
                 "input": context.get("input", {}),
                 "output": context.get("output", {}),
             }
-            result = eval(self.expression, {"__builtins__": {}}, safe_context)
+            result = eval(self.expression, {"__builtins__": {}}, safe_context)  # noqa: S307
             return bool(result)
         except Exception:
             return False

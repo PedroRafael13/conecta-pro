@@ -1,10 +1,9 @@
 'use client';
 
 import { Clock, Search, Plus, Eye, Check, X, ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, CheckCircle, XCircle, Calendar, User, TrendingUp, TrendingDown, Bell, ArrowUpRight, ArrowDownRight, Timer, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
@@ -29,6 +28,14 @@ import {
   TIME_BANK_STATUS_COLORS,
   ALERT_SEVERITY_COLORS,
 } from '@/lib/services/time-bank';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Lazy load recharts — reduz chunk inicial em ~200KB
+const BalanceChart = dynamic(() => import('./balance-chart'), {
+  ssr: false,
+  loading: () => <Skeleton className="w-full h-[200px]" />,
+});
 
 export default function BancoHorasPage() {
   const router = useRouter();
@@ -40,28 +47,38 @@ export default function BancoHorasPage() {
   const [selectedType, setSelectedType] = useState<TimeBankEntryType | ''>('');
   const [selectedDate, setSelectedDate] = useState('');
 
+  // Cast needed: local types use PT values, generated hook expects EN values
   const { data: entriesData, isLoading, error: entriesError, refetch } = useTimeBankEntries({
     page,
     page_size: pageSize,
-    status: selectedStatus || undefined,
-    entry_type: selectedType || undefined,
-    start_date: selectedDate || undefined,
-  });
-  const entries: TimeBankEntry[] = (entriesData as any)?.items ?? (Array.isArray(entriesData) ? entriesData : []);
-  const total = (entriesData as any)?.total ?? entries.length;
-  const totalPages = (entriesData as any)?.total_pages ?? Math.ceil(total / pageSize);
+    ...(selectedStatus ? { status: selectedStatus as unknown as string } : {}),
+    ...(selectedType ? { entry_type: selectedType as unknown as string } : {}),
+  } as Parameters<typeof useTimeBankEntries>[0]);
+  const entriesAny = entriesData as unknown as Record<string, unknown> | undefined;
+  const entriesRaw = entriesAny?.items;
+  const entries = (Array.isArray(entriesRaw) ? entriesRaw : Array.isArray(entriesData) ? entriesData : []) as TimeBankEntry[];
+  const total = (entriesAny?.total as number) ?? entries.length;
+  const totalPages = (entriesAny?.total_pages as number) ?? Math.ceil(total / pageSize);
   const error = entriesError ? 'Erro ao carregar banco de horas' : null;
 
-  const { data: pendingEntries = [] } = usePendingEntries();
-  const { data: alerts = [] } = useExpirationAlerts();
+  const { data: pendingData = [] } = usePendingEntries();
+  const pendingEntries = pendingData as TimeBankEntry[];
+  const { data: alertsRaw = [] } = useExpirationAlerts();
+  const alerts = alertsRaw as unknown as TimeBankAlert[];
   const { data: stats = null } = useTimeBankStats();
   const approveMutation = useApproveTimeBankEntry();
   const rejectMutation = useRejectTimeBankEntry();
 
-  // Modal states
+  // Modal states — Approve
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<TimeBankEntry | null>(null);
   const [approving, setApproving] = useState(false);
+
+  // Modal states — Reject
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<TimeBankEntry | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -78,21 +95,28 @@ export default function BancoHorasPage() {
       setShowApproveModal(false);
       refetch();
     } catch (err) {
-      console.error('Erro ao aprovar:', err);
     } finally {
       setApproving(false);
     }
   };
 
-  const handleReject = async (entry: TimeBankEntry) => {
-    const reason = prompt('Motivo da rejeicao:');
-    if (!reason) return;
+  const handleReject = (entry: TimeBankEntry) => {
+    setRejectTarget(entry);
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
 
+  const handleConfirmReject = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return;
+    setIsRejecting(true);
     try {
-      await rejectMutation.mutateAsync({ entryId: entry.id, data: { rejection_reason: reason } });
+      await rejectMutation.mutateAsync({ entryId: rejectTarget.id, data: { rejection_reason: rejectReason.trim() } });
+      setShowRejectModal(false);
+      setRejectTarget(null);
       refetch();
     } catch (err) {
-      console.error('Erro ao rejeitar:', err);
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -128,6 +152,19 @@ export default function BancoHorasPage() {
         return <Clock className="w-4 h-4" />;
     }
   };
+
+  // Compute top 8 employees by absolute balance from entries
+  const balanceChartData = useMemo(() => {
+    const byEmployee: Record<string, { name: string; balance: number }> = {};
+    entries.forEach(e => {
+      const name = e.employee_name || 'N/A';
+      if (!byEmployee[name]) byEmployee[name] = { name: name.split(' ')[0] ?? name, balance: 0 };
+      byEmployee[name].balance += e.hours;
+    });
+    return Object.values(byEmployee)
+      .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+      .slice(0, 8);
+  }, [entries]);
 
   if (authLoading) {
     return (
@@ -167,7 +204,7 @@ export default function BancoHorasPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
@@ -188,15 +225,15 @@ export default function BancoHorasPage() {
             {alerts.slice(0, 3).map((alert, index) => (
               <div
                 key={index}
-                className={`flex items-center gap-3 p-3 rounded-lg border ${ALERT_SEVERITY_COLORS[alert.severity]}`}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${ALERT_SEVERITY_COLORS[alert.severity] ?? ''}`}
               >
                 <Bell className="w-5 h-5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="font-medium">{alert.employee_name}</p>
-                  <p className="text-sm opacity-80">{alert.message}</p>
+                  <p className="font-medium">{String(alert.employee_name ?? '')}</p>
+                  <p className="text-sm opacity-80">{String(alert.message ?? '')}</p>
                 </div>
-                {alert.hours && (
-                  <span className="font-semibold">{formatHours(alert.hours)}</span>
+                {alert.hours != null && (
+                  <span className="font-semibold">{formatHours(Number(alert.hours))}</span>
                 )}
               </div>
             ))}
@@ -290,6 +327,14 @@ export default function BancoHorasPage() {
           </div>
         </div>
 
+        {/* Balance Chart */}
+        {balanceChartData.length > 0 && (
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">
+            <h2 className="text-sm font-semibold text-[hsl(var(--foreground))] mb-4">Saldo por Colaborador</h2>
+            <BalanceChart data={balanceChartData} />
+          </div>
+        )}
+
         {/* Pending Section */}
         {pendingEntries.length > 0 && (
           <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-6">
@@ -297,7 +342,7 @@ export default function BancoHorasPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-yellow-500" />
                 <h3 className="font-semibold text-yellow-500">
-                  {pendingEntries.length} Lancamentos Pendentes de Aprovacao
+                  {pendingEntries.length} Lancamentos Pendentes de Aprovação
                 </h3>
               </div>
             </div>
@@ -308,13 +353,13 @@ export default function BancoHorasPage() {
                   className="flex items-center justify-between bg-[hsl(var(--background))]/50 p-3 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    {getEntryIcon(entry.entry_type)}
+                    {getEntryIcon(entry.entry_type as TimeBankEntryType)}
                     <div>
                       <p className="text-sm font-medium text-[hsl(var(--foreground))]">
-                        {entry.employee_name || 'Funcionario'}
+                        {(entry as TimeBankEntry).employee_name || 'Funcionario'}
                       </p>
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                        {formatDate(entry.reference_date)} • {entry.description || TIME_BANK_ENTRY_TYPE_LABELS[entry.entry_type]}
+                        {formatDate(entry.reference_date)} • {entry.description || (TIME_BANK_ENTRY_TYPE_LABELS[entry.entry_type as TimeBankEntryType] ?? '')}
                       </p>
                     </div>
                   </div>
@@ -327,7 +372,7 @@ export default function BancoHorasPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setSelectedEntry(entry);
+                          setSelectedEntry(entry as TimeBankEntry);
                           setShowApproveModal(true);
                         }}
                         className="text-green-500 hover:text-green-600"
@@ -337,7 +382,7 @@ export default function BancoHorasPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleReject(entry)}
+                        onClick={() => handleReject(entry as TimeBankEntry)}
                         className="text-red-500 hover:text-red-600"
                       >
                         <X className="w-4 h-4" />
@@ -389,7 +434,7 @@ export default function BancoHorasPage() {
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -595,7 +640,7 @@ export default function BancoHorasPage() {
         isOpen={showApproveModal}
         onClose={() => setShowApproveModal(false)}
         title="Aprovar Lancamento"
-        description="Confirme a aprovacao deste lancamento no banco de horas"
+        description="Confirme a aprovação deste lancamento no banco de horas"
         size="sm"
       >
         {selectedEntry && (
@@ -648,6 +693,43 @@ export default function BancoHorasPage() {
               <Check className="w-4 h-4 mr-2" />
             )}
             Aprovar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal
+        isOpen={showRejectModal}
+        onClose={() => { setShowRejectModal(false); setRejectTarget(null); setRejectReason(''); }}
+        title="Rejeitar Lancamento"
+        description="Informe o motivo da rejeicao"
+        size="sm"
+      >
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {rejectTarget?.employee_name} — {formatHours(rejectTarget?.hours ?? 0)}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">Motivo <span className="text-red-500">*</span></label>
+            <textarea
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/20"
+              placeholder="Descreva o motivo..."
+            />
+          </div>
+        </div>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setShowRejectModal(false)} disabled={isRejecting}>Cancelar</Button>
+          <Button
+            onClick={handleConfirmReject}
+            disabled={!rejectReason.trim() || isRejecting}
+            className="bg-red-500 hover:bg-red-600 text-white border-red-500"
+          >
+            {isRejecting ? 'Rejeitando...' : 'Confirmar Rejeicao'}
           </Button>
         </ModalFooter>
       </Modal>

@@ -2,7 +2,7 @@
 Controller (endpoints) para Lead.
 """
 
-from typing import Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,14 +59,14 @@ async def list_leads(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    status_filter: Optional[LeadStatus] = Query(None, alias="status"),
-    source: Optional[LeadSource] = None,
-    assigned_to_id: Optional[str] = None,
-    min_score: Optional[int] = Query(None, ge=0, le=100),
-    max_score: Optional[int] = Query(None, ge=0, le=100),
-    is_hot: Optional[bool] = None,
-    company: Optional[str] = None,
-    search: Optional[str] = None,
+    status_filter: LeadStatus | None = Query(None, alias="status"),
+    source: LeadSource | None = None,
+    assigned_to_id: str | None = None,
+    min_score: int | None = Query(None, ge=0, le=100),
+    max_score: int | None = Query(None, ge=0, le=100),
+    is_hot: bool | None = None,
+    company: str | None = None,
+    search: str | None = None,
 ) -> LeadListResponse:
     """
     Lista leads com filtros e paginação.
@@ -103,7 +103,7 @@ async def list_leads(  # pylint: disable=too-many-locals
 async def get_lead_stats(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    assigned_to_id: Optional[str] = None,
+    assigned_to_id: str | None = None,
 ) -> LeadStats:
     """
     Obtém estatísticas de leads.
@@ -182,13 +182,11 @@ async def update_lead_status(
             detail="Lead não encontrado",
         )
 
-    logger.info(
-        f"Lead {lead.id} status alterado para {data.status.value} por {current_user.email}"
-    )
+    logger.info(f"Lead {lead.id} status alterado para {data.status.value} por {current_user.email}")
     return LeadResponse.model_validate(lead)
 
 
-@router.post("/{lead_id}/recalculate-score", response_model=LeadResponse)
+@router.post("/{lead_id}/recalculate-score", response_model=LeadResponse, status_code=201)
 async def recalculate_lead_score(
     lead_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -216,7 +214,7 @@ async def get_recommended_action(
     lead_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> dict[str, Any]:
     """
     Obtém ação recomendada para um lead.
 

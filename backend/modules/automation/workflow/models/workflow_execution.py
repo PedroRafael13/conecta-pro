@@ -3,16 +3,15 @@
 Sprint 33 - Workflow Engine (Unificado).
 """
 
-import enum
 from datetime import datetime
-from typing import Any, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
     Enum,
-    Float,
     ForeignKey,
     Integer,
     String,
@@ -24,7 +23,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class ExecutionStatus(str, enum.Enum):
+class ExecutionStatus(StrEnum):
     """Status da execucao."""
 
     PENDING = "PENDING"  # Pendente
@@ -39,7 +38,7 @@ class ExecutionStatus(str, enum.Enum):
     TIMEOUT = "TIMEOUT"  # Timeout
 
 
-class ExecutionPriority(str, enum.Enum):
+class ExecutionPriority(StrEnum):
     """Prioridade de execucao."""
 
     LOW = "LOW"
@@ -219,7 +218,7 @@ class WorkflowExecution(Base):
         )
 
     @property
-    def duration_seconds(self) -> Optional[float]:
+    def duration_seconds(self) -> float | None:
         """Retorna duracao em segundos."""
         if self.execution_time_ms:
             return self.execution_time_ms / 1000
@@ -230,7 +229,7 @@ class WorkflowExecution(Base):
         self.status = ExecutionStatus.RUNNING
         self.started_at = datetime.utcnow()
 
-    def complete(self, result: Optional[dict] = None) -> None:
+    def complete(self, result: dict | None = None) -> None:
         """Marca como completada.
 
         Args:
@@ -247,7 +246,7 @@ class WorkflowExecution(Base):
             delta = self.completed_at - self.started_at
             self.execution_time_ms = int(delta.total_seconds() * 1000)
 
-    def fail(self, error_message: str, step_id: Optional[str] = None) -> None:
+    def fail(self, error_message: str, step_id: str | None = None) -> None:
         """Marca como falha.
 
         Args:
@@ -410,18 +409,9 @@ class WorkflowExecution(Base):
 
         from .workflow_step_execution import StepExecutionStatus
 
-        self.steps_completed = sum(
-            1 for s in self.step_executions
-            if s.status == StepExecutionStatus.COMPLETED
-        )
-        self.steps_failed = sum(
-            1 for s in self.step_executions
-            if s.status == StepExecutionStatus.FAILED
-        )
-        self.steps_skipped = sum(
-            1 for s in self.step_executions
-            if s.status == StepExecutionStatus.SKIPPED
-        )
+        self.steps_completed = sum(1 for s in self.step_executions if s.status == StepExecutionStatus.COMPLETED)
+        self.steps_failed = sum(1 for s in self.step_executions if s.status == StepExecutionStatus.FAILED)
+        self.steps_skipped = sum(1 for s in self.step_executions if s.status == StepExecutionStatus.SKIPPED)
 
     def get_execution_summary(self) -> dict:
         """Retorna resumo da execucao.

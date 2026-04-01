@@ -1,26 +1,26 @@
 """OCR Schemas."""
 
 from modules.ai.ocr.schemas.ocr_schemas import (
+    BatchProcessRequest,
     # Document Scan
     DocumentScanCreate,
-    DocumentScanUpdate,
-    DocumentScanResponse,
     DocumentScanList,
-    # OCR Result
-    OCRResultResponse,
-    # Extracted Field
-    ExtractedFieldResponse,
-    ExtractedFieldCorrection,
+    DocumentScanResponse,
+    DocumentScanUpdate,
     # Document Template
     DocumentTemplateCreate,
     DocumentTemplateResponse,
-    TemplateFieldCreate,
-    # Validation
-    ValidationResultResponse,
+    ExtractedFieldCorrection,
+    # Extracted Field
+    ExtractedFieldResponse,
+    # OCR Result
+    OCRResultResponse,
     # Processing
     ProcessDocumentRequest,
     ProcessDocumentResponse,
-    BatchProcessRequest,
+    TemplateFieldCreate,
+    # Validation
+    ValidationResultResponse,
 )
 
 __all__ = [

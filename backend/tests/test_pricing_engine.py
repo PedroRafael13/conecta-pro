@@ -32,9 +32,7 @@ class TestPricingEngineBasic:
             margin_target=Decimal("15.00"),
         )
 
-    def test_calculate_returns_pricing_result(
-        self, engine: PricingEngine, basic_input: PricingInput
-    ) -> None:
+    def test_calculate_returns_pricing_result(self, engine: PricingEngine, basic_input: PricingInput) -> None:
         """Testa que calculate retorna PricingResult."""
         result = engine.calculate(basic_input)
 
@@ -48,26 +46,20 @@ class TestPricingEngineBasic:
         expected_base = Decimal("2000.00") * 10 * 12
         assert result.base_cost == expected_base
 
-    def test_calculate_cct_value_positive(
-        self, engine: PricingEngine, basic_input: PricingInput
-    ) -> None:
+    def test_calculate_cct_value_positive(self, engine: PricingEngine, basic_input: PricingInput) -> None:
         """Testa que CCT e positivo."""
         result = engine.calculate(basic_input)
 
         assert result.cct_value > 0
         assert result.cct_percent > 0
 
-    def test_calculate_total_greater_than_cost(
-        self, engine: PricingEngine, basic_input: PricingInput
-    ) -> None:
+    def test_calculate_total_greater_than_cost(self, engine: PricingEngine, basic_input: PricingInput) -> None:
         """Testa que total e maior que custo (inclui margem e impostos)."""
         result = engine.calculate(basic_input)
 
         assert result.total_contract > result.total_cost
 
-    def test_calculate_margin_applied(
-        self, engine: PricingEngine, basic_input: PricingInput
-    ) -> None:
+    def test_calculate_margin_applied(self, engine: PricingEngine, basic_input: PricingInput) -> None:
         """Testa que margem e aplicada."""
         result = engine.calculate(basic_input)
 

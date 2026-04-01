@@ -1,5 +1,10 @@
 """Models do módulo Analytics Dashboard."""
 
+from .analytics_cache import (
+    AnalyticsCache,
+    CacheStatus,
+    CacheType,
+)
 from .dashboard_config import (
     DashboardConfig,
     DashboardType,
@@ -7,31 +12,26 @@ from .dashboard_config import (
     RefreshInterval,
 )
 from .dashboard_widget import (
-    DashboardWidget,
-    WidgetType,
-    DataSource,
     AggregationType,
+    DashboardWidget,
+    DataSource,
+    WidgetType,
 )
 from .kpi_definition import (
-    KPIDefinition,
+    DEFAULT_KPIS,
     KPICategory,
-    KPIUnit,
+    KPIDefinition,
     KPIDirection,
     KPIFrequency,
-    DEFAULT_KPIS,
-)
-from .analytics_cache import (
-    AnalyticsCache,
-    CacheType,
-    CacheStatus,
+    KPIUnit,
 )
 from .scheduled_report import (
-    ScheduledReport,
-    ReportType,
-    ReportFormat,
-    ScheduleFrequency,
     DeliveryMethod,
+    ReportFormat,
     ReportStatus,
+    ReportType,
+    ScheduledReport,
+    ScheduleFrequency,
 )
 
 __all__ = [

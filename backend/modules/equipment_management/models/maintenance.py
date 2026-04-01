@@ -3,8 +3,7 @@ Model EquipmentMaintenance - Manutenções de Equipamentos.
 """
 
 from datetime import datetime, timedelta
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
@@ -14,7 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class MaintenanceType(str, Enum):
+class MaintenanceType(StrEnum):
     """Tipos de manutenção."""
 
     PREVENTIVA = "preventiva"  # Agendada periodicamente
@@ -25,7 +24,7 @@ class MaintenanceType(str, Enum):
     CALIBRACAO = "calibracao"  # Calibração de sensores
 
 
-class MaintenanceStatus(str, Enum):
+class MaintenanceStatus(StrEnum):
     """Status da manutenção."""
 
     SCHEDULED = "scheduled"  # Agendada
@@ -37,7 +36,7 @@ class MaintenanceStatus(str, Enum):
     FAILED = "failed"  # Falha na manutenção
 
 
-class MaintenancePriority(str, Enum):
+class MaintenancePriority(StrEnum):
     """Prioridades de manutenção."""
 
     LOW = "low"
@@ -97,167 +96,167 @@ class EquipmentMaintenance(Base):
     equipment_code: Mapped[str] = mapped_column(String(30), nullable=False)
     equipment_name: Mapped[str] = mapped_column(String(200), nullable=False)
     equipment_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    serial_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    serial_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Cliente (onde o equipamento está instalado)
-    client_id: Mapped[Optional[str]] = mapped_column(
+    client_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    client_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    contract_id: Mapped[Optional[str]] = mapped_column(
+    client_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    contract_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Descrição do problema/serviço
     title: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    symptoms: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    reported_by: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    reported_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    symptoms: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reported_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    reported_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Agendamento
-    scheduled_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    scheduled_time: Mapped[Optional[str]] = mapped_column(
+    scheduled_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    scheduled_time: Mapped[str | None] = mapped_column(
         String(5),
         nullable=True,
     )  # HH:MM
-    estimated_duration_hours: Mapped[Optional[float]] = mapped_column(
+    estimated_duration_hours: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    sla_deadline: Mapped[Optional[datetime]] = mapped_column(
+    sla_deadline: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )  # Prazo SLA
 
     # Execução
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    actual_duration_hours: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    actual_duration_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Técnico
-    technician_id: Mapped[Optional[str]] = mapped_column(
+    technician_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    technician_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    team_members: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    technician_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    team_members: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
     # Checklist de manutenção
-    checklist_template_id: Mapped[Optional[str]] = mapped_column(
+    checklist_template_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    checklist_items: Mapped[Optional[list]] = mapped_column(
+    checklist_items: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
     )  # [{item, checked, notes}]
-    checklist_score: Mapped[Optional[float]] = mapped_column(
+    checklist_score: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )  # 0-100%
 
     # Diagnóstico
-    diagnosis: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    root_cause: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    diagnosis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    root_cause: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_warranty_repair: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Ações realizadas
-    actions_taken: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    actions_taken: Mapped[str | None] = mapped_column(Text, nullable=True)
     firmware_updated: Mapped[bool] = mapped_column(Boolean, default=False)
-    firmware_version_before: Mapped[Optional[str]] = mapped_column(
+    firmware_version_before: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    firmware_version_after: Mapped[Optional[str]] = mapped_column(
+    firmware_version_after: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    settings_changed: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    settings_changed: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Peças substituídas
-    parts_replaced: Mapped[Optional[list]] = mapped_column(
+    parts_replaced: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
     )  # [{part_id, name, qty, unit_cost}]
-    parts_requested: Mapped[Optional[list]] = mapped_column(
+    parts_requested: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
     )  # Peças solicitadas mas não entregues
 
     # Custos
-    labor_cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    parts_cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    transport_cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    other_costs: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    total_cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    labor_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
+    parts_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
+    transport_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
+    other_costs: Mapped[float | None] = mapped_column(Float, nullable=True)
+    total_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
     is_billable: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
     )  # Cobrável do cliente?
-    invoice_id: Mapped[Optional[str]] = mapped_column(
+    invoice_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Resultado
-    equipment_status_after: Mapped[Optional[str]] = mapped_column(
+    equipment_status_after: Mapped[str | None] = mapped_column(
         String(30),
         nullable=True,
     )  # Status do equipamento após manutenção
     problem_resolved: Mapped[bool] = mapped_column(Boolean, default=False)
     needs_followup: Mapped[bool] = mapped_column(Boolean, default=False)
-    followup_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    followup_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    followup_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    followup_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Fotos
-    photos_before: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    photos_after: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    photos_parts: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    photos_before: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    photos_after: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    photos_parts: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
     # Relatório técnico
-    technical_report: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    recommendations: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    technical_report: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recommendations: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
     # Assinatura do cliente
-    client_signature: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    signed_by: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    client_signature: Mapped[str | None] = mapped_column(Text, nullable=True)
+    signed_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    signed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Métricas
-    response_time_hours: Mapped[Optional[float]] = mapped_column(
+    response_time_hours: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )  # Tempo até iniciar
-    resolution_time_hours: Mapped[Optional[float]] = mapped_column(
+    resolution_time_hours: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )  # Tempo até concluir
-    sla_met: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    sla_met: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     # Recorrência (para preventivas)
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=False)
-    recurrence_interval_days: Mapped[Optional[int]] = mapped_column(
+    recurrence_interval_days: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
-    next_maintenance_date: Mapped[Optional[datetime]] = mapped_column(
+    next_maintenance_date: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    parent_maintenance_id: Mapped[Optional[str]] = mapped_column(
+    parent_maintenance_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Metadados
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    internal_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    metadata_extra: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    internal_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    metadata_extra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Auditoria
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
@@ -272,7 +271,7 @@ class EquipmentMaintenance(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
@@ -316,8 +315,8 @@ class EquipmentMaintenance(Base):
     def complete(
         self,
         problem_resolved: bool = True,
-        diagnosis: Optional[str] = None,
-        actions_taken: Optional[str] = None,
+        diagnosis: str | None = None,
+        actions_taken: str | None = None,
     ) -> None:
         """Conclui a manutenção."""
         self.status = MaintenanceStatus.COMPLETED.value
@@ -344,9 +343,7 @@ class EquipmentMaintenance(Base):
 
         # Programar próxima manutenção (se preventiva recorrente)
         if self.is_recurring and self.recurrence_interval_days:
-            self.next_maintenance_date = (
-                self.completed_at + timedelta(days=self.recurrence_interval_days)
-            )
+            self.next_maintenance_date = self.completed_at + timedelta(days=self.recurrence_interval_days)
 
     def cancel(self, reason: str) -> None:
         """Cancela a manutenção."""
@@ -374,14 +371,16 @@ class EquipmentMaintenance(Base):
         """Adiciona peça substituída."""
         if not self.parts_replaced:
             self.parts_replaced = []
-        self.parts_replaced.append({
-            "part_id": part_id,
-            "name": name,
-            "quantity": quantity,
-            "unit_cost": unit_cost,
-            "total_cost": quantity * unit_cost,
-            "added_at": datetime.utcnow().isoformat(),
-        })
+        self.parts_replaced.append(
+            {
+                "part_id": part_id,
+                "name": name,
+                "quantity": quantity,
+                "unit_cost": unit_cost,
+                "total_cost": quantity * unit_cost,
+                "added_at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def calculate_total_cost(self) -> float:
         """Calcula custo total da manutenção."""

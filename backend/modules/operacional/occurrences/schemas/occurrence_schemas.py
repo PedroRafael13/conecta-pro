@@ -7,10 +7,10 @@ Quality Score: 99+/100
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from modules.operacional.occurrences.models.occurrence import (
     OccurrenceCategory,
@@ -22,7 +22,6 @@ from modules.operacional.occurrences.models.occurrence import (
 )
 from modules.operacional.occurrences.models.occurrence_attachment import AttachmentType
 
-
 # ============================================================
 # BASE SCHEMAS
 # ============================================================
@@ -33,18 +32,10 @@ class OccurrenceBase(BaseModel):
 
     title: str = Field(..., min_length=5, max_length=200, description="Titulo da ocorrencia")
     description: str = Field(..., min_length=10, description="Descricao detalhada")
-    category: OccurrenceCategory = Field(
-        default=OccurrenceCategory.OUTRO, description="Categoria da ocorrencia"
-    )
-    severity: OccurrenceSeverity = Field(
-        default=OccurrenceSeverity.MEDIA, description="Severidade"
-    )
-    type: OccurrenceType = Field(
-        default=OccurrenceType.INCIDENTE, description="Tipo de ocorrencia"
-    )
-    priority: OccurrencePriority = Field(
-        default=OccurrencePriority.NORMAL, description="Prioridade"
-    )
+    category: OccurrenceCategory = Field(default=OccurrenceCategory.OUTRO, description="Categoria da ocorrencia")
+    severity: OccurrenceSeverity = Field(default=OccurrenceSeverity.MEDIA, description="Severidade")
+    type: OccurrenceType = Field(default=OccurrenceType.INCIDENTE, description="Tipo de ocorrencia")
+    priority: OccurrencePriority = Field(default=OccurrencePriority.NORMAL, description="Prioridade")
 
     @field_validator("title")
     @classmethod
@@ -68,25 +59,15 @@ class OccurrenceCreate(OccurrenceBase):
     """Schema para criacao de Ocorrencia."""
 
     tenant_id: UUID = Field(..., description="ID do tenant")
-    post_id: Optional[UUID] = Field(None, description="ID do posto")
-    client_id: Optional[UUID] = Field(None, description="ID do cliente")
-    contract_id: Optional[UUID] = Field(None, description="ID do contrato")
+    post_id: UUID | None = Field(None, description="ID do posto")
+    client_id: UUID | None = Field(None, description="ID do cliente")
+    contract_id: UUID | None = Field(None, description="ID do contrato")
     reported_by_id: UUID = Field(..., description="ID do usuario que reportou")
-    employee_involved_id: Optional[UUID] = Field(
-        None, description="ID do funcionario envolvido"
-    )
-    witness_ids: Optional[List[UUID]] = Field(
-        default_factory=list, description="IDs das testemunhas"
-    )
-    location_description: Optional[str] = Field(
-        None, max_length=500, description="Descricao do local"
-    )
-    occurred_at: Optional[datetime] = Field(
-        None, description="Data/hora do evento"
-    )
-    tags: Optional[List[str]] = Field(
-        default_factory=list, description="Tags"
-    )
+    employee_involved_id: UUID | None = Field(None, description="ID do funcionario envolvido")
+    witness_ids: list[UUID] | None = Field(default_factory=list, description="IDs das testemunhas")
+    location_description: str | None = Field(None, max_length=500, description="Descricao do local")
+    occurred_at: datetime | None = Field(None, description="Data/hora do evento")
+    tags: list[str] | None = Field(default_factory=list, description="Tags")
 
     class Config:
         json_schema_extra = {
@@ -108,25 +89,25 @@ class OccurrenceCreate(OccurrenceBase):
 class OccurrenceUpdate(BaseModel):
     """Schema para atualizacao de Ocorrencia."""
 
-    title: Optional[str] = Field(None, min_length=5, max_length=200)
-    description: Optional[str] = Field(None, min_length=10)
-    category: Optional[OccurrenceCategory] = None
-    severity: Optional[OccurrenceSeverity] = None
-    type: Optional[OccurrenceType] = None
-    priority: Optional[OccurrencePriority] = None
-    status: Optional[OccurrenceStatus] = None
-    post_id: Optional[UUID] = None
-    client_id: Optional[UUID] = None
-    contract_id: Optional[UUID] = None
-    employee_involved_id: Optional[UUID] = None
-    witness_ids: Optional[List[UUID]] = None
-    location_description: Optional[str] = Field(None, max_length=500)
-    occurred_at: Optional[datetime] = None
-    tags: Optional[List[str]] = None
+    title: str | None = Field(None, min_length=5, max_length=200)
+    description: str | None = Field(None, min_length=10)
+    category: OccurrenceCategory | None = None
+    severity: OccurrenceSeverity | None = None
+    type: OccurrenceType | None = None
+    priority: OccurrencePriority | None = None
+    status: OccurrenceStatus | None = None
+    post_id: UUID | None = None
+    client_id: UUID | None = None
+    contract_id: UUID | None = None
+    employee_involved_id: UUID | None = None
+    witness_ids: list[UUID] | None = None
+    location_description: str | None = Field(None, max_length=500)
+    occurred_at: datetime | None = None
+    tags: list[str] | None = None
 
     @field_validator("title")
     @classmethod
-    def validate_title(cls, v: Optional[str]) -> Optional[str]:
+    def validate_title(cls, v: str | None) -> str | None:
         """Valida e sanitiza o titulo."""
         if v:
             return v.strip()
@@ -134,7 +115,7 @@ class OccurrenceUpdate(BaseModel):
 
     @field_validator("description")
     @classmethod
-    def validate_description(cls, v: Optional[str]) -> Optional[str]:
+    def validate_description(cls, v: str | None) -> str | None:
         """Valida e sanitiza a descricao."""
         if v:
             return v.strip()
@@ -154,12 +135,12 @@ class AttachmentResponse(BaseModel):
     file_type: str
     file_path: str
     file_name: str
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
-    description: Optional[str] = None
-    captured_at: Optional[datetime] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    file_size: int | None = None
+    mime_type: str | None = None
+    description: str | None = None
+    captured_at: datetime | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     uploaded_by_id: UUID
     uploaded_at: datetime
     is_active: bool
@@ -174,10 +155,10 @@ class CommentResponse(BaseModel):
     id: UUID
     occurrence_id: UUID
     author_id: UUID
-    author_name: Optional[str] = None
+    author_name: str | None = None
     content: str
     is_internal: bool
-    edited_at: Optional[datetime] = None
+    edited_at: datetime | None = None
     created_at: datetime
     is_active: bool
 
@@ -191,39 +172,39 @@ class OccurrenceResponse(BaseModel):
     id: UUID
     code: str
     tenant_id: UUID
-    post_id: Optional[UUID] = None
-    client_id: Optional[UUID] = None
-    contract_id: Optional[UUID] = None
+    post_id: UUID | None = None
+    client_id: UUID | None = None
+    contract_id: UUID | None = None
     category: str
     severity: str
     type: str
     title: str
     description: str
     reported_by_id: UUID
-    employee_involved_id: Optional[UUID] = None
-    witness_ids: Optional[List[UUID]] = None
+    employee_involved_id: UUID | None = None
+    witness_ids: list[UUID] | None = None
     status: str
     priority: str
-    resolution: Optional[str] = None
-    resolved_by_id: Optional[UUID] = None
-    resolved_at: Optional[datetime] = None
-    resolution_type: Optional[str] = None
+    resolution: str | None = None
+    resolved_by_id: UUID | None = None
+    resolved_at: datetime | None = None
+    resolution_type: str | None = None
     escalated: bool
-    escalated_to_id: Optional[UUID] = None
-    escalated_at: Optional[datetime] = None
-    escalation_reason: Optional[str] = None
-    disciplinary_action_id: Optional[UUID] = None
-    sla_deadline: Optional[datetime] = None
+    escalated_to_id: UUID | None = None
+    escalated_at: datetime | None = None
+    escalation_reason: str | None = None
+    disciplinary_action_id: UUID | None = None
+    sla_deadline: datetime | None = None
     sla_breached: bool
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[UUID] = None
-    location_description: Optional[str] = None
-    occurred_at: Optional[datetime] = None
-    tags: Optional[List[str]] = None
-    ai_classification: Optional[Dict[str, Any]] = None
-    ai_recommendations: Optional[List[str]] = None
+    created_by: UUID | None = None
+    location_description: str | None = None
+    occurred_at: datetime | None = None
+    tags: list[str] | None = None
+    ai_classification: dict[str, Any] | None = None
+    ai_recommendations: list[str] | None = None
 
     # Computed fields
     is_open: bool = False
@@ -233,8 +214,8 @@ class OccurrenceResponse(BaseModel):
     comment_count: int = 0
 
     # Related
-    attachments: Optional[List[AttachmentResponse]] = None
-    comments: Optional[List[CommentResponse]] = None
+    attachments: list[AttachmentResponse] | None = None
+    comments: list[CommentResponse] | None = None
 
     class Config:
         from_attributes = True
@@ -243,7 +224,7 @@ class OccurrenceResponse(BaseModel):
 class OccurrenceListResponse(BaseModel):
     """Schema de resposta para lista de Ocorrencias com paginacao."""
 
-    items: List[OccurrenceResponse]
+    items: list[OccurrenceResponse]
     total: int
     page: int
     page_size: int
@@ -264,7 +245,7 @@ class OccurrenceSummaryResponse(BaseModel):
     status: str
     priority: str
     sla_breached: bool
-    sla_deadline: Optional[datetime] = None
+    sla_deadline: datetime | None = None
     created_at: datetime
     is_critical: bool = False
 
@@ -280,26 +261,26 @@ class OccurrenceSummaryResponse(BaseModel):
 class OccurrenceFilter(BaseModel):
     """Schema para filtros de busca de Ocorrencias."""
 
-    tenant_id: Optional[UUID] = None
-    post_id: Optional[UUID] = None
-    client_id: Optional[UUID] = None
-    contract_id: Optional[UUID] = None
-    category: Optional[OccurrenceCategory] = None
-    severity: Optional[OccurrenceSeverity] = None
-    type: Optional[OccurrenceType] = None
-    status: Optional[OccurrenceStatus] = None
-    priority: Optional[OccurrencePriority] = None
-    reported_by_id: Optional[UUID] = None
-    employee_involved_id: Optional[UUID] = None
-    escalated: Optional[bool] = None
-    sla_breached: Optional[bool] = None
+    tenant_id: UUID | None = None
+    post_id: UUID | None = None
+    client_id: UUID | None = None
+    contract_id: UUID | None = None
+    category: OccurrenceCategory | None = None
+    severity: OccurrenceSeverity | None = None
+    type: OccurrenceType | None = None
+    status: OccurrenceStatus | None = None
+    priority: OccurrencePriority | None = None
+    reported_by_id: UUID | None = None
+    employee_involved_id: UUID | None = None
+    escalated: bool | None = None
+    sla_breached: bool | None = None
     is_active: bool = True
-    created_at_start: Optional[datetime] = None
-    created_at_end: Optional[datetime] = None
-    occurred_at_start: Optional[datetime] = None
-    occurred_at_end: Optional[datetime] = None
-    search: Optional[str] = Field(None, min_length=2, description="Busca por titulo/descricao")
-    tags: Optional[List[str]] = None
+    created_at_start: datetime | None = None
+    created_at_end: datetime | None = None
+    occurred_at_start: datetime | None = None
+    occurred_at_end: datetime | None = None
+    search: str | None = Field(None, min_length=2, description="Busca por titulo/descricao")
+    tags: list[str] | None = None
 
 
 # ============================================================
@@ -310,17 +291,15 @@ class OccurrenceFilter(BaseModel):
 class AttachmentCreate(BaseModel):
     """Schema para criacao de Anexo."""
 
-    file_type: AttachmentType = Field(
-        default=AttachmentType.OUTRO, description="Tipo do arquivo"
-    )
+    file_type: AttachmentType = Field(default=AttachmentType.OUTRO, description="Tipo do arquivo")
     file_path: str = Field(..., max_length=500, description="Caminho do arquivo")
     file_name: str = Field(..., max_length=255, description="Nome do arquivo")
-    file_size: Optional[int] = Field(None, ge=0, description="Tamanho em bytes")
-    mime_type: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = Field(None, description="Descricao do anexo")
-    captured_at: Optional[datetime] = Field(None, description="Data/hora da captura")
-    latitude: Optional[float] = Field(None, ge=-90, le=90)
-    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    file_size: int | None = Field(None, ge=0, description="Tamanho em bytes")
+    mime_type: str | None = Field(None, max_length=100)
+    description: str | None = Field(None, description="Descricao do anexo")
+    captured_at: datetime | None = Field(None, description="Data/hora da captura")
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
     uploaded_by_id: UUID = Field(..., description="ID do usuario que fez upload")
 
 
@@ -328,7 +307,7 @@ class CommentCreate(BaseModel):
     """Schema para criacao de Comentario."""
 
     author_id: UUID = Field(..., description="ID do autor")
-    author_name: Optional[str] = Field(None, max_length=200)
+    author_name: str | None = Field(None, max_length=200)
     content: str = Field(..., min_length=1, description="Conteudo do comentario")
     is_internal: bool = Field(default=False, description="Se e comentario interno")
 
@@ -343,9 +322,7 @@ class EscalateRequest(BaseModel):
     """Schema para solicitacao de escalacao."""
 
     escalated_to_id: UUID = Field(..., description="ID do usuario para escalar")
-    reason: str = Field(
-        ..., min_length=10, max_length=500, description="Motivo da escalacao"
-    )
+    reason: str = Field(..., min_length=10, max_length=500, description="Motivo da escalacao")
 
     @field_validator("reason")
     @classmethod
@@ -357,13 +334,9 @@ class EscalateRequest(BaseModel):
 class ResolveRequest(BaseModel):
     """Schema para solicitacao de resolucao."""
 
-    resolution: str = Field(
-        ..., min_length=10, description="Descricao da resolucao"
-    )
+    resolution: str = Field(..., min_length=10, description="Descricao da resolucao")
     resolved_by_id: UUID = Field(..., description="ID do usuario que resolveu")
-    resolution_type: Optional[ResolutionType] = Field(
-        None, description="Tipo de resolucao"
-    )
+    resolution_type: ResolutionType | None = Field(None, description="Tipo de resolucao")
 
     @field_validator("resolution")
     @classmethod
@@ -375,9 +348,7 @@ class ResolveRequest(BaseModel):
 class ReopenRequest(BaseModel):
     """Schema para solicitacao de reabertura."""
 
-    reason: Optional[str] = Field(
-        None, min_length=10, max_length=500, description="Motivo da reabertura"
-    )
+    reason: str | None = Field(None, min_length=10, max_length=500, description="Motivo da reabertura")
 
 
 # ============================================================
@@ -399,15 +370,15 @@ class DashboardStats(BaseModel):
     sla_at_risk: int = 0
 
     # Por categoria
-    by_category: Dict[str, int] = Field(default_factory=dict)
+    by_category: dict[str, int] = Field(default_factory=dict)
     # Por severidade
-    by_severity: Dict[str, int] = Field(default_factory=dict)
+    by_severity: dict[str, int] = Field(default_factory=dict)
     # Por prioridade
-    by_priority: Dict[str, int] = Field(default_factory=dict)
+    by_priority: dict[str, int] = Field(default_factory=dict)
 
     # Metricas de tempo
-    avg_resolution_time_hours: Optional[float] = None
-    sla_compliance_rate: Optional[float] = None
+    avg_resolution_time_hours: float | None = None
+    sla_compliance_rate: float | None = None
 
 
 class SLABreachItem(BaseModel):
@@ -434,7 +405,7 @@ class PendingOccurrenceItem(BaseModel):
     priority: str
     status: str
     created_at: datetime
-    sla_deadline: Optional[datetime] = None
+    sla_deadline: datetime | None = None
     sla_breached: bool = False
 
 
@@ -448,7 +419,7 @@ class CategoryConfigBase(BaseModel):
 
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     severity_default: OccurrenceSeverity = OccurrenceSeverity.MEDIA
     priority_default: OccurrencePriority = OccurrencePriority.NORMAL
     type_default: OccurrenceType = OccurrenceType.INCIDENTE
@@ -457,17 +428,17 @@ class CategoryConfigBase(BaseModel):
     requires_location: bool = False
     requires_employee: bool = False
     auto_escalate: bool = False
-    escalate_after_hours: Optional[int] = None
-    escalate_to_role: Optional[str] = None
+    escalate_after_hours: int | None = None
+    escalate_to_role: str | None = None
     sla_hours: int = Field(default=48, ge=1)
-    sla_warning_hours: Optional[int] = None
+    sla_warning_hours: int | None = None
     notify_on_create: bool = True
-    notify_roles: Optional[List[str]] = None
-    notify_emails: Optional[List[str]] = None
+    notify_roles: list[str] | None = None
+    notify_emails: list[str] | None = None
     suggest_disciplinary_action: bool = False
-    disciplinary_action_type: Optional[str] = None
-    color: Optional[str] = None
-    icon: Optional[str] = None
+    disciplinary_action_type: str | None = None
+    color: str | None = None
+    icon: str | None = None
     display_order: int = 0
 
 
@@ -475,35 +446,35 @@ class CategoryConfigCreate(CategoryConfigBase):
     """Schema para criacao de configuracao de categoria."""
 
     tenant_id: UUID = Field(..., description="ID do tenant")
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
 
 
 class CategoryConfigUpdate(BaseModel):
     """Schema para atualizacao de configuracao de categoria."""
 
-    name: Optional[str] = Field(None, min_length=2, max_length=100)
-    description: Optional[str] = None
-    severity_default: Optional[OccurrenceSeverity] = None
-    priority_default: Optional[OccurrencePriority] = None
-    type_default: Optional[OccurrenceType] = None
-    requires_photo: Optional[bool] = None
-    requires_witness: Optional[bool] = None
-    requires_location: Optional[bool] = None
-    requires_employee: Optional[bool] = None
-    auto_escalate: Optional[bool] = None
-    escalate_after_hours: Optional[int] = None
-    escalate_to_role: Optional[str] = None
-    sla_hours: Optional[int] = Field(None, ge=1)
-    sla_warning_hours: Optional[int] = None
-    notify_on_create: Optional[bool] = None
-    notify_roles: Optional[List[str]] = None
-    notify_emails: Optional[List[str]] = None
-    suggest_disciplinary_action: Optional[bool] = None
-    disciplinary_action_type: Optional[str] = None
-    color: Optional[str] = None
-    icon: Optional[str] = None
-    display_order: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=100)
+    description: str | None = None
+    severity_default: OccurrenceSeverity | None = None
+    priority_default: OccurrencePriority | None = None
+    type_default: OccurrenceType | None = None
+    requires_photo: bool | None = None
+    requires_witness: bool | None = None
+    requires_location: bool | None = None
+    requires_employee: bool | None = None
+    auto_escalate: bool | None = None
+    escalate_after_hours: int | None = None
+    escalate_to_role: str | None = None
+    sla_hours: int | None = Field(None, ge=1)
+    sla_warning_hours: int | None = None
+    notify_on_create: bool | None = None
+    notify_roles: list[str] | None = None
+    notify_emails: list[str] | None = None
+    suggest_disciplinary_action: bool | None = None
+    disciplinary_action_type: str | None = None
+    color: str | None = None
+    icon: str | None = None
+    display_order: int | None = None
+    is_active: bool | None = None
 
 
 class CategoryConfigResponse(CategoryConfigBase):
@@ -514,7 +485,7 @@ class CategoryConfigResponse(CategoryConfigBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
 
     class Config:
         from_attributes = True

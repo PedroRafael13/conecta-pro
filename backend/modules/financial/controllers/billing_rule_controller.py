@@ -1,7 +1,6 @@
 """Controller para regras de cobranca automatica."""
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -31,7 +30,7 @@ def get_repository(
 
 
 @router.post(
-    "/",
+    "",
     response_model=BillingRuleResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar regra de cobranca",
@@ -56,17 +55,17 @@ async def create_billing_rule(
 
 
 @router.get(
-    "/",
-    response_model=List[BillingRuleResponse],
+    "",
+    response_model=list[BillingRuleResponse],
     summary="Listar regras de cobranca",
 )
 async def list_billing_rules(
     condominio_id: UUID,
-    search: Optional[str] = Query(None, description="Busca no nome"),
-    billing_type: Optional[str] = Query(None, alias="type", description="Tipo"),
-    frequency: Optional[str] = Query(None, description="Frequencia"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Status"),
-    is_active: Optional[bool] = Query(None, description="Apenas ativas"),
+    search: str | None = Query(None, description="Busca no nome"),
+    billing_type: str | None = Query(None, alias="type", description="Tipo"),
+    frequency: str | None = Query(None, description="Frequencia"),
+    status_filter: str | None = Query(None, alias="status", description="Status"),
+    is_active: bool | None = Query(None, description="Apenas ativas"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: BillingRuleRepository = Depends(get_repository),
@@ -87,7 +86,7 @@ async def list_billing_rules(
 
 @router.get(
     "/active",
-    response_model=List[BillingRuleResponse],
+    response_model=list[BillingRuleResponse],
     summary="Regras ativas",
 )
 async def get_active_rules(
@@ -102,7 +101,7 @@ async def get_active_rules(
 
 @router.get(
     "/due-for-generation",
-    response_model=List[BillingRuleResponse],
+    response_model=list[BillingRuleResponse],
     summary="Regras para geracao",
 )
 async def get_rules_due_for_generation(
@@ -182,11 +181,7 @@ async def delete_billing_rule(
     await repo.delete(rule)
 
 
-@router.post(
-    "/{rule_id}/activate",
-    response_model=BillingRuleResponse,
-    summary="Ativar regra",
-)
+@router.post("/{rule_id}/activate", response_model=BillingRuleResponse, summary="Ativar regra", status_code=201)
 async def activate_rule(
     rule_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
@@ -211,14 +206,10 @@ async def activate_rule(
     return BillingRuleResponse.model_validate(rule)
 
 
-@router.post(
-    "/{rule_id}/pause",
-    response_model=BillingRuleResponse,
-    summary="Pausar regra",
-)
+@router.post("/{rule_id}/pause", response_model=BillingRuleResponse, summary="Pausar regra", status_code=201)
 async def pause_rule(
     rule_id: UUID,
-    reason: Optional[str] = Query(None, description="Motivo da pausa"),
+    reason: str | None = Query(None, description="Motivo da pausa"),
     repo: BillingRuleRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BillingRuleResponse:
@@ -241,11 +232,7 @@ async def pause_rule(
     return BillingRuleResponse.model_validate(rule)
 
 
-@router.post(
-    "/{rule_id}/cancel",
-    response_model=BillingRuleResponse,
-    summary="Cancelar regra",
-)
+@router.post("/{rule_id}/cancel", response_model=BillingRuleResponse, summary="Cancelar regra", status_code=201)
 async def cancel_rule(
     rule_id: UUID,
     reason: str = Query(..., min_length=5, description="Motivo do cancelamento"),
@@ -271,10 +258,7 @@ async def cancel_rule(
     return BillingRuleResponse.model_validate(rule)
 
 
-@router.post(
-    "/{rule_id}/generate",
-    summary="Gerar cobrancas",
-)
+@router.post("/{rule_id}/generate", summary="Gerar cobrancas", status_code=201)
 async def generate_charges(
     rule_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
@@ -302,10 +286,7 @@ async def generate_charges(
     }
 
 
-@router.post(
-    "/process-all",
-    summary="Processar todas as regras",
-)
+@router.post("/process-all", summary="Processar todas as regras", status_code=201)
 async def process_all_rules(
     condominio_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),

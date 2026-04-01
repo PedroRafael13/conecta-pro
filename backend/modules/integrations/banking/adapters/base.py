@@ -9,11 +9,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 
-class BankCode(str, Enum):
+class BankCode(StrEnum):
     """Codigos dos bancos suportados."""
 
     BB = "001"  # Banco do Brasil
@@ -27,7 +26,7 @@ class BankCode(str, Enum):
     CORA = "403"  # Cora SCD
 
 
-class AccountType(str, Enum):
+class AccountType(StrEnum):
     """Tipos de conta bancaria."""
 
     CHECKING = "CONTA_CORRENTE"
@@ -36,7 +35,7 @@ class AccountType(str, Enum):
     PAYMENT = "CONTA_PAGAMENTO"
 
 
-class TransactionType(str, Enum):
+class TransactionType(StrEnum):
     """Tipos de transacao."""
 
     CREDIT = "CREDITO"
@@ -49,7 +48,7 @@ class TransactionType(str, Enum):
     IOF = "IOF"
 
 
-class PaymentStatus(str, Enum):
+class PaymentStatus(StrEnum):
     """Status de pagamento."""
 
     PENDING = "PENDENTE"
@@ -66,11 +65,11 @@ class BankCredentials:
 
     client_id: str
     client_secret: str
-    certificate_path: Optional[str] = None
-    private_key_path: Optional[str] = None
+    certificate_path: str | None = None
+    private_key_path: str | None = None
     environment: str = "sandbox"  # sandbox ou production
-    agency: Optional[str] = None
-    account: Optional[str] = None
+    agency: str | None = None
+    account: str | None = None
 
 
 @dataclass
@@ -98,14 +97,14 @@ class BankTransaction:
     amount: Decimal
     transaction_type: TransactionType
     description: str
-    balance_after: Optional[Decimal] = None
-    counterpart_name: Optional[str] = None
-    counterpart_document: Optional[str] = None
-    counterpart_bank: Optional[str] = None
-    counterpart_agency: Optional[str] = None
-    counterpart_account: Optional[str] = None
-    category: Optional[str] = None
-    reference: Optional[str] = None
+    balance_after: Decimal | None = None
+    counterpart_name: str | None = None
+    counterpart_document: str | None = None
+    counterpart_bank: str | None = None
+    counterpart_agency: str | None = None
+    counterpart_account: str | None = None
+    category: str | None = None
+    reference: str | None = None
 
 
 @dataclass
@@ -135,10 +134,10 @@ class PaymentRequest:
     beneficiary_agency: str
     beneficiary_account: str
     beneficiary_account_type: AccountType = AccountType.CHECKING
-    description: Optional[str] = None
-    scheduled_date: Optional[date] = None
-    pix_key: Optional[str] = None
-    barcode: Optional[str] = None
+    description: str | None = None
+    scheduled_date: date | None = None
+    pix_key: str | None = None
+    barcode: str | None = None
 
 
 @dataclass
@@ -148,11 +147,11 @@ class PaymentResponse:
     payment_id: str
     status: PaymentStatus
     amount: Decimal
-    scheduled_date: Optional[date] = None
-    processed_at: Optional[datetime] = None
-    receipt_url: Optional[str] = None
-    authentication_code: Optional[str] = None
-    error_message: Optional[str] = None
+    scheduled_date: date | None = None
+    processed_at: datetime | None = None
+    receipt_url: str | None = None
+    authentication_code: str | None = None
+    error_message: str | None = None
 
 
 @dataclass
@@ -161,13 +160,13 @@ class PixKey:
 
     key_type: str  # CPF, CNPJ, EMAIL, PHONE, EVP
     key_value: str
-    owner_name: Optional[str] = None
-    owner_document: Optional[str] = None
-    bank_code: Optional[str] = None
-    bank_name: Optional[str] = None
-    agency: Optional[str] = None
-    account: Optional[str] = None
-    account_type: Optional[AccountType] = None
+    owner_name: str | None = None
+    owner_document: str | None = None
+    bank_code: str | None = None
+    bank_name: str | None = None
+    agency: str | None = None
+    account: str | None = None
+    account_type: AccountType | None = None
 
 
 class BankingAdapterError(Exception):
@@ -176,8 +175,8 @@ class BankingAdapterError(Exception):
     def __init__(
         self,
         message: str,
-        code: Optional[str] = None,
-        details: Optional[dict] = None,
+        code: str | None = None,
+        details: dict | None = None,
     ) -> None:
         """Inicializa erro."""
         super().__init__(message)
@@ -223,8 +222,8 @@ class BaseBankingAdapter(ABC):
             credentials: Credenciais de acesso ao banco
         """
         self.credentials = credentials
-        self._access_token: Optional[str] = None
-        self._token_expires_at: Optional[datetime] = None
+        self._access_token: str | None = None
+        self._token_expires_at: datetime | None = None
 
     @property
     def base_url(self) -> str:
@@ -326,7 +325,7 @@ class BaseBankingAdapter(ABC):
     async def validate_pix_key(
         self,
         key: str,
-    ) -> Optional[PixKey]:
+    ) -> PixKey | None:
         """
         Valida e consulta dados de uma chave PIX.
 
@@ -342,7 +341,7 @@ class BaseBankingAdapter(ABC):
         self,
         pix_key: str,
         amount: Decimal,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> PaymentResponse:
         """
         Inicia transferencia PIX.

@@ -3,9 +3,8 @@
 Sprint 34 - AI Predictions.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -14,7 +13,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class TrainingStatus(str, enum.Enum):
+class TrainingStatus(StrEnum):
     """Status do job de treinamento."""
 
     QUEUED = "QUEUED"  # Na fila
@@ -182,7 +181,7 @@ class TrainingJob(Base):
         return self.is_failed and self.retry_count < (self.max_retries or 3)
 
     @property
-    def elapsed_seconds(self) -> Optional[int]:
+    def elapsed_seconds(self) -> int | None:
         """Retorna tempo decorrido."""
         if not self.started_at:
             return None
@@ -205,8 +204,8 @@ class TrainingJob(Base):
     def complete(
         self,
         metrics: dict,
-        model_path: Optional[str] = None,
-        model_size: Optional[int] = None,
+        model_path: str | None = None,
+        model_size: int | None = None,
     ) -> None:
         """Completa o job com sucesso.
 
@@ -228,7 +227,7 @@ class TrainingJob(Base):
         if model_size:
             self.output_model_size = model_size
 
-    def fail(self, error_message: str, traceback: Optional[str] = None) -> None:
+    def fail(self, error_message: str, traceback: str | None = None) -> None:
         """Marca o job como falho.
 
         Args:
@@ -249,7 +248,7 @@ class TrainingJob(Base):
         self.completed_at = datetime.utcnow()
         self.error_message = f"Job exceeded timeout of {self.timeout_seconds} seconds"
 
-    def cancel(self, user_id: Optional[str] = None) -> None:
+    def cancel(self, user_id: str | None = None) -> None:
         """Cancela o job.
 
         Args:
@@ -264,8 +263,8 @@ class TrainingJob(Base):
         self,
         current_epoch: int,
         total_epochs: int,
-        training_loss: Optional[float] = None,
-        validation_loss: Optional[float] = None,
+        training_loss: float | None = None,
+        validation_loss: float | None = None,
     ) -> None:
         """Atualiza progresso.
 

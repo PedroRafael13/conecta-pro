@@ -1,14 +1,14 @@
 """Schemas Pydantic para Document."""
 
-from datetime import datetime, date
-from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from datetime import date, datetime
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.ged.models.document import (
-    DocumentType,
-    DocumentStatus,
     DocumentCategory,
     DocumentConfidentiality,
+    DocumentStatus,
+    DocumentType,
     FileType,
 )
 
@@ -17,30 +17,28 @@ class DocumentBase(BaseModel):
     """Schema base de Document."""
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=5000)
+    description: str | None = Field(None, max_length=5000)
     folder_id: str
     document_type: DocumentType = Field(default=DocumentType.OUTRO)
     category: DocumentCategory = Field(default=DocumentCategory.OUTRO)
-    confidentiality: DocumentConfidentiality = Field(
-        default=DocumentConfidentiality.INTERNO
-    )
-    condominium_id: Optional[str] = None
-    contract_id: Optional[str] = None
-    employee_id: Optional[str] = None
-    client_id: Optional[str] = None
-    resident_id: Optional[str] = None
-    occurrence_id: Optional[str] = None
+    confidentiality: DocumentConfidentiality = Field(default=DocumentConfidentiality.INTERNO)
+    condominium_id: str | None = None
+    contract_id: str | None = None
+    employee_id: str | None = None
+    client_id: str | None = None
+    resident_id: str | None = None
+    occurrence_id: str | None = None
     is_public: bool = False
     inherit_folder_permissions: bool = True
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
+    valid_from: date | None = None
+    valid_until: date | None = None
     is_perpetual: bool = False
     requires_approval: bool = False
     requires_signature: bool = False
-    signature_deadline: Optional[datetime] = None
-    external_reference: Optional[str] = Field(None, max_length=100)
-    metadata: Optional[dict] = None
-    custom_fields: Optional[dict] = None
+    signature_deadline: datetime | None = None
+    external_reference: str | None = Field(None, max_length=100)
+    metadata: dict | None = None
+    custom_fields: dict | None = None
 
 
 class DocumentCreate(DocumentBase):
@@ -55,29 +53,29 @@ class DocumentCreate(DocumentBase):
     checksum: str = Field(..., min_length=64, max_length=64)
     owner_id: str
     created_by: str
-    thumbnail_path: Optional[str] = None
-    preview_path: Optional[str] = None
+    thumbnail_path: str | None = None
+    preview_path: str | None = None
 
 
 class DocumentUpdate(BaseModel):
     """Schema para atualizar Document."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=5000)
-    document_type: Optional[DocumentType] = None
-    category: Optional[DocumentCategory] = None
-    confidentiality: Optional[DocumentConfidentiality] = None
-    is_public: Optional[bool] = None
-    inherit_folder_permissions: Optional[bool] = None
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
-    is_perpetual: Optional[bool] = None
-    requires_approval: Optional[bool] = None
-    requires_signature: Optional[bool] = None
-    signature_deadline: Optional[datetime] = None
-    external_reference: Optional[str] = Field(None, max_length=100)
-    metadata: Optional[dict] = None
-    custom_fields: Optional[dict] = None
+    title: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=5000)
+    document_type: DocumentType | None = None
+    category: DocumentCategory | None = None
+    confidentiality: DocumentConfidentiality | None = None
+    is_public: bool | None = None
+    inherit_folder_permissions: bool | None = None
+    valid_from: date | None = None
+    valid_until: date | None = None
+    is_perpetual: bool | None = None
+    requires_approval: bool | None = None
+    requires_signature: bool | None = None
+    signature_deadline: datetime | None = None
+    external_reference: str | None = Field(None, max_length=100)
+    metadata: dict | None = None
+    custom_fields: dict | None = None
 
 
 class DocumentResponse(BaseModel):
@@ -88,7 +86,7 @@ class DocumentResponse(BaseModel):
     id: str
     code: str
     title: str
-    description: Optional[str]
+    description: str | None
     folder_id: str
     document_type: DocumentType
     category: DocumentCategory
@@ -101,45 +99,49 @@ class DocumentResponse(BaseModel):
     file_size_bytes: int
     mime_type: str
     checksum: str
-    thumbnail_path: Optional[str]
-    preview_path: Optional[str]
+    thumbnail_path: str | None
+    preview_path: str | None
     current_version: int
     version_count: int
     is_latest: bool
-    condominium_id: Optional[str]
-    contract_id: Optional[str]
-    employee_id: Optional[str]
-    client_id: Optional[str]
-    resident_id: Optional[str]
-    occurrence_id: Optional[str]
+    condominium_id: str | None
+    contract_id: str | None
+    employee_id: str | None
+    client_id: str | None
+    resident_id: str | None
+    occurrence_id: str | None
     owner_id: str
     is_public: bool
     inherit_folder_permissions: bool
-    valid_from: Optional[date]
-    valid_until: Optional[date]
+    valid_from: date | None
+    valid_until: date | None
     is_perpetual: bool
     requires_approval: bool
-    approved_by: Optional[str]
-    approved_at: Optional[datetime]
-    rejection_reason: Optional[str]
+    approved_by: str | None
+    approved_at: datetime | None
+    rejection_reason: str | None
     is_signed: bool
     signature_count: int
     requires_signature: bool
-    signature_deadline: Optional[datetime]
+    signature_deadline: datetime | None
     is_ocr_processed: bool
-    ocr_confidence: Optional[float]
+    ocr_text: str | None = None
+    ocr_confidence: float | None = None
     is_indexed: bool
-    search_keywords: Optional[List[str]]
-    external_reference: Optional[str]
+    search_keywords: list[str] | None = None
+    ai_classification: dict | None = None
+    ai_confidence: float | None = None
+    ai_processed_at: datetime | None = None
+    external_reference: str | None
     view_count: int
     download_count: int
     share_count: int
-    last_viewed_at: Optional[datetime]
-    last_downloaded_at: Optional[datetime]
+    last_viewed_at: datetime | None
+    last_downloaded_at: datetime | None
     created_at: datetime
     updated_at: datetime
-    published_at: Optional[datetime]
-    archived_at: Optional[datetime]
+    published_at: datetime | None
+    archived_at: datetime | None
     created_by: str
 
     # Computed
@@ -150,14 +152,14 @@ class DocumentResponse(BaseModel):
     is_pending_signature: bool
     file_size_mb: float
     file_size_kb: float
-    days_until_expiry: Optional[int]
+    days_until_expiry: int | None
     display_name: str
 
 
 class DocumentListResponse(BaseModel):
     """Schema de lista de Documents."""
 
-    items: List[DocumentResponse]
+    items: list[DocumentResponse]
     total: int
     page: int
     page_size: int
@@ -167,24 +169,24 @@ class DocumentListResponse(BaseModel):
 class DocumentFilter(BaseModel):
     """Schema de filtro de Documents."""
 
-    folder_id: Optional[str] = None
-    document_type: Optional[DocumentType] = None
-    category: Optional[DocumentCategory] = None
-    status: Optional[DocumentStatus] = None
-    confidentiality: Optional[DocumentConfidentiality] = None
-    file_type: Optional[FileType] = None
-    condominium_id: Optional[str] = None
-    contract_id: Optional[str] = None
-    owner_id: Optional[str] = None
-    is_public: Optional[bool] = None
-    is_signed: Optional[bool] = None
-    is_expired: Optional[bool] = None
-    requires_approval: Optional[bool] = None
-    requires_signature: Optional[bool] = None
-    search: Optional[str] = None
-    tags: Optional[List[str]] = None
-    created_from: Optional[datetime] = None
-    created_to: Optional[datetime] = None
+    folder_id: str | None = None
+    document_type: DocumentType | None = None
+    category: DocumentCategory | None = None
+    status: DocumentStatus | None = None
+    confidentiality: DocumentConfidentiality | None = None
+    file_type: FileType | None = None
+    condominium_id: str | None = None
+    contract_id: str | None = None
+    owner_id: str | None = None
+    is_public: bool | None = None
+    is_signed: bool | None = None
+    is_expired: bool | None = None
+    requires_approval: bool | None = None
+    requires_signature: bool | None = None
+    search: str | None = None
+    tags: list[str] | None = None
+    created_from: datetime | None = None
+    created_to: datetime | None = None
 
 
 class DocumentMoveRequest(BaseModel):
@@ -197,21 +199,21 @@ class DocumentApprovalRequest(BaseModel):
     """Schema para aprovar/rejeitar documento."""
 
     approved: bool
-    reason: Optional[str] = Field(None, max_length=1000)
+    reason: str | None = Field(None, max_length=1000)
 
 
 class DocumentSearchRequest(BaseModel):
     """Schema para busca avançada."""
 
     query: str = Field(..., min_length=1, max_length=500)
-    folder_id: Optional[str] = None
-    document_types: Optional[List[DocumentType]] = None
-    categories: Optional[List[DocumentCategory]] = None
-    file_types: Optional[List[FileType]] = None
+    folder_id: str | None = None
+    document_types: list[DocumentType] | None = None
+    categories: list[DocumentCategory] | None = None
+    file_types: list[FileType] | None = None
     include_ocr: bool = True
     include_metadata: bool = True
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
     limit: int = Field(default=20, ge=1, le=100)
 
 
@@ -237,15 +239,13 @@ class DocumentUploadRequest(BaseModel):
     """Schema para upload de documento."""
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=5000)
+    description: str | None = Field(None, max_length=5000)
     folder_id: str
     document_type: DocumentType = Field(default=DocumentType.OUTRO)
     category: DocumentCategory = Field(default=DocumentCategory.OUTRO)
-    confidentiality: DocumentConfidentiality = Field(
-        default=DocumentConfidentiality.INTERNO
-    )
-    tags: Optional[List[str]] = None
-    metadata: Optional[dict] = None
+    confidentiality: DocumentConfidentiality = Field(default=DocumentConfidentiality.INTERNO)
+    tags: list[str] | None = None
+    metadata: dict | None = None
 
 
 class DocumentOCRResult(BaseModel):
@@ -253,6 +253,6 @@ class DocumentOCRResult(BaseModel):
 
     text: str
     confidence: float
-    keywords: List[str]
-    language: Optional[str]
+    keywords: list[str]
+    language: str | None
     pages_processed: int

@@ -5,9 +5,10 @@ Revises: sprint30_bi_dashboard
 Create Date: 2026-01-01 16:00:00.000000
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "sprint31_document_kits"
 down_revision = "sprint30_bi_dashboard"
@@ -19,51 +20,101 @@ def upgrade() -> None:
     """Cria tabelas de Kits Documentais."""
     # Criar enums
     kit_type_enum = postgresql.ENUM(
-        "ADMISSAO", "DEMISSAO", "FERIAS", "AFASTAMENTO", "PROMOCAO",
-        "TRANSFERENCIA", "CONTRATO_CLIENTE", "ENCERRAMENTO_CONTRATO",
-        "TREINAMENTO", "CERTIFICACAO", "VIGILANTE", "EQUIPAMENTO",
-        "AUDITORIA", "LICITACAO", "RENOVACAO", "OUTRO",
+        "ADMISSAO",
+        "DEMISSAO",
+        "FERIAS",
+        "AFASTAMENTO",
+        "PROMOCAO",
+        "TRANSFERENCIA",
+        "CONTRATO_CLIENTE",
+        "ENCERRAMENTO_CONTRATO",
+        "TREINAMENTO",
+        "CERTIFICACAO",
+        "VIGILANTE",
+        "EQUIPAMENTO",
+        "AUDITORIA",
+        "LICITACAO",
+        "RENOVACAO",
+        "OUTRO",
         name="kit_type_enum",
         create_type=True,
     )
 
     kit_status_enum = postgresql.ENUM(
-        "RASCUNHO", "ATIVO", "INATIVO", "ARQUIVADO", "OBSOLETO",
+        "RASCUNHO",
+        "ATIVO",
+        "INATIVO",
+        "ARQUIVADO",
+        "OBSOLETO",
         name="kit_status_enum",
         create_type=True,
     )
 
     item_type_enum = postgresql.ENUM(
-        "DOCUMENTO_PESSOAL", "CERTIFICADO", "COMPROVANTE", "DECLARACAO",
-        "CONTRATO", "TERMO", "FORMULARIO", "FOTO", "LAUDO", "ATESTADO",
-        "REGISTRO", "AUTORIZACAO", "PROCURACAO", "OUTRO",
+        "DOCUMENTO_PESSOAL",
+        "CERTIFICADO",
+        "COMPROVANTE",
+        "DECLARACAO",
+        "CONTRATO",
+        "TERMO",
+        "FORMULARIO",
+        "FOTO",
+        "LAUDO",
+        "ATESTADO",
+        "REGISTRO",
+        "AUTORIZACAO",
+        "PROCURACAO",
+        "OUTRO",
         name="item_type_enum",
         create_type=True,
     )
 
     item_priority_enum = postgresql.ENUM(
-        "OBRIGATORIO", "IMPORTANTE", "DESEJAVEL", "OPCIONAL",
+        "OBRIGATORIO",
+        "IMPORTANTE",
+        "DESEJAVEL",
+        "OPCIONAL",
         name="item_priority_enum",
         create_type=True,
     )
 
     assignment_status_enum = postgresql.ENUM(
-        "PENDENTE", "EM_ANDAMENTO", "AGUARDANDO_DOCUMENTOS", "EM_ANALISE",
-        "APROVADO", "REPROVADO", "COMPLETO", "INCOMPLETO", "CANCELADO", "EXPIRADO",
+        "PENDENTE",
+        "EM_ANDAMENTO",
+        "AGUARDANDO_DOCUMENTOS",
+        "EM_ANALISE",
+        "APROVADO",
+        "REPROVADO",
+        "COMPLETO",
+        "INCOMPLETO",
+        "CANCELADO",
+        "EXPIRADO",
         name="assignment_status_enum",
         create_type=True,
     )
 
     item_status_enum = postgresql.ENUM(
-        "PENDENTE", "ENVIADO", "EM_ANALISE", "APROVADO",
-        "REPROVADO", "VENCIDO", "NAO_APLICAVEL",
+        "PENDENTE",
+        "ENVIADO",
+        "EM_ANALISE",
+        "APROVADO",
+        "REPROVADO",
+        "VENCIDO",
+        "NAO_APLICAVEL",
         name="item_status_enum",
         create_type=True,
     )
 
     entity_type_enum = postgresql.ENUM(
-        "FUNCIONARIO", "CANDIDATO", "CONTRATO", "CLIENTE", "FORNECEDOR",
-        "EQUIPAMENTO", "POSTO", "TREINAMENTO", "OUTRO",
+        "FUNCIONARIO",
+        "CANDIDATO",
+        "CONTRATO",
+        "CLIENTE",
+        "FORNECEDOR",
+        "EQUIPAMENTO",
+        "POSTO",
+        "TREINAMENTO",
+        "OUTRO",
         name="entity_type_enum",
         create_type=True,
     )

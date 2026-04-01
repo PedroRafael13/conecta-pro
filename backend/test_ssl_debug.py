@@ -5,8 +5,9 @@ Script de debug para conexão SSL com SEFAZ.
 
 import asyncio
 import ssl
-import aiohttp
 import traceback
+
+import aiohttp
 
 # Paths dos certificados
 CERT_PEM = "/opt/conecta-pro/credentials/certificates/a1_cert.pem"
@@ -23,11 +24,13 @@ async def test_without_cert():
         ssl_ctx = ssl.create_default_context()
         connector = aiohttp.TCPConnector(ssl=ssl_ctx)
 
-        async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(URL_SEFAZ, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-                print(f"Status: {resp.status}")
-                text = await resp.text()
-                print(f"Resposta (primeiros 200 chars): {text[:200]}")
+        async with (
+            aiohttp.ClientSession(connector=connector) as session,
+            session.get(URL_SEFAZ, timeout=aiohttp.ClientTimeout(total=30)) as resp,
+        ):
+            print(f"Status: {resp.status}")
+            text = await resp.text()
+            print(f"Resposta (primeiros 200 chars): {text[:200]}")
     except Exception as e:
         print(f"ERRO: {type(e).__name__}: {e}")
         traceback.print_exc()
@@ -53,7 +56,7 @@ async def test_with_cert():
 
         # Criar connector
         connector = aiohttp.TCPConnector(ssl=ssl_ctx)
-        print(f"Connector criado")
+        print("Connector criado")
 
         async with aiohttp.ClientSession(connector=connector) as session:
             print(f"Session criada, fazendo request para: {URL_SEFAZ}")
@@ -80,15 +83,17 @@ async def test_with_cert_and_ca():
         ssl_ctx = ssl.create_default_context()
         ssl_ctx.load_cert_chain(certfile=CERT_PEM, keyfile=KEY_PEM)
 
-        print(f"SSL Context com CA padrão criado")
+        print("SSL Context com CA padrão criado")
 
         connector = aiohttp.TCPConnector(ssl=ssl_ctx)
 
-        async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(URL_SEFAZ, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-                print(f"Status: {resp.status}")
-                text = await resp.text()
-                print(f"Resposta (primeiros 500 chars): {text[:500]}")
+        async with (
+            aiohttp.ClientSession(connector=connector) as session,
+            session.get(URL_SEFAZ, timeout=aiohttp.ClientTimeout(total=30)) as resp,
+        ):
+            print(f"Status: {resp.status}")
+            text = await resp.text()
+            print(f"Resposta (primeiros 500 chars): {text[:500]}")
 
     except Exception as e:
         print(f"ERRO: {type(e).__name__}: {e}")
@@ -99,8 +104,8 @@ async def test_soap_request():
     """Testa requisição SOAP real."""
     print("\n=== Teste SOAP Request ===")
 
-    SOAP_URL = "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx"
-    CNPJ = "35710481000103"
+    soap_url = "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx"
+    cnpj = "35710481000103"
 
     envelope = f"""<?xml version="1.0" encoding="UTF-8"?>
 <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -110,7 +115,7 @@ async def test_soap_request():
                 <distDFeInt xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.01">
                     <tpAmb>1</tpAmb>
                     <cUFAutor>13</cUFAutor>
-                    <CNPJ>{CNPJ}</CNPJ>
+                    <CNPJ>{cnpj}</CNPJ>
                     <distNSU>
                         <NSU>000000000000000</NSU>
                     </distNSU>
@@ -122,7 +127,7 @@ async def test_soap_request():
 
     headers = {
         "Content-Type": "application/soap+xml; charset=utf-8",
-        "SOAPAction": "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse"
+        "SOAPAction": "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse",
     }
 
     try:
@@ -132,12 +137,9 @@ async def test_soap_request():
         connector = aiohttp.TCPConnector(ssl=ssl_ctx)
 
         async with aiohttp.ClientSession(connector=connector) as session:
-            print(f"Enviando SOAP para: {SOAP_URL}")
+            print(f"Enviando SOAP para: {soap_url}")
             async with session.post(
-                SOAP_URL,
-                data=envelope,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=30)
+                soap_url, data=envelope, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
                 print(f"Status: {resp.status}")
                 text = await resp.text()
@@ -156,6 +158,7 @@ async def main():
 
     # Verificar arquivos
     import os
+
     print(f"\nCert existe: {os.path.exists(CERT_PEM)}")
     print(f"Key existe: {os.path.exists(KEY_PEM)}")
 

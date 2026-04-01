@@ -4,26 +4,29 @@ Knowledge Base Model - Sprint 53.
 Modelo para bases de conhecimento organizacional.
 """
 
+import uuid
+from datetime import datetime
+from enum import StrEnum
+
 from sqlalchemy import (
+    Boolean,
     Column,
+    DateTime,
+    ForeignKey,
+    Integer,
     String,
     Text,
-    Boolean,
-    DateTime,
-    Integer,
-    ForeignKey,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
-import uuid
-import enum
 
 from core.models.base import Base
 
 
-class KnowledgeBaseStatusEnum(str, enum.Enum):
+class KnowledgeBaseStatusEnum(StrEnum):
     """Status da base de conhecimento."""
 
     DRAFT = "draft"
@@ -33,7 +36,7 @@ class KnowledgeBaseStatusEnum(str, enum.Enum):
     MAINTENANCE = "maintenance"
 
 
-class KnowledgeBaseTypeEnum(str, enum.Enum):
+class KnowledgeBaseTypeEnum(StrEnum):
     """Tipo de base de conhecimento."""
 
     GENERAL = "general"
@@ -48,7 +51,7 @@ class KnowledgeBaseTypeEnum(str, enum.Enum):
     EXTERNAL = "external"
 
 
-class KnowledgeBaseVisibilityEnum(str, enum.Enum):
+class KnowledgeBaseVisibilityEnum(StrEnum):
     """Visibilidade da base de conhecimento."""
 
     PUBLIC = "public"
@@ -140,9 +143,7 @@ class KnowledgeBase(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     updated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
@@ -210,14 +211,12 @@ class KBCategory(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relationships
     knowledge_base = relationship("KnowledgeBase", back_populates="categories")
-    parent = relationship("KBCategory", remote_side=[id], backref="children")
+    parent = relationship("KBCategory", remote_side=[id], backref="children")  # noqa: A003
 
     def __repr__(self) -> str:
         return f"<KBCategory {self.name}>"

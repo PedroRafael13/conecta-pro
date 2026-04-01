@@ -1,21 +1,19 @@
 """Schemas Pydantic para Kits Documentais."""
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from modules.document_kits.models.document_kit import (
-    KitType,
-    KitStatus,
-    ItemType,
-    ItemPriority,
     AssignmentStatus,
-    ItemStatusEnum,
     EntityType,
+    ItemPriority,
+    ItemStatusEnum,
+    ItemType,
+    KitStatus,
+    KitType,
 )
-
 
 # === Document Kit Schemas ===
 
@@ -25,17 +23,17 @@ class DocumentKitBase(BaseModel):
 
     codigo: str = Field(..., min_length=1, max_length=50)
     nome: str = Field(..., min_length=1, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
+    descricao: str | None = Field(None, max_length=2000)
     tipo: KitType = Field(default=KitType.OUTRO)
     is_template: bool = Field(default=False)
     is_obrigatorio: bool = Field(default=True)
-    prazo_dias: Optional[int] = Field(default=30, ge=1, le=365)
+    prazo_dias: int | None = Field(default=30, ge=1, le=365)
     permite_parcial: bool = Field(default=False)
     requer_aprovacao: bool = Field(default=True)
-    entity_types: List[str] = Field(default_factory=list)
-    departamentos: List[str] = Field(default_factory=list)
-    cargos: List[str] = Field(default_factory=list)
-    tags: List[str] = Field(default_factory=list)
+    entity_types: list[str] = Field(default_factory=list)
+    departamentos: list[str] = Field(default_factory=list)
+    cargos: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class DocumentKitCreate(DocumentKitBase):
@@ -47,18 +45,18 @@ class DocumentKitCreate(DocumentKitBase):
 class DocumentKitUpdate(BaseModel):
     """Schema para atualizacao de DocumentKit."""
 
-    nome: Optional[str] = Field(None, min_length=1, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
-    tipo: Optional[KitType] = None
-    status: Optional[KitStatus] = None
-    is_obrigatorio: Optional[bool] = None
-    prazo_dias: Optional[int] = Field(None, ge=1, le=365)
-    permite_parcial: Optional[bool] = None
-    requer_aprovacao: Optional[bool] = None
-    entity_types: Optional[List[str]] = None
-    departamentos: Optional[List[str]] = None
-    cargos: Optional[List[str]] = None
-    tags: Optional[List[str]] = None
+    nome: str | None = Field(None, min_length=1, max_length=200)
+    descricao: str | None = Field(None, max_length=2000)
+    tipo: KitType | None = None
+    status: KitStatus | None = None
+    is_obrigatorio: bool | None = None
+    prazo_dias: int | None = Field(None, ge=1, le=365)
+    permite_parcial: bool | None = None
+    requer_aprovacao: bool | None = None
+    entity_types: list[str] | None = None
+    departamentos: list[str] | None = None
+    cargos: list[str] | None = None
+    tags: list[str] | None = None
 
 
 class DocumentKitResponse(DocumentKitBase):
@@ -72,7 +70,7 @@ class DocumentKitResponse(DocumentKitBase):
     uso_count: int
     versao: int
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -80,7 +78,7 @@ class DocumentKitResponse(DocumentKitBase):
 class DocumentKitListResponse(BaseModel):
     """Schema de lista de DocumentKits."""
 
-    items: List[DocumentKitResponse]
+    items: list[DocumentKitResponse]
     total: int
     page: int
     page_size: int
@@ -95,28 +93,25 @@ class DocumentKitItemBase(BaseModel):
 
     codigo: str = Field(..., min_length=1, max_length=50)
     nome: str = Field(..., min_length=1, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
-    instrucoes: Optional[str] = Field(None, max_length=5000)
+    descricao: str | None = Field(None, max_length=2000)
+    instrucoes: str | None = Field(None, max_length=5000)
     tipo: ItemType = Field(default=ItemType.DOCUMENTO_PESSOAL)
     prioridade: ItemPriority = Field(default=ItemPriority.OBRIGATORIO)
     ordem: int = Field(default=0, ge=0)
-    formatos_aceitos: List[str] = Field(default_factory=list)
+    formatos_aceitos: list[str] = Field(default_factory=list)
     tamanho_max_mb: int = Field(default=10, ge=1, le=100)
     requer_validade: bool = Field(default=False)
-    validade_minima_dias: Optional[int] = Field(None, ge=1, le=3650)
+    validade_minima_dias: int | None = Field(None, ge=1, le=3650)
     requer_autenticacao: bool = Field(default=False)
-    template_url: Optional[str] = Field(None, max_length=500)
-    exemplo_url: Optional[str] = Field(None, max_length=500)
-    tags: List[str] = Field(default_factory=list)
+    template_url: str | None = Field(None, max_length=500)
+    exemplo_url: str | None = Field(None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
 
     @field_validator("formatos_aceitos")
     @classmethod
-    def validate_formatos(cls, value: List[str]) -> List[str]:
+    def validate_formatos(cls, value: list[str]) -> list[str]:
         """Valida formatos aceitos."""
-        formatos_validos = [
-            "pdf", "jpg", "jpeg", "png", "gif", "doc", "docx",
-            "xls", "xlsx", "txt", "zip", "rar"
-        ]
+        formatos_validos = ["pdf", "jpg", "jpeg", "png", "gif", "doc", "docx", "xls", "xlsx", "txt", "zip", "rar"]
         for formato in value:
             if formato.lower() not in formatos_validos:
                 raise ValueError(f"Formato invalido: {formato}")
@@ -128,28 +123,28 @@ class DocumentKitItemCreate(DocumentKitItemBase):
 
     kit_id: UUID
     condominio_id: UUID
-    depende_de: Optional[UUID] = None
+    depende_de: UUID | None = None
 
 
 class DocumentKitItemUpdate(BaseModel):
     """Schema para atualizacao de DocumentKitItem."""
 
-    nome: Optional[str] = Field(None, min_length=1, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
-    instrucoes: Optional[str] = Field(None, max_length=5000)
-    tipo: Optional[ItemType] = None
-    prioridade: Optional[ItemPriority] = None
-    ordem: Optional[int] = Field(None, ge=0)
-    is_ativo: Optional[bool] = None
-    formatos_aceitos: Optional[List[str]] = None
-    tamanho_max_mb: Optional[int] = Field(None, ge=1, le=100)
-    requer_validade: Optional[bool] = None
-    validade_minima_dias: Optional[int] = Field(None, ge=1, le=3650)
-    requer_autenticacao: Optional[bool] = None
-    template_url: Optional[str] = Field(None, max_length=500)
-    exemplo_url: Optional[str] = Field(None, max_length=500)
-    depende_de: Optional[UUID] = None
-    tags: Optional[List[str]] = None
+    nome: str | None = Field(None, min_length=1, max_length=200)
+    descricao: str | None = Field(None, max_length=2000)
+    instrucoes: str | None = Field(None, max_length=5000)
+    tipo: ItemType | None = None
+    prioridade: ItemPriority | None = None
+    ordem: int | None = Field(None, ge=0)
+    is_ativo: bool | None = None
+    formatos_aceitos: list[str] | None = None
+    tamanho_max_mb: int | None = Field(None, ge=1, le=100)
+    requer_validade: bool | None = None
+    validade_minima_dias: int | None = Field(None, ge=1, le=3650)
+    requer_autenticacao: bool | None = None
+    template_url: str | None = Field(None, max_length=500)
+    exemplo_url: str | None = Field(None, max_length=500)
+    depende_de: UUID | None = None
+    tags: list[str] | None = None
 
 
 class DocumentKitItemResponse(DocumentKitItemBase):
@@ -159,9 +154,9 @@ class DocumentKitItemResponse(DocumentKitItemBase):
     kit_id: UUID
     condominio_id: UUID
     is_ativo: bool
-    depende_de: Optional[UUID] = None
+    depende_de: UUID | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -174,10 +169,10 @@ class DocumentKitAssignmentBase(BaseModel):
 
     entity_type: EntityType
     entity_id: UUID
-    entity_nome: Optional[str] = Field(None, max_length=200)
-    data_limite: Optional[datetime] = None
-    responsavel_id: Optional[UUID] = None
-    observacoes: Optional[str] = Field(None, max_length=2000)
+    entity_nome: str | None = Field(None, max_length=200)
+    data_limite: datetime | None = None
+    responsavel_id: UUID | None = None
+    observacoes: str | None = Field(None, max_length=2000)
 
 
 class DocumentKitAssignmentCreate(DocumentKitAssignmentBase):
@@ -190,12 +185,12 @@ class DocumentKitAssignmentCreate(DocumentKitAssignmentBase):
 class DocumentKitAssignmentUpdate(BaseModel):
     """Schema para atualizacao de DocumentKitAssignment."""
 
-    status: Optional[AssignmentStatus] = None
-    data_limite: Optional[datetime] = None
-    responsavel_id: Optional[UUID] = None
-    aprovador_id: Optional[UUID] = None
-    observacoes: Optional[str] = Field(None, max_length=2000)
-    motivo_reprovacao: Optional[str] = Field(None, max_length=2000)
+    status: AssignmentStatus | None = None
+    data_limite: datetime | None = None
+    responsavel_id: UUID | None = None
+    aprovador_id: UUID | None = None
+    observacoes: str | None = Field(None, max_length=2000)
+    motivo_reprovacao: str | None = Field(None, max_length=2000)
 
 
 class DocumentKitAssignmentResponse(DocumentKitAssignmentBase):
@@ -206,17 +201,17 @@ class DocumentKitAssignmentResponse(DocumentKitAssignmentBase):
     condominio_id: UUID
     status: AssignmentStatus
     data_inicio: datetime
-    data_conclusao: Optional[datetime] = None
+    data_conclusao: datetime | None = None
     total_itens: int
     itens_pendentes: int
     itens_aprovados: int
     itens_reprovados: int
     percentual_completo: int
-    aprovador_id: Optional[UUID] = None
-    motivo_reprovacao: Optional[str] = None
+    aprovador_id: UUID | None = None
+    motivo_reprovacao: str | None = None
     notificacoes_count: int
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -227,22 +222,22 @@ class DocumentKitAssignmentResponse(DocumentKitAssignmentBase):
 class DocumentKitItemStatusBase(BaseModel):
     """Schema base para DocumentKitItemStatus."""
 
-    arquivo_url: Optional[str] = Field(None, max_length=500)
-    arquivo_nome: Optional[str] = Field(None, max_length=255)
-    data_validade: Optional[datetime] = None
+    arquivo_url: str | None = Field(None, max_length=500)
+    arquivo_nome: str | None = Field(None, max_length=255)
+    data_validade: datetime | None = None
 
 
 class DocumentKitItemStatusUpdate(BaseModel):
     """Schema para atualizacao de DocumentKitItemStatus."""
 
-    status: Optional[ItemStatusEnum] = None
-    arquivo_url: Optional[str] = Field(None, max_length=500)
-    arquivo_nome: Optional[str] = Field(None, max_length=255)
-    arquivo_tamanho: Optional[int] = None
-    arquivo_tipo: Optional[str] = Field(None, max_length=100)
-    data_validade: Optional[datetime] = None
-    observacoes_analise: Optional[str] = Field(None, max_length=2000)
-    motivo_reprovacao: Optional[str] = Field(None, max_length=2000)
+    status: ItemStatusEnum | None = None
+    arquivo_url: str | None = Field(None, max_length=500)
+    arquivo_nome: str | None = Field(None, max_length=255)
+    arquivo_tamanho: int | None = None
+    arquivo_tipo: str | None = Field(None, max_length=100)
+    data_validade: datetime | None = None
+    observacoes_analise: str | None = Field(None, max_length=2000)
+    motivo_reprovacao: str | None = Field(None, max_length=2000)
 
 
 class DocumentKitItemStatusResponse(DocumentKitItemStatusBase):
@@ -253,18 +248,18 @@ class DocumentKitItemStatusResponse(DocumentKitItemStatusBase):
     item_id: UUID
     condominio_id: UUID
     status: ItemStatusEnum
-    arquivo_tamanho: Optional[int] = None
-    arquivo_tipo: Optional[str] = None
+    arquivo_tamanho: int | None = None
+    arquivo_tipo: str | None = None
     is_vencido: bool
-    analisado_por: Optional[UUID] = None
-    analisado_at: Optional[datetime] = None
-    observacoes_analise: Optional[str] = None
-    motivo_reprovacao: Optional[str] = None
+    analisado_por: UUID | None = None
+    analisado_at: datetime | None = None
+    observacoes_analise: str | None = None
+    motivo_reprovacao: str | None = None
     tentativas: int
-    enviado_por: Optional[UUID] = None
-    enviado_at: Optional[datetime] = None
+    enviado_por: UUID | None = None
+    enviado_at: datetime | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -304,7 +299,7 @@ class AssignmentProgressResponse(BaseModel):
     percentual_completo: int
     dias_restantes: int
     is_vencido: bool
-    itens: List[dict]
+    itens: list[dict]
 
 
 class KitComplianceResponse(BaseModel):
@@ -319,8 +314,8 @@ class KitComplianceResponse(BaseModel):
     kits_vencidos: int
     taxa_conformidade: float
     documentos_vencidos: int
-    proximos_vencimentos: List[dict]
-    alertas: List[str]
+    proximos_vencimentos: list[dict]
+    alertas: list[str]
 
 
 class KitSuggestionResponse(BaseModel):

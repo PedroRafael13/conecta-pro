@@ -9,7 +9,6 @@ Quality Score: 99+/100
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
@@ -64,7 +63,7 @@ class OccurrenceCategoryConfig(Base):
         String(100),
         nullable=False,
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -114,11 +113,11 @@ class OccurrenceCategoryConfig(Base):
         nullable=False,
         default=False,
     )
-    escalate_after_hours: Mapped[Optional[int]] = mapped_column(
+    escalate_after_hours: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
-    escalate_to_role: Mapped[Optional[str]] = mapped_column(
+    escalate_to_role: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
@@ -129,7 +128,7 @@ class OccurrenceCategoryConfig(Base):
         nullable=False,
         default=48,
     )
-    sla_warning_hours: Mapped[Optional[int]] = mapped_column(
+    sla_warning_hours: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
@@ -140,12 +139,12 @@ class OccurrenceCategoryConfig(Base):
         nullable=False,
         default=True,
     )
-    notify_roles: Mapped[Optional[list]] = mapped_column(
+    notify_roles: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    notify_emails: Mapped[Optional[list]] = mapped_column(
+    notify_emails: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
@@ -157,17 +156,17 @@ class OccurrenceCategoryConfig(Base):
         nullable=False,
         default=False,
     )
-    disciplinary_action_type: Mapped[Optional[str]] = mapped_column(
+    disciplinary_action_type: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
 
     # === Visual ===
-    color: Mapped[Optional[str]] = mapped_column(
+    color: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
-    icon: Mapped[Optional[str]] = mapped_column(
+    icon: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
@@ -198,7 +197,7 @@ class OccurrenceCategoryConfig(Base):
         default=func.now(),
         onupdate=func.now(),
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )

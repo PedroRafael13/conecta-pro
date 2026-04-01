@@ -6,18 +6,17 @@ Gerencia alertas de contratos.
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from modules.ai.contract_analysis.models.contract_analysis import ContractAnalysis
 from modules.ai.contract_analysis.models.contract_alert import (
-    ContractAlert,
-    AlertType,
-    AlertStatus,
     AlertPriority,
+    AlertStatus,
+    AlertType,
+    ContractAlert,
 )
+from modules.ai.contract_analysis.models.contract_analysis import ContractAnalysis
 from modules.ai.contract_analysis.repositories.contract_repository import (
     ContractAnalysisRepository,
 )
@@ -135,26 +134,25 @@ class AlertService:
                 priority_str = config["priority_map"].get(days_before, "medium")
                 priority = AlertPriority(priority_str)
 
-                alerts.append({
-                    "analysis_id": analysis.id,
-                    "contract_id": analysis.contract_id,
-                    "contract_number": analysis.contract_number,
-                    "alert_type": AlertType.EXPIRY,
-                    "priority": priority,
-                    "title": f"Contrato vence em {days_before} dias",
-                    "description": (
-                        f"O contrato {analysis.contract_number or ''} "
-                        f"vence em {end_date.strftime('%d/%m/%Y')}"
-                    ),
-                    "recommendation": (
-                        "Avaliar necessidade de renovacao ou encerramento"
-                    ),
-                    "trigger_date": trigger_date,
-                    "due_date": end_date - timedelta(days=7),
-                    "reference_date": end_date,
-                    "days_before": days_before,
-                    "days_remaining": days_until,
-                })
+                alerts.append(
+                    {
+                        "analysis_id": analysis.id,
+                        "contract_id": analysis.contract_id,
+                        "contract_number": analysis.contract_number,
+                        "alert_type": AlertType.EXPIRY,
+                        "priority": priority,
+                        "title": f"Contrato vence em {days_before} dias",
+                        "description": (
+                            f"O contrato {analysis.contract_number or ''} vence em {end_date.strftime('%d/%m/%Y')}"
+                        ),
+                        "recommendation": ("Avaliar necessidade de renovacao ou encerramento"),
+                        "trigger_date": trigger_date,
+                        "due_date": end_date - timedelta(days=7),
+                        "reference_date": end_date,
+                        "days_before": days_before,
+                        "days_remaining": days_until,
+                    }
+                )
                 break  # Apenas o alerta mais proximo
 
         return alerts
@@ -185,28 +183,30 @@ class AlertService:
                 if not analysis.has_auto_renewal:
                     title = f"Prazo para renovacao: {days_before} dias"
 
-                alerts.append({
-                    "analysis_id": analysis.id,
-                    "contract_id": analysis.contract_id,
-                    "contract_number": analysis.contract_number,
-                    "alert_type": AlertType.RENEWAL,
-                    "priority": priority,
-                    "title": title,
-                    "description": (
-                        f"Data de renovacao: {renewal_date.strftime('%d/%m/%Y')}. "
-                        f"{'Renovacao automatica' if analysis.has_auto_renewal else 'Avaliar renovacao'}"
-                    ),
-                    "recommendation": (
-                        "Revisar termos antes da renovacao automatica"
-                        if analysis.has_auto_renewal
-                        else "Iniciar processo de renovacao"
-                    ),
-                    "trigger_date": trigger_date,
-                    "due_date": renewal_date - timedelta(days=analysis.notice_period_days or 15),
-                    "reference_date": renewal_date,
-                    "days_before": days_before,
-                    "days_remaining": days_until,
-                })
+                alerts.append(
+                    {
+                        "analysis_id": analysis.id,
+                        "contract_id": analysis.contract_id,
+                        "contract_number": analysis.contract_number,
+                        "alert_type": AlertType.RENEWAL,
+                        "priority": priority,
+                        "title": title,
+                        "description": (
+                            f"Data de renovacao: {renewal_date.strftime('%d/%m/%Y')}. "
+                            f"{'Renovacao automatica' if analysis.has_auto_renewal else 'Avaliar renovacao'}"
+                        ),
+                        "recommendation": (
+                            "Revisar termos antes da renovacao automatica"
+                            if analysis.has_auto_renewal
+                            else "Iniciar processo de renovacao"
+                        ),
+                        "trigger_date": trigger_date,
+                        "due_date": renewal_date - timedelta(days=analysis.notice_period_days or 15),
+                        "reference_date": renewal_date,
+                        "days_before": days_before,
+                        "days_remaining": days_until,
+                    }
+                )
                 break
 
         return alerts
@@ -233,24 +233,26 @@ class AlertService:
                 priority_str = config["priority_map"].get(days_before, "medium")
                 priority = AlertPriority(priority_str)
 
-                alerts.append({
-                    "analysis_id": analysis.id,
-                    "contract_id": analysis.contract_id,
-                    "contract_number": analysis.contract_number,
-                    "alert_type": AlertType.ADJUSTMENT,
-                    "priority": priority,
-                    "title": f"Reajuste de contrato em {days_before} dias",
-                    "description": (
-                        f"Reajuste previsto para {adjustment_date.strftime('%d/%m/%Y')}. "
-                        f"Indice: {analysis.adjustment_index or 'nao especificado'}"
-                    ),
-                    "recommendation": "Calcular e comunicar novo valor",
-                    "trigger_date": trigger_date,
-                    "due_date": adjustment_date,
-                    "reference_date": adjustment_date,
-                    "days_before": days_before,
-                    "days_remaining": days_until,
-                })
+                alerts.append(
+                    {
+                        "analysis_id": analysis.id,
+                        "contract_id": analysis.contract_id,
+                        "contract_number": analysis.contract_number,
+                        "alert_type": AlertType.ADJUSTMENT,
+                        "priority": priority,
+                        "title": f"Reajuste de contrato em {days_before} dias",
+                        "description": (
+                            f"Reajuste previsto para {adjustment_date.strftime('%d/%m/%Y')}. "
+                            f"Indice: {analysis.adjustment_index or 'nao especificado'}"
+                        ),
+                        "recommendation": "Calcular e comunicar novo valor",
+                        "trigger_date": trigger_date,
+                        "due_date": adjustment_date,
+                        "reference_date": adjustment_date,
+                        "days_before": days_before,
+                        "days_remaining": days_until,
+                    }
+                )
                 break
 
         return alerts
@@ -262,37 +264,31 @@ class AlertService:
         if not analysis.risk_factors:
             return alerts
 
-        high_risk_factors = [
-            f for f in analysis.risk_factors
-            if f.get("impact") in ("high", "critical")
-        ]
+        high_risk_factors = [f for f in analysis.risk_factors if f.get("impact") in ("high", "critical")]
 
         if high_risk_factors:
-            priority = (
-                AlertPriority.CRITICAL
-                if analysis.risk_score >= 70
-                else AlertPriority.HIGH
-            )
+            priority = AlertPriority.CRITICAL if analysis.risk_score >= 70 else AlertPriority.HIGH
 
-            alerts.append({
-                "analysis_id": analysis.id,
-                "contract_id": analysis.contract_id,
-                "contract_number": analysis.contract_number,
-                "alert_type": AlertType.RISK,
-                "priority": priority,
-                "title": f"Contrato com risco {analysis.risk_level.value}",
-                "description": (
-                    f"Identificados {len(high_risk_factors)} fatores de risco. "
-                    f"Score: {analysis.risk_score}/100"
-                ),
-                "recommendation": "Revisar clausulas de risco com juridico",
-                "trigger_date": date.today(),
-                "due_date": date.today() + timedelta(days=7),
-                "reference_date": date.today(),
-                "days_before": 0,
-                "days_remaining": 7,
-                "confidence": int(analysis.risk_score),
-            })
+            alerts.append(
+                {
+                    "analysis_id": analysis.id,
+                    "contract_id": analysis.contract_id,
+                    "contract_number": analysis.contract_number,
+                    "alert_type": AlertType.RISK,
+                    "priority": priority,
+                    "title": f"Contrato com risco {analysis.risk_level.value}",
+                    "description": (
+                        f"Identificados {len(high_risk_factors)} fatores de risco. Score: {analysis.risk_score}/100"
+                    ),
+                    "recommendation": "Revisar clausulas de risco com juridico",
+                    "trigger_date": date.today(),
+                    "due_date": date.today() + timedelta(days=7),
+                    "reference_date": date.today(),
+                    "days_before": 0,
+                    "days_remaining": 7,
+                    "confidence": int(analysis.risk_score),
+                }
+            )
 
         return alerts
 
@@ -305,10 +301,7 @@ class AlertService:
             "alert_type": AlertType.REVIEW,
             "priority": AlertPriority.HIGH,
             "title": "Contrato requer revisao",
-            "description": (
-                "A analise automatica identificou que este contrato "
-                "precisa de revisao manual"
-            ),
+            "description": ("A analise automatica identificou que este contrato precisa de revisao manual"),
             "recommendation": "Agendar revisao com equipe juridica",
             "trigger_date": date.today(),
             "due_date": date.today() + timedelta(days=14),
@@ -319,9 +312,9 @@ class AlertService:
 
     def get_pending_alerts(
         self,
-        contract_id: Optional[UUID] = None,
-        priority: Optional[AlertPriority] = None,
-        alert_type: Optional[AlertType] = None,
+        contract_id: UUID | None = None,
+        priority: AlertPriority | None = None,
+        alert_type: AlertType | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> dict:
@@ -357,7 +350,7 @@ class AlertService:
         self,
         alert_id: UUID,
         user_id: UUID,
-    ) -> Optional[ContractAlert]:
+    ) -> ContractAlert | None:
         """Reconhece um alerta."""
         alert = self.repository.get_alert(alert_id)
         if not alert:
@@ -372,8 +365,8 @@ class AlertService:
         self,
         alert_id: UUID,
         user_id: UUID,
-        notes: Optional[str] = None,
-    ) -> Optional[ContractAlert]:
+        notes: str | None = None,
+    ) -> ContractAlert | None:
         """Resolve um alerta."""
         return self.repository.resolve_alert(alert_id, user_id, notes)
 
@@ -381,7 +374,7 @@ class AlertService:
         self,
         alert_id: UUID,
         days: int = 7,
-    ) -> Optional[ContractAlert]:
+    ) -> ContractAlert | None:
         """Adia um alerta."""
         alert = self.repository.get_alert(alert_id)
         if not alert:
@@ -399,8 +392,8 @@ class AlertService:
         self,
         alert_id: UUID,
         user_id: UUID,
-        reason: Optional[str] = None,
-    ) -> Optional[ContractAlert]:
+        reason: str | None = None,
+    ) -> ContractAlert | None:
         """Dispensa um alerta."""
         alert = self.repository.get_alert(alert_id)
         if not alert:

@@ -3,11 +3,10 @@
 Sprint 29 - Balancete e Fechamento.
 """
 
-import enum
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -23,7 +22,7 @@ from modules.financial.models.accounting_account import (
 from modules.financial.models.journal_entry import EntryStatus, JournalEntry, JournalEntryLine
 
 
-class BalanceSheetGroupType(str, enum.Enum):
+class BalanceSheetGroupType(StrEnum):
     """Grupos do Balanço Patrimonial."""
 
     # Ativo
@@ -36,7 +35,7 @@ class BalanceSheetGroupType(str, enum.Enum):
     PATRIMONIO_LIQUIDO = "PATRIMONIO_LIQUIDO"
 
 
-class TrialBalanceType(str, enum.Enum):
+class TrialBalanceType(StrEnum):
     """Tipos de balancete."""
 
     VERIFICATION = "VERIFICATION"  # Balancete de verificação
@@ -55,7 +54,7 @@ class AccountBalance:
     account_nature: AccountNature
     level: int
     is_analytical: bool
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
 
     # Saldos
     previous_debit: Decimal = Decimal("0")
@@ -99,9 +98,7 @@ class AccountBalance:
         # Variação
         if self.previous_balance != Decimal("0"):
             self.variation_absolute = self.current_balance - self.previous_balance
-            self.variation_percentage = (
-                self.variation_absolute / abs(self.previous_balance)
-            ) * Decimal("100")
+            self.variation_percentage = (self.variation_absolute / abs(self.previous_balance)) * Decimal("100")
 
 
 @dataclass
@@ -170,10 +167,7 @@ class BalanceSheetGroup:
 
     def calculate_total(self) -> None:
         """Calcula total do grupo."""
-        self.total = sum(
-            (item.current_balance for item in self.items),
-            Decimal("0")
-        )
+        self.total = sum((item.current_balance for item in self.items), Decimal("0"))
 
 
 @dataclass
@@ -185,30 +179,35 @@ class BalanceSheetReport:
     generated_at: datetime = field(default_factory=datetime.utcnow)
 
     # Grupos do Ativo
-    ativo_circulante: BalanceSheetGroup = field(default_factory=lambda: BalanceSheetGroup(
-        group_type=BalanceSheetGroupType.ATIVO_CIRCULANTE,
-        name="Ativo Circulante"
-    ))
-    ativo_nao_circulante: BalanceSheetGroup = field(default_factory=lambda: BalanceSheetGroup(
-        group_type=BalanceSheetGroupType.ATIVO_NAO_CIRCULANTE,
-        name="Ativo Não Circulante"
-    ))
+    ativo_circulante: BalanceSheetGroup = field(
+        default_factory=lambda: BalanceSheetGroup(
+            group_type=BalanceSheetGroupType.ATIVO_CIRCULANTE, name="Ativo Circulante"
+        )
+    )
+    ativo_nao_circulante: BalanceSheetGroup = field(
+        default_factory=lambda: BalanceSheetGroup(
+            group_type=BalanceSheetGroupType.ATIVO_NAO_CIRCULANTE, name="Ativo Não Circulante"
+        )
+    )
 
     # Grupos do Passivo
-    passivo_circulante: BalanceSheetGroup = field(default_factory=lambda: BalanceSheetGroup(
-        group_type=BalanceSheetGroupType.PASSIVO_CIRCULANTE,
-        name="Passivo Circulante"
-    ))
-    passivo_nao_circulante: BalanceSheetGroup = field(default_factory=lambda: BalanceSheetGroup(
-        group_type=BalanceSheetGroupType.PASSIVO_NAO_CIRCULANTE,
-        name="Passivo Não Circulante"
-    ))
+    passivo_circulante: BalanceSheetGroup = field(
+        default_factory=lambda: BalanceSheetGroup(
+            group_type=BalanceSheetGroupType.PASSIVO_CIRCULANTE, name="Passivo Circulante"
+        )
+    )
+    passivo_nao_circulante: BalanceSheetGroup = field(
+        default_factory=lambda: BalanceSheetGroup(
+            group_type=BalanceSheetGroupType.PASSIVO_NAO_CIRCULANTE, name="Passivo Não Circulante"
+        )
+    )
 
     # Patrimônio Líquido
-    patrimonio_liquido: BalanceSheetGroup = field(default_factory=lambda: BalanceSheetGroup(
-        group_type=BalanceSheetGroupType.PATRIMONIO_LIQUIDO,
-        name="Patrimônio Líquido"
-    ))
+    patrimonio_liquido: BalanceSheetGroup = field(
+        default_factory=lambda: BalanceSheetGroup(
+            group_type=BalanceSheetGroupType.PATRIMONIO_LIQUIDO, name="Patrimônio Líquido"
+        )
+    )
 
     # Totais
     total_ativo: Decimal = Decimal("0")
@@ -236,12 +235,8 @@ class BalanceSheetReport:
         self.patrimonio_liquido.calculate_total()
 
         # Totais gerais
-        self.total_ativo = (
-            self.ativo_circulante.total + self.ativo_nao_circulante.total
-        )
-        self.total_passivo = (
-            self.passivo_circulante.total + self.passivo_nao_circulante.total
-        )
+        self.total_ativo = self.ativo_circulante.total + self.ativo_nao_circulante.total
+        self.total_passivo = self.passivo_circulante.total + self.passivo_nao_circulante.total
         self.total_patrimonio = self.patrimonio_liquido.total
         self.total_passivo_patrimonio = self.total_passivo + self.total_patrimonio
 
@@ -251,12 +246,8 @@ class BalanceSheetReport:
 
         # Análise vertical
         if self.total_ativo > Decimal("0"):
-            self.ativo_circulante.percentage = (
-                self.ativo_circulante.total / self.total_ativo
-            ) * Decimal("100")
-            self.ativo_nao_circulante.percentage = (
-                self.ativo_nao_circulante.total / self.total_ativo
-            ) * Decimal("100")
+            self.ativo_circulante.percentage = (self.ativo_circulante.total / self.total_ativo) * Decimal("100")
+            self.ativo_nao_circulante.percentage = (self.ativo_nao_circulante.total / self.total_ativo) * Decimal("100")
 
         if self.total_passivo_patrimonio > Decimal("0"):
             self.passivo_circulante.percentage = (
@@ -288,7 +279,7 @@ class BalanceSheetService:
         end_date: date,
         balance_type: TrialBalanceType = TrialBalanceType.VERIFICATION,
         include_zero_balance: bool = False,
-        cost_center_id: Optional[UUID] = None,
+        cost_center_id: UUID | None = None,
     ) -> TrialBalanceReport:
         """Gera balancete de verificação.
 
@@ -356,10 +347,7 @@ class BalanceSheetService:
         )
 
         # Busca contas patrimoniais
-        accounts = await self._get_accounts(
-            condominio_id,
-            TrialBalanceType.ANALYTICAL
-        )
+        accounts = await self._get_accounts(condominio_id, TrialBalanceType.ANALYTICAL)
 
         # Data inicial (início do exercício)
         start_of_year = date(reference_date.year, 1, 1)
@@ -384,11 +372,7 @@ class BalanceSheetService:
 
         # Comparação com período anterior
         if include_comparison:
-            await self._add_previous_period_comparison(
-                report,
-                condominio_id,
-                reference_date
-            )
+            await self._add_previous_period_comparison(report, condominio_id, reference_date)
 
         return report
 
@@ -424,10 +408,7 @@ class BalanceSheetService:
             return {"error": "Conta não encontrada"}
 
         # Saldo anterior
-        previous_balance = await self._get_account_balance_at_date(
-            account_id,
-            start_date - timedelta(days=1)
-        )
+        previous_balance = await self._get_account_balance_at_date(account_id, start_date - timedelta(days=1))
 
         # Lançamentos do período
         entries_query = (
@@ -464,14 +445,16 @@ class BalanceSheetService:
             else:
                 running_balance += entry.credit_amount - entry.debit_amount
 
-            statement_entries.append({
-                "date": entry.entry_date,
-                "entry_number": entry.entry_number,
-                "description": entry.line_description or entry.description,
-                "debit": entry.debit_amount,
-                "credit": entry.credit_amount,
-                "balance": running_balance,
-            })
+            statement_entries.append(
+                {
+                    "date": entry.entry_date,
+                    "entry_number": entry.entry_number,
+                    "description": entry.line_description or entry.description,
+                    "debit": entry.debit_amount,
+                    "credit": entry.credit_amount,
+                    "balance": running_balance,
+                }
+            )
 
         return {
             "account_id": str(account_id),
@@ -502,16 +485,8 @@ class BalanceSheetService:
             Dict com análise comparativa.
         """
         # Balanços dos dois períodos
-        current_balance = await self.generate_balance_sheet(
-            condominio_id,
-            current_end_date,
-            include_comparison=False
-        )
-        previous_balance = await self.generate_balance_sheet(
-            condominio_id,
-            previous_end_date,
-            include_comparison=False
-        )
+        current_balance = await self.generate_balance_sheet(condominio_id, current_end_date, include_comparison=False)
+        previous_balance = await self.generate_balance_sheet(condominio_id, previous_end_date, include_comparison=False)
 
         # Análise comparativa
         comparison = {
@@ -521,29 +496,22 @@ class BalanceSheetService:
                 "current": current_balance.total_ativo,
                 "previous": previous_balance.total_ativo,
                 "variation": current_balance.total_ativo - previous_balance.total_ativo,
-                "variation_pct": self._calc_variation_pct(
-                    current_balance.total_ativo,
-                    previous_balance.total_ativo
-                ),
+                "variation_pct": self._calc_variation_pct(current_balance.total_ativo, previous_balance.total_ativo),
             },
             "passivo": {
                 "current": current_balance.total_passivo,
                 "previous": previous_balance.total_passivo,
                 "variation": current_balance.total_passivo - previous_balance.total_passivo,
                 "variation_pct": self._calc_variation_pct(
-                    current_balance.total_passivo,
-                    previous_balance.total_passivo
+                    current_balance.total_passivo, previous_balance.total_passivo
                 ),
             },
             "patrimonio": {
                 "current": current_balance.total_patrimonio,
                 "previous": previous_balance.total_patrimonio,
-                "variation": (
-                    current_balance.total_patrimonio - previous_balance.total_patrimonio
-                ),
+                "variation": (current_balance.total_patrimonio - previous_balance.total_patrimonio),
                 "variation_pct": self._calc_variation_pct(
-                    current_balance.total_patrimonio,
-                    previous_balance.total_patrimonio
+                    current_balance.total_patrimonio, previous_balance.total_patrimonio
                 ),
             },
             "is_balanced": current_balance.is_balanced and previous_balance.is_balanced,
@@ -574,22 +542,26 @@ class BalanceSheetService:
 
         # Verifica se está balanceado
         if not trial_balance.is_balanced:
-            issues.append({
-                "type": "UNBALANCED",
-                "message": f"Balancete não balanceado. Diferença: {trial_balance.difference}",
-                "severity": "ERROR",
-            })
+            issues.append(
+                {
+                    "type": "UNBALANCED",
+                    "message": f"Balancete não balanceado. Diferença: {trial_balance.difference}",
+                    "severity": "ERROR",
+                }
+            )
 
         # Verifica contas sem movimento há muito tempo
         for item in trial_balance.items:
             if item.is_analytical and item.period_debit == 0 and item.period_credit == 0:
                 if item.current_balance != Decimal("0"):
-                    issues.append({
-                        "type": "NO_MOVEMENT",
-                        "message": f"Conta {item.account_code} sem movimento no período",
-                        "severity": "WARNING",
-                        "account_id": str(item.account_id),
-                    })
+                    issues.append(
+                        {
+                            "type": "NO_MOVEMENT",
+                            "message": f"Conta {item.account_code} sem movimento no período",
+                            "severity": "WARNING",
+                            "account_id": str(item.account_id),
+                        }
+                    )
 
         return {
             "reference_date": reference_date.isoformat(),
@@ -619,13 +591,9 @@ class BalanceSheetService:
         )
 
         if balance_type == TrialBalanceType.ANALYTICAL:
-            query = query.where(
-                AccountingAccount.classification == AccountClassification.ANALYTICAL
-            )
+            query = query.where(AccountingAccount.classification == AccountClassification.ANALYTICAL)
         elif balance_type == TrialBalanceType.SYNTHETIC:
-            query = query.where(
-                AccountingAccount.classification == AccountClassification.SYNTHETIC
-            )
+            query = query.where(AccountingAccount.classification == AccountClassification.SYNTHETIC)
 
         query = query.order_by(AccountingAccount.code)
 
@@ -637,7 +605,7 @@ class BalanceSheetService:
         account: AccountingAccount,
         start_date: date,
         end_date: date,
-        cost_center_id: Optional[UUID] = None,
+        cost_center_id: UUID | None = None,
     ) -> AccountBalance:
         """Calcula saldo de uma conta no período."""
         balance = AccountBalance(
@@ -675,7 +643,7 @@ class BalanceSheetService:
         self,
         account_id: UUID,
         until_date: date,
-        cost_center_id: Optional[UUID] = None,
+        cost_center_id: UUID | None = None,
     ) -> tuple[Decimal, Decimal]:
         """Obtém movimentos até uma data."""
         query = (
@@ -706,7 +674,7 @@ class BalanceSheetService:
         account_id: UUID,
         start_date: date,
         end_date: date,
-        cost_center_id: Optional[UUID] = None,
+        cost_center_id: UUID | None = None,
     ) -> tuple[Decimal, Decimal]:
         """Obtém movimentos de um período."""
         query = (
@@ -740,9 +708,7 @@ class BalanceSheetService:
     ) -> Decimal:
         """Obtém saldo de uma conta em uma data."""
         # Busca a conta para saber a natureza
-        account_query = select(AccountingAccount).where(
-            AccountingAccount.id == account_id
-        )
+        account_query = select(AccountingAccount).where(AccountingAccount.id == account_id)
         result = await self.session.execute(account_query)
         account = result.scalar_one_or_none()
 
@@ -801,9 +767,7 @@ class BalanceSheetService:
 
         # Variações
         report.variation_ativo = report.total_ativo - report.previous_total_ativo
-        report.variation_passivo_patrimonio = (
-            report.total_passivo_patrimonio - report.previous_total_passivo_patrimonio
-        )
+        report.variation_passivo_patrimonio = report.total_passivo_patrimonio - report.previous_total_passivo_patrimonio
 
     def _calc_variation_pct(
         self,

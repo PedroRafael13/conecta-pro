@@ -1,0 +1,16 @@
+# Conecta PRO - ERP Privado
+# Bloquear indexação de todas as áreas autenticadas
+
+User-agent: *
+Disallow: /modulos/
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /area-cliente/
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /offline
+
+Allow: /login
+Allow: /
+
+# Sem sitemap — aplicação privada

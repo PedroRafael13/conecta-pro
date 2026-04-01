@@ -93,7 +93,6 @@ export function usePosts(options: UsePostsOptions = {}): UsePostsReturn {
       setPosts([]);
       errorCountRef.current += 1;
       lastErrorTimeRef.current = now;
-      console.error(`[usePosts] Erro ao carregar postos (tentativa ${errorCountRef.current}):`, errorMsg);
     } finally {
       setIsLoading(false);
     }

@@ -8,10 +8,12 @@ Tabela criada:
 - scale_templates (templates reutilizáveis de escalas)
 """
 
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
+
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 # revision identifiers
 revision = "sprint59_scale_templates"
@@ -32,26 +34,20 @@ def upgrade() -> None:
             primary_key=True,
             default=lambda: str(uuid.uuid4()),
         ),
-
         # Tenant (multi-tenancy)
         sa.Column("tenant_id", sa.String(100), nullable=False, index=True),
-
         # Informações do template
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-
         # Dados do template (estrutura da escala em JSON)
         sa.Column("template_data", JSONB(), nullable=False),
-
         # Controle de uso
         sa.Column("times_used", sa.Integer(), default=0, nullable=False),
         sa.Column("last_used", sa.DateTime(), nullable=True),
-
         # Auditoria
         sa.Column("created_by", UUID(as_uuid=False), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
-
         # Soft delete
         sa.Column("is_active", sa.Boolean(), default=True, nullable=False),
     )

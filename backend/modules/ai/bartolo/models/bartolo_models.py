@@ -8,10 +8,8 @@ para que o aprendizado sobreviva a reinicializacoes.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import (
-    Column, String, Text, Integer, Float, Boolean, DateTime, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Float, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models.base import Base
 
@@ -23,6 +21,7 @@ class BartoloInteraction(Base):
     Armazena mensagem, resposta, intent detectado, agente usado,
     feedback do usuario e metricas de processamento.
     """
+
     __tablename__ = "bartolo_interactions"
 
     # Primary key
@@ -88,10 +87,7 @@ class BartoloInteraction(Base):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<BartoloInteraction(id={self.id}, user_id={self.user_id}, "
-            f"intent={self.intent_detected})>"
-        )
+        return f"<BartoloInteraction(id={self.id}, user_id={self.user_id}, intent={self.intent_detected})>"
 
 
 class BartoloLearning(Base):
@@ -101,6 +97,7 @@ class BartoloLearning(Base):
     Armazena padroes identificados a partir de interacoes,
     como saudacoes frequentes, queries comuns, etc.
     """
+
     __tablename__ = "bartolo_learnings"
 
     # Primary key
@@ -154,6 +151,5 @@ class BartoloLearning(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<BartoloLearning(id={self.id}, type={self.pattern_type}, "
-            f"key={self.pattern_key}, freq={self.frequency})>"
+            f"<BartoloLearning(id={self.id}, type={self.pattern_type}, key={self.pattern_key}, freq={self.frequency})>"
         )

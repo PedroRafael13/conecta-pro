@@ -1,8 +1,7 @@
 'use client';
 
 import { Calendar, Users, Settings, AlertCircle } from 'lucide-react';
-import { useMemo, useState, useEffect } from 'react';
-;
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,14 +66,21 @@ export function ScaleGenerateModal({
     enabled: isOpen,
   });
 
-  // Verificar rascunho ao abrir modal
-  useEffect(() => {
-    if (isOpen && autoSave.hasDraft) {
+  // Verificar rascunho ao abrir modal - usando useCallback para evitar recriação
+  const checkDraft = useCallback(() => {
+    if (autoSave.hasDraft) {
       setShowRestoreAlert(true);
     } else {
       setShowRestoreAlert(false);
     }
-  }, [isOpen, autoSave.hasDraft]);
+  }, [autoSave.hasDraft]);
+
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      checkDraft();
+    }
+  }, [isOpen, checkDraft]);
 
   // Funcoes para restaurar e descartar rascunho
   const handleRestoreDraft = () => {
@@ -384,7 +390,7 @@ export function ScaleGenerateModal({
             <p className="font-medium">Geracao Automatica</p>
             <p className="text-xs opacity-80 mt-1">
               A escala sera gerada automaticamente com base no tipo selecionado e nas configuracoes definidas.
-              Os funcionarios alocados ao posto serao automaticamente incluidos na escala.
+              Os funcionários alocados ao posto serão automaticamente incluídos na escala.
             </p>
           </div>
         </div>

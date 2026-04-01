@@ -3,29 +3,29 @@ Testes para a API do módulo de Integrações
 Sprint 32: API Gateway / Integrações
 """
 
-import pytest
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from datetime import datetime
 
+import pytest
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
 from modules.integrations.models import (
     APIEndpoint,
     APIKey,
-    WebhookConfig,
-    IntegrationLog,
-    SyncQueue,
-    HTTPMethod,
+    APIKeyStatus,
+    APIKeyType,
     EndpointCategory,
     EndpointStatus,
-    APIKeyType,
-    APIKeyStatus,
-    WebhookStatus,
-    SyncStatus,
-    SyncEntityType,
     ExternalSystem,
+    HTTPMethod,
+    IntegrationLog,
+    SyncEntityType,
+    SyncQueue,
+    SyncStatus,
+    WebhookConfig,
+    WebhookStatus,
 )
 
 
@@ -49,22 +49,16 @@ class TestAPIEndpointAPI:
             avg_response_time_ms=50,
             ativo=True,
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
     @pytest.mark.asyncio
     async def test_create_endpoint_success(self, mock_endpoint):
         """Testa criação de endpoint com sucesso."""
-        endpoint_data = {
-            "name": "Get Users",
-            "path": "/users",
-            "method": "GET",
-            "category": "clients"
-        }
+        endpoint_data = {"name": "Get Users", "path": "/users", "method": "GET", "category": "clients"}
 
         with patch(
-            'modules.integrations.services.IntegrationService.create_endpoint',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.create_endpoint", new_callable=AsyncMock
         ) as mock_create:
             mock_create.return_value = mock_endpoint
 
@@ -78,8 +72,7 @@ class TestAPIEndpointAPI:
     async def test_list_endpoints(self, mock_endpoint):
         """Testa listagem de endpoints."""
         with patch(
-            'modules.integrations.services.IntegrationService.list_endpoints',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.list_endpoints", new_callable=AsyncMock
         ) as mock_list:
             mock_list.return_value = ([mock_endpoint], 1, 1)
 
@@ -95,8 +88,7 @@ class TestAPIEndpointAPI:
         mock_endpoint.name = "Updated Name"
 
         with patch(
-            'modules.integrations.services.IntegrationService.update_endpoint',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.update_endpoint", new_callable=AsyncMock
         ) as mock_update:
             mock_update.return_value = mock_endpoint
 
@@ -111,8 +103,7 @@ class TestAPIEndpointAPI:
         mock_endpoint.deprecated_at = datetime.utcnow()
 
         with patch(
-            'modules.integrations.services.IntegrationService.deprecate_endpoint',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.deprecate_endpoint", new_callable=AsyncMock
         ) as mock_deprecate:
             mock_deprecate.return_value = mock_endpoint
 
@@ -143,7 +134,7 @@ class TestAPIKeyAPI:
             expires_at=datetime(2027, 12, 31),
             ativo=True,
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
     @pytest.mark.asyncio
@@ -152,8 +143,7 @@ class TestAPIKeyAPI:
         raw_key = "abc12345" + "x" * 52 + "6789"
 
         with patch(
-            'modules.integrations.services.IntegrationService.create_api_key',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.create_api_key", new_callable=AsyncMock
         ) as mock_create:
             mock_create.return_value = (mock_api_key, raw_key)
 
@@ -166,8 +156,7 @@ class TestAPIKeyAPI:
     async def test_verify_api_key_valid(self, mock_api_key):
         """Testa verificação de chave válida."""
         with patch(
-            'modules.integrations.services.IntegrationService.verify_api_key',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.verify_api_key", new_callable=AsyncMock
         ) as mock_verify:
             mock_verify.return_value = (True, mock_api_key, "OK")
 
@@ -180,8 +169,7 @@ class TestAPIKeyAPI:
     async def test_verify_api_key_invalid(self):
         """Testa verificação de chave inválida."""
         with patch(
-            'modules.integrations.services.IntegrationService.verify_api_key',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.verify_api_key", new_callable=AsyncMock
         ) as mock_verify:
             mock_verify.return_value = (False, None, "Chave de API inválida")
 
@@ -198,8 +186,7 @@ class TestAPIKeyAPI:
         mock_api_key.revoked_at = datetime.utcnow()
 
         with patch(
-            'modules.integrations.services.IntegrationService.revoke_api_key',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.revoke_api_key", new_callable=AsyncMock
         ) as mock_revoke:
             mock_revoke.return_value = mock_api_key
 
@@ -227,23 +214,20 @@ class TestWebhookAPI:
             consecutive_failures=0,
             ativo=True,
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
     @pytest.mark.asyncio
     async def test_create_webhook(self, mock_webhook):
         """Testa criação de webhook."""
         with patch(
-            'modules.integrations.services.WebhookService.create_webhook',
-            new_callable=AsyncMock
+            "modules.integrations.services.WebhookService.create_webhook", new_callable=AsyncMock
         ) as mock_create:
             mock_create.return_value = mock_webhook
 
-            result = await mock_create({
-                "name": "Order Webhook",
-                "url": "https://example.com/webhook",
-                "events": ["service_order.created"]
-            })
+            result = await mock_create(
+                {"name": "Order Webhook", "url": "https://example.com/webhook", "events": ["service_order.created"]}
+            )
 
             assert result.name == "Order Webhook"
             assert result.secret_key is not None
@@ -251,20 +235,10 @@ class TestWebhookAPI:
     @pytest.mark.asyncio
     async def test_test_webhook_success(self):
         """Testa teste de webhook com sucesso."""
-        with patch(
-            'modules.integrations.services.WebhookService.test_webhook',
-            new_callable=AsyncMock
-        ) as mock_test:
-            mock_test.return_value = MagicMock(
-                success=True,
-                status_code=200,
-                response_time_ms=150
-            )
+        with patch("modules.integrations.services.WebhookService.test_webhook", new_callable=AsyncMock) as mock_test:
+            mock_test.return_value = MagicMock(success=True, status_code=200, response_time_ms=150)
 
-            result = await mock_test(uuid4(), {
-                "event": "test.event",
-                "payload": {"test": True}
-            })
+            result = await mock_test(uuid4(), {"event": "test.event", "payload": {"test": True}})
 
             assert result.success is True
             assert result.status_code == 200
@@ -273,21 +247,11 @@ class TestWebhookAPI:
     async def test_trigger_event(self, mock_webhook):
         """Testa disparo de evento."""
         with patch(
-            'modules.integrations.services.WebhookService.trigger_event',
-            new_callable=AsyncMock
+            "modules.integrations.services.WebhookService.trigger_event", new_callable=AsyncMock
         ) as mock_trigger:
-            mock_trigger.return_value = [
-                {
-                    "webhook_id": str(mock_webhook.id),
-                    "success": True,
-                    "status_code": 200
-                }
-            ]
+            mock_trigger.return_value = [{"webhook_id": str(mock_webhook.id), "success": True, "status_code": 200}]
 
-            results = await mock_trigger(
-                event="service_order.created",
-                payload={"order_id": "123"}
-            )
+            results = await mock_trigger(event="service_order.created", payload={"order_id": "123"})
 
             assert len(results) == 1
             assert results[0]["success"] is True
@@ -310,23 +274,18 @@ class TestSyncQueueAPI:
             max_retries=3,
             ativo=True,
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
     @pytest.mark.asyncio
     async def test_queue_sync(self, mock_sync_item):
         """Testa adição à fila de sync."""
-        with patch(
-            'modules.integrations.services.IntegrationService.queue_sync',
-            new_callable=AsyncMock
-        ) as mock_queue:
+        with patch("modules.integrations.services.IntegrationService.queue_sync", new_callable=AsyncMock) as mock_queue:
             mock_queue.return_value = mock_sync_item
 
-            result = await mock_queue({
-                "entity_type": "client",
-                "external_system": "omie",
-                "payload": {"name": "Test Client"}
-            })
+            result = await mock_queue(
+                {"entity_type": "client", "external_system": "omie", "payload": {"name": "Test Client"}}
+            )
 
             assert result.entity_type == SyncEntityType.CLIENT
             assert result.status == SyncStatus.PENDING
@@ -337,15 +296,13 @@ class TestSyncQueueAPI:
         items = [mock_sync_item, mock_sync_item]
 
         with patch(
-            'modules.integrations.services.IntegrationService.queue_sync_batch',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.queue_sync_batch", new_callable=AsyncMock
         ) as mock_batch:
             mock_batch.return_value = items
 
-            result = await mock_batch([
-                {"entity_type": "client", "payload": {}},
-                {"entity_type": "client", "payload": {}}
-            ])
+            result = await mock_batch(
+                [{"entity_type": "client", "payload": {}}, {"entity_type": "client", "payload": {}}]
+            )
 
             assert len(result) == 2
 
@@ -353,17 +310,11 @@ class TestSyncQueueAPI:
     async def test_get_sync_stats(self):
         """Testa obtenção de estatísticas."""
         with patch(
-            'modules.integrations.services.IntegrationService.get_sync_stats',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.get_sync_stats", new_callable=AsyncMock
         ) as mock_stats:
             mock_stats.return_value = {
                 "total": 100,
-                "by_status": {
-                    "pending": 10,
-                    "processing": 5,
-                    "completed": 80,
-                    "failed": 5
-                }
+                "by_status": {"pending": 10, "processing": 5, "completed": 80, "failed": 5},
             }
 
             result = await mock_stats()
@@ -377,8 +328,7 @@ class TestSyncQueueAPI:
         mock_sync_item.status = SyncStatus.CANCELLED
 
         with patch(
-            'modules.integrations.services.IntegrationService.cancel_sync_item',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.cancel_sync_item", new_callable=AsyncMock
         ) as mock_cancel:
             mock_cancel.return_value = mock_sync_item
 
@@ -393,8 +343,7 @@ class TestSyncQueueAPI:
         mock_sync_item.retry_count = 0
 
         with patch(
-            'modules.integrations.services.IntegrationService.retry_sync_item',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.retry_sync_item", new_callable=AsyncMock
         ) as mock_retry:
             mock_retry.return_value = mock_sync_item
 
@@ -411,15 +360,10 @@ class TestDashboardAPI:
     async def test_get_dashboard(self):
         """Testa obtenção de dashboard."""
         with patch(
-            'modules.integrations.services.IntegrationService.get_dashboard',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.get_dashboard", new_callable=AsyncMock
         ) as mock_dashboard:
             mock_dashboard.return_value = MagicMock(
-                total_endpoints=50,
-                active_endpoints=45,
-                total_api_keys=20,
-                active_webhooks=10,
-                overall_health="healthy"
+                total_endpoints=50, active_endpoints=45, total_api_keys=20, active_webhooks=10, overall_health="healthy"
             )
 
             result = await mock_dashboard()
@@ -431,14 +375,9 @@ class TestDashboardAPI:
     async def test_health_check(self):
         """Testa health check."""
         with patch(
-            'modules.integrations.services.IntegrationService.get_health_check',
-            new_callable=AsyncMock
+            "modules.integrations.services.IntegrationService.get_health_check", new_callable=AsyncMock
         ) as mock_health:
-            mock_health.return_value = MagicMock(
-                api_gateway="healthy",
-                webhooks="healthy",
-                sync_queue="healthy"
-            )
+            mock_health.return_value = MagicMock(api_gateway="healthy", webhooks="healthy", sync_queue="healthy")
 
             result = await mock_health()
 

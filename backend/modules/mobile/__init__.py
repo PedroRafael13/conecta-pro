@@ -1,15 +1,8 @@
 """
 Mobile API Module - APIs otimizadas para dispositivos móveis.
 
-Sprint 02 - API Mobile Nativa
-
-Este módulo implementa:
-- Mobile Gateway com otimizações de rede e compressão
-- Push Notifications (FCM/APNs)
-- Offline Sync Manager com resolução de conflitos
-- Batch Operations para combinação de requisições
-- Mobile Security com rate limiting e validação
-- Mobile Metrics para analytics
+DEPRECATED: Use 'modules.gestao' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 
 Endpoints:
 - GET  /mobile/health         - Health check
@@ -23,15 +16,25 @@ Endpoints:
 - POST /mobile/notifications/{id}/read  - Marcar como lida
 """
 
-from modules.mobile.gateway import MobileGateway, CompressionMiddleware, DeviceDetector
-from modules.mobile.services import (
-    PushNotificationService,
-    OfflineSyncManager,
-    MobileSecurity,
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.mobile' is deprecated. "
+    "Use 'modules.gestao' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from modules.mobile.controllers import router as mobile_router  # noqa: E402
+from modules.mobile.gateway import CompressionMiddleware, DeviceDetector, MobileGateway  # noqa: E402
+from modules.mobile.services import (  # noqa: E402
     MobileMetrics,
+    MobileSecurity,
+    OfflineSyncManager,
+    PushNotificationService,
     get_metrics,
 )
-from modules.mobile.controllers import router as mobile_router
 
 __all__ = [
     # Gateway

@@ -2,7 +2,8 @@
 Controller (endpoints) para TimeBank (Banco de Horas).
 """
 
-from datetime import date
+from datetime import date, timedelta
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -159,8 +160,6 @@ async def get_expiring_entries(
     entries, _ = await repo.list(filters=filters, page=1, page_size=500)
 
     # Filtrar manualmente por enquanto
-    from datetime import timedelta  # pylint: disable=import-outside-toplevel
-
     limit_date = date.today() + timedelta(days=days)
     expiring = [e for e in entries if e.expiration_date and e.expiration_date <= limit_date]
 
@@ -208,7 +207,7 @@ async def get_stats(
     Cache: 4 minutos
     """
     repo = TimeBankRepository(db)
-    return await repo.get_stats()
+    return await repo.get_global_stats()
 
 
 @router.get(
@@ -218,7 +217,7 @@ async def get_stats(
 async def get_expiration_alerts(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """
     Obtém alertas de expiração de horas.
     """
@@ -229,7 +228,7 @@ async def get_expiration_alerts(
     entries, _ = await repo.list(filters=filters, page=1, page_size=1000)
 
     # Converter para dicionário e verificar alertas
-    entries_dict = [
+    entries_dict: list[dict[str, Any]] = [
         {
             "id": str(e.id),
             "employee_id": str(e.employee_id),
@@ -243,6 +242,128 @@ async def get_expiration_alerts(
     alerts = time_bank_service.check_expiration_alerts(entries_dict)
 
     return alerts
+
+
+@router.get(
+    "/monthly-summary/{employee_id}",
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
+)
+async def get_monthly_summary(
+    employee_id: str,
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(..., ge=2020, le=2100),
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Obtém resumo mensal do banco de horas de um funcionário.
+    """
+    repo = TimeBankRepository(db)
+
+    # Buscar entradas do funcionário
+    filters = TimeBankFilter(employee_id=employee_id)
+    entries, _ = await repo.list(filters=filters, page=1, page_size=1000)
+
+    # Converter para formato do serviço
+    entries_dict: list[dict[str, Any]] = [
+        {
+            "id": str(e.id),
+            "entry_type": e.entry_type,
+            "hours": e.hours,
+            "reference_date": str(e.reference_date),
+        }
+        for e in entries
+    ]
+
+    summary = time_bank_service.calculate_monthly_summary(entries_dict, month, year)
+
+    return summary
+
+
+@router.get(
+    "/recommendations/{employee_id}",
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
+)
+async def get_recommendations(
+    employee_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> list[str]:
+    """
+    Obtém recomendações de gestão do banco de horas.
+    """
+    repo = TimeBankRepository(db)
+
+    # Obter resumo
+    summary = await repo.get_summary(employee_id)
+    if not summary:
+        return []
+
+    # Calcular média mensal (simplificado)
+    monthly_avg = abs(summary.total_credit) / 6 if summary.total_credit else 0
+
+    recommendations = time_bank_service.get_recommendations(
+        summary.current_balance,
+        summary.expiring_soon,
+        monthly_avg,
+    )
+
+    return recommendations
+
+
+@router.post(
+    "/compensate/{employee_id}",
+    response_model=TimeBankResponse,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_CREATE)],
+)
+async def compensate_hours(
+    employee_id: str,
+    data: TimeBankCompensate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> TimeBankResponse:
+    """
+    Registra compensação de horas.
+
+    Valida se o funcionário tem saldo suficiente.
+    """
+    repo = TimeBankRepository(db)
+
+    # Obter saldo atual
+    summary = await repo.get_summary(employee_id)
+    if not summary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Funcionário não encontrado",
+        )
+
+    # Validar compensação
+    validation: dict[str, Any] = time_bank_service.validate_compensation_request(
+        summary.current_balance,
+        data.hours,
+        data.compensation_date,
+    )
+
+    if not validation["is_valid"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(validation["errors"][0] if validation["errors"] else "Validação falhou"),
+        )
+
+    # Criar entrada de compensação
+    entry = await repo.compensate(
+        employee_id,
+        data.hours,
+        data.compensation_date,
+        data.shift_id,
+        data.notes,
+    )
+
+    logger.info(
+        f"Compensação registrada por {current_user.email}: "
+        f"funcionário {employee_id}, {data.hours}h em {data.compensation_date}"
+    )
+    return TimeBankResponse.model_validate(entry)
 
 
 @router.get(
@@ -369,128 +490,6 @@ async def reject_entry(
         user_email=current_user.email,
     )
     return TimeBankResponse.model_validate(entry)
-
-
-@router.post(
-    "/compensate/{employee_id}",
-    response_model=TimeBankResponse,
-    dependencies=[require_operacional_permission(Permission.TIMEBANK_CREATE)],
-)
-async def compensate_hours(
-    employee_id: str,
-    data: TimeBankCompensate,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> TimeBankResponse:
-    """
-    Registra compensação de horas.
-
-    Valida se o funcionário tem saldo suficiente.
-    """
-    repo = TimeBankRepository(db)
-
-    # Obter saldo atual
-    summary = await repo.get_summary(employee_id)
-    if not summary:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Funcionário não encontrado",
-        )
-
-    # Validar compensação
-    validation = time_bank_service.validate_compensation_request(
-        summary.current_balance,
-        data.hours,
-        data.compensation_date,
-    )
-
-    if not validation["is_valid"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(validation["errors"][0] if validation["errors"] else "Validação falhou"),
-        )
-
-    # Criar entrada de compensação
-    entry = await repo.compensate(
-        employee_id,
-        data.hours,
-        data.compensation_date,
-        data.shift_id,
-        data.notes,
-    )
-
-    logger.info(
-        f"Compensação registrada por {current_user.email}: "
-        f"funcionário {employee_id}, {data.hours}h em {data.compensation_date}"
-    )
-    return TimeBankResponse.model_validate(entry)
-
-
-@router.get(
-    "/monthly-summary/{employee_id}",
-    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
-)
-async def get_monthly_summary(
-    employee_id: str,
-    month: int = Query(..., ge=1, le=12),
-    year: int = Query(..., ge=2020, le=2100),
-    current_user: CurrentActiveUser = None,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """
-    Obtém resumo mensal do banco de horas de um funcionário.
-    """
-    repo = TimeBankRepository(db)
-
-    # Buscar entradas do funcionário
-    filters = TimeBankFilter(employee_id=employee_id)
-    entries, _ = await repo.list(filters=filters, page=1, page_size=1000)
-
-    # Converter para formato do serviço
-    entries_dict = [
-        {
-            "id": str(e.id),
-            "entry_type": e.entry_type,
-            "hours": e.hours,
-            "reference_date": str(e.reference_date),
-        }
-        for e in entries
-    ]
-
-    summary = time_bank_service.calculate_monthly_summary(entries_dict, month, year)
-
-    return summary
-
-
-@router.get(
-    "/recommendations/{employee_id}",
-    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
-)
-async def get_recommendations(
-    employee_id: str,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> list[str]:
-    """
-    Obtém recomendações de gestão do banco de horas.
-    """
-    repo = TimeBankRepository(db)
-
-    # Obter resumo
-    summary = await repo.get_summary(employee_id)
-    if not summary:
-        return []
-
-    # Calcular média mensal (simplificado)
-    monthly_avg = abs(summary.total_credit) / 6 if summary.total_credit else 0
-
-    recommendations = time_bank_service.get_recommendations(
-        summary.current_balance,
-        summary.expiring_soon,
-        monthly_avg,
-    )
-
-    return recommendations
 
 
 @router.delete(

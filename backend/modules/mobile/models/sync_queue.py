@@ -1,8 +1,7 @@
 """Model de fila de sincronização offline."""
 
-from datetime import datetime, UTC
-from enum import Enum
-from typing import Optional
+from datetime import UTC, datetime
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
@@ -12,7 +11,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class SyncOperationType(str, Enum):
+class SyncOperationType(StrEnum):
     """Tipos de operação de sincronização."""
 
     CREATE = "create"
@@ -21,7 +20,7 @@ class SyncOperationType(str, Enum):
     UPSERT = "upsert"
 
 
-class SyncStatus(str, Enum):
+class SyncStatus(StrEnum):
     """Status da operação na fila."""
 
     PENDING = "pending"
@@ -32,7 +31,7 @@ class SyncStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class ConflictResolution(str, Enum):
+class ConflictResolution(StrEnum):
     """Estratégias de resolução de conflitos."""
 
     LAST_WRITE_WINS = "last_write_wins"

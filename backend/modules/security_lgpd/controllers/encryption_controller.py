@@ -6,6 +6,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.security_lgpd.schemas.common import StandardResponse
 from modules.security_lgpd.schemas.encryption import (
     DecryptDataRequest,
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/encryption", tags=["LGPD - Criptografia"])
     summary="Criptografa dados sensiveis",
     description="Criptografa dados usando AES-256-GCM ou outros algoritmos suportados.",
 )
-async def encrypt_data(request: EncryptDataRequest) -> StandardResponse:
+async def encrypt_data(current_user: CurrentActiveUser, request: EncryptDataRequest) -> StandardResponse:
     """
     Criptografa dados sensiveis usando algoritmo especificado.
 
@@ -75,7 +76,7 @@ async def encrypt_data(request: EncryptDataRequest) -> StandardResponse:
     summary="Descriptografa dados",
     description="Descriptografa dados previamente criptografados.",
 )
-async def decrypt_data(request: DecryptDataRequest) -> StandardResponse:
+async def decrypt_data(current_user: CurrentActiveUser, request: DecryptDataRequest) -> StandardResponse:
     """
     Descriptografa dados previamente criptografados.
 
@@ -116,7 +117,7 @@ async def decrypt_data(request: DecryptDataRequest) -> StandardResponse:
     summary="Lista algoritmos de criptografia",
     description="Retorna algoritmos de criptografia disponiveis.",
 )
-async def list_algorithms() -> StandardResponse:
+async def list_algorithms(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Lista algoritmos de criptografia disponiveis.
 

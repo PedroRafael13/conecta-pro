@@ -5,45 +5,41 @@ Endpoints REST para base de conhecimento.
 """
 
 import logging
-from typing import List, Optional
-from uuid import UUID, uuid4
 import re
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_db
-from core.auth.dependencies import get_current_user, CurrentActiveUser
-
+from modules.ai.knowledge_base.repositories import KnowledgeBaseRepository
 from modules.ai.knowledge_base.schemas import (
-    KnowledgeBaseCreate,
-    KnowledgeBaseUpdate,
-    KnowledgeBaseResponse,
-    KnowledgeBaseListResponse,
-    KBCategoryCreate,
-    KBCategoryUpdate,
-    KBCategoryResponse,
     ArticleCreate,
-    ArticleUpdate,
-    ArticleResponse,
     ArticleListResponse,
+    ArticleResponse,
+    ArticleUpdate,
     FAQCreate,
-    FAQUpdate,
-    FAQResponse,
     FAQListResponse,
-    QAQuestionRequest,
+    FAQResponse,
+    FAQUpdate,
+    KBCategoryCreate,
+    KBCategoryResponse,
+    KnowledgeBaseCreate,
+    KnowledgeBaseDashboard,
+    KnowledgeBaseListResponse,
+    KnowledgeBaseResponse,
+    KnowledgeBaseUpdate,
     QAAnswerResponse,
     QAFeedbackRequest,
-    QASessionResponse,
+    QAQuestionRequest,
     SemanticSearchRequest,
     SemanticSearchResponse,
-    KnowledgeBaseDashboard,
 )
-from modules.ai.knowledge_base.repositories import KnowledgeBaseRepository
 from modules.ai.knowledge_base.services import (
-    SemanticSearchEngine,
-    QAEngine,
     ArticleGenerator,
+    QAEngine,
+    SemanticSearchEngine,
 )
 
 logger = logging.getLogger(__name__)
@@ -93,11 +89,11 @@ async def create_knowledge_base(
     return kb
 
 
-@kb_router.get("/", response_model=List[KnowledgeBaseListResponse])
+@kb_router.get("/", response_model=list[KnowledgeBaseListResponse])
 async def list_knowledge_bases(
-    condominio_id: Optional[UUID] = None,
-    status: Optional[str] = None,
-    kb_type: Optional[str] = None,
+    condominio_id: UUID | None = None,
+    status: str | None = None,
+    kb_type: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -210,10 +206,10 @@ async def create_category(
     return category
 
 
-@kb_router.get("/{kb_id}/categories", response_model=List[KBCategoryResponse])
+@kb_router.get("/{kb_id}/categories", response_model=list[KBCategoryResponse])
 async def list_categories(
     kb_id: UUID,
-    parent_id: Optional[UUID] = None,
+    parent_id: UUID | None = None,
     db: Session = Depends(get_db),
     current_user: CurrentActiveUser = ...,  # Required
 ):
@@ -254,14 +250,14 @@ async def create_article(
     return article
 
 
-@kb_router.get("/{kb_id}/articles", response_model=List[ArticleListResponse])
+@kb_router.get("/{kb_id}/articles", response_model=list[ArticleListResponse])
 async def list_articles(
     kb_id: UUID,
-    category_id: Optional[UUID] = None,
-    status: Optional[str] = None,
-    article_type: Optional[str] = None,
-    search: Optional[str] = None,
-    tags: Optional[List[str]] = Query(None),
+    category_id: UUID | None = None,
+    status: str | None = None,
+    article_type: str | None = None,
+    search: str | None = None,
+    tags: list[str] | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -337,9 +333,9 @@ async def update_article(
 async def add_article_feedback(
     kb_id: UUID,
     article_id: UUID,
-    is_helpful: Optional[bool] = None,
-    rating: Optional[int] = Query(None, ge=1, le=5),
-    comment: Optional[str] = None,
+    is_helpful: bool | None = None,
+    rating: int | None = Query(None, ge=1, le=5),
+    comment: str | None = None,
     db: Session = Depends(get_db),
     current_user: CurrentActiveUser = ...,  # Required
 ):
@@ -386,13 +382,13 @@ async def create_faq(
     return faq
 
 
-@kb_router.get("/{kb_id}/faqs", response_model=List[FAQListResponse])
+@kb_router.get("/{kb_id}/faqs", response_model=list[FAQListResponse])
 async def list_faqs(
     kb_id: UUID,
-    category_id: Optional[UUID] = None,
-    status: Optional[str] = None,
-    search: Optional[str] = None,
-    tags: Optional[List[str]] = Query(None),
+    category_id: UUID | None = None,
+    status: str | None = None,
+    search: str | None = None,
+    tags: list[str] | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -465,9 +461,9 @@ async def update_faq(
 async def add_faq_feedback(
     kb_id: UUID,
     faq_id: UUID,
-    is_helpful: Optional[bool] = None,
-    rating: Optional[int] = Query(None, ge=1, le=5),
-    comment: Optional[str] = None,
+    is_helpful: bool | None = None,
+    rating: int | None = Query(None, ge=1, le=5),
+    comment: str | None = None,
     db: Session = Depends(get_db),
     current_user: CurrentActiveUser = ...,  # Required
 ):
@@ -509,15 +505,17 @@ async def search_knowledge_base(
             limit=100,
         )
         for a in article_list:
-            articles.append({
-                "id": str(a.id),
-                "title": a.title,
-                "content": a.content,
-                "excerpt": a.excerpt,
-                "article_type": a.article_type,
-                "keywords": a.keywords,
-                "embedding": a.embedding,
-            })
+            articles.append(
+                {
+                    "id": str(a.id),
+                    "title": a.title,
+                    "content": a.content,
+                    "excerpt": a.excerpt,
+                    "article_type": a.article_type,
+                    "keywords": a.keywords,
+                    "embedding": a.embedding,
+                }
+            )
 
     # Busca FAQs
     faqs = []
@@ -528,15 +526,17 @@ async def search_knowledge_base(
             limit=100,
         )
         for f in faq_list:
-            faqs.append({
-                "id": str(f.id),
-                "title": f.question,
-                "content": f"{f.question} {f.answer}",
-                "question": f.question,
-                "answer_short": f.answer_short,
-                "keywords": f.keywords,
-                "embedding": f.question_embedding,
-            })
+            faqs.append(
+                {
+                    "id": str(f.id),
+                    "title": f.question,
+                    "content": f"{f.question} {f.answer}",
+                    "question": f.question,
+                    "answer_short": f.answer_short,
+                    "keywords": f.keywords,
+                    "embedding": f.question_embedding,
+                }
+            )
 
     # Combina documentos
     all_docs = []
@@ -563,24 +563,28 @@ async def search_knowledge_base(
     for r in results:
         doc = r["document"]
         if doc.get("type") == "article":
-            article_results.append({
-                "id": doc["id"],
-                "title": doc["title"],
-                "excerpt": doc.get("excerpt"),
-                "article_type": doc.get("article_type"),
-                "relevance_score": r["final_score"],
-                "matched_keywords": r.get("matched_keywords", []),
-                "highlights": r.get("highlights", []),
-            })
+            article_results.append(
+                {
+                    "id": doc["id"],
+                    "title": doc["title"],
+                    "excerpt": doc.get("excerpt"),
+                    "article_type": doc.get("article_type"),
+                    "relevance_score": r["final_score"],
+                    "matched_keywords": r.get("matched_keywords", []),
+                    "highlights": r.get("highlights", []),
+                }
+            )
         else:
-            faq_results.append({
-                "id": doc["id"],
-                "question": doc.get("question"),
-                "answer_short": doc.get("answer_short"),
-                "relevance_score": r["final_score"],
-                "confidence": r["final_score"],
-                "matched_variation": None,
-            })
+            faq_results.append(
+                {
+                    "id": doc["id"],
+                    "question": doc.get("question"),
+                    "answer_short": doc.get("answer_short"),
+                    "relevance_score": r["final_score"],
+                    "confidence": r["final_score"],
+                    "matched_variation": None,
+                }
+            )
 
     return {
         "query": data.query,
@@ -628,16 +632,18 @@ async def ask_question(
         limit=50,
     )
     for a in article_list:
-        articles.append({
-            "id": str(a.id),
-            "title": a.title,
-            "content": a.content,
-            "excerpt": a.excerpt,
-            "summary": a.summary,
-            "article_type": a.article_type,
-            "keywords": a.keywords,
-            "embedding": a.embedding,
-        })
+        articles.append(
+            {
+                "id": str(a.id),
+                "title": a.title,
+                "content": a.content,
+                "excerpt": a.excerpt,
+                "summary": a.summary,
+                "article_type": a.article_type,
+                "keywords": a.keywords,
+                "embedding": a.embedding,
+            }
+        )
 
     faqs = []
     faq_list, _ = repo.list_faqs(
@@ -646,14 +652,16 @@ async def ask_question(
         limit=50,
     )
     for f in faq_list:
-        faqs.append({
-            "id": str(f.id),
-            "question": f.question,
-            "answer": f.answer,
-            "answer_short": f.answer_short,
-            "keywords": f.keywords,
-            "question_embedding": f.question_embedding,
-        })
+        faqs.append(
+            {
+                "id": str(f.id),
+                "question": f.question,
+                "answer": f.answer,
+                "answer_short": f.answer_short,
+                "keywords": f.keywords,
+                "question_embedding": f.question_embedding,
+            }
+        )
 
     # Processa pergunta
     result = qa_engine.process_question(
@@ -766,7 +774,7 @@ async def generate_faqs_from_content(
     kb_id: UUID,
     content: str,
     max_faqs: int = 5,
-    topic: Optional[str] = None,
+    topic: str | None = None,
     db: Session = Depends(get_db),
     current_user: CurrentActiveUser = ...,  # Required
 ):
@@ -808,8 +816,8 @@ async def extract_keywords(
 
 @kb_router.get("/dashboard/stats", response_model=KnowledgeBaseDashboard)
 async def get_dashboard_stats(
-    knowledge_base_id: Optional[UUID] = None,
-    condominio_id: Optional[UUID] = None,
+    knowledge_base_id: UUID | None = None,
+    condominio_id: UUID | None = None,
     db: Session = Depends(get_db),
     current_user: CurrentActiveUser = ...,  # Required
 ):

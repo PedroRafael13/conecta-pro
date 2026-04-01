@@ -3,8 +3,8 @@
 Sprint 33 - Workflow Engine (Unificado).
 """
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +22,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class StepType(str, enum.Enum):
+class StepType(StrEnum):
     """Tipo de step."""
 
     # Tipos genericos
@@ -65,7 +65,7 @@ class StepType(str, enum.Enum):
     END_ERROR = "END_ERROR"  # Fim com erro
 
 
-class StepStatus(str, enum.Enum):
+class StepStatus(StrEnum):
     """Status do step em execucao."""
 
     PENDING = "PENDING"  # Pendente
@@ -78,7 +78,7 @@ class StepStatus(str, enum.Enum):
     RETRYING = "RETRYING"  # Retentando
 
 
-class OnErrorAction(str, enum.Enum):
+class OnErrorAction(StrEnum):
     """Acao em caso de erro."""
 
     FAIL = "FAIL"  # Falhar workflow
@@ -387,16 +387,12 @@ class WorkflowStep(Base):
         if self.connections and "detailed" in self.connections:
             initial = len(self.connections["detailed"])
             self.connections["detailed"] = [
-                c for c in self.connections["detailed"]
-                if c.get("to_step_id") != to_step_id
+                c for c in self.connections["detailed"] if c.get("to_step_id") != to_step_id
             ]
             removed = len(self.connections["detailed"]) < initial
 
         if self.next_step_ids:
-            self.next_step_ids = [
-                s for s in self.next_step_ids
-                if str(s) != to_step_id
-            ]
+            self.next_step_ids = [s for s in self.next_step_ids if str(s) != to_step_id]
 
         return removed
 

@@ -6,16 +6,16 @@ Testes para:
 - ValidationService
 """
 
-import pytest
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Any
 
-from modules.ai.ocr.services.ocr_service import OCRService
-from modules.ai.ocr.services.extraction_service import ExtractionService
-from modules.ai.ocr.services.validation_service import ValidationService
-from modules.ai.ocr.models.ocr_result import OCRProvider
+import pytest
+
 from modules.ai.ocr.models.extracted_field import FieldType
-
+from modules.ai.ocr.models.ocr_result import OCRProvider
+from modules.ai.ocr.services.extraction_service import ExtractionService
+from modules.ai.ocr.services.ocr_service import OCRService
+from modules.ai.ocr.services.validation_service import ValidationService
 
 # ============================================================
 # Fixtures
@@ -53,7 +53,7 @@ def validation_service():
 
 
 @pytest.fixture
-def sample_ocr_result() -> Dict[str, Any]:
+def sample_ocr_result() -> dict[str, Any]:
     """Resultado OCR de exemplo."""
     return {
         "raw_text": """NOTA FISCAL ELETRONICA
@@ -86,7 +86,7 @@ CEP: 01310-100""",
 
 
 @pytest.fixture
-def sample_extracted_fields() -> List[Dict[str, Any]]:
+def sample_extracted_fields() -> list[dict[str, Any]]:
     """Campos extraidos de exemplo."""
     return [
         {
@@ -334,9 +334,7 @@ class TestExtractionService:
 
     def test_extract_from_key_value_pairs(self, extraction_service, sample_ocr_result):
         """Deve extrair de pares chave-valor."""
-        fields = extraction_service._extract_from_key_value(
-            sample_ocr_result["key_value_pairs"]
-        )
+        fields = extraction_service._extract_from_key_value(sample_ocr_result["key_value_pairs"])
 
         assert len(fields) > 0
         for field in fields:
@@ -396,12 +394,14 @@ class TestValidationService:
     def test_validate_cpf_valid(self, validation_service):
         """Deve validar CPF valido."""
         # CPF valido: 529.982.247-25
-        fields = [{
-            "field_id": "1",
-            "field_name": "cpf",
-            "field_type": "cpf",
-            "normalized_value": "52998224725",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "cpf",
+                "field_type": "cpf",
+                "normalized_value": "52998224725",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -410,12 +410,14 @@ class TestValidationService:
 
     def test_validate_cpf_invalid(self, validation_service):
         """Deve rejeitar CPF invalido."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "cpf",
-            "field_type": "cpf",
-            "normalized_value": "12345678900",  # CPF invalido
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "cpf",
+                "field_type": "cpf",
+                "normalized_value": "12345678900",  # CPF invalido
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -424,12 +426,14 @@ class TestValidationService:
 
     def test_validate_cpf_repeated_digits(self, validation_service):
         """Deve rejeitar CPF com digitos repetidos."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "cpf",
-            "field_type": "cpf",
-            "normalized_value": "11111111111",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "cpf",
+                "field_type": "cpf",
+                "normalized_value": "11111111111",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -438,12 +442,14 @@ class TestValidationService:
     def test_validate_cnpj_valid(self, validation_service):
         """Deve validar CNPJ valido."""
         # CNPJ valido: 11.222.333/0001-81
-        fields = [{
-            "field_id": "1",
-            "field_name": "cnpj",
-            "field_type": "cnpj",
-            "normalized_value": "11222333000181",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "cnpj",
+                "field_type": "cnpj",
+                "normalized_value": "11222333000181",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -451,12 +457,14 @@ class TestValidationService:
 
     def test_validate_cnpj_invalid(self, validation_service):
         """Deve rejeitar CNPJ invalido."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "cnpj",
-            "field_type": "cnpj",
-            "normalized_value": "12345678000190",  # CNPJ invalido
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "cnpj",
+                "field_type": "cnpj",
+                "normalized_value": "12345678000190",  # CNPJ invalido
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -464,12 +472,14 @@ class TestValidationService:
 
     def test_validate_email_valid(self, validation_service):
         """Deve validar email valido."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "email",
-            "field_type": "email",
-            "normalized_value": "teste@email.com",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "email",
+                "field_type": "email",
+                "normalized_value": "teste@email.com",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -477,12 +487,14 @@ class TestValidationService:
 
     def test_validate_email_invalid(self, validation_service):
         """Deve rejeitar email invalido."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "email",
-            "field_type": "email",
-            "normalized_value": "email_invalido",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "email",
+                "field_type": "email",
+                "normalized_value": "email_invalido",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -490,12 +502,14 @@ class TestValidationService:
 
     def test_validate_phone(self, validation_service):
         """Deve validar telefone."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "phone",
-            "field_type": "phone",
-            "normalized_value": "11999991234",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "phone",
+                "field_type": "phone",
+                "normalized_value": "11999991234",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -503,12 +517,14 @@ class TestValidationService:
 
     def test_validate_phone_invalid(self, validation_service):
         """Deve rejeitar telefone muito curto."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "phone",
-            "field_type": "phone",
-            "normalized_value": "123",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "phone",
+                "field_type": "phone",
+                "normalized_value": "123",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -516,12 +532,14 @@ class TestValidationService:
 
     def test_validate_cep(self, validation_service):
         """Deve validar CEP."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "cep",
-            "field_type": "cep",
-            "normalized_value": "01310100",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "cep",
+                "field_type": "cep",
+                "normalized_value": "01310100",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -529,12 +547,14 @@ class TestValidationService:
 
     def test_validate_date_valid(self, validation_service):
         """Deve validar data valida."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "date",
-            "field_type": "date",
-            "normalized_value": "2024-01-15",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "date",
+                "field_type": "date",
+                "normalized_value": "2024-01-15",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -542,12 +562,14 @@ class TestValidationService:
 
     def test_validate_date_invalid_format(self, validation_service):
         """Deve rejeitar data com formato invalido."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "date",
-            "field_type": "date",
-            "normalized_value": "invalido",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "date",
+                "field_type": "date",
+                "normalized_value": "invalido",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -555,12 +577,14 @@ class TestValidationService:
 
     def test_validate_currency(self, validation_service):
         """Deve validar valor monetario."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "valor",
-            "field_type": "currency",
-            "normalized_value": "1500.00",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "valor",
+                "field_type": "currency",
+                "normalized_value": "1500.00",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 
@@ -568,12 +592,14 @@ class TestValidationService:
 
     def test_validate_currency_negative_warning(self, validation_service):
         """Deve gerar warning para valor negativo."""
-        fields = [{
-            "field_id": "1",
-            "field_name": "valor",
-            "field_type": "currency",
-            "normalized_value": "-100.00",
-        }]
+        fields = [
+            {
+                "field_id": "1",
+                "field_name": "valor",
+                "field_type": "currency",
+                "normalized_value": "-100.00",
+            }
+        ]
 
         result = validation_service.validate_fields(fields)
 

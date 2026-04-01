@@ -176,7 +176,6 @@ export function TenderFormModal({
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Erro ao salvar edital:', error);
     }
   };
 
@@ -214,7 +213,7 @@ export function TenderFormModal({
                 id="number"
                 {...register('number')}
                 placeholder="Ex: 001/2024"
-              />
+               aria-label="Ex: 001/2024" />
               {errors.number && (
                 <p className="text-xs text-red-500 mt-1">{errors.number.message}</p>
               )}
@@ -227,7 +226,7 @@ export function TenderFormModal({
                 id="entity"
                 {...register('entity')}
                 placeholder="Ex: Prefeitura Municipal"
-              />
+               aria-label="Ex:  Prefeitura  Municipal" />
               {errors.entity && (
                 <p className="text-xs text-red-500 mt-1">{errors.entity.message}</p>
               )}
@@ -244,7 +243,7 @@ export function TenderFormModal({
               {...register('title')}
               placeholder="Descreva o objeto da licitação..."
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] min-h-[80px]"
-            />
+             aria-label="Descreva O Objeto Da Licitação..." />
             {errors.title && (
               <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>
             )}
@@ -299,7 +298,7 @@ export function TenderFormModal({
                 step="0.01"
                 {...register('estimated_value', { valueAsNumber: true })}
                 placeholder="0,00"
-              />
+               aria-label="0,00" />
             </div>
             <div>
               <Label htmlFor="segment">Segmento</Label>
@@ -326,7 +325,7 @@ export function TenderFormModal({
                 id="publication_date"
                 type="date"
                 {...register('publication_date')}
-              />
+               aria-label="Date" />
             </div>
             <div>
               <Label htmlFor="opening_date">
@@ -336,7 +335,7 @@ export function TenderFormModal({
                 id="opening_date"
                 type="datetime-local"
                 {...register('opening_date')}
-              />
+               aria-label="Datetime Local" />
               {errors.opening_date && (
                 <p className="text-xs text-red-500 mt-1">
                   {errors.opening_date.message}
@@ -352,7 +351,7 @@ export function TenderFormModal({
                 id="deadline_date"
                 type="date"
                 {...register('deadline_date')}
-              />
+               aria-label="Date" />
             </div>
             <div>
               <Label htmlFor="closing_date">Data de Encerramento</Label>
@@ -360,7 +359,7 @@ export function TenderFormModal({
                 id="closing_date"
                 type="datetime-local"
                 {...register('closing_date')}
-              />
+               aria-label="Datetime Local" />
             </div>
           </div>
 
@@ -383,7 +382,7 @@ export function TenderFormModal({
             </div>
             <div>
               <Label htmlFor="city">Cidade</Label>
-              <Input id="city" {...register('city')} placeholder="Ex: São Paulo" />
+              <Input id="city" {...register('city')} placeholder="Ex: São Paulo"  aria-label="Ex:  São  Paulo" />
             </div>
           </div>
 
@@ -395,7 +394,7 @@ export function TenderFormModal({
               type="url"
               {...register('link')}
               placeholder="https://..."
-            />
+             aria-label="Https://..." />
             {errors.link && (
               <p className="text-xs text-red-500 mt-1">{errors.link.message}</p>
             )}
@@ -409,7 +408,7 @@ export function TenderFormModal({
               {...register('observations')}
               placeholder="Observações adicionais..."
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] min-h-[80px]"
-            />
+             aria-label="Observações Adicionais..." />
           </div>
 
           <DialogFooter>

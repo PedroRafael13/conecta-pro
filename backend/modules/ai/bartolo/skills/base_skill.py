@@ -2,10 +2,9 @@
 Base class para Skills do Bartolo
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
 import logging
-import re
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from modules.ai.bartolo.services.data_connector import DataConnector
@@ -18,7 +17,7 @@ class BaseSkill(ABC):
 
     name: str = ""
     description: str = ""
-    commands: List[str] = []
+    commands: list[str] = []
 
     def __init__(self, data_connector: Optional["DataConnector"] = None):
         """
@@ -36,7 +35,7 @@ class BaseSkill(ABC):
         return self.data_connector is not None
 
     @abstractmethod
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa a skill com os argumentos fornecidos"""
         pass
 
@@ -45,7 +44,7 @@ class BaseSkill(ABC):
         """Retorna texto de ajuda da skill"""
         pass
 
-    def parse_command(self, text: str) -> tuple[str, List[str]]:
+    def parse_command(self, text: str) -> tuple[str, list[str]]:
         """Parse do comando e argumentos"""
         parts = text.strip().split()
         if not parts:

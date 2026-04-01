@@ -7,7 +7,7 @@ Logica de negocio para gestao de EPIs.
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import List, Optional, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -16,16 +16,13 @@ from modules.health_occupational.models.epi import (
     EPI,
     EPIDelivery,
     EPIInventory,
-    EPICategory,
-    EPIStatus,
-    DeliveryReason,
 )
 from modules.health_occupational.schemas.epi import (
     EPICreateRequest,
-    EPIUpdateRequest,
     EPIDeliveryRequest,
     EPIDeliveryUpdateRequest,
     EPIInventoryUpdateRequest,
+    EPIUpdateRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,14 +31,14 @@ logger = logging.getLogger(__name__)
 class EPIService:
     """Service para gerenciamento de EPIs (NR-6)."""
 
-    def __init__(self, db: Optional[Session] = None):
+    def __init__(self, db: Session | None = None):
         self.db = db
 
     # ==========================================================================
     # EPI Catalog Operations
     # ==========================================================================
 
-    def create_epi(self, request: EPICreateRequest, created_by: Optional[UUID] = None) -> EPI:
+    def create_epi(self, request: EPICreateRequest, created_by: UUID | None = None) -> EPI:
         """
         Cadastra novo EPI.
 
@@ -93,15 +90,15 @@ class EPIService:
         logger.info("EPI cadastrado: nome=%s, CA=%s", request.nome, request.ca_number)
         return epi
 
-    def get_epi(self, epi_id: UUID) -> Optional[EPI]:
+    def get_epi(self, epi_id: UUID) -> EPI | None:
         """Busca EPI por ID."""
         return self.db.query(EPI).filter(EPI.id == epi_id).first()
 
-    def get_epi_by_ca(self, ca_number: str) -> Optional[EPI]:
+    def get_epi_by_ca(self, ca_number: str) -> EPI | None:
         """Busca EPI pelo numero do CA."""
         return self.db.query(EPI).filter(EPI.ca_number == ca_number).first()
 
-    def update_epi(self, epi_id: UUID, request: EPIUpdateRequest) -> Optional[EPI]:
+    def update_epi(self, epi_id: UUID, request: EPIUpdateRequest) -> EPI | None:
         """Atualiza EPI."""
         epi = self.get_epi(epi_id)
         if not epi:
@@ -117,31 +114,58 @@ class EPIService:
 
     def list_epis(
         self,
-        categoria: Optional[str] = None,
-        ativo: Optional[bool] = True,
+        categoria: str | None = None,
+        ativo: bool | None = True,
         page: int = 1,
         size: int = 20,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Lista EPIs cadastrados."""
-        query = self.db.query(EPI)
+        if not self.db:
+            return {"items": [], "total": 0, "page": page, "size": size}
 
-        if categoria:
-            query = query.filter(EPI.categoria == categoria)
+        from sqlalchemy import text
 
-        if ativo is not None:
-            query = query.filter(EPI.ativo == ativo)
+        try:
+            where = "WHERE 1=1"
+            params: dict = {"limit": size, "offset": (page - 1) * size}
 
-        total = query.count()
-        epis = query.order_by(EPI.nome).offset((page - 1) * size).limit(size).all()
+            if categoria:
+                where += " AND categoria = :categoria"
+                params["categoria"] = categoria
+            if ativo is not None:
+                where += " AND ativo = :ativo"
+                params["ativo"] = ativo
 
-        return {
-            "items": epis,
-            "total": total,
-            "page": page,
-            "size": size,
-        }
+            total = self.db.execute(text(f"SELECT count(*) FROM health_epi_catalog {where}"), params).scalar() or 0
 
-    def deactivate_epi(self, epi_id: UUID) -> Optional[EPI]:
+            rows = self.db.execute(
+                text(
+                    f"SELECT id, nome, descricao, ca_numero, categoria, fabricante, validade_meses, ativo, created_at FROM health_epi_catalog {where} ORDER BY nome LIMIT :limit OFFSET :offset"
+                ),
+                params,
+            ).fetchall()
+
+            items = [
+                {
+                    "id": str(r.id),
+                    "nome": r.nome,
+                    "descricao": r.descricao,
+                    "ca_numero": r.ca_numero,
+                    "categoria": r.categoria,
+                    "fabricante": r.fabricante,
+                    "validade_meses": r.validade_meses,
+                    "ativo": r.ativo,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ]
+
+            return {"items": items, "total": total, "page": page, "size": size}
+        except Exception as e:
+            logger.error("Erro ao listar EPIs: %s", e)
+            return {"items": [], "total": 0, "page": page, "size": size}
+
+    def deactivate_epi(self, epi_id: UUID) -> EPI | None:
         """Desativa EPI."""
         epi = self.get_epi(epi_id)
         if not epi:
@@ -159,7 +183,7 @@ class EPIService:
     def register_delivery(
         self,
         request: EPIDeliveryRequest,
-        entregue_por: Optional[UUID] = None,
+        entregue_por: UUID | None = None,
     ) -> EPIDelivery:
         """
         Registra entrega de EPI para funcionario.
@@ -182,8 +206,7 @@ class EPIService:
         inventory = self.get_inventory(request.epi_id)
         if inventory and inventory.quantidade_atual < request.quantidade:
             raise ValueError(
-                f"Estoque insuficiente: disponivel={inventory.quantidade_atual}, "
-                f"solicitado={request.quantidade}"
+                f"Estoque insuficiente: disponivel={inventory.quantidade_atual}, solicitado={request.quantidade}"
             )
 
         # Calcular validade
@@ -212,6 +235,31 @@ class EPIService:
         self.db.commit()
         self.db.refresh(delivery)
 
+        try:
+            import asyncio
+
+            from infrastructure.message_bus.events import Event, EventType, publish_event
+
+            event = Event(
+                type=EventType.EPI_ENTREGUE,
+                source="health_occupational.epi_service",
+                data={
+                    "entrega_id": str(delivery.id),
+                    "epi_id": str(delivery.epi_id),
+                    "funcionario_id": str(delivery.funcionario_id),
+                    "quantidade": delivery.quantidade,
+                    "motivo": delivery.motivo,
+                    "data_validade": delivery.data_validade.isoformat() if delivery.data_validade else None,
+                },
+            )
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(publish_event(event))
+            else:
+                asyncio.run(publish_event(event))
+        except Exception as _pub_err:
+            logger.warning("Falha ao publicar evento EPI_ENTREGUE: %s", _pub_err)
+
         logger.info(
             "Entrega de EPI registrada: funcionario=%s, epi=%s, qtd=%d",
             request.funcionario_id,
@@ -221,7 +269,7 @@ class EPIService:
 
         return delivery
 
-    def get_delivery(self, delivery_id: UUID) -> Optional[EPIDelivery]:
+    def get_delivery(self, delivery_id: UUID) -> EPIDelivery | None:
         """Busca entrega por ID."""
         return self.db.query(EPIDelivery).filter(EPIDelivery.id == delivery_id).first()
 
@@ -229,7 +277,7 @@ class EPIService:
         self,
         delivery_id: UUID,
         request: EPIDeliveryUpdateRequest,
-    ) -> Optional[EPIDelivery]:
+    ) -> EPIDelivery | None:
         """Atualiza registro de entrega."""
         delivery = self.get_delivery(delivery_id)
         if not delivery:
@@ -251,7 +299,7 @@ class EPIService:
         delivery_id: UUID,
         motivo: str,
         condicao: str,
-    ) -> Optional[EPIDelivery]:
+    ) -> EPIDelivery | None:
         """Registra devolucao de EPI."""
         delivery = self.get_delivery(delivery_id)
         if not delivery:
@@ -280,7 +328,7 @@ class EPIService:
 
         return delivery
 
-    def get_employee_record(self, funcionario_id: UUID) -> Dict[str, Any]:
+    def get_employee_record(self, funcionario_id: UUID) -> dict[str, Any]:
         """
         Retorna ficha de EPI do funcionario.
 
@@ -290,9 +338,12 @@ class EPIService:
         Returns:
             Dict com historico de EPIs.
         """
-        deliveries = self.db.query(EPIDelivery).filter(
-            EPIDelivery.funcionario_id == funcionario_id
-        ).order_by(EPIDelivery.data_entrega.desc()).all()
+        deliveries = (
+            self.db.query(EPIDelivery)
+            .filter(EPIDelivery.funcionario_id == funcionario_id)
+            .order_by(EPIDelivery.data_entrega.desc())
+            .all()
+        )
 
         active_epis = [d for d in deliveries if not d.devolvido and not d.esta_vencido]
         expired_epis = [d for d in deliveries if not d.devolvido and d.esta_vencido]
@@ -312,16 +363,12 @@ class EPIService:
         funcionario_id: UUID,
         page: int = 1,
         size: int = 20,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Lista entregas de um funcionario."""
-        query = self.db.query(EPIDelivery).filter(
-            EPIDelivery.funcionario_id == funcionario_id
-        )
+        query = self.db.query(EPIDelivery).filter(EPIDelivery.funcionario_id == funcionario_id)
 
         total = query.count()
-        deliveries = query.order_by(EPIDelivery.data_entrega.desc()).offset(
-            (page - 1) * size
-        ).limit(size).all()
+        deliveries = query.order_by(EPIDelivery.data_entrega.desc()).offset((page - 1) * size).limit(size).all()
 
         return {
             "items": deliveries,
@@ -334,7 +381,7 @@ class EPIService:
     # Inventory Operations
     # ==========================================================================
 
-    def get_inventory(self, epi_id: UUID) -> Optional[EPIInventory]:
+    def get_inventory(self, epi_id: UUID) -> EPIInventory | None:
         """Busca estoque de um EPI."""
         return self.db.query(EPIInventory).filter(EPIInventory.epi_id == epi_id).first()
 
@@ -342,7 +389,7 @@ class EPIService:
         self,
         epi_id: UUID,
         request: EPIInventoryUpdateRequest,
-    ) -> Optional[EPIInventory]:
+    ) -> EPIInventory | None:
         """Atualiza estoque de EPI."""
         inventory = self.get_inventory(epi_id)
         if not inventory:
@@ -360,8 +407,8 @@ class EPIService:
         self,
         epi_id: UUID,
         quantidade: int,
-        lote: Optional[str] = None,
-        validade_lote: Optional[date] = None,
+        lote: str | None = None,
+        validade_lote: date | None = None,
     ) -> EPIInventory:
         """Adiciona itens ao estoque."""
         inventory = self.get_inventory(epi_id)
@@ -384,9 +431,9 @@ class EPIService:
 
     def list_inventory(
         self,
-        categoria: Optional[str] = None,
+        categoria: str | None = None,
         low_stock_only: bool = False,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Lista estoque de EPIs.
 
@@ -397,40 +444,56 @@ class EPIService:
         Returns:
             Lista de itens de estoque.
         """
-        query = self.db.query(EPIInventory).join(EPI)
+        if not self.db:
+            return []
 
-        if categoria:
-            query = query.filter(EPI.categoria == categoria)
+        from sqlalchemy import text
 
-        if low_stock_only:
-            query = query.filter(
-                EPIInventory.quantidade_atual < EPIInventory.quantidade_minima
+        try:
+            sql = (
+                "SELECT i.id, i.epi_id, c.nome, c.categoria, c.ca_numero, "
+                "i.quantidade_disponivel, i.quantidade_minima, i.lote, "
+                "i.data_validade, i.localizacao "
+                "FROM health_epi_inventory i "
+                "JOIN health_epi_catalog c ON i.epi_id = c.id "
+                "WHERE 1=1"
             )
+            params: dict = {}
 
-        inventories = query.all()
+            if categoria:
+                sql += " AND c.categoria = :categoria"
+                params["categoria"] = categoria
 
-        result = []
-        for inv in inventories:
-            epi = self.get_epi(inv.epi_id)
-            result.append({
-                "epi_id": str(inv.epi_id),
-                "epi_nome": epi.nome if epi else None,
-                "categoria": epi.categoria if epi else None,
-                "ca_number": epi.ca_number if epi else None,
-                "quantidade_atual": inv.quantidade_atual,
-                "quantidade_minima": inv.quantidade_minima,
-                "estoque_baixo": inv.estoque_baixo,
-                "local_armazenamento": inv.local_armazenamento,
-                "lote_atual": inv.lote_atual,
-            })
+            if low_stock_only:
+                sql += " AND i.quantidade_disponivel < i.quantidade_minima"
 
-        return result
+            sql += " ORDER BY c.nome"
+            rows = self.db.execute(text(sql), params).fetchall()
+
+            return [
+                {
+                    "epi_id": str(row.epi_id),
+                    "epi_nome": row.nome,
+                    "categoria": row.categoria,
+                    "ca_numero": row.ca_numero,
+                    "quantidade_disponivel": row.quantidade_disponivel,
+                    "quantidade_minima": row.quantidade_minima,
+                    "estoque_baixo": (row.quantidade_disponivel or 0) < (row.quantidade_minima or 5),
+                    "lote": row.lote,
+                    "data_validade": row.data_validade.isoformat() if row.data_validade else None,
+                    "localizacao": row.localizacao,
+                }
+                for row in rows
+            ]
+        except Exception as e:
+            logger.error("Erro ao listar estoque EPI: %s", e)
+            return []
 
     # ==========================================================================
     # EPI Categories Info
     # ==========================================================================
 
-    def get_epi_categories(self) -> Dict[str, Any]:
+    def get_epi_categories(self) -> dict[str, Any]:
         """Retorna informacoes sobre categorias de EPI."""
         return {
             "categorias": [
@@ -441,7 +504,11 @@ class EPIService:
                 {"id": "respiratorio", "nome": "Protecao Respiratoria", "exemplos": ["respirador", "mascara_pff2"]},
                 {"id": "tronco", "nome": "Protecao do Tronco", "exemplos": ["avental", "colete"]},
                 {"id": "membros_superiores", "nome": "Protecao Membros Superiores", "exemplos": ["luvas", "mangotes"]},
-                {"id": "membros_inferiores", "nome": "Protecao Membros Inferiores", "exemplos": ["calcado_seguranca", "perneira"]},
+                {
+                    "id": "membros_inferiores",
+                    "nome": "Protecao Membros Inferiores",
+                    "exemplos": ["calcado_seguranca", "perneira"],
+                },
                 {"id": "corpo_inteiro", "nome": "Protecao Corpo Inteiro", "exemplos": ["macacao", "conjunto"]},
                 {"id": "quedas", "nome": "Protecao Contra Quedas", "exemplos": ["cinturao", "trava_quedas"]},
             ],
@@ -451,26 +518,57 @@ class EPIService:
     # Statistics
     # ==========================================================================
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Retorna estatisticas de EPI."""
-        total_epis = self.db.query(EPI).filter(EPI.ativo == True).count()
+        if not self.db:
+            return {
+                "total_epis_ativos": 0,
+                "entregas_ano": 0,
+                "itens_baixo_estoque": 0,
+                "assinaturas_pendentes": 0,
+            }
 
-        total_deliveries = self.db.query(EPIDelivery).filter(
-            EPIDelivery.data_entrega >= datetime(date.today().year, 1, 1)
-        ).count()
+        from sqlalchemy import text
 
-        low_stock = self.db.query(EPIInventory).filter(
-            EPIInventory.quantidade_atual < EPIInventory.quantidade_minima
-        ).count()
+        try:
+            total_epis = (
+                self.db.execute(text("SELECT count(*) FROM health_epi_catalog WHERE ativo = true")).scalar() or 0
+            )
 
-        pending_signatures = self.db.query(EPIDelivery).filter(
-            EPIDelivery.assinatura_funcionario == False,
-            EPIDelivery.devolvido == False,
-        ).count()
+            total_deliveries = (
+                self.db.execute(
+                    text(
+                        "SELECT count(*) FROM health_epi_deliveries WHERE extract(year from data_entrega) = extract(year from current_date)"
+                    )
+                ).scalar()
+                or 0
+            )
 
-        return {
-            "total_epis_ativos": total_epis,
-            "entregas_ano": total_deliveries,
-            "itens_baixo_estoque": low_stock,
-            "assinaturas_pendentes": pending_signatures,
-        }
+            low_stock = (
+                self.db.execute(
+                    text("SELECT count(*) FROM health_epi_inventory WHERE quantidade_disponivel < quantidade_minima")
+                ).scalar()
+                or 0
+            )
+
+            pending_signatures = (
+                self.db.execute(
+                    text("SELECT count(*) FROM health_epi_deliveries WHERE assinatura_url IS NULL")
+                ).scalar()
+                or 0
+            )
+
+            return {
+                "total_epis_ativos": total_epis,
+                "entregas_ano": total_deliveries,
+                "itens_baixo_estoque": low_stock,
+                "assinaturas_pendentes": pending_signatures,
+            }
+        except Exception as e:
+            logger.error("Erro ao consultar estatisticas EPI: %s", e)
+            return {
+                "total_epis_ativos": 0,
+                "entregas_ano": 0,
+                "itens_baixo_estoque": 0,
+                "assinaturas_pendentes": 0,
+            }

@@ -5,12 +5,12 @@ Define prompts especificos e capacidades para cada modulo do Conecta PRO.
 Cobre todos os 28+ modulos do sistema.
 """
 
-from typing import Optional
-from enum import Enum
+from enum import StrEnum
 
 
-class ModuleCategory(str, Enum):
+class ModuleCategory(StrEnum):
     """Categorias de modulos."""
+
     COMERCIAL = "comercial"
     OPERACOES = "operacoes"
     RH = "rh"
@@ -57,13 +57,18 @@ ACOES COMUNS:
 - Ver relatorio de comissoes
 """,
         "capabilities": [
-            "criar_lead", "qualificar_lead", "converter_lead",
-            "cadastrar_cliente", "criar_oportunidade", "criar_proposta",
-            "calcular_comissao", "gerar_contrato", "consultar_pipeline",
+            "criar_lead",
+            "qualificar_lead",
+            "converter_lead",
+            "cadastrar_cliente",
+            "criar_oportunidade",
+            "criar_proposta",
+            "calcular_comissao",
+            "gerar_contrato",
+            "consultar_pipeline",
         ],
         "wizards": ["proposta_comercial", "qualificacao_lead", "contrato_servico"],
     },
-
     "propostas": {
         "category": ModuleCategory.COMERCIAL,
         "name": "Propostas Comerciais",
@@ -100,12 +105,15 @@ PISOS SALARIAIS CCT 2026 (principais):
 Posso ajudar a montar uma proposta passo a passo!
 """,
         "capabilities": [
-            "criar_proposta", "calcular_custos", "aplicar_cct",
-            "calcular_bdi", "gerar_pdf", "enviar_proposta",
+            "criar_proposta",
+            "calcular_custos",
+            "aplicar_cct",
+            "calcular_bdi",
+            "gerar_pdf",
+            "enviar_proposta",
         ],
         "wizards": ["proposta_portaria", "proposta_limpeza", "proposta_manutencao"],
     },
-
     # ==========================================
     # OPERACOES (MODULO OPERACIONAL COMPLETO)
     # ==========================================
@@ -297,22 +305,39 @@ EXEMPLOS DE PERGUNTAS
 """,
         "capabilities": [
             # Consultas
-            "consultar_escala", "consultar_turno_atual", "verificar_presenca",
-            "listar_ocorrencias", "consultar_historico_disciplinar",
-            "consultar_banco_horas", "consultar_substituicoes",
-            "listar_postos", "listar_alocacoes",
+            "consultar_escala",
+            "consultar_turno_atual",
+            "verificar_presenca",
+            "listar_ocorrencias",
+            "consultar_historico_disciplinar",
+            "consultar_banco_horas",
+            "consultar_substituicoes",
+            "listar_postos",
+            "listar_alocacoes",
             # Relatorios
-            "gerar_relatorio_cobertura", "gerar_relatorio_ocorrencias",
-            "gerar_relatorio_horas_extras", "gerar_relatorio_cliente",
-            "gerar_relatorio_faltas", "gerar_relatorio_substituicoes",
+            "gerar_relatorio_cobertura",
+            "gerar_relatorio_ocorrencias",
+            "gerar_relatorio_horas_extras",
+            "gerar_relatorio_cliente",
+            "gerar_relatorio_faltas",
+            "gerar_relatorio_substituicoes",
             # Acoes
-            "criar_posto", "definir_escala", "alocar_funcionario",
-            "criar_ocorrencia", "escalar_ocorrencia", "resolver_ocorrencia",
-            "criar_medida_administrativa", "sugerir_substituto",
-            "aprovar_banco_horas", "registrar_check_in", "registrar_check_out",
+            "criar_posto",
+            "definir_escala",
+            "alocar_funcionario",
+            "criar_ocorrencia",
+            "escalar_ocorrencia",
+            "resolver_ocorrencia",
+            "criar_medida_administrativa",
+            "sugerir_substituto",
+            "aprovar_banco_horas",
+            "registrar_check_in",
+            "registrar_check_out",
             # Calculos
-            "calcular_horas_extras", "calcular_custo_substituicao",
-            "calcular_cobertura_periodo", "calcular_adicional_noturno",
+            "calcular_horas_extras",
+            "calcular_custo_substituicao",
+            "calcular_cobertura_periodo",
+            "calcular_adicional_noturno",
         ],
         "wizards": [
             "criar_posto_completo",
@@ -324,7 +349,6 @@ EXEMPLOS DE PERGUNTAS
         ],
         "integrations": ["hr", "dp", "folha_pagamento", "esocial", "ponto"],
     },
-
     "escalas": {
         "category": ModuleCategory.OPERACOES,
         "name": "Escalas de Trabalho",
@@ -351,12 +375,14 @@ REGRAS CLT:
 Posso ajudar a montar uma escala respeitando todas as regras trabalhistas!
 """,
         "capabilities": [
-            "criar_escala", "validar_escala", "calcular_horas",
-            "verificar_conflitos", "gerar_escala_mensal",
+            "criar_escala",
+            "validar_escala",
+            "calcular_horas",
+            "verificar_conflitos",
+            "gerar_escala_mensal",
         ],
         "wizards": ["montar_escala_12x36", "montar_escala_5x2"],
     },
-
     # ==========================================
     # RECURSOS HUMANOS
     # ==========================================
@@ -388,12 +414,15 @@ COMPLIANCE:
 Posso ajudar com calculos trabalhistas ou processos de RH!
 """,
         "capabilities": [
-            "cadastrar_funcionario", "calcular_ferias", "calcular_rescisao",
-            "calcular_13o", "gerar_esocial", "consultar_funcionario",
+            "cadastrar_funcionario",
+            "calcular_ferias",
+            "calcular_rescisao",
+            "calcular_13o",
+            "gerar_esocial",
+            "consultar_funcionario",
         ],
         "wizards": ["admissao_funcionario", "demissao_funcionario", "programar_ferias"],
     },
-
     "folha_pagamento": {
         "category": ModuleCategory.RH,
         "name": "Folha de Pagamento",
@@ -426,12 +455,15 @@ TABELA INSS 2026:
 Posso calcular qualquer componente da folha!
 """,
         "capabilities": [
-            "calcular_salario", "calcular_horas_extras", "calcular_inss",
-            "calcular_irrf", "gerar_holerite", "fechar_folha",
+            "calcular_salario",
+            "calcular_horas_extras",
+            "calcular_inss",
+            "calcular_irrf",
+            "gerar_holerite",
+            "fechar_folha",
         ],
         "wizards": ["calculo_folha_individual", "fechamento_folha_mensal"],
     },
-
     "ponto": {
         "category": ModuleCategory.RH,
         "name": "Ponto Eletronico",
@@ -458,12 +490,15 @@ RELATORIOS:
 - Banco de horas
 """,
         "capabilities": [
-            "registrar_ponto", "consultar_ponto", "justificar_falta",
-            "calcular_banco_horas", "gerar_espelho", "importar_rep",
+            "registrar_ponto",
+            "consultar_ponto",
+            "justificar_falta",
+            "calcular_banco_horas",
+            "gerar_espelho",
+            "importar_rep",
         ],
         "wizards": [],
     },
-
     "recrutamento": {
         "category": ModuleCategory.RH,
         "name": "Recrutamento e Selecao",
@@ -489,12 +524,14 @@ FLUXO DO PROCESSO:
 8. Contratacao
 """,
         "capabilities": [
-            "abrir_vaga", "cadastrar_candidato", "agendar_entrevista",
-            "avaliar_candidato", "aprovar_contratacao",
+            "abrir_vaga",
+            "cadastrar_candidato",
+            "agendar_entrevista",
+            "avaliar_candidato",
+            "aprovar_contratacao",
         ],
         "wizards": ["abertura_vaga", "processo_seletivo"],
     },
-
     # ==========================================
     # FINANCEIRO
     # ==========================================
@@ -524,12 +561,15 @@ RELATORIOS:
 - Balancete por centro de custo
 """,
         "capabilities": [
-            "criar_titulo", "baixar_titulo", "consultar_fluxo",
-            "conciliar_banco", "gerar_dre", "gerar_boleto",
+            "criar_titulo",
+            "baixar_titulo",
+            "consultar_fluxo",
+            "conciliar_banco",
+            "gerar_dre",
+            "gerar_boleto",
         ],
         "wizards": ["lancamento_despesa", "faturamento_cliente"],
     },
-
     "faturamento": {
         "category": ModuleCategory.FINANCEIRO,
         "name": "Faturamento",
@@ -558,12 +598,14 @@ FLUXO:
 6. Acompanhamento do pagamento
 """,
         "capabilities": [
-            "gerar_fatura", "emitir_nfse", "gerar_boleto",
-            "enviar_cobranca", "renegociar_divida",
+            "gerar_fatura",
+            "emitir_nfse",
+            "gerar_boleto",
+            "enviar_cobranca",
+            "renegociar_divida",
         ],
         "wizards": ["faturamento_contrato"],
     },
-
     "contabilidade": {
         "category": ModuleCategory.FINANCEIRO,
         "name": "Contabilidade",
@@ -591,12 +633,15 @@ CLASSIFICACAO DE CONTAS:
 - 5. Custos/Despesas
 """,
         "capabilities": [
-            "criar_lancamento", "consultar_razao", "gerar_balancete",
-            "gerar_dre", "gerar_balanco", "fechar_periodo",
+            "criar_lancamento",
+            "consultar_razao",
+            "gerar_balancete",
+            "gerar_dre",
+            "gerar_balanco",
+            "fechar_periodo",
         ],
         "wizards": [],
     },
-
     # ==========================================
     # LICITACOES
     # ==========================================
@@ -635,12 +680,15 @@ INTEGRACOES:
 Posso ajudar a analisar editais e montar propostas para licitacoes!
 """,
         "capabilities": [
-            "buscar_editais", "analisar_edital", "calcular_proposta",
-            "verificar_documentos", "renovar_certidoes", "monitorar_prazos",
+            "buscar_editais",
+            "analisar_edital",
+            "calcular_proposta",
+            "verificar_documentos",
+            "renovar_certidoes",
+            "monitorar_prazos",
         ],
         "wizards": ["proposta_licitacao", "analise_edital"],
     },
-
     "certidoes": {
         "category": ModuleCategory.LICITACOES,
         "name": "Certidoes",
@@ -667,12 +715,14 @@ INTEGRACOES:
 - TST (CNDT)
 """,
         "capabilities": [
-            "consultar_certidoes", "verificar_validade", "solicitar_renovacao",
-            "verificar_habilitacao", "alertar_vencimento",
+            "consultar_certidoes",
+            "verificar_validade",
+            "solicitar_renovacao",
+            "verificar_habilitacao",
+            "alertar_vencimento",
         ],
         "wizards": [],
     },
-
     # ==========================================
     # SEGURANCA E LGPD
     # ==========================================
@@ -705,12 +755,13 @@ BOAS PRATICAS:
 - Politica de retencao
 """,
         "capabilities": [
-            "consultar_consentimentos", "solicitar_anonimizacao",
-            "gerar_relatorio_lgpd", "auditar_acessos",
+            "consultar_consentimentos",
+            "solicitar_anonimizacao",
+            "gerar_relatorio_lgpd",
+            "auditar_acessos",
         ],
         "wizards": ["solicitacao_titular"],
     },
-
     # ==========================================
     # SAUDE OCUPACIONAL
     # ==========================================
@@ -752,12 +803,14 @@ EPIs POR FUNCAO:
 - Eletricista: Luvas isolantes, capacete
 """,
         "capabilities": [
-            "agendar_exame", "emitir_aso", "registrar_epi",
-            "mapear_riscos", "gerar_ficha_epi",
+            "agendar_exame",
+            "emitir_aso",
+            "registrar_epi",
+            "mapear_riscos",
+            "gerar_ficha_epi",
         ],
         "wizards": ["agendamento_exame", "entrega_epi"],
     },
-
     # ==========================================
     # INTEGRACAO
     # ==========================================
@@ -788,12 +841,14 @@ INTEGRACOES:
   - Conectividade Social
 """,
         "capabilities": [
-            "enviar_esocial", "consultar_esocial", "emitir_nfse",
-            "consultar_cpf", "consultar_cnpj",
+            "enviar_esocial",
+            "consultar_esocial",
+            "emitir_nfse",
+            "consultar_cpf",
+            "consultar_cnpj",
         ],
         "wizards": [],
     },
-
     # ==========================================
     # ADMINISTRATIVO
     # ==========================================
@@ -826,12 +881,14 @@ ACOES:
 - Consultar historico
 """,
         "capabilities": [
-            "cadastrar_cliente", "atualizar_cliente", "consultar_cliente",
-            "vincular_contrato", "historico_cliente",
+            "cadastrar_cliente",
+            "atualizar_cliente",
+            "consultar_cliente",
+            "vincular_contrato",
+            "historico_cliente",
         ],
         "wizards": ["cadastro_cliente_completo"],
     },
-
     "contratos": {
         "category": ModuleCategory.ADMINISTRATIVO,
         "name": "Gestao de Contratos",
@@ -862,12 +919,14 @@ GESTAO:
 - Encerramento
 """,
         "capabilities": [
-            "criar_contrato", "adicionar_aditivo", "calcular_reajuste",
-            "renovar_contrato", "encerrar_contrato",
+            "criar_contrato",
+            "adicionar_aditivo",
+            "calcular_reajuste",
+            "renovar_contrato",
+            "encerrar_contrato",
         ],
         "wizards": ["criar_contrato_servico"],
     },
-
     "inventario": {
         "category": ModuleCategory.ADMINISTRATIVO,
         "name": "Estoque e Inventario",
@@ -894,12 +953,14 @@ MOVIMENTACOES:
 - Transferencia entre almoxarifados
 """,
         "capabilities": [
-            "consultar_estoque", "registrar_entrada", "registrar_saida",
-            "transferir_material", "inventariar",
+            "consultar_estoque",
+            "registrar_entrada",
+            "registrar_saida",
+            "transferir_material",
+            "inventariar",
         ],
         "wizards": [],
     },
-
     "relatorios": {
         "category": ModuleCategory.ADMINISTRATIVO,
         "name": "Relatorios e BI",
@@ -925,12 +986,13 @@ EXPORTACAO:
 - CSV
 """,
         "capabilities": [
-            "gerar_relatorio", "consultar_dashboard", "exportar_dados",
+            "gerar_relatorio",
+            "consultar_dashboard",
+            "exportar_dados",
             "agendar_relatorio",
         ],
         "wizards": [],
     },
-
     # ==========================================
     # IA E AUTOMACAO
     # ==========================================
@@ -962,7 +1024,9 @@ ACOES:
 - Gerar documento
 """,
         "capabilities": [
-            "criar_automacao", "ativar_automacao", "consultar_execucoes",
+            "criar_automacao",
+            "ativar_automacao",
+            "consultar_execucoes",
             "pausar_automacao",
         ],
         "wizards": ["criar_automacao_email"],
@@ -1002,13 +1066,10 @@ def get_all_modules() -> list:
 
 def get_modules_by_category(category: ModuleCategory) -> list:
     """Retorna modulos de uma categoria."""
-    return [
-        module for module, config in MODULE_PROMPTS.items()
-        if config.get("category") == category
-    ]
+    return [module for module, config in MODULE_PROMPTS.items() if config.get("category") == category]
 
 
-def find_module_by_capability(capability: str) -> Optional[str]:
+def find_module_by_capability(capability: str) -> str | None:
     """Encontra modulo que tem determinada capacidade."""
     for module, capabilities in MODULE_CAPABILITIES.items():
         if capability in capabilities:

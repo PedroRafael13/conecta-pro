@@ -3,8 +3,8 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from modules.financial.models.warehouse import Warehouse
 
 
-class InventoryType(str, Enum):
+class InventoryType(StrEnum):
     """Tipo de inventário."""
 
     GERAL = "geral"  # Todos os itens
@@ -38,7 +38,7 @@ class InventoryType(str, Enum):
     LOCALIZACAO = "localizacao"  # Por local
 
 
-class InventoryStatus(str, Enum):
+class InventoryStatus(StrEnum):
     """Status do inventário."""
 
     PLANEJADO = "planejado"
@@ -52,7 +52,7 @@ class InventoryStatus(str, Enum):
     CANCELADO = "cancelado"
 
 
-class InventoryItemStatus(str, Enum):
+class InventoryItemStatus(StrEnum):
     """Status do item do inventário."""
 
     PENDENTE = "pendente"
@@ -66,7 +66,7 @@ class InventoryItemStatus(str, Enum):
 class StockInventory(Base):
     """Inventário/Contagem de estoque."""
 
-    __tablename__ = "stock_inventories"
+    __tablename__ = "fin_stock_inventories"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
@@ -79,7 +79,7 @@ class StockInventory(Base):
     # Armazém
     warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=False,
         index=True,
     )
@@ -162,7 +162,7 @@ class StockInventory(Base):
 
     # Relacionamentos
     warehouse: "Warehouse" = relationship("Warehouse")
-    items: List["StockInventoryItem"] = relationship(
+    items: list["StockInventoryItem"] = relationship(
         "StockInventoryItem",
         back_populates="inventory",
         cascade="all, delete-orphan",
@@ -239,7 +239,7 @@ class StockInventory(Base):
         """Submete para aprovação."""
         self.status = InventoryStatus.AGUARDANDO_APROVACAO.value
 
-    def approve(self, approver_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def approve(self, approver_id: uuid.UUID, notes: str | None = None) -> None:
         """Aprova o inventário."""
         self.status = InventoryStatus.APROVADO.value
         self.approved_by = approver_id
@@ -316,12 +316,12 @@ class StockInventory(Base):
 class StockInventoryItem(Base):
     """Item do inventário."""
 
-    __tablename__ = "stock_inventory_items"
+    __tablename__ = "fin_stock_inventory_items"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     inventory_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("stock_inventories.id", ondelete="CASCADE"),
+        ForeignKey("fin_stock_inventories.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -337,7 +337,7 @@ class StockInventoryItem(Base):
     # Stock Item
     stock_item_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("stock_items.id"),
+        ForeignKey("fin_stock_items.id"),
         nullable=True,
         index=True,
     )
@@ -436,7 +436,7 @@ class StockInventoryItem(Base):
         return False
 
     @property
-    def divergence_percentage(self) -> Optional[Decimal]:
+    def divergence_percentage(self) -> Decimal | None:
         """Percentual de divergência."""
         if self.expected_quantity and self.expected_quantity > 0 and self.difference_quantity:
             return abs(self.difference_quantity / self.expected_quantity * 100)
@@ -497,9 +497,7 @@ class StockInventoryItem(Base):
     def _calculate_difference(self) -> None:
         """Calcula diferença."""
         if self.counted_quantity is not None:
-            self.difference_quantity = self.counted_quantity - (
-                self.expected_quantity or Decimal("0")
-            )
+            self.difference_quantity = self.counted_quantity - (self.expected_quantity or Decimal("0"))
             self.counted_value = self.counted_quantity * (self.unit_cost or Decimal("0"))
             self.difference_value = self.counted_value - (self.expected_value or Decimal("0"))
 
@@ -517,21 +515,13 @@ class StockInventoryItem(Base):
             "batch_number": self.batch_number,
             "location": self.full_location,
             "expected_quantity": float(self.expected_quantity) if self.expected_quantity else 0,
-            "counted_quantity": (
-                float(self.counted_quantity) if self.counted_quantity is not None else None
-            ),
-            "difference_quantity": (
-                float(self.difference_quantity) if self.difference_quantity is not None else None
-            ),
+            "counted_quantity": (float(self.counted_quantity) if self.counted_quantity is not None else None),
+            "difference_quantity": (float(self.difference_quantity) if self.difference_quantity is not None else None),
             "unit_cost": float(self.unit_cost) if self.unit_cost else 0,
             "expected_value": float(self.expected_value) if self.expected_value else 0,
-            "counted_value": (
-                float(self.counted_value) if self.counted_value is not None else None
-            ),
+            "counted_value": (float(self.counted_value) if self.counted_value is not None else None),
             "has_divergence": self.has_divergence,
-            "divergence_percentage": (
-                float(self.divergence_percentage) if self.divergence_percentage else None
-            ),
+            "divergence_percentage": (float(self.divergence_percentage) if self.divergence_percentage else None),
             "is_counted": self.is_counted,
             "is_verified": self.is_verified,
             "is_adjusted": self.is_adjusted,

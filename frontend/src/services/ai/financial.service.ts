@@ -3,13 +3,11 @@
  * Análise financeira inteligente: fluxo de caixa, recebíveis, compras
  */
 
-import { getFinancialFluxoDeCaixa } from '@/types/generated/ai/financial-fluxo-de-caixa/financial-fluxo-de-caixa';
-import { getFinancialContasAReceber } from '@/types/generated/ai/financial-contas-a-receber/financial-contas-a-receber';
-import { getFinancialCompras } from '@/types/generated/ai/financial-compras/financial-compras';
+import { customInstance } from '@/lib/axios-instance';
 
-const cashflowApi = getFinancialFluxoDeCaixa();
-const receivablesApi = getFinancialContasAReceber();
-const purchasesApi = getFinancialCompras();
+const CASHFLOW_BASE = '/api/v1/financial/cashflow/ai';
+const RECEIVABLES_BASE = '/api/v1/financial/receivables/ai';
+const PURCHASES_BASE = '/api/v1/financial/purchases/ai';
 
 /**
  * Service para análise financeira com IA
@@ -23,8 +21,8 @@ export class FinancialAIService {
   static async detectCashflowAnomalies(
     condominioId: string,
     periodMonths?: number
-  ): Promise<any> {
-    return cashflowApi.detectAnomaliesApiV1FinancialCashflowAiAnomaliesPost({
+  ): Promise<unknown> {
+    return customInstance.post(`${CASHFLOW_BASE}/anomalies`, {
       condominio_id: condominioId,
       period_months: periodMonths,
     });
@@ -36,8 +34,8 @@ export class FinancialAIService {
   static async forecastCashflow(
     condominioId: string,
     monthsAhead?: number
-  ): Promise<any> {
-    return cashflowApi.generateAiForecastApiV1FinancialCashflowAiForecastPost({
+  ): Promise<unknown> {
+    return customInstance.post(`${CASHFLOW_BASE}/forecast`, {
       condominio_id: condominioId,
       months_ahead: monthsAhead,
     });
@@ -46,27 +44,27 @@ export class FinancialAIService {
   /**
    * Identifica oportunidades de otimização
    */
-  static async getCashflowOpportunities(condominioId: string): Promise<any> {
-    return cashflowApi.getOpportunitiesApiV1FinancialCashflowAiOpportunitiesGet({
-      condominio_id: condominioId,
+  static async getCashflowOpportunities(condominioId: string): Promise<unknown> {
+    return customInstance.get(`${CASHFLOW_BASE}/opportunities`, {
+      params: { condominio_id: condominioId },
     });
   }
 
   /**
    * Analisa riscos no fluxo de caixa
    */
-  static async analyzeCashflowRisks(condominioId: string): Promise<any> {
-    return cashflowApi.getRisksApiV1FinancialCashflowAiRisksGet({
-      condominio_id: condominioId,
+  static async analyzeCashflowRisks(condominioId: string): Promise<unknown> {
+    return customInstance.get(`${CASHFLOW_BASE}/risks`, {
+      params: { condominio_id: condominioId },
     });
   }
 
   /**
    * Sugestões de melhoria de fluxo de caixa
    */
-  static async getCashflowSuggestions(condominioId: string): Promise<any> {
-    return cashflowApi.getOptimizationSuggestionsApiV1FinancialCashflowAiSuggestionsGet({
-      condominio_id: condominioId,
+  static async getCashflowSuggestions(condominioId: string): Promise<unknown> {
+    return customInstance.get(`${CASHFLOW_BASE}/suggestions`, {
+      params: { condominio_id: condominioId },
     });
   }
 
@@ -78,10 +76,9 @@ export class FinancialAIService {
   static async forecastReceivablesCashflow(
     condominioId: string,
     months?: number
-  ): Promise<any> {
-    return receivablesApi.getCashFlowForecastApiV1FinancialReceivablesAiCashFlowForecastGet({
-      condominio_id: condominioId,
-      months,
+  ): Promise<unknown> {
+    return customInstance.get(`${RECEIVABLES_BASE}/cash-flow-forecast`, {
+      params: { condominio_id: condominioId, months },
     });
   }
 
@@ -91,28 +88,27 @@ export class FinancialAIService {
   static async getCollectionPriorities(
     condominioId: string,
     limit?: number
-  ): Promise<any> {
-    return receivablesApi.getCollectionPrioritiesApiV1FinancialReceivablesAiCollectionPrioritiesGet({
-      condominio_id: condominioId,
-      limit,
+  ): Promise<unknown> {
+    return customInstance.get(`${RECEIVABLES_BASE}/collection-priorities`, {
+      params: { condominio_id: condominioId, limit },
     });
   }
 
   /**
    * Analisa risco de cliente
    */
-  static async analyzeCustomerRisk(customerId: string): Promise<any> {
-    return receivablesApi.getCustomerRiskApiV1FinancialReceivablesAiCustomerRiskCustomerIdGet(
-      customerId
+  static async analyzeCustomerRisk(customerId: string): Promise<unknown> {
+    return customInstance.get(
+      `${RECEIVABLES_BASE}/customer-risk/${customerId}`
     );
   }
 
   /**
    * Análise de inadimplência
    */
-  static async analyzeDelinquency(condominioId: string): Promise<any> {
-    return receivablesApi.getDelinquencyAnalysisApiV1FinancialReceivablesAiDelinquencyAnalysisGet({
-      condominio_id: condominioId,
+  static async analyzeDelinquency(condominioId: string): Promise<unknown> {
+    return customInstance.get(`${RECEIVABLES_BASE}/delinquency-analysis`, {
+      params: { condominio_id: condominioId },
     });
   }
 
@@ -124,8 +120,8 @@ export class FinancialAIService {
   static async predictDemand(
     productId: string,
     monthsAhead?: number
-  ): Promise<any> {
-    return purchasesApi.predictDemandApiV1FinancialPurchasesAiPredictDemandPost({
+  ): Promise<unknown> {
+    return customInstance.post(`${PURCHASES_BASE}/predict-demand`, {
       product_id: productId,
       months_ahead: monthsAhead,
     });
@@ -134,9 +130,9 @@ export class FinancialAIService {
   /**
    * Calcula ponto de reposição de estoque
    */
-  static async calculateReorderPoint(productId: string): Promise<any> {
-    return purchasesApi.calculateReorderPointApiV1FinancialPurchasesAiReorderPointProductIdGet(
-      productId
+  static async calculateReorderPoint(productId: string): Promise<unknown> {
+    return customInstance.get(
+      `${PURCHASES_BASE}/reorder-point/${productId}`
     );
   }
 
@@ -147,8 +143,8 @@ export class FinancialAIService {
     condominioId: string,
     productDescription: string,
     limit?: number
-  ): Promise<any> {
-    return purchasesApi.suggestSuppliersApiV1FinancialPurchasesAiSuggestSuppliersPost({
+  ): Promise<unknown> {
+    return customInstance.post(`${PURCHASES_BASE}/suggest-suppliers`, {
       condominio_id: condominioId,
       product_description: productDescription,
       limit,
@@ -158,9 +154,9 @@ export class FinancialAIService {
   /**
    * Analisa desempenho de fornecedor
    */
-  static async analyzeSupplier(supplierId: string): Promise<any> {
-    return purchasesApi.analyzeSupplierApiV1FinancialPurchasesAiSupplierAnalysisSupplierIdGet(
-      supplierId
+  static async analyzeSupplier(supplierId: string): Promise<unknown> {
+    return customInstance.get(
+      `${PURCHASES_BASE}/supplier-analysis/${supplierId}`
     );
   }
 }

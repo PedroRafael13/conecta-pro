@@ -6,7 +6,6 @@ salvando padrões de alocação e configurações.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
@@ -58,7 +57,7 @@ class ScaleTemplate(Base):
         String(100),
         nullable=False,
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -108,7 +107,7 @@ class ScaleTemplate(Base):
         default=0,
         nullable=False,
     )
-    last_used: Mapped[Optional[datetime]] = mapped_column(
+    last_used: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )

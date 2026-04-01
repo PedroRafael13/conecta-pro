@@ -10,21 +10,17 @@ Data: 23/01/2026
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.document_kits.models.document_kit import (
     DocumentKit,
     DocumentKitAssignment,
-    DocumentKitItemStatus,
-    KitType,
-    KitStatus,
-    AssignmentStatus,
-    ItemStatusEnum,
     EntityType,
+    KitStatus,
+    KitType,
 )
 from modules.document_kits.schemas.kit_schemas import DocumentKitAssignmentCreate
 from modules.document_kits.services.kit_operational_service import KitOperationalService
@@ -70,12 +66,14 @@ class KitMonthlyGeneratorService:
         """
         # Buscar template existente
         result = await self.db.execute(
-            select(DocumentKit).where(
+            select(DocumentKit)
+            .where(
                 DocumentKit.condominio_id == condominio_id,
                 DocumentKit.is_template.is_(True),
                 DocumentKit.tipo == KitType.MENSAL,
                 DocumentKit.status == KitStatus.ATIVO,
-            ).limit(1)
+            )
+            .limit(1)
         )
         template = result.scalar_one_or_none()
 
@@ -122,8 +120,8 @@ class KitMonthlyGeneratorService:
         month: int,
         year: int,
         created_by_id: str,
-        prazo_dias: Optional[int] = 30,
-    ) -> Dict:
+        prazo_dias: int | None = 30,
+    ) -> dict:
         """
         Gera kits mensais para TODOS os funcionários de um condomínio.
 
@@ -163,9 +161,7 @@ class KitMonthlyGeneratorService:
             cond_uuid = UUID(condominio_id)
             created_by_uuid = UUID(created_by_id)
 
-            logger.info(
-                f"Iniciando geração de kits mensais: condomínio={condominio_id}, período={month:02d}/{year}"
-            )
+            logger.info(f"Iniciando geração de kits mensais: condomínio={condominio_id}, período={month:02d}/{year}")
 
             # 1. Buscar funcionários do condomínio no período
             employees_data = await self.operational_service.get_employees_by_month(
@@ -216,22 +212,26 @@ class KitMonthlyGeneratorService:
                 try:
                     # Verificar se já existe atribuição para este funcionário neste mês
                     existing = await self.db.execute(
-                        select(DocumentKitAssignment).where(
+                        select(DocumentKitAssignment)
+                        .where(
                             DocumentKitAssignment.kit_id == template_kit.id,
                             DocumentKitAssignment.entity_type == EntityType.FUNCIONARIO,
                             DocumentKitAssignment.entity_id == employee.id,
                             DocumentKitAssignment.condominio_id == cond_uuid,
-                        ).limit(1)
+                        )
+                        .limit(1)
                     )
                     if existing.scalar_one_or_none():
                         logger.debug(f"Atribuição já existe para {employee.nome}")
                         assignments_skipped += 1
-                        details.append({
-                            "employee_id": str(employee.id),
-                            "employee_name": employee.nome,
-                            "status": "skipped",
-                            "reason": "Atribuição já existe",
-                        })
+                        details.append(
+                            {
+                                "employee_id": str(employee.id),
+                                "employee_name": employee.nome,
+                                "status": "skipped",
+                                "reason": "Atribuição já existe",
+                            }
+                        )
                         continue
 
                     # Criar atribuição
@@ -249,26 +249,30 @@ class KitMonthlyGeneratorService:
                     assignment = self.kit_service.assign_kit(assignment_data, created_by_uuid)
 
                     assignments_created += 1
-                    details.append({
-                        "employee_id": str(employee.id),
-                        "employee_name": employee.nome,
-                        "assignment_id": str(assignment.id),
-                        "post_name": post.name,
-                        "role": allocation.role,
-                        "status": "created",
-                    })
+                    details.append(
+                        {
+                            "employee_id": str(employee.id),
+                            "employee_name": employee.nome,
+                            "assignment_id": str(assignment.id),
+                            "post_name": post.name,
+                            "role": allocation.role,
+                            "status": "created",
+                        }
+                    )
 
                     logger.info(f"Kit atribuído para {employee.nome} (assignment_id={assignment.id})")
 
                 except Exception as e:
                     logger.error(f"Erro ao criar atribuição para {employee.nome}: {e}")
                     assignments_failed += 1
-                    details.append({
-                        "employee_id": str(employee.id),
-                        "employee_name": employee.nome,
-                        "status": "failed",
-                        "error": str(e),
-                    })
+                    details.append(
+                        {
+                            "employee_id": str(employee.id),
+                            "employee_name": employee.nome,
+                            "status": "failed",
+                            "error": str(e),
+                        }
+                    )
 
             # 5. Retornar resumo
             result = {
@@ -311,7 +315,7 @@ class KitMonthlyGeneratorService:
         month: int,
         year: int,
         created_by_id: str,
-    ) -> Dict:
+    ) -> dict:
         """
         Gera kits mensais para TODOS os condomínios que possuem funcionários.
 
@@ -377,9 +381,6 @@ class KitMonthlyGeneratorService:
             ),
         }
 
-        logger.info(
-            f"Geração em LOTE finalizada: {len(results)} condomínios, "
-            f"{total_created} kits criados"
-        )
+        logger.info(f"Geração em LOTE finalizada: {len(results)} condomínios, {total_created} kits criados")
 
         return summary

@@ -4,23 +4,23 @@ domains/procurement/entities/__init__.py - ENTITIES
 """
 
 from .enums import (
+    BiddingModality,
+    ContractType,
+    PaymentTerms,
     ProcurementStatus,
     ProcurementType,
     ProcurementUrgency,
     SupplierRisk,
-    PaymentTerms,
-    ContractType,
-    BiddingModality
 )
 from .procurement import (
-    ProcurementEntity,
-    BudgetAllocation,
-    ContractTerms,
-    SupplierQualification,
     AuditEntry,
+    BudgetAllocation,
+    BudgetId,
+    ContractTerms,
+    ProcurementEntity,
     ProcurementId,
     SupplierId,
-    BudgetId
+    SupplierQualification,
 )
 
 __all__ = [
@@ -41,5 +41,5 @@ __all__ = [
     # Type aliases
     "ProcurementId",
     "SupplierId",
-    "BudgetId"
+    "BudgetId",
 ]

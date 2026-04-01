@@ -3,243 +3,234 @@ Module: financial
 Description: Modulo Financeiro Completo - Conecta PRO
 Author: Conecta PRO Team
 Date: 2026-01-10
-Quality Score Target: 99+/100
-Compliance: Legislacao fiscal e contabil brasileira
 
-Este modulo fornece gestao financeira completa:
-- Contas a Pagar: Fornecedores, parcelas, pagamentos
-- Contas a Receber: Clientes, cobrancas, recebimentos
-- Fluxo de Caixa: Contas bancarias, transacoes, reconciliacao
-- Compras: Requisicoes, cotacoes, pedidos, recebimento
-- Estoque: Armazens, itens, movimentacoes, inventarios
-- Contabilidade: Plano de contas, lancamentos, balancetes
-- Fiscal: NFe, NFSe, SPED, obrigacoes fiscais
-- BI/Dashboard: KPIs, widgets, relatorios agendados
-- Custeio ABC: Drivers, atividades, pools, alocacoes
-
-Estrutura modular:
-- models/: Modelos SQLAlchemy para persistencia
-- schemas/: Schemas Pydantic para validacao
-- services/: Logica de negocio e IA
-- controllers/: Endpoints FastAPI
-- repositories/: Acesso a dados
-- bi_dashboard/: Submodulo de BI e dashboards
-- costing/: Submodulo de custeio ABC
+DEPRECATED: Use 'modules.financeiro' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from fastapi import APIRouter
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.financial' is deprecated. "
+    "Use 'modules.financeiro' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from fastapi import APIRouter  # noqa: E402
+
+# Routers dos submodulos
+from modules.financial.bi_dashboard.controllers import router as bi_dashboard_router  # noqa: E402
+
+# Models do BI Dashboard
+from modules.financial.bi_dashboard.models import (  # noqa: E402
+    AnalyticsCache,
+    FinancialDashboard,
+    FinancialKPI,
+    FinancialWidget,
+    ScheduledReport,
+)
+
+# Repositories do BI Dashboard
+from modules.financial.bi_dashboard.repositories import (  # noqa: E402
+    CacheRepository,
+    DashboardRepository,
+    KPIRepository,
+    ReportRepository,
+    WidgetRepository,
+)
+
+# Services do BI Dashboard
+from modules.financial.bi_dashboard.services import (  # noqa: E402
+    AnalyticsService,
+    BIService,
+    ForecastService,
+)
 
 # =============================================================================
 # ROUTERS DOS CONTROLLERS PRINCIPAIS
 # =============================================================================
-from modules.financial.controllers import (
-    # Contas a Pagar
-    supplier_router,
-    payable_router,
-    # Contas a Receber
-    customer_router,
-    receivable_category_router,
-    receivable_router,
-    billing_rule_router,
-    # Fluxo de Caixa
-    bank_account_router,
-    bank_transaction_router,
-    bank_reconciliation_router,
-    cashflow_router,
-    # Compras
-    purchase_router,
-    # Estoque
-    inventory_router,
+from modules.financial.controllers import (  # noqa: E402
     # Contabilidade
     accounting_router,
+    # Fluxo de Caixa
+    bank_account_router,
+    bank_reconciliation_router,
+    bank_transaction_router,
+    billing_rule_router,
+    cashflow_router,
+    # Contas a Receber
+    customer_router,
     # Fiscal
     fiscal_router,
+    # Estoque
+    inventory_router,
+    payable_router,
+    # Compras
+    purchase_router,
+    receivable_category_router,
+    receivable_router,
+    # Contas a Pagar
+    supplier_router,
 )
-
-# Routers dos submodulos
-from modules.financial.bi_dashboard.controllers import router as bi_dashboard_router
-from modules.financial.costing import router as costing_router
-
-# =============================================================================
-# MODELS PRINCIPAIS (Re-exports para acesso direto)
-# =============================================================================
-from modules.financial.models import (
-    # === Contas a Pagar ===
-    Supplier,
-    SupplierType,
-    SupplierStatus,
-    PayableAccount,
-    PayableStatus,
-    PayableType,
-    PayableInstallment,
-    PayablePayment,
-    PaymentMethod,
-    # === Contas a Receber ===
-    Customer,
-    CustomerType,
-    CustomerStatus,
-    ReceivableAccount,
-    ReceivableStatus,
-    ReceivableType,
-    ReceivableInstallment,
-    ReceivablePayment,
-    BillingRule,
-    # === Fluxo de Caixa ===
-    BankAccount,
-    BankAccountType,
-    BankAccountStatus,
-    BankTransaction,
-    TransactionType,
-    BankReconciliation,
-    CashFlowEntry,
-    CashFlowForecast,
-    # === Compras ===
-    Product,
-    ProductCategory,
-    PurchaseRequisition,
-    PurchaseQuotation,
-    PurchaseOrder,
-    GoodsReceipt,
-    PurchaseApproval,
-    # === Estoque ===
-    Warehouse,
-    StockItem,
-    StockMovement,
-    StockInventory,
-    StockReservation,
-    # === Contabilidade ===
-    ChartOfAccounts,
-    AccountingAccount,
-    CostCenter,
-    AccountingPeriod,
-    JournalEntry,
-    TrialBalance,
-    # === Fiscal ===
-    TaxConfiguration,
-    NFe,
-    NFSe,
-    SPEDFile,
-    FiscalObligation,
-    CFOP,
-    NCM,
-)
-
-# Models do BI Dashboard
-from modules.financial.bi_dashboard.models import (
-    FinancialDashboard,
-    FinancialWidget,
-    FinancialKPI,
-    ScheduledReport,
-    AnalyticsCache,
-)
+from modules.financial.costing import router as costing_router  # noqa: E402
 
 # Models do Custeio
-from modules.financial.costing.models import (
-    CostDriver,
+from modules.financial.costing.models import (  # noqa: E402
     CostActivity,
-    CostPool,
-    CostObject,
     CostAllocation,
     CostAnalysis,
+    CostDriver,
+    CostObject,
+    CostPool,
 )
 
-# =============================================================================
-# SERVICES PRINCIPAIS (Re-exports para acesso direto)
-# =============================================================================
-from modules.financial.services import (
-    # Contas a Pagar
-    PayableService,
-    SupplierService,
-    PayableAIService,
-    # Fluxo de Caixa
-    CashFlowService,
-    CashFlowAIService,
-    # Compras
-    PurchaseAIService,
-    # Contabilidade
-    AccountingAIService,
-    # Fiscal
-    FiscalAIService,
-)
-
-# Services do BI Dashboard
-from modules.financial.bi_dashboard.services import (
-    BIService,
-    AnalyticsService,
-    ForecastService,
+# Repositories do Custeio
+from modules.financial.costing.repositories import (  # noqa: E402
+    CostActivityRepository,
+    CostAllocationRepository,
+    CostAnalysisRepository,
+    CostDriverRepository,
+    CostObjectRepository,
+    CostPoolRepository,
 )
 
 # Services do Custeio
-from modules.financial.costing.services import (
+from modules.financial.costing.services import (  # noqa: E402
     ABCService,
     AllocationService,
     CostAIService,
 )
 
 # =============================================================================
+# MODELS PRINCIPAIS (Re-exports para acesso direto)
+# =============================================================================
+from modules.financial.models import (  # noqa: E402
+    CFOP,
+    NCM,
+    AccountingAccount,
+    AccountingPeriod,
+    # === Fluxo de Caixa ===
+    BankAccount,
+    BankAccountStatus,
+    BankAccountType,
+    BankReconciliation,
+    BankTransaction,
+    BillingRule,
+    CashFlowEntry,
+    CashFlowForecast,
+    # === Contabilidade ===
+    ChartOfAccounts,
+    CostCenter,
+    # === Contas a Receber ===
+    Customer,
+    CustomerStatus,
+    CustomerType,
+    FiscalObligation,
+    GoodsReceipt,
+    JournalEntry,
+    NFe,
+    NFSe,
+    PayableAccount,
+    PayableInstallment,
+    PayablePayment,
+    PayableStatus,
+    PayableType,
+    PaymentMethod,
+    # === Compras ===
+    Product,
+    ProductCategory,
+    PurchaseApproval,
+    PurchaseOrder,
+    PurchaseQuotation,
+    PurchaseRequisition,
+    ReceivableAccount,
+    ReceivableInstallment,
+    ReceivablePayment,
+    ReceivableStatus,
+    ReceivableType,
+    SPEDFile,
+    StockInventory,
+    StockItem,
+    StockMovement,
+    StockReservation,
+    # === Contas a Pagar ===
+    Supplier,
+    SupplierStatus,
+    SupplierType,
+    # === Fiscal ===
+    TaxConfiguration,
+    TransactionType,
+    TrialBalance,
+    # === Estoque ===
+    Warehouse,
+)
+
+# =============================================================================
 # REPOSITORIES PRINCIPAIS (Re-exports para acesso direto)
 # =============================================================================
-from modules.financial.repositories import (
-    # Contas a Pagar
-    SupplierRepository,
+from modules.financial.repositories import (  # noqa: E402
+    AccountingAccountRepository,
+    AccountingPeriodRepository,
+    # Fluxo de Caixa
+    BankAccountRepository,
+    BankReconciliationRepository,
+    BankTransactionRepository,
+    BillingRuleRepository,
+    CashFlowEntryRepository,
+    CashFlowForecastRepository,
+    # Contabilidade
+    ChartOfAccountsRepository,
+    CostCenterRepository,
+    # Contas a Receber
+    CustomerRepository,
+    # Fiscal
+    FiscalRepository,
+    GoodsReceiptRepository,
+    JournalEntryRepository,
     PayableAccountRepository,
     PayableInstallmentRepository,
     PayablePaymentRepository,
-    # Contas a Receber
-    CustomerRepository,
-    ReceivableCategoryRepository,
-    ReceivableAccountRepository,
-    ReceivableInstallmentRepository,
-    ReceivablePaymentRepository,
-    BillingRuleRepository,
-    # Fluxo de Caixa
-    BankAccountRepository,
-    BankTransactionRepository,
-    BankReconciliationRepository,
-    CashFlowEntryRepository,
-    CashFlowForecastRepository,
     # Compras
     ProductCategoryRepository,
     ProductRepository,
-    PurchaseRequisitionRepository,
-    PurchaseQuotationRepository,
-    PurchaseOrderRepository,
-    GoodsReceiptRepository,
     PurchaseApprovalRepository,
-    # Estoque
-    WarehouseRepository,
+    PurchaseOrderRepository,
+    PurchaseQuotationRepository,
+    PurchaseRequisitionRepository,
+    ReceivableAccountRepository,
+    ReceivableCategoryRepository,
+    ReceivableInstallmentRepository,
+    ReceivablePaymentRepository,
+    StockInventoryRepository,
     StockItemRepository,
     StockMovementRepository,
-    StockInventoryRepository,
     StockReservationRepository,
-    # Contabilidade
-    ChartOfAccountsRepository,
-    AccountingAccountRepository,
-    CostCenterRepository,
-    AccountingPeriodRepository,
-    JournalEntryRepository,
+    # Contas a Pagar
+    SupplierRepository,
     TrialBalanceRepository,
+    # Estoque
+    WarehouseRepository,
+)
+
+# =============================================================================
+# SERVICES PRINCIPAIS (Re-exports para acesso direto)
+# =============================================================================
+from modules.financial.services import (  # noqa: E402
+    # Contabilidade
+    AccountingAIService,
+    CashFlowAIService,
+    # Fluxo de Caixa
+    CashFlowService,
     # Fiscal
-    FiscalRepository,
-)
-
-# Repositories do BI Dashboard
-from modules.financial.bi_dashboard.repositories import (
-    DashboardRepository,
-    WidgetRepository,
-    KPIRepository,
-    ReportRepository,
-    CacheRepository,
-)
-
-# Repositories do Custeio
-from modules.financial.costing.repositories import (
-    CostDriverRepository,
-    CostActivityRepository,
-    CostPoolRepository,
-    CostObjectRepository,
-    CostAllocationRepository,
-    CostAnalysisRepository,
+    FiscalAIService,
+    PayableAIService,
+    # Contas a Pagar
+    PayableService,
+    # Compras
+    PurchaseAIService,
+    SupplierService,
 )
 
 # =============================================================================

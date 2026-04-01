@@ -2,20 +2,21 @@
 
 import logging
 from datetime import datetime
-from typing import List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import UUID
-from enum import Enum
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.hr.mobile_time_clock.models import MobileDevice, DeviceStatus
+from modules.hr.mobile_time_clock.models import DeviceStatus, MobileDevice
 from modules.hr.mobile_time_clock.repositories import MobileDeviceRepository
 
 logger = logging.getLogger(__name__)
 
 
-class NotificationType(str, Enum):
+class NotificationType(StrEnum):
     """Tipos de notificação."""
+
     CHECKIN_REMINDER = "checkin_reminder"
     CHECKIN_CONFIRMED = "checkin_confirmed"
     CHECKIN_REJECTED = "checkin_rejected"
@@ -46,7 +47,7 @@ class PushNotificationService:
         notification_type: NotificationType,
         title: str,
         body: str,
-        data: Dict[str, Any] = None,
+        data: dict[str, Any] = None,
     ) -> bool:
         """Envia notificação para um dispositivo."""
         if not device.push_token:
@@ -82,7 +83,7 @@ class PushNotificationService:
         notification_type: NotificationType,
         title: str,
         body: str,
-        data: Dict[str, Any] = None,
+        data: dict[str, Any] = None,
     ) -> int:
         """Envia notificação para todos os dispositivos de um funcionário."""
         devices = await self.device_repo.get_by_employee(
@@ -103,8 +104,8 @@ class PushNotificationService:
         notification_type: NotificationType,
         title: str,
         body: str,
-        data: Dict[str, Any] = None,
-        employee_ids: List[UUID] = None,
+        data: dict[str, Any] = None,
+        employee_ids: list[UUID] = None,
     ) -> int:
         """Envia notificação para dispositivos do condomínio."""
         # pylint: disable=import-outside-toplevel
@@ -125,10 +126,7 @@ class PushNotificationService:
             if await self.send_to_device(device, notification_type, title, body, data):
                 sent_count += 1
 
-        logger.info(
-            f"Enviadas {sent_count}/{len(devices)} "
-            f"notificações para condomínio {condominio_id}"
-        )
+        logger.info(f"Enviadas {sent_count}/{len(devices)} notificações para condomínio {condominio_id}")
         return sent_count
 
     async def notify_checkin_confirmed(
@@ -262,7 +260,7 @@ class PushNotificationService:
         notification_type: NotificationType,
         title: str,
         body: str,
-        data: Dict[str, Any] = None,
+        data: dict[str, Any] = None,
     ) -> dict:
         """Constrói payload da notificação."""
         return {

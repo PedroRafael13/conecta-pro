@@ -3,18 +3,15 @@ APIKey Model - Chaves de API para autenticação
 Sprint 32: API Gateway / Integrações
 """
 
-import enum
-import secrets
 import hashlib
+import secrets
 from datetime import datetime
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -23,24 +20,27 @@ if TYPE_CHECKING:
     from modules.integrations.models.integration_log import IntegrationLog
 
 
-class APIKeyType(str, enum.Enum):
+class APIKeyType(StrEnum):
     """Tipo de chave de API."""
+
     PRODUCTION = "production"
     SANDBOX = "sandbox"
     DEVELOPMENT = "development"
     TESTING = "testing"
 
 
-class APIKeyStatus(str, enum.Enum):
+class APIKeyStatus(StrEnum):
     """Status da chave de API."""
+
     ACTIVE = "active"
     SUSPENDED = "suspended"
     EXPIRED = "expired"
     REVOKED = "revoked"
 
 
-class APIKeyScope(str, enum.Enum):
+class APIKeyScope(StrEnum):
     """Escopos de permissão."""
+
     READ_ALL = "read:all"
     WRITE_ALL = "write:all"
     READ_CLIENTS = "read:clients"
@@ -61,6 +61,7 @@ class APIKey(Base):
     Model para chaves de API.
     Gerencia autenticação e autorização de integrações.
     """
+
     __tablename__ = "api_keys"
 
     # Primary key
@@ -80,16 +81,8 @@ class APIKey(Base):
     key_hint = Column(String(10), nullable=True)  # Últimos caracteres para referência
 
     # Tipo e Status
-    key_type = Column(
-        Enum(APIKeyType),
-        nullable=False,
-        default=APIKeyType.PRODUCTION
-    )
-    status = Column(
-        Enum(APIKeyStatus),
-        nullable=False,
-        default=APIKeyStatus.ACTIVE
-    )
+    key_type = Column(Enum(APIKeyType), nullable=False, default=APIKeyType.PRODUCTION)
+    status = Column(Enum(APIKeyStatus), nullable=False, default=APIKeyStatus.ACTIVE)
 
     # Permissões
     scopes = Column(JSONB, nullable=True)  # Lista de escopos
@@ -133,17 +126,13 @@ class APIKey(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    logs: List["IntegrationLog"] = relationship(
-        "IntegrationLog",
-        back_populates="api_key",
-        foreign_keys="IntegrationLog.api_key_id"
+    logs: list["IntegrationLog"] = relationship(
+        "IntegrationLog", back_populates="api_key", foreign_keys="IntegrationLog.api_key_id"
     )
 
     # Índices
@@ -183,7 +172,7 @@ class APIKey(Base):
         """Verifica se a chave fornecida é válida."""
         return self.key_hash == self.hash_key(key)
 
-    def record_usage(self, ip: str, user_agent: Optional[str] = None) -> None:
+    def record_usage(self, ip: str, user_agent: str | None = None) -> None:
         """Registra uso da chave."""
         self.last_used_at = datetime.utcnow()
         self.last_used_ip = ip
@@ -255,14 +244,14 @@ class APIKey(Base):
             return True
         return scope in self.scopes
 
-    def suspend(self, reason: Optional[str] = None) -> None:
+    def suspend(self, reason: str | None = None) -> None:
         """Suspende a chave."""
         self.status = APIKeyStatus.SUSPENDED
         if reason:
             self.notes = f"Suspensa: {reason}"
         self.updated_at = datetime.utcnow()
 
-    def revoke(self, revoked_by: Optional[str] = None, reason: Optional[str] = None) -> None:
+    def revoke(self, revoked_by: str | None = None, reason: str | None = None) -> None:
         """Revoga a chave."""
         self.status = APIKeyStatus.REVOKED
         self.revoked_at = datetime.utcnow()
@@ -301,7 +290,7 @@ class APIKey(Base):
         return datetime.utcnow() > self.expires_at
 
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> int | None:
         """Dias até expiração."""
         if self.never_expires or not self.expires_at:
             return None

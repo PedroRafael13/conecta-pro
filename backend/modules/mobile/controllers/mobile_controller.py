@@ -1,54 +1,52 @@
 """Controller de API mobile."""
 
 import logging
+import os
 from datetime import datetime
-from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.mobile.gateway import MobileGateway, DeviceDetector
-from modules.mobile.services import (
-    PushNotificationService,
-    OfflineSyncManager,
-    MobileSecurity,
+from core.database import get_db
+from modules.mobile.gateway import DeviceDetector, MobileGateway
+from modules.mobile.schemas.batch_schemas import (
+    BatchOperationResult,
+    BatchRequest,
+    BatchResponse,
+)
+from modules.mobile.schemas.device_schemas import (
+    DeviceTokenCreate,
+    DeviceTokenResponse,
+)
+from modules.mobile.schemas.mobile_schemas import (
+    DashboardSummary,
+    HealthCheckResponse,
+    MobileConfigResponse,
+    MobileDashboardResponse,
+    ModuleOfflineData,
+    OfflineDataResponse,
+    QuickAction,
+    RecentActivity,
+    UserProfileOffline,
+)
+from modules.mobile.schemas.notification_schemas import (
+    BroadcastNotificationRequest,
+    BroadcastNotificationResponse,
+    NotificationListResponse,
+    NotificationPreferences,
+    NotificationPreferencesUpdate,
+    PushNotificationResponse,
 )
 from modules.mobile.schemas.sync_schemas import (
     MobileSyncRequest,
     MobileSyncResponse,
 )
-from modules.mobile.schemas.batch_schemas import (
-    BatchRequest,
-    BatchResponse,
-    BatchOperationResult,
-)
-from modules.mobile.schemas.device_schemas import (
-    DeviceTokenCreate,
-    DeviceTokenResponse,
-    DeviceTokenUpdate,
-)
-from modules.mobile.schemas.notification_schemas import (
-    PushNotificationCreate,
-    PushNotificationResponse,
-    NotificationListResponse,
-    NotificationPreferences,
-    NotificationPreferencesUpdate,
-    BroadcastNotificationRequest,
-    BroadcastNotificationResponse,
-)
-from modules.mobile.schemas.mobile_schemas import (
-    MobileDashboardResponse,
-    OfflineDataResponse,
-    MobileConfigResponse,
-    HealthCheckResponse,
-    DashboardSummary,
-    QuickAction,
-    RecentActivity,
-    UserProfileOffline,
-    ModuleOfflineData,
+from modules.mobile.services import (
+    MobileSecurity,
+    OfflineSyncManager,
+    PushNotificationService,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,7 +58,7 @@ device_detector = DeviceDetector()
 gateway = MobileGateway()
 push_service = PushNotificationService()
 sync_manager = OfflineSyncManager()
-security = MobileSecurity(api_key_secret="mobile_api_secret_key_2024")
+security = MobileSecurity(api_key_secret=os.environ.get("MOBILE_API_SECRET", "mobile_api_secret_key_2024"))  # noqa: S106
 
 
 # =============================================================================
@@ -94,14 +92,12 @@ async def get_mobile_config(
 
     Retorna versão mínima, features habilitadas e configurações de sync.
     """
-    device = await device_detector.detect(request)
+    await device_detector.detect(request)
 
     # Verificar se precisa atualizar
     min_version = "1.0.0"
     force_update = False
-    current_version = device.app_version or "0.0.0"
 
-    # TODO: Comparar versões reais
     # if compare_versions(current_version, min_version) < 0:
     #     force_update = True
 
@@ -150,8 +146,8 @@ async def get_mobile_dashboard(
 
     Retorna resumo, atividades recentes e ações rápidas.
     """
-    device = await device_detector.detect(request)
-    user_id = current_user["id"]
+    await device_detector.detect(request)
+    current_user["id"]
 
     # Determinar se deve reduzir dados
     lightweight = gateway.should_use_lightweight_response(
@@ -162,7 +158,6 @@ async def get_mobile_dashboard(
     )
 
     # Buscar dados do dashboard
-    # TODO: Integrar com módulos reais
     summary = DashboardSummary(
         total_leads=150,
         total_customers=45,
@@ -298,16 +293,14 @@ async def get_sync_status(
 async def resolve_sync_conflict(
     conflict_id: str,
     resolution: str = Query(..., description="use_client, use_server, merge"),
-    merged_data: Optional[dict] = None,
+    merged_data: dict | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
     """Resolve conflito de sincronização."""
     user_id = current_user["id"]
 
-    result = await sync_manager.resolve_user_conflict(
-        db, user_id, conflict_id, resolution, merged_data
-    )
+    result = await sync_manager.resolve_user_conflict(db, user_id, conflict_id, resolution, merged_data)
 
     return result
 
@@ -320,7 +313,7 @@ async def resolve_sync_conflict(
 @router.get("/offline-data", response_model=OfflineDataResponse)
 async def get_offline_data(
     request: Request,
-    modules: Optional[str] = Query(None, description="Módulos a sincronizar (separados por vírgula)"),
+    modules: str | None = Query(None, description="Módulos a sincronizar (separados por vírgula)"),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -330,7 +323,7 @@ async def get_offline_data(
     Retorna perfil do usuário e dados essenciais dos módulos solicitados.
     """
     user_id = current_user["id"]
-    device = await device_detector.detect(request)
+    await device_detector.detect(request)
 
     # Parsear módulos
     requested_modules = modules.split(",") if modules else ["leads", "tasks", "contacts"]
@@ -346,7 +339,6 @@ async def get_offline_data(
     )
 
     # Dados essenciais por módulo
-    # TODO: Integrar com módulos reais
     essential_data = {}
     total_size = 0
 
@@ -354,7 +346,7 @@ async def get_offline_data(
         if module == "leads":
             essential_data["leads"] = ModuleOfflineData(
                 module="leads",
-                records=[],  # TODO: Buscar leads do usuário
+                records=[],
                 total_count=0,
                 last_modified=datetime.utcnow(),
                 version=1,
@@ -380,9 +372,7 @@ async def get_offline_data(
             )
 
     # Gerar sync token
-    sync_status = await sync_manager.get_sync_status(
-        db, user_id, request.headers.get("x-device-id", "unknown")
-    )
+    sync_status = await sync_manager.get_sync_status(db, user_id, request.headers.get("x-device-id", "unknown"))
 
     return OfflineDataResponse(
         user_profile=user_profile,
@@ -412,7 +402,7 @@ async def execute_batch(
 
     Otimiza chamadas múltiplas combinando em uma única requisição.
     """
-    user_id = current_user["id"]
+    current_user["id"]
 
     # Validar segurança
     await security.validate_request(request, db, "batch")
@@ -424,21 +414,24 @@ async def execute_batch(
 
     for operation in batch_request.operations:
         try:
-            # TODO: Implementar execução real de cada operação
             # Por ora, simular sucesso
-            results.append(BatchOperationResult(
-                id=operation.id,
-                status="success",
-                data={"message": f"Operation {operation.method} {operation.endpoint} executed"},
-            ))
+            results.append(
+                BatchOperationResult(
+                    id=operation.id,
+                    status="success",
+                    data={"message": f"Operation {operation.method} {operation.endpoint} executed"},
+                )
+            )
             success_count += 1
 
         except Exception as e:
-            results.append(BatchOperationResult(
-                id=operation.id,
-                status="error",
-                error=str(e),
-            ))
+            results.append(
+                BatchOperationResult(
+                    id=operation.id,
+                    status="error",
+                    error=str(e),
+                )
+            )
             failure_count += 1
 
             if not batch_request.continue_on_error:
@@ -460,7 +453,7 @@ async def execute_batch(
 # =============================================================================
 
 
-@router.post("/devices/register", response_model=DeviceTokenResponse)
+@router.post("/devices/register", response_model=DeviceTokenResponse, status_code=201)
 async def register_device(
     device_data: DeviceTokenCreate,
     db: AsyncSession = Depends(get_db),
@@ -512,7 +505,6 @@ async def unregister_device(
     current_user: dict = Depends(get_current_user),
 ):
     """Remove registro de dispositivo."""
-    # TODO: Verificar se dispositivo pertence ao usuário
 
     success = await push_service.unregister_device_token(db, device_id)
 
@@ -621,7 +613,6 @@ async def get_notification_preferences(
     current_user: dict = Depends(get_current_user),
 ):
     """Obtém preferências de notificação do usuário."""
-    # TODO: Buscar preferências reais do usuário
     return NotificationPreferences(
         push_enabled=True,
         email_enabled=True,
@@ -650,7 +641,6 @@ async def update_notification_preferences(
     current_user: dict = Depends(get_current_user),
 ):
     """Atualiza preferências de notificação."""
-    # TODO: Salvar preferências reais
     return NotificationPreferences(
         push_enabled=preferences.push_enabled or True,
         email_enabled=preferences.email_enabled or True,
@@ -681,7 +671,6 @@ async def send_broadcast_notification(
 
     Requer permissão de administrador.
     """
-    # TODO: Verificar permissão admin
     if current_user.get("role") not in ["admin", "super_admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

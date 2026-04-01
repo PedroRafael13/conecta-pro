@@ -1,28 +1,28 @@
 """Model para solicitações de férias."""
 
-from datetime import datetime, date
-from enum import Enum
 import uuid
+from datetime import date, datetime
+from enum import StrEnum
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
-    DateTime,
+    CheckConstraint,
+    Column,
     Date,
+    DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
-    Index,
+    String,
     Text,
-    CheckConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class VacationStatus(str, Enum):
+class VacationStatus(StrEnum):
     """Status da solicitação de férias."""
 
     DRAFT = "draft"  # Rascunho
@@ -36,7 +36,7 @@ class VacationStatus(str, Enum):
     INTERRUPTED = "interrupted"  # Interrompida
 
 
-class VacationType(str, Enum):
+class VacationType(StrEnum):
     """Tipo de férias."""
 
     FULL = "full"  # Férias integrais (30 dias)

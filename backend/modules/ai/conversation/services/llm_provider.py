@@ -5,7 +5,7 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from core.config.settings import settings
@@ -13,7 +13,7 @@ from core.config.settings import settings
 logger = logging.getLogger(__name__)
 
 
-class LLMModel(str, Enum):
+class LLMModel(StrEnum):
     """Modelos de LLM disponiveis."""
 
     # OpenAI

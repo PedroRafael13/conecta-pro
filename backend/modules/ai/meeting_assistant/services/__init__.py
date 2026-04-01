@@ -2,10 +2,10 @@
 Meeting Assistant Services - Sprint 49.
 """
 
-from .schedule_optimizer import ScheduleOptimizer
-from .task_prioritizer import TaskPrioritizer
 from .meeting_summarizer import MeetingSummarizer
+from .schedule_optimizer import ScheduleOptimizer
 from .smart_notifier import SmartNotifier
+from .task_prioritizer import TaskPrioritizer
 
 __all__ = [
     "ScheduleOptimizer",

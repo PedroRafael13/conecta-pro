@@ -12,9 +12,10 @@ Tabelas criadas:
 - hr_employee_payroll_configs: Configurações por funcionário
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers
 revision = "sprint20_payroll"

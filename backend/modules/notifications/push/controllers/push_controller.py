@@ -5,7 +5,7 @@ Sprint 37 - Push Notifications Mobile.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -124,7 +124,7 @@ async def register_device(
 )
 async def list_devices(
     current_user: CurrentActiveUser,
-    platform: Optional[str] = Query(None, description="Filtrar por plataforma"),
+    platform: str | None = Query(None, description="Filtrar por plataforma"),
     active_only: bool = Query(True, description="Apenas dispositivos ativos"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -174,10 +174,14 @@ async def get_device(
     push_service: PushService = Depends(get_push_service),
 ) -> DeviceResponse:
     """Obtém detalhes do dispositivo."""
-    device = push_service.db.query(PushDevice).filter(
-        PushDevice.id == device_id,
-        PushDevice.user_id == current_user.id,
-    ).first()
+    device = (
+        push_service.db.query(PushDevice)
+        .filter(
+            PushDevice.id == device_id,
+            PushDevice.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not device:
         raise HTTPException(
@@ -201,10 +205,14 @@ async def update_device(
     push_service: PushService = Depends(get_push_service),
 ) -> DeviceResponse:
     """Atualiza dispositivo."""
-    device = push_service.db.query(PushDevice).filter(
-        PushDevice.id == device_id,
-        PushDevice.user_id == current_user.id,
-    ).first()
+    device = (
+        push_service.db.query(PushDevice)
+        .filter(
+            PushDevice.id == device_id,
+            PushDevice.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not device:
         raise HTTPException(
@@ -248,10 +256,14 @@ async def unregister_device(
     push_service: PushService = Depends(get_push_service),
 ) -> None:
     """Remove registro do dispositivo."""
-    device = push_service.db.query(PushDevice).filter(
-        PushDevice.id == device_id,
-        PushDevice.user_id == current_user.id,
-    ).first()
+    device = (
+        push_service.db.query(PushDevice)
+        .filter(
+            PushDevice.id == device_id,
+            PushDevice.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not device:
         raise HTTPException(
@@ -296,10 +308,14 @@ async def subscribe_to_topic(
 
         if request.user_ids:
             # Buscar dispositivos dos usuários
-            devices = push_service.db.query(PushDevice).filter(
-                PushDevice.user_id.in_(request.user_ids),
-                PushDevice.active == True,  # noqa: E712
-            ).all()
+            devices = (
+                push_service.db.query(PushDevice)
+                .filter(
+                    PushDevice.user_id.in_(request.user_ids),
+                    PushDevice.active == True,  # noqa: E712
+                )
+                .all()
+            )
             device_ids = [d.id for d in devices]
         elif not device_ids:
             # Usar dispositivos do usuário atual
@@ -315,10 +331,14 @@ async def subscribe_to_topic(
         )
 
         # Contar inscritos no tópico
-        count = push_service.db.query(PushDevice).filter(
-            PushDevice.subscribed_topics.contains([request.topic]),
-            PushDevice.active == True,  # noqa: E712
-        ).count()
+        count = (
+            push_service.db.query(PushDevice)
+            .filter(
+                PushDevice.subscribed_topics.contains([request.topic]),
+                PushDevice.active == True,  # noqa: E712
+            )
+            .count()
+        )
 
         logger.info(
             "Subscribed %d devices to topic '%s'",
@@ -355,9 +375,13 @@ async def unsubscribe_from_topic(
         device_ids = request.device_ids
 
         if request.user_ids:
-            devices = push_service.db.query(PushDevice).filter(
-                PushDevice.user_id.in_(request.user_ids),
-            ).all()
+            devices = (
+                push_service.db.query(PushDevice)
+                .filter(
+                    PushDevice.user_id.in_(request.user_ids),
+                )
+                .all()
+            )
             device_ids = [d.id for d in devices]
         elif not device_ids:
             devices = push_service.get_user_devices(
@@ -371,10 +395,14 @@ async def unsubscribe_from_topic(
             device_ids=device_ids,
         )
 
-        count = push_service.db.query(PushDevice).filter(
-            PushDevice.subscribed_topics.contains([request.topic]),
-            PushDevice.active == True,  # noqa: E712
-        ).count()
+        count = (
+            push_service.db.query(PushDevice)
+            .filter(
+                PushDevice.subscribed_topics.contains([request.topic]),
+                PushDevice.active == True,  # noqa: E712
+            )
+            .count()
+        )
 
         logger.info(
             "Unsubscribed %d devices from topic '%s'",
@@ -397,32 +425,33 @@ async def unsubscribe_from_topic(
 
 @router.get(
     "/topics",
-    response_model=List[TopicResponse],
+    response_model=list[TopicResponse],
     summary="Listar tópicos",
     description="Lista tópicos disponíveis e contagem de inscritos.",
 )
 async def list_topics(
     current_user: CurrentActiveUser,
     push_service: PushService = Depends(get_push_service),
-) -> List[TopicResponse]:
+) -> list[TopicResponse]:
     """Lista tópicos com contagem."""
     try:
         # Buscar todos os tópicos únicos do tenant
-        devices = push_service.db.query(PushDevice).filter(
-            PushDevice.tenant_id == current_user.tenant_id,
-            PushDevice.active == True,  # noqa: E712
-        ).all()
+        devices = (
+            push_service.db.query(PushDevice)
+            .filter(
+                PushDevice.tenant_id == current_user.tenant_id,
+                PushDevice.active == True,  # noqa: E712
+            )
+            .all()
+        )
 
         # Agregar tópicos
-        topic_counts: Dict[str, int] = {}
+        topic_counts: dict[str, int] = {}
         for device in devices:
             for topic in device.subscribed_topics or []:
                 topic_counts[topic] = topic_counts.get(topic, 0) + 1
 
-        return [
-            TopicResponse(topic=topic, subscriber_count=count)
-            for topic, count in sorted(topic_counts.items())
-        ]
+        return [TopicResponse(topic=topic, subscriber_count=count) for topic, count in sorted(topic_counts.items())]
 
     except Exception as e:
         logger.error("Error listing topics: %s", e)
@@ -493,9 +522,7 @@ async def send_notification(
                 results["total_targeted"] += result.get("total_devices", 0)
                 results["total_queued"] += result.get("success_count", 0)
                 results["total_failed"] += result.get("failure_count", 0)
-                results["notification_ids"].extend(
-                    result.get("notification_ids", [])
-                )
+                results["notification_ids"].extend(result.get("notification_ids", []))
 
         # Enviar para dispositivos específicos
         if request.device_ids:
@@ -544,19 +571,19 @@ async def send_notification(
 
 @router.get(
     "/notifications",
-    response_model=List[NotificationResponse],
+    response_model=list[NotificationResponse],
     summary="Listar notificações",
     description="Lista notificações enviadas.",
 )
 async def list_notifications(
     current_user: CurrentActiveUser,
-    user_id: Optional[UUID] = Query(None, description="Filtrar por usuário"),
-    device_id: Optional[UUID] = Query(None, description="Filtrar por dispositivo"),
-    status_filter: Optional[str] = Query(None, description="Filtrar por status"),
+    user_id: UUID | None = Query(None, description="Filtrar por usuário"),
+    device_id: UUID | None = Query(None, description="Filtrar por dispositivo"),
+    status_filter: str | None = Query(None, description="Filtrar por status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     push_service: PushService = Depends(get_push_service),
-) -> List[NotificationResponse]:
+) -> list[NotificationResponse]:
     """Lista notificações."""
     try:
         query = push_service.db.query(PushNotification).filter(
@@ -618,7 +645,7 @@ async def mark_notification_opened(
 async def mark_notification_clicked(
     notification_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    action_id: Optional[str] = Query(None, description="ID da ação clicada"),
+    action_id: str | None = Query(None, description="ID da ação clicada"),
     push_service: PushService = Depends(get_push_service),
 ) -> None:
     """Marca notificação como clicada."""
@@ -708,8 +735,8 @@ async def create_campaign(
 )
 async def list_campaigns(
     current_user: CurrentActiveUser,
-    status_filter: Optional[str] = Query(None, description="Filtrar por status"),
-    campaign_type: Optional[str] = Query(None, description="Filtrar por tipo"),
+    status_filter: str | None = Query(None, description="Filtrar por status"),
+    campaign_type: str | None = Query(None, description="Filtrar por tipo"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     push_service: PushService = Depends(get_push_service),
@@ -758,10 +785,14 @@ async def get_campaign(
     push_service: PushService = Depends(get_push_service),
 ) -> CampaignResponse:
     """Obtém campanha."""
-    campaign = push_service.db.query(PushCampaign).filter(
-        PushCampaign.id == campaign_id,
-        PushCampaign.tenant_id == current_user.tenant_id,
-    ).first()
+    campaign = (
+        push_service.db.query(PushCampaign)
+        .filter(
+            PushCampaign.id == campaign_id,
+            PushCampaign.tenant_id == current_user.tenant_id,
+        )
+        .first()
+    )
 
     if not campaign:
         raise HTTPException(
@@ -785,10 +816,14 @@ async def update_campaign(
     push_service: PushService = Depends(get_push_service),
 ) -> CampaignResponse:
     """Atualiza campanha."""
-    campaign = push_service.db.query(PushCampaign).filter(
-        PushCampaign.id == campaign_id,
-        PushCampaign.tenant_id == current_user.tenant_id,
-    ).first()
+    campaign = (
+        push_service.db.query(PushCampaign)
+        .filter(
+            PushCampaign.id == campaign_id,
+            PushCampaign.tenant_id == current_user.tenant_id,
+        )
+        .first()
+    )
 
     if not campaign:
         raise HTTPException(
@@ -837,10 +872,14 @@ async def send_campaign(
     push_service: PushService = Depends(get_push_service),
 ) -> SendPushResponse:
     """Envia campanha."""
-    campaign = push_service.db.query(PushCampaign).filter(
-        PushCampaign.id == campaign_id,
-        PushCampaign.tenant_id == current_user.tenant_id,
-    ).first()
+    campaign = (
+        push_service.db.query(PushCampaign)
+        .filter(
+            PushCampaign.id == campaign_id,
+            PushCampaign.tenant_id == current_user.tenant_id,
+        )
+        .first()
+    )
 
     if not campaign:
         raise HTTPException(
@@ -893,10 +932,14 @@ async def delete_campaign(
     push_service: PushService = Depends(get_push_service),
 ) -> None:
     """Exclui campanha."""
-    campaign = push_service.db.query(PushCampaign).filter(
-        PushCampaign.id == campaign_id,
-        PushCampaign.tenant_id == current_user.tenant_id,
-    ).first()
+    campaign = (
+        push_service.db.query(PushCampaign)
+        .filter(
+            PushCampaign.id == campaign_id,
+            PushCampaign.tenant_id == current_user.tenant_id,
+        )
+        .first()
+    )
 
     if not campaign:
         raise HTTPException(
@@ -932,10 +975,14 @@ async def get_campaign_analytics(
     push_service: PushService = Depends(get_push_service),
 ) -> CampaignAnalyticsResponse:
     """Obtém analytics da campanha."""
-    campaign = push_service.db.query(PushCampaign).filter(
-        PushCampaign.id == campaign_id,
-        PushCampaign.tenant_id == current_user.tenant_id,
-    ).first()
+    campaign = (
+        push_service.db.query(PushCampaign)
+        .filter(
+            PushCampaign.id == campaign_id,
+            PushCampaign.tenant_id == current_user.tenant_id,
+        )
+        .first()
+    )
 
     if not campaign:
         raise HTTPException(
@@ -944,18 +991,9 @@ async def get_campaign_analytics(
         )
 
     # Calcular taxas
-    delivery_rate = (
-        (campaign.total_delivered / campaign.total_sent * 100)
-        if campaign.total_sent > 0 else 0.0
-    )
-    open_rate = (
-        (campaign.total_opened / campaign.total_delivered * 100)
-        if campaign.total_delivered > 0 else 0.0
-    )
-    click_rate = (
-        (campaign.total_clicked / campaign.total_opened * 100)
-        if campaign.total_opened > 0 else 0.0
-    )
+    delivery_rate = (campaign.total_delivered / campaign.total_sent * 100) if campaign.total_sent > 0 else 0.0
+    open_rate = (campaign.total_opened / campaign.total_delivered * 100) if campaign.total_delivered > 0 else 0.0
+    click_rate = (campaign.total_clicked / campaign.total_opened * 100) if campaign.total_opened > 0 else 0.0
 
     return CampaignAnalyticsResponse(
         campaign_id=campaign.id,
@@ -965,7 +1003,7 @@ async def get_campaign_analytics(
         total_delivered=campaign.total_delivered,
         total_opened=campaign.total_opened,
         total_clicked=campaign.total_clicked,
-        total_converted=0,  # TODO: Implementar tracking de conversões
+        total_converted=0,
         delivery_rate=delivery_rate,
         open_rate=open_rate,
         click_rate=click_rate,
@@ -1020,20 +1058,25 @@ async def create_segment(
 
 @router.get(
     "/segments",
-    response_model=List[SegmentResponse],
+    response_model=list[SegmentResponse],
     summary="Listar segmentos",
     description="Lista segmentos de dispositivos.",
 )
 async def list_segments(
     current_user: CurrentActiveUser,
     push_service: PushService = Depends(get_push_service),
-) -> List[SegmentResponse]:
+) -> list[SegmentResponse]:
     """Lista segmentos."""
     try:
-        segments = push_service.db.query(PushSegment).filter(
-            PushSegment.tenant_id == current_user.tenant_id,
-            PushSegment.active == True,  # noqa: E712
-        ).order_by(PushSegment.name).all()
+        segments = (
+            push_service.db.query(PushSegment)
+            .filter(
+                PushSegment.tenant_id == current_user.tenant_id,
+                PushSegment.active == True,  # noqa: E712
+            )
+            .order_by(PushSegment.name)
+            .all()
+        )
 
         return [SegmentResponse.model_validate(s) for s in segments]
 
@@ -1059,9 +1102,9 @@ async def list_segments(
 async def get_metrics_summary(
     current_user: CurrentActiveUser,
     period: MetricPeriod = Query(MetricPeriod.DAILY),
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
-    platform: Optional[str] = Query(None),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
+    platform: str | None = Query(None),
     push_service: PushService = Depends(get_push_service),
 ) -> MetricsSummaryResponse:
     """Obtém resumo de métricas."""
@@ -1071,6 +1114,7 @@ async def get_metrics_summary(
             end_date = datetime.utcnow()
         if not start_date:
             from datetime import timedelta
+
             start_date = end_date - timedelta(days=30)
 
         summary = push_service.get_metrics_summary(
@@ -1113,13 +1157,17 @@ async def get_metrics_summary(
 async def get_device_stats(
     current_user: CurrentActiveUser,
     push_service: PushService = Depends(get_push_service),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Obtém estatísticas de dispositivos."""
     try:
         # Total por plataforma
-        devices = push_service.db.query(PushDevice).filter(
-            PushDevice.tenant_id == current_user.tenant_id,
-        ).all()
+        devices = (
+            push_service.db.query(PushDevice)
+            .filter(
+                PushDevice.tenant_id == current_user.tenant_id,
+            )
+            .all()
+        )
 
         stats = {
             "total": len(devices),

@@ -1,7 +1,7 @@
 """
 Testes para NFeProvider - Integração NF-e com SEFAZ.
 
-Testa a nova integração NF-e via brazilfiscal em substituição à simulação.
+Testa a nova integração NF-e via PyNFe em substituição à simulação.
 Execute com: python -m pytest tests/test_nfe_provider.py -v -s
 """
 
@@ -9,6 +9,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -20,6 +21,7 @@ from modules.financial.integrations.nfe_provider import (
     NFeConfig,
     NFeError,
     NFeProvider,
+    _calcular_dv_chave,
     create_nfe_provider,
 )
 
@@ -63,8 +65,8 @@ class TestNFeProvider:
         assert provider.config.uf == "RJ"
 
     @pytest.mark.asyncio
-    async def test_emitir_nfe_simulacao(self):
-        """Testa emissão de NF-e (simulação)."""
+    async def test_emitir_nfe(self):
+        """Testa emissão de NF-e (com mock do sync)."""
         nfe_data = {
             "destinatario": {"cnpj": "12345678000199", "razao_social": "Cliente Teste LTDA"},
             "items": [
@@ -78,7 +80,21 @@ class TestNFeProvider:
             ],
         }
 
-        resultado = await self.provider.emitir_nfe(nfe_data=nfe_data, nfe_id=uuid4(), numero=123)
+        fake_chave = "35260235710481000103550010000001231234567890"
+        fake_result = {
+            "status": "enviada",
+            "chave_acesso": fake_chave,
+            "protocolo": "",
+            "mensagem": "[] Sem resposta SEFAZ",
+            "xml_autorizado": None,
+            "pdf_danfe": None,
+            "codigo_status": "",
+            "motivo": "Sem resposta SEFAZ",
+            "data_autorizacao": datetime.now().isoformat(),
+        }
+
+        with patch.object(self.provider, "_emitir_sync", return_value=fake_result):
+            resultado = await self.provider.emitir_nfe(nfe_data=nfe_data, nfe_id=uuid4(), numero=123)
 
         # Verificar estrutura da resposta
         assert "status" in resultado
@@ -86,18 +102,29 @@ class TestNFeProvider:
         assert "protocolo" in resultado
         assert "mensagem" in resultado
 
-        # Verificar valores simulados
+        # Verificar valores
         assert resultado["status"] == "enviada"
-        assert len(resultado["chave_acesso"]) == 44  # Chave NF-e tem 44 dígitos
-        assert "SIMULAÇÃO" in resultado["mensagem"]
+        assert len(resultado["chave_acesso"]) == 44
+        assert resultado["chave_acesso"] == fake_chave
 
     @pytest.mark.asyncio
-    async def test_cancelar_nfe_simulacao(self):
-        """Testa cancelamento de NF-e (simulação)."""
+    async def test_cancelar_nfe(self):
+        """Testa cancelamento de NF-e (com mock do sync)."""
         chave_acesso = "13202613123456000199550010000001231234567890"
         motivo = "Teste de cancelamento - erro de digitação"
 
-        resultado = await self.provider.cancelar_nfe(chave_acesso=chave_acesso, motivo=motivo, nfe_id=uuid4())
+        fake_result = {
+            "status": "cancelada",
+            "chave_acesso": chave_acesso,
+            "protocolo": "135260000012345",
+            "mensagem": "[135] Evento registrado e vinculado a NF-e",
+            "data_cancelamento": datetime.now().isoformat(),
+            "codigo_status": "135",
+            "motivo_cancelamento": motivo,
+        }
+
+        with patch.object(self.provider, "_cancelar_sync", return_value=fake_result):
+            resultado = await self.provider.cancelar_nfe(chave_acesso=chave_acesso, motivo=motivo, nfe_id=uuid4())
 
         # Verificar estrutura da resposta
         assert "status" in resultado
@@ -109,13 +136,13 @@ class TestNFeProvider:
         # Verificar valores
         assert resultado["status"] == "cancelada"
         assert resultado["chave_acesso"] == chave_acesso
-        assert motivo in resultado["mensagem"]
+        assert resultado["motivo_cancelamento"] == motivo
 
     @pytest.mark.asyncio
     async def test_cancelar_nfe_chave_invalida(self):
         """Testa cancelamento com chave inválida."""
         chave_invalida = "123"  # Muito curta
-        motivo = "Teste cancelamento"
+        motivo = "Teste cancelamento com motivo suficiente"
 
         with pytest.raises(NFeError) as exc_info:
             await self.provider.cancelar_nfe(chave_acesso=chave_invalida, motivo=motivo, nfe_id=uuid4())
@@ -136,11 +163,23 @@ class TestNFeProvider:
         assert exc_info.value.code == "INVALID_REASON"
 
     @pytest.mark.asyncio
-    async def test_consultar_status_simulacao(self):
-        """Testa consulta de status (simulação)."""
+    async def test_consultar_status(self):
+        """Testa consulta de status (com mock do sync)."""
         chave_acesso = "13202613123456000199550010000001231234567890"
 
-        resultado = await self.provider.consultar_status(chave_acesso)
+        fake_result = {
+            "status": "autorizada",
+            "chave_acesso": chave_acesso,
+            "protocolo": "135260000012345",
+            "data_autorizacao": datetime.now().isoformat(),
+            "codigo_status": "100",
+            "descricao_status": "Autorizado o uso da NF-e",
+            "xml_disponivel": True,
+            "situacao": "NORMAL",
+        }
+
+        with patch.object(self.provider, "_consultar_sync", return_value=fake_result):
+            resultado = await self.provider.consultar_status(chave_acesso)
 
         # Verificar estrutura da resposta
         assert "status" in resultado
@@ -149,7 +188,7 @@ class TestNFeProvider:
         assert "data_autorizacao" in resultado
         assert "codigo_status" in resultado
 
-        # Verificar valores simulados
+        # Verificar valores
         assert resultado["status"] == "autorizada"
         assert resultado["chave_acesso"] == chave_acesso
         assert resultado["codigo_status"] == "100"
@@ -166,9 +205,22 @@ class TestNFeProvider:
         assert exc_info.value.code == "INVALID_KEY"
 
     @pytest.mark.asyncio
-    async def test_test_connection_simulacao(self):
-        """Testa conexão com SEFAZ (simulação)."""
-        resultado = await self.provider.test_connection()
+    async def test_test_connection(self):
+        """Testa conexão com SEFAZ (com mock do sync)."""
+        fake_result = {
+            "conectado": True,
+            "ambiente": "Homologação",
+            "uf": "SP",
+            "servico_ativo": True,
+            "ultima_atualizacao": datetime.now().isoformat(),
+            "versao_schema": "4.00",
+            "codigo_status": "107",
+            "motivo": "Servico em Operacao",
+            "tempo_medio_resposta": "1",
+        }
+
+        with patch.object(self.provider, "_status_sync", return_value=fake_result):
+            resultado = await self.provider.test_connection()
 
         # Verificar estrutura da resposta
         assert "conectado" in resultado
@@ -180,17 +232,17 @@ class TestNFeProvider:
         assert resultado["conectado"] is True
         assert resultado["ambiente"] == "Homologação"
         assert resultado["uf"] == "SP"
-        assert resultado["simulacao"] is True  # Flag temporária
 
     def test_calcular_dv_chave(self):
         """Testa cálculo do dígito verificador da chave NF-e."""
         # Chave sem DV: 1320261312345600019955001000000123
         chave_sem_dv = "1320261312345600019955001000000123"
-        dv = self.provider._calcular_dv_chave(chave_sem_dv)
+        dv = _calcular_dv_chave(chave_sem_dv)
 
-        # DV deve ser um dígito de 0 a 9
-        assert isinstance(dv, int)
-        assert 0 <= dv <= 9
+        # DV deve ser um dígito string de 0 a 9
+        assert isinstance(dv, str)
+        assert len(dv) == 1
+        assert dv in "0123456789"
 
     def test_nfe_error_structure(self):
         """Testa estrutura da exceção NFeError."""
@@ -202,21 +254,18 @@ class TestNFeProvider:
 
 
 class TestNFeProviderIntegracao:
-    """Testes de integração (quando brazilfiscal estiver instalado)."""
+    """Testes de integração (quando PyNFe estiver configurado)."""
 
-    @pytest.mark.skip(reason="brazilfiscal não instalado ainda")
+    @pytest.mark.skip(reason="PyNFe/certificado não configurado ainda")
     @pytest.mark.asyncio
     async def test_emissao_real_homologacao(self):
         """Teste de emissão real em homologação (quando implementado)."""
-        # Este teste será habilitado após instalar brazilfiscal
-        # e configurar certificado de homologação
         pass
 
-    @pytest.mark.skip(reason="brazilfiscal não instalado ainda")
+    @pytest.mark.skip(reason="PyNFe/certificado não configurado ainda")
     @pytest.mark.asyncio
     async def test_cancelamento_real_homologacao(self):
         """Teste de cancelamento real em homologação (quando implementado)."""
-        # Este teste será habilitado após implementação completa
         pass
 
 

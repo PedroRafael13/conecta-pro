@@ -2,24 +2,23 @@
 
 import logging
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_async_session
 from core.auth.dependencies import get_current_user, require_roles
-from modules.hr.employee_portal.services import VacationService
+from core.database import get_async_session
+from modules.hr.employee_portal.models import VacationStatus
 from modules.hr.employee_portal.schemas import (
-    VacationRequestCreate,
-    VacationRequestResponse,
-    VacationRequestListResponse,
     VacationBalanceResponse,
     VacationCalculationRequest,
     VacationCalculationResponse,
+    VacationRequestCreate,
+    VacationRequestListResponse,
+    VacationRequestResponse,
 )
-from modules.hr.employee_portal.models import VacationStatus
+from modules.hr.employee_portal.services import VacationService
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +41,7 @@ async def get_vacation_balance(
     return await service.get_vacation_balance(employee_id)
 
 
-@router.post(
-    "/calculate",
-    response_model=VacationCalculationResponse,
-    summary="Calcular valores de férias",
-)
+@router.post("/calculate", response_model=VacationCalculationResponse, summary="Calcular valores de férias")
 async def calculate_vacation(
     data: VacationCalculationRequest,
     db: AsyncSession = Depends(get_async_session),
@@ -67,7 +62,7 @@ async def calculate_vacation(
     summary="Listar solicitações de férias",
 )
 async def list_vacation_requests(
-    status_filter: Optional[VacationStatus] = Query(None, alias="status"),
+    status_filter: VacationStatus | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_async_session),
@@ -151,6 +146,7 @@ async def get_vacation_request(
     "/requests/{request_id}/submit",
     response_model=VacationRequestResponse,
     summary="Enviar solicitação para aprovação",
+    status_code=201,
 )
 async def submit_vacation_request(
     request_id: UUID,
@@ -175,6 +171,7 @@ async def submit_vacation_request(
     "/requests/{request_id}/cancel",
     response_model=VacationRequestResponse,
     summary="Cancelar solicitação",
+    status_code=201,
 )
 async def cancel_vacation_request(
     request_id: UUID,
@@ -241,7 +238,7 @@ async def list_pending_approvals(
 async def approve_vacation_request(
     request_id: UUID,
     level: str = Query("manager", regex="^(manager|hr)$"),
-    notes: Optional[str] = Body(None, max_length=500),
+    notes: str | None = Body(None, max_length=500),
     db: AsyncSession = Depends(get_async_session),
     current_user: dict = Depends(get_current_user),
 ):

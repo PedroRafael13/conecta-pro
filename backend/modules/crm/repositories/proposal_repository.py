@@ -2,8 +2,8 @@
 Repository para operacoes de banco de dados com Proposal.
 """
 
+import builtins
 from datetime import date, datetime, timedelta
-from typing import List, Optional, Tuple
 from uuid import uuid4
 
 from sqlalchemy import func, or_, select
@@ -44,9 +44,7 @@ class ProposalRepository:
         now = datetime.utcnow()
         return f"PROP-{now.strftime('%Y%m%d')}-{uuid4().hex[:6].upper()}"
 
-    async def create(
-        self, data: ProposalCreate, created_by_id: Optional[str] = None
-    ) -> Proposal:
+    async def create(self, data: ProposalCreate, created_by_id: str | None = None) -> Proposal:
         """
         Cria uma nova proposta.
 
@@ -116,8 +114,8 @@ class ProposalRepository:
         return proposal
 
     async def create_from_opportunity(
-        self, data: ProposalCreateFromOpportunity, created_by_id: Optional[str] = None
-    ) -> Optional[Proposal]:
+        self, data: ProposalCreateFromOpportunity, created_by_id: str | None = None
+    ) -> Proposal | None:
         """
         Cria proposta a partir de uma opportunity.
 
@@ -181,14 +179,10 @@ class ProposalRepository:
         proposal.calculate_totals()
         await self.db.commit()
 
-        logger.info(
-            f"Proposal criada de Opportunity: {proposal.id} (opp: {opportunity.id})"
-        )
+        logger.info(f"Proposal criada de Opportunity: {proposal.id} (opp: {opportunity.id})")
         return proposal
 
-    def _create_item(
-        self, proposal_id: str, data: ProposalItemCreate, sort_order: int
-    ) -> ProposalItem:
+    def _create_item(self, proposal_id: str, data: ProposalItemCreate, sort_order: int) -> ProposalItem:
         """Cria item de proposta."""
         item = ProposalItem(
             id=str(uuid4()),
@@ -206,7 +200,7 @@ class ProposalRepository:
         item.calculate_total()
         return item
 
-    async def get_by_id(self, proposal_id: str) -> Optional[Proposal]:
+    async def get_by_id(self, proposal_id: str) -> Proposal | None:
         """
         Busca proposta por ID.
 
@@ -223,7 +217,7 @@ class ProposalRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_number(self, number: str) -> Optional[Proposal]:
+    async def get_by_number(self, number: str) -> Proposal | None:
         """Busca proposta por numero."""
         result = await self.db.execute(
             select(Proposal)
@@ -234,10 +228,10 @@ class ProposalRepository:
 
     async def list(
         self,
-        filters: Optional[ProposalFilter] = None,
+        filters: ProposalFilter | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[Proposal], int]:
+    ) -> tuple[list[Proposal], int]:
         """
         Lista propostas com filtros e paginacao.
 
@@ -290,9 +284,7 @@ class ProposalRepository:
             if filters.is_expired:
                 query = query.where(Proposal.valid_until < today)
             else:
-                query = query.where(
-                    or_(Proposal.valid_until >= today, Proposal.valid_until.is_(None))
-                )
+                query = query.where(or_(Proposal.valid_until >= today, Proposal.valid_until.is_(None)))
 
         if filters.min_value is not None:
             query = query.where(Proposal.total >= filters.min_value)
@@ -301,9 +293,7 @@ class ProposalRepository:
             query = query.where(Proposal.total <= filters.max_value)
 
         if filters.client_name:
-            query = query.where(
-                Proposal.client_name.ilike(f"%{filters.client_name}%")
-            )
+            query = query.where(Proposal.client_name.ilike(f"%{filters.client_name}%"))
 
         if filters.date_from:
             query = query.where(Proposal.issue_date >= filters.date_from)
@@ -325,9 +315,7 @@ class ProposalRepository:
 
         return query
 
-    async def update(
-        self, proposal_id: str, data: ProposalUpdate
-    ) -> Optional[Proposal]:
+    async def update(self, proposal_id: str, data: ProposalUpdate) -> Proposal | None:
         """
         Atualiza uma proposta.
 
@@ -351,9 +339,7 @@ class ProposalRepository:
         update_data = data.model_dump(exclude_unset=True)
 
         for field, value in update_data.items():
-            if field == "proposal_type" and value:
-                setattr(proposal, field, value.value)
-            elif field == "discount_type" and value:
+            if field == "proposal_type" and value or field == "discount_type" and value:
                 setattr(proposal, field, value.value)
             else:
                 setattr(proposal, field, value)
@@ -369,9 +355,7 @@ class ProposalRepository:
         logger.info(f"Proposal atualizada: {proposal.id}")
         return proposal
 
-    async def add_item(
-        self, proposal_id: str, item_data: ProposalItemCreate
-    ) -> Optional[ProposalItem]:
+    async def add_item(self, proposal_id: str, item_data: ProposalItemCreate) -> ProposalItem | None:
         """Adiciona item a proposta."""
         proposal = await self.get_by_id(proposal_id)
         if not proposal or proposal.is_closed:
@@ -423,9 +407,9 @@ class ProposalRepository:
         self,
         proposal_id: str,
         status: ProposalStatus,
-        notes: Optional[str] = None,
-        user_id: Optional[str] = None,  # pylint: disable=unused-argument
-    ) -> Optional[Proposal]:
+        notes: str | None = None,
+        user_id: str | None = None,  # pylint: disable=unused-argument
+    ) -> Proposal | None:
         """
         Atualiza status da proposta.
 
@@ -464,8 +448,10 @@ class ProposalRepository:
         return proposal
 
     async def submit_for_approval(
-        self, proposal_id: str, user_id: Optional[str] = None  # pylint: disable=unused-argument
-    ) -> Optional[Proposal]:
+        self,
+        proposal_id: str,
+        user_id: str | None = None,  # pylint: disable=unused-argument
+    ) -> Proposal | None:
         """Submete proposta para aprovacao."""
         proposal = await self.get_by_id(proposal_id)
         if not proposal or not proposal.is_draft:
@@ -485,7 +471,7 @@ class ProposalRepository:
         proposal_id: str,
         data: ProposalApprovalRequest,
         user_id: str,
-    ) -> Optional[Proposal]:
+    ) -> Proposal | None:
         """
         Processa aprovacao/rejeicao de proposta.
 
@@ -532,9 +518,7 @@ class ProposalRepository:
         logger.info(f"Proposal {proposal_id} aprovacao: {data.action.value}")
         return proposal
 
-    async def create_new_version(
-        self, proposal_id: str, created_by_id: Optional[str] = None
-    ) -> Optional[Proposal]:
+    async def create_new_version(self, proposal_id: str, created_by_id: str | None = None) -> Proposal | None:
         """
         Cria nova versao da proposta.
 
@@ -625,7 +609,7 @@ class ProposalRepository:
         return True
 
     async def get_stats(  # pylint: disable=too-many-locals
-        self, created_by_id: Optional[str] = None
+        self, created_by_id: str | None = None
     ) -> ProposalStats:
         """
         Obtem estatisticas de propostas.
@@ -746,14 +730,9 @@ class ProposalRepository:
 
         # Se for default, remover flag dos outros
         if data.is_default:
-            await self.db.execute(
-                select(ProposalTemplate)
-                .where(ProposalTemplate.is_default.is_(True))
-            )
+            await self.db.execute(select(ProposalTemplate).where(ProposalTemplate.is_default.is_(True)))
             # Reset all defaults
-            result = await self.db.execute(
-                select(ProposalTemplate).where(ProposalTemplate.is_default.is_(True))
-            )
+            result = await self.db.execute(select(ProposalTemplate).where(ProposalTemplate.is_default.is_(True)))
             for t in result.scalars().all():
                 t.is_default = False
 
@@ -764,7 +743,7 @@ class ProposalRepository:
         logger.info(f"Template criado: {template.id} ({template.name})")
         return template
 
-    async def get_template_by_id(self, template_id: str) -> Optional[ProposalTemplate]:
+    async def get_template_by_id(self, template_id: str) -> ProposalTemplate | None:
         """Busca template por ID."""
         result = await self.db.execute(
             select(ProposalTemplate).where(
@@ -774,18 +753,14 @@ class ProposalRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_templates(self) -> List[ProposalTemplate]:
+    async def list_templates(self) -> builtins.list[ProposalTemplate]:
         """Lista todos os templates ativos."""
         result = await self.db.execute(
-            select(ProposalTemplate)
-            .where(ProposalTemplate.is_active.is_(True))
-            .order_by(ProposalTemplate.name)
+            select(ProposalTemplate).where(ProposalTemplate.is_active.is_(True)).order_by(ProposalTemplate.name)
         )
         return list(result.scalars().all())
 
-    async def update_template(
-        self, template_id: str, data: ProposalTemplateUpdate
-    ) -> Optional[ProposalTemplate]:
+    async def update_template(self, template_id: str, data: ProposalTemplateUpdate) -> ProposalTemplate | None:
         """Atualiza template."""
         template = await self.get_template_by_id(template_id)
         if not template:

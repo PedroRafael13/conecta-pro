@@ -2,24 +2,23 @@
 
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from modules.financial.bi_dashboard.models.kpi_definition import (
+    AlertLevel,
     FinancialKPI,
     KPICategory,
-    KPIStatus,
     KPIFrequency,
-    AlertLevel,
+    KPIStatus,
 )
 from modules.financial.bi_dashboard.schemas.kpi_schemas import (
     KPICreate,
-    KPIUpdate,
     KPIFilters,
     KPISummary,
+    KPIUpdate,
 )
 
 
@@ -81,7 +80,7 @@ class KPIRepository:
         self,
         kpi_id: UUID,
         condominio_id: UUID = None,
-    ) -> Optional[FinancialKPI]:
+    ) -> FinancialKPI | None:
         """Busca KPI por ID."""
         query = self.db.query(FinancialKPI).filter(FinancialKPI.id == kpi_id)
         if condominio_id:
@@ -92,7 +91,7 @@ class KPIRepository:
         self,
         codigo: str,
         condominio_id: UUID = None,
-    ) -> Optional[FinancialKPI]:
+    ) -> FinancialKPI | None:
         """Busca KPI por codigo."""
         query = self.db.query(FinancialKPI).filter(FinancialKPI.codigo == codigo)
         if condominio_id:
@@ -107,9 +106,7 @@ class KPIRepository:
         limit: int = 100,
     ) -> tuple[list[FinancialKPI], int]:
         """Lista KPIs com filtros."""
-        query = self.db.query(FinancialKPI).filter(
-            FinancialKPI.condominio_id == condominio_id
-        )
+        query = self.db.query(FinancialKPI).filter(FinancialKPI.condominio_id == condominio_id)
 
         if filters:
             if filters.categoria:
@@ -121,9 +118,7 @@ class KPIRepository:
             if filters.alert_level:
                 query = query.filter(FinancialKPI.alert_level == filters.alert_level)
             if filters.show_in_summary is not None:
-                query = query.filter(
-                    FinancialKPI.show_in_summary == filters.show_in_summary
-                )
+                query = query.filter(FinancialKPI.show_in_summary == filters.show_in_summary)
             if filters.search:
                 search_term = f"%{filters.search}%"
                 query = query.filter(
@@ -208,11 +203,16 @@ class KPIRepository:
 
     def get_summary(self, condominio_id: UUID) -> list[FinancialKPI]:
         """Lista KPIs para resumo."""
-        return self.db.query(FinancialKPI).filter(
-            FinancialKPI.condominio_id == condominio_id,
-            FinancialKPI.status == KPIStatus.ACTIVE,
-            FinancialKPI.show_in_summary == True,
-        ).order_by(FinancialKPI.order).all()
+        return (
+            self.db.query(FinancialKPI)
+            .filter(
+                FinancialKPI.condominio_id == condominio_id,
+                FinancialKPI.status == KPIStatus.ACTIVE,
+                FinancialKPI.show_in_summary,
+            )
+            .order_by(FinancialKPI.order)
+            .all()
+        )
 
     def get_by_category(
         self,
@@ -220,11 +220,16 @@ class KPIRepository:
         categoria: KPICategory,
     ) -> list[FinancialKPI]:
         """Lista KPIs por categoria."""
-        return self.db.query(FinancialKPI).filter(
-            FinancialKPI.condominio_id == condominio_id,
-            FinancialKPI.categoria == categoria,
-            FinancialKPI.status == KPIStatus.ACTIVE,
-        ).order_by(FinancialKPI.order).all()
+        return (
+            self.db.query(FinancialKPI)
+            .filter(
+                FinancialKPI.condominio_id == condominio_id,
+                FinancialKPI.categoria == categoria,
+                FinancialKPI.status == KPIStatus.ACTIVE,
+            )
+            .order_by(FinancialKPI.order)
+            .all()
+        )
 
     def get_alerts(
         self,
@@ -236,12 +241,16 @@ class KPIRepository:
         if min_level == AlertLevel.CRITICAL:
             levels = [AlertLevel.CRITICAL]
 
-        return self.db.query(FinancialKPI).filter(
-            FinancialKPI.condominio_id == condominio_id,
-            FinancialKPI.status == KPIStatus.ACTIVE,
-            FinancialKPI.alert_enabled == True,
-            FinancialKPI.alert_level.in_(levels),
-        ).all()
+        return (
+            self.db.query(FinancialKPI)
+            .filter(
+                FinancialKPI.condominio_id == condominio_id,
+                FinancialKPI.status == KPIStatus.ACTIVE,
+                FinancialKPI.alert_enabled,
+                FinancialKPI.alert_level.in_(levels),
+            )
+            .all()
+        )
 
     def get_needing_calculation(
         self,
@@ -251,10 +260,14 @@ class KPIRepository:
         now = datetime.utcnow()
         kpis = []
 
-        for kpi in self.db.query(FinancialKPI).filter(
-            FinancialKPI.condominio_id == condominio_id,
-            FinancialKPI.status == KPIStatus.ACTIVE,
-        ).all():
+        for kpi in (
+            self.db.query(FinancialKPI)
+            .filter(
+                FinancialKPI.condominio_id == condominio_id,
+                FinancialKPI.status == KPIStatus.ACTIVE,
+            )
+            .all()
+        ):
             if not kpi.ultimo_calculo_at:
                 kpis.append(kpi)
                 continue
@@ -274,24 +287,16 @@ class KPIRepository:
 
     def get_stats(self, condominio_id: UUID) -> KPISummary:
         """Retorna estatisticas de KPIs."""
-        base_query = self.db.query(FinancialKPI).filter(
-            FinancialKPI.condominio_id == condominio_id
-        )
+        base_query = self.db.query(FinancialKPI).filter(FinancialKPI.condominio_id == condominio_id)
 
         total = base_query.count()
-        active = base_query.filter(
-            FinancialKPI.status == KPIStatus.ACTIVE
-        ).count()
+        active = base_query.filter(FinancialKPI.status == KPIStatus.ACTIVE).count()
         on_target = base_query.filter(
             FinancialKPI.status == KPIStatus.ACTIVE,
-            FinancialKPI.meta_atingida == True,
+            FinancialKPI.meta_atingida,
         ).count()
-        warning = base_query.filter(
-            FinancialKPI.alert_level == AlertLevel.WARNING
-        ).count()
-        critical = base_query.filter(
-            FinancialKPI.alert_level == AlertLevel.CRITICAL
-        ).count()
+        warning = base_query.filter(FinancialKPI.alert_level == AlertLevel.WARNING).count()
+        critical = base_query.filter(FinancialKPI.alert_level == AlertLevel.CRITICAL).count()
 
         by_category = {}
         for cat in KPICategory:
@@ -306,26 +311,28 @@ class KPIRepository:
             FinancialKPI.meta_valor.isnot(None),
         ).all():
             if kpi.progress_to_target > 0:
-                top_performers.append({
-                    "id": str(kpi.id),
-                    "codigo": kpi.codigo,
-                    "nome": kpi.nome,
-                    "progress": float(kpi.progress_to_target),
-                })
+                top_performers.append(
+                    {
+                        "id": str(kpi.id),
+                        "codigo": kpi.codigo,
+                        "nome": kpi.nome,
+                        "progress": float(kpi.progress_to_target),
+                    }
+                )
         top_performers.sort(key=lambda x: x["progress"], reverse=True)
 
         # Needs attention (em alerta)
         needs_attention = []
-        for kpi in base_query.filter(
-            FinancialKPI.alert_level.in_([AlertLevel.WARNING, AlertLevel.CRITICAL])
-        ).all():
-            needs_attention.append({
-                "id": str(kpi.id),
-                "codigo": kpi.codigo,
-                "nome": kpi.nome,
-                "alert_level": kpi.alert_level.value,
-                "alert_message": kpi.alert_message,
-            })
+        for kpi in base_query.filter(FinancialKPI.alert_level.in_([AlertLevel.WARNING, AlertLevel.CRITICAL])).all():
+            needs_attention.append(
+                {
+                    "id": str(kpi.id),
+                    "codigo": kpi.codigo,
+                    "nome": kpi.nome,
+                    "alert_level": kpi.alert_level.value,
+                    "alert_message": kpi.alert_message,
+                }
+            )
 
         return KPISummary(
             total=total,

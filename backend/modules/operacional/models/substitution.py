@@ -3,8 +3,7 @@ Modelo Substitution (Substituição de Funcionário) para Operações.
 """
 
 from datetime import date, datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, String, Text, func
@@ -14,7 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class SubstitutionStatus(str, Enum):
+class SubstitutionStatus(StrEnum):
     """Status da substituição."""
 
     PENDING = "pending"  # Aguardando confirmação
@@ -25,7 +24,7 @@ class SubstitutionStatus(str, Enum):
     REJECTED = "rejected"  # Rejeitada pelo substituto
 
 
-class SubstitutionReason(str, Enum):
+class SubstitutionReason(StrEnum):
     """Motivo da substituição."""
 
     SICK_LEAVE = "sick_leave"  # Atestado médico
@@ -84,7 +83,7 @@ class Substitution(Base):
         nullable=False,
         index=True,
     )
-    substitute_employee_id: Mapped[Optional[str]] = mapped_column(
+    substitute_employee_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -110,8 +109,8 @@ class Substitution(Base):
         default=func.now(),
         nullable=False,
     )
-    confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Custos
     additional_cost: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
@@ -119,20 +118,20 @@ class Substitution(Base):
     is_overtime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Observações
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    reason_details: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    rejection_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reason_details: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Notificações
     notification_sent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    notification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    notification_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Quem solicitou/aprovou
-    requested_by: Mapped[Optional[str]] = mapped_column(
+    requested_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    approved_by: Mapped[Optional[str]] = mapped_column(
+    approved_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
@@ -174,7 +173,7 @@ class Substitution(Base):
         return self.substitute_employee_id is not None
 
     @property
-    def response_time_hours(self) -> Optional[float]:
+    def response_time_hours(self) -> float | None:
         """Calcula tempo de resposta em horas."""
         if not self.confirmed_at:
             return None

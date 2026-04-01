@@ -1,48 +1,42 @@
 """Models do módulo GED (Gestão Eletrônica de Documentos)."""
 
-from modules.ged.models.folder import (
-    Folder,
-    FolderType,
-    FolderStatus,
-    FolderPermission,
-)
-
 from modules.ged.models.document import (
     Document,
-    DocumentType,
-    DocumentStatus,
     DocumentCategory,
     DocumentConfidentiality,
+    DocumentStatus,
+    DocumentType,
     FileType,
 )
-
-from modules.ged.models.document_version import (
-    DocumentVersion,
-    VersionType,
-    VersionStatus,
-)
-
 from modules.ged.models.document_share import (
     DocumentShare,
-    ShareType,
     SharePermission,
     ShareStatus,
+    ShareType,
 )
-
-from modules.ged.models.document_tag import (
-    DocumentTag,
-    TagType,
-    TagColor,
-    document_tag_association,
-)
-
 from modules.ged.models.document_signature import (
     DocumentSignature,
-    SignatureType,
-    SignatureStatus,
     SignatureRole,
+    SignatureStatus,
+    SignatureType,
 )
-
+from modules.ged.models.document_tag import (
+    DocumentTag,
+    TagColor,
+    TagType,
+    document_tag_association,
+)
+from modules.ged.models.document_version import (
+    DocumentVersion,
+    VersionStatus,
+    VersionType,
+)
+from modules.ged.models.folder import (
+    Folder,
+    FolderPermission,
+    FolderStatus,
+    FolderType,
+)
 
 __all__ = [
     # Folder

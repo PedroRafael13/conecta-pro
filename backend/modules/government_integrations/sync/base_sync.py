@@ -9,16 +9,16 @@ Fornece funcionalidades comuns:
 - Metricas de execucao
 """
 
-import logging
-import time
-from abc import ABC, abstractmethod
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, Generator
-from uuid import uuid4
-from dataclasses import dataclass, field
-from enum import Enum
 import asyncio
+import logging
 import traceback
+from abc import ABC, abstractmethod
+from collections.abc import Generator
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
+from enum import StrEnum
+from typing import Any
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -27,38 +27,42 @@ logger = logging.getLogger(__name__)
 # DATA CLASSES
 # =============================================================================
 
+
 @dataclass
 class SyncResult:
     """Resultado de uma sincronizacao."""
+
     sucesso: bool
     registros_processados: int = 0
     registros_novos: int = 0
     registros_atualizados: int = 0
     registros_erro: int = 0
     mensagem: str = ""
-    erros: List[Dict[str, Any]] = field(default_factory=list)
-    dados_extras: Dict[str, Any] = field(default_factory=dict)
+    erros: list[dict[str, Any]] = field(default_factory=list)
+    dados_extras: dict[str, Any] = field(default_factory=dict)
     duracao_segundos: float = 0
-    ultimo_id_processado: Optional[str] = None
-    ultima_data_processada: Optional[datetime] = None
+    ultimo_id_processado: str | None = None
+    ultima_data_processada: datetime | None = None
 
 
 @dataclass
 class SyncConfig:
     """Configuracao de sincronizacao."""
+
     cnpj_empresa: str
     servico: str
-    data_inicial: Optional[date] = None
-    data_final: Optional[date] = None
+    data_inicial: date | None = None
+    data_final: date | None = None
     tipo_sync: str = "incremental"  # completa, incremental
-    max_registros: Optional[int] = None
+    max_registros: int | None = None
     timeout_segundos: int = 300
     max_retries: int = 3
-    parametros_extras: Dict[str, Any] = field(default_factory=dict)
+    parametros_extras: dict[str, Any] = field(default_factory=dict)
 
 
-class SyncStatus(str, Enum):
+class SyncStatus(StrEnum):
     """Status de sincronizacao."""
+
     IDLE = "idle"
     RUNNING = "running"
     SUCCESS = "success"
@@ -69,6 +73,7 @@ class SyncStatus(str, Enum):
 # =============================================================================
 # CLASSE BASE
 # =============================================================================
+
 
 class BaseSynchronizer(ABC):
     """
@@ -106,7 +111,7 @@ class BaseSynchronizer(ABC):
         self.govbr_service = govbr_service
         self._status = SyncStatus.IDLE
         self._cancel_requested = False
-        self._current_sync_id: Optional[str] = None
+        self._current_sync_id: str | None = None
 
     @property
     def status(self) -> SyncStatus:
@@ -126,7 +131,7 @@ class BaseSynchronizer(ABC):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> Generator[Dict[str, Any], None, None]:
+    ) -> Generator[dict[str, Any], None, None]:
         """
         Extrai dados do servico governamental.
 
@@ -144,7 +149,7 @@ class BaseSynchronizer(ABC):
     @abstractmethod
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """
@@ -163,7 +168,7 @@ class BaseSynchronizer(ABC):
     def _obter_ultima_sincronizacao(
         self,
         cnpj: str,
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         """
         Obtem data/hora da ultima sincronizacao bem sucedida.
 
@@ -200,8 +205,7 @@ class BaseSynchronizer(ABC):
         result = SyncResult(sucesso=False)
 
         logger.info(
-            f"[{self.SERVICO_NOME}] Iniciando sincronizacao - "
-            f"CNPJ: {config.cnpj_empresa}, Tipo: {config.tipo_sync}"
+            f"[{self.SERVICO_NOME}] Iniciando sincronizacao - CNPJ: {config.cnpj_empresa}, Tipo: {config.tipo_sync}"
         )
 
         try:
@@ -214,15 +218,13 @@ class BaseSynchronizer(ABC):
                 if ultima_sync:
                     config.data_inicial = ultima_sync.date()
                 else:
-                    config.data_inicial = date.today() - timedelta(
-                        days=self.DIAS_RETROATIVOS_PADRAO
-                    )
+                    config.data_inicial = date.today() - timedelta(days=self.DIAS_RETROATIVOS_PADRAO)
 
             if not config.data_final:
                 config.data_final = date.today()
 
             # Registrar inicio no banco
-            sync_log = await self._registrar_inicio_sync(config)
+            await self._registrar_inicio_sync(config)
 
             # Extrair e processar dados
             async for registro in self._extrair_dados(config):
@@ -248,14 +250,14 @@ class BaseSynchronizer(ABC):
 
                 except Exception as e:
                     result.registros_erro += 1
-                    result.erros.append({
-                        "registro": str(registro.get("id", "unknown")),
-                        "erro": str(e),
-                        "traceback": traceback.format_exc()
-                    })
-                    logger.error(
-                        f"[{self.SERVICO_NOME}] Erro processando registro: {e}"
+                    result.erros.append(
+                        {
+                            "registro": str(registro.get("id", "unknown")),
+                            "erro": str(e),
+                            "traceback": traceback.format_exc(),
+                        }
                     )
+                    logger.error(f"[{self.SERVICO_NOME}] Erro processando registro: {e}")
 
                 # Commit parcial a cada 100 registros
                 if result.registros_processados % 100 == 0:
@@ -276,8 +278,7 @@ class BaseSynchronizer(ABC):
                 result.sucesso = True
                 self._status = SyncStatus.PARTIAL
                 result.mensagem = (
-                    f"Sincronizacao parcial: {result.registros_erro} erros de "
-                    f"{result.registros_processados} registros"
+                    f"Sincronizacao parcial: {result.registros_erro} erros de {result.registros_processados} registros"
                 )
             else:
                 self._status = SyncStatus.ERROR
@@ -286,11 +287,7 @@ class BaseSynchronizer(ABC):
         except Exception as e:
             self._status = SyncStatus.ERROR
             result.mensagem = f"Erro na sincronizacao: {str(e)}"
-            result.erros.append({
-                "tipo": "erro_geral",
-                "erro": str(e),
-                "traceback": traceback.format_exc()
-            })
+            result.erros.append({"tipo": "erro_geral", "erro": str(e), "traceback": traceback.format_exc()})
             logger.exception(f"[{self.SERVICO_NOME}] Erro na sincronizacao")
 
         finally:
@@ -323,20 +320,20 @@ class BaseSynchronizer(ABC):
         if not config.cnpj_empresa or len(config.cnpj_empresa) != 14:
             raise ValueError("CNPJ invalido")
 
+    @abstractmethod
     async def _registrar_inicio_sync(self, config: SyncConfig):
         """Registra inicio da sincronizacao no banco."""
-        # Sera implementado com o modelo real
-        pass
+        ...
 
+    @abstractmethod
     async def _registrar_fim_sync(self, result: SyncResult):
         """Registra fim da sincronizacao no banco."""
-        # Sera implementado com o modelo real
-        pass
+        ...
 
     async def _commit_parcial(self):
         """Faz commit parcial durante processamento."""
         try:
-            if hasattr(self.db, 'commit'):
+            if hasattr(self.db, "commit"):
                 await self.db.commit()
         except Exception as e:
             logger.warning(f"[{self.SERVICO_NOME}] Erro no commit parcial: {e}")
@@ -344,7 +341,7 @@ class BaseSynchronizer(ABC):
     async def _commit_final(self):
         """Faz commit final apos processamento."""
         try:
-            if hasattr(self.db, 'commit'):
+            if hasattr(self.db, "commit"):
                 await self.db.commit()
         except Exception as e:
             logger.error(f"[{self.SERVICO_NOME}] Erro no commit final: {e}")
@@ -384,11 +381,10 @@ class BaseSynchronizer(ABC):
 
             except Exception as e:
                 last_error = e
-                delay = base_delay * (2 ** attempt)
+                delay = base_delay * (2**attempt)
 
                 logger.warning(
-                    f"[{self.SERVICO_NOME}] Tentativa {attempt + 1}/{max_retries} "
-                    f"falhou: {e}. Aguardando {delay}s..."
+                    f"[{self.SERVICO_NOME}] Tentativa {attempt + 1}/{max_retries} falhou: {e}. Aguardando {delay}s..."
                 )
 
                 await asyncio.sleep(delay)
@@ -398,14 +394,16 @@ class BaseSynchronizer(ABC):
     def _normalizar_cnpj(self, cnpj: str) -> str:
         """Remove formatacao do CNPJ."""
         import re
-        return re.sub(r'[^0-9]', '', cnpj)
+
+        return re.sub(r"[^0-9]", "", cnpj)
 
     def _normalizar_cpf(self, cpf: str) -> str:
         """Remove formatacao do CPF."""
         import re
-        return re.sub(r'[^0-9]', '', cpf)
 
-    def _parse_data(self, data_str: str) -> Optional[date]:
+        return re.sub(r"[^0-9]", "", cpf)
+
+    def _parse_data(self, data_str: str) -> date | None:
         """Converte string para date."""
         if not data_str:
             return None
@@ -420,13 +418,13 @@ class BaseSynchronizer(ABC):
 
         for fmt in formatos:
             try:
-                return datetime.strptime(data_str[:len(fmt)], fmt).date()
+                return datetime.strptime(data_str[: len(fmt)], fmt).date()
             except ValueError:
                 continue
 
         return None
 
-    def _parse_decimal(self, valor: Any) -> Optional[float]:
+    def _parse_decimal(self, valor: Any) -> float | None:
         """Converte valor para decimal."""
         if valor is None:
             return None
@@ -435,7 +433,7 @@ class BaseSynchronizer(ABC):
             return float(valor)
 
         if isinstance(valor, str):
-            valor = valor.replace(',', '.').strip()
+            valor = valor.replace(",", ".").strip()
             try:
                 return float(valor)
             except ValueError:
@@ -448,8 +446,10 @@ class BaseSynchronizer(ABC):
 # DECORATORS
 # =============================================================================
 
+
 def retry_on_error(max_retries: int = 3, base_delay: float = 1.0):
     """Decorator para retry com backoff exponencial."""
+
     def decorator(func):
         async def wrapper(*args, **kwargs):
             last_error = None
@@ -458,19 +458,19 @@ def retry_on_error(max_retries: int = 3, base_delay: float = 1.0):
                     return await func(*args, **kwargs)
                 except Exception as e:
                     last_error = e
-                    delay = base_delay * (2 ** attempt)
-                    logger.warning(
-                        f"Tentativa {attempt + 1}/{max_retries} falhou: {e}. "
-                        f"Aguardando {delay}s..."
-                    )
+                    delay = base_delay * (2**attempt)
+                    logger.warning(f"Tentativa {attempt + 1}/{max_retries} falhou: {e}. Aguardando {delay}s...")
                     await asyncio.sleep(delay)
             raise last_error
+
         return wrapper
+
     return decorator
 
 
 def log_execution(func):
     """Decorator para logging de execucao."""
+
     async def wrapper(*args, **kwargs):
         logger.info(f"Iniciando {func.__name__}")
         inicio = datetime.utcnow()
@@ -483,4 +483,5 @@ def log_execution(func):
             duracao = (datetime.utcnow() - inicio).total_seconds()
             logger.error(f"Erro em {func.__name__} apos {duracao:.2f}s: {e}")
             raise
+
     return wrapper

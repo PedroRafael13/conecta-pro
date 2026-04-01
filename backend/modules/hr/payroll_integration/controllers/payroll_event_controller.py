@@ -1,7 +1,6 @@
 """Controller para eventos de folha de pagamento."""
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -105,9 +104,9 @@ async def create_bulk_events(
 )
 async def list_period_events(
     period_id: UUID,
-    employee_id: Optional[UUID] = Query(None, description="Filtrar por funcionário"),
-    event_type: Optional[EventType] = Query(None, description="Tipo de evento"),
-    event_category: Optional[EventCategory] = Query(None, description="Categoria"),
+    employee_id: UUID | None = Query(None, description="Filtrar por funcionário"),
+    event_type: EventType | None = Query(None, description="Tipo de evento"),
+    event_category: EventCategory | None = Query(None, description="Categoria"),
     page: int = Query(1, ge=1, description="Página"),
     page_size: int = Query(100, ge=1, le=1000, description="Itens por página"),
     db: AsyncSession = Depends(get_db),
@@ -141,7 +140,7 @@ async def list_period_events(
 
 @router.get(
     "/employee/{employee_id}/period/{period_id}",
-    response_model=List[PayrollEventResponse],
+    response_model=list[PayrollEventResponse],
     summary="Eventos do funcionário",
 )
 async def get_employee_events(
@@ -149,7 +148,7 @@ async def get_employee_events(
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[PayrollEventResponse]:
+) -> list[PayrollEventResponse]:
     """Retorna todos eventos de um funcionário no período."""
     try:
         service = PayrollEventService(db)
@@ -239,8 +238,7 @@ async def get_events_by_category(
         service = PayrollEventService(db)
         grouped = await service.get_events_by_category(period_id)
         return {
-            category: [PayrollEventResponse.model_validate(e) for e in events]
-            for category, events in grouped.items()
+            category: [PayrollEventResponse.model_validate(e) for e in events] for category, events in grouped.items()
         }
     except Exception as e:
         logger.error("Erro ao agrupar eventos por categoria: %s", e)

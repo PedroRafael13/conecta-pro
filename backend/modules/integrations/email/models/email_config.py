@@ -3,9 +3,8 @@
 Sprint 32 - Automacoes Email.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -21,7 +20,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class EmailProvider(str, enum.Enum):
+class EmailProvider(StrEnum):
     """Provedor de email."""
 
     SMTP = "SMTP"  # SMTP generico
@@ -33,7 +32,7 @@ class EmailProvider(str, enum.Enum):
     SPARKPOST = "SPARKPOST"  # SparkPost
 
 
-class EmailConfigStatus(str, enum.Enum):
+class EmailConfigStatus(StrEnum):
     """Status da configuracao."""
 
     PENDING = "PENDING"  # Pendente verificacao
@@ -188,7 +187,7 @@ class EmailConfig(Base):
         self.status = EmailConfigStatus.VERIFIED
         self.verified_at = datetime.utcnow()
 
-    def mark_failed(self, reason: Optional[str] = None) -> None:
+    def mark_failed(self, reason: str | None = None) -> None:
         """Marca como falha."""
         self.status = EmailConfigStatus.FAILED
         if reason and self.settings is None:
@@ -200,7 +199,7 @@ class EmailConfig(Base):
         """Retorna credenciais mascaradas para exibicao."""
         result = {}
         if self.smtp_password:
-            result["smtp_password"] = "****"
+            result["smtp_password"] = "****"  # noqa: S105
         if self.api_key:
             key = self.api_key
             if len(key) > 8:

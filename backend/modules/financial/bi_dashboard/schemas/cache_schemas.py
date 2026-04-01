@@ -2,10 +2,10 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.financial.bi_dashboard.models.analytics_cache import (
     CacheStatus,
@@ -21,31 +21,31 @@ class CacheEntry(BaseModel):
     cache_key: str
     tipo: CacheType
     status: CacheStatus
-    entity_type: Optional[str] = None
-    entity_id: Optional[UUID] = None
+    entity_type: str | None = None
+    entity_id: UUID | None = None
     data: Any
-    data_size_bytes: Optional[int] = None
-    row_count: Optional[int] = None
+    data_size_bytes: int | None = None
+    row_count: int | None = None
     parametros: dict = Field(default_factory=dict)
-    periodo_inicio: Optional[datetime] = None
-    periodo_fim: Optional[datetime] = None
+    periodo_inicio: datetime | None = None
+    periodo_fim: datetime | None = None
     ttl_seconds: int = 300
     expires_at: datetime
     is_expired: bool = False
     hit_count: int = 0
     miss_count: int = 0
-    last_hit_at: Optional[datetime] = None
-    last_refresh_at: Optional[datetime] = None
+    last_hit_at: datetime | None = None
+    last_refresh_at: datetime | None = None
     refresh_count: int = 0
-    refresh_duration_ms: Optional[int] = None
-    last_error: Optional[str] = None
+    refresh_duration_ms: int | None = None
+    last_error: str | None = None
     error_count: int = 0
     is_valid: bool = True
     hit_rate: Decimal = Decimal("0")
     age_seconds: int = 0
     time_to_live: int = 0
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -66,17 +66,17 @@ class CacheStats(BaseModel):
     avg_age_seconds: int = 0
     by_type: dict = Field(default_factory=dict)
     by_status: dict = Field(default_factory=dict)
-    oldest_entry: Optional[datetime] = None
-    newest_entry: Optional[datetime] = None
+    oldest_entry: datetime | None = None
+    newest_entry: datetime | None = None
 
 
 class CacheInvalidate(BaseModel):
     """Solicitacao de invalidacao de cache."""
 
-    cache_keys: Optional[list[str]] = None
-    entity_type: Optional[str] = None
-    entity_ids: Optional[list[UUID]] = None
-    tipo: Optional[CacheType] = None
+    cache_keys: list[str] | None = None
+    entity_type: str | None = None
+    entity_ids: list[UUID] | None = None
+    tipo: CacheType | None = None
     invalidate_all: bool = Field(default=False)
     condominio_only: bool = Field(default=True)
 
@@ -84,9 +84,9 @@ class CacheInvalidate(BaseModel):
 class CacheRefresh(BaseModel):
     """Solicitacao de refresh de cache."""
 
-    cache_keys: Optional[list[str]] = None
-    entity_type: Optional[str] = None
-    entity_ids: Optional[list[UUID]] = None
+    cache_keys: list[str] | None = None
+    entity_type: str | None = None
+    entity_ids: list[UUID] | None = None
     force: bool = Field(default=False)
 
 
@@ -124,7 +124,7 @@ class CacheHitResult(BaseModel):
     """Resultado de consulta ao cache."""
 
     hit: bool
-    data: Optional[Any] = None
+    data: Any | None = None
     cache_key: str
     ttl_remaining: int = 0
     age_seconds: int = 0

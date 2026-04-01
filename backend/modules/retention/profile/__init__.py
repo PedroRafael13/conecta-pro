@@ -35,28 +35,28 @@ Tipos de Posto Suportados:
 
 from .controllers import router
 from .models import (
-    OperationalProfile,
-    ProfileQuestion,
-    PostMatch,
-    ProfileDimension,
-    PostTypeProfile,
-    QUESTIONARIO_PERFIL,
     PERFIL_IDEAL_POR_TIPO,
+    QUESTIONARIO_PERFIL,
+    OperationalProfile,
+    PostMatch,
+    PostTypeProfile,
+    ProfileDimension,
+    ProfileQuestion,
 )
-from .schemas import (
-    ProfileDimensionEnum,
-    PostTypeEnum,
-    MatchNivelEnum,
-    SubmitRespostasRequest,
-    OperationalProfileResponse,
-    OperationalProfileDetail,
-    PostMatchResponse,
-    PostMatchDetail,
-    QuestionnaireResponse,
-    DashboardResponse,
-)
-from .services import ProfileService, ProfileMatcher
 from .repositories import ProfileRepository
+from .schemas import (
+    DashboardResponse,
+    MatchNivelEnum,
+    OperationalProfileDetail,
+    OperationalProfileResponse,
+    PostMatchDetail,
+    PostMatchResponse,
+    PostTypeEnum,
+    ProfileDimensionEnum,
+    QuestionnaireResponse,
+    SubmitRespostasRequest,
+)
+from .services import ProfileMatcher, ProfileService
 
 __all__ = [
     # Router

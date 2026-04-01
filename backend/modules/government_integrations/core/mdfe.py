@@ -19,33 +19,36 @@ Eventos:
 """
 
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Dict, List, Optional, Any
+import xml.etree.ElementTree as ET  # noqa: S405
 from dataclasses import dataclass, field
-from enum import Enum
-import xml.etree.ElementTree as ET
+from datetime import datetime
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class ModalTransporteMDFe(str, Enum):
+class ModalTransporteMDFe(StrEnum):
     """Modal de transporte."""
+
     RODOVIARIO = "1"
     AEREO = "2"
     AQUAVIARIO = "3"
     FERROVIARIO = "4"
 
 
-class TipoEmitente(str, Enum):
+class TipoEmitente(StrEnum):
     """Tipo de emitente do MDF-e."""
+
     TRANSPORTADORA = "1"  # Prestador de serviço de transporte
-    CARGA_PROPRIA = "2"   # Transportador de carga própria
-    CTC = "3"             # Correios
+    CARGA_PROPRIA = "2"  # Transportador de carga própria
+    CTC = "3"  # Correios
 
 
-class TipoCarroceria(str, Enum):
+class TipoCarroceria(StrEnum):
     """Tipo de carroceria."""
+
     NAO_APLICAVEL = "00"
     ABERTA = "01"
     FECHADA_BAU = "02"
@@ -54,8 +57,9 @@ class TipoCarroceria(str, Enum):
     SIDER = "05"
 
 
-class TipoRodado(str, Enum):
+class TipoRodado(StrEnum):
     """Tipo de rodado do veículo."""
+
     TRUCK = "01"
     TOCO = "02"
     CAVALO_MECANICO = "03"
@@ -64,8 +68,9 @@ class TipoRodado(str, Enum):
     OUTROS = "06"
 
 
-class SituacaoMDFe(str, Enum):
+class SituacaoMDFe(StrEnum):
     """Situação do MDF-e."""
+
     EM_DIGITACAO = "em_digitacao"
     ASSINADO = "assinado"
     AUTORIZADO = "autorizado"
@@ -77,6 +82,7 @@ class SituacaoMDFe(str, Enum):
 @dataclass
 class Condutor:
     """Condutor do veículo."""
+
     cpf: str
     nome: str
 
@@ -84,25 +90,27 @@ class Condutor:
 @dataclass
 class Veiculo:
     """Veículo de transporte."""
+
     placa: str
-    renavam: Optional[str] = None
+    renavam: str | None = None
     uf: str = ""
     tara: Decimal = Decimal("0")  # Peso do veículo vazio
     capacidade_kg: Decimal = Decimal("0")
     capacidade_m3: Decimal = Decimal("0")
     tipo_rodado: TipoRodado = TipoRodado.TRUCK
     tipo_carroceria: TipoCarroceria = TipoCarroceria.FECHADA_BAU
-    proprietario_cnpj_cpf: Optional[str] = None
-    proprietario_nome: Optional[str] = None
-    proprietario_ie: Optional[str] = None
-    proprietario_uf: Optional[str] = None
+    proprietario_cnpj_cpf: str | None = None
+    proprietario_nome: str | None = None
+    proprietario_ie: str | None = None
+    proprietario_uf: str | None = None
 
 
 @dataclass
 class Reboque:
     """Reboque/Semi-reboque."""
+
     placa: str
-    renavam: Optional[str] = None
+    renavam: str | None = None
     uf: str = ""
     tara: Decimal = Decimal("0")
     capacidade_kg: Decimal = Decimal("0")
@@ -113,30 +121,34 @@ class Reboque:
 @dataclass
 class DocumentoVinculado:
     """Documento fiscal vinculado ao MDF-e."""
+
     tipo: str  # "NFe" ou "CTe"
     chave: str
-    segundo_codigo_barras: Optional[str] = None  # Para NF-e de carga lotação
+    segundo_codigo_barras: str | None = None  # Para NF-e de carga lotação
 
 
 @dataclass
 class Municipio:
     """Município de carregamento/descarregamento."""
+
     codigo_ibge: str
     nome: str
-    documentos: List[DocumentoVinculado] = field(default_factory=list)
+    documentos: list[DocumentoVinculado] = field(default_factory=list)
 
 
 @dataclass
 class Percurso:
     """Percurso do MDF-e (UFs de passagem)."""
+
     uf: str
 
 
 @dataclass
 class MDFe:
     """Manifesto Eletrônico de Documentos Fiscais."""
+
     # Identificação
-    chave: Optional[str] = None
+    chave: str | None = None
     numero: int = 0
     serie: int = 1
     modelo: str = "58"
@@ -149,16 +161,16 @@ class MDFe:
     # UF
     uf_inicio: str = ""
     uf_fim: str = ""
-    percurso: List[Percurso] = field(default_factory=list)
+    percurso: list[Percurso] = field(default_factory=list)
 
     # Data/hora
-    data_inicio_viagem: Optional[datetime] = None
+    data_inicio_viagem: datetime | None = None
 
     # Municípios de carregamento
-    municipios_carregamento: List[Municipio] = field(default_factory=list)
+    municipios_carregamento: list[Municipio] = field(default_factory=list)
 
     # Municípios de descarregamento
-    municipios_descarregamento: List[Municipio] = field(default_factory=list)
+    municipios_descarregamento: list[Municipio] = field(default_factory=list)
 
     # Totais
     quantidade_cte: int = 0
@@ -168,33 +180,33 @@ class MDFe:
     unidade_peso: str = "KG"
 
     # Veículo e condutores
-    veiculo_tracao: Optional[Veiculo] = None
-    reboques: List[Reboque] = field(default_factory=list)
-    condutores: List[Condutor] = field(default_factory=list)
+    veiculo_tracao: Veiculo | None = None
+    reboques: list[Reboque] = field(default_factory=list)
+    condutores: list[Condutor] = field(default_factory=list)
 
     # CIOT (Código Identificador da Operação de Transporte)
-    ciot: Optional[str] = None
-    ciot_cnpj_cpf: Optional[str] = None
+    ciot: str | None = None
+    ciot_cnpj_cpf: str | None = None
 
     # Vale pedágio
-    vale_pedagio: List[Dict[str, Any]] = field(default_factory=list)
+    vale_pedagio: list[dict[str, Any]] = field(default_factory=list)
 
     # Seguro
-    seguradora_cnpj: Optional[str] = None
-    seguradora_nome: Optional[str] = None
-    numero_apolice: Optional[str] = None
-    numero_averbacao: Optional[str] = None
+    seguradora_cnpj: str | None = None
+    seguradora_nome: str | None = None
+    numero_apolice: str | None = None
+    numero_averbacao: str | None = None
 
     # Situação
     situacao: SituacaoMDFe = SituacaoMDFe.EM_DIGITACAO
-    protocolo_autorizacao: Optional[str] = None
-    data_autorizacao: Optional[datetime] = None
-    protocolo_encerramento: Optional[str] = None
-    data_encerramento: Optional[datetime] = None
+    protocolo_autorizacao: str | None = None
+    data_autorizacao: datetime | None = None
+    protocolo_encerramento: str | None = None
+    data_encerramento: datetime | None = None
 
     # XML
-    xml_assinado: Optional[str] = None
-    xml_protocolo: Optional[str] = None
+    xml_assinado: str | None = None
+    xml_protocolo: str | None = None
 
 
 class MDFeManager:
@@ -237,10 +249,7 @@ class MDFeManager:
         self.tipo_ambiente = "1" if ambiente == "producao" else "2"
 
     def criar_mdfe(
-        self,
-        numero: int,
-        serie: int = 1,
-        modal: ModalTransporteMDFe = ModalTransporteMDFe.RODOVIARIO
+        self, numero: int, serie: int = 1, modal: ModalTransporteMDFe = ModalTransporteMDFe.RODOVIARIO
     ) -> MDFe:
         """
         Cria um novo MDF-e.
@@ -456,7 +465,7 @@ class MDFeManager:
         logger.info(f"Gerado XML MDF-e nº {mdfe.numero}")
         return xml_str
 
-    def encerrar(self, mdfe: MDFe, data_encerramento: Optional[datetime] = None) -> Dict[str, Any]:
+    def encerrar(self, mdfe: MDFe, data_encerramento: datetime | None = None) -> dict[str, Any]:
         """
         Gera evento de encerramento do MDF-e.
 
@@ -485,13 +494,9 @@ class MDFeManager:
 
         logger.info(f"Gerado evento de encerramento MDF-e {mdfe.numero}")
 
-        return {
-            "evento": evento,
-            "status": "pendente",
-            "mensagem": "Implementar envio do evento via WebService"
-        }
+        return {"evento": evento, "status": "pendente", "mensagem": "Implementar envio do evento via WebService"}
 
-    def incluir_condutor(self, mdfe: MDFe, condutor: Condutor) -> Dict[str, Any]:
+    def incluir_condutor(self, mdfe: MDFe, condutor: Condutor) -> dict[str, Any]:
         """
         Gera evento de inclusão de condutor.
 
@@ -515,13 +520,9 @@ class MDFeManager:
 
         logger.info(f"Gerado evento de inclusão de condutor MDF-e {mdfe.numero}")
 
-        return {
-            "evento": evento,
-            "status": "pendente",
-            "mensagem": "Implementar envio do evento via WebService"
-        }
+        return {"evento": evento, "status": "pendente", "mensagem": "Implementar envio do evento via WebService"}
 
-    def consultar_status_servico(self) -> Dict[str, Any]:
+    def consultar_status_servico(self) -> dict[str, Any]:
         """
         Consulta status do serviço MDF-e na SEFAZ.
 
@@ -534,10 +535,10 @@ class MDFeManager:
             "servico": "MDFeStatusServico",
             "url": url,
             "status": "pendente",
-            "mensagem": "Implementar consulta via WebService"
+            "mensagem": "Implementar consulta via WebService",
         }
 
-    def consultar_nao_encerrados(self) -> List[Dict[str, Any]]:
+    def consultar_nao_encerrados(self) -> list[dict[str, Any]]:
         """
         Consulta MDF-e não encerrados do emitente.
 
@@ -549,11 +550,32 @@ class MDFeManager:
     def _codigo_uf(self, uf: str) -> str:
         """Retorna código IBGE da UF."""
         codigos = {
-            "AC": "12", "AL": "27", "AP": "16", "AM": "13", "BA": "29",
-            "CE": "23", "DF": "53", "ES": "32", "GO": "52", "MA": "21",
-            "MT": "51", "MS": "50", "MG": "31", "PA": "15", "PB": "25",
-            "PR": "41", "PE": "26", "PI": "22", "RJ": "33", "RN": "24",
-            "RS": "43", "RO": "11", "RR": "14", "SC": "42", "SP": "35",
-            "SE": "28", "TO": "17"
+            "AC": "12",
+            "AL": "27",
+            "AP": "16",
+            "AM": "13",
+            "BA": "29",
+            "CE": "23",
+            "DF": "53",
+            "ES": "32",
+            "GO": "52",
+            "MA": "21",
+            "MT": "51",
+            "MS": "50",
+            "MG": "31",
+            "PA": "15",
+            "PB": "25",
+            "PR": "41",
+            "PE": "26",
+            "PI": "22",
+            "RJ": "33",
+            "RN": "24",
+            "RS": "43",
+            "RO": "11",
+            "RR": "14",
+            "SC": "42",
+            "SP": "35",
+            "SE": "28",
+            "TO": "17",
         }
         return codigos.get(uf, "13")

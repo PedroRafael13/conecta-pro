@@ -10,8 +10,8 @@ from pathlib import Path
 backend_path = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_path))
 
-from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
+from fastapi import FastAPI  # noqa: E402
+from fastapi.openapi.utils import get_openapi  # noqa: E402
 
 # Criar app mínima apenas com routers Analytics
 app = FastAPI(
@@ -21,22 +21,11 @@ app = FastAPI(
 )
 
 # Importar routers Analytics
-from modules.analytics.controllers import (
-    executive_dashboard_router,
-    analytics_router
-)
+from modules.analytics.controllers import analytics_router, executive_dashboard_router  # noqa: E402
 
 # Registrar routers no padrão da API
-app.include_router(
-    executive_dashboard_router,
-    prefix="/api/v1/analytics",
-    tags=["Analytics - Executive Dashboard"]
-)
-app.include_router(
-    analytics_router,
-    prefix="/api/v1",
-    tags=["Analytics - Predictive"]
-)
+app.include_router(executive_dashboard_router, prefix="/api/v1/analytics", tags=["Analytics - Executive Dashboard"])
+app.include_router(analytics_router, prefix="/api/v1", tags=["Analytics - Predictive"])
 
 # Gerar OpenAPI spec
 openapi_spec = get_openapi(

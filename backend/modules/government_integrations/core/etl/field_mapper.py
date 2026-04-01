@@ -4,10 +4,12 @@ Mapeador de Campos para documentos fiscais.
 Define mapeamentos de XML/JSON para modelos internos.
 """
 
-from typing import Dict, Any, List, Optional, Callable
-from dataclasses import dataclass, field
-import xml.etree.ElementTree as ET
 import logging
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any
+
+import defusedxml.ElementTree as ET  # noqa: N817
 
 from .normalizer import NormalizadorDados
 
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 # NF-e / NFC-e (modelo 55/65)
-MAPEAMENTO_NFE: Dict[str, str] = {
+MAPEAMENTO_NFE: dict[str, str] = {
     # Identificação
     "ide/cUF": "uf_codigo",
     "ide/cNF": "codigo_numerico",
@@ -37,7 +39,6 @@ MAPEAMENTO_NFE: Dict[str, str] = {
     "ide/finNFe": "finalidade",
     "ide/indFinal": "consumidor_final",
     "ide/indPres": "presenca_comprador",
-
     # Emitente
     "emit/CNPJ": "emitente_cnpj",
     "emit/CPF": "emitente_cpf",
@@ -53,7 +54,6 @@ MAPEAMENTO_NFE: Dict[str, str] = {
     "emit/enderEmit/xMun": "emitente_municipio",
     "emit/enderEmit/UF": "emitente_uf",
     "emit/enderEmit/CEP": "emitente_cep",
-
     # Destinatário
     "dest/CNPJ": "destinatario_cnpj",
     "dest/CPF": "destinatario_cpf",
@@ -69,7 +69,6 @@ MAPEAMENTO_NFE: Dict[str, str] = {
     "dest/enderDest/xMun": "destinatario_municipio",
     "dest/enderDest/UF": "destinatario_uf",
     "dest/enderDest/CEP": "destinatario_cep",
-
     # Totais
     "total/ICMSTot/vBC": "base_calculo_icms",
     "total/ICMSTot/vICMS": "valor_icms",
@@ -94,7 +93,6 @@ MAPEAMENTO_NFE: Dict[str, str] = {
     "total/ICMSTot/vOutro": "valor_outros",
     "total/ICMSTot/vNF": "valor_total",
     "total/ICMSTot/vTotTrib": "valor_total_tributos",
-
     # Protocolo
     "protNFe/infProt/tpAmb": "ambiente",
     "protNFe/infProt/verAplic": "versao_aplicativo",
@@ -107,7 +105,7 @@ MAPEAMENTO_NFE: Dict[str, str] = {
 }
 
 # CT-e (modelo 57)
-MAPEAMENTO_CTE: Dict[str, str] = {
+MAPEAMENTO_CTE: dict[str, str] = {
     # Identificação
     "ide/cUF": "uf_codigo",
     "ide/cCT": "codigo_numerico",
@@ -124,27 +122,22 @@ MAPEAMENTO_CTE: Dict[str, str] = {
     "ide/cMunEnv": "municipio_envio",
     "ide/cMunIni": "municipio_inicio",
     "ide/cMunFim": "municipio_fim",
-
     # Emitente
     "emit/CNPJ": "emitente_cnpj",
     "emit/IE": "emitente_ie",
     "emit/xNome": "emitente_razao_social",
     "emit/xFant": "emitente_fantasia",
-
     # Remetente
     "rem/CNPJ": "remetente_cnpj",
     "rem/CPF": "remetente_cpf",
     "rem/xNome": "remetente_nome",
-
     # Destinatário
     "dest/CNPJ": "destinatario_cnpj",
     "dest/CPF": "destinatario_cpf",
     "dest/xNome": "destinatario_nome",
-
     # Valores
     "vPrest/vTPrest": "valor_total_prestacao",
     "vPrest/vRec": "valor_receber",
-
     # Protocolo
     "protCTe/infProt/chCTe": "chave_acesso",
     "protCTe/infProt/dhRecbto": "data_autorizacao",
@@ -153,7 +146,7 @@ MAPEAMENTO_CTE: Dict[str, str] = {
 }
 
 # NFS-e (padrão ABRASF)
-MAPEAMENTO_NFSE: Dict[str, str] = {
+MAPEAMENTO_NFSE: dict[str, str] = {
     # Identificação
     "InfNfse/Numero": "numero",
     "InfNfse/CodigoVerificacao": "codigo_verificacao",
@@ -161,24 +154,20 @@ MAPEAMENTO_NFSE: Dict[str, str] = {
     "InfNfse/NaturezaOperacao": "natureza_operacao",
     "InfNfse/OptanteSimplesNacional": "optante_simples",
     "InfNfse/IncentivadorCultural": "incentivador_cultural",
-
     # Prestador
     "InfNfse/PrestadorServico/IdentificacaoPrestador/Cnpj": "prestador_cnpj",
     "InfNfse/PrestadorServico/IdentificacaoPrestador/InscricaoMunicipal": "prestador_im",
     "InfNfse/PrestadorServico/RazaoSocial": "prestador_razao_social",
     "InfNfse/PrestadorServico/NomeFantasia": "prestador_fantasia",
-
     # Tomador
     "InfNfse/TomadorServico/IdentificacaoTomador/CpfCnpj/Cnpj": "tomador_cnpj",
     "InfNfse/TomadorServico/IdentificacaoTomador/CpfCnpj/Cpf": "tomador_cpf",
     "InfNfse/TomadorServico/RazaoSocial": "tomador_razao_social",
-
     # Serviço
     "InfNfse/Servico/ItemListaServico": "codigo_servico",
     "InfNfse/Servico/CodigoCnae": "cnae",
     "InfNfse/Servico/Discriminacao": "discriminacao",
     "InfNfse/Servico/CodigoMunicipio": "municipio_prestacao",
-
     # Valores
     "InfNfse/Servico/Valores/ValorServicos": "valor_servicos",
     "InfNfse/Servico/Valores/ValorDeducoes": "valor_deducoes",
@@ -195,20 +184,17 @@ MAPEAMENTO_NFSE: Dict[str, str] = {
 }
 
 # eSocial
-MAPEAMENTO_ESOCIAL: Dict[str, str] = {
+MAPEAMENTO_ESOCIAL: dict[str, str] = {
     # Identificação do evento
     "ideEvento/tpAmb": "ambiente",
     "ideEvento/procEmi": "processo_emissao",
     "ideEvento/verProc": "versao_processo",
-
     # Empregador
     "ideEmpregador/tpInsc": "tipo_inscricao",
     "ideEmpregador/nrInsc": "numero_inscricao",
-
     # Trabalhador (quando aplicável)
     "ideTrabalhador/cpfTrab": "trabalhador_cpf",
     "ideTrabalhador/nisTrab": "trabalhador_nis",
-
     # Recibo
     "recibo/nrRecibo": "numero_recibo",
     "recibo/dhRecepcao": "data_recepcao",
@@ -217,27 +203,23 @@ MAPEAMENTO_ESOCIAL: Dict[str, str] = {
 }
 
 # FGTS Digital
-MAPEAMENTO_FGTS: Dict[str, str] = {
+MAPEAMENTO_FGTS: dict[str, str] = {
     # Trabalhador
     "trabalhador/cpf": "trabalhador_cpf",
     "trabalhador/pis": "trabalhador_pis",
     "trabalhador/nome": "trabalhador_nome",
     "trabalhador/dataNascimento": "trabalhador_nascimento",
     "trabalhador/dataAdmissao": "trabalhador_admissao",
-
     # Competência
     "competencia/anoMes": "competencia",
-
     # Remuneração
     "remuneracao/valor": "remuneracao_bruta",
     "remuneracao/categoria": "categoria_trabalhador",
-
     # FGTS
     "fgts/baseCalculo": "base_calculo_fgts",
     "fgts/aliquota": "aliquota_fgts",
     "fgts/valorDeposito": "valor_fgts",
     "fgts/valorMulta": "valor_multa",
-
     # Guia
     "guia/numero": "numero_guia",
     "guia/codigoBarras": "codigo_barras",
@@ -251,12 +233,14 @@ MAPEAMENTO_FGTS: Dict[str, str] = {
 # MAPEADOR DE CAMPOS
 # =============================================================================
 
+
 @dataclass
 class ConfigMapeamento:
     """Configuração de mapeamento."""
-    mapeamento: Dict[str, str]
-    campos_obrigatorios: List[str] = field(default_factory=list)
-    normalizadores: Dict[str, Callable] = field(default_factory=dict)
+
+    mapeamento: dict[str, str]
+    campos_obrigatorios: list[str] = field(default_factory=list)
+    normalizadores: dict[str, Callable] = field(default_factory=dict)
 
 
 class MapeadorCampos:
@@ -265,7 +249,7 @@ class MapeadorCampos:
     """
 
     # Normalizadores padrão por tipo de campo
-    NORMALIZADORES_PADRAO: Dict[str, Callable] = {
+    NORMALIZADORES_PADRAO: dict[str, Callable] = {
         "cnpj": NormalizadorDados.normalizar_cnpj,
         "cpf": NormalizadorDados.normalizar_cpf,
         "ie": NormalizadorDados.normalizar_ie,
@@ -290,11 +274,7 @@ class MapeadorCampos:
         r"^ncm$": "ncm",
     }
 
-    def __init__(
-        self,
-        tipo_documento: str,
-        mapeamento_custom: Optional[Dict[str, str]] = None
-    ):
+    def __init__(self, tipo_documento: str, mapeamento_custom: dict[str, str] | None = None):
         """
         Inicializa mapeador.
 
@@ -317,11 +297,7 @@ class MapeadorCampos:
         base = mapeamentos.get(tipo_documento.lower(), {})
         self.mapeamento = {**base, **(mapeamento_custom or {})}
 
-    def mapear_xml(
-        self,
-        xml_content: bytes,
-        namespaces: Optional[Dict[str, str]] = None
-    ) -> Dict[str, Any]:
+    def mapear_xml(self, xml_content: bytes, namespaces: dict[str, str] | None = None) -> dict[str, Any]:
         """
         Mapeia XML para dicionário usando mapeamento definido.
 
@@ -353,7 +329,7 @@ class MapeadorCampos:
 
         return resultado
 
-    def mapear_dict(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def mapear_dict(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Mapeia dicionário para modelo interno.
 
@@ -397,19 +373,13 @@ class MapeadorCampos:
                     try:
                         return normalizador(valor)
                     except Exception as e:
-                        logger.warning(
-                            f"Erro ao normalizar {nome_campo}: {e}"
-                        )
+                        logger.warning(f"Erro ao normalizar {nome_campo}: {e}")
                         return valor
 
         return valor
 
     @classmethod
-    def extrair_itens_nfe(
-        cls,
-        xml_content: bytes,
-        namespaces: Optional[Dict[str, str]] = None
-    ) -> List[Dict[str, Any]]:
+    def extrair_itens_nfe(cls, xml_content: bytes, namespaces: dict[str, str] | None = None) -> list[dict[str, Any]]:
         """
         Extrai itens de uma NF-e.
 
@@ -431,25 +401,25 @@ class MapeadorCampos:
             # Produto
             prod = det.find("prod", namespaces)
             if prod is not None:
-                item.update({
-                    "codigo": prod.findtext("cProd", namespaces=namespaces),
-                    "ean": prod.findtext("cEAN", namespaces=namespaces),
-                    "descricao": prod.findtext("xProd", namespaces=namespaces),
-                    "ncm": NormalizadorDados.normalizar_ncm(
-                        prod.findtext("NCM", namespaces=namespaces)
-                    ),
-                    "cfop": prod.findtext("CFOP", namespaces=namespaces),
-                    "unidade": prod.findtext("uCom", namespaces=namespaces),
-                    "quantidade": NormalizadorDados.normalizar_valor(
-                        prod.findtext("qCom", namespaces=namespaces), 4
-                    ),
-                    "valor_unitario": NormalizadorDados.normalizar_valor(
-                        prod.findtext("vUnCom", namespaces=namespaces), 4
-                    ),
-                    "valor_total": NormalizadorDados.normalizar_valor(
-                        prod.findtext("vProd", namespaces=namespaces)
-                    ),
-                })
+                item.update(
+                    {
+                        "codigo": prod.findtext("cProd", namespaces=namespaces),
+                        "ean": prod.findtext("cEAN", namespaces=namespaces),
+                        "descricao": prod.findtext("xProd", namespaces=namespaces),
+                        "ncm": NormalizadorDados.normalizar_ncm(prod.findtext("NCM", namespaces=namespaces)),
+                        "cfop": prod.findtext("CFOP", namespaces=namespaces),
+                        "unidade": prod.findtext("uCom", namespaces=namespaces),
+                        "quantidade": NormalizadorDados.normalizar_valor(
+                            prod.findtext("qCom", namespaces=namespaces), 4
+                        ),
+                        "valor_unitario": NormalizadorDados.normalizar_valor(
+                            prod.findtext("vUnCom", namespaces=namespaces), 4
+                        ),
+                        "valor_total": NormalizadorDados.normalizar_valor(
+                            prod.findtext("vProd", namespaces=namespaces)
+                        ),
+                    }
+                )
 
             # Impostos
             imposto = det.find("imposto", namespaces)

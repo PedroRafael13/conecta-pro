@@ -2,17 +2,17 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    Index,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,8 +23,9 @@ if TYPE_CHECKING:
     from .dashboard_config import DashboardConfig
 
 
-class WidgetType(str, Enum):
+class WidgetType(StrEnum):
     """Tipo de widget."""
+
     # Gráficos
     LINE_CHART = "line_chart"
     BAR_CHART = "bar_chart"
@@ -64,8 +65,9 @@ class WidgetType(str, Enum):
     DROPDOWN = "dropdown"
 
 
-class DataSource(str, Enum):
+class DataSource(StrEnum):
     """Fonte de dados do widget."""
+
     TIME_ENTRIES = "time_entries"
     CHECKINS = "checkins"
     EMPLOYEES = "employees"
@@ -79,8 +81,9 @@ class DataSource(str, Enum):
     EXTERNAL_API = "external_api"
 
 
-class AggregationType(str, Enum):
+class AggregationType(StrEnum):
     """Tipo de agregação."""
+
     COUNT = "count"
     SUM = "sum"
     AVG = "avg"
@@ -113,7 +116,7 @@ class DashboardWidget(Base):
 
     # Informações básicas
     title: Mapped[str] = mapped_column(String(100), nullable=False)
-    subtitle: Mapped[Optional[str]] = mapped_column(String(200))
+    subtitle: Mapped[str | None] = mapped_column(String(200))
     widget_type: Mapped[str] = mapped_column(
         String(30),
         nullable=False,
@@ -134,48 +137,48 @@ class DashboardWidget(Base):
         String(20),
         default=AggregationType.COUNT.value,
     )
-    group_by: Mapped[Optional[str]] = mapped_column(String(50))
-    order_by: Mapped[Optional[str]] = mapped_column(String(50))
-    limit: Mapped[Optional[int]] = mapped_column(Integer)
+    group_by: Mapped[str | None] = mapped_column(String(50))
+    order_by: Mapped[str | None] = mapped_column(String(50))
+    limit: Mapped[int | None] = mapped_column(Integer)
 
     # Query customizada
-    custom_query: Mapped[Optional[str]] = mapped_column(Text)
-    query_params: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    custom_query: Mapped[str | None] = mapped_column(Text)
+    query_params: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Filtros
-    filters: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    date_range: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    filters: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    date_range: Mapped[dict | None] = mapped_column(JSONB, default=dict)
     inherit_dashboard_filters: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Configuração visual
-    chart_config: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    colors: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    chart_config: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    colors: Mapped[list | None] = mapped_column(JSONB, default=list)
     show_legend: Mapped[bool] = mapped_column(Boolean, default=True)
     show_labels: Mapped[bool] = mapped_column(Boolean, default=True)
     show_grid: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # KPI específico
-    kpi_metric: Mapped[Optional[str]] = mapped_column(String(50))
-    kpi_target: Mapped[Optional[float]] = mapped_column(Integer)  # Float stored as int*100
-    kpi_unit: Mapped[Optional[str]] = mapped_column(String(20))
-    kpi_format: Mapped[Optional[str]] = mapped_column(String(30))
+    kpi_metric: Mapped[str | None] = mapped_column(String(50))
+    kpi_target: Mapped[float | None] = mapped_column(Integer)  # Float stored as int*100
+    kpi_unit: Mapped[str | None] = mapped_column(String(20))
+    kpi_format: Mapped[str | None] = mapped_column(String(30))
     show_comparison: Mapped[bool] = mapped_column(Boolean, default=True)
-    comparison_period: Mapped[Optional[str]] = mapped_column(String(30))
+    comparison_period: Mapped[str | None] = mapped_column(String(30))
 
     # Thresholds e alertas
-    thresholds: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    thresholds: Mapped[dict | None] = mapped_column(JSONB, default=dict)
     alert_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    alert_conditions: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    alert_conditions: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Atualização
-    refresh_interval: Mapped[Optional[str]] = mapped_column(String(20))
+    refresh_interval: Mapped[str | None] = mapped_column(String(20))
     cache_duration_seconds: Mapped[int] = mapped_column(Integer, default=300)
-    last_refreshed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_refreshed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Interatividade
     is_interactive: Mapped[bool] = mapped_column(Boolean, default=True)
-    click_action: Mapped[Optional[str]] = mapped_column(String(30))
-    drill_down_config: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    click_action: Mapped[str | None] = mapped_column(String(30))
+    drill_down_config: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Estado
     is_visible: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -183,7 +186,7 @@ class DashboardWidget(Base):
     is_loading: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Metadados
-    settings: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    settings: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Auditoria
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

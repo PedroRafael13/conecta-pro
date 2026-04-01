@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,16 +14,16 @@ class BankAccountBase(BaseModel):
     """Schema base para conta bancaria."""
 
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
     bank_code: str = Field(..., min_length=1, max_length=10)
     bank_name: str = Field(..., min_length=1, max_length=100)
     agency: str = Field(..., min_length=1, max_length=10)
-    agency_digit: Optional[str] = Field(None, max_length=2)
+    agency_digit: str | None = Field(None, max_length=2)
     account_number: str = Field(..., min_length=1, max_length=20)
     account_digit: str = Field(..., min_length=1, max_length=2)
     account_type: str = Field(default="corrente")
-    holder_name: Optional[str] = Field(None, max_length=150)
-    holder_document: Optional[str] = Field(None, max_length=20)
+    holder_name: str | None = Field(None, max_length=150)
+    holder_document: str | None = Field(None, max_length=20)
 
 
 class BankAccountCreate(BankAccountBase):
@@ -31,37 +31,37 @@ class BankAccountCreate(BankAccountBase):
 
     condominio_id: UUID
     opening_balance: Decimal = Field(default=Decimal("0"))
-    opening_date: Optional[date] = None
+    opening_date: date | None = None
     pix_enabled: bool = False
-    pix_key: Optional[str] = None
-    pix_key_type: Optional[str] = None
+    pix_key: str | None = None
+    pix_key_type: str | None = None
     boleto_enabled: bool = False
-    boleto_wallet: Optional[str] = None
-    boleto_agreement: Optional[str] = None
+    boleto_wallet: str | None = None
+    boleto_agreement: str | None = None
     is_main_account: bool = False
 
 
 class BankAccountUpdate(BaseModel):
     """Schema para atualizacao de conta bancaria."""
 
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
-    holder_name: Optional[str] = Field(None, max_length=150)
-    holder_document: Optional[str] = Field(None, max_length=20)
-    pix_enabled: Optional[bool] = None
-    pix_key: Optional[str] = None
-    pix_key_type: Optional[str] = None
-    boleto_enabled: Optional[bool] = None
-    boleto_wallet: Optional[str] = None
-    boleto_agreement: Optional[str] = None
-    is_main_account: Optional[bool] = None
-    allow_negative_balance: Optional[bool] = None
-    overdraft_limit: Optional[Decimal] = None
-    minimum_balance: Optional[Decimal] = None
-    bank_manager_name: Optional[str] = None
-    bank_manager_phone: Optional[str] = None
-    bank_manager_email: Optional[str] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, max_length=100)
+    description: str | None = Field(None, max_length=500)
+    holder_name: str | None = Field(None, max_length=150)
+    holder_document: str | None = Field(None, max_length=20)
+    pix_enabled: bool | None = None
+    pix_key: str | None = None
+    pix_key_type: str | None = None
+    boleto_enabled: bool | None = None
+    boleto_wallet: str | None = None
+    boleto_agreement: str | None = None
+    is_main_account: bool | None = None
+    allow_negative_balance: bool | None = None
+    overdraft_limit: Decimal | None = None
+    minimum_balance: Decimal | None = None
+    bank_manager_name: str | None = None
+    bank_manager_phone: str | None = None
+    bank_manager_email: str | None = None
+    notes: str | None = None
 
 
 class BankAccountResponse(BankAccountBase):
@@ -77,11 +77,11 @@ class BankAccountResponse(BankAccountBase):
     available_balance: Decimal
     blocked_balance: Decimal
     pix_enabled: bool
-    pix_key: Optional[str]
+    pix_key: str | None
     boleto_enabled: bool
     is_main_account: bool
-    opening_date: Optional[date]
-    last_balance_update: Optional[datetime]
+    opening_date: date | None
+    last_balance_update: datetime | None
     created_at: datetime
     ativo: bool
 
@@ -89,12 +89,14 @@ class BankAccountResponse(BankAccountBase):
 class BankAccountFilter(BaseModel):
     """Filtros para busca de contas bancarias."""
 
-    status: Optional[str] = None
-    account_type: Optional[str] = None
-    bank_code: Optional[str] = None
-    is_main_account: Optional[bool] = None
-    pix_enabled: Optional[bool] = None
-    boleto_enabled: Optional[bool] = None
+    condominio_id: UUID | None = None
+    status: str | None = None
+    account_type: str | None = None
+    bank_code: str | None = None
+    is_main_account: bool | None = None
+    is_main: bool | None = None  # alias usado pelo controller
+    pix_enabled: bool | None = None
+    boleto_enabled: bool | None = None
 
 
 class BankAccountStats(BaseModel):
@@ -117,34 +119,34 @@ class BankTransactionBase(BaseModel):
 
     transaction_type: str
     category: str = "nao_identificado"
-    amount: Decimal = Field(..., gt=0)
+    amount: Decimal
     description: str = Field(..., min_length=1, max_length=500)
-    memo: Optional[str] = None
+    memo: str | None = None
     transaction_date: date
-    competence_date: Optional[date] = None
+    competence_date: date | None = None
 
 
 class BankTransactionCreate(BankTransactionBase):
     """Schema para criacao de movimentacao."""
 
     bank_account_id: UUID
-    document_number: Optional[str] = None
-    reference: Optional[str] = None
-    counterparty_name: Optional[str] = None
-    counterparty_document: Optional[str] = None
-    pix_key: Optional[str] = None
-    barcode: Optional[str] = None
+    document_number: str | None = None
+    reference: str | None = None
+    counterparty_name: str | None = None
+    counterparty_document: str | None = None
+    pix_key: str | None = None
+    barcode: str | None = None
 
 
 class BankTransactionUpdate(BaseModel):
     """Schema para atualizacao de movimentacao."""
 
-    category: Optional[str] = None
-    description: Optional[str] = Field(None, max_length=500)
-    memo: Optional[str] = None
-    competence_date: Optional[date] = None
-    counterparty_name: Optional[str] = None
-    counterparty_document: Optional[str] = None
+    category: str | None = None
+    description: str | None = Field(None, max_length=500)
+    memo: str | None = None
+    competence_date: date | None = None
+    counterparty_name: str | None = None
+    counterparty_document: str | None = None
 
 
 class BankTransactionResponse(BankTransactionBase):
@@ -155,14 +157,14 @@ class BankTransactionResponse(BankTransactionBase):
     id: UUID
     bank_account_id: UUID
     status: str
-    balance_before: Optional[Decimal]
-    balance_after: Optional[Decimal]
+    balance_before: Decimal | None
+    balance_after: Decimal | None
     origin: str
-    source_type: Optional[str]
+    source_type: str | None
     reconciliation_status: str
-    external_id: Optional[str]
-    document_number: Optional[str]
-    counterparty_name: Optional[str]
+    external_id: str | None
+    document_number: str | None
+    counterparty_name: str | None
     is_transfer: bool
     is_reversal: bool
     created_at: datetime
@@ -171,16 +173,16 @@ class BankTransactionResponse(BankTransactionBase):
 class BankTransactionFilter(BaseModel):
     """Filtros para busca de movimentacoes."""
 
-    transaction_type: Optional[str] = None
-    category: Optional[str] = None
-    status: Optional[str] = None
-    reconciliation_status: Optional[str] = None
-    origin: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    min_amount: Optional[Decimal] = None
-    max_amount: Optional[Decimal] = None
-    counterparty_name: Optional[str] = None
+    transaction_type: str | None = None
+    category: str | None = None
+    status: str | None = None
+    reconciliation_status: str | None = None
+    origin: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    min_amount: Decimal | None = None
+    max_amount: Decimal | None = None
+    counterparty_name: str | None = None
 
 
 class BankTransactionImport(BaseModel):
@@ -188,7 +190,7 @@ class BankTransactionImport(BaseModel):
 
     bank_account_id: UUID
     file_format: str = Field(..., pattern="^(ofx|cnab|csv)$")
-    transactions: List[Dict[str, Any]]
+    transactions: list[dict[str, Any]]
 
 
 class TransferRequest(BaseModel):
@@ -199,7 +201,7 @@ class TransferRequest(BaseModel):
     amount: Decimal = Field(..., gt=0)
     description: str = Field(..., min_length=1, max_length=500)
     transaction_date: date
-    competence_date: Optional[date] = None
+    competence_date: date | None = None
 
 
 # ===================== BANK RECONCILIATION =====================
@@ -208,8 +210,8 @@ class TransferRequest(BaseModel):
 class BankReconciliationBase(BaseModel):
     """Schema base para conciliacao."""
 
-    reference: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = None
+    reference: str | None = Field(None, max_length=50)
+    description: str | None = None
     period_type: str = "mensal"
     period_start: date
     period_end: date
@@ -226,9 +228,9 @@ class BankReconciliationCreate(BankReconciliationBase):
 class BankReconciliationUpdate(BaseModel):
     """Schema para atualizacao de conciliacao."""
 
-    bank_opening_balance: Optional[Decimal] = None
-    bank_closing_balance: Optional[Decimal] = None
-    notes: Optional[str] = None
+    bank_opening_balance: Decimal | None = None
+    bank_closing_balance: Decimal | None = None
+    notes: str | None = None
 
 
 class BankReconciliationResponse(BankReconciliationBase):
@@ -241,9 +243,9 @@ class BankReconciliationResponse(BankReconciliationBase):
     condominio_id: UUID
     status: str
     system_opening_balance: Decimal
-    system_closing_balance: Optional[Decimal]
-    bank_opening_balance: Optional[Decimal]
-    bank_closing_balance: Optional[Decimal]
+    system_closing_balance: Decimal | None
+    bank_opening_balance: Decimal | None
+    bank_closing_balance: Decimal | None
     closing_difference: Decimal
     reconciliation_progress: Decimal
     reconciled_count: int
@@ -251,28 +253,28 @@ class BankReconciliationResponse(BankReconciliationBase):
     pending_bank_count: int
     divergent_count: int
     statement_imported: bool
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
+    started_at: datetime | None
+    completed_at: datetime | None
     created_at: datetime
 
 
 class BankReconciliationFilter(BaseModel):
     """Schema para filtros de listagem de conciliacoes."""
 
-    bank_account_id: Optional[UUID] = None
-    condominio_id: Optional[UUID] = None
-    status: Optional[str] = None
-    period_type: Optional[str] = None
-    period_start_from: Optional[date] = None
-    period_start_to: Optional[date] = None
+    bank_account_id: UUID | None = None
+    condominio_id: UUID | None = None
+    status: str | None = None
+    period_type: str | None = None
+    period_start_from: date | None = None
+    period_start_to: date | None = None
 
 
 class ReconciliationItemMatch(BaseModel):
     """Schema para conciliar item."""
 
     system_transaction_id: UUID
-    bank_transaction_id: Optional[UUID] = None
-    note: Optional[str] = None
+    bank_transaction_id: UUID | None = None
+    note: str | None = None
 
 
 class ReconciliationAdjustment(BaseModel):
@@ -289,7 +291,7 @@ class StatementImport(BaseModel):
     reconciliation_id: UUID
     file_name: str
     file_format: str = Field(..., pattern="^(ofx|cnab|csv|pdf)$")
-    transactions: List[Dict[str, Any]]
+    transactions: list[dict[str, Any]]
 
 
 # ===================== CASHFLOW ENTRY =====================
@@ -300,41 +302,41 @@ class CashFlowEntryBase(BaseModel):
 
     entry_type: str
     description: str = Field(..., min_length=1, max_length=500)
-    memo: Optional[str] = None
+    memo: str | None = None
     expected_amount: Decimal = Field(..., gt=0)
     entry_date: date
-    competence_date: Optional[date] = None
-    due_date: Optional[date] = None
+    competence_date: date | None = None
+    due_date: date | None = None
 
 
 class CashFlowEntryCreate(CashFlowEntryBase):
     """Schema para criacao de lancamento."""
 
     condominio_id: UUID
-    bank_account_id: Optional[UUID] = None
-    payable_category_id: Optional[UUID] = None
-    receivable_category_id: Optional[UUID] = None
-    counterparty_name: Optional[str] = None
+    bank_account_id: UUID | None = None
+    payable_category_id: UUID | None = None
+    receivable_category_id: UUID | None = None
+    counterparty_name: str | None = None
     is_recurring: bool = False
-    recurrence_frequency: Optional[str] = None
-    recurrence_start: Optional[date] = None
-    recurrence_end: Optional[date] = None
-    recurrence_count: Optional[int] = None
-    tags: List[str] = Field(default_factory=list)
+    recurrence_frequency: str | None = None
+    recurrence_start: date | None = None
+    recurrence_end: date | None = None
+    recurrence_count: int | None = None
+    tags: list[str] = Field(default_factory=list)
 
 
 class CashFlowEntryUpdate(BaseModel):
     """Schema para atualizacao de lancamento."""
 
-    description: Optional[str] = Field(None, max_length=500)
-    memo: Optional[str] = None
-    expected_amount: Optional[Decimal] = Field(None, gt=0)
-    entry_date: Optional[date] = None
-    due_date: Optional[date] = None
-    bank_account_id: Optional[UUID] = None
-    counterparty_name: Optional[str] = None
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    description: str | None = Field(None, max_length=500)
+    memo: str | None = None
+    expected_amount: Decimal | None = Field(None, gt=0)
+    entry_date: date | None = None
+    due_date: date | None = None
+    bank_account_id: UUID | None = None
+    counterparty_name: str | None = None
+    tags: list[str] | None = None
+    notes: str | None = None
 
 
 class CashFlowEntryResponse(CashFlowEntryBase):
@@ -344,15 +346,15 @@ class CashFlowEntryResponse(CashFlowEntryBase):
 
     id: UUID
     condominio_id: UUID
-    bank_account_id: Optional[UUID]
+    bank_account_id: UUID | None
     source_type: str
     status: str
-    realized_amount: Optional[Decimal]
-    realized_date: Optional[date]
-    difference: Optional[Decimal]
+    realized_amount: Decimal | None
+    realized_date: date | None
+    difference: Decimal | None
     is_recurring: bool
-    counterparty_name: Optional[str]
-    tags: List[str]
+    counterparty_name: str | None
+    tags: list[str]
     is_approved: bool
     created_at: datetime
 
@@ -360,16 +362,17 @@ class CashFlowEntryResponse(CashFlowEntryBase):
 class CashFlowEntryFilter(BaseModel):
     """Filtros para busca de lancamentos."""
 
-    entry_type: Optional[str] = None
-    source_type: Optional[str] = None
-    status: Optional[str] = None
-    bank_account_id: Optional[UUID] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    min_amount: Optional[Decimal] = None
-    max_amount: Optional[Decimal] = None
-    is_recurring: Optional[bool] = None
-    is_overdue: Optional[bool] = None
+    condominio_id: UUID | None = None
+    entry_type: str | None = None
+    source_type: str | None = None
+    status: str | None = None
+    bank_account_id: UUID | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    min_amount: Decimal | None = None
+    max_amount: Decimal | None = None
+    is_recurring: bool | None = None
+    is_overdue: bool | None = None
 
 
 class CashFlowEntryRealize(BaseModel):
@@ -377,7 +380,7 @@ class CashFlowEntryRealize(BaseModel):
 
     realized_amount: Decimal = Field(..., gt=0)
     realized_date: date
-    bank_transaction_id: Optional[UUID] = None
+    bank_transaction_id: UUID | None = None
 
 
 # ===================== CASHFLOW FORECAST =====================
@@ -387,8 +390,8 @@ class CashFlowForecastBase(BaseModel):
     """Schema base para previsao."""
 
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
-    reference: Optional[str] = Field(None, max_length=50)
+    description: str | None = None
+    reference: str | None = Field(None, max_length=50)
     period_type: str = "mensal"
     period_start: date
     period_end: date
@@ -404,22 +407,22 @@ class CashFlowForecastCreate(CashFlowForecastBase):
     expected_other_income: Decimal = Decimal("0")
     expected_payables: Decimal = Decimal("0")
     expected_other_expenses: Decimal = Decimal("0")
-    assumptions: List[str] = Field(default_factory=list)
-    target_balance: Optional[Decimal] = None
+    assumptions: list[str] = Field(default_factory=list)
+    target_balance: Decimal | None = None
 
 
 class CashFlowForecastUpdate(BaseModel):
     """Schema para atualizacao de previsao."""
 
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
-    expected_receivables: Optional[Decimal] = None
-    expected_other_income: Optional[Decimal] = None
-    expected_payables: Optional[Decimal] = None
-    expected_other_expenses: Optional[Decimal] = None
-    assumptions: Optional[List[str]] = None
-    target_balance: Optional[Decimal] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, max_length=100)
+    description: str | None = None
+    expected_receivables: Decimal | None = None
+    expected_other_income: Decimal | None = None
+    expected_payables: Decimal | None = None
+    expected_other_expenses: Decimal | None = None
+    assumptions: list[str] | None = None
+    target_balance: Decimal | None = None
+    notes: str | None = None
 
 
 class CashFlowForecastResponse(CashFlowForecastBase):
@@ -435,29 +438,31 @@ class CashFlowForecastResponse(CashFlowForecastBase):
     expected_opening_balance: Decimal
     expected_closing_balance: Decimal
     expected_net_flow: Decimal
-    actual_inflows: Optional[Decimal]
-    actual_outflows: Optional[Decimal]
-    actual_closing_balance: Optional[Decimal]
-    balance_variance: Optional[Decimal]
+    actual_inflows: Decimal | None
+    actual_outflows: Decimal | None
+    actual_closing_balance: Decimal | None
+    balance_variance: Decimal | None
     confidence_level: int
     confidence_category: str
     ai_generated: bool
     has_negative_balance_alert: bool
-    risks: List[Dict[str, Any]]
-    opportunities: List[Dict[str, Any]]
-    alerts: List[Dict[str, Any]]
+    risks: list[dict[str, Any]]
+    opportunities: list[dict[str, Any]]
+    alerts: list[dict[str, Any]]
     created_at: datetime
 
 
 class CashFlowForecastFilter(BaseModel):
     """Filtros para busca de previsoes."""
 
-    status: Optional[str] = None
-    period_type: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    ai_generated: Optional[bool] = None
-    has_alerts: Optional[bool] = None
+    condominio_id: UUID | None = None
+    status: str | None = None
+    period_type: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    ai_generated: bool | None = None
+    has_alerts: bool | None = None
+    confidence: str | None = None  # campo passado pelo controller
 
 
 class ForecastActualsUpdate(BaseModel):
@@ -498,7 +503,7 @@ class CashFlowProjection(BaseModel):
     receivables: Decimal = Decimal("0")
     balance: Decimal = Decimal("0")
     cumulative_balance: Decimal = Decimal("0")
-    details: List[Dict[str, Any]] = Field(default_factory=list)
+    details: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class CashFlowSummary(BaseModel):
@@ -511,8 +516,8 @@ class CashFlowSummary(BaseModel):
     total_inflows: Decimal
     total_outflows: Decimal
     net_flow: Decimal
-    inflows_by_category: Dict[str, Decimal]
-    outflows_by_category: Dict[str, Decimal]
+    inflows_by_category: dict[str, Decimal]
+    outflows_by_category: dict[str, Decimal]
     pending_receivables: Decimal
     pending_payables: Decimal
     overdue_receivables: Decimal
@@ -527,17 +532,17 @@ class CashFlowTrend(BaseModel):
     outflows: Decimal
     net_flow: Decimal
     balance: Decimal
-    variance_pct: Optional[float] = None
+    variance_pct: float | None = None
 
 
 class CashFlowDashboard(BaseModel):
     """Dashboard de fluxo de caixa."""
 
     summary: CashFlowSummary
-    trends: List[CashFlowTrend]
-    projections: List[CashFlowProjection]
-    accounts: List[BankAccountResponse]
-    alerts: List[Dict[str, Any]]
+    trends: list[CashFlowTrend]
+    projections: list[CashFlowProjection]
+    accounts: list[BankAccountResponse]
+    alerts: list[dict[str, Any]]
     upcoming_payables: int
     upcoming_receivables: int
     overdue_payables: int
@@ -560,11 +565,11 @@ class AIForecastResponse(BaseModel):
     """Resposta de previsao por IA."""
 
     forecast: CashFlowForecastResponse
-    scenarios: Dict[str, Dict[str, Decimal]]
-    confidence_factors: Dict[str, float]
-    recommendations: List[str]
-    risks: List[Dict[str, Any]]
-    opportunities: List[Dict[str, Any]]
+    scenarios: dict[str, dict[str, Decimal]]
+    confidence_factors: dict[str, float]
+    recommendations: list[str]
+    risks: list[dict[str, Any]]
+    opportunities: list[dict[str, Any]]
 
 
 class AnomalyDetectionRequest(BaseModel):
@@ -578,10 +583,10 @@ class AnomalyDetectionRequest(BaseModel):
 class AnomalyDetectionResponse(BaseModel):
     """Resposta de deteccao de anomalias."""
 
-    anomalies: List[Dict[str, Any]]
+    anomalies: list[dict[str, Any]]
     total: int
-    by_severity: Dict[str, int]
-    by_category: Dict[str, int]
+    by_severity: dict[str, int]
+    by_category: dict[str, int]
 
 
 class OptimizationSuggestion(BaseModel):
@@ -594,4 +599,4 @@ class OptimizationSuggestion(BaseModel):
     potential_savings: Decimal
     implementation_effort: str
     priority: str
-    action_items: List[str]
+    action_items: list[str]

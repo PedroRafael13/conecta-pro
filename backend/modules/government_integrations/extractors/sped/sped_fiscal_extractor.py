@@ -7,15 +7,14 @@ Implementa:
 - Consulta de escriturações transmitidas
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
-import re
+from datetime import datetime, timedelta
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +61,10 @@ class ExtratorSPEDFiscal(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -91,15 +90,10 @@ class ExtratorSPEDFiscal(ExtratorBase):
         if data_inicio is None:
             data_inicio = data_fim - timedelta(days=365)
 
-        logger.info(
-            f"Iniciando extração SPED Fiscal: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
-        )
+        logger.info(f"Iniciando extração SPED Fiscal: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}")
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -112,9 +106,7 @@ class ExtratorSPEDFiscal(ExtratorBase):
                 logger.info(f"Extraindo SPED Fiscal para CNPJ: {cnpj}")
 
                 # Consultar escriturações por período
-                docs = await self._consultar_escrituracoes(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs = await self._consultar_escrituracoes(tenant_id, cnpj, data_inicio, data_fim)
 
                 for doc in docs:
                     resultado.documentos.append(doc)
@@ -145,12 +137,12 @@ class ExtratorSPEDFiscal(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta escriturações SPED Fiscal transmitidas."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Gerar períodos mensais
             periodo_atual = data_inicio.replace(day=1)
@@ -158,22 +150,16 @@ class ExtratorSPEDFiscal(ExtratorBase):
             while periodo_atual <= data_fim:
                 periodo_str = periodo_atual.strftime("%Y-%m")
 
-                doc = await self._criar_documento_escrituracao(
-                    cnpj, periodo_str
-                )
+                doc = await self._criar_documento_escrituracao(cnpj, periodo_str)
 
                 if doc:
                     documentos.append(doc)
 
                 # Próximo mês
                 if periodo_atual.month == 12:
-                    periodo_atual = periodo_atual.replace(
-                        year=periodo_atual.year + 1, month=1
-                    )
+                    periodo_atual = periodo_atual.replace(year=periodo_atual.year + 1, month=1)
                 else:
-                    periodo_atual = periodo_atual.replace(
-                        month=periodo_atual.month + 1
-                    )
+                    periodo_atual = periodo_atual.replace(month=periodo_atual.month + 1)
 
         except Exception as e:
             logger.error(f"Erro ao consultar escriturações SPED Fiscal: {e}")
@@ -198,7 +184,6 @@ class ExtratorSPEDFiscal(ExtratorBase):
             "cnpj": cnpj,
             "periodo_apuracao": periodo,
             "tipo": "sped_fiscal",
-
             "escrituracao": {
                 "transmitida": None,
                 "data_transmissao": None,
@@ -206,7 +191,6 @@ class ExtratorSPEDFiscal(ExtratorBase):
                 "hash_arquivo": None,
                 "versao_layout": "017",  # Versão atual
             },
-
             # Resumo do Bloco C (Documentos Fiscais)
             "documentos_fiscais": {
                 "nfe_entrada": {
@@ -228,7 +212,6 @@ class ExtratorSPEDFiscal(ExtratorBase):
                     "valor_total": 0.0,
                 },
             },
-
             # Resumo do Bloco E (Apuração)
             "apuracao_icms": {
                 "debitos": 0.0,
@@ -238,26 +221,22 @@ class ExtratorSPEDFiscal(ExtratorBase):
                 "valor_recolher": 0.0,
                 "saldo_credor_transportar": 0.0,
             },
-
             "apuracao_ipi": {
                 "debitos": 0.0,
                 "creditos": 0.0,
                 "saldo_apurado": 0.0,
             },
-
             # Resumo do Bloco H (Inventário)
             "inventario": {
                 "data_inventario": None,
                 "valor_total": 0.0,
                 "quantidade_itens": 0,
             },
-
             # Resumo do Bloco K (Produção)
             "producao": {
                 "possui_bloco_k": None,
                 "ordens_producao": 0,
             },
-
             "consultado_em": datetime.utcnow().isoformat(),
             "status": "consulta_manual_necessaria",
         }
@@ -273,7 +252,7 @@ class ExtratorSPEDFiscal(ExtratorBase):
     def parsear_arquivo_sped(
         self,
         conteudo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Parseia um arquivo SPED Fiscal.
 
@@ -313,8 +292,8 @@ class ExtratorSPEDFiscal(ExtratorBase):
 
     def extrair_registro_0000(
         self,
-        campos: List[str],
-    ) -> Dict[str, Any]:
+        campos: list[str],
+    ) -> dict[str, Any]:
         """Extrai dados do registro 0000 (Abertura)."""
         if len(campos) < 15:
             return {}
@@ -322,54 +301,54 @@ class ExtratorSPEDFiscal(ExtratorBase):
         return {
             "cod_ver": campos[2],  # Código da versão do leiaute
             "cod_fin": campos[3],  # Código da finalidade
-            "dt_ini": campos[4],   # Data inicial
-            "dt_fin": campos[5],   # Data final
-            "nome": campos[6],     # Nome empresarial
+            "dt_ini": campos[4],  # Data inicial
+            "dt_fin": campos[5],  # Data final
+            "nome": campos[6],  # Nome empresarial
             "cnpj": campos[7],
             "cpf": campos[8],
             "uf": campos[9],
-            "ie": campos[10],      # Inscrição estadual
-            "cod_mun": campos[11], # Código do município
-            "im": campos[12],      # Inscrição municipal
+            "ie": campos[10],  # Inscrição estadual
+            "cod_mun": campos[11],  # Código do município
+            "im": campos[12],  # Inscrição municipal
             "suframa": campos[13],
             "ind_perfil": campos[14],  # Perfil de apresentação
         }
 
     def extrair_registro_c100(
         self,
-        campos: List[str],
-    ) -> Dict[str, Any]:
+        campos: list[str],
+    ) -> dict[str, Any]:
         """Extrai dados do registro C100 (Documento fiscal)."""
         if len(campos) < 30:
             return {}
 
         return {
-            "ind_oper": campos[2],      # 0=Entrada, 1=Saída
-            "ind_emit": campos[3],      # 0=Emissão própria, 1=Terceiros
-            "cod_part": campos[4],      # Código do participante
-            "cod_mod": campos[5],       # Código do modelo (55=NF-e)
-            "cod_sit": campos[6],       # Código da situação
-            "ser": campos[7],           # Série
-            "num_doc": campos[8],       # Número do documento
-            "chv_nfe": campos[9],       # Chave da NF-e
-            "dt_doc": campos[10],       # Data do documento
-            "dt_e_s": campos[11],       # Data entrada/saída
-            "vl_doc": campos[12],       # Valor total do documento
-            "ind_pgto": campos[13],     # Indicador de pagamento
-            "vl_desc": campos[14],      # Valor do desconto
-            "vl_abat_nt": campos[15],   # Abatimento não tributado
-            "vl_merc": campos[16],      # Valor das mercadorias
-            "ind_frt": campos[17],      # Indicador do frete
-            "vl_frt": campos[18],       # Valor do frete
-            "vl_seg": campos[19],       # Valor do seguro
-            "vl_out_da": campos[20],    # Outras despesas
-            "vl_bc_icms": campos[21],   # Base de cálculo ICMS
-            "vl_icms": campos[22],      # Valor do ICMS
+            "ind_oper": campos[2],  # 0=Entrada, 1=Saída
+            "ind_emit": campos[3],  # 0=Emissão própria, 1=Terceiros
+            "cod_part": campos[4],  # Código do participante
+            "cod_mod": campos[5],  # Código do modelo (55=NF-e)
+            "cod_sit": campos[6],  # Código da situação
+            "ser": campos[7],  # Série
+            "num_doc": campos[8],  # Número do documento
+            "chv_nfe": campos[9],  # Chave da NF-e
+            "dt_doc": campos[10],  # Data do documento
+            "dt_e_s": campos[11],  # Data entrada/saída
+            "vl_doc": campos[12],  # Valor total do documento
+            "ind_pgto": campos[13],  # Indicador de pagamento
+            "vl_desc": campos[14],  # Valor do desconto
+            "vl_abat_nt": campos[15],  # Abatimento não tributado
+            "vl_merc": campos[16],  # Valor das mercadorias
+            "ind_frt": campos[17],  # Indicador do frete
+            "vl_frt": campos[18],  # Valor do frete
+            "vl_seg": campos[19],  # Valor do seguro
+            "vl_out_da": campos[20],  # Outras despesas
+            "vl_bc_icms": campos[21],  # Base de cálculo ICMS
+            "vl_icms": campos[22],  # Valor do ICMS
             "vl_bc_icms_st": campos[23],
             "vl_icms_st": campos[24],
-            "vl_ipi": campos[25],       # Valor do IPI
-            "vl_pis": campos[26],       # Valor do PIS
-            "vl_cofins": campos[27],    # Valor da COFINS
+            "vl_ipi": campos[25],  # Valor do IPI
+            "vl_pis": campos[26],  # Valor do PIS
+            "vl_cofins": campos[27],  # Valor da COFINS
             "vl_pis_st": campos[28],
             "vl_cofins_st": campos[29],
         }
@@ -377,7 +356,7 @@ class ExtratorSPEDFiscal(ExtratorBase):
     async def validar_arquivo_sped(
         self,
         conteudo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Valida estrutura de um arquivo SPED Fiscal.
 
@@ -427,9 +406,7 @@ class ExtratorSPEDFiscal(ExtratorBase):
                     idx_atual = blocos_esperados.index(bloco_atual) if bloco_atual in blocos_esperados else -1
                     idx_novo = blocos_esperados.index(bloco)
                     if idx_novo < idx_atual:
-                        resultado["avisos"].append(
-                            f"Linha {i+1}: Bloco {bloco} após bloco {bloco_atual}"
-                        )
+                        resultado["avisos"].append(f"Linha {i + 1}: Bloco {bloco} após bloco {bloco_atual}")
                 bloco_atual = bloco
 
         return resultado

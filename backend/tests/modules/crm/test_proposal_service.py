@@ -4,9 +4,10 @@ Testes do ProposalService.
 Testes para workflow de aprovacao, precificacao e validacoes.
 """
 
-import pytest
 from datetime import date, timedelta
 from decimal import Decimal
+
+import pytest
 
 from modules.crm.models.proposal import (
     ApprovalAction,

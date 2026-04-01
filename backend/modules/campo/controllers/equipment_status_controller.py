@@ -3,11 +3,11 @@ Controller FastAPI para EquipmentStatus.
 """
 
 from datetime import datetime
-from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.campo.models.equipment_status import EquipmentStatusType
@@ -23,7 +23,7 @@ from modules.campo.schemas.equipment_status import (
     EquipmentStatusUpdate,
 )
 
-router = APIRouter(prefix="/guardian/equipment-status", tags=["EquipmentStatus"])
+router = APIRouter(prefix="/campo/equipment-status", tags=["Campo Equipment"])
 
 
 @router.post(
@@ -33,13 +33,14 @@ router = APIRouter(prefix="/guardian/equipment-status", tags=["EquipmentStatus"]
 )
 async def create_equipment_status(
     data: EquipmentStatusCreate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
-    """Cria um novo status de equipamento (recebido do Guardian)."""
+    """Cria um novo status de equipamento."""
     repo = EquipmentStatusRepository(db)
 
     # Verificar se já existe
-    existing = await repo.get_by_guardian_id(data.guardian_id)
+    existing = await repo.get_by_external_id(data.external_id)
     if existing:
         # Atualizar ao invés de criar
         update_data = EquipmentStatusUpdate(
@@ -51,7 +52,7 @@ async def create_equipment_status(
             has_alerts=data.has_alerts,
             active_alerts=data.active_alerts,
         )
-        equipment = await repo.update_by_guardian_id(data.guardian_id, update_data)
+        equipment = await repo.update_by_external_id(data.external_id, update_data)
         logger.info(f"Status de equipamento atualizado: {equipment.equipment_name}")
         return EquipmentStatusResponse.model_validate(equipment)
 
@@ -60,17 +61,18 @@ async def create_equipment_status(
     return EquipmentStatusResponse.model_validate(equipment)
 
 
-@router.get("/", response_model=EquipmentStatusListResponse)
+@router.get("", response_model=EquipmentStatusListResponse)
 async def list_equipment_status(  # pylint: disable=too-many-locals
-    search: Optional[str] = Query(None),
-    equipment_type: Optional[str] = Query(None),
-    equipment_status: Optional[EquipmentStatusType] = Query(None, alias="status"),
-    client_id: Optional[str] = Query(None),
-    post_id: Optional[str] = Query(None),
-    is_online: Optional[bool] = Query(None),
-    has_alerts: Optional[bool] = Query(None),
-    has_issues: Optional[bool] = Query(None),
-    needs_maintenance: Optional[bool] = Query(None),
+    current_user: CurrentActiveUser,
+    search: str | None = Query(None),
+    equipment_type: str | None = Query(None),
+    equipment_status: EquipmentStatusType | None = Query(None, alias="status"),
+    client_id: str | None = Query(None),
+    post_id: str | None = Query(None),
+    is_online: bool | None = Query(None),
+    has_alerts: bool | None = Query(None),
+    has_issues: bool | None = Query(None),
+    needs_maintenance: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -102,7 +104,8 @@ async def list_equipment_status(  # pylint: disable=too-many-locals
 
 @router.get("/stats", response_model=EquipmentStatusStats)
 async def get_equipment_stats(
-    client_id: Optional[str] = Query(None),
+    current_user: CurrentActiveUser,
+    client_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusStats:
     """Obtém estatísticas de equipamentos."""
@@ -112,10 +115,11 @@ async def get_equipment_stats(
 
 @router.get("/offline")
 async def get_offline_equipment(
-    client_id: Optional[str] = Query(None),
+    current_user: CurrentActiveUser,
+    client_id: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> List[EquipmentStatusResponse]:
+) -> list[EquipmentStatusResponse]:
     """Obtém equipamentos offline."""
     repo = EquipmentStatusRepository(db)
     equipments = await repo.get_offline(client_id, limit)
@@ -124,10 +128,11 @@ async def get_offline_equipment(
 
 @router.get("/with-alerts")
 async def get_equipment_with_alerts(
-    client_id: Optional[str] = Query(None),
+    current_user: CurrentActiveUser,
+    client_id: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> List[EquipmentStatusResponse]:
+) -> list[EquipmentStatusResponse]:
     """Obtém equipamentos com alertas ativos."""
     repo = EquipmentStatusRepository(db)
     equipments = await repo.get_with_alerts(client_id, limit)
@@ -136,10 +141,11 @@ async def get_equipment_with_alerts(
 
 @router.get("/needs-maintenance")
 async def get_equipment_needs_maintenance(
+    current_user: CurrentActiveUser,
     days_ahead: int = Query(7, ge=1, le=90),
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-) -> List[EquipmentStatusResponse]:
+) -> list[EquipmentStatusResponse]:
     """Obtém equipamentos que precisam de manutenção."""
     repo = EquipmentStatusRepository(db)
     equipments = await repo.get_needs_maintenance(days_ahead, client_id)
@@ -149,6 +155,7 @@ async def get_equipment_needs_maintenance(
 @router.get("/{equipment_id}", response_model=EquipmentStatusResponse)
 async def get_equipment_status(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
     """Obtém status de um equipamento por ID."""
@@ -166,6 +173,7 @@ async def get_equipment_status(
 async def update_equipment_status(
     equipment_id: str,
     data: EquipmentStatusUpdate,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
     """Atualiza status de um equipamento."""
@@ -183,7 +191,8 @@ async def update_equipment_status(
 @router.post("/{equipment_id}/set-online", response_model=EquipmentStatusResponse)
 async def set_equipment_online(
     equipment_id: str,
-    latency_ms: Optional[int] = Query(None, ge=0),
+    current_user: CurrentActiveUser,
+    latency_ms: int | None = Query(None, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
     """Marca equipamento como online."""
@@ -206,7 +215,8 @@ async def set_equipment_online(
 @router.post("/{equipment_id}/set-offline", response_model=EquipmentStatusResponse)
 async def set_equipment_offline(
     equipment_id: str,
-    reason: Optional[str] = Query(None, max_length=255),
+    current_user: CurrentActiveUser,
+    reason: str | None = Query(None, max_length=255),
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
     """Marca equipamento como offline."""
@@ -226,9 +236,10 @@ async def set_equipment_offline(
     return EquipmentStatusResponse.model_validate(equipment)
 
 
-@router.post("/{equipment_id}/add-alert", response_model=EquipmentStatusResponse)
+@router.post("/{equipment_id}/add-alert", response_model=EquipmentStatusResponse, status_code=201)
 async def add_equipment_alert(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     alert_type: str = Query(..., description="Tipo do alerta"),
     alert_message: str = Query(..., description="Mensagem do alerta"),
     db: AsyncSession = Depends(get_db),
@@ -242,11 +253,13 @@ async def add_equipment_alert(
             detail="Equipamento não encontrado",
         )
 
-    equipment.add_alert({
-        "type": alert_type,
-        "message": alert_message,
-        "created_at": datetime.utcnow().isoformat(),
-    })
+    equipment.add_alert(
+        {
+            "type": alert_type,
+            "message": alert_message,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+    )
     await repo.db.commit()
     await repo.db.refresh(equipment)
 
@@ -257,6 +270,7 @@ async def add_equipment_alert(
 @router.post("/{equipment_id}/clear-alerts", response_model=EquipmentStatusResponse)
 async def clear_equipment_alerts(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
     """Limpa alertas do equipamento."""
@@ -279,6 +293,7 @@ async def clear_equipment_alerts(
 @router.delete("/{equipment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_equipment_status(
     equipment_id: str,
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Remove um status de equipamento (soft delete)."""

@@ -7,8 +7,8 @@ Servico de classificacao de emails com IA.
 import logging
 import re
 import time
-from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,40 +26,97 @@ class EmailClassifier:
         # Keywords por categoria
         self.category_keywords = {
             "support": [
-                "ajuda", "problema", "erro", "nao funciona", "suporte",
-                "duvida", "como fazer", "nao consigo", "bug", "falha",
+                "ajuda",
+                "problema",
+                "erro",
+                "nao funciona",
+                "suporte",
+                "duvida",
+                "como fazer",
+                "nao consigo",
+                "bug",
+                "falha",
             ],
             "sales": [
-                "preco", "orcamento", "proposta", "comprar", "adquirir",
-                "plano", "contrato", "promocao", "desconto", "pagamento",
+                "preco",
+                "orcamento",
+                "proposta",
+                "comprar",
+                "adquirir",
+                "plano",
+                "contrato",
+                "promocao",
+                "desconto",
+                "pagamento",
             ],
             "billing": [
-                "fatura", "boleto", "cobranca", "pagamento", "taxa",
-                "mensalidade", "debito", "credito", "nf", "nota fiscal",
+                "fatura",
+                "boleto",
+                "cobranca",
+                "pagamento",
+                "taxa",
+                "mensalidade",
+                "debito",
+                "credito",
+                "nf",
+                "nota fiscal",
             ],
             "complaint": [
-                "reclamacao", "insatisfeito", "pessimo", "horrivel",
-                "absurdo", "inaceitavel", "advogado", "procon", "processo",
+                "reclamacao",
+                "insatisfeito",
+                "pessimo",
+                "horrivel",
+                "absurdo",
+                "inaceitavel",
+                "advogado",
+                "procon",
+                "processo",
             ],
             "scheduling": [
-                "agendar", "marcar", "horario", "reuniao", "visita",
-                "data", "disponibilidade", "reagendar", "cancelar",
+                "agendar",
+                "marcar",
+                "horario",
+                "reuniao",
+                "visita",
+                "data",
+                "disponibilidade",
+                "reagendar",
+                "cancelar",
             ],
             "feedback": [
-                "sugestao", "opiniao", "avaliacao", "feedback", "melhoria",
-                "elogio", "parabens", "otimo", "excelente",
+                "sugestao",
+                "opiniao",
+                "avaliacao",
+                "feedback",
+                "melhoria",
+                "elogio",
+                "parabens",
+                "otimo",
+                "excelente",
             ],
         }
 
         # Keywords de urgencia
         self.urgency_keywords = {
             "critical": [
-                "urgente", "urgentissimo", "emergencia", "imediato",
-                "critico", "parado", "bloqueado", "crise",
+                "urgente",
+                "urgentissimo",
+                "emergencia",
+                "imediato",
+                "critico",
+                "parado",
+                "bloqueado",
+                "crise",
             ],
             "high": [
-                "importante", "prioridade", "rapido", "logo", "hoje",
-                "amanha", "prazo", "vencimento",
+                "importante",
+                "prioridade",
+                "rapido",
+                "logo",
+                "hoje",
+                "amanha",
+                "prazo",
+                "vencimento",
             ],
         }
 
@@ -77,9 +134,15 @@ class EmailClassifier:
 
         # Indicadores de spam
         self.spam_indicators = [
-            r"gratis", r"ganhe\s+dinheiro", r"trabalhe\s+em\s+casa",
-            r"perca\s+peso", r"viagra", r"casino", r"loteria",
-            r"investimento\s+garantido", r"lucro\s+facil",
+            r"gratis",
+            r"ganhe\s+dinheiro",
+            r"trabalhe\s+em\s+casa",
+            r"perca\s+peso",
+            r"viagra",
+            r"casino",
+            r"loteria",
+            r"investimento\s+garantido",
+            r"lucro\s+facil",
         ]
 
         # Keywords de sentimento
@@ -104,8 +167,8 @@ class EmailClassifier:
         subject: str,
         body: str,
         from_address: str = None,
-        headers: Dict[str, Any] = None,
-    ) -> Dict[str, Any]:
+        headers: dict[str, Any] = None,
+    ) -> dict[str, Any]:
         """
         Classifica um email.
 
@@ -128,9 +191,7 @@ class EmailClassifier:
         category, category_confidence, subcategory = self._classify_category(full_text)
 
         # Calcula prioridade
-        priority, priority_score, priority_factors = self._calculate_priority(
-            full_text, category, from_address
-        )
+        priority, priority_score, priority_factors = self._calculate_priority(full_text, category, from_address)
 
         # Analisa sentimento
         sentiment, sentiment_score = self._analyze_sentiment(full_text)
@@ -163,9 +224,7 @@ class EmailClassifier:
         is_phishing, phishing_indicators = self._check_phishing(full_text, headers)
 
         # Calcula security score
-        security_score = self._calculate_security_score(
-            spam_score, is_phishing, headers
-        )
+        security_score = self._calculate_security_score(spam_score, is_phishing, headers)
 
         processing_time = int((time.time() - start_time) * 1000)
 
@@ -205,7 +264,7 @@ class EmailClassifier:
     def _classify_category(
         self,
         text: str,
-    ) -> Tuple[str, float, Optional[str]]:
+    ) -> tuple[str, float, str | None]:
         """Classifica categoria do email."""
         scores = {}
 
@@ -231,7 +290,7 @@ class EmailClassifier:
         text: str,
         category: str,
         from_address: str = None,
-    ) -> Tuple[str, float, Dict[str, float]]:
+    ) -> tuple[str, float, dict[str, float]]:
         """Calcula prioridade do email."""
         factors = {
             "urgency": 0.0,
@@ -261,10 +320,7 @@ class EmailClassifier:
 
         # Score final
         score = (
-            factors["urgency"] * 0.4 +
-            factors["category"] * 0.3 +
-            factors["sender"] * 0.2 +
-            factors["sentiment"] * 0.1
+            factors["urgency"] * 0.4 + factors["category"] * 0.3 + factors["sender"] * 0.2 + factors["sentiment"] * 0.1
         )
 
         # Determina prioridade
@@ -279,7 +335,7 @@ class EmailClassifier:
 
         return priority, score, factors
 
-    def _analyze_sentiment(self, text: str) -> Tuple[str, float]:
+    def _analyze_sentiment(self, text: str) -> tuple[str, float]:
         """Analisa sentimento do texto."""
         scores = {
             "very_positive": 0,
@@ -307,7 +363,7 @@ class EmailClassifier:
 
         return "neutral", 0.0
 
-    def _detect_emotions(self, text: str) -> Dict[str, float]:
+    def _detect_emotions(self, text: str) -> dict[str, float]:
         """Detecta emocoes no texto."""
         emotions = {}
 
@@ -318,7 +374,7 @@ class EmailClassifier:
 
         return emotions
 
-    def _detect_intent(self, text: str) -> Tuple[Optional[str], float]:
+    def _detect_intent(self, text: str) -> tuple[str | None, float]:
         """Detecta intencao do email."""
         intents = {
             "request_help": ["preciso de ajuda", "pode me ajudar", "ajuda com"],
@@ -338,16 +394,32 @@ class EmailClassifier:
 
         return None, 0.0
 
-    def _extract_keywords(self, text: str, max_keywords: int = 10) -> List[str]:
+    def _extract_keywords(self, text: str, max_keywords: int = 10) -> list[str]:
         """Extrai keywords do texto."""
         # Stopwords simples
         stopwords = {
-            "a", "o", "e", "de", "da", "do", "em", "um", "uma", "para",
-            "com", "na", "no", "que", "se", "por", "mais", "como",
+            "a",
+            "o",
+            "e",
+            "de",
+            "da",
+            "do",
+            "em",
+            "um",
+            "uma",
+            "para",
+            "com",
+            "na",
+            "no",
+            "que",
+            "se",
+            "por",
+            "mais",
+            "como",
         }
 
         # Tokeniza
-        words = re.findall(r'\b[a-záéíóúãõç]{3,}\b', text.lower())
+        words = re.findall(r"\b[a-záéíóúãõç]{3,}\b", text.lower())
 
         # Conta frequencia
         freq = {}
@@ -360,33 +432,33 @@ class EmailClassifier:
 
         return [word for word, count in sorted_words[:max_keywords]]
 
-    def _extract_entities(self, text: str) -> List[Dict[str, Any]]:
+    def _extract_entities(self, text: str) -> list[dict[str, Any]]:
         """Extrai entidades do texto."""
         entities = []
 
         # Email
-        emails = re.findall(r'\b[\w.-]+@[\w.-]+\.\w+\b', text)
+        emails = re.findall(r"\b[\w.-]+@[\w.-]+\.\w+\b", text)
         for email in emails:
             entities.append({"type": "email", "value": email, "confidence": 0.95})
 
         # Telefone
-        phones = re.findall(r'\(?\d{2}\)?\s*\d{4,5}[-\s]?\d{4}', text)
+        phones = re.findall(r"\(?\d{2}\)?\s*\d{4,5}[-\s]?\d{4}", text)
         for phone in phones:
             entities.append({"type": "phone", "value": phone, "confidence": 0.9})
 
         # Data
-        dates = re.findall(r'\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}', text)
+        dates = re.findall(r"\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}", text)
         for date in dates:
             entities.append({"type": "date", "value": date, "confidence": 0.85})
 
         # Valor monetario
-        values = re.findall(r'R\$\s*[\d.,]+', text)
+        values = re.findall(r"R\$\s*[\d.,]+", text)
         for value in values:
             entities.append({"type": "money", "value": value, "confidence": 0.9})
 
         return entities
 
-    def _extract_topics(self, text: str, category: str) -> List[str]:
+    def _extract_topics(self, text: str, category: str) -> list[str]:
         """Extrai topicos do email."""
         topics = [category] if category != "other" else []
 
@@ -405,7 +477,7 @@ class EmailClassifier:
 
         return topics[:5]
 
-    def _extract_action_items(self, text: str) -> List[Dict[str, Any]]:
+    def _extract_action_items(self, text: str) -> list[dict[str, Any]]:
         """Extrai action items do texto."""
         action_items = []
 
@@ -419,28 +491,32 @@ class EmailClassifier:
         for pattern, action_type in patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
             for match in matches[:3]:
-                action_items.append({
-                    "action": match.strip(),
-                    "type": action_type,
-                    "extracted_at": datetime.utcnow().isoformat(),
-                })
+                action_items.append(
+                    {
+                        "action": match.strip(),
+                        "type": action_type,
+                        "extracted_at": datetime.utcnow().isoformat(),
+                    }
+                )
 
         return action_items
 
-    def _extract_questions(self, text: str) -> List[Dict[str, Any]]:
+    def _extract_questions(self, text: str) -> list[dict[str, Any]]:
         """Extrai perguntas do texto."""
         questions = []
 
         # Encontra frases terminando com ?
-        sentences = re.split(r'[.!]', text)
+        sentences = re.split(r"[.!]", text)
         for sentence in sentences:
-            if '?' in sentence:
-                question = sentence.split('?')[0].strip() + '?'
+            if "?" in sentence:
+                question = sentence.split("?")[0].strip() + "?"
                 if len(question) > 10:
-                    questions.append({
-                        "question": question,
-                        "answered": False,
-                    })
+                    questions.append(
+                        {
+                            "question": question,
+                            "answered": False,
+                        }
+                    )
 
         return questions[:5]
 
@@ -448,8 +524,8 @@ class EmailClassifier:
         self,
         text: str,
         from_address: str = None,
-        headers: Dict[str, Any] = None,
-    ) -> Tuple[bool, float]:
+        headers: dict[str, Any] = None,
+    ) -> tuple[bool, float]:
         """Verifica se e spam."""
         spam_score = 0.0
         indicators = 0
@@ -475,8 +551,8 @@ class EmailClassifier:
     def _check_phishing(
         self,
         text: str,
-        headers: Dict[str, Any] = None,
-    ) -> Tuple[bool, List[str]]:
+        headers: dict[str, Any] = None,
+    ) -> tuple[bool, list[str]]:
         """Verifica se e phishing."""
         indicators_found = []
 
@@ -492,7 +568,7 @@ class EmailClassifier:
         self,
         spam_score: float,
         is_phishing: bool,
-        headers: Dict[str, Any] = None,
+        headers: dict[str, Any] = None,
     ) -> float:
         """Calcula score de seguranca."""
         score = 1.0

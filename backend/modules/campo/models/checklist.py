@@ -7,26 +7,23 @@ Templates reutilizaveis com diferentes tipos de perguntas.
 """
 
 from datetime import datetime
-from enum import Enum as PyEnum
-from typing import Optional, List
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, Integer, DateTime,
-    ForeignKey, Enum, Numeric, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models.base import Base
-
 
 # =============================================================================
 # ENUMS
 # =============================================================================
 
-class TipoServico(str, PyEnum):
+
+class TipoServico(StrEnum):
     """Tipo de servico ao qual o checklist se aplica."""
+
     INSTALACAO = "instalacao"
     MANUTENCAO_PREVENTIVA = "manutencao_preventiva"
     MANUTENCAO_CORRETIVA = "manutencao_corretiva"
@@ -38,8 +35,9 @@ class TipoServico(str, PyEnum):
     GERAL = "geral"
 
 
-class TipoResposta(str, PyEnum):
+class TipoResposta(StrEnum):
     """Tipo de resposta esperada para o item."""
+
     TEXTO = "texto"
     TEXTO_LONGO = "texto_longo"
     NUMERO = "numero"
@@ -58,8 +56,9 @@ class TipoResposta(str, PyEnum):
     ARQUIVO = "arquivo"
 
 
-class CategoriaItem(str, PyEnum):
+class CategoriaItem(StrEnum):
     """Categoria do item do checklist."""
+
     VERIFICACAO = "verificacao"
     MEDICAO = "medicao"
     DOCUMENTACAO = "documentacao"
@@ -75,6 +74,7 @@ class CategoriaItem(str, PyEnum):
 # MODEL - TEMPLATE
 # =============================================================================
 
+
 class ChecklistTemplate(Base):
     """
     Template de Checklist Reutilizavel.
@@ -82,11 +82,9 @@ class ChecklistTemplate(Base):
     Define a estrutura de um checklist que pode ser aplicado
     a diferentes Ordens de Servico do mesmo tipo.
     """
+
     __tablename__ = "checklist_templates"
-    __table_args__ = (
-        Index("ix_checklist_template_tipo", "tipo_servico"),
-        {}
-    )
+    __table_args__ = (Index("ix_checklist_template_tipo", "tipo_servico"), {})
 
     # =========================================================================
     # Identificacao
@@ -140,7 +138,9 @@ class ChecklistTemplate(Base):
     # =========================================================================
     # Relacionamentos
     # =========================================================================
-    itens = relationship("ChecklistItem", back_populates="template", cascade="all, delete-orphan", order_by="ChecklistItem.ordem")
+    itens = relationship(
+        "ChecklistItem", back_populates="template", cascade="all, delete-orphan", order_by="ChecklistItem.ordem"
+    )
 
     # =========================================================================
     # Propriedades
@@ -168,19 +168,13 @@ class ChecklistTemplate(Base):
     def adicionar_item(self, pergunta: str, tipo_resposta: TipoResposta, **kwargs) -> "ChecklistItem":
         """Adiciona item ao template."""
         ordem = len(self.itens) + 1 if self.itens else 1
-        item = ChecklistItem(
-            template_id=self.id,
-            ordem=ordem,
-            pergunta=pergunta,
-            tipo_resposta=tipo_resposta,
-            **kwargs
-        )
+        item = ChecklistItem(template_id=self.id, ordem=ordem, pergunta=pergunta, tipo_resposta=tipo_resposta, **kwargs)
         if not self.itens:
             self.itens = []
         self.itens.append(item)
         return item
 
-    def reordenar_itens(self, nova_ordem: List[str]):
+    def reordenar_itens(self, nova_ordem: list[str]):
         """Reordena itens conforme lista de IDs."""
         if not self.itens:
             return
@@ -211,17 +205,16 @@ class ChecklistTemplate(Base):
 # MODEL - ITEM
 # =============================================================================
 
+
 class ChecklistItem(Base):
     """
     Item do Checklist (pergunta/verificacao).
 
     Define uma pergunta ou verificacao dentro do template.
     """
+
     __tablename__ = "checklist_itens"
-    __table_args__ = (
-        Index("ix_checklist_item_template", "template_id"),
-        {}
-    )
+    __table_args__ = (Index("ix_checklist_item_template", "template_id"), {})
 
     # =========================================================================
     # Identificacao
@@ -324,7 +317,7 @@ class ChecklistItem(Base):
     # =========================================================================
     # Metodos
     # =========================================================================
-    def validar_resposta(self, valor) -> tuple[bool, Optional[str]]:
+    def validar_resposta(self, valor) -> tuple[bool, str | None]:
         """Valida resposta conforme tipo e restricoes."""
         if self.obrigatorio and valor is None:
             return False, "Resposta obrigatoria"
@@ -358,7 +351,7 @@ class ChecklistItem(Base):
 
         return True, None
 
-    def verificar_alerta(self, valor) -> Optional[dict]:
+    def verificar_alerta(self, valor) -> dict | None:
         """Verifica se resposta gera alerta."""
         if not self.gera_alerta or not self.alerta_condicao:
             return None
@@ -375,7 +368,7 @@ class ChecklistItem(Base):
                     "pergunta": self.pergunta,
                     "mensagem": self.alerta_mensagem,
                     "severidade": self.alerta_severidade,
-                    "valor": valor
+                    "valor": valor,
                 }
 
         elif "<" in condicao:
@@ -388,7 +381,7 @@ class ChecklistItem(Base):
                         "pergunta": self.pergunta,
                         "mensagem": self.alerta_mensagem,
                         "severidade": self.alerta_severidade,
-                        "valor": valor
+                        "valor": valor,
                     }
             except (ValueError, TypeError):
                 pass
@@ -403,7 +396,7 @@ class ChecklistItem(Base):
                         "pergunta": self.pergunta,
                         "mensagem": self.alerta_mensagem,
                         "severidade": self.alerta_severidade,
-                        "valor": valor
+                        "valor": valor,
                     }
             except (ValueError, TypeError):
                 pass
@@ -418,17 +411,19 @@ class ChecklistItem(Base):
 # MODEL - RESPOSTA
 # =============================================================================
 
+
 class ChecklistResposta(Base):
     """
     Resposta de um Checklist Preenchido.
 
     Armazena as respostas dadas pelo tecnico durante a OS.
     """
+
     __tablename__ = "checklist_respostas"
     __table_args__ = (
         Index("ix_checklist_resposta_os", "ordem_servico_id"),
         Index("ix_checklist_resposta_item", "item_id"),
-        {}
+        {},
     )
 
     # =========================================================================
@@ -583,6 +578,7 @@ class ChecklistResposta(Base):
 # MODEL - CHECKLIST PREENCHIDO (Agregador)
 # =============================================================================
 
+
 class ChecklistPreenchido(Base):
     """
     Checklist Preenchido (agregador de respostas).
@@ -590,11 +586,9 @@ class ChecklistPreenchido(Base):
     Representa uma instancia de checklist aplicada a uma OS,
     com metadados de preenchimento e status.
     """
+
     __tablename__ = "checklists_preenchidos"
-    __table_args__ = (
-        Index("ix_checklist_preenchido_os", "ordem_servico_id"),
-        {}
-    )
+    __table_args__ = (Index("ix_checklist_preenchido_os", "ordem_servico_id"), {})
 
     # =========================================================================
     # Identificacao

@@ -1,26 +1,25 @@
 """Controller para gerenciamento de zonas de geofencing."""
 
 import logging
-from typing import List  # noqa: F401  # pylint: disable=unused-import
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
+from core.database import get_db
+from modules.hr.mobile_time_clock.repositories import GeofenceZoneRepository
 from modules.hr.mobile_time_clock.schemas import (
-    GeofenceZoneCreate,
-    GeofenceZoneUpdate,
-    GeofenceZoneResponse,
-    GeofenceZoneList,
-    GeofenceZoneFilter,
     GeofenceCheckRequest,
     GeofenceCheckResponse,
+    GeofenceZoneCreate,
+    GeofenceZoneFilter,
+    GeofenceZoneList,
+    GeofenceZoneResponse,
     GeofenceZoneStats,
+    GeofenceZoneUpdate,
 )
 from modules.hr.mobile_time_clock.services import GeofenceService
-from modules.hr.mobile_time_clock.repositories import GeofenceZoneRepository
 
 logger = logging.getLogger(__name__)
 

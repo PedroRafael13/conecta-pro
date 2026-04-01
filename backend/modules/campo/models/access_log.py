@@ -1,12 +1,11 @@
 """
-Modelo AccessLog para logs de acesso do Guardian.
+Modelo AccessLog para logs de acesso do CAMPO.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, String, Text, func
@@ -16,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class AccessLogType(str, Enum):
+class AccessLogType(StrEnum):
     """Tipo de log de acesso."""
 
     ENTRY = "entry"  # Entrada
@@ -34,12 +33,12 @@ class AccessLog(Base):
     """
     Modelo de Log de Acesso.
 
-    Armazena todos os registros de acesso recebidos do Conecta Guardian,
+    Armazena todos os registros de acesso,
     incluindo entradas, saídas, negações e eventos especiais.
 
     Attributes:
         id: Identificador único
-        guardian_id: ID original no Guardian
+        external_id: ID externo de integração
         log_type: Tipo de acesso
         client_id: ID do cliente/condomínio
         post_id: ID do posto de acesso
@@ -64,7 +63,7 @@ class AccessLog(Base):
         primary_key=True,
         default=lambda: str(uuid4()),
     )
-    guardian_id: Mapped[str] = mapped_column(
+    external_id: Mapped[str] = mapped_column(
         String(100),
         unique=True,
         nullable=False,
@@ -85,12 +84,12 @@ class AccessLog(Base):
         nullable=False,
         index=True,
     )
-    contract_id: Mapped[Optional[str]] = mapped_column(
+    contract_id: Mapped[str | None] = mapped_column(
         String(36),
         nullable=True,
         index=True,
     )
-    post_id: Mapped[Optional[str]] = mapped_column(
+    post_id: Mapped[str | None] = mapped_column(
         String(36),
         nullable=True,
         index=True,
@@ -98,64 +97,64 @@ class AccessLog(Base):
 
     # Pessoa
     person_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    person_document: Mapped[Optional[str]] = mapped_column(
+    person_document: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
         index=True,
     )
-    person_type: Mapped[Optional[str]] = mapped_column(
+    person_type: Mapped[str | None] = mapped_column(
         String(30),
         nullable=True,
     )  # morador, visitante, prestador, funcionario
-    person_id: Mapped[Optional[str]] = mapped_column(
+    person_id: Mapped[str | None] = mapped_column(
         String(36),
         nullable=True,
         index=True,
     )
 
     # Localização
-    unit_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    unit_block: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    access_point: Mapped[Optional[str]] = mapped_column(
+    unit_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    unit_block: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    access_point: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )  # Portaria, Garagem, Social, etc.
-    access_point_id: Mapped[Optional[str]] = mapped_column(
+    access_point_id: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
 
     # Método de Acesso
-    access_method: Mapped[Optional[str]] = mapped_column(
+    access_method: Mapped[str | None] = mapped_column(
         String(30),
         nullable=True,
     )  # facial, tag_rfid, senha, biometria, interfone, remoto
-    device_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    device_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    device_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    device_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Veículo (se aplicável)
-    vehicle_plate: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    vehicle_model: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    vehicle_color: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    vehicle_plate: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    vehicle_model: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    vehicle_color: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     # Operador
-    operator_id: Mapped[Optional[str]] = mapped_column(
+    operator_id: Mapped[str | None] = mapped_column(
         String(36),
         nullable=True,
     )
-    operator_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    authorization_type: Mapped[Optional[str]] = mapped_column(
+    operator_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    authorization_type: Mapped[str | None] = mapped_column(
         String(30),
         nullable=True,
     )  # automatico, manual, morador
 
     # Mídia
-    photos: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    video_clip_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    photos: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    video_clip_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Observações
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    denial_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    denial_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Timestamps
     event_timestamp: Mapped[datetime] = mapped_column(
@@ -170,8 +169,8 @@ class AccessLog(Base):
     )
 
     # Geolocalização
-    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Controle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -182,8 +181,8 @@ class AccessLog(Base):
     )
 
     # Metadados
-    guardian_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    sync_id: Mapped[Optional[str]] = mapped_column(
+    external_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    sync_id: Mapped[str | None] = mapped_column(
         String(36),
         nullable=True,
     )

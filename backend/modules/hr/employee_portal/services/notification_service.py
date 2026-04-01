@@ -1,16 +1,15 @@
 """Service para notificações do portal."""
 
 import logging
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.employee_portal.models import (
     EmployeeNotification,
-    NotificationType,
-    NotificationPriority,
     NotificationChannel,
+    NotificationPriority,
+    NotificationType,
 )
 from modules.hr.employee_portal.repositories import NotificationRepository
 from modules.hr.employee_portal.schemas import (
@@ -33,9 +32,7 @@ NOTIFICATION_CONFIG = {
         "icon": "beach_access",
         "color": "blue",
         "priority": NotificationPriority.HIGH,
-        "channels": [
-            NotificationChannel.PORTAL, NotificationChannel.EMAIL, NotificationChannel.PUSH
-        ],
+        "channels": [NotificationChannel.PORTAL, NotificationChannel.EMAIL, NotificationChannel.PUSH],
     },
     NotificationType.VACATION_REJECTED: {
         "icon": "cancel",
@@ -79,12 +76,12 @@ class PortalNotificationService:
         message: str,
         condominio_id: UUID,
         *,
-        reference_type: Optional[str] = None,
-        reference_id: Optional[UUID] = None,
-        action_url: Optional[str] = None,
-        action_label: Optional[str] = None,
-        extra_data: Optional[dict] = None,
-        created_by: Optional[UUID] = None,
+        reference_type: str | None = None,
+        reference_id: UUID | None = None,
+        action_url: str | None = None,
+        action_label: str | None = None,
+        extra_data: dict | None = None,
+        created_by: UUID | None = None,
     ) -> EmployeeNotification:
         """Envia notificação para funcionário."""
         config = NOTIFICATION_CONFIG.get(notification_type, {})
@@ -110,14 +107,14 @@ class PortalNotificationService:
 
     async def send_bulk_notification(
         self,
-        employee_ids: List[UUID],
+        employee_ids: list[UUID],
         notification_type: NotificationType,
         title: str,
         message: str,
         condominio_id: UUID,
         *,
-        created_by: Optional[UUID] = None,
-    ) -> List[EmployeeNotification]:
+        created_by: UUID | None = None,
+    ) -> list[EmployeeNotification]:
         """Envia notificação para múltiplos funcionários."""
         config = NOTIFICATION_CONFIG.get(notification_type, {})
 
@@ -144,9 +141,9 @@ class PortalNotificationService:
         *,
         page: int = 1,
         page_size: int = 20,
-        is_read: Optional[bool] = None,
-        notification_type: Optional[NotificationType] = None,
-    ) -> Tuple[List[EmployeeNotification], int]:
+        is_read: bool | None = None,
+        notification_type: NotificationType | None = None,
+    ) -> tuple[list[EmployeeNotification], int]:
         """Lista notificações do funcionário."""
         return await self.repo.list_by_employee(
             employee_id,
@@ -160,7 +157,7 @@ class PortalNotificationService:
         self,
         notification_id: UUID,
         employee_id: UUID,
-    ) -> Optional[EmployeeNotification]:
+    ) -> EmployeeNotification | None:
         """Marca notificação como lida."""
         notification = await self.repo.get_by_id(notification_id)
         if not notification or notification.employee_id != employee_id:
@@ -170,7 +167,7 @@ class PortalNotificationService:
 
     async def mark_multiple_as_read(
         self,
-        notification_ids: List[UUID],
+        notification_ids: list[UUID],
         employee_id: UUID,
     ) -> int:
         """Marca múltiplas notificações como lidas."""
@@ -186,7 +183,7 @@ class PortalNotificationService:
         self,
         notification_id: UUID,
         employee_id: UUID,
-    ) -> Optional[EmployeeNotification]:
+    ) -> EmployeeNotification | None:
         """Descarta notificação."""
         notification = await self.repo.get_by_id(notification_id)
         if not notification or notification.employee_id != employee_id:

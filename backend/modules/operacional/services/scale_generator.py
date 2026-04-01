@@ -11,7 +11,7 @@ Este serviço implementa algoritmos inteligentes para:
 
 import calendar
 from datetime import date, datetime, time, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     import holidays
@@ -34,7 +34,7 @@ class ScaleGenerator:
     """
 
     # Configurações padrão por tipo de escala
-    SCALE_CONFIGS: Dict[str, Dict[str, Any]] = {
+    SCALE_CONFIGS: dict[str, dict[str, Any]] = {
         ScaleType.SCALE_12X36.value: {
             "work_hours": 12,
             "rest_hours": 36,
@@ -97,9 +97,9 @@ class ScaleGenerator:
         scale_type: ScaleType,
         month: int,
         year: int,
-        employee_ids: List[str],
-        config: Optional[Dict[str, Any]] = None,
-    ) -> List[ShiftCreate]:
+        employee_ids: list[str],
+        config: dict[str, Any] | None = None,
+    ) -> list[ShiftCreate]:
         """
         Gera escala de trabalho para um mês.
 
@@ -115,10 +115,7 @@ class ScaleGenerator:
         Returns:
             Lista de turnos a serem criados
         """
-        logger.info(
-            f"Gerando escala {scale_type.value} para {month}/{year} "
-            f"com {len(employee_ids)} funcionários"
-        )
+        logger.info(f"Gerando escala {scale_type.value} para {month}/{year} com {len(employee_ids)} funcionários")
 
         # Obter configuração base
         base_config = self.SCALE_CONFIGS.get(
@@ -135,26 +132,18 @@ class ScaleGenerator:
 
         # Gerar turnos baseado no tipo
         if scale_type == ScaleType.SCALE_12X36:
-            shifts = self._generate_12x36(
-                scale_id, post_id, start_date, days_in_month, employee_ids, final_config
-            )
+            shifts = self._generate_12x36(scale_id, post_id, start_date, days_in_month, employee_ids, final_config)
         elif scale_type == ScaleType.SCALE_6X1:
-            shifts = self._generate_6x1(
-                scale_id, post_id, start_date, days_in_month, employee_ids, final_config
-            )
+            shifts = self._generate_6x1(scale_id, post_id, start_date, days_in_month, employee_ids, final_config)
         elif scale_type in (ScaleType.SCALE_5X2, ScaleType.ADMINISTRATIVO):
-            shifts = self._generate_5x2(
-                scale_id, post_id, start_date, days_in_month, employee_ids, final_config
-            )
+            shifts = self._generate_5x2(scale_id, post_id, start_date, days_in_month, employee_ids, final_config)
         elif scale_type == ScaleType.TURNO_REVEZAMENTO:
             shifts = self._generate_turno_revezamento(
                 scale_id, post_id, start_date, days_in_month, employee_ids, final_config
             )
         else:
             # Escala genérica
-            shifts = self._generate_generic(
-                scale_id, post_id, start_date, days_in_month, employee_ids, final_config
-            )
+            shifts = self._generate_generic(scale_id, post_id, start_date, days_in_month, employee_ids, final_config)
 
         logger.info(f"Gerados {len(shifts)} turnos para escala {scale_id}")
         return shifts
@@ -195,7 +184,6 @@ class ScaleGenerator:
             employee_id = day_employees[day_idx % len(day_employees)]
 
             is_holiday = current_date in self.holidays
-            is_sunday = current_date.weekday() == 6
 
             shift = ShiftCreate(
                 scale_id=scale_id,
@@ -222,7 +210,6 @@ class ScaleGenerator:
             employee_id = night_employees[night_idx % len(night_employees)]
 
             is_holiday = current_date in self.holidays
-            is_sunday = current_date.weekday() == 6
 
             shift = ShiftCreate(
                 scale_id=scale_id,
@@ -249,9 +236,9 @@ class ScaleGenerator:
         post_id: str,
         start_date: date,
         days_in_month: int,
-        employee_ids: List[str],
-        config: Dict[str, Any],
-    ) -> List[ShiftCreate]:
+        employee_ids: list[str],
+        config: dict[str, Any],
+    ) -> list[ShiftCreate]:
         """
         Gera escala 6x1.
 
@@ -270,14 +257,11 @@ class ScaleGenerator:
         )
 
         # Distribuir folgas entre funcionários
-        employee_off_patterns = self._create_6x1_pattern(
-            employee_ids, work_days, off_days, days_in_month
-        )
+        employee_off_patterns = self._create_6x1_pattern(employee_ids, work_days, off_days, days_in_month)
 
         for day in range(1, days_in_month + 1):
             current_date = start_date.replace(day=day)
             is_holiday = current_date in self.holidays
-            is_sunday = current_date.weekday() == 6
 
             for employee_id, off_days_list in employee_off_patterns.items():
                 is_off = day in off_days_list
@@ -300,11 +284,11 @@ class ScaleGenerator:
 
     def _create_6x1_pattern(
         self,
-        employee_ids: List[str],
+        employee_ids: list[str],
         work_days: int,
         off_days: int,
         days_in_month: int,
-    ) -> Dict[str, List[int]]:
+    ) -> dict[str, list[int]]:
         """
         Cria padrão de folgas para escala 6x1.
 
@@ -333,9 +317,9 @@ class ScaleGenerator:
         post_id: str,
         start_date: date,
         days_in_month: int,
-        employee_ids: List[str],
-        config: Dict[str, Any],
-    ) -> List[ShiftCreate]:
+        employee_ids: list[str],
+        config: dict[str, Any],
+    ) -> list[ShiftCreate]:
         """
         Gera escala 5x2 (segunda a sexta).
 
@@ -352,7 +336,6 @@ class ScaleGenerator:
             weekday = current_date.weekday()
             is_weekend = weekday >= 5  # Sábado ou Domingo
             is_holiday = current_date in self.holidays
-            is_sunday = weekday == 6
 
             is_off = (weekend_off and is_weekend) or is_holiday
 
@@ -413,7 +396,6 @@ class ScaleGenerator:
         for day in range(1, days_in_month + 1):
             current_date = start_date.replace(day=day)
             is_holiday = current_date in self.holidays
-            is_sunday = current_date.weekday() == 6
 
             for idx, employee_id in enumerate(employee_ids):
                 # Calcular qual turno o funcionário está na semana
@@ -469,7 +451,6 @@ class ScaleGenerator:
         for day in range(1, days_in_month + 1):
             current_date = start_date.replace(day=day)
             is_holiday = current_date in self.holidays
-            is_sunday = current_date.weekday() == 6
 
             for idx, employee_id in enumerate(employee_ids):
                 # Determinar se é dia de folga
@@ -494,9 +475,9 @@ class ScaleGenerator:
 
     def optimize_scale(
         self,
-        shifts: List[ShiftCreate],
-        config: Optional[Dict[str, Any]] = None,
-    ) -> List[ShiftCreate]:
+        shifts: list[ShiftCreate],
+        config: dict[str, Any] | None = None,
+    ) -> list[ShiftCreate]:
         """
         Otimiza a escala gerada.
 
@@ -527,9 +508,9 @@ class ScaleGenerator:
         logger.info("Escala otimizada com sucesso")
         return shifts
 
-    def _balance_night_shifts(self, shifts: List[ShiftCreate]) -> List[ShiftCreate]:
+    def _balance_night_shifts(self, shifts: list[ShiftCreate]) -> list[ShiftCreate]:
         """Balanceia turnos noturnos entre funcionários."""
-        night_count: Dict[str, int] = {}
+        night_count: dict[str, int] = {}
 
         for shift in shifts:
             if shift.is_night_shift and shift.employee_id:
@@ -542,10 +523,10 @@ class ScaleGenerator:
 
         return shifts
 
-    def _validate_rest_intervals(self, shifts: List[ShiftCreate]) -> List[ShiftCreate]:
+    def _validate_rest_intervals(self, shifts: list[ShiftCreate]) -> list[ShiftCreate]:
         """Valida intervalo mínimo de 11h entre turnos (CLT)."""
         # Ordenar por funcionário e data
-        shifts_by_employee: Dict[str, List[ShiftCreate]] = {}
+        shifts_by_employee: dict[str, list[ShiftCreate]] = {}
 
         for shift in shifts:
             if shift.employee_id:
@@ -576,13 +557,12 @@ class ScaleGenerator:
 
                 if interval < 11:
                     logger.warning(
-                        f"Intervalo insuficiente para funcionário {employee_id}: "
-                        f"{interval:.1f}h (mínimo 11h)"
+                        f"Intervalo insuficiente para funcionário {employee_id}: {interval:.1f}h (mínimo 11h)"
                     )
 
         return shifts
 
-    def calculate_metrics(self, shifts: List[ShiftCreate]) -> Dict[str, Any]:
+    def calculate_metrics(self, shifts: list[ShiftCreate]) -> dict[str, Any]:
         """
         Calcula métricas da escala.
 
@@ -601,12 +581,10 @@ class ScaleGenerator:
         total_hours = sum(s.planned_hours for s in work_shifts)
 
         # Horas por funcionário
-        hours_by_employee: Dict[str, float] = {}
+        hours_by_employee: dict[str, float] = {}
         for shift in work_shifts:
             if shift.employee_id:
-                hours_by_employee[shift.employee_id] = (
-                    hours_by_employee.get(shift.employee_id, 0) + shift.planned_hours
-                )
+                hours_by_employee[shift.employee_id] = hours_by_employee.get(shift.employee_id, 0) + shift.planned_hours
 
         return {
             "total_shifts": total_shifts,
@@ -616,9 +594,7 @@ class ScaleGenerator:
             "holiday_shifts": len(holiday_shifts),
             "total_hours": total_hours,
             "hours_by_employee": hours_by_employee,
-            "avg_hours_per_employee": (
-                total_hours / len(hours_by_employee) if hours_by_employee else 0
-            ),
+            "avg_hours_per_employee": (total_hours / len(hours_by_employee) if hours_by_employee else 0),
         }
 
 

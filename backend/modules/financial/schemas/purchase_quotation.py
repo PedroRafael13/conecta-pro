@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -20,19 +20,19 @@ class QuotationItemBase(BaseModel):
     description: str = Field(..., min_length=1, max_length=500)
     unit_of_measure: str = Field(default="un", max_length=10)
     quantity_requested: Decimal = Field(..., gt=0)
-    quantity_offered: Optional[Decimal] = Field(None, gt=0)
-    unit_price: Optional[Decimal] = Field(None, ge=0)
+    quantity_offered: Decimal | None = Field(None, gt=0)
+    unit_price: Decimal | None = Field(None, ge=0)
     discount_percentage: Decimal = Decimal("0")
     ipi_percentage: Decimal = Decimal("0")
     icms_percentage: Decimal = Decimal("0")
-    delivery_days: Optional[int] = Field(None, ge=0)
-    availability: Optional[str] = Field(None, max_length=50)
-    supplier_code: Optional[str] = Field(None, max_length=50)
-    supplier_description: Optional[str] = Field(None, max_length=500)
-    technical_specs: Optional[str] = None
-    notes: Optional[str] = None
-    requisition_item_id: Optional[UUID] = None
-    product_id: Optional[UUID] = None
+    delivery_days: int | None = Field(None, ge=0)
+    availability: str | None = Field(None, max_length=50)
+    supplier_code: str | None = Field(None, max_length=50)
+    supplier_description: str | None = Field(None, max_length=500)
+    technical_specs: str | None = None
+    notes: str | None = None
+    requisition_item_id: UUID | None = None
+    product_id: UUID | None = None
 
 
 class QuotationItemCreate(QuotationItemBase):
@@ -42,20 +42,20 @@ class QuotationItemCreate(QuotationItemBase):
 class QuotationItemUpdate(BaseModel):
     """Schema para atualizar item de cotação."""
 
-    description: Optional[str] = Field(None, min_length=1, max_length=500)
-    quantity_offered: Optional[Decimal] = Field(None, gt=0)
-    unit_price: Optional[Decimal] = Field(None, ge=0)
-    discount_percentage: Optional[Decimal] = None
-    ipi_percentage: Optional[Decimal] = None
-    icms_percentage: Optional[Decimal] = None
-    delivery_days: Optional[int] = None
-    availability: Optional[str] = None
-    supplier_code: Optional[str] = None
-    supplier_description: Optional[str] = None
-    technical_specs: Optional[str] = None
-    notes: Optional[str] = None
-    meets_specs: Optional[bool] = None
-    evaluation_notes: Optional[str] = None
+    description: str | None = Field(None, min_length=1, max_length=500)
+    quantity_offered: Decimal | None = Field(None, gt=0)
+    unit_price: Decimal | None = Field(None, ge=0)
+    discount_percentage: Decimal | None = None
+    ipi_percentage: Decimal | None = None
+    icms_percentage: Decimal | None = None
+    delivery_days: int | None = None
+    availability: str | None = None
+    supplier_code: str | None = None
+    supplier_description: str | None = None
+    technical_specs: str | None = None
+    notes: str | None = None
+    meets_specs: bool | None = None
+    evaluation_notes: str | None = None
 
 
 class QuotationItemResponse(QuotationItemBase):
@@ -65,10 +65,10 @@ class QuotationItemResponse(QuotationItemBase):
     quotation_id: UUID
     item_number: int
     discount_amount: Decimal = Decimal("0")
-    total: Optional[Decimal] = None
-    min_quantity: Optional[Decimal] = None
-    meets_specs: Optional[bool] = None
-    evaluation_notes: Optional[str] = None
+    total: Decimal | None = None
+    min_quantity: Decimal | None = None
+    meets_specs: bool | None = None
+    evaluation_notes: str | None = None
     created_at: datetime
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -80,13 +80,13 @@ class QuotationItemResponse(QuotationItemBase):
 class PurchaseQuotationBase(BaseModel):
     """Schema base para cotação de compra."""
 
-    reference: Optional[str] = Field(None, max_length=50)
-    validity_date: Optional[date] = None
-    expected_delivery_date: Optional[date] = None
+    reference: str | None = Field(None, max_length=50)
+    validity_date: date | None = None
+    expected_delivery_date: date | None = None
     payment_condition: PaymentCondition = PaymentCondition.DIAS_30
-    payment_installments: Optional[int] = Field(None, ge=1)
+    payment_installments: int | None = Field(None, ge=1)
     delivery_type: DeliveryType = DeliveryType.CIF
-    delivery_days: Optional[int] = Field(None, ge=0)
+    delivery_days: int | None = Field(None, ge=0)
     discount_percentage: Decimal = Decimal("0")
     discount_amount: Decimal = Decimal("0")
     freight_amount: Decimal = Decimal("0")
@@ -94,8 +94,8 @@ class PurchaseQuotationBase(BaseModel):
     other_costs: Decimal = Decimal("0")
     ipi_amount: Decimal = Decimal("0")
     icms_amount: Decimal = Decimal("0")
-    notes: Optional[str] = None
-    supplier_notes: Optional[str] = None
+    notes: str | None = None
+    supplier_notes: str | None = None
 
 
 class PurchaseQuotationCreate(PurchaseQuotationBase):
@@ -104,31 +104,31 @@ class PurchaseQuotationCreate(PurchaseQuotationBase):
     condominio_id: UUID
     requisition_id: UUID
     supplier_id: UUID
-    items: List[QuotationItemCreate] = Field(default=[], min_length=0)
+    items: list[QuotationItemCreate] = Field(default=[], min_length=0)
 
 
 class PurchaseQuotationUpdate(BaseModel):
     """Schema para atualizar cotação."""
 
-    reference: Optional[str] = None
-    validity_date: Optional[date] = None
-    expected_delivery_date: Optional[date] = None
-    payment_condition: Optional[PaymentCondition] = None
-    payment_installments: Optional[int] = None
-    delivery_type: Optional[DeliveryType] = None
-    delivery_days: Optional[int] = None
-    discount_percentage: Optional[Decimal] = None
-    discount_amount: Optional[Decimal] = None
-    freight_amount: Optional[Decimal] = None
-    insurance_amount: Optional[Decimal] = None
-    other_costs: Optional[Decimal] = None
-    ipi_amount: Optional[Decimal] = None
-    icms_amount: Optional[Decimal] = None
-    notes: Optional[str] = None
-    supplier_notes: Optional[str] = None
-    technical_score: Optional[Decimal] = Field(None, ge=0, le=100)
-    commercial_score: Optional[Decimal] = Field(None, ge=0, le=100)
-    delivery_score: Optional[Decimal] = Field(None, ge=0, le=100)
+    reference: str | None = None
+    validity_date: date | None = None
+    expected_delivery_date: date | None = None
+    payment_condition: PaymentCondition | None = None
+    payment_installments: int | None = None
+    delivery_type: DeliveryType | None = None
+    delivery_days: int | None = None
+    discount_percentage: Decimal | None = None
+    discount_amount: Decimal | None = None
+    freight_amount: Decimal | None = None
+    insurance_amount: Decimal | None = None
+    other_costs: Decimal | None = None
+    ipi_amount: Decimal | None = None
+    icms_amount: Decimal | None = None
+    notes: str | None = None
+    supplier_notes: str | None = None
+    technical_score: Decimal | None = Field(None, ge=0, le=100)
+    commercial_score: Decimal | None = Field(None, ge=0, le=100)
+    delivery_score: Decimal | None = Field(None, ge=0, le=100)
 
 
 class PurchaseQuotationResponse(PurchaseQuotationBase):
@@ -141,26 +141,26 @@ class PurchaseQuotationResponse(PurchaseQuotationBase):
     supplier_id: UUID
     status: QuotationStatus
     request_date: date
-    sent_date: Optional[datetime] = None
-    received_date: Optional[datetime] = None
+    sent_date: datetime | None = None
+    received_date: datetime | None = None
     subtotal: Decimal = Decimal("0")
     total: Decimal = Decimal("0")
     pis_amount: Decimal = Decimal("0")
     cofins_amount: Decimal = Decimal("0")
-    technical_score: Optional[Decimal] = None
-    commercial_score: Optional[Decimal] = None
-    delivery_score: Optional[Decimal] = None
-    overall_score: Optional[Decimal] = None
+    technical_score: Decimal | None = None
+    commercial_score: Decimal | None = None
+    delivery_score: Decimal | None = None
+    overall_score: Decimal | None = None
     is_best_price: bool = False
     is_best_delivery: bool = False
     is_best_overall: bool = False
-    selected_at: Optional[datetime] = None
-    selected_by: Optional[UUID] = None
-    selection_justification: Optional[str] = None
-    rejection_reason: Optional[str] = None
-    items: List[QuotationItemResponse] = []
+    selected_at: datetime | None = None
+    selected_by: UUID | None = None
+    selection_justification: str | None = None
+    rejection_reason: str | None = None
+    items: list[QuotationItemResponse] = []
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
@@ -171,7 +171,7 @@ class PurchaseQuotationResponse(PurchaseQuotationBase):
 class PurchaseQuotationListResponse(BaseModel):
     """Schema de resposta para lista de cotações."""
 
-    items: List[PurchaseQuotationResponse]
+    items: list[PurchaseQuotationResponse]
     total: int
     page: int = 1
     page_size: int = 50
@@ -180,7 +180,7 @@ class PurchaseQuotationListResponse(BaseModel):
 class QuotationSelectRequest(BaseModel):
     """Request para selecionar cotação vencedora."""
 
-    justification: Optional[str] = Field(None, max_length=500)
+    justification: str | None = Field(None, max_length=500)
 
 
 class QuotationRejectRequest(BaseModel):
@@ -192,10 +192,10 @@ class QuotationRejectRequest(BaseModel):
 class QuotationScoreRequest(BaseModel):
     """Request para avaliar cotação."""
 
-    technical_score: Optional[Decimal] = Field(None, ge=0, le=100)
-    commercial_score: Optional[Decimal] = Field(None, ge=0, le=100)
-    delivery_score: Optional[Decimal] = Field(None, ge=0, le=100)
-    notes: Optional[str] = None
+    technical_score: Decimal | None = Field(None, ge=0, le=100)
+    commercial_score: Decimal | None = Field(None, ge=0, le=100)
+    delivery_score: Decimal | None = Field(None, ge=0, le=100)
+    notes: str | None = None
 
 
 class QuotationComparisonResponse(BaseModel):
@@ -203,19 +203,19 @@ class QuotationComparisonResponse(BaseModel):
 
     requisition_id: UUID
     requisition_number: str
-    quotations: List[Dict[str, Any]] = []
-    best_price: Optional[UUID] = None
-    best_delivery: Optional[UUID] = None
-    best_overall: Optional[UUID] = None
-    recommendation: Optional[str] = None
+    quotations: list[dict[str, Any]] = []
+    best_price: UUID | None = None
+    best_delivery: UUID | None = None
+    best_overall: UUID | None = None
+    recommendation: str | None = None
 
 
 class QuotationStats(BaseModel):
     """Estatísticas de cotações."""
 
     total: int = 0
-    by_status: Dict[str, int] = {}
+    by_status: dict[str, int] = {}
     pending_response: int = 0
     expired: int = 0
-    average_response_days: Optional[float] = None
-    average_discount_percentage: Optional[float] = None
+    average_response_days: float | None = None
+    average_discount_percentage: float | None = None

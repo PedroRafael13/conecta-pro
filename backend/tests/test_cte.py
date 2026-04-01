@@ -4,37 +4,38 @@ Testes para CT-e (Conhecimento de Transporte Eletronico).
 Testes unitarios e de integracao para CT-e.
 """
 
-import pytest
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.cte import (
+    Carga,
+    ComponenteValor,
+    CTe,
+    CTeManager,
+    ModalTransporte,
+    NFReferenciada,
+    Participante,
+    SituacaoCTe,
+    TipoServico,
+    TomadorServico,
+)
 from modules.government_integrations.schemas.cte import (
-    ParticipanteRequest,
-    NFReferenciadaRequest,
     CargaRequest,
     ComponenteValorRequest,
     CriarCTeRequest,
     GerarXMLRequest,
     ModalTransporteEnum,
+    NFReferenciadaRequest,
+    ParticipanteRequest,
+    SituacaoCTeEnum,
     TipoServicoEnum,
     TomadorServicoEnum,
-    SituacaoCTeEnum,
 )
 from modules.government_integrations.services.cte_service import (
     CTeService,
-)
-from modules.government_integrations.core.cte import (
-    CTeManager,
-    CTe,
-    ModalTransporte,
-    TipoServico,
-    TomadorServico,
-    SituacaoCTe,
-    Participante,
-    NFReferenciada,
-    Carga,
-    ComponenteValor,
 )
 
 
@@ -54,9 +55,7 @@ class TestSchemas:
 
     def test_nf_referenciada_request_valid(self):
         """Testa request de NF referenciada valida."""
-        request = NFReferenciadaRequest(
-            chave="35260100000000000000550010000000011000000011"
-        )
+        request = NFReferenciadaRequest(chave="35260100000000000000550010000000011000000011")
         assert len(request.chave) == 44
 
     def test_carga_request_valid(self):
@@ -211,9 +210,7 @@ class TestCTeManager:
         cte = manager.criar_cte(numero=1, serie=1)
 
         # Adiciona NF referenciada
-        cte.nf_referenciadas.append(NFReferenciada(
-            chave="35260100000000000000550010000000011000000011"
-        ))
+        cte.nf_referenciadas.append(NFReferenciada(chave="35260100000000000000550010000000011000000011"))
 
         cte.carga = Carga(
             valor_total_carga=Decimal("50000.00"),
@@ -240,13 +237,16 @@ class TestCTeService:
     @pytest.fixture
     def service(self):
         """Cria instancia do service."""
-        with patch.dict('os.environ', {
-            'CTE_CNPJ': '35710481000103',
-            'EMPRESA_RAZAO_SOCIAL': 'Transportadora Teste',
-            'EMPRESA_IE': '123456789',
-            'EMPRESA_UF': 'SP',
-            'CTE_AMBIENTE': 'homologacao',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "CTE_CNPJ": "35710481000103",
+                "EMPRESA_RAZAO_SOCIAL": "Transportadora Teste",
+                "EMPRESA_IE": "123456789",
+                "EMPRESA_UF": "SP",
+                "CTE_AMBIENTE": "homologacao",
+            },
+        ):
             return CTeService()
 
     def test_service_init(self, service):
@@ -406,12 +406,14 @@ class TestCTeService:
         """Testa listagem de CT-e."""
         # Cria alguns CT-e
         for i in range(30, 33):
-            service.criar_cte({
-                "numero": i,
-                "serie": 1,
-                "modal": "01",
-                "valor_total_servico": "1500.00",
-            })
+            service.criar_cte(
+                {
+                    "numero": i,
+                    "serie": 1,
+                    "modal": "01",
+                    "valor_total_servico": "1500.00",
+                }
+            )
 
         ctes = service.listar_ctes()
 
@@ -421,11 +423,13 @@ class TestCTeService:
     def test_limpar_cache(self, service):
         """Testa limpeza de cache."""
         # Cria CT-e
-        service.criar_cte({
-            "numero": 40,
-            "serie": 1,
-            "modal": "01",
-        })
+        service.criar_cte(
+            {
+                "numero": 40,
+                "serie": 1,
+                "modal": "01",
+            }
+        )
 
         # Limpa cache
         resultado = service.limpar_cache()
@@ -443,12 +447,13 @@ class TestCTeEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.cte_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -471,13 +476,10 @@ class TestCTeEndpoints:
             "tipo_servico": "0",
             "tomador": "0",
             "valor_total_servico": "1500.00",
-            "valor_receber": "1500.00"
+            "valor_receber": "1500.00",
         }
 
-        response = client.post(
-            "/api/v1/government/cte/criar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/cte/criar", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -490,24 +492,13 @@ class TestCTeEndpoints:
             "numero": 101,
             "serie": 1,
             "modal": "01",
-            "remetente": {
-                "tipo": "remetente",
-                "cnpj_cpf": "12345678000190",
-                "nome": "Empresa Remetente"
-            },
-            "destinatario": {
-                "tipo": "destinatario",
-                "cnpj_cpf": "98765432000110",
-                "nome": "Empresa Destinatario"
-            },
+            "remetente": {"tipo": "remetente", "cnpj_cpf": "12345678000190", "nome": "Empresa Remetente"},
+            "destinatario": {"tipo": "destinatario", "cnpj_cpf": "98765432000110", "nome": "Empresa Destinatario"},
             "valor_total_servico": "1500.00",
-            "valor_receber": "1500.00"
+            "valor_receber": "1500.00",
         }
 
-        response = client.post(
-            "/api/v1/government/cte/criar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/cte/criar", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -518,25 +509,13 @@ class TestCTeEndpoints:
         # Primeiro cria o CT-e
         client.post(
             "/api/v1/government/cte/criar",
-            json={
-                "numero": 102,
-                "serie": 1,
-                "modal": "01",
-                "valor_total_servico": "1500.00"
-            }
+            json={"numero": 102, "serie": 1, "modal": "01", "valor_total_servico": "1500.00"},
         )
 
         # Depois gera o XML
-        payload = {
-            "numero": 102,
-            "serie": 1,
-            "modal": "01"
-        }
+        payload = {"numero": 102, "serie": 1, "modal": "01"}
 
-        response = client.post(
-            "/api/v1/government/cte/gerar-xml",
-            json=payload
-        )
+        response = client.post("/api/v1/government/cte/gerar-xml", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -584,14 +563,7 @@ class TestCTeEndpoints:
     def test_obter_cte_endpoint(self, client):
         """Testa endpoint de obtencao de CT-e."""
         # Primeiro cria o CT-e
-        client.post(
-            "/api/v1/government/cte/criar",
-            json={
-                "numero": 103,
-                "serie": 1,
-                "modal": "01"
-            }
-        )
+        client.post("/api/v1/government/cte/criar", json={"numero": 103, "serie": 1, "modal": "01"})
 
         # Depois obtem
         response = client.get("/api/v1/government/cte/obter/103?serie=1")

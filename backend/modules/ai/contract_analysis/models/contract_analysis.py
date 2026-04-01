@@ -4,10 +4,9 @@ Contract Analysis Model - AI Contract Analysis
 Model principal para analise de contratos.
 """
 
-import enum
 import uuid
 from datetime import date, datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -16,7 +15,6 @@ from sqlalchemy import (
     DateTime,
     Enum,
     Float,
-    ForeignKey,
     Integer,
     String,
     Text,
@@ -27,7 +25,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class AnalysisStatus(str, enum.Enum):
+class AnalysisStatus(StrEnum):
     """Status da analise."""
 
     PENDING = "pending"
@@ -37,7 +35,7 @@ class AnalysisStatus(str, enum.Enum):
     REVIEW_REQUIRED = "review_required"
 
 
-class ContractType(str, enum.Enum):
+class ContractType(StrEnum):
     """Tipo de contrato."""
 
     SERVICE = "service"  # Prestacao de servicos
@@ -54,7 +52,7 @@ class ContractType(str, enum.Enum):
     OTHER = "other"
 
 
-class RiskLevel(str, enum.Enum):
+class RiskLevel(StrEnum):
     """Nivel de risco do contrato."""
 
     LOW = "low"
@@ -85,17 +83,8 @@ class ContractAnalysis(Base):
     document_hash = Column(String(64))  # SHA-256 do documento
 
     # Status e tipo
-    status = Column(
-        Enum(AnalysisStatus),
-        default=AnalysisStatus.PENDING,
-        nullable=False,
-        index=True
-    )
-    contract_type = Column(
-        Enum(ContractType),
-        default=ContractType.OTHER,
-        nullable=False
-    )
+    status = Column(Enum(AnalysisStatus), default=AnalysisStatus.PENDING, nullable=False, index=True)
+    contract_type = Column(Enum(ContractType), default=ContractType.OTHER, nullable=False)
     contract_type_confidence = Column(Float, default=0)  # 0-100
 
     # Partes identificadas
@@ -120,11 +109,7 @@ class ContractAnalysis(Base):
     adjustment_date = Column(Date)
 
     # Analise de risco
-    risk_level = Column(
-        Enum(RiskLevel),
-        default=RiskLevel.MEDIUM,
-        nullable=False
-    )
+    risk_level = Column(Enum(RiskLevel), default=RiskLevel.MEDIUM, nullable=False)
     risk_score = Column(Float, default=50)  # 0-100
     risk_factors = Column(JSONB, default=list)
 
@@ -172,22 +157,14 @@ class ContractAnalysis(Base):
     error_message = Column(Text)
 
     # Relacionamentos
-    clauses = relationship(
-        "ExtractedClause",
-        back_populates="analysis",
-        cascade="all, delete-orphan"
-    )
-    alerts = relationship(
-        "ContractAlert",
-        back_populates="analysis",
-        cascade="all, delete-orphan"
-    )
+    clauses = relationship("ExtractedClause", back_populates="analysis", cascade="all, delete-orphan")
+    alerts = relationship("ContractAlert", back_populates="analysis", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<ContractAnalysis {self.contract_number} - {self.status.value}>"
 
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> int | None:
         """Dias ate o vencimento."""
         if not self.end_date:
             return None

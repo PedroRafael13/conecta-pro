@@ -13,13 +13,14 @@ Classes:
     OnboardingProgress: Modelo de progresso do funcionário
 """
 
-import enum
 import uuid
-from datetime import datetime, date
-from typing import Optional, List, TYPE_CHECKING
+from datetime import date, datetime
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
@@ -27,11 +28,10 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    func,
     UniqueConstraint,
-    CheckConstraint,
+    func,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.base import Base
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     pass  # Para evitar imports circulares
 
 
-class StepType(str, enum.Enum):
+class StepType(StrEnum):
     """
     Tipos de etapa do processo de onboarding.
 
@@ -63,7 +63,7 @@ class StepType(str, enum.Enum):
     AVALIACAO = "avaliacao"
 
 
-class ProgressStatus(str, enum.Enum):
+class ProgressStatus(StrEnum):
     """
     Status de progresso de uma etapa do onboarding.
 
@@ -134,18 +134,18 @@ class OnboardingChecklist(Base):
         index=True,
         comment="Nome do checklist de onboarding",
     )
-    descricao: Mapped[Optional[str]] = mapped_column(
+    descricao: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Descrição detalhada do checklist",
     )
-    cargo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    cargo_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
         index=True,
         comment="ID do cargo associado (FK externa)",
     )
-    departamento: Mapped[Optional[str]] = mapped_column(
+    departamento: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         index=True,
@@ -176,7 +176,7 @@ class OnboardingChecklist(Base):
         default=False,
         comment="Indica se é o checklist padrão do condomínio",
     )
-    metadata_info: Mapped[Optional[dict]] = mapped_column(
+    metadata_info: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -195,7 +195,7 @@ class OnboardingChecklist(Base):
         onupdate=func.now(),
         comment="Data e hora da última atualização",
     )
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         index=True,
@@ -203,7 +203,7 @@ class OnboardingChecklist(Base):
     )
 
     # Relationships
-    etapas: Mapped[List["OnboardingStep"]] = relationship(
+    etapas: Mapped[list["OnboardingStep"]] = relationship(
         "OnboardingStep",
         back_populates="checklist",
         cascade="all, delete-orphan",
@@ -312,7 +312,7 @@ class OnboardingStep(Base):
         nullable=False,
         comment="Nome da etapa do onboarding",
     )
-    descricao: Mapped[Optional[str]] = mapped_column(
+    descricao: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Descrição detalhada da etapa",
@@ -342,23 +342,23 @@ class OnboardingStep(Base):
         default=1,
         comment="Ordem de exibição da etapa no checklist",
     )
-    responsavel_padrao_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    responsavel_padrao_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
         comment="ID do responsável padrão pela etapa (FK externa)",
     )
-    recursos: Mapped[Optional[List[str]]] = mapped_column(
+    recursos: Mapped[list[str] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
         comment="Lista de recursos necessários para a etapa",
     )
-    instrucoes: Mapped[Optional[str]] = mapped_column(
+    instrucoes: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Instruções detalhadas para execução da etapa",
     )
-    link_material: Mapped[Optional[str]] = mapped_column(
+    link_material: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="Link para material de apoio",
@@ -387,7 +387,7 @@ class OnboardingStep(Base):
         default=False,
         comment="Notificar RH ao concluir/atrasar",
     )
-    dependencia_step_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    dependencia_step_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey(
             "retention.onboarding_steps.id",
@@ -396,7 +396,7 @@ class OnboardingStep(Base):
         nullable=True,
         comment="ID da etapa que deve ser concluída antes",
     )
-    metadata_info: Mapped[Optional[dict]] = mapped_column(
+    metadata_info: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -421,14 +421,14 @@ class OnboardingStep(Base):
         "OnboardingChecklist",
         back_populates="etapas",
     )
-    progressos: Mapped[List["OnboardingProgress"]] = relationship(
+    progressos: Mapped[list["OnboardingProgress"]] = relationship(
         "OnboardingProgress",
         back_populates="step",
         cascade="all, delete-orphan",
     )
     dependencia: Mapped[Optional["OnboardingStep"]] = relationship(
         "OnboardingStep",
-        remote_side=[id],
+        remote_side=[id],  # noqa: A003
         foreign_keys=[dependencia_step_id],
     )
 
@@ -535,28 +535,28 @@ class OnboardingProgress(Base):
         index=True,
         comment="Data prevista para conclusão da etapa",
     )
-    data_inicio: Mapped[Optional[datetime]] = mapped_column(
+    data_inicio: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="Data e hora de início da etapa",
     )
-    data_conclusao: Mapped[Optional[datetime]] = mapped_column(
+    data_conclusao: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="Data e hora de conclusão da etapa",
     )
-    observacoes: Mapped[Optional[str]] = mapped_column(
+    observacoes: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Observações sobre o progresso da etapa",
     )
-    supervisor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    supervisor_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
         index=True,
         comment="ID do supervisor responsável (FK externa)",
     )
-    responsavel_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    responsavel_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
         comment="ID do responsável pela execução (FK externa)",
@@ -567,26 +567,26 @@ class OnboardingProgress(Base):
         default=0,
         comment="Quantidade de notificações enviadas",
     )
-    ultima_notificacao_at: Mapped[Optional[datetime]] = mapped_column(
+    ultima_notificacao_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="Data e hora da última notificação enviada",
     )
-    evidencia_url: Mapped[Optional[str]] = mapped_column(
+    evidencia_url: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="URL da evidência de conclusão da etapa",
     )
-    avaliacao_nota: Mapped[Optional[float]] = mapped_column(
+    avaliacao_nota: Mapped[float | None] = mapped_column(
         nullable=True,
         comment="Nota de avaliação da etapa (0-10)",
     )
-    avaliacao_comentario: Mapped[Optional[str]] = mapped_column(
+    avaliacao_comentario: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Comentário da avaliação da etapa",
     )
-    metadata_info: Mapped[Optional[dict]] = mapped_column(
+    metadata_info: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -618,13 +618,7 @@ class OnboardingProgress(Base):
 
     def __repr__(self) -> str:
         """Representação textual do objeto."""
-        return (
-            f"<OnboardingProgress("
-            f"id={self.id}, "
-            f"funcionario_id={self.funcionario_id}, "
-            f"status='{self.status.value}'"
-            f")>"
-        )
+        return f"<OnboardingProgress(id={self.id}, funcionario_id={self.funcionario_id}, status='{self.status.value}')>"
 
     def iniciar(self) -> None:
         """Marca a etapa como em andamento."""
@@ -632,7 +626,7 @@ class OnboardingProgress(Base):
             self.status = ProgressStatus.EM_ANDAMENTO
             self.data_inicio = datetime.utcnow()
 
-    def concluir(self, observacoes: Optional[str] = None) -> None:
+    def concluir(self, observacoes: str | None = None) -> None:
         """
         Marca a etapa como concluída.
 
@@ -649,7 +643,7 @@ class OnboardingProgress(Base):
         if self.status not in (ProgressStatus.CONCLUIDO, ProgressStatus.CANCELADO):
             self.status = ProgressStatus.ATRASADO
 
-    def cancelar(self, motivo: Optional[str] = None) -> None:
+    def cancelar(self, motivo: str | None = None) -> None:
         """
         Cancela a etapa.
 
@@ -665,7 +659,7 @@ class OnboardingProgress(Base):
         self.notificacoes_enviadas += 1
         self.ultima_notificacao_at = datetime.utcnow()
 
-    def avaliar(self, nota: float, comentario: Optional[str] = None) -> None:
+    def avaliar(self, nota: float, comentario: str | None = None) -> None:
         """
         Registra avaliação da etapa.
 
@@ -698,7 +692,7 @@ class OnboardingProgress(Base):
         return date.today() > self.data_prevista
 
     @property
-    def tempo_execucao_dias(self) -> Optional[int]:
+    def tempo_execucao_dias(self) -> int | None:
         """Calcula o tempo de execução em dias."""
         if self.data_inicio and self.data_conclusao:
             delta = self.data_conclusao - self.data_inicio

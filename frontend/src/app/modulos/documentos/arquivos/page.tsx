@@ -139,7 +139,26 @@ export default function ArquivosPage() {
 
   // Status badge
   const getStatusBadge = (status: string) => {
-    const statusInfo = DOCUMENT_STATUS.find(s => s.value === status);
+    const statusLabels: Record<string, string> = {
+      rascunho: 'Rascunho',
+      pendente_aprovacao: 'Pendente Aprovação',
+      aprovado: 'Aprovado',
+      rejeitado: 'Rejeitado',
+      publicado: 'Publicado',
+      arquivado: 'Arquivado',
+      expirado: 'Expirado',
+      excluido: 'Excluído',
+    };
+    const statusColors: Record<string, string> = {
+      rascunho: 'gray',
+      pendente_aprovacao: 'yellow',
+      aprovado: 'green',
+      rejeitado: 'red',
+      publicado: 'blue',
+      arquivado: 'gray',
+      expirado: 'orange',
+      excluido: 'red',
+    };
     const colors: Record<string, string> = {
       gray: 'bg-gray-100 text-gray-800',
       yellow: 'bg-yellow-100 text-yellow-800',
@@ -148,9 +167,10 @@ export default function ArquivosPage() {
       blue: 'bg-blue-100 text-blue-800',
       orange: 'bg-orange-100 text-orange-800',
     };
+    const color = statusColors[status] ?? 'gray';
     return (
-      <Badge className={colors[statusInfo?.color || 'gray'] + ' border-0'}>
-        {statusInfo?.label || status}
+      <Badge className={(colors[color] ?? colors['gray']) + ' border-0'}>
+        {statusLabels[status] ?? status}
       </Badge>
     );
   };
@@ -206,7 +226,7 @@ export default function ArquivosPage() {
 
     for (let i = 0; i < uploadFiles.length; i++) {
       const uploadFile = uploadFiles[i];
-      if (uploadFile.status !== 'pending') continue;
+      if (!uploadFile || uploadFile.status !== 'pending') continue;
 
       setUploadFiles(prev => prev.map((f, idx) =>
         idx === i ? { ...f, status: 'uploading', progress: 0 } : f
@@ -224,7 +244,7 @@ export default function ArquivosPage() {
         await uploadMutation.mutateAsync({
           data: {
             file: uploadFile.file,
-            title: uploadFile.file.name.split('.')[0],
+            title: uploadFile.file.name.split('.')[0] ?? uploadFile.file.name,
             folder_id: selectedFolderId || '',
             document_type: selectedDocType,
             category: selectedCategory,
@@ -236,8 +256,7 @@ export default function ArquivosPage() {
         setUploadFiles(prev => prev.map((f, idx) =>
           idx === i ? { ...f, status: 'success', progress: 100 } : f
         ));
-      } catch (error) {
-        console.error('Erro no upload:', error);
+      } catch {
         setUploadFiles(prev => prev.map((f, idx) =>
           idx === i ? { ...f, status: 'error', error: 'Falha no upload' } : f
         ));
@@ -278,8 +297,7 @@ export default function ArquivosPage() {
     try {
       const viewData = await getViewUrlApiV1GedDocumentsDocumentIdViewUrlGet(doc.id);
       window.open((viewData as any).url, '_blank');
-    } catch (error) {
-      console.error('Erro ao visualizar:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro ao abrir documento',
@@ -296,8 +314,7 @@ export default function ArquivosPage() {
         title: 'Download iniciado',
         description: `Baixando ${doc.title}...`,
       });
-    } catch (error) {
-      console.error('Erro no download:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro no download',
@@ -320,8 +337,7 @@ export default function ArquivosPage() {
       });
       setSelectedDocument(null);
       invalidateDocuments();
-    } catch (error) {
-      console.error('Erro ao excluir:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro ao excluir',
@@ -391,9 +407,9 @@ export default function ArquivosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
-                {DOCUMENT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
+                {Object.entries(DOCUMENT_TYPES).map(([key, value]) => (
+                  <SelectItem key={key} value={value}>
+                    {key.replace(/_/g, ' ')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -407,9 +423,9 @@ export default function ArquivosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
-                {DOCUMENT_STATUS.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
+                {Object.entries(DOCUMENT_STATUS).map(([key, value]) => (
+                  <SelectItem key={key} value={value}>
+                    {key.replace(/_/g, ' ')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -469,10 +485,10 @@ export default function ArquivosPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {DOCUMENT_TYPES.find(t => t.value === doc.document_type)?.label || doc.document_type}
+                      {doc.document_type.replace(/_/g, ' ')}
                     </TableCell>
                     <TableCell>
-                      {DOCUMENT_CATEGORIES.find(c => c.value === doc.category)?.label || doc.category}
+                      {doc.category.replace(/_/g, ' ')}
                     </TableCell>
                     <TableCell>{getStatusBadge(doc.status)}</TableCell>
                     <TableCell>{formatFileSize(doc.file_size_bytes)}</TableCell>
@@ -591,14 +607,14 @@ export default function ArquivosPage() {
               className="hidden"
               onChange={handleFileSelect}
               accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.txt"
-            />
+             aria-label="File" />
           </div>
 
           {/* Upload Options */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Pasta destino</Label>
-              <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
+              <Select value={selectedFolderId} onValueChange={setSelectedFolderId} aria-label="Selected Folder Id">
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
@@ -614,14 +630,14 @@ export default function ArquivosPage() {
             </div>
             <div className="space-y-2">
               <Label>Tipo de documento</Label>
-              <Select value={selectedDocType} onValueChange={setSelectedDocType}>
+              <Select value={selectedDocType} onValueChange={setSelectedDocType} aria-label="Selected Doc Type">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                  {Object.entries(DOCUMENT_TYPES).map(([key, value]) => (
+                    <SelectItem key={key} value={value}>
+                      {key.replace(/_/g, ' ')}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -629,14 +645,14 @@ export default function ArquivosPage() {
             </div>
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory} aria-label="Selected Category">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
+                  {Object.entries(DOCUMENT_CATEGORIES).map(([key, value]) => (
+                    <SelectItem key={key} value={value}>
+                      {key.replace(/_/g, ' ')}
                     </SelectItem>
                   ))}
                 </SelectContent>

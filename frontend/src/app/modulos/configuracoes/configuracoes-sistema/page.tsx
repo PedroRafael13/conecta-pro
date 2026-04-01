@@ -160,7 +160,7 @@ function SystemConfigTab() {
                 className="pl-10"
               />
             </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter} aria-label="Category Filter">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
@@ -345,7 +345,7 @@ function TenantSettingsTab() {
           <div className="flex flex-col md:flex-row gap-4">
             <div className="w-[300px]">
               <Label className="text-xs text-muted-foreground mb-1 block">Selecione o Tenant</Label>
-              <Select value={selectedTenantId} onValueChange={setSelectedTenantId}>
+              <Select value={selectedTenantId} onValueChange={setSelectedTenantId} aria-label="Selected Tenant Id">
                 <SelectTrigger>
                   <SelectValue placeholder="Escolha um tenant..." />
                 </SelectTrigger>

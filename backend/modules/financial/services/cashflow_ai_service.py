@@ -4,7 +4,7 @@ import logging
 import uuid
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -98,12 +98,8 @@ class CashFlowAIService:
         forecast.update_confidence(confidence)
 
         # Gera breakdown
-        forecast.inflows_breakdown = await self._generate_inflows_breakdown(
-            condominio_id, months_ahead
-        )
-        forecast.outflows_breakdown = await self._generate_outflows_breakdown(
-            condominio_id, months_ahead
-        )
+        forecast.inflows_breakdown = await self._generate_inflows_breakdown(condominio_id, months_ahead)
+        forecast.outflows_breakdown = await self._generate_outflows_breakdown(condominio_id, months_ahead)
 
         # Gera cenarios
         if include_scenarios:
@@ -139,7 +135,7 @@ class CashFlowAIService:
         self,
         condominio_id: UUID,
         months: int = 12,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Coleta dados historicos para analise."""
         end_date = date.today()
         start_date = end_date - timedelta(days=months * 30)
@@ -199,21 +195,15 @@ class CashFlowAIService:
             "monthly_data": monthly_data,
             "total_payables": sum(p.net_value or Decimal("0") for p in payables),
             "total_receivables": sum(r.net_value or Decimal("0") for r in receivables),
-            "total_paid": sum(
-                p.paid_amount or Decimal("0")
-                for p in payables
-                if p.status == PayableStatus.PAGA.value
-            ),
+            "total_paid": sum(p.paid_amount or Decimal("0") for p in payables if p.status == PayableStatus.PAGA.value),
             "total_collected": sum(
-                r.paid_value or Decimal("0")
-                for r in receivables
-                if r.status == ReceivableStatus.PAGA.value
+                r.paid_value or Decimal("0") for r in receivables if r.status == ReceivableStatus.PAGA.value
             ),
         }
 
     async def _analyze_patterns(  # pylint: disable=too-many-locals
-        self, historical_data: Dict[str, Any]
-    ) -> Dict[str, float]:
+        self, historical_data: dict[str, Any]
+    ) -> dict[str, float]:
         """Analisa padroes nos dados historicos."""
         patterns = {
             "payment_regularity": 0.0,
@@ -329,7 +319,7 @@ class CashFlowAIService:
         self,
         condominio_id: UUID,
         months_ahead: int,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Gera breakdown de entradas previstas."""
         today = date.today()
         future_date = today + timedelta(days=months_ahead * 30)
@@ -364,7 +354,7 @@ class CashFlowAIService:
         self,
         condominio_id: UUID,
         months_ahead: int,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Gera breakdown de saidas previstas."""
         today = date.today()
         future_date = today + timedelta(days=months_ahead * 30)
@@ -397,8 +387,8 @@ class CashFlowAIService:
 
     def _calculate_confidence(
         self,
-        historical_data: Dict[str, Any],
-        patterns: Dict[str, float],
+        historical_data: dict[str, Any],
+        patterns: dict[str, float],
     ) -> int:
         """Calcula nivel de confianca da previsao."""
         confidence = 50  # Base
@@ -430,7 +420,7 @@ class CashFlowAIService:
 
         return min(100, max(0, confidence))
 
-    def _generate_scenarios(self, forecast: CashFlowForecast) -> Dict[str, Dict[str, float]]:
+    def _generate_scenarios(self, forecast: CashFlowForecast) -> dict[str, dict[str, float]]:
         """Gera cenarios pessimista, realista e otimista."""
         expected_inflows = float(forecast.expected_inflows)
         expected_outflows = float(forecast.expected_outflows)
@@ -440,9 +430,7 @@ class CashFlowAIService:
             "pessimista": {
                 "inflows": expected_inflows * 0.8,  # 80% das receitas
                 "outflows": expected_outflows * 1.1,  # 110% das despesas
-                "closing_balance": opening_balance
-                + (expected_inflows * 0.8)
-                - (expected_outflows * 1.1),
+                "closing_balance": opening_balance + (expected_inflows * 0.8) - (expected_outflows * 1.1),
             },
             "realista": {
                 "inflows": expected_inflows,
@@ -452,17 +440,15 @@ class CashFlowAIService:
             "otimista": {
                 "inflows": expected_inflows * 1.1,  # 110% das receitas
                 "outflows": expected_outflows * 0.95,  # 95% das despesas
-                "closing_balance": opening_balance
-                + (expected_inflows * 1.1)
-                - (expected_outflows * 0.95),
+                "closing_balance": opening_balance + (expected_inflows * 1.1) - (expected_outflows * 0.95),
             },
         }
 
     def _identify_risks(
         self,
         forecast: CashFlowForecast,
-        patterns: Dict[str, float],
-    ) -> List[Dict[str, Any]]:
+        patterns: dict[str, float],
+    ) -> list[dict[str, Any]]:
         """Identifica riscos no fluxo de caixa."""
         risks = []
 
@@ -518,16 +504,14 @@ class CashFlowAIService:
     def _identify_opportunities(
         self,
         forecast: CashFlowForecast,
-        patterns: Dict[str, float],
-    ) -> List[Dict[str, Any]]:
+        patterns: dict[str, float],
+    ) -> list[dict[str, Any]]:
         """Identifica oportunidades de otimizacao."""
         opportunities = []
 
         # Oportunidade de aplicacao financeira
         if forecast.expected_closing_balance > forecast.expected_outflows * Decimal("0.3"):
-            excess = forecast.expected_closing_balance - (
-                forecast.expected_outflows * Decimal("0.3")
-            )
+            excess = forecast.expected_closing_balance - (forecast.expected_outflows * Decimal("0.3"))
             opportunities.append(
                 {
                     "opportunity_type": "aplicacao_financeira",
@@ -552,9 +536,7 @@ class CashFlowAIService:
         # Oportunidade de reducao de inadimplencia
         collection_rate = patterns.get("collection_rate", 100)
         if collection_rate < 95:
-            potential_recovery = forecast.expected_receivables * Decimal(
-                str((95 - collection_rate) / 100)
-            )
+            potential_recovery = forecast.expected_receivables * Decimal(str((95 - collection_rate) / 100))
             opportunities.append(
                 {
                     "opportunity_type": "recuperacao_credito",
@@ -621,7 +603,7 @@ class CashFlowAIService:
         condominio_id: UUID,
         period_months: int = 6,
         sensitivity: str = "medium",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Detecta anomalias no fluxo de caixa."""
         logger.info(f"Detectando anomalias para {condominio_id}")
         anomalies = []
@@ -661,8 +643,7 @@ class CashFlowAIService:
                                 "deviation": value - avg_recv,
                                 "severity": "high" if z_score > 3 else "medium",
                                 "description": (
-                                    f"Receita de {month} fora do padrao "
-                                    f"(desvio de {z_score:.1f} desvios padrao)"
+                                    f"Receita de {month} fora do padrao (desvio de {z_score:.1f} desvios padrao)"
                                 ),
                             }
                         )
@@ -687,8 +668,7 @@ class CashFlowAIService:
                                 "deviation": value - avg_pay,
                                 "severity": "high" if z_score > 3 else "medium",
                                 "description": (
-                                    f"Despesa de {month} fora do padrao "
-                                    f"(desvio de {z_score:.1f} desvios padrao)"
+                                    f"Despesa de {month} fora do padrao (desvio de {z_score:.1f} desvios padrao)"
                                 ),
                             }
                         )
@@ -698,7 +678,7 @@ class CashFlowAIService:
     async def suggest_optimizations(
         self,
         condominio_id: UUID,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Sugere otimizacoes para o fluxo de caixa."""
         logger.info(f"Gerando sugestoes de otimizacao para {condominio_id}")
         suggestions = []
@@ -710,17 +690,16 @@ class CashFlowAIService:
         # Sugestao: Melhorar arrecadacao
         collection_rate = patterns.get("collection_rate", 100)
         if collection_rate < 90:
-            potential_improvement = historical_data.get(
-                "total_receivables", Decimal("0")
-            ) * Decimal(str((90 - collection_rate) / 100))
+            potential_improvement = historical_data.get("total_receivables", Decimal("0")) * Decimal(
+                str((90 - collection_rate) / 100)
+            )
             suggestions.append(
                 {
                     "id": str(uuid.uuid4()),
                     "type": "melhoria_arrecadacao",
                     "title": "Aumentar taxa de arrecadacao",
                     "description": (
-                        f"Taxa atual de {collection_rate:.1f}%. "
-                        "Implementar cobranca preventiva pode aumentar para 90%+"
+                        f"Taxa atual de {collection_rate:.1f}%. Implementar cobranca preventiva pode aumentar para 90%+"
                     ),
                     "potential_savings": potential_improvement,
                     "implementation_effort": "medio",
@@ -744,8 +723,7 @@ class CashFlowAIService:
                     "type": "renegociacao_contratos",
                     "title": "Renegociar contratos com fornecedores",
                     "description": (
-                        "Revisar contratos de servicos recorrentes pode gerar "
-                        "economia de 5-10% nos custos fixos"
+                        "Revisar contratos de servicos recorrentes pode gerar economia de 5-10% nos custos fixos"
                     ),
                     "potential_savings": potential_reduction * 12,  # Anual
                     "implementation_effort": "alto",
@@ -770,8 +748,7 @@ class CashFlowAIService:
                     "type": "aplicacao_financeira",
                     "title": "Aplicar reservas excedentes",
                     "description": (
-                        f"Saldo excedente de R$ {float(excess):.2f} pode ser "
-                        "aplicado em investimentos de baixo risco"
+                        f"Saldo excedente de R$ {float(excess):.2f} pode ser aplicado em investimentos de baixo risco"
                     ),
                     "potential_savings": potential_yield,
                     "implementation_effort": "baixo",

@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Clock, ArrowLeft, Filter, RefreshCw, AlertCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -16,10 +17,11 @@ import { useCheckInShift, useCheckOutShift, useMarkShiftMissed } from '@/hooks/o
 import { getErrorMessage } from '@/lib/api';
 import { ShiftCalendar } from '@/components/operacional/shift-calendar';
 import { ShiftDayView } from '@/components/operacional/shift-day-view';
-import { ShiftCheckModal } from '@/components/operacional/shift-check-modal';
+const ShiftCheckModal = dynamic(() => import('@/components/operacional/shift-check-modal').then(m => m.ShiftCheckModal), { ssr: false });
 import { ExportButton } from '@/components/ui/export-button';
 import { formatDataForExport } from '@/utils/export';
-import type { Employee, Post, Scale, Shift, ShiftFilter } from '@/types/operacional';
+import type { Shift, ShiftFilter } from '@/types/operacional';
+import type { PostResponse, EmployeeResponse, ScaleResponse } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';
 
 const TIMEZONE = 'America/Manaus';
 
@@ -30,9 +32,13 @@ const toLocalDateKey = (date: Date) => {
 export default function TurnosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
-  const { data: posts = [] } = usePosts();
-  const { data: employees = [] } = useEmployees();
-  const { data: scales = [] } = useScales();
+  const { data: postsData } = usePosts();
+  const { data: employeesData } = useEmployees();
+  const { data: scalesData } = useScales();
+
+  const posts: PostResponse[] = useMemo(() => postsData?.items ?? [], [postsData?.items]);
+  const employees: EmployeeResponse[] = useMemo(() => employeesData?.items ?? [], [employeesData?.items]);
+  const scales: ScaleResponse[] = useMemo(() => scalesData?.items ?? [], [scalesData?.items]);
 
   const { mutate: checkIn } = useCheckInShift();
   const { mutate: checkOut } = useCheckOutShift();
@@ -64,16 +70,23 @@ export default function TurnosPage() {
     };
   }, [selectedDate, view]);
 
+  const shiftParams = useMemo(() => {
+    const hasCustomRange = Boolean(filters.start_date || filters.end_date);
+    return {
+      ...filters,
+      start_date: hasCustomRange ? filters.start_date : dateRange.start,
+      end_date: hasCustomRange ? filters.end_date : dateRange.end,
+    };
+  }, [dateRange, filters]);
+
   const {
-    data: shifts = [],
+    data: shiftsData,
     isLoading,
     error,
-    setFilters: setShiftFilters,
     refetch: refresh,
-  } = useShifts({
-    start_date: dateRange.start,
-    end_date: dateRange.end,
-  });
+  } = useShifts(shiftParams);
+
+  const shifts = useMemo(() => (shiftsData?.items ?? []) as unknown as Shift[], [shiftsData?.items]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -81,25 +94,27 @@ export default function TurnosPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    const hasCustomRange = Boolean(filters.start_date || filters.end_date);
-    setShiftFilters({
-      ...filters,
-      start_date: hasCustomRange ? filters.start_date : dateRange.start,
-      end_date: hasCustomRange ? filters.end_date : dateRange.end,
-    });
-  }, [dateRange, filters, setShiftFilters]);
-
   const postMap = useMemo(() => {
-    return posts.reduce<Record<string, Post>>((acc, post) => {
+    return posts.reduce<Record<string, PostResponse>>((acc, post) => {
       acc[post.id] = post;
       return acc;
     }, {});
   }, [posts]);
 
   const employeeMap = useMemo(() => {
-    return employees.reduce<Record<string, Employee>>((acc, employee) => {
+    return employees.reduce<Record<string, EmployeeResponse>>((acc, employee) => {
       acc[employee.id] = employee;
+      return acc;
+    }, {});
+  }, [employees]);
+
+  const calendarEmployeeMap = useMemo(() => {
+    return employees.reduce<Record<string, { full_name?: string | null; name?: string | null; email?: string | null }>>((acc, employee) => {
+      acc[employee.id] = {
+        full_name: employee.nome,
+        name: employee.nome,
+        email: employee.email ?? null,
+      };
       return acc;
     }, {});
   }, [employees]);
@@ -108,10 +123,9 @@ export default function TurnosPage() {
     if (!employeeId) return 'Sem funcionario';
     const employee = employeeMap[employeeId];
     return (
-      employee?.full_name ||
-      employee?.name ||
+      employee?.nome ||
       employee?.email ||
-      employee?.registration ||
+      employee?.matricula ||
       employeeId
     );
   };
@@ -191,7 +205,7 @@ export default function TurnosPage() {
         markMissed(
           {
             shiftId: selectedShift.id,
-            data: {
+            params: {
               reason: payload.reason,
             },
           },
@@ -254,7 +268,7 @@ export default function TurnosPage() {
                 <Filter className="w-4 h-4 mr-2" />
                 Filtros
               </Button>
-              <Button variant="outline" onClick={refresh} disabled={isLoading}>
+              <Button variant="outline" onClick={() => refresh()} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
               <ExportButton
@@ -291,7 +305,7 @@ export default function TurnosPage() {
                   onChange={(e) => setFilters({ ...filters, scale_id: e.target.value || undefined })}
                 >
                   <option value="">Todas</option>
-                  {scales.map((scale: Scale) => (
+                  {scales.map((scale) => (
                     <option key={scale.id} value={scale.id}>
                       {scale.name || `${scale.month}/${scale.year}`}
                     </option>
@@ -378,8 +392,8 @@ export default function TurnosPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
-            <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refresh} className="ml-auto">
+            <p className="text-red-500">{error.detail?.[0]?.msg ?? 'Erro ao carregar turnos'}</p>
+            <Button variant="outline" size="sm" onClick={() => refresh()} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -392,7 +406,7 @@ export default function TurnosPage() {
             onSelectDate={setSelectedDate}
             view={view}
             onViewChange={setView}
-            employeeMap={employeeMap}
+            employeeMap={calendarEmployeeMap}
           />
           <div className="space-y-4">
             <div>

@@ -6,6 +6,8 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Path, status
 
+from core.auth.dependencies import CurrentActiveUser
+
 from ..schemas.common import StandardResponse
 from ..schemas.sefaz import NFERequest
 from ..services.sefaz_service import SEFAZService
@@ -22,7 +24,7 @@ router = APIRouter(prefix="/sefaz", tags=["SEFAZ"])
     summary="Emite NFe/NFCe",
     description="Emite Nota Fiscal Eletronica layout 4.00.",
 )
-async def emit_nfe(request: NFERequest) -> StandardResponse:
+async def emit_nfe(current_user: CurrentActiveUser, request: NFERequest) -> StandardResponse:
     """
     Emite NFe ou NFCe.
 
@@ -71,6 +73,7 @@ async def emit_nfe(request: NFERequest) -> StandardResponse:
     description="Consulta situacao de NFe pela chave de acesso.",
 )
 async def get_nfe_status(
+    current_user: CurrentActiveUser,
     chave_acesso: str = Path(
         ...,
         min_length=44,

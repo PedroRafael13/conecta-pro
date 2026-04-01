@@ -7,6 +7,37 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.0.0-rc] - 2026-04-01
+
+### Added
+- Sistema de agentes autônomos 24h: 80 agentes, 13 orquestradores, score 10.0/10
+- Bot monitor Telegram @conecta_pro_monitor_bot (alertas a cada 30 min)
+- docs/RUNBOOK.md: 6 incidentes documentados com diagnóstico e resolução
+
+### Fixed
+- Auth: HTTPBearer retorna 401 (não 403) sem token — RFC 6750
+- Auth: 68 endpoints LGPD + config protegidos com JWT
+- DB Schema: 88 colunas adicionadas (tenants, feature_flags, system_configs)
+- SQLAlchemy: @property removido de queries — substituído por colunas reais
+- CI/CD: DEPLOY_PATH corrigido (/opt/erp-conecta-mais → /opt/conecta-pro)
+- CI/CD: branch feature/* adicionada aos triggers de push/pull_request
+- CI/CD: 5 quality gates || true removidos (mypy, eslint, tsc, safety, vitest)
+- Financeiro: 12/12 agentes corrigidos (condominio_id obrigatório)
+- DP: is_active sincronizado com status (campo exposto no schema DPEmployeeRead)
+- GED: trailing slash 404 corrigido em 6 endpoints (redirect_slashes=False)
+- GED: UUID inválido em kits/{id}/send retorna 422 (não 500)
+- Operacional: time_bank/stats corrigido (func.case() → case() — SA 2.x compat)
+- Rate limit: token compartilhado entre agentes (monkey-patch BaseAgent)
+- CLAUDE.md: atualizado (estava 58 dias desatualizado)
+- README.md: path /opt/erp-conecta-mais corrigido para /opt/conecta-pro
+
+### Security
+- 111 controllers sem auth mapeados — correção em progresso (Skill 06)
+- LGPD: 21 endpoints protegidos com JWT
+- Config: 47 endpoints protegidos com JWT
+
+---
+
 ## [Unreleased] - 2026-01-26
 
 ### 🎯 Quick Wins - Fase 1 (Em Desenvolvimento)

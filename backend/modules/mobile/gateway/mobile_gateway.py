@@ -5,9 +5,9 @@ import json
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
-from fastapi import Request, Response
+from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +18,8 @@ class DeviceInfo:
 
     device_type: str
     platform: str
-    os_version: Optional[str]
-    app_version: Optional[str]
+    os_version: str | None
+    app_version: str | None
     connection_type: str
     battery_level: str
     is_low_bandwidth: bool
@@ -213,10 +213,7 @@ class MobileGateway:
         compressed = False
         final_data = json_data.encode("utf-8")
 
-        if (
-            "gzip" in accept_encoding
-            and len(final_data) > self.compression_threshold
-        ):
+        if "gzip" in accept_encoding and len(final_data) > self.compression_threshold:
             compressed_data = gzip.compress(
                 final_data,
                 compresslevel=config["compression_level"],
@@ -259,11 +256,7 @@ class MobileGateway:
             "comments",
         }
 
-        return {
-            key: value
-            for key, value in data.items()
-            if key not in optional_fields
-        }
+        return {key: value for key, value in data.items() if key not in optional_fields}
 
     def get_config_for_device(self, device_info: DeviceInfo) -> dict:
         """Retorna configuração para o dispositivo."""
@@ -275,15 +268,13 @@ class MobileGateway:
     def should_use_lightweight_response(self, device_info: DeviceInfo) -> bool:
         """Verifica se deve usar resposta lightweight."""
         return (
-            device_info.is_low_bandwidth
-            or device_info.is_low_battery
-            or device_info.connection_type in ["3g", "slow"]
+            device_info.is_low_bandwidth or device_info.is_low_battery or device_info.connection_type in ["3g", "slow"]
         )
 
     async def process_low_bandwidth(
         self,
         data: Any,
-        essential_fields: Optional[list[str]] = None,
+        essential_fields: list[str] | None = None,
     ) -> Any:
         """
         Processa dados para conexões lentas.
@@ -291,18 +282,10 @@ class MobileGateway:
         Mantém apenas campos essenciais.
         """
         if essential_fields and isinstance(data, dict):
-            return {
-                key: value
-                for key, value in data.items()
-                if key in essential_fields
-            }
+            return {key: value for key, value in data.items() if key in essential_fields}
         elif essential_fields and isinstance(data, list):
             return [
-                {
-                    key: value
-                    for key, value in item.items()
-                    if key in essential_fields
-                }
+                {key: value for key, value in item.items() if key in essential_fields}
                 for item in data
                 if isinstance(item, dict)
             ]
@@ -321,9 +304,5 @@ class MobileGateway:
         heavy_fields = {"images", "videos", "attachments", "charts", "graphs"}
 
         if isinstance(data, dict):
-            return {
-                key: value
-                for key, value in data.items()
-                if key not in heavy_fields
-            }
+            return {key: value for key, value in data.items() if key not in heavy_fields}
         return data

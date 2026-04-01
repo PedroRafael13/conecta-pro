@@ -4,23 +4,21 @@ Service para CT-e (Conhecimento de Transporte Eletronico).
 Camada de servico que encapsula a logica de negocio do CT-e.
 """
 
-import os
 import logging
-from datetime import datetime
+import os
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 from ..core.cte import (
-    CTeManager,
-    CTe,
-    ModalTransporte,
-    TipoServico,
-    TomadorServico,
-    SituacaoCTe,
-    Participante,
-    NFReferenciada,
     Carga,
     ComponenteValor,
+    CTe,
+    CTeManager,
+    ModalTransporte,
+    NFReferenciada,
+    Participante,
+    TipoServico,
+    TomadorServico,
 )
 
 logger = logging.getLogger(__name__)
@@ -70,11 +68,11 @@ class CTeService:
         )
 
         # Cache de CT-e criados
-        self._ctes: Dict[str, CTe] = {}
+        self._ctes: dict[str, CTe] = {}
 
         logger.info(f"CTeService iniciado: CNPJ={self.cnpj}, UF={self.uf}, Ambiente={self.ambiente}")
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """Valida e retorna status da configuracao."""
         return {
             "cnpj": self.cnpj,
@@ -92,7 +90,7 @@ class CTeService:
             ],
         }
 
-    def criar_cte(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def criar_cte(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Cria um novo CT-e.
 
@@ -140,10 +138,12 @@ class CTeService:
         # Configura NF-e referenciadas
         if dados.get("nf_referenciadas"):
             for nf in dados["nf_referenciadas"]:
-                cte.nf_referenciadas.append(NFReferenciada(
-                    chave=nf["chave"],
-                    pin=nf.get("pin"),
-                ))
+                cte.nf_referenciadas.append(
+                    NFReferenciada(
+                        chave=nf["chave"],
+                        pin=nf.get("pin"),
+                    )
+                )
 
         # Configura carga
         if dados.get("carga"):
@@ -165,10 +165,12 @@ class CTeService:
         # Configura componentes de valor
         if dados.get("componentes_valor"):
             for comp in dados["componentes_valor"]:
-                cte.componentes_valor.append(ComponenteValor(
-                    nome=comp["nome"],
-                    valor=Decimal(str(comp["valor"])),
-                ))
+                cte.componentes_valor.append(
+                    ComponenteValor(
+                        nome=comp["nome"],
+                        valor=Decimal(str(comp["valor"])),
+                    )
+                )
 
         # Configura ICMS
         cte.icms_base_calculo = Decimal(str(dados.get("icms_base_calculo", 0)))
@@ -195,7 +197,7 @@ class CTeService:
             "valor_receber": str(cte.valor_receber),
         }
 
-    def gerar_xml(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def gerar_xml(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Gera XML do CT-e.
 
@@ -227,7 +229,7 @@ class CTeService:
             "xml": xml,
         }
 
-    def consultar_status_servico(self) -> Dict[str, Any]:
+    def consultar_status_servico(self) -> dict[str, Any]:
         """
         Consulta status do servico CT-e na SEFAZ.
 
@@ -240,25 +242,15 @@ class CTeService:
 
         return resultado
 
-    def listar_modais(self) -> Dict[str, Any]:
+    def listar_modais(self) -> dict[str, Any]:
         """Lista modais de transporte disponiveis."""
-        return {
-            "modais": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.MODAIS.items()
-            ]
-        }
+        return {"modais": [{"codigo": k, "descricao": v} for k, v in self.MODAIS.items()]}
 
-    def listar_tipos_servico(self) -> Dict[str, Any]:
+    def listar_tipos_servico(self) -> dict[str, Any]:
         """Lista tipos de servico disponiveis."""
-        return {
-            "tipos_servico": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.TIPOS_SERVICO.items()
-            ]
-        }
+        return {"tipos_servico": [{"codigo": k, "descricao": v} for k, v in self.TIPOS_SERVICO.items()]}
 
-    def obter_cte(self, numero: int, serie: int = 1) -> Optional[Dict[str, Any]]:
+    def obter_cte(self, numero: int, serie: int = 1) -> dict[str, Any] | None:
         """
         Obtem CT-e do cache.
 
@@ -288,7 +280,7 @@ class CTeService:
             "valor_receber": str(cte.valor_receber),
         }
 
-    def listar_ctes(self) -> Dict[str, Any]:
+    def listar_ctes(self) -> dict[str, Any]:
         """Lista todos os CT-e em cache."""
         return {
             "ctes": [
@@ -303,7 +295,7 @@ class CTeService:
             ]
         }
 
-    def limpar_cache(self) -> Dict[str, Any]:
+    def limpar_cache(self) -> dict[str, Any]:
         """Limpa cache de CT-e."""
         count = len(self._ctes)
         self._ctes.clear()
@@ -312,7 +304,7 @@ class CTeService:
 
         return {"message": f"Cache limpo: {count} CT-e removidos"}
 
-    def _criar_participante(self, dados: Dict[str, Any]) -> Participante:
+    def _criar_participante(self, dados: dict[str, Any]) -> Participante:
         """Cria participante a partir de dados."""
         return Participante(
             tipo=dados.get("tipo", "remetente"),
@@ -332,7 +324,7 @@ class CTeService:
 
 
 # Singleton
-_service_instance: Optional[CTeService] = None
+_service_instance: CTeService | None = None
 
 
 def get_cte_service() -> CTeService:

@@ -6,11 +6,9 @@ Parser de respostas da API PNCP
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, Any, Optional
+from typing import Any
 
-from modules.bidding.integrations.pncp.models import (
-    PNCPCompra, PNCPOrgao, PNCPItem, PNCPDocumento, PNCPContrato
-)
+from modules.bidding.integrations.pncp.models import PNCPCompra, PNCPContrato, PNCPDocumento, PNCPItem, PNCPOrgao
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +16,7 @@ logger = logging.getLogger(__name__)
 class PNCPParser:
     """Parser para converter respostas da API PNCP em DTOs."""
 
-    def parse_compra(self, data: Dict[str, Any]) -> PNCPCompra:
+    def parse_compra(self, data: dict[str, Any]) -> PNCPCompra:
         """
         Converte dados de compra da API para DTO.
 
@@ -37,7 +35,7 @@ class PNCPParser:
             uf=orgao_data.get("uf", "AM"),
             municipio=orgao_data.get("municipio"),
             codigo_ibge=orgao_data.get("codigoIbge"),
-            esfera=orgao_data.get("esferaId")
+            esfera=orgao_data.get("esferaId"),
         )
 
         return PNCPCompra(
@@ -67,10 +65,10 @@ class PNCPParser:
             link_pncp=self._gerar_link_pncp(orgao.cnpj, data.get("anoCompra"), data.get("sequencialCompra")),
             srp=data.get("srp", False),
             processo_administrativo=data.get("processoAdministrativo"),
-            justificativa=data.get("justificativa")
+            justificativa=data.get("justificativa"),
         )
 
-    def parse_item(self, data: Dict[str, Any]) -> PNCPItem:
+    def parse_item(self, data: dict[str, Any]) -> PNCPItem:
         """
         Converte dados de item para DTO.
 
@@ -89,10 +87,10 @@ class PNCPParser:
             valor_total_estimado=self._parse_decimal(data.get("valorTotalEstimado")),
             situacao=data.get("situacao"),
             codigo_material_servico=data.get("codigoMaterialServico"),
-            tipo_beneficio=data.get("tipoBeneficio")
+            tipo_beneficio=data.get("tipoBeneficio"),
         )
 
-    def parse_documento(self, data: Dict[str, Any]) -> PNCPDocumento:
+    def parse_documento(self, data: dict[str, Any]) -> PNCPDocumento:
         """
         Converte dados de documento para DTO.
 
@@ -108,10 +106,10 @@ class PNCPParser:
             url=data.get("url", ""),
             data_publicacao=self._parse_datetime(data.get("dataPublicacao")),
             tamanho_bytes=data.get("tamanhoBytes"),
-            hash_arquivo=data.get("hashArquivo")
+            hash_arquivo=data.get("hashArquivo"),
         )
 
-    def parse_contrato(self, data: Dict[str, Any]) -> PNCPContrato:
+    def parse_contrato(self, data: dict[str, Any]) -> PNCPContrato:
         """
         Converte dados de contrato para DTO.
 
@@ -136,10 +134,10 @@ class PNCPParser:
             data_vigencia_inicio=self._parse_date(data.get("dataVigenciaInicio")),
             data_vigencia_fim=self._parse_date(data.get("dataVigenciaFim")),
             objeto=data.get("objetoContrato", ""),
-            link_pncp=data.get("linkPncp")
+            link_pncp=data.get("linkPncp"),
         )
 
-    def _parse_datetime(self, value: Any) -> Optional[datetime]:
+    def _parse_datetime(self, value: Any) -> datetime | None:
         """Parse de datetime."""
         if not value:
             return None
@@ -161,7 +159,7 @@ class PNCPParser:
         dt = self._parse_datetime(value)
         return dt.date() if dt else None
 
-    def _parse_decimal(self, value: Any) -> Optional[Decimal]:
+    def _parse_decimal(self, value: Any) -> Decimal | None:
         """Parse de decimal."""
         if value is None:
             return None
@@ -177,14 +175,9 @@ class PNCPParser:
             return ""
         if len(text) <= max_length:
             return text
-        return text[:max_length - 3] + "..."
+        return text[: max_length - 3] + "..."
 
-    def _gerar_link_pncp(
-        self,
-        cnpj: str,
-        ano: int,
-        sequencial: int
-    ) -> str:
+    def _gerar_link_pncp(self, cnpj: str, ano: int, sequencial: int) -> str:
         """Gera link para visualizacao no PNCP."""
         if not all([cnpj, ano, sequencial]):
             return ""

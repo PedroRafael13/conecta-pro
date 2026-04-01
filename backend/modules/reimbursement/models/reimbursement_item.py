@@ -1,9 +1,8 @@
 """Model para itens de reembolso (despesas individuais)."""
 
 import uuid
-from datetime import date
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -24,11 +23,11 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 if TYPE_CHECKING:
-    from modules.reimbursement.models.reimbursement_request import ReimbursementRequest
     from modules.reimbursement.models.reimbursement_attachment import ReimbursementAttachment
+    from modules.reimbursement.models.reimbursement_request import ReimbursementRequest
 
 
-class ExpenseCategory(str, Enum):
+class ExpenseCategory(StrEnum):
     """Categoria de despesa."""
 
     TRANSPORTE = "transporte"  # Uber, taxi, combustível
@@ -44,7 +43,7 @@ class ExpenseCategory(str, Enum):
     OUTROS = "outros"  # Outros
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """Tipo de documento fiscal."""
 
     NOTA_FISCAL = "nota_fiscal"
@@ -144,7 +143,7 @@ class ReimbursementItem(Base):
     def __repr__(self) -> str:
         return f"<ReimbursementItem {self.id} - {self.category_type} - {self.amount}>"
 
-    def approve(self, approved_amount: Optional[Decimal] = None) -> None:
+    def approve(self, approved_amount: Decimal | None = None) -> None:
         """Aprova o item."""
         self.is_approved = True
         self.approved_amount = approved_amount or self.amount

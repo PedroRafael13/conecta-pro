@@ -96,8 +96,7 @@ export default function CriptografiaPage() {
         String(result);
 
       setEncryptResult(encrypted);
-    } catch (error) {
-      console.error('Erro ao criptografar:', error);
+    } catch {
       setEncryptResult('Erro ao criptografar dados');
     }
   };
@@ -116,8 +115,7 @@ export default function CriptografiaPage() {
         String(result);
 
       setDecryptResult(decrypted);
-    } catch (error) {
-      console.error('Erro ao descriptografar:', error);
+    } catch {
       setDecryptResult('Erro ao descriptografar dados');
     }
   };
@@ -128,7 +126,7 @@ export default function CriptografiaPage() {
       setter(true);
       setTimeout(() => setter(false), 2000);
     } catch {
-      console.error('Erro ao copiar');
+      // silenced
     }
   };
 
@@ -240,7 +238,7 @@ export default function CriptografiaPage() {
                   readOnly
                   rows={4}
                   className="font-mono text-sm"
-                />
+                 aria-label="Encrypt Result"/>
               </div>
             )}
           </CardContent>
@@ -314,7 +312,7 @@ export default function CriptografiaPage() {
                   value={decryptResult}
                   readOnly
                   rows={4}
-                />
+                 aria-label="Decrypt Result"/>
               </div>
             )}
           </CardContent>

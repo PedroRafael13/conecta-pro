@@ -6,9 +6,8 @@ Service for processing and executing voice commands.
 
 import re
 import time
-from datetime import datetime
 from difflib import SequenceMatcher
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID, uuid4
 
 
@@ -76,7 +75,7 @@ class VoiceCommandProcessor:
     def __init__(self, min_confidence: float = 0.6):
         """Initialize command processor."""
         self.min_confidence = min_confidence
-        self._command_registry: Dict[str, Dict] = {}
+        self._command_registry: dict[str, dict] = {}
         self._load_builtin_commands()
 
     def _load_builtin_commands(self) -> None:
@@ -93,10 +92,10 @@ class VoiceCommandProcessor:
     def register_command(
         self,
         code: str,
-        phrases: List[str],
+        phrases: list[str],
         category: str,
-        params: List[str],
-        action_config: Dict,
+        params: list[str],
+        action_config: dict,
     ) -> None:
         """Register a custom command."""
         self._command_registry[code] = {
@@ -111,9 +110,9 @@ class VoiceCommandProcessor:
     def process_command(
         self,
         text: str,
-        context: Optional[Dict] = None,
-        user_id: Optional[UUID] = None,
-    ) -> Dict[str, Any]:
+        context: dict | None = None,
+        user_id: UUID | None = None,
+    ) -> dict[str, Any]:
         """
         Process a voice command text.
 
@@ -180,9 +179,9 @@ class VoiceCommandProcessor:
     def execute_command(
         self,
         command_code: str,
-        parameters: Dict[str, Any],
-        context: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+        parameters: dict[str, Any],
+        context: dict | None = None,
+    ) -> dict[str, Any]:
         """
         Execute a recognized command.
 
@@ -221,12 +220,12 @@ class VoiceCommandProcessor:
         # Lowercase
         text = text.lower().strip()
         # Remove extra spaces
-        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r"\s+", " ", text)
         # Remove punctuation except hyphens
-        text = re.sub(r'[^\w\s-]', '', text)
+        text = re.sub(r"[^\w\s-]", "", text)
         return text
 
-    def _find_command(self, text: str) -> Dict[str, Any]:
+    def _find_command(self, text: str) -> dict[str, Any]:
         """Find matching command from text."""
         best_match = None
         best_confidence = 0
@@ -239,21 +238,25 @@ class VoiceCommandProcessor:
                     confidence = 0.95
                 else:
                     # Calculate similarity
-                    confidence = SequenceMatcher(None, phrase, text[:len(phrase) + 5]).ratio()
+                    confidence = SequenceMatcher(None, phrase, text[: len(phrase) + 5]).ratio()
 
                 if confidence > best_confidence:
                     if best_match:
-                        alternatives.append({
-                            "code": best_match["code"],
-                            "confidence": best_confidence,
-                        })
+                        alternatives.append(
+                            {
+                                "code": best_match["code"],
+                                "confidence": best_confidence,
+                            }
+                        )
                     best_match = command
                     best_confidence = confidence
                 elif confidence > 0.5:
-                    alternatives.append({
-                        "code": code,
-                        "confidence": confidence,
-                    })
+                    alternatives.append(
+                        {
+                            "code": code,
+                            "confidence": confidence,
+                        }
+                    )
 
         if best_match and best_confidence >= self.min_confidence:
             return {
@@ -268,7 +271,7 @@ class VoiceCommandProcessor:
             "alternatives": sorted(alternatives, key=lambda x: x["confidence"], reverse=True)[:3],
         }
 
-    def _extract_parameters(self, text: str, command: Dict) -> Dict[str, Any]:
+    def _extract_parameters(self, text: str, command: dict) -> dict[str, Any]:
         """Extract parameters from command text."""
         params = {}
         required_params = command.get("params", [])
@@ -306,18 +309,18 @@ class VoiceCommandProcessor:
                 params["name"] = quoted[0]
             else:
                 # Look for "chamado X" pattern
-                match = re.search(r'chamad[oa]\s+(.+)', text)
+                match = re.search(r"chamad[oa]\s+(.+)", text)
                 if match:
                     params["name"] = match.group(1).strip()
 
         return params
 
-    def _get_missing_params(self, command: Dict, params: Dict) -> List[str]:
+    def _get_missing_params(self, command: dict, params: dict) -> list[str]:
         """Get list of missing required parameters."""
         required = command.get("params", [])
         return [p for p in required if p not in params]
 
-    def _generate_response(self, command: Dict, params: Dict, status: str) -> str:
+    def _generate_response(self, command: dict, params: dict, status: str) -> str:
         """Generate response text for command."""
         code = command["code"]
 
@@ -349,10 +352,10 @@ class VoiceCommandProcessor:
 
     def _simulate_execution(
         self,
-        command: Dict,
-        params: Dict,
-        context: Optional[Dict],
-    ) -> Dict[str, Any]:
+        command: dict,
+        params: dict,
+        context: dict | None,
+    ) -> dict[str, Any]:
         """Simulate command execution."""
         code = command["code"]
 
@@ -396,7 +399,7 @@ class VoiceCommandProcessor:
             "response": "Comando executado.",
         }
 
-    def get_suggestions(self, partial_text: str, max_suggestions: int = 5) -> List[Dict]:
+    def get_suggestions(self, partial_text: str, max_suggestions: int = 5) -> list[dict]:
         """Get command suggestions for partial input."""
         normalized = self._normalize_text(partial_text)
         suggestions = []
@@ -404,31 +407,37 @@ class VoiceCommandProcessor:
         for code, command in self._command_registry.items():
             for phrase in command["phrases"]:
                 if phrase.startswith(normalized) or normalized in phrase:
-                    suggestions.append({
-                        "code": code,
-                        "phrase": phrase,
-                        "category": command["category"],
-                    })
+                    suggestions.append(
+                        {
+                            "code": code,
+                            "phrase": phrase,
+                            "category": command["category"],
+                        }
+                    )
 
         # Sort by relevance
-        suggestions.sort(key=lambda x: (
-            not x["phrase"].startswith(normalized),
-            len(x["phrase"]),
-        ))
+        suggestions.sort(
+            key=lambda x: (
+                not x["phrase"].startswith(normalized),
+                len(x["phrase"]),
+            )
+        )
 
         return suggestions[:max_suggestions]
 
-    def list_commands(self, category: Optional[str] = None) -> List[Dict]:
+    def list_commands(self, category: str | None = None) -> list[dict]:
         """List available commands."""
         commands = []
         for code, command in self._command_registry.items():
             if category and command["category"] != category:
                 continue
-            commands.append({
-                "code": code,
-                "phrases": command["phrases"],
-                "category": command["category"],
-                "params": command["params"],
-                "is_system": command.get("is_system", False),
-            })
+            commands.append(
+                {
+                    "code": code,
+                    "phrases": command["phrases"],
+                    "category": command["category"],
+                    "params": command["params"],
+                    "is_system": command.get("is_system", False),
+                }
+            )
         return commands

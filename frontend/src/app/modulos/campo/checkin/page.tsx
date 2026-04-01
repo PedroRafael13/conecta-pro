@@ -32,7 +32,7 @@ export default function CheckinPage() {
   const ITEMS_PER_PAGE = 10;
 
   // Extrair checkins do dashboard ou usar array vazio
-  const rawCheckins: any[] = dashboard?.checkins_list ?? dashboard?.registros ?? [];
+  const rawCheckins: any[] = useMemo(() => dashboard?.checkins_list ?? dashboard?.registros ?? [], [dashboard?.checkins_list, dashboard?.registros]);
 
   // Filtros
   const filteredCheckins = useMemo(() => {

@@ -1,7 +1,6 @@
 """Schemas para exportação de folha de pagamento."""
 
 from datetime import date, datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -12,17 +11,17 @@ from modules.hr.payroll_integration.models import ExportFormat
 class ExportScopeSchema(BaseModel):
     """Escopo da exportação."""
 
-    employees: Optional[List[str]] = Field(
+    employees: list[str] | None = Field(
         default=["all"],
         description="IDs de funcionários ou 'all'",
     )
-    departments: Optional[List[str]] = Field(
+    departments: list[str] | None = Field(
         default=["all"],
         description="IDs de departamentos ou 'all'",
     )
-    event_types: Optional[List[str]] = None
-    event_categories: Optional[List[str]] = None
-    date_range: Optional[dict] = None
+    event_types: list[str] | None = None
+    event_categories: list[str] | None = None
+    date_range: dict | None = None
 
 
 class FileConfigSchema(BaseModel):
@@ -40,18 +39,18 @@ class PayrollExportBase(BaseModel):
     """Schema base para exportação."""
 
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     export_format: ExportFormat
-    export_type: Optional[str] = None
-    scope: Optional[ExportScopeSchema] = None
-    file_config: Optional[FileConfigSchema] = None
+    export_type: str | None = None
+    scope: ExportScopeSchema | None = None
+    file_config: FileConfigSchema | None = None
 
 
 class PayrollExportCreate(PayrollExportBase):
     """Schema para criação de exportação."""
 
-    period_id: Optional[UUID] = None
-    integration_id: Optional[UUID] = None
+    period_id: UUID | None = None
+    integration_id: UUID | None = None
 
     @field_validator("period_id", "integration_id")
     @classmethod
@@ -63,10 +62,10 @@ class PayrollExportCreate(PayrollExportBase):
 class PayrollExportUpdate(BaseModel):
     """Schema para atualização de exportação."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    scope: Optional[ExportScopeSchema] = None
-    file_config: Optional[FileConfigSchema] = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    scope: ExportScopeSchema | None = None
+    file_config: FileConfigSchema | None = None
 
 
 class PayrollExportResponse(BaseModel):
@@ -74,36 +73,36 @@ class PayrollExportResponse(BaseModel):
 
     id: UUID
     condominio_id: UUID
-    period_id: Optional[UUID]
-    integration_id: Optional[UUID]
+    period_id: UUID | None
+    integration_id: UUID | None
     export_code: str
     name: str
-    description: Optional[str]
+    description: str | None
     export_format: str
-    export_type: Optional[str]
-    scope: Optional[dict]
-    file_config: Optional[dict]
-    file_name: Optional[str]
-    file_path: Optional[str]
-    file_size: Optional[int]
-    file_hash: Optional[str]
+    export_type: str | None
+    scope: dict | None
+    file_config: dict | None
+    file_name: str | None
+    file_path: str | None
+    file_size: int | None
+    file_hash: str | None
     status: str
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    processing_time_ms: Optional[int]
+    started_at: datetime | None
+    completed_at: datetime | None
+    processing_time_ms: int | None
     total_records: int
     processed_records: int
     success_records: int
     error_records: int
     warning_records: int
-    transmission_id: Optional[str]
-    transmission_date: Optional[datetime]
-    receipt_number: Optional[str]
-    receipt_date: Optional[datetime]
-    errors: Optional[List[dict]]
-    warnings: Optional[List[dict]]
-    download_url: Optional[str]
-    download_expires_at: Optional[datetime]
+    transmission_id: str | None
+    transmission_date: datetime | None
+    receipt_number: str | None
+    receipt_date: datetime | None
+    errors: list[dict] | None
+    warnings: list[dict] | None
+    download_url: str | None
+    download_expires_at: datetime | None
     download_count: int
     retry_count: int
     is_completed: bool
@@ -114,7 +113,7 @@ class PayrollExportResponse(BaseModel):
     is_esocial_export: bool
     is_bank_export: bool
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -122,7 +121,7 @@ class PayrollExportResponse(BaseModel):
 class PayrollExportListResponse(BaseModel):
     """Lista paginada de exportações."""
 
-    items: List["PayrollExportResponse"]
+    items: list["PayrollExportResponse"]
     total: int
     page: int
     page_size: int
@@ -140,9 +139,9 @@ class ExportProgressResponse(BaseModel):
     success_records: int
     error_records: int
     progress_percentage: float
-    started_at: Optional[datetime]
-    estimated_completion: Optional[datetime]
-    current_step: Optional[str]
+    started_at: datetime | None
+    estimated_completion: datetime | None
+    current_step: str | None
 
 
 class ExportDownloadResponse(BaseModel):
@@ -163,7 +162,7 @@ class ExportErrorDetail(BaseModel):
     field: str
     code: str
     message: str
-    employee_id: Optional[str]
+    employee_id: str | None
     timestamp: datetime
 
 
@@ -175,8 +174,8 @@ class ExportValidationResponse(BaseModel):
     total_records: int
     valid_records: int
     invalid_records: int
-    errors: List[ExportErrorDetail]
-    warnings: List[ExportErrorDetail]
+    errors: list[ExportErrorDetail]
+    warnings: list[ExportErrorDetail]
 
 
 class BankExportRequest(BaseModel):
@@ -187,7 +186,7 @@ class BankExportRequest(BaseModel):
     account_number: str
     account_digit: str
     branch_number: str
-    branch_digit: Optional[str] = None
+    branch_digit: str | None = None
     company_name: str
     company_document: str = Field(..., min_length=14, max_length=14)
     payment_date: date
@@ -205,7 +204,7 @@ class ESocialExportRequest(BaseModel):
         ...,
         pattern="^S-(1200|1210|1260|1270|1280|1298|1299|2200|2299|2300|2399)$",
     )
-    employees: Optional[List[UUID]] = None
+    employees: list[UUID] | None = None
     test_mode: bool = Field(
         default=False,
         description="Modo de teste (ambiente restrito)",
@@ -217,11 +216,11 @@ class ESocialTransmissionResponse(BaseModel):
 
     export_id: UUID
     protocol: str
-    receipt: Optional[str]
+    receipt: str | None
     status: str
     transmitted_at: datetime
     events_count: int
     accepted_count: int
     rejected_count: int
     pending_count: int
-    rejections: Optional[List[dict]]
+    rejections: list[dict] | None

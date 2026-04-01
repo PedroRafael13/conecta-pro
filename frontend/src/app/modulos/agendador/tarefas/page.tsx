@@ -314,7 +314,7 @@ export default function TarefasPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="create-type">Tipo</Label>
-                <Select value={formType} onValueChange={setFormType}>
+                <Select value={formType} onValueChange={setFormType} aria-label="Form Type">
                   <SelectTrigger>
                     <SelectValue placeholder="Tipo da tarefa" />
                   </SelectTrigger>

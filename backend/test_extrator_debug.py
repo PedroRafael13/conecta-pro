@@ -5,10 +5,9 @@ Debug do extrator NF-e - simula o fluxo completo.
 
 import asyncio
 import sys
-import os
 
 # Adicionar path do módulo
-sys.path.insert(0, '/app')
+sys.path.insert(0, "/app")
 
 from uuid import UUID
 
@@ -43,12 +42,12 @@ async def test_credenciais():
     """Testa obtenção de credenciais."""
     print("\n=== Teste de Credenciais ===")
 
-    from modules.government_integrations.core.credentials import ProvedorCredenciais, TipoCredencial
+    from modules.government_integrations.core.credentials import TipoCredencial
     from modules.government_integrations.core.credentials.file_credential_provider import get_file_credential_provider
 
     try:
         provider = get_file_credential_provider()
-        print(f"FileCredentialProvider criado")
+        print("FileCredentialProvider criado")
 
         # Testar SSL context
         ssl_ctx = provider.get_ssl_context()
@@ -63,6 +62,7 @@ async def test_credenciais():
     except Exception as e:
         print(f"ERRO: {type(e).__name__}: {e}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -71,7 +71,6 @@ async def test_session():
     print("\n=== Teste de Sessão HTTP ===")
 
     import aiohttp
-    import ssl
 
     from modules.government_integrations.core.credentials.file_credential_provider import get_file_credential_provider
 
@@ -104,10 +103,12 @@ async def test_session():
         print(f"CLIENT ERROR: {type(e).__name__}: {e}")
         print(f"  args: {e.args}")
         import traceback
+
         traceback.print_exc()
     except Exception as e:
         print(f"ERRO: {type(e).__name__}: {e}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -115,9 +116,8 @@ async def test_extracao():
     """Testa extração completa."""
     print("\n=== Teste de Extração Completa ===")
 
-    from modules.government_integrations.extractors.sefaz.nfe_extractor import ExtratorNFe
-    from modules.government_integrations.core.credentials import ProvedorCredenciais
     from modules.government_integrations.core.credentials.file_credential_provider import get_file_credential_provider
+    from modules.government_integrations.extractors.sefaz.nfe_extractor import ExtratorNFe
 
     try:
         # Criar provedor adaptado
@@ -135,7 +135,7 @@ async def test_extracao():
         adapter = FileProviderAdapter(file_provider)
 
         extrator = ExtratorNFe(credentials=adapter)
-        print(f"Extrator criado")
+        print("Extrator criado")
 
         # Tentar extrair
         tenant_id = UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
@@ -143,7 +143,7 @@ async def test_extracao():
         print(f"\nIniciando extração para tenant: {tenant_id}")
         resultado = await extrator.extrair(tenant_id)
 
-        print(f"\nResultado:")
+        print("\nResultado:")
         print(f"  Status: {resultado.status}")
         print(f"  Documentos: {resultado.documentos_processados}")
         print(f"  Novos: {resultado.documentos_novos}")
@@ -154,6 +154,7 @@ async def test_extracao():
     except Exception as e:
         print(f"ERRO: {type(e).__name__}: {e}")
         import traceback
+
         traceback.print_exc()
 
 

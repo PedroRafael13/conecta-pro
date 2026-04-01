@@ -3,11 +3,10 @@ Controller para cálculos de FGTS e INSS.
 """
 
 import logging
-import sys
 
 from fastapi import APIRouter, HTTPException, status
 
-
+from core.auth.dependencies import CurrentActiveUser
 
 # Imports relativos do módulo pai
 from modules.government_integrations.utils import CalculoError
@@ -28,7 +27,7 @@ router = APIRouter(tags=["FGTS/INSS"])
     summary="Calcula FGTS",
     description="Calcula valor de FGTS (8% ou rescisorio com multa 40%).",
 )
-async def calculate_fgts(request: CalculoFGTSRequest) -> StandardResponse:
+async def calculate_fgts(current_user: CurrentActiveUser, request: CalculoFGTSRequest) -> StandardResponse:
     """
     Calcula FGTS.
 
@@ -72,7 +71,7 @@ async def calculate_fgts(request: CalculoFGTSRequest) -> StandardResponse:
     summary="Calcula INSS",
     description="Calcula INSS com tabela progressiva 2026.",
 )
-async def calculate_inss(request: CalculoINSSRequest) -> StandardResponse:
+async def calculate_inss(current_user: CurrentActiveUser, request: CalculoINSSRequest) -> StandardResponse:
     """
     Calcula INSS com tabela progressiva.
 
@@ -110,7 +109,7 @@ async def calculate_inss(request: CalculoINSSRequest) -> StandardResponse:
     summary="Tabela INSS vigente",
     description="Retorna tabela progressiva do INSS 2026.",
 )
-async def get_inss_table() -> StandardResponse:
+async def get_inss_table(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Retorna tabela INSS vigente.
 

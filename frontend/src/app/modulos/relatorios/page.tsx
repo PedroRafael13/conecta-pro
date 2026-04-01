@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, ClipboardCheck, PieChart, TrendingUp, RefreshCw, ArrowRight, BarChart3, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, PieChart, TrendingUp, RefreshCw, ArrowRight, BarChart3, AlertCircle, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,14 @@ import { Button } from '@/components/ui/button';
 import { useDashboardHealth } from '@/hooks/analytics';
 
 const reportModules = [
+  {
+    title: 'Central de Relatorios PDF',
+    description: 'Gere relatorios em PDF com dados reais: certidoes, headcount, GED, financeiro.',
+    icon: FileText,
+    href: '/modulos/relatorios/central',
+    color: 'text-red-500',
+    bg: 'bg-red-500/10',
+  },
   {
     title: 'Dashboards Executivos',
     description: 'KPIs estratégicos, alertas ativos e insights preditivos para tomada de decisão.',

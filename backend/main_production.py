@@ -3,30 +3,31 @@ ERP Conecta Mais V2.0 - Producao (Modulos Core)
 Versao otimizada que carrega apenas modulos estaveis.
 """
 
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 import time
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from core.config import settings
 from core.logging import configure_logging, logger
+from core.rate_limit import limiter
 
 # =============================================================================
 # SENTRY INITIALIZATION
 # =============================================================================
 if settings.sentry_dsn:
     import sentry_sdk
-    from sentry_sdk.integrations.fastapi import FastApiIntegration
-    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-    from sentry_sdk.integrations.redis import RedisIntegration
     from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
     sentry_sdk.init(
         dsn=settings.sentry_dsn,
@@ -44,6 +45,12 @@ if settings.sentry_dsn:
         attach_stacktrace=True,
     )
     logger.info("Sentry: inicializado")
+else:
+    if settings.environment == "production":
+        logger.warning(
+            "SENTRY_DSN nao configurado — erros de producao nao serao monitorados",
+            action="sentry_missing",
+        )
 
 
 # =============================================================================
@@ -55,16 +62,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         if "/api/" in request.url.path:
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
         return response
 
 
-# =============================================================================
-# RATE LIMITER
-# =============================================================================
-limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+# Rate limiter importado de core.rate_limit (usa Redis, headers habilitados)
 
 
 @asynccontextmanager
@@ -90,12 +95,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     logger.info("Conexoes fechadas")
 
 
+_is_production = settings.environment == "production"
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="Sistema ERP completo para gestao empresarial",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
+    redirect_slashes=False,
     lifespan=lifespan,
 )
 
@@ -109,11 +118,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
+# ProxyHeaders: confia nos headers X-Forwarded-Proto/X-Forwarded-For do nginx
+# para que redirects 307 usem https:// em vez de http://
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["127.0.0.1", "::1"])
 
 
 @app.get("/health", tags=["Health"])
@@ -133,9 +145,10 @@ async def health_check_detailed():
     Verifica: Database, Redis, Celery.
     Retorna: healthy, degraded ou unhealthy.
     """
+    from sqlalchemy import text
+
     from core.cache import get_redis
     from core.database.session import async_session_factory
-    from sqlalchemy import text
 
     checks = {
         "database": {"status": "unknown", "latency_ms": None, "error": None},
@@ -170,6 +183,7 @@ async def health_check_detailed():
     try:
         start = time.time()
         import redis as redis_sync
+
         celery_redis = redis_sync.from_url(settings.redis_url.replace("/1", "/0"))
         celery_redis.ping()
         latency = (time.time() - start) * 1000
@@ -182,19 +196,27 @@ async def health_check_detailed():
     statuses = [c["status"] for c in checks.values()]
     if all(s == "healthy" for s in statuses):
         overall = "healthy"
+        status_code = 200
     elif "unhealthy" in statuses:
         overall = "unhealthy"
+        status_code = 503
     else:
         overall = "degraded"
+        status_code = 200
 
-    return {
-        "status": overall,
-        "app": settings.app_name,
-        "version": settings.app_version,
-        "environment": settings.environment,
-        "checks": checks,
-        "timestamp": time.time(),
-    }
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": overall,
+            "app": settings.app_name,
+            "version": settings.app_version,
+            "environment": settings.environment,
+            "checks": checks,
+            "timestamp": time.time(),
+        },
+    )
 
 
 @app.get("/", tags=["Root"])
@@ -207,35 +229,20 @@ async def root():
 
 
 # =============================================================================
-# API ROUTER - CARREGAMENTO SEGURO
+# API ROUTER - CARREGAMENTO VIA 9 MÓDULOS ORGANIZADOS
+# Reorganização: 35 módulos → 9 módulos (2026-03-11)
+# API URLs inalteradas — apenas imports reorganizados
 # =============================================================================
 from fastapi import APIRouter
 
 api_router = APIRouter(prefix="/api/v1")
 
-
-# Funcao helper para importar modulos com seguranca
-def safe_import(module_path: str, router_name: str = "router"):
-    """Importa um modulo de forma segura, retornando None se falhar."""
-    try:
-        import importlib
-        module = importlib.import_module(module_path)
-        return getattr(module, router_name, None)
-    except Exception as e:
-        logger.warning(f"Modulo {module_path} nao carregado: {e}")
-        return None
-
-
-# =============================================================================
-# MODULOS CORE (Alta prioridade)
-# =============================================================================
-
-# Auth - importacao direta sem passar pelo api/v1/__init__.py
+# Auth - importacao direta (fora dos módulos)
 try:
     import importlib.util
+
     spec = importlib.util.spec_from_file_location("auth", "/app/api/v1/endpoints/auth.py")
     auth_module = importlib.util.module_from_spec(spec)
-    # Executar o modulo manualmente
     spec.loader.exec_module(auth_module)
     auth_router = auth_module.router
     api_router.include_router(auth_router)
@@ -254,41 +261,102 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Users: {e}")
 
-# CRM
-try:
-    from modules.crm.controllers import (
-        lead_router,
-        opportunity_router,
-        proposal_router,
-        contract_router,
-        commission_router,
-        dashboard_router,
-    )
-    api_router.include_router(lead_router, prefix="/crm", tags=["CRM - Leads"])
-    api_router.include_router(opportunity_router, prefix="/crm", tags=["CRM - Oportunidades"])
-    api_router.include_router(proposal_router, prefix="/crm", tags=["CRM - Propostas"])
-    api_router.include_router(contract_router, prefix="/crm", tags=["CRM - Contratos"])
-    api_router.include_router(commission_router, prefix="/crm", tags=["CRM - Comissoes"])
-    api_router.include_router(dashboard_router, prefix="/crm", tags=["CRM - Dashboard"])
-    logger.info("Modulo CRM: OK")
-except Exception as e:
-    logger.warning(f"Modulo CRM: {e}")
 
-# Operations
+# =============================================================================
+# 1. COMERCIAL (crm + clients + bidding + services)
+# =============================================================================
 try:
-    from modules.operacional.controllers import (
+    from modules.comercial import (
+        bidding_agent_router,
+        bidding_contract_router,
+        bidding_document_router,
+        bidding_erp_router,
+        bidding_proposal_router,
+        bidding_sync_router,
+        bidding_tender_router,
+        client_router,
+        crm_commission_router,
+        crm_contract_router,
+        crm_dashboard_router,
+        crm_lead_router,
+        crm_opportunity_router,
+        crm_proposal_router,
+        service_router,
+    )
+    from modules.crm.controllers.client_controller import (
+        router as crm_client_router,
+    )
+
+    # CRM
+    api_router.include_router(crm_client_router, prefix="/crm", tags=["CRM - Clientes"])
+    api_router.include_router(crm_lead_router, prefix="/crm", tags=["CRM - Leads"])
+    api_router.include_router(crm_opportunity_router, prefix="/crm", tags=["CRM - Oportunidades"])
+    api_router.include_router(crm_proposal_router, prefix="/crm", tags=["CRM - Propostas"])
+    api_router.include_router(crm_contract_router, prefix="/crm", tags=["CRM - Contratos"])
+    api_router.include_router(crm_commission_router, prefix="/crm", tags=["CRM - Comissoes"])
+    api_router.include_router(crm_dashboard_router, prefix="/crm", tags=["CRM - Dashboard"])
+    # CRM Contacts + Activities + 360°
+    from modules.crm.controllers.contact_controller import router as crm_contact_router
+
+    api_router.include_router(crm_contact_router, prefix="/crm", tags=["CRM - Contatos & 360"])
+    # Marketing
+    from modules.crm.controllers.marketing_controller import router as mkt_router
+
+    api_router.include_router(mkt_router, tags=["Marketing"])
+    # Clients
+    api_router.include_router(client_router, tags=["Clients - Cadastro"])
+    # Bidding (Licitações — sem certidões, movidas para fiscal_contabil)
+    api_router.include_router(bidding_tender_router, prefix="/bidding", tags=["Bidding - Editais"])
+    api_router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
+    api_router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
+    api_router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
+    api_router.include_router(bidding_agent_router, prefix="/bidding", tags=["Bidding - AI Agents"])
+    api_router.include_router(bidding_sync_router, prefix="/bidding", tags=["Bidding - Sincronizacao"])
+    api_router.include_router(bidding_erp_router, prefix="/bidding", tags=["Bidding - Integracao ERP"])
+    # Services
+    api_router.include_router(service_router, tags=["Services - Servicos"])
+    logger.info("Modulo Comercial: OK (CRM + Clients + Bidding + Services)")
+except Exception as e:
+    logger.warning(f"Modulo Comercial: {e}")
+
+
+# =============================================================================
+# 2. OPERAÇÕES (operacional + campo)
+# =============================================================================
+try:
+    from modules.operacoes import (
+        allocation_router,
+        announcement_router,
+        banco_horas_alias,
+        checklist_router,
+        communication_router,
+        diarist_fiscal_router,
+        diarist_router,
+        disciplinary_router,
+        employee_router,
+        ferias_alias,
+        inspection_round_router,
+        kpi_trends_router,
+        notification_router,
+        occurrence_router,
+        ocorrencias_alias,
+        operacional_ai_router,
+        operacional_dashboard_router,
+        operacional_ws_router,
+        ordem_servico_router,
         post_router,
+        reports_router,
         scale_router,
         scale_template_router,
+        scale_templates_alias,
         shift_router,
-        allocation_router,
-        employee_router,
         substitution_router,
         time_bank_router,
-        reports_router,
-        kpi_trends_router,
+        vacation_router,
+        visita_router,
     )
-    # Routers já têm seu próprio prefix (/posts, /scales, etc)
+
+    # Core
     api_router.include_router(post_router, prefix="/operacional", tags=["Operacional - Postos"])
     api_router.include_router(scale_router, prefix="/operacional", tags=["Operacional - Escalas"])
     api_router.include_router(scale_template_router, prefix="/operacional", tags=["Operacional - Templates de Escalas"])
@@ -299,36 +367,223 @@ try:
     api_router.include_router(time_bank_router, prefix="/operacional", tags=["Operacional - Banco de Horas"])
     api_router.include_router(reports_router, prefix="/operacional", tags=["Operacional - Relatorios"])
     api_router.include_router(kpi_trends_router, prefix="/operacional", tags=["Operacional - KPI Trends"])
-    logger.info("Modulo Operations: OK")
-except Exception as e:
-    logger.warning(f"Modulo Operations: {e}")
-
-# Operations - Occurrences (Ocorrencias Disciplinares)
-try:
-    from modules.operacional.occurrences import occurrence_router
     api_router.include_router(occurrence_router, prefix="/operacional", tags=["Operacional - Ocorrencias"])
-    logger.info("Modulo Operations Occurrences: OK")
+    # Diaristas
+    api_router.include_router(diarist_router, prefix="/operacional", tags=["Operacional - Diaristas"])
+    api_router.include_router(
+        diarist_fiscal_router, prefix="/operacional/diaristas/fiscal", tags=["Operacional - Diaristas Fiscal"]
+    )
+    # Disciplinary
+    api_router.include_router(
+        disciplinary_router, prefix="/operacional", tags=["Operacional - Medidas Administrativas"]
+    )
+    # Inspection Rounds
+    api_router.include_router(
+        inspection_round_router, prefix="/operacional/rondas", tags=["Operacional - Rondas de Inspecao"]
+    )
+    # Communication
+    api_router.include_router(communication_router, prefix="/operacional", tags=["Operacional - Comunicacao"])
+    # Vacations
+    api_router.include_router(vacation_router, prefix="/operacional", tags=["Operacional - Férias"])
+    # AI
+    api_router.include_router(operacional_ai_router, prefix="/operacional", tags=["Operacional - AI"])
+    # WebSocket
+    api_router.include_router(operacional_ws_router, prefix="/operacional", tags=["Operacional - WebSocket"])
+    # Campo
+    api_router.include_router(ordem_servico_router, prefix="/campo/os", tags=["Campo - Ordens de Servico"])
+    api_router.include_router(visita_router, prefix="/campo/visitas", tags=["Campo - Visitas"])
+    api_router.include_router(checklist_router, prefix="/campo/checklists", tags=["Campo - Checklists"])
+    # --- Dashboard operacional ---
+    api_router.include_router(operacional_dashboard_router, prefix="/operacional", tags=["Operacional - Dashboard"])
+    # --- Aliases PT-BR (frontend compatibility — redirects) ---
+    api_router.include_router(banco_horas_alias, prefix="/operacional", tags=["Operacional - Banco Horas (alias)"])
+    api_router.include_router(ocorrencias_alias, prefix="/operacional", tags=["Operacional - Ocorrencias (alias)"])
+    api_router.include_router(ferias_alias, prefix="/operacional", tags=["Operacional - Ferias (alias)"])
+    api_router.include_router(
+        scale_templates_alias, prefix="/operacional", tags=["Operacional - Scale Templates (alias)"]
+    )
+    # --- Comunicados e Notificações (direto, sem /comunicacao/) ---
+    api_router.include_router(announcement_router, prefix="/operacional", tags=["Operacional - Comunicados"])
+    api_router.include_router(notification_router, prefix="/operacional", tags=["Operacional - Notificacoes"])
+    logger.info("Modulo Operacoes: OK (Operacional + Campo)")
 except Exception as e:
-    logger.warning(f"Modulo Operations Occurrences: {e}")
+    logger.warning(f"Modulo Operacoes: {e}")
 
-# Financial (sem costing que tem dependencias)
+
+# =============================================================================
+# 3. TÉCNICO (equipment + document_kits)
+# =============================================================================
 try:
-    from modules.financial.controllers import (
+    from modules.tecnico import (
+        comodato_router,
+        document_kit_router,
+        documents_router,
+        equipment_maintenance_router,
+        equipment_router,
+        installation_router,
+    )
+
+    api_router.include_router(equipment_router, tags=["Equipment"])
+    api_router.include_router(installation_router, tags=["Equipment - Instalacoes"])
+    api_router.include_router(equipment_maintenance_router, tags=["Equipment - Manutencao"])
+    api_router.include_router(comodato_router, tags=["Equipment - Comodato"])
+    api_router.include_router(document_kit_router, tags=["Document Kits"])
+    if documents_router:
+        api_router.include_router(documents_router, tags=["Document Intelligence"])
+        logger.info("Modulo Tecnico: OK (Equipment + Document Kits + Documents/OCR)")
+    else:
+        logger.info("Modulo Tecnico: OK (Equipment + Document Kits)")
+except Exception as e:
+    logger.warning(f"Modulo Tecnico: {e}")
+
+# Document Kits - Operational Integration (carregamento separado por dependência apscheduler)
+try:
+    from modules.document_kits.controllers.operational_controller import router as operational_router
+
+    api_router.include_router(operational_router)
+    logger.info("Modulo Document Kits Operational: OK")
+except Exception as e:
+    logger.warning(f"Modulo Document Kits Operational: {e}")
+
+
+# =============================================================================
+# 4. PESSOAS (recruitment + retention + reimbursement + ged)
+# =============================================================================
+try:
+    from modules.pessoas import (
+        climate_router,
+        ged_config_router,
+        ged_document_router,
+        ged_folder_router,
+        ged_share_router,
+        ged_signature_router,
+        ged_stats_router,
+        ged_tag_router,
+        ged_version_router,
+        onboarding_router,
+        profile_router,
+        recruitment_router,
+        reimbursement_router,
+        turnover_router,
+    )
+
+    # Recruitment
+    api_router.include_router(recruitment_router, tags=["Recruitment - Recrutamento e Selecao"])
+    # Retention
+    api_router.include_router(onboarding_router, tags=["Retention - Onboarding"])
+    api_router.include_router(profile_router, tags=["Retention - Operational Profile"])
+    api_router.include_router(climate_router, tags=["Retention - Climate Survey"])
+    api_router.include_router(turnover_router, tags=["Retention - Turnover Prediction"])
+    # Reimbursement
+    api_router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Reimbursement - Reembolsos"])
+    # GED
+    api_router.include_router(ged_folder_router, prefix="/ged", tags=["GED - Pastas"])
+    api_router.include_router(ged_document_router, prefix="/ged", tags=["GED - Documentos"])
+    api_router.include_router(ged_version_router, prefix="/ged", tags=["GED - Versoes"])
+    api_router.include_router(ged_share_router, prefix="/ged", tags=["GED - Compartilhamentos"])
+    api_router.include_router(ged_tag_router, prefix="/ged", tags=["GED - Tags"])
+    api_router.include_router(ged_signature_router, prefix="/ged", tags=["GED - Assinaturas"])
+    api_router.include_router(ged_stats_router, prefix="/ged", tags=["GED - Estatísticas"])
+    api_router.include_router(ged_config_router, prefix="/ged", tags=["GED - Config & Reports"])
+    try:
+        from modules.ged.controllers.ged_integration_controller import router as ged_integration_router
+
+        api_router.include_router(ged_integration_router, prefix="/ged", tags=["GED - Integracao"])
+    except ImportError:
+        logger.warning("Modulo GED Integration: falha ao importar (ImportError)")
+    logger.info("Modulo Pessoas: OK (Recruitment + Retention + Reimbursement + GED + Integracao)")
+except Exception as e:
+    logger.warning(f"Modulo Pessoas: {e}")
+
+# CCT 2026 SINDECOMPRESTS
+try:
+    from modules.people_management.hr.controllers.cct_controller import router as cct_router
+
+    api_router.include_router(cct_router, prefix="/people-management/hr", tags=["CCT 2026 SINDECOMPRESTS"])
+    logger.info("Modulo CCT 2026 SINDECOMPRESTS: OK")
+except Exception as e:
+    logger.warning(f"Modulo CCT: {e}")
+
+# GED Auto-Assemble + Dashboard (standalone, fora de people_management p/ evitar import circular)
+try:
+    from modules.ged.controllers.auto_assemble_controller import router as ged_auto_assemble_router
+
+    api_router.include_router(ged_auto_assemble_router, prefix="/ged", tags=["GED - Auto-Assemble"])
+    logger.info("Modulo GED Auto-Assemble: OK")
+except Exception as e:
+    logger.warning(f"Modulo GED Auto-Assemble: {e}")
+
+# NFS-e e Dashboard Financeiro
+try:
+    from modules.ged.controllers.nfse_controller import router as nfse_router
+
+    api_router.include_router(nfse_router, prefix="/financial", tags=["NFS-e - Faturamento"])
+    logger.info("Modulo NFS-e Faturamento: OK")
+except Exception as e:
+    logger.warning(f"Modulo NFS-e Faturamento: {e}")
+
+# Financial Overview (endpoints para /modulos/financeiro page)
+try:
+    from modules.ged.controllers.financial_overview_controller import router as fin_overview_router
+
+    api_router.include_router(fin_overview_router, prefix="/financial", tags=["Financial Overview"])
+    logger.info("Modulo Financial Overview: OK")
+except Exception as e:
+    logger.warning(f"Modulo Financial Overview: {e}")
+
+# GED Kit PDFs: geração, ZIP, email
+try:
+    from modules.ged.controllers.kit_pdf_controller import router as kit_pdf_router
+
+    api_router.include_router(kit_pdf_router, prefix="/ged", tags=["GED - Kit PDFs"])
+    logger.info("Modulo GED Kit PDFs: OK")
+except Exception as e:
+    logger.warning(f"Modulo GED Kit PDFs: {e}")
+
+# GED Kit Real (anatomia auditada Google Drive)
+try:
+    from modules.ged.controllers.kit_real_controller import router as kit_real_router
+
+    api_router.include_router(kit_real_router, prefix="/ged", tags=["GED - Kit Real"])
+    logger.info("Modulo GED Kit Real: OK")
+except Exception as e:
+    logger.warning(f"Modulo GED Kit Real: {e}")
+
+# Saude Ocupacional (NR-4, NR-6, NR-7, NR-9)
+try:
+    from modules.health_occupational import router as health_occupational_router
+
+    api_router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
+    logger.info("Modulo Saude Ocupacional: OK (PCMSO + PPRA + EPI)")
+except Exception as e:
+    logger.warning(f"Modulo Saude Ocupacional: {e}")
+
+
+# =============================================================================
+# 5. FINANCEIRO (financial completo)
+# =============================================================================
+try:
+    from modules.financeiro import (
         accounting_router,
-        supplier_router,
-        payable_router,
+        bank_account_router,
+        bank_reconciliation_router,
+        bank_transaction_router,
+        bi_dashboard_router,
+        billing_rule_router,
+        cashflow_router,
         customer_router,
+        financial_ai_router,
+        fiscal_router,
+        inventory_router,
+        nfse_entrada_router,
+        payable_router,
+        purchase_router,
         receivable_category_router,
         receivable_router,
-        billing_rule_router,
-        bank_account_router,
-        bank_transaction_router,
-        bank_reconciliation_router,
-        cashflow_router,
-        purchase_router,
-        inventory_router,
+        relatorios_router,
+        supplier_router,
     )
-    # Todos os routers já têm seu próprio prefix, então usamos apenas /financial
+
     api_router.include_router(accounting_router, prefix="/financial", tags=["Financial - Contabilidade"])
     api_router.include_router(supplier_router, prefix="/financial", tags=["Financial - Fornecedores"])
     api_router.include_router(payable_router, prefix="/financial", tags=["Financial - Contas a Pagar"])
@@ -342,321 +597,216 @@ try:
     api_router.include_router(cashflow_router, prefix="/financial", tags=["Financial - Fluxo de Caixa"])
     api_router.include_router(purchase_router, prefix="/financial", tags=["Financial - Compras"])
     api_router.include_router(inventory_router, prefix="/financial", tags=["Financial - Estoque"])
-    logger.info("Modulo Financial: OK")
-except Exception as e:
-    logger.warning(f"Modulo Financial: {e}")
-
-# Financial - BI Dashboard (60 endpoints - Sprint 30)
-try:
-    from modules.financial.bi_dashboard.controllers import router as bi_dashboard_router
+    api_router.include_router(fiscal_router, prefix="/financial", tags=["Financial - Fiscal/Tributário"])
+    api_router.include_router(financial_ai_router, prefix="/financial", tags=["Financial AI"])
+    api_router.include_router(relatorios_router, prefix="/financial", tags=["Financial - Relatórios"])
     api_router.include_router(bi_dashboard_router, prefix="/financial", tags=["Financial - BI Dashboard"])
-    logger.info("Modulo Financial BI Dashboard: OK")
+    if nfse_entrada_router:
+        api_router.include_router(nfse_entrada_router, prefix="/financial", tags=["Financial - NFS-e Entrada"])
+    logger.info("Modulo Financeiro: OK (18 routers)")
 except Exception as e:
-    logger.warning(f"Modulo Financial BI Dashboard: {e}")
+    logger.warning(f"Modulo Financeiro: {e}")
 
-# Analytics - Executive Dashboard (7 endpoints - FASE 3)
+
+# =============================================================================
+# 6. FISCAL/CONTÁBIL (empresas + fiscal + government)
+# =============================================================================
 try:
-    from modules.analytics.controllers import executive_dashboard_router
+    from modules.fiscal_contabil import (
+        bidding_certificate_router,
+        bookkeeper_router,
+        dominio_router,
+        empresas_dashboard_router,
+        empresas_router,
+        government_integrations_router,
+        migrador_router,
+        nfse_multi_router,
+        obrigacoes_router,
+        statements_router,
+    )
+
+    # Empresas Multi-CNPJ
+    api_router.include_router(empresas_router, tags=["Empresas - Multi-CNPJ"])
+    api_router.include_router(migrador_router, prefix="/empresas", tags=["Migrador de Contratos"])
+    api_router.include_router(obrigacoes_router, prefix="/empresas", tags=["Obrigações Multi-Empresa"])
+    api_router.include_router(empresas_dashboard_router, prefix="/empresas", tags=["Dashboard Multi-Empresa"])
+    api_router.include_router(dominio_router, tags=["Domínio TOTVS"])
+    api_router.include_router(bookkeeper_router, tags=["Escrituração Contábil"])
+    api_router.include_router(statements_router, tags=["Demonstrativos Financeiros"])
+    # Fiscal
+    api_router.include_router(nfse_multi_router, prefix="/fiscal", tags=["Fiscal - NFS-e Multi-Empresa"])
+    # Government
+    api_router.include_router(government_integrations_router, tags=["Government"])
+    # Certidões (CNDs) — movido de comercial/bidding
+    api_router.include_router(bidding_certificate_router, prefix="/bidding", tags=["Certidões - CNDs"])
+    logger.info("Modulo Fiscal/Contabil: OK (Empresas + Fiscal + Government + Certidoes)")
+except Exception as e:
+    logger.warning(f"Modulo Fiscal/Contabil: {e}")
+
+
+# =============================================================================
+# 7. INTELIGÊNCIA (ai/bartolo + analytics + reports + monitoring + search)
+# =============================================================================
+try:
+    from modules.inteligencia import (
+        analytics_router,
+        bartolo_router,
+        executive_dashboard_router,
+        monitoring_router,
+        report_router,
+    )
+
+    api_router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
     api_router.include_router(executive_dashboard_router, prefix="/analytics", tags=["Analytics - Executive Dashboard"])
-    logger.info("Modulo Analytics Executive Dashboard: OK")
-except Exception as e:
-    logger.warning(f"Modulo Analytics Executive Dashboard: {e}")
-
-# Analytics - Predictive Analytics (25 endpoints - Sprint 04)
-try:
-    from modules.analytics.controllers import analytics_router
     api_router.include_router(analytics_router, tags=["Analytics - Predictive"])
-    logger.info("Modulo Analytics Predictive: OK")
-except Exception as e:
-    logger.warning(f"Modulo Analytics Predictive: {e}")
-
-# GED
-try:
-    from modules.ged.controllers import (
-        folder_router,
-        document_router,
-        version_router,
-        share_router,
-        tag_router,
-        signature_router,
-        stats_router,
-    )
-    # Routers já têm seu próprio prefix
-    api_router.include_router(folder_router, prefix="/ged", tags=["GED - Pastas"])
-    api_router.include_router(document_router, prefix="/ged", tags=["GED - Documentos"])
-    api_router.include_router(version_router, prefix="/ged", tags=["GED - Versoes"])
-    api_router.include_router(share_router, prefix="/ged", tags=["GED - Compartilhamentos"])
-    api_router.include_router(tag_router, prefix="/ged", tags=["GED - Tags"])
-    api_router.include_router(signature_router, prefix="/ged", tags=["GED - Assinaturas"])
-    api_router.include_router(stats_router, prefix="/ged", tags=["GED - Estatísticas"])
-    logger.info("Modulo GED: OK")
-except Exception as e:
-    logger.warning(f"Modulo GED: {e}")
-
-# Clients
-try:
-    from modules.clients.controllers import router as client_router
-    # Router já tem prefix="/clients"
-    api_router.include_router(client_router, tags=["Clients - Cadastro"])
-    logger.info("Modulo Clients: OK")
-except Exception as e:
-    logger.warning(f"Modulo Clients: {e}")
-
-# Audit
-try:
-    from modules.audit.controllers import router as audit_router
-    # Router já tem prefix="/audit"
-    api_router.include_router(audit_router, tags=["Audit - Auditoria"])
-    logger.info("Modulo Audit: OK")
-except Exception as e:
-    logger.warning(f"Modulo Audit: {e}")
-
-# Config
-try:
-    from modules.config.controllers import router as config_router
-    # Router já tem prefix="/config"
-    api_router.include_router(config_router, tags=["Config - Configuracoes"])
-    logger.info("Modulo Config: OK")
-except Exception as e:
-    logger.warning(f"Modulo Config: {e}")
-
-# Reports
-try:
-    from modules.reports.controllers import router as report_router
-    # Router já tem prefix="/reports"
     api_router.include_router(report_router, tags=["Reports - Relatorios"])
-    logger.info("Modulo Reports: OK")
+    api_router.include_router(monitoring_router, tags=["Monitoring"])
+    # Briefing Executivo
+    try:
+        from modules.ai.bartolo.controllers.briefing_controller import router as briefing_router
+
+        api_router.include_router(briefing_router, prefix="/ai", tags=["AI - Briefing Executivo"])
+    except Exception as exc:
+        logger.warning("Briefing controller: %s", exc)
+    # Intelligence Hub — desabilitado (bloqueia startup com workers pesados)
+    # Para reativar: resolver inicializacao sincrona em intelligence_hub/__init__.py
+    logger.info("Modulo Inteligencia: OK (AI + Briefing)")
 except Exception as e:
-    logger.warning(f"Modulo Reports: {e}")
+    logger.warning(f"Modulo Inteligencia: {e}")
 
-# Services
+# OpenClaw — Multi-Agent alert response system
 try:
-    from modules.services.controllers import router as service_router
-    # Router já tem prefix="/services"
-    api_router.include_router(service_router, tags=["Services - Servicos"])
-    logger.info("Modulo Services: OK")
+    from modules.ai.openclaw.controller import router as openclaw_router
+
+    api_router.include_router(openclaw_router, prefix="/ai", tags=["AI - OpenClaw Alert Response"])
+    logger.info("Modulo OpenClaw: OK (Alert webhook + Remediation)")
 except Exception as e:
-    logger.warning(f"Modulo Services: {e}")
+    logger.warning(f"Modulo OpenClaw: {e}")
 
-# Occurrences - REMOVIDO (Transferido para PLUS)
-# Facilities - REMOVIDO (Transferido para PLUS)
 
-# Equipment Management
+# =============================================================================
+# 8. GESTÃO (config + audit + notifications + mobile + workflows + integrations)
+# =============================================================================
 try:
-    from modules.equipment_management.controllers import (
-        equipment_router,
-        installation_router,
-        maintenance_router as equipment_maintenance_router,
-        comodato_router,
+    from modules.gestao import (
+        audit_router,
+        banking_router,
+        config_router,
+        connector_router,
+        integration_router,
+        intelligent_notification_router,
+        mobile_router,
+        notification_router,
+        push_notification_router,
+        solides_router,
+        whatsapp_router,
+        workflow_router,
     )
-    # Routers já têm prefixes próprios (/equipment, /installations, /maintenances, /comodatos)
-    api_router.include_router(equipment_router, tags=["Equipment"])
-    api_router.include_router(installation_router, tags=["Equipment - Instalacoes"])
-    api_router.include_router(equipment_maintenance_router, tags=["Equipment - Manutencao"])
-    api_router.include_router(comodato_router, tags=["Equipment - Comodato"])
-    logger.info("Modulo Equipment: OK")
-except Exception as e:
-    logger.warning(f"Modulo Equipment: {e}")
 
-# Integrations (Sprint 32: API Gateway + Sprint 33: Conectores Externos + Sólides)
-try:
-    from modules.integrations.controllers import integration_router, connector_router, solides_router
+    # Config
+    api_router.include_router(config_router, tags=["Config - Configuracoes"])
+    # Audit
+    api_router.include_router(audit_router, tags=["Audit - Auditoria"])
+    # Notifications
+    api_router.include_router(notification_router, prefix="", tags=["Notifications - Hub"])
+    api_router.include_router(
+        intelligent_notification_router, prefix="/notifications", tags=["Notifications - Intelligent"]
+    )
+    api_router.include_router(push_notification_router, prefix="/notifications", tags=["Notifications - Push"])
+    # Mobile
+    api_router.include_router(mobile_router, tags=["Mobile - API Nativa"])
+    # Workflows
+    api_router.include_router(workflow_router, prefix="/workflows", tags=["Workflows"])
+    # Integrations
     api_router.include_router(integration_router, prefix="/integrations", tags=["Integrations - API Gateway"])
     api_router.include_router(connector_router, tags=["Integrations - Conectores"])
     api_router.include_router(solides_router, prefix="/integrations", tags=["Integrations - Sólides RH/DP"])
-    logger.info("Modulo Integrations: OK")
+    api_router.include_router(banking_router, prefix="/integrations", tags=["Integrations - Banking"])
+    # WhatsApp (Evolution API)
+    if whatsapp_router:
+        api_router.include_router(whatsapp_router, tags=["WhatsApp - Evolution API"])
+    logger.info("Modulo Gestao: OK (Config + Audit + Notifications + Mobile + Workflows + Integrations + WhatsApp)")
 except Exception as e:
-    logger.warning(f"Modulo Integrations: {e}")
+    logger.warning(f"Modulo Gestao: {e}")
 
-# Diarists
+
+# 9. CADASTROS - reservado para dados mestres (módulo futuro)
+# Importações serão adicionadas conforme refatoração avançar
+
+
+# =============================================================================
+# 10. GESTÃO DE PESSOAS (people_management: DP + RH + Operations + Portal)
+# =============================================================================
 try:
-    from modules.operacional.diaristas.controllers import router as diarist_router, fiscal_router as diarist_fiscal_router
-    # Adicionado prefix /diaristas
-    api_router.include_router(diarist_router, prefix="/operacional/diaristas", tags=["Operacional - Diaristas"])
-    api_router.include_router(diarist_fiscal_router, prefix="/operacional/diaristas/fiscal", tags=["Operacional - Diaristas Fiscal"])
-    logger.info("Modulo Diarists: OK")
-    logger.info("Modulo Diarists Fiscal: OK")
+    from modules.people_management import router as people_management_router
+
+    api_router.include_router(people_management_router)
+    logger.info("Modulo People Management: OK (DP + RH + Operations + Portal + GED)")
 except Exception as e:
-    logger.warning(f"Modulo Diarists: {e}")
+    logger.warning(f"Modulo People Management: {e}")
 
-# Document Kits
+
+# =============================================================================
+# 11. AREA DO CLIENTE (client_portal: Auth + Kits + Chamados)
+# =============================================================================
 try:
-    from modules.document_kits.controllers import router as document_kit_router
-    # Router já tem prefix="/document-kits"
-    api_router.include_router(document_kit_router, tags=["Document Kits"])
-    logger.info("Modulo Document Kits: OK")
+    from modules.client_portal import router as client_portal_router
+
+    api_router.include_router(client_portal_router)
+    logger.info("Modulo Client Portal: OK (Auth + Kits + Tickets)")
 except Exception as e:
-    logger.warning(f"Modulo Document Kits: {e}")
+    logger.warning(f"Modulo Client Portal: {e}")
 
-# Document Kits - Operational Integration
+
+# =============================================================================
+# 12. CCT 2026 — SINDECOMPRESTS/SINDICOND-AM
+# =============================================================================
 try:
-    from modules.document_kits.controllers.operational_controller import router as operational_router
-    # Router já tem prefix="/document-kits-operational"
-    api_router.include_router(operational_router)
-    logger.info("Modulo Document Kits Operational: OK")
+    from modules.cct import router as cct_router
+
+    api_router.include_router(cct_router)
+    logger.info("Modulo CCT 2026: OK (Salarios + Beneficios + Jornadas + Compliance + Rescisao + Feriados)")
 except Exception as e:
-    logger.warning(f"Modulo Document Kits Operational: {e}")
+    logger.warning(f"Modulo CCT 2026: {e}")
 
-# Government Integrations
-try:
-    from modules.government_integrations import government_integrations_router
-    api_router.include_router(government_integrations_router, tags=["Government"])
-    logger.info("Modulo Government: OK")
-except Exception as e:
-    logger.warning(f"Modulo Government: {e}")
 
-# Monitoring
+# =============================================================================
+# 13. CCT DB ADMIN — Admin endpoints para gerenciar CCT no banco
+# =============================================================================
 try:
-    from modules.monitoring import router as monitoring_router
-    api_router.include_router(monitoring_router, tags=["Monitoring"])
-    logger.info("Modulo Monitoring: OK")
-except Exception as e:
-    logger.warning(f"Modulo Monitoring: {e}")
-
-# Automation/Workflows
-try:
-    from modules.automation.workflow.controllers import router as workflow_router
-    api_router.include_router(workflow_router, prefix="/workflows", tags=["Workflows"])
-    logger.info("Modulo Workflows: OK")
-except Exception as e:
-    logger.warning(f"Modulo Workflows: {e}")
-
-# CAMPO - Servico de Campo (OS, Visitas, Checklists)
-try:
-    from modules.campo import (
-        ordem_servico_router,
-        visita_router,
-        checklist_router,
+    from modules.people_management.cct.controllers.admin_cct_controller import (
+        router as admin_cct_router,
     )
-    api_router.include_router(ordem_servico_router, prefix="/campo/os", tags=["Campo - Ordens de Servico"])
-    api_router.include_router(visita_router, prefix="/campo/visitas", tags=["Campo - Visitas"])
-    api_router.include_router(checklist_router, prefix="/campo/checklists", tags=["Campo - Checklists"])
-    logger.info("Modulo Campo (OS/Visitas/Checklists): OK")
+
+    api_router.include_router(admin_cct_router, prefix="/people-management")
+    logger.info("Admin CCT DB: OK (CRUD convenções, cargos, feriados, benefícios)")
 except Exception as e:
-    logger.warning(f"Modulo Campo: {e}")
+    logger.warning(f"Admin CCT DB: {e}")
 
-# REEMBOLSO - Reembolso de Despesas
+
+# =============================================================================
+# 14. DP PAYSLIPS — Endpoint para DP publicar contracheques
+# =============================================================================
 try:
-    from modules.reimbursement import reimbursement_router
-    api_router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Reimbursement - Reembolsos"])
-    logger.info("Modulo Reimbursement: OK")
-except Exception as e:
-    logger.warning(f"Modulo Reimbursement: {e}")
-
-# DISCIPLINARY - Medidas Administrativas (Advertencias, Suspensoes, Demissoes)
-try:
-    from modules.operacional.disciplinary import router as disciplinary_router
-    api_router.include_router(disciplinary_router, prefix="/operacional", tags=["Operacional - Medidas Administrativas"])
-    logger.info("Modulo Disciplinary: OK")
-except Exception as e:
-    logger.warning(f"Modulo Disciplinary: {e}")
-
-# INSPECTION ROUNDS - Rondas de Inspecao
-try:
-    from modules.operacional.inspection_rounds import inspection_round_router
-    api_router.include_router(inspection_round_router, prefix="/operacional/rondas", tags=["Operacional - Rondas de Inspecao"])
-    logger.info("Modulo Inspection Rounds: OK")
-except Exception as e:
-    logger.warning(f"Modulo Inspection Rounds: {e}")
-
-# COMMUNICATION - Comunicados, Notificacoes, Alertas
-try:
-    from modules.operacional.communication import communication_router
-    api_router.include_router(communication_router, prefix="/operacional", tags=["Operacional - Comunicacao"])
-    logger.info("Modulo Communication: OK")
-except Exception as e:
-    logger.warning(f"Modulo Communication: {e}")
-
-# SEARCH - Busca Global
-try:
-    from modules.search import search_router
-    api_router.include_router(search_router, tags=["Search - Busca Global"])
-    logger.info("Modulo Search: OK")
-except Exception as e:
-    logger.warning(f"Modulo Search: {e}")
-
-# BARTOLO - Assistente Inteligente IA
-try:
-    from modules.ai.bartolo.controllers import bartolo_router, openclaw_router
-    api_router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
-    api_router.include_router(openclaw_router, prefix="/ai/openclaw", tags=["AI - OpenClaw Quality"])
-    logger.info("Modulo Bartolo: OK")
-except Exception as e:
-    logger.warning(f"Modulo Bartolo: {e}")
-
-# RECRUITMENT - Recrutamento e Selecao
-try:
-    from modules.recruitment import router as recruitment_router
-    api_router.include_router(recruitment_router, tags=["Recruitment - Recrutamento e Selecao"])
-    logger.info("Modulo Recruitment: OK")
-except Exception as e:
-    logger.warning(f"Modulo Recruitment: {e}")
-
-# NOTIFICATIONS - Notification Hub (Sprint 36, 37, 03)
-try:
-    from modules.notifications.controllers import router as notification_router
-    from modules.notifications.controllers import intelligent_router as intelligent_notification_router
-    from modules.notifications.push.controllers import router as push_notification_router
-
-    api_router.include_router(notification_router, prefix="/notifications", tags=["Notifications - Hub"])
-    api_router.include_router(intelligent_notification_router, prefix="/notifications/intelligent", tags=["Notifications - Intelligent"])
-    api_router.include_router(push_notification_router, prefix="/notifications/push", tags=["Notifications - Push"])
-    logger.info("Modulo Notifications: OK")
-except Exception as e:
-    logger.warning(f"Modulo Notifications: {e}")
-
-# MOBILE - APIs Mobile Nativas (Sincronizacao Offline, Push Notifications)
-try:
-    from modules.mobile import mobile_router
-    api_router.include_router(mobile_router, tags=["Mobile - API Nativa"])
-    logger.info("Modulo Mobile: OK")
-except Exception as e:
-    logger.warning(f"Modulo Mobile: {e}")
-
-# BIDDING - Licitacoes Publicas (Lei 14.133/2021, PNCP)
-try:
-    from modules.bidding import (
-        tender_router,
-        document_router as bidding_document_router,
-        proposal_router as bidding_proposal_router,
-        contract_router as bidding_contract_router,
-        certificate_router,
+    from modules.people_management.employee_portal.controllers.dp_payslips_controller import (
+        router as dp_payslips_router,
     )
-    api_router.include_router(tender_router, prefix="/bidding", tags=["Bidding - Editais"])
-    api_router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
-    api_router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
-    api_router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
-    api_router.include_router(certificate_router, prefix="/bidding", tags=["Bidding - Certidoes"])
-    logger.info("Modulo Bidding: OK")
-except Exception as e:
-    logger.warning(f"Modulo Bidding: {e}")
 
-
-# RETENTION - Retencao de Talentos
-try:
-    from modules.retention import (
-        onboarding_router,
-        profile_router,
-        climate_router,
-        turnover_router,
-    )
-    api_router.include_router(onboarding_router, prefix="/retention/onboarding", tags=["Retention - Onboarding"])
-    api_router.include_router(profile_router, prefix="/retention/profile", tags=["Retention - Operational Profile"])
-    api_router.include_router(climate_router, prefix="/retention/climate", tags=["Retention - Climate Survey"])
-    api_router.include_router(turnover_router, prefix="/retention/turnover", tags=["Retention - Turnover Prediction"])
-    logger.info("Modulo Retention: OK")
+    api_router.include_router(dp_payslips_router, prefix="/people-management")
+    logger.info("DP Payslips: OK (criar/publicar/importar contracheques)")
 except Exception as e:
-    logger.warning(f"Modulo Retention: {e}")
+    logger.warning(f"DP Payslips: {e}")
 
 
 # Incluir router principal
 app.include_router(api_router)
 
-logger.info("=== API CONECTA PRO INICIADA ===")
+logger.info("=== API CONECTA PRO INICIADA (13 módulos) ===")
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "main_production:app",
         host=settings.host,

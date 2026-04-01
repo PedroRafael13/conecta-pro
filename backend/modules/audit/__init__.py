@@ -1,17 +1,9 @@
 """
 Module: audit
 Description: Modulo de Auditoria e Compliance
-Author: Conecta PRO Team
-Date: 2026-01-10
-Quality Score Target: 99+/100
-Sprint: 33 - Auditoria e Compliance
 
-Este modulo fornece:
-- Logs de auditoria com rastreabilidade completa
-- Regras de compliance configuraveis
-- Verificacoes automaticas de conformidade
-- Politicas de retencao de dados
-- Historico de acessos com analise de risco
+DEPRECATED: Use 'modules.gestao' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 
 Estrutura modular:
 - models/: Modelos SQLAlchemy para persistencia
@@ -21,10 +13,20 @@ Estrutura modular:
 - repositories/: Acesso a dados
 """
 
-from fastapi import APIRouter
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.audit' is deprecated. "
+    "Use 'modules.gestao' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from fastapi import APIRouter  # noqa: E402
 
 # Importa router do controller
-from modules.audit.controllers import router as audit_controller_router
+from modules.audit.controllers import router as audit_controller_router  # noqa: E402
 
 # Cria router principal do modulo
 audit_router = APIRouter(prefix="/audit", tags=["Audit - Auditoria e Compliance"])
@@ -36,79 +38,79 @@ audit_router.include_router(audit_controller_router)
 router = audit_router
 
 # Re-export models principais
-from modules.audit.models import (
-    # AuditLog
-    AuditLog,
+from modules.audit.models import (  # noqa: E402
+    # AccessHistory
+    AccessHistory,
+    AccessResult,
+    AccessType,
     AuditAction,
     AuditCategory,
-    AuditSeverity,
+    # AuditLog
+    AuditLog,
     AuditResult,
+    AuditSeverity,
+    CheckResult,
+    CheckStatus,
+    CheckType,
+    # ComplianceCheck
+    ComplianceCheck,
+    ComplianceFramework,
     # ComplianceRule
     ComplianceRule,
-    ComplianceFramework,
+    DataCategory,
+    # DataRetention
+    DataRetention,
+    DeviceType,
+    RetentionAction,
+    RetentionPeriod,
+    RetentionStatus,
+    RiskLevel,
     RuleCategory,
     RuleSeverity,
     RuleStatus,
-    # ComplianceCheck
-    ComplianceCheck,
-    CheckStatus,
-    CheckResult,
-    CheckType,
-    # DataRetention
-    DataRetention,
-    RetentionPeriod,
-    RetentionAction,
-    RetentionStatus,
-    DataCategory,
-    # AccessHistory
-    AccessHistory,
-    AccessType,
-    AccessResult,
-    DeviceType,
-    RiskLevel,
 )
 
-# Re-export services
-from modules.audit.services import AuditService
-
 # Re-export repositories
-from modules.audit.repositories import AuditRepository
+from modules.audit.repositories import AuditRepository  # noqa: E402
 
 # Re-export schemas principais
-from modules.audit.schemas import (
-    # AuditLog
-    AuditLogCreate,
-    AuditLogResponse,
-    AuditLogList,
-    AuditLogFilter,
-    AuditLogStats,
-    # ComplianceRule
-    ComplianceRuleCreate,
-    ComplianceRuleUpdate,
-    ComplianceRuleResponse,
-    ComplianceRuleList,
-    # ComplianceCheck
-    ComplianceCheckCreate,
-    ComplianceCheckUpdate,
-    ComplianceCheckResponse,
-    ComplianceCheckList,
-    # DataRetention
-    DataRetentionCreate,
-    DataRetentionUpdate,
-    DataRetentionResponse,
-    DataRetentionList,
-    DataRetentionExecution,
+from modules.audit.schemas import (  # noqa: E402
     # AccessHistory
     AccessHistoryCreate,
-    AccessHistoryResponse,
-    AccessHistoryList,
     AccessHistoryFilter,
+    AccessHistoryList,
+    AccessHistoryResponse,
     AccessHistoryStats,
     # Dashboard
     AuditDashboard,
+    # AuditLog
+    AuditLogCreate,
+    AuditLogFilter,
+    AuditLogList,
+    AuditLogResponse,
+    AuditLogStats,
+    # ComplianceCheck
+    ComplianceCheckCreate,
+    ComplianceCheckList,
+    ComplianceCheckResponse,
+    ComplianceCheckUpdate,
     ComplianceOverview,
+    # ComplianceRule
+    ComplianceRuleCreate,
+    ComplianceRuleList,
+    ComplianceRuleResponse,
+    ComplianceRuleUpdate,
+    # DataRetention
+    DataRetentionCreate,
+    DataRetentionExecution,
+    DataRetentionList,
+    DataRetentionResponse,
+    DataRetentionUpdate,
     SecurityOverview,
 )
+
+# Re-export services
+from modules.audit.services import AuditService  # noqa: E402
 
 __all__ = [
     # Router principal

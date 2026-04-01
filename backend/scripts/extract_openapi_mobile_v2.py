@@ -24,13 +24,12 @@ def extract_mobile_openapi():
     # Import apenas do router mobile
     try:
         from fastapi import FastAPI
+
         from modules.mobile.controllers.mobile_controller import router as mobile_router
 
         # Criar app temporário apenas com router mobile
         temp_app = FastAPI(
-            title="Conecta PRO - Mobile API",
-            version="1.0.0",
-            description="APIs nativas para dispositivos móveis"
+            title="Conecta PRO - Mobile API", version="1.0.0", description="APIs nativas para dispositivos móveis"
         )
 
         # Incluir apenas router mobile
@@ -41,6 +40,7 @@ def extract_mobile_openapi():
     except Exception as e:
         print(f"❌ Erro ao importar router mobile: {e}")
         import traceback
+
         traceback.print_exc()
         raise
 
@@ -60,37 +60,38 @@ def extract_mobile_openapi():
     except Exception as e:
         print(f"❌ Erro ao gerar OpenAPI: {e}")
         import traceback
+
         traceback.print_exc()
         raise
 
     # Salvar arquivo
-    output_file = Path(__file__).parent.parent / 'openapi-mobile.json'
+    output_file = Path(__file__).parent.parent / "openapi-mobile.json"
 
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(openapi_schema, f, indent=2, ensure_ascii=False)
 
     print(f"✓ OpenAPI salvo em: {output_file}")
     print(f"✓ Tamanho: {output_file.stat().st_size / 1024:.1f} KB")
 
     # Listar endpoints
-    paths = openapi_schema.get('paths', {})
+    paths = openapi_schema.get("paths", {})
     if paths:
         print(f"\n📋 {len(paths)} endpoints extraídos:")
         for i, path in enumerate(sorted(paths.keys()), 1):
             methods = list(paths[path].keys())
-            methods = [m.upper() for m in methods if m != 'parameters']
+            methods = [m.upper() for m in methods if m != "parameters"]
             print(f"  {i:2d}. {', '.join(methods):12s} {path}")
     else:
         print("\n⚠️  Nenhum endpoint encontrado!")
 
     # Listar schemas
-    schemas = openapi_schema.get('components', {}).get('schemas', {})
+    schemas = openapi_schema.get("components", {}).get("schemas", {})
     print(f"\n📦 {len(schemas)} schemas extraídos")
 
     return openapi_schema
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         spec = extract_mobile_openapi()
         print("\n✅ Extração concluída com sucesso!")

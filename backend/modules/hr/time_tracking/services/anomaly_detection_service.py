@@ -1,21 +1,20 @@
 """Serviço de detecção de anomalias com IA."""
 
-from typing import List, Dict, Tuple
-from statistics import mean, stdev
 import logging
 import math
+from statistics import mean, stdev
 
 from modules.hr.time_tracking.models import (
+    AnomalyType,
+    EntryType,
     TimeEntry,
     WorkSchedule,
-    EntryType,
-    AnomalyType,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class AnomalyScore:  # pylint: disable=too-few-public-methods
+class AnomalyScore:  # pylint: disable=too-few-public-methods  # noqa: B903
     """Representa um score de anomalia."""
 
     def __init__(
@@ -56,10 +55,10 @@ class AnomalyDetectionService:
 
     def analyze_entries(
         self,
-        entries: List[TimeEntry],
+        entries: list[TimeEntry],
         schedule: WorkSchedule = None,
-        historical_data: List[TimeEntry] = None,
-    ) -> List[AnomalyScore]:
+        historical_data: list[TimeEntry] = None,
+    ) -> list[AnomalyScore]:
         """Analisa registros e detecta anomalias.
 
         Args:
@@ -105,17 +104,15 @@ class AnomalyDetectionService:
 
         # 8. Análise estatística (padrões atípicos)
         if historical_data:
-            pattern_anomalies = self._detect_pattern_anomalies(
-                entries, historical_data
-            )
+            pattern_anomalies = self._detect_pattern_anomalies(entries, historical_data)
             anomalies.extend(pattern_anomalies)
 
         return anomalies
 
     def calculate_risk_score(
         self,
-        anomalies: List[AnomalyScore],
-    ) -> Tuple[float, str]:
+        anomalies: list[AnomalyScore],
+    ) -> tuple[float, str]:
         """Calcula score de risco consolidado.
 
         Returns:
@@ -142,7 +139,7 @@ class AnomalyDetectionService:
     def suggest_resolution(
         self,
         anomaly: AnomalyScore,
-    ) -> Dict:
+    ) -> dict:
         """Sugere resolução para anomalia.
 
         Returns:
@@ -196,17 +193,20 @@ class AnomalyDetectionService:
             },
         }
 
-        return resolutions.get(anomaly.anomaly_type, {
-            "action": "verificar",
-            "message": "Verificar anomalia manualmente",
-            "requires_approval": True,
-        })
+        return resolutions.get(
+            anomaly.anomaly_type,
+            {
+                "action": "verificar",
+                "message": "Verificar anomalia manualmente",
+                "requires_approval": True,
+            },
+        )
 
     def _detect_missing_entries(
         self,
-        entries: List[TimeEntry],
+        entries: list[TimeEntry],
         schedule: WorkSchedule = None,
-    ) -> List[AnomalyScore]:
+    ) -> list[AnomalyScore]:
         """Detecta registros faltantes."""
         anomalies = []
 
@@ -214,48 +214,56 @@ class AnomalyDetectionService:
 
         # Verifica entrada
         if EntryType.ENTRADA not in entry_types:
-            anomalies.append(AnomalyScore(
-                anomaly_type=AnomalyType.FALTA_ENTRADA,
-                score=80.0,
-                description="Registro de entrada não encontrado",
-                severity="high",
-            ))
+            anomalies.append(
+                AnomalyScore(
+                    anomaly_type=AnomalyType.FALTA_ENTRADA,
+                    score=80.0,
+                    description="Registro de entrada não encontrado",
+                    severity="high",
+                )
+            )
 
         # Verifica saída
         if EntryType.SAIDA not in entry_types:
-            anomalies.append(AnomalyScore(
-                anomaly_type=AnomalyType.FALTA_SAIDA,
-                score=80.0,
-                description="Registro de saída não encontrado",
-                severity="high",
-            ))
+            anomalies.append(
+                AnomalyScore(
+                    anomaly_type=AnomalyType.FALTA_SAIDA,
+                    score=80.0,
+                    description="Registro de saída não encontrado",
+                    severity="high",
+                )
+            )
 
         # Verifica intervalo (se jornada > 6h)
         if schedule:
             day_schedule = schedule.get_schedule_for_day(entries[0].entry_date)
             if day_schedule and day_schedule.get("daily_minutes", 0) > 360:
                 if EntryType.SAIDA_INTERVALO not in entry_types:
-                    anomalies.append(AnomalyScore(
-                        anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
-                        score=40.0,
-                        description="Saída para intervalo não registrada",
-                        severity="medium",
-                    ))
+                    anomalies.append(
+                        AnomalyScore(
+                            anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
+                            score=40.0,
+                            description="Saída para intervalo não registrada",
+                            severity="medium",
+                        )
+                    )
                 if EntryType.RETORNO_INTERVALO not in entry_types:
-                    anomalies.append(AnomalyScore(
-                        anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
-                        score=40.0,
-                        description="Retorno de intervalo não registrado",
-                        severity="medium",
-                    ))
+                    anomalies.append(
+                        AnomalyScore(
+                            anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
+                            score=40.0,
+                            description="Retorno de intervalo não registrado",
+                            severity="medium",
+                        )
+                    )
 
         return anomalies
 
     def _detect_late_entries(
         self,
-        entries: List[TimeEntry],
+        entries: list[TimeEntry],
         schedule: WorkSchedule = None,
-    ) -> List[AnomalyScore]:
+    ) -> list[AnomalyScore]:
         """Detecta atrasos na entrada."""
         anomalies = []
 
@@ -284,20 +292,22 @@ class AnomalyDetectionService:
             severity = "low" if late_minutes <= 15 else "medium" if late_minutes <= 60 else "high"
             score = min(60, 20 + late_minutes * 0.5)
 
-            anomalies.append(AnomalyScore(
-                anomaly_type=AnomalyType.ATRASO,
-                score=score,
-                description=f"Atraso de {late_minutes} minutos na entrada",
-                severity=severity,
-            ))
+            anomalies.append(
+                AnomalyScore(
+                    anomaly_type=AnomalyType.ATRASO,
+                    score=score,
+                    description=f"Atraso de {late_minutes} minutos na entrada",
+                    severity=severity,
+                )
+            )
 
         return anomalies
 
     def _detect_early_departure(
         self,
-        entries: List[TimeEntry],
+        entries: list[TimeEntry],
         schedule: WorkSchedule = None,
-    ) -> List[AnomalyScore]:
+    ) -> list[AnomalyScore]:
         """Detecta saída antecipada."""
         anomalies = []
 
@@ -326,19 +336,21 @@ class AnomalyDetectionService:
             severity = "low" if early_minutes <= 15 else "medium" if early_minutes <= 60 else "high"
             score = min(50, 15 + early_minutes * 0.4)
 
-            anomalies.append(AnomalyScore(
-                anomaly_type=AnomalyType.SAIDA_ANTECIPADA,
-                score=score,
-                description=f"Saída {early_minutes} minutos antes do previsto",
-                severity=severity,
-            ))
+            anomalies.append(
+                AnomalyScore(
+                    anomaly_type=AnomalyType.SAIDA_ANTECIPADA,
+                    score=score,
+                    description=f"Saída {early_minutes} minutos antes do previsto",
+                    severity=severity,
+                )
+            )
 
         return anomalies
 
     def _detect_excessive_work(
         self,
-        entries: List[TimeEntry],
-    ) -> List[AnomalyScore]:
+        entries: list[TimeEntry],
+    ) -> list[AnomalyScore]:
         """Detecta jornada excessiva."""
         anomalies = []
 
@@ -370,23 +382,22 @@ class AnomalyDetectionService:
                 severity = "critical"
             score = min(90, 50 + excess_hours * 10)
 
-            description = (
-                f"Jornada de {worked_hours:.1f}h excede "
-                f"limite de {self.MAX_WORK_HOURS}h"
+            description = f"Jornada de {worked_hours:.1f}h excede limite de {self.MAX_WORK_HOURS}h"
+            anomalies.append(
+                AnomalyScore(
+                    anomaly_type=AnomalyType.EXCESSO_JORNADA,
+                    score=score,
+                    description=description,
+                    severity=severity,
+                )
             )
-            anomalies.append(AnomalyScore(
-                anomaly_type=AnomalyType.EXCESSO_JORNADA,
-                score=score,
-                description=description,
-                severity=severity,
-            ))
 
         return anomalies
 
     def _detect_irregular_break(  # pylint: disable=too-many-locals
         self,
-        entries: List[TimeEntry],
-    ) -> List[AnomalyScore]:
+        entries: list[TimeEntry],
+    ) -> list[AnomalyScore]:
         """Detecta intervalo irregular."""
         anomalies = []
 
@@ -412,12 +423,14 @@ class AnomalyDetectionService:
             # Se jornada > 6h, deve ter intervalo mínimo de 1h
             if worked_minutes > 360:  # 6 horas
                 if not break_outs or not break_ins:
-                    anomalies.append(AnomalyScore(
-                        anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
-                        score=50.0,
-                        description="Jornada > 6h sem intervalo registrado",
-                        severity="high",
-                    ))
+                    anomalies.append(
+                        AnomalyScore(
+                            anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
+                            score=50.0,
+                            description="Jornada > 6h sem intervalo registrado",
+                            severity="high",
+                        )
+                    )
                 else:
                     # Calcula duração do intervalo
                     break_start = min(break_outs, key=lambda e: e.entry_time)
@@ -428,23 +441,22 @@ class AnomalyDetectionService:
                     break_duration = b_end - b_start
 
                     if break_duration < self.MIN_BREAK_MINUTES:
-                        desc = (
-                            f"Intervalo de {break_duration}min abaixo "
-                            f"do mínimo ({self.MIN_BREAK_MINUTES}min)"
+                        desc = f"Intervalo de {break_duration}min abaixo do mínimo ({self.MIN_BREAK_MINUTES}min)"
+                        anomalies.append(
+                            AnomalyScore(
+                                anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
+                                score=35.0,
+                                description=desc,
+                                severity="medium",
+                            )
                         )
-                        anomalies.append(AnomalyScore(
-                            anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
-                            score=35.0,
-                            description=desc,
-                            severity="medium",
-                        ))
 
         return anomalies
 
     def _detect_duplicates(
         self,
-        entries: List[TimeEntry],
-    ) -> List[AnomalyScore]:
+        entries: list[TimeEntry],
+    ) -> list[AnomalyScore]:
         """Detecta registros duplicados."""
         anomalies = []
         entries_sorted = sorted(entries, key=lambda e: (e.entry_type, e.entry_time))
@@ -460,21 +472,23 @@ class AnomalyDetectionService:
                 diff = abs(next_minutes - curr_minutes)
 
                 if diff <= self.DUPLICATE_THRESHOLD_MINUTES:
-                    anomalies.append(AnomalyScore(
-                        anomaly_type=AnomalyType.REGISTRO_DUPLICADO,
-                        score=30.0,
-                        description=f"Registro duplicado de {curr.entry_type.value}",
-                        severity="low",
-                        auto_resolvable=True,
-                    ))
+                    anomalies.append(
+                        AnomalyScore(
+                            anomaly_type=AnomalyType.REGISTRO_DUPLICADO,
+                            score=30.0,
+                            description=f"Registro duplicado de {curr.entry_type.value}",
+                            severity="low",
+                            auto_resolvable=True,
+                        )
+                    )
 
         return anomalies
 
     def _detect_location_issues(
         self,
-        entries: List[TimeEntry],
+        entries: list[TimeEntry],
         schedule: WorkSchedule = None,
-    ) -> List[AnomalyScore]:
+    ) -> list[AnomalyScore]:
         """Detecta problemas de localização."""
         anomalies = []
 
@@ -492,30 +506,29 @@ class AnomalyDetectionService:
                 loc_radius = location.get("radius", self.LOCATION_THRESHOLD_METERS)
 
                 if loc_lat and loc_lng:
-                    distance = self._haversine_distance(
-                        entry.latitude, entry.longitude,
-                        loc_lat, loc_lng
-                    )
+                    distance = self._haversine_distance(entry.latitude, entry.longitude, loc_lat, loc_lng)
                     if distance <= loc_radius:
                         is_valid = True
                         break
 
             if not is_valid:
-                anomalies.append(AnomalyScore(
-                    anomaly_type=AnomalyType.LOCALIZACAO_INVALIDA,
-                    score=60.0,
-                    description="Registro fora do local de trabalho permitido",
-                    severity="high",
-                ))
+                anomalies.append(
+                    AnomalyScore(
+                        anomaly_type=AnomalyType.LOCALIZACAO_INVALIDA,
+                        score=60.0,
+                        description="Registro fora do local de trabalho permitido",
+                        severity="high",
+                    )
+                )
                 break  # Uma anomalia por dia é suficiente
 
         return anomalies
 
     def _detect_pattern_anomalies(  # pylint: disable=too-many-locals
         self,
-        entries: List[TimeEntry],
-        historical_data: List[TimeEntry],
-    ) -> List[AnomalyScore]:
+        entries: list[TimeEntry],
+        historical_data: list[TimeEntry],
+    ) -> list[AnomalyScore]:
         """Detecta padrões atípicos usando análise estatística."""
         anomalies = []
 
@@ -555,19 +568,23 @@ class AnomalyDetectionService:
                 z_score = abs(current_minutes - avg_entry) / std_entry
 
                 if z_score > 3:  # Mais de 3 desvios padrão
-                    anomalies.append(AnomalyScore(
-                        anomaly_type=AnomalyType.HORARIO_INCOMUM,
-                        score=25.0,
-                        description=f"Horário de entrada atípico (z-score: {z_score:.2f})",
-                        severity="low",
-                    ))
+                    anomalies.append(
+                        AnomalyScore(
+                            anomaly_type=AnomalyType.HORARIO_INCOMUM,
+                            score=25.0,
+                            description=f"Horário de entrada atípico (z-score: {z_score:.2f})",
+                            severity="low",
+                        )
+                    )
 
         return anomalies
 
     def _haversine_distance(
         self,
-        lat1: float, lon1: float,
-        lat2: float, lon2: float,
+        lat1: float,
+        lon1: float,
+        lat2: float,
+        lon2: float,
     ) -> float:
         """Calcula distância entre dois pontos usando Haversine."""
         earth_radius = 6371000  # Raio da Terra em metros
@@ -577,10 +594,7 @@ class AnomalyDetectionService:
         delta_phi = math.radians(lat2 - lat1)
         delta_lambda = math.radians(lon2 - lon1)
 
-        a = (
-            math.sin(delta_phi / 2) ** 2 +
-            math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
-        )
+        a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         return earth_radius * c

@@ -11,15 +11,49 @@ Author: Claude AI + Human Developer
 Date: 2026-01-16
 """
 
-import pytest
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Dict, Any
-from unittest.mock import MagicMock, patch, AsyncMock
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
 from httpx import AsyncClient
 from pydantic import ValidationError
+
+# Core
+from modules.government_integrations.core.fgts_inss_manager import (
+    CalculadoraFGTS,
+    CalculadoraINSS,
+    CalculoError,
+    CalculoFGTS,
+    CalculoINSS,
+    CategoriaContribuinte,
+    Certidao,
+    CodigoRecolhimento,
+    ConsultaError,
+    ExtratoFGTS,
+    FGTSINSSError,
+    FGTSINSSManager,
+    GeradorGPS,
+    GeradorGRF,
+    GeradorGRRF,
+    Guia,
+    GuiaError,
+    ModalidadeSaque,
+    Remuneracao,
+    StatusCertidao,
+    StatusGuia,
+    TabelaINSS,
+    TipoCertidao,
+    TipoGuia,
+    TipoRecolhimento,
+    Trabalhador,
+    calcular_aliquota_efetiva_inss,
+    formatar_pis_pasep,
+    init_fgts_inss_manager,
+    validar_pis_pasep,
+)
 
 # Schemas
 from modules.government_integrations.schemas.fgts_inss import (
@@ -27,47 +61,13 @@ from modules.government_integrations.schemas.fgts_inss import (
     CalculoINSSRequest,
 )
 
-# Core
-from modules.government_integrations.core.fgts_inss_manager import (
-    FGTSINSSManager,
-    CalculadoraFGTS,
-    CalculadoraINSS,
-    GeradorGRF,
-    GeradorGRRF,
-    GeradorGPS,
-    TabelaINSS,
-    Trabalhador,
-    Remuneracao,
-    CalculoFGTS,
-    CalculoINSS,
-    Guia,
-    Certidao,
-    ExtratoFGTS,
-    TipoRecolhimento,
-    CodigoRecolhimento,
-    ModalidadeSaque,
-    CategoriaContribuinte,
-    TipoGuia,
-    StatusGuia,
-    StatusCertidao,
-    TipoCertidao,
-    FGTSINSSError,
-    CalculoError,
-    GuiaError,
-    ConsultaError,
-    validar_pis_pasep,
-    formatar_pis_pasep,
-    calcular_aliquota_efetiva_inss,
-    init_fgts_inss_manager,
-)
-
 # Service
 from modules.government_integrations.services.fgts_inss_service import FGTSINSSService
-
 
 # =============================================================================
 # FIXTURES
 # =============================================================================
+
 
 @pytest.fixture
 def trabalhador_padrao() -> Trabalhador:
@@ -149,7 +149,7 @@ def calculadora_inss() -> CalculadoraINSS:
 
 
 @pytest.fixture
-def auth_headers() -> Dict[str, str]:
+def auth_headers() -> dict[str, str]:
     """Headers de autenticacao para testes de API."""
     return {"Authorization": "Bearer test-token"}
 
@@ -157,6 +157,7 @@ def auth_headers() -> Dict[str, str]:
 # =============================================================================
 # TEST SCHEMAS
 # =============================================================================
+
 
 class TestSchemas:
     """Testes para validacao dos schemas Pydantic."""
@@ -308,6 +309,7 @@ class TestSchemas:
 # TEST FGTS INSS MANAGER (CORE)
 # =============================================================================
 
+
 class TestFGTSINSSManager:
     """Testes para o FGTSINSSManager (core)."""
 
@@ -321,9 +323,7 @@ class TestFGTSINSSManager:
             remuneracao_padrao: Remuneracao,
         ):
             """Testa calculo de deposito mensal padrao (8%)."""
-            resultado = calculadora_fgts.calcular_deposito_mensal(
-                trabalhador_padrao, remuneracao_padrao
-            )
+            resultado = calculadora_fgts.calcular_deposito_mensal(trabalhador_padrao, remuneracao_padrao)
 
             # Base: 3000 + 300 + 150 = 3450
             # FGTS: 3450 * 8% = 276.00
@@ -448,9 +448,7 @@ class TestFGTSINSSManager:
             remuneracao_salario_minimo: Remuneracao,
         ):
             """Testa INSS para salario na primeira faixa (7.5%)."""
-            resultado = calculadora_inss.calcular_contribuicao(
-                trabalhador_padrao, remuneracao_salario_minimo
-            )
+            resultado = calculadora_inss.calcular_contribuicao(trabalhador_padrao, remuneracao_salario_minimo)
 
             # 1518 * 7.5% = 113.85
             assert resultado.valor_contribuicao == Decimal("113.85")
@@ -463,9 +461,7 @@ class TestFGTSINSSManager:
             remuneracao_padrao: Remuneracao,
         ):
             """Testa calculo progressivo com multiplas faixas."""
-            resultado = calculadora_inss.calcular_contribuicao(
-                trabalhador_padrao, remuneracao_padrao
-            )
+            resultado = calculadora_inss.calcular_contribuicao(trabalhador_padrao, remuneracao_padrao)
 
             # Base: 3450.00
             # Faixa 1: 1518.00 * 7.5% = 113.85
@@ -483,9 +479,7 @@ class TestFGTSINSSManager:
             remuneracao_teto_inss: Remuneracao,
         ):
             """Testa que contribuicao e limitada ao teto."""
-            resultado = calculadora_inss.calcular_contribuicao(
-                trabalhador_padrao, remuneracao_teto_inss
-            )
+            resultado = calculadora_inss.calcular_contribuicao(trabalhador_padrao, remuneracao_teto_inss)
 
             # Base limitada ao teto: 8157.41
             assert resultado.base_calculo == Decimal("8157.41")
@@ -498,9 +492,7 @@ class TestFGTSINSSManager:
             remuneracao_padrao: Remuneracao,
         ):
             """Testa calculo da aliquota efetiva."""
-            resultado = calculadora_inss.calcular_contribuicao(
-                trabalhador_padrao, remuneracao_padrao
-            )
+            resultado = calculadora_inss.calcular_contribuicao(trabalhador_padrao, remuneracao_padrao)
 
             # Aliquota efetiva deve ser menor que 14% (maior aliquota)
             assert resultado.aliquota_efetiva > Decimal("0")
@@ -525,9 +517,7 @@ class TestFGTSINSSManager:
             assert resultado["valor_terceiros"] == Decimal("5800.00")
             assert resultado["total"] == Decimal("27800.00")
 
-        def test_contribuicao_patronal_com_fap_ajustado(
-            self, calculadora_inss: CalculadoraINSS
-        ):
+        def test_contribuicao_patronal_com_fap_ajustado(self, calculadora_inss: CalculadoraINSS):
             """Testa RAT ajustado pelo FAP."""
             folha_total = Decimal("50000.00")
 
@@ -561,9 +551,7 @@ class TestFGTSINSSManager:
         ):
             """Testa geracao de GRF."""
             gerador = GeradorGRF()
-            calculo = calculadora_fgts.calcular_deposito_mensal(
-                trabalhador_padrao, remuneracao_padrao
-            )
+            calculo = calculadora_fgts.calcular_deposito_mensal(trabalhador_padrao, remuneracao_padrao)
 
             guia = gerador.gerar(
                 empresa_cnpj="12345678000199",
@@ -612,12 +600,8 @@ class TestFGTSINSSManager:
         ):
             """Testa geracao de GPS."""
             gerador = GeradorGPS()
-            contribuicao = calculadora_inss.calcular_contribuicao(
-                trabalhador_padrao, remuneracao_padrao
-            )
-            patronal = calculadora_inss.calcular_contribuicao_patronal(
-                Decimal("3450.00")
-            )
+            contribuicao = calculadora_inss.calcular_contribuicao(trabalhador_padrao, remuneracao_padrao)
+            patronal = calculadora_inss.calcular_contribuicao_patronal(Decimal("3450.00"))
 
             guia = gerador.gerar(
                 empresa_cnpj="12345678000199",
@@ -696,9 +680,7 @@ class TestFGTSINSSManager:
             remuneracao_padrao: Remuneracao,
         ):
             """Testa geracao de GRF via manager."""
-            calculos = await manager.calcular_fgts_mensal(
-                [trabalhador_padrao], [remuneracao_padrao]
-            )
+            calculos = await manager.calcular_fgts_mensal([trabalhador_padrao], [remuneracao_padrao])
 
             guia = await manager.gerar_grf(
                 empresa_cnpj="12345678000199",
@@ -759,9 +741,7 @@ class TestFGTSINSSManager:
             assert "guia" in resultado["inss"]
 
         @pytest.mark.asyncio
-        async def test_consultar_extrato_fgts_homologacao(
-            self, manager: FGTSINSSManager
-        ):
+        async def test_consultar_extrato_fgts_homologacao(self, manager: FGTSINSSManager):
             """Testa consulta de extrato FGTS em homologacao."""
             extrato = await manager.consultar_extrato_fgts(
                 pis_pasep="12345678901",
@@ -874,6 +854,7 @@ class TestFGTSINSSManager:
 # =============================================================================
 # TEST FGTS INSS SERVICE
 # =============================================================================
+
 
 class TestFGTSINSSService:
     """Testes para FGTSINSSService."""
@@ -1004,6 +985,7 @@ class TestFGTSINSSService:
 # TEST FGTS INSS ENDPOINTS
 # =============================================================================
 
+
 class TestFGTSINSSEndpoints:
     """Testes para endpoints REST do FGTS/INSS."""
 
@@ -1011,6 +993,7 @@ class TestFGTSINSSEndpoints:
     def app(self):
         """Fixture para app FastAPI local (sem dependencias de main)."""
         from fastapi import FastAPI
+
         from modules.government_integrations.controllers.fgts_inss_controller import router
 
         app = FastAPI()
@@ -1188,6 +1171,7 @@ class TestFGTSINSSEndpoints:
 # TEST DATA CLASSES
 # =============================================================================
 
+
 class TestDataClasses:
     """Testes para data classes."""
 
@@ -1243,6 +1227,7 @@ class TestDataClasses:
 # TEST ENUMS
 # =============================================================================
 
+
 class TestEnums:
     """Testes para enums."""
 
@@ -1297,6 +1282,7 @@ class TestEnums:
 # =============================================================================
 # TEST SINGLETON
 # =============================================================================
+
 
 class TestSingleton:
     """Testes para singleton do manager."""

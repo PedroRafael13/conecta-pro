@@ -8,29 +8,29 @@ Quality Score Target: 99+/100
 
 from __future__ import annotations
 
+import builtins
 import logging
 from datetime import datetime
-from typing import List, Optional, Tuple
 from uuid import uuid4
 
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.operacional.communication.models.alert import Alert
 from modules.operacional.communication.models.announcement import (
     Announcement,
     AnnouncementStatus,
 )
 from modules.operacional.communication.models.announcement_read import AnnouncementRead
 from modules.operacional.communication.models.notification import Notification
-from modules.operacional.communication.models.alert import Alert
 from modules.operacional.communication.schemas.communication_schemas import (
+    AlertCreate,
+    AlertFilter,
     AnnouncementCreate,
     AnnouncementFilter,
     AnnouncementUpdate,
     NotificationCreate,
     NotificationFilter,
-    AlertCreate,
-    AlertFilter,
 )
 
 logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ class AnnouncementRepository:
             priority=data.priority.value,
             category=data.category.value,
             publish_at=data.publish_at,
-            expires_at=data.expires_at,
+            data_expiracao=data.expires_at,
             requires_acknowledgment=data.requires_acknowledgment,
             attachments=attachments,
             status=status,
@@ -114,8 +114,8 @@ class AnnouncementRepository:
     async def get_by_id(
         self,
         announcement_id: str,
-        tenant_id: Optional[str] = None,
-    ) -> Optional[Announcement]:
+        tenant_id: str | None = None,
+    ) -> Announcement | None:
         """
         Busca comunicado por ID.
 
@@ -140,10 +140,10 @@ class AnnouncementRepository:
     async def list(
         self,
         tenant_id: str,
-        filters: Optional[AnnouncementFilter] = None,
+        filters: AnnouncementFilter | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[Announcement], int]:
+    ) -> tuple[builtins.list[Announcement], int]:
         """
         Lista comunicados com filtros e paginacao.
 
@@ -191,18 +191,20 @@ class AnnouncementRepository:
             query = query.where(Announcement.status == filters.status.value)
 
         if filters.priority:
-            query = query.where(Announcement.priority == filters.priority.value)
+            # prioridade é a coluna real; priority é @property alias
+            query = query.where(Announcement.prioridade == filters.priority.value)
 
         if filters.category:
-            query = query.where(Announcement.category == filters.category.value)
+            # tipo é a coluna real; category é @property alias
+            query = query.where(Announcement.tipo == filters.category.value)
 
         if filters.target_type:
-            query = query.where(Announcement.target_type == filters.target_type.value)
+            # destinatarios_tipo é a coluna real; target_type é @property alias
+            query = query.where(Announcement.destinatarios_tipo == filters.target_type.value)
 
         if filters.requires_acknowledgment is not None:
-            query = query.where(
-                Announcement.requires_acknowledgment == filters.requires_acknowledgment
-            )
+            # requer_confirmacao é a coluna real; requires_acknowledgment é @property alias
+            query = query.where(Announcement.requer_confirmacao == filters.requires_acknowledgment)
 
         if filters.is_active is not None:
             query = query.where(Announcement.is_active == filters.is_active)
@@ -211,8 +213,9 @@ class AnnouncementRepository:
             search_term = f"%{filters.search}%"
             query = query.where(
                 or_(
-                    Announcement.title.ilike(search_term),
-                    Announcement.content.ilike(search_term),
+                    # titulo/conteudo são as colunas reais; title/content são @property aliases
+                    Announcement.titulo.ilike(search_term),
+                    Announcement.conteudo.ilike(search_term),
                 )
             )
 
@@ -229,7 +232,7 @@ class AnnouncementRepository:
         announcement_id: str,
         data: AnnouncementUpdate,
         tenant_id: str,
-    ) -> Optional[Announcement]:
+    ) -> Announcement | None:
         """
         Atualiza um comunicado.
 
@@ -247,9 +250,7 @@ class AnnouncementRepository:
 
         # Nao permite editar comunicados publicados
         if announcement.status == AnnouncementStatus.PUBLISHED.value:
-            logger.warning(
-                f"Tentativa de editar comunicado publicado: {announcement_id}"
-            )
+            logger.warning(f"Tentativa de editar comunicado publicado: {announcement_id}")
             return None
 
         update_data = data.model_dump(exclude_unset=True)
@@ -302,8 +303,8 @@ class AnnouncementRepository:
         announcement_id: str,
         tenant_id: str,
         published_by: str,
-        schedule_at: Optional[datetime] = None,
-    ) -> Optional[Announcement]:
+        schedule_at: datetime | None = None,
+    ) -> Announcement | None:
         """
         Publica um comunicado.
 
@@ -337,22 +338,20 @@ class AnnouncementRepository:
         await self.db.commit()
         await self.db.refresh(announcement)
 
-        logger.info(
-            f"Comunicado {'agendado' if schedule_at else 'publicado'}: {announcement_id}"
-        )
+        logger.info(f"Comunicado {'agendado' if schedule_at else 'publicado'}: {announcement_id}")
         return announcement
 
     async def get_for_user(
         self,
         tenant_id: str,
         user_id: str,
-        user_roles: List[str],
-        department_id: Optional[str] = None,
-        post_id: Optional[str] = None,
+        user_roles: builtins.list[str],
+        department_id: str | None = None,
+        post_id: str | None = None,
         only_unread: bool = False,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[Announcement], int]:
+    ) -> tuple[builtins.list[Announcement], int]:
         """
         Busca comunicados relevantes para um usuario.
 
@@ -370,37 +369,37 @@ class AnnouncementRepository:
             Tupla (comunicados, total)
         """
         # Comunicados publicados e nao expirados
+        # Nota: usar data_expiracao (coluna real) em vez de expires_at (@property)
         query = select(Announcement).where(
             Announcement.tenant_id == tenant_id,
             Announcement.is_active.is_(True),
             Announcement.status == AnnouncementStatus.PUBLISHED.value,
             or_(
-                Announcement.expires_at.is_(None),
-                Announcement.expires_at > datetime.utcnow(),
+                Announcement.data_expiracao.is_(None),
+                Announcement.data_expiracao > datetime.utcnow(),
             ),
         )
 
         # Filtro por destinatario
-        from modules.operacional.communication.models.announcement import (
-            AnnouncementTargetType,
-        )
-
+        # FIX: usar colunas reais do DB em vez das @property Python que nao
+        # sao atributos SQLAlchemy e causavam AttributeError → 500.
+        # target_type/@property → destinatarios_tipo (coluna real)
+        # target_ids/@property  → destinatarios_funcionarios / destinatarios_postos
+        # target_roles/@property → sem coluna no DB, removido
         target_conditions = [
-            Announcement.target_type == AnnouncementTargetType.ALL.value,
-            Announcement.target_ids.contains([user_id]),
+            or_(
+                Announcement.destinatarios_tipo == "todos",
+                Announcement.destinatarios_tipo == "all",
+            ),
+            Announcement.destinatarios_funcionarios.contains([user_id]),
+            Announcement.destinatarios_postos.contains([user_id]),
         ]
-
-        if user_roles:
-            for role in user_roles:
-                target_conditions.append(Announcement.target_roles.contains([role]))
 
         query = query.where(or_(*target_conditions))
 
         # Filtro por nao lidos
         if only_unread:
-            subquery = select(AnnouncementRead.announcement_id).where(
-                AnnouncementRead.user_id == user_id
-            )
+            subquery = select(AnnouncementRead.announcement_id).where(AnnouncementRead.user_id == user_id)
             query = query.where(Announcement.id.notin_(subquery))
 
         # Count
@@ -409,8 +408,9 @@ class AnnouncementRepository:
         total = total_result.scalar() or 0
 
         # Ordenacao e paginacao
+        # FIX: usar coluna real 'prioridade' em vez da @property 'priority'
         query = query.order_by(
-            Announcement.priority.desc(),
+            Announcement.prioridade.desc(),
             Announcement.created_at.desc(),
         )
         query = query.offset((page - 1) * page_size).limit(page_size)
@@ -424,9 +424,9 @@ class AnnouncementRepository:
         self,
         announcement_id: str,
         user_id: str,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-    ) -> Optional[AnnouncementRead]:
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+    ) -> AnnouncementRead | None:
         """
         Marca comunicado como lido.
 
@@ -467,7 +467,7 @@ class AnnouncementRepository:
         self,
         announcement_id: str,
         user_id: str,
-    ) -> Optional[AnnouncementRead]:
+    ) -> AnnouncementRead | None:
         """
         Confirma leitura de comunicado.
 
@@ -516,9 +516,7 @@ class AnnouncementRepository:
             return {}
 
         result = await self.db.execute(
-            select(AnnouncementRead).where(
-                AnnouncementRead.announcement_id == announcement_id
-            )
+            select(AnnouncementRead).where(AnnouncementRead.announcement_id == announcement_id)
         )
         reads = list(result.scalars().all())
 
@@ -530,9 +528,7 @@ class AnnouncementRepository:
             "total_reads": total_reads,
             "total_acknowledgments": total_acknowledgments,
             "read_percentage": announcement.read_percentage,
-            "acknowledgment_percentage": (
-                (total_acknowledgments / total_reads * 100) if total_reads > 0 else 0
-            ),
+            "acknowledgment_percentage": ((total_acknowledgments / total_reads * 100) if total_reads > 0 else 0),
             "reads": reads,
         }
 
@@ -546,7 +542,7 @@ class AnnouncementRepository:
         result = await self.db.execute(
             select(Announcement).where(
                 Announcement.status == AnnouncementStatus.SCHEDULED.value,
-                Announcement.publish_at <= datetime.utcnow(),
+                Announcement.data_publicacao <= datetime.utcnow(),  # coluna real; publish_at é @property
                 Announcement.is_active.is_(True),
             )
         )
@@ -555,7 +551,7 @@ class AnnouncementRepository:
         count = 0
         for announcement in scheduled:
             announcement.status = AnnouncementStatus.PUBLISHED.value
-            announcement.published_at = datetime.utcnow()
+            announcement.data_publicacao = datetime.utcnow()  # coluna real; published_at é @property sem setter
             announcement.updated_at = datetime.utcnow()
             count += 1
 
@@ -575,7 +571,7 @@ class AnnouncementRepository:
         result = await self.db.execute(
             select(Announcement).where(
                 Announcement.status == AnnouncementStatus.PUBLISHED.value,
-                Announcement.expires_at <= datetime.utcnow(),
+                Announcement.data_expiracao <= datetime.utcnow(),  # coluna real, nao @property
                 Announcement.is_active.is_(True),
             )
         )
@@ -629,9 +625,6 @@ class NotificationRepository:
         Returns:
             Notificacao criada
         """
-        from modules.operacional.communication.models.notification import (
-            NotificationChannel,
-        )
 
         notification = Notification(
             id=str(uuid4()),
@@ -656,9 +649,9 @@ class NotificationRepository:
 
     async def create_bulk(
         self,
-        notifications: List[NotificationCreate],
+        notifications: list[NotificationCreate],
         tenant_id: str,
-    ) -> List[Notification]:
+    ) -> list[Notification]:
         """
         Cria multiplas notificacoes.
 
@@ -680,9 +673,9 @@ class NotificationRepository:
     async def get_by_id(
         self,
         notification_id: str,
-        tenant_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-    ) -> Optional[Notification]:
+        tenant_id: str | None = None,
+        user_id: str | None = None,
+    ) -> Notification | None:
         """
         Busca notificacao por ID.
 
@@ -711,10 +704,10 @@ class NotificationRepository:
         self,
         tenant_id: str,
         user_id: str,
-        filters: Optional[NotificationFilter] = None,
+        filters: NotificationFilter | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[Notification], int]:
+    ) -> tuple[list[Notification], int]:
         """
         Lista notificacoes de um usuario.
 
@@ -790,7 +783,7 @@ class NotificationRepository:
         self,
         notification_id: str,
         user_id: str,
-    ) -> Optional[Notification]:
+    ) -> Notification | None:
         """
         Marca notificacao como lida.
 
@@ -816,7 +809,7 @@ class NotificationRepository:
         self,
         tenant_id: str,
         user_id: str,
-        notification_ids: Optional[List[str]] = None,
+        notification_ids: list[str] | None = None,
     ) -> int:
         """
         Marca todas notificacoes como lidas.
@@ -1004,8 +997,8 @@ class AlertRepository:
     async def get_by_id(
         self,
         alert_id: str,
-        tenant_id: Optional[str] = None,
-    ) -> Optional[Alert]:
+        tenant_id: str | None = None,
+    ) -> Alert | None:
         """
         Busca alerta por ID.
 
@@ -1030,10 +1023,10 @@ class AlertRepository:
     async def list_active(
         self,
         tenant_id: str,
-        filters: Optional[AlertFilter] = None,
-        user_id: Optional[str] = None,
-        user_roles: Optional[List[str]] = None,
-    ) -> List[Alert]:
+        filters: AlertFilter | None = None,
+        user_id: str | None = None,
+        user_roles: list[str] | None = None,
+    ) -> list[Alert]:
         """
         Lista alertas ativos.
 
@@ -1106,7 +1099,7 @@ class AlertRepository:
         alert_id: str,
         user_id: str,
         tenant_id: str,
-    ) -> Optional[Alert]:
+    ) -> Alert | None:
         """
         Confirma alerta.
 

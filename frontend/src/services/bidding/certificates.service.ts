@@ -181,39 +181,6 @@ export async function atualizarStatusEmLote(
   return data;
 }
 
-/**
- * Download de certidão (PDF)
- */
-export async function downloadCertidao(
-  certificateId: string
-): Promise<Blob> {
-  const { data } = await api.get<Blob>(
-    `/api/v1/bidding/certificates/${certificateId}/download`,
-    { responseType: 'blob' }
-  );
-  return data;
-}
-
-/**
- * Valida certidão no órgão emissor
- */
-export async function validarCertidao(
-  certificateId: string
-): Promise<{
-  valida: boolean;
-  status: string;
-  mensagem: string;
-  data_validacao: string;
-}> {
-  const { data } = await api.post<{
-    valida: boolean;
-    status: string;
-    mensagem: string;
-    data_validacao: string;
-  }>(`/api/v1/bidding/certificates/${certificateId}/validar`);
-  return data;
-}
-
 const certificatesService = {
   listarCertidoes,
   buscarCertidaoPorId,
@@ -226,8 +193,6 @@ const certificatesService = {
   listarPendentesRenovacao,
   renovarCertidoes,
   atualizarStatusEmLote,
-  downloadCertidao,
-  validarCertidao,
 };
 
 export default certificatesService;

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Callable, Dict, List, Optional, Set
+from collections.abc import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,7 +25,6 @@ from modules.operacional.communication.repositories.communication_repository imp
 from modules.operacional.communication.schemas.communication_schemas import (
     AlertCreate,
     AlertFilter,
-    AlertResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -70,7 +69,7 @@ class AlertService:
         """
         self.db = db
         self.repository = AlertRepository(db)
-        self._broadcast_handlers: List[Callable] = []
+        self._broadcast_handlers: list[Callable] = []
 
     def register_broadcast_handler(
         self,
@@ -172,19 +171,20 @@ class AlertService:
             tenant_id: ID do tenant
         """
         try:
-            from .notification_service import NotificationService
             from modules.operacional.communication.models.notification import (
-                NotificationType,
                 NotificationChannel,
+                NotificationType,
             )
             from modules.operacional.communication.schemas.communication_schemas import (
                 NotificationCreate,
             )
 
+            from .notification_service import NotificationService
+
             notification_service = NotificationService(self.db)
 
             # Envia para usuarios destinatarios
-            for user_id in (alert.target_users or []):
+            for user_id in alert.target_users or []:
                 data = NotificationCreate(
                     user_id=user_id,
                     title=f"ALERTA CRITICO: {alert.title}",
@@ -203,9 +203,7 @@ class AlertService:
                 )
                 await notification_service.send(data, tenant_id, skip_rate_limit=True)
 
-            logger.info(
-                f"Notificacoes criticas enviadas para alerta {alert.id}"
-            )
+            logger.info(f"Notificacoes criticas enviadas para alerta {alert.id}")
 
         except Exception as e:
             logger.error(f"Erro ao enviar notificacao critica: {e}")
@@ -236,10 +234,10 @@ class AlertService:
     async def get_active_alerts(
         self,
         tenant_id: str,
-        filters: Optional[AlertFilter] = None,
-        user_id: Optional[str] = None,
-        user_roles: Optional[List[str]] = None,
-    ) -> List[Alert]:
+        filters: AlertFilter | None = None,
+        user_id: str | None = None,
+        user_roles: list[str] | None = None,
+    ) -> list[Alert]:
         """
         Lista alertas ativos.
 
@@ -252,9 +250,7 @@ class AlertService:
         Returns:
             Lista de alertas ativos
         """
-        return await self.repository.list_active(
-            tenant_id, filters, user_id, user_roles
-        )
+        return await self.repository.list_active(tenant_id, filters, user_id, user_roles)
 
     async def acknowledge(
         self,
@@ -351,7 +347,7 @@ class AlertService:
         title: str,
         message: str,
         severity: AlertSeverity = AlertSeverity.WARNING,
-        target_roles: Optional[List[str]] = None,
+        target_roles: list[str] | None = None,
     ) -> Alert:
         """
         Cria alerta de ocorrencia.
@@ -385,7 +381,7 @@ class AlertService:
         reference_id: str,
         sla_name: str,
         time_remaining_minutes: int,
-        target_users: Optional[List[str]] = None,
+        target_users: list[str] | None = None,
     ) -> Alert:
         """
         Cria alerta de SLA prestes a vencer.
@@ -425,7 +421,7 @@ class AlertService:
         post_id: str,
         post_name: str,
         start_time: str,
-        target_roles: Optional[List[str]] = None,
+        target_roles: list[str] | None = None,
     ) -> Alert:
         """
         Cria alerta de posto descoberto.
@@ -458,7 +454,7 @@ class AlertService:
         employee_id: str,
         employee_name: str,
         post_name: str,
-        target_roles: Optional[List[str]] = None,
+        target_roles: list[str] | None = None,
     ) -> Alert:
         """
         Cria alerta de falta detectada.
@@ -491,8 +487,8 @@ class AlertService:
         substitution_id: str,
         post_name: str,
         start_time: str,
-        target_users: Optional[List[str]] = None,
-        target_roles: Optional[List[str]] = None,
+        target_users: list[str] | None = None,
+        target_roles: list[str] | None = None,
     ) -> Alert:
         """
         Cria alerta de substituicao urgente.
@@ -526,9 +522,9 @@ class AlertService:
         tenant_id: str,
         user_id: str,
         user_name: str,
-        location: Optional[str] = None,
-        latitude: Optional[float] = None,
-        longitude: Optional[float] = None,
+        location: str | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
     ) -> Alert:
         """
         Cria alerta de panico acionado.

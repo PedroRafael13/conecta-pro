@@ -4,27 +4,30 @@ Article Model - Sprint 53.
 Modelo para artigos da base de conhecimento.
 """
 
+import uuid
+from datetime import datetime
+from enum import StrEnum
+
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
     Boolean,
+    Column,
     DateTime,
-    Integer,
     Float,
     ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, TSVECTOR
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
-import uuid
-import enum
 
 from core.models.base import Base
 
 
-class ArticleStatusEnum(str, enum.Enum):
+class ArticleStatusEnum(StrEnum):
     """Status do artigo."""
 
     DRAFT = "draft"
@@ -35,7 +38,7 @@ class ArticleStatusEnum(str, enum.Enum):
     NEEDS_UPDATE = "needs_update"
 
 
-class ArticleTypeEnum(str, enum.Enum):
+class ArticleTypeEnum(StrEnum):
     """Tipo de artigo."""
 
     HOW_TO = "how_to"
@@ -50,7 +53,7 @@ class ArticleTypeEnum(str, enum.Enum):
     GLOSSARY = "glossary"
 
 
-class ArticlePriorityEnum(str, enum.Enum):
+class ArticlePriorityEnum(StrEnum):
     """Prioridade do artigo nos resultados."""
 
     LOW = "low"
@@ -176,9 +179,7 @@ class Article(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     updated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)

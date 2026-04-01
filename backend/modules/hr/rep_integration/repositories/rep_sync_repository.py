@@ -1,10 +1,9 @@
 """Repository para REPSync."""
 
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.rep_integration.models import (
@@ -13,8 +12,8 @@ from modules.hr.rep_integration.models import (
 )
 from modules.hr.rep_integration.schemas import (
     REPSyncCreate,
-    REPSyncUpdate,
     REPSyncFilter,
+    REPSyncUpdate,
 )
 
 
@@ -42,18 +41,16 @@ class REPSyncRepository:
         await self.db.refresh(sync)
         return sync
 
-    async def get_by_id(self, sync_id: UUID) -> Optional[REPSync]:
+    async def get_by_id(self, sync_id: UUID) -> REPSync | None:
         """Busca sincronização por ID."""
-        result = await self.db.execute(
-            select(REPSync).where(REPSync.id == sync_id)
-        )
+        result = await self.db.execute(select(REPSync).where(REPSync.id == sync_id))
         return result.scalar_one_or_none()
 
     async def update(
         self,
         sync_id: UUID,
         data: REPSyncUpdate,
-    ) -> Optional[REPSync]:
+    ) -> REPSync | None:
         """Atualiza sincronização."""
         sync = await self.get_by_id(sync_id)
         if not sync:
@@ -72,7 +69,7 @@ class REPSyncRepository:
         filters: REPSyncFilter,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[REPSync], int]:
+    ) -> tuple[list[REPSync], int]:
         """Lista sincronizações com filtros e paginação."""
         query = select(REPSync)
 
@@ -112,7 +109,7 @@ class REPSyncRepository:
 
         return list(syncs), total
 
-    async def get_running_sync(self, device_id: UUID) -> Optional[REPSync]:
+    async def get_running_sync(self, device_id: UUID) -> REPSync | None:
         """Verifica se há sync em andamento para o dispositivo."""
         result = await self.db.execute(
             select(REPSync).where(
@@ -126,7 +123,7 @@ class REPSyncRepository:
         self,
         device_id: UUID,
         sync_type: str = None,
-    ) -> Optional[REPSync]:
+    ) -> REPSync | None:
         """Retorna última sincronização bem-sucedida."""
         query = select(REPSync).where(
             REPSync.device_id == device_id,
@@ -241,11 +238,7 @@ class REPSyncRepository:
         if current_nsr:
             update_data["last_nsr_after"] = current_nsr
 
-        await self.db.execute(
-            update(REPSync)
-            .where(REPSync.id == sync_id)
-            .values(**update_data)
-        )
+        await self.db.execute(update(REPSync).where(REPSync.id == sync_id).values(**update_data))
         await self.db.commit()
 
     async def cancel_stale_syncs(self, timeout_minutes: int = 30) -> int:
@@ -283,30 +276,18 @@ class REPSyncRepository:
             base_where.append(REPSync.condominio_id == condominio_id)
 
         # Total
-        total_result = await self.db.execute(
-            select(func.count()).where(*base_where)
-        )
+        total_result = await self.db.execute(select(func.count()).where(*base_where))
         total = total_result.scalar() or 0
 
         # Por status
         status_result = await self.db.execute(
-            select(
-                REPSync.status,
-                func.count(REPSync.id)
-            )
-            .where(*base_where)
-            .group_by(REPSync.status)
+            select(REPSync.status, func.count(REPSync.id)).where(*base_where).group_by(REPSync.status)
         )
         by_status = {row[0]: row[1] for row in status_result.all()}
 
         # Por tipo
         type_result = await self.db.execute(
-            select(
-                REPSync.sync_type,
-                func.count(REPSync.id)
-            )
-            .where(*base_where)
-            .group_by(REPSync.sync_type)
+            select(REPSync.sync_type, func.count(REPSync.id)).where(*base_where).group_by(REPSync.sync_type)
         )
         by_type = {row[0]: row[1] for row in type_result.all()}
 

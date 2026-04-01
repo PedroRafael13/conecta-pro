@@ -4,7 +4,7 @@ import logging
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -69,10 +69,10 @@ class AccountingAIService:
     async def detect_journal_anomalies(
         self,
         condominio_id: UUID,
-        period_start: Optional[date] = None,
-        period_end: Optional[date] = None,
+        period_start: date | None = None,
+        period_end: date | None = None,
         sensitivity: str = "medium",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Detecta anomalias em lancamentos contabeis."""
         logger.info(f"Detectando anomalias em lancamentos para {condominio_id}")
         anomalies = []
@@ -111,9 +111,7 @@ class AccountingAIService:
         anomalies.extend(sequence_anomalies)
 
         # 5. Analisa contas incomuns
-        account_anomalies = await self._detect_unusual_accounts(
-            condominio_id, entries, period_start
-        )
+        account_anomalies = await self._detect_unusual_accounts(condominio_id, entries, period_start)
         anomalies.extend(account_anomalies)
 
         # 6. Analisa estornos excessivos
@@ -127,7 +125,7 @@ class AccountingAIService:
         condominio_id: UUID,
         start_date: date,
         end_date: date,
-    ) -> List[JournalEntry]:
+    ) -> list[JournalEntry]:
         """Busca lancamentos contabeis do periodo."""
         query = (
             select(JournalEntry)
@@ -146,14 +144,14 @@ class AccountingAIService:
 
     async def _detect_value_anomalies(
         self,
-        entries: List[JournalEntry],
+        entries: list[JournalEntry],
         threshold: float,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Detecta valores atipicos em lancamentos."""
         anomalies = []
 
         # Agrupa por tipo de lancamento
-        entries_by_type: Dict[str, List[Decimal]] = {}
+        entries_by_type: dict[str, list[Decimal]] = {}
         for entry in entries:
             entry_type = entry.entry_type or "geral"
             if entry_type not in entries_by_type:
@@ -188,9 +186,7 @@ class AccountingAIService:
                             "type": "valor_atipico",
                             "entry_id": str(entry.id),
                             "entry_number": entry.entry_number,
-                            "entry_date": (
-                                entry.entry_date.isoformat() if entry.entry_date else None
-                            ),
+                            "entry_date": (entry.entry_date.isoformat() if entry.entry_date else None),
                             "value": float(value),
                             "expected_range": {
                                 "min": avg - (threshold * std_dev),
@@ -204,10 +200,7 @@ class AccountingAIService:
                                 f"Lancamento #{entry.entry_number} com valor R$ {value:,.2f} "
                                 f"fora do padrao (media: R$ {avg:,.2f}, desvio: {z_score:.1f} DP)"
                             ),
-                            "recommendation": (
-                                "Verificar se o lancamento esta correto "
-                                "ou requer aprovacao especial"
-                            ),
+                            "recommendation": ("Verificar se o lancamento esta correto ou requer aprovacao especial"),
                         }
                     )
 
@@ -215,8 +208,8 @@ class AccountingAIService:
 
     async def _detect_timing_anomalies(
         self,
-        entries: List[JournalEntry],
-    ) -> List[Dict[str, Any]]:
+        entries: list[JournalEntry],
+    ) -> list[dict[str, Any]]:
         """Detecta padroes de horario incomuns."""
         anomalies = []
 
@@ -236,22 +229,15 @@ class AccountingAIService:
                         "type": "horario_incomum",
                         "entry_id": str(entry.id),
                         "entry_number": entry.entry_number,
-                        "entry_date": (
-                            entry.entry_date.isoformat()
-                            if entry.entry_date else None
-                        ),
+                        "entry_date": (entry.entry_date.isoformat() if entry.entry_date else None),
                         "created_at": entry.created_at.isoformat(),
                         "hour": hour,
                         "severity": "baixa",
                         "severity_score": 20,
                         "description": (
-                            f"Lancamento #{entry.entry_number} criado as {hour}h "
-                            f"(fora do horario comercial)"
+                            f"Lancamento #{entry.entry_number} criado as {hour}h (fora do horario comercial)"
                         ),
-                        "recommendation": (
-                            "Verificar se usuario tinha autorizacao "
-                            "para acesso fora do horario"
-                        ),
+                        "recommendation": ("Verificar se usuario tinha autorizacao para acesso fora do horario"),
                     }
                 )
 
@@ -264,21 +250,13 @@ class AccountingAIService:
                         "type": "lancamento_fim_semana",
                         "entry_id": str(entry.id),
                         "entry_number": entry.entry_number,
-                        "entry_date": (
-                            entry.entry_date.isoformat()
-                            if entry.entry_date else None
-                        ),
+                        "entry_date": (entry.entry_date.isoformat() if entry.entry_date else None),
                         "created_at": entry.created_at.isoformat(),
                         "weekday": weekday,
                         "severity": "baixa",
                         "severity_score": 15,
-                        "description": (
-                            f"Lancamento #{entry.entry_number} criado no {day_name}"
-                        ),
-                        "recommendation": (
-                            "Verificar procedimento de lancamentos "
-                            "em finais de semana"
-                        ),
+                        "description": (f"Lancamento #{entry.entry_number} criado no {day_name}"),
+                        "recommendation": ("Verificar procedimento de lancamentos em finais de semana"),
                     }
                 )
 
@@ -286,8 +264,8 @@ class AccountingAIService:
 
     async def _detect_duplicate_entries(
         self,
-        entries: List[JournalEntry],
-    ) -> List[Dict[str, Any]]:
+        entries: list[JournalEntry],
+    ) -> list[dict[str, Any]]:
         """Detecta possiveis lancamentos duplicados."""
         anomalies = []
         checked_pairs = set()
@@ -312,10 +290,7 @@ class AccountingAIService:
                             "type": "possivel_duplicata",
                             "entry_ids": [str(entry1.id), str(entry2.id)],
                             "entry_numbers": [entry1.entry_number, entry2.entry_number],
-                            "entry_date": (
-                                entry1.entry_date.isoformat()
-                                if entry1.entry_date else None
-                            ),
+                            "entry_date": (entry1.entry_date.isoformat() if entry1.entry_date else None),
                             "value": float(entry1.total_debit or 0),
                             "description": entry1.description,
                             "severity": "alta",
@@ -332,8 +307,8 @@ class AccountingAIService:
 
     async def _detect_sequence_gaps(
         self,
-        entries: List[JournalEntry],
-    ) -> List[Dict[str, Any]]:
+        entries: list[JournalEntry],
+    ) -> list[dict[str, Any]]:
         """Detecta falhas na sequencia de numeracao."""
         anomalies = []
 
@@ -366,10 +341,7 @@ class AccountingAIService:
                                 f"Falha na sequencia: {gap} numero(s) ausente(s) "
                                 f"entre #{prev.entry_number} e #{curr.entry_number}"
                             ),
-                            "recommendation": (
-                                "Verificar se lancamentos foram excluidos "
-                                "ou se houve erro no sistema"
-                            ),
+                            "recommendation": ("Verificar se lancamentos foram excluidos ou se houve erro no sistema"),
                         }
                     )
             except (ValueError, TypeError):
@@ -380,9 +352,9 @@ class AccountingAIService:
     async def _detect_unusual_accounts(
         self,
         condominio_id: UUID,
-        entries: List[JournalEntry],
+        entries: list[JournalEntry],
         period_start: date,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Detecta uso de contas incomuns."""
         anomalies = []
 
@@ -412,9 +384,7 @@ class AccountingAIService:
         # Verifica contas usadas no periodo atual
         for entry in entries:
             # Busca linhas do lancamento
-            lines_query = select(JournalEntryLine).where(
-                JournalEntryLine.journal_entry_id == entry.id
-            )
+            lines_query = select(JournalEntryLine).where(JournalEntryLine.journal_entry_id == entry.id)
             lines_result = await self.session.execute(lines_query)
             lines = list(lines_result.scalars().all())
 
@@ -436,10 +406,7 @@ class AccountingAIService:
                                 f"Lancamento #{entry.entry_number} usa conta {line.account_code} "
                                 f"que nunca foi utilizada antes"
                             ),
-                            "recommendation": (
-                                "Verificar se a conta esta correta "
-                                "para este tipo de operacao"
-                            ),
+                            "recommendation": ("Verificar se a conta esta correta para este tipo de operacao"),
                         }
                     )
                 elif historical_usage[line.account_id] <= 2:
@@ -468,15 +435,13 @@ class AccountingAIService:
 
     async def _detect_excessive_reversals(
         self,
-        entries: List[JournalEntry],
-    ) -> List[Dict[str, Any]]:
+        entries: list[JournalEntry],
+    ) -> list[dict[str, Any]]:
         """Detecta volume excessivo de estornos."""
         anomalies = []
 
         # Conta estornos
-        reversal_entries = [
-            e for e in entries if e.entry_type == EntryType.ESTORNO.value
-        ]
+        reversal_entries = [e for e in entries if e.entry_type == EntryType.ESTORNO.value]
 
         total_entries = len(entries)
         reversal_count = len(reversal_entries)
@@ -517,24 +482,20 @@ class AccountingAIService:
         description: str,
         value: Decimal,
         transaction_type: str = "expense",  # "expense" ou "income"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Sugere classificacao contabil baseada no historico."""
         logger.info(f"Sugerindo classificacao para: {description}")
         suggestions = []
 
         # Busca lancamentos similares no historico
-        similar_entries = await self._find_similar_entries(
-            condominio_id, description, value, transaction_type
-        )
+        similar_entries = await self._find_similar_entries(condominio_id, description, value, transaction_type)
 
         # Agrupa por conta utilizada
-        account_usage: Dict[str, Dict[str, Any]] = {}
+        account_usage: dict[str, dict[str, Any]] = {}
 
         for entry in similar_entries:
             # Busca linhas do lancamento
-            lines_query = select(JournalEntryLine).where(
-                JournalEntryLine.journal_entry_id == entry.id
-            )
+            lines_query = select(JournalEntryLine).where(JournalEntryLine.journal_entry_id == entry.id)
             result = await self.session.execute(lines_query)
             lines = list(result.scalars().all())
 
@@ -550,22 +511,18 @@ class AccountingAIService:
                         "similarity_scores": [],
                     }
                 account_usage[account_id]["usage_count"] += 1
-                account_usage[account_id]["total_value"] += (
-                    line.debit_value or line.credit_value or Decimal("0")
-                )
+                account_usage[account_id]["total_value"] += line.debit_value or line.credit_value or Decimal("0")
                 account_usage[account_id]["similarity_scores"].append(
                     self._calculate_description_similarity(description, entry.description or "")
                 )
 
         # Calcula score de confianca para cada conta
-        for account_id, data in account_usage.items():
+        for _account_id, data in account_usage.items():
             avg_similarity = (
-                sum(data["similarity_scores"]) / len(data["similarity_scores"])
-                if data["similarity_scores"]
-                else 0
+                sum(data["similarity_scores"]) / len(data["similarity_scores"]) if data["similarity_scores"] else 0
             )
             frequency_score = min(100, data["usage_count"] * 10)
-            confidence = int((avg_similarity * 0.6 + frequency_score * 0.4))
+            confidence = int(avg_similarity * 0.6 + frequency_score * 0.4)
 
             suggestions.append(
                 {
@@ -576,9 +533,7 @@ class AccountingAIService:
                     "usage_count": data["usage_count"],
                     "average_value": float(data["total_value"] / data["usage_count"]),
                     "similarity_score": avg_similarity,
-                    "reason": self._generate_suggestion_reason(
-                        data["usage_count"], avg_similarity
-                    ),
+                    "reason": self._generate_suggestion_reason(data["usage_count"], avg_similarity),
                 }
             )
 
@@ -594,7 +549,7 @@ class AccountingAIService:
         description: str,
         value: Decimal,
         transaction_type: str,  # pylint: disable=unused-argument
-    ) -> List[JournalEntry]:
+    ) -> list[JournalEntry]:
         """Busca lancamentos similares no historico."""
         # Busca lancamentos dos ultimos 12 meses
         end_date = date.today()
@@ -627,9 +582,7 @@ class AccountingAIService:
 
             # Verifica range de valor (dentro de 50%)
             entry_value = entry.total_debit or Decimal("0")
-            value_in_range = (
-                value * Decimal("0.5") <= entry_value <= value * Decimal("1.5")
-            )
+            value_in_range = value * Decimal("0.5") <= entry_value <= value * Decimal("1.5")
 
             if keyword_match or value_in_range:
                 similar_entries.append(entry)
@@ -682,7 +635,7 @@ class AccountingAIService:
         self,
         condominio_id: UUID,
         months_ahead: int = 3,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Gera previsao de balanco patrimonial."""
         logger.info(f"Gerando previsao de balanco para {condominio_id}")
 
@@ -729,8 +682,7 @@ class AccountingAIService:
 
         # Calcula totais projetados
         total_ativo = (
-            projections["ativo_circulante"]["projected_value"]
-            + projections["ativo_nao_circulante"]["projected_value"]
+            projections["ativo_circulante"]["projected_value"] + projections["ativo_nao_circulante"]["projected_value"]
         )
         total_passivo = (
             projections["passivo_circulante"]["projected_value"]
@@ -741,13 +693,9 @@ class AccountingAIService:
         # Calcula indicadores projetados
         ativo_circ = projections["ativo_circulante"]["projected_value"]
         passivo_circ = projections["passivo_circulante"]["projected_value"]
-        liquidity_ratio = (
-            ativo_circ / passivo_circ if passivo_circ > 0 else 0
-        )
+        liquidity_ratio = ativo_circ / passivo_circ if passivo_circ > 0 else 0
 
-        debt_ratio = (
-            total_passivo / total_ativo * 100 if total_ativo > 0 else 0
-        )
+        debt_ratio = total_passivo / total_ativo * 100 if total_ativo > 0 else 0
 
         # Calcula confianca baseada em dados historicos
         confidence = self._calculate_forecast_confidence(historical_data, trends)
@@ -758,8 +706,7 @@ class AccountingAIService:
             "months_ahead": months_ahead,
             "base_balance_id": str(latest_balance.id) if latest_balance else None,
             "base_balance_date": (
-                latest_balance.reference_date.isoformat()
-                if latest_balance and latest_balance.reference_date else None
+                latest_balance.reference_date.isoformat() if latest_balance and latest_balance.reference_date else None
             ),
             "projections": {
                 "ativo_circulante": {
@@ -803,19 +750,13 @@ class AccountingAIService:
                 "liquidity_ratio": liquidity_ratio,
                 "debt_ratio": debt_ratio,
                 "liquidity_status": (
-                    "saudavel" if liquidity_ratio >= 1
-                    else "atencao" if liquidity_ratio >= 0.5 else "critico"
+                    "saudavel" if liquidity_ratio >= 1 else "atencao" if liquidity_ratio >= 0.5 else "critico"
                 ),
-                "debt_status": (
-                    "baixo" if debt_ratio < 40
-                    else "moderado" if debt_ratio < 70 else "alto"
-                ),
+                "debt_status": ("baixo" if debt_ratio < 40 else "moderado" if debt_ratio < 70 else "alto"),
             },
             "trends": trends,
             "confidence": confidence,
-            "confidence_level": (
-                "alta" if confidence >= 75 else "media" if confidence >= 50 else "baixa"
-            ),
+            "confidence_level": ("alta" if confidence >= 75 else "media" if confidence >= 50 else "baixa"),
             "ai_model": "accounting-forecast-v1.0",
             "generated_at": datetime.now().isoformat(),
         }
@@ -823,7 +764,7 @@ class AccountingAIService:
     async def _get_latest_trial_balance(
         self,
         condominio_id: UUID,
-    ) -> Optional[TrialBalance]:
+    ) -> TrialBalance | None:
         """Busca ultimo balancete."""
         query = (
             select(TrialBalance)
@@ -844,7 +785,7 @@ class AccountingAIService:
         self,
         condominio_id: UUID,
         months: int = 12,
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> dict[str, list[dict[str, Any]]]:
         """Coleta historico de balancetes."""
         end_date = date.today()
         start_date = end_date - timedelta(days=months * 30)
@@ -866,7 +807,7 @@ class AccountingAIService:
         balances = list(result.scalars().all())
 
         # Agrupa por grupo de contas
-        history: Dict[str, List[Dict[str, Any]]] = {
+        history: dict[str, list[dict[str, Any]]] = {
             "ativo_circulante": [],
             "ativo_nao_circulante": [],
             "passivo_circulante": [],
@@ -910,8 +851,8 @@ class AccountingAIService:
 
     def _analyze_balance_trends(
         self,
-        historical_data: Dict[str, List[Dict[str, Any]]],
-    ) -> Dict[str, Any]:
+        historical_data: dict[str, list[dict[str, Any]]],
+    ) -> dict[str, Any]:
         """Analisa tendencias nos dados historicos."""
         trends = {}
 
@@ -921,13 +862,9 @@ class AccountingAIService:
                 continue
 
             values = [d["value"] for d in data]
-            first_half_avg = (
-                sum(values[: len(values) // 2]) / (len(values) // 2)
-                if len(values) >= 2 else values[0]
-            )
+            first_half_avg = sum(values[: len(values) // 2]) / (len(values) // 2) if len(values) >= 2 else values[0]
             second_half_avg = (
-                sum(values[len(values) // 2 :]) / len(values[len(values) // 2 :])
-                if len(values) >= 2 else values[-1]
+                sum(values[len(values) // 2 :]) / len(values[len(values) // 2 :]) if len(values) >= 2 else values[-1]
             )
 
             if first_half_avg > 0:
@@ -940,10 +877,7 @@ class AccountingAIService:
             variance = sum((v - avg) ** 2 for v in values) / len(values)
             volatility = (variance**0.5 / avg * 100) if avg > 0 else 0
 
-            direction = (
-                "crescente" if change_rate > 5
-                else "decrescente" if change_rate < -5 else "estavel"
-            )
+            direction = "crescente" if change_rate > 5 else "decrescente" if change_rate < -5 else "estavel"
 
             trends[group] = {
                 "direction": direction,
@@ -955,9 +889,9 @@ class AccountingAIService:
 
     def _project_account_group(
         self,
-        historical_values: List[Dict[str, Any]],
+        historical_values: list[dict[str, Any]],
         months_ahead: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Projeta valor futuro para um grupo de contas."""
         if not historical_values:
             return {
@@ -998,15 +932,9 @@ class AccountingAIService:
         # Projeta valor futuro
         projected_value = current_value * ((1 + avg_monthly_change) ** months_ahead)
 
-        change_percent = (
-            ((projected_value - current_value) / current_value * 100)
-            if current_value > 0 else 0
-        )
+        change_percent = ((projected_value - current_value) / current_value * 100) if current_value > 0 else 0
 
-        trend = (
-            "crescente" if avg_monthly_change > 0.01
-            else "decrescente" if avg_monthly_change < -0.01 else "estavel"
-        )
+        trend = "crescente" if avg_monthly_change > 0.01 else "decrescente" if avg_monthly_change < -0.01 else "estavel"
 
         return {
             "current_value": current_value,
@@ -1017,8 +945,8 @@ class AccountingAIService:
 
     def _calculate_forecast_confidence(
         self,
-        historical_data: Dict[str, List[Dict[str, Any]]],
-        trends: Dict[str, Any],
+        historical_data: dict[str, list[dict[str, Any]]],
+        trends: dict[str, Any],
     ) -> int:
         """Calcula nivel de confianca da previsao."""
         confidence = 50  # Base
@@ -1033,11 +961,7 @@ class AccountingAIService:
             confidence += 5
 
         # Baixa volatilidade = mais confianca
-        avg_volatility = (
-            sum(t.get("volatility", 50) for t in trends.values()) / len(trends)
-            if trends
-            else 50
-        )
+        avg_volatility = sum(t.get("volatility", 50) for t in trends.values()) / len(trends) if trends else 50
 
         if avg_volatility < 10:
             confidence += 20
@@ -1055,7 +979,7 @@ class AccountingAIService:
     async def optimize_cost_center_allocation(
         self,
         condominio_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Sugere otimizacoes na alocacao de centros de custo."""
         logger.info(f"Analisando centros de custo para {condominio_id}")
 
@@ -1069,28 +993,20 @@ class AccountingAIService:
             }
 
         # Analisa utilizacao
-        usage_analysis = await self._analyze_cost_center_usage(
-            condominio_id, cost_centers
-        )
+        usage_analysis = await self._analyze_cost_center_usage(condominio_id, cost_centers)
 
         # Identifica problemas
         issues = []
         suggestions = []
 
         # 1. Centros de custo sem uso
-        unused = [
-            cc for cc in cost_centers
-            if usage_analysis.get(str(cc.id), {}).get("usage_count", 0) == 0
-        ]
+        unused = [cc for cc in cost_centers if usage_analysis.get(str(cc.id), {}).get("usage_count", 0) == 0]
         if unused:
             issues.append(
                 {
                     "type": "centros_sem_uso",
                     "count": len(unused),
-                    "centers": [
-                        {"id": str(cc.id), "code": cc.code, "name": cc.name}
-                        for cc in unused
-                    ],
+                    "centers": [{"id": str(cc.id), "code": cc.code, "name": cc.name} for cc in unused],
                     "severity": "media",
                     "impact": "Estrutura de custos desnecessariamente complexa",
                 }
@@ -1100,10 +1016,7 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "desativar_centros",
                     "title": "Desativar centros de custo sem uso",
-                    "description": (
-                        f"{len(unused)} centro(s) de custo nao tem lancamentos. "
-                        "Considere desativa-los."
-                    ),
+                    "description": (f"{len(unused)} centro(s) de custo nao tem lancamentos. Considere desativa-los."),
                     "affected_centers": [cc.code for cc in unused],
                     "effort": "baixo",
                     "priority": "media",
@@ -1111,11 +1024,7 @@ class AccountingAIService:
             )
 
         # 2. Centros de custo com uso muito baixo
-        low_usage = [
-            cc
-            for cc in cost_centers
-            if 0 < usage_analysis.get(str(cc.id), {}).get("usage_count", 0) < 5
-        ]
+        low_usage = [cc for cc in cost_centers if 0 < usage_analysis.get(str(cc.id), {}).get("usage_count", 0) < 5]
         if low_usage:
             issues.append(
                 {
@@ -1165,10 +1074,7 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "detalhar_custos",
                     "title": "Detalhar centros de custo concentrados",
-                    "description": (
-                        "Centros com alta concentracao podem ser "
-                        "subdivididos para melhor analise"
-                    ),
+                    "description": ("Centros com alta concentracao podem ser subdivididos para melhor analise"),
                     "affected_centers": [c["code"] for c in high_concentration],
                     "effort": "alto",
                     "priority": "media",
@@ -1181,10 +1087,9 @@ class AccountingAIService:
 
         # Calcula metricas gerais
         total_centers = len(cost_centers)
-        active_centers = len([
-            cc for cc in cost_centers
-            if usage_analysis.get(str(cc.id), {}).get("usage_count", 0) > 0
-        ])
+        active_centers = len(
+            [cc for cc in cost_centers if usage_analysis.get(str(cc.id), {}).get("usage_count", 0) > 0]
+        )
 
         return {
             "condominio_id": str(condominio_id),
@@ -1192,9 +1097,7 @@ class AccountingAIService:
                 "total_cost_centers": total_centers,
                 "active_cost_centers": active_centers,
                 "inactive_cost_centers": total_centers - active_centers,
-                "utilization_rate": (
-                    (active_centers / total_centers * 100) if total_centers > 0 else 0
-                ),
+                "utilization_rate": ((active_centers / total_centers * 100) if total_centers > 0 else 0),
             },
             "usage_analysis": usage_analysis,
             "issues": issues,
@@ -1207,7 +1110,7 @@ class AccountingAIService:
     async def _get_active_cost_centers(
         self,
         condominio_id: UUID,
-    ) -> List[CostCenter]:
+    ) -> list[CostCenter]:
         """Busca centros de custo ativos."""
         query = select(CostCenter).where(
             and_(
@@ -1222,8 +1125,8 @@ class AccountingAIService:
     async def _analyze_cost_center_usage(
         self,
         condominio_id: UUID,
-        cost_centers: List[CostCenter],
-    ) -> Dict[str, Dict[str, Any]]:
+        cost_centers: list[CostCenter],
+    ) -> dict[str, dict[str, Any]]:
         """Analisa utilizacao de cada centro de custo."""
         usage = {}
 
@@ -1261,8 +1164,8 @@ class AccountingAIService:
 
     async def _detect_cost_concentration(
         self,
-        usage_analysis: Dict[str, Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        usage_analysis: dict[str, dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Detecta concentracao excessiva em poucos centros."""
         if not usage_analysis:
             return []
@@ -1291,27 +1194,20 @@ class AccountingAIService:
 
     async def _check_hierarchy_issues(
         self,
-        cost_centers: List[CostCenter],
-    ) -> List[Dict[str, Any]]:
+        cost_centers: list[CostCenter],
+    ) -> list[dict[str, Any]]:
         """Verifica problemas na hierarquia de centros de custo."""
         issues = []
 
         # Verifica centros sem pai quando deveriam ter
-        orphans = [
-            cc
-            for cc in cost_centers
-            if cc.level and cc.level > 1 and not cc.parent_id
-        ]
+        orphans = [cc for cc in cost_centers if cc.level and cc.level > 1 and not cc.parent_id]
 
         if orphans:
             issues.append(
                 {
                     "type": "hierarquia_incompleta",
                     "count": len(orphans),
-                    "centers": [
-                        {"id": str(cc.id), "code": cc.code, "name": cc.name}
-                        for cc in orphans
-                    ],
+                    "centers": [{"id": str(cc.id), "code": cc.code, "name": cc.name} for cc in orphans],
                     "severity": "media",
                     "impact": "Estrutura hierarquica inconsistente",
                 }
@@ -1321,7 +1217,7 @@ class AccountingAIService:
 
     def _calculate_cost_center_health(
         self,
-        issues: List[Dict[str, Any]],
+        issues: list[dict[str, Any]],
         total_centers: int,  # pylint: disable=unused-argument
     ) -> int:
         """Calcula score de saude da estrutura de centros de custo."""
@@ -1347,7 +1243,7 @@ class AccountingAIService:
         condominio_id: UUID,
         period_start: date,
         period_end: date,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analisa DRE do periodo."""
         logger.info(f"Analisando DRE para {condominio_id} de {period_start} a {period_end}")
 
@@ -1365,21 +1261,17 @@ class AccountingAIService:
         # Agrupa por natureza de conta
         revenues = Decimal("0")
         expenses = Decimal("0")
-        revenue_breakdown: Dict[str, Decimal] = {}
-        expense_breakdown: Dict[str, Decimal] = {}
+        revenue_breakdown: dict[str, Decimal] = {}
+        expense_breakdown: dict[str, Decimal] = {}
 
         for entry in entries:
-            lines_query = select(JournalEntryLine).where(
-                JournalEntryLine.journal_entry_id == entry.id
-            )
+            lines_query = select(JournalEntryLine).where(JournalEntryLine.journal_entry_id == entry.id)
             result = await self.session.execute(lines_query)
             lines = list(result.scalars().all())
 
             for line in lines:
                 # Busca conta para determinar natureza
-                account_query = select(AccountingAccount).where(
-                    AccountingAccount.id == line.account_id
-                )
+                account_query = select(AccountingAccount).where(AccountingAccount.id == line.account_id)
                 account_result = await self.session.execute(account_query)
                 account = account_result.scalar_one_or_none()
 
@@ -1415,16 +1307,12 @@ class AccountingAIService:
         prev_expenses = Decimal("0")
 
         for entry in prev_entries:
-            lines_query = select(JournalEntryLine).where(
-                JournalEntryLine.journal_entry_id == entry.id
-            )
+            lines_query = select(JournalEntryLine).where(JournalEntryLine.journal_entry_id == entry.id)
             result = await self.session.execute(lines_query)
             lines = list(result.scalars().all())
 
             for line in lines:
-                account_query = select(AccountingAccount).where(
-                    AccountingAccount.id == line.account_id
-                )
+                account_query = select(AccountingAccount).where(AccountingAccount.id == line.account_id)
                 account_result = await self.session.execute(account_query)
                 account = account_result.scalar_one_or_none()
 
@@ -1437,17 +1325,10 @@ class AccountingAIService:
         prev_net_income = prev_revenues - prev_expenses
 
         # Calcula variacoes
-        revenue_change = (
-            ((revenues - prev_revenues) / prev_revenues * 100)
-            if prev_revenues > 0 else Decimal("0")
-        )
-        expense_change = (
-            ((expenses - prev_expenses) / prev_expenses * 100)
-            if prev_expenses > 0 else Decimal("0")
-        )
+        revenue_change = ((revenues - prev_revenues) / prev_revenues * 100) if prev_revenues > 0 else Decimal("0")
+        expense_change = ((expenses - prev_expenses) / prev_expenses * 100) if prev_expenses > 0 else Decimal("0")
         income_change = (
-            ((net_income - prev_net_income) / abs(prev_net_income) * 100)
-            if prev_net_income != 0 else Decimal("0")
+            ((net_income - prev_net_income) / abs(prev_net_income) * 100) if prev_net_income != 0 else Decimal("0")
         )
 
         # Gera insights
@@ -1502,9 +1383,9 @@ class AccountingAIService:
         net_income: Decimal,
         revenue_change: Decimal,
         expense_change: Decimal,
-        revenue_breakdown: Dict[str, Decimal],  # pylint: disable=unused-argument
-        expense_breakdown: Dict[str, Decimal],
-    ) -> List[Dict[str, Any]]:
+        revenue_breakdown: dict[str, Decimal],  # pylint: disable=unused-argument
+        expense_breakdown: dict[str, Decimal],
+    ) -> list[dict[str, Any]]:
         """Gera insights sobre a DRE."""
         insights = []
 
@@ -1517,7 +1398,7 @@ class AccountingAIService:
                     "title": "Resultado positivo no periodo",
                     "description": (
                         f"Superavit de R$ {float(net_income):,.2f} "
-                        f"({float(net_income/revenues*100):.1f}% de margem)"
+                        f"({float(net_income / revenues * 100):.1f}% de margem)"
                         if revenues > 0
                         else f"Superavit de R$ {float(net_income):,.2f}"
                     ),
@@ -1532,7 +1413,7 @@ class AccountingAIService:
                     "description": (
                         f"Deficit de R$ {float(abs(net_income)):,.2f}. "
                         f"Despesas excedem receitas em "
-                        f"{float(abs(net_income)/revenues*100):.1f}%"
+                        f"{float(abs(net_income) / revenues * 100):.1f}%"
                         if revenues > 0
                         else f"Deficit de R$ {float(abs(net_income)):,.2f}"
                     ),
@@ -1546,10 +1427,7 @@ class AccountingAIService:
                     "type": "receita_crescendo",
                     "severity": "info",
                     "title": "Crescimento de receitas",
-                    "description": (
-                        f"Receitas cresceram {float(revenue_change):.1f}% "
-                        "em relacao ao periodo anterior"
-                    ),
+                    "description": (f"Receitas cresceram {float(revenue_change):.1f}% em relacao ao periodo anterior"),
                 }
             )
         elif revenue_change < -10:
@@ -1559,8 +1437,7 @@ class AccountingAIService:
                     "severity": "alta",
                     "title": "Queda de receitas",
                     "description": (
-                        f"Receitas cairam {float(abs(revenue_change)):.1f}% "
-                        "em relacao ao periodo anterior"
+                        f"Receitas cairam {float(abs(revenue_change)):.1f}% em relacao ao periodo anterior"
                     ),
                 }
             )
@@ -1573,8 +1450,7 @@ class AccountingAIService:
                     "severity": "media",
                     "title": "Aumento significativo de despesas",
                     "description": (
-                        f"Despesas aumentaram {float(expense_change):.1f}%. "
-                        "Recomenda-se revisar os principais gastos."
+                        f"Despesas aumentaram {float(expense_change):.1f}%. Recomenda-se revisar os principais gastos."
                     ),
                 }
             )
@@ -1585,8 +1461,7 @@ class AccountingAIService:
                     "severity": "info",
                     "title": "Reducao de despesas",
                     "description": (
-                        f"Despesas reduziram {float(abs(expense_change)):.1f}% "
-                        "em relacao ao periodo anterior"
+                        f"Despesas reduziram {float(abs(expense_change)):.1f}% em relacao ao periodo anterior"
                     ),
                 }
             )
@@ -1604,8 +1479,7 @@ class AccountingAIService:
                         "severity": "media",
                         "title": "Concentracao de despesas",
                         "description": (
-                            f"A categoria {top_expense[0]} representa "
-                            f"{float(top_percentage):.1f}% das despesas totais"
+                            f"A categoria {top_expense[0]} representa {float(top_percentage):.1f}% das despesas totais"
                         ),
                     }
                 )
@@ -1619,7 +1493,7 @@ class AccountingAIService:
     async def get_accounting_recommendations(
         self,
         condominio_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Gera recomendacoes gerais de contabilidade."""
         logger.info(f"Gerando recomendacoes contabeis para {condominio_id}")
 
@@ -1664,7 +1538,7 @@ class AccountingAIService:
     async def _check_period_closures(
         self,
         condominio_id: UUID,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Verifica fechamento de periodos."""
         recommendations = []
 
@@ -1677,9 +1551,7 @@ class AccountingAIService:
             and_(
                 AccountingPeriod.condominio_id == condominio_id,
                 AccountingPeriod.end_date < last_month_end,
-                AccountingPeriod.status.in_([
-                    PeriodStatus.ABERTO.value, PeriodStatus.EM_FECHAMENTO.value
-                ]),
+                AccountingPeriod.status.in_([PeriodStatus.ABERTO.value, PeriodStatus.EM_FECHAMENTO.value]),
                 AccountingPeriod.ativo.is_(True),
             )
         )
@@ -1712,7 +1584,7 @@ class AccountingAIService:
     async def _check_pending_entries(
         self,
         condominio_id: UUID,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Verifica lancamentos pendentes."""
         recommendations = []
 
@@ -1769,7 +1641,7 @@ class AccountingAIService:
     async def _check_trial_balance(
         self,
         condominio_id: UUID,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Verifica situacao do balancete."""
         recommendations = []
 
@@ -1796,10 +1668,7 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "balancete_pendente",
                     "title": "Balancete do mes anterior nao gerado",
-                    "description": (
-                        f"O balancete de {last_month.strftime('%m/%Y')} "
-                        "ainda nao foi publicado"
-                    ),
+                    "description": (f"O balancete de {last_month.strftime('%m/%Y')} ainda nao foi publicado"),
                     "priority": "alta",
                     "action": "Gerar e publicar o balancete do periodo",
                 }
@@ -1810,7 +1679,7 @@ class AccountingAIService:
     async def _check_chart_of_accounts(
         self,
         condominio_id: UUID,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Verifica plano de contas."""
         recommendations = []
 
@@ -1843,10 +1712,7 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "multiplos_planos",
                     "title": "Multiplos planos de contas ativos",
-                    "description": (
-                        f"{len(charts)} planos de contas ativos. "
-                        "Recomenda-se manter apenas um ativo"
-                    ),
+                    "description": (f"{len(charts)} planos de contas ativos. Recomenda-se manter apenas um ativo"),
                     "priority": "media",
                     "action": "Revisar e desativar planos de contas desnecessarios",
                 }

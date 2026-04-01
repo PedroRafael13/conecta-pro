@@ -3,29 +3,27 @@ SyncQueue Model - Fila de Sincronização
 Sprint 32: API Gateway / Integrações
 """
 
-import enum
 from datetime import datetime, timedelta
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class SyncDirection(str, enum.Enum):
+class SyncDirection(StrEnum):
     """Direção da sincronização."""
+
     INBOUND = "inbound"  # Sistema externo -> ERP
     OUTBOUND = "outbound"  # ERP -> Sistema externo
     BIDIRECTIONAL = "bidirectional"
 
 
-class SyncPriority(str, enum.Enum):
+class SyncPriority(StrEnum):
     """Prioridade de sincronização."""
+
     CRITICAL = "critical"
     HIGH = "high"
     NORMAL = "normal"
@@ -33,8 +31,9 @@ class SyncPriority(str, enum.Enum):
     BATCH = "batch"
 
 
-class SyncStatus(str, enum.Enum):
+class SyncStatus(StrEnum):
     """Status da sincronização."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -45,8 +44,9 @@ class SyncStatus(str, enum.Enum):
     PARTIAL = "partial"
 
 
-class SyncEntityType(str, enum.Enum):
+class SyncEntityType(StrEnum):
     """Tipo de entidade sendo sincronizada."""
+
     CLIENT = "client"
     SERVICE = "service"
     SERVICE_ORDER = "service_order"
@@ -61,8 +61,9 @@ class SyncEntityType(str, enum.Enum):
     CONTRACT = "contract"
 
 
-class SyncOperationType(str, enum.Enum):
+class SyncOperationType(StrEnum):
     """Tipo de operação."""
+
     CREATE = "create"
     UPDATE = "update"
     DELETE = "delete"
@@ -71,8 +72,9 @@ class SyncOperationType(str, enum.Enum):
     DELTA_SYNC = "delta_sync"
 
 
-class ExternalSystem(str, enum.Enum):
+class ExternalSystem(StrEnum):
     """Sistema externo de integração."""
+
     SAP = "sap"
     TOTVS = "totvs"
     OMIE = "omie"
@@ -90,6 +92,7 @@ class SyncQueue(Base):
     Model para fila de sincronização.
     Gerencia sincronização assíncrona entre sistemas.
     """
+
     __tablename__ = "sync_queue"
 
     # Primary key
@@ -100,27 +103,15 @@ class SyncQueue(Base):
     batch_id = Column(UUID(as_uuid=True), nullable=True)  # Agrupamento
 
     # Sistema
-    external_system = Column(
-        Enum(ExternalSystem),
-        nullable=False,
-        default=ExternalSystem.CUSTOM
-    )
+    external_system = Column(Enum(ExternalSystem), nullable=False, default=ExternalSystem.CUSTOM)
     external_system_config_id = Column(UUID(as_uuid=True), nullable=True)
-    direction = Column(
-        Enum(SyncDirection),
-        nullable=False,
-        default=SyncDirection.OUTBOUND
-    )
+    direction = Column(Enum(SyncDirection), nullable=False, default=SyncDirection.OUTBOUND)
 
     # Entidade
     entity_type = Column(Enum(SyncEntityType), nullable=False)
     entity_id = Column(UUID(as_uuid=True), nullable=True)
     external_id = Column(String(200), nullable=True)
-    operation = Column(
-        Enum(SyncOperationType),
-        nullable=False,
-        default=SyncOperationType.UPSERT
-    )
+    operation = Column(Enum(SyncOperationType), nullable=False, default=SyncOperationType.UPSERT)
 
     # Dados
     payload = Column(JSONB, nullable=True)
@@ -183,9 +174,7 @@ class SyncQueue(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -202,12 +191,7 @@ class SyncQueue(Base):
         Index("ix_sync_queue_correlation_id", "correlation_id"),
         Index("ix_sync_queue_scheduled_at", "scheduled_at"),
         Index("ix_sync_queue_next_retry_at", "next_retry_at"),
-        Index(
-            "ix_sync_queue_status_priority_scheduled",
-            "status",
-            "priority",
-            "scheduled_at"
-        ),
+        Index("ix_sync_queue_status_priority_scheduled", "status", "priority", "scheduled_at"),
         Index("ix_sync_queue_ativo", "ativo"),
     )
 
@@ -221,11 +205,7 @@ class SyncQueue(Base):
         self.processed_by = worker_id
         self.updated_at = datetime.utcnow()
 
-    def complete_success(
-        self,
-        external_id: Optional[str] = None,
-        response: Optional[dict] = None
-    ) -> None:
+    def complete_success(self, external_id: str | None = None, response: dict | None = None) -> None:
         """Marca como completado com sucesso."""
         self.status = SyncStatus.COMPLETED
         self.completed_at = datetime.utcnow()
@@ -241,11 +221,7 @@ class SyncQueue(Base):
         self.updated_at = datetime.utcnow()
 
     def complete_failure(
-        self,
-        error_code: str,
-        error_message: str,
-        error_details: Optional[dict] = None,
-        status_code: Optional[int] = None
+        self, error_code: str, error_message: str, error_details: dict | None = None, status_code: int | None = None
     ) -> None:
         """Marca como falha."""
         self.last_error_at = datetime.utcnow()
@@ -258,9 +234,7 @@ class SyncQueue(Base):
 
         if self.retry_count < self.max_retries:
             self.status = SyncStatus.RETRYING
-            delay = self.retry_delay_seconds * (
-                self.retry_backoff_multiplier ** self.retry_count
-            )
+            delay = self.retry_delay_seconds * (self.retry_backoff_multiplier**self.retry_count)
             self.next_retry_at = datetime.utcnow() + timedelta(seconds=delay)
             self.retry_count += 1
         else:
@@ -273,12 +247,7 @@ class SyncQueue(Base):
 
         self.updated_at = datetime.utcnow()
 
-    def complete_partial(
-        self,
-        processed_count: int,
-        total_count: int,
-        errors: Optional[list] = None
-    ) -> None:
+    def complete_partial(self, processed_count: int, total_count: int, errors: list | None = None) -> None:
         """Marca como parcialmente completado."""
         self.status = SyncStatus.PARTIAL
         self.completed_at = datetime.utcnow()
@@ -292,7 +261,7 @@ class SyncQueue(Base):
             self.validation_errors = errors
         self.updated_at = datetime.utcnow()
 
-    def cancel(self, reason: Optional[str] = None) -> None:
+    def cancel(self, reason: str | None = None) -> None:
         """Cancela a sincronização."""
         self.status = SyncStatus.CANCELLED
         self.completed_at = datetime.utcnow()
@@ -300,7 +269,7 @@ class SyncQueue(Base):
             self.notes = f"Cancelado: {reason}"
         self.updated_at = datetime.utcnow()
 
-    def skip(self, reason: Optional[str] = None) -> None:
+    def skip(self, reason: str | None = None) -> None:
         """Pula a sincronização."""
         self.status = SyncStatus.SKIPPED
         self.completed_at = datetime.utcnow()
@@ -365,7 +334,7 @@ class SyncQueue(Base):
         return self.retry_count < self.max_retries
 
     @property
-    def wait_time_seconds(self) -> Optional[int]:
+    def wait_time_seconds(self) -> int | None:
         """Tempo de espera até poder processar."""
         if self.status == SyncStatus.RETRYING and self.next_retry_at:
             delta = self.next_retry_at - datetime.utcnow()

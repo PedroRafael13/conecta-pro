@@ -7,15 +7,14 @@ Implementa:
 - Integração com o portal nacional
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
-from xml.etree import ElementTree as ET
+from datetime import datetime, timedelta
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +40,8 @@ class ExtratorNFSeNacional(ExtratorBase):
 
     URLS = {
         "producao": "https://www.nfse.gov.br/EmissorNacional/",
-        "homologacao": "https://www.producaorestrita.nfse.gov.br/EmissorNacional/",
-        "api": "https://www.nfse.gov.br/api/",
+        "homologacao": "https://sefin.nfse.gov.br/sefinnacional/EmissorNacional/",
+        "api": "https://sefin.nfse.gov.br/sefinnacional/",
     }
 
     @property
@@ -56,10 +55,10 @@ class ExtratorNFSeNacional(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -86,14 +85,11 @@ class ExtratorNFSeNacional(ExtratorBase):
             data_inicio = data_fim - timedelta(days=30)
 
         logger.info(
-            f"Iniciando extração NFS-e Nacional: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
+            f"Iniciando extração NFS-e Nacional: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}"
         )
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -106,9 +102,7 @@ class ExtratorNFSeNacional(ExtratorBase):
                 logger.info(f"Extraindo NFS-e Nacional para CNPJ: {cnpj}")
 
                 # NFS-e emitidas
-                docs_emitidas = await self._consultar_nfse_emitidas(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs_emitidas = await self._consultar_nfse_emitidas(tenant_id, cnpj, data_inicio, data_fim)
                 for doc in docs_emitidas:
                     resultado.documentos.append(doc)
                     resultado.documentos_processados += 1
@@ -118,9 +112,7 @@ class ExtratorNFSeNacional(ExtratorBase):
                         resultado.documentos_erro += 1
 
                 # NFS-e recebidas (tomadas)
-                docs_recebidas = await self._consultar_nfse_recebidas(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs_recebidas = await self._consultar_nfse_recebidas(tenant_id, cnpj, data_inicio, data_fim)
                 for doc in docs_recebidas:
                     resultado.documentos.append(doc)
                     resultado.documentos_processados += 1
@@ -146,17 +138,15 @@ class ExtratorNFSeNacional(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta NFS-e emitidas pelo contribuinte."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Montar envelope de consulta
-            envelope = self._montar_envelope_consulta_emitidas(
-                cnpj, data_inicio, data_fim
-            )
+            self._montar_envelope_consulta_emitidas(cnpj, data_inicio, data_fim)
 
             # Em produção, fazer requisição ao web service
             # Aqui retornamos estrutura de exemplo
@@ -166,7 +156,7 @@ class ExtratorNFSeNacional(ExtratorBase):
                 doc = self._criar_documento_nfse(
                     cnpj=cnpj,
                     numero=f"2024{str(i).zfill(6)}",
-                    data_emissao=data_inicio + timedelta(days=i*5),
+                    data_emissao=data_inicio + timedelta(days=i * 5),
                     tipo="emitida",
                 )
                 documentos.append(doc)
@@ -190,17 +180,15 @@ class ExtratorNFSeNacional(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta NFS-e recebidas (tomadas) pelo contribuinte."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Montar envelope de consulta
-            envelope = self._montar_envelope_consulta_recebidas(
-                cnpj, data_inicio, data_fim
-            )
+            self._montar_envelope_consulta_recebidas(cnpj, data_inicio, data_fim)
 
             # Em produção, fazer requisição ao web service
 
@@ -209,7 +197,7 @@ class ExtratorNFSeNacional(ExtratorBase):
                 doc = self._criar_documento_nfse(
                     cnpj=cnpj,
                     numero=f"REC2024{str(i).zfill(6)}",
-                    data_emissao=data_inicio + timedelta(days=i*7),
+                    data_emissao=data_inicio + timedelta(days=i * 7),
                     tipo="recebida",
                 )
                 documentos.append(doc)
@@ -231,8 +219,8 @@ class ExtratorNFSeNacional(ExtratorBase):
     <soap:Body>
         <ConsultaNFSeEmitidas xmlns="{NS_NFSE}">
             <CNPJ>{cnpj}</CNPJ>
-            <DataInicio>{data_inicio.strftime('%Y-%m-%d')}</DataInicio>
-            <DataFim>{data_fim.strftime('%Y-%m-%d')}</DataFim>
+            <DataInicio>{data_inicio.strftime("%Y-%m-%d")}</DataInicio>
+            <DataFim>{data_fim.strftime("%Y-%m-%d")}</DataFim>
             <Pagina>1</Pagina>
         </ConsultaNFSeEmitidas>
     </soap:Body>
@@ -250,8 +238,8 @@ class ExtratorNFSeNacional(ExtratorBase):
     <soap:Body>
         <ConsultaNFSeRecebidas xmlns="{NS_NFSE}">
             <CNPJTomador>{cnpj}</CNPJTomador>
-            <DataInicio>{data_inicio.strftime('%Y-%m-%d')}</DataInicio>
-            <DataFim>{data_fim.strftime('%Y-%m-%d')}</DataFim>
+            <DataInicio>{data_inicio.strftime("%Y-%m-%d")}</DataInicio>
+            <DataFim>{data_fim.strftime("%Y-%m-%d")}</DataFim>
             <Pagina>1</Pagina>
         </ConsultaNFSeRecebidas>
     </soap:Body>
@@ -269,20 +257,17 @@ class ExtratorNFSeNacional(ExtratorBase):
             "numero": numero,
             "data_emissao": data_emissao.isoformat(),
             "tipo": tipo,
-
             "prestador" if tipo == "emitida" else "tomador": {
                 "cnpj": cnpj,
                 "razao_social": None,
                 "inscricao_municipal": None,
             },
-
             "servico": {
                 "codigo_cnae": None,
                 "codigo_tributacao_municipio": None,
                 "discriminacao": "Serviço a ser consultado",
                 "codigo_municipio": None,
             },
-
             "valores": {
                 "valor_servicos": 0.0,
                 "valor_deducoes": 0.0,
@@ -295,10 +280,8 @@ class ExtratorNFSeNacional(ExtratorBase):
                 "aliquota_iss": 0.0,
                 "valor_liquido": 0.0,
             },
-
             "situacao": "normal",
             "codigo_verificacao": None,
-
             "consultado_em": datetime.utcnow().isoformat(),
             "status": "consulta_manual_necessaria",
         }
@@ -317,7 +300,7 @@ class ExtratorNFSeNacional(ExtratorBase):
         cnpj: str,
         numero: str,
         codigo_municipio: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """
         Consulta uma NFS-e específica pelo número.
 
@@ -331,18 +314,7 @@ class ExtratorNFSeNacional(ExtratorBase):
             DocumentoExtraido ou None
         """
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
-
-            envelope = f"""<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="{NS_SOAP}">
-    <soap:Body>
-        <ConsultaNFSePorNumero xmlns="{NS_NFSE}">
-            <CNPJPrestador>{cnpj}</CNPJPrestador>
-            <NumeroNFSe>{numero}</NumeroNFSe>
-            <CodigoMunicipio>{codigo_municipio}</CodigoMunicipio>
-        </ConsultaNFSePorNumero>
-    </soap:Body>
-</soap:Envelope>"""
+            await self._get_session(tenant_id, with_cert=True)
 
             # Em produção, fazer requisição
             return self._criar_documento_nfse(
@@ -362,7 +334,7 @@ class ExtratorNFSeNacional(ExtratorBase):
         cnpj: str,
         numero_rps: str,
         serie_rps: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """
         Consulta NFS-e pelo RPS (Recibo Provisório de Serviço).
 
@@ -376,7 +348,7 @@ class ExtratorNFSeNacional(ExtratorBase):
             DocumentoExtraido ou None
         """
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             dados = {
                 "cnpj": cnpj,
@@ -403,7 +375,7 @@ class ExtratorNFSeNacional(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Verifica pendências de NFS-e.
 

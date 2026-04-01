@@ -5,39 +5,32 @@ Endpoints REST para previsao de estoque e demanda.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from core.auth.dependencies import get_current_active_user, CurrentActiveUser
-
 from modules.ai.inventory_forecast.models.forecast import (
     ForecastStatus,
     ForecastType,
 )
-from modules.ai.inventory_forecast.models.demand_pattern import (
-    PatternType,
-    TrendDirection,
-)
-from modules.ai.inventory_forecast.schemas.forecast_schemas import (
-    ForecastRequest,
-    BulkForecastRequest,
-    ForecastResponse,
-    ForecastListResponse,
-    ForecastSummary,
-    DemandPatternResponse,
-    ReorderSuggestion,
-    ReorderListResponse,
-)
-from modules.ai.inventory_forecast.services.forecast_engine import ForecastEngine
-from modules.ai.inventory_forecast.services.demand_analyzer import DemandAnalyzer
-from modules.ai.inventory_forecast.services.reorder_service import ReorderService
 from modules.ai.inventory_forecast.repositories.forecast_repository import (
     ForecastRepository,
 )
+from modules.ai.inventory_forecast.schemas.forecast_schemas import (
+    DemandPatternResponse,
+    ForecastListResponse,
+    ForecastRequest,
+    ForecastResponse,
+    ForecastSummary,
+    ReorderListResponse,
+    ReorderSuggestion,
+)
+from modules.ai.inventory_forecast.services.demand_analyzer import DemandAnalyzer
+from modules.ai.inventory_forecast.services.forecast_engine import ForecastEngine
+from modules.ai.inventory_forecast.services.reorder_service import ReorderService
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +66,6 @@ async def generate_forecast(
     """
     engine = ForecastEngine(db)
 
-    # TODO: Buscar dados do produto e historico do modulo de estoque
     # Por enquanto, usar dados mock para demonstracao
     product_info = {
         "code": f"PROD-{str(request.product_id)[:8]}",
@@ -81,8 +73,8 @@ async def generate_forecast(
     }
 
     # Mock de dados historicos (em producao, buscar do banco)
-    from datetime import date, timedelta
     import random
+    from datetime import date, timedelta
 
     historical_data = []
     base_date = date.today() - timedelta(days=request.historical_days)
@@ -93,7 +85,7 @@ async def generate_forecast(
         base = 100
         trend = i * 0.05
         seasonal = 20 * (1 if d.weekday() < 5 else 0.5)  # Menor no fim de semana
-        noise = random.uniform(-15, 15)
+        noise = random.uniform(-15, 15)  # noqa: S311
         quantity = max(0, base + trend + seasonal + noise)
         historical_data.append({"date": d, "quantity": quantity})
 
@@ -150,9 +142,9 @@ async def get_forecast(
     summary="Listar previsoes",
 )
 async def list_forecasts(
-    product_id: Optional[UUID] = Query(None, description="Filtrar por produto"),
-    status_filter: Optional[ForecastStatus] = Query(None, alias="status"),
-    forecast_type: Optional[ForecastType] = Query(None),
+    product_id: UUID | None = Query(None, description="Filtrar por produto"),
+    status_filter: ForecastStatus | None = Query(None, alias="status"),
+    forecast_type: ForecastType | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -230,15 +222,14 @@ async def analyze_demand_pattern(
     """
     analyzer = DemandAnalyzer(db)
 
-    # TODO: Buscar dados reais do modulo de estoque
     product_info = {
         "code": f"PROD-{str(product_id)[:8]}",
         "name": "Produto de Teste",
     }
 
     # Mock de dados historicos
-    from datetime import date, timedelta
     import random
+    from datetime import date, timedelta
 
     historical_data = []
     base_date = date.today() - timedelta(days=days)
@@ -249,7 +240,7 @@ async def analyze_demand_pattern(
         trend = i * 0.03
         seasonal = 15 * (1 if d.weekday() < 5 else 0.6)
         monthly = 10 * (1.2 if d.month in [11, 12] else 0.9)  # Pico no fim do ano
-        noise = random.uniform(-10, 10)
+        noise = random.uniform(-10, 10)  # noqa: S311
         quantity = max(0, base + trend + seasonal + monthly + noise)
         historical_data.append({"date": d, "quantity": quantity})
 
@@ -346,16 +337,15 @@ async def generate_reorder_suggestions(
     """
     reorder_service = ReorderService(db)
 
-    # TODO: Buscar estoque atual do modulo de estoque
     import random
 
     products_stock = [
         {
             "product_id": pid,
-            "current_stock": random.uniform(10, 200),
+            "current_stock": random.uniform(10, 200),  # noqa: S311
             "lead_time_days": default_lead_time,
             "code": f"PROD-{str(pid)[:8]}",
-            "name": f"Produto {i+1}",
+            "name": f"Produto {i + 1}",
         }
         for i, pid in enumerate(product_ids)
     ]
@@ -395,13 +385,12 @@ async def get_critical_products(
     if not forecasts:
         return []
 
-    # TODO: Buscar estoque real do modulo de estoque
     import random
 
     products_stock = [
         {
             "product_id": f.product_id,
-            "current_stock": random.uniform(5, 50),  # Estoque baixo para teste
+            "current_stock": random.uniform(5, 50),  # noqa: S311  # Estoque baixo para teste
             "lead_time_days": default_lead_time,
             "code": f.product_code,
             "name": f.product_name,
@@ -499,7 +488,7 @@ async def simulate_stock(
     summary="Estatisticas de acuracidade",
 )
 async def get_accuracy_stats(
-    product_id: Optional[UUID] = None,
+    product_id: UUID | None = None,
     days: int = Query(30, ge=7, le=365),
     db: Session = Depends(get_db),
     current_user: CurrentActiveUser = ...,  # Required

@@ -9,7 +9,7 @@ import hashlib
 import hmac
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -72,7 +72,7 @@ class BBAdapter(BaseBankingAdapter):
     def __init__(self, credentials: BankCredentials) -> None:
         """Inicializa adapter BB."""
         super().__init__(credentials)
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Retorna cliente HTTP configurado."""
@@ -173,8 +173,8 @@ class BBAdapter(BaseBankingAdapter):
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict] = None,
-        params: Optional[dict] = None,
+        data: dict | None = None,
+        params: dict | None = None,
     ) -> dict[str, Any]:
         """Faz requisicao autenticada."""
         await self.ensure_authenticated()
@@ -254,9 +254,7 @@ class BBAdapter(BaseBankingAdapter):
             blocked=self._parse_amount(data.get("blockedAmount", 0)),
             total=self._parse_amount(data.get("totalAmount", 0)),
             currency=data.get("currency", "BRL"),
-            updated_at=datetime.fromisoformat(
-                data.get("updateDateTime", datetime.now().isoformat())
-            ),
+            updated_at=datetime.fromisoformat(data.get("updateDateTime", datetime.now().isoformat())),
         )
 
     async def get_statement(
@@ -396,7 +394,7 @@ class BBAdapter(BaseBankingAdapter):
     async def validate_pix_key(
         self,
         key: str,
-    ) -> Optional[PixKey]:
+    ) -> PixKey | None:
         """Valida chave PIX."""
         endpoint = f"{self.PIX_ENDPOINT}/dict/{key}"
 
@@ -422,7 +420,7 @@ class BBAdapter(BaseBankingAdapter):
         self,
         pix_key: str,
         amount: Decimal,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> PaymentResponse:
         """Inicia transferencia PIX."""
         payload = {

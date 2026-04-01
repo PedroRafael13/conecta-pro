@@ -2,17 +2,17 @@
 Model de Log de Auditoria LGPD.
 """
 
-import enum
 import uuid
 from datetime import datetime
+from enum import StrEnum
 
-from sqlalchemy import Column, DateTime, Enum, String, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Column, DateTime, Enum, String
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models import Base
 
 
-class AuditAction(str, enum.Enum):
+class AuditAction(StrEnum):
     """Acoes de auditoria."""
 
     CREATE = "create"
@@ -29,7 +29,7 @@ class AuditAction(str, enum.Enum):
     ERASURE = "erasure"
 
 
-class AuditSeverity(str, enum.Enum):
+class AuditSeverity(StrEnum):
     """Severidade do evento de auditoria."""
 
     DEBUG = "debug"
@@ -39,7 +39,7 @@ class AuditSeverity(str, enum.Enum):
     CRITICAL = "critical"
 
 
-class ResourceType(str, enum.Enum):
+class ResourceType(StrEnum):
     """Tipos de recurso auditados."""
 
     USER = "user"

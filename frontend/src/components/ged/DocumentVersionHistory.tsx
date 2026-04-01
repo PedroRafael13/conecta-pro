@@ -12,8 +12,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-;
 import { toast } from 'sonner';
+import { documentVersionService } from '@/services/ged/documentVersionService';
+import { formatFileSize } from '@/utils/file-helpers';
+import type { DocumentVersionResponse } from '@/types/generated/ged/schemas/documentVersionResponse';
 
 interface DocumentVersionHistoryProps {
   documentId: string;
@@ -26,7 +28,7 @@ export function DocumentVersionHistory({
   open,
   onClose,
 }: DocumentVersionHistoryProps) {
-  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [versions, setVersions] = useState<DocumentVersionResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [comparing, setComparing] = useState<{ versionA: number; versionB: number } | null>(null);
   const [compareResult, setCompareResult] = useState<any>(null);
@@ -35,6 +37,7 @@ export function DocumentVersionHistory({
     if (open && documentId) {
       loadVersions();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, [open, documentId]);
 
   const loadVersions = async () => {
@@ -114,7 +117,7 @@ export function DocumentVersionHistory({
     });
   };
 
-  const getVersionBadgeColor = (version: DocumentVersion) => {
+  const getVersionBadgeColor = (version: DocumentVersionResponse) => {
     if (version.is_current) return 'bg-green-500';
     if (version.status === 'arquivada') return 'bg-gray-400';
     if (version.status === 'obsoleta') return 'bg-yellow-500';
@@ -122,6 +125,12 @@ export function DocumentVersionHistory({
   };
 
   return (
+    <>
+    {loading && open && (
+      <div aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    )}
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
@@ -146,7 +155,9 @@ export function DocumentVersionHistory({
               <div>
                 <p className="text-sm text-gray-500">Versão Atual</p>
                 <p className="text-2xl font-bold">
-                  {versions.find((v) => v.is_current)?.version_number || '-'}
+                  {versions.find((v) => v.is_current) != null
+                    ? `v${versions.find((v) => v.is_current)!.version_number}`
+                    : '-'}
                 </p>
               </div>
               <div>
@@ -240,7 +251,7 @@ export function DocumentVersionHistory({
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            handleCompare(version.version_number, versions[index + 1].version_number)
+                            handleCompare(version.version_number, versions[index + 1]!.version_number)
                           }
                         >
                           <ArrowUpDown className="h-4 w-4 mr-1" />
@@ -326,5 +337,6 @@ export function DocumentVersionHistory({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

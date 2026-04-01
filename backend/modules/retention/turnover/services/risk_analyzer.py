@@ -9,25 +9,21 @@ dashboard de turnover.
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.retention.turnover.models.turnover_models import (
     CategoriaFator,
-    NivelRisco,
     RiskAlert,
     RiskFactor,
-    TipoAlerta,
     TurnoverPrediction,
 )
 from modules.retention.turnover.repositories.turnover_repository import (
     TurnoverRepository,
 )
 from modules.retention.turnover.schemas.turnover_schemas import (
-    AlertCreate,
-    AlertFilter,
     DashboardDistribuicaoNivel,
     DashboardFatorFrequente,
     DashboardResponse,
@@ -35,7 +31,6 @@ from modules.retention.turnover.schemas.turnover_schemas import (
     FatorAgregadoResponse,
     HistoricoItemResponse,
     HistoricoResponse,
-    PredictionFilter,
     RiskFactorSummary,
 )
 
@@ -51,7 +46,7 @@ class RiskAnalyzer:
     """
 
     # Mapeamento de recomendacoes por tipo de fator
-    RECOMENDACOES_PADRAO: Dict[str, List[str]] = {
+    RECOMENDACOES_PADRAO: dict[str, list[str]] = {
         "faltas_ultimo_mes": [
             "Agendar conversa individual com o funcionario",
             "Verificar situacao pessoal e familiar",
@@ -131,7 +126,7 @@ class RiskAnalyzer:
     async def analisar_fatores(
         self,
         prediction: TurnoverPrediction,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Analisa os fatores de risco de uma predicao.
 
@@ -167,9 +162,9 @@ class RiskAnalyzer:
 
     async def gerar_recomendacoes(
         self,
-        fatores: List[RiskFactor],
+        fatores: list[RiskFactor],
         max_recomendacoes: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Gera lista priorizada de recomendacoes baseada nos fatores.
 
@@ -188,18 +183,18 @@ class RiskAnalyzer:
 
             recs = self._get_recomendacoes_fator(fator.nome)
             for rec in recs[:2]:  # Pegar top 2 de cada fator
-                recomendacoes_todas.append({
-                    "texto": rec,
-                    "fator_origem": fator.nome,
-                    "categoria": fator.categoria.value,
-                    "prioridade": self._calcular_prioridade_acao(fator),
-                    "impacto_estimado": self._estimar_impacto_acao(fator),
-                })
+                recomendacoes_todas.append(
+                    {
+                        "texto": rec,
+                        "fator_origem": fator.nome,
+                        "categoria": fator.categoria.value,
+                        "prioridade": self._calcular_prioridade_acao(fator),
+                        "impacto_estimado": self._estimar_impacto_acao(fator),
+                    }
+                )
 
         # Ordenar por prioridade e impacto
-        recomendacoes_todas.sort(
-            key=lambda x: (x["prioridade"], -x["impacto_estimado"])
-        )
+        recomendacoes_todas.sort(key=lambda x: (x["prioridade"], -x["impacto_estimado"]))
 
         # Remover duplicatas mantendo ordem
         textos_vistos = set()
@@ -243,13 +238,16 @@ class RiskAnalyzer:
             return "baixo"
         return "minimo"
 
-    def _get_recomendacoes_fator(self, nome: str) -> List[str]:
+    def _get_recomendacoes_fator(self, nome: str) -> list[str]:
         """Retorna recomendacoes para um fator especifico."""
-        return self.RECOMENDACOES_PADRAO.get(nome, [
-            "Analisar situacao especifica do funcionario",
-            "Conversar com gestor direto",
-            "Verificar historico recente",
-        ])
+        return self.RECOMENDACOES_PADRAO.get(
+            nome,
+            [
+                "Analisar situacao especifica do funcionario",
+                "Conversar com gestor direto",
+                "Verificar historico recente",
+            ],
+        )
 
     def _calcular_prioridade_acao(self, fator: RiskFactor) -> int:
         """Calcula prioridade de acao (1=maxima, 5=minima)."""
@@ -286,7 +284,7 @@ class RiskAnalyzer:
         self,
         funcionario_id: UUID,
         condominium_id: UUID,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Detecta mudancas significativas no risco do funcionario.
 
@@ -298,9 +296,7 @@ class RiskAnalyzer:
             Dict com detalhes das mudancas ou None
         """
         # Buscar historico
-        historico = await self.repository.get_predictions_by_funcionario(
-            funcionario_id, limit=5
-        )
+        historico = await self.repository.get_predictions_by_funcionario(funcionario_id, limit=5)
 
         if len(historico) < 2:
             return None
@@ -341,19 +337,23 @@ class RiskAnalyzer:
                 diff = contrib_atual - contrib_ant
 
                 if diff >= 3:  # Aumento significativo
-                    mudancas["fatores_agravados"].append({
-                        "nome": nome,
-                        "variacao": round(diff, 2),
-                        "atual": contrib_atual,
-                        "anterior": contrib_ant,
-                    })
+                    mudancas["fatores_agravados"].append(
+                        {
+                            "nome": nome,
+                            "variacao": round(diff, 2),
+                            "atual": contrib_atual,
+                            "anterior": contrib_ant,
+                        }
+                    )
                 elif diff <= -3:  # Melhoria significativa
-                    mudancas["fatores_melhorados"].append({
-                        "nome": nome,
-                        "variacao": round(diff, 2),
-                        "atual": contrib_atual,
-                        "anterior": contrib_ant,
-                    })
+                    mudancas["fatores_melhorados"].append(
+                        {
+                            "nome": nome,
+                            "variacao": round(diff, 2),
+                            "atual": contrib_atual,
+                            "anterior": contrib_ant,
+                        }
+                    )
 
         return mudancas
 
@@ -380,7 +380,7 @@ class RiskAnalyzer:
     async def get_dashboard_data(
         self,
         condominium_id: UUID,
-        setor_id: Optional[UUID] = None,
+        setor_id: UUID | None = None,
     ) -> DashboardResponse:
         """
         Retorna dados consolidados para o dashboard.
@@ -396,15 +396,11 @@ class RiskAnalyzer:
         inicio_mes = agora - timedelta(days=30)
 
         # Metricas basicas
-        total_predicoes = await self.repository.count_active_predictions(
-            condominium_id
-        )
+        total_predicoes = await self.repository.count_active_predictions(condominium_id)
         score_medio = await self.repository.get_average_score(condominium_id)
 
         # Distribuicao por nivel
-        distribuicao_raw = await self.repository.get_distribution_by_nivel(
-            condominium_id
-        )
+        distribuicao_raw = await self.repository.get_distribution_by_nivel(condominium_id)
 
         total_funcionarios = sum(d["quantidade"] for d in distribuicao_raw)
 
@@ -412,26 +408,19 @@ class RiskAnalyzer:
             DashboardDistribuicaoNivel(
                 nivel=d["nivel"],
                 quantidade=d["quantidade"],
-                percentual=Decimal(str(
-                    round(d["quantidade"] / total_funcionarios * 100, 2)
-                    if total_funcionarios > 0 else 0
-                )),
+                percentual=Decimal(
+                    str(round(d["quantidade"] / total_funcionarios * 100, 2) if total_funcionarios > 0 else 0)
+                ),
             )
             for d in distribuicao_raw
         ]
 
         # Alertas
-        alertas_pendentes = len(
-            await self.repository.get_pending_alerts(condominium_id, limit=1000)
-        )
-        alertas_mes = await self.repository.count_alerts_by_period(
-            condominium_id, inicio_mes
-        )
+        alertas_pendentes = len(await self.repository.get_pending_alerts(condominium_id, limit=1000))
+        alertas_mes = await self.repository.count_alerts_by_period(condominium_id, inicio_mes)
 
         # Top fatores
-        fatores_agregados = await self.repository.get_aggregated_factors(
-            condominium_id
-        )
+        fatores_agregados = await self.repository.get_aggregated_factors(condominium_id)
         fatores_frequentes = [
             DashboardFatorFrequente(
                 nome=f["nome"],
@@ -443,9 +432,7 @@ class RiskAnalyzer:
         ]
 
         # Tendencia
-        tendencia_raw = await self.repository.get_trend_data(
-            condominium_id, dias=30
-        )
+        tendencia_raw = await self.repository.get_trend_data(condominium_id, dias=30)
         tendencia = [
             DashboardTendencia(
                 data=t["data"],
@@ -464,9 +451,7 @@ class RiskAnalyzer:
             variacao_score = Decimal(str(round(score_fim - score_inicio, 2)))
 
         # Funcionarios com risco crescente/decrescente
-        crescente, decrescente = await self.repository.get_score_variation(
-            condominium_id, dias=30
-        )
+        crescente, decrescente = await self.repository.get_score_variation(condominium_id, dias=30)
 
         return DashboardResponse(
             total_funcionarios=total_funcionarios,
@@ -502,9 +487,7 @@ class RiskAnalyzer:
         Returns:
             HistoricoResponse com analise temporal
         """
-        predicoes = await self.repository.get_predictions_by_funcionario(
-            funcionario_id, limit=limite
-        )
+        predicoes = await self.repository.get_predictions_by_funcionario(funcionario_id, limit=limite)
 
         if not predicoes:
             return HistoricoResponse(
@@ -514,7 +497,7 @@ class RiskAnalyzer:
                 historico=[],
             )
 
-        predicao_atual = predicoes[0]
+        predicoes[0]
         scores = [float(p.score_risco) for p in predicoes]
 
         # Calcular estatisticas
@@ -530,12 +513,10 @@ class RiskAnalyzer:
         for i, pred in enumerate(predicoes):
             variacao = None
             if i < len(predicoes) - 1:
-                variacao = Decimal(str(
-                    float(pred.score_risco) - float(predicoes[i + 1].score_risco)
-                ))
+                variacao = Decimal(str(float(pred.score_risco) - float(predicoes[i + 1].score_risco)))
 
             # Contar alertas
-            alertas = len(pred.alertas) if hasattr(pred, 'alertas') else 0
+            alertas = len(pred.alertas) if hasattr(pred, "alertas") else 0
 
             # Principais fatores
             principais = [
@@ -546,11 +527,7 @@ class RiskAnalyzer:
                     threshold_violado=f.threshold_violado,
                     descricao=f.descricao,
                 )
-                for f in sorted(
-                    pred.fatores,
-                    key=lambda x: x.contribuicao_score,
-                    reverse=True
-                )[:3]
+                for f in sorted(pred.fatores, key=lambda x: x.contribuicao_score, reverse=True)[:3]
             ]
 
             historico_items.append(
@@ -578,7 +555,7 @@ class RiskAnalyzer:
 
     def _calcular_tendencia_historico(
         self,
-        predicoes: List[TurnoverPrediction],
+        predicoes: list[TurnoverPrediction],
     ) -> str:
         """Calcula tendencia baseada no historico."""
         if len(predicoes) < 3:
@@ -593,9 +570,9 @@ class RiskAnalyzer:
         soma_x = sum(range(n))
         soma_y = sum(scores)
         soma_xy = sum(i * s for i, s in enumerate(scores))
-        soma_x2 = sum(i ** 2 for i in range(n))
+        soma_x2 = sum(i**2 for i in range(n))
 
-        denominador = n * soma_x2 - soma_x ** 2
+        denominador = n * soma_x2 - soma_x**2
         if denominador == 0:
             return "estavel"
 
@@ -616,8 +593,8 @@ class RiskAnalyzer:
     async def get_fatores_agregados(
         self,
         condominium_id: UUID,
-        categoria: Optional[CategoriaFator] = None,
-    ) -> List[FatorAgregadoResponse]:
+        categoria: CategoriaFator | None = None,
+    ) -> list[FatorAgregadoResponse]:
         """
         Retorna estatisticas agregadas dos fatores de risco.
 
@@ -628,15 +605,11 @@ class RiskAnalyzer:
         Returns:
             Lista de fatores com estatisticas
         """
-        fatores_raw = await self.repository.get_aggregated_factors(
-            condominium_id, categoria
-        )
+        fatores_raw = await self.repository.get_aggregated_factors(condominium_id, categoria)
 
         resultado = []
         for f in fatores_raw:
-            recomendacoes = self.RECOMENDACOES_PADRAO.get(
-                f["nome"], ["Analisar situacao especifica"]
-            )
+            recomendacoes = self.RECOMENDACOES_PADRAO.get(f["nome"], ["Analisar situacao especifica"])
 
             resultado.append(
                 FatorAgregadoResponse(
@@ -645,9 +618,7 @@ class RiskAnalyzer:
                     total_ocorrencias=f["total_ocorrencias"],
                     contribuicao_media=Decimal(str(f["contribuicao_media"])),
                     contribuicao_maxima=Decimal(str(f["contribuicao_maxima"])),
-                    percentual_threshold_violado=Decimal(
-                        str(f["percentual_threshold_violado"])
-                    ),
+                    percentual_threshold_violado=Decimal(str(f["percentual_threshold_violado"])),
                     funcionarios_afetados=f["funcionarios_afetados"],
                     descricao_padrao=self._formatar_nome_fator(f["nome"]),
                     recomendacoes_comuns=recomendacoes[:3],
@@ -664,7 +635,7 @@ class RiskAnalyzer:
         self,
         condominium_id: UUID,
         limite: int = 50,
-    ) -> List[RiskAlert]:
+    ) -> list[RiskAlert]:
         """Retorna alertas pendentes de visualizacao."""
         return await self.repository.get_pending_alerts(condominium_id, limite)
 
@@ -672,22 +643,18 @@ class RiskAnalyzer:
         self,
         alert_id: UUID,
         usuario_id: UUID,
-    ) -> Optional[RiskAlert]:
+    ) -> RiskAlert | None:
         """Marca alerta como visualizado."""
-        return await self.repository.mark_alert_visualizado(
-            alert_id, usuario_id
-        )
+        return await self.repository.mark_alert_visualizado(alert_id, usuario_id)
 
     async def registrar_acao_alerta(
         self,
         alert_id: UUID,
         acao: str,
         usuario_id: UUID,
-    ) -> Optional[RiskAlert]:
+    ) -> RiskAlert | None:
         """Registra acao tomada em alerta."""
-        return await self.repository.register_alert_action(
-            alert_id, acao, usuario_id
-        )
+        return await self.repository.register_alert_action(alert_id, acao, usuario_id)
 
     # =========================================================================
     # Audit
@@ -699,10 +666,10 @@ class RiskAnalyzer:
         condominium_id: UUID,
         acao: str,
         recurso: str,
-        recurso_id: Optional[UUID] = None,
-        funcionario_id: Optional[UUID] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        recurso_id: UUID | None = None,
+        funcionario_id: UUID | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
     ) -> None:
         """Registra acesso para auditoria."""
         await self.repository.create_audit_log(

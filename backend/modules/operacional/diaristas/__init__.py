@@ -22,73 +22,73 @@ Estrutura modular:
 
 from fastapi import APIRouter
 
+from modules.operacional.diaristas.controllers import fiscal_router, notificacao_router
+
 # Importa routers dos controllers
 from modules.operacional.diaristas.controllers import router as diarist_router
-from modules.operacional.diaristas.controllers import notificacao_router
-from modules.operacional.diaristas.controllers import fiscal_router
 
 # Importa models para re-export
 from modules.operacional.diaristas.models import (
+    AssignmentStatus,
+    AssignmentType,
     Diarist,
     DiaristAssignment,
-    DiaristSchedule,
-    DiaristPayment,
     DiaristEvaluation,
-    DiaristType,
+    DiaristPayment,
+    DiaristSchedule,
     DiaristStatus,
+    DiaristType,
     DocumentType,
-    AssignmentType,
-    AssignmentStatus,
+    PaymentMethod,
+    PaymentStatus,
     RecurrenceType,
     ScheduleStatus,
-    PaymentStatus,
-    PaymentMethod,
     Weekday,
-)
-
-# Importa schemas para re-export
-from modules.operacional.diaristas.schemas import (
-    DiaristBase,
-    DiaristCreate,
-    DiaristUpdate,
-    DiaristResponse,
-    DiaristListResponse,
-    DiaristAssignmentBase,
-    DiaristAssignmentCreate,
-    DiaristAssignmentResponse,
-    DiaristScheduleBase,
-    DiaristScheduleCreate,
-    DiaristScheduleResponse,
-    DiaristPaymentBase,
-    DiaristPaymentCreate,
-    DiaristPaymentResponse,
-    DiaristEvaluationBase,
-    DiaristEvaluationCreate,
-    DiaristEvaluationResponse,
-    CheckinRequest,
-    CheckoutRequest,
-    DiaristSuggestionResponse,
-    DiaristAvailabilityResponse,
-    DiaristPerformanceResponse,
-    ScheduleOptimizationResponse,
-)
-
-# Importa services para re-export
-from modules.operacional.diaristas.services import (
-    DiaristService,
-    DiaristAIService,
-    NotificacaoService,
-    TipoNotificacao,
-    CanalNotificacao,
-    StatusNotificacao,
-    get_notificacao_service,
-    FiscalService,
-    get_fiscal_service,
 )
 
 # Importa repositories para re-export
 from modules.operacional.diaristas.repositories import (
     DiaristRepository,
+)
+
+# Importa schemas para re-export
+from modules.operacional.diaristas.schemas import (
+    CheckinRequest,
+    CheckoutRequest,
+    DiaristAssignmentBase,
+    DiaristAssignmentCreate,
+    DiaristAssignmentResponse,
+    DiaristAvailabilityResponse,
+    DiaristBase,
+    DiaristCreate,
+    DiaristEvaluationBase,
+    DiaristEvaluationCreate,
+    DiaristEvaluationResponse,
+    DiaristListResponse,
+    DiaristPaymentBase,
+    DiaristPaymentCreate,
+    DiaristPaymentResponse,
+    DiaristPerformanceResponse,
+    DiaristResponse,
+    DiaristScheduleBase,
+    DiaristScheduleCreate,
+    DiaristScheduleResponse,
+    DiaristSuggestionResponse,
+    DiaristUpdate,
+    ScheduleOptimizationResponse,
+)
+
+# Importa services para re-export
+from modules.operacional.diaristas.services import (
+    CanalNotificacao,
+    DiaristAIService,
+    DiaristService,
+    FiscalService,
+    NotificacaoService,
+    StatusNotificacao,
+    TipoNotificacao,
+    get_fiscal_service,
+    get_notificacao_service,
 )
 
 # Cria router principal que agrega todos os sub-routers

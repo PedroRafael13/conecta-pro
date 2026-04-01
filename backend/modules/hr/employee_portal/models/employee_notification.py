@@ -1,24 +1,24 @@
 """Model para notificações do funcionário."""
 
-from datetime import datetime
-from enum import Enum
 import uuid
+from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
+    Column,
     DateTime,
     ForeignKey,
     Index,
+    String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class NotificationType(str, Enum):
+class NotificationType(StrEnum):
     """Tipo de notificação."""
 
     # Folha de pagamento
@@ -55,7 +55,7 @@ class NotificationType(str, Enum):
     TRAINING_REMINDER = "training_reminder"  # Lembrete de treinamento
 
     # Sistema
-    PASSWORD_EXPIRING = "password_expiring"  # Senha expirando
+    PASSWORD_EXPIRING = "password_expiring"  # Senha expirando  # noqa: S105
     PROFILE_INCOMPLETE = "profile_incomplete"  # Perfil incompleto
     SYSTEM_MAINTENANCE = "system_maintenance"  # Manutenção do sistema
 
@@ -70,7 +70,7 @@ class NotificationType(str, Enum):
     SUCCESS = "success"  # Sucesso
 
 
-class NotificationPriority(str, Enum):
+class NotificationPriority(StrEnum):
     """Prioridade da notificação."""
 
     LOW = "low"  # Baixa
@@ -79,7 +79,7 @@ class NotificationPriority(str, Enum):
     URGENT = "urgent"  # Urgente
 
 
-class NotificationChannel(str, Enum):
+class NotificationChannel(StrEnum):
     """Canal de entrega da notificação."""
 
     PORTAL = "portal"  # Apenas no portal

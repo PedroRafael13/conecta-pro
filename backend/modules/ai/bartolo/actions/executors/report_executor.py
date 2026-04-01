@@ -9,11 +9,11 @@ Date: 2026-01-30
 """
 
 import logging
-from datetime import datetime, date
+from datetime import date, datetime
 from uuid import uuid4
 
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionStatus
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus, ActionType
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 # Import condicional do servico de relatorios
 try:
     from modules.operacional.relatorios.services.relatorio_service import RelatorioService
+
     _HAS_RELATORIO_SERVICE = True
 except ImportError:
     _HAS_RELATORIO_SERVICE = False
@@ -28,6 +29,7 @@ except ImportError:
 # Import condicional do servico de exportacao
 try:
     from modules.operacional.relatorios.services.export_service import ExportService
+
     _HAS_EXPORT_SERVICE = True
 except ImportError:
     _HAS_EXPORT_SERVICE = False
@@ -142,7 +144,7 @@ class ReportActionExecutor(BaseActionExecutor):
         post_code = params.get("post_code", "")
         employee_id = params.get("employee_id", "")
         export_format = params.get("format", "pdf")
-        tenant_id = params.get("tenant_id", "")
+        params.get("tenant_id", "")
 
         changes_summary = []
         warnings = []
@@ -183,10 +185,7 @@ class ReportActionExecutor(BaseActionExecutor):
 
         # Formato de exportacao
         if export_format not in EXPORT_FORMATS:
-            warnings.append(
-                f"Formato '{export_format}' nao suportado. "
-                f"Formatos: {', '.join(EXPORT_FORMATS)}"
-            )
+            warnings.append(f"Formato '{export_format}' nao suportado. Formatos: {', '.join(EXPORT_FORMATS)}")
             export_format = "pdf"
 
         changes_summary.append(f"Formato: {export_format.upper()}")
@@ -205,7 +204,8 @@ class ReportActionExecutor(BaseActionExecutor):
 
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.REPORTS_GENERATE)
             except Exception:
                 user_has_perm = True
@@ -292,7 +292,7 @@ class ReportActionExecutor(BaseActionExecutor):
                 raise
         else:
             # Fallback: gerar dados de resumo estatico
-            today = date.today()
+            date.today()
             report_data = {
                 "report_type": report_type,
                 "report_name": report_info["name"],

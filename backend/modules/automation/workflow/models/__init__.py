@@ -11,17 +11,17 @@ from modules.automation.workflow.models.workflow import (
     WorkflowStatus,
 )
 from modules.automation.workflow.models.workflow_action import (
+    BUILTIN_ACTIONS,
     ActionCategory,
     ActionType,
     WorkflowAction,
-    BUILTIN_ACTIONS,
 )
 from modules.automation.workflow.models.workflow_condition import (
+    BUILTIN_CONDITIONS,
     ConditionOperator,
     ConditionType,
     LogicalOperator,
     WorkflowCondition,
-    BUILTIN_CONDITIONS,
 )
 from modules.automation.workflow.models.workflow_execution import (
     ExecutionPriority,

@@ -2,21 +2,20 @@
 
 /**
  * Hooks React Query - Contracts (Contratos Públicos)
- *
- * Hooks para gestão de contratos públicos, medições, aditivos
+ * Cobertura 100% dos 14 endpoints backend
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import contractsService, {
   type ListContractsParams,
-  type AlterarStatusContratoParams,
   type AditivarParams,
+  type CalcularReajusteParams,
+  type CriarMedicaoParams,
 } from '@/services/bidding/contracts.service';
 import type {
   PublicContractCreate,
   PublicContractUpdate,
-  MeasurementSummary,
 } from '@/types/generated/bidding';
 
 const QUERY_KEYS = {
@@ -25,16 +24,13 @@ const QUERY_KEYS = {
   list: (params?: ListContractsParams) => [...QUERY_KEYS.lists(), params] as const,
   details: () => [...QUERY_KEYS.all, 'detail'] as const,
   detail: (id: string) => [...QUERY_KEYS.details(), id] as const,
-  measurements: (contractId: string) =>
-    [...QUERY_KEYS.detail(contractId), 'measurements'] as const,
-  vigentes: (params?: any) => [...QUERY_KEYS.all, 'vigentes', params] as const,
-  vencendo: (params?: any) => [...QUERY_KEYS.all, 'vencendo', params] as const,
-  dashboard: (params?: any) => [...QUERY_KEYS.all, 'dashboard', params] as const,
+  vigentes: (params?: unknown) => [...QUERY_KEYS.all, 'vigentes', params] as const,
+  vencendo: (params?: unknown) => [...QUERY_KEYS.all, 'vencendo', params] as const,
+  dashboard: (params?: unknown) => [...QUERY_KEYS.all, 'dashboard', params] as const,
+  medicoes: (contractId: string) => [...QUERY_KEYS.detail(contractId), 'medicoes'] as const,
 };
 
-/**
- * Hook para listar contratos com filtros
- */
+// GET /contracts/
 export function useListarContratos(params?: ListContractsParams) {
   return useQuery({
     queryKey: QUERY_KEYS.list(params),
@@ -43,9 +39,34 @@ export function useListarContratos(params?: ListContractsParams) {
   });
 }
 
-/**
- * Hook para buscar contrato por ID
- */
+// GET /contracts/dashboard
+export function useContractsDashboard(params?: { periodo_dias?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.dashboard(params),
+    queryFn: () => contractsService.getDashboard(params),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// GET /contracts/vigentes
+export function useListarContratosVigentes(params?: { page?: number; size?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.vigentes(params),
+    queryFn: () => contractsService.listarContratosVigentes(params),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// GET /contracts/vencendo
+export function useListarContratosVencendo(params?: { dias?: number; page?: number; size?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.vencendo(params),
+    queryFn: () => contractsService.listarContratosVencendo(params),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// GET /contracts/{id}
 export function useBuscarContrato(contractId: string, enabled = true) {
   return useQuery({
     queryKey: QUERY_KEYS.detail(contractId),
@@ -55,15 +76,11 @@ export function useBuscarContrato(contractId: string, enabled = true) {
   });
 }
 
-/**
- * Hook para criar novo contrato
- */
+// POST /contracts/
 export function useCriarContrato() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (payload: PublicContractCreate) =>
-      contractsService.criarContrato(payload),
+    mutationFn: (payload: PublicContractCreate) => contractsService.criarContrato(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
       toast.success('Contrato criado com sucesso');
@@ -74,12 +91,9 @@ export function useCriarContrato() {
   });
 }
 
-/**
- * Hook para atualizar contrato
- */
+// PUT /contracts/{id}
 export function useAtualizarContrato() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: PublicContractUpdate }) =>
       contractsService.atualizarContrato(id, data),
@@ -89,22 +103,16 @@ export function useAtualizarContrato() {
       toast.success('Contrato atualizado com sucesso');
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao atualizar contrato'
-      );
+      toast.error(error?.response?.data?.detail || 'Erro ao atualizar contrato');
     },
   });
 }
 
-/**
- * Hook para remover contrato
- */
+// DELETE /contracts/{id}
 export function useRemoverContrato() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (contractId: string) =>
-      contractsService.removerContrato(contractId),
+    mutationFn: (contractId: string) => contractsService.removerContrato(contractId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
       toast.success('Contrato removido com sucesso');
@@ -115,70 +123,14 @@ export function useRemoverContrato() {
   });
 }
 
-/**
- * Hook para listar contratos vigentes
- */
-export function useListarContratosVigentes(params?: {
-  page?: number;
-  size?: number;
-}) {
-  return useQuery({
-    queryKey: QUERY_KEYS.vigentes(params),
-    queryFn: () => contractsService.listarContratosVigentes(params),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para listar contratos vencendo
- */
-export function useListarContratosVencendo(params?: {
-  dias?: number;
-  page?: number;
-  size?: number;
-}) {
-  return useQuery({
-    queryKey: QUERY_KEYS.vencendo(params),
-    queryFn: () => contractsService.listarContratosVencendo(params),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para alterar status do contrato
- */
-export function useAlterarStatusContrato() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (params: AlterarStatusContratoParams) =>
-      contractsService.alterarStatus(params),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.contract_id),
-      });
-      toast.success('Status alterado com sucesso');
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao alterar status');
-    },
-  });
-}
-
-/**
- * Hook para criar aditivo de contrato
- */
+// POST /contracts/{id}/aditivo
 export function useAditivar() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (params: AditivarParams) => contractsService.aditivar(params),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.contract_id),
-      });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(variables.contract_id) });
       toast.success('Aditivo criado com sucesso');
     },
     onError: (error: any) => {
@@ -187,51 +139,50 @@ export function useAditivar() {
   });
 }
 
-/**
- * Hook para dashboard de contratos
- */
-export function useContractsDashboard(params?: { periodo_dias?: number }) {
-  return useQuery({
-    queryKey: QUERY_KEYS.dashboard(params),
-    queryFn: () => contractsService.getDashboard(params),
-    staleTime: 1000 * 60 * 10,
+// POST /contracts/{id}/reajuste/calcular
+export function useCalcularReajuste() {
+  return useMutation({
+    mutationFn: (params: CalcularReajusteParams) => contractsService.calcularReajuste(params),
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Erro ao calcular reajuste');
+    },
   });
 }
 
-// ========== MEDIÇÕES ==========
-// NOTA: Funções de medições comentadas até os tipos estarem disponíveis no schema gerado
+// POST /contracts/{id}/reajuste/aplicar
+export function useAplicarReajuste() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: CalcularReajusteParams) => contractsService.aplicarReajuste(params),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(variables.contract_id) });
+      toast.success('Reajuste aplicado com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Erro ao aplicar reajuste');
+    },
+  });
+}
 
-/*
-export function useListarMedicoes(
-  contractId: string,
-  params?: { status?: string }
-) {
+// GET /contracts/{id}/medicoes
+export function useListarMedicoes(contractId: string, params?: { status?: string }) {
   return useQuery({
-    queryKey: QUERY_KEYS.measurements(contractId),
+    queryKey: QUERY_KEYS.medicoes(contractId),
     queryFn: () => contractsService.listarMedicoes(contractId, params),
     enabled: !!contractId,
     staleTime: 1000 * 60 * 5,
   });
 }
 
+// POST /contracts/{id}/medicoes
 export function useCriarMedicao() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({
-      contractId,
-      data,
-    }: {
-      contractId: string;
-      data: any;
-    }) => contractsService.criarMedicao(contractId, data),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.measurements(variables.contractId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.contractId),
-      });
+    mutationFn: (params: CriarMedicaoParams) => contractsService.criarMedicao(params),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.medicoes(variables.contract_id) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(variables.contract_id) });
       toast.success('Medição criada com sucesso');
     },
     onError: (error: any) => {
@@ -240,54 +191,15 @@ export function useCriarMedicao() {
   });
 }
 
-export function useAtualizarMedicao() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      contractId,
-      measurementId,
-      data,
-    }: {
-      contractId: string;
-      measurementId: string;
-      data: any;
-    }) => contractsService.atualizarMedicao(contractId, measurementId, data),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.measurements(variables.contractId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.contractId),
-      });
-      toast.success('Medição atualizada com sucesso');
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao atualizar medição');
-    },
-  });
-}
-
+// POST /medicoes/{measurement_id}/aprovar
 export function useAprovarMedicao() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({
-      contractId,
-      measurementId,
-      observacoes,
-    }: {
-      contractId: string;
-      measurementId: string;
-      observacoes?: string;
-    }) => contractsService.aprovarMedicao(contractId, measurementId, observacoes),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.measurements(variables.contractId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.contractId),
-      });
+    mutationFn: ({ measurementId, contractId, observacoes }: { measurementId: string; contractId: string; observacoes?: string }) =>
+      contractsService.aprovarMedicao(measurementId, observacoes),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.medicoes(variables.contractId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(variables.contractId) });
       toast.success('Medição aprovada com sucesso');
     },
     onError: (error: any) => {
@@ -295,32 +207,3 @@ export function useAprovarMedicao() {
     },
   });
 }
-
-export function useRejeitarMedicao() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      contractId,
-      measurementId,
-      motivo,
-    }: {
-      contractId: string;
-      measurementId: string;
-      motivo: string;
-    }) => contractsService.rejeitarMedicao(contractId, measurementId, motivo),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.measurements(variables.contractId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.contractId),
-      });
-      toast.success('Medição rejeitada');
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao rejeitar medição');
-    },
-  });
-}
-*/

@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Numeric, String, Text
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from modules.financial.models.warehouse import Warehouse
 
 
-class MovementType(str, Enum):
+class MovementType(StrEnum):
     """Tipo de movimentação."""
 
     ENTRADA = "entrada"
@@ -33,7 +33,7 @@ class MovementType(str, Enum):
     BONIFICACAO = "bonificacao"
 
 
-class MovementReason(str, Enum):
+class MovementReason(StrEnum):
     """Motivo da movimentação."""
 
     # Entradas
@@ -62,7 +62,7 @@ class MovementReason(str, Enum):
     OUTRO = "outro"
 
 
-class MovementStatus(str, Enum):
+class MovementStatus(StrEnum):
     """Status da movimentação."""
 
     RASCUNHO = "rascunho"
@@ -76,7 +76,7 @@ class MovementStatus(str, Enum):
 class StockMovement(Base):
     """Movimentação de estoque."""
 
-    __tablename__ = "stock_movements"
+    __tablename__ = "fin_stock_movements"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
@@ -103,14 +103,14 @@ class StockMovement(Base):
     # Armazéns
     warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=False,
         index=True,
     )
     # Para transferências
     destination_warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=True,
         index=True,
     )
@@ -330,7 +330,7 @@ class StockMovement(Base):
             return -qty
         return qty
 
-    def approve(self, approver_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def approve(self, approver_id: uuid.UUID, notes: str | None = None) -> None:
         """Aprova a movimentação."""
         self.status = MovementStatus.APROVADA.value
         self.approved_by = approver_id
@@ -368,9 +368,7 @@ class StockMovement(Base):
             "status": self.status,
             "product_id": str(self.product_id),
             "warehouse_id": str(self.warehouse_id),
-            "destination_warehouse_id": (
-                str(self.destination_warehouse_id) if self.destination_warehouse_id else None
-            ),
+            "destination_warehouse_id": (str(self.destination_warehouse_id) if self.destination_warehouse_id else None),
             "movement_date": (self.movement_date.isoformat() if self.movement_date else None),
             "batch_number": self.batch_number,
             "quantity": float(self.quantity) if self.quantity else 0,

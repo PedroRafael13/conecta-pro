@@ -7,7 +7,6 @@ uma interface unica para operacoes bancarias Open Banking.
 
 from datetime import date
 from decimal import Decimal
-from typing import Optional
 
 from core.logging import logger
 
@@ -21,6 +20,8 @@ from ..adapters import (
     BaseBankingAdapter,
     BBAdapter,
     BradescoAdapter,
+    CoraAdapter,
+    InterAdapter,
     ItauAdapter,
     PaymentRequest,
     PaymentResponse,
@@ -41,6 +42,8 @@ class BankingService:
         BankCode.BB: BBAdapter,
         BankCode.ITAU: ItauAdapter,
         BankCode.BRADESCO: BradescoAdapter,
+        BankCode.CORA: CoraAdapter,
+        BankCode.INTER: InterAdapter,
     }
 
     def __init__(self) -> None:
@@ -157,8 +160,8 @@ class BankingService:
         beneficiary_agency: str,
         beneficiary_account: str,
         beneficiary_account_type: AccountType = AccountType.CHECKING,
-        description: Optional[str] = None,
-        scheduled_date: Optional[date] = None,
+        description: str | None = None,
+        scheduled_date: date | None = None,
     ) -> PaymentResponse:
         """
         Realiza transferencia TED/DOC.
@@ -199,7 +202,7 @@ class BankingService:
         account_id: str,
         pix_key: str,
         amount: Decimal,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> PaymentResponse:
         """
         Realiza transferencia PIX.
@@ -220,7 +223,7 @@ class BankingService:
         self,
         account_id: str,
         key: str,
-    ) -> Optional[PixKey]:
+    ) -> PixKey | None:
         """
         Valida uma chave PIX.
 

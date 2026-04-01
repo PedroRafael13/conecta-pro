@@ -1,7 +1,7 @@
 """Services do módulo de reembolso."""
 
-from .reimbursement_service import ReimbursementService
 from .approval_service import ApprovalService
-from .file_validator import FileValidator, FileValidationError
+from .file_validator import FileValidationError, FileValidator
+from .reimbursement_service import ReimbursementService
 
 __all__ = ["ReimbursementService", "ApprovalService", "FileValidator", "FileValidationError"]

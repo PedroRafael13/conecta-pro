@@ -1,29 +1,29 @@
 """ABC Costing Service - Custeio Baseado em Atividades."""
 
+import logging
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
-import logging
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.costing.models import (
-    CostDriver,
     CostActivity,
-    CostPool,
-    CostObject,
     CostAllocation,
     CostAnalysis,
+    CostDriver,
+    CostObject,
+    CostPool,
 )
-from modules.financial.costing.models.cost_driver import DriverStatus
 from modules.financial.costing.models.cost_activity import ActivityStatus
 from modules.financial.costing.models.cost_allocation import (
     AllocationStatus,
     AllocationType,
 )
 from modules.financial.costing.models.cost_analysis import AnalysisType
+from modules.financial.costing.models.cost_driver import DriverStatus
 
 logger = logging.getLogger(__name__)
 
@@ -71,23 +71,22 @@ class ABCService:
             else:
                 rate = Decimal("0")
 
-            calculated_rates.append({
-                "driver_id": str(driver.id),
-                "codigo": driver.codigo,
-                "nome": driver.nome,
-                "custo_total": float(driver.custo_total),
-                "quantidade_usada": float(driver.quantidade_usada or 0),
-                "capacidade_pratica": float(driver.capacidade_pratica or 0),
-                "taxa_calculada": float(rate),
-                "unidade_medida": driver.unidade_medida.value if driver.unidade_medida else None,
-                "capacidade_ociosa_percentual": float(driver.capacity_usage_percent or 0),
-                "custo_ociosidade": float(driver.idle_capacity_cost or 0),
-            })
+            calculated_rates.append(
+                {
+                    "driver_id": str(driver.id),
+                    "codigo": driver.codigo,
+                    "nome": driver.nome,
+                    "custo_total": float(driver.custo_total),
+                    "quantidade_usada": float(driver.quantidade_usada or 0),
+                    "capacidade_pratica": float(driver.capacidade_pratica or 0),
+                    "taxa_calculada": float(rate),
+                    "unidade_medida": driver.unidade_medida.value if driver.unidade_medida else None,
+                    "capacidade_ociosa_percentual": float(driver.capacity_usage_percent or 0),
+                    "custo_ociosidade": float(driver.idle_capacity_cost or 0),
+                }
+            )
 
-        logger.info(
-            f"Calculadas taxas de {len(calculated_rates)} drivers "
-            f"para condomínio {condominio_id}"
-        )
+        logger.info(f"Calculadas taxas de {len(calculated_rates)} drivers para condomínio {condominio_id}")
         return calculated_rates
 
     async def calculate_activity_costs(
@@ -119,9 +118,7 @@ class ABCService:
         activity_costs = []
         for activity in activities:
             # Busca alocações recebidas
-            alloc_query = select(
-                func.sum(CostAllocation.valor_alocado)
-            ).where(
+            alloc_query = select(func.sum(CostAllocation.valor_alocado)).where(
                 CostAllocation.destino_id == activity.id,
                 CostAllocation.tipo == AllocationType.POOL_TO_ACTIVITY,
                 CostAllocation.status == AllocationStatus.EXECUTED,
@@ -139,27 +136,24 @@ class ABCService:
             else:
                 rate_per_unit = Decimal("0")
 
-            activity_costs.append({
-                "activity_id": str(activity.id),
-                "codigo": activity.codigo,
-                "nome": activity.nome,
-                "nivel": activity.nivel.value if activity.nivel else None,
-                "tipo_valor": (
-                    activity.tipo_valor_agregado.value if activity.tipo_valor_agregado else None
-                ),
-                "custo_direto": float(activity.custo_direto or 0),
-                "custo_alocado": float(allocated_cost),
-                "custo_total": float(total_cost),
-                "output_quantidade": float(activity.output_quantidade or 0),
-                "taxa_por_unidade": float(rate_per_unit),
-                "capacidade_pratica": float(activity.capacidade_pratica or 0),
-                "capacidade_usada": float(activity.capacidade_usada or 0),
-            })
+            activity_costs.append(
+                {
+                    "activity_id": str(activity.id),
+                    "codigo": activity.codigo,
+                    "nome": activity.nome,
+                    "nivel": activity.nivel.value if activity.nivel else None,
+                    "tipo_valor": (activity.tipo_valor_agregado.value if activity.tipo_valor_agregado else None),
+                    "custo_direto": float(activity.custo_direto or 0),
+                    "custo_alocado": float(allocated_cost),
+                    "custo_total": float(total_cost),
+                    "output_quantidade": float(activity.output_quantidade or 0),
+                    "taxa_por_unidade": float(rate_per_unit),
+                    "capacidade_pratica": float(activity.capacidade_pratica or 0),
+                    "capacidade_usada": float(activity.capacidade_usada or 0),
+                }
+            )
 
-        logger.info(
-            f"Calculados custos de {len(activity_costs)} atividades "
-            f"para condomínio {condominio_id}"
-        )
+        logger.info(f"Calculados custos de {len(activity_costs)} atividades para condomínio {condominio_id}")
         return activity_costs
 
     async def calculate_object_costs(  # pylint: disable=too-many-locals
@@ -190,9 +184,7 @@ class ABCService:
         object_costs = []
         for obj in objects:
             # Busca alocações recebidas das atividades
-            alloc_query = select(
-                func.sum(CostAllocation.valor_alocado)
-            ).where(
+            alloc_query = select(func.sum(CostAllocation.valor_alocado)).where(
                 CostAllocation.destino_id == obj.id,
                 CostAllocation.tipo == AllocationType.ACTIVITY_TO_OBJECT,
                 CostAllocation.status == AllocationStatus.EXECUTED,
@@ -220,31 +212,28 @@ class ABCService:
             else:
                 unit_cost = Decimal("0")
 
-            object_costs.append({
-                "object_id": str(obj.id),
-                "codigo": obj.codigo,
-                "nome": obj.nome,
-                "tipo": obj.tipo.value if obj.tipo else None,
-                "custo_direto": float(direct_cost),
-                "custo_indireto": float(indirect_cost),
-                "custo_total": float(total_cost),
-                "receita": float(receita),
-                "margem_bruta": float(gross_margin),
-                "margem_bruta_percentual": float(gross_margin_pct),
-                "quantidade": float(obj.quantidade or 0),
-                "custo_unitario": float(unit_cost),
-                "nivel_lucratividade": (
-                    obj.profitability_level.value if obj.profitability_level else None
-                ),
-            })
+            object_costs.append(
+                {
+                    "object_id": str(obj.id),
+                    "codigo": obj.codigo,
+                    "nome": obj.nome,
+                    "tipo": obj.tipo.value if obj.tipo else None,
+                    "custo_direto": float(direct_cost),
+                    "custo_indireto": float(indirect_cost),
+                    "custo_total": float(total_cost),
+                    "receita": float(receita),
+                    "margem_bruta": float(gross_margin),
+                    "margem_bruta_percentual": float(gross_margin_pct),
+                    "quantidade": float(obj.quantidade or 0),
+                    "custo_unitario": float(unit_cost),
+                    "nivel_lucratividade": (obj.profitability_level.value if obj.profitability_level else None),
+                }
+            )
 
         # Ordena por margem (do pior para o melhor para identificar problemas)
         object_costs.sort(key=lambda x: x["margem_bruta_percentual"])
 
-        logger.info(
-            f"Calculados custos de {len(object_costs)} objetos "
-            f"para condomínio {condominio_id}"
-        )
+        logger.info(f"Calculados custos de {len(object_costs)} objetos para condomínio {condominio_id}")
         return object_costs
 
     async def run_abc_costing(  # pylint: disable=too-many-locals
@@ -252,7 +241,7 @@ class ABCService:
         condominio_id: UUID,
         periodo_inicio: date,
         periodo_fim: date,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> dict[str, Any]:
         """Executa custeio ABC completo para o período.
 
@@ -265,25 +254,16 @@ class ABCService:
         Returns:
             Resultado completo do custeio ABC
         """
-        logger.info(
-            f"Iniciando custeio ABC para condomínio {condominio_id} "
-            f"período {periodo_inicio} a {periodo_fim}"
-        )
+        logger.info(f"Iniciando custeio ABC para condomínio {condominio_id} período {periodo_inicio} a {periodo_fim}")
 
         # Etapa 1: Calcula taxas dos drivers
-        driver_rates = await self.calculate_driver_rates(
-            condominio_id, periodo_inicio, periodo_fim
-        )
+        driver_rates = await self.calculate_driver_rates(condominio_id, periodo_inicio, periodo_fim)
 
         # Etapa 2: Calcula custos das atividades
-        activity_costs = await self.calculate_activity_costs(
-            condominio_id, periodo_inicio, periodo_fim
-        )
+        activity_costs = await self.calculate_activity_costs(condominio_id, periodo_inicio, periodo_fim)
 
         # Etapa 3: Calcula custos dos objetos
-        object_costs = await self.calculate_object_costs(
-            condominio_id, periodo_inicio, periodo_fim
-        )
+        object_costs = await self.calculate_object_costs(condominio_id, periodo_inicio, periodo_fim)
 
         # Estatísticas gerais
         total_driver_cost = sum(d["custo_total"] for d in driver_rates)
@@ -294,14 +274,8 @@ class ABCService:
         total_margin = sum(o["margem_bruta"] for o in object_costs)
 
         # Análise de valor agregado
-        value_added = [
-            a for a in activity_costs
-            if a.get("tipo_valor") == "VALUE_ADDED"
-        ]
-        non_value_added = [
-            a for a in activity_costs
-            if a.get("tipo_valor") == "NON_VALUE_ADDED"
-        ]
+        value_added = [a for a in activity_costs if a.get("tipo_valor") == "VALUE_ADDED"]
+        non_value_added = [a for a in activity_costs if a.get("tipo_valor") == "NON_VALUE_ADDED"]
 
         result = {
             "condominio_id": str(condominio_id),
@@ -319,9 +293,7 @@ class ABCService:
                 "custo_total_objetos": total_object_cost,
                 "receita_total": total_revenue,
                 "margem_total": total_margin,
-                "margem_percentual": (
-                    (total_margin / total_revenue * 100) if total_revenue > 0 else 0
-                ),
+                "margem_percentual": ((total_margin / total_revenue * 100) if total_revenue > 0 else 0),
             },
             "analise_valor": {
                 "atividades_valor_agregado": len(value_added),
@@ -352,8 +324,7 @@ class ABCService:
             insights=[
                 f"Custo total alocado: R$ {total_object_cost:,.2f}",
                 (
-                    f"Custo de ociosidade: R$ {total_idle_cost:,.2f} "
-                    f"({total_idle_cost/total_driver_cost*100:.1f}%)"
+                    f"Custo de ociosidade: R$ {total_idle_cost:,.2f} ({total_idle_cost / total_driver_cost * 100:.1f}%)"
                     if total_driver_cost > 0
                     else "Sem custos de ociosidade"
                 ),
@@ -372,10 +343,7 @@ class ABCService:
 
         result["analysis_id"] = str(analysis.id)
 
-        logger.info(
-            f"Custeio ABC concluído. Análise {analysis.id} criada. "
-            f"Custo total: R$ {total_object_cost:,.2f}"
-        )
+        logger.info(f"Custeio ABC concluído. Análise {analysis.id} criada. Custo total: R$ {total_object_cost:,.2f}")
 
         return result
 
@@ -417,15 +385,17 @@ class ABCService:
         distribution = []
         for alloc in allocations:
             activity = await self.session.get(CostActivity, alloc.destino_id)
-            distribution.append({
-                "allocation_id": str(alloc.id),
-                "activity_id": str(alloc.destino_id),
-                "activity_nome": activity.nome if activity else "Desconhecida",
-                "valor": float(alloc.valor_alocado),
-                "percentual": float(alloc.percentual_alocado or 0),
-                "driver_id": str(alloc.driver_id) if alloc.driver_id else None,
-                "driver_quantidade": float(alloc.driver_quantidade or 0),
-            })
+            distribution.append(
+                {
+                    "allocation_id": str(alloc.id),
+                    "activity_id": str(alloc.destino_id),
+                    "activity_nome": activity.nome if activity else "Desconhecida",
+                    "valor": float(alloc.valor_alocado),
+                    "percentual": float(alloc.percentual_alocado or 0),
+                    "driver_id": str(alloc.driver_id) if alloc.driver_id else None,
+                    "driver_quantidade": float(alloc.driver_quantidade or 0),
+                }
+            )
 
         return {
             "pool_id": str(pool_id),
@@ -434,9 +404,7 @@ class ABCService:
             "valor_total": float(pool.valor_total or 0),
             "valor_alocado": float(total_allocated),
             "valor_nao_alocado": float(unallocated),
-            "percentual_alocado": (
-                float(total_allocated / pool.valor_total * 100) if pool.valor_total else 0
-            ),
+            "percentual_alocado": (float(total_allocated / pool.valor_total * 100) if pool.valor_total else 0),
             "distribuicao": distribution,
         }
 
@@ -476,9 +444,7 @@ class ABCService:
         activity_total = activity.custo_direto or Decimal("0")
 
         # Soma alocações recebidas
-        received_query = select(
-            func.sum(CostAllocation.valor_alocado)
-        ).where(
+        received_query = select(func.sum(CostAllocation.valor_alocado)).where(
             CostAllocation.destino_id == activity_id,
             CostAllocation.tipo == AllocationType.POOL_TO_ACTIVITY,
             CostAllocation.status == AllocationStatus.EXECUTED,
@@ -495,16 +461,18 @@ class ABCService:
         distribution = []
         for alloc in allocations:
             obj = await self.session.get(CostObject, alloc.destino_id)
-            distribution.append({
-                "allocation_id": str(alloc.id),
-                "object_id": str(alloc.destino_id),
-                "object_nome": obj.nome if obj else "Desconhecido",
-                "object_tipo": obj.tipo.value if obj and obj.tipo else None,
-                "valor": float(alloc.valor_alocado),
-                "percentual": float(alloc.percentual_alocado or 0),
-                "driver_id": str(alloc.driver_id) if alloc.driver_id else None,
-                "driver_quantidade": float(alloc.driver_quantidade or 0),
-            })
+            distribution.append(
+                {
+                    "allocation_id": str(alloc.id),
+                    "object_id": str(alloc.destino_id),
+                    "object_nome": obj.nome if obj else "Desconhecido",
+                    "object_tipo": obj.tipo.value if obj and obj.tipo else None,
+                    "valor": float(alloc.valor_alocado),
+                    "percentual": float(alloc.percentual_alocado or 0),
+                    "driver_id": str(alloc.driver_id) if alloc.driver_id else None,
+                    "driver_quantidade": float(alloc.driver_quantidade or 0),
+                }
+            )
 
         return {
             "activity_id": str(activity_id),
@@ -515,9 +483,7 @@ class ABCService:
             "custo_total": float(activity_total),
             "valor_alocado": float(total_allocated),
             "valor_nao_alocado": float(unallocated),
-            "percentual_alocado": (
-                float(total_allocated / activity_total * 100) if activity_total else 0
-            ),
+            "percentual_alocado": (float(total_allocated / activity_total * 100) if activity_total else 0),
             "distribuicao": distribution,
         }
 

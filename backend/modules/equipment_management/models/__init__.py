@@ -1,5 +1,9 @@
 """Models do módulo de Gestão de Equipamentos."""
 
+from modules.equipment_management.models.comodato import (
+    ComodatoStatus,
+    EquipmentComodato,
+)
 from modules.equipment_management.models.equipment import (
     Equipment,
     EquipmentCategory,
@@ -15,10 +19,6 @@ from modules.equipment_management.models.maintenance import (
     MaintenancePriority,
     MaintenanceStatus,
     MaintenanceType,
-)
-from modules.equipment_management.models.comodato import (
-    ComodatoStatus,
-    EquipmentComodato,
 )
 
 __all__ = [

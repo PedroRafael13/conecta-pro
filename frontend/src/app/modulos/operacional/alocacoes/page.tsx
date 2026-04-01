@@ -1,10 +1,10 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Users, ArrowLeft, Filter, Eye, Calendar, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Ban, Plus, ArrowRightLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
@@ -13,28 +13,32 @@ import { useAllocations, useTerminateAllocation, useCreateAllocation } from '@/h
 import { usePosts } from '@/hooks/operacional/usePosts';
 import { useEmployees } from '@/hooks/operacional/useEmployees';
 import { getErrorMessage } from '@/lib/api';
-import { AllocationDetailModal } from '@/components/operacional/allocation-detail-modal';
-import { AllocationFormModal } from '@/components/operacional/allocation-form-modal';
+const AllocationDetailModal = dynamic(() => import('@/components/operacional/allocation-detail-modal').then(m => m.AllocationDetailModal), { ssr: false });
+const AllocationFormModal = dynamic(() => import('@/components/operacional/allocation-form-modal').then(m => m.AllocationFormModal), { ssr: false });
 import { ExportButton } from '@/components/ui/export-button';
-import type { Allocation, AllocationStatus, AllocationTerminate, Employee, Post } from '@/types/operacional';
+import type { Allocation, AllocationFilter, AllocationStatus, AllocationTerminate, Employee, Post } from '@/types/operacional';
 import { ALLOCATION_STATUS_LABELS } from '@/types/operacional';
 
 export default function AlocacoesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const {
-    data: allocations = [],
+    data: allocationsData,
     isLoading,
     error,
-    refetch: refresh,
+    refetch,
   } = useAllocations();
-  const total = allocations.length;
+  const allocations = (allocationsData?.items ?? []) as Allocation[];
+  const total = allocationsData?.total ?? allocations.length;
+  const refresh = () => { refetch(); };
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const totalPages = Math.ceil(total / pageSize);
-  const [filters, setFilters] = useState({});
-  const { data: posts = [] } = usePosts();
-  const { data: employees = [] } = useEmployees();
+  const [filters, setFilters] = useState<AllocationFilter>({});
+  const { data: postsData } = usePosts();
+  const posts = useMemo(() => (postsData?.items ?? []) as Post[], [postsData?.items]);
+  const { data: employeesData } = useEmployees();
+  const employees = useMemo(() => (employeesData?.items ?? []) as Employee[], [employeesData?.items]);
   const terminateAllocationMutation = useTerminateAllocation();
   const createAllocationMutation = useCreateAllocation();
 
@@ -169,7 +173,7 @@ export default function AlocacoesPage() {
     setSelectedAllocation(allocation);
     setTransferData({
       new_post_id: '',
-      transfer_date: new Date().toISOString().split('T')[0],
+      transfer_date: new Date().toISOString().split('T')[0] ?? '',
       notes: '',
     });
     setTransferError(null);
@@ -236,6 +240,26 @@ export default function AlocacoesPage() {
     if (!selectedAllocation) return posts;
     return posts.filter((post) => post.id !== selectedAllocation.post_id);
   }, [posts, selectedAllocation]);
+
+  // Detectar conflitos: colaboradores alocados múltiplas vezes no mesmo dia
+  const conflicts = useMemo(() => {
+    const items = (allocations as any[]) || [];
+    const byEmployeeDate: Record<string, any[]> = {};
+    items.forEach((alloc: any) => {
+      const key = `${alloc.employee_id}_${alloc.date || alloc.start_date || ''}`;
+      if (!byEmployeeDate[key]) byEmployeeDate[key] = [];
+      byEmployeeDate[key].push(alloc);
+    });
+    return Object.entries(byEmployeeDate)
+      .filter(([, allocs]) => allocs.length > 1)
+      .map(([key, allocs]) => ({
+        key,
+        employeeName: allocs[0].employee_name || 'Colaborador',
+        date: allocs[0].date || allocs[0].start_date || '',
+        count: allocs.length,
+        posts: allocs.map((a: any) => a.post_name || a.post_id || 'Posto').join(', '),
+      }));
+  }, [allocations]);
 
   // Preparar dados para exportação
   const exportData = allocations.map((alloc) => ({
@@ -446,8 +470,8 @@ export default function AlocacoesPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
-            <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refresh} className="ml-auto">
+            <p className="text-red-500">{error instanceof Error ? error.message : 'Erro ao carregar alocações'}</p>
+            <Button variant="outline" size="sm" onClick={() => refresh()} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -475,6 +499,24 @@ export default function AlocacoesPage() {
           </div>
         ) : (
           <>
+            {conflicts.length > 0 && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  <h3 className="font-semibold text-red-500">{conflicts.length} Conflito(s) de Alocação Detectado(s)</h3>
+                </div>
+                <div className="space-y-2">
+                  {conflicts.map(c => (
+                    <div key={c.key} className="bg-[hsl(var(--background))]/60 rounded-lg px-3 py-2 text-sm">
+                      <span className="font-medium text-[hsl(var(--foreground))]">{c.employeeName}</span>
+                      <span className="text-[hsl(var(--muted-foreground))]"> alocado {c.count}× em {c.date ? new Date(c.date).toLocaleDateString('pt-BR') : '—'}: </span>
+                      <span className="text-red-500">{c.posts}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">

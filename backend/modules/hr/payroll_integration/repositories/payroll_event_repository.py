@@ -3,7 +3,6 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -68,11 +67,11 @@ class PayrollEventRepository:
 
     async def create_bulk(
         self,
-        events: List[PayrollEventCreate],
+        events: list[PayrollEventCreate],
         condominio_id: UUID,
         *,
         created_by: UUID = None,
-    ) -> List[PayrollEvent]:
+    ) -> list[PayrollEvent]:
         """Cria múltiplos eventos em lote."""
         created_events = []
 
@@ -108,7 +107,7 @@ class PayrollEventRepository:
         logger.info("Criados %d eventos em lote", len(created_events))
         return created_events
 
-    async def get_by_id(self, event_id: UUID) -> Optional[PayrollEvent]:
+    async def get_by_id(self, event_id: UUID) -> PayrollEvent | None:
         """Busca evento por ID."""
         query = select(PayrollEvent).where(
             and_(
@@ -129,7 +128,7 @@ class PayrollEventRepository:
         event_category: EventCategory = None,
         page: int = 1,
         page_size: int = 100,
-    ) -> Tuple[List[PayrollEvent], int]:
+    ) -> tuple[list[PayrollEvent], int]:
         """Lista eventos de um período."""
         conditions = [
             PayrollEvent.period_id == period_id,
@@ -166,7 +165,7 @@ class PayrollEventRepository:
         self,
         employee_id: UUID,
         period_id: UUID,
-    ) -> List[PayrollEvent]:
+    ) -> list[PayrollEvent]:
         """Lista todos eventos de um funcionário em um período."""
         query = (
             select(PayrollEvent)
@@ -187,7 +186,7 @@ class PayrollEventRepository:
         self,
         event_id: UUID,
         data: PayrollEventUpdate,
-    ) -> Optional[PayrollEvent]:
+    ) -> PayrollEvent | None:
         """Atualiza evento."""
         event = await self.get_by_id(event_id)
         if not event:
@@ -209,7 +208,7 @@ class PayrollEventRepository:
         new_value: Decimal,
         reason: str,
         user_id: UUID,
-    ) -> Optional[PayrollEvent]:
+    ) -> PayrollEvent | None:
         """Ajusta valor do evento."""
         event = await self.get_by_id(event_id)
         if not event:
@@ -226,7 +225,7 @@ class PayrollEventRepository:
         event_id: UUID,
         reason: str,
         user_id: UUID,
-    ) -> Optional[PayrollEvent]:
+    ) -> PayrollEvent | None:
         """Cancela evento."""
         event = await self.get_by_id(event_id)
         if not event:
@@ -269,7 +268,7 @@ class PayrollEventRepository:
     async def get_period_totals(
         self,
         period_id: UUID,
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Calcula totais do período."""
         # Total de proventos
         earnings_query = select(func.sum(PayrollEvent.value)).where(
@@ -314,7 +313,7 @@ class PayrollEventRepository:
         self,
         employee_id: UUID,
         period_id: UUID,
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Calcula totais de um funcionário no período."""
         events = await self.list_by_employee(employee_id, period_id)
 
@@ -331,7 +330,7 @@ class PayrollEventRepository:
     async def get_events_by_category(
         self,
         period_id: UUID,
-    ) -> Dict[str, List[PayrollEvent]]:
+    ) -> dict[str, list[PayrollEvent]]:
         """Agrupa eventos por categoria."""
         query = (
             select(PayrollEvent)
@@ -347,7 +346,7 @@ class PayrollEventRepository:
         result = await self.db.execute(query)
         events = list(result.scalars().all())
 
-        grouped: Dict[str, List[PayrollEvent]] = {}
+        grouped: dict[str, list[PayrollEvent]] = {}
         for event in events:
             category = event.event_category
             if category not in grouped:

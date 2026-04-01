@@ -12,11 +12,10 @@ Suporta multiplos providers:
 import hashlib
 import logging
 import re
-import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from modules.ai.ocr.models.ocr_result import OCRProvider, OCRResult
+from modules.ai.ocr.models.ocr_result import OCRProvider
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +50,12 @@ class OCRService:
         self.enable_key_value_detection = enable_key_value_detection
 
         # Configuracoes por provider
-        self.provider_configs: Dict[str, Dict[str, Any]] = {}
+        self.provider_configs: dict[str, dict[str, Any]] = {}
 
     def configure_provider(
         self,
         provider: OCRProvider,
-        config: Dict[str, Any],
+        config: dict[str, Any],
     ) -> None:
         """Configura um provider.
 
@@ -70,10 +69,10 @@ class OCRService:
     def process_image(
         self,
         image_data: bytes,
-        provider: Optional[OCRProvider] = None,
-        language: Optional[str] = None,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        provider: OCRProvider | None = None,
+        language: str | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Processa imagem com OCR.
 
         Args:
@@ -127,8 +126,8 @@ class OCRService:
         self,
         image_data: bytes,
         language: str,
-        options: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        options: dict[str, Any],
+    ) -> dict[str, Any]:
         """Processa com Tesseract OCR (simulado).
 
         Args:
@@ -183,8 +182,8 @@ class OCRService:
         self,
         image_data: bytes,
         language: str,
-        options: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        options: dict[str, Any],
+    ) -> dict[str, Any]:
         """Processa com Google Cloud Vision (simulado).
 
         Args:
@@ -211,8 +210,8 @@ class OCRService:
         self,
         image_data: bytes,
         language: str,
-        options: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        options: dict[str, Any],
+    ) -> dict[str, Any]:
         """Processa com AWS Textract (simulado).
 
         Args:
@@ -241,8 +240,8 @@ class OCRService:
         self,
         image_data: bytes,
         language: str,
-        options: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        options: dict[str, Any],
+    ) -> dict[str, Any]:
         """Processa com Azure Form Recognizer (simulado).
 
         Args:
@@ -269,8 +268,8 @@ class OCRService:
 
     def _detect_key_value_pairs(
         self,
-        ocr_result: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        ocr_result: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """Detecta pares chave-valor no texto.
 
         Args:
@@ -296,18 +295,20 @@ class OCRService:
                 key = key.strip()
                 value = value.strip()
                 if key and value:
-                    pairs.append({
-                        "key": key,
-                        "value": value,
-                        "confidence": 0.8,
-                    })
+                    pairs.append(
+                        {
+                            "key": key,
+                            "value": value,
+                            "confidence": 0.8,
+                        }
+                    )
 
         return pairs
 
     def _detect_tables(
         self,
-        ocr_result: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        ocr_result: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """Detecta tabelas no resultado OCR.
 
         Args:
@@ -339,8 +340,8 @@ class OCRService:
 
     def _find_aligned_lines(
         self,
-        lines: List[Dict[str, Any]],
-    ) -> List[List[Dict[str, Any]]]:
+        lines: list[dict[str, Any]],
+    ) -> list[list[dict[str, Any]]]:
         """Encontra linhas alinhadas.
 
         Args:
@@ -349,7 +350,7 @@ class OCRService:
         Returns:
             Grupos de linhas alinhadas
         """
-        groups: List[List[Dict[str, Any]]] = []
+        groups: list[list[dict[str, Any]]] = []
         used = set()
 
         for i, line in enumerate(lines):
@@ -359,7 +360,7 @@ class OCRService:
             group = [line]
             y_pos = line.get("bounding_box", {}).get("y", 0)
 
-            for j, other_line in enumerate(lines[i + 1:], i + 1):
+            for j, other_line in enumerate(lines[i + 1 :], i + 1):
                 if j in used:
                     continue
                 other_y = other_line.get("bounding_box", {}).get("y", 0)
@@ -376,8 +377,8 @@ class OCRService:
 
     def _lines_to_table(
         self,
-        lines: List[Dict[str, Any]],
-    ) -> Optional[Dict[str, Any]]:
+        lines: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
         """Converte linhas alinhadas em tabela.
 
         Args:
@@ -397,12 +398,14 @@ class OCRService:
 
         cells = []
         for i, line in enumerate(sorted_lines):
-            cells.append({
-                "row": 0,
-                "col": i,
-                "text": line.get("text", ""),
-                "confidence": line.get("confidence", 0),
-            })
+            cells.append(
+                {
+                    "row": 0,
+                    "col": i,
+                    "text": line.get("text", ""),
+                    "confidence": line.get("confidence", 0),
+                }
+            )
 
         return {
             "rows": 1,
@@ -412,8 +415,8 @@ class OCRService:
 
     def _calculate_metrics(
         self,
-        ocr_result: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        ocr_result: dict[str, Any],
+    ) -> dict[str, Any]:
         """Calcula metricas do resultado OCR.
 
         Args:
@@ -467,8 +470,8 @@ class OCRService:
 
     def detect_document_type(
         self,
-        ocr_result: Dict[str, Any],
-    ) -> Tuple[Optional[str], float]:
+        ocr_result: dict[str, Any],
+    ) -> tuple[str | None, float]:
         """Detecta tipo de documento pelo conteudo.
 
         Args:
@@ -482,28 +485,44 @@ class OCRService:
         # Padroes de deteccao
         type_patterns = {
             "invoice": [
-                "NOTA FISCAL", "NFE", "DANFE", "NF-E",
-                "FATURA", "INVOICE",
+                "NOTA FISCAL",
+                "NFE",
+                "DANFE",
+                "NF-E",
+                "FATURA",
+                "INVOICE",
             ],
             "receipt": [
-                "CUPOM FISCAL", "RECIBO", "COMPROVANTE",
+                "CUPOM FISCAL",
+                "RECIBO",
+                "COMPROVANTE",
                 "RECEIPT",
             ],
             "boleto": [
-                "BOLETO", "CODIGO DE BARRAS", "FICHA DE COMPENSACAO",
+                "BOLETO",
+                "CODIGO DE BARRAS",
+                "FICHA DE COMPENSACAO",
                 "LINHA DIGITAVEL",
             ],
             "contract": [
-                "CONTRATO", "CONTRACT", "ACORDO", "TERMO DE",
+                "CONTRATO",
+                "CONTRACT",
+                "ACORDO",
+                "TERMO DE",
             ],
             "id_card": [
-                "REGISTRO GERAL", "IDENTIDADE", "RG",
+                "REGISTRO GERAL",
+                "IDENTIDADE",
+                "RG",
             ],
             "cnh": [
-                "CARTEIRA NACIONAL", "HABILITACAO", "CNH",
+                "CARTEIRA NACIONAL",
+                "HABILITACAO",
+                "CNH",
             ],
             "cpf_card": [
-                "CADASTRO DE PESSOAS FISICAS", "CPF",
+                "CADASTRO DE PESSOAS FISICAS",
+                "CPF",
             ],
         }
 
@@ -520,7 +539,7 @@ class OCRService:
 
         return best_type, best_score
 
-    def get_supported_languages(self, provider: OCRProvider) -> List[str]:
+    def get_supported_languages(self, provider: OCRProvider) -> list[str]:
         """Retorna idiomas suportados pelo provider.
 
         Args:
@@ -554,7 +573,7 @@ class OCRService:
         self,
         page_count: int,
         provider: OCRProvider,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Estima custo de processamento.
 
         Args:

@@ -4,34 +4,35 @@ Testes para EFD-Reinf.
 Testes unitários e de integração para eventos EFD-Reinf.
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.efd_reinf import (
+    ClassificacaoTributaria,
+    EFDReinfManager,
+    IndRetificacao,
+    InfoContribuinte,
+    PagamentoBeneficiarioPF,
+    PagamentoBeneficiarioPJ,
+    RetencaoServico,
+    TipoAmbiente,
+)
 from modules.government_integrations.schemas.efd_reinf import (
+    ClassificacaoTributariaEnum,
     GerarR1000Request,
     GerarR2010Request,
+    GerarR2099Request,
     GerarR4010Request,
     GerarR4020Request,
-    GerarR2099Request,
-    RetencaoServicoRequest,
     PagamentoPFRequest,
     PagamentoPJRequest,
-    ClassificacaoTributariaEnum,
+    RetencaoServicoRequest,
 )
 from modules.government_integrations.services.efd_reinf_service import (
     EFDReinfService,
-)
-from modules.government_integrations.core.efd_reinf import (
-    EFDReinfManager,
-    TipoAmbiente,
-    InfoContribuinte,
-    RetencaoServico,
-    PagamentoBeneficiarioPF,
-    PagamentoBeneficiarioPJ,
-    ClassificacaoTributaria,
-    IndRetificacao,
 )
 
 
@@ -44,7 +45,7 @@ class TestSchemas:
             razao_social="Empresa Teste LTDA",
             classificacao_tributaria=ClassificacaoTributariaEnum.EMPRESA_SIMPLES,
             inicio_validade="2026-01",
-            email="contato@empresa.com.br"
+            email="contato@empresa.com.br",
         )
         assert request.razao_social == "Empresa Teste LTDA"
         assert request.classificacao_tributaria == ClassificacaoTributariaEnum.EMPRESA_SIMPLES
@@ -92,7 +93,7 @@ class TestSchemas:
                     valor_retencao=Decimal("1100.00"),
                     numero_nf="123",
                 )
-            ]
+            ],
         )
         assert request.periodo_apuracao == "2026-01"
         assert len(request.retencoes) == 1
@@ -131,7 +132,7 @@ class TestSchemas:
                     natureza_rendimento="10008",
                     valor_bruto=Decimal("3000.00"),
                 )
-            ]
+            ],
         )
         assert len(request.pagamentos) == 1
 
@@ -160,16 +161,13 @@ class TestSchemas:
                     natureza_rendimento="15004",
                     valor_bruto=Decimal("10000.00"),
                 )
-            ]
+            ],
         )
         assert len(request.pagamentos) == 1
 
     def test_r2099_request_valid(self):
         """Testa GerarR2099Request válido."""
-        request = GerarR2099Request(
-            periodo_apuracao="2026-01",
-            retificacao=False
-        )
+        request = GerarR2099Request(periodo_apuracao="2026-01", retificacao=False)
         assert request.periodo_apuracao == "2026-01"
 
 
@@ -310,11 +308,14 @@ class TestEFDReinfService:
     @pytest.fixture
     def service(self):
         """Cria instância do service para testes."""
-        with patch.dict('os.environ', {
-            'EFD_REINF_CNPJ': '35710481000103',
-            'EFD_REINF_ENVIRONMENT': 'producao_restrita',
-            'CERTIFICATE_PATH': '',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "EFD_REINF_CNPJ": "35710481000103",
+                "EFD_REINF_ENVIRONMENT": "producao_restrita",
+                "CERTIFICATE_PATH": "",
+            },
+        ):
             return EFDReinfService()
 
     def test_service_init(self, service):
@@ -433,12 +434,13 @@ class TestEFDReinfEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.efd_reinf_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -476,13 +478,10 @@ class TestEFDReinfEndpoints:
             "razao_social": "Empresa Teste LTDA",
             "classificacao_tributaria": "02",
             "inicio_validade": "2026-01",
-            "email": "teste@empresa.com.br"
+            "email": "teste@empresa.com.br",
         }
 
-        response = client.post(
-            "/api/v1/government/efd-reinf/r1000",
-            json=payload
-        )
+        response = client.post("/api/v1/government/efd-reinf/r1000", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -497,16 +496,14 @@ class TestEFDReinfEndpoints:
                 {
                     "cnpj_prestador": "12345678000199",
                     "valor_bruto": "10000.00",
+                    "valor_base_retencao": "10000.00",
                     "valor_retencao": "1100.00",
-                    "numero_nf": "123456"
+                    "numero_nf": "123456",
                 }
-            ]
+            ],
         }
 
-        response = client.post(
-            "/api/v1/government/efd-reinf/r2010",
-            json=payload
-        )
+        response = client.post("/api/v1/government/efd-reinf/r2010", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -523,15 +520,12 @@ class TestEFDReinfEndpoints:
                     "nome_beneficiario": "João da Silva",
                     "natureza_rendimento": "10008",
                     "valor_bruto": "5000.00",
-                    "valor_irrf": "750.00"
+                    "valor_irrf": "750.00",
                 }
-            ]
+            ],
         }
 
-        response = client.post(
-            "/api/v1/government/efd-reinf/r4010",
-            json=payload
-        )
+        response = client.post("/api/v1/government/efd-reinf/r4010", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -549,15 +543,12 @@ class TestEFDReinfEndpoints:
                     "natureza_rendimento": "15004",
                     "valor_bruto": "25000.00",
                     "valor_irrf": "375.00",
-                    "valor_csll": "250.00"
+                    "valor_csll": "250.00",
                 }
-            ]
+            ],
         }
 
-        response = client.post(
-            "/api/v1/government/efd-reinf/r4020",
-            json=payload
-        )
+        response = client.post("/api/v1/government/efd-reinf/r4020", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -566,15 +557,9 @@ class TestEFDReinfEndpoints:
 
     def test_gerar_r2099_endpoint(self, client):
         """Testa endpoint de geração R-2099."""
-        payload = {
-            "periodo_apuracao": "2026-01",
-            "retificacao": False
-        }
+        payload = {"periodo_apuracao": "2026-01", "retificacao": False}
 
-        response = client.post(
-            "/api/v1/government/efd-reinf/r2099",
-            json=payload
-        )
+        response = client.post("/api/v1/government/efd-reinf/r2099", json=payload)
 
         assert response.status_code == 201
         data = response.json()

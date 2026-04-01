@@ -6,20 +6,19 @@ Servico para geracao automatica de insights de feedback.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai.sentiment_analysis.models import (
     FeedbackInsight,
-    InsightType,
     InsightPriority,
+    InsightType,
     SentimentTrend,
-    TrendPeriod,
     TrendDirection,
+    TrendPeriod,
 )
-from modules.ai.sentiment_analysis.models.feedback_insight import InsightStatus
 from modules.ai.sentiment_analysis.repositories import SentimentRepository
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ class InsightGenerator:
     async def generate_insights_from_trend(
         self,
         trend: SentimentTrend,
-    ) -> List[FeedbackInsight]:
+    ) -> list[FeedbackInsight]:
         """
         Gera insights baseados em uma tendencia.
 
@@ -98,7 +97,7 @@ class InsightGenerator:
         self,
         period_type: TrendPeriod = TrendPeriod.DAILY,
         days_back: int = 1,
-    ) -> List[FeedbackInsight]:
+    ) -> list[FeedbackInsight]:
         """Analisa dados recentes e gera insights."""
         # Buscar tendencias recentes
         now = datetime.utcnow()
@@ -345,7 +344,7 @@ class InsightGenerator:
     async def _create_recurring_issue_insight(
         self,
         trend: SentimentTrend,
-    ) -> Optional[FeedbackInsight]:
+    ) -> FeedbackInsight | None:
         """Cria insight de problema recorrente."""
         if not trend.top_negative_aspects:
             return None
@@ -420,7 +419,7 @@ class InsightGenerator:
 
         return await self.repository.create_insight(insight)
 
-    async def _generate_opportunity_insights(self) -> List[FeedbackInsight]:
+    async def _generate_opportunity_insights(self) -> list[FeedbackInsight]:
         """Gera insights de oportunidade baseados em dados historicos."""
         insights = []
 
@@ -432,14 +431,14 @@ class InsightGenerator:
     async def get_active_insights(
         self,
         limit: int = 20,
-    ) -> List[FeedbackInsight]:
+    ) -> list[FeedbackInsight]:
         """Retorna insights ativos."""
         return await self.repository.get_active_insights(limit=limit)
 
     async def get_critical_insights(
         self,
         limit: int = 10,
-    ) -> List[FeedbackInsight]:
+    ) -> list[FeedbackInsight]:
         """Retorna insights criticos."""
         return await self.repository.get_critical_insights(limit=limit)
 
@@ -447,7 +446,7 @@ class InsightGenerator:
         self,
         insight_id: UUID,
         user_id: UUID,
-    ) -> Optional[FeedbackInsight]:
+    ) -> FeedbackInsight | None:
         """Reconhece um insight."""
         insight = await self.repository.get_insight(insight_id)
         if not insight:
@@ -461,8 +460,8 @@ class InsightGenerator:
         self,
         insight_id: UUID,
         user_id: UUID,
-        team: Optional[str] = None,
-    ) -> Optional[FeedbackInsight]:
+        team: str | None = None,
+    ) -> FeedbackInsight | None:
         """Atribui insight a um usuario."""
         insight = await self.repository.get_insight(insight_id)
         if not insight:
@@ -477,8 +476,8 @@ class InsightGenerator:
         insight_id: UUID,
         user_id: UUID,
         outcome: str,
-        notes: Optional[str] = None,
-    ) -> Optional[FeedbackInsight]:
+        notes: str | None = None,
+    ) -> FeedbackInsight | None:
         """Resolve um insight."""
         insight = await self.repository.get_insight(insight_id)
         if not insight:
@@ -492,9 +491,9 @@ class InsightGenerator:
         self,
         insight_id: UUID,
         was_useful: bool,
-        rating: Optional[int] = None,
-        notes: Optional[str] = None,
-    ) -> Optional[FeedbackInsight]:
+        rating: int | None = None,
+        notes: str | None = None,
+    ) -> FeedbackInsight | None:
         """Adiciona feedback sobre utilidade do insight."""
         insight = await self.repository.get_insight(insight_id)
         if not insight:
@@ -504,6 +503,6 @@ class InsightGenerator:
         await self.repository.update_insight(insight_id)
         return insight
 
-    async def get_insight_stats(self) -> Dict[str, Any]:
+    async def get_insight_stats(self) -> dict[str, Any]:
         """Retorna estatisticas de insights."""
         return await self.repository.get_insight_stats()

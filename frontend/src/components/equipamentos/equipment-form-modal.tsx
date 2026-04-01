@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,17 @@ interface EquipmentFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (equipment?: any) => ({
+  nome: equipment?.nome || '',
+  equipment_type: equipment?.equipment_type || 'camera',
+  serial_number: equipment?.serial_number || '',
+  marca: equipment?.marca || '',
+  modelo: equipment?.modelo || '',
+  location: equipment?.location || '',
+  observacoes: equipment?.observacoes || '',
+});
+
 export function EquipmentFormModal({
   isOpen,
   onClose,
@@ -30,39 +41,20 @@ export function EquipmentFormModal({
   isLoading,
 }: EquipmentFormModalProps) {
   const isEditing = !!equipment;
-  const [form, setForm] = useState({
-    nome: '',
-    equipment_type: 'camera',
-    serial_number: '',
-    marca: '',
-    modelo: '',
-    location: '',
-    observacoes: '',
-  });
+
+  const formKey = useMemo(() => {
+    return equipment?.id || equipment?.codigo || 'new';
+  }, [equipment]);
+
+  const [form, setForm] = useState(createInitialForm(equipment));
 
   useEffect(() => {
-    if (equipment) {
-      setForm({
-        nome: equipment.nome || '',
-        equipment_type: equipment.equipment_type || 'camera',
-        serial_number: equipment.serial_number || '',
-        marca: equipment.marca || '',
-        modelo: equipment.modelo || '',
-        location: equipment.location || '',
-        observacoes: equipment.observacoes || '',
-      });
-    } else {
-      setForm({
-        nome: '',
-        equipment_type: 'camera',
-        serial_number: '',
-        marca: '',
-        modelo: '',
-        location: '',
-        observacoes: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(equipment));
     }
-  }, [equipment, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

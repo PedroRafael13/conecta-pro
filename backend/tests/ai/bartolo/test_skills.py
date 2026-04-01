@@ -10,21 +10,23 @@ Testa:
 - Skills Registry: get_skill, list_skills
 """
 
-import pytest
 import sys
-sys.path.insert(0, '/app')
 
-from modules.ai.bartolo.skills.base_skill import BaseSkill
-from modules.ai.bartolo.skills.escala_skill import EscalaSkill
-from modules.ai.bartolo.skills.cobertura_skill import CoberturaSkill
-from modules.ai.bartolo.skills.substituto_skill import SubstitutoSkill
+import pytest
+
+sys.path.insert(0, "/app")
+
+from modules.ai.bartolo.skills import SKILL_REGISTRY, get_skill, list_skills
 from modules.ai.bartolo.skills.alerta_skill import AlertaSkill
-from modules.ai.bartolo.skills import get_skill, list_skills, SKILL_REGISTRY
-
+from modules.ai.bartolo.skills.base_skill import BaseSkill
+from modules.ai.bartolo.skills.cobertura_skill import CoberturaSkill
+from modules.ai.bartolo.skills.escala_skill import EscalaSkill
+from modules.ai.bartolo.skills.substituto_skill import SubstitutoSkill
 
 # ==========================================================================
 # Testes de BaseSkill
 # ==========================================================================
+
 
 class TestBaseSkillParseCommand:
     """Testes para parse_command da BaseSkill."""
@@ -68,6 +70,7 @@ class TestBaseSkillParseCommand:
 # ==========================================================================
 # Testes de EscalaSkill
 # ==========================================================================
+
 
 class TestEscalaSkill:
     """Testes para EscalaSkill."""
@@ -198,6 +201,7 @@ class TestEscalaSkill:
 # Testes de CoberturaSkill
 # ==========================================================================
 
+
 class TestCoberturaSkill:
     """Testes para CoberturaSkill."""
 
@@ -269,6 +273,7 @@ class TestCoberturaSkill:
 # ==========================================================================
 # Testes de SubstitutoSkill
 # ==========================================================================
+
 
 class TestSubstitutoSkill:
     """Testes para SubstitutoSkill."""
@@ -369,6 +374,7 @@ class TestSubstitutoSkill:
 # Testes de AlertaSkill
 # ==========================================================================
 
+
 class TestAlertaSkill:
     """Testes para AlertaSkill."""
 
@@ -444,6 +450,7 @@ class TestAlertaSkill:
 # Testes do Skills Registry
 # ==========================================================================
 
+
 class TestSkillsRegistry:
     """Testes para o registry de skills."""
 
@@ -474,12 +481,15 @@ class TestSkillsRegistry:
         assert "alerta" in skills
         assert len(skills) == 11
 
-    @pytest.mark.parametrize("skill_name,expected_class", [
-        ("escala", EscalaSkill),
-        ("cobertura", CoberturaSkill),
-        ("substituto", SubstitutoSkill),
-        ("alerta", AlertaSkill),
-    ])
+    @pytest.mark.parametrize(
+        "skill_name,expected_class",
+        [
+            ("escala", EscalaSkill),
+            ("cobertura", CoberturaSkill),
+            ("substituto", SubstitutoSkill),
+            ("alerta", AlertaSkill),
+        ],
+    )
     def test_get_skill_returns_correct_class(self, skill_name, expected_class):
         """Testa que get_skill retorna a classe correta."""
         skill = get_skill(skill_name)

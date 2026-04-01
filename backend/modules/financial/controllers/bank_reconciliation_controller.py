@@ -5,7 +5,6 @@ import io
 import logging
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -33,7 +32,6 @@ from modules.financial.schemas import (
     ReconciliationItemMatch,
     StatementImport,
 )
-from modules.financial.schemas.cashflow import BankReconciliationFilter
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +59,7 @@ def get_transaction_repository(
 
 
 @router.post(
-    "/",
+    "",
     response_model=BankReconciliationResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar conciliação",
@@ -102,43 +100,36 @@ async def create_reconciliation(
 
 
 @router.get(
-    "/",
-    response_model=List[BankReconciliationResponse],
+    "",
+    response_model=list[BankReconciliationResponse],
     summary="Listar conciliações",
 )
 async def list_reconciliations(
     bank_account_id: UUID,
-    reconciliation_status: Optional[ReconciliationStatus] = Query(None),
-    period_type: Optional[ReconciliationPeriodType] = Query(None),
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
+    reconciliation_status: ReconciliationStatus | None = Query(None),
+    period_type: ReconciliationPeriodType | None = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: BankReconciliationRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[BankReconciliationResponse]:
+) -> list[BankReconciliationResponse]:
     """Lista conciliações com filtros."""
-    filters = BankReconciliationFilter(
-        bank_account_id=bank_account_id,
-        status=reconciliation_status,
-        period_type=period_type,
-        start_date=start_date,
-        end_date=end_date,
-    )
-    reconciliations = await repo.list_with_filters(filters, skip=skip, limit=limit)
+    reconciliations = await repo.list(bank_account_id=bank_account_id, skip=skip, limit=limit)
     return [BankReconciliationResponse.model_validate(r) for r in reconciliations]
 
 
 @router.get(
     "/in-progress",
-    response_model=Optional[BankReconciliationResponse],
+    response_model=BankReconciliationResponse | None,
     summary="Conciliação em andamento",
 )
 async def get_in_progress(
     bank_account_id: UUID,
     repo: BankReconciliationRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> Optional[BankReconciliationResponse]:
+) -> BankReconciliationResponse | None:
     """Retorna conciliação em andamento para a conta."""
     reconciliation = await repo.get_in_progress(bank_account_id)
     if reconciliation:
@@ -228,10 +219,7 @@ async def delete_reconciliation(
 # ==================== OPERAÇÕES ====================
 
 
-@router.post(
-    "/{reconciliation_id}/import-statement",
-    summary="Importar extrato",
-)
+@router.post("/{reconciliation_id}/import-statement", summary="Importar extrato", status_code=201)
 async def import_statement(
     reconciliation_id: UUID,
     data: StatementImport,
@@ -294,8 +282,7 @@ async def import_statement(
     await session.commit()
 
     logger.info(
-        f"Extrato importado para conciliação {reconciliation_id}: "
-        f"{items_count} itens, por {current_user.get('email')}"
+        f"Extrato importado para conciliação {reconciliation_id}: {items_count} itens, por {current_user.get('email')}"
     )
 
     return {
@@ -307,10 +294,7 @@ async def import_statement(
     }
 
 
-@router.post(
-    "/{reconciliation_id}/match",
-    summary="Conciliar item",
-)
+@router.post("/{reconciliation_id}/match", summary="Conciliar item", status_code=201)
 async def match_item(
     reconciliation_id: UUID,
     data: ReconciliationItemMatch,
@@ -365,10 +349,7 @@ async def match_item(
     }
 
 
-@router.post(
-    "/{reconciliation_id}/adjustment",
-    summary="Criar ajuste",
-)
+@router.post("/{reconciliation_id}/adjustment", summary="Criar ajuste", status_code=201)
 async def create_adjustment(
     reconciliation_id: UUID,
     data: ReconciliationAdjustment,
@@ -411,9 +392,7 @@ async def create_adjustment(
             account.update_balance(-data.amount)
 
     # Atualiza total de ajustes na conciliação
-    reconciliation.total_adjustments = (
-        reconciliation.total_adjustments or Decimal("0")
-    ) + data.amount
+    reconciliation.total_adjustments = (reconciliation.total_adjustments or Decimal("0")) + data.amount
 
     await session.commit()
 
@@ -434,6 +413,7 @@ async def create_adjustment(
     "/{reconciliation_id}/complete",
     response_model=BankReconciliationResponse,
     summary="Finalizar conciliação",
+    status_code=201,
 )
 async def complete_reconciliation(
     reconciliation_id: UUID,
@@ -464,8 +444,7 @@ async def complete_reconciliation(
             # Há diferença não conciliada
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Diferença de R$ {difference:.2f} não conciliada. "
-                f"Crie ajustes ou concilie mais itens.",
+                detail=f"Diferença de R$ {difference:.2f} não conciliada. Crie ajustes ou concilie mais itens.",
             )
 
     # Atualiza status
@@ -486,6 +465,7 @@ async def complete_reconciliation(
     "/{reconciliation_id}/reopen",
     response_model=BankReconciliationResponse,
     summary="Reabrir conciliação",
+    status_code=201,
 )
 async def reopen_reconciliation(
     reconciliation_id: UUID,
@@ -516,10 +496,7 @@ async def reopen_reconciliation(
         },
     )
 
-    logger.info(
-        f"Conciliação reaberta: {reconciliation_id} por {current_user.get('email')}, "
-        f"motivo: {reason}"
-    )
+    logger.info(f"Conciliação reaberta: {reconciliation_id} por {current_user.get('email')}, motivo: {reason}")
     return BankReconciliationResponse.model_validate(updated)
 
 
@@ -556,9 +533,7 @@ async def get_reconciliation_details(
     )
 
     # Separa conciliadas e pendentes
-    reconciled = [
-        t for t in transactions if t.reconciliation_status == ReconciliationStatus.CONCILIADO
-    ]
+    reconciled = [t for t in transactions if t.reconciliation_status == ReconciliationStatus.CONCILIADO]
     pending = [t for t in transactions if t.reconciliation_status == ReconciliationStatus.PENDENTE]
 
     # Calcula totais

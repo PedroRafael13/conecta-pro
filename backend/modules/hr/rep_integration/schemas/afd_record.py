@@ -1,10 +1,9 @@
 """Schemas Pydantic para AFDRecord."""
 
-from datetime import datetime, date, time
-from typing import Optional, List
+from datetime import date, datetime, time
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AFDRecordBase(BaseModel):
@@ -35,23 +34,23 @@ class AFDRecordCreate(AFDRecordBase):
 
     device_id: UUID
     condominio_id: UUID
-    record_date: Optional[date] = None
-    record_time: Optional[time] = None
-    pis_number: Optional[str] = None
-    cnpj: Optional[str] = None
-    cei: Optional[str] = None
-    company_name: Optional[str] = None
-    rep_serial: Optional[str] = None
-    rep_manufacturer: Optional[str] = None
-    rep_model: Optional[str] = None
-    generation_date: Optional[datetime] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    original_date: Optional[date] = None
-    original_time: Optional[time] = None
-    adjusted_date: Optional[date] = None
-    adjusted_time: Optional[time] = None
-    event_id: Optional[UUID] = None
+    record_date: date | None = None
+    record_time: time | None = None
+    pis_number: str | None = None
+    cnpj: str | None = None
+    cei: str | None = None
+    company_name: str | None = None
+    rep_serial: str | None = None
+    rep_manufacturer: str | None = None
+    rep_model: str | None = None
+    generation_date: datetime | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    original_date: date | None = None
+    original_time: time | None = None
+    adjusted_date: date | None = None
+    adjusted_time: time | None = None
+    event_id: UUID | None = None
     line_hash: str
 
 
@@ -63,22 +62,22 @@ class AFDRecordResponse(AFDRecordBase):
     id: UUID
     device_id: UUID
     condominio_id: UUID
-    record_date: Optional[date] = None
-    record_time: Optional[time] = None
-    pis_number: Optional[str] = None
-    event_id: Optional[UUID] = None
+    record_date: date | None = None
+    record_time: time | None = None
+    pis_number: str | None = None
+    event_id: UUID | None = None
     line_hash: str
     is_exported: bool
-    exported_at: Optional[datetime] = None
+    exported_at: datetime | None = None
     is_valid: bool
-    validation_error: Optional[str] = None
+    validation_error: str | None = None
     created_at: datetime
 
 
 class AFDRecordList(BaseModel):
     """Schema para lista de registros AFD."""
 
-    items: List[AFDRecordResponse]
+    items: list[AFDRecordResponse]
     total: int
     page: int
     page_size: int
@@ -88,16 +87,16 @@ class AFDRecordList(BaseModel):
 class AFDRecordFilter(BaseModel):
     """Filtros para busca de registros AFD."""
 
-    device_id: Optional[UUID] = None
-    condominio_id: Optional[UUID] = None
-    record_type: Optional[str] = None
-    pis_number: Optional[str] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    is_exported: Optional[bool] = None
-    is_valid: Optional[bool] = None
-    nsr_from: Optional[int] = None
-    nsr_to: Optional[int] = None
+    device_id: UUID | None = None
+    condominio_id: UUID | None = None
+    record_type: str | None = None
+    pis_number: str | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    is_exported: bool | None = None
+    is_valid: bool | None = None
+    nsr_from: int | None = None
+    nsr_to: int | None = None
 
 
 class AFDExportRequest(BaseModel):
@@ -135,7 +134,7 @@ class AFDExportResponse(BaseModel):
     """Resposta da exportação AFD."""
 
     success: bool
-    file_path: Optional[str] = None
+    file_path: str | None = None
     file_name: str
     total_records: int
     period_start: date
@@ -143,7 +142,7 @@ class AFDExportResponse(BaseModel):
     generated_at: datetime
     file_size_bytes: int
     checksum: str
-    download_url: Optional[str] = None
+    download_url: str | None = None
 
 
 class AFDValidationResult(BaseModel):
@@ -153,13 +152,13 @@ class AFDValidationResult(BaseModel):
     total_lines: int
     valid_lines: int
     invalid_lines: int
-    errors: List[dict]
-    warnings: List[dict]
-    header_info: Optional[dict] = None
-    company_info: Optional[dict] = None
+    errors: list[dict]
+    warnings: list[dict]
+    header_info: dict | None = None
+    company_info: dict | None = None
     records_count: int
-    date_range_start: Optional[date] = None
-    date_range_end: Optional[date] = None
+    date_range_start: date | None = None
+    date_range_end: date | None = None
 
 
 class AFDImportRequest(BaseModel):
@@ -188,5 +187,5 @@ class AFDImportResponse(BaseModel):
     imported_records: int
     skipped_records: int
     error_records: int
-    errors: Optional[List[dict]] = None
-    validation_result: Optional[AFDValidationResult] = None
+    errors: list[dict] | None = None
+    validation_result: AFDValidationResult | None = None

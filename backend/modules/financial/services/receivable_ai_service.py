@@ -4,7 +4,6 @@ import logging
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Dict, List
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -33,7 +32,7 @@ class CustomerRiskScore:
     overdue_debt: Decimal
     overdue_days_avg: float
     payment_history_score: float
-    recommendations: List[str]
+    recommendations: list[str]
 
 
 @dataclass
@@ -46,7 +45,7 @@ class CollectionPriority:
     days_overdue: int
     priority_score: float
     recommended_action: str
-    contact_info: Dict[str, str]
+    contact_info: dict[str, str]
 
 
 @dataclass
@@ -58,7 +57,7 @@ class CashFlowForecast:
     expected_receipts: Decimal
     probable_receipts: Decimal  # Considerando inadimplencia
     historical_collection_rate: float
-    by_day: List[Dict]
+    by_day: list[dict]
 
 
 @dataclass
@@ -69,7 +68,7 @@ class DelinquencyAnalysis:
     delinquent_customers: int
     delinquency_rate: float
     total_overdue: Decimal
-    aging_buckets: Dict[str, Dict]
+    aging_buckets: dict[str, dict]
     trend: str  # melhorando, estavel, piorando
     projected_losses: Decimal
 
@@ -87,9 +86,7 @@ class ReceivableAIService:
     ) -> CustomerRiskScore:
         """Calcula score de risco do cliente."""
         # Busca dados do cliente
-        customer_result = await self.session.execute(
-            select(Customer).where(Customer.id == customer_id)
-        )
+        customer_result = await self.session.execute(select(Customer).where(Customer.id == customer_id))
         customer = customer_result.scalar_one_or_none()
         if not customer:
             raise ValueError("Cliente nao encontrado")
@@ -129,23 +126,20 @@ class ReceivableAIService:
         overdue_installments = list(overdue_result.scalars().all())
 
         # Calcula metricas
-        total_overdue_days = sum(
-            (today - inst.due_date).days for inst in overdue_installments
-        )
-        avg_overdue_days = (
-            total_overdue_days / len(overdue_installments)
-            if overdue_installments
-            else 0
-        )
+        total_overdue_days = sum((today - inst.due_date).days for inst in overdue_installments)
+        avg_overdue_days = total_overdue_days / len(overdue_installments) if overdue_installments else 0
 
         # Score de historico de pagamento (0-100)
         payment_score = 100.0
         if payments:
             late_payments = sum(
-                1 for p in payments
-                if p.payment_date and hasattr(p, 'installment') and
-                p.installment and p.installment.due_date and
-                p.payment_date > p.installment.due_date
+                1
+                for p in payments
+                if p.payment_date
+                and hasattr(p, "installment")
+                and p.installment
+                and p.installment.due_date
+                and p.payment_date > p.installment.due_date
             )
             payment_score = max(0, 100 - (late_payments / len(payments) * 100))
 
@@ -154,10 +148,7 @@ class ReceivableAIService:
 
         # Fator: divida vencida
         if customer.overdue_debt > 0:
-            overdue_ratio = (
-                float(customer.overdue_debt / customer.total_debt)
-                if customer.total_debt > 0 else 0
-            )
+            overdue_ratio = float(customer.overdue_debt / customer.total_debt) if customer.total_debt > 0 else 0
             risk_factors.append(overdue_ratio * 40)
 
         # Fator: dias de atraso medio
@@ -182,9 +173,7 @@ class ReceivableAIService:
             risk_level = "critico"
 
         # Gera recomendacoes
-        recommendations = self._generate_risk_recommendations(
-            risk_level, avg_overdue_days, customer.overdue_debt
-        )
+        recommendations = self._generate_risk_recommendations(risk_level, avg_overdue_days, customer.overdue_debt)
 
         return CustomerRiskScore(
             customer_id=customer_id,
@@ -203,7 +192,7 @@ class ReceivableAIService:
         risk_level: str,
         avg_overdue_days: float,
         overdue_debt: Decimal,
-    ) -> List[str]:
+    ) -> list[str]:
         """Gera recomendacoes baseadas no risco."""
         recommendations = []
 
@@ -234,7 +223,7 @@ class ReceivableAIService:
         self,
         condominio_id: UUID,
         limit: int = 20,
-    ) -> List[CollectionPriority]:
+    ) -> list[CollectionPriority]:
         """Retorna lista priorizada de cobrancas."""
         today = date.today()
 
@@ -264,9 +253,7 @@ class ReceivableAIService:
             remaining_value = account.net_value - account.paid_value
 
             # Calcula score de prioridade
-            priority_score = self._calculate_priority_score(
-                remaining_value, days_overdue
-            )
+            priority_score = self._calculate_priority_score(remaining_value, days_overdue)
 
             # Determina acao recomendada
             action = self._get_recommended_action(days_overdue, remaining_value)
@@ -373,17 +360,16 @@ class ReceivableAIService:
         current_date = today
 
         while current_date <= end_date:
-            day_total = sum(
-                inst.current_value for inst in installments
-                if inst.due_date == current_date
-            )
+            day_total = sum(inst.current_value for inst in installments if inst.due_date == current_date)
             total_expected += day_total
 
-            by_day.append({
-                "date": current_date.isoformat(),
-                "expected": float(day_total),
-                "probable": float(day_total * Decimal(str(collection_rate))),
-            })
+            by_day.append(
+                {
+                    "date": current_date.isoformat(),
+                    "expected": float(day_total),
+                    "probable": float(day_total * Decimal(str(collection_rate))),
+                }
+            )
             current_date += timedelta(days=1)
 
         probable_total = total_expected * Decimal(str(collection_rate))
@@ -422,8 +408,7 @@ class ReceivableAIService:
 
         # Total recebido no periodo
         received_result = await self.session.execute(
-            select(func.sum(ReceivablePayment.paid_value))
-            .where(
+            select(func.sum(ReceivablePayment.paid_value)).where(
                 and_(
                     ReceivablePayment.condominio_id == condominio_id,
                     ReceivablePayment.payment_date >= start_date,
@@ -472,15 +457,12 @@ class ReceivableAIService:
 
         # Total vencido
         overdue_result = await self.session.execute(
-            select(func.sum(ReceivableAccount.net_value - ReceivableAccount.paid_value))
-            .where(
+            select(func.sum(ReceivableAccount.net_value - ReceivableAccount.paid_value)).where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
                     ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < today,
-                    ReceivableAccount.status.notin_(
-                        [ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]
-                    ),
+                    ReceivableAccount.status.notin_([ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]),
                 )
             )
         )
@@ -490,9 +472,7 @@ class ReceivableAIService:
         aging_buckets = await self._calculate_aging_buckets(condominio_id, today)
 
         # Taxa de inadimplencia
-        delinquency_rate = (
-            delinquent_customers / total_customers if total_customers > 0 else 0
-        )
+        delinquency_rate = delinquent_customers / total_customers if total_customers > 0 else 0
 
         # Tendencia (comparando com mes anterior)
         trend = await self._calculate_trend(condominio_id)
@@ -515,7 +495,7 @@ class ReceivableAIService:
         self,
         condominio_id: UUID,
         reference_date: date,
-    ) -> Dict[str, Dict]:
+    ) -> dict[str, dict]:
         """Calcula distribuicao de aging."""
         buckets = {
             "1-7": {"count": 0, "value": 0},
@@ -527,15 +507,12 @@ class ReceivableAIService:
         }
 
         result = await self.session.execute(
-            select(ReceivableAccount)
-            .where(
+            select(ReceivableAccount).where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
                     ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < reference_date,
-                    ReceivableAccount.status.notin_(
-                        [ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]
-                    ),
+                    ReceivableAccount.status.notin_([ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]),
                 )
             )
         )
@@ -569,16 +546,13 @@ class ReceivableAIService:
         # Mes atual
         current_month_start = today.replace(day=1)
         current_result = await self.session.execute(
-            select(func.sum(ReceivableAccount.net_value - ReceivableAccount.paid_value))
-            .where(
+            select(func.sum(ReceivableAccount.net_value - ReceivableAccount.paid_value)).where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
                     ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < today,
                     ReceivableAccount.due_date >= current_month_start,
-                    ReceivableAccount.status.notin_(
-                        [ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]
-                    ),
+                    ReceivableAccount.status.notin_([ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]),
                 )
             )
         )
@@ -588,16 +562,13 @@ class ReceivableAIService:
         prev_month_end = current_month_start - timedelta(days=1)
         prev_month_start = prev_month_end.replace(day=1)
         prev_result = await self.session.execute(
-            select(func.sum(ReceivableAccount.net_value - ReceivableAccount.paid_value))
-            .where(
+            select(func.sum(ReceivableAccount.net_value - ReceivableAccount.paid_value)).where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
                     ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < prev_month_end,
                     ReceivableAccount.due_date >= prev_month_start,
-                    ReceivableAccount.status.notin_(
-                        [ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]
-                    ),
+                    ReceivableAccount.status.notin_([ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]),
                 )
             )
         )

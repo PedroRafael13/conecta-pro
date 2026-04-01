@@ -6,6 +6,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Path, status
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.security_lgpd.schemas.common import StandardResponse
 from modules.security_lgpd.schemas.pia import PIARequest
 from modules.security_lgpd.services.pia_service import PIAService
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/pia", tags=["LGPD - Avaliacao de Impacto (PIA/DPIA)"
     summary="Cria avaliacao de impacto (PIA/DPIA)",
     description="Inicia avaliacao de impacto de privacidade para projeto.",
 )
-async def create_pia(request: PIARequest) -> StandardResponse:
+async def create_pia(current_user: CurrentActiveUser, request: PIARequest) -> StandardResponse:
     """
     Cria avaliacao de impacto de privacidade.
 
@@ -71,6 +72,7 @@ async def create_pia(request: PIARequest) -> StandardResponse:
     description="Retorna detalhes de uma avaliacao de impacto.",
 )
 async def get_pia(
+    current_user: CurrentActiveUser,
     assessment_id: str = Path(..., description="ID da avaliacao"),
 ) -> StandardResponse:
     """
@@ -105,6 +107,7 @@ async def get_pia(
         )
 
 
+@router.get("/risk-categories", include_in_schema=False)
 @router.get(
     "/risk-categories/list",
     response_model=StandardResponse,
@@ -112,7 +115,7 @@ async def get_pia(
     summary="Lista categorias de risco",
     description="Retorna categorias de risco disponiveis.",
 )
-async def list_risk_categories() -> StandardResponse:
+async def list_risk_categories(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Lista categorias de risco disponiveis.
 

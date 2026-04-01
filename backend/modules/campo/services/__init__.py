@@ -3,34 +3,29 @@
 # =============================================================================
 # Legacy - Portaria Remota
 # =============================================================================
-from .guardian_sync_service import GuardianSyncService
-from .occurrence_analyzer import OccurrenceAnalyzer
+from .checklist_service import ChecklistService
+from .estoque_integration import (
+    EstoqueIntegrationService,
+    StatusRequisicao,
+    TipoMovimentacao,
+    get_estoque_integration_service,
+)
 
 # =============================================================================
 # CAMPO - Ordens de Servico, Visitas, Checklists
 # =============================================================================
 from .ordem_servico_service import OrdemServicoService
-from .visita_service import VisitaService
-from .checklist_service import ChecklistService
 from .roteirizacao_service import (
-    RoteirizacaoService,
-    TipoOtimizacao,
-    StatusRoteiro,
     PontoRota,
+    RoteirizacaoService,
     RoteiroOtimizado,
+    StatusRoteiro,
+    TipoOtimizacao,
     get_roteirizacao_service,
 )
-from .estoque_integration import (
-    EstoqueIntegrationService,
-    TipoMovimentacao,
-    StatusRequisicao,
-    get_estoque_integration_service,
-)
+from .visita_service import VisitaService
 
 __all__ = [
-    # Legacy
-    "GuardianSyncService",
-    "OccurrenceAnalyzer",
     # CAMPO
     "OrdemServicoService",
     "VisitaService",

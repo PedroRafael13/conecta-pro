@@ -6,27 +6,27 @@ Registra execuções de verificação de qualidade de dados.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
-    ForeignKey,
     Integer,
     String,
     Text,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class CheckStatusEnum(str, Enum):
+class CheckStatusEnum(StrEnum):
     """Status da verificação."""
 
     PENDING = "pending"
@@ -37,7 +37,7 @@ class CheckStatusEnum(str, Enum):
     PARTIAL = "partial"
 
 
-class CheckScopeEnum(str, Enum):
+class CheckScopeEnum(StrEnum):
     """Escopo da verificação."""
 
     FULL = "full"
@@ -47,7 +47,7 @@ class CheckScopeEnum(str, Enum):
     BATCH = "batch"
 
 
-class CheckTriggerEnum(str, Enum):
+class CheckTriggerEnum(StrEnum):
     """Gatilho da verificação."""
 
     MANUAL = "manual"
@@ -71,26 +71,18 @@ class DataQualityCheck(Base):
 
     # Status
     status = Column(
-        SQLEnum(CheckStatusEnum, name="dq_check_status_enum"),
-        nullable=False,
-        default=CheckStatusEnum.PENDING
+        SQLEnum(CheckStatusEnum, name="dq_check_status_enum"), nullable=False, default=CheckStatusEnum.PENDING
     )
     progress = Column(Float, default=0.0)  # 0-100
 
     # Escopo
-    scope = Column(
-        SQLEnum(CheckScopeEnum, name="dq_check_scope_enum"),
-        nullable=False,
-        default=CheckScopeEnum.FULL
-    )
+    scope = Column(SQLEnum(CheckScopeEnum, name="dq_check_scope_enum"), nullable=False, default=CheckScopeEnum.FULL)
     entity_type = Column(String(100), nullable=False)
     entity_ids = Column(JSONB, default=list)  # IDs específicos se aplicável
 
     # Gatilho
     trigger = Column(
-        SQLEnum(CheckTriggerEnum, name="dq_check_trigger_enum"),
-        nullable=False,
-        default=CheckTriggerEnum.MANUAL
+        SQLEnum(CheckTriggerEnum, name="dq_check_trigger_enum"), nullable=False, default=CheckTriggerEnum.MANUAL
     )
     triggered_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -201,9 +193,7 @@ class DataQualityCheck(Base):
         self.completed_at = datetime.utcnow()
         self.progress = 100.0
         if self.started_at:
-            self.duration_ms = int(
-                (self.completed_at - self.started_at).total_seconds() * 1000
-            )
+            self.duration_ms = int((self.completed_at - self.started_at).total_seconds() * 1000)
         self._calculate_scores()
 
     def update_progress(self, progress: float, records_processed: int = None) -> None:
@@ -243,14 +233,14 @@ class DataQualityCheck(Base):
         elif self.records_checked > 0:
             self.overall_score = self.pass_rate
 
-    def set_error(self, message: str, details: Dict = None) -> None:
+    def set_error(self, message: str, details: dict = None) -> None:
         """Define erro da verificação."""
         self.status = CheckStatusEnum.FAILED
         self.error_message = message
         self.error_details = details or {}
         self.completed_at = datetime.utcnow()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -270,7 +260,7 @@ class DataQualityCheck(Base):
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
         }
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self) -> dict[str, Any]:
         """Converte para dicionário resumido."""
         return {
             "id": str(self.id),

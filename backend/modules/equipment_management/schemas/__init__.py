@@ -1,5 +1,12 @@
 """Schemas do módulo de Gestão de Equipamentos."""
 
+from modules.equipment_management.schemas.comodato import (
+    ComodatoCreate,
+    ComodatoFilter,
+    ComodatoListResponse,
+    ComodatoResponse,
+    ComodatoUpdate,
+)
 from modules.equipment_management.schemas.equipment import (
     EquipmentCreate,
     EquipmentFilter,
@@ -22,13 +29,6 @@ from modules.equipment_management.schemas.maintenance import (
     MaintenanceResponse,
     MaintenanceStats,
     MaintenanceUpdate,
-)
-from modules.equipment_management.schemas.comodato import (
-    ComodatoCreate,
-    ComodatoFilter,
-    ComodatoListResponse,
-    ComodatoResponse,
-    ComodatoUpdate,
 )
 
 __all__ = [

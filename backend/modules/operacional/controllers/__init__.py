@@ -1,17 +1,18 @@
 """Controllers do módulo Operations - Postos e Escalas."""
 
 from .allocation_controller import router as allocation_router
+from .dashboard_controller import router as dashboard_router
 from .employee_controller import router as employee_router
+from .kpi_trends_controller import router as kpi_trends_router
+
 # occurrence_controller foi movido para occurrences/controllers/
 from .post_controller import router as post_router
+from .reports_controller import router as reports_router
 from .scale_controller import router as scale_router
 from .scale_template_controller import router as scale_template_router
 from .shift_controller import router as shift_router
 from .substitution_controller import router as substitution_router
 from .time_bank_controller import router as time_bank_router
-from .dashboard_controller import router as dashboard_router
-from .reports_controller import router as reports_router
-from .kpi_trends_controller import router as kpi_trends_router
 
 __all__ = [
     "post_router",

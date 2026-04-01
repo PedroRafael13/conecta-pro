@@ -3,11 +3,20 @@
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -18,7 +27,7 @@ if TYPE_CHECKING:
     from modules.financial.models.purchase_quotation import PurchaseQuotation
 
 
-class RequisitionStatus(str, Enum):
+class RequisitionStatus(StrEnum):
     """Status da requisição de compra."""
 
     RASCUNHO = "rascunho"
@@ -33,7 +42,7 @@ class RequisitionStatus(str, Enum):
     CANCELADA = "cancelada"
 
 
-class RequisitionPriority(str, Enum):
+class RequisitionPriority(StrEnum):
     """Prioridade da requisição."""
 
     BAIXA = "baixa"
@@ -43,7 +52,7 @@ class RequisitionPriority(str, Enum):
     CRITICA = "critica"
 
 
-class RequisitionType(str, Enum):
+class RequisitionType(StrEnum):
     """Tipo de requisição."""
 
     MATERIAL = "material"
@@ -71,9 +80,7 @@ class PurchaseRequisition(Base):
     # Identificação
     number = Column(String(20), nullable=False, index=True)  # REQ-YYYY-NNNN
     revision = Column(Integer, default=1)  # Versão/revisão
-    requisition_type = Column(
-        String(20), nullable=False, default=RequisitionType.MATERIAL.value
-    )
+    requisition_type = Column(String(20), nullable=False, default=RequisitionType.MATERIAL.value)
     status = Column(String(30), nullable=False, default=RequisitionStatus.RASCUNHO.value)
     priority = Column(String(20), nullable=False, default=RequisitionPriority.MEDIA.value)
 
@@ -83,9 +90,7 @@ class PurchaseRequisition(Base):
     justification = Column(Text, nullable=True)  # Justificativa da compra
 
     # Solicitante
-    requester_id = Column(
-        UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=False, index=True
-    )
+    requester_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=False, index=True)
     department = Column(String(100), nullable=True)  # Departamento solicitante
     cost_center = Column(String(50), nullable=True)  # Centro de custo
 
@@ -111,9 +116,7 @@ class PurchaseRequisition(Base):
     delivery_instructions = Column(Text, nullable=True)
 
     # Fornecedor sugerido
-    suggested_supplier_id = Column(
-        UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=True
-    )
+    suggested_supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=True)
     supplier_justification = Column(Text, nullable=True)  # Justificativa do fornecedor único
 
     # Anexos e observações
@@ -142,14 +145,12 @@ class PurchaseRequisition(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    items: List["PurchaseRequisitionItem"] = relationship(
+    items: list["PurchaseRequisitionItem"] = relationship(
         "PurchaseRequisitionItem",
         back_populates="requisition",
         cascade="all, delete-orphan",
     )
-    quotations: List["PurchaseQuotation"] = relationship(
-        "PurchaseQuotation", back_populates="requisition"
-    )
+    quotations: list["PurchaseQuotation"] = relationship("PurchaseQuotation", back_populates="requisition")
 
     __table_args__ = (
         Index("ix_purchase_requisitions_number", "number"),
@@ -215,7 +216,7 @@ class PurchaseRequisition(Base):
         return False
 
     @property
-    def days_until_needed(self) -> Optional[int]:
+    def days_until_needed(self) -> int | None:
         """Dias até a data necessária."""
         if self.needed_by_date:
             delta = self.needed_by_date - datetime.utcnow().date()
@@ -230,7 +231,7 @@ class PurchaseRequisition(Base):
             raise ValueError("Requisição deve ter pelo menos um item")
         self.status = RequisitionStatus.PENDENTE_APROVACAO.value
 
-    def approve(self, approver_id: uuid.UUID, comment: Optional[str] = None) -> None:
+    def approve(self, approver_id: uuid.UUID, comment: str | None = None) -> None:
         """Aprova a requisição."""
         if self.status != RequisitionStatus.PENDENTE_APROVACAO.value:
             raise ValueError("Apenas requisições pendentes podem ser aprovadas")
@@ -239,9 +240,7 @@ class PurchaseRequisition(Base):
         self.approved_by = approver_id
         self._add_approval_history("aprovado", approver_id, comment)
 
-    def reject(
-        self, rejector_id: uuid.UUID, reason: str, comment: Optional[str] = None
-    ) -> None:
+    def reject(self, rejector_id: uuid.UUID, reason: str, comment: str | None = None) -> None:
         """Rejeita a requisição."""
         if self.status != RequisitionStatus.PENDENTE_APROVACAO.value:
             raise ValueError("Apenas requisições pendentes podem ser rejeitadas")
@@ -301,9 +300,7 @@ class PurchaseRequisition(Base):
         self.estimated_total = total
         return total
 
-    def _add_approval_history(
-        self, action: str, user_id: uuid.UUID, comment: Optional[str] = None
-    ) -> None:
+    def _add_approval_history(self, action: str, user_id: uuid.UUID, comment: str | None = None) -> None:
         """Adiciona entrada ao histórico de aprovações."""
         if not self.approval_history:
             self.approval_history = []
@@ -326,9 +323,7 @@ class PurchaseRequisition(Base):
             "status": self.status,
             "priority": self.priority,
             "request_date": self.request_date.isoformat() if self.request_date else None,
-            "needed_by_date": (
-                self.needed_by_date.isoformat() if self.needed_by_date else None
-            ),
+            "needed_by_date": (self.needed_by_date.isoformat() if self.needed_by_date else None),
             "estimated_total": float(self.estimated_total) if self.estimated_total else 0,
             "items_count": self.items_count,
             "quotations_count": self.quotations_count,
@@ -351,9 +346,7 @@ class PurchaseRequisitionItem(Base):
     )
 
     # Produto
-    product_id = Column(
-        UUID(as_uuid=True), ForeignKey("products.id"), nullable=True, index=True
-    )
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=True, index=True)
 
     # Identificação do item
     item_number = Column(Integer, nullable=False)  # Número sequencial
@@ -382,9 +375,7 @@ class PurchaseRequisitionItem(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    requisition: "PurchaseRequisition" = relationship(
-        "PurchaseRequisition", back_populates="items"
-    )
+    requisition: "PurchaseRequisition" = relationship("PurchaseRequisition", back_populates="items")
 
     __table_args__ = (
         Index("ix_purchase_requisition_items_requisition", "requisition_id"),
@@ -432,9 +423,7 @@ class PurchaseRequisitionItem(Base):
             "quantity_requested": float(self.quantity_requested),
             "quantity_ordered": float(self.quantity_ordered) if self.quantity_ordered else 0,
             "quantity_received": float(self.quantity_received) if self.quantity_received else 0,
-            "estimated_unit_price": (
-                float(self.estimated_unit_price) if self.estimated_unit_price else None
-            ),
+            "estimated_unit_price": (float(self.estimated_unit_price) if self.estimated_unit_price else None),
             "estimated_total": float(self.estimated_total) if self.estimated_total else None,
             "product_id": str(self.product_id) if self.product_id else None,
         }

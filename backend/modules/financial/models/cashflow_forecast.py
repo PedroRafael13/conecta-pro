@@ -3,8 +3,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +22,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class ForecastPeriodType(str, Enum):
+class ForecastPeriodType(StrEnum):
     """Tipo de periodo da previsao."""
 
     DIARIO = "diario"
@@ -32,7 +31,7 @@ class ForecastPeriodType(str, Enum):
     TRIMESTRAL = "trimestral"
 
 
-class ForecastStatus(str, Enum):
+class ForecastStatus(StrEnum):
     """Status da previsao."""
 
     RASCUNHO = "rascunho"
@@ -42,7 +41,7 @@ class ForecastStatus(str, Enum):
     ARQUIVADA = "arquivada"
 
 
-class ForecastConfidence(str, Enum):
+class ForecastConfidence(StrEnum):
     """Nivel de confianca da previsao."""
 
     MUITO_BAIXA = "muito_baixa"  # < 40%
@@ -227,7 +226,7 @@ class CashFlowForecast(Base):
         return self.actual_closing_balance is not None
 
     @property
-    def accuracy(self) -> Optional[float]:
+    def accuracy(self) -> float | None:
         """Calcula precisao da previsao (para periodos passados)."""
         if not self.has_actuals or self.expected_closing_balance == 0:
             return None
@@ -246,25 +245,19 @@ class CashFlowForecast(Base):
             self.expected_other_expenses or Decimal("0")
         )
         self.expected_net_flow = self.expected_inflows - self.expected_outflows
-        self.expected_closing_balance = (
-            self.expected_opening_balance or Decimal("0")
-        ) + self.expected_net_flow
+        self.expected_closing_balance = (self.expected_opening_balance or Decimal("0")) + self.expected_net_flow
 
     def calculate_variances(self) -> None:
         """Calcula variacoes entre previsto e realizado."""
         if self.actual_inflows is not None:
             self.inflows_variance = self.actual_inflows - self.expected_inflows
             if self.expected_inflows != 0:
-                self.inflows_variance_pct = Decimal(
-                    str(float(self.inflows_variance / self.expected_inflows * 100))
-                )
+                self.inflows_variance_pct = Decimal(str(float(self.inflows_variance / self.expected_inflows * 100)))
 
         if self.actual_outflows is not None:
             self.outflows_variance = self.actual_outflows - self.expected_outflows
             if self.expected_outflows != 0:
-                self.outflows_variance_pct = Decimal(
-                    str(float(self.outflows_variance / self.expected_outflows * 100))
-                )
+                self.outflows_variance_pct = Decimal(str(float(self.outflows_variance / self.expected_outflows * 100)))
 
         if self.actual_closing_balance is not None:
             self.balance_variance = self.actual_closing_balance - self.expected_closing_balance
@@ -380,7 +373,7 @@ class CashFlowForecast(Base):
         """Arquiva a previsao."""
         self.status = ForecastStatus.ARQUIVADA.value
 
-    def review(self, user_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def review(self, user_id: uuid.UUID, notes: str | None = None) -> None:
         """Marca como revisada."""
         self.status = ForecastStatus.REVISADA.value
         self.reviewed_at = datetime.utcnow()
@@ -413,9 +406,7 @@ class CashFlowForecast(Base):
             "expected_net_flow": float(self.expected_net_flow or 0),
             "actual_inflows": float(self.actual_inflows) if self.actual_inflows else None,
             "actual_outflows": float(self.actual_outflows) if self.actual_outflows else None,
-            "actual_closing_balance": (
-                float(self.actual_closing_balance) if self.actual_closing_balance else None
-            ),
+            "actual_closing_balance": (float(self.actual_closing_balance) if self.actual_closing_balance else None),
             "balance_variance": float(self.balance_variance) if self.balance_variance else None,
             "confidence_level": self.confidence_level,
             "confidence_category": self.confidence_category,

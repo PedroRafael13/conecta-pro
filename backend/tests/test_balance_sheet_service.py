@@ -165,8 +165,8 @@ class TestTrialBalanceReport:
         for i in range(3):
             balance = AccountBalance(
                 account_id=uuid4(),
-                account_code=f"1.1.01.00{i+1}",
-                account_name=f"Conta {i+1}",
+                account_code=f"1.1.01.00{i + 1}",
+                account_name=f"Conta {i + 1}",
                 account_type=AccountType.ASSET,
                 account_nature=AccountNature.DEBIT,
                 level=4,
@@ -240,8 +240,8 @@ class TestBalanceSheetGroup:
         for i in range(3):
             balance = AccountBalance(
                 account_id=uuid4(),
-                account_code=f"1.1.01.00{i+1}",
-                account_name=f"Conta {i+1}",
+                account_code=f"1.1.01.00{i + 1}",
+                account_name=f"Conta {i + 1}",
                 account_type=AccountType.ASSET,
                 account_nature=AccountNature.DEBIT,
                 level=4,

@@ -5,20 +5,19 @@ extras, faltas e atrasos para fechamento da folha de pagamento.
 """
 
 import uuid
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, List
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
-    DateTime,
     Date,
+    DateTime,
+    Index,
     Integer,
+    Numeric,
     String,
     Text,
-    Numeric,
-    Index,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,7 +25,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 
-class TimeSheetStatus(str, Enum):
+class TimeSheetStatus(StrEnum):
     """Status da folha de ponto."""
 
     ABERTO = "aberto"
@@ -49,9 +48,7 @@ class TimeSheet(Base):
     __tablename__ = "time_sheets"
 
     # Identificação
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     code: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
 
     # Período
@@ -63,22 +60,20 @@ class TimeSheet(Base):
     # Funcionário
     employee_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     employee_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    employee_registration: Mapped[Optional[str]] = mapped_column(String(50))
-    employee_cpf: Mapped[Optional[str]] = mapped_column(String(14))
-    employee_pis: Mapped[Optional[str]] = mapped_column(String(15))
-    department_id: Mapped[Optional[str]] = mapped_column(String(50))
-    department_name: Mapped[Optional[str]] = mapped_column(String(100))
-    position_name: Mapped[Optional[str]] = mapped_column(String(100))
+    employee_registration: Mapped[str | None] = mapped_column(String(50))
+    employee_cpf: Mapped[str | None] = mapped_column(String(14))
+    employee_pis: Mapped[str | None] = mapped_column(String(15))
+    department_id: Mapped[str | None] = mapped_column(String(50))
+    department_name: Mapped[str | None] = mapped_column(String(100))
+    position_name: Mapped[str | None] = mapped_column(String(100))
 
     # Jornada
-    work_schedule_id: Mapped[Optional[str]] = mapped_column(String(50))
-    work_schedule_name: Mapped[Optional[str]] = mapped_column(String(200))
+    work_schedule_id: Mapped[str | None] = mapped_column(String(50))
+    work_schedule_name: Mapped[str | None] = mapped_column(String(200))
     weekly_hours_expected: Mapped[int] = mapped_column(Integer, default=2640)  # 44h
 
     # Status
-    status: Mapped[TimeSheetStatus] = mapped_column(
-        String(20), default=TimeSheetStatus.ABERTO
-    )
+    status: Mapped[TimeSheetStatus] = mapped_column(String(20), default=TimeSheetStatus.ABERTO)
 
     # Dias do período
     total_days: Mapped[int] = mapped_column(Integer, default=0)
@@ -128,25 +123,15 @@ class TimeSheet(Base):
     # DSR (Descanso Semanal Remunerado)
     dsr_entitled: Mapped[bool] = mapped_column(Boolean, default=True)
     dsr_lost_days: Mapped[int] = mapped_column(Integer, default=0)
-    dsr_lost_reason: Mapped[Optional[str]] = mapped_column(Text)
+    dsr_lost_reason: Mapped[str | None] = mapped_column(Text)
 
     # Valores monetários
     hourly_rate: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
-    overtime_50_value: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0")
-    )
-    overtime_100_value: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0")
-    )
-    night_additional_value: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0")
-    )
-    total_additional_value: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0")
-    )
-    total_deduction_value: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0")
-    )
+    overtime_50_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
+    overtime_100_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
+    night_additional_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
+    total_additional_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
+    total_deduction_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
 
     # Ocorrências e justificativas
     total_entries: Mapped[int] = mapped_column(Integer, default=0)
@@ -158,62 +143,60 @@ class TimeSheet(Base):
     manual_entries_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Registros detalhados por dia
-    daily_summary: Mapped[Optional[List[dict]]] = mapped_column(JSONB, default=list)
+    daily_summary: Mapped[list[dict] | None] = mapped_column(JSONB, default=list)
     # Formato: [{"date": "2024-01-01", "expected": 528, "worked": 540, "overtime": 12, ...}]
 
     # Revisão
     has_pending_issues: Mapped[bool] = mapped_column(Boolean, default=False)
-    pending_issues: Mapped[Optional[List[dict]]] = mapped_column(JSONB, default=list)
+    pending_issues: Mapped[list[dict] | None] = mapped_column(JSONB, default=list)
     # Formato: [{"type": "missing_entry", "date": "2024-01-05", "description": "..."}]
 
-    reviewed_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    reviewed_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    review_notes: Mapped[Optional[str]] = mapped_column(Text)
+    reviewed_by_id: Mapped[str | None] = mapped_column(String(50))
+    reviewed_by_name: Mapped[str | None] = mapped_column(String(200))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    review_notes: Mapped[str | None] = mapped_column(Text)
 
     # Aprovação
     approved_by_employee: Mapped[bool] = mapped_column(Boolean, default=False)
-    employee_approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    employee_approval_notes: Mapped[Optional[str]] = mapped_column(Text)
+    employee_approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    employee_approval_notes: Mapped[str | None] = mapped_column(Text)
 
     approved_by_manager: Mapped[bool] = mapped_column(Boolean, default=False)
-    manager_id: Mapped[Optional[str]] = mapped_column(String(50))
-    manager_name: Mapped[Optional[str]] = mapped_column(String(200))
-    manager_approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    manager_approval_notes: Mapped[Optional[str]] = mapped_column(Text)
+    manager_id: Mapped[str | None] = mapped_column(String(50))
+    manager_name: Mapped[str | None] = mapped_column(String(200))
+    manager_approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    manager_approval_notes: Mapped[str | None] = mapped_column(Text)
 
     approved_by_hr: Mapped[bool] = mapped_column(Boolean, default=False)
-    hr_approver_id: Mapped[Optional[str]] = mapped_column(String(50))
-    hr_approver_name: Mapped[Optional[str]] = mapped_column(String(200))
-    hr_approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    hr_approval_notes: Mapped[Optional[str]] = mapped_column(Text)
+    hr_approver_id: Mapped[str | None] = mapped_column(String(50))
+    hr_approver_name: Mapped[str | None] = mapped_column(String(200))
+    hr_approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    hr_approval_notes: Mapped[str | None] = mapped_column(Text)
 
     # Fechamento
-    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    closed_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    closed_by_name: Mapped[Optional[str]] = mapped_column(String(200))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    closed_by_id: Mapped[str | None] = mapped_column(String(50))
+    closed_by_name: Mapped[str | None] = mapped_column(String(200))
 
     # Envio para folha
-    sent_to_payroll_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    payroll_reference: Mapped[Optional[str]] = mapped_column(String(100))
-    payroll_batch_id: Mapped[Optional[str]] = mapped_column(String(50))
+    sent_to_payroll_at: Mapped[datetime | None] = mapped_column(DateTime)
+    payroll_reference: Mapped[str | None] = mapped_column(String(100))
+    payroll_batch_id: Mapped[str | None] = mapped_column(String(50))
 
     # Condomínio
-    condominium_id: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    condominium_name: Mapped[Optional[str]] = mapped_column(String(200))
+    condominium_id: Mapped[str | None] = mapped_column(String(50), index=True)
+    condominium_name: Mapped[str | None] = mapped_column(String(200))
 
     # Observações
-    notes: Mapped[Optional[str]] = mapped_column(Text)
-    internal_notes: Mapped[Optional[str]] = mapped_column(Text)
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    notes: Mapped[str | None] = mapped_column(Text)
+    internal_notes: Mapped[str | None] = mapped_column(Text)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Controle
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    last_calculated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_calculated_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Índices
     __table_args__ = (
@@ -264,22 +247,16 @@ class TimeSheet(Base):
 
     def _calculate_hours_balance(self) -> None:
         """Calcula saldo de horas."""
-        self.hours_balance_minutes = (
-            self.hours_worked_minutes - self.hours_expected_minutes
-        )
+        self.hours_balance_minutes = self.hours_worked_minutes - self.hours_expected_minutes
 
     def _calculate_overtime_totals(self) -> None:
         """Calcula totais de horas extras."""
-        self.overtime_total_minutes = (
-            self.overtime_50_minutes + self.overtime_100_minutes
-        )
+        self.overtime_total_minutes = self.overtime_50_minutes + self.overtime_100_minutes
 
     def _calculate_time_bank(self) -> None:
         """Calcula banco de horas."""
         self.time_bank_current_balance = (
-            self.time_bank_previous_balance
-            + self.time_bank_credits
-            - self.time_bank_debits
+            self.time_bank_previous_balance + self.time_bank_credits - self.time_bank_debits
         )
 
     def _calculate_values(self) -> None:
@@ -300,11 +277,7 @@ class TimeSheet(Base):
         self.night_additional_value = night_hours * self.hourly_rate * Decimal("0.20")
 
         # Total adicionais
-        self.total_additional_value = (
-            self.overtime_50_value
-            + self.overtime_100_value
-            + self.night_additional_value
-        )
+        self.total_additional_value = self.overtime_50_value + self.overtime_100_value + self.night_additional_value
 
         # Descontos (atrasos e faltas injustificadas)
         deduction_minutes = self.late_minutes + self.early_departure_minutes
@@ -320,9 +293,7 @@ class TimeSheet(Base):
             self.dsr_lost_days = 1  # Por semana com ocorrência
             reasons = []
             if self.unjustified_absent_days > 0:
-                reasons.append(
-                    f"{self.unjustified_absent_days} falta(s) injustificada(s)"
-                )
+                reasons.append(f"{self.unjustified_absent_days} falta(s) injustificada(s)")
             if self.late_minutes > 30:
                 reasons.append(f"Atrasos totais de {self.late_minutes} minutos")
             self.dsr_lost_reason = "; ".join(reasons)
@@ -369,18 +340,20 @@ class TimeSheet(Base):
         if not self.daily_summary:
             self.daily_summary = []
 
-        self.daily_summary.append({
-            "date": entry_date.isoformat(),
-            "expected": expected_minutes,
-            "worked": worked_minutes,
-            "overtime": overtime_minutes,
-            "night": night_minutes,
-            "late": late_minutes,
-            "early": early_minutes,
-            "is_holiday": is_holiday,
-            "is_absent": is_absent,
-            "notes": notes,
-        })
+        self.daily_summary.append(
+            {
+                "date": entry_date.isoformat(),
+                "expected": expected_minutes,
+                "worked": worked_minutes,
+                "overtime": overtime_minutes,
+                "night": night_minutes,
+                "late": late_minutes,
+                "early": early_minutes,
+                "is_holiday": is_holiday,
+                "is_absent": is_absent,
+                "notes": notes,
+            }
+        )
 
     def add_issue(
         self,
@@ -400,13 +373,15 @@ class TimeSheet(Base):
         if not self.pending_issues:
             self.pending_issues = []
 
-        self.pending_issues.append({
-            "type": issue_type,
-            "date": issue_date.isoformat(),
-            "description": description,
-            "severity": severity,
-            "created_at": datetime.utcnow().isoformat(),
-        })
+        self.pending_issues.append(
+            {
+                "type": issue_type,
+                "date": issue_date.isoformat(),
+                "description": description,
+                "severity": severity,
+                "created_at": datetime.utcnow().isoformat(),
+            }
+        )
         self.has_pending_issues = True
 
     def employee_approve(self, notes: str = None) -> None:
@@ -548,27 +523,30 @@ class TimeSheet(Base):
     @property
     def is_fully_approved(self) -> bool:
         """Verifica se está totalmente aprovada."""
-        return (
-            self.approved_by_employee
-            and self.approved_by_manager
-            and self.approved_by_hr
-        )
+        return self.approved_by_employee and self.approved_by_manager and self.approved_by_hr
 
     @property
     def can_close(self) -> bool:
         """Verifica se pode fechar."""
-        return (
-            not self.has_pending_issues
-            and self.is_fully_approved
-            and self.status == TimeSheetStatus.APROVADO
-        )
+        return not self.has_pending_issues and self.is_fully_approved and self.status == TimeSheetStatus.APROVADO
 
     @property
     def period_display(self) -> str:
         """Retorna período formatado."""
         months = [
-            "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+            "",
+            "Janeiro",
+            "Fevereiro",
+            "Março",
+            "Abril",
+            "Maio",
+            "Junho",
+            "Julho",
+            "Agosto",
+            "Setembro",
+            "Outubro",
+            "Novembro",
+            "Dezembro",
         ]
         return f"{months[self.reference_month]}/{self.reference_year}"
 
@@ -589,7 +567,4 @@ class TimeSheet(Base):
 
     def __repr__(self) -> str:
         """Representação do objeto."""
-        return (
-            f"<TimeSheet {self.code}: {self.employee_name} "
-            f"{self.period_display}>"
-        )
+        return f"<TimeSheet {self.code}: {self.employee_name} {self.period_display}>"

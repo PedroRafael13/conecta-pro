@@ -5,13 +5,13 @@ Definicao de todos os schemas de entrada/saida para a API de perfil.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-class ProfileDimensionEnum(str, Enum):
+class ProfileDimensionEnum(StrEnum):
     """Dimensoes do perfil operacional."""
 
     VIGILANCIA = "vigilancia"
@@ -20,7 +20,7 @@ class ProfileDimensionEnum(str, Enum):
     LIDERANCA = "lideranca"
 
 
-class PostTypeEnum(str, Enum):
+class PostTypeEnum(StrEnum):
     """Tipos de posto com perfil ideal."""
 
     CFTV = "cftv"
@@ -33,7 +33,7 @@ class PostTypeEnum(str, Enum):
     VIGILANTE = "vigilante"
 
 
-class MatchNivelEnum(str, Enum):
+class MatchNivelEnum(StrEnum):
     """Niveis de match."""
 
     BAIXO = "baixo"
@@ -61,16 +61,16 @@ class ProfileQuestionCreate(ProfileQuestionBase):
     """Schema para criacao de pergunta."""
 
     versao: str = Field(default="1.0.0", max_length=20)
-    condominium_id: Optional[str] = None
+    condominium_id: str | None = None
 
 
 class ProfileQuestionUpdate(BaseModel):
     """Schema para atualizacao de pergunta."""
 
-    texto: Optional[str] = Field(None, min_length=10, max_length=500)
-    ordem: Optional[int] = Field(None, ge=1, le=100)
-    peso: Optional[float] = Field(None, ge=0.1, le=5.0)
-    ativo: Optional[bool] = None
+    texto: str | None = Field(None, min_length=10, max_length=500)
+    ordem: int | None = Field(None, ge=1, le=100)
+    peso: float | None = Field(None, ge=0.1, le=5.0)
+    ativo: bool | None = None
 
 
 class ProfileQuestionResponse(ProfileQuestionBase):
@@ -81,19 +81,19 @@ class ProfileQuestionResponse(ProfileQuestionBase):
     id: str
     ativo: bool
     versao: str
-    condominium_id: Optional[str] = None
+    condominium_id: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
 
 class QuestionnaireResponse(BaseModel):
     """Schema de resposta do questionario completo."""
 
-    perguntas: List[ProfileQuestionResponse]
+    perguntas: list[ProfileQuestionResponse]
     total_perguntas: int
     versao: str
-    dimensoes: List[str]
-    escala: Dict[str, str] = Field(
+    dimensoes: list[str]
+    escala: dict[str, str] = Field(
         default={
             "1": "Discordo totalmente",
             "2": "Discordo parcialmente",
@@ -127,19 +127,17 @@ class SubmitRespostasRequest(BaseModel):
     """Schema para submissao de respostas do questionario."""
 
     funcionario_id: str = Field(..., description="UUID do funcionario")
-    respostas: Dict[str, int] = Field(
+    respostas: dict[str, int] = Field(
         ...,
         description="Respostas no formato {pergunta_id: valor}",
         min_length=20,
     )
-    tempo_resposta_segundos: Optional[int] = Field(
-        None, ge=0, description="Tempo total em segundos"
-    )
-    condominium_id: Optional[str] = None
+    tempo_resposta_segundos: int | None = Field(None, ge=0, description="Tempo total em segundos")
+    condominium_id: str | None = None
 
     @field_validator("respostas")
     @classmethod
-    def validar_respostas(cls, v: Dict[str, int]) -> Dict[str, int]:
+    def validar_respostas(cls, v: dict[str, int]) -> dict[str, int]:
         """Valida todas as respostas."""
         if len(v) < 20:
             raise ValueError(f"Questionario incompleto. Esperado 20 respostas, recebido {len(v)}")
@@ -155,16 +153,16 @@ class SaveProgressRequest(BaseModel):
     """Schema para salvamento de progresso."""
 
     funcionario_id: str
-    respostas_parciais: Dict[str, int] = Field(default_factory=dict)
+    respostas_parciais: dict[str, int] = Field(default_factory=dict)
     ultima_pergunta: int = Field(ge=0, le=20)
-    condominium_id: Optional[str] = None
+    condominium_id: str | None = None
 
 
 class ProgressResponse(BaseModel):
     """Schema de resposta do progresso."""
 
     funcionario_id: str
-    respostas_salvas: Dict[str, int]
+    respostas_salvas: dict[str, int]
     ultima_pergunta: int
     total_perguntas: int
     percentual_completo: float
@@ -204,12 +202,12 @@ class OperationalProfileResponse(OperationalProfileBase):
     funcionario_id: str
     data_avaliacao: datetime
     versao_questionario: str
-    tempo_resposta_segundos: Optional[int] = None
+    tempo_resposta_segundos: int | None = None
     is_valid: bool
-    invalidation_reason: Optional[str] = None
-    condominium_id: Optional[str] = None
+    invalidation_reason: str | None = None
+    condominium_id: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     # Campos computados
     score_medio: float = Field(default=0.0)
@@ -219,20 +217,20 @@ class OperationalProfileResponse(OperationalProfileBase):
 class OperationalProfileDetail(OperationalProfileResponse):
     """Schema detalhado do perfil com analise."""
 
-    scores_detalhados: List[DimensionScore]
-    radar_chart_data: Dict[str, int]
-    recomendacoes: List[str]
-    pontos_fortes: List[str]
-    pontos_desenvolvimento: List[str]
-    tipos_posto_recomendados: List[str]
+    scores_detalhados: list[DimensionScore]
+    radar_chart_data: dict[str, int]
+    recomendacoes: list[str]
+    pontos_fortes: list[str]
+    pontos_desenvolvimento: list[str]
+    tipos_posto_recomendados: list[str]
 
 
 class OperationalProfileHistory(BaseModel):
     """Schema para historico de perfis."""
 
-    profiles: List[OperationalProfileResponse]
+    profiles: list[OperationalProfileResponse]
     total: int
-    evolucao: Dict[str, List[Dict[str, Any]]]  # {dimensao: [{data, score}]}
+    evolucao: dict[str, list[dict[str, Any]]]  # {dimensao: [{data, score}]}
 
 
 # ============================================================
@@ -257,22 +255,22 @@ class PostMatchResponse(PostMatchBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    profile_id: Optional[str] = None
-    fatores_positivos: List[str]
-    fatores_negativos: List[str]
-    scores_detalhados: Optional[Dict[str, Any]] = None
+    profile_id: str | None = None
+    fatores_positivos: list[str]
+    fatores_negativos: list[str]
+    scores_detalhados: dict[str, Any] | None = None
     calculado_em: datetime
-    valido_ate: Optional[datetime] = None
-    condominium_id: Optional[str] = None
+    valido_ate: datetime | None = None
+    condominium_id: str | None = None
     created_at: datetime
 
 
 class PostMatchDetail(PostMatchResponse):
     """Schema detalhado de match com analise."""
 
-    analise_dimensoes: List[Dict[str, Any]]
-    gap_analysis: Dict[str, int]  # Diferenca entre perfil e ideal
-    sugestoes_desenvolvimento: List[str]
+    analise_dimensoes: list[dict[str, Any]]
+    gap_analysis: dict[str, int]  # Diferenca entre perfil e ideal
+    sugestoes_desenvolvimento: list[str]
     probabilidade_sucesso: float
 
 
@@ -282,25 +280,25 @@ class CalculateMatchRequest(BaseModel):
     funcionario_id: str
     posto_id: str
     posto_tipo: PostTypeEnum
-    condominium_id: Optional[str] = None
+    condominium_id: str | None = None
 
 
 class BulkMatchRequest(BaseModel):
     """Schema para calculo de match em lote."""
 
     funcionario_id: str
-    posto_ids: List[str] = Field(..., min_length=1, max_length=50)
-    condominium_id: Optional[str] = None
+    posto_ids: list[str] = Field(..., min_length=1, max_length=50)
+    condominium_id: str | None = None
 
 
 class BestMatchesResponse(BaseModel):
     """Schema de resposta com melhores matches."""
 
     funcionario_id: str
-    matches: List[PostMatchResponse]
+    matches: list[PostMatchResponse]
     total: int
-    melhor_tipo_posto: Optional[PostTypeEnum] = None
-    pior_tipo_posto: Optional[PostTypeEnum] = None
+    melhor_tipo_posto: PostTypeEnum | None = None
+    pior_tipo_posto: PostTypeEnum | None = None
 
 
 class BestFuncionariosResponse(BaseModel):
@@ -308,7 +306,7 @@ class BestFuncionariosResponse(BaseModel):
 
     posto_id: str
     posto_tipo: PostTypeEnum
-    matches: List[PostMatchResponse]
+    matches: list[PostMatchResponse]
     total: int
     media_match: float
 
@@ -322,15 +320,15 @@ class IdealProfileByType(BaseModel):
     """Perfil ideal por tipo de posto."""
 
     tipo: PostTypeEnum
-    perfil_ideal: Dict[str, int]
+    perfil_ideal: dict[str, int]
     descricao: str
-    requisitos_principais: List[str]
+    requisitos_principais: list[str]
 
 
 class PostTypesResponse(BaseModel):
     """Lista de tipos de posto com perfis ideais."""
 
-    tipos: List[IdealProfileByType]
+    tipos: list[IdealProfileByType]
     total: int
 
 
@@ -358,21 +356,21 @@ class DashboardStats(BaseModel):
     avaliacoes_semana: int
     media_score_geral: float
 
-    distribuicao_perfis: Dict[str, int]  # {perfil_predominante: count}
-    distribuicao_scores: List[ProfileDistribution]
+    distribuicao_perfis: dict[str, int]  # {perfil_predominante: count}
+    distribuicao_scores: list[ProfileDistribution]
 
-    top_matches: List[PostMatchResponse]
+    top_matches: list[PostMatchResponse]
     funcionarios_sem_perfil: int
 
-    evolucao_mensal: List[Dict[str, Any]]  # [{mes, total, media}]
+    evolucao_mensal: list[dict[str, Any]]  # [{mes, total, media}]
 
 
 class DashboardResponse(BaseModel):
     """Resposta completa do dashboard."""
 
     stats: DashboardStats
-    alertas: List[str]
-    recomendacoes: List[str]
+    alertas: list[str]
+    recomendacoes: list[str]
     ultima_atualizacao: datetime
 
 
@@ -384,7 +382,7 @@ class DashboardResponse(BaseModel):
 class ProfileListResponse(BaseModel):
     """Lista paginada de perfis."""
 
-    items: List[OperationalProfileResponse]
+    items: list[OperationalProfileResponse]
     total: int
     page: int
     page_size: int
@@ -394,7 +392,7 @@ class ProfileListResponse(BaseModel):
 class MatchListResponse(BaseModel):
     """Lista paginada de matches."""
 
-    items: List[PostMatchResponse]
+    items: list[PostMatchResponse]
     total: int
     page: int
     page_size: int
@@ -404,23 +402,23 @@ class MatchListResponse(BaseModel):
 class ProfileFilter(BaseModel):
     """Filtros para busca de perfis."""
 
-    funcionario_id: Optional[str] = None
-    perfil_predominante: Optional[ProfileDimensionEnum] = None
-    score_minimo: Optional[int] = Field(None, ge=0, le=100)
-    score_maximo: Optional[int] = Field(None, ge=0, le=100)
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
-    condominium_id: Optional[str] = None
+    funcionario_id: str | None = None
+    perfil_predominante: ProfileDimensionEnum | None = None
+    score_minimo: int | None = Field(None, ge=0, le=100)
+    score_maximo: int | None = Field(None, ge=0, le=100)
+    data_inicio: datetime | None = None
+    data_fim: datetime | None = None
+    condominium_id: str | None = None
     apenas_validos: bool = True
 
 
 class MatchFilter(BaseModel):
     """Filtros para busca de matches."""
 
-    funcionario_id: Optional[str] = None
-    posto_id: Optional[str] = None
-    posto_tipo: Optional[PostTypeEnum] = None
-    score_minimo: Optional[float] = Field(None, ge=0, le=100)
+    funcionario_id: str | None = None
+    posto_id: str | None = None
+    posto_tipo: PostTypeEnum | None = None
+    score_minimo: float | None = Field(None, ge=0, le=100)
     apenas_recomendados: bool = False
-    nivel_match: Optional[MatchNivelEnum] = None
-    condominium_id: Optional[str] = None
+    nivel_match: MatchNivelEnum | None = None
+    condominium_id: str | None = None

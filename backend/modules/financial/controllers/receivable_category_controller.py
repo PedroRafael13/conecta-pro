@@ -1,7 +1,6 @@
 """Controller para categorias de contas a receber."""
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -30,7 +29,7 @@ def get_repository(
 
 
 @router.post(
-    "/",
+    "",
     response_model=ReceivableCategoryResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar categoria",
@@ -55,15 +54,15 @@ async def create_category(
 
 
 @router.get(
-    "/",
-    response_model=List[ReceivableCategoryResponse],
+    "",
+    response_model=list[ReceivableCategoryResponse],
     summary="Listar categorias",
 )
 async def list_categories(
     condominio_id: UUID,
-    search: Optional[str] = Query(None, description="Busca no nome"),
-    category_type: Optional[str] = Query(None, alias="type", description="Tipo"),
-    is_active: Optional[bool] = Query(None, description="Apenas ativas"),
+    search: str | None = Query(None, description="Busca no nome"),
+    category_type: str | None = Query(None, alias="type", description="Tipo"),
+    is_active: bool | None = Query(None, description="Apenas ativas"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: ReceivableCategoryRepository = Depends(get_repository),
@@ -83,7 +82,7 @@ async def list_categories(
 
 @router.get(
     "/tree",
-    response_model=List[ReceivableCategoryResponse],
+    response_model=list[ReceivableCategoryResponse],
     summary="Arvore de categorias",
 )
 async def get_category_tree(
@@ -118,7 +117,7 @@ async def get_category(
 
 @router.get(
     "/{category_id}/children",
-    response_model=List[ReceivableCategoryResponse],
+    response_model=list[ReceivableCategoryResponse],
     summary="Subcategorias",
 )
 async def get_children(
@@ -194,9 +193,7 @@ async def delete_category(
 
 
 @router.post(
-    "/{category_id}/activate",
-    response_model=ReceivableCategoryResponse,
-    summary="Ativar categoria",
+    "/{category_id}/activate", response_model=ReceivableCategoryResponse, summary="Ativar categoria", status_code=201
 )
 async def activate_category(
     category_id: UUID,
@@ -220,6 +217,7 @@ async def activate_category(
     "/{category_id}/deactivate",
     response_model=ReceivableCategoryResponse,
     summary="Desativar categoria",
+    status_code=201,
 )
 async def deactivate_category(
     category_id: UUID,

@@ -58,6 +58,13 @@ class UserResponse(UserBase):
 
     model_config = {"from_attributes": True}
 
+    @field_validator("permissions", mode="before")
+    @classmethod
+    def normalize_permissions(cls, v: object) -> list[str]:
+        if v is None:
+            return []
+        return list(v)
+
 
 class UserList(BaseModel):
     """Schema para listagem de usuários."""

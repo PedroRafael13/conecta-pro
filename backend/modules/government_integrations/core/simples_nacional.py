@@ -19,34 +19,37 @@ Funcionalidades:
 """
 
 import logging
-from datetime import datetime, date
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from enum import Enum
+from datetime import date, datetime
+from decimal import ROUND_HALF_UP, Decimal
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class AnexoSimples(str, Enum):
+class AnexoSimples(StrEnum):
     """Anexos do Simples Nacional."""
-    ANEXO_I = "I"      # Comércio
-    ANEXO_II = "II"    # Indústria
+
+    ANEXO_I = "I"  # Comércio
+    ANEXO_II = "II"  # Indústria
     ANEXO_III = "III"  # Serviços (ex: vigilância, limpeza, locação de mão de obra)
-    ANEXO_IV = "IV"    # Serviços (construção, vigilância, advocacia)
-    ANEXO_V = "V"      # Serviços (TI, engenharia, publicidade)
+    ANEXO_IV = "IV"  # Serviços (construção, vigilância, advocacia)
+    ANEXO_V = "V"  # Serviços (TI, engenharia, publicidade)
 
 
-class SituacaoOpcao(str, Enum):
+class SituacaoOpcao(StrEnum):
     """Situação da opção pelo Simples Nacional."""
+
     OPTANTE = "optante"
     NAO_OPTANTE = "nao_optante"
     EXCLUIDO = "excluido"
     IMPEDIDO = "impedido"
 
 
-class TipoReceita(str, Enum):
+class TipoReceita(StrEnum):
     """Tipo de receita."""
+
     REVENDA_MERCADORIAS = "revenda"
     VENDA_PRODUCAO = "producao"
     SERVICOS = "servicos"
@@ -56,6 +59,7 @@ class TipoReceita(str, Enum):
 @dataclass
 class FaixaAliquota:
     """Faixa de alíquota do Simples Nacional."""
+
     faixa: int
     receita_bruta_inicio: Decimal
     receita_bruta_fim: Decimal
@@ -77,15 +81,14 @@ class FaixaAliquota:
         if rbt12 <= 0:
             return Decimal("0")
 
-        aliquota_efetiva = (
-            (rbt12 * self.aliquota_nominal - self.valor_deduzir) / rbt12
-        )
+        aliquota_efetiva = (rbt12 * self.aliquota_nominal - self.valor_deduzir) / rbt12
         return aliquota_efetiva.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
 @dataclass
 class ReceitaCompetencia:
     """Receita de uma competência."""
+
     competencia: str  # YYYY-MM
     tipo_receita: TipoReceita
     anexo: AnexoSimples
@@ -101,6 +104,7 @@ class ReceitaCompetencia:
 @dataclass
 class DAS:
     """Documento de Arrecadação do Simples Nacional."""
+
     numero_documento: str
     competencia: str
     data_vencimento: date
@@ -110,8 +114,8 @@ class DAS:
     valor_total: Decimal = Decimal("0")
 
     # Código de barras
-    codigo_barras: Optional[str] = None
-    linha_digitavel: Optional[str] = None
+    codigo_barras: str | None = None
+    linha_digitavel: str | None = None
 
     # Composição do DAS
     irpj: Decimal = Decimal("0")
@@ -124,7 +128,7 @@ class DAS:
 
     # Situação
     situacao: str = "gerado"
-    data_pagamento: Optional[datetime] = None
+    data_pagamento: datetime | None = None
 
     def __post_init__(self):
         if self.valor_total == Decimal("0"):
@@ -134,13 +138,14 @@ class DAS:
 @dataclass
 class PGDASD:
     """PGDAS-D - Declaração mensal do Simples Nacional."""
+
     competencia: str
     cnpj: str
     razao_social: str
     data_apuracao: datetime = field(default_factory=datetime.now)
 
     # Receitas
-    receitas: List[ReceitaCompetencia] = field(default_factory=list)
+    receitas: list[ReceitaCompetencia] = field(default_factory=list)
 
     # Cálculos
     rbt12: Decimal = Decimal("0")  # Receita Bruta dos últimos 12 meses
@@ -149,17 +154,18 @@ class PGDASD:
     valor_devido: Decimal = Decimal("0")
 
     # DAS gerado
-    das: Optional[DAS] = None
+    das: DAS | None = None
 
     # Situação
     transmitida: bool = False
-    numero_recibo: Optional[str] = None
-    data_transmissao: Optional[datetime] = None
+    numero_recibo: str | None = None
+    data_transmissao: datetime | None = None
 
 
 @dataclass
 class DEFIS:
     """DEFIS - Declaração de Informações Socioeconômicas e Fiscais."""
+
     ano_calendario: int
     cnpj: str
     razao_social: str
@@ -180,12 +186,12 @@ class DEFIS:
     doacao_campanha: Decimal = Decimal("0")
 
     # Sócios
-    socios: List[Dict[str, Any]] = field(default_factory=list)
+    socios: list[dict[str, Any]] = field(default_factory=list)
 
     # Situação
     transmitida: bool = False
-    numero_recibo: Optional[str] = None
-    data_transmissao: Optional[datetime] = None
+    numero_recibo: str | None = None
+    data_transmissao: datetime | None = None
 
 
 class SimplesNacionalManager:
@@ -276,21 +282,24 @@ class SimplesNacionalManager:
         self.razao_social = razao_social
         self.anexo_principal = anexo_principal
 
-    def consultar_opcao(self) -> Dict[str, Any]:
+    def consultar_opcao(self) -> dict[str, Any]:
         """
         Consulta situação da opção pelo Simples Nacional.
 
         Returns:
             Dados da situação
         """
-        # Na implementação real, consultaria o portal
+        # IMPORTANTE: A empresa migrou para Lucro Real em 01/01/2026.
+        # Não há API pública do Simples Nacional para consulta automática.
         return {
             "cnpj": self.cnpj,
             "razao_social": self.razao_social,
-            "situacao": SituacaoOpcao.OPTANTE.value,
-            "data_opcao": "2020-01-01",
-            "enquadramento": self.anexo_principal.value,
-            "simei": False,  # Não é MEI
+            "situacao": "nao_sincronizado",
+            "regime_atual": "lucro_real",
+            "data_migracao": "2026-01-01",
+            "simei": False,
+            "fonte": "configuracao_local",
+            "aviso": "Empresa no Lucro Real desde 01/2026. Simples Nacional não tem API pública.",
         }
 
     def obter_faixa(self, rbt12: Decimal, anexo: AnexoSimples) -> FaixaAliquota:
@@ -317,11 +326,7 @@ class SimplesNacionalManager:
         # Se excedeu o limite, retorna última faixa
         return tabela[-1]
 
-    def calcular_fator_r(
-        self,
-        folha_12_meses: Decimal,
-        rbt12: Decimal
-    ) -> Tuple[Decimal, AnexoSimples]:
+    def calcular_fator_r(self, folha_12_meses: Decimal, rbt12: Decimal) -> tuple[Decimal, AnexoSimples]:
         """
         Calcula o Fator R para determinar o anexo.
 
@@ -357,9 +362,9 @@ class SimplesNacionalManager:
     def calcular_pgdasd(
         self,
         competencia: str,
-        receitas: List[ReceitaCompetencia],
+        receitas: list[ReceitaCompetencia],
         rbt12: Decimal,
-        folha_12_meses: Optional[Decimal] = None
+        folha_12_meses: Decimal | None = None,
     ) -> PGDASD:
         """
         Calcula o PGDAS-D (declaração mensal).
@@ -400,9 +405,9 @@ class SimplesNacionalManager:
         pgdasd.aliquota_efetiva = faixa.calcular_aliquota_efetiva(rbt12)
 
         # Calcula valor devido
-        pgdasd.valor_devido = (
-            pgdasd.receita_mes * pgdasd.aliquota_efetiva
-        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        pgdasd.valor_devido = (pgdasd.receita_mes * pgdasd.aliquota_efetiva).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
 
         logger.info(
             f"PGDAS-D {competencia}: RBT12={rbt12}, Receita={pgdasd.receita_mes}, "
@@ -411,11 +416,7 @@ class SimplesNacionalManager:
 
         return pgdasd
 
-    def gerar_das(
-        self,
-        pgdasd: PGDASD,
-        data_vencimento: Optional[date] = None
-    ) -> DAS:
+    def gerar_das(self, pgdasd: PGDASD, data_vencimento: date | None = None) -> DAS:
         """
         Gera o DAS (guia de pagamento) a partir do PGDAS-D.
 
@@ -436,10 +437,7 @@ class SimplesNacionalManager:
             data_vencimento = date(ano, mes, 20)
 
         # Calcula partilha dos tributos
-        partilha = self.PARTILHA.get(
-            self.anexo_principal,
-            self.PARTILHA[AnexoSimples.ANEXO_III]
-        )
+        partilha = self.PARTILHA.get(self.anexo_principal, self.PARTILHA[AnexoSimples.ANEXO_III])
 
         das = DAS(
             numero_documento=f"DAS{pgdasd.competencia.replace('-', '')}{datetime.now().strftime('%H%M%S')}",
@@ -465,10 +463,7 @@ class SimplesNacionalManager:
         return das
 
     def calcular_defis(
-        self,
-        ano_calendario: int,
-        pgdasd_mensal: List[PGDASD],
-        dados_adicionais: Optional[Dict[str, Any]] = None
+        self, ano_calendario: int, pgdasd_mensal: list[PGDASD], dados_adicionais: dict[str, Any] | None = None
     ) -> DEFIS:
         """
         Calcula a DEFIS (declaração anual).
@@ -499,24 +494,16 @@ class SimplesNacionalManager:
 
         return defis
 
-    def consultar_pendencias(self) -> Dict[str, Any]:
+    def consultar_pendencias(self) -> dict[str, Any]:
         """
         Consulta pendências no Simples Nacional.
 
         Returns:
             Lista de pendências
         """
-        return {
-            "cnpj": self.cnpj,
-            "pendencias": [],
-            "mensagem": "Implementar consulta via portal Simples Nacional"
-        }
+        return {"cnpj": self.cnpj, "pendencias": [], "mensagem": "Implementar consulta via portal Simples Nacional"}
 
-    def consultar_das_emitidos(
-        self,
-        competencia_inicio: str,
-        competencia_fim: str
-    ) -> List[Dict[str, Any]]:
+    def consultar_das_emitidos(self, competencia_inicio: str, competencia_fim: str) -> list[dict[str, Any]]:
         """
         Consulta DAS emitidos em um período.
 
@@ -539,11 +526,8 @@ class SimplesNacionalManager:
         return f"85840000000 {int(das.valor_total * 100):011d} 00010 {das.competencia.replace('-', '')}0 00000"
 
     def simular_calculo(
-        self,
-        receita_mensal: Decimal,
-        rbt12: Decimal,
-        folha_12_meses: Optional[Decimal] = None
-    ) -> Dict[str, Any]:
+        self, receita_mensal: Decimal, rbt12: Decimal, folha_12_meses: Decimal | None = None
+    ) -> dict[str, Any]:
         """
         Simula cálculo do Simples Nacional.
 
@@ -591,5 +575,5 @@ class SimplesNacionalManager:
                 "pis": str((valor_devido * partilha["pis"]).quantize(Decimal("0.01"))),
                 "cpp": str((valor_devido * partilha["cpp"]).quantize(Decimal("0.01"))),
                 "iss": str((valor_devido * partilha["iss"]).quantize(Decimal("0.01"))),
-            }
+            },
         }

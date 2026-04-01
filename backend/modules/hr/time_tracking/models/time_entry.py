@@ -4,20 +4,20 @@ Conformidade com Portaria 671 do MTE (Ministério do Trabalho).
 """
 
 import uuid
-from datetime import datetime, date, time
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from datetime import date, datetime, time
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
-    DateTime,
     Date,
-    Time,
+    DateTime,
+    Index,
     Integer,
+    Numeric,
     String,
     Text,
-    Numeric,
-    Index,
+    Time,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -25,11 +25,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 if TYPE_CHECKING:
-    from .work_schedule import WorkSchedule
-    from .time_justification import TimeJustification
+    pass
 
 
-class EntryType(str, Enum):
+class EntryType(StrEnum):
     """Tipo de registro de ponto."""
 
     ENTRADA = "entrada"
@@ -40,7 +39,7 @@ class EntryType(str, Enum):
     SAIDA_EXTRA = "saida_extra"
 
 
-class RegistrationMethod(str, Enum):
+class RegistrationMethod(StrEnum):
     """Método de registro do ponto."""
 
     BIOMETRIA_DIGITAL = "biometria_digital"
@@ -56,7 +55,7 @@ class RegistrationMethod(str, Enum):
     PIN = "pin"
 
 
-class EntryStatus(str, Enum):
+class EntryStatus(StrEnum):
     """Status do registro de ponto."""
 
     CONFIRMADO = "confirmado"
@@ -68,7 +67,7 @@ class EntryStatus(str, Enum):
     INVALIDO = "invalido"
 
 
-class AnomalyType(str, Enum):
+class AnomalyType(StrEnum):
     """Tipo de anomalia detectada."""
 
     ATRASO = "atraso"
@@ -95,33 +94,27 @@ class TimeEntry(Base):
     __tablename__ = "time_entries"
 
     # Identificação
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     code: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
 
     # Funcionário
     employee_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     employee_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    employee_registration: Mapped[Optional[str]] = mapped_column(String(50))
-    employee_cpf: Mapped[Optional[str]] = mapped_column(String(14))
-    department_id: Mapped[Optional[str]] = mapped_column(String(50))
-    department_name: Mapped[Optional[str]] = mapped_column(String(100))
-    position_name: Mapped[Optional[str]] = mapped_column(String(100))
+    employee_registration: Mapped[str | None] = mapped_column(String(50))
+    employee_cpf: Mapped[str | None] = mapped_column(String(14))
+    department_id: Mapped[str | None] = mapped_column(String(50))
+    department_name: Mapped[str | None] = mapped_column(String(100))
+    position_name: Mapped[str | None] = mapped_column(String(100))
 
     # Jornada
-    work_schedule_id: Mapped[Optional[str]] = mapped_column(String(50))
+    work_schedule_id: Mapped[str | None] = mapped_column(String(50))
 
     # Registro
-    entry_type: Mapped[EntryType] = mapped_column(
-        String(30), default=EntryType.ENTRADA
-    )
+    entry_type: Mapped[EntryType] = mapped_column(String(30), default=EntryType.ENTRADA)
     registration_method: Mapped[RegistrationMethod] = mapped_column(
         String(30), default=RegistrationMethod.BIOMETRIA_DIGITAL
     )
-    status: Mapped[EntryStatus] = mapped_column(
-        String(20), default=EntryStatus.CONFIRMADO
-    )
+    status: Mapped[EntryStatus] = mapped_column(String(20), default=EntryStatus.CONFIRMADO)
 
     # Data e hora
     entry_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
@@ -129,7 +122,7 @@ class TimeEntry(Base):
     entry_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     # Horário esperado (da jornada)
-    expected_time: Mapped[Optional[time]] = mapped_column(Time)
+    expected_time: Mapped[time | None] = mapped_column(Time)
     tolerance_minutes: Mapped[int] = mapped_column(Integer, default=10)
 
     # Diferença calculada
@@ -139,86 +132,82 @@ class TimeEntry(Base):
     is_overtime: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Geolocalização
-    latitude: Mapped[Optional[float]] = mapped_column(Numeric(10, 7))
-    longitude: Mapped[Optional[float]] = mapped_column(Numeric(10, 7))
-    accuracy_meters: Mapped[Optional[float]] = mapped_column(Numeric(10, 2))
-    address: Mapped[Optional[str]] = mapped_column(String(500))
+    latitude: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    longitude: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    accuracy_meters: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    address: Mapped[str | None] = mapped_column(String(500))
     is_within_allowed_area: Mapped[bool] = mapped_column(Boolean, default=True)
-    allowed_area_id: Mapped[Optional[str]] = mapped_column(String(50))
-    distance_from_work_meters: Mapped[Optional[float]] = mapped_column(Numeric(10, 2))
+    allowed_area_id: Mapped[str | None] = mapped_column(String(50))
+    distance_from_work_meters: Mapped[float | None] = mapped_column(Numeric(10, 2))
 
     # Dispositivo
-    device_id: Mapped[Optional[str]] = mapped_column(String(100))
-    device_name: Mapped[Optional[str]] = mapped_column(String(200))
-    device_type: Mapped[Optional[str]] = mapped_column(String(50))
-    device_ip: Mapped[Optional[str]] = mapped_column(String(50))
-    device_mac: Mapped[Optional[str]] = mapped_column(String(20))
-    user_agent: Mapped[Optional[str]] = mapped_column(String(500))
-    app_version: Mapped[Optional[str]] = mapped_column(String(20))
+    device_id: Mapped[str | None] = mapped_column(String(100))
+    device_name: Mapped[str | None] = mapped_column(String(200))
+    device_type: Mapped[str | None] = mapped_column(String(50))
+    device_ip: Mapped[str | None] = mapped_column(String(50))
+    device_mac: Mapped[str | None] = mapped_column(String(20))
+    user_agent: Mapped[str | None] = mapped_column(String(500))
+    app_version: Mapped[str | None] = mapped_column(String(20))
 
     # Biometria
-    biometric_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2))
-    biometric_template_id: Mapped[Optional[str]] = mapped_column(String(100))
-    face_match_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2))
-    photo_url: Mapped[Optional[str]] = mapped_column(String(500))
+    biometric_score: Mapped[float | None] = mapped_column(Numeric(5, 2))
+    biometric_template_id: Mapped[str | None] = mapped_column(String(100))
+    face_match_score: Mapped[float | None] = mapped_column(Numeric(5, 2))
+    photo_url: Mapped[str | None] = mapped_column(String(500))
     liveness_check: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # REP - Registrador Eletrônico de Ponto
-    rep_id: Mapped[Optional[str]] = mapped_column(String(50))
-    rep_serial: Mapped[Optional[str]] = mapped_column(String(50))
-    nsr: Mapped[Optional[int]] = mapped_column(Integer)  # Número Sequencial do Registro
-    pis_pasep: Mapped[Optional[str]] = mapped_column(String(15))
+    rep_id: Mapped[str | None] = mapped_column(String(50))
+    rep_serial: Mapped[str | None] = mapped_column(String(50))
+    nsr: Mapped[int | None] = mapped_column(Integer)  # Número Sequencial do Registro
+    pis_pasep: Mapped[str | None] = mapped_column(String(15))
 
     # Anomalia
-    anomaly_type: Mapped[AnomalyType] = mapped_column(
-        String(40), default=AnomalyType.SEM_ANOMALIA
-    )
-    anomaly_description: Mapped[Optional[str]] = mapped_column(Text)
+    anomaly_type: Mapped[AnomalyType] = mapped_column(String(40), default=AnomalyType.SEM_ANOMALIA)
+    anomaly_description: Mapped[str | None] = mapped_column(Text)
     anomaly_resolved: Mapped[bool] = mapped_column(Boolean, default=False)
-    anomaly_resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    anomaly_resolved_by_id: Mapped[Optional[str]] = mapped_column(String(50))
+    anomaly_resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    anomaly_resolved_by_id: Mapped[str | None] = mapped_column(String(50))
 
     # Justificativa (se houver)
-    justification_id: Mapped[Optional[str]] = mapped_column(String(50))
+    justification_id: Mapped[str | None] = mapped_column(String(50))
     has_justification: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Ajuste manual
     is_manual_entry: Mapped[bool] = mapped_column(Boolean, default=False)
-    original_time: Mapped[Optional[time]] = mapped_column(Time)
-    adjusted_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    adjusted_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    adjusted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    adjustment_reason: Mapped[Optional[str]] = mapped_column(Text)
+    original_time: Mapped[time | None] = mapped_column(Time)
+    adjusted_by_id: Mapped[str | None] = mapped_column(String(50))
+    adjusted_by_name: Mapped[str | None] = mapped_column(String(200))
+    adjusted_at: Mapped[datetime | None] = mapped_column(DateTime)
+    adjustment_reason: Mapped[str | None] = mapped_column(Text)
 
     # Aprovação (para ajustes manuais)
     requires_approval: Mapped[bool] = mapped_column(Boolean, default=False)
-    approved_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    approved_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    approval_notes: Mapped[Optional[str]] = mapped_column(Text)
+    approved_by_id: Mapped[str | None] = mapped_column(String(50))
+    approved_by_name: Mapped[str | None] = mapped_column(String(200))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    approval_notes: Mapped[str | None] = mapped_column(Text)
 
     # Noturno
     is_night_shift: Mapped[bool] = mapped_column(Boolean, default=False)
     night_hours_minutes: Mapped[int] = mapped_column(Integer, default=0)
 
     # Condomínio/Local
-    condominium_id: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    condominium_name: Mapped[Optional[str]] = mapped_column(String(200))
-    work_location_id: Mapped[Optional[str]] = mapped_column(String(50))
-    work_location_name: Mapped[Optional[str]] = mapped_column(String(200))
+    condominium_id: Mapped[str | None] = mapped_column(String(50), index=True)
+    condominium_name: Mapped[str | None] = mapped_column(String(200))
+    work_location_id: Mapped[str | None] = mapped_column(String(50))
+    work_location_name: Mapped[str | None] = mapped_column(String(200))
 
     # Observações e metadados
-    notes: Mapped[Optional[str]] = mapped_column(Text)
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    notes: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[list | None] = mapped_column(JSONB, default=list)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Controle
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    created_by_id: Mapped[Optional[str]] = mapped_column(String(50))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id: Mapped[str | None] = mapped_column(String(50))
 
     # Índices compostos
     __table_args__ = (
@@ -278,17 +267,13 @@ class TimeEntry(Base):
         # Atraso
         if self.is_late and self.entry_type == EntryType.ENTRADA:
             self.anomaly_type = AnomalyType.ATRASO
-            self.anomaly_description = (
-                f"Atraso de {self.difference_minutes} minutos"
-            )
+            self.anomaly_description = f"Atraso de {self.difference_minutes} minutos"
             return self.anomaly_type
 
         # Saída antecipada
         if self.is_early and self.entry_type == EntryType.SAIDA:
             self.anomaly_type = AnomalyType.SAIDA_ANTECIPADA
-            self.anomaly_description = (
-                f"Saída {abs(self.difference_minutes)} minutos antes"
-            )
+            self.anomaly_description = f"Saída {abs(self.difference_minutes)} minutos antes"
             return self.anomaly_type
 
         # Localização inválida
@@ -300,9 +285,7 @@ class TimeEntry(Base):
         # Falha biométrica
         if self.biometric_score and self.biometric_score < 70:
             self.anomaly_type = AnomalyType.BIOMETRIA_FALHA
-            self.anomaly_description = (
-                f"Score biométrico baixo: {self.biometric_score}"
-            )
+            self.anomaly_description = f"Score biométrico baixo: {self.biometric_score}"
             return self.anomaly_type
 
         self.anomaly_type = AnomalyType.SEM_ANOMALIA
@@ -410,15 +393,11 @@ class TimeEntry(Base):
             if entry >= night_start:
                 # Entre 22h e meia-noite
                 midnight = time(23, 59, 59)
-                diff = datetime.combine(date.today(), midnight) - datetime.combine(
-                    date.today(), entry
-                )
+                diff = datetime.combine(date.today(), midnight) - datetime.combine(date.today(), entry)
                 self.night_hours_minutes = int(diff.total_seconds() / 60)
             else:
                 # Entre meia-noite e 5h
-                diff = datetime.combine(date.today(), entry) - datetime.combine(
-                    date.today(), time(0, 0)
-                )
+                diff = datetime.combine(date.today(), entry) - datetime.combine(date.today(), time(0, 0))
                 self.night_hours_minutes = int(diff.total_seconds() / 60)
 
         return self.night_hours_minutes
@@ -439,10 +418,7 @@ class TimeEntry(Base):
     @property
     def has_anomaly(self) -> bool:
         """Verifica se tem anomalia não resolvida."""
-        return (
-            self.anomaly_type != AnomalyType.SEM_ANOMALIA
-            and not self.anomaly_resolved
-        )
+        return self.anomaly_type != AnomalyType.SEM_ANOMALIA and not self.anomaly_resolved
 
     @property
     def is_valid_biometric(self) -> bool:
@@ -476,7 +452,4 @@ class TimeEntry(Base):
 
     def __repr__(self) -> str:
         """Representação do objeto."""
-        return (
-            f"<TimeEntry {self.code}: {self.employee_name} "
-            f"{self.entry_type.value} {self.datetime_formatted}>"
-        )
+        return f"<TimeEntry {self.code}: {self.employee_name} {self.entry_type.value} {self.datetime_formatted}>"

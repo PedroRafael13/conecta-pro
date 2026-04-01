@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import numpy as np
@@ -71,7 +71,7 @@ class DriftAlert:
     model_name: str
     drift_type: DriftType
     severity: AlertSeverity
-    feature_name: Optional[str]
+    feature_name: str | None
     drift_score: float
     baseline_distribution: dict[str, Any]
     current_distribution: dict[str, Any]
@@ -91,7 +91,7 @@ class ModelHealth:
     overall_score: float  # 0-100
     metrics: list[PerformanceMetric]
     drift_alerts: list[DriftAlert]
-    last_prediction_time: Optional[datetime]
+    last_prediction_time: datetime | None
     predictions_last_hour: int
     avg_latency_ms: float
     error_rate: float
@@ -141,7 +141,7 @@ class ModelMonitor:
 
     def __init__(
         self,
-        model_registry: Optional[ModelRegistry] = None,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         """
         Inicializa o monitor.
@@ -174,10 +174,7 @@ class ModelMonitor:
         logger.info(f"Verificando saúde do modelo: {model_name}")
 
         # Obter versão em produção
-        model_version = self.model_registry.get_model_version(
-            model_name,
-            stage=ModelStage.PRODUCTION
-        )
+        model_version = self.model_registry.get_model_version(model_name, stage=ModelStage.PRODUCTION)
 
         if not model_version:
             return ModelHealth(
@@ -195,9 +192,7 @@ class ModelMonitor:
             )
 
         # Coletar métricas de performance
-        metrics = await self._collect_performance_metrics(
-            db, model_name, model_version.version
-        )
+        metrics = await self._collect_performance_metrics(db, model_name, model_version.version)
 
         # Verificar drift
         drift_alerts = await self._check_drift(db, model_name)
@@ -209,14 +204,10 @@ class ModelMonitor:
         error_rate = self._calculate_error_rate(model_name)
 
         # Calcular status geral
-        overall_score, status = self._calculate_overall_health(
-            metrics, drift_alerts, avg_latency, error_rate
-        )
+        overall_score, status = self._calculate_overall_health(metrics, drift_alerts, avg_latency, error_rate)
 
         # Gerar recomendações
-        recommendations = self._generate_recommendations(
-            metrics, drift_alerts, avg_latency, error_rate
-        )
+        recommendations = self._generate_recommendations(metrics, drift_alerts, avg_latency, error_rate)
 
         return ModelHealth(
             model_name=model_name,
@@ -247,9 +238,7 @@ class ModelMonitor:
         """
         # Listar modelos em produção
         models = self.model_registry.list_models()
-        production_models = [
-            m for m in models if m.get("production_version")
-        ]
+        production_models = [m for m in models if m.get("production_version")]
 
         # Verificar saúde de cada modelo
         models_status = []
@@ -259,14 +248,16 @@ class ModelMonitor:
 
         for model in production_models:
             health = await self.check_model_health(db, model["name"])
-            models_status.append({
-                "name": model["name"],
-                "version": health.model_version,
-                "status": health.status.value,
-                "score": health.overall_score,
-                "predictions": health.predictions_last_hour,
-                "latency": health.avg_latency_ms,
-            })
+            models_status.append(
+                {
+                    "name": model["name"],
+                    "version": health.model_version,
+                    "status": health.status.value,
+                    "score": health.overall_score,
+                    "predictions": health.predictions_last_hour,
+                    "latency": health.avg_latency_ms,
+                }
+            )
 
             if health.status == HealthStatus.HEALTHY:
                 healthy += 1
@@ -289,12 +280,10 @@ class ModelMonitor:
             recent_alerts=active_alerts[-10:],
             system_metrics={
                 "total_predictions_24h": sum(self._prediction_counts.values()),
-                "avg_latency_ms": np.mean([
-                    np.mean(lats) for lats in self._latencies.values() if lats
-                ]) if self._latencies else 0,
-                "models_needing_retrain": sum(
-                    1 for s in models_status if s["score"] < 70
-                ),
+                "avg_latency_ms": np.mean([np.mean(lats) for lats in self._latencies.values() if lats])
+                if self._latencies
+                else 0,
+                "models_needing_retrain": sum(1 for s in models_status if s["score"] < 70),
             },
         )
 
@@ -304,8 +293,8 @@ class ModelMonitor:
         model_name: str,
         feature_name: str,
         current_data: np.ndarray,
-        reference_data: Optional[np.ndarray] = None,
-    ) -> Optional[DriftAlert]:
+        reference_data: np.ndarray | None = None,
+    ) -> DriftAlert | None:
         """
         Detecta drift em uma feature específica.
 
@@ -324,11 +313,7 @@ class ModelMonitor:
             baseline_key = f"{model_name}_{feature_name}"
             if baseline_key in self._baseline_distributions:
                 reference_stats = self._baseline_distributions[baseline_key]
-                reference_data = np.random.normal(
-                    reference_stats["mean"],
-                    reference_stats["std"],
-                    len(current_data)
-                )
+                reference_data = np.random.normal(reference_stats["mean"], reference_stats["std"], len(current_data))
             else:
                 # Armazenar como baseline
                 self._baseline_distributions[baseline_key] = {
@@ -383,8 +368,8 @@ class ModelMonitor:
         db: AsyncSession,
         model_name: str,
         predictions: np.ndarray,
-        reference_period_days: int = 7,
-    ) -> Optional[DriftAlert]:
+        _reference_period_days: int = 7,
+    ) -> DriftAlert | None:
         """
         Detecta drift nas predições do modelo.
 
@@ -484,9 +469,9 @@ class ModelMonitor:
 
     def get_alerts(
         self,
-        model_name: Optional[str] = None,
-        severity: Optional[AlertSeverity] = None,
-        acknowledged: Optional[bool] = None,
+        model_name: str | None = None,
+        severity: AlertSeverity | None = None,
+        acknowledged: bool | None = None,
     ) -> list[DriftAlert]:
         """
         Obtém alertas filtrados.
@@ -531,10 +516,7 @@ class ModelMonitor:
                 if value is None:
                     continue
 
-                thresholds = self.DEFAULT_THRESHOLDS.get(
-                    metric_name,
-                    {"warning": 0.8, "critical": 0.7}
-                )
+                thresholds = self.DEFAULT_THRESHOLDS.get(metric_name, {"warning": 0.8, "critical": 0.7})
 
                 # Determinar se é saudável
                 is_healthy = value >= thresholds["warning"]
@@ -575,10 +557,7 @@ class ModelMonitor:
         model_name: str,
     ) -> list[DriftAlert]:
         """Verifica alertas de drift para o modelo."""
-        return [
-            a for a in self._alerts
-            if a.model_name == model_name and not a.acknowledged
-        ]
+        return [a for a in self._alerts if a.model_name == model_name and not a.acknowledged]
 
     def _calculate_error_rate(self, model_name: str) -> float:
         """Calcula taxa de erro do modelo."""
@@ -657,24 +636,17 @@ class ModelMonitor:
 
         unhealthy_metrics = [m for m in metrics if not m.is_healthy]
         if unhealthy_metrics:
-            recommendations.append(
-                f"Métricas abaixo do threshold: {', '.join(m.name for m in unhealthy_metrics)}"
-            )
+            recommendations.append(f"Métricas abaixo do threshold: {', '.join(m.name for m in unhealthy_metrics)}")
 
         # Recomendações de drift
         if drift_alerts:
-            drift_features = [
-                a.feature_name for a in drift_alerts if a.feature_name
-            ]
+            drift_features = [a.feature_name for a in drift_alerts if a.feature_name]
             if drift_features:
                 recommendations.append(
-                    f"Data drift detectado em: {', '.join(drift_features)}. "
-                    "Revisar pipeline de dados."
+                    f"Data drift detectado em: {', '.join(drift_features)}. Revisar pipeline de dados."
                 )
             else:
-                recommendations.append(
-                    "Drift nas predições detectado. Avaliar necessidade de retraining."
-                )
+                recommendations.append("Drift nas predições detectado. Avaliar necessidade de retraining.")
 
         # Recomendações de latência
         if avg_latency > self.DEFAULT_THRESHOLDS["latency_ms"]["warning"]:
@@ -686,8 +658,7 @@ class ModelMonitor:
         # Recomendações de erro
         if error_rate > self.DEFAULT_THRESHOLDS["error_rate"]["warning"]:
             recommendations.append(
-                f"Taxa de erro ({error_rate*100:.2f}%) elevada. "
-                "Verificar logs e dados de entrada."
+                f"Taxa de erro ({error_rate * 100:.2f}%) elevada. Verificar logs e dados de entrada."
             )
 
         if not recommendations:

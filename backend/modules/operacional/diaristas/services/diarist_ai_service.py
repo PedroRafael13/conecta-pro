@@ -3,7 +3,6 @@
 import logging
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -18,9 +17,9 @@ from modules.operacional.diaristas.models.diarist import (
 )
 from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 from modules.operacional.diaristas.schemas.diarist_schemas import (
-    DiaristSuggestionResponse,
     DiaristAvailabilityResponse,
     DiaristPerformanceResponse,
+    DiaristSuggestionResponse,
     ScheduleOptimizationResponse,
 )
 
@@ -39,7 +38,7 @@ class DiaristAIService:
         self,
         condominio_id: UUID,
         data: date,
-        tipo: Optional[DiaristType] = None,
+        tipo: DiaristType | None = None,
         duracao_horas: int = 8,
         priorizar_conhecidas: bool = True,
     ) -> DiaristSuggestionResponse:
@@ -75,11 +74,13 @@ class DiaristAIService:
                 condominio_id=condominio_id,
                 duracao_horas=duracao_horas,
             )
-            scored_diarists.append({
-                "diarist": diarist,
-                "score": score,
-                "motivos": self._get_score_reasons(diarist, score),
-            })
+            scored_diarists.append(
+                {
+                    "diarist": diarist,
+                    "score": score,
+                    "motivos": self._get_score_reasons(diarist, score),
+                }
+            )
 
         # Ordenar por score
         scored_diarists.sort(key=lambda x: x["score"], reverse=True)
@@ -139,9 +140,7 @@ class DiaristAIService:
 
         # Disponibilidade de horário (peso 10%) - máximo 10 pontos
         if diarist.hora_fim_disponivel and diarist.hora_inicio_disponivel:
-            horas_disponiveis = (
-                diarist.hora_fim_disponivel.hour - diarist.hora_inicio_disponivel.hour
-            )
+            horas_disponiveis = diarist.hora_fim_disponivel.hour - diarist.hora_inicio_disponivel.hour
             if horas_disponiveis >= duracao_horas:
                 score += 10
             else:
@@ -179,7 +178,7 @@ class DiaristAIService:
         condominio_id: UUID,
         data_inicio: date,
         data_fim: date,
-        tipo: Optional[DiaristType] = None,
+        tipo: DiaristType | None = None,
     ) -> DiaristAvailabilityResponse:
         """
         Analisa disponibilidade de diaristas em um período.
@@ -203,13 +202,15 @@ class DiaristAIService:
 
             weekday = Weekday(current.strftime("%A").upper())
 
-            days_analysis.append({
-                "data": current.isoformat(),
-                "dia_semana": weekday.value,
-                "disponiveis": len(available),
-                "agendados": len(scheduled),
-                "status": self._get_day_status(len(available), len(scheduled)),
-            })
+            days_analysis.append(
+                {
+                    "data": current.isoformat(),
+                    "dia_semana": weekday.value,
+                    "disponiveis": len(available),
+                    "agendados": len(scheduled),
+                    "status": self._get_day_status(len(available), len(scheduled)),
+                }
+            )
 
             current += timedelta(days=1)
 
@@ -265,10 +266,7 @@ class DiaristAIService:
             )
 
         if avg_available < 3:
-            recommendations.append(
-                "Média de disponibilidade baixa. "
-                "Recomendado ampliar o cadastro de diaristas."
-            )
+            recommendations.append("Média de disponibilidade baixa. Recomendado ampliar o cadastro de diaristas.")
 
         # Verificar dias da semana problemáticos
         weekday_counts = {}
@@ -283,8 +281,7 @@ class DiaristAIService:
             avg = counts["available"] / counts["total"]
             if avg < 2:
                 recommendations.append(
-                    f"Baixa disponibilidade às {wd}s. "
-                    "Considere incentivar diaristas a trabalhar neste dia."
+                    f"Baixa disponibilidade às {wd}s. Considere incentivar diaristas a trabalhar neste dia."
                 )
 
         if not recommendations:
@@ -295,8 +292,8 @@ class DiaristAIService:
     def analyze_performance(
         self,
         diarist_id: UUID,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
     ) -> DiaristPerformanceResponse:
         """
         Analisa performance de uma diarista usando IA.
@@ -323,10 +320,10 @@ class DiaristAIService:
 
         # Score geral (média ponderada)
         overall_score = (
-            dimensions["qualidade"] * 0.30 +
-            dimensions["pontualidade"] * 0.25 +
-            dimensions["confiabilidade"] * 0.25 +
-            dimensions["produtividade"] * 0.20
+            dimensions["qualidade"] * 0.30
+            + dimensions["pontualidade"] * 0.25
+            + dimensions["confiabilidade"] * 0.25
+            + dimensions["produtividade"] * 0.20
         )
 
         # Gerar insights
@@ -347,9 +344,7 @@ class DiaristAIService:
             classificacao=self._get_classification(overall_score),
         )
 
-    def _calculate_performance_dimensions(
-        self, diarist: Diarist, metrics: dict
-    ) -> dict[str, float]:
+    def _calculate_performance_dimensions(self, diarist: Diarist, metrics: dict) -> dict[str, float]:
         """Calcula scores por dimensão de performance."""
         # Qualidade (baseado em avaliações)
         qualidade = float(diarist.avaliacao_media or 0) * 20  # 0-100
@@ -383,42 +378,27 @@ class DiaristAIService:
 
         # Análise de qualidade
         if dimensions["qualidade"] >= 90:
-            insights.append(
-                "Excelente qualidade de serviço! "
-                "Avaliações consistentemente positivas."
-            )
+            insights.append("Excelente qualidade de serviço! Avaliações consistentemente positivas.")
         elif dimensions["qualidade"] < 60:
-            insights.append(
-                "Qualidade abaixo do esperado. "
-                "Recomendado feedback e treinamento."
-            )
+            insights.append("Qualidade abaixo do esperado. Recomendado feedback e treinamento.")
 
         # Análise de pontualidade
         if dimensions["pontualidade"] >= 95:
             insights.append("Pontualidade exemplar em todos os serviços.")
         elif dimensions["pontualidade"] < 80:
-            insights.append(
-                "Taxa de pontualidade precisa melhorar. "
-                "Sugestão: confirmar agendamentos com antecedência."
-            )
+            insights.append("Taxa de pontualidade precisa melhorar. Sugestão: confirmar agendamentos com antecedência.")
 
         # Análise de confiabilidade
         if dimensions["confiabilidade"] >= 95:
             insights.append("Alta confiabilidade - raramente cancela serviços.")
         elif dimensions["confiabilidade"] < 80:
-            insights.append(
-                "Taxa de cancelamento elevada. "
-                "Verificar motivos e disponibilidade real."
-            )
+            insights.append("Taxa de cancelamento elevada. Verificar motivos e disponibilidade real.")
 
         # Análise de produtividade
         if dimensions["produtividade"] >= 100:
             insights.append("Produtividade acima da média - trabalha horas extras.")
         elif dimensions["produtividade"] < 80:
-            insights.append(
-                "Produtividade pode ser melhorada. "
-                "Avaliar organização e planejamento."
-            )
+            insights.append("Produtividade pode ser melhorada. Avaliar organização e planejamento.")
 
         # Insight geral
         total = metrics["agendamentos"]["total"]
@@ -478,7 +458,7 @@ class DiaristAIService:
         condominio_id: UUID,
         data_inicio: date,
         data_fim: date,
-        budget: Optional[Decimal] = None,
+        budget: Decimal | None = None,
     ) -> ScheduleOptimizationResponse:
         """
         Otimiza agendamentos do condomínio usando IA.
@@ -546,10 +526,7 @@ class DiaristAIService:
                     for s in diarist_schedules
                     if s.status == ScheduleStatus.CONCLUIDO
                 ),
-                "valor_total": sum(
-                    float(s.valor_final or s.valor_previsto or 0)
-                    for s in diarist_schedules
-                ),
+                "valor_total": sum(float(s.valor_final or s.valor_previsto or 0) for s in diarist_schedules),
             }
 
         return distribution
@@ -559,7 +536,7 @@ class DiaristAIService:
         schedules: list[DiaristSchedule],
         _diarists: list[Diarist],
         distribution: dict,
-        budget: Optional[Decimal],
+        budget: Decimal | None,
     ) -> list[dict]:
         """Gera sugestões de otimização."""
         suggestions = []
@@ -572,37 +549,41 @@ class DiaristAIService:
             min_val = min(totals) if totals else 0
 
             if max_val - min_val > avg * 0.5:
-                suggestions.append({
-                    "tipo": "rebalanceamento",
-                    "descricao": "Distribuição de trabalho desbalanceada",
-                    "acao": "Redistribuir agendamentos entre diaristas",
-                    "impacto": "medio",
-                })
+                suggestions.append(
+                    {
+                        "tipo": "rebalanceamento",
+                        "descricao": "Distribuição de trabalho desbalanceada",
+                        "acao": "Redistribuir agendamentos entre diaristas",
+                        "impacto": "medio",
+                    }
+                )
 
         # Verificar custos
         if budget:
-            total_cost = sum(
-                float(s.valor_previsto or 0) for s in schedules
-            )
+            total_cost = sum(float(s.valor_previsto or 0) for s in schedules)
             if Decimal(str(total_cost)) > budget:
-                suggestions.append({
-                    "tipo": "reducao_custos",
-                    "descricao": f"Custos excedem orçamento em R$ {total_cost - float(budget):.2f}",
-                    "acao": "Considerar diaristas com menor custo ou reduzir frequência",
-                    "impacto": "alto",
-                })
+                suggestions.append(
+                    {
+                        "tipo": "reducao_custos",
+                        "descricao": f"Custos excedem orçamento em R$ {total_cost - float(budget):.2f}",
+                        "acao": "Considerar diaristas com menor custo ou reduzir frequência",
+                        "impacto": "alto",
+                    }
+                )
 
         # Verificar diaristas subutilizadas
         top_diarists = self.repository.get_top_diarists(limit=5)
         for td in top_diarists:
             dist = distribution.get(str(td["diarist"].id), {})
             if dist.get("total_agendamentos", 0) == 0:
-                suggestions.append({
-                    "tipo": "aproveitamento",
-                    "descricao": f"{td['diarist'].nome} está disponível mas sem agendamentos",
-                    "acao": "Considerar alocar esta profissional bem avaliada",
-                    "impacto": "baixo",
-                })
+                suggestions.append(
+                    {
+                        "tipo": "aproveitamento",
+                        "descricao": f"{td['diarist'].nome} está disponível mas sem agendamentos",
+                        "acao": "Considerar alocar esta profissional bem avaliada",
+                        "impacto": "baixo",
+                    }
+                )
 
         return suggestions
 

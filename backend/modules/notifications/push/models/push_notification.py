@@ -3,10 +3,9 @@
 Sprint 37 - Push Notifications Mobile.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -15,7 +14,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class NotificationStatus(str, enum.Enum):
+class NotificationStatus(StrEnum):
     """Status da notificacao."""
 
     PENDING = "pending"
@@ -31,7 +30,7 @@ class NotificationStatus(str, enum.Enum):
     UNREGISTERED = "unregistered"
 
 
-class NotificationPriority(str, enum.Enum):
+class NotificationPriority(StrEnum):
     """Prioridade da notificacao."""
 
     LOW = "low"
@@ -171,7 +170,7 @@ class PushNotification(Base):
     def __repr__(self) -> str:
         return f"<PushNotification {self.notification_id} ({self.status.value})>"
 
-    def update_status(self, new_status: NotificationStatus, details: Optional[dict] = None) -> None:
+    def update_status(self, new_status: NotificationStatus, details: dict | None = None) -> None:
         """Atualiza status com historico."""
         old_status = self.status
         self.status = new_status

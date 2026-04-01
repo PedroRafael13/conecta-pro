@@ -4,12 +4,12 @@ from .occurrence import (
     AttachmentSchema,
     OccurrenceBase,
     OccurrenceCreate,
-    OccurrenceUpdate,
+    OccurrenceFilter,
+    OccurrenceListResponse,
     OccurrenceResolve,
     OccurrenceResponse,
-    OccurrenceListResponse,
-    OccurrenceFilter,
     OccurrenceStats,
+    OccurrenceUpdate,
 )
 
 __all__ = [

@@ -8,17 +8,18 @@ Author: Conecta PRO Team
 Date: 2026-01-29
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime
-from enum import Enum
 import logging
 import re
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class RondaIntent(str, Enum):
+class RondaIntent(StrEnum):
     """Intents relacionados a rondas de inspecao."""
+
     RONDAS_HOJE = "rondas_hoje"
     RONDAS_ANDAMENTO = "rondas_andamento"
     RONDA_DETALHES = "ronda_detalhes"
@@ -52,13 +53,15 @@ class RondaAgent:
         # ==================================================================
         # CRIAR_RONDA - Criar nova ronda (wizard)
         # ==================================================================
-        (r"(?:criar|crie|cria|nova|agendar|agende|cadastrar|cadastre)\s+(?:uma\s+)?(?:nova\s+)?ronda", RondaIntent.CRIAR_RONDA),
+        (
+            r"(?:criar|crie|cria|nova|agendar|agende|cadastrar|cadastre)\s+(?:uma\s+)?(?:nova\s+)?ronda",
+            RondaIntent.CRIAR_RONDA,
+        ),
         (r"(?:quero|preciso)\s+(?:de\s+)?(?:uma\s+)?(?:nova\s+)?ronda", RondaIntent.CRIAR_RONDA),
         (r"(?:pode|consegue|da\s+para)\s+(?:criar|agendar)\s+(?:uma\s+)?ronda", RondaIntent.CRIAR_RONDA),
         (r"(?:me\s+)?(?:ajuda|ajude)\s+(?:a\s+)?(?:criar|agendar)\s+(?:uma\s+)?ronda", RondaIntent.CRIAR_RONDA),
         (r"(?:montar|preparar|planejar)\s+(?:uma\s+)?ronda", RondaIntent.CRIAR_RONDA),
         (r"nova\s+ronda\s+de\s+inspecao", RondaIntent.CRIAR_RONDA),
-
         # ==================================================================
         # INICIAR_RONDA - Iniciar ronda existente (action)
         # ==================================================================
@@ -66,7 +69,6 @@ class RondaAgent:
         (r"(?:dar\s+inicio|comecar)\s+(?:a\s+)?ronda", RondaIntent.INICIAR_RONDA),
         (r"(?:iniciar|inicie)\s+(?:a\s+)?ronda\s+(?:RON-[\w-]+|\w+)", RondaIntent.INICIAR_RONDA),
         (r"(?:iniciar|comecar)\s+inspecao", RondaIntent.INICIAR_RONDA),
-
         # ==================================================================
         # RESULTADO_RONDA - Resultado/relatorio de ronda
         # ==================================================================
@@ -75,7 +77,6 @@ class RondaAgent:
         (r"(?:como\s+)?(?:foi|ficou|terminou)\s+(?:a\s+)?ronda", RondaIntent.RESULTADO_RONDA),
         (r"(?:ver|veja|mostrar|mostre)\s+(?:o\s+)?resultado\s+(?:da\s+)?ronda", RondaIntent.RESULTADO_RONDA),
         (r"(?:ver|veja|mostrar|mostre)\s+(?:o\s+)?relatorio\s+(?:da\s+)?ronda", RondaIntent.RESULTADO_RONDA),
-
         # ==================================================================
         # RONDA_DETALHES - Detalhe de uma ronda especifica
         # ==================================================================
@@ -84,7 +85,6 @@ class RondaAgent:
         (r"(?:ver|veja|mostrar|mostre|exibir|exiba)\s+(?:a\s+)?ronda\s+(?:RON-[\w-]+)", RondaIntent.RONDA_DETALHES),
         (r"(?:qual|quais)\s+(?:os?\s+)?(?:dados?|detalhes?)\s+(?:da\s+)?ronda", RondaIntent.RONDA_DETALHES),
         (r"(?:abrir|abra)\s+(?:a\s+)?ronda\s+(?:RON-[\w-]+)", RondaIntent.RONDA_DETALHES),
-
         # ==================================================================
         # RONDAS_INSPETOR - Rondas por inspetor
         # ==================================================================
@@ -93,7 +93,6 @@ class RondaAgent:
         (r"(?:quais|quantas)\s+rondas?\s+(?:do|da|de)\s+\w+", RondaIntent.RONDAS_INSPETOR),
         (r"(?:ver|veja|mostrar|mostre|listar|liste)\s+rondas?\s+(?:do|da|de)\s+\w+", RondaIntent.RONDAS_INSPETOR),
         (r"(?:historico|historico)\s+(?:de\s+)?rondas?\s+(?:do|da|de)\s+\w+", RondaIntent.RONDAS_INSPETOR),
-
         # ==================================================================
         # ESTATISTICAS_RONDAS - Estatisticas por status
         # ==================================================================
@@ -102,17 +101,18 @@ class RondaAgent:
         (r"(?:quantas|quantos)\s+rondas?\s+(?:por\s+status|temos|existem|tem|ha)", RondaIntent.ESTATISTICAS_RONDAS),
         (r"(?:resumo|painel|dashboard)\s+(?:de\s+|das?\s+)?rondas?", RondaIntent.ESTATISTICAS_RONDAS),
         (r"(?:panorama|visao\s+geral)\s+(?:de\s+|das?\s+)?rondas?", RondaIntent.ESTATISTICAS_RONDAS),
-
         # ==================================================================
         # RONDAS_ANDAMENTO - Rondas em andamento
         # ==================================================================
         (r"rondas?\s+(?:em\s+)?andamento", RondaIntent.RONDAS_ANDAMENTO),
         (r"rondas?\s+(?:em\s+)?(?:progresso|curso|execucao)", RondaIntent.RONDAS_ANDAMENTO),
-        (r"(?:tem|ha|há)\s+(?:alguma\s+)?ronda\s+(?:em\s+)?(?:andamento|progresso|curso)", RondaIntent.RONDAS_ANDAMENTO),
+        (
+            r"(?:tem|ha|há)\s+(?:alguma\s+)?ronda\s+(?:em\s+)?(?:andamento|progresso|curso)",
+            RondaIntent.RONDAS_ANDAMENTO,
+        ),
         (r"(?:quais|quantas)\s+rondas?\s+(?:estao|estão)\s+(?:em\s+)?andamento", RondaIntent.RONDAS_ANDAMENTO),
         (r"rondas?\s+(?:ativas?|acontecendo|rodando)", RondaIntent.RONDAS_ANDAMENTO),
         (r"(?:ver|veja|mostrar|mostre)\s+rondas?\s+(?:em\s+)?andamento", RondaIntent.RONDAS_ANDAMENTO),
-
         # ==================================================================
         # RONDAS_HOJE - Rondas agendadas hoje (mais generico, por ultimo)
         # ==================================================================
@@ -120,10 +120,16 @@ class RondaAgent:
         (r"rondas?\s+(?:agendadas?|previstas?|programadas?)\s+(?:para\s+)?hoje", RondaIntent.RONDAS_HOJE),
         (r"(?:tem|ha|há)\s+rondas?\s+(?:para\s+)?hoje", RondaIntent.RONDAS_HOJE),
         (r"(?:quais|quantas)\s+rondas?\s+(?:para\s+|de\s+)?hoje", RondaIntent.RONDAS_HOJE),
-        (r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:as\s+)?rondas?\s+(?:de\s+|para\s+)?hoje", RondaIntent.RONDAS_HOJE),
+        (
+            r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:as\s+)?rondas?\s+(?:de\s+|para\s+)?hoje",
+            RondaIntent.RONDAS_HOJE,
+        ),
         (r"rondas?\s+do\s+dia", RondaIntent.RONDAS_HOJE),
         (r"(?:agenda|programacao)\s+(?:de\s+)?rondas?\s+(?:de\s+)?hoje", RondaIntent.RONDAS_HOJE),
-        (r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:as\s+)?rondas?(?:\s+(?:atuais?|existentes?|ativas?))?$", RondaIntent.RONDAS_HOJE),
+        (
+            r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:as\s+)?rondas?(?:\s+(?:atuais?|existentes?|ativas?))?$",
+            RondaIntent.RONDAS_HOJE,
+        ),
     ]
 
     def __init__(self, db=None, data_connector=None):
@@ -140,12 +146,13 @@ class RondaAgent:
         if db and not data_connector:
             try:
                 from modules.ai.bartolo.services.data_connector import DataConnector
+
                 self.data_connector = DataConnector(db)
             except Exception as e:
                 logger.warning(f"Nao foi possivel criar DataConnector: {e}")
                 self.data_connector = None
 
-    async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def process(self, message: str, context: dict[str, Any] = None) -> dict[str, Any]:
         """
         Processa uma mensagem relacionada a rondas de inspecao.
 
@@ -174,7 +181,7 @@ class RondaAgent:
         else:
             return await self._handle_default(message, context)
 
-    def _detect_intent(self, message: str) -> Optional[RondaIntent]:
+    def _detect_intent(self, message: str) -> RondaIntent | None:
         """Detecta o intent da mensagem."""
         message_lower = message.lower()
 
@@ -187,7 +194,7 @@ class RondaAgent:
     # HANDLERS
     # ==========================================================================
 
-    async def _handle_rondas_hoje(self, context: Dict) -> Dict[str, Any]:
+    async def _handle_rondas_hoje(self, context: dict) -> dict[str, Any]:
         """Retorna rondas agendadas para hoje usando DataConnector ou fallback."""
         if self.data_connector:
             try:
@@ -223,7 +230,7 @@ Nenhuma ronda agendada para hoje foi encontrada no momento.
             ],
         }
 
-    async def _handle_rondas_andamento(self, context: Dict) -> Dict[str, Any]:
+    async def _handle_rondas_andamento(self, context: dict) -> dict[str, Any]:
         """Retorna rondas em andamento."""
         if self.data_connector:
             try:
@@ -258,7 +265,7 @@ Nenhuma ronda em andamento no momento.
             ],
         }
 
-    async def _handle_ronda_detalhes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ronda_detalhes(self, message: str, context: dict) -> dict[str, Any]:
         """Retorna detalhes de uma ronda especifica."""
         # Extrair codigo da ronda da mensagem
         code_match = re.search(r"(RON-[\w-]+)", message, re.IGNORECASE)
@@ -304,7 +311,7 @@ Para ver os detalhes, informe o codigo da ronda.
             "suggestions": ["/ronda hoje", "/ronda andamento"],
         }
 
-    async def _handle_resultado_ronda(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_resultado_ronda(self, message: str, context: dict) -> dict[str, Any]:
         """Retorna resultado/relatorio de uma ronda concluida."""
         code_match = re.search(r"(RON-[\w-]+)", message, re.IGNORECASE)
         round_code = code_match.group(1).upper() if code_match else None
@@ -349,7 +356,7 @@ Para ver o resultado, informe o codigo da ronda.
             "suggestions": ["/ronda hoje", "/ronda andamento"],
         }
 
-    async def _handle_rondas_inspetor(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_rondas_inspetor(self, message: str, context: dict) -> dict[str, Any]:
         """Retorna rondas de um inspetor especifico."""
         # Extrair nome do inspetor da mensagem
         name_match = re.search(
@@ -399,7 +406,7 @@ Para ver as rondas de um inspetor, informe o nome.
             "suggestions": ["/ronda hoje", "/ronda stats"],
         }
 
-    async def _handle_estatisticas_rondas(self, context: Dict) -> Dict[str, Any]:
+    async def _handle_estatisticas_rondas(self, context: dict) -> dict[str, Any]:
         """Retorna estatisticas de rondas por status."""
         if self.data_connector:
             try:
@@ -441,7 +448,7 @@ Para ver as rondas de um inspetor, informe o nome.
             ],
         }
 
-    async def _handle_iniciar_ronda(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_iniciar_ronda(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona para action de iniciar ronda."""
         code_match = re.search(r"(RON-[\w-]+)", message, re.IGNORECASE)
         round_code = code_match.group(1).upper() if code_match else None
@@ -482,7 +489,7 @@ Ou consulte as rondas agendadas para hoje com `/ronda hoje`.""",
             "suggestions": ["/ronda hoje", "Criar nova ronda"],
         }
 
-    async def _handle_criar_ronda(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_criar_ronda(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona para wizard de criacao de ronda."""
         return {
             "response": """**Criar Nova Ronda de Inspecao**
@@ -510,7 +517,7 @@ Vou guiar voce na criacao de uma nova ronda. Precisarei das seguintes informacoe
             ],
         }
 
-    async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
+    async def _handle_default(self, message: str, context: dict) -> dict[str, Any] | None:
         """Handler padrao - retorna None para permitir que DataConnector processe."""
         return None
 
@@ -534,10 +541,10 @@ Vou guiar voce na criacao de uma nova ronda. Precisarei das seguintes informacoe
     async def process_followup(
         self,
         message: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         previous_intent: str,
-        previous_data: Optional[Dict] = None,
-    ) -> Optional[Dict[str, Any]]:
+        previous_data: dict | None = None,
+    ) -> dict[str, Any] | None:
         """
         Processa follow-up de uma conversa anterior com o RondaAgent.
 
@@ -560,7 +567,7 @@ Vou guiar voce na criacao de uma nova ronda. Precisarei das seguintes informacoe
                     round_code = previous_data.get("code", "")
                     return {
                         "response": f"Ronda {round_code} iniciada! O status foi alterado para **Em Andamento**.\n\n"
-                                    f"Registre os checkpoints durante a inspecao.",
+                        f"Registre os checkpoints durante a inspecao.",
                         "intent": RondaIntent.INICIAR_RONDA.value,
                         "data": {**previous_data, "confirmed": True},
                         "suggestions": ["/ronda andamento", "Ver detalhes"],
@@ -581,8 +588,8 @@ Vou guiar voce na criacao de uma nova ronda. Precisarei das seguintes informacoe
                 if re.match(pattern, message_clean):
                     return {
                         "response": "Iniciando wizard de criacao de ronda...\n\n"
-                                    "**Passo 1/7 - Tipo de Inspecao**\n\n"
-                                    "Qual o tipo de inspecao a ser realizada?",
+                        "**Passo 1/7 - Tipo de Inspecao**\n\n"
+                        "Qual o tipo de inspecao a ser realizada?",
                         "intent": RondaIntent.CRIAR_RONDA.value,
                         "data": {**previous_data, "wizard_started": True},
                         "suggestions": [
@@ -616,7 +623,7 @@ Vou guiar voce na criacao de uma nova ronda. Precisarei das seguintes informacoe
 
         return None
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Retorna lista de capabilities do agente."""
         return [
             "Consultar rondas agendadas para hoje",

@@ -4,44 +4,45 @@ Testes para MDF-e (Manifesto Eletronico de Documentos Fiscais).
 Testes unitarios e de integracao para MDF-e.
 """
 
-import pytest
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.mdfe import (
+    Condutor,
+    DocumentoVinculado,
+    MDFe,
+    MDFeManager,
+    ModalTransporteMDFe,
+    Municipio,
+    Percurso,
+    Reboque,
+    SituacaoMDFe,
+    TipoCarroceria,
+    TipoEmitente,
+    TipoRodado,
+    Veiculo,
+)
 from modules.government_integrations.schemas.mdfe import (
     CondutorRequest,
-    VeiculoRequest,
-    ReboqueRequest,
-    DocumentoVinculadoRequest,
-    MunicipioRequest,
     CriarMDFeRequest,
-    GerarXMLRequest,
+    DocumentoVinculadoRequest,
     EncerrarMDFeRequest,
+    GerarXMLRequest,
     IncluirCondutorRequest,
     ModalTransporteEnum,
-    TipoEmitenteEnum,
-    TipoCarroceriaEnum,
-    TipoRodadoEnum,
+    MunicipioRequest,
+    ReboqueRequest,
     SituacaoMDFeEnum,
+    TipoCarroceriaEnum,
+    TipoEmitenteEnum,
+    TipoRodadoEnum,
+    VeiculoRequest,
 )
 from modules.government_integrations.services.mdfe_service import (
     MDFeService,
-)
-from modules.government_integrations.core.mdfe import (
-    MDFeManager,
-    MDFe,
-    Condutor,
-    Veiculo,
-    Reboque,
-    DocumentoVinculado,
-    Municipio,
-    Percurso,
-    ModalTransporteMDFe,
-    TipoEmitente,
-    TipoCarroceria,
-    TipoRodado,
-    SituacaoMDFe,
 )
 
 
@@ -125,7 +126,7 @@ class TestSchemas:
             condutor=CondutorRequest(
                 cpf="12345678901",
                 nome="Joao Silva",
-            )
+            ),
         )
         assert request.condutor.cpf == "12345678901"
 
@@ -263,13 +264,16 @@ class TestMDFeService:
     @pytest.fixture
     def service(self):
         """Cria instancia do service."""
-        with patch.dict('os.environ', {
-            'MDFE_CNPJ': '35710481000103',
-            'EMPRESA_RAZAO_SOCIAL': 'Transportadora Teste',
-            'EMPRESA_IE': '123456789',
-            'EMPRESA_UF': 'AM',
-            'MDFE_AMBIENTE': 'homologacao',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "MDFE_CNPJ": "35710481000103",
+                "EMPRESA_RAZAO_SOCIAL": "Transportadora Teste",
+                "EMPRESA_IE": "123456789",
+                "EMPRESA_UF": "AM",
+                "MDFE_AMBIENTE": "homologacao",
+            },
+        ):
             return MDFeService()
 
     def test_service_init(self, service):
@@ -320,9 +324,7 @@ class TestMDFeService:
                 "tipo_rodado": "03",
                 "tipo_carroceria": "02",
             },
-            "condutores": [
-                {"cpf": "12345678901", "nome": "Joao Silva"}
-            ],
+            "condutores": [{"cpf": "12345678901", "nome": "Joao Silva"}],
         }
 
         resultado = service.criar_mdfe(dados)
@@ -489,12 +491,13 @@ class TestMDFeEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.mdfe_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -547,10 +550,7 @@ class TestMDFeEndpoints:
             "peso_bruto_total": "15000.0000",
         }
 
-        response = client.post(
-            "/api/v1/government/mdfe/criar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/mdfe/criar", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -574,15 +574,10 @@ class TestMDFeEndpoints:
                 "tipo_rodado": "03",
                 "tipo_carroceria": "02",
             },
-            "condutores": [
-                {"cpf": "12345678901", "nome": "Joao Silva"}
-            ],
+            "condutores": [{"cpf": "12345678901", "nome": "Joao Silva"}],
         }
 
-        response = client.post(
-            "/api/v1/government/mdfe/criar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/mdfe/criar", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -626,10 +621,7 @@ class TestMDFeEndpoints:
             "codigo_municipio": "3550308",
         }
 
-        response = client.post(
-            "/api/v1/government/mdfe/encerrar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/mdfe/encerrar", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -640,16 +632,10 @@ class TestMDFeEndpoints:
         """Testa endpoint de inclusao de condutor."""
         payload = {
             "chave": "35260100000000000000580010000000011000000011",
-            "condutor": {
-                "cpf": "12345678901",
-                "nome": "Joao Silva"
-            }
+            "condutor": {"cpf": "12345678901", "nome": "Joao Silva"},
         }
 
-        response = client.post(
-            "/api/v1/government/mdfe/incluir-condutor",
-            json=payload
-        )
+        response = client.post("/api/v1/government/mdfe/incluir-condutor", json=payload)
 
         assert response.status_code == 200
         data = response.json()

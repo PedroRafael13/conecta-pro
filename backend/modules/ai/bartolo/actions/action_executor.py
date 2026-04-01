@@ -22,7 +22,6 @@ from .executors.disciplinary_executor import DisciplinaryActionExecutor
 from .executors.inspection_executor import InspectionActionExecutor
 from .executors.notification_executor import NotificationActionExecutor
 from .executors.occurrence_executor import OccurrenceActionExecutor
-from .executors.openclaw_executor import OpenClawActionExecutor
 from .executors.post_executor import PostActionExecutor
 from .executors.report_executor import ReportActionExecutor
 from .executors.scale_executor import ScaleActionExecutor
@@ -101,19 +100,6 @@ class ActionExecutor:
         ActionType.SEND_NOTIFICATION: NotificationActionExecutor,
         # Relatórios
         ActionType.GENERATE_REPORT: ReportActionExecutor,
-        # OpenClaw CI/CD
-        ActionType.OPENCLAW_RUN_TESTS: OpenClawActionExecutor,
-        ActionType.OPENCLAW_RUN_LINT: OpenClawActionExecutor,
-        ActionType.OPENCLAW_RUN_SECURITY: OpenClawActionExecutor,
-        ActionType.OPENCLAW_RUN_COVERAGE: OpenClawActionExecutor,
-        ActionType.OPENCLAW_RUN_HEALTH: OpenClawActionExecutor,
-        ActionType.OPENCLAW_RUN_FULL_CYCLE: OpenClawActionExecutor,
-        ActionType.OPENCLAW_RUN_E2E: OpenClawActionExecutor,
-        ActionType.OPENCLAW_RUN_E2E_MODULE: OpenClawActionExecutor,
-        ActionType.OPENCLAW_DEPLOY_STAGING: OpenClawActionExecutor,
-        ActionType.OPENCLAW_DEPLOY_PRODUCTION: OpenClawActionExecutor,
-        ActionType.OPENCLAW_DAEMON_START: OpenClawActionExecutor,
-        ActionType.OPENCLAW_DAEMON_STOP: OpenClawActionExecutor,
     }
 
     # Timeout para ações pendentes (5 minutos)

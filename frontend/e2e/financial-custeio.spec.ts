@@ -1,70 +1,72 @@
 /**
  * Testes E2E - Custeio ABC
+ *
+ * Validações:
+ * - Carregamento da página com header correto
+ * - Cards de estatísticas (Direcionadores, Atividades, Pools de Custo, Objetos de Custo)
+ * - Tabs de navegação (Direcionadores, Atividades, Pools de Custo, Objetos de Custo)
+ * - Campo de busca funcional e dinâmico por tab
+ * - Troca de tabs funciona sem erros
  */
 
 import { test, expect } from './fixtures';
 
 test.describe('Custeio ABC', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock explícito de /auth/me ANTES de qualquer navegação
-    await page.route('**/api/v1/auth/**', (route) => {
-      if (route.request().url().includes('/auth/me') && route.request().method() === 'GET') {
-        route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-            email: 'admin@conectaplus.com.br',
-            name: 'Admin',
-            role: 'admin',
-            is_active: true,
-            permissions: ['*'],
-            tenant_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-          }),
-        });
-      } else {
-        route.continue();
-      }
+    await page.goto('/modulos/financeiro/custeio', { waitUntil: 'load' });
+  });
+
+  test('deve carregar página com header correto', async ({ page }) => {
+    await test.step('Verificar título h1 "Custeio ABC"', async () => {
+      await expect(page.locator('h1')).toContainText('Custeio', { timeout: 8000 });
+    });
+  });
+
+  test('deve exibir 4 cards de estatísticas', async ({ page }) => {
+    const stats = ['Direcionadores', 'Atividades', 'Pools de Custo', 'Objetos de Custo'];
+    for (const stat of stats) {
+      await test.step(`Verificar card "${stat}"`, async () => {
+        await expect(page.locator('text=' + stat).first()).toBeVisible({ timeout: 8000 });
+      });
+    }
+  });
+
+  test('deve exibir 4 tabs de navegação', async ({ page }) => {
+    const tabs = ['Direcionadores', 'Atividades', 'Pools de Custo', 'Objetos de Custo'];
+    for (const tab of tabs) {
+      await test.step(`Verificar tab "${tab}"`, async () => {
+        await expect(page.locator('button', { hasText: tab }).first()).toBeVisible({ timeout: 8000 });
+      });
+    }
+  });
+
+  test('deve exibir campo de busca', async ({ page }) => {
+    await test.step('Verificar campo de busca presente', async () => {
+      const searchInput = page.locator('input[type="search"]').first();
+      await expect(searchInput).toBeVisible({ timeout: 8000 });
+    });
+  });
+
+  test('deve exibir tabela ou estado vazio na tab ativa', async ({ page }) => {
+    await test.step('Aguardar conteúdo carregar', async () => {
+      await page.waitForTimeout(4000);
     });
 
-    // Configurar token no localStorage
-    await page.addInitScript(() => {
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBjb25lY3RhcGx1cy5jb20uYnIiLCJleHAiOjk5OTk5OTk5OTl9.mock';
-      localStorage.setItem('access_token', mockToken);
+    await test.step('Verificar presença de tabela ou mensagem de vazio', async () => {
+      const hasTable = await page.locator('table').isVisible().catch(() => false);
+      const hasEmpty = await page.locator('text=Nenhum').first().isVisible().catch(() => false);
+      expect(hasTable || hasEmpty).toBeTruthy();
     });
-
-    await page.goto('/modulos/financeiro/custeio', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
   });
 
-  test('deve carregar a página de custeio', async ({ page }) => {
-    const hasContent = await page.locator('h1, button, div').count();
-    expect(hasContent).toBeGreaterThan(0);
-  });
-
-  test('deve exibir o título "Custeio ABC"', async ({ page }) => {
-    const title = page.locator('text=/Custeio/i').first();
-    await expect(title).toBeVisible({ timeout: 10000 });
-  });
-
-  test('deve ter cards de estatísticas', async ({ page }) => {
-    const cards = await page.locator('[class*="card"], [class*="Card"]').count();
-    expect(cards).toBeGreaterThan(0);
-  });
-
-  test('deve ter tabs de navegação', async ({ page }) => {
-    const tabs = await page.locator('button').count();
-    expect(tabs).toBeGreaterThan(0);
-  });
-
-  test('deve ter campo de busca', async ({ page }) => {
-    const searchInputs = page.locator('input[type="search"]');
-    const count = await searchInputs.count();
-    expect(count).toBeGreaterThanOrEqual(0);
-  });
-
-  test('deve ter estrutura de tabela', async ({ page }) => {
-    const hasTable = await page.locator('table, div[role="table"]').count();
-    expect(hasTable).toBeGreaterThanOrEqual(0);
+  test('deve navegar entre todas as tabs sem erros', async ({ page }) => {
+    const tabs = ['Atividades', 'Pools de Custo', 'Objetos de Custo', 'Direcionadores'];
+    for (const tab of tabs) {
+      await test.step(`Navegar para tab "${tab}"`, async () => {
+        await page.locator('button', { hasText: tab }).first().click();
+        await page.waitForTimeout(300);
+        await expect(page.locator('h1')).toContainText('Custeio');
+      });
+    }
   });
 });

@@ -51,7 +51,7 @@ export function MoveFolderDialog({ folder, open, onClose, onMoved }: MoveFolderD
         <DialogHeader>
           <DialogTitle>Mover Pasta</DialogTitle>
           <DialogDescription>
-            Selecione o novo local para a pasta "{folder?.name}"
+            Selecione o novo local para a pasta &quot;{folder?.name}&quot;
           </DialogDescription>
         </DialogHeader>
 

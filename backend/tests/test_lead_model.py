@@ -147,10 +147,7 @@ class TestLeadSource:
 
     def test_all_sources_exist(self):
         """Testa que todas as fontes existem."""
-        expected = [
-            "website", "referral", "social_media", "email_campaign",
-            "event", "partner", "cold_call", "other"
-        ]
+        expected = ["website", "referral", "social_media", "email_campaign", "event", "partner", "cold_call", "other"]
 
         for source in expected:
             assert hasattr(LeadSource, source.upper())

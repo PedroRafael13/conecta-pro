@@ -3,10 +3,10 @@
 import base64
 import json
 import logging
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from modules.equipment_management.repositories.equipment_repository import (
     EquipmentRepository,
 )
@@ -36,31 +36,27 @@ class EquipmentService:
         if data.serial_number:
             existing = await self.repository.get_by_serial_number(data.serial_number)
             if existing:
-                raise ValueError(
-                    f"Já existe equipamento com número de série: {data.serial_number}"
-                )
+                raise ValueError(f"Já existe equipamento com número de série: {data.serial_number}")
 
         equipment = await self.repository.create(data)
         await self.session.commit()
         return EquipmentResponse.model_validate(equipment)
 
-    async def get_by_id(self, equipment_id: str | UUID) -> Optional[EquipmentResponse]:
+    async def get_by_id(self, equipment_id: str | UUID) -> EquipmentResponse | None:
         """Busca equipamento por ID."""
         equipment = await self.repository.get_by_id(equipment_id)
         if not equipment:
             return None
         return EquipmentResponse.model_validate(equipment)
 
-    async def get_by_code(self, code: str) -> Optional[EquipmentResponse]:
+    async def get_by_code(self, code: str) -> EquipmentResponse | None:
         """Busca equipamento por código."""
         equipment = await self.repository.get_by_code(code)
         if not equipment:
             return None
         return EquipmentResponse.model_validate(equipment)
 
-    async def update(
-        self, equipment_id: str | UUID, data: EquipmentUpdate
-    ) -> Optional[EquipmentResponse]:
+    async def update(self, equipment_id: str | UUID, data: EquipmentUpdate) -> EquipmentResponse | None:
         """Atualiza um equipamento."""
         equipment = await self.repository.update(equipment_id, data)
         if not equipment:
@@ -77,14 +73,12 @@ class EquipmentService:
 
     async def list_with_filters(
         self,
-        filters: Optional[EquipmentFilter] = None,
+        filters: EquipmentFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> EquipmentListResponse:
         """Lista equipamentos com filtros."""
-        items, total = await self.repository.list_with_filters(
-            filters=filters, page=page, page_size=page_size
-        )
+        items, total = await self.repository.list_with_filters(filters=filters, page=page, page_size=page_size)
 
         total_pages = (total + page_size - 1) // page_size
 
@@ -126,7 +120,7 @@ class EquipmentService:
         items = await self.repository.get_expiring_warranty(days)
         return [EquipmentResponse.model_validate(item) for item in items]
 
-    async def get_stats(self, client_id: Optional[str] = None) -> EquipmentStats:
+    async def get_stats(self, client_id: str | None = None) -> EquipmentStats:
         """Obtém estatísticas de equipamentos."""
         return await self.repository.get_stats(client_id)
 
@@ -135,12 +129,12 @@ class EquipmentService:
         equipment_id: str | UUID,
         client_id: str,
         client_name: str,
-        contract_id: Optional[str] = None,
-        installation_id: Optional[str] = None,
-        location: Optional[str] = None,
-        latitude: Optional[float] = None,
-        longitude: Optional[float] = None,
-    ) -> Optional[EquipmentResponse]:
+        contract_id: str | None = None,
+        installation_id: str | None = None,
+        location: str | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
+    ) -> EquipmentResponse | None:
         """Registra instalação de equipamento."""
         equipment = await self.repository.install(
             equipment_id=equipment_id,
@@ -157,7 +151,7 @@ class EquipmentService:
         await self.session.commit()
         return EquipmentResponse.model_validate(equipment)
 
-    async def uninstall(self, equipment_id: str | UUID) -> Optional[EquipmentResponse]:
+    async def uninstall(self, equipment_id: str | UUID) -> EquipmentResponse | None:
         """Desinstala equipamento."""
         equipment = await self.repository.uninstall(equipment_id)
         if not equipment:
@@ -165,9 +159,7 @@ class EquipmentService:
         await self.session.commit()
         return EquipmentResponse.model_validate(equipment)
 
-    async def update_online_status(
-        self, equipment_id: str | UUID, is_online: bool
-    ) -> Optional[EquipmentResponse]:
+    async def update_online_status(self, equipment_id: str | UUID, is_online: bool) -> EquipmentResponse | None:
         """Atualiza status online/offline."""
         equipment = await self.repository.update_online_status(equipment_id, is_online)
         if not equipment:
@@ -175,15 +167,13 @@ class EquipmentService:
         await self.session.commit()
         return EquipmentResponse.model_validate(equipment)
 
-    async def bulk_update_online_status(
-        self, equipment_ids: list[str], is_online: bool
-    ) -> dict:
+    async def bulk_update_online_status(self, equipment_ids: list[str], is_online: bool) -> dict:
         """Atualiza status online/offline em massa."""
         count = await self.repository.bulk_update_online_status(equipment_ids, is_online)
         await self.session.commit()
         return {"updated": count, "total": len(equipment_ids)}
 
-    async def generate_qr_code(self, equipment_id: str | UUID) -> Optional[str]:
+    async def generate_qr_code(self, equipment_id: str | UUID) -> str | None:
         """Gera QR Code para equipamento."""
         equipment = await self.repository.get_by_id(equipment_id)
         if not equipment:
@@ -207,9 +197,7 @@ class EquipmentService:
 
         return qr_url
 
-    async def calculate_depreciation(
-        self, equipment_id: str | UUID
-    ) -> Optional[dict]:
+    async def calculate_depreciation(self, equipment_id: str | UUID) -> dict | None:
         """Calcula depreciação atual do equipamento."""
         equipment = await self.repository.get_by_id(equipment_id)
         if not equipment:

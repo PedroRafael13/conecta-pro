@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,31 +28,33 @@ interface DocumentUploadModalProps {
   isLoading?: boolean;
 }
 
+const defaultFormData = {
+  tipo_documento: 'contrato_social',
+  nome: '',
+  data_validade: '',
+  arquivo_url: '',
+  observacoes: '',
+};
+
 export function DocumentUploadModal({
   isOpen,
   onClose,
   onSubmit,
   isLoading,
 }: DocumentUploadModalProps) {
-  const [formData, setFormData] = useState({
-    tipo_documento: 'contrato_social',
-    nome: '',
-    data_validade: '',
-    arquivo_url: '',
-    observacoes: '',
-  });
+  const [formData, setFormData] = useState(defaultFormData);
+
+  // Reset form when modal closes
+  const resetForm = useCallback(() => {
+    setFormData(defaultFormData);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
-      setFormData({
-        tipo_documento: 'contrato_social',
-        nome: '',
-        data_validade: '',
-        arquivo_url: '',
-        observacoes: '',
-      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

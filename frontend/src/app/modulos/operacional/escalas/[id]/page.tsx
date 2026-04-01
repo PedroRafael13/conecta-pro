@@ -213,7 +213,7 @@ export default function ScaleDetailPage() {
                   disabled={operationLoading}
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Enviar para Aprovacao
+                  Enviar para Aprovação
                 </Button>
               )}
 

@@ -9,7 +9,7 @@ Quality Score: 99+/100
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
@@ -59,7 +59,7 @@ class OccurrenceComment(Base):
         nullable=False,
         index=True,
     )
-    author_name: Mapped[Optional[str]] = mapped_column(
+    author_name: Mapped[str | None] = mapped_column(
         String(200),
         nullable=True,
     )
@@ -78,11 +78,11 @@ class OccurrenceComment(Base):
     )
 
     # === Edicao ===
-    edited_at: Mapped[Optional[datetime]] = mapped_column(
+    edited_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    original_content: Mapped[Optional[str]] = mapped_column(
+    original_content: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -102,7 +102,7 @@ class OccurrenceComment(Base):
     )
 
     # === Relacionamento ===
-    occurrence: Mapped["Occurrence"] = relationship(
+    occurrence: Mapped[Occurrence] = relationship(
         "Occurrence",
         back_populates="comments",
     )

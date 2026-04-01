@@ -3,8 +3,8 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from modules.financial.models.bank_transaction import BankTransaction
 
 
-class BankAccountType(str, Enum):
+class BankAccountType(StrEnum):
     """Tipo de conta bancaria."""
 
     CORRENTE = "corrente"
@@ -27,7 +27,7 @@ class BankAccountType(str, Enum):
     DIGITAL = "digital"  # Conta digital (Nubank, Inter, etc)
 
 
-class BankAccountStatus(str, Enum):
+class BankAccountStatus(StrEnum):
     """Status da conta bancaria."""
 
     ATIVA = "ativa"
@@ -36,7 +36,7 @@ class BankAccountStatus(str, Enum):
     ENCERRADA = "encerrada"
 
 
-class PixKeyType(str, Enum):
+class PixKeyType(StrEnum):
     """Tipo de chave PIX."""
 
     CPF = "cpf"
@@ -238,7 +238,7 @@ class BankAccount(Base):
         """Bloqueia a conta."""
         self.status = BankAccountStatus.BLOQUEADA.value
 
-    def close(self, closing_date: Optional[date] = None) -> None:
+    def close(self, closing_date: date | None = None) -> None:
         """Encerra a conta."""
         self.status = BankAccountStatus.ENCERRADA.value
         self.closing_date = closing_date or date.today()
@@ -271,7 +271,5 @@ class BankAccount(Base):
             "is_main_account": self.is_main_account,
             "is_active": self.is_active,
             "opening_date": self.opening_date.isoformat() if self.opening_date else None,
-            "last_balance_update": (
-                self.last_balance_update.isoformat() if self.last_balance_update else None
-            ),
+            "last_balance_update": (self.last_balance_update.isoformat() if self.last_balance_update else None),
         }

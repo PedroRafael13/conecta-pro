@@ -6,23 +6,23 @@ Endpoints REST para gestao de EPIs.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
+from core.database.session import get_sync_db_dependency
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.epi import (
     EPICreateRequest,
-    EPIUpdateRequest,
-    EPIResponse,
     EPIDeliveryRequest,
-    EPIDeliveryUpdateRequest,
     EPIDeliveryResponse,
-    EPIInventoryUpdateRequest,
+    EPIDeliveryUpdateRequest,
     EPIInventoryResponse,
-    EPIRecordResponse,
+    EPIInventoryUpdateRequest,
+    EPIResponse,
+    EPIUpdateRequest,
 )
 from modules.health_occupational.services.epi_service import EPIService
 
@@ -31,10 +31,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/epi", tags=["EPI - Equipamentos de Protecao (NR-6)"])
 
 
-# Dependency para obter o service
-def get_epi_service() -> EPIService:
-    """Retorna instancia do EPIService."""
-    return EPIService()
+# Dependency para obter o service com DB session
+def get_epi_service(db: Session = Depends(get_sync_db_dependency)) -> EPIService:
+    """Retorna instancia do EPIService com DB session."""
+    return EPIService(db=db)
 
 
 # ==============================================================================
@@ -51,6 +51,7 @@ def get_epi_service() -> EPIService:
 )
 async def create_epi(
     request: EPICreateRequest,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """
@@ -102,85 +103,15 @@ async def create_epi(
 
 
 @router.get(
-    "/{epi_id}",
-    response_model=StandardResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Busca EPI por ID",
-)
-async def get_epi(
-    epi_id: UUID,
-    service: EPIService = Depends(get_epi_service),
-) -> StandardResponse:
-    """Busca EPI por ID."""
-    try:
-        epi = service.get_epi(epi_id)
-        if not epi:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="EPI nao encontrado",
-            )
-
-        return StandardResponse(
-            success=True,
-            message="EPI encontrado",
-            data=EPIResponse.model_validate(epi).model_dump(),
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Erro ao buscar EPI: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro interno",
-        )
-
-
-@router.patch(
-    "/{epi_id}",
-    response_model=StandardResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Atualiza EPI",
-)
-async def update_epi(
-    epi_id: UUID,
-    request: EPIUpdateRequest,
-    service: EPIService = Depends(get_epi_service),
-) -> StandardResponse:
-    """Atualiza dados de EPI."""
-    try:
-        epi = service.update_epi(epi_id, request)
-        if not epi:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="EPI nao encontrado",
-            )
-
-        return StandardResponse(
-            success=True,
-            message="EPI atualizado",
-            data={"epi_id": str(epi.id)},
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Erro ao atualizar EPI: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro interno",
-        )
-
-
-@router.get(
-    "/",
+    "",
     response_model=StandardResponse,
     status_code=status.HTTP_200_OK,
     summary="Lista EPIs cadastrados",
 )
 async def list_epis(
-    categoria: Optional[str] = Query(None, description="Filtrar por categoria"),
-    ativo: Optional[bool] = Query(True, description="Filtrar por status"),
+    current_user: CurrentActiveUser,
+    categoria: str | None = Query(None, description="Filtrar por categoria"),
+    ativo: bool | None = Query(True, description="Filtrar por status"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     service: EPIService = Depends(get_epi_service),
@@ -213,38 +144,145 @@ async def list_epis(
         )
 
 
-@router.delete(
-    "/{epi_id}",
+# ==============================================================================
+# Reference Data Endpoints
+# ==============================================================================
+
+
+@router.get(
+    "/categorias",
     response_model=StandardResponse,
     status_code=status.HTTP_200_OK,
-    summary="Desativa EPI",
+    summary="Lista categorias de EPI",
+    description="Retorna categorias de EPI conforme NR-6.",
 )
-async def deactivate_epi(
-    epi_id: UUID,
+async def list_epi_categories(
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
-    """Desativa EPI (soft delete)."""
+    """Lista categorias de EPI."""
+    data = service.get_epi_categories()
+
+    return StandardResponse(
+        success=True,
+        message="Categorias de EPI conforme NR-6",
+        data=data,
+    )
+
+
+# ==============================================================================
+# Statistics Endpoint
+# ==============================================================================
+
+
+@router.get(
+    "/estatisticas",
+    response_model=StandardResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Estatisticas de EPI",
+)
+async def get_statistics(
+    current_user: CurrentActiveUser,
+    service: EPIService = Depends(get_epi_service),
+) -> StandardResponse:
+    """Retorna estatisticas de EPI."""
     try:
-        epi = service.deactivate_epi(epi_id)
-        if not epi:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="EPI nao encontrado",
-            )
+        stats = service.get_statistics()
 
         return StandardResponse(
             success=True,
-            message="EPI desativado",
-            data={"epi_id": str(epi.id)},
+            message="Estatisticas de EPI",
+            data=stats,
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error("Erro ao desativar EPI: %s", str(e))
+        logger.error("Erro ao obter estatisticas: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro interno",
+        )
+
+
+# ==============================================================================
+# Inventory Endpoints
+# ==============================================================================
+
+
+@router.get(
+    "/estoque",
+    response_model=StandardResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Consulta estoque de EPIs",
+    description="Retorna estoque atual de todos os EPIs.",
+)
+async def get_epi_inventory(
+    current_user: CurrentActiveUser,
+    categoria: str | None = Query(None, description="Filtrar por categoria"),
+    baixo_estoque: bool = Query(False, description="Apenas com estoque baixo"),
+    service: EPIService = Depends(get_epi_service),
+) -> StandardResponse:
+    """Consulta estoque de EPIs."""
+    try:
+        inventory = service.list_inventory(
+            categoria=categoria,
+            low_stock_only=baixo_estoque,
+        )
+
+        return StandardResponse(
+            success=True,
+            message="Estoque de EPIs",
+            data={
+                "itens": inventory,
+                "total_itens": len(inventory),
+                "filtros": {
+                    "categoria": categoria,
+                    "baixo_estoque": baixo_estoque,
+                },
+            },
+        )
+
+    except Exception as e:
+        logger.error("Erro ao consultar estoque: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno ao consultar estoque",
+        )
+
+
+@router.get(
+    "/ficha/{funcionario_id}",
+    response_model=StandardResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Consulta ficha de EPI do funcionario",
+    description="Retorna historico de EPIs entregues ao funcionario.",
+)
+async def get_epi_record(
+    current_user: CurrentActiveUser,
+    funcionario_id: UUID = Path(..., description="UUID do funcionario"),
+    service: EPIService = Depends(get_epi_service),
+) -> StandardResponse:
+    """Consulta ficha de EPI do funcionario."""
+    try:
+        record = service.get_employee_record(funcionario_id)
+
+        return StandardResponse(
+            success=True,
+            message="Ficha de EPI do funcionario",
+            data={
+                "funcionario_id": str(funcionario_id),
+                "entregas": [EPIDeliveryResponse.model_validate(d).model_dump() for d in record["entregas"]],
+                "total_entregas": record["total_entregas"],
+                "epis_ativos": len(record["epis_ativos"]),
+                "epis_vencidos": len(record["epis_vencidos"]),
+                "epis_devolvidos": len(record["epis_devolvidos"]),
+            },
+        )
+
+    except Exception as e:
+        logger.error("Erro ao consultar ficha: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno ao consultar ficha",
         )
 
 
@@ -262,6 +300,7 @@ async def deactivate_epi(
 )
 async def deliver_epi(
     request: EPIDeliveryRequest,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """
@@ -323,6 +362,7 @@ async def deliver_epi(
 )
 async def get_delivery(
     delivery_id: UUID,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Busca entrega por ID."""
@@ -358,6 +398,7 @@ async def get_delivery(
 )
 async def return_epi(
     delivery_id: UUID,
+    current_user: CurrentActiveUser,
     motivo: str = Query(..., description="Motivo da devolucao"),
     condicao: str = Query(..., description="Condicao do EPI (bom, danificado, etc)"),
     service: EPIService = Depends(get_epi_service),
@@ -400,6 +441,7 @@ async def return_epi(
 )
 async def sign_delivery(
     delivery_id: UUID,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Registra assinatura do funcionario na entrega."""
@@ -434,90 +476,6 @@ async def sign_delivery(
         )
 
 
-@router.get(
-    "/ficha/{funcionario_id}",
-    response_model=StandardResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Consulta ficha de EPI do funcionario",
-    description="Retorna historico de EPIs entregues ao funcionario.",
-)
-async def get_epi_record(
-    funcionario_id: UUID = Path(..., description="UUID do funcionario"),
-    service: EPIService = Depends(get_epi_service),
-) -> StandardResponse:
-    """Consulta ficha de EPI do funcionario."""
-    try:
-        record = service.get_employee_record(funcionario_id)
-
-        return StandardResponse(
-            success=True,
-            message="Ficha de EPI do funcionario",
-            data={
-                "funcionario_id": str(funcionario_id),
-                "entregas": [
-                    EPIDeliveryResponse.model_validate(d).model_dump()
-                    for d in record["entregas"]
-                ],
-                "total_entregas": record["total_entregas"],
-                "epis_ativos": len(record["epis_ativos"]),
-                "epis_vencidos": len(record["epis_vencidos"]),
-                "epis_devolvidos": len(record["epis_devolvidos"]),
-            },
-        )
-
-    except Exception as e:
-        logger.error("Erro ao consultar ficha: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro interno ao consultar ficha",
-        )
-
-
-# ==============================================================================
-# Inventory Endpoints
-# ==============================================================================
-
-
-@router.get(
-    "/estoque",
-    response_model=StandardResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Consulta estoque de EPIs",
-    description="Retorna estoque atual de todos os EPIs.",
-)
-async def get_epi_inventory(
-    categoria: Optional[str] = Query(None, description="Filtrar por categoria"),
-    baixo_estoque: bool = Query(False, description="Apenas com estoque baixo"),
-    service: EPIService = Depends(get_epi_service),
-) -> StandardResponse:
-    """Consulta estoque de EPIs."""
-    try:
-        inventory = service.list_inventory(
-            categoria=categoria,
-            low_stock_only=baixo_estoque,
-        )
-
-        return StandardResponse(
-            success=True,
-            message="Estoque de EPIs",
-            data={
-                "itens": inventory,
-                "total_itens": len(inventory),
-                "filtros": {
-                    "categoria": categoria,
-                    "baixo_estoque": baixo_estoque,
-                },
-            },
-        )
-
-    except Exception as e:
-        logger.error("Erro ao consultar estoque: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro interno ao consultar estoque",
-        )
-
-
 @router.patch(
     "/estoque/{epi_id}",
     response_model=StandardResponse,
@@ -527,6 +485,7 @@ async def get_epi_inventory(
 async def update_inventory(
     epi_id: UUID,
     request: EPIInventoryUpdateRequest,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Atualiza estoque de EPI."""
@@ -562,8 +521,9 @@ async def update_inventory(
 )
 async def add_to_inventory(
     epi_id: UUID,
+    current_user: CurrentActiveUser,
     quantidade: int = Query(..., ge=1, description="Quantidade a adicionar"),
-    lote: Optional[str] = Query(None, description="Numero do lote"),
+    lote: str | None = Query(None, description="Numero do lote"),
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Registra entrada de itens no estoque."""
@@ -594,56 +554,113 @@ async def add_to_inventory(
 
 
 # ==============================================================================
-# Reference Data Endpoints
+# Parametric {epi_id} Endpoints (MUST be last to avoid capturing specific paths)
 # ==============================================================================
 
 
 @router.get(
-    "/categorias",
+    "/{epi_id}",
     response_model=StandardResponse,
     status_code=status.HTTP_200_OK,
-    summary="Lista categorias de EPI",
-    description="Retorna categorias de EPI conforme NR-6.",
+    summary="Busca EPI por ID",
 )
-async def list_epi_categories(
+async def get_epi(
+    epi_id: UUID,
+    current_user: CurrentActiveUser,
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
-    """Lista categorias de EPI."""
-    data = service.get_epi_categories()
-
-    return StandardResponse(
-        success=True,
-        message="Categorias de EPI conforme NR-6",
-        data=data,
-    )
-
-
-# ==============================================================================
-# Statistics Endpoint
-# ==============================================================================
-
-
-@router.get(
-    "/estatisticas",
-    response_model=StandardResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Estatisticas de EPI",
-)
-async def get_statistics(
-    service: EPIService = Depends(get_epi_service),
-) -> StandardResponse:
-    """Retorna estatisticas de EPI."""
+    """Busca EPI por ID."""
     try:
-        stats = service.get_statistics()
+        epi = service.get_epi(epi_id)
+        if not epi:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="EPI nao encontrado",
+            )
 
         return StandardResponse(
             success=True,
-            message="Estatisticas de EPI",
-            data=stats,
+            message="EPI encontrado",
+            data=EPIResponse.model_validate(epi).model_dump(),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error("Erro ao obter estatisticas: %s", str(e))
+        logger.error("Erro ao buscar EPI: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno",
+        )
+
+
+@router.patch(
+    "/{epi_id}",
+    response_model=StandardResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Atualiza EPI",
+)
+async def update_epi(
+    epi_id: UUID,
+    request: EPIUpdateRequest,
+    current_user: CurrentActiveUser,
+    service: EPIService = Depends(get_epi_service),
+) -> StandardResponse:
+    """Atualiza dados de EPI."""
+    try:
+        epi = service.update_epi(epi_id, request)
+        if not epi:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="EPI nao encontrado",
+            )
+
+        return StandardResponse(
+            success=True,
+            message="EPI atualizado",
+            data={"epi_id": str(epi.id)},
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Erro ao atualizar EPI: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno",
+        )
+
+
+@router.delete(
+    "/{epi_id}",
+    response_model=StandardResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Desativa EPI",
+)
+async def deactivate_epi(
+    epi_id: UUID,
+    current_user: CurrentActiveUser,
+    service: EPIService = Depends(get_epi_service),
+) -> StandardResponse:
+    """Desativa EPI (soft delete)."""
+    try:
+        epi = service.deactivate_epi(epi_id)
+        if not epi:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="EPI nao encontrado",
+            )
+
+        return StandardResponse(
+            success=True,
+            message="EPI desativado",
+            data={"epi_id": str(epi.id)},
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Erro ao desativar EPI: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro interno",

@@ -9,22 +9,21 @@ API Base: https://www.bling.com.br/Api/v3/
 import logging
 import time
 from datetime import datetime
-from typing import Optional, Dict, Any, List
-from uuid import UUID
+from typing import Any
 
+from modules.integrations.connectors.base.auth import APIKeyAuth
 from modules.integrations.connectors.base.connector import (
     BaseConnector,
     ConnectorCapabilities,
-    SyncResult,
     HealthCheckResult,
+    SyncResult,
 )
-from modules.integrations.connectors.base.auth import APIKeyAuth
-from modules.integrations.connectors.base.rate_limiter import AdaptiveRateLimiter
 from modules.integrations.connectors.base.exceptions import (
-    ConnectorError,
     APIError,
-    NotFoundError,
+    ConnectorError,
 )
+from modules.integrations.connectors.base.rate_limiter import AdaptiveRateLimiter
+from modules.integrations.sync.engine import ConnectorRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -74,26 +73,13 @@ class BlingConnector(BaseConnector):
         """Cria autenticação via API Key."""
         api_key = self.credentials.get("api_key")
         if not api_key:
-            raise ConnectorError(
-                "API key do Bling não configurada",
-                connector=self.NAME,
-                error_code="MISSING_API_KEY"
-            )
+            raise ConnectorError("API key do Bling não configurada", connector=self.NAME, error_code="MISSING_API_KEY")
 
-        return APIKeyAuth(
-            api_key=api_key,
-            header_name="Authorization",
-            header_prefix="Bearer"
-        )
+        return APIKeyAuth(api_key=api_key, header_name="Authorization", header_prefix="Bearer")
 
     def _create_rate_limiter(self) -> AdaptiveRateLimiter:
         """Cria rate limiter adaptativo para Bling."""
-        return AdaptiveRateLimiter(
-            initial_rate=3.0,
-            min_rate=0.5,
-            max_rate=5.0,
-            name=f"{self.NAME}-ratelimiter"
-        )
+        return AdaptiveRateLimiter(initial_rate=3.0, min_rate=0.5, max_rate=5.0, name=f"{self.NAME}-ratelimiter")
 
     async def health_check(self) -> HealthCheckResult:
         """Verifica conexão com a API Bling."""
@@ -101,44 +87,35 @@ class BlingConnector(BaseConnector):
 
         try:
             # Buscar 1 contato para testar
-            response = await self.http.get(
-                "/contatos",
-                params={"limite": 1}
-            )
+            response = await self.http.get("/contatos", params={"limite": 1})
 
             latency = int((time.monotonic() - start) * 1000)
 
             if response.status_code == 200:
                 return HealthCheckResult(
-                    healthy=True,
-                    latency_ms=latency,
-                    message="Conexão OK",
-                    details={"api_version": "v3"}
+                    healthy=True, latency_ms=latency, message="Conexão OK", details={"api_version": "v3"}
                 )
             else:
                 return HealthCheckResult(
                     healthy=False,
                     latency_ms=latency,
                     message=f"Status inesperado: {response.status_code}",
-                    details={"response": response.text[:200]}
+                    details={"response": response.text[:200]},
                 )
 
         except Exception as e:
             latency = int((time.monotonic() - start) * 1000)
             return HealthCheckResult(
-                healthy=False,
-                latency_ms=latency,
-                message=str(e),
-                details={"error_type": type(e).__name__}
+                healthy=False, latency_ms=latency, message=str(e), details={"error_type": type(e).__name__}
             )
 
     async def fetch_entities(
         self,
         entity_type: str,
-        cursor: Optional[str] = None,
-        updated_since: Optional[datetime] = None,
+        cursor: str | None = None,
+        updated_since: datetime | None = None,
         page_size: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str, Any] | None = None,
     ) -> SyncResult:
         """
         Busca entidades do Bling.
@@ -155,15 +132,13 @@ class BlingConnector(BaseConnector):
         """
         if entity_type not in self.ENTITY_ENDPOINTS:
             raise ConnectorError(
-                f"Entidade não suportada: {entity_type}",
-                connector=self.NAME,
-                error_code="INVALID_ENTITY"
+                f"Entidade não suportada: {entity_type}", connector=self.NAME, error_code="INVALID_ENTITY"
             )
 
         endpoint = self.ENTITY_ENDPOINTS[entity_type]
 
         # Montar parâmetros
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "limite": min(page_size, 100),  # Bling max 100
         }
 
@@ -185,20 +160,14 @@ class BlingConnector(BaseConnector):
             response = await self.http.get(endpoint, params=params)
 
             if response.status_code == 404:
-                return SyncResult(
-                    success=True,
-                    data=[],
-                    cursor=None,
-                    has_more=False,
-                    total_count=0
-                )
+                return SyncResult(success=True, data=[], cursor=None, has_more=False, total_count=0)
 
             if response.status_code != 200:
                 raise APIError(
                     f"Erro ao buscar {entity_type}: {response.status_code}",
                     connector=self.NAME,
                     status_code=response.status_code,
-                    response_body=response.text[:500]
+                    response_body=response.text[:500],
                 )
 
             data = response.json()
@@ -211,10 +180,7 @@ class BlingConnector(BaseConnector):
             has_more = len(items) >= params["limite"]
             next_cursor = str(params["pagina"] + 1) if has_more else None
 
-            logger.debug(
-                f"[{self.NAME}] Buscou {len(items)} {entity_type} "
-                f"(página {params['pagina']})"
-            )
+            logger.debug(f"[{self.NAME}] Buscou {len(items)} {entity_type} (página {params['pagina']})")
 
             return SyncResult(
                 success=True,
@@ -222,24 +188,16 @@ class BlingConnector(BaseConnector):
                 cursor=next_cursor,
                 has_more=has_more,
                 total_count=len(items),
-                metadata={"page": params["pagina"]}
+                metadata={"page": params["pagina"]},
             )
 
         except APIError:
             raise
         except Exception as e:
             logger.error(f"[{self.NAME}] Erro ao buscar {entity_type}: {e}")
-            return SyncResult(
-                success=False,
-                data=[],
-                errors=[{"error": str(e), "entity_type": entity_type}]
-            )
+            return SyncResult(success=False, data=[], errors=[{"error": str(e), "entity_type": entity_type}])
 
-    async def fetch_entity_by_id(
-        self,
-        entity_type: str,
-        external_id: str
-    ) -> Optional[Dict[str, Any]]:
+    async def fetch_entity_by_id(self, entity_type: str, external_id: str) -> dict[str, Any] | None:
         """
         Busca uma entidade específica pelo ID.
 
@@ -251,10 +209,7 @@ class BlingConnector(BaseConnector):
             Dados da entidade ou None
         """
         if entity_type not in self.ENTITY_ENDPOINTS:
-            raise ConnectorError(
-                f"Entidade não suportada: {entity_type}",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Entidade não suportada: {entity_type}", connector=self.NAME)
 
         # Endpoint específico
         endpoint = f"{self.ENTITY_ENDPOINTS[entity_type]}/{external_id}"
@@ -267,9 +222,7 @@ class BlingConnector(BaseConnector):
 
             if response.status_code != 200:
                 raise APIError(
-                    f"Erro ao buscar {entity_type}/{external_id}",
-                    connector=self.NAME,
-                    status_code=response.status_code
+                    f"Erro ao buscar {entity_type}/{external_id}", connector=self.NAME, status_code=response.status_code
                 )
 
             data = response.json()
@@ -281,19 +234,12 @@ class BlingConnector(BaseConnector):
             logger.error(f"[{self.NAME}] Erro ao buscar {entity_type}/{external_id}: {e}")
             return None
 
-    async def create_entity(
-        self,
-        entity_type: str,
-        data: Dict[str, Any]
-    ):
+    async def create_entity(self, entity_type: str, data: dict[str, Any]):
         """Cria entidade no Bling."""
         from modules.integrations.connectors.base.connector import EntityResult
 
         if entity_type not in self.ENTITY_ENDPOINTS:
-            raise ConnectorError(
-                f"Entidade não suportada: {entity_type}",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Entidade não suportada: {entity_type}", connector=self.NAME)
 
         endpoint = self.ENTITY_ENDPOINTS[entity_type]
 
@@ -308,36 +254,22 @@ class BlingConnector(BaseConnector):
                     success=True,
                     external_id=str(external_id) if external_id else None,
                     action="created",
-                    data=result.get("data")
+                    data=result.get("data"),
                 )
             else:
                 return EntityResult(
-                    success=False,
-                    action="error",
-                    error=f"Status {response.status_code}: {response.text[:200]}"
+                    success=False, action="error", error=f"Status {response.status_code}: {response.text[:200]}"
                 )
 
         except Exception as e:
-            return EntityResult(
-                success=False,
-                action="error",
-                error=str(e)
-            )
+            return EntityResult(success=False, action="error", error=str(e))
 
-    async def update_entity(
-        self,
-        entity_type: str,
-        external_id: str,
-        data: Dict[str, Any]
-    ):
+    async def update_entity(self, entity_type: str, external_id: str, data: dict[str, Any]):
         """Atualiza entidade no Bling."""
         from modules.integrations.connectors.base.connector import EntityResult
 
         if entity_type not in self.ENTITY_ENDPOINTS:
-            raise ConnectorError(
-                f"Entidade não suportada: {entity_type}",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Entidade não suportada: {entity_type}", connector=self.NAME)
 
         endpoint = f"{self.ENTITY_ENDPOINTS[entity_type]}/{external_id}"
 
@@ -347,36 +279,22 @@ class BlingConnector(BaseConnector):
             if response.status_code == 200:
                 result = response.json()
 
-                return EntityResult(
-                    success=True,
-                    external_id=external_id,
-                    action="updated",
-                    data=result.get("data")
-                )
+                return EntityResult(success=True, external_id=external_id, action="updated", data=result.get("data"))
             elif response.status_code == 404:
                 return EntityResult(
-                    success=False,
-                    external_id=external_id,
-                    action="not_found",
-                    error="Entidade não encontrada"
+                    success=False, external_id=external_id, action="not_found", error="Entidade não encontrada"
                 )
             else:
                 return EntityResult(
                     success=False,
                     external_id=external_id,
                     action="error",
-                    error=f"Status {response.status_code}: {response.text[:200]}"
+                    error=f"Status {response.status_code}: {response.text[:200]}",
                 )
 
         except Exception as e:
-            return EntityResult(
-                success=False,
-                external_id=external_id,
-                action="error",
-                error=str(e)
-            )
+            return EntityResult(success=False, external_id=external_id, action="error", error=str(e))
 
 
 # Registrar conector
-from modules.integrations.sync.engine import ConnectorRegistry
 ConnectorRegistry.register(BlingConnector)

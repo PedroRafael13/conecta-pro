@@ -4,7 +4,6 @@ Controller (endpoints) para Gestão de Contratos.
 
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,15 +77,15 @@ async def list_contracts(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    status_filter: Optional[ContractStatus] = Query(None, alias="status"),
-    contract_type: Optional[ContractType] = None,
-    client_id: Optional[str] = None,
-    commercial_manager_id: Optional[str] = None,
-    account_manager_id: Optional[str] = None,
-    has_sla: Optional[bool] = None,
-    min_value: Optional[float] = Query(None, ge=0),
-    max_value: Optional[float] = Query(None, ge=0),
-    search: Optional[str] = None,
+    status_filter: ContractStatus | None = Query(None, alias="status"),
+    contract_type: ContractType | None = None,
+    client_id: str | None = None,
+    commercial_manager_id: str | None = None,
+    account_manager_id: str | None = None,
+    has_sla: bool | None = None,
+    min_value: float | None = Query(None, ge=0),
+    max_value: float | None = Query(None, ge=0),
+    search: str | None = None,
 ) -> ContractListResponse:
     """
     Lista contratos com filtros e paginação.
@@ -121,8 +120,8 @@ async def list_contracts(  # pylint: disable=too-many-locals
 async def get_contract_stats(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    client_id: Optional[str] = None,
-    commercial_manager_id: Optional[str] = None,
+    client_id: str | None = None,
+    commercial_manager_id: str | None = None,
 ) -> ContractStats:
     """
     Obtém estatísticas de contratos.
@@ -134,12 +133,12 @@ async def get_contract_stats(
     )
 
 
-@router.get("/alerts", response_model=List[ContractAlert])
+@router.get("/alerts", response_model=list[ContractAlert])
 async def get_contract_alerts(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     days_ahead: int = Query(30, ge=1, le=90),
-) -> List[ContractAlert]:
+) -> list[ContractAlert]:
     """
     Obtém alertas de contratos (vencimento, reajuste).
     """
@@ -153,6 +152,52 @@ async def get_contract_alerts(
     )
 
     return service.get_contract_alerts(contracts, days_ahead=days_ahead)
+
+
+# ============== Contract Template Endpoints (antes de /{contract_id} para evitar captura) ==============
+
+
+@router.post(
+    "/templates",
+    response_model=ContractTemplateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_template(
+    data: ContractTemplateCreate,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),
+) -> ContractTemplateResponse:
+    """
+    Cria template de contrato.
+    """
+    repo = ContractRepository(db)
+    template = await repo.create_template(data)
+    logger.info(f"Template criado por {current_user.email}: {template.name}")
+    return ContractTemplateResponse.model_validate(template)
+
+
+@router.get("/templates", response_model=ContractTemplateListResponse)
+async def list_templates(
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),
+    service_type: ServiceType | None = None,
+    approved_only: bool = False,
+) -> ContractTemplateListResponse:
+    """
+    Lista templates de contrato.
+    """
+    repo = ContractRepository(db)
+    templates = await repo.list_templates(
+        service_type=service_type.value if service_type else None,
+        approved_only=approved_only,
+    )
+    return ContractTemplateListResponse(
+        items=[ContractTemplateResponse.model_validate(t) for t in templates],
+        total=len(templates),
+    )
+
+
+# ============== Contract by ID (deve vir DEPOIS de rotas estáticas) ==============
 
 
 @router.get("/{contract_id}", response_model=ContractDetailResponse)
@@ -201,7 +246,7 @@ async def update_contract(
     return ContractDetailResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/submit", response_model=ContractResponse)
+@router.post("/{contract_id}/submit", response_model=ContractResponse, status_code=201)
 async def submit_contract_for_signature(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -225,13 +270,11 @@ async def submit_contract_for_signature(
             detail="Contrato não encontrado ou não está em rascunho",
         )
 
-    logger.info(
-        f"Contract enviado para assinatura por {current_user.email}: {contract.contract_number}"
-    )
+    logger.info(f"Contract enviado para assinatura por {current_user.email}: {contract.contract_number}")
     return ContractResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/activate", response_model=ContractResponse)
+@router.post("/{contract_id}/activate", response_model=ContractResponse, status_code=201)
 async def activate_contract(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -257,12 +300,12 @@ async def activate_contract(
     return ContractResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/suspend", response_model=ContractResponse)
+@router.post("/{contract_id}/suspend", response_model=ContractResponse, status_code=201)
 async def suspend_contract(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = None,  # pylint: disable=unused-argument
+    reason: str | None = None,  # pylint: disable=unused-argument
 ) -> ContractResponse:
     """
     Suspende um contrato ativo.
@@ -284,12 +327,12 @@ async def suspend_contract(
     return ContractResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/terminate", response_model=ContractResponse)
+@router.post("/{contract_id}/terminate", response_model=ContractResponse, status_code=201)
 async def terminate_contract(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = None,  # pylint: disable=unused-argument
+    reason: str | None = None,  # pylint: disable=unused-argument
 ) -> ContractResponse:
     """
     Encerra um contrato.
@@ -311,7 +354,7 @@ async def terminate_contract(
     return ContractResponse.model_validate(contract)
 
 
-@router.post("/{contract_id}/renew", response_model=RenewalResult)
+@router.post("/{contract_id}/renew", response_model=RenewalResult, status_code=201)
 async def calculate_renewal(
     contract_id: str,
     data: ContractRenewal,
@@ -341,13 +384,13 @@ async def calculate_renewal(
     )
 
 
-@router.post("/{contract_id}/calculate-adjustment", response_model=AdjustmentResult)
+@router.post("/{contract_id}/calculate-adjustment", response_model=AdjustmentResult, status_code=201)
 async def calculate_adjustment(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    custom_percent: Optional[float] = None,
-    effective_date: Optional[date] = None,
+    custom_percent: float | None = None,
+    effective_date: date | None = None,
 ) -> AdjustmentResult:
     """
     Calcula reajuste do contrato.
@@ -398,7 +441,7 @@ async def delete_contract(
 # ============== Contract Item Endpoints ==============
 
 
-@router.post("/{contract_id}/items", response_model=ContractItemResponse)
+@router.post("/{contract_id}/items", response_model=ContractItemResponse, status_code=201)
 async def add_contract_item(
     contract_id: str,
     data: ContractItemCreate,
@@ -473,7 +516,7 @@ async def remove_contract_item(
 # ============== Contract Addendum Endpoints ==============
 
 
-@router.post("/{contract_id}/addendums", response_model=ContractAddendumResponse)
+@router.post("/{contract_id}/addendums", response_model=ContractAddendumResponse, status_code=201)
 async def create_addendum(
     contract_id: str,
     data: ContractAddendumCreate,
@@ -484,9 +527,7 @@ async def create_addendum(
     Cria aditivo do contrato.
     """
     repo = ContractRepository(db)
-    addendum = await repo.create_addendum(
-        contract_id, data, created_by_id=str(current_user.id)
-    )
+    addendum = await repo.create_addendum(contract_id, data, created_by_id=str(current_user.id))
 
     if not addendum:
         raise HTTPException(
@@ -498,12 +539,12 @@ async def create_addendum(
     return ContractAddendumResponse.model_validate(addendum)
 
 
-@router.get("/{contract_id}/addendums", response_model=List[ContractAddendumResponse])
+@router.get("/{contract_id}/addendums", response_model=list[ContractAddendumResponse])
 async def list_addendums(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-) -> List[ContractAddendumResponse]:
+) -> list[ContractAddendumResponse]:
     """
     Lista aditivos do contrato.
     """
@@ -512,7 +553,7 @@ async def list_addendums(
     return [ContractAddendumResponse.model_validate(a) for a in addendums]
 
 
-@router.post("/addendums/{addendum_id}/sign", response_model=ContractAddendumResponse)
+@router.post("/addendums/{addendum_id}/sign", response_model=ContractAddendumResponse, status_code=201)
 async def sign_addendum(
     addendum_id: str,
     data: ContractAddendumSign,
@@ -535,47 +576,7 @@ async def sign_addendum(
     return ContractAddendumResponse.model_validate(addendum)
 
 
-# ============== Contract Template Endpoints ==============
-
-
-@router.post(
-    "/templates",
-    response_model=ContractTemplateResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_template(
-    data: ContractTemplateCreate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    db: AsyncSession = Depends(get_db),
-) -> ContractTemplateResponse:
-    """
-    Cria template de contrato.
-    """
-    repo = ContractRepository(db)
-    template = await repo.create_template(data)
-    logger.info(f"Template criado por {current_user.email}: {template.name}")
-    return ContractTemplateResponse.model_validate(template)
-
-
-@router.get("/templates", response_model=ContractTemplateListResponse)
-async def list_templates(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    db: AsyncSession = Depends(get_db),
-    service_type: Optional[ServiceType] = None,
-    approved_only: bool = False,
-) -> ContractTemplateListResponse:
-    """
-    Lista templates de contrato.
-    """
-    repo = ContractRepository(db)
-    templates = await repo.list_templates(
-        service_type=service_type.value if service_type else None,
-        approved_only=approved_only,
-    )
-    return ContractTemplateListResponse(
-        items=[ContractTemplateResponse.model_validate(t) for t in templates],
-        total=len(templates),
-    )
+# (create_template e list_templates movidos para antes de /{contract_id} — ver acima)
 
 
 @router.get("/templates/{template_id}", response_model=ContractTemplateResponse)
@@ -622,7 +623,7 @@ async def update_template(
     return ContractTemplateResponse.model_validate(template)
 
 
-@router.post("/templates/{template_id}/approve", response_model=ContractTemplateResponse)
+@router.post("/templates/{template_id}/approve", response_model=ContractTemplateResponse, status_code=201)
 async def approve_template(
     template_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -668,7 +669,7 @@ async def delete_template(
 # ============== SLA Report Endpoints ==============
 
 
-@router.post("/{contract_id}/sla-reports", response_model=ContractSLAReportResponse)
+@router.post("/{contract_id}/sla-reports", response_model=ContractSLAReportResponse, status_code=201)
 async def create_sla_report(
     contract_id: str,
     data: ContractSLAReportCreate,
@@ -679,9 +680,7 @@ async def create_sla_report(
     Cria relatório de SLA mensal.
     """
     repo = ContractRepository(db)
-    report = await repo.create_sla_report(
-        contract_id, data, generated_by_id=str(current_user.id)
-    )
+    report = await repo.create_sla_report(contract_id, data, generated_by_id=str(current_user.id))
 
     if not report:
         raise HTTPException(
@@ -693,13 +692,13 @@ async def create_sla_report(
     return ContractSLAReportResponse.model_validate(report)
 
 
-@router.get("/{contract_id}/sla-reports", response_model=List[ContractSLAReportResponse])
+@router.get("/{contract_id}/sla-reports", response_model=list[ContractSLAReportResponse])
 async def list_sla_reports(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    year: Optional[int] = None,
-) -> List[ContractSLAReportResponse]:
+    year: int | None = None,
+) -> list[ContractSLAReportResponse]:
     """
     Lista relatórios de SLA do contrato.
     """
@@ -708,7 +707,7 @@ async def list_sla_reports(
     return [ContractSLAReportResponse.model_validate(r) for r in reports]
 
 
-@router.post("/sla-reports/{report_id}/approve", response_model=ContractSLAReportResponse)
+@router.post("/sla-reports/{report_id}/approve", response_model=ContractSLAReportResponse, status_code=201)
 async def approve_sla_report(
     report_id: str,
     data: ContractSLAReportApprove,
@@ -736,7 +735,7 @@ async def approve_sla_report(
     return ContractSLAReportResponse.model_validate(report)
 
 
-@router.post("/{contract_id}/calculate-sla", response_model=SLACalculation)
+@router.post("/{contract_id}/calculate-sla", response_model=SLACalculation, status_code=201)
 async def calculate_sla(
     contract_id: str,
     indicator_results: list[dict],

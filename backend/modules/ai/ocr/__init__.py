@@ -14,13 +14,13 @@ from modules.ai.ocr.models import (
     DocumentScan,
     DocumentScanStatus,
     DocumentScanType,
-    OCRResult,
-    OCRProvider,
-    ExtractedField,
-    FieldType,
     DocumentTemplate,
-    TemplateField,
+    ExtractedField,
     ExtractionRule,
+    FieldType,
+    OCRProvider,
+    OCRResult,
+    TemplateField,
     ValidationResult,
 )
 

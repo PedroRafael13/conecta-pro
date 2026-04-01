@@ -4,31 +4,30 @@ Fraud Detection Schemas - Sprint 45
 Schemas Pydantic para API de deteccao de fraudes.
 """
 
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 from modules.ai.fraud_detection.models.fraud_alert import (
-    FraudCategory,
     AlertSeverity,
     AlertStatus,
-)
-from modules.ai.fraud_detection.models.fraud_rule import (
-    RuleType,
-    RuleOperator,
-    RuleAction,
+    FraudCategory,
 )
 from modules.ai.fraud_detection.models.fraud_pattern import (
-    PatternType,
     PatternStatus,
+    PatternType,
+)
+from modules.ai.fraud_detection.models.fraud_rule import (
+    RuleAction,
+    RuleOperator,
+    RuleType,
 )
 from modules.ai.fraud_detection.models.risk_profile import (
     EntityType,
     RiskLevel,
 )
-
 
 # =============================================================================
 # Alert Schemas
@@ -39,44 +38,44 @@ class FraudAlertCreate(BaseModel):
     """Schema para criar alerta de fraude."""
 
     category: FraudCategory
-    subcategory: Optional[str] = None
+    subcategory: str | None = None
     severity: AlertSeverity = AlertSeverity.MEDIUM
     title: str = Field(..., min_length=5, max_length=300)
-    description: Optional[str] = None
+    description: str | None = None
 
     entity_type: str = Field(..., min_length=1)
     entity_id: UUID
-    entity_name: Optional[str] = None
+    entity_name: str | None = None
 
-    transaction_id: Optional[UUID] = None
-    transaction_type: Optional[str] = None
-    transaction_value: Optional[float] = None
+    transaction_id: UUID | None = None
+    transaction_type: str | None = None
+    transaction_value: float | None = None
 
-    rule_id: Optional[UUID] = None
-    pattern_id: Optional[UUID] = None
+    rule_id: UUID | None = None
+    pattern_id: UUID | None = None
 
     risk_score: float = Field(default=0, ge=0, le=100)
-    confidence_score: Optional[float] = Field(default=None, ge=0, le=100)
+    confidence_score: float | None = Field(default=None, ge=0, le=100)
 
-    evidence: List[Dict[str, Any]] = []
-    indicators: List[str] = []
+    evidence: list[dict[str, Any]] = []
+    indicators: list[str] = []
 
-    ip_address: Optional[str] = None
-    device_id: Optional[str] = None
-    location: Optional[str] = None
+    ip_address: str | None = None
+    device_id: str | None = None
+    location: str | None = None
 
-    potential_loss: Optional[float] = None
+    potential_loss: float | None = None
     requires_immediate_action: bool = False
 
 
 class FraudAlertUpdate(BaseModel):
     """Schema para atualizar alerta."""
 
-    severity: Optional[AlertSeverity] = None
-    status: Optional[AlertStatus] = None
-    description: Optional[str] = None
-    investigation_notes: Optional[str] = None
-    tags: Optional[List[str]] = None
+    severity: AlertSeverity | None = None
+    status: AlertStatus | None = None
+    description: str | None = None
+    investigation_notes: str | None = None
+    tags: list[str] | None = None
 
 
 class FraudAlertResponse(BaseModel):
@@ -85,51 +84,51 @@ class FraudAlertResponse(BaseModel):
     id: UUID
     alert_number: str
     category: FraudCategory
-    subcategory: Optional[str] = None
+    subcategory: str | None = None
     severity: AlertSeverity
     status: AlertStatus
 
     title: str
-    description: Optional[str] = None
-    summary: Optional[str] = None
+    description: str | None = None
+    summary: str | None = None
 
     entity_type: str
     entity_id: UUID
-    entity_name: Optional[str] = None
+    entity_name: str | None = None
 
-    transaction_id: Optional[UUID] = None
-    transaction_value: Optional[float] = None
+    transaction_id: UUID | None = None
+    transaction_value: float | None = None
 
-    rule_id: Optional[UUID] = None
-    rule_name: Optional[str] = None
-    pattern_id: Optional[UUID] = None
-    pattern_name: Optional[str] = None
+    rule_id: UUID | None = None
+    rule_name: str | None = None
+    pattern_id: UUID | None = None
+    pattern_name: str | None = None
 
     risk_score: float
-    confidence_score: Optional[float] = None
+    confidence_score: float | None = None
 
-    evidence: List[Dict[str, Any]] = []
-    indicators: List[str] = []
+    evidence: list[dict[str, Any]] = []
+    indicators: list[str] = []
 
-    ip_address: Optional[str] = None
-    location: Optional[str] = None
+    ip_address: str | None = None
+    location: str | None = None
 
-    potential_loss: Optional[float] = None
-    actual_loss: Optional[float] = None
+    potential_loss: float | None = None
+    actual_loss: float | None = None
 
-    assigned_to: Optional[UUID] = None
-    assigned_at: Optional[datetime] = None
+    assigned_to: UUID | None = None
+    assigned_at: datetime | None = None
 
-    resolved_by: Optional[UUID] = None
-    resolved_at: Optional[datetime] = None
-    resolution_type: Optional[str] = None
+    resolved_by: UUID | None = None
+    resolved_at: datetime | None = None
+    resolution_type: str | None = None
 
     created_at: datetime
-    detected_at: Optional[datetime] = None
+    detected_at: datetime | None = None
 
     is_active: bool
     requires_immediate_action: bool
-    days_open: Optional[int] = None
+    days_open: int | None = None
 
     class Config:
         from_attributes = True
@@ -138,7 +137,7 @@ class FraudAlertResponse(BaseModel):
 class AlertListResponse(BaseModel):
     """Schema para lista de alertas."""
 
-    items: List[FraudAlertResponse]
+    items: list[FraudAlertResponse]
     total: int
     page: int
     page_size: int
@@ -155,10 +154,10 @@ class AlertResolveRequest(BaseModel):
     """Schema para resolver alerta."""
 
     resolution_type: str = Field(..., min_length=1)
-    resolution_notes: Optional[str] = None
-    actions_taken: List[Dict[str, Any]] = []
-    actual_loss: Optional[float] = None
-    recovered_amount: Optional[float] = None
+    resolution_notes: str | None = None
+    actions_taken: list[dict[str, Any]] = []
+    actual_loss: float | None = None
+    recovered_amount: float | None = None
 
 
 class AlertEscalateRequest(BaseModel):
@@ -172,7 +171,7 @@ class AlertFeedbackRequest(BaseModel):
     """Schema para feedback de alerta."""
 
     is_correct: bool
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 # =============================================================================
@@ -195,32 +194,32 @@ class FraudRuleCreate(BaseModel):
 
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=3, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
 
     rule_type: RuleType
     category: str
-    subcategory: Optional[str] = None
+    subcategory: str | None = None
 
     default_severity: str = "medium"
     risk_weight: float = Field(default=1.0, ge=0.1, le=10.0)
 
-    conditions: List[RuleCondition] = []
+    conditions: list[RuleCondition] = []
 
-    threshold_value: Optional[float] = None
-    threshold_count: Optional[int] = None
-    threshold_period_minutes: Optional[int] = None
+    threshold_value: float | None = None
+    threshold_count: int | None = None
+    threshold_period_minutes: int | None = None
 
-    velocity_count: Optional[int] = None
-    velocity_period_minutes: Optional[int] = None
-    velocity_field: Optional[str] = None
+    velocity_count: int | None = None
+    velocity_period_minutes: int | None = None
+    velocity_field: str | None = None
 
     primary_action: RuleAction = RuleAction.ALERT
-    secondary_actions: List[str] = []
+    secondary_actions: list[str] = []
 
-    notify_channels: List[str] = []
+    notify_channels: list[str] = []
 
-    applies_to_entities: List[str] = []
-    applies_to_transactions: List[str] = []
+    applies_to_entities: list[str] = []
+    applies_to_transactions: list[str] = []
 
     is_active: bool = True
     is_test_mode: bool = False
@@ -229,13 +228,13 @@ class FraudRuleCreate(BaseModel):
 class FraudRuleUpdate(BaseModel):
     """Schema para atualizar regra."""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    default_severity: Optional[str] = None
-    risk_weight: Optional[float] = None
-    conditions: Optional[List[RuleCondition]] = None
-    primary_action: Optional[RuleAction] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    default_severity: str | None = None
+    risk_weight: float | None = None
+    conditions: list[RuleCondition] | None = None
+    primary_action: RuleAction | None = None
+    is_active: bool | None = None
 
 
 class FraudRuleResponse(BaseModel):
@@ -244,32 +243,32 @@ class FraudRuleResponse(BaseModel):
     id: UUID
     code: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
     rule_type: RuleType
     category: str
-    subcategory: Optional[str] = None
+    subcategory: str | None = None
 
     default_severity: str
     risk_weight: float
 
-    conditions: List[Dict[str, Any]]
+    conditions: list[dict[str, Any]]
 
     primary_action: RuleAction
-    secondary_actions: List[str]
+    secondary_actions: list[str]
 
     total_triggers: int
     true_positives: int
     false_positives: int
-    precision_rate: Optional[float] = None
-    last_triggered_at: Optional[datetime] = None
+    precision_rate: float | None = None
+    last_triggered_at: datetime | None = None
 
     is_active: bool
     is_system: bool
     is_test_mode: bool
 
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -279,7 +278,7 @@ class RuleTestRequest(BaseModel):
     """Schema para testar regra."""
 
     rule_id: UUID
-    test_data: Dict[str, Any]
+    test_data: dict[str, Any]
 
 
 class RuleTestResponse(BaseModel):
@@ -287,7 +286,7 @@ class RuleTestResponse(BaseModel):
 
     matched: bool
     score: float
-    reasons: List[str]
+    reasons: list[str]
     conditions_evaluated: int
     conditions_matched: int
 
@@ -302,24 +301,24 @@ class FraudPatternCreate(BaseModel):
 
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=3, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
 
     pattern_type: PatternType
     category: str
-    subcategory: Optional[str] = None
+    subcategory: str | None = None
 
     severity: str = "medium"
     risk_score: float = Field(default=50.0, ge=0, le=100)
 
-    pattern_definition: Dict[str, Any] = {}
-    features: List[Dict[str, Any]] = []
-    indicators: List[str] = []
+    pattern_definition: dict[str, Any] = {}
+    features: list[dict[str, Any]] = []
+    indicators: list[str] = []
 
     detection_threshold: float = Field(default=0.7, ge=0, le=1)
     confidence_threshold: float = Field(default=0.8, ge=0, le=1)
 
-    prevention_tips: List[str] = []
-    recommended_actions: List[str] = []
+    prevention_tips: list[str] = []
+    recommended_actions: list[str] = []
 
     is_active: bool = True
     is_ml_based: bool = False
@@ -328,15 +327,15 @@ class FraudPatternCreate(BaseModel):
 class FraudPatternUpdate(BaseModel):
     """Schema para atualizar padrao."""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    severity: Optional[str] = None
-    risk_score: Optional[float] = None
-    pattern_definition: Optional[Dict[str, Any]] = None
-    indicators: Optional[List[str]] = None
-    detection_threshold: Optional[float] = None
-    status: Optional[PatternStatus] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    severity: str | None = None
+    risk_score: float | None = None
+    pattern_definition: dict[str, Any] | None = None
+    indicators: list[str] | None = None
+    detection_threshold: float | None = None
+    status: PatternStatus | None = None
+    is_active: bool | None = None
 
 
 class FraudPatternResponse(BaseModel):
@@ -345,7 +344,7 @@ class FraudPatternResponse(BaseModel):
     id: UUID
     code: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
     pattern_type: PatternType
     category: str
@@ -354,9 +353,9 @@ class FraudPatternResponse(BaseModel):
     severity: str
     risk_score: float
 
-    pattern_definition: Dict[str, Any]
-    features: List[Dict[str, Any]]
-    indicators: List[str]
+    pattern_definition: dict[str, Any]
+    features: list[dict[str, Any]]
+    indicators: list[str]
 
     detection_threshold: float
     confidence_threshold: float
@@ -364,14 +363,14 @@ class FraudPatternResponse(BaseModel):
     total_detections: int
     confirmed_cases: int
     false_positives: int
-    detection_rate: Optional[float] = None
-    last_detected_at: Optional[datetime] = None
+    detection_rate: float | None = None
+    last_detected_at: datetime | None = None
 
     is_active: bool
     is_ml_based: bool
 
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -380,19 +379,19 @@ class FraudPatternResponse(BaseModel):
 class PatternMatchRequest(BaseModel):
     """Schema para verificar padrao."""
 
-    pattern_id: Optional[UUID] = None
-    data: Dict[str, Any]
-    indicators: List[str] = []
+    pattern_id: UUID | None = None
+    data: dict[str, Any]
+    indicators: list[str] = []
 
 
 class PatternMatchResponse(BaseModel):
     """Schema de resposta de match de padrao."""
 
     matched: bool
-    pattern_id: Optional[UUID] = None
-    pattern_name: Optional[str] = None
+    pattern_id: UUID | None = None
+    pattern_name: str | None = None
     confidence: float
-    indicators_found: List[str]
+    indicators_found: list[str]
     risk_score: float
 
 
@@ -406,8 +405,8 @@ class RiskProfileCreate(BaseModel):
 
     entity_type: EntityType
     entity_id: UUID
-    entity_identifier: Optional[str] = None
-    entity_name: Optional[str] = None
+    entity_identifier: str | None = None
+    entity_name: str | None = None
 
     risk_level: RiskLevel = RiskLevel.LOW
     risk_score: float = Field(default=0, ge=0, le=100)
@@ -415,25 +414,25 @@ class RiskProfileCreate(BaseModel):
     behavior_score: float = Field(default=0, ge=0, le=100)
     transaction_score: float = Field(default=0, ge=0, le=100)
 
-    risk_factors: List[Dict[str, Any]] = []
-    trust_indicators: List[Dict[str, Any]] = []
+    risk_factors: list[dict[str, Any]] = []
+    trust_indicators: list[dict[str, Any]] = []
 
-    transaction_limit_daily: Optional[float] = None
-    transaction_limit_monthly: Optional[float] = None
+    transaction_limit_daily: float | None = None
+    transaction_limit_monthly: float | None = None
 
 
 class RiskProfileUpdate(BaseModel):
     """Schema para atualizar perfil."""
 
-    risk_level: Optional[RiskLevel] = None
-    risk_factors: Optional[List[Dict[str, Any]]] = None
-    trust_indicators: Optional[List[Dict[str, Any]]] = None
-    transaction_limit_daily: Optional[float] = None
-    transaction_limit_monthly: Optional[float] = None
-    is_blocked: Optional[bool] = None
-    is_whitelisted: Optional[bool] = None
-    is_watchlisted: Optional[bool] = None
-    notes: Optional[str] = None
+    risk_level: RiskLevel | None = None
+    risk_factors: list[dict[str, Any]] | None = None
+    trust_indicators: list[dict[str, Any]] | None = None
+    transaction_limit_daily: float | None = None
+    transaction_limit_monthly: float | None = None
+    is_blocked: bool | None = None
+    is_whitelisted: bool | None = None
+    is_watchlisted: bool | None = None
+    notes: str | None = None
 
 
 class RiskProfileResponse(BaseModel):
@@ -442,8 +441,8 @@ class RiskProfileResponse(BaseModel):
     id: UUID
     entity_type: EntityType
     entity_id: UUID
-    entity_identifier: Optional[str] = None
-    entity_name: Optional[str] = None
+    entity_identifier: str | None = None
+    entity_name: str | None = None
 
     risk_level: RiskLevel
     risk_score: float
@@ -454,13 +453,13 @@ class RiskProfileResponse(BaseModel):
     velocity_score: float
     identity_score: float
 
-    risk_factors: List[Dict[str, Any]]
-    trust_indicators: List[Dict[str, Any]]
+    risk_factors: list[dict[str, Any]]
+    trust_indicators: list[dict[str, Any]]
 
     total_alerts: int
     confirmed_frauds: int
     false_positives: int
-    fraud_rate: Optional[float] = None
+    fraud_rate: float | None = None
 
     total_transactions: int
     total_transaction_value: float
@@ -474,7 +473,7 @@ class RiskProfileResponse(BaseModel):
     identity_verified: bool
 
     created_at: datetime
-    last_calculated_at: Optional[datetime] = None
+    last_calculated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -496,10 +495,10 @@ class RiskScoreResponse(BaseModel):
     entity_id: UUID
     risk_level: RiskLevel
     risk_score: float
-    previous_score: Optional[float] = None
+    previous_score: float | None = None
     score_change: float
-    risk_factors: List[Dict[str, Any]]
-    recommendations: List[str]
+    risk_factors: list[dict[str, Any]]
+    recommendations: list[str]
 
 
 # =============================================================================
@@ -513,8 +512,8 @@ class DetectionRequest(BaseModel):
     entity_type: str
     entity_id: UUID
     event_type: str
-    event_data: Dict[str, Any]
-    context: Dict[str, Any] = {}
+    event_data: dict[str, Any]
+    context: dict[str, Any] = {}
     real_time: bool = True
 
 
@@ -525,10 +524,10 @@ class DetectionResponse(BaseModel):
     risk_score: float
     risk_level: RiskLevel
     alerts_generated: int
-    alert_ids: List[UUID]
-    matched_rules: List[str]
-    matched_patterns: List[str]
-    recommendations: List[str]
+    alert_ids: list[UUID]
+    matched_rules: list[str]
+    matched_patterns: list[str]
+    recommendations: list[str]
     processing_time_ms: int
 
 
@@ -542,18 +541,18 @@ class TransactionCheckRequest(BaseModel):
 
     payer_id: UUID
     payer_type: str
-    payer_account: Optional[str] = None
+    payer_account: str | None = None
 
-    payee_id: Optional[UUID] = None
-    payee_type: Optional[str] = None
-    payee_account: Optional[str] = None
+    payee_id: UUID | None = None
+    payee_type: str | None = None
+    payee_account: str | None = None
 
-    ip_address: Optional[str] = None
-    device_id: Optional[str] = None
-    location: Optional[str] = None
-    user_agent: Optional[str] = None
+    ip_address: str | None = None
+    device_id: str | None = None
+    location: str | None = None
+    user_agent: str | None = None
 
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class TransactionCheckResponse(BaseModel):
@@ -565,15 +564,15 @@ class TransactionCheckResponse(BaseModel):
     risk_level: RiskLevel
 
     decision: str  # approve, review, block, challenge
-    decision_reasons: List[str]
+    decision_reasons: list[str]
 
-    matched_rules: List[str]
-    matched_patterns: List[str]
+    matched_rules: list[str]
+    matched_patterns: list[str]
 
-    alerts_generated: List[UUID]
+    alerts_generated: list[UUID]
 
-    recommendations: List[str]
-    required_actions: List[str]
+    recommendations: list[str]
+    required_actions: list[str]
 
     processing_time_ms: int
 
@@ -582,19 +581,19 @@ class AccessCheckRequest(BaseModel):
     """Schema para verificar acesso."""
 
     user_id: UUID
-    session_id: Optional[str] = None
+    session_id: str | None = None
 
     ip_address: str
-    device_id: Optional[str] = None
-    user_agent: Optional[str] = None
+    device_id: str | None = None
+    user_agent: str | None = None
 
-    location: Optional[str] = None
-    geo_coordinates: Optional[Dict[str, float]] = None
+    location: str | None = None
+    geo_coordinates: dict[str, float] | None = None
 
     action: str  # login, password_reset, data_export, etc
-    resource: Optional[str] = None
+    resource: str | None = None
 
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class AccessCheckResponse(BaseModel):
@@ -606,16 +605,16 @@ class AccessCheckResponse(BaseModel):
     risk_level: RiskLevel
 
     decision: str  # allow, challenge, block
-    challenge_type: Optional[str] = None  # mfa, captcha, email
+    challenge_type: str | None = None  # mfa, captcha, email
 
-    anomalies_detected: List[str]
-    risk_factors: List[str]
+    anomalies_detected: list[str]
+    risk_factors: list[str]
 
     is_new_device: bool
     is_new_location: bool
     is_unusual_time: bool
 
-    alerts_generated: List[UUID]
+    alerts_generated: list[UUID]
 
     processing_time_ms: int
 
@@ -634,8 +633,8 @@ class AlertsSummary(BaseModel):
     total_resolved: int
     total_false_positives: int
 
-    by_severity: Dict[str, int]
-    by_category: Dict[str, int]
+    by_severity: dict[str, int]
+    by_category: dict[str, int]
 
     avg_resolution_time_hours: float
     escalated_count: int
@@ -677,7 +676,7 @@ class FraudDashboardStats(BaseModel):
     # Regras
     active_rules: int
     rules_triggered_today: int
-    most_triggered_rules: List[Dict[str, Any]]
+    most_triggered_rules: list[dict[str, Any]]
 
     # Padroes
     active_patterns: int
@@ -692,5 +691,5 @@ class FraudDashboardStats(BaseModel):
     risk_distribution: RiskDistribution
 
     # Tendencias
-    alerts_trend: List[Dict[str, Any]]
-    fraud_trend: List[Dict[str, Any]]
+    alerts_trend: list[dict[str, Any]]
+    fraud_trend: list[dict[str, Any]]

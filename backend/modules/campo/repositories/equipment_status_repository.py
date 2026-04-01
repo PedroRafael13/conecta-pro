@@ -2,8 +2,8 @@
 Repository para EquipmentStatus.
 """
 
+import builtins
 from datetime import datetime, timedelta
-from typing import Optional, List
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +30,7 @@ class EquipmentStatusRepository:
     async def create(self, data: EquipmentStatusCreate) -> EquipmentStatus:
         """Cria um novo status de equipamento."""
         equipment = EquipmentStatus(
-            guardian_id=data.guardian_id,
+            external_id=data.external_id,
             equipment_id=data.equipment_id,
             equipment_type=data.equipment_type,
             equipment_name=data.equipment_name,
@@ -57,7 +57,7 @@ class EquipmentStatusRepository:
             active_alerts=data.active_alerts,
             next_maintenance_at=data.next_maintenance_at,
             maintenance_notes=data.maintenance_notes,
-            guardian_metadata=data.guardian_metadata,
+            external_metadata=data.external_metadata,
         )
 
         self.db.add(equipment)
@@ -65,7 +65,7 @@ class EquipmentStatusRepository:
         await self.db.refresh(equipment)
         return equipment
 
-    async def get_by_id(self, equipment_id: str) -> Optional[EquipmentStatus]:
+    async def get_by_id(self, equipment_id: str) -> EquipmentStatus | None:
         """Busca equipamento por ID."""
         result = await self.db.execute(
             select(EquipmentStatus).where(
@@ -75,14 +75,14 @@ class EquipmentStatusRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_guardian_id(
+    async def get_by_external_id(
         self,
-        guardian_id: str,
-    ) -> Optional[EquipmentStatus]:
-        """Busca equipamento por ID do Guardian."""
+        external_id: str,
+    ) -> EquipmentStatus | None:
+        """Busca equipamento por ID externo."""
         result = await self.db.execute(
             select(EquipmentStatus).where(
-                EquipmentStatus.guardian_id == guardian_id,
+                EquipmentStatus.external_id == external_id,
                 EquipmentStatus.is_active.is_(True),
             )
         )
@@ -92,7 +92,7 @@ class EquipmentStatusRepository:
         self,
         equipment_id: str,
         client_id: str,
-    ) -> Optional[EquipmentStatus]:
+    ) -> EquipmentStatus | None:
         """Busca por equipment_id e client_id."""
         result = await self.db.execute(
             select(EquipmentStatus).where(
@@ -108,7 +108,7 @@ class EquipmentStatusRepository:
         filters: EquipmentStatusFilter,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[List[EquipmentStatus], int]:
+    ) -> tuple[list[EquipmentStatus], int]:
         """Lista equipamentos com filtros e paginação."""
         query = select(EquipmentStatus).where(EquipmentStatus.is_active.is_(True))
 
@@ -125,9 +125,7 @@ class EquipmentStatusRepository:
             )
 
         if filters.equipment_type:
-            query = query.where(
-                EquipmentStatus.equipment_type == filters.equipment_type
-            )
+            query = query.where(EquipmentStatus.equipment_type == filters.equipment_type)
 
         if filters.status:
             query = query.where(EquipmentStatus.status == filters.status)
@@ -139,30 +137,26 @@ class EquipmentStatusRepository:
             query = query.where(EquipmentStatus.post_id == filters.post_id)
 
         if filters.is_online is True:
-            query = query.where(
-                EquipmentStatus.status == EquipmentStatusType.ONLINE.value
-            )
+            query = query.where(EquipmentStatus.status == EquipmentStatusType.ONLINE.value)
         elif filters.is_online is False:
-            query = query.where(
-                EquipmentStatus.status != EquipmentStatusType.ONLINE.value
-            )
+            query = query.where(EquipmentStatus.status != EquipmentStatusType.ONLINE.value)
 
         if filters.has_alerts is not None:
             query = query.where(EquipmentStatus.has_alerts == filters.has_alerts)
 
         if filters.has_issues is True:
             query = query.where(
-                EquipmentStatus.status.in_([
-                    EquipmentStatusType.WARNING.value,
-                    EquipmentStatusType.ERROR.value,
-                ])
+                EquipmentStatus.status.in_(
+                    [
+                        EquipmentStatusType.WARNING.value,
+                        EquipmentStatusType.ERROR.value,
+                    ]
+                )
             )
 
         if filters.needs_maintenance is True:
             now = datetime.utcnow()
-            query = query.where(
-                EquipmentStatus.next_maintenance_at <= now + timedelta(days=7)
-            )
+            query = query.where(EquipmentStatus.next_maintenance_at <= now + timedelta(days=7))
 
         # Contar total
         count_query = select(func.count()).select_from(query.subquery())
@@ -186,7 +180,7 @@ class EquipmentStatusRepository:
         self,
         equipment_id: str,
         data: EquipmentStatusUpdate,
-    ) -> Optional[EquipmentStatus]:
+    ) -> EquipmentStatus | None:
         """Atualiza status de um equipamento."""
         equipment = await self.get_by_id(equipment_id)
         if not equipment:
@@ -200,13 +194,13 @@ class EquipmentStatusRepository:
         await self.db.refresh(equipment)
         return equipment
 
-    async def update_by_guardian_id(
+    async def update_by_external_id(
         self,
-        guardian_id: str,
+        external_id: str,
         data: EquipmentStatusUpdate,
-    ) -> Optional[EquipmentStatus]:
-        """Atualiza status pelo ID do Guardian."""
-        equipment = await self.get_by_guardian_id(guardian_id)
+    ) -> EquipmentStatus | None:
+        """Atualiza status pelo ID externo."""
+        equipment = await self.get_by_external_id(external_id)
         if not equipment:
             return None
 
@@ -228,7 +222,7 @@ class EquipmentStatusRepository:
         self,
         client_id: str | None = None,
         limit: int = 100,
-    ) -> List[EquipmentStatus]:
+    ) -> builtins.list[EquipmentStatus]:
         """Busca equipamentos offline."""
         query = select(EquipmentStatus).where(
             EquipmentStatus.status == EquipmentStatusType.OFFLINE.value,
@@ -247,7 +241,7 @@ class EquipmentStatusRepository:
         self,
         client_id: str | None = None,
         limit: int = 100,
-    ) -> List[EquipmentStatus]:
+    ) -> builtins.list[EquipmentStatus]:
         """Busca equipamentos com alertas."""
         query = select(EquipmentStatus).where(
             EquipmentStatus.has_alerts.is_(True),
@@ -266,7 +260,7 @@ class EquipmentStatusRepository:
         self,
         days_ahead: int = 7,
         client_id: str | None = None,
-    ) -> List[EquipmentStatus]:
+    ) -> builtins.list[EquipmentStatus]:
         """Busca equipamentos que precisam de manutenção."""
         cutoff = datetime.utcnow() + timedelta(days=days_ahead)
 
@@ -288,52 +282,38 @@ class EquipmentStatusRepository:
         client_id: str | None = None,
     ) -> EquipmentStatusStats:
         """Retorna estatísticas de equipamentos."""
-        base_query = select(EquipmentStatus).where(
-            EquipmentStatus.is_active.is_(True)
-        )
+        base_query = select(EquipmentStatus).where(EquipmentStatus.is_active.is_(True))
 
         if client_id:
             base_query = base_query.where(EquipmentStatus.client_id == client_id)
 
         # Contagem total
-        total_result = await self.db.execute(
-            select(func.count()).select_from(base_query.subquery())
-        )
+        total_result = await self.db.execute(select(func.count()).select_from(base_query.subquery()))
         total = total_result.scalar() or 0
 
         # Contagem por status
         status_counts = {}
         for status in EquipmentStatusType:
             status_query = base_query.where(EquipmentStatus.status == status.value)
-            count_result = await self.db.execute(
-                select(func.count()).select_from(status_query.subquery())
-            )
+            count_result = await self.db.execute(select(func.count()).select_from(status_query.subquery()))
             status_counts[status.value] = count_result.scalar() or 0
 
         # Com alertas
         alerts_result = await self.db.execute(
-            select(func.count()).select_from(
-                base_query.where(EquipmentStatus.has_alerts.is_(True)).subquery()
-            )
+            select(func.count()).select_from(base_query.where(EquipmentStatus.has_alerts.is_(True)).subquery())
         )
         with_alerts = alerts_result.scalar() or 0
 
         # Precisa manutenção
         cutoff = datetime.utcnow() + timedelta(days=7)
         maintenance_result = await self.db.execute(
-            select(func.count()).select_from(
-                base_query.where(
-                    EquipmentStatus.next_maintenance_at <= cutoff
-                ).subquery()
-            )
+            select(func.count()).select_from(base_query.where(EquipmentStatus.next_maintenance_at <= cutoff).subquery())
         )
         needs_maintenance = maintenance_result.scalar() or 0
 
         # Médias
         avg_uptime_result = await self.db.execute(
-            select(func.avg(EquipmentStatus.uptime_percentage)).select_from(
-                base_query.subquery()
-            )
+            select(func.avg(EquipmentStatus.uptime_percentage)).select_from(base_query.subquery())
         )
         avg_uptime = avg_uptime_result.scalar() or 0.0
 

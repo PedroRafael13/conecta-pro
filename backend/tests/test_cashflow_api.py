@@ -30,11 +30,9 @@ from modules.financial.models import (
 )
 from modules.financial.schemas import (
     AIForecastRequest,
-    AIForecastResponse,
     AnomalyDetectionRequest,
     AnomalyDetectionResponse,
     BankAccountCreate,
-    BankAccountResponse,
     BankTransactionCreate,
     CashFlowEntryCreate,
     CashFlowForecastCreate,
@@ -63,10 +61,10 @@ def sample_bank_account():
         bank_name="Banco do Brasil",
         agency="1234",
         account_number="12345",
-        initial_balance=Decimal("10000.00"),
+        opening_balance=Decimal("10000.00"),
         current_balance=Decimal("15000.00"),
         blocked_balance=Decimal("0.00"),
-        is_main=True,
+        is_main_account=True,
     )
 
 
@@ -77,11 +75,11 @@ def sample_bank_transaction(sample_bank_account):
         id=uuid4(),
         bank_account_id=sample_bank_account.id,
         transaction_type=TransactionType.CREDITO,
-        category=TransactionCategory.TAXA_CONDOMINIO,
+        category=TransactionCategory.TAXA_CONDOMINIAL,
         amount=Decimal("500.00"),
         description="Recebimento taxa",
         transaction_date=date.today(),
-        status=TransactionStatus.EFETIVADA,
+        status=TransactionStatus.CONFIRMADA,
     )
 
 
@@ -94,8 +92,8 @@ def sample_reconciliation(sample_bank_account):
         period_type=ReconciliationPeriodType.MENSAL,
         period_start=date(2024, 1, 1),
         period_end=date(2024, 1, 31),
-        opening_balance=Decimal("10000.00"),
-        status=ReconciliationStatus.PENDENTE,
+        system_opening_balance=Decimal("10000.00"),
+        status=ReconciliationStatus.RASCUNHO,
     )
 
 
@@ -108,7 +106,7 @@ def sample_cashflow_entry():
         entry_type=CashFlowEntryType.ENTRADA,
         source_type=CashFlowSourceType.CONTA_RECEBER,
         description="Receita prevista",
-        expected_date=date.today() + timedelta(days=30),
+        entry_date=date.today() + timedelta(days=30),
         expected_amount=Decimal("5000.00"),
         status=CashFlowEntryStatus.PREVISTO,
     )
@@ -124,11 +122,11 @@ def sample_forecast():
         period_type=ForecastPeriodType.MENSAL,
         period_start=date(2024, 1, 1),
         period_end=date(2024, 1, 31),
-        status=ForecastStatus.ATIVO,
-        confidence=ForecastConfidence.ALTA,
+        status=ForecastStatus.ATIVA,
+        confidence_category=ForecastConfidence.ALTA.value,
         expected_inflows=Decimal("50000.00"),
         expected_outflows=Decimal("35000.00"),
-        expected_balance=Decimal("15000.00"),
+        expected_closing_balance=Decimal("15000.00"),
     )
 
 
@@ -151,6 +149,10 @@ class TestBankAccountController:
                 name="Conta Principal",
                 account_type=BankAccountType.CORRENTE,
                 bank_code="001",
+                bank_name="Banco do Brasil",
+                agency="1234",
+                account_number="12345",
+                account_digit="6",
             )
 
             result = await mock_instance.create(data.model_dump())
@@ -165,7 +167,7 @@ class TestBankAccountController:
             mock_instance.get_main_account = AsyncMock(return_value=sample_bank_account)
 
             result = await mock_instance.get_main_account(sample_bank_account.condominio_id)
-            assert result.is_main is True
+            assert result.is_main_account is True
 
     @pytest.mark.asyncio
     async def test_get_total_balance(self, mock_current_user, sample_bank_account):
@@ -182,15 +184,12 @@ class TestBankAccountController:
         """Testa atualização de conta bancária."""
         with patch("modules.financial.repositories.BankAccountRepository") as mock_repo:
             mock_instance = mock_repo.return_value
-            updated_account = BankAccount(
-                **{**sample_bank_account.__dict__, "name": "Conta Atualizada"}
-            )
+            updated_account = MagicMock()
+            updated_account.name = "Conta Atualizada"
             mock_instance.get_by_id = AsyncMock(return_value=sample_bank_account)
             mock_instance.update = AsyncMock(return_value=updated_account)
 
-            result = await mock_instance.update(
-                sample_bank_account.id, {"name": "Conta Atualizada"}
-            )
+            result = await mock_instance.update(sample_bank_account.id, {"name": "Conta Atualizada"})
             assert result.name == "Conta Atualizada"
 
 
@@ -201,9 +200,7 @@ class TestBankTransactionController:
     """Testes para BankTransactionController."""
 
     @pytest.mark.asyncio
-    async def test_create_transaction(
-        self, mock_current_user, sample_bank_account, sample_bank_transaction
-    ):
+    async def test_create_transaction(self, mock_current_user, sample_bank_account, sample_bank_transaction):
         """Testa criação de transação."""
         with patch("modules.financial.repositories.BankTransactionRepository") as mock_repo:
             mock_instance = mock_repo.return_value
@@ -212,7 +209,7 @@ class TestBankTransactionController:
             data = BankTransactionCreate(
                 bank_account_id=sample_bank_account.id,
                 transaction_type=TransactionType.CREDITO,
-                category=TransactionCategory.TAXA_CONDOMINIO,
+                category=TransactionCategory.TAXA_CONDOMINIAL,
                 amount=Decimal("500.00"),
                 description="Recebimento taxa",
                 transaction_date=date.today(),
@@ -223,23 +220,17 @@ class TestBankTransactionController:
             assert result.transaction_type == TransactionType.CREDITO
 
     @pytest.mark.asyncio
-    async def test_get_pending_reconciliation(
-        self, mock_current_user, sample_bank_account, sample_bank_transaction
-    ):
+    async def test_get_pending_reconciliation(self, mock_current_user, sample_bank_account, sample_bank_transaction):
         """Testa obtenção de transações pendentes de conciliação."""
         with patch("modules.financial.repositories.BankTransactionRepository") as mock_repo:
             mock_instance = mock_repo.return_value
-            mock_instance.get_pending_reconciliation = AsyncMock(
-                return_value=[sample_bank_transaction]
-            )
+            mock_instance.get_pending_reconciliation = AsyncMock(return_value=[sample_bank_transaction])
 
             result = await mock_instance.get_pending_reconciliation(sample_bank_account.id, 100)
             assert len(result) == 1
 
     @pytest.mark.asyncio
-    async def test_get_by_period(
-        self, mock_current_user, sample_bank_account, sample_bank_transaction
-    ):
+    async def test_get_by_period(self, mock_current_user, sample_bank_account, sample_bank_transaction):
         """Testa obtenção de transações por período."""
         with patch("modules.financial.repositories.BankTransactionRepository") as mock_repo:
             mock_instance = mock_repo.return_value
@@ -260,9 +251,7 @@ class TestBankReconciliationController:
     """Testes para BankReconciliationController."""
 
     @pytest.mark.asyncio
-    async def test_create_reconciliation(
-        self, mock_current_user, sample_bank_account, sample_reconciliation
-    ):
+    async def test_create_reconciliation(self, mock_current_user, sample_bank_account, sample_reconciliation):
         """Testa criação de conciliação."""
         with patch("modules.financial.repositories.BankReconciliationRepository") as mock_repo:
             mock_instance = mock_repo.return_value
@@ -275,15 +264,13 @@ class TestBankReconciliationController:
                     "period_type": ReconciliationPeriodType.MENSAL,
                     "period_start": date(2024, 1, 1),
                     "period_end": date(2024, 1, 31),
-                    "opening_balance": Decimal("10000.00"),
+                    "system_opening_balance": Decimal("10000.00"),
                 }
             )
             assert result.period_type == ReconciliationPeriodType.MENSAL
 
     @pytest.mark.asyncio
-    async def test_get_in_progress(
-        self, mock_current_user, sample_bank_account, sample_reconciliation
-    ):
+    async def test_get_in_progress(self, mock_current_user, sample_bank_account, sample_reconciliation):
         """Testa obtenção de conciliação em andamento."""
         with patch("modules.financial.repositories.BankReconciliationRepository") as mock_repo:
             mock_instance = mock_repo.return_value
@@ -310,9 +297,8 @@ class TestCashFlowEntryController:
             data = CashFlowEntryCreate(
                 condominio_id=sample_cashflow_entry.condominio_id,
                 entry_type=CashFlowEntryType.ENTRADA,
-                source_type=CashFlowSourceType.CONTA_RECEBER,
                 description="Receita prevista",
-                expected_date=date.today() + timedelta(days=30),
+                entry_date=date.today() + timedelta(days=30),
                 expected_amount=Decimal("5000.00"),
             )
 
@@ -370,13 +356,13 @@ class TestCashFlowForecastController:
                 period_type=ForecastPeriodType.MENSAL,
                 period_start=date(2024, 1, 1),
                 period_end=date(2024, 1, 31),
-                expected_inflows=Decimal("50000.00"),
-                expected_outflows=Decimal("35000.00"),
-                expected_balance=Decimal("15000.00"),
+                forecast_date=date(2024, 1, 1),
+                expected_receivables=Decimal("50000.00"),
+                expected_payables=Decimal("35000.00"),
             )
 
             result = await mock_instance.create(data.model_dump())
-            assert result.expected_balance == Decimal("15000.00")
+            assert result.expected_closing_balance == Decimal("15000.00")
 
     @pytest.mark.asyncio
     async def test_get_active_forecasts(self, mock_current_user, sample_forecast):
@@ -387,7 +373,7 @@ class TestCashFlowForecastController:
 
             result = await mock_instance.get_active(sample_forecast.condominio_id)
             assert len(result) == 1
-            assert result[0].status == ForecastStatus.ATIVO
+            assert result[0].status == ForecastStatus.ATIVA
 
 
 # ==================== TESTES AI SERVICE ====================
@@ -401,28 +387,22 @@ class TestCashFlowAIService:
         """Testa geração de previsão com IA."""
         with patch("modules.financial.services.CashFlowAIService") as mock_service:
             mock_instance = mock_service.return_value
-            mock_response = AIForecastResponse(
-                condominio_id=uuid4(),
-                period_days=90,
-                generated_at=date.today(),
-                confidence=ForecastConfidence.ALTA,
-                projections=[],
-                scenarios={
-                    "pessimista": Decimal("10000.00"),
-                    "realista": Decimal("15000.00"),
-                    "otimista": Decimal("20000.00"),
-                },
-                risks=[],
-                opportunities=[],
-                alerts=[],
-            )
+            mock_response = MagicMock()
+            mock_response.scenarios = {
+                "pessimista": {"balance": Decimal("10000.00")},
+                "realista": {"balance": Decimal("15000.00")},
+                "otimista": {"balance": Decimal("20000.00")},
+            }
+            mock_response.recommendations = ["Aumentar reserva de emergência"]
+            mock_response.risks = [{"type": "inadimplencia", "impact": "alto"}]
+            mock_response.opportunities = [{"type": "renegociacao"}]
             mock_instance.generate_forecast = AsyncMock(return_value=mock_response)
 
-            request = AIForecastRequest(condominio_id=uuid4(), period_days=90)
+            request = AIForecastRequest(condominio_id=uuid4(), months_ahead=3)
             result = await mock_instance.generate_forecast(request)
 
-            assert result.confidence == ForecastConfidence.ALTA
-            assert result.scenarios["realista"] == Decimal("15000.00")
+            assert result.scenarios["realista"]["balance"] == Decimal("15000.00")
+            assert len(result.recommendations) == 1
 
     @pytest.mark.asyncio
     async def test_detect_anomalies(self, mock_current_user):
@@ -430,30 +410,26 @@ class TestCashFlowAIService:
         with patch("modules.financial.services.CashFlowAIService") as mock_service:
             mock_instance = mock_service.return_value
             mock_response = AnomalyDetectionResponse(
-                condominio_id=uuid4(),
-                period_months=6,
-                analyzed_at=date.today(),
                 anomalies=[
                     {
                         "type": "valor_alto",
                         "description": "Pagamento acima do esperado",
-                        "amount": Decimal("5000.00"),
-                        "expected": Decimal("2000.00"),
-                        "deviation": 2.5,
+                        "amount": "5000.00",
                         "severity": "high",
                         "date": str(date.today()),
                     }
                 ],
-                total_anomalies=1,
-                summary={"high": 1, "medium": 0, "low": 0},
+                total=1,
+                by_severity={"high": 1, "medium": 0, "low": 0},
+                by_category={"valor_alto": 1},
             )
             mock_instance.detect_anomalies = AsyncMock(return_value=mock_response)
 
             request = AnomalyDetectionRequest(condominio_id=uuid4(), period_months=6)
             result = await mock_instance.detect_anomalies(request)
 
-            assert result.total_anomalies == 1
-            assert result.summary["high"] == 1
+            assert result.total == 1
+            assert result.by_severity["high"] == 1
 
     @pytest.mark.asyncio
     async def test_suggest_optimizations(self, mock_current_user):
@@ -462,22 +438,24 @@ class TestCashFlowAIService:
             mock_instance = mock_service.return_value
             mock_suggestions = [
                 OptimizationSuggestion(
-                    suggestion_type="renegociacao",
+                    id="opt-001",
+                    type="renegociacao",
                     title="Renegociar contrato de limpeza",
                     description="O valor atual está 20% acima da média de mercado",
                     potential_savings=Decimal("2000.00"),
+                    implementation_effort="medio",
                     priority="high",
-                    category="fornecedores",
-                    action="Solicitar propostas de outros fornecedores",
+                    action_items=["Solicitar propostas de outros fornecedores"],
                 ),
                 OptimizationSuggestion(
-                    suggestion_type="antecipacao",
+                    id="opt-002",
+                    type="antecipacao",
                     title="Antecipar recebíveis",
                     description="Oferecer desconto para pagamento antecipado",
                     potential_savings=Decimal("1500.00"),
+                    implementation_effort="baixo",
                     priority="medium",
-                    category="receitas",
-                    action="Enviar comunicado aos moradores",
+                    action_items=["Enviar comunicado aos moradores"],
                 ),
             ]
             mock_instance.suggest_optimizations = AsyncMock(return_value=mock_suggestions)
@@ -531,30 +509,36 @@ class TestCashFlowIntegration:
         recon = BankReconciliation(
             id=uuid4(),
             bank_account_id=sample_bank_account.id,
+            condominio_id=sample_bank_account.condominio_id,
             period_type=ReconciliationPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
-            opening_balance=Decimal("10000.00"),
-            total_system_items=10,
-            items_reconciled=0,
+            system_opening_balance=Decimal("10000.00"),
+            total_system_transactions=10,
+            total_bank_transactions=10,
+            reconciled_count=0,
         )
 
         # Simula conciliação de itens
-        recon.items_reconciled = 5
-        recon.update_progress()
-        assert recon.progress_percentage == Decimal("50.00")
+        recon.reconciled_count = 5
+        recon.calculate_progress()
+        assert recon.reconciliation_progress == Decimal("50.0")
 
-        recon.items_reconciled = 10
-        recon.update_progress()
-        assert recon.progress_percentage == Decimal("100.00")
+        recon.reconciled_count = 10
+        recon.calculate_progress()
+        assert recon.reconciliation_progress == Decimal("100")
 
-        # Finaliza
-        recon.statement_balance = Decimal("15000.00")
-        recon.closing_balance = Decimal("15000.00")
-        recon.complete()
+        # Finaliza - sem diferenças
+        recon.bank_closing_balance = Decimal("15000.00")
+        recon.system_closing_balance = Decimal("15000.00")
+        recon.closing_difference = Decimal("0")
+        recon.divergent_count = 0
+        recon.pending_system_count = 0
+        recon.pending_bank_count = 0
+        recon.complete(uuid4())
 
         assert recon.status == ReconciliationStatus.CONCLUIDA
-        assert recon.difference == Decimal("0.00")
+        assert recon.closing_difference == Decimal("0")
 
     @pytest.mark.asyncio
     async def test_cashflow_entry_realization(self, sample_cashflow_entry):
@@ -585,23 +569,22 @@ class TestCashFlowIntegration:
         # Valores esperados
         assert forecast.expected_inflows == Decimal("50000.00")
         assert forecast.expected_outflows == Decimal("35000.00")
-        assert forecast.expected_balance == Decimal("15000.00")
+        assert forecast.expected_closing_balance == Decimal("15000.00")
 
         # Atualiza com valores realizados
-        forecast.update_actuals(
-            inflows=Decimal("48000.00"),
-            outflows=Decimal("36000.00"),
-            balance=Decimal("12000.00"),
-        )
+        forecast.actual_inflows = Decimal("48000.00")
+        forecast.actual_outflows = Decimal("36000.00")
+        forecast.actual_closing_balance = Decimal("12000.00")
+        forecast.calculate_variances()
 
         # Verifica variações
-        assert forecast.variance_inflows == Decimal("-2000.00")
-        assert forecast.variance_outflows == Decimal("1000.00")
-        assert forecast.variance_balance == Decimal("-3000.00")
+        assert forecast.inflows_variance == Decimal("-2000.00")
+        assert forecast.outflows_variance == Decimal("1000.00")
+        assert forecast.balance_variance == Decimal("-3000.00")
 
         # Verifica percentual
         expected_pct = (Decimal("-3000.00") / Decimal("15000.00")) * 100
-        assert forecast.variance_percentage == expected_pct
+        assert forecast.balance_variance_pct == expected_pct
 
 
 # ==================== TESTES DE VALIDAÇÃO ====================
@@ -618,6 +601,10 @@ class TestCashFlowValidation:
             name="Conta Teste",
             account_type=BankAccountType.CORRENTE,
             bank_code="001",
+            bank_name="Banco Teste",
+            agency="0001",
+            account_number="12345",
+            account_digit="6",
         )
         assert data.name == "Conta Teste"
 
@@ -626,7 +613,7 @@ class TestCashFlowValidation:
         data = BankTransactionCreate(
             bank_account_id=uuid4(),
             transaction_type=TransactionType.CREDITO,
-            category=TransactionCategory.TAXA_CONDOMINIO,
+            category=TransactionCategory.TAXA_CONDOMINIAL,
             amount=Decimal("500.00"),
             description="Teste",
             transaction_date=date.today(),
@@ -638,12 +625,11 @@ class TestCashFlowValidation:
         data = CashFlowEntryCreate(
             condominio_id=uuid4(),
             entry_type=CashFlowEntryType.ENTRADA,
-            source_type=CashFlowSourceType.MANUAL,
             description="Entrada teste",
-            expected_date=date.today() + timedelta(days=1),
+            entry_date=date.today() + timedelta(days=1),
             expected_amount=Decimal("1000.00"),
         )
-        assert data.expected_date > date.today()
+        assert data.entry_date > date.today()
 
     def test_forecast_create_validation(self):
         """Testa validação de criação de previsão."""
@@ -653,8 +639,8 @@ class TestCashFlowValidation:
             period_type=ForecastPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
-            expected_inflows=Decimal("50000.00"),
-            expected_outflows=Decimal("35000.00"),
-            expected_balance=Decimal("15000.00"),
+            forecast_date=date(2024, 1, 1),
+            expected_receivables=Decimal("50000.00"),
+            expected_payables=Decimal("35000.00"),
         )
         assert data.period_end > data.period_start

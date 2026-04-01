@@ -5,17 +5,18 @@ Processa intents relacionados a postos de servico,
 consulta dados via DataConnector e oferece fallback estatico.
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, date
-from enum import Enum
 import logging
 import re
+from datetime import date
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class PostoIntent(str, Enum):
+class PostoIntent(StrEnum):
     """Intents relacionados a postos de trabalho."""
+
     LISTAR_POSTOS = "listar_postos"
     VER_POSTO = "ver_posto"
     CRIAR_POSTO = "criar_posto"
@@ -47,42 +48,53 @@ class PostoAgent:
         # ==================================================================
         # CRIAR_POSTO - Antes de listar (mais especifico)
         # ==================================================================
-        (r"(?:criar|crie|cria|registrar|registre|cadastrar|cadastre|novo|nova)\s+(?:um\s+)?posto", PostoIntent.CRIAR_POSTO),
+        (
+            r"(?:criar|crie|cria|registrar|registre|cadastrar|cadastre|novo|nova)\s+(?:um\s+)?posto",
+            PostoIntent.CRIAR_POSTO,
+        ),
         (r"(?:adicionar|adicione|incluir|inclua)\s+(?:um\s+)?(?:novo\s+)?posto", PostoIntent.CRIAR_POSTO),
         (r"(?:abrir|abra)\s+(?:um\s+)?(?:novo\s+)?posto", PostoIntent.CRIAR_POSTO),
         (r"novo\s+posto\s+de\s+(?:trabalho|servico|vigilancia|portaria)", PostoIntent.CRIAR_POSTO),
         (r"(?:preciso|precisamos)\s+(?:de\s+)?(?:um\s+)?(?:novo\s+)?posto", PostoIntent.CRIAR_POSTO),
-
         # ==================================================================
         # ATUALIZAR_POSTO - Antes de ver detalhes (mais especifico)
         # ==================================================================
-        (r"(?:atualizar|atualize|editar|edite|alterar|altere|modificar|modifique)\s+(?:o\s+)?posto", PostoIntent.ATUALIZAR_POSTO),
+        (
+            r"(?:atualizar|atualize|editar|edite|alterar|altere|modificar|modifique)\s+(?:o\s+)?posto",
+            PostoIntent.ATUALIZAR_POSTO,
+        ),
         (r"(?:mudar|mude|trocar|troque)\s+(?:dados?\s+)?(?:do\s+)?posto", PostoIntent.ATUALIZAR_POSTO),
         (r"(?:atualizar|atualize|editar|edite|alterar|altere)\s+POST-\d+", PostoIntent.ATUALIZAR_POSTO),
         (r"posto\s+POST-\d+\s+(?:atualizar|editar|alterar|mudar)", PostoIntent.ATUALIZAR_POSTO),
-
         # ==================================================================
         # VER_REQUISITOS - Antes de detalhes (mais especifico)
         # ==================================================================
-        (r"(?:requisitos?|exigencias?|certificac[oõ]es?|qualificac[oõ]es?)\s+(?:do\s+)?posto", PostoIntent.VER_REQUISITOS),
+        (
+            r"(?:requisitos?|exigencias?|certificac[oõ]es?|qualificac[oõ]es?)\s+(?:do\s+)?posto",
+            PostoIntent.VER_REQUISITOS,
+        ),
         (r"posto\s+(?:precisa|requer|exige|necessita)\s+(?:de\s+)?", PostoIntent.VER_REQUISITOS),
         (r"(?:o\s+que|quais?)\s+(?:o\s+)?posto\s+(?:precisa|requer|exige)", PostoIntent.VER_REQUISITOS),
         (r"(?:requisitos?|exigencias?|certificac[oõ]es?)\s+(?:do\s+)?POST-\d+", PostoIntent.VER_REQUISITOS),
         (r"(?:armamento|veiculo|cnh|certificado)\s+(?:do\s+|no\s+)?posto", PostoIntent.VER_REQUISITOS),
         (r"posto\s+(?:armado|desarmado|com\s+veiculo)", PostoIntent.VER_REQUISITOS),
-
         # ==================================================================
         # VER_COBERTURA - Antes de stats (mais especifico)
         # ==================================================================
         (r"cobertura\s+(?:do\s+|dos\s+)?postos?", PostoIntent.VER_COBERTURA),
         (r"(?:efetivo|alocacao|alocados?)\s+(?:do\s+|dos\s+|no\s+|nos\s+)?postos?", PostoIntent.VER_COBERTURA),
         (r"postos?\s+(?:com\s+)?(?:deficit|falta|carencia|vaga)", PostoIntent.VER_COBERTURA),
-        (r"(?:falta|faltam|deficit|vagas?)\s+(?:de\s+)?(?:funcionarios?|colaboradores?|vigilantes?)\s+(?:no\s+|nos\s+)?postos?", PostoIntent.VER_COBERTURA),
+        (
+            r"(?:falta|faltam|deficit|vagas?)\s+(?:de\s+)?(?:funcionarios?|colaboradores?|vigilantes?)\s+(?:no\s+|nos\s+)?postos?",
+            PostoIntent.VER_COBERTURA,
+        ),
         (r"postos?\s+(?:descobertos?|sem\s+cobertura|sem\s+efetivo)", PostoIntent.VER_COBERTURA),
-        (r"(?:quantos?\s+)?(?:funcionarios?|colaboradores?)\s+(?:alocados?|trabalhando)\s+(?:no\s+|nos\s+)?postos?", PostoIntent.VER_COBERTURA),
+        (
+            r"(?:quantos?\s+)?(?:funcionarios?|colaboradores?)\s+(?:alocados?|trabalhando)\s+(?:no\s+|nos\s+)?postos?",
+            PostoIntent.VER_COBERTURA,
+        ),
         (r"cobertura\s+(?:do\s+)?POST-\d+", PostoIntent.VER_COBERTURA),
         (r"postos?\s+(?:com\s+)?cobertura\s+(?:critica|baixa|insuficiente)", PostoIntent.VER_COBERTURA),
-
         # ==================================================================
         # VER_STATS - Estatisticas gerais
         # ==================================================================
@@ -92,7 +104,6 @@ class PostoAgent:
         (r"postos?\s+(?:em\s+)?numeros", PostoIntent.VER_STATS),
         (r"(?:custo|valor)\s+(?:total\s+)?(?:dos\s+)?postos?", PostoIntent.VER_STATS),
         (r"(?:stats?|estatisticas?)\s+(?:do\s+)?POST-\d+", PostoIntent.VER_STATS),
-
         # ==================================================================
         # VER_POSTO - Detalhes de um posto especifico
         # ==================================================================
@@ -102,11 +113,13 @@ class PostoAgent:
         (r"(?:detalhe|detalhes|info)\s+(?:do\s+)?posto", PostoIntent.VER_POSTO),
         (r"(?:ver|veja|mostrar|mostre)\s+(?:o\s+)?posto\b(?!\s*s)", PostoIntent.VER_POSTO),
         (r"sobre\s+(?:o\s+)?posto", PostoIntent.VER_POSTO),
-
         # ==================================================================
         # LISTAR_POSTOS - Generico (por ultimo)
         # ==================================================================
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:os\s+)?postos?(?:\s+(?:ativos?|inativos?|todos?))?", PostoIntent.LISTAR_POSTOS),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:os\s+)?postos?(?:\s+(?:ativos?|inativos?|todos?))?",
+            PostoIntent.LISTAR_POSTOS,
+        ),
         (r"postos?\s+(?:ativos?|inativos?|cadastrados?|existentes?|disponiveis?)", PostoIntent.LISTAR_POSTOS),
         (r"(?:tem|ha|há)\s+(?:algum|quantos?)\s+postos?", PostoIntent.LISTAR_POSTOS),
         (r"(?:quais?|que)\s+(?:sao\s+)?(?:os\s+)?postos?", PostoIntent.LISTAR_POSTOS),
@@ -122,12 +135,13 @@ class PostoAgent:
         if db and not data_connector:
             try:
                 from modules.ai.bartolo.services.data_connector import DataConnector
+
                 self.data_connector = DataConnector(db)
             except Exception as e:
                 logger.warning(f"Nao foi possivel criar DataConnector: {e}")
                 self.data_connector = None
 
-    async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def process(self, message: str, context: dict[str, Any] = None) -> dict[str, Any]:
         """
         Processa uma mensagem relacionada a postos.
 
@@ -154,7 +168,7 @@ class PostoAgent:
         else:
             return await self._handle_default(message, context)
 
-    def _detect_intent(self, message: str) -> Optional[PostoIntent]:
+    def _detect_intent(self, message: str) -> PostoIntent | None:
         """Detecta o intent da mensagem."""
         message_lower = message.lower()
 
@@ -167,13 +181,12 @@ class PostoAgent:
     # HANDLERS
     # =========================================================================
 
-    async def _handle_listar_postos(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_listar_postos(self, message: str, context: dict) -> dict[str, Any]:
         """Lista postos usando DataConnector ou repositorio direto."""
         if self.data_connector and self.db:
             try:
                 from modules.operacional.repositories.post_repository import PostRepository
                 from modules.operacional.schemas.post import PostFilter
-                from modules.operacional.models.post import PostStatus, PostType
 
                 repo = PostRepository(self.db)
 
@@ -253,7 +266,7 @@ class PostoAgent:
                 logger.warning(f"Erro ao listar postos via DB: {e}")
 
         # Fallback estatico
-        today = date.today().strftime('%d/%m/%Y')
+        today = date.today().strftime("%d/%m/%Y")
         return {
             "response": f"""📍 **POSTOS DE TRABALHO** (5)
 
@@ -272,7 +285,7 @@ Dados de referencia ({today})""",
             "suggestions": ["/posto stats", "/posto cobertura", "Criar novo posto"],
         }
 
-    async def _handle_ver_posto(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_posto(self, message: str, context: dict) -> dict[str, Any]:
         """Mostra detalhes de um posto especifico."""
         # Extrair codigo do posto
         code_match = re.search(r"POST-\d+", message.upper())
@@ -293,9 +306,9 @@ Dados de referencia ({today})""",
                         "suspended": "Suspenso ⚫",
                     }.get(post.status, post.status)
 
-                    shift_start = post.shift_start_time.strftime('%H:%M') if post.shift_start_time else 'N/A'
-                    shift_end = post.shift_end_time.strftime('%H:%M') if post.shift_end_time else 'N/A'
-                    created = post.created_at.strftime('%d/%m/%Y') if post.created_at else 'N/A'
+                    shift_start = post.shift_start_time.strftime("%H:%M") if post.shift_start_time else "N/A"
+                    shift_end = post.shift_end_time.strftime("%H:%M") if post.shift_end_time else "N/A"
+                    created = post.created_at.strftime("%d/%m/%Y") if post.created_at else "N/A"
 
                     # Requisitos
                     req_lines = []
@@ -306,15 +319,21 @@ Dados de referencia ({today})""",
                     if post.requires_experience_months > 0:
                         req_lines.append(f"Experiencia minima: {post.requires_experience_months} meses")
                     if post.required_certifications:
-                        certs = ", ".join(str(c) for c in post.required_certifications.values()) if isinstance(post.required_certifications, dict) else str(post.required_certifications)
+                        certs = (
+                            ", ".join(str(c) for c in post.required_certifications.values())
+                            if isinstance(post.required_certifications, dict)
+                            else str(post.required_certifications)
+                        )
                         req_lines.append(f"Certificacoes: {certs}")
 
-                    requisitos_text = "\n".join(f"  - {r}" for r in req_lines) if req_lines else "  Nenhum requisito especial"
+                    requisitos_text = (
+                        "\n".join(f"  - {r}" for r in req_lines) if req_lines else "  Nenhum requisito especial"
+                    )
 
                     response = f"""📍 **POSTO {post.code}**
 
 **Nome:** {post.name}
-**Descricao:** {post.description or 'N/A'}
+**Descricao:** {post.description or "N/A"}
 
 **Classificacao:**
 - Tipo: {post.post_type}
@@ -337,12 +356,12 @@ Dados de referencia ({today})""",
 {requisitos_text}
 
 **Localizacao:**
-- Endereco: {post.address or 'N/A'}
-- Cidade: {post.city or 'N/A'}/{post.state or 'N/A'}
+- Endereco: {post.address or "N/A"}
+- Cidade: {post.city or "N/A"}/{post.state or "N/A"}
 
 **Contatos:**
-- Supervisor: {post.supervisor_name or 'N/A'} ({post.supervisor_phone or 'N/A'})
-- Emergencia: {post.emergency_contact or 'N/A'} ({post.emergency_phone or 'N/A'})
+- Supervisor: {post.supervisor_name or "N/A"} ({post.supervisor_phone or "N/A"})
+- Emergencia: {post.emergency_contact or "N/A"} ({post.emergency_phone or "N/A"})
 
 **Criado em:** {created}"""
 
@@ -410,7 +429,7 @@ Dados de referencia ({today})""",
 - Supervisor: Carlos Silva (11-99999-0001)
 - Emergencia: Base Central (11-99999-0000)
 
-**Criado em:** {date.today().strftime('%d/%m/%Y')}""",
+**Criado em:** {date.today().strftime("%d/%m/%Y")}""",
             "intent": PostoIntent.VER_POSTO.value,
             "data": {"codigo": code_display},
             "suggestions": [
@@ -420,7 +439,7 @@ Dados de referencia ({today})""",
             ],
         }
 
-    async def _handle_criar_posto(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_criar_posto(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona para wizard/action de criacao de posto."""
         return {
             "response": """📝 **CRIAR NOVO POSTO**
@@ -456,7 +475,7 @@ Posso iniciar o **assistente guiado** para coletar esses dados passo a passo.
             ],
         }
 
-    async def _handle_atualizar_posto(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_atualizar_posto(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona para action de atualizacao de posto."""
         code_match = re.search(r"POST-\d+", message.upper())
         code = code_match.group(0) if code_match else None
@@ -502,7 +521,7 @@ Apos identificar o posto, sera possivel alterar:
             ],
         }
 
-    async def _handle_ver_requisitos(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_requisitos(self, message: str, context: dict) -> dict[str, Any]:
         """Mostra requisitos de um posto especifico."""
         code_match = re.search(r"POST-\d+", message.upper())
         code = code_match.group(0) if code_match else None
@@ -611,7 +630,7 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
             ],
         }
 
-    async def _handle_ver_stats(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_stats(self, message: str, context: dict) -> dict[str, Any]:
         """Mostra estatisticas gerais dos postos."""
         if self.db:
             try:
@@ -624,7 +643,12 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
                     # Por status
                     status_lines = []
                     status_icons = {"active": "🟢", "inactive": "🔴", "temporary": "🟡", "suspended": "⚫"}
-                    status_labels = {"active": "Ativos", "inactive": "Inativos", "temporary": "Temporarios", "suspended": "Suspensos"}
+                    status_labels = {
+                        "active": "Ativos",
+                        "inactive": "Inativos",
+                        "temporary": "Temporarios",
+                        "suspended": "Suspensos",
+                    }
                     for st, count in sorted(stats.by_status.items(), key=lambda x: x[1], reverse=True):
                         icon = status_icons.get(st, "⚪")
                         label = status_labels.get(st, st.title())
@@ -641,7 +665,11 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
                         shift_lines.append(f"  - {sh.replace('_', ' ').title()}: **{count}**")
 
                     # Cobertura
-                    cobertura_pct = round((stats.total_allocated / stats.total_headcount) * 100, 1) if stats.total_headcount > 0 else 0
+                    cobertura_pct = (
+                        round((stats.total_allocated / stats.total_headcount) * 100, 1)
+                        if stats.total_headcount > 0
+                        else 0
+                    )
 
                     response = f"""📊 **ESTATISTICAS DE POSTOS**
 
@@ -652,13 +680,13 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
 - Cobertura geral: **{cobertura_pct}%** ({stats.total_allocated}/{stats.total_headcount})
 
 **Por Status:**
-{chr(10).join(status_lines) if status_lines else '  Nenhum dado'}
+{chr(10).join(status_lines) if status_lines else "  Nenhum dado"}
 
 **Por Tipo:**
-{chr(10).join(type_lines[:5]) if type_lines else '  Nenhum dado'}
+{chr(10).join(type_lines[:5]) if type_lines else "  Nenhum dado"}
 
 **Por Turno:**
-{chr(10).join(shift_lines[:5]) if shift_lines else '  Nenhum dado'}
+{chr(10).join(shift_lines[:5]) if shift_lines else "  Nenhum dado"}
 
 **Custo Mensal Total:** R$ {stats.total_monthly_cost:,.2f}"""
 
@@ -711,7 +739,7 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
             "suggestions": ["/posto cobertura", "/posto listar", "Criar novo posto"],
         }
 
-    async def _handle_ver_cobertura(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_cobertura(self, message: str, context: dict) -> dict[str, Any]:
         """Mostra cobertura atual dos postos (alocados vs necessarios)."""
         # Extrair codigo do posto se informado
         code_match = re.search(r"POST-\d+", message.upper())
@@ -727,7 +755,11 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
                     # Cobertura de um posto especifico
                     post = await repo.get_by_code(code)
                     if post:
-                        cobertura_pct = round((post.current_headcount / post.required_headcount) * 100, 1) if post.required_headcount > 0 else 0
+                        cobertura_pct = (
+                            round((post.current_headcount / post.required_headcount) * 100, 1)
+                            if post.required_headcount > 0
+                            else 0
+                        )
                         cobertura_icon = "🟢" if cobertura_pct >= 80 else "🟡" if cobertura_pct >= 50 else "🔴"
 
                         response = f"""📊 **COBERTURA DO POSTO {post.code}** ({post.name})
@@ -775,14 +807,16 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
                 for p in posts:
                     if p.required_headcount > 0:
                         cob = round((p.current_headcount / p.required_headcount) * 100, 1)
-                        postos_cobertura.append({
-                            "codigo": p.code,
-                            "nome": p.name,
-                            "alocados": p.current_headcount,
-                            "requeridos": p.required_headcount,
-                            "cobertura": cob,
-                            "deficit": p.vacancy_count,
-                        })
+                        postos_cobertura.append(
+                            {
+                                "codigo": p.code,
+                                "nome": p.name,
+                                "alocados": p.current_headcount,
+                                "requeridos": p.required_headcount,
+                                "cobertura": cob,
+                                "deficit": p.vacancy_count,
+                            }
+                        )
 
                 # Ordenar por cobertura (menor primeiro)
                 postos_cobertura.sort(key=lambda x: x["cobertura"])
@@ -867,7 +901,7 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
             "suggestions": ["/posto stats", "/posto listar", "Ver escalas"],
         }
 
-    async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
+    async def _handle_default(self, message: str, context: dict) -> dict[str, Any] | None:
         """Handler padrao - retorna None para permitir que DataConnector processe."""
         return None
 
@@ -941,7 +975,7 @@ Informe o codigo do posto para consulta especifica: `/posto requisitos POST-XXX`
 
         return filters
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Retorna lista de capabilities do agente."""
         return [
             "Listar postos com filtros (contrato, cliente, status, tipo, turno)",

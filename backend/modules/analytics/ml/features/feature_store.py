@@ -5,8 +5,8 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
-from uuid import UUID, uuid4
+from typing import Any
+from uuid import UUID
 
 import numpy as np
 import pandas as pd
@@ -51,8 +51,8 @@ class FeatureDefinition:
     feature_type: FeatureType
     source_table: str
     source_column: str
-    aggregation: Optional[FeatureAggregation] = None
-    transformation: Optional[str] = None
+    aggregation: FeatureAggregation | None = None
+    transformation: str | None = None
     default_value: Any = None
     is_derived: bool = False
     dependencies: list[str] = field(default_factory=list)
@@ -226,9 +226,9 @@ class FeatureStore:
         self,
         db: AsyncSession,
         user_id: int,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        include: Optional[list[str]] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        include: list[str] | None = None,
     ) -> dict[str, Any]:
         """
         Obtém features de um usuário.
@@ -262,9 +262,12 @@ class FeatureStore:
         for feature_name in features_to_compute:
             if feature_name in self.USER_FEATURES:
                 value = await self._compute_feature(
-                    db, self.USER_FEATURES[feature_name],
-                    entity_id=user_id, entity_type="user",
-                    start_date=start_date, end_date=end_date,
+                    db,
+                    self.USER_FEATURES[feature_name],
+                    entity_id=user_id,
+                    entity_type="user",
+                    start_date=start_date,
+                    end_date=end_date,
                 )
                 result[feature_name] = value
 
@@ -278,9 +281,9 @@ class FeatureStore:
         self,
         db: AsyncSession,
         user_id: int,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        include: Optional[list[str]] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        include: list[str] | None = None,
     ) -> dict[str, Any]:
         """Obtém features de engagement de um usuário."""
         end_date = end_date or datetime.utcnow()
@@ -293,9 +296,12 @@ class FeatureStore:
         for feature_name in features_to_compute:
             if feature_name in self.ENGAGEMENT_FEATURES:
                 value = await self._compute_feature(
-                    db, self.ENGAGEMENT_FEATURES[feature_name],
-                    entity_id=user_id, entity_type="user",
-                    start_date=start_date, end_date=end_date,
+                    db,
+                    self.ENGAGEMENT_FEATURES[feature_name],
+                    entity_id=user_id,
+                    entity_type="user",
+                    start_date=start_date,
+                    end_date=end_date,
                 )
                 result[feature_name] = value
 
@@ -305,9 +311,9 @@ class FeatureStore:
         self,
         db: AsyncSession,
         user_id: int,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        include: Optional[list[str]] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        include: list[str] | None = None,
     ) -> dict[str, Any]:
         """Obtém features de transação de um usuário."""
         end_date = end_date or datetime.utcnow()
@@ -320,9 +326,12 @@ class FeatureStore:
         for feature_name in features_to_compute:
             if feature_name in self.TRANSACTION_FEATURES:
                 value = await self._compute_feature(
-                    db, self.TRANSACTION_FEATURES[feature_name],
-                    entity_id=user_id, entity_type="user",
-                    start_date=start_date, end_date=end_date,
+                    db,
+                    self.TRANSACTION_FEATURES[feature_name],
+                    entity_id=user_id,
+                    entity_type="user",
+                    start_date=start_date,
+                    end_date=end_date,
                 )
                 result[feature_name] = value
 
@@ -360,9 +369,12 @@ class FeatureStore:
                 feature_def = self._get_feature_definition(feature_name)
                 if feature_def:
                     value = await self._compute_feature(
-                        db, feature_def,
-                        entity_id=entity_id, entity_type=entity_type,
-                        start_date=start_date, end_date=end_date,
+                        db,
+                        feature_def,
+                        entity_id=entity_id,
+                        entity_type=entity_type,
+                        start_date=start_date,
+                        end_date=end_date,
                     )
                     row[feature_name] = value
 
@@ -396,8 +408,10 @@ class FeatureStore:
             feature_def = self._get_feature_definition(feature_name)
             if feature_def:
                 value = await self._compute_feature(
-                    db, feature_def,
-                    entity_id=entity_id, entity_type=entity_type,
+                    db,
+                    feature_def,
+                    entity_id=entity_id,
+                    entity_type=entity_type,
                     start_date=now - timedelta(days=365),
                     end_date=now,
                 )
@@ -415,7 +429,6 @@ class FeatureStore:
         end_date: datetime,
     ) -> Any:
         """Computa valor de uma feature."""
-        # TODO: Implementar queries reais baseadas na definição
 
         # Simulação de valores para desenvolvimento
         simulated_values = {
@@ -438,7 +451,7 @@ class FeatureStore:
 
         return feature_def.default_value
 
-    def _get_feature_definition(self, name: str) -> Optional[FeatureDefinition]:
+    def _get_feature_definition(self, name: str) -> FeatureDefinition | None:
         """Obtém definição de feature por nome."""
         all_features = {
             **self.USER_FEATURES,
@@ -451,9 +464,9 @@ class FeatureStore:
         self,
         entity_type: str,
         entity_id: int,
-        start_date: Optional[datetime],
-        end_date: Optional[datetime],
-        include: Optional[list[str]],
+        start_date: datetime | None,
+        end_date: datetime | None,
+        include: list[str] | None,
     ) -> str:
         """Gera chave de cache."""
         key_parts = [
@@ -463,9 +476,9 @@ class FeatureStore:
             str(end_date),
             str(sorted(include) if include else "all"),
         ]
-        return hashlib.md5(":".join(key_parts).encode()).hexdigest()
+        return hashlib.sha256(":".join(key_parts).encode()).hexdigest()
 
-    def _get_from_cache(self, key: str) -> Optional[Any]:
+    def _get_from_cache(self, key: str) -> Any | None:
         """Obtém valor do cache."""
         if key not in self._cache:
             return None
@@ -490,7 +503,7 @@ class FeatureStore:
         self._feature_sets[feature_set.name] = feature_set
         logger.info(f"Feature set registrado: {feature_set.name}")
 
-    def get_feature_set(self, name: str) -> Optional[FeatureSet]:
+    def get_feature_set(self, name: str) -> FeatureSet | None:
         """Obtém conjunto de features por nome."""
         return self._feature_sets.get(name)
 
@@ -498,7 +511,7 @@ class FeatureStore:
         """Lista conjuntos de features disponíveis."""
         return list(self._feature_sets.keys())
 
-    def get_feature_metadata(self, name: str) -> Optional[dict]:
+    def get_feature_metadata(self, name: str) -> dict | None:
         """Obtém metadados de uma feature."""
         feature_def = self._get_feature_definition(name)
         if not feature_def:

@@ -4,17 +4,17 @@ domains/financial/entities/chart_of_accounts.py - CHART OF ACCOUNTS
 Enterprise chart of accounts entity with hierarchical structure
 """
 
-from typing import Dict, List, Optional, Any, NewType
 from datetime import datetime
 from decimal import Decimal
+from typing import Any, NewType
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .enums import AccountType, AccountStatus
+from .enums import AccountStatus, AccountType
 
 # Strong typing for domain identifiers
-AccountId = NewType('AccountId', UUID)
+AccountId = NewType("AccountId", UUID)
 
 
 class AccountBalance(BaseModel):
@@ -51,18 +51,11 @@ class AccountEntity(BaseModel):
     hierarquia e regras de negocio.
     """
 
-    model_config = ConfigDict(
-        use_enum_values=True,
-        validate_assignment=True
-    )
+    model_config = ConfigDict(use_enum_values=True, validate_assignment=True)
 
     # Identity
     account_id: UUID = Field(default_factory=uuid4)
-    account_code: str = Field(
-        ...,
-        pattern=r"^(\d{1,4})(\.\d{1,2}){0,4}$",
-        description="Codigo hierarquico: 1.1.1.01"
-    )
+    account_code: str = Field(..., pattern=r"^(\d{1,4})(\.\d{1,2}){0,4}$", description="Codigo hierarquico: 1.1.1.01")
     account_name: str = Field(..., min_length=3, max_length=100)
 
     # Classification
@@ -70,7 +63,7 @@ class AccountEntity(BaseModel):
     status: AccountStatus = Field(default=AccountStatus.ACTIVE)
 
     # Hierarchy
-    parent_account_id: Optional[UUID] = None
+    parent_account_id: UUID | None = None
     level: int = Field(..., ge=1, le=5)
     is_analytical: bool = Field(default=True)  # True = recebe lancamentos
 
@@ -80,7 +73,7 @@ class AccountEntity(BaseModel):
     current_balance: Decimal = Field(default=Decimal("0"))
 
     # Metadata
-    description: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
     cost_center_required: bool = Field(default=False)
     project_required: bool = Field(default=False)
 
@@ -91,26 +84,24 @@ class AccountEntity(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: str
-    updated_by: Optional[str] = None
+    updated_by: str | None = None
 
-    @field_validator('account_code')
+    @field_validator("account_code")
     @classmethod
     def validate_account_code_format(cls, v: str) -> str:
         """Valida formato do codigo da conta."""
-        parts = v.split('.')
+        parts = v.split(".")
         if len(parts) > 5:
             raise ValueError("Codigo de conta nao pode ter mais de 5 niveis")
         return v
 
-    @model_validator(mode='after')
-    def validate_account(self) -> 'AccountEntity':
+    @model_validator(mode="after")
+    def validate_account(self) -> "AccountEntity":
         """Valida regras de negocio da conta."""
         # Valida nivel vs codigo
-        parts = self.account_code.split('.')
+        parts = self.account_code.split(".")
         if len(parts) != self.level:
-            raise ValueError(
-                f"Nivel ({self.level}) deve corresponder a hierarquia do codigo ({len(parts)})"
-            )
+            raise ValueError(f"Nivel ({self.level}) deve corresponder a hierarquia do codigo ({len(parts)})")
 
         # Contas sinteticas nao recebem lancamentos
         if not self.is_analytical and self.current_balance != Decimal("0"):
@@ -146,17 +137,14 @@ class AccountEntity(BaseModel):
     @property
     def allows_posting(self) -> bool:
         """Verifica se permite lancamentos."""
-        return (
-            self.is_analytical and
-            self.status == AccountStatus.ACTIVE
-        )
+        return self.is_analytical and self.status == AccountStatus.ACTIVE
 
-    def calculate_balance(self, debits: Decimal, credits: Decimal) -> Decimal:
+    def calculate_balance(self, debits: Decimal, credits_amount: Decimal) -> Decimal:
         """Calcula saldo baseado na natureza da conta."""
         if self.is_debit_nature:
-            return self.opening_balance + debits - credits
+            return self.opening_balance + debits - credits_amount
         else:
-            return self.opening_balance + credits - debits
+            return self.opening_balance + credits_amount - debits
 
     def apply_debit(self, amount: Decimal) -> Decimal:
         """Aplica debito e retorna novo saldo."""
@@ -204,9 +192,9 @@ class AccountEntity(BaseModel):
         self.updated_at = datetime.utcnow()
         self.updated_by = user_id
 
-    def get_account_hierarchy(self) -> List[str]:
+    def get_account_hierarchy(self) -> list[str]:
         """Retorna hierarquia de codigos da conta."""
-        parts = self.account_code.split('.')
+        parts = self.account_code.split(".")
         hierarchy = []
         current = ""
         for part in parts:
@@ -240,7 +228,7 @@ class ChartOfAccountsEntity(BaseModel):
     max_levels: int = Field(default=5, ge=3, le=7)
 
     # Accounts
-    accounts: Dict[str, AccountEntity] = Field(default_factory=dict)
+    accounts: dict[str, AccountEntity] = Field(default_factory=dict)
 
     # Multi-tenant
     tenant_id: UUID
@@ -275,47 +263,45 @@ class ChartOfAccountsEntity(BaseModel):
         self.accounts[account.account_code] = account
         self.updated_at = datetime.utcnow()
 
-    def get_account(self, account_code: str) -> Optional[AccountEntity]:
+    def get_account(self, account_code: str) -> AccountEntity | None:
         """Busca conta por codigo."""
         return self.accounts.get(account_code)
 
-    def get_account_by_id(self, account_id: UUID) -> Optional[AccountEntity]:
+    def get_account_by_id(self, account_id: UUID) -> AccountEntity | None:
         """Busca conta por ID."""
         return self._find_account_by_id(account_id)
 
-    def _find_account_by_id(self, account_id: UUID) -> Optional[AccountEntity]:
+    def _find_account_by_id(self, account_id: UUID) -> AccountEntity | None:
         """Busca interna por ID."""
         for account in self.accounts.values():
             if account.account_id == account_id:
                 return account
         return None
 
-    def get_analytical_accounts(self) -> List[AccountEntity]:
+    def get_analytical_accounts(self) -> list[AccountEntity]:
         """Retorna todas as contas analiticas."""
         return [acc for acc in self.accounts.values() if acc.is_analytical]
 
-    def get_synthetic_accounts(self) -> List[AccountEntity]:
+    def get_synthetic_accounts(self) -> list[AccountEntity]:
         """Retorna todas as contas sinteticas."""
         return [acc for acc in self.accounts.values() if not acc.is_analytical]
 
-    def get_accounts_by_type(self, account_type: AccountType) -> List[AccountEntity]:
+    def get_accounts_by_type(self, account_type: AccountType) -> list[AccountEntity]:
         """Retorna contas por tipo."""
-        return [
-            acc for acc in self.accounts.values()
-            if acc.account_type == account_type.value
-        ]
+        return [acc for acc in self.accounts.values() if acc.account_type == account_type.value]
 
-    def get_children(self, parent_code: str) -> List[AccountEntity]:
+    def get_children(self, parent_code: str) -> list[AccountEntity]:
         """Retorna contas filhas de uma conta."""
         return [
-            acc for acc in self.accounts.values()
-            if acc.account_code.startswith(f"{parent_code}.") and
-            acc.account_code.count('.') == parent_code.count('.') + 1
+            acc
+            for acc in self.accounts.values()
+            if acc.account_code.startswith(f"{parent_code}.")
+            and acc.account_code.count(".") == parent_code.count(".") + 1
         ]
 
-    def calculate_synthetic_balances(self) -> Dict[str, Decimal]:
+    def calculate_synthetic_balances(self) -> dict[str, Decimal]:
         """Calcula saldos das contas sinteticas."""
-        balances: Dict[str, Decimal] = {}
+        balances: dict[str, Decimal] = {}
 
         # Primeiro, copia saldos das analiticas
         for code, account in self.accounts.items():
@@ -327,27 +313,24 @@ class ChartOfAccountsEntity(BaseModel):
             for code, account in self.accounts.items():
                 if account.level == level and not account.is_analytical:
                     children = self.get_children(code)
-                    balances[code] = sum(
-                        balances.get(child.account_code, Decimal("0"))
-                        for child in children
-                    )
+                    balances[code] = sum(balances.get(child.account_code, Decimal("0")) for child in children)
 
         return balances
 
-    def validate_hierarchy(self) -> List[str]:
+    def validate_hierarchy(self) -> list[str]:
         """Valida integridade da hierarquia."""
         errors = []
 
         for code, account in self.accounts.items():
             # Verifica se pai existe
             if account.level > 1:
-                parent_code = '.'.join(code.split('.')[:-1])
+                parent_code = ".".join(code.split(".")[:-1])
                 if parent_code not in self.accounts:
                     errors.append(f"Conta {code}: pai {parent_code} nao existe")
 
         return errors
 
-    def export_structure(self) -> List[Dict[str, Any]]:
+    def export_structure(self) -> list[dict[str, Any]]:
         """Exporta estrutura do plano de contas."""
         return [
             {
@@ -356,7 +339,7 @@ class ChartOfAccountsEntity(BaseModel):
                 "type": acc.account_type,
                 "level": acc.level,
                 "is_analytical": acc.is_analytical,
-                "balance": str(acc.current_balance)
+                "balance": str(acc.current_balance),
             }
             for acc in sorted(self.accounts.values(), key=lambda x: x.account_code)
         ]

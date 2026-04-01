@@ -7,11 +7,12 @@ export interface Module {
   description: string;
   icon: string; // Nome do ícone Lucide
   href: string;
-  color: 'cyan' | 'green' | 'orange' | 'purple' | 'red' | 'blue' | 'yellow' | 'pink';
+  color: 'cyan' | 'green' | 'orange' | 'purple' | 'red' | 'blue' | 'yellow' | 'pink' | 'amber' | 'teal';
   permissions: string[];
   subModules: SubModule[];
   badge?: string | number;
   enabled: boolean;
+  external?: boolean;
 }
 
 // Sub-módulo (aparece na sidebar após clicar no card)
@@ -22,6 +23,7 @@ export interface SubModule {
   icon: string;
   permissions: string[];
   badge?: number;
+  group?: string;
 }
 
 // Configuração de módulos por categoria
@@ -90,6 +92,9 @@ export const rolePermissions: Record<UserRole, string[]> = {
 // Verificar se usuário tem permissão
 export function hasPermission(userRole: UserRole, requiredPermissions: string[]): boolean {
   const userPermissions = rolePermissions[userRole];
+
+  // Role desconhecida (ex: "pending") — sem acesso
+  if (!userPermissions) return false;
 
   // Admin tem acesso total
   if (userPermissions.includes('*')) return true;

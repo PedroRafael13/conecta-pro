@@ -1,24 +1,23 @@
 """Service para JobPosition."""
 
 import logging
-from typing import Optional, List, Tuple
 from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.recruitment.models.job_position import (
+    Department,
     JobPosition,
     PositionStatus,
-    Department,
-)
-from modules.recruitment.schemas.job_position import (
-    JobPositionCreate,
-    JobPositionUpdate,
-    JobPositionFilter,
-    JobPositionPublish,
 )
 from modules.recruitment.repositories.job_position_repository import (
     JobPositionRepository,
+)
+from modules.recruitment.schemas.job_position import (
+    JobPositionCreate,
+    JobPositionFilter,
+    JobPositionPublish,
+    JobPositionUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,17 +51,15 @@ class JobPositionService:
 
         return position
 
-    async def get_by_id(self, position_id: str) -> Optional[JobPosition]:
+    async def get_by_id(self, position_id: str) -> JobPosition | None:
         """Busca vaga por ID."""
         return await self.repository.get_by_id(position_id)
 
-    async def get_by_code(self, code: str) -> Optional[JobPosition]:
+    async def get_by_code(self, code: str) -> JobPosition | None:
         """Busca vaga por código."""
         return await self.repository.get_by_code(code)
 
-    async def update(
-        self, position_id: str, data: JobPositionUpdate
-    ) -> Optional[JobPosition]:
+    async def update(self, position_id: str, data: JobPositionUpdate) -> JobPosition | None:
         """
         Atualiza uma vaga.
 
@@ -100,12 +97,12 @@ class JobPositionService:
 
     async def list_with_filters(
         self,
-        filters: Optional[JobPositionFilter] = None,
+        filters: JobPositionFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[JobPosition], int]:
+    ) -> tuple[list[JobPosition], int]:
         """
         Lista vagas com filtros.
 
@@ -119,29 +116,21 @@ class JobPositionService:
         Returns:
             Tuple com lista de vagas e total
         """
-        return await self.repository.list_with_filters(
-            filters, skip, limit, order_by, order_desc
-        )
+        return await self.repository.list_with_filters(filters, skip, limit, order_by, order_desc)
 
-    async def get_open_positions(
-        self, condominium_id: str = None, skip: int = 0, limit: int = 20
-    ) -> List[JobPosition]:
+    async def get_open_positions(self, condominium_id: str = None, skip: int = 0, limit: int = 20) -> list[JobPosition]:
         """Retorna vagas abertas."""
         return await self.repository.get_open_positions(condominium_id, skip, limit)
 
-    async def get_by_department(
-        self, department: Department, status: PositionStatus = None
-    ) -> List[JobPosition]:
+    async def get_by_department(self, department: Department, status: PositionStatus = None) -> list[JobPosition]:
         """Retorna vagas por departamento."""
         return await self.repository.get_by_department(department, status)
 
-    async def get_expiring_soon(self, days: int = 7) -> List[JobPosition]:
+    async def get_expiring_soon(self, days: int = 7) -> list[JobPosition]:
         """Retorna vagas próximas da expiração."""
         return await self.repository.get_expiring_soon(days)
 
-    async def publish(
-        self, position_id: str, data: JobPositionPublish
-    ) -> Optional[JobPosition]:
+    async def publish(self, position_id: str, data: JobPositionPublish) -> JobPosition | None:
         """
         Publica uma vaga.
 
@@ -163,11 +152,7 @@ class JobPositionService:
         position.published_at = data.published_at or date.today()
 
         if data.deadline_date:
-            position.deadline_date = data.deadline_date
-        if data.publish_externally is not None:
-            position.publish_externally = data.publish_externally
-        if data.external_platforms:
-            position.external_platforms = data.external_platforms
+            position.deadline = data.deadline_date
 
         await self.session.flush()
         await self.session.commit()
@@ -179,7 +164,7 @@ class JobPositionService:
 
         return position
 
-    async def pause(self, position_id: str, reason: str = None) -> Optional[JobPosition]:
+    async def pause(self, position_id: str, reason: str = None) -> JobPosition | None:
         """
         Pausa uma vaga.
 
@@ -207,7 +192,7 @@ class JobPositionService:
 
         return position
 
-    async def reopen(self, position_id: str) -> Optional[JobPosition]:
+    async def reopen(self, position_id: str) -> JobPosition | None:
         """
         Reabre uma vaga pausada.
 
@@ -234,9 +219,7 @@ class JobPositionService:
 
         return position
 
-    async def close(
-        self, position_id: str, reason: str = None
-    ) -> Optional[JobPosition]:
+    async def close(self, position_id: str, reason: str = None) -> JobPosition | None:
         """
         Fecha uma vaga.
 
@@ -261,7 +244,7 @@ class JobPositionService:
 
         return position
 
-    async def fill_vacancy(self, position_id: str) -> Optional[JobPosition]:
+    async def fill_vacancy(self, position_id: str) -> JobPosition | None:
         """
         Preenche uma vaga.
 
@@ -275,8 +258,7 @@ class JobPositionService:
         if position:
             await self.session.commit()
             logger.info(
-                f"Vaga preenchida: {position.code} "
-                f"({position.filled_vacancies}/{position.vacancies})",
+                f"Vaga preenchida: {position.code} ({position.filled_count}/{position.vacancies})",
                 extra={"position_id": str(position.id)},
             )
         return position
@@ -295,7 +277,7 @@ class JobPositionService:
         """Retorna estatísticas de vagas."""
         return await self.repository.get_stats(condominium_id)
 
-    async def duplicate(self, position_id: str) -> Optional[JobPosition]:
+    async def duplicate(self, position_id: str) -> JobPosition | None:
         """
         Duplica uma vaga existente.
 
@@ -322,18 +304,17 @@ class JobPositionService:
             work_model=original.work_model,
             salary_min=original.salary_min,
             salary_max=original.salary_max,
-            salary_currency=original.salary_currency,
-            hide_salary=original.hide_salary,
+            show_salary=original.show_salary if hasattr(original, "show_salary") else False,
             vacancies=original.vacancies,
             city=original.city,
             state=original.state,
             address=original.address,
             required_skills=original.required_skills,
             desired_skills=original.desired_skills,
-            experience_min=original.experience_min,
+            min_experience_years=original.min_experience_years,
             education_level=original.education_level,
-            condominium_id=original.condominium_id,
-            recruiter_id=original.recruiter_id,
+            condominio_id=original.condominio_id,
+            responsible_id=original.responsible_id,
         )
 
         new_position = await self.repository.create(data)

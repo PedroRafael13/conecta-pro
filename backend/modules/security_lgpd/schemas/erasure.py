@@ -2,7 +2,7 @@
 Schemas de exclusao de dados (direito ao esquecimento) do modulo de seguranca LGPD.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
@@ -51,5 +51,5 @@ class ErasureStatusResponse(BaseModel):
     titular_id: str = Field(..., description="ID do titular")
     scope: str = Field(..., description="Escopo da exclusao")
     status: str = Field(..., description="Status atual")
-    estimated_completion: Optional[str] = Field(None, description="Prazo estimado")
-    details: Optional[Dict[str, Any]] = Field(None, description="Detalhes adicionais")
+    estimated_completion: str | None = Field(None, description="Prazo estimado")
+    details: dict[str, Any] | None = Field(None, description="Detalhes adicionais")

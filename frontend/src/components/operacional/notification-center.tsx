@@ -3,9 +3,10 @@
 import { Bell, X, CheckCircle, CheckCheck, Trash2, Clock, AlertTriangle, ChevronRight, Settings, Eye } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { useNotifications, useUnreadCount, useUserAlerts } from '@/hooks/useNotifications';
+import type { NotificationType, Notification as AppNotification, Alert } from '@/lib/services/notifications';
+import { NOTIFICATION_TYPE_LABELS } from '@/lib/services/notifications';
 
 // Cores dos tipos de notificacao
 const NOTIFICATION_TYPE_COLORS: Record<NotificationType, string> = {
@@ -61,7 +62,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
     }
   };
 
-  const handleMarkAsRead = async (notification: Notification, e: React.MouseEvent) => {
+  const handleMarkAsRead = async (notification: AppNotification, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!notification.is_read) {
       await markAsRead(notification.id);
@@ -75,7 +76,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
     refresh();
   };
 
-  const handleDelete = async (notification: Notification, e: React.MouseEvent) => {
+  const handleDelete = async (notification: AppNotification, e: React.MouseEvent) => {
     e.stopPropagation();
     await deleteNotification(notification.id);
     refreshCount();

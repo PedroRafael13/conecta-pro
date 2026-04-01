@@ -6,16 +6,14 @@ Serviço de validação de dados contra regras de qualidade.
 
 import re
 import uuid
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from modules.ai.data_quality.models import (
-    DataQualityRule,
     DataQualityIssue,
-    RuleTypeEnum,
-    IssueTypeEnum,
-    IssueSeverityEnum,
+    DataQualityRule,
     IssueStatusEnum,
+    IssueTypeEnum,
+    RuleTypeEnum,
 )
 
 
@@ -38,12 +36,8 @@ class DataValidator:
         }
 
     def validate_record(
-        self,
-        data: Dict[str, Any],
-        rules: List[DataQualityRule],
-        entity_type: str,
-        entity_id: uuid.UUID = None
-    ) -> Tuple[bool, List[DataQualityIssue], Dict[str, Any]]:
+        self, data: dict[str, Any], rules: list[DataQualityRule], entity_type: str, entity_id: uuid.UUID = None
+    ) -> tuple[bool, list[DataQualityIssue], dict[str, Any]]:
         """
         Valida registro contra regras.
 
@@ -69,7 +63,7 @@ class DataValidator:
                         field_name=rule.field_name,
                         current_value=str(field_value) if field_value else None,
                         error_message=result.get("message"),
-                        suggested_value=result.get("suggested_value")
+                        suggested_value=result.get("suggested_value"),
                     )
                     issues.append(issue)
 
@@ -82,58 +76,35 @@ class DataValidator:
                 if not result["valid"]:
                     is_valid = False
                     issue = self._create_issue(
-                        rule=rule,
-                        entity_type=entity_type,
-                        entity_id=entity_id,
-                        error_message=result.get("message")
+                        rule=rule, entity_type=entity_type, entity_id=entity_id, error_message=result.get("message")
                     )
                     issues.append(issue)
 
         return is_valid, issues, fixed_data
 
-    def _apply_rule(
-        self,
-        rule: DataQualityRule,
-        value: Any,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _apply_rule(self, rule: DataQualityRule, value: Any, full_data: dict[str, Any]) -> dict[str, Any]:
         """Aplica regra de validação."""
         validator = self.validators.get(rule.rule_type)
         if validator:
             return validator(value, rule, full_data)
         return {"valid": True}
 
-    def _validate_not_null(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_not_null(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida campo não nulo."""
         if value is None or (isinstance(value, str) and value.strip() == ""):
             return {
                 "valid": False,
                 "message": rule.get_error_message() or f"Campo {rule.field_name} é obrigatório",
-                "issue_type": IssueTypeEnum.MISSING_VALUE
+                "issue_type": IssueTypeEnum.MISSING_VALUE,
             }
         return {"valid": True}
 
-    def _validate_unique(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_unique(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida unicidade (placeholder - requer verificação no banco)."""
         # Esta validação real seria feita no nível do serviço/repositório
         return {"valid": True}
 
-    def _validate_format(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_format(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida formato usando regex."""
         if value is None:
             return {"valid": True}
@@ -144,16 +115,11 @@ class DataValidator:
                 return {
                     "valid": False,
                     "message": f"Formato inválido para {rule.field_name}",
-                    "issue_type": IssueTypeEnum.INVALID_FORMAT
+                    "issue_type": IssueTypeEnum.INVALID_FORMAT,
                 }
         return {"valid": True}
 
-    def _validate_range(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_range(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida valor dentro de range."""
         if value is None:
             return {"valid": True}
@@ -165,29 +131,20 @@ class DataValidator:
                     "valid": False,
                     "message": f"Valor abaixo do mínimo ({rule.min_value})",
                     "issue_type": IssueTypeEnum.OUT_OF_RANGE,
-                    "suggested_value": rule.min_value
+                    "suggested_value": rule.min_value,
                 }
             if rule.max_value is not None and num_value > rule.max_value:
                 return {
                     "valid": False,
                     "message": f"Valor acima do máximo ({rule.max_value})",
                     "issue_type": IssueTypeEnum.OUT_OF_RANGE,
-                    "suggested_value": rule.max_value
+                    "suggested_value": rule.max_value,
                 }
         except (ValueError, TypeError):
-            return {
-                "valid": False,
-                "message": "Valor não é numérico",
-                "issue_type": IssueTypeEnum.TYPE_MISMATCH
-            }
+            return {"valid": False, "message": "Valor não é numérico", "issue_type": IssueTypeEnum.TYPE_MISMATCH}
         return {"valid": True}
 
-    def _validate_length(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_length(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida comprimento de string."""
         if value is None:
             return {"valid": True}
@@ -199,23 +156,18 @@ class DataValidator:
             return {
                 "valid": False,
                 "message": f"Comprimento mínimo é {rule.min_length} caracteres",
-                "issue_type": IssueTypeEnum.INVALID_VALUE
+                "issue_type": IssueTypeEnum.INVALID_VALUE,
             }
         if rule.max_length is not None and length > rule.max_length:
             return {
                 "valid": False,
                 "message": f"Comprimento máximo é {rule.max_length} caracteres",
                 "issue_type": IssueTypeEnum.INVALID_VALUE,
-                "fixed_value": str_value[:rule.max_length] if rule.auto_fix_enabled else None
+                "fixed_value": str_value[: rule.max_length] if rule.auto_fix_enabled else None,
             }
         return {"valid": True}
 
-    def _validate_enum(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_enum(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida valor em lista de permitidos."""
         if value is None:
             return {"valid": True}
@@ -225,16 +177,11 @@ class DataValidator:
             return {
                 "valid": False,
                 "message": f"Valor deve ser um de: {', '.join(map(str, allowed))}",
-                "issue_type": IssueTypeEnum.INVALID_VALUE
+                "issue_type": IssueTypeEnum.INVALID_VALUE,
             }
         return {"valid": True}
 
-    def _validate_regex(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_regex(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida contra padrão regex."""
         if value is None or not rule.regex_pattern:
             return {"valid": True}
@@ -243,40 +190,27 @@ class DataValidator:
             return {
                 "valid": False,
                 "message": rule.get_error_message() or "Valor não corresponde ao padrão esperado",
-                "issue_type": IssueTypeEnum.INVALID_FORMAT
+                "issue_type": IssueTypeEnum.INVALID_FORMAT,
             }
         return {"valid": True}
 
-    def _validate_cpf(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_cpf(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida CPF brasileiro."""
         if value is None:
             return {"valid": True}
 
-        cpf = re.sub(r'\D', '', str(value))
+        cpf = re.sub(r"\D", "", str(value))
 
         if len(cpf) != 11:
-            return {
-                "valid": False,
-                "message": "CPF deve ter 11 dígitos",
-                "issue_type": IssueTypeEnum.INVALID_CHECKSUM
-            }
+            return {"valid": False, "message": "CPF deve ter 11 dígitos", "issue_type": IssueTypeEnum.INVALID_CHECKSUM}
 
         # Verifica CPFs inválidos conhecidos
         if cpf in [str(i) * 11 for i in range(10)]:
-            return {
-                "valid": False,
-                "message": "CPF inválido",
-                "issue_type": IssueTypeEnum.INVALID_CHECKSUM
-            }
+            return {"valid": False, "message": "CPF inválido", "issue_type": IssueTypeEnum.INVALID_CHECKSUM}
 
         # Calcula dígitos verificadores
-        def calc_digit(cpf_part: str, weights: List[int]) -> int:
-            total = sum(int(d) * w for d, w in zip(cpf_part, weights))
+        def calc_digit(cpf_part: str, weights: list[int]) -> int:
+            total = sum(int(d) * w for d, w in zip(cpf_part, weights, strict=False))
             remainder = total % 11
             return 0 if remainder < 2 else 11 - remainder
 
@@ -290,41 +224,28 @@ class DataValidator:
             return {
                 "valid": False,
                 "message": "CPF com dígito verificador inválido",
-                "issue_type": IssueTypeEnum.INVALID_CHECKSUM
+                "issue_type": IssueTypeEnum.INVALID_CHECKSUM,
             }
 
         return {"valid": True}
 
-    def _validate_cnpj(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_cnpj(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida CNPJ brasileiro."""
         if value is None:
             return {"valid": True}
 
-        cnpj = re.sub(r'\D', '', str(value))
+        cnpj = re.sub(r"\D", "", str(value))
 
         if len(cnpj) != 14:
-            return {
-                "valid": False,
-                "message": "CNPJ deve ter 14 dígitos",
-                "issue_type": IssueTypeEnum.INVALID_CHECKSUM
-            }
+            return {"valid": False, "message": "CNPJ deve ter 14 dígitos", "issue_type": IssueTypeEnum.INVALID_CHECKSUM}
 
         # Verifica CNPJs inválidos
         if cnpj in [str(i) * 14 for i in range(10)]:
-            return {
-                "valid": False,
-                "message": "CNPJ inválido",
-                "issue_type": IssueTypeEnum.INVALID_CHECKSUM
-            }
+            return {"valid": False, "message": "CNPJ inválido", "issue_type": IssueTypeEnum.INVALID_CHECKSUM}
 
         # Calcula dígitos verificadores
-        def calc_digit(cnpj_part: str, weights: List[int]) -> int:
-            total = sum(int(d) * w for d, w in zip(cnpj_part, weights))
+        def calc_digit(cnpj_part: str, weights: list[int]) -> int:
+            total = sum(int(d) * w for d, w in zip(cnpj_part, weights, strict=False))
             remainder = total % 11
             return 0 if remainder < 2 else 11 - remainder
 
@@ -338,47 +259,33 @@ class DataValidator:
             return {
                 "valid": False,
                 "message": "CNPJ com dígito verificador inválido",
-                "issue_type": IssueTypeEnum.INVALID_CHECKSUM
+                "issue_type": IssueTypeEnum.INVALID_CHECKSUM,
             }
 
         return {"valid": True}
 
-    def _validate_email(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_email(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida email."""
         if value is None:
             return {"valid": True}
 
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if not re.match(email_pattern, str(value)):
-            return {
-                "valid": False,
-                "message": "Email em formato inválido",
-                "issue_type": IssueTypeEnum.INVALID_FORMAT
-            }
+            return {"valid": False, "message": "Email em formato inválido", "issue_type": IssueTypeEnum.INVALID_FORMAT}
         return {"valid": True}
 
-    def _validate_phone(
-        self,
-        value: Any,
-        rule: DataQualityRule,
-        full_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_phone(self, value: Any, rule: DataQualityRule, full_data: dict[str, Any]) -> dict[str, Any]:
         """Valida telefone brasileiro."""
         if value is None:
             return {"valid": True}
 
-        phone = re.sub(r'\D', '', str(value))
+        phone = re.sub(r"\D", "", str(value))
 
         if len(phone) < 10 or len(phone) > 11:
             return {
                 "valid": False,
                 "message": "Telefone deve ter 10 ou 11 dígitos",
-                "issue_type": IssueTypeEnum.INVALID_FORMAT
+                "issue_type": IssueTypeEnum.INVALID_FORMAT,
             }
         return {"valid": True}
 
@@ -390,7 +297,7 @@ class DataValidator:
         field_name: str = None,
         current_value: str = None,
         error_message: str = None,
-        suggested_value: str = None
+        suggested_value: str = None,
     ) -> DataQualityIssue:
         """Cria issue de qualidade."""
         issue_code = f"DQ-{uuid.uuid4().hex[:8].upper()}"
@@ -426,5 +333,5 @@ class DataValidator:
             description=rule.description,
             error_message=error_message,
             can_auto_fix=rule.auto_fix_enabled,
-            confidence_score=1.0
+            confidence_score=1.0,
         )

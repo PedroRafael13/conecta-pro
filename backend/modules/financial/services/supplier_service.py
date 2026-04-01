@@ -1,7 +1,7 @@
 """Service para fornecedores."""
 
+import builtins
 import logging
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,7 +43,7 @@ class SupplierService:
         logger.info(f"Fornecedor criado: {supplier.id} - {supplier.name}")
         return supplier
 
-    async def get_by_id(self, supplier_id: UUID) -> Optional[Supplier]:
+    async def get_by_id(self, supplier_id: UUID) -> Supplier | None:
         """Busca fornecedor por ID."""
         return await self.repository.get_by_id(supplier_id)
 
@@ -51,17 +51,17 @@ class SupplierService:
         self,
         cpf_cnpj: str,
         condominio_id: UUID,
-    ) -> Optional[Supplier]:
+    ) -> Supplier | None:
         """Busca fornecedor por CPF/CNPJ."""
         return await self.repository.get_by_cpf_cnpj(cpf_cnpj, condominio_id)
 
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[SupplierFilter] = None,
+        filters: SupplierFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[Supplier], int]:
+    ) -> tuple[list[Supplier], int]:
         """Lista fornecedores com filtros e paginação."""
         suppliers = await self.repository.list(condominio_id, filters, skip, limit)
         total = await self.repository.count(condominio_id, filters)
@@ -71,7 +71,7 @@ class SupplierService:
         self,
         supplier_id: UUID,
         data: SupplierUpdate,
-    ) -> Optional[Supplier]:
+    ) -> Supplier | None:
         """Atualiza um fornecedor."""
         supplier = await self.repository.get_by_id(supplier_id)
         if not supplier:
@@ -100,7 +100,7 @@ class SupplierService:
         supplier_id: UUID,
         reason: str,
         user_id: UUID,
-    ) -> Optional[Supplier]:
+    ) -> Supplier | None:
         """Bloqueia um fornecedor."""
         supplier = await self.repository.get_by_id(supplier_id)
         if not supplier:
@@ -115,7 +115,7 @@ class SupplierService:
         logger.info(f"Fornecedor bloqueado: {supplier_id} - Motivo: {reason}")
         return supplier
 
-    async def unblock(self, supplier_id: UUID) -> Optional[Supplier]:
+    async def unblock(self, supplier_id: UUID) -> Supplier | None:
         """Desbloqueia um fornecedor."""
         supplier = await self.repository.get_by_id(supplier_id)
         if not supplier:
@@ -134,7 +134,7 @@ class SupplierService:
         self,
         supplier_id: UUID,
         user_id: UUID,
-    ) -> Optional[Supplier]:
+    ) -> Supplier | None:
         """Qualifica um fornecedor."""
         supplier = await self.repository.get_by_id(supplier_id)
         if not supplier:
@@ -158,14 +158,14 @@ class SupplierService:
         condominio_id: UUID,
         query: str,
         limit: int = 10,
-    ) -> List[Supplier]:
+    ) -> builtins.list[Supplier]:
         """Busca rápida de fornecedores."""
         return await self.repository.search(condominio_id, query, limit)
 
     async def validate_for_payment(
         self,
         supplier_id: UUID,
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Valida se fornecedor pode receber pagamentos."""
         supplier = await self.repository.get_by_id(supplier_id)
         if not supplier:

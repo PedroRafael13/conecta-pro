@@ -1,7 +1,7 @@
 """Repository para fornecedores."""
 
+import builtins
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -26,7 +26,7 @@ class SupplierRepository:
         """Inicializa o repository."""
         self.session = session
 
-    async def create(self, data: SupplierCreate, user_id: Optional[UUID] = None) -> Supplier:
+    async def create(self, data: SupplierCreate, user_id: UUID | None = None) -> Supplier:
         """Cria um novo fornecedor."""
         supplier = Supplier(
             **data.model_dump(),
@@ -37,7 +37,7 @@ class SupplierRepository:
         await self.session.refresh(supplier)
         return supplier
 
-    async def get_by_id(self, supplier_id: UUID) -> Optional[Supplier]:
+    async def get_by_id(self, supplier_id: UUID) -> Supplier | None:
         """Busca fornecedor por ID."""
         result = await self.session.execute(
             select(Supplier).where(
@@ -53,7 +53,7 @@ class SupplierRepository:
         self,
         cpf_cnpj: str,
         condominio_id: UUID,
-    ) -> Optional[Supplier]:
+    ) -> Supplier | None:
         """Busca fornecedor por CPF/CNPJ."""
         result = await self.session.execute(
             select(Supplier).where(
@@ -69,10 +69,10 @@ class SupplierRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[SupplierFilter] = None,
+        filters: SupplierFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Supplier]:
+    ) -> list[Supplier]:
         """Lista fornecedores com filtros."""
         query = select(Supplier).where(
             and_(
@@ -125,7 +125,7 @@ class SupplierRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[SupplierFilter] = None,
+        filters: SupplierFilter | None = None,
     ) -> int:
         """Conta fornecedores com filtros."""
         query = select(func.count(Supplier.id)).where(
@@ -296,7 +296,7 @@ class SupplierRepository:
         condominio_id: UUID,
         query: str,
         limit: int = 10,
-    ) -> List[Supplier]:
+    ) -> builtins.list[Supplier]:
         """Busca rápida de fornecedores."""
         search_term = f"%{query}%"
         result = await self.session.execute(

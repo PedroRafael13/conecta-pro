@@ -5,19 +5,19 @@ Model for storing audio recordings for speech recognition.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Column, String, Boolean, DateTime, Float, Integer, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 
 from core.models.base import Base
 
 
-class VoiceRecordingStatusEnum(str, Enum):
+class VoiceRecordingStatusEnum(StrEnum):
     """Voice recording status."""
+
     PENDING = "pending"
     UPLOADING = "uploading"
     UPLOADED = "uploaded"
@@ -28,8 +28,9 @@ class VoiceRecordingStatusEnum(str, Enum):
     ARCHIVED = "archived"
 
 
-class VoiceRecordingSourceEnum(str, Enum):
+class VoiceRecordingSourceEnum(StrEnum):
     """Voice recording source."""
+
     PHONE_CALL = "phone_call"
     VOICEMAIL = "voicemail"
     MEETING = "meeting"
@@ -42,8 +43,9 @@ class VoiceRecordingSourceEnum(str, Enum):
     OTHER = "other"
 
 
-class AudioFormatEnum(str, Enum):
+class AudioFormatEnum(StrEnum):
     """Audio format types."""
+
     WAV = "wav"
     MP3 = "mp3"
     OGG = "ogg"
@@ -169,7 +171,7 @@ class VoiceRecording(Base):
         """Check if recording can be retried."""
         return self.retry_count < max_retries
 
-    def get_audio_info(self) -> Dict[str, Any]:
+    def get_audio_info(self) -> dict[str, Any]:
         """Get audio technical info."""
         return {
             "format": self.audio_format,
@@ -181,7 +183,7 @@ class VoiceRecording(Base):
             "file_size_bytes": self.file_size_bytes,
         }
 
-    def get_quality_info(self) -> Dict[str, Any]:
+    def get_quality_info(self) -> dict[str, Any]:
         """Get audio quality info."""
         return {
             "quality_score": self.quality_score,

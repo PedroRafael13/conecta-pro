@@ -1,44 +1,46 @@
 """Testes para os models do módulo GED."""
 
-import pytest
-from datetime import datetime, timedelta
+import hashlib
+from datetime import date, datetime, timedelta
 from uuid import uuid4
 
-from modules.ged.models.folder import (
-    Folder,
-    FolderType,
-    FolderStatus,
-    FolderPermission,
-)
+import pytest
+
 from modules.ged.models.document import (
     Document,
-    DocumentType,
-    DocumentStatus,
     DocumentCategory,
     DocumentConfidentiality,
+    DocumentStatus,
+    DocumentType,
     FileType,
-)
-from modules.ged.models.document_version import (
-    DocumentVersion,
-    VersionType,
-    VersionStatus,
 )
 from modules.ged.models.document_share import (
     DocumentShare,
-    ShareType,
     SharePermission,
     ShareStatus,
-)
-from modules.ged.models.document_tag import (
-    DocumentTag,
-    TagType,
-    TagColor,
+    ShareType,
 )
 from modules.ged.models.document_signature import (
     DocumentSignature,
-    SignatureType,
-    SignatureStatus,
     SignatureRole,
+    SignatureStatus,
+    SignatureType,
+)
+from modules.ged.models.document_tag import (
+    DocumentTag,
+    TagColor,
+    TagType,
+)
+from modules.ged.models.document_version import (
+    DocumentVersion,
+    VersionStatus,
+    VersionType,
+)
+from modules.ged.models.folder import (
+    Folder,
+    FolderPermission,
+    FolderStatus,
+    FolderType,
 )
 
 
@@ -50,12 +52,13 @@ class TestFolderModel:
         folder = Folder(
             name="Contratos",
             folder_type=FolderType.CONTRATO,
+            status=FolderStatus.ATIVA,
             condominium_id=str(uuid4()),
             created_by=str(uuid4()),
         )
         assert folder.name == "Contratos"
         assert folder.folder_type == FolderType.CONTRATO
-        assert folder.status == FolderStatus.ATIVO
+        assert folder.status == FolderStatus.ATIVA
 
     def test_folder_update_path(self):
         """Testa atualização de path."""
@@ -65,7 +68,7 @@ class TestFolderModel:
             folder_type=FolderType.DEPARTAMENTO,
             created_by=str(uuid4()),
         )
-        folder.update_path()
+        folder.update_path("/Contratos")
         assert folder.full_path == "/Contratos/SubPasta"
 
     def test_folder_archive(self):
@@ -77,7 +80,7 @@ class TestFolderModel:
         )
         user_id = str(uuid4())
         folder.archive(user_id)
-        assert folder.status == FolderStatus.ARQUIVADO
+        assert folder.status == FolderStatus.ARQUIVADA
         assert folder.archived_by == user_id
         assert folder.archived_at is not None
 
@@ -86,11 +89,11 @@ class TestFolderModel:
         folder = Folder(
             name="Pasta",
             folder_type=FolderType.DEPARTAMENTO,
-            status=FolderStatus.ARQUIVADO,
+            status=FolderStatus.ARQUIVADA,
             created_by=str(uuid4()),
         )
         folder.unarchive()
-        assert folder.status == FolderStatus.ATIVO
+        assert folder.status == FolderStatus.ATIVA
         assert folder.archived_by is None
         assert folder.archived_at is None
 
@@ -102,7 +105,7 @@ class TestFolderModel:
             created_by=str(uuid4()),
         )
         folder.block()
-        assert folder.status == FolderStatus.BLOQUEADO
+        assert folder.status == FolderStatus.BLOQUEADA
 
     def test_folder_grant_permission(self):
         """Testa concessão de permissão."""
@@ -161,6 +164,7 @@ class TestDocumentModel:
             folder_id=str(uuid4()),
             document_type=DocumentType.CONTRATO,
             category=DocumentCategory.ADMINISTRATIVO,
+            status=DocumentStatus.RASCUNHO,
             file_name="contrato.pdf",
             file_path="/docs/contrato.pdf",
             file_size_bytes=1024000,
@@ -229,7 +233,7 @@ class TestDocumentModel:
             folder_id=str(uuid4()),
             created_by=str(uuid4()),
         )
-        doc.set_ocr_result("Texto extraído", 0.95, ["palavra1", "palavra2"])
+        doc.set_ocr_result("Texto extraído", 0.95)
         assert doc.is_ocr_processed
         assert doc.ocr_text == "Texto extraído"
         assert doc.ocr_confidence == 0.95
@@ -240,6 +244,7 @@ class TestDocumentModel:
             title="Documento",
             folder_id=str(uuid4()),
             current_version=1,
+            version_count=1,
             created_by=str(uuid4()),
         )
         new_version = doc.create_new_version()
@@ -251,7 +256,7 @@ class TestDocumentModel:
         doc = Document(
             title="Documento",
             folder_id=str(uuid4()),
-            expires_at=datetime.utcnow() - timedelta(days=1),
+            valid_until=date.today() - timedelta(days=1),
             created_by=str(uuid4()),
         )
         assert doc.check_expiry()
@@ -259,14 +264,16 @@ class TestDocumentModel:
 
     def test_document_verify_checksum(self):
         """Testa verificação de checksum."""
+        content = b"conteudo do arquivo"
+        expected_checksum = hashlib.sha256(content).hexdigest()
         doc = Document(
             title="Documento",
             folder_id=str(uuid4()),
-            checksum="abc123",
+            checksum=expected_checksum,
             created_by=str(uuid4()),
         )
-        assert doc.verify_checksum("abc123")
-        assert not doc.verify_checksum("xyz789")
+        assert doc.verify_checksum(content)
+        assert not doc.verify_checksum(b"conteudo diferente")
 
 
 class TestDocumentVersionModel:
@@ -277,6 +284,7 @@ class TestDocumentVersionModel:
         version = DocumentVersion(
             document_id=str(uuid4()),
             version_number=1,
+            is_current=True,
             file_name="doc_v1.pdf",
             file_path="/docs/v1/doc.pdf",
             file_size_bytes=1024,
@@ -306,7 +314,7 @@ class TestDocumentVersionModel:
             created_by=str(uuid4()),
         )
         version.archive()
-        assert version.status == VersionStatus.ARQUIVADO
+        assert version.status == VersionStatus.ARQUIVADA
 
 
 class TestDocumentShareModel:
@@ -317,23 +325,27 @@ class TestDocumentShareModel:
         share = DocumentShare(
             document_id=str(uuid4()),
             share_type=ShareType.USUARIO,
-            permission=SharePermission.VISUALIZAR,
+            permissions=["visualizar"],
+            status=ShareStatus.ATIVO,
             shared_by=str(uuid4()),
-            recipient_id=str(uuid4()),
+            shared_with_id=str(uuid4()),
         )
         assert share.share_type == ShareType.USUARIO
         assert share.status == ShareStatus.ATIVO
 
     def test_share_generate_token(self):
-        """Testa geração de token."""
+        """Testa geração de token via share_token."""
+        import secrets
+
+        token = secrets.token_urlsafe(32)
         share = DocumentShare(
             document_id=str(uuid4()),
-            share_type=ShareType.LINK,
+            share_type=ShareType.EXTERNO,
             shared_by=str(uuid4()),
+            share_token=token,
         )
-        token = share.generate_token()
-        assert token is not None
-        assert share.access_token == token
+        assert share.share_token is not None
+        assert share.share_token == token
 
     def test_share_revoke(self):
         """Testa revogação de compartilhamento."""
@@ -342,25 +354,26 @@ class TestDocumentShareModel:
             share_type=ShareType.USUARIO,
             shared_by=str(uuid4()),
         )
-        share.revoke()
+        user_id = str(uuid4())
+        share.revoke(user_id)
         assert share.status == ShareStatus.REVOGADO
 
     def test_share_access_count(self):
-        """Testa contagem de acessos."""
+        """Testa contagem de downloads atingiu limite."""
         share = DocumentShare(
             document_id=str(uuid4()),
-            share_type=ShareType.LINK,
-            max_access_count=5,
-            access_count=5,
+            share_type=ShareType.EXTERNO,
+            max_downloads=5,
+            download_count=5,
             shared_by=str(uuid4()),
         )
-        assert share.access_count_exceeded
+        assert share.is_download_limit_reached
 
     def test_share_expired(self):
         """Testa verificação de expiração."""
         share = DocumentShare(
             document_id=str(uuid4()),
-            share_type=ShareType.LINK,
+            share_type=ShareType.EXTERNO,
             expires_at=datetime.utcnow() - timedelta(hours=1),
             shared_by=str(uuid4()),
         )
@@ -374,6 +387,7 @@ class TestDocumentTagModel:
         """Testa criação de tag."""
         tag = DocumentTag(
             name="Importante",
+            slug=DocumentTag.generate_slug("Importante"),
             tag_type=TagType.PRIORIDADE,
             color=TagColor.VERMELHO,
             created_by=str(uuid4()),
@@ -385,6 +399,7 @@ class TestDocumentTagModel:
         """Testa geração de slug."""
         tag = DocumentTag(
             name="Contrato de Prestação de Serviços",
+            slug=DocumentTag.generate_slug("Contrato de Prestação de Serviços"),
             tag_type=TagType.CATEGORIA,
             created_by=str(uuid4()),
         )
@@ -394,23 +409,23 @@ class TestDocumentTagModel:
         """Testa incremento de contagem."""
         tag = DocumentTag(
             name="Tag",
-            tag_type=TagType.PERSONALIZADA,
-            document_count=5,
+            tag_type=TagType.USUARIO,
+            usage_count=5,
             created_by=str(uuid4()),
         )
-        tag.increment_count()
-        assert tag.document_count == 6
+        tag.increment_usage()
+        assert tag.usage_count == 6
 
     def test_tag_decrement_count(self):
         """Testa decremento de contagem."""
         tag = DocumentTag(
             name="Tag",
-            tag_type=TagType.PERSONALIZADA,
-            document_count=5,
+            tag_type=TagType.USUARIO,
+            usage_count=5,
             created_by=str(uuid4()),
         )
-        tag.decrement_count()
-        assert tag.document_count == 4
+        tag.decrement_usage()
+        assert tag.usage_count == 4
 
 
 class TestDocumentSignatureModel:
@@ -424,6 +439,7 @@ class TestDocumentSignatureModel:
             signer_name="João Silva",
             signer_role=SignatureRole.PARTE,
             signature_type=SignatureType.ELETRONICA,
+            status=SignatureStatus.PENDENTE,
             created_by=str(uuid4()),
         )
         assert signature.status == SignatureStatus.PENDENTE
@@ -492,6 +508,7 @@ class TestDocumentSignatureModel:
         signature = DocumentSignature(
             document_id=str(uuid4()),
             signer_email="user@example.com",
+            status=SignatureStatus.PENDENTE,
             deadline=datetime.utcnow() - timedelta(days=1),
             created_by=str(uuid4()),
         )

@@ -6,17 +6,14 @@ Servico para calculo e rastreamento de tendencias de sentimento.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
-import statistics
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai.sentiment_analysis.models import (
     SentimentTrend,
     TrendPeriod,
-    TrendDirection,
-    SentimentType,
 )
 from modules.ai.sentiment_analysis.models.sentiment_trend import TrendCategory
 from modules.ai.sentiment_analysis.repositories import SentimentRepository
@@ -65,9 +62,9 @@ class TrendCalculator:
         period_start: datetime,
         period_end: datetime,
         category: TrendCategory = TrendCategory.OVERALL,
-        category_value: Optional[str] = None,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
+        category_value: str | None = None,
+        entity_type: str | None = None,
+        entity_id: UUID | None = None,
     ) -> SentimentTrend:
         """
         Calcula tendencia para um periodo especifico.
@@ -84,10 +81,7 @@ class TrendCalculator:
         Returns:
             Tendencia calculada
         """
-        logger.info(
-            f"Calculando tendencia {period_type.value} "
-            f"de {period_start} a {period_end}"
-        )
+        logger.info(f"Calculando tendencia {period_type.value} de {period_start} a {period_end}")
 
         # Gerar label do periodo
         period_label = self._generate_period_label(period_type, period_start)
@@ -174,9 +168,7 @@ class TrendCalculator:
 
         # Calcular taxa de reclamacoes
         if trend.total_analyses > 0:
-            trend.complaints_rate = (
-                trend.complaints_count / trend.total_analyses
-            ) * 100
+            trend.complaints_rate = (trend.complaints_count / trend.total_analyses) * 100
 
         # Comparar com periodo anterior
         previous_trend = await self._get_previous_trend(
@@ -226,8 +218,8 @@ class TrendCalculator:
         start_date: datetime,
         end_date: datetime,
         category: TrendCategory = TrendCategory.OVERALL,
-        category_value: Optional[str] = None,
-    ) -> List[SentimentTrend]:
+        category_value: str | None = None,
+    ) -> list[SentimentTrend]:
         """Calcula tendencias para um range de datas."""
         trends = []
         config = self.PERIOD_CONFIG[period_type]
@@ -256,7 +248,7 @@ class TrendCalculator:
         current_start: datetime,
         current_end: datetime,
         category: TrendCategory = TrendCategory.OVERALL,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compara tendencia atual com periodo anterior."""
         # Tendencia atual
         current_trend = await self.calculate_trend(
@@ -280,19 +272,13 @@ class TrendCalculator:
         )
 
         # Calcular diferencas
-        score_diff = (
-            current_trend.avg_sentiment_score - previous_trend.avg_sentiment_score
-        )
+        score_diff = current_trend.avg_sentiment_score - previous_trend.avg_sentiment_score
         volume_diff = current_trend.total_analyses - previous_trend.total_analyses
 
-        satisfaction_diff = (
-            current_trend.satisfaction_rate - previous_trend.satisfaction_rate
-        )
+        satisfaction_diff = current_trend.satisfaction_rate - previous_trend.satisfaction_rate
 
         # Gerar highlights
-        highlights = self._generate_comparison_highlights(
-            current_trend, previous_trend
-        )
+        highlights = self._generate_comparison_highlights(current_trend, previous_trend)
 
         return {
             "current": current_trend.to_summary(),
@@ -309,8 +295,8 @@ class TrendCalculator:
         period_type: TrendPeriod,
         periods: int = 12,
         category: TrendCategory = TrendCategory.OVERALL,
-        category_value: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        category_value: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Retorna timeline de tendencias."""
         trends = await self.repository.list_trends(
             period_type=period_type,
@@ -325,8 +311,8 @@ class TrendCalculator:
         period_type: TrendPeriod,
         period_start: datetime,
         category: str,
-        category_value: Optional[str] = None,
-    ) -> Optional[SentimentTrend]:
+        category_value: str | None = None,
+    ) -> SentimentTrend | None:
         """Busca tendencia do periodo anterior."""
         config = self.PERIOD_CONFIG[period_type]
         delta = config["delta"]
@@ -357,7 +343,7 @@ class TrendCalculator:
 
         return date.strftime(format_str)
 
-    def _predict_next_score(self, trend: SentimentTrend) -> Optional[float]:
+    def _predict_next_score(self, trend: SentimentTrend) -> float | None:
         """Faz previsao simples do proximo score."""
         if trend.prev_avg_score is None:
             return None
@@ -376,30 +362,22 @@ class TrendCalculator:
         self,
         current: SentimentTrend,
         previous: SentimentTrend,
-    ) -> List[str]:
+    ) -> list[str]:
         """Gera highlights da comparacao."""
         highlights = []
 
         score_diff = current.avg_sentiment_score - previous.avg_sentiment_score
 
         if score_diff > 10:
-            highlights.append(
-                f"Sentimento melhorou {abs(score_diff):.1f} pontos"
-            )
+            highlights.append(f"Sentimento melhorou {abs(score_diff):.1f} pontos")
         elif score_diff < -10:
-            highlights.append(
-                f"Sentimento piorou {abs(score_diff):.1f} pontos"
-            )
+            highlights.append(f"Sentimento piorou {abs(score_diff):.1f} pontos")
 
         satisfaction_diff = current.satisfaction_rate - previous.satisfaction_rate
         if satisfaction_diff > 5:
-            highlights.append(
-                f"Satisfacao aumentou {satisfaction_diff:.1f}%"
-            )
+            highlights.append(f"Satisfacao aumentou {satisfaction_diff:.1f}%")
         elif satisfaction_diff < -5:
-            highlights.append(
-                f"Satisfacao diminuiu {abs(satisfaction_diff):.1f}%"
-            )
+            highlights.append(f"Satisfacao diminuiu {abs(satisfaction_diff):.1f}%")
 
         if current.total_analyses > previous.total_analyses * 1.5:
             highlights.append("Volume de feedback aumentou significativamente")
@@ -415,12 +393,10 @@ class TrendCalculator:
 
         return highlights
 
-    async def calculate_daily_trends(self) -> List[SentimentTrend]:
+    async def calculate_daily_trends(self) -> list[SentimentTrend]:
         """Calcula tendencias diarias (job agendado)."""
         now = datetime.utcnow()
-        yesterday_start = now.replace(
-            hour=0, minute=0, second=0, microsecond=0
-        ) - timedelta(days=1)
+        yesterday_start = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
         yesterday_end = yesterday_start + timedelta(days=1)
 
         trend = await self.calculate_trend(
@@ -431,15 +407,13 @@ class TrendCalculator:
 
         return [trend]
 
-    async def calculate_weekly_trends(self) -> List[SentimentTrend]:
+    async def calculate_weekly_trends(self) -> list[SentimentTrend]:
         """Calcula tendencias semanais (job agendado)."""
         now = datetime.utcnow()
 
         # Encontrar inicio da semana anterior (segunda)
         days_since_monday = now.weekday()
-        this_monday = now.replace(
-            hour=0, minute=0, second=0, microsecond=0
-        ) - timedelta(days=days_since_monday)
+        this_monday = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days_since_monday)
         last_monday = this_monday - timedelta(weeks=1)
         last_sunday = this_monday
 
@@ -451,7 +425,7 @@ class TrendCalculator:
 
         return [trend]
 
-    async def get_dashboard_summary(self) -> Dict[str, Any]:
+    async def get_dashboard_summary(self) -> dict[str, Any]:
         """Retorna resumo para dashboard."""
         now = datetime.utcnow()
 

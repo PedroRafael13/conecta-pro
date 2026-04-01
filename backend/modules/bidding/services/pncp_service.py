@@ -5,17 +5,16 @@ Portal Nacional de Contratacoes Publicas
 """
 
 import logging
-import httpx
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
-from uuid import UUID
+from typing import Any
 
+import httpx
 from sqlalchemy.orm import Session
 
+from modules.bidding.models.tender import BiddingModality, TenderStatus
 from modules.bidding.repositories.tender_repository import TenderRepository
 from modules.bidding.schemas.tender import TenderCreate
-from modules.bidding.models.tender import TenderStatus, BiddingModality
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +55,8 @@ class PNCPService:
         data_fim: date = None,
         modalidade: str = None,
         pagina: int = 1,
-        tam_pagina: int = 20
-    ) -> Dict[str, Any]:
+        tam_pagina: int = 20,
+    ) -> dict[str, Any]:
         """
         Busca compras no PNCP.
 
@@ -72,11 +71,7 @@ class PNCPService:
         Returns:
             Dict com resultados e metadados
         """
-        params = {
-            "uf": uf,
-            "pagina": pagina,
-            "tamanhoPagina": tam_pagina
-        }
+        params = {"uf": uf, "pagina": pagina, "tamanhoPagina": tam_pagina}
 
         if data_inicio:
             params["dataInicial"] = data_inicio.strftime("%Y-%m-%d")
@@ -88,10 +83,7 @@ class PNCPService:
             params["modalidade"] = modalidade
 
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/compras",
-                params=params
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/compras", params=params)
             response.raise_for_status()
             data = response.json()
 
@@ -100,30 +92,17 @@ class PNCPService:
                 "total": data.get("totalRegistros", 0),
                 "pagina": pagina,
                 "tamanho_pagina": tam_pagina,
-                "compras": data.get("compras", [])
+                "compras": data.get("compras", []),
             }
 
         except httpx.HTTPStatusError as e:
             logger.error(f"Erro HTTP ao buscar compras: {e}")
-            return {
-                "sucesso": False,
-                "erro": f"Erro HTTP: {e.response.status_code}",
-                "compras": []
-            }
+            return {"sucesso": False, "erro": f"Erro HTTP: {e.response.status_code}", "compras": []}
         except Exception as e:
             logger.error(f"Erro ao buscar compras PNCP: {e}")
-            return {
-                "sucesso": False,
-                "erro": str(e),
-                "compras": []
-            }
+            return {"sucesso": False, "erro": str(e), "compras": []}
 
-    async def buscar_detalhes_compra(
-        self,
-        cnpj_orgao: str,
-        ano: int,
-        sequencial: int
-    ) -> Optional[Dict[str, Any]]:
+    async def buscar_detalhes_compra(self, cnpj_orgao: str, ano: int, sequencial: int) -> dict[str, Any] | None:
         """
         Busca detalhes de uma compra especifica.
 
@@ -136,9 +115,7 @@ class PNCPService:
             Dict com detalhes da compra ou None
         """
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/orgaos/{cnpj_orgao}/compras/{ano}/{sequencial}"
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/orgaos/{cnpj_orgao}/compras/{ano}/{sequencial}")
             response.raise_for_status()
             return response.json()
 
@@ -149,17 +126,10 @@ class PNCPService:
             logger.error(f"Erro ao buscar detalhes PNCP: {e}")
             return None
 
-    async def buscar_itens_compra(
-        self,
-        cnpj_orgao: str,
-        ano: int,
-        sequencial: int
-    ) -> List[Dict[str, Any]]:
+    async def buscar_itens_compra(self, cnpj_orgao: str, ano: int, sequencial: int) -> list[dict[str, Any]]:
         """Busca itens de uma compra."""
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/orgaos/{cnpj_orgao}/compras/{ano}/{sequencial}/itens"
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/orgaos/{cnpj_orgao}/compras/{ano}/{sequencial}/itens")
             response.raise_for_status()
             return response.json().get("itens", [])
 
@@ -167,12 +137,7 @@ class PNCPService:
             logger.error(f"Erro ao buscar itens PNCP: {e}")
             return []
 
-    async def buscar_documentos_compra(
-        self,
-        cnpj_orgao: str,
-        ano: int,
-        sequencial: int
-    ) -> List[Dict[str, Any]]:
+    async def buscar_documentos_compra(self, cnpj_orgao: str, ano: int, sequencial: int) -> list[dict[str, Any]]:
         """Busca documentos/anexos de uma compra."""
         try:
             response = await self.client.get(
@@ -185,12 +150,7 @@ class PNCPService:
             logger.error(f"Erro ao buscar documentos PNCP: {e}")
             return []
 
-    async def sincronizar_editais(
-        self,
-        uf: str = "AM",
-        dias: int = 30,
-        segmentos: List[str] = None
-    ) -> Dict[str, Any]:
+    async def sincronizar_editais(self, uf: str = "AM", dias: int = 30, segmentos: list[str] = None) -> dict[str, Any]:
         """
         Sincroniza editais do PNCP para o banco local.
 
@@ -207,13 +167,7 @@ class PNCPService:
         data_fim = date.today()
         data_inicio = data_fim - timedelta(days=dias)
 
-        stats = {
-            "total_encontrados": 0,
-            "novos_importados": 0,
-            "atualizados": 0,
-            "erros": 0,
-            "ignorados": 0
-        }
+        stats = {"total_encontrados": 0, "novos_importados": 0, "atualizados": 0, "erros": 0, "ignorados": 0}
 
         # Palavras-chave para segmentos
         palavras_segmentos = {
@@ -224,12 +178,7 @@ class PNCPService:
 
         pagina = 1
         while True:
-            resultado = await self.buscar_compras(
-                uf=uf,
-                data_inicio=data_inicio,
-                data_fim=data_fim,
-                pagina=pagina
-            )
+            resultado = await self.buscar_compras(uf=uf, data_inicio=data_inicio, data_fim=data_fim, pagina=pagina)
 
             if not resultado["sucesso"] or not resultado["compras"]:
                 break
@@ -276,11 +225,7 @@ class PNCPService:
         logger.info(f"Sincronizacao PNCP concluida: {stats}")
         return stats
 
-    async def _criar_edital(
-        self,
-        compra: Dict[str, Any],
-        segmento: str = None
-    ):
+    async def _criar_edital(self, compra: dict[str, Any], segmento: str = None):
         """Cria edital a partir de dados do PNCP."""
         orgao = compra.get("orgaoEntidade", {})
 
@@ -300,12 +245,12 @@ class PNCPService:
             pncp_id=self._gerar_pncp_id(compra),
             pncp_link=compra.get("linkSistemaOrigem"),
             segmento=segmento,
-            fonte="pncp"
+            fonte="pncp",
         )
 
         await self.repository.create(tender_data)
 
-    async def _atualizar_edital(self, tender, compra: Dict[str, Any]):
+    async def _atualizar_edital(self, tender, compra: dict[str, Any]):
         """Atualiza edital existente com dados do PNCP."""
         tender.pncp_ultima_sync = datetime.utcnow()
 
@@ -318,7 +263,7 @@ class PNCPService:
 
         await self.db.commit()
 
-    def _gerar_pncp_id(self, compra: Dict[str, Any]) -> str:
+    def _gerar_pncp_id(self, compra: dict[str, Any]) -> str:
         """Gera ID unico para compra do PNCP."""
         orgao = compra.get("orgaoEntidade", {})
         return f"{orgao.get('cnpj', '')}_{compra.get('anoCompra')}_{compra.get('sequencialCompra')}"
@@ -329,12 +274,9 @@ class PNCPService:
             return BiddingModality.PREGAO_ELETRONICO.value
 
         modalidade_lower = modalidade_pncp.lower().replace(" ", "")
-        return self.MODALIDADE_MAP.get(
-            modalidade_lower,
-            BiddingModality.PREGAO_ELETRONICO.value
-        )
+        return self.MODALIDADE_MAP.get(modalidade_lower, BiddingModality.PREGAO_ELETRONICO.value)
 
-    def _parse_data(self, data_str: str) -> Optional[datetime]:
+    def _parse_data(self, data_str: str) -> datetime | None:
         """Parse de data do PNCP."""
         if not data_str:
             return None
@@ -348,20 +290,14 @@ class PNCPService:
         except Exception:
             return None
 
-    async def verificar_disponibilidade(self) -> Dict[str, Any]:
+    async def verificar_disponibilidade(self) -> dict[str, Any]:
         """Verifica disponibilidade da API PNCP."""
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/compras",
-                params={"pagina": 1, "tamanhoPagina": 1}
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/compras", params={"pagina": 1, "tamanhoPagina": 1})
             return {
                 "disponivel": response.status_code == 200,
                 "status_code": response.status_code,
-                "tempo_resposta_ms": response.elapsed.total_seconds() * 1000
+                "tempo_resposta_ms": response.elapsed.total_seconds() * 1000,
             }
         except Exception as e:
-            return {
-                "disponivel": False,
-                "erro": str(e)
-            }
+            return {"disponivel": False, "erro": str(e)}

@@ -1,40 +1,15 @@
 'use client';
 
-import { AlertCircle, Loader2, User, Phone, MapPin, Briefcase, DollarSign, CheckCircle } from 'lucide-react';
+import { AlertCircle, Loader2, User, Briefcase, DollarSign } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { getErrorMessage } from '@/lib/api';
-;
-
-interface DiaristFormData {
-  nome: string;
-  cpf: string;
-  rg?: string;
-  data_nascimento?: string;
-  email?: string;
-  telefone?: string;
-  telefone_emergencia?: string;
-  endereco?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-  tipos_servico: string[];
-  especialidades: string[];
-  experiencia_anos: number;
-  dias_disponiveis: string[];
-  hora_inicio_disponivel?: string;
-  hora_fim_disponivel?: string;
-  aceita_hora_extra: boolean;
-  valor_diaria: number;
-  valor_hora_extra?: number;
-  banco?: string;
-  agencia?: string;
-  conta?: string;
-  tipo_conta?: string;
-  pix?: string;
-}
+import type { DiaristFormData } from './diarist-form-types';
+import { INITIAL_FORM_DATA, formatCPF, formatCEP, formatPhone } from './diarist-form-types';
+import { DiaristDadosPessoaisTab } from './diarist-dados-pessoais-tab';
+import { DiaristServicosTab } from './diarist-servicos-tab';
+import { DiaristPagamentoTab } from './diarist-pagamento-tab';
 
 interface DiaristFormModalProps {
   isOpen: boolean;
@@ -42,28 +17,12 @@ interface DiaristFormModalProps {
   onSuccess: () => void;
 }
 
-const TIPOS_SERVICO = [
-  { value: 'limpeza', label: 'Limpeza' },
-  { value: 'portaria', label: 'Portaria' },
-  { value: 'manutencao', label: 'Manutencao' },
-  { value: 'jardinagem', label: 'Jardinagem' },
-  { value: 'outros', label: 'Outros' },
-];
+type TabId = 'dados' | 'servicos' | 'pagamento';
 
-const DIAS_SEMANA = [
-  { value: 'segunda', label: 'Segunda' },
-  { value: 'terca', label: 'Terca' },
-  { value: 'quarta', label: 'Quarta' },
-  { value: 'quinta', label: 'Quinta' },
-  { value: 'sexta', label: 'Sexta' },
-  { value: 'sabado', label: 'Sabado' },
-  { value: 'domingo', label: 'Domingo' },
-];
-
-const ESTADOS = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
-  'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC',
-  'SP', 'SE', 'TO',
+const TABS = [
+  { id: 'dados' as const, label: 'Dados Pessoais', icon: User },
+  { id: 'servicos' as const, label: 'Servicos', icon: Briefcase },
+  { id: 'pagamento' as const, label: 'Pagamento', icon: DollarSign },
 ];
 
 export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModalProps) {
@@ -71,65 +30,12 @@ export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModa
   const [isFetchingCPF, setIsFetchingCPF] = useState(false);
   const [cpfStatus, setCpfStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dados' | 'servicos' | 'pagamento'>('dados');
-
-  const [formData, setFormData] = useState<DiaristFormData>({
-    nome: '',
-    cpf: '',
-    rg: '',
-    data_nascimento: '',
-    email: '',
-    telefone: '',
-    telefone_emergencia: '',
-    endereco: '',
-    cidade: '',
-    estado: '',
-    cep: '',
-    tipos_servico: [],
-    especialidades: [],
-    experiencia_anos: 0,
-    dias_disponiveis: [],
-    hora_inicio_disponivel: '08:00',
-    hora_fim_disponivel: '17:00',
-    aceita_hora_extra: true,
-    valor_diaria: 0,
-    valor_hora_extra: 25,
-    banco: '',
-    agencia: '',
-    conta: '',
-    tipo_conta: '',
-    pix: '',
-  });
+  const [activeTab, setActiveTab] = useState<TabId>('dados');
+  const [formData, setFormData] = useState<DiaristFormData>({ ...INITIAL_FORM_DATA });
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        nome: '',
-        cpf: '',
-        rg: '',
-        data_nascimento: '',
-        email: '',
-        telefone: '',
-        telefone_emergencia: '',
-        endereco: '',
-        cidade: '',
-        estado: '',
-        cep: '',
-        tipos_servico: [],
-        especialidades: [],
-        experiencia_anos: 0,
-        dias_disponiveis: [],
-        hora_inicio_disponivel: '08:00',
-        hora_fim_disponivel: '17:00',
-        aceita_hora_extra: true,
-        valor_diaria: 0,
-        valor_hora_extra: 25,
-        banco: '',
-        agencia: '',
-        conta: '',
-        tipo_conta: '',
-        pix: '',
-      });
+      setFormData({ ...INITIAL_FORM_DATA });
       setError(null);
       setActiveTab('dados');
     }
@@ -139,7 +45,6 @@ export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModa
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
-
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData((prev) => ({ ...prev, [name]: checked }));
@@ -166,28 +71,6 @@ export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModa
         ? prev.dias_disponiveis.filter((d) => d !== dia)
         : [...prev.dias_disponiveis, dia],
     }));
-  };
-
-  const formatCPF = (value: string): string => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
-    if (cleaned.length <= 9)
-      return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6)}`;
-    return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9, 11)}`;
-  };
-
-  const formatCEP = (value: string): string => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length <= 5) return cleaned;
-    return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 8)}`;
-  };
-
-  const formatPhone = (value: string): string => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length <= 2) return cleaned;
-    if (cleaned.length <= 7) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
   };
 
   const fetchCPFData = async (cpf: string) => {
@@ -234,8 +117,6 @@ export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModa
     const formatted = formatCPF(e.target.value);
     setFormData((prev) => ({ ...prev, cpf: formatted }));
     setCpfStatus('idle');
-
-    // Auto-consultar quando CPF completo
     const cleaned = formatted.replace(/\D/g, '');
     if (cleaned.length === 11) {
       fetchCPFData(cleaned);
@@ -281,15 +162,11 @@ export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     if (!validateForm()) return;
 
     setIsLoading(true);
-
     try {
       const token = localStorage.getItem('access_token');
-
-      // Preparar dados para API
       const apiData = {
         nome: formData.nome.trim(),
         cpf: formData.cpf.replace(/\D/g, ''),
@@ -341,12 +218,6 @@ export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModa
     }
   };
 
-  const tabs = [
-    { id: 'dados', label: 'Dados Pessoais', icon: User },
-    { id: 'servicos', label: 'Servicos', icon: Briefcase },
-    { id: 'pagamento', label: 'Pagamento', icon: DollarSign },
-  ] as const;
-
   return (
     <Modal
       isOpen={isOpen}
@@ -365,7 +236,7 @@ export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModa
 
         {/* Tabs */}
         <div className="flex border-b border-[hsl(var(--border))]">
-          {tabs.map((tab) => (
+          {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -385,373 +256,29 @@ export function DiaristFormModal({ isOpen, onClose, onSuccess }: DiaristFormModa
         {/* Tab Content */}
         <div className="min-h-[350px]">
           {activeTab === 'dados' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Nome Completo *
-                  </label>
-                  <Input
-                    name="nome"
-                    value={formData.nome}
-                    onChange={handleChange}
-                    placeholder="Nome completo do diarista"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    CPF * {cpfStatus === 'found' && <span className="text-green-500 text-xs ml-1">- Dados encontrados</span>}
-                  </label>
-                  <div className="relative">
-                    <Input
-                      value={formData.cpf}
-                      onChange={handleCPFChange}
-                      placeholder="000.000.000-00"
-                      maxLength={14}
-                      required
-                    />
-                    {isFetchingCPF && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="w-4 h-4 animate-spin text-[hsl(var(--muted-foreground))]" />
-                      </div>
-                    )}
-                    {!isFetchingCPF && cpfStatus === 'found' && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    RG
-                  </label>
-                  <Input
-                    name="rg"
-                    value={formData.rg}
-                    onChange={handleChange}
-                    placeholder="RG"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Data de Nascimento
-                  </label>
-                  <Input
-                    type="date"
-                    name="data_nascimento"
-                    value={formData.data_nascimento}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Telefone
-                  </label>
-                  <Input
-                    value={formData.telefone}
-                    onChange={handlePhoneChange('telefone')}
-                    placeholder="(00) 00000-0000"
-                    maxLength={15}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Telefone Emergencia
-                  </label>
-                  <Input
-                    value={formData.telefone_emergencia}
-                    onChange={handlePhoneChange('telefone_emergencia')}
-                    placeholder="(00) 00000-0000"
-                    maxLength={15}
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-[hsl(var(--border))] pt-4 mt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-                  <span className="text-sm font-medium text-[hsl(var(--foreground))]">Endereco</span>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      CEP
-                    </label>
-                    <Input
-                      value={formData.cep}
-                      onChange={handleCEPChange}
-                      placeholder="00000-000"
-                      maxLength={9}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      Endereco
-                    </label>
-                    <Input
-                      name="endereco"
-                      value={formData.endereco}
-                      onChange={handleChange}
-                      placeholder="Rua, numero, bairro"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      Cidade
-                    </label>
-                    <Input
-                      name="cidade"
-                      value={formData.cidade}
-                      onChange={handleChange}
-                      placeholder="Cidade"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      Estado
-                    </label>
-                    <select
-                      name="estado"
-                      value={formData.estado}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-                    >
-                      <option value="">Selecione</option>
-                      {ESTADOS.map((uf) => (
-                        <option key={uf} value={uf}>
-                          {uf}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <DiaristDadosPessoaisTab
+              formData={formData}
+              onChange={handleChange}
+              onCPFChange={handleCPFChange}
+              onCEPChange={handleCEPChange}
+              onPhoneChange={handlePhoneChange}
+              isFetchingCPF={isFetchingCPF}
+              cpfStatus={cpfStatus}
+            />
           )}
-
           {activeTab === 'servicos' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-3">
-                  Tipos de Servico *
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {TIPOS_SERVICO.map((tipo) => (
-                    <label
-                      key={tipo.value}
-                      className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        formData.tipos_servico.includes(tipo.value)
-                          ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10'
-                          : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.tipos_servico.includes(tipo.value)}
-                        onChange={() => handleTipoServicoChange(tipo.value)}
-                        className="w-4 h-4 rounded"
-                      />
-                      <span className="text-sm text-[hsl(var(--foreground))]">{tipo.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-3">
-                  Dias Disponiveis
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {DIAS_SEMANA.map((dia) => (
-                    <label
-                      key={dia.value}
-                      className={`px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
-                        formData.dias_disponiveis.includes(dia.value)
-                          ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]'
-                          : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] text-[hsl(var(--foreground))]'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.dias_disponiveis.includes(dia.value)}
-                        onChange={() => handleDiaDisponivelChange(dia.value)}
-                        className="sr-only"
-                      />
-                      <span className="text-sm">{dia.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Horario Inicio
-                  </label>
-                  <Input
-                    type="time"
-                    name="hora_inicio_disponivel"
-                    value={formData.hora_inicio_disponivel}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Horario Fim
-                  </label>
-                  <Input
-                    type="time"
-                    name="hora_fim_disponivel"
-                    value={formData.hora_fim_disponivel}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                  Anos de Experiencia
-                </label>
-                <Input
-                  type="number"
-                  name="experiencia_anos"
-                  value={formData.experiencia_anos}
-                  onChange={handleChange}
-                  min={0}
-                />
-              </div>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="aceita_hora_extra"
-                  checked={formData.aceita_hora_extra}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded"
-                />
-                <span className="text-sm text-[hsl(var(--foreground))]">Aceita hora extra</span>
-              </label>
-            </div>
+            <DiaristServicosTab
+              formData={formData}
+              onChange={handleChange}
+              onTipoServicoChange={handleTipoServicoChange}
+              onDiaDisponivelChange={handleDiaDisponivelChange}
+            />
           )}
-
           {activeTab === 'pagamento' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Valor da Diaria (R$) *
-                  </label>
-                  <Input
-                    type="number"
-                    name="valor_diaria"
-                    value={formData.valor_diaria}
-                    onChange={handleChange}
-                    min={0}
-                    step={0.01}
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    Valor Hora Extra (R$)
-                  </label>
-                  <Input
-                    type="number"
-                    name="valor_hora_extra"
-                    value={formData.valor_hora_extra}
-                    onChange={handleChange}
-                    min={0}
-                    step={0.01}
-                    placeholder="25.00"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-[hsl(var(--border))] pt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-                  <span className="text-sm font-medium text-[hsl(var(--foreground))]">
-                    Dados Bancarios
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      Banco
-                    </label>
-                    <Input
-                      name="banco"
-                      value={formData.banco}
-                      onChange={handleChange}
-                      placeholder="Nome do banco"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      Tipo de Conta
-                    </label>
-                    <select
-                      name="tipo_conta"
-                      value={formData.tipo_conta}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-                    >
-                      <option value="">Selecione</option>
-                      <option value="corrente">Corrente</option>
-                      <option value="poupanca">Poupanca</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      Agencia
-                    </label>
-                    <Input
-                      name="agencia"
-                      value={formData.agencia}
-                      onChange={handleChange}
-                      placeholder="0000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      Conta
-                    </label>
-                    <Input
-                      name="conta"
-                      value={formData.conta}
-                      onChange={handleChange}
-                      placeholder="00000-0"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                      Chave PIX
-                    </label>
-                    <Input
-                      name="pix"
-                      value={formData.pix}
-                      onChange={handleChange}
-                      placeholder="CPF, Email, Telefone ou Chave Aleatoria"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <DiaristPagamentoTab
+              formData={formData}
+              onChange={handleChange}
+            />
           )}
         </div>
 

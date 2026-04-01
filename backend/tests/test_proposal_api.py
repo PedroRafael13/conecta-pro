@@ -18,11 +18,11 @@ from modules.crm.schemas.proposal import (
     ProposalStats,
 )
 from tests.factories import (
+    TEST_PROPOSAL_DATA,
+    TEST_PROPOSAL_ITEM_DATA,
     ProposalFactory,
     ProposalItemFactory,
     ProposalTemplateFactory,
-    TEST_PROPOSAL_DATA,
-    TEST_PROPOSAL_ITEM_DATA,
 )
 
 
@@ -68,7 +68,6 @@ class TestProposalEndpoints:
     async def test_create_proposal_validation_error(self, mock_db, mock_user):
         """Testa erro de validacao na criacao."""
         # Dados invalidos (faltando campos obrigatorios)
-        invalid_data = {"title": ""}  # titulo vazio
 
         # Deve falhar na validacao Pydantic
         with pytest.raises(ValueError):
@@ -374,10 +373,12 @@ class TestProposalTemplates:
         ) as mock_create:
             mock_create.return_value = sample_template
 
-            result = await mock_create({
-                "name": sample_template.name,
-                "validity_days": 30,
-            })
+            result = await mock_create(
+                {
+                    "name": sample_template.name,
+                    "validity_days": 30,
+                }
+            )
             assert result.name == sample_template.name
 
     @pytest.mark.asyncio

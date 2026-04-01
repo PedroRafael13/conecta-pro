@@ -61,13 +61,13 @@ export function ProposalFormModal({
       if (proposal) {
         setFormData({
           tender_id: proposal.tender_id || '',
-          cnpj: proposal.cnpj || '',
-          razao_social: proposal.razao_social || '',
+          cnpj: String(proposal.cnpj || ''),
+          razao_social: String(proposal.razao_social || ''),
           numero_proposta: (proposal as any).numero_proposta || '',
           valor_global:
             typeof proposal.valor_global === 'string'
               ? parseFloat(proposal.valor_global)
-              : proposal.valor_global || 0,
+              : Number(proposal.valor_global) || 0,
           prazo_entrega: (proposal as any).prazo_entrega || 30,
           validade_proposta: (proposal as any).validade_proposta || 60,
           observacoes_tecnicas: (proposal as any).observacoes_tecnicas || '',
@@ -195,7 +195,7 @@ export function ProposalFormModal({
               onChange={handleChange}
               placeholder="ID do Edital"
               disabled={isSubmitting || isEditing}
-            />
+             aria-label="I D Do  Edital" />
             <p className="text-xs text-muted-foreground">
               Selecione o edital ao qual esta proposta se refere
             </p>
@@ -221,7 +221,7 @@ export function ProposalFormModal({
                 placeholder="00.000.000/0000-00"
                 disabled={isSubmitting}
                 maxLength={18}
-              />
+               aria-label="00.000.000/0000 00" />
             </div>
 
             <div className="space-y-2">
@@ -235,7 +235,7 @@ export function ProposalFormModal({
                 onChange={handleChange}
                 placeholder="Nome da empresa"
                 disabled={isSubmitting}
-              />
+               aria-label="Nome Da Empresa" />
             </div>
           </div>
         </div>
@@ -256,7 +256,7 @@ export function ProposalFormModal({
                 onChange={handleChange}
                 placeholder="Gerado automaticamente"
                 disabled={isSubmitting}
-              />
+               aria-label="Gerado Automaticamente" />
             </div>
 
             <div className="space-y-2">
@@ -325,7 +325,7 @@ export function ProposalFormModal({
                 onChange={handleChange}
                 disabled={isSubmitting}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
+               aria-label="Status">
                 {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -352,7 +352,7 @@ export function ProposalFormModal({
               placeholder="Especificações técnicas, requisitos, etc..."
               rows={4}
               disabled={isSubmitting}
-            />
+             aria-label="Especificações Técnicas, Requisitos, Etc..." />
           </div>
 
           <div className="space-y-2">
@@ -367,7 +367,7 @@ export function ProposalFormModal({
               placeholder="Condições comerciais, prazos de pagamento, etc..."
               rows={4}
               disabled={isSubmitting}
-            />
+             aria-label="Condições Comerciais, Prazos De Pagamento, Etc..." />
           </div>
         </div>
       </div>

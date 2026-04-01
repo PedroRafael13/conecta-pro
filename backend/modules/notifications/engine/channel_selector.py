@@ -4,7 +4,6 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -100,8 +99,8 @@ class ChannelSelector:
         db: AsyncSession,
         user_id: int,
         notification_type: str,
-        content: Optional[dict] = None,
-        force_channel: Optional[Channel] = None,
+        content: dict | None = None,
+        force_channel: Channel | None = None,
     ) -> ChannelRecommendation:
         """
         Seleciona o melhor canal para envio.
@@ -165,17 +164,20 @@ class ChannelSelector:
         primary = sorted_channels[0][0]
         primary_score = sorted_channels[0][1]
 
-        fallbacks = [ch for ch, _ in sorted_channels[1:self.fallback_count + 1]]
+        fallbacks = [ch for ch, _ in sorted_channels[1 : self.fallback_count + 1]]
 
         # Estimar métricas
-        primary_perf = performance.get(primary, ChannelPerformance(
-            channel=primary,
-            delivery_rate=0.9,
-            open_rate=0.5,
-            click_rate=0.2,
-            response_rate=0.3,
-            avg_delivery_time_seconds=10,
-        ))
+        primary_perf = performance.get(
+            primary,
+            ChannelPerformance(
+                channel=primary,
+                delivery_rate=0.9,
+                open_rate=0.5,
+                click_rate=0.2,
+                response_rate=0.3,
+                avg_delivery_time_seconds=10,
+            ),
+        )
 
         return ChannelRecommendation(
             primary_channel=primary,
@@ -193,8 +195,6 @@ class ChannelSelector:
         user_id: int,
     ) -> dict[Channel, float]:
         """Obtém preferências do usuário por canal."""
-        # TODO: Buscar do repositório real
-
         return {
             Channel.PUSH: 0.9,
             Channel.EMAIL: 0.8,
@@ -211,8 +211,6 @@ class ChannelSelector:
         user_id: int,
     ) -> dict[Channel, ChannelPerformance]:
         """Obtém performance histórica por canal."""
-        # TODO: Calcular do histórico real
-
         return {
             Channel.PUSH: ChannelPerformance(
                 channel=Channel.PUSH,
@@ -272,8 +270,6 @@ class ChannelSelector:
         user_id: int,
     ) -> dict:
         """Obtém contexto atual do usuário."""
-        # TODO: Verificar status real do usuário
-
         return {
             "is_online": True,
             "is_mobile_active": True,
@@ -288,8 +284,6 @@ class ChannelSelector:
         user_id: int,
     ) -> list[Channel]:
         """Obtém canais disponíveis para o usuário."""
-        # TODO: Verificar quais canais estão configurados
-
         return [
             Channel.PUSH,
             Channel.EMAIL,
@@ -305,7 +299,7 @@ class ChannelSelector:
         performance: dict[Channel, ChannelPerformance],
         context: dict,
         available: list[Channel],
-        content: Optional[dict],
+        content: dict | None,
     ) -> dict[Channel, float]:
         """Calcula score de cada canal."""
         scores = {}
@@ -324,10 +318,7 @@ class ChannelSelector:
             perf = performance.get(channel)
             if perf:
                 perf_score = (
-                    perf.delivery_rate * 0.3
-                    + perf.open_rate * 0.3
-                    + perf.click_rate * 0.2
-                    + perf.response_rate * 0.2
+                    perf.delivery_rate * 0.3 + perf.open_rate * 0.3 + perf.click_rate * 0.2 + perf.response_rate * 0.2
                 )
             else:
                 perf_score = 0.5

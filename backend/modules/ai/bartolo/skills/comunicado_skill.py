@@ -16,8 +16,8 @@ Date: 2026-01-29
 """
 
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
 from datetime import date
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -45,15 +45,21 @@ class ComunicadoSkill(BaseSkill):
     name = "comunicado"
     description = "Gerenciamento de comunicados e anuncios"
     commands = [
-        "listar", "recentes", "pendentes", "stats",
-        "leituras", "nao_lidos", "reenviar", "help",
+        "listar",
+        "recentes",
+        "pendentes",
+        "stats",
+        "leituras",
+        "nao_lidos",
+        "reenviar",
+        "help",
     ]
 
     def __init__(self, data_connector: Optional["DataConnector"] = None, db=None):
         super().__init__(data_connector=data_connector)
         self.db = db
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando de comunicado."""
 
         if not command or command == "help":
@@ -78,7 +84,7 @@ class ComunicadoSkill(BaseSkill):
             "suggestions": self.commands[:4],
         }
 
-    async def _listar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _listar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar comunicados ativos."""
         # Tenta buscar dados reais
         if self.has_data_connector:
@@ -107,13 +113,13 @@ class ComunicadoSkill(BaseSkill):
 
 - 🟠 **Alteracao de procedimento - Portaria**
   Tipo: procedimento | Prioridade: alta
-  Visualizacoes: 45 | Confirmacoes: 32 | {today.strftime('%d/%m/%Y')} 09:00
+  Visualizacoes: 45 | Confirmacoes: 32 | {today.strftime("%d/%m/%Y")} 09:00
 - 🔴 **Escala de feriado - Carnaval 2026**
   Tipo: escala | Prioridade: urgente
-  Visualizacoes: 120 | Confirmacoes: 95 | {today.strftime('%d/%m/%Y')} 08:00
+  Visualizacoes: 120 | Confirmacoes: 95 | {today.strftime("%d/%m/%Y")} 08:00
 - 🟢 **Novo uniforme disponivel**
   Tipo: informativo | Prioridade: normal
-  Visualizacoes: 30 | Confirmacoes: 10 | {today.strftime('%d/%m/%Y')} 07:30
+  Visualizacoes: 30 | Confirmacoes: 10 | {today.strftime("%d/%m/%Y")} 07:30
 
 **Total: 3 comunicados ativos**""",
             "suggestions": [
@@ -123,7 +129,7 @@ class ComunicadoSkill(BaseSkill):
             ],
         }
 
-    async def _recentes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _recentes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar comunicados recentes."""
         # Tenta buscar dados reais
         if self.has_data_connector:
@@ -133,7 +139,9 @@ class ComunicadoSkill(BaseSkill):
                     recentes = result.data[:5]
                     lines = []
                     for idx, c in enumerate(recentes, 1):
-                        prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(c.get('prioridade', 'normal'), "🟢")
+                        prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(
+                            c.get("prioridade", "normal"), "🟢"
+                        )
                         lines.append(
                             f"{idx}. {prio_icon} **{c.get('titulo', 'N/A')}** | "
                             f"{c.get('data_publicacao', 'N/A')} | "
@@ -165,9 +173,9 @@ class ComunicadoSkill(BaseSkill):
         return {
             "response": f"""🕐 **COMUNICADOS RECENTES** (3)
 
-1. 🟠 **Alteracao de procedimento - Portaria** | {today.strftime('%d/%m/%Y')} 09:00 | 👁 45 | ✅ 32
-2. 🔴 **Escala de feriado - Carnaval 2026** | {today.strftime('%d/%m/%Y')} 08:00 | 👁 120 | ✅ 95
-3. 🟢 **Novo uniforme disponivel** | {today.strftime('%d/%m/%Y')} 07:30 | 👁 30 | ✅ 10
+1. 🟠 **Alteracao de procedimento - Portaria** | {today.strftime("%d/%m/%Y")} 09:00 | 👁 45 | ✅ 32
+2. 🔴 **Escala de feriado - Carnaval 2026** | {today.strftime("%d/%m/%Y")} 08:00 | 👁 120 | ✅ 95
+3. 🟢 **Novo uniforme disponivel** | {today.strftime("%d/%m/%Y")} 07:30 | 👁 30 | ✅ 10
 
 *Exibindo os 3 comunicados mais recentes.*""",
             "suggestions": [
@@ -177,7 +185,7 @@ class ComunicadoSkill(BaseSkill):
             ],
         }
 
-    async def _pendentes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pendentes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar comunicados pendentes de publicacao."""
         # Tenta buscar dados reais
         if self.has_data_connector:
@@ -185,8 +193,7 @@ class ComunicadoSkill(BaseSkill):
                 result = await self.data_connector._get_comunicados_ativos()
                 if result.success and result.data:
                     pendentes = [
-                        c for c in result.data
-                        if c.get('status') in ('draft', 'rascunho', 'scheduled', 'agendado')
+                        c for c in result.data if c.get("status") in ("draft", "rascunho", "scheduled", "agendado")
                     ]
 
                     if pendentes:
@@ -197,7 +204,7 @@ class ComunicadoSkill(BaseSkill):
                                 "rascunho": "Rascunho",
                                 "scheduled": "Agendado",
                                 "agendado": "Agendado",
-                            }.get(c.get('status', ''), c.get('status', 'N/A'))
+                            }.get(c.get("status", ""), c.get("status", "N/A"))
                             lines.append(
                                 f"| {idx} | {c.get('titulo', 'N/A')[:40]} | {status_label} | {c.get('tipo', 'N/A')} |"
                             )
@@ -244,14 +251,17 @@ class ComunicadoSkill(BaseSkill):
             ],
         }
 
-    async def _stats(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _stats(self, args: list[str], context: dict) -> dict[str, Any]:
         """Exibir estatisticas de comunicados (geral ou por comunicado_id)."""
         # Se recebeu um ID, retorna stats especificas do comunicado
         if args:
             comunicado_id = args[0]
             if self.has_data_connector and self.db:
                 try:
-                    from modules.operacional.communication.repositories.communication_repository import AnnouncementRepository
+                    from modules.operacional.communication.repositories.communication_repository import (
+                        AnnouncementRepository,
+                    )
+
                     repo = AnnouncementRepository(self.db)
                     tenant_id = context.get("tenant_id", "")
 
@@ -265,15 +275,15 @@ class ComunicadoSkill(BaseSkill):
                         ack_pct = stats.get("acknowledgment_percentage", 0)
 
                         prio_icons = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}
-                        prio = getattr(announcement, 'priority', 'normal')
+                        prio = getattr(announcement, "priority", "normal")
 
                         return {
                             "response": f"""📊 **ESTATISTICAS DO COMUNICADO**
 
 **Titulo:** {announcement.title}
 **Status:** {announcement.status}
-**Prioridade:** {prio_icons.get(prio, '⚪')} {prio}
-**Requer Confirmacao:** {'Sim' if announcement.requires_acknowledgment else 'Nao'}
+**Prioridade:** {prio_icons.get(prio, "⚪")} {prio}
+**Requer Confirmacao:** {"Sim" if announcement.requires_acknowledgment else "Nao"}
 
 | Metrica | Valor |
 |---------|-------|
@@ -283,7 +293,7 @@ class ComunicadoSkill(BaseSkill):
 | Taxa de Leitura | {read_pct:.1f}% |
 | Taxa de Confirmacao | {ack_pct:.1f}% |
 
-{'🟢 Boa taxa de leitura' if read_pct >= 80 else '🟠 Taxa abaixo de 80%' if read_pct >= 50 else '🔴 Taxa critica de leitura (< 50%)'}""",
+{"🟢 Boa taxa de leitura" if read_pct >= 80 else "🟠 Taxa abaixo de 80%" if read_pct >= 50 else "🔴 Taxa critica de leitura (< 50%)"}""",
                             "data": {
                                 "comunicado_id": comunicado_id,
                                 "total_reads": total_reads,
@@ -331,15 +341,15 @@ _Dados ilustrativos._""",
                 if result.success and result.data:
                     comunicados = result.data
                     total = len(comunicados)
-                    total_views = sum(c.get('visualizacoes', 0) for c in comunicados)
-                    total_confirms = sum(c.get('confirmacoes', 0) for c in comunicados)
-                    urgentes = sum(1 for c in comunicados if c.get('prioridade') in ('urgente', 'alta'))
+                    total_views = sum(c.get("visualizacoes", 0) for c in comunicados)
+                    total_confirms = sum(c.get("confirmacoes", 0) for c in comunicados)
+                    urgentes = sum(1 for c in comunicados if c.get("prioridade") in ("urgente", "alta"))
                     taxa = (total_confirms / total_views * 100) if total_views > 0 else 0
 
                     # Por tipo
-                    tipos_count: Dict[str, int] = {}
+                    tipos_count: dict[str, int] = {}
                     for c in comunicados:
-                        tipo = c.get('tipo', 'outros')
+                        tipo = c.get("tipo", "outros")
                         tipos_count[tipo] = tipos_count.get(tipo, 0) + 1
 
                     tipos_rows = [f"| {t.capitalize()} | {q} |" for t, q in tipos_count.items()]
@@ -360,7 +370,7 @@ _Dados ilustrativos._""",
 |------|-----|
 {chr(10).join(tipos_rows)}
 
-{'🟢 Taxa de confirmacao OK' if taxa >= 80 else '🟠 Taxa abaixo de 80%' if taxa >= 50 else '🔴 Taxa critica (< 50%)'}"""
+{"🟢 Taxa de confirmacao OK" if taxa >= 80 else "🟠 Taxa abaixo de 80%" if taxa >= 50 else "🔴 Taxa critica (< 50%)"}"""
 
                     return {
                         "response": response_text,
@@ -412,7 +422,7 @@ _Dados ilustrativos._""",
     # TRACKING DE LEITURA
     # ==================================================================
 
-    async def _leituras(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _leituras(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ver quem leu/confirmou um comunicado especifico."""
         if not args:
             return {
@@ -424,7 +434,10 @@ _Dados ilustrativos._""",
 
         if self.has_data_connector and self.db:
             try:
-                from modules.operacional.communication.repositories.communication_repository import AnnouncementRepository
+                from modules.operacional.communication.repositories.communication_repository import (
+                    AnnouncementRepository,
+                )
+
                 repo = AnnouncementRepository(self.db)
 
                 # Busca o comunicado
@@ -442,10 +455,10 @@ _Dados ilustrativos._""",
                     # Lista de quem leu
                     lines = []
                     for r in reads[:20]:
-                        user_id = getattr(r, 'user_id', 'N/A')
-                        read_at = getattr(r, 'read_at', None)
-                        ack_at = getattr(r, 'acknowledged_at', None)
-                        read_str = read_at.strftime('%d/%m/%Y %H:%M') if read_at else 'N/A'
+                        user_id = getattr(r, "user_id", "N/A")
+                        read_at = getattr(r, "read_at", None)
+                        ack_at = getattr(r, "acknowledged_at", None)
+                        read_str = read_at.strftime("%d/%m/%Y %H:%M") if read_at else "N/A"
                         ack_str = "Sim" if ack_at else "Nao"
                         lines.append(f"| {user_id[:12]}... | {read_str} | {ack_str} |")
 
@@ -471,7 +484,7 @@ _Dados ilustrativos._""",
 |---------|---------|-----------|
 {table_rows}
 
-{'*Exibindo os primeiros 20 registros.*' if len(reads) > 20 else ''}""",
+{"*Exibindo os primeiros 20 registros.*" if len(reads) > 20 else ""}""",
                         "data": {
                             "comunicado_id": comunicado_id,
                             "total_reads": total_reads,
@@ -511,7 +524,7 @@ _Dados ilustrativos. Conecte ao banco para dados reais._""",
             ],
         }
 
-    async def _nao_lidos(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _nao_lidos(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar quem NAO leu um comunicado."""
         if not args:
             return {
@@ -523,10 +536,12 @@ _Dados ilustrativos. Conecte ao banco para dados reais._""",
 
         if self.has_data_connector and self.db:
             try:
-                from modules.operacional.communication.repositories.communication_repository import AnnouncementRepository
-                from modules.operacional.communication.models.announcement_read import AnnouncementRead
-                from modules.operacional.communication.models.announcement import Announcement
                 from sqlalchemy import select
+
+                from modules.operacional.communication.models.announcement_read import AnnouncementRead
+                from modules.operacional.communication.repositories.communication_repository import (
+                    AnnouncementRepository,
+                )
 
                 repo = AnnouncementRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
@@ -541,11 +556,9 @@ _Dados ilustrativos. Conecte ao banco para dados reais._""",
 
                 # Buscar quem leu
                 reads_result = await self.db.execute(
-                    select(AnnouncementRead.user_id).where(
-                        AnnouncementRead.announcement_id == comunicado_id
-                    )
+                    select(AnnouncementRead.user_id).where(AnnouncementRead.announcement_id == comunicado_id)
                 )
-                read_user_ids = set(row[0] for row in reads_result.all())
+                read_user_ids = {row[0] for row in reads_result.all()}
 
                 # Obter destinatarios totais
                 target_ids = announcement.target_ids or []
@@ -573,10 +586,10 @@ _Dados ilustrativos. Conecte ao banco para dados reais._""",
 **Ja leram:** {len(read_user_ids)}
 **NAO leram:** {unread_count}
 
-{'**Usuarios que nao leram:**' if lines else ''}
+{"**Usuarios que nao leram:**" if lines else ""}
 {unread_list}
 
-{'*Exibindo os primeiros 20.*' if len(unread_ids) > 20 else ''}""",
+{"*Exibindo os primeiros 20.*" if len(unread_ids) > 20 else ""}""",
                     "data": {
                         "comunicado_id": comunicado_id,
                         "unread_count": unread_count,
@@ -611,7 +624,7 @@ _Dados ilustrativos._""",
             ],
         }
 
-    async def _reenviar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _reenviar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Reenviar comunicado para quem nao leu."""
         if not args:
             return {
@@ -623,13 +636,14 @@ _Dados ilustrativos._""",
 
         if self.has_data_connector and self.db:
             try:
+                from sqlalchemy import select
+
+                from modules.operacional.communication.models.announcement_read import AnnouncementRead
                 from modules.operacional.communication.repositories.communication_repository import (
                     AnnouncementRepository,
                     NotificationRepository,
                 )
-                from modules.operacional.communication.models.announcement_read import AnnouncementRead
                 from modules.operacional.communication.schemas.communication_schemas import NotificationCreate
-                from sqlalchemy import select
 
                 announcement_repo = AnnouncementRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
@@ -644,11 +658,9 @@ _Dados ilustrativos._""",
 
                 # Buscar quem ja leu
                 reads_result = await self.db.execute(
-                    select(AnnouncementRead.user_id).where(
-                        AnnouncementRead.announcement_id == comunicado_id
-                    )
+                    select(AnnouncementRead.user_id).where(AnnouncementRead.announcement_id == comunicado_id)
                 )
-                read_user_ids = set(row[0] for row in reads_result.all())
+                read_user_ids = {row[0] for row in reads_result.all()}
 
                 # Identificar destinatarios que nao leram
                 target_ids = announcement.target_ids or []
@@ -665,7 +677,11 @@ _Dados ilustrativos._""",
                 count = 0
                 for uid in unread_ids:
                     try:
-                        from modules.operacional.communication.models.notification import NotificationType, NotificationChannel
+                        from modules.operacional.communication.models.notification import (
+                            NotificationChannel,
+                            NotificationType,
+                        )
+
                         notif_data = NotificationCreate(
                             user_id=uid,
                             title=f"Lembrete: {announcement.title}",

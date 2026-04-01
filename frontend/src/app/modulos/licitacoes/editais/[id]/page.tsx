@@ -427,40 +427,158 @@ export default function TenderDetailPage() {
 
             {/* Tab: Documentos */}
             {activeTab === 'documentos' && (
-              <div className="text-center py-12">
-                <FileDown className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                  Documentos Exigidos
-                </h3>
-                <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                  Funcionalidade em desenvolvimento
-                </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    Documentos Exigidos no Edital
+                  </h3>
+                  <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                    {tenderData.required_documents?.length || 0} documento(s)
+                  </span>
+                </div>
+                {tenderData.required_documents && tenderData.required_documents.length > 0 ? (
+                  <div className="space-y-2">
+                    {tenderData.required_documents.map((doc: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 bg-[hsl(var(--muted))] rounded-lg">
+                        <FileDown className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {typeof doc === 'string' ? doc : doc.name || doc.titulo || 'Documento'}
+                          </p>
+                          {doc.tipo && <p className="text-xs text-[hsl(var(--muted-foreground))]">{doc.tipo}</p>}
+                        </div>
+                        {doc.obrigatorio !== false && (
+                          <span className="text-xs bg-red-500/10 text-red-600 px-2 py-0.5 rounded">Obrigatório</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileDown className="w-10 h-10 text-[hsl(var(--muted-foreground))]/50 mx-auto mb-3" />
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                      Nenhum documento cadastrado para este edital.
+                    </p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                      Use o botão Editar para adicionar documentos exigidos.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Tab: Propostas */}
             {activeTab === 'propostas' && (
-              <div className="text-center py-12">
-                <FileCheck className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                  Propostas Vinculadas
-                </h3>
-                <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                  Funcionalidade em desenvolvimento
-                </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    Propostas Vinculadas
+                  </h3>
+                  <Link href={`/modulos/licitacoes/propostas?tender_id=${tenderId}`}>
+                    <Button variant="outline" size="sm">
+                      <FileCheck className="w-4 h-4 mr-2" />
+                      Nova Proposta
+                    </Button>
+                  </Link>
+                </div>
+                {tenderData.proposals && tenderData.proposals.length > 0 ? (
+                  <div className="space-y-2">
+                    {tenderData.proposals.map((prop: any) => (
+                      <Link key={prop.id} href={`/modulos/licitacoes/propostas/${prop.id}`}>
+                        <div className="flex items-center justify-between p-3 bg-[hsl(var(--muted))] rounded-lg hover:bg-[hsl(var(--muted))]/80 transition-colors cursor-pointer">
+                          <div className="flex items-center gap-3">
+                            <FileCheck className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+                            <div>
+                              <p className="text-sm font-medium">{prop.razao_social || prop.cnpj || 'Proposta'}</p>
+                              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                {prop.numero_proposta || prop.id?.slice(0, 8)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold">
+                              {prop.valor_global
+                                ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.valor_global)
+                                : '-'}
+                            </p>
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              prop.status === 'enviada' ? 'bg-blue-500/10 text-blue-600' :
+                              prop.status === 'vencedora' ? 'bg-green-500/10 text-green-600' :
+                              'bg-gray-500/10 text-gray-600'
+                            }`}>
+                              {prop.status || 'rascunho'}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileCheck className="w-10 h-10 text-[hsl(var(--muted-foreground))]/50 mx-auto mb-3" />
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                      Nenhuma proposta vinculada a este edital.
+                    </p>
+                    <Link href={`/modulos/licitacoes/propostas?tender_id=${tenderId}`}>
+                      <Button variant="outline" size="sm" className="mt-3">
+                        Criar Proposta
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Tab: Histórico */}
             {activeTab === 'historico' && (
-              <div className="text-center py-12">
-                <History className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
                   Histórico de Alterações
                 </h3>
-                <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                  Funcionalidade em desenvolvimento
-                </p>
+                <div className="space-y-0">
+                  <div className="relative pl-6 pb-6 border-l-2 border-[hsl(var(--border))]">
+                    <div className="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-blue-500" />
+                    <div>
+                      <p className="text-sm font-medium">Edital Criado</p>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                        {formatDate(tender.created_at)} — Status: {tender.status}
+                      </p>
+                    </div>
+                  </div>
+                  {tender.updated_at && tender.updated_at !== tender.created_at && (
+                    <div className="relative pl-6 pb-6 border-l-2 border-[hsl(var(--border))]">
+                      <div className="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-green-500" />
+                      <div>
+                        <p className="text-sm font-medium">Última Atualização</p>
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                          {formatDate(tender.updated_at)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {tenderData.opening_date && (
+                    <div className="relative pl-6 pb-6 border-l-2 border-[hsl(var(--border))]">
+                      <div className="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-orange-500" />
+                      <div>
+                        <p className="text-sm font-medium">Abertura Prevista</p>
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                          {formatDateTime(tenderData.opening_date)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {tenderData.closing_date && (
+                    <div className="relative pl-6 border-l-2 border-transparent">
+                      <div className="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-red-500" />
+                      <div>
+                        <p className="text-sm font-medium">Encerramento</p>
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                          {formatDateTime(tenderData.closing_date)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

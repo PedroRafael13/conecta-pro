@@ -4,23 +4,20 @@ Sprint 35: Configurações e Multi-tenant
 """
 # pylint: disable=too-many-instance-attributes
 
-import enum
 import hashlib
 from datetime import datetime, timedelta
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Float, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class FlagStatus(str, enum.Enum):
+class FlagStatus(StrEnum):
     """Status da feature flag."""
+
     ATIVO = "ativo"
     INATIVO = "inativo"
     GRADUAL = "gradual"  # Rollout gradual
@@ -28,16 +25,18 @@ class FlagStatus(str, enum.Enum):
     DEPRECATED = "deprecated"
 
 
-class FlagType(str, enum.Enum):
+class FlagType(StrEnum):
     """Tipo de feature flag."""
+
     RELEASE = "release"  # Nova funcionalidade
     EXPERIMENT = "experiment"  # Experimento/A/B test
     OPERATIONAL = "operational"  # Toggle operacional
     PERMISSION = "permission"  # Controle de permissão
 
 
-class RolloutStrategy(str, enum.Enum):
+class RolloutStrategy(StrEnum):
     """Estratégia de rollout."""
+
     ALL = "all"  # Todos
     NONE = "none"  # Nenhum
     PERCENTAGE = "percentage"  # Percentual de usuários
@@ -60,23 +59,11 @@ class FeatureFlag(Base):
     descricao = Column(Text, nullable=True)
 
     # Status e tipo
-    status = Column(
-        Enum(FlagStatus),
-        nullable=False,
-        default=FlagStatus.INATIVO
-    )
-    flag_type = Column(
-        Enum(FlagType),
-        nullable=False,
-        default=FlagType.RELEASE
-    )
+    status = Column(Enum(FlagStatus), nullable=False, default=FlagStatus.INATIVO)
+    flag_type = Column(Enum(FlagType), nullable=False, default=FlagType.RELEASE)
 
     # Rollout
-    rollout_strategy = Column(
-        Enum(RolloutStrategy),
-        nullable=False,
-        default=RolloutStrategy.NONE
-    )
+    rollout_strategy = Column(Enum(RolloutStrategy), nullable=False, default=RolloutStrategy.NONE)
     rollout_percentage = Column(Float, default=0, nullable=False)  # 0-100
 
     # Listas de inclusão/exclusão
@@ -195,12 +182,7 @@ class FeatureFlag(Base):
     # ==================== Métodos de Avaliação ====================
 
     # pylint: disable=too-many-return-statements,too-many-branches
-    def evaluate(
-        self,
-        tenant_id: str = None,
-        user_id: str = None,
-        attributes: dict = None
-    ) -> tuple:
+    def evaluate(self, tenant_id: str = None, user_id: str = None, attributes: dict = None) -> tuple:
         """
         Avalia se a flag está habilitada para o contexto.
         Retorna (is_enabled, variant)
@@ -273,7 +255,7 @@ class FeatureFlag(Base):
     def _is_in_percentage(self, identifier: str, percentage: float) -> bool:
         """Verifica se identificador está dentro do percentual."""
         hash_input = f"{self.codigo}:{identifier}".encode()
-        hash_value = int(hashlib.md5(hash_input).hexdigest(), 16)
+        hash_value = int(hashlib.sha256(hash_input).hexdigest(), 16)
         bucket = hash_value % 100
         return bucket < percentage
 
@@ -289,13 +271,13 @@ class FeatureFlag(Base):
                 return False
         return True
 
-    def _get_variant(self, identifier: str) -> Optional[str]:
+    def _get_variant(self, identifier: str) -> str | None:
         """Determina variante para o identificador."""
         if not self.variants:
             return self.default_variant
 
         hash_input = f"{self.codigo}:variant:{identifier}".encode()
-        hash_value = int(hashlib.md5(hash_input).hexdigest(), 16)
+        hash_value = int(hashlib.sha256(hash_input).hexdigest(), 16)
         bucket = hash_value % 100
 
         cumulative = 0
@@ -341,12 +323,7 @@ class FeatureFlag(Base):
         self.rollout_percentage = min(100, max(0, percentage))
         self.updated_at = datetime.utcnow()
 
-    def start_gradual_rollout(
-        self,
-        start_percentage: float,
-        end_percentage: float,
-        duration_days: int
-    ) -> None:
+    def start_gradual_rollout(self, start_percentage: float, end_percentage: float, duration_days: int) -> None:
         """Inicia rollout gradual."""
         self.status = FlagStatus.GRADUAL
         self.rollout_strategy = RolloutStrategy.GRADUAL

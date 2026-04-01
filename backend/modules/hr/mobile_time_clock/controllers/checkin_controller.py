@@ -2,31 +2,30 @@
 
 import logging
 from datetime import date
-from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
+from core.database import get_db
+from modules.hr.mobile_time_clock.repositories import (
+    MobileCheckInRepository,
+    MobileDeviceRepository,
+)
 from modules.hr.mobile_time_clock.schemas import (
-    MobileCheckInCreate,
-    MobileCheckInReview,
-    MobileCheckInResponse,
-    MobileCheckInList,
-    MobileCheckInFilter,
-    MobileCheckInStats,
     CheckInConfirmation,
+    MobileCheckInCreate,
+    MobileCheckInFilter,
+    MobileCheckInList,
+    MobileCheckInResponse,
+    MobileCheckInReview,
+    MobileCheckInStats,
 )
 from modules.hr.mobile_time_clock.services import (
     CheckInValidationService,
     DeviceService,
     PushNotificationService,
-)
-from modules.hr.mobile_time_clock.repositories import (
-    MobileCheckInRepository,
-    MobileDeviceRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -49,9 +48,7 @@ async def create_checkin(
     """Registra check-in via app mobile."""
     # Validar dispositivo
     device_service = DeviceService(db)
-    is_valid, device, error = await device_service.validate_device_for_checkin(
-        device_uuid
-    )
+    is_valid, device, error = await device_service.validate_device_for_checkin(device_uuid)
 
     if not is_valid:
         raise HTTPException(
@@ -105,7 +102,7 @@ async def create_checkin(
 
 @router.get(
     "/today",
-    response_model=List[MobileCheckInResponse],
+    response_model=list[MobileCheckInResponse],
     summary="Check-ins de hoje",
 )
 async def get_today_checkins(
@@ -179,7 +176,7 @@ async def get_checkin(
 
 @router.get(
     "/pending-review",
-    response_model=List[MobileCheckInResponse],
+    response_model=list[MobileCheckInResponse],
     summary="Check-ins pendentes de revisão",
     dependencies=[Depends(require_roles(["admin", "rh", "gestor"]))],
 )

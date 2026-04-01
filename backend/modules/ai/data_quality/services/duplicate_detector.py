@@ -5,9 +5,8 @@ Serviço de detecção de registros duplicados.
 """
 
 import uuid
-from datetime import datetime
 from difflib import SequenceMatcher
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from modules.ai.data_quality.models import (
     DuplicateRecord,
@@ -23,12 +22,8 @@ class DuplicateDetector:
         self.threshold = threshold
 
     def find_duplicates(
-        self,
-        records: List[Dict[str, Any]],
-        fields: List[str],
-        id_field: str = "id",
-        entity_type: str = "unknown"
-    ) -> List[DuplicateRecord]:
+        self, records: list[dict[str, Any]], fields: list[str], id_field: str = "id", entity_type: str = "unknown"
+    ) -> list[DuplicateRecord]:
         """
         Encontra registros duplicados.
 
@@ -45,15 +40,13 @@ class DuplicateDetector:
         processed_pairs = set()
 
         for i, record1 in enumerate(records):
-            for j, record2 in enumerate(records[i + 1:], start=i + 1):
+            for _j, record2 in enumerate(records[i + 1 :], start=i + 1):
                 pair_key = tuple(sorted([str(record1.get(id_field)), str(record2.get(id_field))]))
                 if pair_key in processed_pairs:
                     continue
                 processed_pairs.add(pair_key)
 
-                similarity, field_scores, matching_fields = self._compare_records(
-                    record1, record2, fields
-                )
+                similarity, field_scores, matching_fields = self._compare_records(record1, record2, fields)
 
                 if similarity >= self.threshold:
                     duplicate = self._create_duplicate_record(
@@ -63,18 +56,15 @@ class DuplicateDetector:
                         entity_type=entity_type,
                         similarity=similarity,
                         field_scores=field_scores,
-                        matching_fields=matching_fields
+                        matching_fields=matching_fields,
                     )
                     duplicates.append(duplicate)
 
         return duplicates
 
     def _compare_records(
-        self,
-        record1: Dict[str, Any],
-        record2: Dict[str, Any],
-        fields: List[str]
-    ) -> Tuple[float, Dict[str, float], List[str]]:
+        self, record1: dict[str, Any], record2: dict[str, Any], fields: list[str]
+    ) -> tuple[float, dict[str, float], list[str]]:
         """Compara dois registros."""
         field_scores = {}
         matching_fields = []
@@ -126,16 +116,17 @@ class DuplicateDetector:
         text = str(value).lower().strip()
         # Remove caracteres especiais
         import re
-        text = re.sub(r'[^\w\s]', '', text)
+
+        text = re.sub(r"[^\w\s]", "", text)
         # Remove espaços duplicados
-        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r"\s+", " ", text)
         return text
 
     def _get_field_weight(self, field: str) -> float:
         """Retorna peso do campo para cálculo de similaridade."""
         # Campos com maior peso para identificação
-        high_weight_fields = ['email', 'cpf', 'cnpj', 'phone', 'telefone', 'documento']
-        medium_weight_fields = ['name', 'nome', 'razao_social', 'company']
+        high_weight_fields = ["email", "cpf", "cnpj", "phone", "telefone", "documento"]
+        medium_weight_fields = ["name", "nome", "razao_social", "company"]
 
         field_lower = field.lower()
         if any(f in field_lower for f in high_weight_fields):
@@ -146,13 +137,13 @@ class DuplicateDetector:
 
     def _create_duplicate_record(
         self,
-        record1: Dict[str, Any],
-        record2: Dict[str, Any],
+        record1: dict[str, Any],
+        record2: dict[str, Any],
         id_field: str,
         entity_type: str,
         similarity: float,
-        field_scores: Dict[str, float],
-        matching_fields: List[str]
+        field_scores: dict[str, float],
+        matching_fields: list[str],
     ) -> DuplicateRecord:
         """Cria registro de duplicata."""
         group_id = uuid.uuid4()
@@ -168,10 +159,7 @@ class DuplicateDetector:
             dup_type = DuplicateTypeEnum.PARTIAL
 
         # Identifica campos conflitantes
-        conflicting_fields = [
-            f for f, score in field_scores.items()
-            if score < 100 and score > 0
-        ]
+        conflicting_fields = [f for f, score in field_scores.items() if score < 100 and score > 0]
 
         # Pode fazer auto-merge se similaridade alta e sem conflitos importantes
         can_auto_merge = similarity >= 95 and len(conflicting_fields) <= 2
@@ -188,15 +176,12 @@ class DuplicateDetector:
             similarity_score=similarity,
             confidence_score=min(similarity, 100) / 100,
             field_scores=field_scores,
-            can_auto_merge=can_auto_merge
+            can_auto_merge=can_auto_merge,
         )
 
     def compare_two_records(
-        self,
-        record1: Dict[str, Any],
-        record2: Dict[str, Any],
-        fields: List[str] = None
-    ) -> Dict[str, Any]:
+        self, record1: dict[str, Any], record2: dict[str, Any], fields: list[str] = None
+    ) -> dict[str, Any]:
         """
         Compara dois registros específicos.
 
@@ -207,18 +192,13 @@ class DuplicateDetector:
             # Usa todos os campos em comum
             fields = list(set(record1.keys()) & set(record2.keys()))
 
-        similarity, field_scores, matching_fields = self._compare_records(
-            record1, record2, fields
-        )
+        similarity, field_scores, matching_fields = self._compare_records(record1, record2, fields)
 
         return {
             "is_duplicate": similarity >= self.threshold,
             "similarity_score": similarity,
             "field_scores": field_scores,
             "matching_fields": matching_fields,
-            "conflicting_fields": [
-                f for f, score in field_scores.items()
-                if score < 100 and score > 0
-            ],
-            "threshold": self.threshold
+            "conflicting_fields": [f for f, score in field_scores.items() if score < 100 and score > 0],
+            "threshold": self.threshold,
         }

@@ -1,31 +1,32 @@
 """Testes unitários para models do módulo Analytics Dashboard."""
 
-import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.analytics_dashboard.models import (
-    DashboardConfig,
-    DashboardWidget,
-    KPIDefinition,
+    AggregationType,
     AnalyticsCache,
-    ScheduledReport,
+    CacheStatus,
+    CacheType,
+    DashboardConfig,
     DashboardType,
     DashboardVisibility,
-    WidgetType,
+    DashboardWidget,
     DataSource,
-    AggregationType,
-    KPICategory,
-    KPIUnit,
-    KPIDirection,
-    ReportType,
-    ReportFormat,
-    ScheduleFrequency,
     DeliveryMethod,
+    KPICategory,
+    KPIDefinition,
+    KPIDirection,
+    KPIUnit,
+    ReportFormat,
     ReportStatus,
-    CacheType,
-    CacheStatus,
+    ReportType,
+    ScheduledReport,
+    ScheduleFrequency,
+    WidgetType,
 )
 
 
@@ -37,11 +38,14 @@ class TestDashboardConfig:
         dashboard = DashboardConfig(
             id=uuid4(),
             name="Dashboard RH",
+            slug="dashboard-rh",
             description="Dashboard de métricas de RH",
             dashboard_type=DashboardType.EXECUTIVE,
             visibility=DashboardVisibility.ORGANIZATION,
             condominio_id=uuid4(),
             owner_id=uuid4(),
+            is_default=False,
+            auto_refresh=False,
         )
 
         assert dashboard.name == "Dashboard RH"
@@ -61,7 +65,7 @@ class TestDashboardConfig:
     def test_dashboard_visibility_enum(self):
         """Testa enum DashboardVisibility."""
         assert DashboardVisibility.PRIVATE.value == "private"
-        assert DashboardVisibility.DEPARTMENT.value == "department"
+        assert DashboardVisibility.TEAM.value == "team"
         assert DashboardVisibility.ORGANIZATION.value == "organization"
         assert DashboardVisibility.PUBLIC.value == "public"
 
@@ -70,17 +74,20 @@ class TestDashboardConfig:
         dashboard = DashboardConfig(
             id=uuid4(),
             name="Dashboard Customizado",
+            slug="dashboard-customizado",
             dashboard_type=DashboardType.CUSTOM,
             visibility=DashboardVisibility.PRIVATE,
-            layout_config={"columns": 12, "rowHeight": 100},
+            condominio_id=uuid4(),
+            owner_id=uuid4(),
+            default_filters={"columns": 12, "rowHeight": 100},
             theme="dark",
-            grid_columns=12,
+            columns=12,
             row_height=100,
         )
 
-        assert dashboard.layout_config == {"columns": 12, "rowHeight": 100}
+        assert dashboard.default_filters == {"columns": 12, "rowHeight": 100}
         assert dashboard.theme == "dark"
-        assert dashboard.grid_columns == 12
+        assert dashboard.columns == 12
 
 
 class TestDashboardWidget:
@@ -94,16 +101,16 @@ class TestDashboardWidget:
             title="Taxa de Absenteísmo",
             widget_type=WidgetType.KPI_CARD,
             data_source=DataSource.ABSENCES,
-            position_x=0,
-            position_y=0,
-            width=4,
-            height=2,
+            grid_x=0,
+            grid_y=0,
+            grid_width=4,
+            grid_height=2,
         )
 
         assert widget.title == "Taxa de Absenteísmo"
         assert widget.widget_type == WidgetType.KPI_CARD
         assert widget.data_source == DataSource.ABSENCES
-        assert widget.width == 4
+        assert widget.grid_width == 4
 
     def test_widget_type_enum(self):
         """Testa enum WidgetType."""
@@ -154,15 +161,14 @@ class TestDashboardWidget:
             dashboard_id=uuid4(),
             title="Pontualidade",
             widget_type=WidgetType.KPI_CARD,
-            kpi_code="PUNCTUALITY_RATE",
+            kpi_metric="PUNCTUALITY_RATE",
             kpi_format="percentage",
-            show_trend=True,
             show_comparison=True,
             comparison_period="previous_month",
         )
 
-        assert widget.kpi_code == "PUNCTUALITY_RATE"
-        assert widget.show_trend is True
+        assert widget.kpi_metric == "PUNCTUALITY_RATE"
+        assert widget.show_comparison is True
 
 
 class TestKPIDefinition:
@@ -200,7 +206,7 @@ class TestKPIDefinition:
         assert KPIUnit.PERCENTAGE.value == "percentage"
         assert KPIUnit.HOURS.value == "hours"
         assert KPIUnit.CURRENCY.value == "currency"
-        assert KPIUnit.NUMBER.value == "number"
+        assert KPIUnit.COUNT.value == "count"
         assert KPIUnit.DAYS.value == "days"
 
     def test_kpi_direction_enum(self):
@@ -237,13 +243,15 @@ class TestKPIDefinition:
             name="Eficiência de Horas Trabalhadas",
             category=KPICategory.PRODUCTIVITY,
             unit=KPIUnit.PERCENTAGE,
-            formula="(worked_hours / expected_hours) * 100",
-            formula_description="Horas trabalhadas dividido por horas esperadas",
-            data_sources=["time_entries", "employees"],
+            calculation_formula="(worked_hours / expected_hours) * 100",
+            calculation_params={
+                "description": "Horas trabalhadas dividido por horas esperadas",
+                "data_sources": ["time_entries", "employees"],
+            },
         )
 
-        assert "worked_hours" in kpi.formula
-        assert len(kpi.data_sources) == 2
+        assert "worked_hours" in kpi.calculation_formula
+        assert len(kpi.calculation_params["data_sources"]) == 2
 
 
 class TestAnalyticsCache:
@@ -257,47 +265,52 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="kpi:ABSENTEEISM_RATE:condo123:2024-12",
-            cache_type=CacheType.KPI_VALUE,
+            cache_type=CacheType.KPI,
             data={"value": 2.5, "trend": "down"},
             ttl_seconds=3600,
             expires_at=expires,
             status=CacheStatus.VALID,
+            condominio_id=uuid4(),
+            params_hash="abc123",
         )
 
-        assert cache.cache_type == CacheType.KPI_VALUE
+        assert cache.cache_type == CacheType.KPI
         assert cache.status == CacheStatus.VALID
         assert cache.ttl_seconds == 3600
 
     def test_cache_type_enum(self):
         """Testa enum CacheType."""
-        assert CacheType.KPI_VALUE.value == "kpi_value"
-        assert CacheType.DASHBOARD_DATA.value == "dashboard_data"
-        assert CacheType.WIDGET_DATA.value == "widget_data"
+        assert CacheType.KPI.value == "kpi"
+        assert CacheType.WIDGET.value == "widget"
+        assert CacheType.REPORT.value == "report"
         assert CacheType.AGGREGATION.value == "aggregation"
-        assert CacheType.REPORT_DATA.value == "report_data"
+        assert CacheType.QUERY.value == "query"
 
     def test_cache_status_enum(self):
         """Testa enum CacheStatus."""
         assert CacheStatus.VALID.value == "valid"
         assert CacheStatus.EXPIRED.value == "expired"
-        assert CacheStatus.INVALIDATED.value == "invalidated"
         assert CacheStatus.STALE.value == "stale"
+        assert CacheStatus.COMPUTING.value == "computing"
+        assert CacheStatus.ERROR.value == "error"
 
     def test_cache_with_compression(self):
         """Testa cache com compressão."""
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="report:monthly:2024-12",
-            cache_type=CacheType.REPORT_DATA,
+            cache_type=CacheType.REPORT,
             data={"large": "dataset"},
-            compressed=True,
-            data_size=1024,
+            is_compressed=True,
+            data_size_bytes=1024,
             ttl_seconds=86400,
             expires_at=datetime.utcnow() + timedelta(days=1),
+            condominio_id=uuid4(),
+            params_hash="def456",
         )
 
-        assert cache.compressed is True
-        assert cache.data_size == 1024
+        assert cache.is_compressed is True
+        assert cache.data_size_bytes == 1024
 
 
 class TestScheduledReport:
@@ -309,26 +322,26 @@ class TestScheduledReport:
             id=uuid4(),
             name="Relatório Mensal de Ponto",
             description="Relatório mensal de frequência",
-            report_type=ReportType.TIME_ATTENDANCE,
+            report_type=ReportType.ATTENDANCE,
             output_format=ReportFormat.PDF,
-            schedule_frequency=ScheduleFrequency.MONTHLY,
+            frequency=ScheduleFrequency.MONTHLY,
             delivery_method=DeliveryMethod.EMAIL,
             condominio_id=uuid4(),
             owner_id=uuid4(),
         )
 
         assert report.name == "Relatório Mensal de Ponto"
-        assert report.report_type == ReportType.TIME_ATTENDANCE
+        assert report.report_type == ReportType.ATTENDANCE
         assert report.output_format == ReportFormat.PDF
-        assert report.schedule_frequency == ScheduleFrequency.MONTHLY
+        assert report.frequency == ScheduleFrequency.MONTHLY
 
     def test_report_type_enum(self):
         """Testa enum ReportType."""
-        assert ReportType.TIME_ATTENDANCE.value == "time_attendance"
-        assert ReportType.OVERTIME_SUMMARY.value == "overtime_summary"
-        assert ReportType.ABSENCE_REPORT.value == "absence_report"
-        assert ReportType.KPI_SUMMARY.value == "kpi_summary"
-        assert ReportType.COMPLIANCE_AUDIT.value == "compliance_audit"
+        assert ReportType.ATTENDANCE.value == "attendance"
+        assert ReportType.OVERTIME.value == "overtime"
+        assert ReportType.ABSENCES.value == "absences"
+        assert ReportType.EXECUTIVE_SUMMARY.value == "executive_summary"
+        assert ReportType.COMPLIANCE.value == "compliance"
 
     def test_report_format_enum(self):
         """Testa enum ReportFormat."""
@@ -357,49 +370,53 @@ class TestScheduledReport:
         assert ReportStatus.ACTIVE.value == "active"
         assert ReportStatus.PAUSED.value == "paused"
         assert ReportStatus.DISABLED.value == "disabled"
-        assert ReportStatus.ERROR.value == "error"
+        assert ReportStatus.FAILED.value == "failed"
 
     def test_report_with_recipients(self):
         """Testa relatório com destinatários."""
         report = ScheduledReport(
             id=uuid4(),
             name="Relatório Semanal",
-            report_type=ReportType.OVERTIME_SUMMARY,
+            report_type=ReportType.OVERTIME,
             output_format=ReportFormat.EXCEL,
-            schedule_frequency=ScheduleFrequency.WEEKLY,
+            frequency=ScheduleFrequency.WEEKLY,
             delivery_method=DeliveryMethod.EMAIL,
+            condominio_id=uuid4(),
+            owner_id=uuid4(),
             recipients=[
                 {"email": "rh@empresa.com", "name": "RH"},
                 {"email": "gestor@empresa.com", "name": "Gestor"},
             ],
-            schedule_config={
-                "day_of_week": 1,  # Segunda-feira
+            report_config={
+                "day_of_week": 1,
                 "hour": 8,
                 "minute": 0,
             },
         )
 
         assert len(report.recipients) == 2
-        assert report.schedule_config["day_of_week"] == 1
+        assert report.report_config["day_of_week"] == 1
 
     def test_report_with_filters(self):
         """Testa relatório com filtros."""
         report = ScheduledReport(
             id=uuid4(),
             name="Relatório por Departamento",
-            report_type=ReportType.TIME_ATTENDANCE,
+            report_type=ReportType.ATTENDANCE,
             output_format=ReportFormat.PDF,
-            schedule_frequency=ScheduleFrequency.MONTHLY,
+            frequency=ScheduleFrequency.MONTHLY,
             delivery_method=DeliveryMethod.EMAIL,
+            condominio_id=uuid4(),
+            owner_id=uuid4(),
             filters={
                 "department_ids": ["dept-001", "dept-002"],
                 "include_inactive": False,
             },
-            included_sections=["summary", "details", "charts"],
+            columns=["summary", "details", "charts"],
         )
 
         assert "department_ids" in report.filters
-        assert "summary" in report.included_sections
+        assert "summary" in report.columns
 
 
 class TestDefaultKPIs:

@@ -1,16 +1,15 @@
 """Schemas Pydantic para WorkSchedule."""
 
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from modules.hr.time_tracking.models import (
-    ScheduleType,
-    ScheduleStatus,
     DayOfWeek,
+    ScheduleStatus,
+    ScheduleType,
 )
 
 
@@ -19,8 +18,8 @@ class DailyScheduleEntry(BaseModel):
 
     entry: str = Field(..., pattern=r"^\d{2}:\d{2}$")
     exit: str = Field(..., pattern=r"^\d{2}:\d{2}$")
-    break_start: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
-    break_end: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
+    break_start: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
+    break_end: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
 
 
 class AllowedLocation(BaseModel):
@@ -36,7 +35,7 @@ class WorkScheduleBase(BaseModel):
     """Schema base para WorkSchedule."""
 
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     schedule_type: ScheduleType = ScheduleType.CLT_44H
 
     # Carga horária
@@ -45,10 +44,10 @@ class WorkScheduleBase(BaseModel):
     max_daily_hours_minutes: int = Field(600, ge=60, le=720)
 
     # Horário padrão
-    default_entry_time: Optional[time] = None
-    default_exit_time: Optional[time] = None
-    default_break_start: Optional[time] = None
-    default_break_end: Optional[time] = None
+    default_entry_time: time | None = None
+    default_exit_time: time | None = None
+    default_break_start: time | None = None
+    default_break_end: time | None = None
     break_duration_minutes: int = Field(60, ge=0, le=180)
 
 
@@ -56,18 +55,18 @@ class WorkScheduleCreate(WorkScheduleBase):
     """Schema para criação de WorkSchedule."""
 
     # Funcionário (se não for template)
-    employee_id: Optional[str] = Field(None, max_length=50)
-    employee_name: Optional[str] = Field(None, max_length=200)
+    employee_id: str | None = Field(None, max_length=50)
+    employee_name: str | None = Field(None, max_length=200)
     is_template: bool = False
 
     # Departamento
-    department_id: Optional[str] = Field(None, max_length=50)
-    department_name: Optional[str] = Field(None, max_length=100)
+    department_id: str | None = Field(None, max_length=50)
+    department_name: str | None = Field(None, max_length=100)
 
     # Horários por dia
-    daily_schedule: Optional[dict] = None
-    work_days: Optional[List[str]] = None
-    days_off: Optional[List[str]] = None
+    daily_schedule: dict | None = None
+    work_days: list[str] | None = None
+    days_off: list[str] | None = None
 
     # Tolerâncias
     entry_tolerance_minutes: int = Field(10, ge=0, le=60)
@@ -94,7 +93,7 @@ class WorkScheduleCreate(WorkScheduleBase):
 
     # Geolocalização
     require_geolocation: bool = False
-    allowed_locations: Optional[List[AllowedLocation]] = None
+    allowed_locations: list[AllowedLocation] | None = None
     max_distance_meters: int = Field(100, ge=10, le=5000)
 
     # Biometria
@@ -105,21 +104,21 @@ class WorkScheduleCreate(WorkScheduleBase):
 
     # Feriados
     consider_holidays: bool = True
-    holiday_calendar_id: Optional[str] = Field(None, max_length=50)
+    holiday_calendar_id: str | None = Field(None, max_length=50)
 
     # Validade
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
+    valid_from: date | None = None
+    valid_until: date | None = None
 
     # Local
-    condominium_id: Optional[str] = Field(None, max_length=50)
-    condominium_name: Optional[str] = Field(None, max_length=200)
+    condominium_id: str | None = Field(None, max_length=50)
+    condominium_name: str | None = Field(None, max_length=200)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
     @field_validator("work_days")
     @classmethod
-    def validate_work_days(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_work_days(cls, v: list[str] | None) -> list[str] | None:
         """Valida dias de trabalho."""
         if v:
             valid_days = [d.value for d in DayOfWeek]
@@ -132,38 +131,38 @@ class WorkScheduleCreate(WorkScheduleBase):
 class WorkScheduleUpdate(BaseModel):
     """Schema para atualização de WorkSchedule."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    schedule_type: Optional[ScheduleType] = None
-    status: Optional[ScheduleStatus] = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    schedule_type: ScheduleType | None = None
+    status: ScheduleStatus | None = None
 
-    weekly_hours_minutes: Optional[int] = Field(None, ge=60, le=3600)
-    daily_hours_minutes: Optional[int] = Field(None, ge=60, le=720)
+    weekly_hours_minutes: int | None = Field(None, ge=60, le=3600)
+    daily_hours_minutes: int | None = Field(None, ge=60, le=720)
 
-    default_entry_time: Optional[time] = None
-    default_exit_time: Optional[time] = None
-    default_break_start: Optional[time] = None
-    default_break_end: Optional[time] = None
+    default_entry_time: time | None = None
+    default_exit_time: time | None = None
+    default_break_start: time | None = None
+    default_break_end: time | None = None
 
-    daily_schedule: Optional[dict] = None
-    work_days: Optional[List[str]] = None
+    daily_schedule: dict | None = None
+    work_days: list[str] | None = None
 
-    entry_tolerance_minutes: Optional[int] = Field(None, ge=0, le=60)
-    exit_tolerance_minutes: Optional[int] = Field(None, ge=0, le=60)
+    entry_tolerance_minutes: int | None = Field(None, ge=0, le=60)
+    exit_tolerance_minutes: int | None = Field(None, ge=0, le=60)
 
-    overtime_requires_approval: Optional[bool] = None
-    use_time_bank: Optional[bool] = None
+    overtime_requires_approval: bool | None = None
+    use_time_bank: bool | None = None
 
-    require_geolocation: Optional[bool] = None
-    allowed_locations: Optional[List[AllowedLocation]] = None
+    require_geolocation: bool | None = None
+    allowed_locations: list[AllowedLocation] | None = None
 
-    require_biometric: Optional[bool] = None
-    min_biometric_score: Optional[int] = Field(None, ge=0, le=100)
+    require_biometric: bool | None = None
+    min_biometric_score: int | None = Field(None, ge=0, le=100)
 
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
+    valid_from: date | None = None
+    valid_until: date | None = None
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class WorkScheduleResponse(WorkScheduleBase):
@@ -175,16 +174,16 @@ class WorkScheduleResponse(WorkScheduleBase):
     code: str
     status: ScheduleStatus
 
-    employee_id: Optional[str] = None
-    employee_name: Optional[str] = None
+    employee_id: str | None = None
+    employee_name: str | None = None
     is_template: bool = False
 
-    department_id: Optional[str] = None
-    department_name: Optional[str] = None
+    department_id: str | None = None
+    department_name: str | None = None
 
-    daily_schedule: Optional[dict] = None
-    work_days: Optional[List[str]] = None
-    days_off: Optional[List[str]] = None
+    daily_schedule: dict | None = None
+    work_days: list[str] | None = None
+    days_off: list[str] | None = None
 
     entry_tolerance_minutes: int = 10
     exit_tolerance_minutes: int = 10
@@ -200,18 +199,18 @@ class WorkScheduleResponse(WorkScheduleBase):
     time_bank_balance_minutes: int = 0
 
     require_geolocation: bool = False
-    allowed_locations: Optional[List[dict]] = None
+    allowed_locations: list[dict] | None = None
 
     require_biometric: bool = True
     min_biometric_score: int = 80
 
     consider_holidays: bool = True
 
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
+    valid_from: date | None = None
+    valid_until: date | None = None
 
-    condominium_id: Optional[str] = None
-    condominium_name: Optional[str] = None
+    condominium_id: str | None = None
+    condominium_name: str | None = None
 
     # Calculados
     weekly_hours: float
@@ -235,24 +234,24 @@ class WorkScheduleListResponse(BaseModel):
     schedule_type: ScheduleType
     schedule_type_display: str
     status: ScheduleStatus
-    employee_id: Optional[str] = None
-    employee_name: Optional[str] = None
+    employee_id: str | None = None
+    employee_name: str | None = None
     is_template: bool = False
     weekly_hours: float
     is_valid: bool
-    condominium_name: Optional[str] = None
+    condominium_name: str | None = None
 
 
 class WorkScheduleFilter(BaseModel):
     """Schema para filtros de WorkSchedule."""
 
-    employee_id: Optional[str] = None
-    schedule_type: Optional[ScheduleType] = None
-    status: Optional[ScheduleStatus] = None
-    department_id: Optional[str] = None
-    condominium_id: Optional[str] = None
-    is_template: Optional[bool] = None
-    is_valid: Optional[bool] = None
+    employee_id: str | None = None
+    schedule_type: ScheduleType | None = None
+    status: ScheduleStatus | None = None
+    department_id: str | None = None
+    condominium_id: str | None = None
+    is_template: bool | None = None
+    is_valid: bool | None = None
 
 
 class WorkScheduleStats(BaseModel):
@@ -270,5 +269,5 @@ class WorkScheduleValidation(BaseModel):
     """Schema para validação de regras CLT."""
 
     is_valid: bool = True
-    violations: List[str] = []
-    warnings: List[str] = []
+    violations: list[str] = []
+    warnings: list[str] = []

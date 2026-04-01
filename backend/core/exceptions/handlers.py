@@ -4,11 +4,12 @@ Exception handlers customizados para a aplicação.
 Provê exceptions padronizadas e handlers globais para FastAPI.
 """
 
-from typing import Any, Dict
+from typing import Any
+
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from core.logging import logger
 
+from core.logging import logger
 
 # =============================================================================
 # EXCEPTIONS CUSTOMIZADAS
@@ -55,7 +56,7 @@ class ConflictError(Exception):
 class ValidationError(Exception):
     """Erro de validação de dados (422)."""
 
-    def __init__(self, message: str, errors: Dict[str, Any] = None):
+    def __init__(self, message: str, errors: dict[str, Any] = None):
         """
         Args:
             message: Mensagem de erro geral

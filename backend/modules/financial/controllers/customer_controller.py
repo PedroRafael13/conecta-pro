@@ -1,7 +1,6 @@
 """Controller para clientes/devedores do contas a receber."""
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -31,7 +30,7 @@ def get_repository(
 
 
 @router.post(
-    "/",
+    "",
     response_model=CustomerResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar cliente",
@@ -56,17 +55,17 @@ async def create_customer(
 
 
 @router.get(
-    "/",
-    response_model=List[CustomerResponse],
+    "",
+    response_model=list[CustomerResponse],
     summary="Listar clientes",
 )
 async def list_customers(
     condominio_id: UUID,
-    search: Optional[str] = Query(None, description="Busca no nome ou documento"),
-    customer_type: Optional[str] = Query(None, alias="type", description="Tipo"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Status"),
-    has_debt: Optional[bool] = Query(None, description="Com divida ativa"),
-    is_overdue: Optional[bool] = Query(None, description="Com divida vencida"),
+    search: str | None = Query(None, description="Busca no nome ou documento"),
+    customer_type: str | None = Query(None, alias="type", description="Tipo"),
+    status_filter: str | None = Query(None, alias="status", description="Status"),
+    has_debt: bool | None = Query(None, description="Com divida ativa"),
+    is_overdue: bool | None = Query(None, description="Com divida vencida"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: CustomerRepository = Depends(get_repository),
@@ -87,7 +86,7 @@ async def list_customers(
 
 @router.get(
     "/debtors",
-    response_model=List[CustomerResponse],
+    response_model=list[CustomerResponse],
     summary="Listar devedores",
 )
 async def list_debtors(
@@ -165,7 +164,7 @@ async def get_customer_by_morador(
 
 @router.get(
     "/unidade/{unidade_id}",
-    response_model=List[CustomerResponse],
+    response_model=list[CustomerResponse],
     summary="Buscar clientes por unidade",
 )
 async def get_customers_by_unidade(
@@ -231,11 +230,7 @@ async def delete_customer(
     await repo.delete(customer)
 
 
-@router.post(
-    "/{customer_id}/block",
-    response_model=CustomerResponse,
-    summary="Bloquear cliente",
-)
+@router.post("/{customer_id}/block", response_model=CustomerResponse, summary="Bloquear cliente", status_code=201)
 async def block_customer(
     customer_id: UUID,
     reason: str = Query(..., min_length=5, description="Motivo do bloqueio"),
@@ -255,11 +250,7 @@ async def block_customer(
     return CustomerResponse.model_validate(customer)
 
 
-@router.post(
-    "/{customer_id}/unblock",
-    response_model=CustomerResponse,
-    summary="Desbloquear cliente",
-)
+@router.post("/{customer_id}/unblock", response_model=CustomerResponse, summary="Desbloquear cliente", status_code=201)
 async def unblock_customer(
     customer_id: UUID,
     repo: CustomerRepository = Depends(get_repository),
@@ -302,7 +293,5 @@ async def get_customer_debt_summary(
         "overdue_debt": float(customer.overdue_debt),
         "status": customer.status,
         "is_blocked": customer.status == CustomerStatus.BLOQUEADO.value,
-        "block_reason": (
-            customer.notes if customer.status == CustomerStatus.BLOQUEADO.value else None
-        ),
+        "block_reason": (customer.notes if customer.status == CustomerStatus.BLOQUEADO.value else None),
     }

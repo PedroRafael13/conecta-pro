@@ -5,13 +5,12 @@ Sprint 5 - Dashboard CRM.
 
 import uuid
 from datetime import date, datetime, timedelta
-from typing import List
 from unittest.mock import MagicMock
 
 import pytest
 
 from modules.crm.models.commission import Commission, CommissionStatus
-from modules.crm.models.lead import Lead, LeadStatus, LeadSource
+from modules.crm.models.lead import Lead, LeadSource, LeadStatus
 from modules.crm.models.opportunity import Opportunity, OpportunityStage
 from modules.crm.models.proposal import Proposal, ProposalStatus
 from modules.crm.services.dashboard_service import (
@@ -37,10 +36,10 @@ class TestDashboardService:
         return str(uuid.uuid4())
 
     @pytest.fixture
-    def sample_leads(self, seller_id) -> List[Lead]:
+    def sample_leads(self, seller_id) -> list[Lead]:
         """Fixture para leads de exemplo."""
         now = datetime.utcnow()
-        today = date.today()
+        date.today()
 
         leads = []
         statuses = [
@@ -56,7 +55,7 @@ class TestDashboardService:
         for i, status in enumerate(statuses):
             lead = MagicMock(spec=Lead)
             lead.id = str(uuid.uuid4())
-            lead.name = f"Lead {i+1}"
+            lead.name = f"Lead {i + 1}"
             lead.status = status
             lead.assigned_to_id = seller_id if i < 5 else str(uuid.uuid4())
             lead.is_active = True
@@ -74,7 +73,7 @@ class TestDashboardService:
         return leads
 
     @pytest.fixture
-    def sample_opportunities(self, seller_id) -> List[Opportunity]:
+    def sample_opportunities(self, seller_id) -> list[Opportunity]:
         """Fixture para opportunities de exemplo."""
         now = datetime.utcnow()
 
@@ -92,7 +91,7 @@ class TestDashboardService:
         for i, (stage, value, prob) in enumerate(stages_values):
             opp = MagicMock(spec=Opportunity)
             opp.id = str(uuid.uuid4())
-            opp.name = f"Opportunity {i+1}"
+            opp.name = f"Opportunity {i + 1}"
             opp.stage = stage
             opp.value = value
             opp.probability = prob
@@ -109,7 +108,7 @@ class TestDashboardService:
         return opportunities
 
     @pytest.fixture
-    def sample_proposals(self) -> List[Proposal]:
+    def sample_proposals(self) -> list[Proposal]:
         """Fixture para propostas de exemplo."""
         now = datetime.utcnow()
 
@@ -127,7 +126,7 @@ class TestDashboardService:
         for i, (status, total) in enumerate(statuses_totals):
             prop = MagicMock(spec=Proposal)
             prop.id = str(uuid.uuid4())
-            prop.number = f"PROP-2024-{i+1:05d}"
+            prop.number = f"PROP-2024-{i + 1:05d}"
             prop.status = status
             prop.total = total
             prop.is_active = True
@@ -138,7 +137,7 @@ class TestDashboardService:
         return proposals
 
     @pytest.fixture
-    def sample_commissions(self, seller_id) -> List[Commission]:
+    def sample_commissions(self, seller_id) -> list[Commission]:
         """Fixture para comissões de exemplo."""
         now = datetime.utcnow()
 
@@ -154,7 +153,7 @@ class TestDashboardService:
         for i, (status, value) in enumerate(statuses_values):
             comm = MagicMock(spec=Commission)
             comm.id = str(uuid.uuid4())
-            comm.reference_number = f"COM-2024-{i+1:05d}"
+            comm.reference_number = f"COM-2024-{i + 1:05d}"
             comm.seller_id = seller_id
             comm.status = status
             comm.final_commission = value
@@ -342,8 +341,7 @@ class TestDashboardService:
         assert kpis.commissions_paid_value == 5500
 
     def test_calculate_kpis_full(
-        self, service, sample_leads, sample_opportunities,
-        sample_proposals, sample_commissions
+        self, service, sample_leads, sample_opportunities, sample_proposals, sample_commissions
     ):
         """Testa KPIs com todos os dados."""
         kpis = service.calculate_kpis(
@@ -487,8 +485,7 @@ class TestDashboardService:
         assert metrics.total_sales == 0
 
     def test_calculate_seller_performance(
-        self, service, seller_id, sample_leads,
-        sample_opportunities, sample_commissions
+        self, service, seller_id, sample_leads, sample_opportunities, sample_commissions
     ):
         """Testa cálculo de performance do vendedor."""
         metrics = service.calculate_seller_performance(
@@ -505,8 +502,7 @@ class TestDashboardService:
         assert metrics.leads_converted > 0
 
     def test_calculate_seller_performance_with_target(
-        self, service, seller_id, sample_leads,
-        sample_opportunities, sample_commissions
+        self, service, seller_id, sample_leads, sample_opportunities, sample_commissions
     ):
         """Testa performance com meta."""
         metrics = service.calculate_seller_performance(
@@ -522,8 +518,7 @@ class TestDashboardService:
         assert metrics.target_percentage >= 0
 
     def test_calculate_seller_conversion_rate(
-        self, service, seller_id, sample_leads,
-        sample_opportunities, sample_commissions
+        self, service, seller_id, sample_leads, sample_opportunities, sample_commissions
     ):
         """Testa taxa de conversão do vendedor."""
         metrics = service.calculate_seller_performance(
@@ -551,9 +546,7 @@ class TestDashboardService:
 
         assert len(top) == 0
 
-    def test_get_top_performers(
-        self, service, sample_leads, sample_opportunities, sample_commissions
-    ):
+    def test_get_top_performers(self, service, sample_leads, sample_opportunities, sample_commissions):
         """Testa busca de top performers."""
         sellers = {
             str(uuid.uuid4()): "Vendedor 1",
@@ -574,9 +567,7 @@ class TestDashboardService:
         if len(top) >= 2:
             assert top[0].total_sales >= top[1].total_sales
 
-    def test_get_top_performers_limit(
-        self, service, sample_leads, sample_opportunities, sample_commissions
-    ):
+    def test_get_top_performers_limit(self, service, sample_leads, sample_opportunities, sample_commissions):
         """Testa limite de top performers."""
         sellers = {str(uuid.uuid4()): f"Vendedor {i}" for i in range(10)}
 
@@ -650,7 +641,7 @@ class TestDashboardService:
             OpportunityStage.NEGOTIATION.value,
             OpportunityStage.CLOSED_WON.value,
         ]
-        for i, stage in enumerate(stages):
+        for _i, stage in enumerate(stages):
             opp = MagicMock(spec=Opportunity)
             opp.id = str(uuid.uuid4())
             opp.stage = stage

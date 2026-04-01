@@ -7,8 +7,8 @@ from modules.ai.workflow_optimizer.services.workflow_analyzer import (
     WorkflowOptimizer,
 )
 from modules.ai.workflow_optimizer.services.workflow_executor import (
-    WorkflowExecutor,
     StepExecutor,
+    WorkflowExecutor,
 )
 
 __all__ = [

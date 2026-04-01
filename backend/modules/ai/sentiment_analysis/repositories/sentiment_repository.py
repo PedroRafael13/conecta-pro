@@ -6,26 +6,24 @@ Repository para operacoes de banco de dados do modulo de sentimento.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, func, and_, or_, desc, asc
+from sqlalchemy import and_, asc, delete, desc, func, or_, select, update
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from modules.ai.sentiment_analysis.models import (
+    AnalysisStatus,
+    FeedbackInsight,
+    InsightPriority,
+    RuleCategory,
     SentimentAnalysis,
+    SentimentRule,
+    SentimentTrend,
     SentimentType,
     SourceType,
-    AnalysisStatus,
-    SentimentRule,
-    RuleCategory,
-    SentimentTrend,
     TrendPeriod,
-    TrendDirection,
-    FeedbackInsight,
-    InsightType,
-    InsightPriority,
 )
 from modules.ai.sentiment_analysis.models.feedback_insight import InsightStatus
 
@@ -56,18 +54,16 @@ class SentimentRepository:
     async def get_analysis(
         self,
         analysis_id: UUID,
-    ) -> Optional[SentimentAnalysis]:
+    ) -> SentimentAnalysis | None:
         """Busca analise por ID."""
-        result = await self.session.execute(
-            select(SentimentAnalysis).where(SentimentAnalysis.id == analysis_id)
-        )
+        result = await self.session.execute(select(SentimentAnalysis).where(SentimentAnalysis.id == analysis_id))
         return result.scalar_one_or_none()
 
     async def update_analysis(
         self,
         analysis_id: UUID,
         **kwargs,
-    ) -> Optional[SentimentAnalysis]:
+    ) -> SentimentAnalysis | None:
         """Atualiza analise."""
         analysis = await self.get_analysis(analysis_id)
         if not analysis:
@@ -83,20 +79,18 @@ class SentimentRepository:
 
     async def delete_analysis(self, analysis_id: UUID) -> bool:
         """Remove analise."""
-        result = await self.session.execute(
-            delete(SentimentAnalysis).where(SentimentAnalysis.id == analysis_id)
-        )
+        result = await self.session.execute(delete(SentimentAnalysis).where(SentimentAnalysis.id == analysis_id))
         await self.session.commit()
         return result.rowcount > 0
 
     async def list_analyses(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         page: int = 1,
         page_size: int = 50,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[SentimentAnalysis], int]:
+    ) -> tuple[list[SentimentAnalysis], int]:
         """Lista analises com filtros e paginacao."""
         query = select(SentimentAnalysis)
 
@@ -104,66 +98,40 @@ class SentimentRepository:
             conditions = []
 
             if "sentiment_types" in filters and filters["sentiment_types"]:
-                conditions.append(
-                    SentimentAnalysis.sentiment_type.in_(filters["sentiment_types"])
-                )
+                conditions.append(SentimentAnalysis.sentiment_type.in_(filters["sentiment_types"]))
 
             if "source_types" in filters and filters["source_types"]:
-                conditions.append(
-                    SentimentAnalysis.source_type.in_(filters["source_types"])
-                )
+                conditions.append(SentimentAnalysis.source_type.in_(filters["source_types"]))
 
             if "customer_id" in filters and filters["customer_id"]:
-                conditions.append(
-                    SentimentAnalysis.customer_id == filters["customer_id"]
-                )
+                conditions.append(SentimentAnalysis.customer_id == filters["customer_id"])
 
             if "entity_type" in filters and filters["entity_type"]:
-                conditions.append(
-                    SentimentAnalysis.entity_type == filters["entity_type"]
-                )
+                conditions.append(SentimentAnalysis.entity_type == filters["entity_type"])
 
             if "entity_id" in filters and filters["entity_id"]:
                 conditions.append(SentimentAnalysis.entity_id == filters["entity_id"])
 
             if "min_score" in filters and filters["min_score"] is not None:
-                conditions.append(
-                    SentimentAnalysis.sentiment_score >= filters["min_score"]
-                )
+                conditions.append(SentimentAnalysis.sentiment_score >= filters["min_score"])
 
             if "max_score" in filters and filters["max_score"] is not None:
-                conditions.append(
-                    SentimentAnalysis.sentiment_score <= filters["max_score"]
-                )
+                conditions.append(SentimentAnalysis.sentiment_score <= filters["max_score"])
 
             if "has_urgency" in filters and filters["has_urgency"] is not None:
-                conditions.append(
-                    SentimentAnalysis.has_urgency == filters["has_urgency"]
-                )
+                conditions.append(SentimentAnalysis.has_urgency == filters["has_urgency"])
 
             if "has_complaint" in filters and filters["has_complaint"] is not None:
-                conditions.append(
-                    SentimentAnalysis.has_complaint == filters["has_complaint"]
-                )
+                conditions.append(SentimentAnalysis.has_complaint == filters["has_complaint"])
 
-            if (
-                "has_intent_to_leave" in filters
-                and filters["has_intent_to_leave"] is not None
-            ):
-                conditions.append(
-                    SentimentAnalysis.has_intent_to_leave
-                    == filters["has_intent_to_leave"]
-                )
+            if "has_intent_to_leave" in filters and filters["has_intent_to_leave"] is not None:
+                conditions.append(SentimentAnalysis.has_intent_to_leave == filters["has_intent_to_leave"])
 
             if "requires_action" in filters and filters["requires_action"] is not None:
-                conditions.append(
-                    SentimentAnalysis.requires_action == filters["requires_action"]
-                )
+                conditions.append(SentimentAnalysis.requires_action == filters["requires_action"])
 
             if "is_reviewed" in filters and filters["is_reviewed"] is not None:
-                conditions.append(
-                    SentimentAnalysis.is_reviewed == filters["is_reviewed"]
-                )
+                conditions.append(SentimentAnalysis.is_reviewed == filters["is_reviewed"])
 
             if "date_from" in filters and filters["date_from"]:
                 conditions.append(SentimentAnalysis.created_at >= filters["date_from"])
@@ -179,7 +147,8 @@ class SentimentRepository:
         total = await self.session.scalar(count_query) or 0
 
         # Order
-        order_column = getattr(SentimentAnalysis, order_by, SentimentAnalysis.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(SentimentAnalysis).mapper.column_attrs}
+        order_column = getattr(SentimentAnalysis, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(desc(order_column))
         else:
@@ -198,7 +167,7 @@ class SentimentRepository:
         self,
         customer_id: UUID,
         limit: int = 100,
-    ) -> List[SentimentAnalysis]:
+    ) -> list[SentimentAnalysis]:
         """Busca analises de um cliente."""
         result = await self.session.execute(
             select(SentimentAnalysis)
@@ -212,7 +181,7 @@ class SentimentRepository:
         self,
         hours: int = 24,
         limit: int = 50,
-    ) -> List[SentimentAnalysis]:
+    ) -> list[SentimentAnalysis]:
         """Busca analises criticas recentes."""
         since = datetime.utcnow() - timedelta(hours=hours)
 
@@ -223,7 +192,7 @@ class SentimentRepository:
                     SentimentAnalysis.created_at >= since,
                     or_(
                         SentimentAnalysis.sentiment_type == SentimentType.VERY_NEGATIVE,
-                        SentimentAnalysis.has_intent_to_leave == True,
+                        SentimentAnalysis.has_intent_to_leave,
                         SentimentAnalysis.urgency_level >= 8,
                     ),
                 )
@@ -235,9 +204,9 @@ class SentimentRepository:
 
     async def get_analysis_stats(
         self,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> dict[str, Any]:
         """Retorna estatisticas de analises."""
         conditions = []
         if date_from:
@@ -271,18 +240,10 @@ class SentimentRepository:
         # Indicadores
         indicators_result = await self.session.execute(
             select(
-                func.sum(
-                    func.cast(SentimentAnalysis.has_urgency, Integer)
-                ).label("urgency_count"),
-                func.sum(
-                    func.cast(SentimentAnalysis.has_complaint, Integer)
-                ).label("complaint_count"),
-                func.sum(
-                    func.cast(SentimentAnalysis.has_intent_to_leave, Integer)
-                ).label("churn_risk_count"),
-                func.sum(
-                    func.cast(SentimentAnalysis.requires_action, Integer)
-                ).label("action_required_count"),
+                func.sum(func.cast(SentimentAnalysis.has_urgency, Integer)).label("urgency_count"),
+                func.sum(func.cast(SentimentAnalysis.has_complaint, Integer)).label("complaint_count"),
+                func.sum(func.cast(SentimentAnalysis.has_intent_to_leave, Integer)).label("churn_risk_count"),
+                func.sum(func.cast(SentimentAnalysis.requires_action, Integer)).label("action_required_count"),
             ).where(where_clause)
         )
         indicators = indicators_result.one()
@@ -310,25 +271,21 @@ class SentimentRepository:
         logger.info(f"Regra criada: {rule.code}")
         return rule
 
-    async def get_rule(self, rule_id: UUID) -> Optional[SentimentRule]:
+    async def get_rule(self, rule_id: UUID) -> SentimentRule | None:
         """Busca regra por ID."""
-        result = await self.session.execute(
-            select(SentimentRule).where(SentimentRule.id == rule_id)
-        )
+        result = await self.session.execute(select(SentimentRule).where(SentimentRule.id == rule_id))
         return result.scalar_one_or_none()
 
-    async def get_rule_by_code(self, code: str) -> Optional[SentimentRule]:
+    async def get_rule_by_code(self, code: str) -> SentimentRule | None:
         """Busca regra por codigo."""
-        result = await self.session.execute(
-            select(SentimentRule).where(SentimentRule.code == code)
-        )
+        result = await self.session.execute(select(SentimentRule).where(SentimentRule.code == code))
         return result.scalar_one_or_none()
 
     async def update_rule(
         self,
         rule_id: UUID,
         **kwargs,
-    ) -> Optional[SentimentRule]:
+    ) -> SentimentRule | None:
         """Atualiza regra."""
         rule = await self.get_rule(rule_id)
         if not rule:
@@ -348,7 +305,7 @@ class SentimentRepository:
             delete(SentimentRule).where(
                 and_(
                     SentimentRule.id == rule_id,
-                    SentimentRule.is_system == False,
+                    not SentimentRule.is_system,
                 )
             )
         )
@@ -357,11 +314,11 @@ class SentimentRepository:
 
     async def list_rules(
         self,
-        category: Optional[RuleCategory] = None,
-        is_active: Optional[bool] = None,
+        category: RuleCategory | None = None,
+        is_active: bool | None = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[SentimentRule], int]:
+    ) -> tuple[list[SentimentRule], int]:
         """Lista regras."""
         query = select(SentimentRule)
 
@@ -392,10 +349,10 @@ class SentimentRepository:
 
     async def get_active_rules(
         self,
-        source_type: Optional[SourceType] = None,
-    ) -> List[SentimentRule]:
+        source_type: SourceType | None = None,
+    ) -> list[SentimentRule]:
         """Busca regras ativas."""
-        query = select(SentimentRule).where(SentimentRule.is_active == True)
+        query = select(SentimentRule).where(SentimentRule.is_active)
 
         if source_type:
             # Filtra regras que se aplicam a esta fonte
@@ -437,20 +394,18 @@ class SentimentRepository:
         await self.session.refresh(trend)
         return trend
 
-    async def get_trend(self, trend_id: UUID) -> Optional[SentimentTrend]:
+    async def get_trend(self, trend_id: UUID) -> SentimentTrend | None:
         """Busca tendencia por ID."""
-        result = await self.session.execute(
-            select(SentimentTrend).where(SentimentTrend.id == trend_id)
-        )
+        result = await self.session.execute(select(SentimentTrend).where(SentimentTrend.id == trend_id))
         return result.scalar_one_or_none()
 
     async def get_trend_by_period(
         self,
         period_type: TrendPeriod,
         period_label: str,
-        category: Optional[str] = None,
-        category_value: Optional[str] = None,
-    ) -> Optional[SentimentTrend]:
+        category: str | None = None,
+        category_value: str | None = None,
+    ) -> SentimentTrend | None:
         """Busca tendencia por periodo."""
         query = select(SentimentTrend).where(
             and_(
@@ -471,7 +426,7 @@ class SentimentRepository:
         self,
         trend_id: UUID,
         **kwargs,
-    ) -> Optional[SentimentTrend]:
+    ) -> SentimentTrend | None:
         """Atualiza tendencia."""
         trend = await self.get_trend(trend_id)
         if not trend:
@@ -487,14 +442,14 @@ class SentimentRepository:
 
     async def list_trends(
         self,
-        period_type: Optional[TrendPeriod] = None,
-        category: Optional[str] = None,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
+        period_type: TrendPeriod | None = None,
+        category: str | None = None,
+        entity_type: str | None = None,
+        entity_id: UUID | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
         limit: int = 100,
-    ) -> List[SentimentTrend]:
+    ) -> list[SentimentTrend]:
         """Lista tendencias."""
         query = select(SentimentTrend)
 
@@ -523,12 +478,10 @@ class SentimentRepository:
     async def get_latest_trend(
         self,
         period_type: TrendPeriod,
-        category: Optional[str] = None,
-    ) -> Optional[SentimentTrend]:
+        category: str | None = None,
+    ) -> SentimentTrend | None:
         """Busca tendencia mais recente."""
-        query = select(SentimentTrend).where(
-            SentimentTrend.period_type == period_type
-        )
+        query = select(SentimentTrend).where(SentimentTrend.period_type == period_type)
 
         if category:
             query = query.where(SentimentTrend.category == category)
@@ -550,28 +503,24 @@ class SentimentRepository:
         logger.info(f"Insight criado: {insight.insight_number}")
         return insight
 
-    async def get_insight(self, insight_id: UUID) -> Optional[FeedbackInsight]:
+    async def get_insight(self, insight_id: UUID) -> FeedbackInsight | None:
         """Busca insight por ID."""
-        result = await self.session.execute(
-            select(FeedbackInsight).where(FeedbackInsight.id == insight_id)
-        )
+        result = await self.session.execute(select(FeedbackInsight).where(FeedbackInsight.id == insight_id))
         return result.scalar_one_or_none()
 
     async def get_insight_by_number(
         self,
         number: str,
-    ) -> Optional[FeedbackInsight]:
+    ) -> FeedbackInsight | None:
         """Busca insight por numero."""
-        result = await self.session.execute(
-            select(FeedbackInsight).where(FeedbackInsight.insight_number == number)
-        )
+        result = await self.session.execute(select(FeedbackInsight).where(FeedbackInsight.insight_number == number))
         return result.scalar_one_or_none()
 
     async def update_insight(
         self,
         insight_id: UUID,
         **kwargs,
-    ) -> Optional[FeedbackInsight]:
+    ) -> FeedbackInsight | None:
         """Atualiza insight."""
         insight = await self.get_insight(insight_id)
         if not insight:
@@ -587,20 +536,18 @@ class SentimentRepository:
 
     async def delete_insight(self, insight_id: UUID) -> bool:
         """Remove insight."""
-        result = await self.session.execute(
-            delete(FeedbackInsight).where(FeedbackInsight.id == insight_id)
-        )
+        result = await self.session.execute(delete(FeedbackInsight).where(FeedbackInsight.id == insight_id))
         await self.session.commit()
         return result.rowcount > 0
 
     async def list_insights(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         page: int = 1,
         page_size: int = 50,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[FeedbackInsight], int]:
+    ) -> tuple[list[FeedbackInsight], int]:
         """Lista insights com filtros."""
         query = select(FeedbackInsight)
 
@@ -608,14 +555,10 @@ class SentimentRepository:
             conditions = []
 
             if "insight_types" in filters and filters["insight_types"]:
-                conditions.append(
-                    FeedbackInsight.insight_type.in_(filters["insight_types"])
-                )
+                conditions.append(FeedbackInsight.insight_type.in_(filters["insight_types"]))
 
             if "priorities" in filters and filters["priorities"]:
-                conditions.append(
-                    FeedbackInsight.priority.in_(filters["priorities"])
-                )
+                conditions.append(FeedbackInsight.priority.in_(filters["priorities"]))
 
             if "statuses" in filters and filters["statuses"]:
                 conditions.append(FeedbackInsight.status.in_(filters["statuses"]))
@@ -624,38 +567,22 @@ class SentimentRepository:
                 conditions.append(FeedbackInsight.category == filters["category"])
 
             if "entity_type" in filters and filters["entity_type"]:
-                conditions.append(
-                    FeedbackInsight.entity_type == filters["entity_type"]
-                )
+                conditions.append(FeedbackInsight.entity_type == filters["entity_type"])
 
             if "entity_id" in filters and filters["entity_id"]:
                 conditions.append(FeedbackInsight.entity_id == filters["entity_id"])
 
-            if (
-                "min_impact_score" in filters
-                and filters["min_impact_score"] is not None
-            ):
-                conditions.append(
-                    FeedbackInsight.impact_score >= filters["min_impact_score"]
-                )
+            if "min_impact_score" in filters and filters["min_impact_score"] is not None:
+                conditions.append(FeedbackInsight.impact_score >= filters["min_impact_score"])
 
-            if (
-                "min_urgency_score" in filters
-                and filters["min_urgency_score"] is not None
-            ):
-                conditions.append(
-                    FeedbackInsight.urgency_score >= filters["min_urgency_score"]
-                )
+            if "min_urgency_score" in filters and filters["min_urgency_score"] is not None:
+                conditions.append(FeedbackInsight.urgency_score >= filters["min_urgency_score"])
 
             if "assigned_to" in filters and filters["assigned_to"]:
-                conditions.append(
-                    FeedbackInsight.assigned_to == filters["assigned_to"]
-                )
+                conditions.append(FeedbackInsight.assigned_to == filters["assigned_to"])
 
             if "assigned_team" in filters and filters["assigned_team"]:
-                conditions.append(
-                    FeedbackInsight.assigned_team == filters["assigned_team"]
-                )
+                conditions.append(FeedbackInsight.assigned_team == filters["assigned_team"])
 
             if "date_from" in filters and filters["date_from"]:
                 conditions.append(FeedbackInsight.created_at >= filters["date_from"])
@@ -671,7 +598,8 @@ class SentimentRepository:
         total = await self.session.scalar(count_query) or 0
 
         # Order
-        order_column = getattr(FeedbackInsight, order_by, FeedbackInsight.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(FeedbackInsight).mapper.column_attrs}
+        order_column = getattr(FeedbackInsight, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(desc(order_column))
         else:
@@ -689,16 +617,18 @@ class SentimentRepository:
     async def get_active_insights(
         self,
         limit: int = 50,
-    ) -> List[FeedbackInsight]:
+    ) -> list[FeedbackInsight]:
         """Busca insights ativos."""
         result = await self.session.execute(
             select(FeedbackInsight)
             .where(
-                FeedbackInsight.status.in_([
-                    InsightStatus.NEW,
-                    InsightStatus.ACKNOWLEDGED,
-                    InsightStatus.IN_PROGRESS,
-                ])
+                FeedbackInsight.status.in_(
+                    [
+                        InsightStatus.NEW,
+                        InsightStatus.ACKNOWLEDGED,
+                        InsightStatus.IN_PROGRESS,
+                    ]
+                )
             )
             .order_by(
                 desc(FeedbackInsight.priority),
@@ -708,17 +638,19 @@ class SentimentRepository:
         )
         return list(result.scalars().all())
 
-    async def get_critical_insights(self, limit: int = 20) -> List[FeedbackInsight]:
+    async def get_critical_insights(self, limit: int = 20) -> list[FeedbackInsight]:
         """Busca insights criticos."""
         result = await self.session.execute(
             select(FeedbackInsight)
             .where(
                 and_(
                     FeedbackInsight.priority == InsightPriority.CRITICAL,
-                    FeedbackInsight.status.in_([
-                        InsightStatus.NEW,
-                        InsightStatus.ACKNOWLEDGED,
-                    ]),
+                    FeedbackInsight.status.in_(
+                        [
+                            InsightStatus.NEW,
+                            InsightStatus.ACKNOWLEDGED,
+                        ]
+                    ),
                 )
             )
             .order_by(desc(FeedbackInsight.created_at))
@@ -726,7 +658,7 @@ class SentimentRepository:
         )
         return list(result.scalars().all())
 
-    async def get_insight_stats(self) -> Dict[str, Any]:
+    async def get_insight_stats(self) -> dict[str, Any]:
         """Retorna estatisticas de insights."""
         # Por status
         status_result = await self.session.execute(
@@ -744,11 +676,13 @@ class SentimentRepository:
                 func.count(FeedbackInsight.id).label("count"),
             )
             .where(
-                FeedbackInsight.status.in_([
-                    InsightStatus.NEW,
-                    InsightStatus.ACKNOWLEDGED,
-                    InsightStatus.IN_PROGRESS,
-                ])
+                FeedbackInsight.status.in_(
+                    [
+                        InsightStatus.NEW,
+                        InsightStatus.ACKNOWLEDGED,
+                        InsightStatus.IN_PROGRESS,
+                    ]
+                )
             )
             .group_by(FeedbackInsight.priority)
         )
@@ -761,11 +695,13 @@ class SentimentRepository:
                 func.count(FeedbackInsight.id).label("count"),
             )
             .where(
-                FeedbackInsight.status.in_([
-                    InsightStatus.NEW,
-                    InsightStatus.ACKNOWLEDGED,
-                    InsightStatus.IN_PROGRESS,
-                ])
+                FeedbackInsight.status.in_(
+                    [
+                        InsightStatus.NEW,
+                        InsightStatus.ACKNOWLEDGED,
+                        InsightStatus.IN_PROGRESS,
+                    ]
+                )
             )
             .group_by(FeedbackInsight.insight_type)
         )
@@ -775,10 +711,7 @@ class SentimentRepository:
             "by_status": status_counts,
             "by_priority": priority_counts,
             "by_type": type_counts,
-            "total_active": sum(
-                status_counts.get(s, 0)
-                for s in ["new", "acknowledged", "in_progress"]
-            ),
+            "total_active": sum(status_counts.get(s, 0) for s in ["new", "acknowledged", "in_progress"]),
             "total_critical": priority_counts.get("critical", 0),
         }
 
@@ -790,8 +723,8 @@ class SentimentRepository:
         self,
         period_start: datetime,
         period_end: datetime,
-        group_by: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        group_by: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Agrega sentimento por periodo."""
         query = select(
             func.count(SentimentAnalysis.id).label("count"),
@@ -837,7 +770,8 @@ class SentimentRepository:
         )
 
         if group_by:
-            group_column = getattr(SentimentAnalysis, group_by, None)
+            _valid_group_column_cols = {c.key for c in sa_inspect(SentimentAnalysis).mapper.column_attrs}
+            group_column = getattr(SentimentAnalysis, group_by) if group_by in _valid_group_column_cols else None
             if group_column:
                 query = query.add_columns(group_column.label("group_value"))
                 query = query.group_by(group_column)
@@ -866,10 +800,10 @@ class SentimentRepository:
 
     async def get_top_keywords(
         self,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
         limit: int = 20,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Busca keywords mais frequentes."""
         conditions = [SentimentAnalysis.status == AnalysisStatus.COMPLETED]
         if date_from:
@@ -878,12 +812,10 @@ class SentimentRepository:
             conditions.append(SentimentAnalysis.created_at <= date_to)
 
         result = await self.session.execute(
-            select(SentimentAnalysis.keywords)
-            .where(and_(*conditions))
-            .limit(1000)  # Limite de registros para agregar
+            select(SentimentAnalysis.keywords).where(and_(*conditions)).limit(1000)  # Limite de registros para agregar
         )
 
-        keyword_counts: Dict[str, int] = {}
+        keyword_counts: dict[str, int] = {}
         for row in result.scalars().all():
             if row:
                 for kw in row:
@@ -892,17 +824,15 @@ class SentimentRepository:
                     keyword_counts[word] = keyword_counts.get(word, 0) + freq
 
         # Ordenar e limitar
-        sorted_keywords = sorted(
-            keyword_counts.items(), key=lambda x: x[1], reverse=True
-        )[:limit]
+        sorted_keywords = sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
 
         return [{"word": word, "count": count} for word, count in sorted_keywords]
 
     async def get_emotion_distribution(
         self,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
-    ) -> Dict[str, int]:
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> dict[str, int]:
         """Retorna distribuicao de emocoes."""
         conditions = [SentimentAnalysis.status == AnalysisStatus.COMPLETED]
         if date_from:
@@ -919,11 +849,8 @@ class SentimentRepository:
             .group_by(SentimentAnalysis.primary_emotion)
         )
 
-        return {
-            r[0].value if r[0] else "unknown": r[1]
-            for r in result.all()
-        }
+        return {r[0].value if r[0] else "unknown": r[1] for r in result.all()}
 
 
 # Helper para Integer cast
-from sqlalchemy import Integer
+from sqlalchemy import Integer  # noqa: E402

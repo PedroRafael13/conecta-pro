@@ -2,8 +2,7 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -11,7 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class IntegrationType(str, Enum):
+class IntegrationType(StrEnum):
     """Tipo de sistema de integração."""
 
     ESOCIAL = "esocial"  # eSocial (Governo)
@@ -29,7 +28,7 @@ class IntegrationType(str, Enum):
     FILE = "file"  # Importação/exportação por arquivo
 
 
-class IntegrationStatus(str, Enum):
+class IntegrationStatus(StrEnum):
     """Status da integração."""
 
     ACTIVE = "active"  # Ativa
@@ -207,11 +206,11 @@ class PayrollIntegration(Base):
             # Manter apenas últimos 50 erros
             self.error_log = self.error_log[-50:]
 
-    def get_rubrica_code(self, internal_code: str) -> Optional[str]:
+    def get_rubrica_code(self, internal_code: str) -> str | None:
         """Obtém código externo de rubrica."""
         return self.rubrica_mapping.get(internal_code)
 
-    def get_field_mapping(self, internal_field: str) -> Optional[str]:
+    def get_field_mapping(self, internal_field: str) -> str | None:
         """Obtém mapeamento de campo externo."""
         return self.field_mapping.get(internal_field)
 

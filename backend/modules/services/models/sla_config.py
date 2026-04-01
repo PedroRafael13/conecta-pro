@@ -3,17 +3,14 @@ SLAConfig Model - Configuração de SLA
 Sprint 31: Gestão de Serviços
 """
 
-import enum
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Numeric, Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -22,8 +19,9 @@ if TYPE_CHECKING:
     from modules.services.models.service_catalog import ServiceCatalog
 
 
-class SLAMetricType(str, enum.Enum):
+class SLAMetricType(StrEnum):
     """Tipo de métrica de SLA."""
+
     TEMPO_RESPOSTA = "tempo_resposta"
     TEMPO_RESOLUCAO = "tempo_resolucao"
     DISPONIBILIDADE = "disponibilidade"
@@ -39,17 +37,14 @@ class SLAConfig(Base):
     Model para configuração de SLA.
     Define os acordos de nível de serviço.
     """
+
     __tablename__ = "sla_configs"
 
     # Primary key
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     # Foreign keys
-    service_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("service_catalog.id", ondelete="CASCADE"),
-        nullable=True
-    )
+    service_id = Column(UUID(as_uuid=True), ForeignKey("service_catalog.id", ondelete="CASCADE"), nullable=True)
     client_id = Column(UUID(as_uuid=True), nullable=True)
     contract_id = Column(UUID(as_uuid=True), nullable=True)
 
@@ -59,9 +54,7 @@ class SLAConfig(Base):
     code = Column(String(30), nullable=True)
 
     # Tipo de métrica
-    metric_type = Column(
-        Enum(SLAMetricType), nullable=False, default=SLAMetricType.TEMPO_RESOLUCAO
-    )
+    metric_type = Column(Enum(SLAMetricType), nullable=False, default=SLAMetricType.TEMPO_RESOLUCAO)
 
     # Tempos (em minutos para maior precisão)
     response_time_minutes = Column(Integer, nullable=True)
@@ -69,13 +62,9 @@ class SLAConfig(Base):
     first_contact_time_minutes = Column(Integer, nullable=True)
 
     # Percentuais
-    target_availability_percent = Column(
-        Numeric(5, 2), nullable=True, default=99.0
-    )
+    target_availability_percent = Column(Numeric(5, 2), nullable=True, default=99.0)
     target_quality_percent = Column(Numeric(5, 2), nullable=True, default=95.0)
-    target_satisfaction_percent = Column(
-        Numeric(5, 2), nullable=True, default=90.0
-    )
+    target_satisfaction_percent = Column(Numeric(5, 2), nullable=True, default=90.0)
 
     # Limites
     max_incidents_month = Column(Integer, nullable=True)
@@ -133,16 +122,12 @@ class SLAConfig(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    service: Optional["ServiceCatalog"] = relationship(
-        "ServiceCatalog", back_populates="sla_configs"
-    )
+    service: Optional["ServiceCatalog"] = relationship("ServiceCatalog", back_populates="sla_configs")
 
     # Índices
     __table_args__ = (
@@ -181,18 +166,10 @@ class SLAConfig(Base):
         else:
             self.orders_breached += 1
         if self.total_orders > 0:
-            self.current_compliance_percent = Decimal(
-                str(round(
-                    (self.orders_within_sla / self.total_orders) * 100, 2
-                ))
-            )
+            self.current_compliance_percent = Decimal(str(round((self.orders_within_sla / self.total_orders) * 100, 2)))
         self.updated_at = datetime.utcnow()
 
-    def calculate_deadline(
-        self,
-        start_time: datetime,
-        priority: Optional[str] = None
-    ) -> datetime:
+    def calculate_deadline(self, start_time: datetime, priority: str | None = None) -> datetime:
         """Calcula deadline baseado no SLA."""
         resolution_minutes = self.resolution_time_minutes or 480  # 8h padrão
 

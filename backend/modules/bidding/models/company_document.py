@@ -5,60 +5,58 @@ Gestao de documentos necessarios para participacao em licitacoes.
 """
 
 import uuid
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional
+from datetime import date, datetime
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Integer, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, Date, DateTime, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models import Base
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """Tipo de documento."""
+
     # Certidoes
-    CND_FEDERAL = "cnd_federal"                    # Certidao Negativa de Debitos Federais
-    CND_ESTADUAL = "cnd_estadual"                  # Certidao Negativa de Debitos Estaduais
-    CND_MUNICIPAL = "cnd_municipal"                # Certidao Negativa de Debitos Municipais
-    CND_TRABALHISTA = "cnd_trabalhista"            # Certidao Negativa de Debitos Trabalhistas
-    CRF_FGTS = "crf_fgts"                          # Certificado de Regularidade do FGTS
-    CND_INSS = "cnd_inss"                          # Certidao Negativa de Debitos INSS
+    CND_FEDERAL = "cnd_federal"  # Certidao Negativa de Debitos Federais
+    CND_ESTADUAL = "cnd_estadual"  # Certidao Negativa de Debitos Estaduais
+    CND_MUNICIPAL = "cnd_municipal"  # Certidao Negativa de Debitos Municipais
+    CND_TRABALHISTA = "cnd_trabalhista"  # Certidao Negativa de Debitos Trabalhistas
+    CRF_FGTS = "crf_fgts"  # Certificado de Regularidade do FGTS
+    CND_INSS = "cnd_inss"  # Certidao Negativa de Debitos INSS
 
     # Documentos Juridicos
-    CONTRATO_SOCIAL = "contrato_social"            # Contrato Social e alteracoes
-    CNPJ = "cnpj"                                  # Cartao CNPJ
-    PROCURACAO = "procuracao"                      # Procuracao
-    ESTATUTO = "estatuto"                          # Estatuto Social
-    ATA_ASSEMBLEIA = "ata_assembleia"              # Ata de Assembleia
+    CONTRATO_SOCIAL = "contrato_social"  # Contrato Social e alteracoes
+    CNPJ = "cnpj"  # Cartao CNPJ
+    PROCURACAO = "procuracao"  # Procuracao
+    ESTATUTO = "estatuto"  # Estatuto Social
+    ATA_ASSEMBLEIA = "ata_assembleia"  # Ata de Assembleia
 
     # Documentos Tecnicos
-    ATESTADO_CAPACIDADE = "atestado_capacidade"    # Atestado de Capacidade Tecnica
-    REGISTRO_CREA = "registro_crea"                # Registro no CREA
-    REGISTRO_CRA = "registro_cra"                  # Registro no CRA
+    ATESTADO_CAPACIDADE = "atestado_capacidade"  # Atestado de Capacidade Tecnica
+    REGISTRO_CREA = "registro_crea"  # Registro no CREA
+    REGISTRO_CRA = "registro_cra"  # Registro no CRA
     ALVARA_FUNCIONAMENTO = "alvara_funcionamento"  # Alvara de Funcionamento
-    LICENCA_AMBIENTAL = "licenca_ambiental"        # Licenca Ambiental
+    LICENCA_AMBIENTAL = "licenca_ambiental"  # Licenca Ambiental
 
     # Documentos Financeiros
-    BALANCO_PATRIMONIAL = "balanco_patrimonial"    # Balanco Patrimonial
-    DRE = "dre"                                    # Demonstracao de Resultado
-    CERTIDAO_FALENCIA = "certidao_falencia"        # Certidao Negativa de Falencia
+    BALANCO_PATRIMONIAL = "balanco_patrimonial"  # Balanco Patrimonial
+    DRE = "dre"  # Demonstracao de Resultado
+    CERTIDAO_FALENCIA = "certidao_falencia"  # Certidao Negativa de Falencia
 
     # Outros
-    DECLARACAO = "declaracao"                      # Declaracoes diversas
+    DECLARACAO = "declaracao"  # Declaracoes diversas
     OUTROS = "outros"
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     """Status do documento."""
-    VALID = "valid"              # Valido
-    EXPIRING = "expiring"        # Vencendo em breve (< 30 dias)
-    EXPIRED = "expired"          # Vencido
-    PENDING = "pending"          # Pendente de obtencao
-    RENEWING = "renewing"        # Em renovacao
+
+    VALID = "valid"  # Valido
+    EXPIRING = "expiring"  # Vencendo em breve (< 30 dias)
+    EXPIRED = "expired"  # Vencido
+    PENDING = "pending"  # Pendente de obtencao
+    RENEWING = "renewing"  # Em renovacao
 
 
 class CompanyDocument(Base):
@@ -68,6 +66,7 @@ class CompanyDocument(Base):
     Gerencia todos os documentos necessarios para participacao
     em processos licitatorios, com controle de validade e alertas.
     """
+
     __tablename__ = "bidding_company_documents"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -114,8 +113,8 @@ class CompanyDocument(Base):
 
     # Indices
     __table_args__ = (
-        Index('idx_company_doc_tipo_status', 'tipo', 'status'),
-        Index('idx_company_doc_validade', 'data_validade'),
+        Index("idx_company_doc_tipo_status", "tipo", "status"),
+        Index("idx_company_doc_validade", "data_validade"),
     )
 
     def __repr__(self) -> str:
@@ -129,7 +128,7 @@ class CompanyDocument(Base):
         return date.today() <= self.data_validade
 
     @property
-    def dias_para_vencer(self) -> Optional[int]:
+    def dias_para_vencer(self) -> int | None:
         """Dias restantes ate o vencimento."""
         if not self.data_validade:
             return None

@@ -6,28 +6,28 @@ Sprint 35: Configurações e Multi-tenant
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.config.models import (
-    Tenant,
-    TenantSettings,
-    SystemConfig,
-    FeatureFlag,
-    NotificationTemplate,
-    TenantStatus,
-    TenantPlan,
-    TenantType,
-    SettingCategory,
     ConfigScope,
+    FeatureFlag,
     FlagStatus,
     FlagType,
     NotificationChannel,
+    NotificationTemplate,
     NotificationType,
+    SettingCategory,
+    SystemConfig,
     TemplateStatus,
+    Tenant,
+    TenantPlan,
+    TenantSettings,
+    TenantStatus,
+    TenantType,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,36 +48,25 @@ class ConfigRepository:
         await self.db.refresh(tenant)
         return tenant
 
-    async def get_tenant_by_id(self, tenant_id: UUID) -> Optional[Tenant]:
+    async def get_tenant_by_id(self, tenant_id: UUID) -> Tenant | None:
         """Busca tenant por ID."""
-        result = await self.db.execute(
-            select(Tenant).where(Tenant.id == tenant_id)
-        )
+        result = await self.db.execute(select(Tenant).where(Tenant.id == tenant_id))
         return result.scalar_one_or_none()
 
-    async def get_tenant_by_codigo(self, codigo: str) -> Optional[Tenant]:
+    async def get_tenant_by_codigo(self, codigo: str) -> Tenant | None:
         """Busca tenant por código."""
-        result = await self.db.execute(
-            select(Tenant).where(Tenant.codigo == codigo)
-        )
+        result = await self.db.execute(select(Tenant).where(Tenant.codigo == codigo))
         return result.scalar_one_or_none()
 
-    async def get_tenant_by_cnpj(self, cnpj: str) -> Optional[Tenant]:
+    async def get_tenant_by_cnpj(self, cnpj: str) -> Tenant | None:
         """Busca tenant por CNPJ."""
-        result = await self.db.execute(
-            select(Tenant).where(Tenant.cnpj == cnpj)
-        )
+        result = await self.db.execute(select(Tenant).where(Tenant.cnpj == cnpj))
         return result.scalar_one_or_none()
 
-    async def get_tenant_by_domain(self, domain: str) -> Optional[Tenant]:
+    async def get_tenant_by_domain(self, domain: str) -> Tenant | None:
         """Busca tenant por domínio ou subdomínio."""
         result = await self.db.execute(
-            select(Tenant).where(
-                or_(
-                    Tenant.dominio_personalizado == domain,
-                    Tenant.subdominio == domain
-                )
-            )
+            select(Tenant).where(or_(Tenant.dominio_personalizado == domain, Tenant.subdominio == domain))
         )
         return result.scalar_one_or_none()
 
@@ -89,8 +78,8 @@ class ConfigRepository:
         plan: TenantPlan = None,
         tenant_type: TenantType = None,
         search: str = None,
-        ativo: bool = True
-    ) -> Tuple[List[Tenant], int]:
+        ativo: bool = True,
+    ) -> tuple[list[Tenant], int]:
         """Lista tenants com filtros."""
         query = select(Tenant).where(Tenant.ativo == ativo)
 
@@ -107,7 +96,7 @@ class ConfigRepository:
                     Tenant.nome.ilike(search_filter),
                     Tenant.codigo.ilike(search_filter),
                     Tenant.email.ilike(search_filter),
-                    Tenant.cnpj.ilike(search_filter)
+                    Tenant.cnpj.ilike(search_filter),
                 )
             )
 
@@ -144,39 +133,31 @@ class ConfigRepository:
     async def get_active_tenants_count(self) -> int:
         """Conta tenants ativos."""
         result = await self.db.execute(
-            select(func.count(Tenant.id)).where(
-                and_(
-                    Tenant.status == TenantStatus.ATIVO,
-                    Tenant.ativo == True
-                )
-            )
+            select(func.count(Tenant.id)).where(and_(Tenant.status == TenantStatus.ATIVO, Tenant.ativo))
         )
         return result.scalar() or 0
 
-    async def get_trial_tenants(self) -> List[Tenant]:
+    async def get_trial_tenants(self) -> list[Tenant]:
         """Lista tenants em trial."""
         result = await self.db.execute(
-            select(Tenant).where(
-                and_(
-                    Tenant.status == TenantStatus.TRIAL,
-                    Tenant.ativo == True
-                )
-            ).order_by(Tenant.trial_ends_at)
+            select(Tenant).where(and_(Tenant.status == TenantStatus.TRIAL, Tenant.ativo)).order_by(Tenant.trial_ends_at)
         )
         return list(result.scalars().all())
 
-    async def get_expiring_trials(self, days: int = 7) -> List[Tenant]:
+    async def get_expiring_trials(self, days: int = 7) -> list[Tenant]:
         """Lista trials expirando em X dias."""
         cutoff = datetime.utcnow() + timedelta(days=days)
         result = await self.db.execute(
-            select(Tenant).where(
+            select(Tenant)
+            .where(
                 and_(
                     Tenant.status == TenantStatus.TRIAL,
                     Tenant.trial_ends_at <= cutoff,
                     Tenant.trial_ends_at > datetime.utcnow(),
-                    Tenant.ativo == True
+                    Tenant.ativo,
                 )
-            ).order_by(Tenant.trial_ends_at)
+            )
+            .order_by(Tenant.trial_ends_at)
         )
         return list(result.scalars().all())
 
@@ -189,43 +170,23 @@ class ConfigRepository:
         await self.db.refresh(setting)
         return setting
 
-    async def get_setting_by_id(self, setting_id: UUID) -> Optional[TenantSettings]:
+    async def get_setting_by_id(self, setting_id: UUID) -> TenantSettings | None:
         """Busca configuração por ID."""
-        result = await self.db.execute(
-            select(TenantSettings).where(TenantSettings.id == setting_id)
-        )
+        result = await self.db.execute(select(TenantSettings).where(TenantSettings.id == setting_id))
         return result.scalar_one_or_none()
 
-    async def get_setting_by_key(
-        self,
-        tenant_id: UUID,
-        chave: str
-    ) -> Optional[TenantSettings]:
+    async def get_setting_by_key(self, tenant_id: UUID, chave: str) -> TenantSettings | None:
         """Busca configuração por chave."""
         result = await self.db.execute(
-            select(TenantSettings).where(
-                and_(
-                    TenantSettings.tenant_id == tenant_id,
-                    TenantSettings.chave == chave
-                )
-            )
+            select(TenantSettings).where(and_(TenantSettings.tenant_id == tenant_id, TenantSettings.chave == chave))
         )
         return result.scalar_one_or_none()
 
     async def list_tenant_settings(
-        self,
-        tenant_id: UUID,
-        category: SettingCategory = None,
-        group: str = None,
-        visible: bool = None
-    ) -> Tuple[List[TenantSettings], int]:
+        self, tenant_id: UUID, category: SettingCategory = None, group: str = None, visible: bool = None
+    ) -> tuple[list[TenantSettings], int]:
         """Lista configurações do tenant."""
-        query = select(TenantSettings).where(
-            and_(
-                TenantSettings.tenant_id == tenant_id,
-                TenantSettings.ativo == True
-            )
-        )
+        query = select(TenantSettings).where(and_(TenantSettings.tenant_id == tenant_id, TenantSettings.ativo))
 
         if category:
             query = query.where(TenantSettings.category == category)
@@ -240,11 +201,7 @@ class ConfigRepository:
         total_count = total.scalar()
 
         # Results
-        query = query.order_by(
-            TenantSettings.category,
-            TenantSettings.group,
-            TenantSettings.display_order
-        )
+        query = query.order_by(TenantSettings.category, TenantSettings.group, TenantSettings.display_order)
         result = await self.db.execute(query)
 
         return list(result.scalars().all()), total_count
@@ -266,20 +223,14 @@ class ConfigRepository:
             return True
         return False
 
-    async def get_settings_by_category(
-        self,
-        tenant_id: UUID,
-        category: SettingCategory
-    ) -> List[TenantSettings]:
+    async def get_settings_by_category(self, tenant_id: UUID, category: SettingCategory) -> list[TenantSettings]:
         """Lista configurações por categoria."""
         result = await self.db.execute(
-            select(TenantSettings).where(
-                and_(
-                    TenantSettings.tenant_id == tenant_id,
-                    TenantSettings.category == category,
-                    TenantSettings.ativo == True
-                )
-            ).order_by(TenantSettings.display_order)
+            select(TenantSettings)
+            .where(
+                and_(TenantSettings.tenant_id == tenant_id, TenantSettings.category == category, TenantSettings.ativo)
+            )
+            .order_by(TenantSettings.display_order)
         )
         return list(result.scalars().all())
 
@@ -292,33 +243,21 @@ class ConfigRepository:
         await self.db.refresh(config)
         return config
 
-    async def get_system_config_by_id(
-        self,
-        config_id: UUID
-    ) -> Optional[SystemConfig]:
+    async def get_system_config_by_id(self, config_id: UUID) -> SystemConfig | None:
         """Busca configuração global por ID."""
-        result = await self.db.execute(
-            select(SystemConfig).where(SystemConfig.id == config_id)
-        )
+        result = await self.db.execute(select(SystemConfig).where(SystemConfig.id == config_id))
         return result.scalar_one_or_none()
 
-    async def get_system_config_by_key(self, chave: str) -> Optional[SystemConfig]:
+    async def get_system_config_by_key(self, chave: str) -> SystemConfig | None:
         """Busca configuração global por chave."""
-        result = await self.db.execute(
-            select(SystemConfig).where(SystemConfig.chave == chave)
-        )
+        result = await self.db.execute(select(SystemConfig).where(SystemConfig.chave == chave))
         return result.scalar_one_or_none()
 
     async def list_system_configs(
-        self,
-        scope: ConfigScope = None,
-        category: str = None,
-        admin_only: bool = None,
-        skip: int = 0,
-        limit: int = 100
-    ) -> Tuple[List[SystemConfig], int]:
+        self, scope: ConfigScope = None, category: str = None, admin_only: bool = None, skip: int = 0, limit: int = 100
+    ) -> tuple[list[SystemConfig], int]:
         """Lista configurações globais."""
-        query = select(SystemConfig).where(SystemConfig.ativo == True)
+        query = select(SystemConfig).where(SystemConfig.ativo)
 
         if scope:
             query = query.where(SystemConfig.scope == scope)
@@ -356,16 +295,9 @@ class ConfigRepository:
             return True
         return False
 
-    async def get_cacheable_configs(self) -> List[SystemConfig]:
+    async def get_cacheable_configs(self) -> list[SystemConfig]:
         """Lista configurações cacheáveis."""
-        result = await self.db.execute(
-            select(SystemConfig).where(
-                and_(
-                    SystemConfig.cacheable == True,
-                    SystemConfig.ativo == True
-                )
-            )
-        )
+        result = await self.db.execute(select(SystemConfig).where(and_(SystemConfig.cacheable, SystemConfig.ativo)))
         return list(result.scalars().all())
 
     # ==================== FeatureFlag ====================
@@ -377,24 +309,14 @@ class ConfigRepository:
         await self.db.refresh(flag)
         return flag
 
-    async def get_feature_flag_by_id(
-        self,
-        flag_id: UUID
-    ) -> Optional[FeatureFlag]:
+    async def get_feature_flag_by_id(self, flag_id: UUID) -> FeatureFlag | None:
         """Busca feature flag por ID."""
-        result = await self.db.execute(
-            select(FeatureFlag).where(FeatureFlag.id == flag_id)
-        )
+        result = await self.db.execute(select(FeatureFlag).where(FeatureFlag.id == flag_id))
         return result.scalar_one_or_none()
 
-    async def get_feature_flag_by_codigo(
-        self,
-        codigo: str
-    ) -> Optional[FeatureFlag]:
+    async def get_feature_flag_by_codigo(self, codigo: str) -> FeatureFlag | None:
         """Busca feature flag por código."""
-        result = await self.db.execute(
-            select(FeatureFlag).where(FeatureFlag.codigo == codigo)
-        )
+        result = await self.db.execute(select(FeatureFlag).where(FeatureFlag.codigo == codigo))
         return result.scalar_one_or_none()
 
     async def list_feature_flags(
@@ -404,10 +326,10 @@ class ConfigRepository:
         category: str = None,
         owner_team: str = None,
         skip: int = 0,
-        limit: int = 100
-    ) -> Tuple[List[FeatureFlag], int]:
+        limit: int = 100,
+    ) -> tuple[list[FeatureFlag], int]:
         """Lista feature flags."""
-        query = select(FeatureFlag).where(FeatureFlag.ativo == True)
+        query = select(FeatureFlag).where(FeatureFlag.ativo)
 
         if status:
             query = query.where(FeatureFlag.status == status)
@@ -447,35 +369,24 @@ class ConfigRepository:
             return True
         return False
 
-    async def get_active_feature_flags(self) -> List[FeatureFlag]:
+    async def get_active_feature_flags(self) -> list[FeatureFlag]:
         """Lista feature flags ativas."""
         result = await self.db.execute(
-            select(FeatureFlag).where(
-                and_(
-                    FeatureFlag.status == FlagStatus.ATIVO,
-                    FeatureFlag.ativo == True
-                )
-            )
+            select(FeatureFlag).where(and_(FeatureFlag.status == FlagStatus.ATIVO, FeatureFlag.ativo))
         )
         return list(result.scalars().all())
 
-    async def get_scheduled_flags(self) -> List[FeatureFlag]:
+    async def get_scheduled_flags(self) -> list[FeatureFlag]:
         """Lista flags com agendamento pendente."""
         now = datetime.utcnow()
         result = await self.db.execute(
             select(FeatureFlag).where(
                 and_(
-                    FeatureFlag.ativo == True,
+                    FeatureFlag.ativo,
                     or_(
-                        and_(
-                            FeatureFlag.scheduled_enable_at != None,
-                            FeatureFlag.scheduled_enable_at <= now
-                        ),
-                        and_(
-                            FeatureFlag.scheduled_disable_at != None,
-                            FeatureFlag.scheduled_disable_at <= now
-                        )
-                    )
+                        and_(FeatureFlag.scheduled_enable_at is not None, FeatureFlag.scheduled_enable_at <= now),
+                        and_(FeatureFlag.scheduled_disable_at is not None, FeatureFlag.scheduled_disable_at <= now),
+                    ),
                 )
             )
         )
@@ -483,33 +394,19 @@ class ConfigRepository:
 
     # ==================== NotificationTemplate ====================
 
-    async def create_notification_template(
-        self,
-        template: NotificationTemplate
-    ) -> NotificationTemplate:
+    async def create_notification_template(self, template: NotificationTemplate) -> NotificationTemplate:
         """Cria template de notificação."""
         self.db.add(template)
         await self.db.commit()
         await self.db.refresh(template)
         return template
 
-    async def get_notification_template_by_id(
-        self,
-        template_id: UUID
-    ) -> Optional[NotificationTemplate]:
+    async def get_notification_template_by_id(self, template_id: UUID) -> NotificationTemplate | None:
         """Busca template por ID."""
-        result = await self.db.execute(
-            select(NotificationTemplate).where(
-                NotificationTemplate.id == template_id
-            )
-        )
+        result = await self.db.execute(select(NotificationTemplate).where(NotificationTemplate.id == template_id))
         return result.scalar_one_or_none()
 
-    async def get_notification_template_by_codigo(
-        self,
-        tenant_id: UUID,
-        codigo: str
-    ) -> Optional[NotificationTemplate]:
+    async def get_notification_template_by_codigo(self, tenant_id: UUID, codigo: str) -> NotificationTemplate | None:
         """Busca template por código (tenant ou global)."""
         # Primeiro busca específico do tenant
         result = await self.db.execute(
@@ -517,7 +414,7 @@ class ConfigRepository:
                 and_(
                     NotificationTemplate.tenant_id == tenant_id,
                     NotificationTemplate.codigo == codigo,
-                    NotificationTemplate.ativo == True
+                    NotificationTemplate.ativo,
                 )
             )
         )
@@ -528,9 +425,9 @@ class ConfigRepository:
             result = await self.db.execute(
                 select(NotificationTemplate).where(
                     and_(
-                        NotificationTemplate.tenant_id == None,
+                        NotificationTemplate.tenant_id is None,
                         NotificationTemplate.codigo == codigo,
-                        NotificationTemplate.ativo == True
+                        NotificationTemplate.ativo,
                     )
                 )
             )
@@ -547,36 +444,27 @@ class ConfigRepository:
         category: str = None,
         include_global: bool = True,
         skip: int = 0,
-        limit: int = 100
-    ) -> Tuple[List[NotificationTemplate], int]:
+        limit: int = 100,
+    ) -> tuple[list[NotificationTemplate], int]:
         """Lista templates de notificação."""
-        query = select(NotificationTemplate).where(
-            NotificationTemplate.ativo == True
-        )
+        query = select(NotificationTemplate).where(NotificationTemplate.ativo)
 
         # Filtro de tenant
         if tenant_id:
             if include_global:
                 query = query.where(
-                    or_(
-                        NotificationTemplate.tenant_id == tenant_id,
-                        NotificationTemplate.tenant_id == None
-                    )
+                    or_(NotificationTemplate.tenant_id == tenant_id, NotificationTemplate.tenant_id is None)
                 )
             else:
-                query = query.where(
-                    NotificationTemplate.tenant_id == tenant_id
-                )
+                query = query.where(NotificationTemplate.tenant_id == tenant_id)
         else:
             # Apenas globais
-            query = query.where(NotificationTemplate.tenant_id == None)
+            query = query.where(NotificationTemplate.tenant_id is None)
 
         if channel:
             query = query.where(NotificationTemplate.channel == channel)
         if notification_type:
-            query = query.where(
-                NotificationTemplate.notification_type == notification_type
-            )
+            query = query.where(NotificationTemplate.notification_type == notification_type)
         if status:
             query = query.where(NotificationTemplate.status == status)
         if category:
@@ -589,19 +477,14 @@ class ConfigRepository:
 
         # Results
         query = query.order_by(
-            NotificationTemplate.channel,
-            NotificationTemplate.notification_type,
-            NotificationTemplate.nome
+            NotificationTemplate.channel, NotificationTemplate.notification_type, NotificationTemplate.nome
         )
         query = query.offset(skip).limit(limit)
         result = await self.db.execute(query)
 
         return list(result.scalars().all()), total_count
 
-    async def update_notification_template(
-        self,
-        template: NotificationTemplate
-    ) -> NotificationTemplate:
+    async def update_notification_template(self, template: NotificationTemplate) -> NotificationTemplate:
         """Atualiza template."""
         template.updated_at = datetime.utcnow()
         await self.db.commit()
@@ -619,25 +502,20 @@ class ConfigRepository:
         return False
 
     async def get_active_templates_by_channel(
-        self,
-        channel: NotificationChannel,
-        tenant_id: UUID = None
-    ) -> List[NotificationTemplate]:
+        self, channel: NotificationChannel, tenant_id: UUID = None
+    ) -> list[NotificationTemplate]:
         """Lista templates ativos por canal."""
         query = select(NotificationTemplate).where(
             and_(
                 NotificationTemplate.channel == channel,
                 NotificationTemplate.status == TemplateStatus.ATIVO,
-                NotificationTemplate.ativo == True
+                NotificationTemplate.ativo,
             )
         )
 
         if tenant_id:
             query = query.where(
-                or_(
-                    NotificationTemplate.tenant_id == tenant_id,
-                    NotificationTemplate.tenant_id == None
-                )
+                or_(NotificationTemplate.tenant_id == tenant_id, NotificationTemplate.tenant_id is None)
             )
 
         result = await self.db.execute(query)
@@ -645,63 +523,34 @@ class ConfigRepository:
 
     # ==================== Dashboard Stats ====================
 
-    async def get_config_dashboard_stats(self) -> Dict[str, Any]:
+    async def get_config_dashboard_stats(self) -> dict[str, Any]:
         """Retorna estatísticas para dashboard."""
         # Tenants
-        total_tenants = await self.db.execute(
-            select(func.count(Tenant.id)).where(Tenant.ativo == True)
-        )
+        total_tenants = await self.db.execute(select(func.count(Tenant.id)).where(Tenant.ativo))
         active_tenants = await self.db.execute(
-            select(func.count(Tenant.id)).where(
-                and_(
-                    Tenant.status == TenantStatus.ATIVO,
-                    Tenant.ativo == True
-                )
-            )
+            select(func.count(Tenant.id)).where(and_(Tenant.status == TenantStatus.ATIVO, Tenant.ativo))
         )
         trial_tenants = await self.db.execute(
-            select(func.count(Tenant.id)).where(
-                and_(
-                    Tenant.status == TenantStatus.TRIAL,
-                    Tenant.ativo == True
-                )
-            )
+            select(func.count(Tenant.id)).where(and_(Tenant.status == TenantStatus.TRIAL, Tenant.ativo))
         )
         suspended_tenants = await self.db.execute(
             select(func.count(Tenant.id)).where(
-                and_(
-                    Tenant.status.in_([
-                        TenantStatus.SUSPENSO,
-                        TenantStatus.BLOQUEADO
-                    ]),
-                    Tenant.ativo == True
-                )
+                and_(Tenant.status.in_([TenantStatus.SUSPENSO, TenantStatus.BLOQUEADO]), Tenant.ativo)
             )
         )
 
         # Configs
-        total_configs = await self.db.execute(
-            select(func.count(SystemConfig.id)).where(SystemConfig.ativo == True)
-        )
+        total_configs = await self.db.execute(select(func.count(SystemConfig.id)).where(SystemConfig.ativo))
 
         # Feature Flags
-        total_flags = await self.db.execute(
-            select(func.count(FeatureFlag.id)).where(FeatureFlag.ativo == True)
-        )
+        total_flags = await self.db.execute(select(func.count(FeatureFlag.id)).where(FeatureFlag.ativo))
         active_flags = await self.db.execute(
-            select(func.count(FeatureFlag.id)).where(
-                and_(
-                    FeatureFlag.status == FlagStatus.ATIVO,
-                    FeatureFlag.ativo == True
-                )
-            )
+            select(func.count(FeatureFlag.id)).where(and_(FeatureFlag.status == FlagStatus.ATIVO, FeatureFlag.ativo))
         )
 
         # Templates
         total_templates = await self.db.execute(
-            select(func.count(NotificationTemplate.id)).where(
-                NotificationTemplate.ativo == True
-            )
+            select(func.count(NotificationTemplate.id)).where(NotificationTemplate.ativo)
         )
 
         return {
@@ -712,15 +561,12 @@ class ConfigRepository:
             "total_configs": total_configs.scalar() or 0,
             "total_feature_flags": total_flags.scalar() or 0,
             "active_feature_flags": active_flags.scalar() or 0,
-            "total_notification_templates": total_templates.scalar() or 0
+            "total_notification_templates": total_templates.scalar() or 0,
         }
 
-    async def get_recent_tenants(self, limit: int = 5) -> List[Tenant]:
+    async def get_recent_tenants(self, limit: int = 5) -> list[Tenant]:
         """Lista tenants recentes."""
         result = await self.db.execute(
-            select(Tenant)
-            .where(Tenant.ativo == True)
-            .order_by(Tenant.created_at.desc())
-            .limit(limit)
+            select(Tenant).where(Tenant.ativo).order_by(Tenant.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())

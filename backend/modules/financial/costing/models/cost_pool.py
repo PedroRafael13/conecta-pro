@@ -1,8 +1,8 @@
 """Cost Pool model - Pools de Custos Indiretos."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from modules.financial.costing.models.cost_activity import CostActivity
 
 
-class PoolType(str, enum.Enum):
+class PoolType(StrEnum):
     """Tipo do pool de custo."""
 
     OVERHEAD = "OVERHEAD"  # Custos indiretos gerais
@@ -43,7 +43,7 @@ class PoolType(str, enum.Enum):
     CUSTOM = "CUSTOM"  # Personalizado
 
 
-class PoolStatus(str, enum.Enum):
+class PoolStatus(StrEnum):
     """Status do pool."""
 
     ACTIVE = "ACTIVE"
@@ -51,7 +51,7 @@ class PoolStatus(str, enum.Enum):
     CLOSED = "CLOSED"
 
 
-class AllocationBasis(str, enum.Enum):
+class AllocationBasis(StrEnum):
     """Base de alocação do pool."""
 
     DIRECT_LABOR_HOURS = "DIRECT_LABOR_HOURS"  # Horas de MOD
@@ -70,9 +70,7 @@ class CostPool(Base):
     """Pool de Custo - agrupa custos indiretos para alocação."""
 
     __tablename__ = "fin_cost_pools"
-    __table_args__ = (
-        UniqueConstraint("condominio_id", "code", name="uq_cost_pool_code"),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "code", name="uq_cost_pool_code"),)
 
     # Primary Key
     id = Column(
@@ -137,9 +135,7 @@ class CostPool(Base):
     budget_variance = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
 
     # Base de alocação
-    allocation_base_quantity = Column(
-        Numeric(18, 4), default=Decimal("0"), nullable=False
-    )
+    allocation_base_quantity = Column(Numeric(18, 4), default=Decimal("0"), nullable=False)
     allocation_rate = Column(Numeric(18, 6), default=Decimal("0"), nullable=False)
     rate_currency = Column(String(3), default="BRL", nullable=False)
 

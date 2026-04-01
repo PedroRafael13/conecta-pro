@@ -1,14 +1,13 @@
 """Serviço de cálculo de horas trabalhadas."""
 
+import logging
 from datetime import date, time
 from decimal import Decimal
-from typing import List, Optional, Tuple
-import logging
 
 from modules.hr.time_tracking.models import (
+    EntryType,
     TimeEntry,
     WorkSchedule,
-    EntryType,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,7 +31,7 @@ class TimeCalculationService:
 
     def calculate_worked_hours(  # pylint: disable=too-many-locals
         self,
-        entries: List[TimeEntry],
+        entries: list[TimeEntry],
         schedule: WorkSchedule = None,
     ) -> dict:
         """Calcula horas trabalhadas a partir dos registros de ponto.
@@ -52,12 +51,8 @@ class TimeCalculationService:
         # Separa entradas e saídas
         clock_ins = [e for e in entries_sorted if e.entry_type == EntryType.ENTRADA]
         clock_outs = [e for e in entries_sorted if e.entry_type == EntryType.SAIDA]
-        break_starts = [
-            e for e in entries_sorted if e.entry_type == EntryType.SAIDA_INTERVALO
-        ]
-        break_ends = [
-            e for e in entries_sorted if e.entry_type == EntryType.RETORNO_INTERVALO
-        ]
+        break_starts = [e for e in entries_sorted if e.entry_type == EntryType.SAIDA_INTERVALO]
+        break_ends = [e for e in entries_sorted if e.entry_type == EntryType.RETORNO_INTERVALO]
 
         if not clock_ins or not clock_outs:
             return self._empty_result()
@@ -75,9 +70,7 @@ class TimeCalculationService:
         worked_minutes = total_minutes - break_minutes
 
         # Horas noturnas
-        night_minutes = self._calculate_night_minutes(
-            first_in, last_out, break_starts, break_ends
-        )
+        night_minutes = self._calculate_night_minutes(first_in, last_out, break_starts, break_ends)
 
         # Horas esperadas do dia
         expected_minutes = 0
@@ -128,7 +121,7 @@ class TimeCalculationService:
         overtime_minutes: int,
         work_date: date,
         schedule: WorkSchedule = None,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Determina tipo de hora extra (50% ou 100%).
 
         Returns:
@@ -180,7 +173,7 @@ class TimeCalculationService:
         overtime_50_minutes: int,
         overtime_100_minutes: int,
         hourly_rate: Decimal,
-    ) -> Tuple[Decimal, Decimal]:
+    ) -> tuple[Decimal, Decimal]:
         """Calcula valor das horas extras.
 
         Returns:
@@ -201,7 +194,7 @@ class TimeCalculationService:
         late_count: int,
         absence_count: int,
         max_late_for_dsr: int = 0,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Verifica direito ao DSR (Descanso Semanal Remunerado).
 
         Conforme CLT, perde DSR se houver falta injustificada ou
@@ -227,7 +220,7 @@ class TimeCalculationService:
         break_minutes: int,
         last_exit_yesterday: time = None,
         first_entry_today: time = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Valida regras CLT de jornada.
 
         Returns:
@@ -237,27 +230,19 @@ class TimeCalculationService:
 
         # Máximo 10h diárias (8h + 2h extra)
         if worked_minutes > self.MAX_DAILY_HOURS * 60:
-            violations.append(
-                f"Jornada diária ({worked_minutes // 60}h) excede limite de {self.MAX_DAILY_HOURS}h"
-            )
+            violations.append(f"Jornada diária ({worked_minutes // 60}h) excede limite de {self.MAX_DAILY_HOURS}h")
 
         # Intervalo mínimo para jornada > 6h
         if worked_minutes > 360 and break_minutes < 60:  # 6h
-            violations.append(
-                f"Intervalo ({break_minutes}min) abaixo do mínimo de 60min para jornada > 6h"
-            )
+            violations.append(f"Intervalo ({break_minutes}min) abaixo do mínimo de 60min para jornada > 6h")
 
         # Intervalo mínimo para jornada 4-6h
         if 240 < worked_minutes <= 360 and break_minutes < 15:
-            violations.append(
-                f"Intervalo ({break_minutes}min) abaixo do mínimo de 15min para jornada 4-6h"
-            )
+            violations.append(f"Intervalo ({break_minutes}min) abaixo do mínimo de 15min para jornada 4-6h")
 
         # Descanso entre jornadas (11h)
         if last_exit_yesterday and first_entry_today:
-            rest_minutes = self._calculate_rest_between_shifts(
-                last_exit_yesterday, first_entry_today
-            )
+            rest_minutes = self._calculate_rest_between_shifts(last_exit_yesterday, first_entry_today)
             if rest_minutes < self.MIN_REST_BETWEEN_SHIFTS * 60:
                 violations.append(
                     f"Descanso entre jornadas ({rest_minutes // 60}h) "
@@ -268,8 +253,8 @@ class TimeCalculationService:
 
     def pair_entries(
         self,
-        entries: List[TimeEntry],
-    ) -> List[dict]:
+        entries: list[TimeEntry],
+    ) -> list[dict]:
         """Agrupa registros em pares (entrada/saída).
 
         Returns:
@@ -285,22 +270,26 @@ class TimeCalculationService:
             if entry.entry_type == EntryType.ENTRADA:
                 if pending_in:
                     # Entrada sem saída anterior - anomalia
-                    periods.append({
-                        "start": pending_in.entry_time,
-                        "end": None,
-                        "type": "work",
-                        "incomplete": True,
-                    })
+                    periods.append(
+                        {
+                            "start": pending_in.entry_time,
+                            "end": None,
+                            "type": "work",
+                            "incomplete": True,
+                        }
+                    )
                 pending_in = entry
 
             elif entry.entry_type == EntryType.SAIDA:
                 if pending_in:
-                    periods.append({
-                        "start": pending_in.entry_time,
-                        "end": entry.entry_time,
-                        "type": "work",
-                        "incomplete": False,
-                    })
+                    periods.append(
+                        {
+                            "start": pending_in.entry_time,
+                            "end": entry.entry_time,
+                            "type": "work",
+                            "incomplete": False,
+                        }
+                    )
                     pending_in = None
 
             elif entry.entry_type == EntryType.SAIDA_INTERVALO:
@@ -308,22 +297,26 @@ class TimeCalculationService:
 
             elif entry.entry_type == EntryType.RETORNO_INTERVALO:
                 if pending_break_out:
-                    periods.append({
-                        "start": pending_break_out.entry_time,
-                        "end": entry.entry_time,
-                        "type": "break",
-                        "incomplete": False,
-                    })
+                    periods.append(
+                        {
+                            "start": pending_break_out.entry_time,
+                            "end": entry.entry_time,
+                            "type": "break",
+                            "incomplete": False,
+                        }
+                    )
                     pending_break_out = None
 
         # Verifica pendências
         if pending_in:
-            periods.append({
-                "start": pending_in.entry_time,
-                "end": None,
-                "type": "work",
-                "incomplete": True,
-            })
+            periods.append(
+                {
+                    "start": pending_in.entry_time,
+                    "end": None,
+                    "type": "work",
+                    "incomplete": True,
+                }
+            )
 
         return periods
 
@@ -340,17 +333,15 @@ class TimeCalculationService:
 
     def _calculate_break_minutes(
         self,
-        break_starts: List[TimeEntry],
-        break_ends: List[TimeEntry],
+        break_starts: list[TimeEntry],
+        break_ends: list[TimeEntry],
     ) -> int:
         """Calcula total de minutos de intervalo."""
         total = 0
 
         for i, start in enumerate(break_starts):
             if i < len(break_ends):
-                total += self._time_diff_minutes(
-                    start.entry_time, break_ends[i].entry_time
-                )
+                total += self._time_diff_minutes(start.entry_time, break_ends[i].entry_time)
 
         return total
 
@@ -358,8 +349,8 @@ class TimeCalculationService:
         self,
         first_in: time,
         last_out: time,
-        break_starts: List[TimeEntry],
-        break_ends: List[TimeEntry],
+        break_starts: list[TimeEntry],
+        break_ends: list[TimeEntry],
     ) -> int:
         """Calcula minutos trabalhados no período noturno (22h-05h)."""
         night_minutes = 0
@@ -399,9 +390,7 @@ class TimeCalculationService:
         # Desconta intervalos noturnos
         for i, start in enumerate(break_starts):
             if i < len(break_ends):
-                break_night = self._calculate_night_in_period(
-                    start.entry_time, break_ends[i].entry_time
-                )
+                break_night = self._calculate_night_in_period(start.entry_time, break_ends[i].entry_time)
                 night_minutes -= break_night
 
         return max(0, night_minutes)
@@ -427,7 +416,7 @@ class TimeCalculationService:
         self,
         schedule: WorkSchedule,
         work_date: date,
-    ) -> Optional[time]:
+    ) -> time | None:
         """Obtém horário esperado de entrada."""
         day_schedule = schedule.get_schedule_for_day(work_date)
         if day_schedule:
@@ -438,7 +427,7 @@ class TimeCalculationService:
         self,
         schedule: WorkSchedule,
         work_date: date,
-    ) -> Optional[time]:
+    ) -> time | None:
         """Obtém horário esperado de saída."""
         day_schedule = schedule.get_schedule_for_day(work_date)
         if day_schedule:
@@ -466,14 +455,14 @@ class TimeCalculationService:
         """
         # Feriados nacionais fixos
         fixed_holidays = [
-            (1, 1),   # Ano Novo
+            (1, 1),  # Ano Novo
             (4, 21),  # Tiradentes
-            (5, 1),   # Dia do Trabalho
-            (9, 7),   # Independência
-            (10, 12), # Nossa Senhora
+            (5, 1),  # Dia do Trabalho
+            (9, 7),  # Independência
+            (10, 12),  # Nossa Senhora
             (11, 2),  # Finados
-            (11, 15), # Proclamação da República
-            (12, 25), # Natal
+            (11, 15),  # Proclamação da República
+            (12, 25),  # Natal
         ]
 
         return (check_date.month, check_date.day) in fixed_holidays

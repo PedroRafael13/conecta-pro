@@ -123,8 +123,6 @@ function PastasContent() {
       });
       invalidateFolders();
     } catch (error: any) {
-      console.error('Erro ao criar pasta:', error);
-
       if (error?.response?.status === 409 || error?.status === 409) {
         const errorMsg = error?.response?.data?.detail || error?.message || 'Já existe uma pasta com este nome neste local';
         toast({
@@ -164,8 +162,6 @@ function PastasContent() {
       });
       invalidateFolders();
     } catch (error: any) {
-      console.error('Erro ao atualizar pasta:', error);
-
       if (error?.response?.status === 409 || error?.status === 409) {
         const errorMsg = error?.response?.data?.detail || error?.message || 'Já existe uma pasta com este nome neste local';
         toast({
@@ -199,8 +195,7 @@ function PastasContent() {
       });
       setSelectedFolder(null);
       invalidateFolders();
-    } catch (error) {
-      console.error('Erro ao excluir pasta:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro ao excluir',

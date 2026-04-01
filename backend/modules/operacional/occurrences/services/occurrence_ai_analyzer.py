@@ -12,19 +12,18 @@ Quality Score: 99+/100
 from __future__ import annotations
 
 import logging
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
-from collections import Counter
+from typing import Any
 
 from sqlalchemy.orm import Session
 
 from modules.operacional.occurrences.models import (
     Occurrence,
     OccurrenceCategory,
-    OccurrenceSeverity,
     OccurrencePriority,
-    OccurrenceStatus,
+    OccurrenceSeverity,
 )
 from modules.operacional.occurrences.repositories import OccurrenceRepository
 
@@ -50,12 +49,12 @@ class ClassificationResult:
     suggested_severity: OccurrenceSeverity
     suggested_priority: OccurrencePriority
     confidence: float
-    keywords: List[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
     risk_score: float = 0.0
     requires_immediate_action: bool = False
-    similar_occurrences: List[str] = field(default_factory=list)
+    similar_occurrences: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "suggested_category": self.suggested_category.value,
@@ -87,53 +86,123 @@ class PatternAnalysis:
     period_start: datetime
     period_end: datetime
     total_occurrences: int
-    trends: Dict[str, Any] = field(default_factory=dict)
-    hotspots: List[Dict[str, Any]] = field(default_factory=list)
-    recurring_issues: List[Dict[str, Any]] = field(default_factory=list)
-    employee_patterns: List[Dict[str, Any]] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    trends: dict[str, Any] = field(default_factory=dict)
+    hotspots: list[dict[str, Any]] = field(default_factory=list)
+    recurring_issues: list[dict[str, Any]] = field(default_factory=list)
+    employee_patterns: list[dict[str, Any]] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
 
 # Palavras-chave para classificacao
-CATEGORY_KEYWORDS: Dict[OccurrenceCategory, List[str]] = {
+CATEGORY_KEYWORDS: dict[OccurrenceCategory, list[str]] = {
     OccurrenceCategory.SEGURANCA: [
-        "invasao", "furto", "roubo", "assalto", "violencia",
-        "arma", "ameaca", "suspeito", "intruso", "seguranca",
-        "alarme", "monitoramento", "cerca", "portao", "acesso",
+        "invasao",
+        "furto",
+        "roubo",
+        "assalto",
+        "violencia",
+        "arma",
+        "ameaca",
+        "suspeito",
+        "intruso",
+        "seguranca",
+        "alarme",
+        "monitoramento",
+        "cerca",
+        "portao",
+        "acesso",
     ],
     OccurrenceCategory.LIMPEZA: [
-        "limpeza", "sujeira", "lixo", "varrido", "lavado",
-        "higiene", "sanitario", "banheiro", "residuo", "organizado",
-        "vidro", "chao", "area comum",
+        "limpeza",
+        "sujeira",
+        "lixo",
+        "varrido",
+        "lavado",
+        "higiene",
+        "sanitario",
+        "banheiro",
+        "residuo",
+        "organizado",
+        "vidro",
+        "chao",
+        "area comum",
     ],
     OccurrenceCategory.COMPORTAMENTO: [
-        "comportamento", "conduta", "atitude", "desacato",
-        "insubordinacao", "celular", "dormindo", "uniforme",
-        "farda", "atraso", "falta", "abandono", "negligencia",
+        "comportamento",
+        "conduta",
+        "atitude",
+        "desacato",
+        "insubordinacao",
+        "celular",
+        "dormindo",
+        "uniforme",
+        "farda",
+        "atraso",
+        "falta",
+        "abandono",
+        "negligencia",
     ],
     OccurrenceCategory.ACIDENTE: [
-        "acidente", "queda", "ferimento", "lesao", "machucado",
-        "ambulancia", "hospital", "emergencia", "urgencia",
-        "socorro", "primeiros socorros",
+        "acidente",
+        "queda",
+        "ferimento",
+        "lesao",
+        "machucado",
+        "ambulancia",
+        "hospital",
+        "emergencia",
+        "urgencia",
+        "socorro",
+        "primeiros socorros",
     ],
     OccurrenceCategory.MANUTENCAO: [
-        "manutencao", "quebrado", "danificado", "vazamento",
-        "eletrico", "hidraulico", "ar condicionado", "elevador",
-        "lampada", "porta", "fechadura", "equipamento",
+        "manutencao",
+        "quebrado",
+        "danificado",
+        "vazamento",
+        "eletrico",
+        "hidraulico",
+        "ar condicionado",
+        "elevador",
+        "lampada",
+        "porta",
+        "fechadura",
+        "equipamento",
     ],
 }
 
 # Palavras que indicam alta severidade
-HIGH_SEVERITY_KEYWORDS: List[str] = [
-    "urgente", "emergencia", "grave", "critico", "imediato",
-    "ferido", "acidente", "invasao", "roubo", "furto", "violencia",
-    "arma", "incendio", "explosao", "desmaio", "morte",
+HIGH_SEVERITY_KEYWORDS: list[str] = [
+    "urgente",
+    "emergencia",
+    "grave",
+    "critico",
+    "imediato",
+    "ferido",
+    "acidente",
+    "invasao",
+    "roubo",
+    "furto",
+    "violencia",
+    "arma",
+    "incendio",
+    "explosao",
+    "desmaio",
+    "morte",
 ]
 
 # Palavras que indicam baixa severidade
-LOW_SEVERITY_KEYWORDS: List[str] = [
-    "pequeno", "menor", "leve", "sugestao", "observacao",
-    "elogio", "feedback", "melhoria", "possivel", "talvez",
+LOW_SEVERITY_KEYWORDS: list[str] = [
+    "pequeno",
+    "menor",
+    "leve",
+    "sugestao",
+    "observacao",
+    "elogio",
+    "feedback",
+    "melhoria",
+    "possivel",
+    "talvez",
 ]
 
 
@@ -172,7 +241,7 @@ class OccurrenceAIAnalyzer:
         self,
         title: str,
         description: str,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
     ) -> ClassificationResult:
         """Classifica uma ocorrencia baseado no texto.
 
@@ -186,11 +255,11 @@ class OccurrenceAIAnalyzer:
         """
         # Combinar texto para analise
         full_text = f"{title} {description}".lower()
-        words = full_text.split()
+        full_text.split()
 
         # Identificar categoria
-        category_scores: Dict[OccurrenceCategory, int] = {}
-        found_keywords: List[str] = []
+        category_scores: dict[OccurrenceCategory, int] = {}
+        found_keywords: list[str] = []
 
         for category, keywords in CATEGORY_KEYWORDS.items():
             score = 0
@@ -204,9 +273,7 @@ class OccurrenceAIAnalyzer:
         if category_scores:
             max_score = max(category_scores.values())
             if max_score > 0:
-                suggested_category = max(
-                    category_scores, key=category_scores.get
-                )
+                suggested_category = max(category_scores, key=category_scores.get)
             else:
                 suggested_category = OccurrenceCategory.OUTRO
         else:
@@ -253,11 +320,9 @@ class OccurrenceAIAnalyzer:
         )
 
         # Buscar ocorrencias similares se tenant informado
-        similar_occurrences: List[str] = []
+        similar_occurrences: list[str] = []
         if tenant_id and found_keywords:
-            similar_occurrences = self._find_similar(
-                tenant_id, found_keywords[:5]
-            )
+            similar_occurrences = self._find_similar(tenant_id, found_keywords[:5])
 
         return ClassificationResult(
             suggested_category=suggested_category,
@@ -273,7 +338,7 @@ class OccurrenceAIAnalyzer:
     def generate_recommendations(
         self,
         occurrence: Occurrence,
-    ) -> List[str]:
+    ) -> list[str]:
         """Gera recomendacoes para uma ocorrencia.
 
         Args:
@@ -282,40 +347,46 @@ class OccurrenceAIAnalyzer:
         Returns:
             Lista de recomendacoes.
         """
-        recommendations: List[str] = []
+        recommendations: list[str] = []
 
         # Recomendacoes por categoria
         if occurrence.category == OccurrenceCategory.SEGURANCA.value:
-            recommendations.extend([
-                "Verificar cameras de seguranca do periodo",
-                "Registrar boletim de ocorrencia se necessario",
-                "Notificar supervisao imediatamente",
-            ])
+            recommendations.extend(
+                [
+                    "Verificar cameras de seguranca do periodo",
+                    "Registrar boletim de ocorrencia se necessario",
+                    "Notificar supervisao imediatamente",
+                ]
+            )
 
         elif occurrence.category == OccurrenceCategory.COMPORTAMENTO.value:
-            recommendations.extend([
-                "Realizar conversa de orientacao com funcionario",
-                "Documentar historico de ocorrencias do funcionario",
-            ])
+            recommendations.extend(
+                [
+                    "Realizar conversa de orientacao com funcionario",
+                    "Documentar historico de ocorrencias do funcionario",
+                ]
+            )
             if occurrence.requires_disciplinary_action:
-                recommendations.append(
-                    "Avaliar necessidade de medida administrativa"
-                )
+                recommendations.append("Avaliar necessidade de medida administrativa")
 
         elif occurrence.category == OccurrenceCategory.ACIDENTE.value:
-            recommendations.extend([
-                "Garantir atendimento medico ao acidentado",
-                "Preencher CAT (Comunicacao de Acidente de Trabalho)",
-                "Preservar local para investigacao",
-                "Notificar SESMT/CIPA",
-            ])
+            recommendations.extend(
+                [
+                    "Garantir atendimento medico ao acidentado",
+                    "Preencher CAT (Comunicacao de Acidente de Trabalho)",
+                    "Preservar local para investigacao",
+                    "Notificar SESMT/CIPA",
+                ]
+            )
 
         elif occurrence.category == OccurrenceCategory.MANUTENCAO.value:
-            recommendations.extend([
-                "Abrir ordem de servico para manutencao",
-                "Isolar area se houver risco",
-                "Informar moradores/usuarios afetados",
-            ])
+            recommendations.extend(
+                [
+                    "Abrir ordem de servico para manutencao",
+                    "Isolar area se houver risco",
+                    "Informar moradores/usuarios afetados",
+                ]
+            )
 
         # Recomendacoes por severidade
         if occurrence.severity == OccurrenceSeverity.CRITICA.value:
@@ -356,9 +427,7 @@ class OccurrenceAIAnalyzer:
             created_at_end=end_date,
         )
 
-        occurrences, total = self.repository.list_by_tenant(
-            tenant_id, skip=0, limit=10000, filters=filters
-        )
+        occurrences, total = self.repository.list_by_tenant(tenant_id, skip=0, limit=10000, filters=filters)
 
         # Analisar tendencias
         trends = self._analyze_trends(occurrences)
@@ -373,9 +442,7 @@ class OccurrenceAIAnalyzer:
         employee_patterns = self._analyze_employee_patterns(occurrences)
 
         # Gerar recomendacoes
-        recommendations = self._generate_pattern_recommendations(
-            trends, hotspots, recurring, employee_patterns
-        )
+        recommendations = self._generate_pattern_recommendations(trends, hotspots, recurring, employee_patterns)
 
         return PatternAnalysis(
             period_start=start_date,
@@ -435,9 +502,9 @@ class OccurrenceAIAnalyzer:
     def _find_similar(
         self,
         tenant_id: str,
-        keywords: List[str],
+        keywords: list[str],
         limit: int = 5,
-    ) -> List[str]:
+    ) -> list[str]:
         """Busca ocorrencias similares.
 
         Args:
@@ -451,13 +518,11 @@ class OccurrenceAIAnalyzer:
         # Simplificado - em producao usaria busca vetorial ou Elasticsearch
         from modules.operacional.occurrences.schemas import OccurrenceFilter
 
-        similar_ids: List[str] = []
+        similar_ids: list[str] = []
 
         for keyword in keywords[:3]:  # Limitar busca
             filters = OccurrenceFilter(search=keyword)
-            occurrences, _ = self.repository.list_by_tenant(
-                tenant_id, skip=0, limit=limit, filters=filters
-            )
+            occurrences, _ = self.repository.list_by_tenant(tenant_id, skip=0, limit=limit, filters=filters)
             for occ in occurrences:
                 if occ.id not in similar_ids:
                     similar_ids.append(occ.id)
@@ -469,8 +534,8 @@ class OccurrenceAIAnalyzer:
 
     def _analyze_trends(
         self,
-        occurrences: List[Occurrence],
-    ) -> Dict[str, Any]:
+        occurrences: list[Occurrence],
+    ) -> dict[str, Any]:
         """Analisa tendencias nas ocorrencias.
 
         Args:
@@ -512,8 +577,8 @@ class OccurrenceAIAnalyzer:
 
     def _identify_hotspots(
         self,
-        occurrences: List[Occurrence],
-    ) -> List[Dict[str, Any]]:
+        occurrences: list[Occurrence],
+    ) -> list[dict[str, Any]]:
         """Identifica locais com mais ocorrencias.
 
         Args:
@@ -530,18 +595,20 @@ class OccurrenceAIAnalyzer:
         hotspots = []
         for post_id, count in post_counts.most_common(10):
             if count >= 2:  # Minimo para ser considerado hotspot
-                hotspots.append({
-                    "post_id": post_id,
-                    "occurrence_count": count,
-                    "percentage": round((count / len(occurrences)) * 100, 1),
-                })
+                hotspots.append(
+                    {
+                        "post_id": post_id,
+                        "occurrence_count": count,
+                        "percentage": round((count / len(occurrences)) * 100, 1),
+                    }
+                )
 
         return hotspots
 
     def _identify_recurring_issues(
         self,
-        occurrences: List[Occurrence],
-    ) -> List[Dict[str, Any]]:
+        occurrences: list[Occurrence],
+    ) -> list[dict[str, Any]]:
         """Identifica problemas recorrentes.
 
         Args:
@@ -554,30 +621,30 @@ class OccurrenceAIAnalyzer:
             return []
 
         # Agrupar por categoria + posto
-        issue_groups: Dict[Tuple[str, str], int] = {}
+        issue_groups: dict[tuple[str, str], int] = {}
 
         for occ in occurrences:
             key = (occ.category, occ.post_id or "unknown")
             issue_groups[key] = issue_groups.get(key, 0) + 1
 
         recurring = []
-        for (category, post_id), count in sorted(
-            issue_groups.items(), key=lambda x: x[1], reverse=True
-        ):
+        for (category, post_id), count in sorted(issue_groups.items(), key=lambda x: x[1], reverse=True):
             if count >= 3:  # Minimo para ser recorrente
-                recurring.append({
-                    "category": category,
-                    "post_id": post_id if post_id != "unknown" else None,
-                    "occurrence_count": count,
-                    "is_critical": count >= 5,
-                })
+                recurring.append(
+                    {
+                        "category": category,
+                        "post_id": post_id if post_id != "unknown" else None,
+                        "occurrence_count": count,
+                        "is_critical": count >= 5,
+                    }
+                )
 
         return recurring[:10]
 
     def _analyze_employee_patterns(
         self,
-        occurrences: List[Occurrence],
-    ) -> List[Dict[str, Any]]:
+        occurrences: list[Occurrence],
+    ) -> list[dict[str, Any]]:
         """Analisa padroes por funcionario.
 
         Args:
@@ -590,7 +657,7 @@ class OccurrenceAIAnalyzer:
             return []
 
         # Contar ocorrencias por funcionario envolvido
-        employee_counts: Dict[str, Dict[str, Any]] = {}
+        employee_counts: dict[str, dict[str, Any]] = {}
 
         for occ in occurrences:
             if occ.employee_involved_id:
@@ -607,26 +674,26 @@ class OccurrenceAIAnalyzer:
                 employee_counts[emp_id]["severities"][occ.severity] += 1
 
         patterns = []
-        for emp_id, data in sorted(
-            employee_counts.items(), key=lambda x: x[1]["total"], reverse=True
-        ):
+        for emp_id, data in sorted(employee_counts.items(), key=lambda x: x[1]["total"], reverse=True):
             if data["total"] >= 2:  # Minimo para patern
-                patterns.append({
-                    "employee_id": emp_id,
-                    "total_occurrences": data["total"],
-                    "main_category": data["categories"].most_common(1)[0][0],
-                    "needs_attention": data["total"] >= 3,
-                })
+                patterns.append(
+                    {
+                        "employee_id": emp_id,
+                        "total_occurrences": data["total"],
+                        "main_category": data["categories"].most_common(1)[0][0],
+                        "needs_attention": data["total"] >= 3,
+                    }
+                )
 
         return patterns[:10]
 
     def _generate_pattern_recommendations(
         self,
-        trends: Dict[str, Any],
-        hotspots: List[Dict[str, Any]],
-        recurring: List[Dict[str, Any]],
-        employee_patterns: List[Dict[str, Any]],
-    ) -> List[str]:
+        trends: dict[str, Any],
+        hotspots: list[dict[str, Any]],
+        recurring: list[dict[str, Any]],
+        employee_patterns: list[dict[str, Any]],
+    ) -> list[str]:
         """Gera recomendacoes baseadas em padroes.
 
         Args:
@@ -638,21 +705,19 @@ class OccurrenceAIAnalyzer:
         Returns:
             Lista de recomendacoes.
         """
-        recommendations: List[str] = []
+        recommendations: list[str] = []
 
         # Recomendacoes de SLA
         sla_rate = trends.get("sla_compliance_rate", 100)
         if sla_rate < 80:
             recommendations.append(
-                f"ALERTA: Taxa de cumprimento de SLA em {sla_rate}%. "
-                "Revisar prazos e processos de atendimento."
+                f"ALERTA: Taxa de cumprimento de SLA em {sla_rate}%. Revisar prazos e processos de atendimento."
             )
 
         # Recomendacoes de hotspots
         if hotspots and hotspots[0]["occurrence_count"] >= 5:
             recommendations.append(
-                f"Posto com {hotspots[0]['occurrence_count']} ocorrencias. "
-                "Realizar auditoria e treinamento especifico."
+                f"Posto com {hotspots[0]['occurrence_count']} ocorrencias. Realizar auditoria e treinamento especifico."
             )
 
         # Recomendacoes de problemas recorrentes
@@ -675,8 +740,7 @@ class OccurrenceAIAnalyzer:
         peak_hour = trends.get("peak_hour")
         if peak_hour is not None:
             recommendations.append(
-                f"Pico de ocorrencias as {peak_hour}h. "
-                "Considerar reforco de supervisao neste horario."
+                f"Pico de ocorrencias as {peak_hour}h. Considerar reforco de supervisao neste horario."
             )
 
         return recommendations

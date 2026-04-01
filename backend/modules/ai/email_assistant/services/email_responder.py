@@ -4,10 +4,10 @@ Email Responder Service - Sprint 54.
 Servico para geracao automatica de respostas de email.
 """
 
-import re
 import logging
-from typing import Dict, Any, List, Optional, Tuple
+import re
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class EmailResponder:
         self._signatures = self._load_signatures()
         self._phrases = self._load_common_phrases()
 
-    def _load_default_templates(self) -> Dict[str, Dict[str, Any]]:
+    def _load_default_templates(self) -> dict[str, dict[str, Any]]:
         """Carrega templates padrao."""
         return {
             # Suporte
@@ -267,7 +267,7 @@ Atenciosamente,
             },
         }
 
-    def _load_greetings(self) -> Dict[str, List[str]]:
+    def _load_greetings(self) -> dict[str, list[str]]:
         """Carrega saudacoes por tom."""
         return {
             "formal": [
@@ -292,7 +292,7 @@ Atenciosamente,
             ],
         }
 
-    def _load_signatures(self) -> Dict[str, str]:
+    def _load_signatures(self) -> dict[str, str]:
         """Carrega assinaturas padrao."""
         return {
             "formal": """Atenciosamente,
@@ -314,7 +314,7 @@ Atenciosamente,
             "casual": """{sender_name}""",
         }
 
-    def _load_common_phrases(self) -> Dict[str, List[str]]:
+    def _load_common_phrases(self) -> dict[str, list[str]]:
         """Carrega frases comuns por contexto."""
         return {
             "thanks": [
@@ -346,14 +346,14 @@ Atenciosamente,
 
     def generate_reply(
         self,
-        email_data: Dict[str, Any],
-        classification: Dict[str, Any],
+        email_data: dict[str, Any],
+        classification: dict[str, Any],
         tone: str = "professional",
         max_length: int = 500,
         include_greeting: bool = True,
         include_signature: bool = True,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Gera resposta para um email.
 
@@ -462,7 +462,7 @@ Atenciosamente,
                 "subject": f"Re: {email_data.get('subject', 'Sua mensagem')}",
             }
 
-    def _extract_sender_name(self, email_data: Dict[str, Any]) -> str:
+    def _extract_sender_name(self, email_data: dict[str, Any]) -> str:
         """Extrai nome do remetente."""
         # Tenta from_name primeiro
         if email_data.get("from_name"):
@@ -487,8 +487,8 @@ Atenciosamente,
         self,
         category: str,
         intent: str,
-        context: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        context: dict[str, Any],
+    ) -> dict[str, Any] | None:
         """Seleciona template apropriado."""
         # Procura template especifico
         template_key = f"{category}_{intent}"
@@ -518,7 +518,7 @@ Atenciosamente,
         greeting = greetings[0]  # Usa primeiro como padrao
         return greeting.format(name=name)
 
-    def _generate_signature(self, tone: str, context: Dict[str, Any]) -> str:
+    def _generate_signature(self, tone: str, context: dict[str, Any]) -> str:
         """Gera assinatura."""
         signature_template = self._signatures.get(tone, self._signatures["professional"])
 
@@ -538,10 +538,10 @@ Atenciosamente,
 
     def _generate_body(
         self,
-        template: Optional[Dict[str, Any]],
-        email_data: Dict[str, Any],
-        classification: Dict[str, Any],
-        context: Dict[str, Any],
+        template: dict[str, Any] | None,
+        email_data: dict[str, Any],
+        classification: dict[str, Any],
+        context: dict[str, Any],
         sender_name: str,
     ) -> str:
         """Gera corpo da resposta."""
@@ -603,9 +603,9 @@ Atenciosamente,
 
     def _generate_dynamic_body(
         self,
-        email_data: Dict[str, Any],
-        classification: Dict[str, Any],
-        context: Dict[str, Any],
+        email_data: dict[str, Any],
+        classification: dict[str, Any],
+        context: dict[str, Any],
     ) -> str:
         """Gera corpo dinamico quando nao ha template."""
         parts = []
@@ -636,7 +636,7 @@ Atenciosamente,
 
         return "\n".join(parts)
 
-    def _format_action_items(self, action_items: List[Dict[str, Any]]) -> str:
+    def _format_action_items(self, action_items: list[dict[str, Any]]) -> str:
         """Formata itens de acao."""
         if not action_items:
             return ""
@@ -736,35 +736,43 @@ Atenciosamente,
         self,
         category: str,
         intent: str,
-        email_data: Dict[str, Any],
-    ) -> List[str]:
+        email_data: dict[str, Any],
+    ) -> list[str]:
         """Gera sugestoes alternativas."""
         suggestions = []
 
         if category == "support":
-            suggestions.extend([
-                "Posso ajudar com mais alguma coisa?",
-                "Caso o problema persista, entre em contato novamente.",
-                "Gostaria de abrir um chamado formal?",
-            ])
+            suggestions.extend(
+                [
+                    "Posso ajudar com mais alguma coisa?",
+                    "Caso o problema persista, entre em contato novamente.",
+                    "Gostaria de abrir um chamado formal?",
+                ]
+            )
         elif category == "sales":
-            suggestions.extend([
-                "Gostaria de agendar uma demonstracao?",
-                "Posso enviar mais informacoes sobre nossos planos?",
-                "Quer conhecer nossos casos de sucesso?",
-            ])
+            suggestions.extend(
+                [
+                    "Gostaria de agendar uma demonstracao?",
+                    "Posso enviar mais informacoes sobre nossos planos?",
+                    "Quer conhecer nossos casos de sucesso?",
+                ]
+            )
         elif category == "billing":
-            suggestions.extend([
-                "Deseja parcelar o valor?",
-                "Posso verificar outras formas de pagamento?",
-                "Gostaria de receber um extrato detalhado?",
-            ])
+            suggestions.extend(
+                [
+                    "Deseja parcelar o valor?",
+                    "Posso verificar outras formas de pagamento?",
+                    "Gostaria de receber um extrato detalhado?",
+                ]
+            )
         elif category == "complaint":
-            suggestions.extend([
-                "Gostaria de falar com um supervisor?",
-                "Posso registrar uma reclamacao formal?",
-                "Como podemos compensar o transtorno?",
-            ])
+            suggestions.extend(
+                [
+                    "Gostaria de falar com um supervisor?",
+                    "Posso registrar uma reclamacao formal?",
+                    "Como podemos compensar o transtorno?",
+                ]
+            )
 
         return suggestions[:3]
 
@@ -788,8 +796,8 @@ Atenciosamente,
     def _get_filled_variables(
         self,
         body: str,
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Identifica variaveis preenchidas."""
         filled = {}
         for key, value in context.items():
@@ -799,7 +807,7 @@ Atenciosamente,
 
     def _generate_fallback_reply(
         self,
-        email_data: Dict[str, Any],
+        email_data: dict[str, Any],
         tone: str,
     ) -> str:
         """Gera resposta de fallback."""
@@ -818,8 +826,8 @@ Equipe Conecta Plus"""
     def apply_template(
         self,
         template_code: str,
-        variables: Dict[str, Any],
-    ) -> Optional[str]:
+        variables: dict[str, Any],
+    ) -> str | None:
         """
         Aplica um template especifico.
 
@@ -846,8 +854,8 @@ Equipe Conecta Plus"""
 
     def get_available_templates(
         self,
-        category: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        category: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Lista templates disponiveis.
 
@@ -863,12 +871,14 @@ Equipe Conecta Plus"""
             if category and template.get("category") != category:
                 continue
 
-            templates.append({
-                "code": code,
-                "category": template.get("category"),
-                "intent": template.get("intent"),
-                "subject": template.get("subject"),
-                "variables": template.get("variables", []),
-            })
+            templates.append(
+                {
+                    "code": code,
+                    "category": template.get("category"),
+                    "intent": template.get("intent"),
+                    "subject": template.get("subject"),
+                    "variables": template.get("variables", []),
+                }
+            )
 
         return templates

@@ -4,30 +4,30 @@ Models de Perfil Operacional.
 Sistema de avaliacao comportamental para match de funcionarios com postos.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from enum import StrEnum
+from typing import Any, Optional
 
 from sqlalchemy import (
-    String,
-    Text,
     Boolean,
+    CheckConstraint,
     DateTime,
-    Integer,
     Float,
     ForeignKey,
     Index,
-    CheckConstraint,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from core.database import Base
 from core.models import TimestampMixin
 
 
-class ProfileDimension(str, enum.Enum):
+class ProfileDimension(StrEnum):
     """Dimensoes do perfil operacional."""
 
     VIGILANCIA = "vigilancia"
@@ -36,7 +36,7 @@ class ProfileDimension(str, enum.Enum):
     LIDERANCA = "lideranca"
 
 
-class PostTypeProfile(str, enum.Enum):
+class PostTypeProfile(StrEnum):
     """Tipos de posto com perfil ideal definido."""
 
     CFTV = "cftv"
@@ -50,7 +50,7 @@ class PostTypeProfile(str, enum.Enum):
 
 
 # Questionario padrao - 20 perguntas, 5 por dimensao
-QUESTIONARIO_PERFIL: List[Dict[str, str]] = [
+QUESTIONARIO_PERFIL: list[dict[str, str]] = [
     # Vigilancia (5 perguntas) - Capacidade de observacao e atencao
     {
         "id": "v1",
@@ -179,7 +179,7 @@ QUESTIONARIO_PERFIL: List[Dict[str, str]] = [
 
 
 # Perfis ideais por tipo de posto
-PERFIL_IDEAL_POR_TIPO: Dict[str, Dict[str, int]] = {
+PERFIL_IDEAL_POR_TIPO: dict[str, dict[str, int]] = {
     "cftv": {
         "vigilancia": 90,
         "comunicacao": 40,
@@ -302,7 +302,7 @@ class OperationalProfile(Base, TimestampMixin):
     )
 
     # Respostas brutas do questionario {pergunta_id: valor 1-4}
-    respostas: Mapped[Dict[str, Any]] = mapped_column(
+    respostas: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
@@ -320,7 +320,7 @@ class OperationalProfile(Base, TimestampMixin):
     )
 
     # Progresso para salvamento automatico
-    progresso_respostas: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    progresso_respostas: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
     )
@@ -329,7 +329,7 @@ class OperationalProfile(Base, TimestampMixin):
         default=True,
         nullable=False,
     )
-    ultima_pergunta_respondida: Mapped[Optional[int]] = mapped_column(
+    ultima_pergunta_respondida: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
@@ -340,13 +340,13 @@ class OperationalProfile(Base, TimestampMixin):
         default=True,
         nullable=False,
     )
-    invalidation_reason: Mapped[Optional[str]] = mapped_column(
+    invalidation_reason: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
     # Condominio/Tenant
-    condominium_id: Mapped[Optional[str]] = mapped_column(
+    condominium_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -365,7 +365,7 @@ class OperationalProfile(Base, TimestampMixin):
         return f"<OperationalProfile {self.funcionario_id} - {self.perfil_predominante}>"
 
     @property
-    def scores(self) -> Dict[str, int]:
+    def scores(self) -> dict[str, int]:
         """Retorna todos os scores como dict."""
         return {
             "vigilancia": self.vigilancia,
@@ -485,15 +485,13 @@ class ProfileQuestion(Base, TimestampMixin):
     )
 
     # Condominio para customizacao (null = global)
-    condominium_id: Mapped[Optional[str]] = mapped_column(
+    condominium_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
 
-    __table_args__ = (
-        Index("ix_profile_questions_ordem_versao", "ordem", "versao"),
-    )
+    __table_args__ = (Index("ix_profile_questions_ordem_versao", "ordem", "versao"),)
 
     def __repr__(self) -> str:
         return f"<ProfileQuestion {self.codigo} - {self.dimensao}>"
@@ -546,7 +544,7 @@ class PostMatch(Base, TimestampMixin):
     )
 
     # Profile usado no calculo
-    profile_id: Mapped[Optional[str]] = mapped_column(
+    profile_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("operational_profiles.id", ondelete="SET NULL"),
         nullable=True,
@@ -560,19 +558,19 @@ class PostMatch(Base, TimestampMixin):
     )
 
     # Detalhamento do match
-    fatores_positivos: Mapped[List[str]] = mapped_column(
+    fatores_positivos: Mapped[list[str]] = mapped_column(
         ARRAY(String),
         nullable=False,
         default=list,
     )
-    fatores_negativos: Mapped[List[str]] = mapped_column(
+    fatores_negativos: Mapped[list[str]] = mapped_column(
         ARRAY(String),
         nullable=False,
         default=list,
     )
 
     # Scores detalhados por dimensao
-    scores_detalhados: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    scores_detalhados: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
     )
@@ -599,13 +597,13 @@ class PostMatch(Base, TimestampMixin):
     )
 
     # Validade do calculo (null = indefinido)
-    valido_ate: Mapped[Optional[datetime]] = mapped_column(
+    valido_ate: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
 
     # Condominio
-    condominium_id: Mapped[Optional[str]] = mapped_column(
+    condominium_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,

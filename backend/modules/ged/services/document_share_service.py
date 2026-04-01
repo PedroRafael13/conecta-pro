@@ -1,21 +1,21 @@
 """Service para DocumentShare."""
 
+import builtins
 import logging
-from typing import Optional, List
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.ged.repositories.document_share_repository import DocumentShareRepository
+from modules.ged.models.document_share import SharePermission, ShareType
 from modules.ged.repositories.document_repository import DocumentRepository
-from modules.ged.models.document_share import ShareType, SharePermission
+from modules.ged.repositories.document_share_repository import DocumentShareRepository
 from modules.ged.schemas.document_share import (
     DocumentShareCreate,
-    DocumentShareUpdate,
     DocumentShareFilter,
-    DocumentShareResponse,
-    DocumentShareListResponse,
     DocumentShareLinkRequest,
+    DocumentShareListResponse,
+    DocumentShareResponse,
+    DocumentShareUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,23 +55,21 @@ class DocumentShareService:
         )
         return DocumentShareResponse.model_validate(share)
 
-    async def get_by_id(self, share_id: str) -> Optional[DocumentShareResponse]:
+    async def get_by_id(self, share_id: str) -> DocumentShareResponse | None:
         """Busca compartilhamento por ID."""
         share = await self.repository.get_by_id(share_id)
         if not share:
             return None
         return DocumentShareResponse.model_validate(share)
 
-    async def get_by_token(self, token: str) -> Optional[DocumentShareResponse]:
+    async def get_by_token(self, token: str) -> DocumentShareResponse | None:
         """Busca compartilhamento por token."""
         share = await self.repository.get_by_token(token)
         if not share:
             return None
         return DocumentShareResponse.model_validate(share)
 
-    async def update(
-        self, share_id: str, data: DocumentShareUpdate
-    ) -> Optional[DocumentShareResponse]:
+    async def update(self, share_id: str, data: DocumentShareUpdate) -> DocumentShareResponse | None:
         """Atualiza compartilhamento."""
         share = await self.repository.update(share_id, data)
         if not share:
@@ -90,7 +88,7 @@ class DocumentShareService:
 
     async def list(
         self,
-        filters: Optional[DocumentShareFilter] = None,
+        filters: DocumentShareFilter | None = None,
         page: int = 1,
         page_size: int = 20,
         order_by: str = "created_at",
@@ -116,16 +114,14 @@ class DocumentShareService:
             pages=pages,
         )
 
-    async def get_by_document(
-        self, document_id: str
-    ) -> List[DocumentShareResponse]:
+    async def get_by_document(self, document_id: str) -> builtins.list[DocumentShareResponse]:
         """Retorna compartilhamentos de um documento."""
         shares = await self.repository.get_by_document(document_id)
         return [DocumentShareResponse.model_validate(s) for s in shares]
 
     async def get_by_owner(
         self, owner_id: str, page: int = 1, page_size: int = 20
-    ) -> List[DocumentShareResponse]:
+    ) -> builtins.list[DocumentShareResponse]:
         """Retorna compartilhamentos do proprietário."""
         skip = (page - 1) * page_size
         shares = await self.repository.get_by_owner(owner_id, skip, page_size)
@@ -137,7 +133,7 @@ class DocumentShareService:
         recipient_email: str = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> List[DocumentShareResponse]:
+    ) -> builtins.list[DocumentShareResponse]:
         """Retorna compartilhamentos para o destinatário."""
         skip = (page - 1) * page_size
         shares = await self.repository.get_by_recipient(
@@ -148,9 +144,7 @@ class DocumentShareService:
         )
         return [DocumentShareResponse.model_validate(s) for s in shares]
 
-    async def create_public_link(
-        self, data: DocumentShareLinkRequest
-    ) -> DocumentShareResponse:
+    async def create_public_link(self, data: DocumentShareLinkRequest) -> DocumentShareResponse:
         """Cria link público para documento."""
         # Verifica se documento existe
         document = await self.document_repository.get_by_id(data.document_id)
@@ -185,7 +179,7 @@ class DocumentShareService:
         password: str = None,
         ip_address: str = None,  # pylint: disable=unused-argument
         user_agent: str = None,  # pylint: disable=unused-argument
-    ) -> Optional[DocumentShareResponse]:
+    ) -> DocumentShareResponse | None:
         """Acessa documento via link."""
         share = await self.repository.get_by_token(token)
         if not share:
@@ -215,9 +209,7 @@ class DocumentShareService:
         logger.info("Acesso via link: %s", share.id)
         return DocumentShareResponse.model_validate(share)
 
-    async def revoke(
-        self, share_id: str, revoked_by: str = None
-    ) -> Optional[DocumentShareResponse]:
+    async def revoke(self, share_id: str, revoked_by: str = None) -> DocumentShareResponse | None:
         """Revoga compartilhamento."""
         share = await self.repository.revoke(share_id, revoked_by or "system")
         if not share:
@@ -226,9 +218,7 @@ class DocumentShareService:
         logger.info("Compartilhamento revogado: %s", share_id)
         return DocumentShareResponse.model_validate(share)
 
-    async def accept(
-        self, share_id: str, user_id: str
-    ) -> Optional[DocumentShareResponse]:
+    async def accept(self, share_id: str, user_id: str) -> DocumentShareResponse | None:
         """Aceita compartilhamento."""
         share = await self.repository.accept(share_id, user_id)
         if not share:
@@ -237,9 +227,7 @@ class DocumentShareService:
         logger.info("Compartilhamento aceito: %s por %s", share_id, user_id)
         return DocumentShareResponse.model_validate(share)
 
-    async def reject(
-        self, share_id: str, reason: str = None
-    ) -> Optional[DocumentShareResponse]:
+    async def reject(self, share_id: str, reason: str = None) -> DocumentShareResponse | None:
         """Rejeita compartilhamento."""
         share = await self.repository.reject(share_id, reason)
         if not share:
@@ -248,9 +236,7 @@ class DocumentShareService:
         logger.info("Compartilhamento rejeitado: %s", share_id)
         return DocumentShareResponse.model_validate(share)
 
-    async def extend_expiry(
-        self, share_id: str, new_expiry: datetime
-    ) -> Optional[DocumentShareResponse]:
+    async def extend_expiry(self, share_id: str, new_expiry: datetime) -> DocumentShareResponse | None:
         """Estende validade do compartilhamento."""
         share = await self.repository.extend_expiry(share_id, new_expiry)
         if not share:
@@ -259,9 +245,7 @@ class DocumentShareService:
         logger.info("Validade estendida: %s até %s", share_id, new_expiry)
         return DocumentShareResponse.model_validate(share)
 
-    async def update_permission(
-        self, share_id: str, permission: SharePermission
-    ) -> Optional[DocumentShareResponse]:
+    async def update_permission(self, share_id: str, permission: SharePermission) -> DocumentShareResponse | None:
         """Atualiza permissão do compartilhamento."""
         share = await self.repository.update_permission(share_id, permission)
         if not share:
@@ -270,7 +254,7 @@ class DocumentShareService:
         logger.info("Permissão atualizada: %s -> %s", share_id, permission.value)
         return DocumentShareResponse.model_validate(share)
 
-    async def regenerate_token(self, share_id: str) -> Optional[str]:
+    async def regenerate_token(self, share_id: str) -> str | None:
         """Regenera token de acesso."""
         token = await self.repository.regenerate_token(share_id)
         if token:
@@ -278,9 +262,7 @@ class DocumentShareService:
             logger.info("Token regenerado: %s", share_id)
         return token
 
-    async def set_password(
-        self, share_id: str, password: str
-    ) -> Optional[DocumentShareResponse]:
+    async def set_password(self, share_id: str, password: str) -> DocumentShareResponse | None:
         """Define senha para compartilhamento."""
         share = await self.repository.set_password(share_id, password)
         if not share:
@@ -289,9 +271,7 @@ class DocumentShareService:
         logger.info("Senha definida: %s", share_id)
         return DocumentShareResponse.model_validate(share)
 
-    async def remove_password(
-        self, share_id: str
-    ) -> Optional[DocumentShareResponse]:
+    async def remove_password(self, share_id: str) -> DocumentShareResponse | None:
         """Remove senha do compartilhamento."""
         share = await self.repository.remove_password(share_id)
         if not share:
@@ -307,9 +287,7 @@ class DocumentShareService:
         logger.info("%s compartilhamentos expirados", count)
         return count
 
-    async def get_access_log(
-        self, share_id: str
-    ) -> List[dict]:
+    async def get_access_log(self, share_id: str) -> builtins.list[dict]:
         """Retorna log de acessos."""
         share = await self.repository.get_by_id(share_id)
         if not share:

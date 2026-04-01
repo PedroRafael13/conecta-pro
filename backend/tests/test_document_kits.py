@@ -7,17 +7,17 @@ from uuid import uuid4
 import pytest
 
 from modules.document_kits.models.document_kit import (
-    DocumentKit,
-    DocumentKitItem,
-    DocumentKitAssignment,
-    DocumentKitItemStatus,
-    KitType,
-    KitStatus,
-    ItemType,
-    ItemPriority,
     AssignmentStatus,
-    ItemStatusEnum,
+    DocumentKit,
+    DocumentKitAssignment,
+    DocumentKitItem,
+    DocumentKitItemStatus,
     EntityType,
+    ItemPriority,
+    ItemStatusEnum,
+    ItemType,
+    KitStatus,
+    KitType,
 )
 
 
@@ -537,6 +537,7 @@ class TestDocumentKitItemStatusModel:
             condominio_id=uuid4(),
             status=ItemStatusEnum.PENDENTE,
             historico=[],
+            tentativas=0,
         )
 
         enviado_por = str(uuid4())

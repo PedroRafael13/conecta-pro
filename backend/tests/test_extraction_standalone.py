@@ -5,27 +5,31 @@ Testes Standalone de Extração - Sem dependências externas.
 Valida estrutura e lógica básica dos módulos.
 """
 
-import sys
-import os
 import ast
-from pathlib import Path
+import os
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Cores para output
-GREEN = '\033[92m'
-RED = '\033[91m'
-YELLOW = '\033[93m'
-RESET = '\033[0m'
-BOLD = '\033[1m'
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"
+BOLD = "\033[1m"
+
 
 def ok(msg):
     print(f"{GREEN}✓{RESET} {msg}")
 
+
 def fail(msg):
     print(f"{RED}✗{RESET} {msg}")
 
+
 def warn(msg):
     print(f"{YELLOW}⚠{RESET} {msg}")
+
 
 def header(msg):
     print(f"\n{BOLD}--- {msg} ---{RESET}")
@@ -87,7 +91,7 @@ class TestSintaxePython:
 
         for arquivo in arquivos:
             try:
-                with open(arquivo, 'r') as f:
+                with open(arquivo) as f:
                     source = f.read()
                 ast.parse(source)
                 # Não imprimir todos OK, só os erros
@@ -108,14 +112,20 @@ class TestClassesDefinidas:
         header("Classes e Funções")
 
         verificacoes = [
-            ("extractors/orchestrator.py", ["OrquestradorExtracao", "ConfiguracaoExtracao", "TipoServico", "ResultadoExtracao"]),
+            (
+                "extractors/orchestrator.py",
+                ["OrquestradorExtracao", "ConfiguracaoExtracao", "TipoServico", "ResultadoExtracao"],
+            ),
             ("extractors/base_extractor.py", ["ExtratorBase", "DocumentoExtraido"]),
             ("extractors/sefaz/nfe_extractor.py", ["ExtratorNFe"]),
             ("extractors/esocial/esocial_extractor.py", ["ExtratoreSocial"]),
             ("extractors/fgts/fgts_extractor.py", ["ExtratorFGTS"]),
             ("extractors/nfse/manaus_extractor.py", ["ExtratorNFSeManaus"]),
             ("extractors/receita_federal/rfb_extractor.py", ["ExtratorRFB"]),
-            ("jobs/sync_tasks.py", ["sincronizar_nfe", "sincronizar_esocial", "sincronizar_fgts", "sincronizar_nfse", "sincronizar_rfb"]),
+            (
+                "jobs/sync_tasks.py",
+                ["sincronizar_nfe", "sincronizar_esocial", "sincronizar_fgts", "sincronizar_nfse", "sincronizar_rfb"],
+            ),
             ("jobs/monitoring_tasks.py", ["verificar_disponibilidade", "verificar_certificados", "reprocessar_falhas"]),
             ("controllers/dashboard_controller.py", ["DashboardService", "DashboardResponse"]),
             ("controllers/extraction_controller.py", ["IniciarExtracaoRequest", "ExtracaoResponse"]),
@@ -129,7 +139,7 @@ class TestClassesDefinidas:
                 todos_ok = False
                 continue
 
-            with open(path, 'r') as f:
+            with open(path) as f:
                 source = f.read()
 
             faltando = []
@@ -157,7 +167,7 @@ class TestEndpointsAPI:
 
         # Dashboard endpoints
         dashboard_path = BASE_PATH / "controllers/dashboard_controller.py"
-        with open(dashboard_path, 'r') as f:
+        with open(dashboard_path) as f:
             dashboard_source = f.read()
 
         dashboard_endpoints = [
@@ -177,7 +187,7 @@ class TestEndpointsAPI:
 
         # Extraction endpoints
         extraction_path = BASE_PATH / "controllers/extraction_controller.py"
-        with open(extraction_path, 'r') as f:
+        with open(extraction_path) as f:
             extraction_source = f.read()
 
         extraction_endpoints = [
@@ -210,7 +220,7 @@ class TestCeleryTasks:
 
         # Sync tasks
         sync_path = BASE_PATH / "jobs/sync_tasks.py"
-        with open(sync_path, 'r') as f:
+        with open(sync_path) as f:
             sync_source = f.read()
 
         sync_tasks = [
@@ -233,7 +243,7 @@ class TestCeleryTasks:
 
         # Monitoring tasks
         mon_path = BASE_PATH / "jobs/monitoring_tasks.py"
-        with open(mon_path, 'r') as f:
+        with open(mon_path) as f:
             mon_source = f.read()
 
         mon_tasks = [
@@ -261,7 +271,7 @@ class TestTiposServico:
         header("Tipos de Serviço")
 
         orchestrator_path = BASE_PATH / "extractors/orchestrator.py"
-        with open(orchestrator_path, 'r') as f:
+        with open(orchestrator_path) as f:
             source = f.read()
 
         servicos = [
@@ -302,14 +312,14 @@ class TestExtratoresMetodos:
         todos_ok = True
         for arquivo, classe in extratores:
             path = BASE_PATH / arquivo
-            with open(path, 'r') as f:
+            with open(path) as f:
                 source = f.read()
 
             faltando = []
             for metodo in metodos_obrigatorios:
                 if f"def {metodo}" not in source and f"def {metodo}" not in source:
                     # Também verificar property
-                    if f"@property" not in source or metodo not in source:
+                    if "@property" not in source or metodo not in source:
                         faltando.append(metodo)
 
             if faltando:

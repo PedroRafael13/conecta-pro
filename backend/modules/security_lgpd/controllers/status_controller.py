@@ -3,10 +3,11 @@ Controller de Status do Modulo LGPD.
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, status
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.security_lgpd.schemas.common import StandardResponse
 
 router = APIRouter(tags=["LGPD - Status"])
@@ -19,7 +20,7 @@ router = APIRouter(tags=["LGPD - Status"])
     summary="Status do modulo LGPD",
     description="Retorna status de todos os componentes de seguranca.",
 )
-async def get_lgpd_status() -> StandardResponse:
+async def get_lgpd_status(current_user: CurrentActiveUser) -> StandardResponse:
     """
     Retorna status do modulo LGPD.
 
@@ -59,12 +60,12 @@ async def get_lgpd_status() -> StandardResponse:
 
 @router.get(
     "/health",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     status_code=status.HTTP_200_OK,
     summary="Health check",
     description="Verifica saude do modulo.",
 )
-async def health_check() -> Dict[str, Any]:
+async def health_check(current_user: CurrentActiveUser) -> dict[str, Any]:
     """
     Health check do modulo.
 

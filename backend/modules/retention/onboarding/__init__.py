@@ -27,52 +27,51 @@ Exemplo de uso:
 """
 
 # Models
+# Controllers
+from .controllers import onboarding_router
 from .models import (
     OnboardingChecklist,
-    OnboardingStep,
     OnboardingProgress,
-    StepType,
+    OnboardingStep,
     ProgressStatus,
-)
-
-# Schemas
-from .schemas import (
-    # Checklist
-    ChecklistCreate,
-    ChecklistUpdate,
-    ChecklistResponse,
-    ChecklistDetailResponse,
-    ChecklistListResponse,
-    # Step
-    StepCreate,
-    StepUpdate,
-    StepResponse,
-    # Progress
-    ProgressCreate,
-    ProgressUpdate,
-    ProgressComplete,
-    ProgressResponse,
-    ProgressDetailResponse,
-    ProgressListResponse,
-    # Funcionário
-    FuncionarioOnboardingCreate,
-    FuncionarioOnboardingResponse,
-    # Dashboard
-    OnboardingDashboard,
-    OnboardingStats,
-    OnboardingAlert,
-    OnboardingFilter,
-    OnboardingReport,
+    StepType,
 )
 
 # Repositories
 from .repositories import OnboardingRepository
 
-# Services
-from .services import OnboardingService, OnboardingException
+# Schemas
+from .schemas import (
+    # Checklist
+    ChecklistCreate,
+    ChecklistDetailResponse,
+    ChecklistListResponse,
+    ChecklistResponse,
+    ChecklistUpdate,
+    # Funcionário
+    FuncionarioOnboardingCreate,
+    FuncionarioOnboardingResponse,
+    OnboardingAlert,
+    # Dashboard
+    OnboardingDashboard,
+    OnboardingFilter,
+    OnboardingReport,
+    OnboardingStats,
+    ProgressComplete,
+    # Progress
+    ProgressCreate,
+    ProgressDetailResponse,
+    ProgressListResponse,
+    ProgressResponse,
+    ProgressUpdate,
+    # Step
+    StepCreate,
+    StepResponse,
+    StepUpdate,
+)
 
-# Controllers
-from .controllers import onboarding_router
+# Services
+from .services import OnboardingError, OnboardingService
 
 __all__ = [
     # Models
@@ -111,7 +110,7 @@ __all__ = [
     "OnboardingRepository",
     # Service
     "OnboardingService",
-    "OnboardingException",
+    "OnboardingError",
     # Router
     "onboarding_router",
 ]

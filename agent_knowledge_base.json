@@ -1,0 +1,1571 @@
+{
+  "version": "2.0.0",
+  "built_at": "2026-03-20T19:41:31.557999Z",
+  "system": {
+    "name": "Conecta PRO",
+    "environment": "production",
+    "domain": "erp.conectamais.pro",
+    "total_modules": 46,
+    "active_modules": 37,
+    "scaffold_modules": 9,
+    "total_endpoints": 3244,
+    "total_models": 495,
+    "total_lines": 636784
+  },
+  "containers": [
+    {
+      "name": "erp-postgres-exporter",
+      "image": "prometheuscommunity/postgres-exporter",
+      "role": "exporter",
+      "health": "running",
+      "ports": "0.0.0.0:9187->9187/tcp, [::]:9187->9187/tcp"
+    },
+    {
+      "name": "conecta-pro-nginx",
+      "image": "nginx",
+      "role": "unknown",
+      "health": "unknown",
+      "ports": null
+    },
+    {
+      "name": "conecta-pro-celery-beat",
+      "image": "conecta-pro-backend",
+      "role": "scheduler",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "conecta-pro-flower",
+      "image": "conecta-pro-backend",
+      "role": "monitor",
+      "health": "healthy",
+      "ports": "0.0.0.0:5555->5555/tcp, [::]:5555->5555/tcp, 8080/tcp"
+    },
+    {
+      "name": "conecta-pro-celery-integrations",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "34bbe0bcda76_conecta-pro-celery-priority",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "a853a3056bf9_conecta-pro-celery-sefaz",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "8f30da3e29ad_conecta-pro-celery-nfse",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "conecta-pro-celery-batch",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "297439d0453a_conecta-pro-celery-operacional",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "conecta-pro-backend",
+      "image": "conecta-pro-backend",
+      "role": "api",
+      "health": "healthy",
+      "ports": "0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp"
+    },
+    {
+      "name": "conecta-pro-postgres",
+      "image": "postgres",
+      "role": "database",
+      "health": "healthy",
+      "ports": "5432/tcp"
+    },
+    {
+      "name": "erp-node-exporter",
+      "image": "prom/node-exporter",
+      "role": "exporter",
+      "health": "running",
+      "ports": "0.0.0.0:9100->9100/tcp, [::]:9100->9100/tcp"
+    },
+    {
+      "name": "erp-redis-exporter",
+      "image": "oliver006/redis_exporter",
+      "role": "exporter",
+      "health": "running",
+      "ports": "0.0.0.0:9121->9121/tcp, [::]:9121->9121/tcp"
+    },
+    {
+      "name": "conecta-pro-redis",
+      "image": "redis",
+      "role": "cache",
+      "health": "healthy",
+      "ports": "6379/tcp"
+    },
+    {
+      "name": "conecta-pro-redis-staging",
+      "image": "redis",
+      "role": "staging",
+      "health": "healthy",
+      "ports": "6379/tcp"
+    },
+    {
+      "name": "conecta-pro-postgres-staging",
+      "image": "postgres",
+      "role": "staging",
+      "health": "healthy",
+      "ports": "5432/tcp"
+    },
+    {
+      "name": "erp-alertmanager",
+      "image": "prom/alertmanager",
+      "role": "alerting",
+      "health": "healthy",
+      "ports": "0.0.0.0:9093->9093/tcp, [::]:9093->9093/tcp"
+    },
+    {
+      "name": "erp-promtail",
+      "image": "grafana/promtail",
+      "role": "logging",
+      "health": "running",
+      "ports": null
+    },
+    {
+      "name": "erp-loki",
+      "image": "grafana/loki",
+      "role": "logging",
+      "health": "healthy",
+      "ports": "0.0.0.0:3100->3100/tcp, [::]:3100->3100/tcp"
+    },
+    {
+      "name": "erp-prometheus",
+      "image": "prom/prometheus",
+      "role": "monitoring",
+      "health": "running",
+      "ports": "0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp"
+    },
+    {
+      "name": "erp-grafana",
+      "image": "grafana/grafana",
+      "role": "monitoring",
+      "health": "running",
+      "ports": "0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp"
+    }
+  ],
+  "dependencies": {
+    "frontend": {
+      "depends_on": [
+        "backend"
+      ],
+      "port": 3001
+    },
+    "backend": {
+      "depends_on": [
+        "postgres",
+        "redis"
+      ],
+      "port": 8080
+    },
+    "celery_workers": {
+      "depends_on": [
+        "redis",
+        "postgres"
+      ],
+      "workers": [
+        "celery-batch",
+        "celery-beat",
+        "celery-integrations",
+        "celery-nfse",
+        "celery-operacional",
+        "celery-priority",
+        "celery-sefaz"
+      ]
+    },
+    "postgres": {
+      "depends_on": [],
+      "port": 5432
+    },
+    "redis": {
+      "depends_on": [],
+      "port": 6379
+    },
+    "nginx": {
+      "depends_on": [
+        "frontend",
+        "backend"
+      ],
+      "ports": [
+        80,
+        443
+      ]
+    }
+  },
+  "modules": {
+    "ai": {
+      "name": "ai",
+      "files": 336,
+      "lines": 119360,
+      "models": 85,
+      "tables": [
+        "ai_anomaly_logs",
+        "ai_recommendations",
+        "ai_prediction_logs",
+        "ai_feature_stores",
+        "ai_features",
+        "ai_predictions",
+        "ai_ml_models",
+        "ai_training_jobs",
+        "openclaw_interventions",
+        "openclaw_patterns"
+      ],
+      "controllers": 18,
+      "endpoints": 332,
+      "criticality": "low",
+      "internal_dependencies": [
+        "audit",
+        "notifications",
+        "operacional"
+      ],
+      "infrastructure": [
+        "celery",
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": [
+        {
+          "name": "OpenAI GPT-4",
+          "type": "llm",
+          "protocol": "REST",
+          "env": "OPENAI_API_KEY"
+        },
+        {
+          "name": "Anthropic Claude",
+          "type": "llm",
+          "protocol": "REST",
+          "env": "ANTHROPIC_API_KEY"
+        }
+      ]
+    },
+    "analytics": {
+      "name": "analytics",
+      "files": 22,
+      "lines": 7755,
+      "models": 0,
+      "tables": [],
+      "controllers": 2,
+      "endpoints": 7,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "audit": {
+      "name": "audit",
+      "files": 15,
+      "lines": 4387,
+      "models": 5,
+      "tables": [
+        "compliance_checks",
+        "audit_logs",
+        "data_retention_policies",
+        "compliance_rules",
+        "access_history"
+      ],
+      "controllers": 1,
+      "endpoints": 31,
+      "criticality": "low",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "automation": {
+      "name": "automation",
+      "files": 22,
+      "lines": 9052,
+      "models": 8,
+      "tables": [
+        "workflow_actions",
+        "workflows",
+        "workflow_executions",
+        "execution_logs",
+        "workflow_triggers",
+        "workflow_conditions",
+        "workflow_steps",
+        "step_executions"
+      ],
+      "controllers": 1,
+      "endpoints": 9,
+      "criticality": "low",
+      "internal_dependencies": [
+        "_deprecated_workflows_dataclass"
+      ],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "bidding": {
+      "name": "bidding",
+      "files": 97,
+      "lines": 25969,
+      "models": 15,
+      "tables": [
+        "bidding_disputes",
+        "bidding_assessments",
+        "bidding_company_documents",
+        "bidding_proposals",
+        "bidding_proposal_items",
+        "bidding_opportunities",
+        "bidding_analyses",
+        "bidding_tenders",
+        "bidding_tender_documents",
+        "bidding_measurements"
+      ],
+      "controllers": 11,
+      "endpoints": 96,
+      "criticality": "medium",
+      "internal_dependencies": [
+        "comercial",
+        "financial",
+        "fiscal",
+        "operacional"
+      ],
+      "infrastructure": [
+        "celery",
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "campo": {
+      "name": "campo",
+      "files": 39,
+      "lines": 13383,
+      "models": 9,
+      "tables": [
+        "checklist_templates",
+        "checklist_itens",
+        "checklist_respostas",
+        "checklists_preenchidos",
+        "equipment_status",
+        "access_logs",
+        "campo_tecnicos",
+        "ordens_servico",
+        "visitas"
+      ],
+      "controllers": 11,
+      "endpoints": 125,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": [
+        {
+          "name": "ViaCEP",
+          "type": "address_lookup",
+          "protocol": "REST"
+        },
+        {
+          "name": "Google Maps",
+          "type": "geocoding",
+          "protocol": "REST",
+          "env": "GOOGLE_MAPS_API_KEY"
+        }
+      ]
+    },
+    "cct": {
+      "name": "cct",
+      "files": 33,
+      "lines": 3141,
+      "models": 3,
+      "tables": [
+        "cct_salary_audits",
+        "cct_compliance_checks",
+        "cct_benefit_configs"
+      ],
+      "controllers": 6,
+      "endpoints": 25,
+      "criticality": "high",
+      "internal_dependencies": [
+        "operacional"
+      ],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "client_portal": {
+      "name": "client_portal",
+      "files": 19,
+      "lines": 1923,
+      "models": 3,
+      "tables": [
+        "client_portal_ticket_messages",
+        "client_portal_sessions",
+        "client_portal_tickets"
+      ],
+      "controllers": 3,
+      "endpoints": 12,
+      "criticality": "low",
+      "internal_dependencies": [
+        "people_management"
+      ],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "clients": {
+      "name": "clients",
+      "files": 17,
+      "lines": 6135,
+      "models": 5,
+      "tables": [
+        "client_contracts",
+        "integration_settings",
+        "condominiums",
+        "units",
+        "clients"
+      ],
+      "controllers": 1,
+      "endpoints": 50,
+      "criticality": "high",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "config": {
+      "name": "config",
+      "files": 15,
+      "lines": 4335,
+      "models": 5,
+      "tables": [
+        "notification_templates",
+        "feature_flags",
+        "tenants",
+        "tenant_settings",
+        "system_configs"
+      ],
+      "controllers": 1,
+      "endpoints": 47,
+      "criticality": "low",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "crm": {
+      "name": "crm",
+      "files": 37,
+      "lines": 14673,
+      "models": 16,
+      "tables": [
+        "proposals",
+        "proposal_items",
+        "proposal_templates",
+        "proposal_approvals",
+        "commission_rules",
+        "seller_commission_rules",
+        "commissions",
+        "commission_payments",
+        "commission_summaries",
+        "opportunities"
+      ],
+      "controllers": 6,
+      "endpoints": 100,
+      "criticality": "high",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "document_kits": {
+      "name": "document_kits",
+      "files": 16,
+      "lines": 4775,
+      "models": 4,
+      "tables": [
+        "document_kits",
+        "document_kit_items",
+        "document_kit_assignments",
+        "document_kit_item_statuses"
+      ],
+      "controllers": 2,
+      "endpoints": 54,
+      "criticality": "high",
+      "internal_dependencies": [
+        "operacional"
+      ],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "documents": {
+      "name": "documents",
+      "files": 16,
+      "lines": 7289,
+      "models": 0,
+      "tables": [],
+      "controllers": 1,
+      "endpoints": 16,
+      "criticality": "low",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "empresas": {
+      "name": "empresas",
+      "files": 23,
+      "lines": 3797,
+      "models": 2,
+      "tables": [
+        "empresas",
+        "liminares"
+      ],
+      "controllers": 7,
+      "endpoints": 35,
+      "criticality": "high",
+      "internal_dependencies": [
+        "financial"
+      ],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "equipment_management": {
+      "name": "equipment_management",
+      "files": 28,
+      "lines": 8677,
+      "models": 4,
+      "tables": [
+        "equipment_installations",
+        "equipment_comodatos",
+        "equipment_maintenances",
+        "equipments"
+      ],
+      "controllers": 4,
+      "endpoints": 93,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "fase5": {
+      "name": "fase5",
+      "files": 23,
+      "lines": 3300,
+      "models": 0,
+      "tables": [],
+      "controllers": 1,
+      "endpoints": 11,
+      "criticality": "low",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "financial": {
+      "name": "financial",
+      "files": 167,
+      "lines": 72653,
+      "models": 79,
+      "tables": [
+        "fin_charts_of_accounts",
+        "nfe",
+        "nfe_itens",
+        "payable_categories",
+        "sped_files",
+        "sped_registros",
+        "efd_icms_ipi_resumos",
+        "efd_contribuicoes_resumos",
+        "ecd_resumos",
+        "payment_methods"
+      ],
+      "controllers": 18,
+      "endpoints": 516,
+      "criticality": "critical",
+      "internal_dependencies": [
+        "ai",
+        "integrations"
+      ],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": [
+        {
+          "name": "Cora Banking",
+          "type": "banking",
+          "protocol": "REST",
+          "env": "CORA_API_KEY"
+        },
+        {
+          "name": "Inter Banking",
+          "type": "banking",
+          "protocol": "REST",
+          "env": "INTER_API_KEY"
+        }
+      ]
+    },
+    "fiscal": {
+      "name": "fiscal",
+      "files": 5,
+      "lines": 532,
+      "models": 0,
+      "tables": [],
+      "controllers": 1,
+      "endpoints": 5,
+      "criticality": "critical",
+      "internal_dependencies": [],
+      "infrastructure": [],
+      "external_integrations": []
+    },
+    "fiscal_contabil": {
+      "name": "fiscal_contabil",
+      "files": 14,
+      "lines": 38,
+      "models": 0,
+      "tables": [],
+      "controllers": 0,
+      "endpoints": 0,
+      "criticality": "critical",
+      "internal_dependencies": [
+        "bidding",
+        "empresas",
+        "fiscal",
+        "government_integrations"
+      ],
+      "infrastructure": [],
+      "external_integrations": []
+    },
+    "ged": {
+      "name": "ged",
+      "files": 38,
+      "lines": 9804,
+      "models": 6,
+      "tables": [
+        "ged_document_shares",
+        "ged_document_versions",
+        "ged_document_signatures",
+        "ged_folders",
+        "ged_documents",
+        "ged_document_tags"
+      ],
+      "controllers": 8,
+      "endpoints": 139,
+      "criticality": "high",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "government_integrations": {
+      "name": "government_integrations",
+      "files": 171,
+      "lines": 64296,
+      "models": 33,
+      "tables": [
+        "gov_documentos_fiscais",
+        "gov_eventos_documentos_fiscais",
+        "gov_eventos_esocial",
+        "gov_guias_recolhimento",
+        "gov_certidoes",
+        "gov_dados_cadastrais_empresa",
+        "gov_dados_cadastrais_pessoa",
+        "gov_apuracoes_simples",
+        "gov_arquivos_sped",
+        "gov_sync_logs"
+      ],
+      "controllers": 24,
+      "endpoints": 215,
+      "criticality": "critical",
+      "internal_dependencies": [
+        "core",
+        "scheduler"
+      ],
+      "infrastructure": [
+        "celery",
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": [
+        {
+          "name": "eSocial",
+          "type": "gov_api",
+          "protocol": "REST/XML",
+          "env": "ESOCIAL_ENVIRONMENT"
+        },
+        {
+          "name": "SEFAZ",
+          "type": "gov_api",
+          "protocol": "SOAP/XML",
+          "env": "SEFAZ_ENVIRONMENT"
+        },
+        {
+          "name": "NFS-e Manaus",
+          "type": "gov_api",
+          "protocol": "SOAP/ABRASF 2.04"
+        },
+        {
+          "name": "NFS-e Nacional",
+          "type": "gov_api",
+          "protocol": "REST/JSON",
+          "env": "NFSE_NACIONAL_ENVIRONMENT"
+        },
+        {
+          "name": "FGTS Digital",
+          "type": "gov_api",
+          "protocol": "REST"
+        },
+        {
+          "name": "EFD-Reinf",
+          "type": "gov_api",
+          "protocol": "XML"
+        },
+        {
+          "name": "DCTFWeb",
+          "type": "gov_api",
+          "protocol": "REST"
+        },
+        {
+          "name": "SPED Fiscal/Contabil",
+          "type": "gov_api",
+          "protocol": "TXT/Layout"
+        },
+        {
+          "name": "Gov.br OAuth",
+          "type": "oauth",
+          "protocol": "OAuth2"
+        },
+        {
+          "name": "e-CAC",
+          "type": "gov_api",
+          "protocol": "REST"
+        },
+        {
+          "name": "Simples Nacional",
+          "type": "gov_api",
+          "protocol": "REST"
+        }
+      ]
+    },
+    "health_occupational": {
+      "name": "health_occupational",
+      "files": 28,
+      "lines": 8769,
+      "models": 16,
+      "tables": [
+        "health_epis",
+        "health_epi_deliveries",
+        "health_epi_inventory",
+        "health_medical_exams",
+        "health_asos",
+        "health_complementary_exams",
+        "health_risk_mappings",
+        "health_occupational_risks",
+        "health_control_measures",
+        "health_occupational_risks"
+      ],
+      "controllers": 4,
+      "endpoints": 40,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "hr": {
+      "name": "hr",
+      "files": 172,
+      "lines": 45558,
+      "models": 29,
+      "tables": [
+        "scheduled_reports",
+        "dashboard_widgets",
+        "analytics_cache",
+        "kpi_definitions",
+        "dashboard_configs",
+        "payroll_exports",
+        "payroll_periods",
+        "payroll_integrations",
+        "payroll_events",
+        "employee_payroll_configs"
+      ],
+      "controllers": 25,
+      "endpoints": 273,
+      "criticality": "high",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "integrations": {
+      "name": "integrations",
+      "files": 91,
+      "lines": 29494,
+      "models": 34,
+      "tables": [
+        "integration_logs",
+        "webhook_configs",
+        "id_maps",
+        "sync_states",
+        "sync_queue",
+        "api_keys",
+        "sync_runs",
+        "integration_accounts",
+        "api_endpoints",
+        "wa_templates"
+      ],
+      "controllers": 4,
+      "endpoints": 70,
+      "criticality": "medium",
+      "internal_dependencies": [
+        "operacional"
+      ],
+      "infrastructure": [
+        "celery",
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": [
+        {
+          "name": "Solides",
+          "type": "hr_platform",
+          "protocol": "REST/Webhook",
+          "env": "SOLIDES_API_TOKEN"
+        },
+        {
+          "name": "Dominio Sistemas (TOTVS)",
+          "type": "accounting",
+          "protocol": "REST"
+        }
+      ]
+    },
+    "lgpd": {
+      "name": "lgpd",
+      "files": 3,
+      "lines": 495,
+      "models": 0,
+      "tables": [],
+      "controllers": 0,
+      "endpoints": 3,
+      "criticality": "low",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "mobile": {
+      "name": "mobile",
+      "files": 23,
+      "lines": 5326,
+      "models": 4,
+      "tables": [
+        "device_tokens",
+        "mobile_sessions",
+        "mobile_sync_queue",
+        "mobile_notification_logs"
+      ],
+      "controllers": 1,
+      "endpoints": 17,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "monitoring": {
+      "name": "monitoring",
+      "files": 20,
+      "lines": 3581,
+      "models": 2,
+      "tables": [
+        "monitoring_alerts",
+        "monitoring_thresholds"
+      ],
+      "controllers": 2,
+      "endpoints": 25,
+      "criticality": "low",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "notifications": {
+      "name": "notifications",
+      "files": 66,
+      "lines": 21905,
+      "models": 19,
+      "tables": [
+        "notification_templates",
+        "notification_channels",
+        "notification_logs",
+        "notification_metrics",
+        "notification_preferences",
+        "notification_subscriptions",
+        "notification_queue",
+        "anti_procrastination_tasks",
+        "push_devices",
+        "push_device_sessions"
+      ],
+      "controllers": 8,
+      "endpoints": 111,
+      "criticality": "medium",
+      "internal_dependencies": [
+        "ai"
+      ],
+      "infrastructure": [
+        "celery",
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": [
+        {
+          "name": "Evolution API (WhatsApp)",
+          "type": "messaging",
+          "protocol": "REST",
+          "env": "WHATSAPP_API_ENABLED"
+        }
+      ]
+    },
+    "operacional": {
+      "name": "operacional",
+      "files": 168,
+      "lines": 52034,
+      "models": 32,
+      "tables": [
+        "shifts",
+        "employees",
+        "allocations",
+        "time_bank",
+        "posts",
+        "scales",
+        "substitutions",
+        "scale_templates",
+        "vacation_requests",
+        "occurrence_attachments"
+      ],
+      "controllers": 23,
+      "endpoints": 245,
+      "criticality": "critical",
+      "internal_dependencies": [
+        "config",
+        "integrations",
+        "notifications"
+      ],
+      "infrastructure": [
+        "celery",
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "people_management": {
+      "name": "people_management",
+      "files": 232,
+      "lines": 33159,
+      "models": 31,
+      "tables": [
+        "ged_kit_access_logs",
+        "ged_document_kits",
+        "ged_clients",
+        "ged_kit_documents",
+        "employee_dp",
+        "termination_processes",
+        "employee_benefits",
+        "employment_contracts",
+        "admission_processes",
+        "portal_preferences"
+      ],
+      "controllers": 43,
+      "endpoints": 219,
+      "criticality": "high",
+      "internal_dependencies": [
+        "cct",
+        "ged",
+        "hr",
+        "operacional",
+        "recruitment",
+        "reimbursement",
+        "retention"
+      ],
+      "infrastructure": [
+        "celery",
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "recruitment": {
+      "name": "recruitment",
+      "files": 33,
+      "lines": 8384,
+      "models": 7,
+      "tables": [
+        "job_positions",
+        "candidate_educations",
+        "candidate_experiences",
+        "applications",
+        "candidate_skills",
+        "candidates",
+        "interviews"
+      ],
+      "controllers": 4,
+      "endpoints": 79,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "reimbursement": {
+      "name": "reimbursement",
+      "files": 19,
+      "lines": 3541,
+      "models": 4,
+      "tables": [
+        "reimbursement_requests",
+        "reimbursement_items",
+        "reimbursement_categories",
+        "reimbursement_attachments"
+      ],
+      "controllers": 1,
+      "endpoints": 26,
+      "criticality": "medium",
+      "internal_dependencies": [
+        "financial"
+      ],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "reports": {
+      "name": "reports",
+      "files": 17,
+      "lines": 5575,
+      "models": 5,
+      "tables": [
+        "benchmarks",
+        "report_templates",
+        "report_schedules",
+        "report_exports",
+        "executive_kpis"
+      ],
+      "controllers": 2,
+      "endpoints": 38,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "retention": {
+      "name": "retention",
+      "files": 47,
+      "lines": 17766,
+      "models": 14,
+      "tables": [
+        "onboarding_checklists",
+        "onboarding_steps",
+        "onboarding_progress",
+        "climate_surveys",
+        "climate_responses",
+        "climate_scores",
+        "climate_alerts",
+        "operational_profiles",
+        "profile_questions",
+        "post_matches"
+      ],
+      "controllers": 4,
+      "endpoints": 70,
+      "criticality": "low",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    },
+    "scheduler": {
+      "name": "scheduler",
+      "files": 16,
+      "lines": 4630,
+      "models": 7,
+      "tables": [
+        "scheduler_queue",
+        "scheduler_tasks",
+        "scheduler_workers",
+        "scheduler_locks",
+        "scheduler_lock_waiters",
+        "scheduler_executions",
+        "scheduler_execution_logs"
+      ],
+      "controllers": 1,
+      "endpoints": 26,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "security_lgpd": {
+      "name": "security_lgpd",
+      "files": 35,
+      "lines": 5659,
+      "models": 4,
+      "tables": [
+        "lgpd_audit_logs",
+        "lgpd_pia_assessments",
+        "lgpd_consents",
+        "lgpd_erasure_requests"
+      ],
+      "controllers": 7,
+      "endpoints": 21,
+      "criticality": "low",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql",
+        "redis"
+      ],
+      "external_integrations": []
+    },
+    "services": {
+      "name": "services",
+      "files": 16,
+      "lines": 5155,
+      "models": 5,
+      "tables": [
+        "service_catalog",
+        "sla_configs",
+        "service_executions",
+        "service_orders",
+        "service_reports"
+      ],
+      "controllers": 1,
+      "endpoints": 63,
+      "criticality": "medium",
+      "internal_dependencies": [],
+      "infrastructure": [
+        "postgresql"
+      ],
+      "external_integrations": []
+    }
+  },
+  "scaffold_modules": [
+    "cadastros",
+    "comercial",
+    "core",
+    "financeiro",
+    "gestao",
+    "inteligencia",
+    "operacoes",
+    "pessoas",
+    "tecnico"
+  ],
+  "external_integrations": {
+    "OpenAI GPT-4": {
+      "module": "ai",
+      "name": "OpenAI GPT-4",
+      "type": "llm",
+      "protocol": "REST",
+      "env": "OPENAI_API_KEY"
+    },
+    "Anthropic Claude": {
+      "module": "ai",
+      "name": "Anthropic Claude",
+      "type": "llm",
+      "protocol": "REST",
+      "env": "ANTHROPIC_API_KEY"
+    },
+    "ViaCEP": {
+      "module": "campo",
+      "name": "ViaCEP",
+      "type": "address_lookup",
+      "protocol": "REST"
+    },
+    "Google Maps": {
+      "module": "campo",
+      "name": "Google Maps",
+      "type": "geocoding",
+      "protocol": "REST",
+      "env": "GOOGLE_MAPS_API_KEY"
+    },
+    "Cora Banking": {
+      "module": "financial",
+      "name": "Cora Banking",
+      "type": "banking",
+      "protocol": "REST",
+      "env": "CORA_API_KEY"
+    },
+    "Inter Banking": {
+      "module": "financial",
+      "name": "Inter Banking",
+      "type": "banking",
+      "protocol": "REST",
+      "env": "INTER_API_KEY"
+    },
+    "eSocial": {
+      "module": "government_integrations",
+      "name": "eSocial",
+      "type": "gov_api",
+      "protocol": "REST/XML",
+      "env": "ESOCIAL_ENVIRONMENT"
+    },
+    "SEFAZ": {
+      "module": "government_integrations",
+      "name": "SEFAZ",
+      "type": "gov_api",
+      "protocol": "SOAP/XML",
+      "env": "SEFAZ_ENVIRONMENT"
+    },
+    "NFS-e Manaus": {
+      "module": "government_integrations",
+      "name": "NFS-e Manaus",
+      "type": "gov_api",
+      "protocol": "SOAP/ABRASF 2.04"
+    },
+    "NFS-e Nacional": {
+      "module": "government_integrations",
+      "name": "NFS-e Nacional",
+      "type": "gov_api",
+      "protocol": "REST/JSON",
+      "env": "NFSE_NACIONAL_ENVIRONMENT"
+    },
+    "FGTS Digital": {
+      "module": "government_integrations",
+      "name": "FGTS Digital",
+      "type": "gov_api",
+      "protocol": "REST"
+    },
+    "EFD-Reinf": {
+      "module": "government_integrations",
+      "name": "EFD-Reinf",
+      "type": "gov_api",
+      "protocol": "XML"
+    },
+    "DCTFWeb": {
+      "module": "government_integrations",
+      "name": "DCTFWeb",
+      "type": "gov_api",
+      "protocol": "REST"
+    },
+    "SPED Fiscal/Contabil": {
+      "module": "government_integrations",
+      "name": "SPED Fiscal/Contabil",
+      "type": "gov_api",
+      "protocol": "TXT/Layout"
+    },
+    "Gov.br OAuth": {
+      "module": "government_integrations",
+      "name": "Gov.br OAuth",
+      "type": "oauth",
+      "protocol": "OAuth2"
+    },
+    "e-CAC": {
+      "module": "government_integrations",
+      "name": "e-CAC",
+      "type": "gov_api",
+      "protocol": "REST"
+    },
+    "Simples Nacional": {
+      "module": "government_integrations",
+      "name": "Simples Nacional",
+      "type": "gov_api",
+      "protocol": "REST"
+    },
+    "Solides": {
+      "module": "integrations",
+      "name": "Solides",
+      "type": "hr_platform",
+      "protocol": "REST/Webhook",
+      "env": "SOLIDES_API_TOKEN"
+    },
+    "Dominio Sistemas (TOTVS)": {
+      "module": "integrations",
+      "name": "Dominio Sistemas (TOTVS)",
+      "type": "accounting",
+      "protocol": "REST"
+    },
+    "Evolution API (WhatsApp)": {
+      "module": "notifications",
+      "name": "Evolution API (WhatsApp)",
+      "type": "messaging",
+      "protocol": "REST",
+      "env": "WHATSAPP_API_ENABLED"
+    }
+  },
+  "criticality_order": [
+    {
+      "level": "critical",
+      "modules": [
+        "financial",
+        "fiscal",
+        "fiscal_contabil",
+        "government_integrations",
+        "operacional"
+      ],
+      "components": [
+        "postgres",
+        "redis",
+        "backend",
+        "nginx"
+      ]
+    },
+    {
+      "level": "high",
+      "modules": [
+        "cct",
+        "clients",
+        "crm",
+        "document_kits",
+        "empresas",
+        "ged",
+        "hr",
+        "people_management"
+      ],
+      "components": [
+        "celery_workers",
+        "frontend"
+      ]
+    },
+    {
+      "level": "medium",
+      "modules": [
+        "analytics",
+        "bidding",
+        "campo",
+        "equipment_management",
+        "health_occupational",
+        "integrations",
+        "mobile",
+        "notifications",
+        "recruitment",
+        "reimbursement",
+        "reports",
+        "scheduler",
+        "services"
+      ],
+      "components": [
+        "flower"
+      ]
+    },
+    {
+      "level": "low",
+      "modules": [
+        "ai",
+        "audit",
+        "automation",
+        "client_portal",
+        "config",
+        "documents",
+        "fase5",
+        "lgpd",
+        "monitoring",
+        "retention",
+        "security_lgpd"
+      ],
+      "components": [
+        "monitoring",
+        "staging"
+      ]
+    }
+  ],
+  "traffic": {
+    "total_requests": 1640,
+    "peak_hours_utc": [
+      4,
+      5,
+      17,
+      18,
+      19
+    ],
+    "peak_hours_brt": [
+      0,
+      1,
+      13,
+      14,
+      15
+    ],
+    "top_endpoints": [
+      {
+        "path": "/api/v1/notifications/push",
+        "count": 327
+      },
+      {
+        "path": "/api/v1/auth/me",
+        "count": 122
+      },
+      {
+        "path": "/api/v1/operacional/comunicacao/ws/operacional/alertas",
+        "count": 86
+      },
+      {
+        "path": "/api/v1/people-management/operations/postos/posts/stats",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/people-management/operations/escalas/scales/stats",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/clients/stats",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/government/dashboard/status",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/operacional/employees/",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/clients",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/auth/login",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/people-management/operations/postos/posts/",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/people-management/operations/escalas/scales/",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/clients/",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/ai/bartolo/greeting",
+        "count": 18
+      },
+      {
+        "path": "/api/v1/auth/refresh",
+        "count": 17
+      },
+      {
+        "path": "/api/v1/financial/payablesstats",
+        "count": 14
+      },
+      {
+        "path": "/api/v1/financial/bi-dashboard/bi/dashboards/stats",
+        "count": 8
+      },
+      {
+        "path": "/api/v1/financial/receivablesstats",
+        "count": 8
+      },
+      {
+        "path": "/api/v1/financial/cashflowdashboard",
+        "count": 8
+      },
+      {
+        "path": "/api/v1/financial/payables/payables",
+        "count": 6
+      }
+    ],
+    "status_distribution": {
+      "2xx": 760,
+      "4xx": 543,
+      "5xx": 240,
+      "3xx": 97
+    },
+    "analyzed_at": "2026-03-20T19:41:31.557922Z"
+  },
+  "peak_hours": {
+    "known_brt": [
+      "07:00-09:00",
+      "17:00-19:00"
+    ],
+    "from_logs": [
+      0,
+      1,
+      13,
+      14,
+      15
+    ]
+  },
+  "operational_rules": [
+    {
+      "rule": "no_deploy_during_peak",
+      "severity": "high",
+      "description": "Nao executar deploys entre 07:00-09:00 e 17:00-19:00 BRT"
+    },
+    {
+      "rule": "backup_before_deploy",
+      "severity": "critical",
+      "description": "Sempre fazer backup do banco antes de qualquer deploy"
+    },
+    {
+      "rule": "backend_before_frontend",
+      "severity": "high",
+      "description": "Deploiar backend antes do frontend"
+    },
+    {
+      "rule": "financial_zone_proibida",
+      "severity": "critical",
+      "description": "Nao editar backend/modules/financial/ sem testes — compliance fiscal"
+    },
+    {
+      "rule": "government_zone_proibida",
+      "severity": "critical",
+      "description": "Nao editar backend/modules/government_integrations/ — regulatorio"
+    }
+  ]
+}

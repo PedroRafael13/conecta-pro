@@ -6,7 +6,7 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -49,8 +49,8 @@ class ExtractedSignature:
     """Extracted signature data."""
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    image_data: Optional[str] = None  # Base64
-    bounding_box: Optional[BoundingBox] = None
+    image_data: str | None = None  # Base64
+    bounding_box: BoundingBox | None = None
     confidence: float = 0.0
     quality_score: float = 0.0
     contrast_score: float = 0.0
@@ -58,11 +58,11 @@ class ExtractedSignature:
     completeness_score: float = 0.0
     width: int = 0
     height: int = 0
-    feature_vector: Optional[List[float]] = None
-    contour_data: Optional[List[List[int]]] = None
+    feature_vector: list[float] | None = None
+    contour_data: list[list[int]] | None = None
     stroke_count: int = 0
     extraction_method: str = "unknown"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -88,12 +88,12 @@ class ExtractionResult:
     """Result of signature extraction."""
 
     success: bool = False
-    signatures: List[ExtractedSignature] = field(default_factory=list)
+    signatures: list[ExtractedSignature] = field(default_factory=list)
     total_found: int = 0
     processing_time_ms: int = 0
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -149,7 +149,7 @@ class SignatureExtractionService:
     def extract_from_image(
         self,
         image_data: bytes,
-        region: Optional[BoundingBox] = None,
+        region: BoundingBox | None = None,
         method: str = "auto",
     ) -> ExtractionResult:
         """Extract signatures from image.
@@ -170,7 +170,7 @@ class SignatureExtractionService:
             # In production, use OpenCV, PIL, or similar library
 
             # Decode image (simulated)
-            image_hash = hashlib.md5(image_data).hexdigest()
+            image_hash = hashlib.sha256(image_data).hexdigest()
 
             # Preprocess if enabled
             if self.enable_preprocessing:
@@ -193,7 +193,7 @@ class SignatureExtractionService:
 
             # Filter and validate candidates
             valid_signatures = []
-            for candidate in candidates[:self.max_signatures]:
+            for candidate in candidates[: self.max_signatures]:
                 signature = self._validate_and_extract(candidate, processed_data)
                 if signature and signature.confidence >= self.min_confidence:
                     # Extract features if enabled
@@ -224,7 +224,7 @@ class SignatureExtractionService:
     def extract_from_base64(
         self,
         base64_data: str,
-        region: Optional[BoundingBox] = None,
+        region: BoundingBox | None = None,
     ) -> ExtractionResult:
         """Extract signatures from base64 encoded image.
 
@@ -289,8 +289,8 @@ class SignatureExtractionService:
     def _detect_by_contour(
         self,
         image_data: bytes,
-        region: Optional[BoundingBox],
-    ) -> List[Dict[str, Any]]:
+        region: BoundingBox | None,
+    ) -> list[dict[str, Any]]:
         """Detect signatures using contour analysis.
 
         Args:
@@ -304,7 +304,7 @@ class SignatureExtractionService:
         # In production: use cv2.findContours, cv2.boundingRect, etc.
 
         # Generate sample candidates based on image hash for consistency
-        image_hash = hashlib.md5(image_data).hexdigest()
+        image_hash = hashlib.sha256(image_data).hexdigest()
         seed = int(image_hash[:8], 16)
         np.random.seed(seed % (2**31))
 
@@ -313,7 +313,7 @@ class SignatureExtractionService:
         # Generate 1-3 candidates
         num_candidates = np.random.randint(1, 4)
 
-        for i in range(num_candidates):
+        for _i in range(num_candidates):
             width = np.random.randint(self.MIN_SIGNATURE_WIDTH, self.MAX_SIGNATURE_WIDTH)
             height = np.random.randint(self.MIN_SIGNATURE_HEIGHT, self.MAX_SIGNATURE_HEIGHT)
 
@@ -339,8 +339,8 @@ class SignatureExtractionService:
     def _detect_by_edge(
         self,
         image_data: bytes,
-        region: Optional[BoundingBox],
-    ) -> List[Dict[str, Any]]:
+        region: BoundingBox | None,
+    ) -> list[dict[str, Any]]:
         """Detect signatures using edge detection."""
         # Use Canny edge detection
         # In production: cv2.Canny, cv2.HoughLinesP
@@ -349,17 +349,17 @@ class SignatureExtractionService:
     def _detect_by_template(
         self,
         image_data: bytes,
-        region: Optional[BoundingBox],
-    ) -> List[Dict[str, Any]]:
+        region: BoundingBox | None,
+    ) -> list[dict[str, Any]]:
         """Detect signatures using template matching."""
         # Match against known signature patterns
         return self._detect_by_contour(image_data, region)
 
     def _validate_and_extract(
         self,
-        candidate: Dict[str, Any],
+        candidate: dict[str, Any],
         image_data: bytes,
-    ) -> Optional[ExtractedSignature]:
+    ) -> ExtractedSignature | None:
         """Validate candidate and extract signature data.
 
         Args:
@@ -391,7 +391,7 @@ class SignatureExtractionService:
             return None
 
         # Calculate overall quality score
-        quality_score = (contrast * 0.3 + clarity * 0.4 + completeness * 0.3)
+        quality_score = contrast * 0.3 + clarity * 0.4 + completeness * 0.3
 
         # Extract signature image (simulated)
         signature_image = self._crop_region(image_data, bbox)
@@ -432,7 +432,7 @@ class SignatureExtractionService:
         """Calculate contrast score for region."""
         # In production: calculate actual contrast using pixel values
         # Simulated: use image hash for consistency
-        image_hash = hashlib.md5(image_data).hexdigest()
+        image_hash = hashlib.sha256(image_data).hexdigest()
         seed = int(image_hash[:8], 16) + bbox.x + bbox.y
         np.random.seed(seed % (2**31))
         return np.random.uniform(0.4, 0.9)
@@ -440,7 +440,7 @@ class SignatureExtractionService:
     def _calculate_clarity(self, image_data: bytes, bbox: BoundingBox) -> float:
         """Calculate clarity score for region."""
         # In production: calculate actual sharpness/blur metrics
-        image_hash = hashlib.md5(image_data).hexdigest()
+        image_hash = hashlib.sha256(image_data).hexdigest()
         seed = int(image_hash[:8], 16) + bbox.width
         np.random.seed(seed % (2**31))
         return np.random.uniform(0.5, 0.95)
@@ -448,7 +448,7 @@ class SignatureExtractionService:
     def _calculate_completeness(self, image_data: bytes, bbox: BoundingBox) -> float:
         """Calculate completeness score (no cut-off edges)."""
         # In production: check if signature touches edges
-        image_hash = hashlib.md5(image_data).hexdigest()
+        image_hash = hashlib.sha256(image_data).hexdigest()
         seed = int(image_hash[:8], 16) + bbox.height
         np.random.seed(seed % (2**31))
         return np.random.uniform(0.6, 0.98)
@@ -457,9 +457,9 @@ class SignatureExtractionService:
         """Crop region from image."""
         # In production: use PIL or OpenCV to crop
         # Return simulated cropped data
-        return image_data[:min(len(image_data), bbox.area)]
+        return image_data[: min(len(image_data), bbox.area)]
 
-    def _extract_features(self, signature: ExtractedSignature) -> List[float]:
+    def _extract_features(self, signature: ExtractedSignature) -> list[float]:
         """Extract feature vector from signature.
 
         Features include:
@@ -490,7 +490,7 @@ class SignatureExtractionService:
 
         return features
 
-    def _extract_contours(self, signature: ExtractedSignature) -> List[List[int]]:
+    def _extract_contours(self, signature: ExtractedSignature) -> list[list[int]]:
         """Extract contour points from signature."""
         # In production: use cv2.findContours
         # Generate simulated contour points
@@ -517,7 +517,7 @@ class SignatureExtractionService:
     def estimate_stroke_data(
         self,
         signature: ExtractedSignature,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Estimate stroke characteristics from static signature."""
         return {
             "estimated_strokes": signature.stroke_count,

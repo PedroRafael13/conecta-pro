@@ -1,120 +1,67 @@
 """
-Health Check Endpoint - Monitoramento de saúde da aplicação.
+Health Check Controller - Fase C Type Hints
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, status
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.database import get_db
-from core.monitoring.health import HealthChecker
 
-router = APIRouter(tags=["Health"])
+router = APIRouter(prefix="/health", tags=["Health"])
 
 
-@router.get(
-    "/health",
-    status_code=status.HTTP_200_OK,
-    summary="Health Check",
-    description="Verifica saúde de todos os componentes críticos da aplicação",
-)
-async def health_check(
-    db: AsyncSession = Depends(get_db),
-    detailed: bool = False,
-):
+@router.get("/", status_code=status.HTTP_200_OK)
+async def health_check() -> dict[str, str]:
     """
-    Endpoint de Health Check.
+    Health check básico da aplicação.
 
-    Verifica:
-    - Database (PostgreSQL)
-    - Redis (se configurado)
-    - Integrações externas (opcional)
+    Returns:
+        Status da aplicação
+    """
+    return {
+        "status": "healthy",
+        "version": settings.app_version,
+        "environment": settings.environment,
+    }
+
+
+@router.get("/ready", status_code=status.HTTP_200_OK)
+async def readiness_check(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """
+    Readiness probe - verifica se a aplicação está pronta para receber tráfego.
 
     Args:
         db: Sessão do banco de dados
-        detailed: Se True, retorna detalhes completos de cada componente
 
     Returns:
-        Status geral e detalhes dos componentes
-
-    Response Codes:
-        - 200: Sistema saudável ou com degradação aceitável
-        - 503: Sistema não saudável (componentes críticos offline)
+        Status detalhado dos componentes
     """
-    checker = HealthChecker()
+    checks: dict[str, Any] = {
+        "status": "ready",
+        "checks": {},
+    }
 
-    # Tenta obter Redis (opcional)
-    redis_client = None
+    # Check database
     try:
-        from core.cache import get_redis
+        await db.execute(text("SELECT 1"))
+        checks["checks"]["database"] = {"status": "up"}
+    except Exception as e:
+        checks["checks"]["database"] = {"status": "down", "error": str(e)}
+        checks["status"] = "not_ready"
 
-        redis_client = await get_redis()
-    except Exception:
-        pass  # Redis é opcional
-
-    # Configurar integrações externas (se necessário)
-    external_integrations = None
-    # Exemplo: external_integrations = {"solides": "https://employer.tangerino.com.br/test"}
-
-    # Executa health checks
-    result = await checker.check_all(
-        db=db,
-        redis=redis_client,
-        external_integrations=external_integrations,
-    )
-
-    # Se não detalhado, retorna apenas status geral
-    if not detailed:
-        return {
-            "status": result["status"],
-            "healthy_count": result["healthy_count"],
-            "total_count": result["total_count"],
-            "timestamp": result["timestamp"],
-        }
-
-    return result
+    return checks
 
 
-@router.get(
-    "/health/ready",
-    status_code=status.HTTP_200_OK,
-    summary="Readiness Check",
-    description="Verifica se aplicação está pronta para receber requisições",
-)
-async def readiness_check(db: AsyncSession = Depends(get_db)):
+@router.get("/live", status_code=status.HTTP_200_OK)
+async def liveness_check() -> dict[str, str]:
     """
-    Readiness probe para Kubernetes.
+    Liveness probe - verifica se a aplicação está viva.
 
-    Retorna 200 se a aplicação está pronta, 503 caso contrário.
+    Returns:
+        Status de liveness
     """
-    checker = HealthChecker()
-
-    # Verifica apenas database (crítico)
-    db_health = await checker.check_database(db)
-
-    if db_health.status.value == "unhealthy":
-        return {
-            "ready": False,
-            "reason": db_health.message,
-        }, 503
-
-    return {
-        "ready": True,
-        "timestamp": db_health.checked_at.isoformat(),
-    }
-
-
-@router.get(
-    "/health/live",
-    status_code=status.HTTP_200_OK,
-    summary="Liveness Check",
-    description="Verifica se aplicação está viva",
-)
-async def liveness_check():
-    """
-    Liveness probe para Kubernetes.
-
-    Sempre retorna 200 se o processo está rodando.
-    """
-    return {
-        "alive": True,
-    }
+    return {"status": "alive"}

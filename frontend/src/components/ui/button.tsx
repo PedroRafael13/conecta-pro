@@ -21,9 +21,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]
-        hover:brightness-110 focus:ring-[hsl(var(--primary))]
-        glow-primary
+        bg-gradient-to-b from-navy-600 to-navy-700 text-[hsl(var(--primary-foreground))]
+        hover:from-navy-500 hover:to-navy-600 focus:ring-[hsl(var(--primary))]
+        shadow-[0_0_16px_hsl(var(--primary)/0.15)]
+        hover:shadow-[0_0_24px_hsl(var(--primary)/0.2)]
       `,
       default: `
         bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]
@@ -57,7 +58,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const sizes = {
       sm: 'h-8 px-3 text-sm rounded-md',
       md: 'h-10 px-4 text-sm rounded-lg',
-      lg: 'h-12 px-6 text-base rounded-lg',
+      lg: 'h-12 px-6 text-base rounded-xl',
       icon: 'h-10 w-10 rounded-lg',
     };
 

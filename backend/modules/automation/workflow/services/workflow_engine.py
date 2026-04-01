@@ -7,8 +7,10 @@ import asyncio
 import re
 import time
 import traceback
-from dataclasses import dataclass, field as dataclass_field
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -30,8 +32,8 @@ class StepResult:
 
     success: bool
     output: dict = dataclass_field(default_factory=dict)
-    next_step_id: Optional[str] = None
-    error_message: Optional[str] = None
+    next_step_id: str | None = None
+    error_message: str | None = None
     should_continue: bool = True
 
 
@@ -143,10 +145,7 @@ class ExecutionContext:
             elif isinstance(value, dict):
                 resolved[key] = self.resolve_config(value)
             elif isinstance(value, list):
-                resolved[key] = [
-                    self.resolve_template(v) if isinstance(v, str) else v
-                    for v in value
-                ]
+                resolved[key] = [self.resolve_template(v) if isinstance(v, str) else v for v in value]
             else:
                 resolved[key] = value
 
@@ -208,8 +207,8 @@ class WorkflowEngine:
     async def execute_workflow(
         self,
         workflow: Workflow,
-        trigger_data: Optional[dict] = None,
-        initiated_by: Optional[UUID] = None,
+        trigger_data: dict | None = None,
+        initiated_by: UUID | None = None,
         is_test: bool = False,
     ) -> WorkflowExecution:
         """Executa workflow.
@@ -714,9 +713,7 @@ class WorkflowEngine:
 
         await self._log(
             context=context,
-            log_type=(
-                LogType.CONDITION_TRUE if condition_result else LogType.CONDITION_FALSE
-            ),
+            log_type=(LogType.CONDITION_TRUE if condition_result else LogType.CONDITION_FALSE),
             message=f"Condition evaluated: {condition_result}",
             step_id=str(step.id),
             step_name=step.name,
@@ -724,9 +721,7 @@ class WorkflowEngine:
         )
 
         # Proximo step baseado no resultado
-        next_step_id = (
-            step.true_step_id if condition_result else step.false_step_id
-        )
+        next_step_id = step.true_step_id if condition_result else step.false_step_id
 
         return StepResult(
             success=True,
@@ -918,7 +913,7 @@ class WorkflowEngine:
 
     # ==================== Helpers ====================
 
-    async def _find_start_step(self, workflow: Workflow) -> Optional[WorkflowStep]:
+    async def _find_start_step(self, workflow: Workflow) -> WorkflowStep | None:
         """Encontra step inicial.
 
         Args:
@@ -938,7 +933,7 @@ class WorkflowEngine:
 
         return None
 
-    async def _get_step(self, step_id: str) -> Optional[WorkflowStep]:
+    async def _get_step(self, step_id: str) -> WorkflowStep | None:
         """Busca step por ID.
 
         Args:
@@ -1009,10 +1004,10 @@ class WorkflowEngine:
         context: ExecutionContext,
         log_type: LogType,
         message: str,
-        step_id: Optional[str] = None,
-        step_name: Optional[str] = None,
+        step_id: str | None = None,
+        step_name: str | None = None,
         level: str = "INFO",
-        data: Optional[dict] = None,
+        data: dict | None = None,
     ) -> None:
         """Cria log.
 
@@ -1052,7 +1047,7 @@ class WorkflowEngine:
         self,
         trigger: WorkflowTrigger,
         entity_data: dict,
-    ) -> Optional[WorkflowExecution]:
+    ) -> WorkflowExecution | None:
         """Processa trigger.
 
         Args:

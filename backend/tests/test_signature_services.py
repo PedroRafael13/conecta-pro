@@ -3,33 +3,32 @@
 import base64
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 # Add backend to path
 backend_path = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_path))
 
-# Import services directly (avoiding model imports that need database)
-from modules.ai.signature.services.extraction_service import (
+# Import services directly (avoiding model imports that need database)  # noqa: E402
+from modules.ai.signature.services.comparison_service import (  # noqa: E402
+    ComparisonResult,
+    FeatureScore,
+    SignatureComparisonService,
+)
+from modules.ai.signature.services.extraction_service import (  # noqa: E402
     BoundingBox,
     ExtractedSignature,
     ExtractionResult,
     SignatureExtractionService,
 )
-from modules.ai.signature.services.comparison_service import (
-    ComparisonResult,
-    FeatureScore,
-    SignatureComparisonService,
-)
-from modules.ai.signature.services.validation_service import (
+from modules.ai.signature.services.validation_service import (  # noqa: E402
     FraudAnalysisResult,
     QualityCheckResult,
     SignatureValidationService,
     ValidationResult,
 )
-
 
 # ============== Fixtures ==============
 
@@ -174,10 +173,7 @@ class TestSignatureExtractionService:
 
     def test_extract_from_region(self, extraction_service, sample_image_data):
         """Test extract_from_region method."""
-        result = extraction_service.extract_from_region(
-            sample_image_data,
-            x=10, y=10, width=100, height=50
-        )
+        result = extraction_service.extract_from_region(sample_image_data, x=10, y=10, width=100, height=50)
 
         assert isinstance(result, ExtractionResult)
 
@@ -191,10 +187,7 @@ class TestSignatureExtractionService:
     def test_extraction_methods(self, extraction_service, sample_image_data):
         """Test different extraction methods."""
         for method in ["contour", "edge", "template", "auto"]:
-            result = extraction_service.extract_from_image(
-                sample_image_data,
-                method=method
-            )
+            result = extraction_service.extract_from_image(sample_image_data, method=method)
             assert isinstance(result, ExtractionResult)
 
     def test_extracted_signature_properties(self, extraction_service, sample_image_data):
@@ -281,40 +274,25 @@ class TestSignatureComparisonService:
     def test_compare_modes(self, comparison_service, sample_signature, sample_template):
         """Test different comparison modes."""
         for mode in ["strict", "normal", "relaxed"]:
-            result = comparison_service.compare(
-                sample_signature,
-                sample_template,
-                mode=mode
-            )
+            result = comparison_service.compare(sample_signature, sample_template, mode=mode)
             assert isinstance(result, ComparisonResult)
 
     def test_custom_threshold(self, comparison_service, sample_signature, sample_template):
         """Test custom threshold."""
-        result = comparison_service.compare(
-            sample_signature,
-            sample_template,
-            custom_threshold=0.5
-        )
+        result = comparison_service.compare(sample_signature, sample_template, custom_threshold=0.5)
 
         assert result.threshold_used == 0.5
 
     def test_compare_with_template(self, comparison_service, sample_signature, sample_template):
         """Test comparison with template."""
-        result = comparison_service.compare_with_template(
-            sample_signature,
-            sample_template
-        )
+        result = comparison_service.compare_with_template(sample_signature, sample_template)
 
         assert isinstance(result, ComparisonResult)
 
     def test_compare_batch(self, comparison_service, sample_signature):
         """Test batch comparison."""
         candidates = [sample_signature.copy() for _ in range(5)]
-        results = comparison_service.compare_batch(
-            sample_signature,
-            candidates,
-            top_n=3
-        )
+        results = comparison_service.compare_batch(sample_signature, candidates, top_n=3)
 
         assert len(results) <= 3
         # Results should be sorted by similarity
@@ -370,14 +348,9 @@ class TestSignatureValidationService:
         assert isinstance(result, ValidationResult)
         assert result.status in ["pending", "valid", "invalid", "suspicious", "error"]
 
-    def test_validate_with_template(
-        self, validation_service, sample_signature, sample_template
-    ):
+    def test_validate_with_template(self, validation_service, sample_signature, sample_template):
         """Test validation with template."""
-        result = validation_service.validate(
-            sample_signature,
-            template=sample_template
-        )
+        result = validation_service.validate(sample_signature, template=sample_template)
 
         assert isinstance(result, ValidationResult)
         assert result.comparison_result is not None
@@ -388,10 +361,7 @@ class TestSignatureValidationService:
             "purpose": "contract_signing",
             "document_type": "contract",
         }
-        result = validation_service.validate(
-            sample_signature,
-            context=context
-        )
+        result = validation_service.validate(sample_signature, context=context)
 
         assert isinstance(result, ValidationResult)
         assert result.metadata.get("context") == context
@@ -426,14 +396,9 @@ class TestSignatureValidationService:
         assert isinstance(result, FraudAnalysisResult)
         assert result.risk_level in ["low", "medium", "high", "critical"]
 
-    def test_fraud_analysis_with_template(
-        self, validation_service, sample_signature, sample_template
-    ):
+    def test_fraud_analysis_with_template(self, validation_service, sample_signature, sample_template):
         """Test fraud analysis with template."""
-        result = validation_service.analyze_fraud(
-            sample_signature,
-            template=sample_template
-        )
+        result = validation_service.analyze_fraud(sample_signature, template=sample_template)
 
         assert isinstance(result, FraudAnalysisResult)
 
@@ -470,9 +435,7 @@ class TestSignatureValidationService:
     def test_validate_document_integrity(self, validation_service):
         """Test document integrity validation."""
         result = validation_service.validate_document_integrity(
-            document_hash="abc123def456",
-            expected_hash="abc123def456",
-            algorithm="sha256"
+            document_hash="abc123def456", expected_hash="abc123def456", algorithm="sha256"
         )
 
         assert result["is_valid"]
@@ -555,10 +518,7 @@ class TestSignatureIntegration:
             assert isinstance(comparison_result, ComparisonResult)
 
             # 4. Full validation
-            validation_result = validation_service.validate(
-                sig_data,
-                template=sample_template
-            )
+            validation_result = validation_service.validate(sig_data, template=sample_template)
             assert isinstance(validation_result, ValidationResult)
 
     def test_batch_verification(
@@ -575,11 +535,7 @@ class TestSignatureIntegration:
             candidates.append(candidate)
 
         # Compare against all
-        results = comparison_service.compare_batch(
-            sample_signature,
-            candidates,
-            top_n=3
-        )
+        results = comparison_service.compare_batch(sample_signature, candidates, top_n=3)
 
         assert len(results) == 3
         # First should be best match
@@ -598,10 +554,12 @@ class TestSignatureIntegration:
             result = extraction_service.extract_from_image(sample_image_data)
             if result.success and result.signatures:
                 sig = result.signatures[0]
-                samples.append({
-                    "feature_vector": sig.feature_vector,
-                    "contour_data": sig.contour_data,
-                })
+                samples.append(
+                    {
+                        "feature_vector": sig.feature_vector,
+                        "contour_data": sig.contour_data,
+                    }
+                )
 
         # Verify we got samples
         assert len(samples) >= 1
@@ -609,6 +567,7 @@ class TestSignatureIntegration:
         # In production, would average feature vectors to create template
         if samples and samples[0].get("feature_vector"):
             import numpy as np
+
             vectors = [s["feature_vector"] for s in samples if s.get("feature_vector")]
             if vectors:
                 master_vector = np.mean(vectors, axis=0).tolist()

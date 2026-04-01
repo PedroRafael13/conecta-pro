@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -56,7 +55,7 @@ class PayrollPeriodRepository:
         period_id: UUID,
         *,
         include_events: bool = False,
-    ) -> Optional[PayrollPeriod]:
+    ) -> PayrollPeriod | None:
         """Busca período por ID."""
         query = select(PayrollPeriod).where(
             and_(
@@ -75,7 +74,7 @@ class PayrollPeriodRepository:
         self,
         code: str,
         condominio_id: UUID,
-    ) -> Optional[PayrollPeriod]:
+    ) -> PayrollPeriod | None:
         """Busca período por código."""
         query = select(PayrollPeriod).where(
             and_(
@@ -95,7 +94,7 @@ class PayrollPeriodRepository:
         condominio_id: UUID,
         *,
         period_type: PeriodType = None,
-    ) -> Optional[PayrollPeriod]:
+    ) -> PayrollPeriod | None:
         """Busca período por ano/mês de referência."""
         conditions = [
             PayrollPeriod.reference_year == reference_year,
@@ -120,7 +119,7 @@ class PayrollPeriodRepository:
         period_type: PeriodType = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[PayrollPeriod], int]:
+    ) -> tuple[list[PayrollPeriod], int]:
         """Lista períodos com filtros e paginação."""
         conditions = [
             PayrollPeriod.condominio_id == condominio_id,
@@ -160,7 +159,7 @@ class PayrollPeriodRepository:
         self,
         period_id: UUID,
         data: PayrollPeriodUpdate,
-    ) -> Optional[PayrollPeriod]:
+    ) -> PayrollPeriod | None:
         """Atualiza período."""
         period = await self.get_by_id(period_id)
         if not period:
@@ -182,7 +181,7 @@ class PayrollPeriodRepository:
         status: PeriodStatus,
         *,
         user_id: UUID = None,
-    ) -> Optional[PayrollPeriod]:
+    ) -> PayrollPeriod | None:
         """Atualiza status do período."""
         period = await self.get_by_id(period_id)
         if not period:
@@ -210,7 +209,7 @@ class PayrollPeriodRepository:
         self,
         period_id: UUID,
         totals: dict,
-    ) -> Optional[PayrollPeriod]:
+    ) -> PayrollPeriod | None:
         """Atualiza totalizadores do período."""
         period = await self.get_by_id(period_id)
         if not period:
@@ -241,7 +240,7 @@ class PayrollPeriodRepository:
     async def get_open_periods(
         self,
         condominio_id: UUID,
-    ) -> List[PayrollPeriod]:
+    ) -> list[PayrollPeriod]:
         """Retorna períodos abertos para lançamentos."""
         query = select(PayrollPeriod).where(
             and_(
@@ -262,7 +261,7 @@ class PayrollPeriodRepository:
     async def get_current_period(
         self,
         condominio_id: UUID,
-    ) -> Optional[PayrollPeriod]:
+    ) -> PayrollPeriod | None:
         """Retorna período atual (mês corrente)."""
         now = datetime.utcnow()
         return await self.get_by_reference(
@@ -275,7 +274,7 @@ class PayrollPeriodRepository:
     async def get_years_with_periods(
         self,
         condominio_id: UUID,
-    ) -> List[int]:
+    ) -> list[int]:
         """Retorna anos que possuem períodos."""
         query = (
             select(PayrollPeriod.reference_year)

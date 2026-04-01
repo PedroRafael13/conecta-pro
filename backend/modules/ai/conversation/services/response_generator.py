@@ -3,7 +3,7 @@
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from modules.ai.conversation.models.chat_message import IntentCategory
 
@@ -88,8 +88,8 @@ class ResponseGenerator:
         self,
         text: str,
         intent: IntentCategory,
-        module: Optional[str] = None,
-        entities: Optional[dict[str, Any]] = None,
+        module: str | None = None,
+        entities: dict[str, Any] | None = None,
     ) -> FormattedResponse:
         """
         Formata resposta com todos os elementos.
@@ -182,9 +182,7 @@ class ResponseGenerator:
 
         return plain
 
-    def generate_suggestions(
-        self, intent: IntentCategory, module: Optional[str] = None
-    ) -> list[dict[str, Any]]:
+    def generate_suggestions(self, intent: IntentCategory, module: str | None = None) -> list[dict[str, Any]]:
         """
         Gera sugestoes de quick replies.
 
@@ -200,9 +198,19 @@ class ResponseGenerator:
         # Sugestoes baseadas na intencao
         if intent == IntentCategory.GREETING:
             suggestions = [
-                {"text": "Ver dashboard", "type": "quick_reply", "action": "navigate", "payload": {"route": "/dashboard"}},
+                {
+                    "text": "Ver dashboard",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/dashboard"},
+                },
                 {"text": "Minhas tarefas", "type": "quick_reply", "action": "navigate", "payload": {"route": "/tasks"}},
-                {"text": "Ultimas notificacoes", "type": "quick_reply", "action": "navigate", "payload": {"route": "/notifications"}},
+                {
+                    "text": "Ultimas notificacoes",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/notifications"},
+                },
             ]
         elif intent == IntentCategory.HELP_NAVIGATION:
             suggestions = [
@@ -246,27 +254,55 @@ class ResponseGenerator:
         module_suggestions = {
             "crm": [
                 {"text": "Novo lead", "type": "action", "action": "create", "payload": {"entity": "lead"}},
-                {"text": "Ver pipeline", "type": "quick_reply", "action": "navigate", "payload": {"route": "/crm/pipeline"}},
+                {
+                    "text": "Ver pipeline",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/crm/pipeline"},
+                },
             ],
             "financial": [
-                {"text": "Fluxo de caixa", "type": "quick_reply", "action": "navigate", "payload": {"route": "/financial/cashflow"}},
-                {"text": "Contas a pagar", "type": "quick_reply", "action": "navigate", "payload": {"route": "/financial/payables"}},
+                {
+                    "text": "Fluxo de caixa",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/financial/cashflow"},
+                },
+                {
+                    "text": "Contas a pagar",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/financial/payables"},
+                },
             ],
             "hr": [
-                {"text": "Colaboradores", "type": "quick_reply", "action": "navigate", "payload": {"route": "/hr/employees"}},
+                {
+                    "text": "Colaboradores",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/hr/employees"},
+                },
                 {"text": "Folha", "type": "quick_reply", "action": "navigate", "payload": {"route": "/hr/payroll"}},
             ],
             "inventory": [
-                {"text": "Produtos", "type": "quick_reply", "action": "navigate", "payload": {"route": "/inventory/products"}},
-                {"text": "Movimentacoes", "type": "quick_reply", "action": "navigate", "payload": {"route": "/inventory/movements"}},
+                {
+                    "text": "Produtos",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/inventory/products"},
+                },
+                {
+                    "text": "Movimentacoes",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/inventory/movements"},
+                },
             ],
         }
 
         return module_suggestions.get(module, [])
 
-    def generate_actions(
-        self, intent: IntentCategory, entities: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def generate_actions(self, intent: IntentCategory, entities: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Gera acoes possiveis.
 
@@ -283,32 +319,36 @@ class ResponseGenerator:
             # Detecta tipo de acao baseado em entidades
             if "module" in entities:
                 module = entities["module"]
-                actions.append({
-                    "type": "create",
-                    "label": f"Criar registro em {module}",
-                    "module": module,
-                    "requires_confirmation": True,
-                })
+                actions.append(
+                    {
+                        "type": "create",
+                        "label": f"Criar registro em {module}",
+                        "module": module,
+                        "requires_confirmation": True,
+                    }
+                )
 
         elif intent == IntentCategory.DATA_QUERY:
-            actions.append({
-                "type": "export",
-                "label": "Exportar resultados",
-                "formats": ["xlsx", "csv", "pdf"],
-            })
+            actions.append(
+                {
+                    "type": "export",
+                    "label": "Exportar resultados",
+                    "formats": ["xlsx", "csv", "pdf"],
+                }
+            )
 
         elif intent == IntentCategory.ANALYSIS_REQUEST:
-            actions.append({
-                "type": "report",
-                "label": "Gerar relatorio completo",
-                "formats": ["pdf", "xlsx"],
-            })
+            actions.append(
+                {
+                    "type": "report",
+                    "label": "Gerar relatorio completo",
+                    "formats": ["pdf", "xlsx"],
+                }
+            )
 
         return actions
 
-    def get_related_links(
-        self, module: Optional[str], intent: IntentCategory
-    ) -> list[dict[str, Any]]:
+    def get_related_links(self, module: str | None, intent: IntentCategory) -> list[dict[str, Any]]:
         """
         Retorna links relacionados.
 
@@ -327,31 +367,36 @@ class ResponseGenerator:
 
         # Links gerais por intencao
         if intent == IntentCategory.TROUBLESHOOTING:
-            links.extend([
-                {"title": "Central de Ajuda", "url": "/help"},
-                {"title": "FAQ", "url": "/faq"},
-                {"title": "Contato Suporte", "url": "/support"},
-            ])
+            links.extend(
+                [
+                    {"title": "Central de Ajuda", "url": "/help"},
+                    {"title": "FAQ", "url": "/faq"},
+                    {"title": "Contato Suporte", "url": "/support"},
+                ]
+            )
         elif intent == IntentCategory.HELP_NAVIGATION:
-            links.extend([
-                {"title": "Mapa do Sistema", "url": "/sitemap"},
-                {"title": "Tutoriais", "url": "/tutorials"},
-            ])
+            links.extend(
+                [
+                    {"title": "Mapa do Sistema", "url": "/sitemap"},
+                    {"title": "Tutoriais", "url": "/tutorials"},
+                ]
+            )
 
         return links[:5]  # Limita a 5 links
 
-    def get_template_response(self, intent: IntentCategory) -> Optional[str]:
+    def get_template_response(self, intent: IntentCategory) -> str | None:
         """Retorna template de resposta para uma intencao."""
         templates = self.RESPONSE_TEMPLATES.get(intent)
         if templates:
             import random
-            return random.choice(templates)
+
+            return random.choice(templates)  # noqa: S311
         return None
 
     def enrich_response(
         self,
         response: str,
-        data: Optional[dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> str:
         """
         Enriquece resposta com dados.
@@ -377,8 +422,8 @@ class ResponseGenerator:
     def format_data_response(
         self,
         data: list[dict[str, Any]],
-        columns: Optional[list[str]] = None,
-        title: Optional[str] = None,
+        columns: list[str] | None = None,
+        title: str | None = None,
     ) -> str:
         """
         Formata dados em tabela markdown.
@@ -421,9 +466,7 @@ class ResponseGenerator:
 
         return "\n".join(lines)
 
-    def format_error_response(
-        self, error_type: str, message: str, suggestion: Optional[str] = None
-    ) -> FormattedResponse:
+    def format_error_response(self, error_type: str, message: str, suggestion: str | None = None) -> FormattedResponse:
         """
         Formata resposta de erro.
 
@@ -459,8 +502,8 @@ class ResponseGenerator:
     def format_success_response(
         self,
         message: str,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[str] = None,
+        entity_type: str | None = None,
+        entity_id: str | None = None,
     ) -> FormattedResponse:
         """
         Formata resposta de sucesso.
@@ -477,12 +520,14 @@ class ResponseGenerator:
 
         suggestions = []
         if entity_type and entity_id:
-            suggestions.append({
-                "text": f"Ver {entity_type}",
-                "type": "quick_reply",
-                "action": "navigate",
-                "payload": {"route": f"/{entity_type}/{entity_id}"},
-            })
+            suggestions.append(
+                {
+                    "text": f"Ver {entity_type}",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": f"/{entity_type}/{entity_id}"},
+                }
+            )
 
         suggestions.append(
             {"text": "Voltar ao inicio", "type": "quick_reply", "action": "navigate", "payload": {"route": "/"}}

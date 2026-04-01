@@ -5,19 +5,19 @@ Models for voice command recognition and execution.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Column, String, Boolean, DateTime, Float, Integer, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 
 from core.models.base import Base
 
 
-class VoiceCommandStatusEnum(str, Enum):
+class VoiceCommandStatusEnum(StrEnum):
     """Voice command execution status."""
+
     PENDING = "pending"
     RECOGNIZED = "recognized"
     EXECUTING = "executing"
@@ -28,8 +28,9 @@ class VoiceCommandStatusEnum(str, Enum):
     AMBIGUOUS = "ambiguous"
 
 
-class CommandCategoryEnum(str, Enum):
+class CommandCategoryEnum(StrEnum):
     """Voice command category."""
+
     NAVIGATION = "navigation"
     SEARCH = "search"
     CREATE = "create"
@@ -115,6 +116,7 @@ class CommandDefinition(Base):
             if phrase_lower in text_lower or text_lower in phrase_lower:
                 # Calculate similarity
                 from difflib import SequenceMatcher
+
                 similarity = SequenceMatcher(None, text_lower, phrase_lower).ratio()
                 return True, similarity
 
@@ -212,7 +214,7 @@ class VoiceCommand(Base):
         command_id: str,
         command_code: str,
         confidence: float,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
     ) -> None:
         """Set command as recognized."""
         self.command_id = command_id
@@ -227,7 +229,7 @@ class VoiceCommand(Base):
         self.status = VoiceCommandStatusEnum.EXECUTING.value
         self.updated_at = datetime.utcnow()
 
-    def set_completed(self, result: Dict, response: str, execution_time_ms: int) -> None:
+    def set_completed(self, result: dict, response: str, execution_time_ms: int) -> None:
         """Set command as completed."""
         self.status = VoiceCommandStatusEnum.COMPLETED.value
         self.action_result = result
@@ -236,14 +238,14 @@ class VoiceCommand(Base):
         self.executed_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
-    def set_failed(self, error: str, error_code: Optional[str] = None) -> None:
+    def set_failed(self, error: str, error_code: str | None = None) -> None:
         """Set command as failed."""
         self.status = VoiceCommandStatusEnum.FAILED.value
         self.error_message = error
         self.error_code = error_code
         self.updated_at = datetime.utcnow()
 
-    def set_ambiguous(self, alternatives: List[Dict]) -> None:
+    def set_ambiguous(self, alternatives: list[dict]) -> None:
         """Set command as ambiguous with alternatives."""
         self.status = VoiceCommandStatusEnum.AMBIGUOUS.value
         self.alternatives = alternatives
@@ -261,7 +263,7 @@ class VoiceCommand(Base):
         self.confirmed = False
         self.updated_at = datetime.utcnow()
 
-    def add_feedback(self, feedback: str, text: Optional[str] = None) -> None:
+    def add_feedback(self, feedback: str, text: str | None = None) -> None:
         """Add user feedback."""
         self.user_feedback = feedback
         self.feedback_text = text

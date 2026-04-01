@@ -6,7 +6,7 @@ solicitar compensacao e verificar expiracoes.
 """
 
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -37,7 +37,7 @@ class BancoHorasSkill(BaseSkill):
         super().__init__(data_connector=data_connector)
         self.db = db
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando de banco de horas."""
 
         if not command or command == "help":
@@ -61,7 +61,7 @@ class BancoHorasSkill(BaseSkill):
             "suggestions": self.commands[:4],
         }
 
-    async def _saldo(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _saldo(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ver saldo do banco de horas."""
         employee_name = " ".join(args) if args else None
 
@@ -74,23 +74,20 @@ class BancoHorasSkill(BaseSkill):
 
                     # Filtrar por nome se informado
                     if employee_name:
-                        filtered = [
-                            f for f in ranking
-                            if employee_name.lower() in f.get("nome", "").lower()
-                        ]
+                        filtered = [f for f in ranking if employee_name.lower() in f.get("nome", "").lower()]
                         if filtered:
                             func_data = filtered[0]
                             saldo = func_data.get("saldo_banco", 0)
                             saldo_sign = "+" if saldo >= 0 else ""
                             return {
-                                "response": f"""**SALDO - {func_data['nome']}**
+                                "response": f"""**SALDO - {func_data["nome"]}**
 
 | Metrica | Valor |
 |---------|-------|
 | Saldo atual | {saldo_sign}{saldo:.1f}h |
-| Horas extras | {func_data.get('horas_extras', 0):.1f}h |
+| Horas extras | {func_data.get("horas_extras", 0):.1f}h |
 
-Detalhes: `/banco_horas extrato {func_data['nome']}`""",
+Detalhes: `/banco_horas extrato {func_data["nome"]}`""",
                                 "data": {"funcionario": func_data["nome"], "saldo": saldo},
                                 "suggestions": [
                                     f"/banco_horas extrato {func_data['nome']}",
@@ -100,8 +97,7 @@ Detalhes: `/banco_horas extrato {func_data['nome']}`""",
                         else:
                             return {
                                 "response": f"Funcionario '{employee_name}' nao encontrado.\n\n"
-                                            f"Funcionarios disponiveis:\n" +
-                                            "\n".join(f"- {f['nome']}" for f in ranking[:5]),
+                                f"Funcionarios disponiveis:\n" + "\n".join(f"- {f['nome']}" for f in ranking[:5]),
                                 "suggestions": ["/banco_horas saldo"],
                             }
 
@@ -167,7 +163,7 @@ Use `/banco_horas saldo <nome>` para ver detalhes de um funcionario.""",
             "suggestions": ["/banco_horas pendentes", "/banco_horas expiracoes"],
         }
 
-    async def _extrato(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _extrato(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ver extrato detalhado."""
         employee_name = " ".join(args) if args else None
 
@@ -185,28 +181,32 @@ Use `/banco_horas saldo <nome>` para ver detalhes de um funcionario.""",
                     lines = []
                     for entry in entries:
                         tipo_icon = {
-                            "credit": "+", "debit": "-",
-                            "compensation": "-", "adjustment": "~",
+                            "credit": "+",
+                            "debit": "-",
+                            "compensation": "-",
+                            "adjustment": "~",
                             "expiration": "x",
                         }.get(entry.entry_type, "?")
                         tipo_label = {
-                            "credit": "Credito", "debit": "Debito",
-                            "compensation": "Compensacao", "adjustment": "Ajuste",
+                            "credit": "Credito",
+                            "debit": "Debito",
+                            "compensation": "Compensacao",
+                            "adjustment": "Ajuste",
                             "expiration": "Expiracao",
                         }.get(entry.entry_type, entry.entry_type)
 
-                        ref_date = entry.reference_date.strftime('%d/%m') if entry.reference_date else 'N/A'
+                        ref_date = entry.reference_date.strftime("%d/%m") if entry.reference_date else "N/A"
                         status_label = {
-                            "pending": "Pend", "approved": "Aprov",
-                            "rejected": "Rej", "used": "Usado",
+                            "pending": "Pend",
+                            "approved": "Aprov",
+                            "rejected": "Rej",
+                            "used": "Usado",
                             "expired": "Exp",
                         }.get(entry.status, entry.status[:4])
 
-                        lines.append(
-                            f"| {ref_date} | {tipo_label} | {tipo_icon}{entry.hours:.1f}h | {status_label} |"
-                        )
+                        lines.append(f"| {ref_date} | {tipo_label} | {tipo_icon}{entry.hours:.1f}h | {status_label} |")
 
-                    header = f"**EXTRATO BANCO DE HORAS**" + (f" - {employee_name}" if employee_name else "")
+                    header = "**EXTRATO BANCO DE HORAS**" + (f" - {employee_name}" if employee_name else "")
                     return {
                         "response": f"""{header} ({total} registros)
 
@@ -241,7 +241,7 @@ Use `/banco_horas saldo <nome>` para ver detalhes de um funcionario.""",
             "suggestions": ["/banco_horas saldo", "/banco_horas compensar"],
         }
 
-    async def _pendentes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pendentes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar horas extras pendentes de aprovacao."""
         if self.has_data_connector and self.db:
             try:
@@ -255,8 +255,8 @@ Use `/banco_horas saldo <nome>` para ver detalhes de um funcionario.""",
                 if entries:
                     lines = []
                     for entry in entries:
-                        ref_date = entry.reference_date.strftime('%d/%m/%Y') if entry.reference_date else 'N/A'
-                        desc = entry.description or entry.reason or '-'
+                        ref_date = entry.reference_date.strftime("%d/%m/%Y") if entry.reference_date else "N/A"
+                        desc = entry.description or entry.reason or "-"
                         if len(desc) > 30:
                             desc = desc[:27] + "..."
                         lines.append(
@@ -307,13 +307,13 @@ Aprovar: `/banco_horas aprovar <id>`""",
             "suggestions": ["/banco_horas aprovar BH-001", "/banco_horas saldo"],
         }
 
-    async def _aprovar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _aprovar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Aprovar hora extra pendente."""
         if not args:
             return {
                 "response": "**Uso:** `/banco_horas aprovar <id>`\n\n"
-                            "Exemplo: `/banco_horas aprovar BH-001`\n\n"
-                            "Use `/banco_horas pendentes` para listar registros pendentes.",
+                "Exemplo: `/banco_horas aprovar BH-001`\n\n"
+                "Use `/banco_horas pendentes` para listar registros pendentes.",
                 "suggestions": ["/banco_horas pendentes"],
             }
 
@@ -323,11 +323,12 @@ Aprovar: `/banco_horas aprovar <id>`""",
         if self.has_data_connector and self.db:
             try:
                 from modules.operacional.repositories.time_bank_repository import TimeBankRepository
+
                 repo = TimeBankRepository(self.db)
                 entry = await repo.get_by_id(entry_id)
 
                 if entry:
-                    ref_date = entry.reference_date.strftime('%d/%m/%Y') if entry.reference_date else 'N/A'
+                    ref_date = entry.reference_date.strftime("%d/%m/%Y") if entry.reference_date else "N/A"
                     return {
                         "response": f"""**APROVAR HORA EXTRA**
 
@@ -339,7 +340,7 @@ Aprovar: `/banco_horas aprovar <id>`""",
 | Tipo | {entry.entry_type} |
 | Data | {ref_date} |
 | Status | {entry.status} |
-| Descricao | {entry.description or 'N/A'} |
+| Descricao | {entry.description or "N/A"} |
 
 **Confirmar aprovacao?**""",
                         "data": {"entry_id": entry.id, "hours": entry.hours, "status": entry.status},
@@ -356,7 +357,7 @@ Aprovar: `/banco_horas aprovar <id>`""",
                 else:
                     return {
                         "response": f"Registro '{entry_id}' nao encontrado.\n\n"
-                                    "Use `/banco_horas pendentes` para listar registros disponiveis.",
+                        "Use `/banco_horas pendentes` para listar registros disponiveis.",
                         "suggestions": ["/banco_horas pendentes"],
                     }
             except Exception as e:
@@ -388,15 +389,15 @@ Aprovar: `/banco_horas aprovar <id>`""",
             ],
         }
 
-    async def _compensar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _compensar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Solicitar compensacao de horas."""
         if len(args) < 1:
             return {
                 "response": "**Uso:** `/banco_horas compensar <funcionario> [horas] [data]`\n\n"
-                            "Exemplos:\n"
-                            "- `/banco_horas compensar Jose Silva 8 02/02/2026`\n"
-                            "- `/banco_horas compensar Maria Santos 4`\n\n"
-                            "Ou use o assistente guiado: diga 'solicitar compensacao'",
+                "Exemplos:\n"
+                "- `/banco_horas compensar Jose Silva 8 02/02/2026`\n"
+                "- `/banco_horas compensar Maria Santos 4`\n\n"
+                "Ou use o assistente guiado: diga 'solicitar compensacao'",
                 "suggestions": ["/banco_horas saldo", "solicitar compensacao"],
             }
 
@@ -431,20 +432,17 @@ Aprovar: `/banco_horas aprovar <id>`""",
             try:
                 result = await self.data_connector._get_hora_extra_ranking()
                 if result.success and result.data:
-                    filtered = [
-                        f for f in result.data
-                        if employee_name.lower() in f.get("nome", "").lower()
-                    ]
+                    filtered = [f for f in result.data if employee_name.lower() in f.get("nome", "").lower()]
                     if filtered:
                         saldo = filtered[0].get("saldo_banco", 0)
                         saldo_info = f"\n**Saldo disponivel:** {saldo:+.1f}h"
                         if hours and hours > saldo:
                             return {
                                 "response": f"**COMPENSACAO NEGADA**\n\n"
-                                            f"Funcionario: {filtered[0]['nome']}\n"
-                                            f"Saldo disponivel: {saldo:+.1f}h\n"
-                                            f"Horas solicitadas: {hours:.1f}h\n\n"
-                                            f"Saldo insuficiente para esta compensacao.",
+                                f"Funcionario: {filtered[0]['nome']}\n"
+                                f"Saldo disponivel: {saldo:+.1f}h\n"
+                                f"Horas solicitadas: {hours:.1f}h\n\n"
+                                f"Saldo insuficiente para esta compensacao.",
                                 "data": {"insuficiente": True, "saldo": saldo, "solicitado": hours},
                                 "suggestions": [f"/banco_horas saldo {employee_name}"],
                             }
@@ -490,14 +488,15 @@ Para iniciar o assistente guiado completo, diga 'solicitar compensacao'.""",
             ],
         }
 
-    async def _expiracoes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _expiracoes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar horas prestes a expirar."""
         if self.has_data_connector and self.db:
             try:
+                from datetime import date, timedelta
+
+                from modules.operacional.models.time_bank import TimeBankEntryType, TimeBankStatus
                 from modules.operacional.repositories.time_bank_repository import TimeBankRepository
                 from modules.operacional.schemas.time_bank import TimeBankFilter
-                from modules.operacional.models.time_bank import TimeBankStatus, TimeBankEntryType
-                from datetime import date, timedelta
 
                 repo = TimeBankRepository(self.db)
                 filters = TimeBankFilter(
@@ -514,16 +513,18 @@ Para iniciar o assistente guiado completo, diga 'solicitar compensacao'.""",
                     if entry.expiration_date and entry.expiration_date <= limite:
                         days_left = (entry.expiration_date - today).days
                         if days_left >= 0:
-                            exp_date = entry.expiration_date.strftime('%d/%m/%Y')
+                            exp_date = entry.expiration_date.strftime("%d/%m/%Y")
                             urgency = "!!!" if days_left <= 7 else "!" if days_left <= 15 else ""
-                            expiring.append({
-                                "id": entry.id[:8],
-                                "employee_id": entry.employee_id[:8],
-                                "hours": entry.hours,
-                                "exp_date": exp_date,
-                                "days_left": days_left,
-                                "urgency": urgency,
-                            })
+                            expiring.append(
+                                {
+                                    "id": entry.id[:8],
+                                    "employee_id": entry.employee_id[:8],
+                                    "hours": entry.hours,
+                                    "exp_date": exp_date,
+                                    "days_left": days_left,
+                                    "urgency": urgency,
+                                }
+                            )
 
                 expiring.sort(key=lambda x: x["days_left"])
 

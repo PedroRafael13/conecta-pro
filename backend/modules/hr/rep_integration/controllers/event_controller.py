@@ -2,40 +2,39 @@
 
 import logging
 from datetime import date
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
 from modules.hr.rep_integration.repositories import REPEventRepository
-from modules.hr.rep_integration.services import EventProcessorService
 from modules.hr.rep_integration.schemas import (
-    REPEventResponse,
-    REPEventList,
     REPEventFilter,
+    REPEventList,
     REPEventProcess,
     REPEventProcessResult,
+    REPEventResponse,
     REPEventStats,
 )
+from modules.hr.rep_integration.services import EventProcessorService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/events", tags=["REP Events"])
 
 
-@router.get("/", response_model=REPEventList)
+@router.get("", response_model=REPEventList)
 async def list_events(  # pylint: disable=too-many-locals
-    device_id: Optional[UUID] = None,
-    condominio_id: Optional[UUID] = None,
-    employee_id: Optional[UUID] = None,
-    pis_number: Optional[str] = None,
-    event_type: Optional[str] = None,
-    status_filter: Optional[str] = Query(None, alias="status"),
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    has_employee: Optional[bool] = None,
+    device_id: UUID | None = None,
+    condominio_id: UUID | None = None,
+    employee_id: UUID | None = None,
+    pis_number: str | None = None,
+    event_type: str | None = None,
+    status_filter: str | None = Query(None, alias="status"),
+    date_from: date | None = None,
+    date_to: date | None = None,
+    has_employee: bool | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
@@ -88,7 +87,7 @@ async def get_event(
 
 @router.post("/process", response_model=dict)
 async def process_pending_events(
-    device_id: Optional[UUID] = None,
+    device_id: UUID | None = None,
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -130,7 +129,7 @@ async def link_event_to_employee(
 
 @router.post("/link-bulk", response_model=dict)
 async def bulk_link_events(
-    mappings: List[dict],
+    mappings: list[dict],
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
@@ -138,19 +137,16 @@ async def bulk_link_events(
     processor = EventProcessorService(db)
 
     # Converter para formato esperado
-    formatted_mappings = [
-        {"event_id": UUID(m["event_id"]), "employee_id": UUID(m["employee_id"])}
-        for m in mappings
-    ]
+    formatted_mappings = [{"event_id": UUID(m["event_id"]), "employee_id": UUID(m["employee_id"])} for m in mappings]
 
     return await processor.bulk_link_events(formatted_mappings)
 
 
 @router.get("/unidentified/list")
 async def list_unidentified_events(
-    device_id: Optional[UUID] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    device_id: UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -172,7 +168,7 @@ async def list_unidentified_events(
 
 @router.post("/reprocess-failed")
 async def reprocess_failed_events(
-    device_id: Optional[UUID] = None,
+    device_id: UUID | None = None,
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -184,10 +180,10 @@ async def reprocess_failed_events(
 
 @router.get("/statistics/summary", response_model=REPEventStats)
 async def get_events_statistics(
-    device_id: Optional[UUID] = None,
-    condominio_id: Optional[UUID] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    device_id: UUID | None = None,
+    condominio_id: UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPEventStats:

@@ -14,14 +14,13 @@ Endpoints especificos para NF-e no estado do Amazonas:
 
 import logging
 import os
-from typing import Optional, List, Tuple
-from uuid import UUID
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 
 logger = logging.getLogger(__name__)
@@ -37,8 +36,8 @@ def get_sefaz_service(db: Session = None):
     Returns:
         Tuple[SefazAMService, CertificateManager]: Service e gerenciador de certificado
     """
-    from modules.government_integrations.core.sefaz_am import SefazAMService
     from modules.government_integrations.core.certificate_manager import CertificateManager
+    from modules.government_integrations.core.sefaz_am import SefazAMService
 
     cert_path = os.getenv("CERTIFICATE_PATH", "/opt/conecta-pro/credentials/certificates/certificado.pfx")
     cert_password = os.getenv("CERTIFICATE_PASSWORD", "")
@@ -48,6 +47,7 @@ def get_sefaz_service(db: Session = None):
 
     return service, cert_manager
 
+
 router = APIRouter(prefix="/sefaz-am", tags=["SEFAZ-AM (Amazonas)"])
 
 
@@ -55,8 +55,10 @@ router = APIRouter(prefix="/sefaz-am", tags=["SEFAZ-AM (Amazonas)"])
 # SCHEMAS
 # =========================================================================
 
+
 class StatusServicoResponse(BaseModel):
     """Resposta de status do servico."""
+
     disponivel: bool
     codigo: str
     mensagem: str
@@ -67,36 +69,40 @@ class StatusServicoResponse(BaseModel):
 
 class ConsultaNFeResponse(BaseModel):
     """Resposta de consulta NF-e."""
+
     sucesso: bool
     codigo: str
     mensagem: str
-    chave_acesso: Optional[str] = None
-    protocolo: Optional[str] = None
-    data_autorizacao: Optional[str] = None
-    status_nota: Optional[str] = None
-    eventos: List[dict] = []
+    chave_acesso: str | None = None
+    protocolo: str | None = None
+    data_autorizacao: str | None = None
+    status_nota: str | None = None
+    eventos: list[dict] = []
 
 
 class CadastroContribuinteResponse(BaseModel):
     """Resposta de consulta cadastral."""
+
     sucesso: bool
     codigo: str
     mensagem: str
-    contribuintes: List[dict] = []
+    contribuintes: list[dict] = []
 
 
 class DFeResponse(BaseModel):
     """Resposta de consulta DF-e."""
+
     sucesso: bool
     codigo: str
     mensagem: str
-    ultimo_nsu: Optional[str] = None
+    ultimo_nsu: str | None = None
     quantidade_documentos: int = 0
-    documentos: List[dict] = []
+    documentos: list[dict] = []
 
 
 class CancelamentoRequest(BaseModel):
     """Requisicao de cancelamento."""
+
     chave_acesso: str = Field(..., min_length=44, max_length=44)
     cnpj: str = Field(..., min_length=14, max_length=14)
     justificativa: str = Field(..., min_length=15, max_length=255)
@@ -104,6 +110,7 @@ class CancelamentoRequest(BaseModel):
 
 class CartaCorrecaoRequest(BaseModel):
     """Requisicao de carta de correcao."""
+
     chave_acesso: str = Field(..., min_length=44, max_length=44)
     cnpj: str = Field(..., min_length=14, max_length=14)
     correcao: str = Field(..., min_length=15, max_length=1000)
@@ -112,29 +119,33 @@ class CartaCorrecaoRequest(BaseModel):
 
 class InutilizacaoRequest(BaseModel):
     """Requisicao de inutilizacao."""
+
     cnpj: str = Field(..., min_length=14, max_length=14)
     serie: int = Field(..., ge=0, le=999)
     numero_inicial: int = Field(..., ge=1)
     numero_final: int = Field(..., ge=1)
     justificativa: str = Field(..., min_length=15, max_length=255)
-    ano: Optional[int] = None
+    ano: int | None = None
 
 
 class EventoResponse(BaseModel):
     """Resposta de evento."""
+
     sucesso: bool
     codigo: str
     mensagem: str
-    protocolo: Optional[str] = None
-    data_registro: Optional[str] = None
+    protocolo: str | None = None
+    data_registro: str | None = None
 
 
 # =========================================================================
 # ENDPOINTS
 # =========================================================================
 
+
 @router.get("/status", response_model=StatusServicoResponse)
 async def consultar_status_servico(
+    current_user: CurrentActiveUser,
     ambiente: str = Query("producao", enum=["producao", "homologacao"]),
     db: Session = Depends(get_db),
 ):
@@ -173,6 +184,7 @@ async def consultar_status_servico(
 @router.get("/nfe/{chave_acesso}", response_model=ConsultaNFeResponse)
 async def consultar_nfe(
     chave_acesso: str,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -188,8 +200,8 @@ async def consultar_nfe(
         )
 
     try:
-        from modules.government_integrations.core.sefaz_am import SefazAMService
         from modules.government_integrations.core.certificate_manager import CertificateManager
+        from modules.government_integrations.core.sefaz_am import SefazAMService
 
         cert_manager = CertificateManager(db)
         service = SefazAMService(db, cert_manager)
@@ -219,6 +231,7 @@ async def consultar_nfe(
 @router.get("/cadastro/ie/{inscricao_estadual}", response_model=CadastroContribuinteResponse)
 async def consultar_cadastro_ie(
     inscricao_estadual: str,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -228,8 +241,8 @@ async def consultar_cadastro_ie(
     Endpoint: CadConsultaCadastro4
     """
     try:
-        from modules.government_integrations.core.sefaz_am import SefazAMService
         from modules.government_integrations.core.certificate_manager import CertificateManager
+        from modules.government_integrations.core.sefaz_am import SefazAMService
 
         cert_manager = CertificateManager(db)
         service = SefazAMService(db, cert_manager)
@@ -254,6 +267,7 @@ async def consultar_cadastro_ie(
 @router.get("/cadastro/cnpj/{cnpj}", response_model=CadastroContribuinteResponse)
 async def consultar_cadastro_cnpj(
     cnpj: str,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -269,8 +283,8 @@ async def consultar_cadastro_cnpj(
         )
 
     try:
-        from modules.government_integrations.core.sefaz_am import SefazAMService
         from modules.government_integrations.core.certificate_manager import CertificateManager
+        from modules.government_integrations.core.sefaz_am import SefazAMService
 
         cert_manager = CertificateManager(db)
         service = SefazAMService(db, cert_manager)
@@ -294,6 +308,7 @@ async def consultar_cadastro_cnpj(
 
 @router.get("/dfe", response_model=DFeResponse)
 async def consultar_dfe_destinadas(
+    current_user: CurrentActiveUser,
     cnpj: str = Query(..., min_length=14, max_length=14, description="CNPJ do interessado"),
     ultimo_nsu: str = Query("0", description="Ultimo NSU recebido"),
     db: Session = Depends(get_db),
@@ -307,8 +322,8 @@ async def consultar_dfe_destinadas(
     A consulta e paginada via NSU (Numero Sequencial Unico).
     """
     try:
-        from modules.government_integrations.core.sefaz_am import SefazAMService
         from modules.government_integrations.core.certificate_manager import CertificateManager
+        from modules.government_integrations.core.sefaz_am import SefazAMService
 
         cert_manager = CertificateManager(db)
         service = SefazAMService(db, cert_manager)
@@ -332,9 +347,10 @@ async def consultar_dfe_destinadas(
         )
 
 
-@router.post("/cancelar", response_model=EventoResponse)
+@router.post("/cancelar", response_model=EventoResponse, status_code=201)
 async def cancelar_nfe(
     dados: CancelamentoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -344,8 +360,8 @@ async def cancelar_nfe(
     Requer justificativa com minimo de 15 caracteres.
     """
     try:
-        from modules.government_integrations.core.sefaz_am import SefazAMService
         from modules.government_integrations.core.certificate_manager import CertificateManager
+        from modules.government_integrations.core.sefaz_am import SefazAMService
 
         cert_manager = CertificateManager(db)
         service = SefazAMService(db, cert_manager)
@@ -380,9 +396,10 @@ async def cancelar_nfe(
         )
 
 
-@router.post("/carta-correcao", response_model=EventoResponse)
+@router.post("/carta-correcao", response_model=EventoResponse, status_code=201)
 async def registrar_carta_correcao(
     dados: CartaCorrecaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -392,8 +409,8 @@ async def registrar_carta_correcao(
     dados do destinatario. Maximo 20 cartas por nota.
     """
     try:
-        from modules.government_integrations.core.sefaz_am import SefazAMService
         from modules.government_integrations.core.certificate_manager import CertificateManager
+        from modules.government_integrations.core.sefaz_am import SefazAMService
 
         cert_manager = CertificateManager(db)
         service = SefazAMService(db, cert_manager)
@@ -428,9 +445,10 @@ async def registrar_carta_correcao(
         )
 
 
-@router.post("/inutilizar", response_model=EventoResponse)
+@router.post("/inutilizar", response_model=EventoResponse, status_code=201)
 async def inutilizar_numeracao(
     dados: InutilizacaoRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -446,8 +464,8 @@ async def inutilizar_numeracao(
         )
 
     try:
-        from modules.government_integrations.core.sefaz_am import SefazAMService
         from modules.government_integrations.core.certificate_manager import CertificateManager
+        from modules.government_integrations.core.sefaz_am import SefazAMService
 
         cert_manager = CertificateManager(db)
         service = SefazAMService(db, cert_manager)

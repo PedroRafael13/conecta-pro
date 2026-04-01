@@ -1,21 +1,21 @@
 """Repository para TimeJustification."""
 
+import builtins
 from datetime import date
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import (
-    TimeJustification,
-    JustificationType,
     JustificationStatus,
+    JustificationType,
+    TimeJustification,
 )
 from modules.hr.time_tracking.schemas import (
     TimeJustificationCreate,
-    TimeJustificationUpdate,
     TimeJustificationFilter,
+    TimeJustificationUpdate,
 )
 
 
@@ -41,7 +41,7 @@ class TimeJustificationRepository:
         await self.db.refresh(justification)
         return justification
 
-    async def get_by_id(self, justification_id: UUID) -> Optional[TimeJustification]:
+    async def get_by_id(self, justification_id: UUID) -> TimeJustification | None:
         """Busca justificativa por ID."""
         result = await self.db.execute(
             select(TimeJustification).where(
@@ -51,7 +51,7 @@ class TimeJustificationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[TimeJustification]:
+    async def get_by_code(self, code: str) -> TimeJustification | None:
         """Busca justificativa por código."""
         result = await self.db.execute(
             select(TimeJustification).where(
@@ -84,33 +84,23 @@ class TimeJustificationRepository:
         filters: TimeJustificationFilter = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[TimeJustification], int]:
+    ) -> tuple[list[TimeJustification], int]:
         """Lista justificativas com filtros."""
-        query = select(TimeJustification).where(
-            TimeJustification.is_deleted.is_(False)
-        )
+        query = select(TimeJustification).where(TimeJustification.is_deleted.is_(False))
 
         if filters:
             if filters.employee_id:
-                query = query.where(
-                    TimeJustification.employee_id == filters.employee_id
-                )
+                query = query.where(TimeJustification.employee_id == filters.employee_id)
             if filters.justification_type:
-                query = query.where(
-                    TimeJustification.justification_type == filters.justification_type
-                )
+                query = query.where(TimeJustification.justification_type == filters.justification_type)
             if filters.category:
                 query = query.where(TimeJustification.category == filters.category)
             if filters.status:
                 query = query.where(TimeJustification.status == filters.status)
             if filters.condominium_id:
-                query = query.where(
-                    TimeJustification.condominium_id == filters.condominium_id
-                )
+                query = query.where(TimeJustification.condominium_id == filters.condominium_id)
             if filters.department_id:
-                query = query.where(
-                    TimeJustification.department_id == filters.department_id
-                )
+                query = query.where(TimeJustification.department_id == filters.department_id)
             if filters.date_from:
                 query = query.where(TimeJustification.start_date >= filters.date_from)
             if filters.date_to:
@@ -118,39 +108,35 @@ class TimeJustificationRepository:
             if filters.is_pending is not None:
                 if filters.is_pending:
                     query = query.where(
-                        TimeJustification.status.in_([
-                            JustificationStatus.RASCUNHO,
-                            JustificationStatus.SUBMETIDO,
-                            JustificationStatus.EM_ANALISE,
-                        ])
+                        TimeJustification.status.in_(
+                            [
+                                JustificationStatus.RASCUNHO,
+                                JustificationStatus.SUBMETIDO,
+                                JustificationStatus.EM_ANALISE,
+                            ]
+                        )
                     )
                 else:
                     query = query.where(
-                        TimeJustification.status.in_([
-                            JustificationStatus.APROVADO,
-                            JustificationStatus.REJEITADO,
-                        ])
+                        TimeJustification.status.in_(
+                            [
+                                JustificationStatus.APROVADO,
+                                JustificationStatus.REJEITADO,
+                            ]
+                        )
                     )
             if filters.is_verified is not None:
-                query = query.where(
-                    TimeJustification.is_verified == filters.is_verified
-                )
+                query = query.where(TimeJustification.is_verified == filters.is_verified)
             if filters.has_attachments is not None:
-                query = query.where(
-                    TimeJustification.has_attachments == filters.has_attachments
-                )
+                query = query.where(TimeJustification.has_attachments == filters.has_attachments)
             if filters.is_late_submission is not None:
-                query = query.where(
-                    TimeJustification.is_late_submission == filters.is_late_submission
-                )
+                query = query.where(TimeJustification.is_late_submission == filters.is_late_submission)
 
         count_query = select(func.count()).select_from(query.subquery())
         total_result = await self.db.execute(count_query)
         total = total_result.scalar()
 
-        query = query.order_by(
-            TimeJustification.start_date.desc()
-        ).offset(skip).limit(limit)
+        query = query.order_by(TimeJustification.start_date.desc()).offset(skip).limit(limit)
 
         result = await self.db.execute(query)
         justifications = result.scalars().all()
@@ -162,10 +148,11 @@ class TimeJustificationRepository:
         employee_id: str,
         start_date: date,
         end_date: date,
-    ) -> List[TimeJustification]:
+    ) -> builtins.list[TimeJustification]:
         """Busca justificativas de um funcionário em um período."""
         result = await self.db.execute(
-            select(TimeJustification).where(
+            select(TimeJustification)
+            .where(
                 TimeJustification.employee_id == employee_id,
                 or_(
                     and_(
@@ -182,7 +169,8 @@ class TimeJustificationRepository:
                     ),
                 ),
                 TimeJustification.is_deleted.is_(False),
-            ).order_by(TimeJustification.start_date)
+            )
+            .order_by(TimeJustification.start_date)
         )
         return list(result.scalars().all())
 
@@ -191,24 +179,22 @@ class TimeJustificationRepository:
         condominium_id: str = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[TimeJustification]:
+    ) -> builtins.list[TimeJustification]:
         """Busca justificativas pendentes de aprovação."""
         query = select(TimeJustification).where(
-            TimeJustification.status.in_([
-                JustificationStatus.SUBMETIDO,
-                JustificationStatus.EM_ANALISE,
-            ]),
+            TimeJustification.status.in_(
+                [
+                    JustificationStatus.SUBMETIDO,
+                    JustificationStatus.EM_ANALISE,
+                ]
+            ),
             TimeJustification.is_deleted.is_(False),
         )
 
         if condominium_id:
-            query = query.where(
-                TimeJustification.condominium_id == condominium_id
-            )
+            query = query.where(TimeJustification.condominium_id == condominium_id)
 
-        query = query.order_by(
-            TimeJustification.start_date.desc()
-        ).offset(skip).limit(limit)
+        query = query.order_by(TimeJustification.start_date.desc()).offset(skip).limit(limit)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())
@@ -218,7 +204,7 @@ class TimeJustificationRepository:
         condominium_id: str = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[TimeJustification]:
+    ) -> builtins.list[TimeJustification]:
         """Busca justificativas aprovadas pendentes de verificação do RH."""
         query = select(TimeJustification).where(
             TimeJustification.status == JustificationStatus.APROVADO,
@@ -227,13 +213,9 @@ class TimeJustificationRepository:
         )
 
         if condominium_id:
-            query = query.where(
-                TimeJustification.condominium_id == condominium_id
-            )
+            query = query.where(TimeJustification.condominium_id == condominium_id)
 
-        query = query.order_by(
-            TimeJustification.start_date.desc()
-        ).offset(skip).limit(limit)
+        query = query.order_by(TimeJustification.start_date.desc()).offset(skip).limit(limit)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())
@@ -242,7 +224,7 @@ class TimeJustificationRepository:
         self,
         employee_id: str,
         target_date: date,
-    ) -> List[TimeJustification]:
+    ) -> builtins.list[TimeJustification]:
         """Busca justificativas que cobrem uma data específica."""
         result = await self.db.execute(
             select(TimeJustification).where(
@@ -261,7 +243,7 @@ class TimeJustificationRepository:
         condominium_id: str = None,
         date_from: date = None,
         date_to: date = None,
-    ) -> List[TimeJustification]:
+    ) -> builtins.list[TimeJustification]:
         """Busca atestados médicos."""
         medical_types = [
             JustificationType.ATESTADO_MEDICO,
@@ -286,9 +268,7 @@ class TimeJustificationRepository:
         if date_to:
             query = query.where(TimeJustification.end_date <= date_to)
 
-        result = await self.db.execute(
-            query.order_by(TimeJustification.start_date.desc())
-        )
+        result = await self.db.execute(query.order_by(TimeJustification.start_date.desc()))
         return list(result.scalars().all())
 
     async def get_stats(  # pylint: disable=too-many-locals
@@ -311,16 +291,12 @@ class TimeJustificationRepository:
             base_where.append(TimeJustification.end_date <= date_to)
 
         # Total
-        total_result = await self.db.execute(
-            select(func.count()).where(*base_where)
-        )
+        total_result = await self.db.execute(select(func.count()).where(*base_where))
         total = total_result.scalar() or 0
 
         # Por status
         status_result = await self.db.execute(
-            select(TimeJustification.status, func.count())
-            .where(*base_where)
-            .group_by(TimeJustification.status)
+            select(TimeJustification.status, func.count()).where(*base_where).group_by(TimeJustification.status)
         )
         by_status = {row[0].value: row[1] for row in status_result.all()}
 
@@ -334,9 +310,7 @@ class TimeJustificationRepository:
 
         # Por categoria
         category_result = await self.db.execute(
-            select(TimeJustification.category, func.count())
-            .where(*base_where)
-            .group_by(TimeJustification.category)
+            select(TimeJustification.category, func.count()).where(*base_where).group_by(TimeJustification.category)
         )
         by_category = {row[0].value: row[1] for row in category_result.all()}
 
@@ -353,10 +327,12 @@ class TimeJustificationRepository:
         pending_result = await self.db.execute(
             select(func.count()).where(
                 *base_where,
-                TimeJustification.status.in_([
-                    JustificationStatus.SUBMETIDO,
-                    JustificationStatus.EM_ANALISE,
-                ]),
+                TimeJustification.status.in_(
+                    [
+                        JustificationStatus.SUBMETIDO,
+                        JustificationStatus.EM_ANALISE,
+                    ]
+                ),
             )
         )
         pending_count = pending_result.scalar() or 0
@@ -397,7 +373,7 @@ class TimeJustificationRepository:
         start_date: date,
         end_date: date,
         exclude_id: UUID = None,
-    ) -> Optional[TimeJustification]:
+    ) -> TimeJustification | None:
         """Verifica sobreposição de justificativas."""
         query = select(TimeJustification).where(
             TimeJustification.employee_id == employee_id,

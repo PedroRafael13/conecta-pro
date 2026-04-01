@@ -7,22 +7,22 @@ Implementa:
 - Testes periódicos de disponibilidade
 """
 
-from .uf_matrix import (
-    MatrizContingencia,
-    EndpointConfig,
-    TipoContingencia,
-    MATRIZ_CONTINGENCIA_NFE,
-    MATRIZ_CONTINGENCIA_CTE,
-    MATRIZ_CONTINGENCIA_MDFE,
-    ENDPOINTS_CENTRALIZADOS,
+from .availability_checker import (
+    ResultadoVerificacao,
+    VerificadorDisponibilidade,
 )
 from .endpoint_switcher import (
     ComutadorEndpoints,
     StatusEndpoint,
 )
-from .availability_checker import (
-    VerificadorDisponibilidade,
-    ResultadoVerificacao,
+from .uf_matrix import (
+    ENDPOINTS_CENTRALIZADOS,
+    MATRIZ_CONTINGENCIA_CTE,
+    MATRIZ_CONTINGENCIA_MDFE,
+    MATRIZ_CONTINGENCIA_NFE,
+    EndpointConfig,
+    MatrizContingencia,
+    TipoContingencia,
 )
 
 __all__ = [

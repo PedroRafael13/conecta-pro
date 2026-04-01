@@ -1,3 +1,29 @@
 # Tokens de teste para E2E
 frontend/e2e/auth.setup.ts:jwt:134
 frontend/e2e/helpers/auth.ts:jwt:9
+
+# Tokens de exemplo em docs de API (não são reais)
+docs/API_REFERENCE_CORE_AUTH.md:generic-api-key:210
+docs/API_REFERENCE_CORE_AUTH.md:generic-api-key:211
+docs/API_REFERENCE_CORE_AUTH.md:generic-api-key:224
+docs/API_REFERENCE_CORE_AUTH.md:generic-api-key:231
+docs/API_REFERENCE_CORE_AUTH.md:generic-api-key:232
+docs/API_REFERENCE_CORE_AUTH.md:curl-auth-header:242
+docs/API_REFERENCE_CORE_AUTH.md:curl-auth-header:266
+docs/API_REFERENCE_CORE_AUTH.md:curl-auth-header:296
+docs/patches/PATCH_01_VERIFICATION.md:generic-api-key:154
+
+# Tokens de teste E2E (fingerprints exatos do gitleaks)
+frontend/e2e/auth/login.spec.ts:jwt:27
+frontend/e2e/auth/login.spec.ts:stripe-access-token:27
+frontend/e2e/configuracoes/configuracoes-configuracoes-sistema.spec.ts:stripe-access-token:53
+frontend/e2e/configuracoes/configuracoes-sistema.spec.ts:stripe-access-token:83
+frontend/e2e/configuracoes/configuracoes-sistema.spec.ts:slack-webhook-url:83
+frontend/e2e/integracoes/integracoes-webhooks.spec.ts:generic-api-key:14
+frontend/e2e/integracoes/integracoes-webhooks.spec.ts:slack-webhook-url:14
+frontend/e2e/integracoes/integracoes-webhooks.spec.ts:generic-api-key:17
+frontend/e2e/integracoes/integracoes-webhooks.spec.ts:generic-api-key:32
+frontend/e2e/login.spec.ts:generic-api-key:42
+
+# Docker compose prod (JWT secret de dev)
+docker-compose.prod.yml:generic-api-key:46

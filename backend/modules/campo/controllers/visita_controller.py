@@ -3,36 +3,36 @@ Controller para Visita.
 """
 
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from modules.campo.services.visita_service import VisitaService
+from modules.campo.models.visita import ResultadoVisita, StatusVisita, TipoResponsavel, TipoVisita
 from modules.campo.schemas.visita import (
-    VisitaCreate,
-    VisitaUpdate,
-    VisitaRead,
-    VisitaListItem,
-    VisitaConfirmarRequest,
+    VisitaCancelarRequest,
     VisitaCheckinRequest,
     VisitaCheckoutRequest,
-    VisitaResultadoRequest,
-    VisitaCancelarRequest,
-    VisitaReagendarRequest,
-    VisitaInteresseRequest,
-    VisitaPropostaRequest,
-    VisitaLevantamentoRequest,
-    VisitaNecessidadeRequest,
+    VisitaConfirmarRequest,
+    VisitaCreate,
+    VisitaDashboardStats,
+    VisitaFiltro,
     VisitaFollowupRequest,
     VisitaFotoRequest,
-    VisitaFiltro,
+    VisitaInteresseRequest,
+    VisitaLevantamentoRequest,
+    VisitaListItem,
+    VisitaNecessidadeRequest,
     VisitaPaginatedResponse,
-    VisitaDashboardStats,
+    VisitaPropostaRequest,
+    VisitaRead,
+    VisitaReagendarRequest,
+    VisitaResultadoRequest,
+    VisitaUpdate,
 )
-from modules.campo.models.visita import TipoVisita, StatusVisita, ResultadoVisita, TipoResponsavel
+from modules.campo.services.visita_service import VisitaService
 
 router = APIRouter()
 
@@ -46,9 +46,11 @@ def get_service(db: AsyncSession = Depends(get_db)) -> VisitaService:
 # CRUD
 # =============================================================================
 
+
 @router.post("/", response_model=VisitaRead, status_code=status.HTTP_201_CREATED)
 async def criar_visita(
     data: VisitaCreate,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Cria uma nova Visita."""
@@ -58,20 +60,21 @@ async def criar_visita(
 
 @router.get("/", response_model=VisitaPaginatedResponse)
 async def listar_visitas(
-    tipo: Optional[TipoVisita] = None,
-    status_visita: Optional[StatusVisita] = Query(None, alias="status"),
-    resultado: Optional[ResultadoVisita] = None,
-    responsavel_id: Optional[UUID] = None,
-    responsavel_tipo: Optional[TipoResponsavel] = None,
-    cliente_id: Optional[UUID] = None,
-    lead_id: Optional[UUID] = None,
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
-    cidade: Optional[str] = None,
-    estado: Optional[str] = None,
-    confirmada: Optional[bool] = None,
-    proposta_gerada: Optional[bool] = None,
-    busca: Optional[str] = None,
+    current_user: CurrentActiveUser,
+    tipo: TipoVisita | None = None,
+    status_visita: StatusVisita | None = Query(None, alias="status"),
+    resultado: ResultadoVisita | None = None,
+    responsavel_id: UUID | None = None,
+    responsavel_tipo: TipoResponsavel | None = None,
+    cliente_id: UUID | None = None,
+    lead_id: UUID | None = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
+    cidade: str | None = None,
+    estado: str | None = None,
+    confirmada: bool | None = None,
+    proposta_gerada: bool | None = None,
+    busca: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     service: VisitaService = Depends(get_service),
@@ -98,6 +101,7 @@ async def listar_visitas(
 
 @router.get("/pendentes-confirmacao", response_model=list[VisitaListItem])
 async def listar_pendentes_confirmacao(
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Lista visitas que precisam confirmacao."""
@@ -108,7 +112,8 @@ async def listar_pendentes_confirmacao(
 @router.get("/responsavel/{responsavel_id}", response_model=list[VisitaListItem])
 async def listar_visitas_responsavel(
     responsavel_id: UUID,
-    data: Optional[date] = None,
+    current_user: CurrentActiveUser,
+    data: date | None = None,
     apenas_agendadas: bool = False,
     service: VisitaService = Depends(get_service),
 ):
@@ -120,6 +125,7 @@ async def listar_visitas_responsavel(
 @router.get("/cliente/{cliente_id}", response_model=list[VisitaListItem])
 async def listar_visitas_cliente(
     cliente_id: UUID,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Lista visitas de um cliente."""
@@ -130,6 +136,7 @@ async def listar_visitas_cliente(
 @router.get("/lead/{lead_id}", response_model=list[VisitaListItem])
 async def listar_visitas_lead(
     lead_id: UUID,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Lista visitas de um lead."""
@@ -139,7 +146,8 @@ async def listar_visitas_lead(
 
 @router.get("/dashboard", response_model=VisitaDashboardStats)
 async def obter_dashboard(
-    responsavel_id: Optional[UUID] = None,
+    current_user: CurrentActiveUser,
+    responsavel_id: UUID | None = None,
     periodo_dias: int = Query(30, ge=1, le=365),
     service: VisitaService = Depends(get_service),
 ):
@@ -150,6 +158,7 @@ async def obter_dashboard(
 @router.get("/{visita_id}", response_model=VisitaRead)
 async def obter_visita(
     visita_id: UUID,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Obtem detalhes de uma Visita."""
@@ -162,6 +171,7 @@ async def obter_visita(
 @router.get("/numero/{numero}", response_model=VisitaRead)
 async def obter_visita_por_numero(
     numero: str,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Obtem Visita por numero."""
@@ -175,6 +185,7 @@ async def obter_visita_por_numero(
 async def atualizar_visita(
     visita_id: UUID,
     data: VisitaUpdate,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Atualiza uma Visita."""
@@ -187,6 +198,7 @@ async def atualizar_visita(
 @router.delete("/{visita_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def excluir_visita(
     visita_id: UUID,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Exclui uma Visita."""
@@ -199,10 +211,12 @@ async def excluir_visita(
 # ACOES DO FLUXO
 # =============================================================================
 
+
 @router.post("/{visita_id}/confirmar", response_model=VisitaRead)
 async def confirmar_visita(
     visita_id: UUID,
     data: VisitaConfirmarRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Confirma uma visita."""
@@ -218,6 +232,7 @@ async def confirmar_visita(
 @router.post("/{visita_id}/iniciar-deslocamento", response_model=VisitaRead)
 async def iniciar_deslocamento(
     visita_id: UUID,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Marca inicio do deslocamento."""
@@ -234,6 +249,7 @@ async def iniciar_deslocamento(
 async def fazer_checkin(
     visita_id: UUID,
     data: VisitaCheckinRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Registra check-in no local."""
@@ -250,6 +266,7 @@ async def fazer_checkin(
 async def fazer_checkout(
     visita_id: UUID,
     data: VisitaCheckoutRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Registra check-out do local."""
@@ -263,6 +280,7 @@ async def fazer_checkout(
 async def registrar_resultado(
     visita_id: UUID,
     data: VisitaResultadoRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Registra resultado da visita."""
@@ -281,11 +299,11 @@ async def registrar_resultado(
 async def cancelar_visita(
     visita_id: UUID,
     data: VisitaCancelarRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Cancela uma visita."""
     try:
-        # TODO: Obter usuario atual do token
         cancelado_por = None
         visita = await service.cancelar_visita(visita_id, data.motivo, cancelado_por)
         if not visita:
@@ -299,6 +317,7 @@ async def cancelar_visita(
 async def reagendar_visita(
     visita_id: UUID,
     data: VisitaReagendarRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Reagenda uma visita."""
@@ -320,10 +339,12 @@ async def reagendar_visita(
 # CONVERSAO COMERCIAL
 # =============================================================================
 
+
 @router.post("/{visita_id}/interesse", response_model=VisitaRead)
 async def registrar_interesse(
     visita_id: UUID,
     data: VisitaInteresseRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Registra nivel de interesse."""
@@ -341,6 +362,7 @@ async def registrar_interesse(
 async def vincular_proposta(
     visita_id: UUID,
     data: VisitaPropostaRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Vincula proposta gerada a visita."""
@@ -354,10 +376,12 @@ async def vincular_proposta(
 # LEVANTAMENTO TECNICO
 # =============================================================================
 
-@router.post("/{visita_id}/levantamento", response_model=VisitaRead)
+
+@router.post("/{visita_id}/levantamento", response_model=VisitaRead, status_code=201)
 async def adicionar_levantamento(
     visita_id: UUID,
     data: VisitaLevantamentoRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Adiciona dados de levantamento tecnico."""
@@ -367,10 +391,11 @@ async def adicionar_levantamento(
     return VisitaRead.model_validate(visita)
 
 
-@router.post("/{visita_id}/necessidade", response_model=VisitaRead)
+@router.post("/{visita_id}/necessidade", response_model=VisitaRead, status_code=201)
 async def adicionar_necessidade(
     visita_id: UUID,
     data: VisitaNecessidadeRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Adiciona necessidade identificada."""
@@ -390,10 +415,12 @@ async def adicionar_necessidade(
 # FOLLOW-UP E FOTOS
 # =============================================================================
 
+
 @router.post("/{visita_id}/followup", response_model=VisitaRead)
 async def agendar_followup(
     visita_id: UUID,
     data: VisitaFollowupRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Agenda follow-up."""
@@ -403,10 +430,11 @@ async def agendar_followup(
     return VisitaRead.model_validate(visita)
 
 
-@router.post("/{visita_id}/foto", response_model=VisitaRead)
+@router.post("/{visita_id}/foto", response_model=VisitaRead, status_code=201)
 async def adicionar_foto(
     visita_id: UUID,
     data: VisitaFotoRequest,
+    current_user: CurrentActiveUser,
     service: VisitaService = Depends(get_service),
 ):
     """Adiciona foto a visita."""

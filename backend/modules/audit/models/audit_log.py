@@ -3,23 +3,20 @@ AuditLog Model - Logs de Auditoria
 Sprint 33: Auditoria e Compliance
 """
 
-import enum
 import secrets
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 
 from core.database import Base
 
 
-class AuditAction(str, enum.Enum):
+class AuditAction(StrEnum):
     """Tipo de ação auditada."""
+
     CREATE = "create"
     READ = "read"
     UPDATE = "update"
@@ -27,8 +24,8 @@ class AuditAction(str, enum.Enum):
     LOGIN = "login"
     LOGOUT = "logout"
     LOGIN_FAILED = "login_failed"
-    PASSWORD_CHANGE = "password_change"
-    PASSWORD_RESET = "password_reset"
+    PASSWORD_CHANGE = "password_change"  # noqa: S105
+    PASSWORD_RESET = "password_reset"  # noqa: S105
     PERMISSION_GRANT = "permission_grant"
     PERMISSION_REVOKE = "permission_revoke"
     EXPORT = "export"
@@ -42,8 +39,9 @@ class AuditAction(str, enum.Enum):
     API_CALL = "api_call"
 
 
-class AuditCategory(str, enum.Enum):
+class AuditCategory(StrEnum):
     """Categoria da auditoria."""
+
     AUTHENTICATION = "authentication"
     AUTHORIZATION = "authorization"
     DATA_ACCESS = "data_access"
@@ -58,8 +56,9 @@ class AuditCategory(str, enum.Enum):
     REPORT = "report"
 
 
-class AuditSeverity(str, enum.Enum):
+class AuditSeverity(StrEnum):
     """Severidade do evento."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -67,8 +66,9 @@ class AuditSeverity(str, enum.Enum):
     CRITICAL = "critical"
 
 
-class AuditResult(str, enum.Enum):
+class AuditResult(StrEnum):
     """Resultado da ação."""
+
     SUCCESS = "success"
     FAILURE = "failure"
     PARTIAL = "partial"
@@ -81,6 +81,7 @@ class AuditLog(Base):
     Model para logs de auditoria.
     Registra todas as ações relevantes para compliance e segurança.
     """
+
     __tablename__ = "audit_logs"
 
     # Primary key
@@ -185,12 +186,7 @@ class AuditLog(Base):
         Index("ix_audit_logs_created_at", "created_at"),
         Index("ix_audit_logs_requires_review", "requires_review"),
         Index("ix_audit_logs_archived", "archived"),
-        Index(
-            "ix_audit_logs_user_action_date",
-            "user_id",
-            "action",
-            "created_at"
-        ),
+        Index("ix_audit_logs_user_action_date", "user_id", "action", "created_at"),
     )
 
     def __repr__(self) -> str:
@@ -202,17 +198,17 @@ class AuditLog(Base):
         action: AuditAction,
         category: AuditCategory,
         description: str,
-        user_id: Optional[str] = None,
-        user_email: Optional[str] = None,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[str] = None,
+        user_id: str | None = None,
+        user_email: str | None = None,
+        entity_type: str | None = None,
+        entity_id: str | None = None,
         severity: AuditSeverity = AuditSeverity.INFO,
         result: AuditResult = AuditResult.SUCCESS,
-        ip_address: Optional[str] = None,
-        **kwargs
+        ip_address: str | None = None,
+        **kwargs,
     ) -> "AuditLog":
         """Cria um novo evento de auditoria."""
-        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
         token = secrets.token_hex(4).upper()
         event_id = f"EVT-{timestamp}-{token}"
 
@@ -228,17 +224,17 @@ class AuditLog(Base):
             severity=severity,
             result=result,
             ip_address=ip_address,
-            **kwargs
+            **kwargs,
         )
 
-    def mark_for_review(self, reason: Optional[str] = None) -> None:
+    def mark_for_review(self, reason: str | None = None) -> None:
         """Marca para revisão."""
         self.requires_review = True
         if reason:
             self.metadata = self.metadata or {}
             self.metadata["review_reason"] = reason
 
-    def complete_review(self, reviewer_id: str, notes: Optional[str] = None) -> None:
+    def complete_review(self, reviewer_id: str, notes: str | None = None) -> None:
         """Completa a revisão."""
         self.requires_review = False
         self.reviewed_by = reviewer_id
@@ -254,11 +250,7 @@ class AuditLog(Base):
     @property
     def is_security_event(self) -> bool:
         """Verifica se é evento de segurança."""
-        return self.category in [
-            AuditCategory.AUTHENTICATION,
-            AuditCategory.AUTHORIZATION,
-            AuditCategory.SECURITY
-        ]
+        return self.category in [AuditCategory.AUTHENTICATION, AuditCategory.AUTHORIZATION, AuditCategory.SECURITY]
 
     @property
     def is_high_severity(self) -> bool:

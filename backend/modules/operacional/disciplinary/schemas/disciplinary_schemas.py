@@ -13,20 +13,19 @@ Date: 2026-01-18
 Quality Score Target: 99+/100
 """
 
+import re
 from datetime import date, datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-import re
-
 
 # =============================================================================
 # ENUMS
 # =============================================================================
 
 
-class DisciplinaryActionType(str, Enum):
+class DisciplinaryActionType(StrEnum):
     """Tipo de medida disciplinar conforme CLT."""
 
     ADVERTENCIA_VERBAL = "advertencia_verbal"
@@ -35,7 +34,7 @@ class DisciplinaryActionType(str, Enum):
     DEMISSAO_JUSTA_CAUSA = "demissao_justa_causa"
 
 
-class DisciplinaryActionStatus(str, Enum):
+class DisciplinaryActionStatus(StrEnum):
     """Status do fluxo da medida disciplinar."""
 
     RASCUNHO = "rascunho"
@@ -49,7 +48,7 @@ class DisciplinaryActionStatus(str, Enum):
     CANCELADA = "cancelada"
 
 
-class ReasonCategory(str, Enum):
+class ReasonCategory(StrEnum):
     """Categoria do motivo da medida disciplinar conforme CLT Art. 482."""
 
     FALTA = "falta"
@@ -70,7 +69,7 @@ class ReasonCategory(str, Enum):
     OUTROS = "outros"
 
 
-class SignerType(str, Enum):
+class SignerType(StrEnum):
     """Tipo de signatario."""
 
     EMPLOYEE = "employee"
@@ -109,20 +108,20 @@ class DisciplinaryActionBase(BaseModel):
         max_length=14,
         description="CPF do funcionario",
     )
-    employee_position: Optional[str] = Field(
+    employee_position: str | None = Field(
         None,
         max_length=100,
         description="Cargo do funcionario",
     )
-    employee_admission_date: Optional[date] = Field(
+    employee_admission_date: date | None = Field(
         None,
         description="Data de admissao",
     )
-    post_id: Optional[str] = Field(
+    post_id: str | None = Field(
         None,
         description="ID do posto onde ocorreu",
     )
-    client_id: Optional[str] = Field(
+    client_id: str | None = Field(
         None,
         description="ID do cliente",
     )
@@ -136,7 +135,7 @@ class DisciplinaryActionBase(BaseModel):
         max_length=5000,
         description="Descricao detalhada do motivo",
     )
-    occurrence_id: Optional[str] = Field(
+    occurrence_id: str | None = Field(
         None,
         description="ID da ocorrencia relacionada",
     )
@@ -169,15 +168,15 @@ class DisciplinaryActionCreate(DisciplinaryActionBase):
     """Schema para criacao de DisciplinaryAction."""
 
     # Campos opcionais para suspensao
-    suspension_start_date: Optional[date] = Field(
+    suspension_start_date: date | None = Field(
         None,
         description="Data inicio da suspensao",
     )
-    suspension_end_date: Optional[date] = Field(
+    suspension_end_date: date | None = Field(
         None,
         description="Data fim da suspensao",
     )
-    suspension_days: Optional[int] = Field(
+    suspension_days: int | None = Field(
         None,
         ge=1,
         le=30,
@@ -185,27 +184,27 @@ class DisciplinaryActionCreate(DisciplinaryActionBase):
     )
 
     # Testemunhas
-    witness_1_name: Optional[str] = Field(
+    witness_1_name: str | None = Field(
         None,
         max_length=255,
         description="Nome da primeira testemunha",
     )
-    witness_1_cpf: Optional[str] = Field(
+    witness_1_cpf: str | None = Field(
         None,
         description="CPF da primeira testemunha",
     )
-    witness_2_name: Optional[str] = Field(
+    witness_2_name: str | None = Field(
         None,
         max_length=255,
         description="Nome da segunda testemunha",
     )
-    witness_2_cpf: Optional[str] = Field(
+    witness_2_cpf: str | None = Field(
         None,
         description="CPF da segunda testemunha",
     )
 
     # Template
-    document_template_id: Optional[str] = Field(
+    document_template_id: str | None = Field(
         None,
         description="ID do template para gerar documento",
     )
@@ -231,7 +230,7 @@ class DisciplinaryActionCreate(DisciplinaryActionBase):
 
     @field_validator("witness_1_cpf", "witness_2_cpf")
     @classmethod
-    def validate_witness_cpf(cls, v: Optional[str]) -> Optional[str]:
+    def validate_witness_cpf(cls, v: str | None) -> str | None:
         """Valida e formata CPF de testemunha."""
         if v is None:
             return v
@@ -244,22 +243,22 @@ class DisciplinaryActionCreate(DisciplinaryActionBase):
 class DisciplinaryActionUpdate(BaseModel):
     """Schema para atualizacao parcial de DisciplinaryAction."""
 
-    action_type: Optional[DisciplinaryActionType] = None
-    reason_category: Optional[ReasonCategory] = None
-    reason_description: Optional[str] = Field(None, min_length=10, max_length=5000)
-    incident_date: Optional[date] = None
-    post_id: Optional[str] = None
-    client_id: Optional[str] = None
-    occurrence_id: Optional[str] = None
-    suspension_start_date: Optional[date] = None
-    suspension_end_date: Optional[date] = None
-    suspension_days: Optional[int] = Field(None, ge=1, le=30)
-    witness_1_name: Optional[str] = Field(None, max_length=255)
-    witness_1_cpf: Optional[str] = None
-    witness_2_name: Optional[str] = Field(None, max_length=255)
-    witness_2_cpf: Optional[str] = None
-    document_template_id: Optional[str] = None
-    requires_approval: Optional[bool] = None
+    action_type: DisciplinaryActionType | None = None
+    reason_category: ReasonCategory | None = None
+    reason_description: str | None = Field(None, min_length=10, max_length=5000)
+    incident_date: date | None = None
+    post_id: str | None = None
+    client_id: str | None = None
+    occurrence_id: str | None = None
+    suspension_start_date: date | None = None
+    suspension_end_date: date | None = None
+    suspension_days: int | None = Field(None, ge=1, le=30)
+    witness_1_name: str | None = Field(None, max_length=255)
+    witness_1_cpf: str | None = None
+    witness_2_name: str | None = Field(None, max_length=255)
+    witness_2_cpf: str | None = None
+    document_template_id: str | None = None
+    requires_approval: bool | None = None
 
 
 class DisciplinaryActionResponse(BaseModel):
@@ -275,41 +274,41 @@ class DisciplinaryActionResponse(BaseModel):
     employee_id: str
     employee_name: str
     employee_cpf: str
-    employee_position: Optional[str]
-    employee_admission_date: Optional[date]
-    post_id: Optional[str]
-    client_id: Optional[str]
+    employee_position: str | None
+    employee_admission_date: date | None
+    post_id: str | None
+    client_id: str | None
     reason_category: str
     reason_description: str
-    occurrence_id: Optional[str]
+    occurrence_id: str | None
     incident_date: date
-    application_date: Optional[date]
-    suspension_start_date: Optional[date]
-    suspension_end_date: Optional[date]
-    suspension_days: Optional[int]
-    witness_1_name: Optional[str]
-    witness_1_cpf: Optional[str]
-    witness_2_name: Optional[str]
-    witness_2_cpf: Optional[str]
+    application_date: date | None
+    suspension_start_date: date | None
+    suspension_end_date: date | None
+    suspension_days: int | None
+    witness_1_name: str | None
+    witness_1_cpf: str | None
+    witness_2_name: str | None
+    witness_2_cpf: str | None
     requires_approval: bool
-    approved_by_id: Optional[str]
-    approved_at: Optional[datetime]
-    approval_notes: Optional[str]
-    rejected_by_id: Optional[str]
-    rejected_at: Optional[datetime]
-    rejection_reason: Optional[str]
-    employee_signed_at: Optional[datetime]
+    approved_by_id: str | None
+    approved_at: datetime | None
+    approval_notes: str | None
+    rejected_by_id: str | None
+    rejected_at: datetime | None
+    rejection_reason: str | None
+    employee_signed_at: datetime | None
     employee_refused_sign: bool
-    supervisor_signed_at: Optional[datetime]
-    hr_signed_at: Optional[datetime]
+    supervisor_signed_at: datetime | None
+    hr_signed_at: datetime | None
     employee_acknowledged: bool
-    acknowledged_at: Optional[datetime]
+    acknowledged_at: datetime | None
     previous_warnings_count: int
     previous_suspensions_count: int
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[str]
+    created_by: str | None
 
     # Campos calculados
     type_display_name: str
@@ -323,9 +322,9 @@ class DisciplinaryActionResponse(BaseModel):
 class DisciplinaryActionDetailResponse(DisciplinaryActionResponse):
     """Schema de resposta detalhada incluindo documento e assinaturas."""
 
-    document_text: Optional[str]
-    document_hash: Optional[str]
-    document_template_id: Optional[str]
+    document_text: str | None
+    document_hash: str | None
+    document_template_id: str | None
 
     # Assinaturas expandidas (quando carregadas)
     employee_signature: Optional["SignatureResponse"] = None
@@ -336,7 +335,7 @@ class DisciplinaryActionDetailResponse(DisciplinaryActionResponse):
 class DisciplinaryActionListResponse(BaseModel):
     """Schema para listagem paginada de DisciplinaryActions."""
 
-    items: List[DisciplinaryActionResponse]
+    items: list[DisciplinaryActionResponse]
     total: int
     page: int
     page_size: int
@@ -346,17 +345,17 @@ class DisciplinaryActionListResponse(BaseModel):
 class DisciplinaryFilter(BaseModel):
     """Schema para filtros de busca de DisciplinaryActions."""
 
-    action_type: Optional[DisciplinaryActionType] = None
-    status: Optional[DisciplinaryActionStatus] = None
-    reason_category: Optional[ReasonCategory] = None
-    employee_id: Optional[str] = None
-    post_id: Optional[str] = None
-    client_id: Optional[str] = None
-    incident_date_from: Optional[date] = None
-    incident_date_to: Optional[date] = None
-    created_at_from: Optional[datetime] = None
-    created_at_to: Optional[datetime] = None
-    search: Optional[str] = Field(
+    action_type: DisciplinaryActionType | None = None
+    status: DisciplinaryActionStatus | None = None
+    reason_category: ReasonCategory | None = None
+    employee_id: str | None = None
+    post_id: str | None = None
+    client_id: str | None = None
+    incident_date_from: date | None = None
+    incident_date_to: date | None = None
+    created_at_from: datetime | None = None
+    created_at_to: datetime | None = None
+    search: str | None = Field(
         None,
         description="Busca por codigo, nome do funcionario ou descricao",
     )
@@ -366,9 +365,9 @@ class DisciplinaryStats(BaseModel):
     """Estatisticas de medidas disciplinares."""
 
     total: int
-    by_type: Dict[str, int]
-    by_status: Dict[str, int]
-    by_reason_category: Dict[str, int]
+    by_type: dict[str, int]
+    by_status: dict[str, int]
+    by_reason_category: dict[str, int]
     pending_approval: int
     pending_signature: int
     applied_this_month: int
@@ -385,7 +384,7 @@ class DisciplinaryStats(BaseModel):
 class SubmitForApprovalRequest(BaseModel):
     """Request para submeter medida para aprovacao."""
 
-    notes: Optional[str] = Field(
+    notes: str | None = Field(
         None,
         max_length=500,
         description="Notas adicionais para o aprovador",
@@ -395,12 +394,12 @@ class SubmitForApprovalRequest(BaseModel):
 class ApproveRequest(BaseModel):
     """Request para aprovar medida disciplinar."""
 
-    notes: Optional[str] = Field(
+    notes: str | None = Field(
         None,
         max_length=500,
         description="Notas da aprovacao",
     )
-    application_date: Optional[date] = Field(
+    application_date: date | None = Field(
         None,
         description="Data de aplicacao (default: hoje)",
     )
@@ -429,28 +428,28 @@ class SignRequest(BaseModel):
         min_length=100,
         description="Dados da assinatura em Base64",
     )
-    ip_address: Optional[str] = Field(
+    ip_address: str | None = Field(
         None,
         description="IP de onde foi assinado",
     )
-    user_agent: Optional[str] = Field(
+    user_agent: str | None = Field(
         None,
         max_length=500,
         description="User-Agent do navegador",
     )
-    latitude: Optional[float] = Field(
+    latitude: float | None = Field(
         None,
         ge=-90,
         le=90,
         description="Latitude",
     )
-    longitude: Optional[float] = Field(
+    longitude: float | None = Field(
         None,
         ge=-180,
         le=180,
         description="Longitude",
     )
-    geolocation_accuracy: Optional[float] = Field(
+    geolocation_accuracy: float | None = Field(
         None,
         ge=0,
         description="Precisao da geolocalizacao em metros",
@@ -495,11 +494,11 @@ class RefuseSignRequest(BaseModel):
 class GenerateDocumentRequest(BaseModel):
     """Request para gerar documento a partir de template."""
 
-    template_id: Optional[str] = Field(
+    template_id: str | None = Field(
         None,
         description="ID do template (usa padrao se nao informado)",
     )
-    extra_context: Optional[Dict[str, Any]] = Field(
+    extra_context: dict[str, Any] | None = Field(
         None,
         description="Contexto adicional para placeholders",
     )
@@ -512,7 +511,7 @@ class GenerateDocumentResponse(BaseModel):
     document_hash: str
     template_id: str
     generated_at: datetime
-    placeholders_used: List[str]
+    placeholders_used: list[str]
 
 
 # =============================================================================
@@ -533,7 +532,7 @@ class TemplateBase(BaseModel):
         max_length=255,
         description="Nome do template",
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         None,
         max_length=500,
         description="Descricao do template",
@@ -558,11 +557,11 @@ class TemplateCreate(TemplateBase):
 class TemplateUpdate(BaseModel):
     """Schema para atualizacao de Template."""
 
-    name: Optional[str] = Field(None, min_length=2, max_length=255)
-    description: Optional[str] = Field(None, max_length=500)
-    content: Optional[str] = Field(None, min_length=100)
-    is_default: Optional[bool] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=255)
+    description: str | None = Field(None, max_length=500)
+    content: str | None = Field(None, min_length=100)
+    is_default: bool | None = None
+    is_active: bool | None = None
 
 
 class TemplateResponse(BaseModel):
@@ -574,22 +573,22 @@ class TemplateResponse(BaseModel):
     tenant_id: str
     action_type: str
     name: str
-    description: Optional[str]
+    description: str | None
     content: str
     is_default: bool
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[str]
+    created_by: str | None
 
     # Campos calculados
-    placeholder_list: List[str]
+    placeholder_list: list[str]
 
 
 class TemplateListResponse(BaseModel):
     """Schema para listagem de Templates."""
 
-    items: List[TemplateResponse]
+    items: list[TemplateResponse]
     total: int
 
 
@@ -633,11 +632,11 @@ class SignatureCreate(SignatureBase):
         max_length=255,
         description="Nome do signatario",
     )
-    signer_cpf: Optional[str] = Field(
+    signer_cpf: str | None = Field(
         None,
         description="CPF do signatario",
     )
-    signer_email: Optional[str] = Field(
+    signer_email: str | None = Field(
         None,
         max_length=255,
         description="Email do signatario",
@@ -648,11 +647,11 @@ class SignatureCreate(SignatureBase):
         max_length=64,
         description="Hash SHA-256 do documento",
     )
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = Field(None, max_length=500)
-    latitude: Optional[float] = Field(None, ge=-90, le=90)
-    longitude: Optional[float] = Field(None, ge=-180, le=180)
-    geolocation_accuracy: Optional[float] = Field(None, ge=0)
+    ip_address: str | None = None
+    user_agent: str | None = Field(None, max_length=500)
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
+    geolocation_accuracy: float | None = Field(None, ge=0)
 
 
 class SignatureResponse(BaseModel):
@@ -665,20 +664,20 @@ class SignatureResponse(BaseModel):
     signer_id: str
     signer_type: str
     signer_name: str
-    signer_cpf: Optional[str]
-    signer_email: Optional[str]
+    signer_cpf: str | None
+    signer_email: str | None
     document_type: str
     document_id: str
     signature_hash: str
-    ip_address: Optional[str]
-    user_agent: Optional[str]
-    latitude: Optional[float]
-    longitude: Optional[float]
-    geolocation_accuracy: Optional[float]
+    ip_address: str | None
+    user_agent: str | None
+    latitude: float | None
+    longitude: float | None
+    geolocation_accuracy: float | None
     is_valid: bool
-    validated_at: Optional[datetime]
-    invalidated_at: Optional[datetime]
-    invalidation_reason: Optional[str]
+    validated_at: datetime | None
+    invalidated_at: datetime | None
+    invalidation_reason: str | None
     created_at: datetime
 
     # Campos calculados
@@ -750,9 +749,9 @@ class RecommendationResponse(BaseModel):
     reasoning: str
     previous_warnings: int
     previous_suspensions: int
-    last_incident_date: Optional[date]
-    alternative_actions: List[DisciplinaryActionType]
-    legal_references: List[str]
+    last_incident_date: date | None
+    alternative_actions: list[DisciplinaryActionType]
+    legal_references: list[str]
 
 
 class LegalComplianceRequest(BaseModel):
@@ -763,7 +762,7 @@ class LegalComplianceRequest(BaseModel):
     reason_description: str
     incident_date: date
     application_date: date
-    suspension_days: Optional[int] = None
+    suspension_days: int | None = None
     previous_warnings: int = 0
     previous_suspensions: int = 0
 
@@ -772,10 +771,10 @@ class LegalComplianceResponse(BaseModel):
     """Response da validacao de conformidade legal."""
 
     is_compliant: bool
-    issues: List[str]
-    warnings: List[str]
-    recommendations: List[str]
-    clt_articles: List[str]
+    issues: list[str]
+    warnings: list[str]
+    recommendations: list[str]
+    clt_articles: list[str]
 
 
 class ProportionalityCheckRequest(BaseModel):
@@ -799,7 +798,7 @@ class ProportionalityCheckResponse(BaseModel):
         description="Score de proporcionalidade (0-1)",
     )
     analysis: str
-    suggested_action: Optional[DisciplinaryActionType]
+    suggested_action: DisciplinaryActionType | None
     reasoning: str
 
 

@@ -4,40 +4,36 @@ Workflow Controller - Sprint 55.
 Endpoints REST para o otimizador de workflows com IA.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
-from uuid import UUID
-from datetime import datetime
 import logging
+from datetime import datetime
+from uuid import UUID
 
-from core.database import get_async_session
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.auth.dependencies import CurrentActiveUser
-
+from core.database import get_async_session
+from modules.ai.workflow_optimizer.repositories import WorkflowRepository
 from modules.ai.workflow_optimizer.schemas import (
-    WorkflowCreate,
-    WorkflowUpdate,
-    WorkflowResponse,
-    WorkflowListResponse,
     ExecutionCreate,
     ExecutionResponse,
-    TemplateCreate,
-    TemplateUpdate,
-    TemplateResponse,
+    ExecutionStatusEnum,
     OptimizationResponse,
-    ApplyOptimizationRequest,
-    WorkflowAnalysisRequest,
+    TemplateCreate,
+    TemplateResponse,
     WorkflowAnalysisResult,
+    WorkflowCreate,
     WorkflowDashboard,
+    WorkflowListResponse,
+    WorkflowResponse,
     WorkflowStatusEnum,
     WorkflowTypeEnum,
-    ExecutionStatusEnum,
+    WorkflowUpdate,
 )
-from modules.ai.workflow_optimizer.repositories import WorkflowRepository
 from modules.ai.workflow_optimizer.services import (
     WorkflowAnalyzer,
-    WorkflowOptimizer,
     WorkflowExecutor,
+    WorkflowOptimizer,
 )
 
 logger = logging.getLogger(__name__)
@@ -101,16 +97,16 @@ async def create_workflow(
 
 @router.get(
     "/workflows",
-    response_model=List[WorkflowListResponse],
+    response_model=list[WorkflowListResponse],
     summary="Listar workflows",
 )
 async def list_workflows(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    status: Optional[WorkflowStatusEnum] = None,
-    workflow_type: Optional[WorkflowTypeEnum] = None,
-    condominio_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    status: WorkflowStatusEnum | None = None,
+    workflow_type: WorkflowTypeEnum | None = None,
+    condominio_id: UUID | None = None,
+    search: str | None = None,
     repo: WorkflowRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
@@ -287,19 +283,22 @@ async def execute_workflow(
         )
 
         # Atualiza execucao
-        await repo.update_execution(execution.id, {
-            "status": result["status"],
-            "current_step": result["current_step"],
-            "progress_percent": result["progress_percent"],
-            "output_data": result["output_data"],
-            "step_results": result["step_results"],
-            "logs": result["logs"],
-            "error_message": result.get("error_message"),
-            "error_step": result.get("error_step"),
-            "started_at": datetime.fromisoformat(result["started_at"]),
-            "completed_at": datetime.fromisoformat(result["completed_at"]) if result.get("completed_at") else None,
-            "execution_time_ms": result["execution_time_ms"],
-        })
+        await repo.update_execution(
+            execution.id,
+            {
+                "status": result["status"],
+                "current_step": result["current_step"],
+                "progress_percent": result["progress_percent"],
+                "output_data": result["output_data"],
+                "step_results": result["step_results"],
+                "logs": result["logs"],
+                "error_message": result.get("error_message"),
+                "error_step": result.get("error_step"),
+                "started_at": datetime.fromisoformat(result["started_at"]),
+                "completed_at": datetime.fromisoformat(result["completed_at"]) if result.get("completed_at") else None,
+                "execution_time_ms": result["execution_time_ms"],
+            },
+        )
 
         # Atualiza stats do workflow
         await repo.update_workflow_stats(
@@ -315,14 +314,14 @@ async def execute_workflow(
 
 @router.get(
     "/executions",
-    response_model=List[ExecutionResponse],
+    response_model=list[ExecutionResponse],
     summary="Listar execucoes",
 )
 async def list_executions(
-    workflow_id: Optional[UUID] = None,
-    status: Optional[ExecutionStatusEnum] = None,
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
+    workflow_id: UUID | None = None,
+    status: ExecutionStatusEnum | None = None,
+    from_date: datetime | None = None,
+    to_date: datetime | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: WorkflowRepository = Depends(get_repository),
@@ -371,10 +370,13 @@ async def cancel_execution(
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
     """Cancela execucao."""
-    execution = await repo.update_execution(execution_id, {
-        "status": "cancelled",
-        "completed_at": datetime.utcnow(),
-    })
+    execution = await repo.update_execution(
+        execution_id,
+        {
+            "status": "cancelled",
+            "completed_at": datetime.utcnow(),
+        },
+    )
     if not execution:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -414,15 +416,15 @@ async def create_template(
 
 @router.get(
     "/templates",
-    response_model=List[TemplateResponse],
+    response_model=list[TemplateResponse],
     summary="Listar templates",
 )
 async def list_templates(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    workflow_type: Optional[WorkflowTypeEnum] = None,
-    is_active: Optional[bool] = None,
-    ai_recommended: Optional[bool] = None,
+    workflow_type: WorkflowTypeEnum | None = None,
+    is_active: bool | None = None,
+    ai_recommended: bool | None = None,
     repo: WorkflowRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
@@ -467,12 +469,14 @@ async def create_workflow_from_template(
     template_id: UUID,
     name: str,
     code: str,
-    params: dict = {},
-    condominio_id: Optional[UUID] = None,
+    params: dict = None,
+    condominio_id: UUID | None = None,
     repo: WorkflowRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
     """Cria workflow a partir de template."""
+    if params is None:
+        params = {}
     template = await repo.get_template_by_id(template_id)
     if not template:
         raise HTTPException(
@@ -557,12 +561,12 @@ async def analyze_workflow(
 
 @router.get(
     "/workflows/{workflow_id}/optimizations",
-    response_model=List[OptimizationResponse],
+    response_model=list[OptimizationResponse],
     summary="Listar otimizacoes",
 )
 async def list_workflow_optimizations(
     workflow_id: UUID,
-    status: Optional[str] = None,
+    status: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: WorkflowRepository = Depends(get_repository),
@@ -580,7 +584,7 @@ async def list_workflow_optimizations(
 
 @router.post(
     "/workflows/{workflow_id}/suggest-optimizations",
-    response_model=List[OptimizationResponse],
+    response_model=list[OptimizationResponse],
     summary="Sugerir otimizacoes",
 )
 async def suggest_optimizations(
@@ -685,13 +689,16 @@ async def apply_optimization(
     updated_workflow = _optimizer.apply_optimization(workflow_dict, optimization_dict)
 
     # Atualiza workflow
-    await repo.update_workflow(workflow.id, {
-        "steps": updated_workflow.get("steps"),
-        "variables": updated_workflow.get("variables"),
-        "settings": updated_workflow.get("settings"),
-        "is_ai_optimized": True,
-        "last_optimization": datetime.utcnow(),
-    })
+    await repo.update_workflow(
+        workflow.id,
+        {
+            "steps": updated_workflow.get("steps"),
+            "variables": updated_workflow.get("variables"),
+            "settings": updated_workflow.get("settings"),
+            "is_ai_optimized": True,
+            "last_optimization": datetime.utcnow(),
+        },
+    )
 
     # Marca otimizacao como aplicada
     await repo.update_optimization_status(optimization_id, "applied")
@@ -711,7 +718,7 @@ async def apply_optimization(
     summary="Dashboard do otimizador",
 )
 async def get_dashboard(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     repo: WorkflowRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):

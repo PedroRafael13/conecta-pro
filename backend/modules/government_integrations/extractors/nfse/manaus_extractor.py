@@ -7,15 +7,15 @@ Implementa:
 - Download de XML
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
-import asyncio
 import logging
-from xml.etree import ElementTree as ET
+from datetime import datetime, timedelta
+from uuid import UUID
+from xml.etree.ElementTree import Element  # noqa: S405
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from defusedxml import ElementTree as ET  # noqa: N817
+
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +46,10 @@ class ExtratorNFSeManaus(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """Extrai NFS-e de Manaus."""
@@ -80,8 +80,7 @@ class ExtratorNFSeManaus(ExtratorBase):
             for cnpj in cnpjs:
                 # Consultar NFS-e emitidas
                 docs_emitidas = await self._consultar_emitidas(
-                    tenant_id, cnpj, credencial.inscricao_municipal,
-                    data_inicio, data_fim
+                    tenant_id, cnpj, credencial.inscricao_municipal, data_inicio, data_fim
                 )
 
                 for doc in docs_emitidas:
@@ -94,8 +93,7 @@ class ExtratorNFSeManaus(ExtratorBase):
 
                 # Consultar NFS-e recebidas (tomadas)
                 docs_tomadas = await self._consultar_tomadas(
-                    tenant_id, cnpj, credencial.inscricao_municipal,
-                    data_inicio, data_fim
+                    tenant_id, cnpj, credencial.inscricao_municipal, data_inicio, data_fim
                 )
 
                 for doc in docs_tomadas:
@@ -121,17 +119,13 @@ class ExtratorNFSeManaus(ExtratorBase):
         inscricao_municipal: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta NFS-e emitidas pelo prestador."""
         documentos = []
 
-        envelope = self._montar_envelope_consulta(
-            cnpj, inscricao_municipal, data_inicio, data_fim, "prestador"
-        )
+        envelope = self._montar_envelope_consulta(cnpj, inscricao_municipal, data_inicio, data_fim, "prestador")
 
-        resposta = await self._fazer_requisicao(
-            tenant_id, self.URL_PRODUCAO, data=envelope
-        )
+        resposta = await self._fazer_requisicao(tenant_id, self.URL_PRODUCAO, data=envelope)
 
         if resposta:
             documentos = self._processar_resposta_consulta(resposta)
@@ -145,17 +139,13 @@ class ExtratorNFSeManaus(ExtratorBase):
         inscricao_municipal: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta NFS-e tomadas (recebidas)."""
         documentos = []
 
-        envelope = self._montar_envelope_consulta(
-            cnpj, inscricao_municipal, data_inicio, data_fim, "tomador"
-        )
+        envelope = self._montar_envelope_consulta(cnpj, inscricao_municipal, data_inicio, data_fim, "tomador")
 
-        resposta = await self._fazer_requisicao(
-            tenant_id, self.URL_PRODUCAO, data=envelope
-        )
+        resposta = await self._fazer_requisicao(tenant_id, self.URL_PRODUCAO, data=envelope)
 
         if resposta:
             documentos = self._processar_resposta_consulta(resposta)
@@ -168,7 +158,7 @@ class ExtratorNFSeManaus(ExtratorBase):
         inscricao_municipal: str,
         data_inicio: datetime,
         data_fim: datetime,
-        tipo: str  # prestador ou tomador
+        tipo: str,  # prestador ou tomador
     ) -> str:
         """Monta envelope SOAP para consulta de NFS-e."""
         data_ini = data_inicio.strftime("%Y-%m-%d")
@@ -206,10 +196,7 @@ class ExtratorNFSeManaus(ExtratorBase):
     </soap:Body>
 </soap:Envelope>"""
 
-    def _processar_resposta_consulta(
-        self,
-        xml_resposta: str
-    ) -> List[DocumentoExtraido]:
+    def _processar_resposta_consulta(self, xml_resposta: str) -> list[DocumentoExtraido]:
         """Processa resposta da consulta de NFS-e."""
         documentos = []
 
@@ -217,7 +204,7 @@ class ExtratorNFSeManaus(ExtratorBase):
             root = ET.fromstring(xml_resposta.encode())
 
             # Buscar NFS-e no retorno
-            nfses = root.findall(".//{%s}CompNfse" % NS_NFSE)
+            nfses = root.findall(f".//{{{NS_NFSE}}}CompNfse")
 
             for comp in nfses:
                 doc = self._extrair_nfse(comp)
@@ -229,55 +216,51 @@ class ExtratorNFSeManaus(ExtratorBase):
 
         return documentos
 
-    def _extrair_nfse(self, elemento: ET.Element) -> Optional[DocumentoExtraido]:
+    def _extrair_nfse(self, elemento: Element) -> DocumentoExtraido | None:
         """Extrai dados de uma NFS-e."""
         try:
-            nfse = elemento.find("{%s}Nfse" % NS_NFSE)
+            nfse = elemento.find(f"{{{NS_NFSE}}}Nfse")
             if nfse is None:
                 return None
 
-            inf_nfse = nfse.find("{%s}InfNfse" % NS_NFSE)
+            inf_nfse = nfse.find(f"{{{NS_NFSE}}}InfNfse")
             if inf_nfse is None:
                 return None
 
-            numero = inf_nfse.findtext("{%s}Numero" % NS_NFSE)
-            codigo_verificacao = inf_nfse.findtext("{%s}CodigoVerificacao" % NS_NFSE)
+            numero = inf_nfse.findtext(f"{{{NS_NFSE}}}Numero")
+            codigo_verificacao = inf_nfse.findtext(f"{{{NS_NFSE}}}CodigoVerificacao")
 
             # Valores
-            valores = inf_nfse.find("{%s}ValoresNfse" % NS_NFSE) or ET.Element("v")
+            valores = inf_nfse.find(f"{{{NS_NFSE}}}ValoresNfse") or ET.Element("v")
 
             # Prestador
-            prestador = inf_nfse.find("{%s}PrestadorServico" % NS_NFSE) or ET.Element("p")
-            ident_prest = prestador.find("{%s}IdentificacaoPrestador" % NS_NFSE) or ET.Element("i")
+            prestador = inf_nfse.find(f"{{{NS_NFSE}}}PrestadorServico") or ET.Element("p")
+            ident_prest = prestador.find(f"{{{NS_NFSE}}}IdentificacaoPrestador") or ET.Element("i")
 
             # Tomador
-            tomador = inf_nfse.find("{%s}TomadorServico" % NS_NFSE) or ET.Element("t")
-            ident_tom = tomador.find("{%s}IdentificacaoTomador" % NS_NFSE) or ET.Element("i")
-            cpf_cnpj_tom = ident_tom.find("{%s}CpfCnpj" % NS_NFSE) or ET.Element("c")
+            tomador = inf_nfse.find(f"{{{NS_NFSE}}}TomadorServico") or ET.Element("t")
+            ident_tom = tomador.find(f"{{{NS_NFSE}}}IdentificacaoTomador") or ET.Element("i")
+            cpf_cnpj_tom = ident_tom.find(f"{{{NS_NFSE}}}CpfCnpj") or ET.Element("c")
 
             dados = {
                 "numero": numero,
                 "codigo_verificacao": codigo_verificacao,
-                "data_emissao": inf_nfse.findtext("{%s}DataEmissao" % NS_NFSE),
-                "competencia": inf_nfse.findtext("{%s}Competencia" % NS_NFSE),
-
+                "data_emissao": inf_nfse.findtext(f"{{{NS_NFSE}}}DataEmissao"),
+                "competencia": inf_nfse.findtext(f"{{{NS_NFSE}}}Competencia"),
                 # Prestador
-                "prestador_cnpj": ident_prest.findtext(".//{%s}Cnpj" % NS_NFSE),
-                "prestador_nome": prestador.findtext("{%s}RazaoSocial" % NS_NFSE),
-
+                "prestador_cnpj": ident_prest.findtext(f".//{{{NS_NFSE}}}Cnpj"),
+                "prestador_nome": prestador.findtext(f"{{{NS_NFSE}}}RazaoSocial"),
                 # Tomador
-                "tomador_cnpj": cpf_cnpj_tom.findtext("{%s}Cnpj" % NS_NFSE),
-                "tomador_cpf": cpf_cnpj_tom.findtext("{%s}Cpf" % NS_NFSE),
-                "tomador_nome": tomador.findtext("{%s}RazaoSocial" % NS_NFSE),
-
+                "tomador_cnpj": cpf_cnpj_tom.findtext(f"{{{NS_NFSE}}}Cnpj"),
+                "tomador_cpf": cpf_cnpj_tom.findtext(f"{{{NS_NFSE}}}Cpf"),
+                "tomador_nome": tomador.findtext(f"{{{NS_NFSE}}}RazaoSocial"),
                 # Valores
-                "valor_servico": valores.findtext("{%s}ValorServicos" % NS_NFSE),
-                "valor_iss": valores.findtext("{%s}ValorIss" % NS_NFSE),
-                "aliquota_iss": valores.findtext("{%s}Aliquota" % NS_NFSE),
-
+                "valor_servico": valores.findtext(f"{{{NS_NFSE}}}ValorServicos"),
+                "valor_iss": valores.findtext(f"{{{NS_NFSE}}}ValorIss"),
+                "aliquota_iss": valores.findtext(f"{{{NS_NFSE}}}Aliquota"),
                 # Serviço
-                "discriminacao": inf_nfse.findtext(".//{%s}Discriminacao" % NS_NFSE),
-                "codigo_servico": inf_nfse.findtext(".//{%s}ItemListaServico" % NS_NFSE),
+                "discriminacao": inf_nfse.findtext(f".//{{{NS_NFSE}}}Discriminacao"),
+                "codigo_servico": inf_nfse.findtext(f".//{{{NS_NFSE}}}ItemListaServico"),
             }
 
             return DocumentoExtraido(
@@ -293,11 +276,11 @@ class ExtratorNFSeManaus(ExtratorBase):
             logger.error(f"Erro ao extrair NFS-e: {e}")
             return None
 
-    def _parse_data(self, data_str: Optional[str]) -> Optional[datetime]:
+    def _parse_data(self, data_str: str | None) -> datetime | None:
         """Parseia string de data."""
         if not data_str:
             return None
         try:
             return datetime.fromisoformat(data_str.replace("Z", "+00:00"))
-        except:
+        except Exception:
             return None

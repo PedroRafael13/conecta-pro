@@ -1,6 +1,6 @@
 'use client';
 
-import { Shield, MapPin, Calendar, Users, Clock, ChevronRight, ArrowLeft, Search, Plus, AlertCircle, CheckCircle, UserCheck, FileWarning, Navigation, TrendingUp, TrendingDown, Activity, FileText, CalendarCheck, AlertTriangle } from 'lucide-react';
+import { Shield, MapPin, Calendar, Users, Clock, ChevronRight, ArrowLeft, Search, Plus, AlertCircle, CheckCircle, UserCheck, FileWarning, Navigation, TrendingUp, TrendingDown, Activity, FileText, CalendarCheck, AlertTriangle, Brain } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -19,6 +19,15 @@ import { TourTrigger } from '@/features/onboarding/components/TourTrigger';
 
 // Sub-módulos do Operacional
 const subModules = [
+  {
+    id: 'ai-command-center',
+    title: 'AI Command Center',
+    description: 'Centro de comando inteligente com 6 agentes de IA operacional',
+    icon: Brain,
+    href: '/modulos/operacional/ai-command-center',
+    color: 'purple',
+    stats: null,
+  },
   {
     id: 'postos',
     title: 'Postos de Trabalho',
@@ -496,6 +505,49 @@ export default function OperacionalPage() {
             </div>
           </div>
         )}
+
+        {/* AI Command Center Section */}
+        <div className="bg-gradient-to-r from-blue-950/50 to-indigo-950/50 rounded-xl border border-blue-900/30 p-6 mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+              <Brain className="w-4 h-4 text-blue-400" />
+            </div>
+            <h3 className="text-white font-semibold text-sm">Centro de Comando IA</h3>
+            <span className="ml-auto text-xs text-blue-400/70">Powered by Bartolo</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-black/20 rounded-lg p-4">
+              <p className="text-xs text-zinc-500 mb-1">Status Operacional</p>
+              <p className="text-sm font-semibold text-green-400">
+                {coverageRate >= 90 ? '✓ Operação Normal' : coverageRate >= 70 ? '⚠ Atenção Necessária' : '✗ Cobertura Crítica'}
+              </p>
+              <p className="text-xs text-zinc-600 mt-1">{coverageRate}% de cobertura</p>
+            </div>
+            <div className="bg-black/20 rounded-lg p-4">
+              <p className="text-xs text-zinc-500 mb-1">Risco Próximas 24h</p>
+              <p className={`text-sm font-semibold ${shiftsNeedingSubstitution > 2 ? 'text-red-400' : shiftsNeedingSubstitution > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
+                {shiftsNeedingSubstitution > 2 ? '⚠ Alto' : shiftsNeedingSubstitution > 0 ? '⚠ Moderado' : '✓ Baixo'}
+              </p>
+              <p className="text-xs text-zinc-600 mt-1">
+                {shiftsNeedingSubstitution} {shiftsNeedingSubstitution === 1 ? 'turno em atenção' : 'turnos em atenção'}
+              </p>
+            </div>
+            <div className="bg-black/20 rounded-lg p-4">
+              <p className="text-xs text-zinc-500 mb-1">Ação Recomendada</p>
+              <p className="text-sm font-semibold text-blue-400">
+                {shiftsNeedingSubstitution > 0 ? 'Ver Substituições' : pendingOccurrences > 0 ? 'Resolver Ocorrências' : 'Tudo em Ordem'}
+              </p>
+              <p className="text-xs text-zinc-600 mt-1">
+                {shiftsNeedingSubstitution > 0
+                  ? `${shiftsNeedingSubstitution} solicitação${shiftsNeedingSubstitution > 1 ? 'ões' : ''} pendente${shiftsNeedingSubstitution > 1 ? 's' : ''}`
+                  : pendingOccurrences > 0
+                  ? `${pendingOccurrences} ocorrência${pendingOccurrences > 1 ? 's' : ''} aberta${pendingOccurrences > 1 ? 's' : ''}`
+                  : 'Nenhuma ação urgente'}
+              </p>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
     </OperacionalTourProvider>

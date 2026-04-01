@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
-;
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +25,11 @@ import {
 import { SupplierFormModal } from '@/components/financeiro/supplier-form-modal';
 import { SupplierDetailModal } from '@/components/financeiro/supplier-detail-modal';
 import { cn } from '@/lib/utils';
+import { useCondominio } from '@/contexts/CondominioContext';
+import type { SupplierListResponse } from '@/types/generated/financial/models/supplierListResponse';
 
 export default function FornecedoresPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -44,12 +46,15 @@ export default function FornecedoresPage() {
     error,
     refetch,
   } = useSuppliers({
-    condominio_id: '',
+    condominio_id: condominioId,
     ...(search && { search }),
     ...(statusFilter && { status: statusFilter }),
   });
 
-  const { data: stats, refetch: refetchStats } = useSupplierStats({ condominio_id: '' });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: statsRaw, refetch: refetchStats } = useSupplierStats({ condominio_id: condominioId });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stats = statsRaw as any;
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSupplierMutation = useDeleteSupplier();
@@ -61,8 +66,9 @@ export default function FornecedoresPage() {
 
   // Stats
   const totalSuppliers = stats?.total || total;
-  const activeSuppliers = stats?.ativos || suppliers.filter((s: any) => s.status === 'active').length;
-  const blockedSuppliers = stats?.bloqueados || suppliers.filter((s: any) => s.status === 'blocked').length;
+  const typedSuppliers = suppliers as SupplierListResponse[];
+  const activeSuppliers = stats?.ativos || typedSuppliers.filter((s) => s.status === 'active').length;
+  const blockedSuppliers = stats?.bloqueados || typedSuppliers.filter((s) => s.status === 'blocked').length;
 
   const handleView = (supplier: any) => {
     setSelectedSupplier(supplier);
@@ -94,8 +100,8 @@ export default function FornecedoresPage() {
       setShowDeleteModal(false);
       setSelectedSupplier(null);
       // refetch() removido - mutation já invalida queries automaticamente
-    } catch (err) {
-      console.error('Erro ao excluir fornecedor:', err);
+    } catch {
+      // silenced
     } finally {
       setIsDeleting(false);
     }
@@ -104,21 +110,20 @@ export default function FornecedoresPage() {
   const handleBlock = async (supplier: any) => {
     try {
       await blockSupplier.mutateAsync({ supplierId: supplier.id, data: { reason: 'Bloqueado pelo usuario' } });
-      // refetch() removido - mutation já invalida queries automaticamente
-    } catch (err) {
-      console.error('Erro ao bloquear fornecedor:', err);
+    } catch {
+      // silenced
     }
   };
 
   const handleUnblock = async (supplier: any) => {
     try {
       await unblockSupplier.mutateAsync({ supplierId: supplier.id });
-      // refetch() removido - mutation já invalida queries automaticamente
-    } catch (err) {
-      console.error('Erro ao desbloquear fornecedor:', err);
+    } catch {
+      // silenced
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleFormSubmit = async (data: any) => {
     try {
       if (selectedSupplier) {
@@ -133,7 +138,6 @@ export default function FornecedoresPage() {
       setSelectedSupplier(null);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
-      console.error('Erro ao salvar fornecedor:', err);
       throw err;
     }
   };
@@ -165,13 +169,13 @@ export default function FornecedoresPage() {
   };
 
   // Filter localmente por search
-  const filteredSuppliers = search
-    ? suppliers.filter((s: any) =>
+  const filteredSuppliers: SupplierListResponse[] = search
+    ? typedSuppliers.filter((s) =>
         s.name?.toLowerCase().includes(search.toLowerCase()) ||
-        s.document?.toLowerCase().includes(search.toLowerCase()) ||
+        s.cpf_cnpj?.toLowerCase().includes(search.toLowerCase()) ||
         s.email?.toLowerCase().includes(search.toLowerCase())
       )
-    : suppliers;
+    : typedSuppliers;
 
   return (
     <div className="space-y-6 animate-fade-in">

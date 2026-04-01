@@ -1,19 +1,19 @@
 """Models de Diaristas."""
 
 from modules.operacional.diaristas.models.diarist import (  # noqa: F401
+    AssignmentStatus,
+    AssignmentType,
     Diarist,
     DiaristAssignment,
-    DiaristSchedule,
-    DiaristPayment,
     DiaristEvaluation,
-    DiaristType,
+    DiaristPayment,
+    DiaristSchedule,
     DiaristStatus,
+    DiaristType,
     DocumentType,
-    AssignmentType,
-    AssignmentStatus,
+    PaymentMethod,
+    PaymentStatus,
     RecurrenceType,
     ScheduleStatus,
-    PaymentStatus,
-    PaymentMethod,
     Weekday,
 )

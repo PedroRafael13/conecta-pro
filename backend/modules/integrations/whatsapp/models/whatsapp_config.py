@@ -3,9 +3,8 @@
 Sprint 31 - Automacoes WhatsApp.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -13,7 +12,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class WhatsAppStatus(str, enum.Enum):
+class WhatsAppStatus(StrEnum):
     """Status da configuracao WhatsApp."""
 
     PENDING = "PENDING"  # Pendente de configuracao
@@ -23,7 +22,7 @@ class WhatsAppStatus(str, enum.Enum):
     SUSPENDED = "SUSPENDED"  # Suspenso pelo WhatsApp
 
 
-class WhatsAppProvider(str, enum.Enum):
+class WhatsAppProvider(StrEnum):
     """Provedor de API WhatsApp."""
 
     META_CLOUD = "META_CLOUD"  # Meta Cloud API (oficial)
@@ -155,7 +154,7 @@ class WhatsAppConfig(Base):
         self.last_error = error_message
         self.error_count += 1
 
-    def get_masked_token(self) -> Optional[str]:
+    def get_masked_token(self) -> str | None:
         """Retorna token mascarado para exibicao."""
         if not self.access_token:
             return None

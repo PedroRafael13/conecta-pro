@@ -1,7 +1,7 @@
 """Chart of Accounts model - Plano de Contas Contábil."""
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, Text
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from modules.financial.models.accounting_account import AccountingAccount
 
 
-class ChartType(str, enum.Enum):
+class ChartType(StrEnum):
     """Tipo do plano de contas."""
 
     STANDARD = "STANDARD"  # Plano padrão
@@ -22,7 +22,7 @@ class ChartType(str, enum.Enum):
     CUSTOM = "CUSTOM"  # Personalizado
 
 
-class ChartStatus(str, enum.Enum):
+class ChartStatus(StrEnum):
     """Status do plano de contas."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -31,7 +31,7 @@ class ChartStatus(str, enum.Enum):
     ARCHIVED = "ARCHIVED"  # Arquivado
 
 
-class ChartStandard(str, enum.Enum):
+class ChartStandard(StrEnum):
     """Padrão do plano de contas."""
 
     CUSTOM = "CUSTOM"  # Personalizado
@@ -115,9 +115,7 @@ class ChartOfAccounts(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Audit

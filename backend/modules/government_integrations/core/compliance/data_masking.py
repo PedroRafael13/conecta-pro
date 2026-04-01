@@ -4,17 +4,19 @@ Sistema de Mascaramento de Dados Sensíveis.
 Implementa mascaramento para compliance LGPD.
 """
 
-from typing import Dict, Any, List, Optional, Callable
+import logging
+import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-import re
-import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class TipoDadoSensivel(Enum):
     """Tipos de dados sensíveis."""
+
     CPF = "cpf"
     CNPJ = "cnpj"
     RG = "rg"
@@ -36,10 +38,11 @@ class TipoDadoSensivel(Enum):
 @dataclass
 class RegrasMascaramento:
     """Regras de mascaramento para um tipo de dado."""
+
     tipo: TipoDadoSensivel
     regex_deteccao: str  # Regex para detectar o dado
     funcao_mascara: Callable[[str], str]
-    campos: List[str]  # Nomes de campos que contêm este tipo
+    campos: list[str]  # Nomes de campos que contêm este tipo
 
 
 def mascarar_cpf(cpf: str) -> str:
@@ -139,7 +142,7 @@ def mascarar_data(data: str) -> str:
     # Tentar extrair ano
     match = re.search(r"\d{4}", data)
     if match:
-        return f"**/**/****"
+        return "**/**/****"
     return "**/**/****"
 
 
@@ -169,22 +172,18 @@ class MascaradorDados:
         "cpf_titular": TipoDadoSensivel.CPF,
         "cpf_responsavel": TipoDadoSensivel.CPF,
         "numero_cpf": TipoDadoSensivel.CPF,
-
         # CNPJ
         "cnpj": TipoDadoSensivel.CNPJ,
         "cnpj_empresa": TipoDadoSensivel.CNPJ,
         "numero_cnpj": TipoDadoSensivel.CNPJ,
-
         # RG
         "rg": TipoDadoSensivel.RG,
         "numero_rg": TipoDadoSensivel.RG,
-
         # PIS/NIS
         "pis": TipoDadoSensivel.PIS,
         "numero_pis": TipoDadoSensivel.PIS,
         "nis": TipoDadoSensivel.NIS,
         "numero_nis": TipoDadoSensivel.NIS,
-
         # Contato
         "email": TipoDadoSensivel.EMAIL,
         "email_pessoal": TipoDadoSensivel.EMAIL,
@@ -192,33 +191,28 @@ class MascaradorDados:
         "telefone": TipoDadoSensivel.TELEFONE,
         "celular": TipoDadoSensivel.TELEFONE,
         "fone": TipoDadoSensivel.TELEFONE,
-
         # Financeiro
         "numero_cartao": TipoDadoSensivel.CARTAO_CREDITO,
         "cartao_credito": TipoDadoSensivel.CARTAO_CREDITO,
         "conta_bancaria": TipoDadoSensivel.CONTA_BANCARIA,
         "conta_corrente": TipoDadoSensivel.CONTA_BANCARIA,
         "numero_conta": TipoDadoSensivel.CONTA_BANCARIA,
-
         # Pessoal
         "nome": TipoDadoSensivel.NOME,
         "nome_completo": TipoDadoSensivel.NOME,
         "nome_funcionario": TipoDadoSensivel.NOME,
         "data_nascimento": TipoDadoSensivel.DATA_NASCIMENTO,
         "nascimento": TipoDadoSensivel.DATA_NASCIMENTO,
-
         # Endereço
         "endereco": TipoDadoSensivel.ENDERECO,
         "logradouro": TipoDadoSensivel.ENDERECO,
         "endereco_residencial": TipoDadoSensivel.ENDERECO,
-
         # Segurança
         "senha": TipoDadoSensivel.SENHA,
         "password": TipoDadoSensivel.SENHA,
         "secret": TipoDadoSensivel.SENHA,
         "token": TipoDadoSensivel.SENHA,
         "api_key": TipoDadoSensivel.SENHA,
-
         # PIX
         "chave_pix": TipoDadoSensivel.CHAVE_PIX,
         "pix": TipoDadoSensivel.CHAVE_PIX,
@@ -253,17 +247,14 @@ class MascaradorDados:
         TipoDadoSensivel.CARTAO_CREDITO: r"\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}",
     }
 
-    def __init__(self, campos_customizados: Optional[Dict[str, TipoDadoSensivel]] = None):
+    def __init__(self, campos_customizados: dict[str, TipoDadoSensivel] | None = None):
         self.mapeamento_campos = self.MAPEAMENTO_CAMPOS.copy()
         if campos_customizados:
             self.mapeamento_campos.update(campos_customizados)
 
     def mascarar(
-        self,
-        dados: Dict[str, Any],
-        campos_excluir: Optional[List[str]] = None,
-        detectar_automatico: bool = True
-    ) -> Dict[str, Any]:
+        self, dados: dict[str, Any], campos_excluir: list[str] | None = None, detectar_automatico: bool = True
+    ) -> dict[str, Any]:
         """
         Mascara dados sensíveis em um dicionário.
 
@@ -295,8 +286,7 @@ class MascaradorDados:
             # Processar listas
             if isinstance(valor, list):
                 resultado[campo] = [
-                    self.mascarar(item, campos_excluir, detectar_automatico)
-                    if isinstance(item, dict) else item
+                    self.mascarar(item, campos_excluir, detectar_automatico) if isinstance(item, dict) else item
                     for item in valor
                 ]
                 continue
@@ -340,30 +330,22 @@ class MascaradorDados:
 
         return resultado
 
-    def mascarar_campo(
-        self,
-        valor: str,
-        tipo: TipoDadoSensivel
-    ) -> str:
+    def mascarar_campo(self, valor: str, tipo: TipoDadoSensivel) -> str:
         """Mascara um campo específico."""
         funcao = self.FUNCOES_MASCARA.get(tipo)
         if funcao:
             return funcao(valor)
         return mascarar_generico(valor)
 
-    def adicionar_mapeamento(
-        self,
-        campo: str,
-        tipo: TipoDadoSensivel
-    ):
+    def adicionar_mapeamento(self, campo: str, tipo: TipoDadoSensivel):
         """Adiciona mapeamento customizado de campo."""
         self.mapeamento_campos[campo.lower()] = tipo
 
-    def obter_campos_sensiveis(self, dados: Dict) -> List[str]:
+    def obter_campos_sensiveis(self, dados: dict) -> list[str]:
         """Lista campos sensíveis encontrados nos dados."""
         campos = []
 
-        def buscar(d: Dict, prefixo: str = ""):
+        def buscar(d: dict, prefixo: str = ""):
             for campo, valor in d.items():
                 caminho = f"{prefixo}.{campo}" if prefixo else campo
                 campo_lower = campo.lower()

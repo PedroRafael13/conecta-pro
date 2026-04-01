@@ -29,9 +29,7 @@ class PipelineService:
         OpportunityStage.NEGOTIATION.value: 21,
     }
 
-    def calculate_weighted_pipeline(
-        self, opportunities: list[Opportunity]
-    ) -> float:
+    def calculate_weighted_pipeline(self, opportunities: list[Opportunity]) -> float:
         """
         Calcula o valor ponderado total do pipeline.
 
@@ -47,9 +45,7 @@ class PipelineService:
                 total += opp.weighted_value
         return total
 
-    def calculate_win_rate(
-        self, opportunities: list[Opportunity], period_days: int = 90
-    ) -> float:
+    def calculate_win_rate(self, opportunities: list[Opportunity], period_days: int = 90) -> float:
         """
         Calcula a taxa de conversao (win rate) em um periodo.
 
@@ -95,9 +91,7 @@ class PipelineService:
 
         return sum(won_values) / len(won_values)
 
-    def calculate_sales_velocity(
-        self, opportunities: list[Opportunity]
-    ) -> float:
+    def calculate_sales_velocity(self, opportunities: list[Opportunity]) -> float:
         """
         Calcula a velocidade de vendas.
 
@@ -119,9 +113,7 @@ class PipelineService:
 
         return (open_count * win_rate * avg_deal) / avg_cycle
 
-    def calculate_avg_sales_cycle(
-        self, opportunities: list[Opportunity]
-    ) -> float:
+    def calculate_avg_sales_cycle(self, opportunities: list[Opportunity]) -> float:
         """
         Calcula o ciclo medio de vendas (dias ate fechamento).
 
@@ -141,9 +133,7 @@ class PipelineService:
 
         return sum(cycles) / len(cycles)
 
-    def get_stage_conversion_rates(
-        self, opportunities: list[Opportunity]
-    ) -> dict[str, float]:
+    def get_stage_conversion_rates(self, opportunities: list[Opportunity]) -> dict[str, float]:
         """
         Calcula taxas de conversao entre estagios.
 
@@ -162,7 +152,7 @@ class PipelineService:
         ]
 
         # Contagem por estagio (incluindo os que ja passaram)
-        stage_counts: dict[str, int] = {stage: 0 for stage in stage_order}
+        stage_counts: dict[str, int] = dict.fromkeys(stage_order, 0)
 
         for opp in opportunities:
             current_idx = stage_order.index(opp.stage) if opp.stage in stage_order else -1
@@ -265,9 +255,7 @@ class PipelineService:
 
         return forecasts
 
-    def get_overdue_opportunities(
-        self, opportunities: list[Opportunity]
-    ) -> list[Opportunity]:
+    def get_overdue_opportunities(self, opportunities: list[Opportunity]) -> list[Opportunity]:
         """
         Retorna opportunities com prazo vencido.
 
@@ -295,15 +283,9 @@ class PipelineService:
             Lista de opportunities estagnadas
         """
         cutoff = datetime.utcnow() - timedelta(days=days_threshold)
-        return [
-            opp
-            for opp in opportunities
-            if opp.is_open and opp.updated_at < cutoff
-        ]
+        return [opp for opp in opportunities if opp.is_open and opp.updated_at < cutoff]
 
-    def calculate_loss_analysis(
-        self, opportunities: list[Opportunity]
-    ) -> dict:
+    def calculate_loss_analysis(self, opportunities: list[Opportunity]) -> dict:
         """
         Analisa motivos de perda de negocios.
 
@@ -338,17 +320,13 @@ class PipelineService:
             if opp.competitor:
                 competitors[opp.competitor] = competitors.get(opp.competitor, 0) + 1
 
-        top_competitors = sorted(
-            competitors.items(), key=lambda x: x[1], reverse=True
-        )[:5]
+        top_competitors = sorted(competitors.items(), key=lambda x: x[1], reverse=True)[:5]
 
         return {
             "total_lost": len(lost_opps),
             "total_lost_value": sum(opp.value for opp in lost_opps),
             "by_reason": by_reason,
-            "top_competitors": [
-                {"name": name, "count": count} for name, count in top_competitors
-            ],
+            "top_competitors": [{"name": name, "count": count} for name, count in top_competitors],
         }
 
     def get_health_score(  # pylint: disable=too-many-branches
@@ -378,23 +356,17 @@ class PipelineService:
         overdue_pct = (len(overdue) / len(opportunities)) * 100
         if overdue_pct > 20:
             score -= 20
-            recommendations.append(
-                f"{len(overdue)} opportunities com prazo vencido (>20%)"
-            )
+            recommendations.append(f"{len(overdue)} opportunities com prazo vencido (>20%)")
         elif overdue_pct > 10:
             score -= 10
-            recommendations.append(
-                f"{len(overdue)} opportunities com prazo vencido (>10%)"
-            )
+            recommendations.append(f"{len(overdue)} opportunities com prazo vencido (>10%)")
 
         # Verificar estagnadas
         stagnant = self.get_stagnant_opportunities(opportunities)
         stagnant_pct = (len(stagnant) / len(opportunities)) * 100
         if stagnant_pct > 30:
             score -= 15
-            recommendations.append(
-                f"{len(stagnant)} opportunities estagnadas (>30 dias)"
-            )
+            recommendations.append(f"{len(stagnant)} opportunities estagnadas (>30 dias)")
 
         # Verificar win rate
         win_rate = self.calculate_win_rate(opportunities)
@@ -408,16 +380,11 @@ class PipelineService:
         # Verificar distribuicao de estagios
         open_opps = [opp for opp in opportunities if opp.is_open]
         if open_opps:
-            qualification_count = sum(
-                1 for opp in open_opps
-                if opp.stage == OpportunityStage.QUALIFICATION.value
-            )
+            qualification_count = sum(1 for opp in open_opps if opp.stage == OpportunityStage.QUALIFICATION.value)
             qualification_pct = (qualification_count / len(open_opps)) * 100
             if qualification_pct > 50:
                 score -= 10
-                recommendations.append(
-                    "Muitas opportunities em Qualification - acelerar qualificacao"
-                )
+                recommendations.append("Muitas opportunities em Qualification - acelerar qualificacao")
 
         # Determinar status
         if score >= 80:
@@ -426,7 +393,7 @@ class PipelineService:
             status = "attention"
         elif score >= 40:
             status = "warning"
-        else:
+        else:  # pragma: no cover
             status = "critical"
 
         if not recommendations:

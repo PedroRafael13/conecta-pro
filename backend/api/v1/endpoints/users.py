@@ -2,10 +2,9 @@
 Endpoints de gerenciamento de usuarios.
 """
 
-from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, EmailStr
-from sqlalchemy import select, func
+from pydantic import BaseModel
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_active_user
@@ -20,12 +19,14 @@ router = APIRouter(prefix="/users", tags=["Users"])
 # Schemas para gerenciamento de usuarios
 class UserUpdateRole(BaseModel):
     """Schema para atualizar role do usuario."""
+
     role: str
 
 
 class UserListResponse(BaseModel):
     """Schema para lista paginada de usuarios."""
-    users: List[UserResponse]
+
+    users: list[UserResponse]
     total: int
     page: int
     per_page: int
@@ -34,18 +35,18 @@ class UserListResponse(BaseModel):
 # Roles validos no sistema
 VALID_ROLES = [
     # Roles gerais
-    "admin",       # Acesso total ao ERP
-    "gestor",      # Dashboard, relatorios, operacoes
-    "operador",    # Operacoes basicas
-    "funcionario", # Portal do Funcionario (ponto, escalas, docs)
-    "pending",     # Aguardando aprovacao
+    "admin",  # Acesso total ao ERP
+    "gestor",  # Dashboard, relatorios, operacoes
+    "operador",  # Operacoes basicas
+    "funcionario",  # Portal do Funcionario (ponto, escalas, docs)
+    "pending",  # Aguardando aprovacao
     # Roles do modulo operacional
-    "administrador",        # Poder total no operacional
+    "administrador",  # Poder total no operacional
     "gerente_operacional",  # Gestao completa do operacional
-    "supervisor",           # Aprova escalas, coordena
-    "inspetor",             # Fiscaliza, visualiza relatorios
-    "lider",                # Coordena equipe local
-    "agente",               # Apenas propria escala + check-in/out
+    "supervisor",  # Aprova escalas, coordena
+    "inspetor",  # Fiscaliza, visualiza relatorios
+    "lider",  # Coordena equipe local
+    "agente",  # Apenas propria escala + check-in/out
 ]
 
 
@@ -63,8 +64,8 @@ def require_admin(current_user: User = Depends(get_current_active_user)) -> User
 async def list_users(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    role: Optional[str] = Query(None, description="Filtrar por role"),
-    search: Optional[str] = Query(None, description="Buscar por nome ou email"),
+    role: str | None = Query(None, description="Filtrar por role"),
+    search: str | None = Query(None, description="Buscar por nome ou email"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> UserListResponse:
@@ -80,12 +81,8 @@ async def list_users(
     # Buscar por nome ou email
     if search:
         search_filter = f"%{search}%"
-        query = query.where(
-            (User.name.ilike(search_filter)) | (User.email.ilike(search_filter))
-        )
-        count_query = count_query.where(
-            (User.name.ilike(search_filter)) | (User.email.ilike(search_filter))
-        )
+        query = query.where((User.name.ilike(search_filter)) | (User.email.ilike(search_filter)))
+        count_query = count_query.where((User.name.ilike(search_filter)) | (User.email.ilike(search_filter)))
 
     # Paginacao
     offset = (page - 1) * per_page
@@ -106,17 +103,13 @@ async def list_users(
     )
 
 
-@router.get("/pending", response_model=List[UserResponse])
+@router.get("/pending", response_model=list[UserResponse])
 async def list_pending_users(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin),
-) -> List[UserResponse]:
+) -> list[UserResponse]:
     """Lista usuarios aguardando aprovacao (admin only)."""
-    result = await db.execute(
-        select(User)
-        .where(User.role == "pending")
-        .order_by(User.created_at.desc())
-    )
+    result = await db.execute(select(User).where(User.role == "pending").order_by(User.created_at.desc()))
     users = result.scalars().all()
     logger.info(f"Admin {current_user.email} listou {len(users)} usuarios pendentes")
     return [UserResponse.model_validate(u) for u in users]
@@ -136,8 +129,16 @@ async def list_roles(
             {"value": "funcionario", "label": "Funcionário", "description": "Portal do Funcionário"},
             {"value": "pending", "label": "Pendente", "description": "Aguardando aprovação"},
             # Roles do modulo operacional
-            {"value": "administrador", "label": "Administrador Operacional", "description": "Poder total no módulo operacional"},
-            {"value": "gerente_operacional", "label": "Gerente Operacional", "description": "Gestão completa do operacional"},
+            {
+                "value": "administrador",
+                "label": "Administrador Operacional",
+                "description": "Poder total no módulo operacional",
+            },
+            {
+                "value": "gerente_operacional",
+                "label": "Gerente Operacional",
+                "description": "Gestão completa do operacional",
+            },
             {"value": "supervisor", "label": "Supervisor", "description": "Aprova escalas, coordena equipes"},
             {"value": "inspetor", "label": "Inspetor", "description": "Fiscaliza postos, visualiza relatórios"},
             {"value": "lider", "label": "Líder", "description": "Coordena equipe local"},

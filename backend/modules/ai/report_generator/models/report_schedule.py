@@ -6,19 +6,21 @@ Permite agendar geração automática de relatórios em diferentes periodicidade
 
 import uuid
 from datetime import datetime, timedelta
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
     Text,
     Time,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -26,7 +28,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class ScheduleFrequencyEnum(str, Enum):
+class ScheduleFrequencyEnum(StrEnum):
     """Frequência de agendamento."""
 
     ONCE = "once"  # Uma vez
@@ -40,7 +42,7 @@ class ScheduleFrequencyEnum(str, Enum):
     CUSTOM = "custom"  # Cron expression
 
 
-class ScheduleStatusEnum(str, Enum):
+class ScheduleStatusEnum(StrEnum):
     """Status do agendamento."""
 
     ACTIVE = "active"
@@ -51,7 +53,7 @@ class ScheduleStatusEnum(str, Enum):
     CANCELLED = "cancelled"
 
 
-class DeliveryMethodEnum(str, Enum):
+class DeliveryMethodEnum(StrEnum):
     """Método de entrega."""
 
     EMAIL = "email"
@@ -79,16 +81,14 @@ class AIReportSchedule(Base):
 
     # Status
     status = Column(
-        SQLEnum(ScheduleStatusEnum, name="schedule_status_enum"),
-        nullable=False,
-        default=ScheduleStatusEnum.ACTIVE
+        SQLEnum(ScheduleStatusEnum, name="schedule_status_enum"), nullable=False, default=ScheduleStatusEnum.ACTIVE
     )
 
     # Frequência
     frequency = Column(
         SQLEnum(ScheduleFrequencyEnum, name="schedule_frequency_enum"),
         nullable=False,
-        default=ScheduleFrequencyEnum.DAILY
+        default=ScheduleFrequencyEnum.DAILY,
     )
     cron_expression = Column(String(100), nullable=True)  # Para CUSTOM
 
@@ -226,7 +226,7 @@ class AIReportSchedule(Base):
         """Verifica se deve pausar por falhas consecutivas."""
         return self.consecutive_failures >= self.max_consecutive_failures
 
-    def calculate_next_run(self) -> Optional[datetime]:
+    def calculate_next_run(self) -> datetime | None:
         """Calcula próxima execução baseada na frequência."""
         now = datetime.utcnow()
 
@@ -246,10 +246,7 @@ class AIReportSchedule(Base):
             next_run = now + timedelta(days=1)
             if self.run_time:
                 next_run = next_run.replace(
-                    hour=self.run_time.hour,
-                    minute=self.run_time.minute,
-                    second=0,
-                    microsecond=0
+                    hour=self.run_time.hour, minute=self.run_time.minute, second=0, microsecond=0
                 )
             return next_run
 
@@ -257,10 +254,7 @@ class AIReportSchedule(Base):
             next_run = now + timedelta(weeks=1)
             if self.run_time:
                 next_run = next_run.replace(
-                    hour=self.run_time.hour,
-                    minute=self.run_time.minute,
-                    second=0,
-                    microsecond=0
+                    hour=self.run_time.hour, minute=self.run_time.minute, second=0, microsecond=0
                 )
             return next_run
 
@@ -272,10 +266,7 @@ class AIReportSchedule(Base):
                 next_run = now.replace(month=now.month + 1)
             if self.run_time:
                 next_run = next_run.replace(
-                    hour=self.run_time.hour,
-                    minute=self.run_time.minute,
-                    second=0,
-                    microsecond=0
+                    hour=self.run_time.hour, minute=self.run_time.minute, second=0, microsecond=0
                 )
             return next_run
 
@@ -293,10 +284,7 @@ class AIReportSchedule(Base):
             next_run = now.replace(year=now.year + 1)
             if self.run_time:
                 next_run = next_run.replace(
-                    hour=self.run_time.hour,
-                    minute=self.run_time.minute,
-                    second=0,
-                    microsecond=0
+                    hour=self.run_time.hour, minute=self.run_time.minute, second=0, microsecond=0
                 )
             return next_run
 
@@ -384,7 +372,7 @@ class AIReportSchedule(Base):
         self.status = ScheduleStatusEnum.CANCELLED
         self.next_run_at = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),

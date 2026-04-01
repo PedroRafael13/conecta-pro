@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from modules.financial.models.receivable_account import ReceivableAccount
 
 
-class CategoryType(str, Enum):
+class CategoryType(StrEnum):
     """Tipo de categoria de receita."""
 
     TAXA_CONDOMINIAL = "taxa_condominial"  # Taxa de condominio
@@ -79,14 +79,14 @@ class ReceivableCategory(Base):
     # Relacionamentos
     parent: Optional["ReceivableCategory"] = relationship(
         "ReceivableCategory",
-        remote_side=[id],
+        remote_side=[id],  # noqa: A003
         back_populates="children",
     )
-    children: List["ReceivableCategory"] = relationship(
+    children: list["ReceivableCategory"] = relationship(
         "ReceivableCategory",
         back_populates="parent",
     )
-    receivable_accounts: List["ReceivableAccount"] = relationship(
+    receivable_accounts: list["ReceivableAccount"] = relationship(
         "ReceivableAccount",
         back_populates="category",
     )

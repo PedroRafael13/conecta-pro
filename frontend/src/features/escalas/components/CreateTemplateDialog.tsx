@@ -1,7 +1,7 @@
 'use client';
 
 import { Calendar, AlertCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,13 @@ const monthNames = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+// Initial form state factory to ensure fresh state
+const createInitialFormData = (): ScaleTemplateCreate => ({
+  name: '',
+  description: '',
+  source_scale_id: '',
+});
+
 export function CreateTemplateDialog({
   isOpen,
   onClose,
@@ -29,36 +36,46 @@ export function CreateTemplateDialog({
   onSubmit,
   isLoading = false,
 }: CreateTemplateDialogProps) {
-  const [formData, setFormData] = useState<ScaleTemplateCreate>({
-    name: '',
-    description: '',
-    source_scale_id: '',
-  });
+  const [formData, setFormData] = useState<ScaleTemplateCreate>(createInitialFormData);
   const [selectedScale, setSelectedScale] = useState<Scale | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const prevIsOpenRef = useRef(isOpen);
 
-  // Reset form when modal opens/closes
+  // Reset form when modal closes (using ref to avoid setState in effect directly)
   useEffect(() => {
-    if (!isOpen) {
-      setFormData({
-        name: '',
-        description: '',
-        source_scale_id: '',
+    const prevIsOpen = prevIsOpenRef.current;
+    prevIsOpenRef.current = isOpen;
+
+    // Only reset when transitioning from open to closed
+    if (prevIsOpen && !isOpen) {
+      // Use requestAnimationFrame to defer state update to next render cycle
+      const rafId = requestAnimationFrame(() => {
+
+        setFormData(createInitialFormData());
+
+        setSelectedScale(null);
+
+        setErrors({});
       });
-      setSelectedScale(null);
-      setErrors({});
+      return () => cancelAnimationFrame(rafId);
     }
   }, [isOpen]);
 
-  // Update selected scale when source_scale_id changes
+  // Update selected scale when source_scale_id changes - use derived state pattern
+  const currentScale = formData.source_scale_id
+    ? scales.find(s => s.id === formData.source_scale_id) || null
+    : null;
+
+  // Sync selectedScale with derived value when it changes
   useEffect(() => {
-    if (formData.source_scale_id) {
-      const scale = scales.find(s => s.id === formData.source_scale_id);
-      setSelectedScale(scale || null);
-    } else {
-      setSelectedScale(null);
+    if (currentScale?.id !== selectedScale?.id) {
+      const rafId = requestAnimationFrame(() => {
+
+        setSelectedScale(currentScale);
+      });
+      return () => cancelAnimationFrame(rafId);
     }
-  }, [formData.source_scale_id, scales]);
+  }, [currentScale, selectedScale?.id]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};

@@ -5,7 +5,7 @@ Implementa rate limiting usando Redis para controle de requisicoes.
 """
 
 import time
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -32,6 +32,7 @@ class RateLimiter:
         if self._redis_client is None:
             try:
                 from core.cache import get_redis
+
                 self._redis_client = await get_redis()
             except Exception:
                 self._redis_client = False  # Marca como indisponivel
@@ -50,9 +51,7 @@ class RateLimiter:
 
         return request.client.host if request.client else "unknown"
 
-    async def _check_rate_limit_redis(
-        self, key: str
-    ) -> tuple[bool, int, int]:
+    async def _check_rate_limit_redis(self, key: str) -> tuple[bool, int, int]:
         """Verifica rate limit usando Redis."""
         redis = await self._get_redis()
         if not redis:
@@ -90,18 +89,14 @@ class RateLimiter:
             logger.warning(f"Redis rate limit error: {e}, falling back to memory")
             return await self._check_rate_limit_memory(key)
 
-    async def _check_rate_limit_memory(
-        self, key: str
-    ) -> tuple[bool, int, int]:
+    async def _check_rate_limit_memory(self, key: str) -> tuple[bool, int, int]:
         """Verifica rate limit usando memoria (fallback)."""
         current_time = int(time.time())
         window_start = current_time - self.window_seconds
 
         # Limpa entradas antigas
         if key in self._cache:
-            self._cache[key] = [
-                ts for ts in self._cache[key] if ts > window_start
-            ]
+            self._cache[key] = [ts for ts in self._cache[key] if ts > window_start]
         else:
             self._cache[key] = []
 
@@ -139,7 +134,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         "/openapi.json",
     }
 
-    def __init__(self, app, rate_limiter: Optional[RateLimiter] = None):
+    def __init__(self, app, rate_limiter: RateLimiter | None = None):
         super().__init__(app)
         self.rate_limiter = rate_limiter or RateLimiter(
             requests_limit=settings.rate_limit_requests,
@@ -161,9 +156,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         is_allowed, remaining, reset_time = await self.rate_limiter.check(request)
 
         if not is_allowed:
-            logger.warning(
-                f"Rate limit exceeded for {request.client.host}: {request.url.path}"
-            )
+            logger.warning(f"Rate limit exceeded for {request.client.host}: {request.url.path}")
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail={

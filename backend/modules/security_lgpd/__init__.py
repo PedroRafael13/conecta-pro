@@ -23,13 +23,14 @@ Estrutura modular:
 
 from fastapi import APIRouter
 
+from modules.security_lgpd.controllers.audit_controller import router as audit_router
+from modules.security_lgpd.controllers.consent_controller import router as consent_router
+
 # Importa routers dos controllers
 from modules.security_lgpd.controllers.encryption_controller import router as encryption_router
-from modules.security_lgpd.controllers.masking_controller import router as masking_router
-from modules.security_lgpd.controllers.consent_controller import router as consent_router
 from modules.security_lgpd.controllers.erasure_controller import router as erasure_router
+from modules.security_lgpd.controllers.masking_controller import router as masking_router
 from modules.security_lgpd.controllers.pia_controller import router as pia_router
-from modules.security_lgpd.controllers.audit_controller import router as audit_router
 from modules.security_lgpd.controllers.status_controller import router as status_router
 
 # Cria router principal que agrega todos os sub-routers

@@ -99,9 +99,8 @@ export function APIKeyFormModal({
     // Clear error on change
     if (errors[field]) {
       setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
+        const { [field]: _, ...rest } = prev;
+        return rest;
       });
     }
   };

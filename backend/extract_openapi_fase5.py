@@ -2,6 +2,7 @@
 Script para extrair OpenAPI spec completo do módulo FASE5.
 Extrai endpoints de CCT Compliance, Email Intelligence e Quality Framework.
 """
+
 import json
 
 from fastapi import FastAPI
@@ -31,11 +32,7 @@ try:
     from modules.fase5.controllers.fase5_controller import router as fase5_router
 
     # Registrar router
-    app.include_router(
-        fase5_router,
-        prefix="/api/v1",
-        tags=["Fase 5 - Grand Finale"]
-    )
+    app.include_router(fase5_router, prefix="/api/v1", tags=["Fase 5 - Grand Finale"])
 
     # Gerar OpenAPI spec
     openapi_spec = app.openapi()
@@ -50,7 +47,7 @@ try:
     with open(output_path_frontend, "w", encoding="utf-8") as f:
         json.dump(openapi_spec, f, indent=2, ensure_ascii=False)
 
-    print(f"✅ OpenAPI spec gerado com sucesso!")
+    print("✅ OpenAPI spec gerado com sucesso!")
     print(f"   📁 Backend:  {output_path_backend}")
     print(f"   📁 Frontend: {output_path_frontend}")
 
@@ -58,23 +55,23 @@ try:
     total_paths = len(openapi_spec.get("paths", {}))
     total_schemas = len(openapi_spec.get("components", {}).get("schemas", {}))
 
-    print(f"\n📊 Estatísticas FASE5:")
+    print("\n📊 Estatísticas FASE5:")
     print(f"   - Total de endpoints: {total_paths}")
     print(f"   - Total de schemas: {total_schemas}")
 
     # Contar por tag
     tags_count = {}
-    for path, methods in openapi_spec.get("paths", {}).items():
+    for _path, methods in openapi_spec.get("paths", {}).items():
         for method, details in methods.items():
-            if method in ['get', 'post', 'put', 'delete', 'patch']:
-                for tag in details.get('tags', []):
+            if method in ["get", "post", "put", "delete", "patch"]:
+                for tag in details.get("tags", []):
                     tags_count[tag] = tags_count.get(tag, 0) + 1
 
-    print(f"\n📝 Endpoints por controller:")
+    print("\n📝 Endpoints por controller:")
     for tag, count in sorted(tags_count.items()):
         print(f"   {tag}: {count} endpoints")
 
-    print(f"\n📋 Lista de endpoints:")
+    print("\n📋 Lista de endpoints:")
     for path in sorted(openapi_spec.get("paths", {}).keys()):
         methods = list(openapi_spec["paths"][path].keys())
         print(f"   {path} [{', '.join(m.upper() for m in methods if m != 'parameters')}]")
@@ -82,5 +79,6 @@ try:
 except Exception as e:
     print(f"❌ Erro ao extrair OpenAPI spec: {e}")
     import traceback
+
     traceback.print_exc()
     exit(1)

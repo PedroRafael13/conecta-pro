@@ -1,24 +1,23 @@
 """Controller para Candidate."""
 
 import logging
-from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
+from modules.recruitment.models.candidate import CandidateSource, CandidateStatus
 from modules.recruitment.schemas.candidate import (
-    CandidateCreate,
-    CandidateUpdate,
-    CandidateResponse,
-    CandidateListResponse,
-    CandidateFilter,
-    CandidateStats,
     CandidateBlock,
+    CandidateCreate,
+    CandidateFilter,
     CandidateImport,
+    CandidateListResponse,
+    CandidateResponse,
+    CandidateStats,
+    CandidateUpdate,
 )
-from modules.recruitment.models.candidate import CandidateStatus, CandidateSource
 from modules.recruitment.services.candidate_service import CandidateService
 
 logger = logging.getLogger(__name__)
@@ -88,18 +87,13 @@ async def import_candidate(
 async def list_candidates(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    status_filter: Optional[CandidateStatus] = Query(None, alias="status"),
-    source: Optional[CandidateSource] = None,
-    city: Optional[str] = None,
-    state: Optional[str] = None,
-    available_immediately: Optional[bool] = None,
-    has_cnh: Optional[bool] = None,
-    is_pcd: Optional[bool] = None,
-    is_blocked: Optional[bool] = None,
-    salary_min: Optional[float] = None,
-    salary_max: Optional[float] = None,
-    condominium_id: Optional[str] = None,
-    search: Optional[str] = None,
+    status_filter: CandidateStatus | None = Query(None, alias="status"),
+    source: CandidateSource | None = None,
+    city: str | None = None,
+    state: str | None = None,
+    salary_min: float | None = None,
+    salary_max: float | None = None,
+    search: str | None = None,
     order_by: str = "created_at",
     order_desc: bool = True,
     db: AsyncSession = Depends(get_db),
@@ -113,19 +107,12 @@ async def list_candidates(  # pylint: disable=too-many-locals
         source=source,
         city=city,
         state=state,
-        available_immediately=available_immediately,
-        has_cnh=has_cnh,
-        is_pcd=is_pcd,
-        is_blocked=is_blocked,
         salary_min=salary_min,
         salary_max=salary_max,
-        condominium_id=condominium_id,
         search=search,
     )
 
-    candidates, total = await service.list_with_filters(
-        filters, skip, limit, order_by, order_desc
-    )
+    candidates, total = await service.list_with_filters(filters, skip, limit, order_by, order_desc)
 
     return CandidateListResponse(
         items=[CandidateResponse.model_validate(c) for c in candidates],
@@ -143,13 +130,12 @@ async def list_candidates(  # pylint: disable=too-many-locals
 async def list_active_candidates(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    condominium_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateListResponse:
     """Lista candidatos ativos e não bloqueados."""
     service = CandidateService(db)
-    candidates = await service.get_active(condominium_id, skip, limit)
+    candidates = await service.get_active(skip, limit)
 
     return CandidateListResponse(
         items=[CandidateResponse.model_validate(c) for c in candidates],
@@ -188,7 +174,7 @@ async def list_blocked_candidates(
     summary="Buscar por habilidades",
 )
 async def search_by_skills(
-    skills: List[str] = Query(..., min_length=1),
+    skills: list[str] = Query(..., min_length=1),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -234,13 +220,12 @@ async def list_recently_active(
     summary="Estatísticas de candidatos",
 )
 async def get_candidate_stats(
-    condominium_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateStats:
     """Retorna estatísticas dos candidatos."""
     service = CandidateService(db)
-    stats = await service.get_stats(condominium_id)
+    stats = await service.get_stats()
     return CandidateStats(**stats)
 
 
@@ -437,7 +422,7 @@ async def activate_candidate(
 )
 async def update_candidate_tags(
     candidate_id: str,
-    tags: List[str],
+    tags: list[str],
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
@@ -454,11 +439,7 @@ async def update_candidate_tags(
     return CandidateResponse.model_validate(candidate)
 
 
-@router.post(
-    "/{candidate_id}/note",
-    response_model=CandidateResponse,
-    summary="Adicionar nota",
-)
+@router.post("/{candidate_id}/note", response_model=CandidateResponse, summary="Adicionar nota", status_code=201)
 async def add_candidate_note(
     candidate_id: str,
     note: str,

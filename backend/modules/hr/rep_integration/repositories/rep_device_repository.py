@@ -1,20 +1,19 @@
 """Repository para REPDevice."""
 
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, or_, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.rep_integration.models import (
-    REPDevice,
     DeviceStatus,
+    REPDevice,
 )
 from modules.hr.rep_integration.schemas import (
     REPDeviceCreate,
-    REPDeviceUpdate,
     REPDeviceFilter,
+    REPDeviceUpdate,
 )
 
 
@@ -66,18 +65,14 @@ class REPDeviceRepository:
         await self.db.refresh(device)
         return device
 
-    async def get_by_id(self, device_id: UUID) -> Optional[REPDevice]:
+    async def get_by_id(self, device_id: UUID) -> REPDevice | None:
         """Busca dispositivo por ID."""
-        result = await self.db.execute(
-            select(REPDevice).where(REPDevice.id == device_id)
-        )
+        result = await self.db.execute(select(REPDevice).where(REPDevice.id == device_id))
         return result.scalar_one_or_none()
 
-    async def get_by_serial(self, serial_number: str) -> Optional[REPDevice]:
+    async def get_by_serial(self, serial_number: str) -> REPDevice | None:
         """Busca dispositivo por número de série."""
-        result = await self.db.execute(
-            select(REPDevice).where(REPDevice.serial_number == serial_number)
-        )
+        result = await self.db.execute(select(REPDevice).where(REPDevice.serial_number == serial_number))
         return result.scalar_one_or_none()
 
     async def update(
@@ -85,7 +80,7 @@ class REPDeviceRepository:
         device_id: UUID,
         data: REPDeviceUpdate,
         updated_by: UUID = None,
-    ) -> Optional[REPDevice]:
+    ) -> REPDevice | None:
         """Atualiza dispositivo."""
         device = await self.get_by_id(device_id)
         if not device:
@@ -119,7 +114,7 @@ class REPDeviceRepository:
         filters: REPDeviceFilter,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[REPDevice], int]:
+    ) -> tuple[list[REPDevice], int]:
         """Lista dispositivos com filtros e paginação."""
         query = select(REPDevice).where(REPDevice.is_active.is_(True))
 
@@ -164,7 +159,7 @@ class REPDeviceRepository:
     async def get_devices_for_sync(
         self,
         condominio_id: UUID = None,
-    ) -> List[REPDevice]:
+    ) -> list[REPDevice]:
         """Retorna dispositivos que precisam sincronizar."""
         query = select(REPDevice).where(
             REPDevice.is_active.is_(True),
@@ -181,9 +176,7 @@ class REPDeviceRepository:
         # Filtrar os que precisam sync
         now = datetime.utcnow()
         return [
-            d for d in devices
-            if d.last_sync is None or
-            (now - d.last_sync).total_seconds() >= d.sync_interval_seconds
+            d for d in devices if d.last_sync is None or (now - d.last_sync).total_seconds() >= d.sync_interval_seconds
         ]
 
     async def update_status(
@@ -206,11 +199,7 @@ class REPDeviceRepository:
             update_data["last_error"] = error_message
             update_data["last_error_at"] = datetime.utcnow()
 
-        await self.db.execute(
-            update(REPDevice)
-            .where(REPDevice.id == device_id)
-            .values(**update_data)
-        )
+        await self.db.execute(update(REPDevice).where(REPDevice.id == device_id).values(**update_data))
         await self.db.commit()
 
     async def increment_error_count(self, device_id: UUID) -> int:
@@ -239,11 +228,7 @@ class REPDeviceRepository:
         if events_count is not None:
             update_data["events_count"] = events_count
 
-        await self.db.execute(
-            update(REPDevice)
-            .where(REPDevice.id == device_id)
-            .values(**update_data)
-        )
+        await self.db.execute(update(REPDevice).where(REPDevice.id == device_id).values(**update_data))
         await self.db.commit()
 
     async def update_counters(
@@ -266,11 +251,7 @@ class REPDeviceRepository:
         if events_pending is not None:
             update_data["events_pending_sync"] = events_pending
 
-        await self.db.execute(
-            update(REPDevice)
-            .where(REPDevice.id == device_id)
-            .values(**update_data)
-        )
+        await self.db.execute(update(REPDevice).where(REPDevice.id == device_id).values(**update_data))
         await self.db.commit()
 
     async def get_statistics(
@@ -284,17 +265,12 @@ class REPDeviceRepository:
             base_query = base_query.where(REPDevice.condominio_id == condominio_id)
 
         # Total
-        total_result = await self.db.execute(
-            select(func.count()).select_from(base_query.subquery())
-        )
+        total_result = await self.db.execute(select(func.count()).select_from(base_query.subquery()))
         total = total_result.scalar() or 0
 
         # Por status
         status_result = await self.db.execute(
-            select(
-                REPDevice.status,
-                func.count(REPDevice.id)
-            )
+            select(REPDevice.status, func.count(REPDevice.id))
             .where(REPDevice.is_active.is_(True))
             .group_by(REPDevice.status)
         )
@@ -302,10 +278,7 @@ class REPDeviceRepository:
 
         # Por fabricante
         manufacturer_result = await self.db.execute(
-            select(
-                REPDevice.manufacturer,
-                func.count(REPDevice.id)
-            )
+            select(REPDevice.manufacturer, func.count(REPDevice.id))
             .where(REPDevice.is_active.is_(True))
             .group_by(REPDevice.manufacturer)
         )
@@ -319,8 +292,7 @@ class REPDeviceRepository:
                 func.sum(REPDevice.registered_faces),
                 func.sum(REPDevice.events_count),
                 func.sum(REPDevice.events_pending_sync),
-            )
-            .where(REPDevice.is_active.is_(True))
+            ).where(REPDevice.is_active.is_(True))
         )
         counters = counters_result.one()
 

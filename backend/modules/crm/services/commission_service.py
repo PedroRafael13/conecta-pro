@@ -6,7 +6,6 @@ Gerencia cálculo, aprovação e processamento de comissões.
 import json
 import uuid
 from datetime import date, datetime, timedelta
-from typing import Optional
 
 from core.logging import logger
 from modules.crm.models.commission import (
@@ -50,9 +49,9 @@ class CommissionService:
         self,
         rules: list[CommissionRule],
         sale_value: float,
-        product_category: Optional[str] = None,
-        service_type: Optional[str] = None,
-    ) -> Optional[CommissionRule]:
+        product_category: str | None = None,
+        service_type: str | None = None,
+    ) -> CommissionRule | None:
         """
         Encontra a regra de comissão aplicável.
 
@@ -115,7 +114,7 @@ class CommissionService:
         rule: CommissionRule,
         sale_value: float,
         sale_margin: float = 0.0,
-        custom_rate: Optional[float] = None,
+        custom_rate: float | None = None,
     ) -> dict:
         """
         Calcula o valor da comissão baseado na regra.
@@ -141,9 +140,7 @@ class CommissionService:
         elif commission_type == CommissionType.MARGIN.value:
             base_commission = sale_margin * (rate / 100)
         elif commission_type == CommissionType.PROGRESSIVE.value:
-            base_commission = self._calculate_progressive(
-                rule.progressive_scale, sale_value, rate
-            )
+            base_commission = self._calculate_progressive(rule.progressive_scale, sale_value, rate)
         elif commission_type == CommissionType.BONUS.value:
             # Bônus é fixo quando critérios são atingidos
             base_commission = rate
@@ -169,9 +166,7 @@ class CommissionService:
             "due_date": due_date,
         }
 
-    def _calculate_progressive(
-        self, scale_json: Optional[str], sale_value: float, default_rate: float
-    ) -> float:
+    def _calculate_progressive(self, scale_json: str | None, sale_value: float, default_rate: float) -> float:
         """Calcula comissão com escala progressiva."""
         if not scale_json:
             return sale_value * (default_rate / 100)
@@ -213,7 +208,7 @@ class CommissionService:
         rule: CommissionRule,
         seller_id: str,
         sale_margin: float = 0.0,
-        custom_rate: Optional[float] = None,
+        custom_rate: float | None = None,
     ) -> dict:
         """
         Cria dados de comissão a partir de proposta aceita.
@@ -284,8 +279,8 @@ class CommissionService:
     def calculate_stats(  # pylint: disable=too-many-locals
         self,
         commissions: list[Commission],
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
     ) -> CommissionStats:
         """
         Calcula estatísticas de comissões.
@@ -312,15 +307,9 @@ class CommissionService:
         cancelled_count = sum(1 for c in filtered if c.status == CommissionStatus.CANCELLED.value)
 
         # Valores por status
-        pending_value = sum(
-            c.final_commission for c in filtered if c.status == CommissionStatus.PENDING.value
-        )
-        approved_value = sum(
-            c.final_commission for c in filtered if c.status == CommissionStatus.APPROVED.value
-        )
-        paid_value = sum(
-            c.final_commission for c in filtered if c.status == CommissionStatus.PAID.value
-        )
+        pending_value = sum(c.final_commission for c in filtered if c.status == CommissionStatus.PENDING.value)
+        approved_value = sum(c.final_commission for c in filtered if c.status == CommissionStatus.APPROVED.value)
+        paid_value = sum(c.final_commission for c in filtered if c.status == CommissionStatus.PAID.value)
         total_value = sum(c.final_commission for c in filtered)
 
         # Comissões atrasadas
@@ -378,8 +367,8 @@ class CommissionService:
         self,
         commissions: list[Commission],
         seller_id: str,
-        seller_name: Optional[str] = None,
-        target: Optional[float] = None,
+        seller_name: str | None = None,
+        target: float | None = None,
     ) -> SellerCommissionStats:
         """
         Calcula estatísticas de comissões por vendedor.
@@ -397,12 +386,8 @@ class CommissionService:
 
         total_sales = sum(c.sale_value for c in seller_commissions)
         total_commissions = sum(c.final_commission for c in seller_commissions)
-        pending_commissions = sum(
-            c.final_commission for c in seller_commissions if c.is_pending
-        )
-        paid_commissions = sum(
-            c.final_commission for c in seller_commissions if c.is_paid
-        )
+        pending_commissions = sum(c.final_commission for c in seller_commissions if c.is_pending)
+        paid_commissions = sum(c.final_commission for c in seller_commissions if c.is_paid)
 
         # Taxa média de comissão
         if total_sales > 0:
@@ -413,8 +398,7 @@ class CommissionService:
         # Vendas do mês atual
         today = date.today()
         current_month = [
-            c for c in seller_commissions
-            if c.created_at.year == today.year and c.created_at.month == today.month
+            c for c in seller_commissions if c.created_at.year == today.year and c.created_at.month == today.month
         ]
         current_month_sales = sum(c.sale_value for c in current_month)
         current_month_commissions = sum(c.final_commission for c in current_month)
@@ -459,10 +443,7 @@ class CommissionService:
             Ranking de vendedores
         """
         # Filtrar por período
-        period_commissions = [
-            c for c in commissions
-            if period_start <= c.created_at.date() <= period_end
-        ]
+        period_commissions = [c for c in commissions if period_start <= c.created_at.date() <= period_end]
 
         # Calcular stats por vendedor
         seller_stats = []
@@ -506,7 +487,8 @@ class CommissionService:
         """
         # Filtrar comissões do período
         period_commissions = [
-            c for c in commissions
+            c
+            for c in commissions
             if c.seller_id == summary.seller_id
             and c.created_at.year == summary.year
             and c.created_at.month == summary.month
@@ -532,7 +514,7 @@ class CommissionService:
         self,
         commission: Commission,
         event: str,
-        event_date: Optional[date] = None,  # pylint: disable=unused-argument
+        event_date: date | None = None,  # pylint: disable=unused-argument
     ) -> bool:
         """
         Verifica se o gatilho da comissão deve ser processado.
@@ -561,7 +543,7 @@ class CommissionService:
     def process_trigger(
         self,
         commission: Commission,
-        event_date: Optional[date] = None,
+        event_date: date | None = None,
     ) -> Commission:
         """
         Processa gatilho e atualiza comissão para aprovação.
@@ -577,15 +559,14 @@ class CommissionService:
         commission.status = CommissionStatus.APPROVED.value
 
         # Recalcular data de vencimento se necessário
-        if hasattr(commission, 'rule') and commission.rule:
+        if hasattr(commission, "rule") and commission.rule:
             delay = commission.rule.trigger_delay_days
             commission.due_date = commission.trigger_date + timedelta(days=delay)
 
         commission.updated_at = datetime.utcnow()
 
         logger.info(
-            f"Comissão {commission.reference_number} aprovada para pagamento. "
-            f"Vencimento: {commission.due_date}"
+            f"Comissão {commission.reference_number} aprovada para pagamento. Vencimento: {commission.due_date}"
         )
 
         return commission

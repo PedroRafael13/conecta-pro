@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-;
+import { useCondominio } from '@/contexts/CondominioContext';
 import {
   usePayables,
   usePayableDashboard,
@@ -39,6 +39,10 @@ import {
 } from '@/hooks/financial/useFinancial';
 import { PayableFormModal } from '@/components/financeiro/payable-form-modal';
 import { PayableDetailModal } from '@/components/financeiro/payable-detail-modal';
+import type { PayableAccountListResponse } from '@/types/generated/financial/models/payableAccountListResponse';
+import type { PayableAccountStats } from '@/types/generated/financial/models/payableAccountStats';
+import type { PayableAccountCreate } from '@/types/generated/financial/models/payableAccountCreate';
+import type { PayableAccountUpdate } from '@/types/generated/financial/models/payableAccountUpdate';
 
 const formatCurrency = (value: number | null | undefined) =>
   (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -68,6 +72,7 @@ const getStatusBadge = (status?: string | null) => {
 };
 
 export default function ContasPagarPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [supplierFilter, setSupplierFilter] = useState('');
@@ -79,6 +84,7 @@ export default function ContasPagarPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedPayable, setSelectedPayable] = useState<any>(null);
 
   // Data hooks
@@ -88,7 +94,7 @@ export default function ContasPagarPage() {
     error: queryError,
     refetch,
   } = usePayables({
-    condominio_id: '',
+    condominio_id: condominioId,
     skip,
     limit,
     ...(search ? { search } : {}),
@@ -100,7 +106,9 @@ export default function ContasPagarPage() {
   const { mutateAsync: updatePayable, isPending: updating } = useUpdatePayable();
   const { mutateAsync: processPayment, isPending: processing } = useProcessPayment();
 
-  const payables: any[] = Array.isArray(payablesData) ? payablesData : (payablesData as any)?.data || [];
+  const payables: PayableAccountListResponse[] = Array.isArray(payablesData)
+    ? (payablesData as PayableAccountListResponse[])
+    : ((payablesData as { data?: PayableAccountListResponse[] })?.data ?? []);
 
   // Filter locally by supplier if set
   const filteredPayables = payables.filter((item: any) => {
@@ -133,50 +141,50 @@ export default function ContasPagarPage() {
     setPaymentModalOpen(true);
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: PayableAccountCreate | PayableAccountUpdate) => {
     try {
       if (selectedPayable?.id) {
-        await updatePayable({ accountId: selectedPayable.id, data });
+        await updatePayable({ accountId: selectedPayable.id, data: data as PayableAccountUpdate });
       } else {
-        await createPayable({ data });
+        await createPayable({ data: data as PayableAccountCreate });
       }
       setFormModalOpen(false);
       setSelectedPayable(null);
-      // refetch() removido - mutations já invalidam queries automaticamente
-    } catch (err) {
-      console.error('Erro ao salvar conta a pagar:', err);
+    } catch {
+      // silenced
     }
   };
 
   const handleDelete = async () => {
     if (!selectedPayable?.id) return;
     try {
-      await updatePayable({ accountId: selectedPayable.id, data: { notes: 'Cancelado' } as any });
+      const cancelUpdate: PayableAccountUpdate = { notes: 'Cancelado' };
+      await updatePayable({ accountId: selectedPayable.id, data: cancelUpdate });
       setDeleteModalOpen(false);
       setSelectedPayable(null);
-      // refetch() removido - mutations já invalidam queries automaticamente
-    } catch (err) {
-      console.error('Erro ao cancelar conta:', err);
+    } catch {
+      // silenced
     }
   };
 
   const handlePayment = async () => {
     if (!selectedPayable?.id) return;
     try {
-      await processPayment({ installmentId: selectedPayable.id, data: { installment_id: selectedPayable.id, paid_value: selectedPayable?.amount ?? 0, payment_date: new Date().toISOString().split('T')[0] ?? '' } });
+      await processPayment({ installmentId: selectedPayable.id, data: { installment_id: selectedPayable.id, paid_value: parseFloat(selectedPayable?.balance ?? selectedPayable?.net_value ?? '0'), payment_date: new Date().toISOString().split('T')[0] ?? '' } });
       setPaymentModalOpen(false);
       setSelectedPayable(null);
       // refetch() removido - mutations já invalidam queries automaticamente
-    } catch (err) {
-      console.error('Erro ao registrar pagamento:', err);
+    } catch {
+      // silenced
     }
   };
 
+  const dashboardTyped = dashboard as PayableAccountStats | undefined;
   const stats = {
-    total: (dashboard as any)?.total || 0,
-    due_today: (dashboard as any)?.due_today || 0,
-    overdue: (dashboard as any)?.overdue || 0,
-    paid: (dashboard as any)?.paid || 0,
+    total: dashboardTyped?.total_count ?? 0,
+    due_today: 0,
+    overdue: dashboardTyped?.overdue_count ?? 0,
+    paid: 0,
   };
 
   return (

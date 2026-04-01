@@ -10,12 +10,12 @@ Este modulo implementa o sistema de chat inteligente com:
 - REST API Endpoints
 """
 
+from modules.ai.conversation.controllers.chat_controller import router as chat_router
+from modules.ai.conversation.services.context_manager import ContextManager
 from modules.ai.conversation.services.conversation_engine import ConversationEngine
 from modules.ai.conversation.services.intent_classifier import IntentClassifier
-from modules.ai.conversation.services.context_manager import ContextManager
 from modules.ai.conversation.services.llm_provider import LLMProvider
 from modules.ai.conversation.services.response_generator import ResponseGenerator
-from modules.ai.conversation.controllers.chat_controller import router as chat_router
 
 __all__ = [
     "ConversationEngine",

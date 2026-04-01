@@ -5,7 +5,6 @@ Verifica conformidade de contratos.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -15,8 +14,8 @@ from modules.ai.contract_analysis.models.contract_analysis import (
     ContractType,
 )
 from modules.ai.contract_analysis.models.extracted_clause import (
-    ExtractedClause,
     ClauseType,
+    ExtractedClause,
 )
 from modules.ai.contract_analysis.repositories.contract_repository import (
     ContractAnalysisRepository,
@@ -142,18 +141,18 @@ class ComplianceChecker:
         missing_clauses = []
 
         # 1. Verificar clausulas obrigatorias por tipo
-        type_requirements = self.REQUIRED_CLAUSES_BY_TYPE.get(
-            analysis.contract_type, {}
-        )
+        type_requirements = self.REQUIRED_CLAUSES_BY_TYPE.get(analysis.contract_type, {})
         found_types = {c.clause_type for c in clauses}
 
         for clause_type, info in type_requirements.items():
             max_score += info["weight"]
-            required_clauses.append({
-                "type": clause_type.value,
-                "description": info["description"],
-                "required": True,
-            })
+            required_clauses.append(
+                {
+                    "type": clause_type.value,
+                    "description": info["description"],
+                    "required": True,
+                }
+            )
 
             if clause_type in found_types:
                 total_score += info["weight"]
@@ -163,12 +162,14 @@ class ComplianceChecker:
                 missing_clauses.append(clause_type.value)
                 required_clauses[-1]["status"] = "missing"
                 required_clauses[-1]["compliant"] = False
-                issues.append({
-                    "severity": "high" if info["weight"] >= 15 else "medium",
-                    "type": "missing_clause",
-                    "description": f"Clausula obrigatoria ausente: {info['description']}",
-                    "clause_type": clause_type.value,
-                })
+                issues.append(
+                    {
+                        "severity": "high" if info["weight"] >= 15 else "medium",
+                        "type": "missing_clause",
+                        "description": f"Clausula obrigatoria ausente: {info['description']}",
+                        "clause_type": clause_type.value,
+                    }
+                )
 
         # 2. Verificar requisitos gerais
         general_check = self._check_general_requirements(analysis)
@@ -177,12 +178,14 @@ class ComplianceChecker:
             if general_check.get(req["id"], False):
                 total_score += req["weight"]
             else:
-                issues.append({
-                    "severity": "medium",
-                    "type": "missing_requirement",
-                    "description": f"Requisito ausente: {req['description']}",
-                    "requirement_id": req["id"],
-                })
+                issues.append(
+                    {
+                        "severity": "medium",
+                        "type": "missing_requirement",
+                        "description": f"Requisito ausente: {req['description']}",
+                        "requirement_id": req["id"],
+                    }
+                )
 
         # 3. Verificar LGPD (se aplicavel)
         if check_lgpd and self._needs_lgpd_check(clauses):
@@ -193,12 +196,14 @@ class ComplianceChecker:
                 if lgpd_check.get(req["id"], False):
                     total_score += req["weight"]
                 else:
-                    issues.append({
-                        "severity": "high",
-                        "type": "lgpd_compliance",
-                        "description": f"LGPD: {req['description']}",
-                        "requirement_id": req["id"],
-                    })
+                    issues.append(
+                        {
+                            "severity": "high",
+                            "type": "lgpd_compliance",
+                            "description": f"LGPD: {req['description']}",
+                            "requirement_id": req["id"],
+                        }
+                    )
 
         # 4. Calcular score final
         compliance_score = (total_score / max_score * 100) if max_score > 0 else 0
@@ -223,15 +228,9 @@ class ComplianceChecker:
     def _check_general_requirements(self, analysis: ContractAnalysis) -> dict:
         """Verifica requisitos gerais."""
         return {
-            "parties_identified": bool(
-                analysis.contractor_name and analysis.contracted_name
-            ),
-            "dates_defined": bool(
-                analysis.start_date and analysis.end_date
-            ),
-            "value_defined": bool(
-                analysis.total_value or analysis.monthly_value
-            ),
+            "parties_identified": bool(analysis.contractor_name and analysis.contracted_name),
+            "dates_defined": bool(analysis.start_date and analysis.end_date),
+            "value_defined": bool(analysis.total_value or analysis.monthly_value),
             "jurisdiction_defined": True,  # Assumir presente se tiver clausula de foro
         }
 
@@ -249,9 +248,7 @@ class ComplianceChecker:
 
     def _check_lgpd_compliance(self, clauses: list[ExtractedClause]) -> dict:
         """Verifica conformidade LGPD."""
-        has_data_protection = any(
-            c.clause_type == ClauseType.DATA_PROTECTION for c in clauses
-        )
+        has_data_protection = any(c.clause_type == ClauseType.DATA_PROTECTION for c in clauses)
 
         # Verificar finalidade
         has_purpose = False
@@ -276,11 +273,7 @@ class ComplianceChecker:
         else:
             return "non_compliant"
 
-    def _generate_recommendations(
-        self,
-        issues: list[dict],
-        missing_clauses: list[str]
-    ) -> list[str]:
+    def _generate_recommendations(self, issues: list[dict], missing_clauses: list[str]) -> list[str]:
         """Gera recomendacoes de conformidade."""
         recommendations = []
 
@@ -289,18 +282,12 @@ class ComplianceChecker:
 
         for issue in issues:
             if issue["type"] == "lgpd_compliance":
-                recommendations.append(
-                    "Incluir clausulas de protecao de dados (LGPD)"
-                )
+                recommendations.append("Incluir clausulas de protecao de dados (LGPD)")
             elif issue["type"] == "missing_requirement":
                 if "partes" in issue["description"].lower():
-                    recommendations.append(
-                        "Identificar claramente as partes com nome e documento"
-                    )
+                    recommendations.append("Identificar claramente as partes com nome e documento")
                 elif "datas" in issue["description"].lower():
-                    recommendations.append(
-                        "Definir datas de inicio e termino da vigencia"
-                    )
+                    recommendations.append("Definir datas de inicio e termino da vigencia")
 
         return list(set(recommendations))[:10]
 
@@ -338,17 +325,18 @@ class ComplianceChecker:
             for clause in clauses:
                 if clause.clause_type.value == template_type:
                     found = True
-                    # TODO: Comparar conteudo com NLP similarity
                     break
 
             if found:
                 matches += 1
             else:
-                deviations.append({
-                    "type": template_type,
-                    "deviation": "missing",
-                    "description": f"Clausula de {template_type} ausente no contrato",
-                })
+                deviations.append(
+                    {
+                        "type": template_type,
+                        "deviation": "missing",
+                        "description": f"Clausula de {template_type} ausente no contrato",
+                    }
+                )
 
         match_score = (matches / len(template_clauses) * 100) if template_clauses else 0
 
@@ -361,10 +349,7 @@ class ComplianceChecker:
 
     def get_compliance_report(self, analysis_id: UUID) -> dict:
         """Gera relatorio de conformidade."""
-        analysis = self.repository.get_analysis(
-            analysis_id,
-            include_clauses=True
-        )
+        analysis = self.repository.get_analysis(analysis_id, include_clauses=True)
 
         if not analysis:
             return {"error": "Analise nao encontrada"}
@@ -373,10 +358,7 @@ class ComplianceChecker:
             "contract_id": str(analysis.contract_id),
             "contract_type": analysis.contract_type.value,
             "compliance_score": analysis.compliance_score,
-            "status": self._determine_status(
-                analysis.compliance_score,
-                analysis.compliance_issues or []
-            ),
+            "status": self._determine_status(analysis.compliance_score, analysis.compliance_issues or []),
             "issues": analysis.compliance_issues or [],
             "missing_clauses": analysis.missing_clauses or [],
         }

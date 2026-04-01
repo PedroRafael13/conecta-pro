@@ -2,8 +2,6 @@
 Controller (endpoints) para Proposal.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,7 +33,7 @@ router = APIRouter(prefix="/proposals", tags=["CRM - Proposals"])
 # ============== Proposal Endpoints ==============
 
 
-@router.post("/", response_model=ProposalDetailResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProposalDetailResponse, status_code=status.HTTP_201_CREATED)
 async def create_proposal(
     data: ProposalCreate,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -76,27 +74,24 @@ async def create_proposal_from_opportunity(
             detail="Opportunity nao encontrada ou inativa",
         )
 
-    logger.info(
-        f"Proposal criada de opportunity {data.opportunity_id} "
-        f"por {current_user.email}: {proposal.number}"
-    )
+    logger.info(f"Proposal criada de opportunity {data.opportunity_id} por {current_user.email}: {proposal.number}")
     return ProposalDetailResponse.model_validate(proposal)
 
 
-@router.get("/", response_model=ProposalListResponse)
+@router.get("", response_model=ProposalListResponse)
 async def list_proposals(  # pylint: disable=too-many-locals
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
-    status_filter: Optional[ProposalStatus] = Query(None, alias="status"),
-    proposal_type: Optional[ProposalType] = None,
-    opportunity_id: Optional[str] = None,
-    is_expired: Optional[bool] = None,
-    min_value: Optional[float] = Query(None, ge=0),
-    max_value: Optional[float] = Query(None, ge=0),
-    client_name: Optional[str] = None,
-    search: Optional[str] = None,
+    status_filter: ProposalStatus | None = Query(None, alias="status"),
+    proposal_type: ProposalType | None = None,
+    opportunity_id: str | None = None,
+    is_expired: bool | None = None,
+    min_value: float | None = Query(None, ge=0),
+    max_value: float | None = Query(None, ge=0),
+    client_name: str | None = None,
+    search: str | None = None,
 ) -> ProposalListResponse:
     """
     Lista propostas com filtros e paginacao.
@@ -133,7 +128,7 @@ async def list_proposals(  # pylint: disable=too-many-locals
 async def get_proposal_stats(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    created_by_id: Optional[str] = None,
+    created_by_id: str | None = None,
 ) -> ProposalStats:
     """
     Obtem estatisticas de propostas.
@@ -190,7 +185,7 @@ async def update_proposal(
     return ProposalDetailResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/submit", response_model=ProposalResponse)
+@router.post("/{proposal_id}/submit", response_model=ProposalResponse, status_code=201)
 async def submit_proposal_for_approval(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -214,7 +209,7 @@ async def submit_proposal_for_approval(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/approve", response_model=ProposalResponse)
+@router.post("/{proposal_id}/approve", response_model=ProposalResponse, status_code=201)
 async def process_proposal_approval(
     proposal_id: str,
     data: ProposalApprovalRequest,
@@ -235,13 +230,11 @@ async def process_proposal_approval(
             detail="Proposta nao encontrada ou nao esta pendente",
         )
 
-    logger.info(
-        f"Proposal {proposal.number} {data.action.value} por {current_user.email}"
-    )
+    logger.info(f"Proposal {proposal.number} {data.action.value} por {current_user.email}")
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/send", response_model=ProposalResponse)
+@router.post("/{proposal_id}/send", response_model=ProposalResponse, status_code=201)
 async def send_proposal(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -253,9 +246,7 @@ async def send_proposal(
     Muda status para SENT e registra data de envio.
     """
     repo = ProposalRepository(db)
-    proposal = await repo.update_status(
-        proposal_id, ProposalStatus.SENT, user_id=str(current_user.id)
-    )
+    proposal = await repo.update_status(proposal_id, ProposalStatus.SENT, user_id=str(current_user.id))
 
     if not proposal:
         raise HTTPException(
@@ -267,7 +258,7 @@ async def send_proposal(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/accept", response_model=ProposalResponse)
+@router.post("/{proposal_id}/accept", response_model=ProposalResponse, status_code=201)
 async def accept_proposal(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -289,12 +280,12 @@ async def accept_proposal(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/reject", response_model=ProposalResponse)
+@router.post("/{proposal_id}/reject", response_model=ProposalResponse, status_code=201)
 async def reject_proposal(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = None,
+    reason: str | None = None,
 ) -> ProposalResponse:
     """
     Marca proposta como rejeitada pelo cliente.
@@ -312,7 +303,7 @@ async def reject_proposal(
     return ProposalResponse.model_validate(proposal)
 
 
-@router.post("/{proposal_id}/new-version", response_model=ProposalDetailResponse)
+@router.post("/{proposal_id}/new-version", response_model=ProposalDetailResponse, status_code=201)
 async def create_new_version(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -332,10 +323,7 @@ async def create_new_version(
             detail="Proposta nao encontrada",
         )
 
-    logger.info(
-        f"Nova versao criada por {current_user.email}: "
-        f"{proposal.number} v{proposal.version}"
-    )
+    logger.info(f"Nova versao criada por {current_user.email}: {proposal.number} v{proposal.version}")
     return ProposalDetailResponse.model_validate(proposal)
 
 
@@ -363,7 +351,7 @@ async def delete_proposal(
 # ============== Item Endpoints ==============
 
 
-@router.post("/{proposal_id}/items", response_model=ProposalItemResponse)
+@router.post("/{proposal_id}/items", response_model=ProposalItemResponse, status_code=201)
 async def add_proposal_item(
     proposal_id: str,
     data: ProposalItemCreate,

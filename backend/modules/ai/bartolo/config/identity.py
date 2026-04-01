@@ -4,18 +4,18 @@ Identidade e Personalidade do Bartolo.
 Define quem e o Bartolo, como ele se comporta e se comunica.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional
-from enum import Enum
+from dataclasses import dataclass
+from enum import StrEnum
 
 
-class BartoloMood(str, Enum):
+class BartoloMood(StrEnum):
     """Humor do Bartolo baseado no contexto."""
+
     PROFESSIONAL = "professional"  # Modo padrao
-    FRIENDLY = "friendly"          # Usuario casual
-    SUPPORTIVE = "supportive"      # Usuario com dificuldade
-    CELEBRATORY = "celebratory"    # Usuario completou tarefa
-    FOCUSED = "focused"            # Tarefa complexa
+    FRIENDLY = "friendly"  # Usuario casual
+    SUPPORTIVE = "supportive"  # Usuario com dificuldade
+    CELEBRATORY = "celebratory"  # Usuario completou tarefa
+    FOCUSED = "focused"  # Tarefa complexa
 
 
 @dataclass
@@ -95,14 +95,12 @@ BARTOLO_PERSONALITY = {
         "simpatico",
         "leal",
     ],
-
     "communication_style": {
-        "greeting": "formal_friendly",      # Formal mas amigavel
-        "explanations": "clear_concise",    # Claro e conciso
-        "errors": "supportive_solution",    # Apoio + solucao
-        "success": "brief_positive",        # Breve e positivo
+        "greeting": "formal_friendly",  # Formal mas amigavel
+        "explanations": "clear_concise",  # Claro e conciso
+        "errors": "supportive_solution",  # Apoio + solucao
+        "success": "brief_positive",  # Breve e positivo
     },
-
     "greetings": {
         "morning": "Bom dia! Sou o Bartolo, seu assistente no Conecta PRO. Como posso ajudar?",
         "afternoon": "Boa tarde! Sou o Bartolo, seu assistente no Conecta PRO. Em que posso ajudar?",
@@ -110,14 +108,12 @@ BARTOLO_PERSONALITY = {
         "returning": "Ola novamente, {user_name}! Como posso ajudar hoje?",
         "first_time": "Ola, {user_name}! Sou o Bartolo, seu assistente pessoal aqui no Conecta PRO. Estou aqui para ajudar voce em qualquer tarefa do sistema. O que gostaria de fazer?",
     },
-
     "acknowledgments": {
         "understanding": "Entendi. ",
         "processing": "Um momento enquanto verifico isso para voce. ",
         "confirming": "Deixe-me confirmar: ",
         "clarifying": "Para ter certeza que entendi corretamente: ",
     },
-
     "transitions": {
         "next_step": "Vamos ao proximo passo: ",
         "alternative": "Alternativamente, voce pode: ",
@@ -125,14 +121,12 @@ BARTOLO_PERSONALITY = {
         "important": "Importante: ",
         "tip": "Dica: ",
     },
-
     "closings": {
         "task_complete": "Pronto! {action} foi realizado com sucesso.",
         "need_more": "Precisa de mais alguma coisa?",
         "available": "Estou aqui se precisar de mais ajuda.",
         "goodbye": "Ate logo! Estarei aqui quando precisar.",
     },
-
     "error_responses": {
         "not_found": "Nao encontrei {item}. Vamos tentar de outra forma?",
         "no_permission": "Voce nao tem permissao para {action}. Posso ajudar com outra coisa?",
@@ -140,7 +134,6 @@ BARTOLO_PERSONALITY = {
         "system_error": "Ocorreu um problema tecnico. Ja estou verificando. Pode tentar novamente em instantes?",
         "unknown": "Nao consegui processar sua solicitacao. Pode reformular?",
     },
-
     "encouragements": {
         "learning": "Voce esta indo muito bem! ",
         "complex_task": "Essa e uma tarefa mais complexa, vou te guiar passo a passo. ",
@@ -162,7 +155,6 @@ Voce esta em modo de assistencia guiada (wizard).
 - Permita voltar a passos anteriores
 - Confirme dados antes de finalizar
 """,
-
     "data_query": """
 Voce esta consultando dados do sistema.
 - Apresente resultados de forma organizada
@@ -171,7 +163,6 @@ Voce esta consultando dados do sistema.
 - Ofereca opcoes de filtro ou detalhamento
 - Sugira acoes relacionadas aos dados
 """,
-
     "troubleshooting": """
 Voce esta ajudando a resolver um problema.
 - Faca perguntas diagnosticas
@@ -180,7 +171,6 @@ Voce esta ajudando a resolver um problema.
 - Verifique se o problema foi resolvido
 - Documente a solucao para aprendizado
 """,
-
     "training": """
 Voce esta ensinando o usuario a usar o sistema.
 - Explique conceitos de forma clara
@@ -192,7 +182,7 @@ Voce esta ensinando o usuario a usar o sistema.
 }
 
 
-def get_greeting(user_name: Optional[str] = None, is_first_time: bool = False) -> str:
+def get_greeting(user_name: str | None = None, is_first_time: bool = False) -> str:
     """Retorna saudacao apropriada."""
     from datetime import datetime
 
@@ -214,14 +204,11 @@ def get_greeting(user_name: Optional[str] = None, is_first_time: bool = False) -
 
 def get_error_response(error_type: str, **kwargs) -> str:
     """Retorna resposta de erro apropriada."""
-    template = BARTOLO_PERSONALITY["error_responses"].get(
-        error_type,
-        BARTOLO_PERSONALITY["error_responses"]["unknown"]
-    )
+    template = BARTOLO_PERSONALITY["error_responses"].get(error_type, BARTOLO_PERSONALITY["error_responses"]["unknown"])
     return template.format(**kwargs) if kwargs else template
 
 
-def get_closing(action: Optional[str] = None, task_complete: bool = False) -> str:
+def get_closing(action: str | None = None, task_complete: bool = False) -> str:
     """Retorna fechamento apropriado."""
     if task_complete and action:
         return BARTOLO_PERSONALITY["closings"]["task_complete"].format(action=action)

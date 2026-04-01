@@ -3,7 +3,6 @@ Repository para relatorios operacionais.
 """
 
 from datetime import date
-from typing import Dict, List, Optional
 
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,8 +22,8 @@ class ReportsRepository:
         self,
         start_date: date,
         end_date: date,
-        post_id: Optional[str] = None,
-    ) -> List[Dict]:
+        post_id: str | None = None,
+    ) -> list[dict]:
         """Retorna cobertura por posto (alocacoes)."""
         posts_query = select(Post.id, Post.name).where(Post.is_active.is_(True))
         if post_id:
@@ -62,7 +61,7 @@ class ReportsRepository:
             for row in alloc_result.all()
         }
 
-        items: List[Dict] = []
+        items: list[dict] = []
         for post in posts:
             counts = alloc_map.get(post.id, {"total_allocations": 0, "active_allocations": 0})
             total_allocations = counts["total_allocations"]
@@ -84,8 +83,8 @@ class ReportsRepository:
         self,
         start_date: date,
         end_date: date,
-        employee_id: Optional[str] = None,
-    ) -> List[Dict]:
+        employee_id: str | None = None,
+    ) -> list[dict]:
         """Retorna horas trabalhadas por funcionario."""
         query = (
             select(
@@ -121,8 +120,8 @@ class ReportsRepository:
         self,
         start_date: date,
         end_date: date,
-        post_id: Optional[str] = None,
-    ) -> List[Dict]:
+        post_id: str | None = None,
+    ) -> list[dict]:
         """Retorna custos estimados por posto."""
         query = (
             select(
@@ -143,14 +142,12 @@ class ReportsRepository:
         raw_items = list(result.all())
 
         post_ids = [row.post_id for row in raw_items]
-        post_names: Dict[str, str] = {}
+        post_names: dict[str, str] = {}
         if post_ids:
-            posts_result = await self.db.execute(
-                select(Post.id, Post.name).where(Post.id.in_(post_ids))
-            )
+            posts_result = await self.db.execute(select(Post.id, Post.name).where(Post.id.in_(post_ids)))
             post_names = {str(row.id): row.name for row in posts_result.all()}
 
-        items: List[Dict] = []
+        items: list[dict] = []
         for row in raw_items:
             items.append(
                 {

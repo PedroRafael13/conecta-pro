@@ -1,20 +1,19 @@
 """Repository para MobileDevice."""
 
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
-    MobileDevice,
     DeviceStatus,
+    MobileDevice,
 )
 from modules.hr.mobile_time_clock.schemas import (
+    MobileDeviceFilter,
     MobileDeviceRegister,
     MobileDeviceUpdate,
-    MobileDeviceFilter,
 )
 
 
@@ -55,25 +54,21 @@ class MobileDeviceRepository:
         await self.db.refresh(device)
         return device
 
-    async def get_by_id(self, device_id: UUID) -> Optional[MobileDevice]:
+    async def get_by_id(self, device_id: UUID) -> MobileDevice | None:
         """Busca dispositivo por ID."""
-        result = await self.db.execute(
-            select(MobileDevice).where(MobileDevice.id == device_id)
-        )
+        result = await self.db.execute(select(MobileDevice).where(MobileDevice.id == device_id))
         return result.scalar_one_or_none()
 
-    async def get_by_uuid(self, device_uuid: str) -> Optional[MobileDevice]:
+    async def get_by_uuid(self, device_uuid: str) -> MobileDevice | None:
         """Busca dispositivo por UUID."""
-        result = await self.db.execute(
-            select(MobileDevice).where(MobileDevice.device_uuid == device_uuid)
-        )
+        result = await self.db.execute(select(MobileDevice).where(MobileDevice.device_uuid == device_uuid))
         return result.scalar_one_or_none()
 
     async def get_by_employee(
         self,
         employee_id: UUID,
         active_only: bool = True,
-    ) -> List[MobileDevice]:
+    ) -> list[MobileDevice]:
         """Busca dispositivos do funcionário."""
         query = select(MobileDevice).where(MobileDevice.employee_id == employee_id)
 
@@ -87,7 +82,7 @@ class MobileDeviceRepository:
         self,
         device_id: UUID,
         data: MobileDeviceUpdate,
-    ) -> Optional[MobileDevice]:
+    ) -> MobileDevice | None:
         """Atualiza dispositivo."""
         device = await self.get_by_id(device_id)
         if not device:
@@ -108,7 +103,7 @@ class MobileDeviceRepository:
         approved_by: UUID,
         is_trusted: bool = False,
         **kwargs,
-    ) -> Optional[MobileDevice]:
+    ) -> MobileDevice | None:
         """Aprova dispositivo."""
         device = await self.get_by_id(device_id)
         if not device:
@@ -133,7 +128,7 @@ class MobileDeviceRepository:
         device_id: UUID,
         blocked_by: UUID,
         reason: str,
-    ) -> Optional[MobileDevice]:
+    ) -> MobileDevice | None:
         """Bloqueia dispositivo."""
         device = await self.get_by_id(device_id)
         if not device:
@@ -149,7 +144,7 @@ class MobileDeviceRepository:
         await self.db.refresh(device)
         return device
 
-    async def unblock(self, device_id: UUID) -> Optional[MobileDevice]:
+    async def unblock(self, device_id: UUID) -> MobileDevice | None:
         """Desbloqueia dispositivo."""
         device = await self.get_by_id(device_id)
         if not device:
@@ -180,11 +175,7 @@ class MobileDeviceRepository:
             update_values["last_known_lng"] = longitude
             update_values["last_location_at"] = datetime.utcnow()
 
-        await self.db.execute(
-            update(MobileDevice)
-            .where(MobileDevice.id == device_id)
-            .values(**update_values)
-        )
+        await self.db.execute(update(MobileDevice).where(MobileDevice.id == device_id).values(**update_values))
         await self.db.commit()
 
     async def increment_checkin_count(self, device_id: UUID) -> None:
@@ -217,9 +208,7 @@ class MobileDeviceRepository:
     async def reset_failed_attempts(self, device_id: UUID) -> None:
         """Reseta tentativas falhas."""
         await self.db.execute(
-            update(MobileDevice)
-            .where(MobileDevice.id == device_id)
-            .values(failed_attempts=0, last_failed_at=None)
+            update(MobileDevice).where(MobileDevice.id == device_id).values(failed_attempts=0, last_failed_at=None)
         )
         await self.db.commit()
 
@@ -242,7 +231,7 @@ class MobileDeviceRepository:
         filters: MobileDeviceFilter,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[MobileDevice], int]:
+    ) -> tuple[list[MobileDevice], int]:
         """Lista dispositivos com filtros."""
         query = select(MobileDevice)
 
@@ -276,7 +265,7 @@ class MobileDeviceRepository:
     async def get_pending_approval(
         self,
         condominio_id: UUID,
-    ) -> List[MobileDevice]:
+    ) -> list[MobileDevice]:
         """Lista dispositivos aguardando aprovação."""
         result = await self.db.execute(
             select(MobileDevice)

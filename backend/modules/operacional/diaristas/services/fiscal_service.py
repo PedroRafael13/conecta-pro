@@ -8,28 +8,28 @@ Fornece funcionalidades para:
 - Relatórios fiscais
 """
 
-from datetime import date, datetime
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID, uuid4
 import logging
+from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
+from uuid import UUID, uuid4
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from modules.operacional.diaristas.models import Diarist, DiaristPayment
 from modules.operacional.diaristas.models.documento_fiscal import (
     DocumentoFiscal,
-    RetencaoFiscal,
     EventoESocial,
+    RetencaoFiscal,
+    StatusDocumentoFiscal,
+    StatusEventoESocial,
     TabelaINSS,
     TabelaIRRF,
     TipoDocumentoFiscal,
-    StatusDocumentoFiscal,
-    TipoRetencao,
     TipoEventoESocial,
-    StatusEventoESocial,
+    TipoRetencao,
 )
-from modules.operacional.diaristas.models import Diarist, DiaristPayment
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +81,8 @@ class FiscalService:
     def calcular_inss(
         self,
         valor_bruto: Decimal,
-        data_referencia: Optional[date] = None,
-    ) -> Dict[str, Decimal]:
+        data_referencia: date | None = None,
+    ) -> dict[str, Decimal]:
         """
         Calcula INSS para contribuinte individual (autônomo).
 
@@ -106,9 +106,7 @@ class FiscalService:
         aliquota = tabela.get("aliquota_autonomo", Decimal("11.00"))
 
         # Cálculo
-        valor_inss = (base_calculo * aliquota / 100).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        valor_inss = (base_calculo * aliquota / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         return {
             "base_calculo": base_calculo,
@@ -122,8 +120,8 @@ class FiscalService:
         valor_bruto: Decimal,
         inss_retido: Decimal = Decimal("0"),
         dependentes: int = 0,
-        data_referencia: Optional[date] = None,
-    ) -> Dict[str, Decimal]:
+        data_referencia: date | None = None,
+    ) -> dict[str, Decimal]:
         """
         Calcula IRRF sobre rendimentos de trabalho autônomo.
 
@@ -141,10 +139,7 @@ class FiscalService:
         tabela = self._get_tabela_irrf(data_referencia)
 
         # Dedução por dependente
-        deducao_dependente = tabela.get(
-            "deducao_dependente",
-            TABELA_IRRF_PADRAO_2026["deducao_dependente"]
-        )
+        deducao_dependente = tabela.get("deducao_dependente", TABELA_IRRF_PADRAO_2026["deducao_dependente"])
 
         # Base de cálculo
         base_calculo = valor_bruto - inss_retido - (dependentes * deducao_dependente)
@@ -166,9 +161,7 @@ class FiscalService:
 
         # Cálculo
         if aliquota > 0:
-            valor_irrf = ((base_calculo * aliquota / 100) - deducao).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            valor_irrf = ((base_calculo * aliquota / 100) - deducao).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             valor_irrf = max(valor_irrf, Decimal("0"))
         else:
             valor_irrf = Decimal("0")
@@ -185,9 +178,9 @@ class FiscalService:
     def calcular_iss(
         self,
         valor_bruto: Decimal,
-        aliquota: Optional[Decimal] = None,
-        municipio_codigo: Optional[str] = None,
-    ) -> Dict[str, Decimal]:
+        aliquota: Decimal | None = None,
+        municipio_codigo: str | None = None,
+    ) -> dict[str, Decimal]:
         """
         Calcula ISS sobre serviços prestados.
 
@@ -204,9 +197,7 @@ class FiscalService:
         # TODO: Implementar consulta de alíquota por município
         aliquota_iss = aliquota or ALIQUOTA_ISS_PADRAO
 
-        valor_iss = (valor_bruto * aliquota_iss / 100).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        valor_iss = (valor_bruto * aliquota_iss / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         return {
             "base_calculo": valor_bruto,
@@ -219,9 +210,9 @@ class FiscalService:
         self,
         valor_bruto: Decimal,
         dependentes: int = 0,
-        aliquota_iss: Optional[Decimal] = None,
-        data_referencia: Optional[date] = None,
-    ) -> Dict[str, Any]:
+        aliquota_iss: Decimal | None = None,
+        data_referencia: date | None = None,
+    ) -> dict[str, Any]:
         """
         Calcula todas as retenções fiscais de uma vez.
 
@@ -238,9 +229,7 @@ class FiscalService:
         inss = self.calcular_inss(valor_bruto, data_referencia)
 
         # IRRF (considera INSS)
-        irrf = self.calcular_irrf(
-            valor_bruto, inss["valor"], dependentes, data_referencia
-        )
+        irrf = self.calcular_irrf(valor_bruto, inss["valor"], dependentes, data_referencia)
 
         # ISS
         iss = self.calcular_iss(valor_bruto, aliquota_iss)
@@ -267,15 +256,15 @@ class FiscalService:
     def gerar_rpa(
         self,
         diarist_id: UUID,
-        payment_id: Optional[UUID] = None,
-        valor_bruto: Optional[Decimal] = None,
-        competencia: Optional[str] = None,
+        payment_id: UUID | None = None,
+        valor_bruto: Decimal | None = None,
+        competencia: str | None = None,
         descricao_servico: str = "Prestação de serviços de limpeza e conservação",
         codigo_servico: str = "7.10",  # Código LC 116/2003 para limpeza
         dependentes: int = 0,
-        aliquota_iss: Optional[Decimal] = None,
-        tomador_cnpj: Optional[str] = None,
-        tomador_razao_social: Optional[str] = None,
+        aliquota_iss: Decimal | None = None,
+        tomador_cnpj: str | None = None,
+        tomador_razao_social: str | None = None,
     ) -> DocumentoFiscal:
         """
         Gera RPA (Recibo de Pagamento Autônomo) para um diarista.
@@ -303,9 +292,7 @@ class FiscalService:
         # Se payment_id, buscar valor do pagamento
         payment = None
         if payment_id:
-            payment = self.db.query(DiaristPayment).filter(
-                DiaristPayment.id == payment_id
-            ).first()
+            payment = self.db.query(DiaristPayment).filter(DiaristPayment.id == payment_id).first()
             if payment and not valor_bruto:
                 valor_bruto = payment.gross_amount
 
@@ -335,30 +322,25 @@ class FiscalService:
             payment_id=payment_id,
             competencia=competencia,
             data_emissao=date.today(),
-
             # Valores
             valor_bruto=valor_bruto,
             valor_inss=retencoes["inss"]["valor"],
             valor_iss=retencoes["iss"]["valor"],
             valor_irrf=retencoes["irrf"]["valor"],
             valor_liquido=retencoes["valor_liquido"],
-
             # Prestador
             prestador_cpf=diarista.cpf,
             prestador_nome=diarista.full_name,
-            prestador_endereco=diarista.address if hasattr(diarista, 'address') else None,
-            prestador_municipio=diarista.city if hasattr(diarista, 'city') else None,
-            prestador_uf=diarista.state if hasattr(diarista, 'state') else None,
-            prestador_pis=diarista.pis if hasattr(diarista, 'pis') else None,
-
+            prestador_endereco=diarista.address if hasattr(diarista, "address") else None,
+            prestador_municipio=diarista.city if hasattr(diarista, "city") else None,
+            prestador_uf=diarista.state if hasattr(diarista, "state") else None,
+            prestador_pis=diarista.pis if hasattr(diarista, "pis") else None,
             # Tomador
             tomador_cnpj=tomador_cnpj or "00.000.000/0001-00",  # TODO: Buscar da empresa
             tomador_razao_social=tomador_razao_social or "Conecta PRO Ltda",
-
             # Serviço
             descricao_servico=descricao_servico,
             codigo_servico=codigo_servico,
-
             # Bases de cálculo
             base_calculo_inss=retencoes["inss"]["base_calculo"],
             aliquota_inss=retencoes["inss"]["aliquota"],
@@ -417,9 +399,11 @@ class FiscalService:
         """Gera número sequencial para documento."""
         ano = date.today().year
         # Buscar último número do ano
-        ultimo = self.db.query(func.max(DocumentoFiscal.numero)).filter(
-            DocumentoFiscal.numero.like(f"{prefixo}-{ano}-%")
-        ).scalar()
+        ultimo = (
+            self.db.query(func.max(DocumentoFiscal.numero))
+            .filter(DocumentoFiscal.numero.like(f"{prefixo}-{ano}-%"))
+            .scalar()
+        )
 
         if ultimo:
             seq = int(ultimo.split("-")[-1]) + 1
@@ -459,8 +443,10 @@ class FiscalService:
         dados_evento = {
             "cpfTrab": diarista.cpf,
             "nmTrab": diarista.full_name,
-            "dtNascto": diarista.birth_date.isoformat() if hasattr(diarista, 'birth_date') and diarista.birth_date else None,
-            "sexo": "M" if diarista.gender == "male" else "F" if hasattr(diarista, 'gender') else "M",
+            "dtNascto": diarista.birth_date.isoformat()
+            if hasattr(diarista, "birth_date") and diarista.birth_date
+            else None,
+            "sexo": "M" if diarista.gender == "male" else "F" if hasattr(diarista, "gender") else "M",
             "cadIni": {
                 "codCateg": "701",  # Contribuinte individual - Autônomo
                 "dtInicio": data_inicio.isoformat(),
@@ -512,32 +498,38 @@ class FiscalService:
             raise ValueError(f"Diarista {diarist_id} não encontrado")
 
         # Calcular INSS
-        inss = self.calcular_inss(valor_remuneracao)
+        self.calcular_inss(valor_remuneracao)
 
         dados_evento = {
             "cpfTrab": diarista.cpf,
             "perApur": competencia,
-            "dmDev": [{
-                "ideDmDev": str(uuid4())[:8],
-                "codCateg": "701",
-                "infoPerApur": {
-                    "ideEstabLot": [{
-                        "tpInsc": "1",  # CNPJ
-                        "nrInsc": "00000000000100",  # TODO: Buscar CNPJ da empresa
-                        "detVerbas": [{
-                            "codRubr": "1000",
-                            "ideTabRubr": "001",
-                            "qtdRubr": 1,
-                            "fatorRubr": 1,
-                            "vrUnit": float(valor_remuneracao),
-                            "vrRubr": float(valor_remuneracao),
-                        }],
-                        "infoAgNocivo": {
-                            "grauExp": "1",
-                        },
-                    }],
-                },
-            }],
+            "dmDev": [
+                {
+                    "ideDmDev": str(uuid4())[:8],
+                    "codCateg": "701",
+                    "infoPerApur": {
+                        "ideEstabLot": [
+                            {
+                                "tpInsc": "1",  # CNPJ
+                                "nrInsc": "00000000000100",  # TODO: Buscar CNPJ da empresa
+                                "detVerbas": [
+                                    {
+                                        "codRubr": "1000",
+                                        "ideTabRubr": "001",
+                                        "qtdRubr": 1,
+                                        "fatorRubr": 1,
+                                        "vrUnit": float(valor_remuneracao),
+                                        "vrRubr": float(valor_remuneracao),
+                                    }
+                                ],
+                                "infoAgNocivo": {
+                                    "grauExp": "1",
+                                },
+                            }
+                        ],
+                    },
+                }
+            ],
             "infoComplCont": {
                 "codCBO": "5142-05",  # Auxiliar de serviços de limpeza
             },
@@ -565,14 +557,14 @@ class FiscalService:
 
     def listar_documentos(
         self,
-        diarist_id: Optional[UUID] = None,
-        tipo: Optional[TipoDocumentoFiscal] = None,
-        competencia: Optional[str] = None,
-        status: Optional[StatusDocumentoFiscal] = None,
+        diarist_id: UUID | None = None,
+        tipo: TipoDocumentoFiscal | None = None,
+        competencia: str | None = None,
+        status: StatusDocumentoFiscal | None = None,
         limit: int = 50,
-    ) -> List[DocumentoFiscal]:
+    ) -> list[DocumentoFiscal]:
         """Lista documentos fiscais com filtros."""
-        query = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.is_active == True)
+        query = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.is_active)
 
         if diarist_id:
             query = query.filter(DocumentoFiscal.diarist_id == diarist_id)
@@ -589,8 +581,8 @@ class FiscalService:
         self,
         data_inicio: date,
         data_fim: date,
-        diarist_id: Optional[UUID] = None,
-    ) -> Dict[str, Any]:
+        diarist_id: UUID | None = None,
+    ) -> dict[str, Any]:
         """
         Gera relatório de retenções por período.
 
@@ -610,7 +602,7 @@ class FiscalService:
             func.sum(DocumentoFiscal.valor_liquido).label("total_liquido"),
             func.count(DocumentoFiscal.id).label("qtd_documentos"),
         ).filter(
-            DocumentoFiscal.is_active == True,
+            DocumentoFiscal.is_active,
             DocumentoFiscal.status == StatusDocumentoFiscal.EMITIDO,
             DocumentoFiscal.data_emissao >= data_inicio,
             DocumentoFiscal.data_emissao <= data_fim,
@@ -632,9 +624,7 @@ class FiscalService:
                 "iss": float(resultado.total_iss or 0),
                 "irrf": float(resultado.total_irrf or 0),
                 "total_retencoes": float(
-                    (resultado.total_inss or 0) +
-                    (resultado.total_iss or 0) +
-                    (resultado.total_irrf or 0)
+                    (resultado.total_inss or 0) + (resultado.total_iss or 0) + (resultado.total_irrf or 0)
                 ),
                 "liquido": float(resultado.total_liquido or 0),
             },
@@ -645,18 +635,19 @@ class FiscalService:
     # HELPERS
     # =========================================================================
 
-    def _get_tabela_inss(self, data_referencia: Optional[date] = None) -> Dict:
+    def _get_tabela_inss(self, data_referencia: date | None = None) -> dict:
         """Obtém tabela INSS vigente."""
         data = data_referencia or date.today()
 
-        tabela = self.db.query(TabelaINSS).filter(
-            TabelaINSS.is_active == True,
-            TabelaINSS.vigencia_inicio <= data,
-            or_(
-                TabelaINSS.vigencia_fim.is_(None),
-                TabelaINSS.vigencia_fim >= data
+        tabela = (
+            self.db.query(TabelaINSS)
+            .filter(
+                TabelaINSS.is_active,
+                TabelaINSS.vigencia_inicio <= data,
+                or_(TabelaINSS.vigencia_fim.is_(None), TabelaINSS.vigencia_fim >= data),
             )
-        ).first()
+            .first()
+        )
 
         if tabela:
             return {
@@ -667,18 +658,19 @@ class FiscalService:
 
         return TABELA_INSS_PADRAO_2026
 
-    def _get_tabela_irrf(self, data_referencia: Optional[date] = None) -> Dict:
+    def _get_tabela_irrf(self, data_referencia: date | None = None) -> dict:
         """Obtém tabela IRRF vigente."""
         data = data_referencia or date.today()
 
-        tabela = self.db.query(TabelaIRRF).filter(
-            TabelaIRRF.is_active == True,
-            TabelaIRRF.vigencia_inicio <= data,
-            or_(
-                TabelaIRRF.vigencia_fim.is_(None),
-                TabelaIRRF.vigencia_fim >= data
+        tabela = (
+            self.db.query(TabelaIRRF)
+            .filter(
+                TabelaIRRF.is_active,
+                TabelaIRRF.vigencia_inicio <= data,
+                or_(TabelaIRRF.vigencia_fim.is_(None), TabelaIRRF.vigencia_fim >= data),
             )
-        ).first()
+            .first()
+        )
 
         if tabela:
             return {

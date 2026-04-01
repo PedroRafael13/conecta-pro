@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,19 @@ interface ContractFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (editData?: any) => ({
+  numero_contrato: editData?.numero_contrato || '',
+  proposta_id: editData?.proposta_id || '',
+  orgao_contratante: editData?.orgao_contratante || '',
+  objeto: editData?.objeto || '',
+  valor_total: editData?.valor_total || 0,
+  data_assinatura: editData?.data_assinatura?.split('T')[0] || '',
+  data_inicio: editData?.data_inicio?.split('T')[0] || '',
+  data_fim: editData?.data_fim?.split('T')[0] || '',
+  observacoes: editData?.observacoes || '',
+});
+
 export function ContractFormModal({
   isOpen,
   onClose,
@@ -30,45 +43,19 @@ export function ContractFormModal({
   editData,
   isLoading,
 }: ContractFormModalProps) {
-  const [formData, setFormData] = useState({
-    numero_contrato: '',
-    proposta_id: '',
-    orgao_contratante: '',
-    objeto: '',
-    valor_total: 0,
-    data_assinatura: '',
-    data_inicio: '',
-    data_fim: '',
-    observacoes: '',
-  });
+  const formKey = useMemo(() => {
+    return editData?.id || editData?.codigo || 'new';
+  }, [editData]);
+
+  const [formData, setFormData] = useState(createInitialForm(editData));
 
   useEffect(() => {
-    if (editData) {
-      setFormData({
-        numero_contrato: editData.numero_contrato || '',
-        proposta_id: editData.proposta_id || '',
-        orgao_contratante: editData.orgao_contratante || '',
-        objeto: editData.objeto || '',
-        valor_total: editData.valor_total || 0,
-        data_assinatura: editData.data_assinatura?.split('T')[0] || '',
-        data_inicio: editData.data_inicio?.split('T')[0] || '',
-        data_fim: editData.data_fim?.split('T')[0] || '',
-        observacoes: editData.observacoes || '',
-      });
-    } else {
-      setFormData({
-        numero_contrato: '',
-        proposta_id: '',
-        orgao_contratante: '',
-        objeto: '',
-        valor_total: 0,
-        data_assinatura: '',
-        data_inicio: '',
-        data_fim: '',
-        observacoes: '',
-      });
+    if (isOpen) {
+
+      setFormData(createInitialForm(editData));
     }
-  }, [editData, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

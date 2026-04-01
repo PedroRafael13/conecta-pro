@@ -4,20 +4,9 @@ modules/fase5/cct_compliance/__init__.py - CCT Compliance Module
 Compliance automatico com CCT SINDCOND 2026
 """
 
+from .enums import StatusValidacao, TipoBeneficio, TipoCargo, TipoJornada
+from .models import Beneficio, CargoSINDCOND, JornadaTrabalho, SalarioBase, ValidacaoCCT
 from .service import CCTComplianceService
-from .models import (
-    CargoSINDCOND,
-    SalarioBase,
-    Beneficio,
-    JornadaTrabalho,
-    ValidacaoCCT
-)
-from .enums import (
-    TipoCargo,
-    TipoJornada,
-    TipoBeneficio,
-    StatusValidacao
-)
 
 __all__ = [
     "CCTComplianceService",
@@ -29,5 +18,5 @@ __all__ = [
     "TipoCargo",
     "TipoJornada",
     "TipoBeneficio",
-    "StatusValidacao"
+    "StatusValidacao",
 ]

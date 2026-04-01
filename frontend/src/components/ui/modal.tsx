@@ -70,6 +70,8 @@ export function Modal({
 
       {/* Modal */}
       <div
+        role="dialog"
+        aria-modal="true"
         className={cn(
           'relative w-full mx-4 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-2xl',
           'animate-in fade-in zoom-in-95 duration-200',

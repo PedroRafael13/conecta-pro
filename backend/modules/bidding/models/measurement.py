@@ -5,41 +5,38 @@ Gestao de medicoes de contratos publicos.
 """
 
 import uuid
-from datetime import datetime, date
+from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Numeric, Integer, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models import Base
 
 
-class MeasurementStatus(str, Enum):
+class MeasurementStatus(StrEnum):
     """Status da medicao."""
-    DRAFT = "draft"                          # Rascunho
-    SUBMITTED = "submitted"                  # Enviada para aprovacao
-    UNDER_REVIEW = "under_review"            # Em analise pelo fiscal
-    APPROVED = "approved"                    # Aprovada
-    REJECTED = "rejected"                    # Rejeitada
+
+    DRAFT = "draft"  # Rascunho
+    SUBMITTED = "submitted"  # Enviada para aprovacao
+    UNDER_REVIEW = "under_review"  # Em analise pelo fiscal
+    APPROVED = "approved"  # Aprovada
+    REJECTED = "rejected"  # Rejeitada
     PARTIALLY_APPROVED = "partially_approved"  # Aprovada parcialmente
-    PAID = "paid"                            # Paga
-    CANCELED = "canceled"                    # Cancelada
+    PAID = "paid"  # Paga
+    CANCELED = "canceled"  # Cancelada
 
 
-class MeasurementType(str, Enum):
+class MeasurementType(StrEnum):
     """Tipo de medicao."""
-    MENSAL = "mensal"                # Medicao mensal
-    EVENTUAL = "eventual"            # Medicao eventual
-    FINAL = "final"                  # Medicao final
-    REAJUSTE = "reajuste"            # Medicao de reajuste
-    ADICIONAL = "adicional"          # Servicos adicionais
+
+    MENSAL = "mensal"  # Medicao mensal
+    EVENTUAL = "eventual"  # Medicao eventual
+    FINAL = "final"  # Medicao final
+    REAJUSTE = "reajuste"  # Medicao de reajuste
+    ADICIONAL = "adicional"  # Servicos adicionais
 
 
 class Measurement(Base):
@@ -49,6 +46,7 @@ class Measurement(Base):
     Representa uma medicao de servicos/obras executados
     em um contrato publico, com aprovacao e pagamento.
     """
+
     __tablename__ = "bidding_measurements"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -103,9 +101,9 @@ class Measurement(Base):
     nota_fiscal_url = Column(String(500), nullable=True)
 
     # Arquivos
-    relatorio_url = Column(String(500), nullable=True)       # Relatorio de medicao
-    planilha_url = Column(String(500), nullable=True)        # Planilha de medicao
-    fotos_url = Column(JSONB, default=list)                  # Registro fotografico
+    relatorio_url = Column(String(500), nullable=True)  # Relatorio de medicao
+    planilha_url = Column(String(500), nullable=True)  # Planilha de medicao
+    fotos_url = Column(JSONB, default=list)  # Registro fotografico
 
     # Observacoes
     descricao_servicos = Column(Text, nullable=True)
@@ -122,9 +120,9 @@ class Measurement(Base):
 
     # Indices compostos
     __table_args__ = (
-        Index('idx_measurement_contrato_numero', 'contrato_id', 'numero_medicao'),
-        Index('idx_measurement_competencia', 'competencia'),
-        Index('idx_measurement_status', 'status'),
+        Index("idx_measurement_contrato_numero", "contrato_id", "numero_medicao"),
+        Index("idx_measurement_competencia", "competencia"),
+        Index("idx_measurement_status", "status"),
     )
 
     def __repr__(self) -> str:
@@ -134,21 +132,17 @@ class Measurement(Base):
     def valor_total_retencoes(self) -> Decimal:
         """Calcula o total de retencoes."""
         return (
-            (self.retencao_iss or Decimal("0")) +
-            (self.retencao_inss or Decimal("0")) +
-            (self.retencao_irrf or Decimal("0")) +
-            (self.retencao_pis_cofins_csll or Decimal("0")) +
-            (self.outras_retencoes or Decimal("0"))
+            (self.retencao_iss or Decimal("0"))
+            + (self.retencao_inss or Decimal("0"))
+            + (self.retencao_irrf or Decimal("0"))
+            + (self.retencao_pis_cofins_csll or Decimal("0"))
+            + (self.outras_retencoes or Decimal("0"))
         )
 
     @property
     def valor_a_receber(self) -> Decimal:
         """Valor liquido a receber apos retencoes e glosas."""
-        return (
-            self.valor_bruto -
-            self.valor_total_retencoes -
-            (self.valor_glosas or Decimal("0"))
-        )
+        return self.valor_bruto - self.valor_total_retencoes - (self.valor_glosas or Decimal("0"))
 
     @property
     def esta_aprovada(self) -> bool:
@@ -156,7 +150,7 @@ class Measurement(Base):
         return self.status in [
             MeasurementStatus.APPROVED.value,
             MeasurementStatus.PARTIALLY_APPROVED.value,
-            MeasurementStatus.PAID.value
+            MeasurementStatus.PAID.value,
         ]
 
     def calcular_retencoes(
@@ -164,7 +158,7 @@ class Measurement(Base):
         aliquota_iss: Decimal = Decimal("5.0"),
         aliquota_inss: Decimal = Decimal("11.0"),
         aliquota_irrf: Decimal = Decimal("1.5"),
-        aliquota_pcc: Decimal = Decimal("4.65")
+        aliquota_pcc: Decimal = Decimal("4.65"),
     ) -> None:
         """Calcula as retencoes sobre o valor bruto."""
         self.retencao_iss = self.valor_bruto * (aliquota_iss / 100)
@@ -175,43 +169,25 @@ class Measurement(Base):
         self.valor_retencoes = self.valor_total_retencoes
         self.valor_liquido = self.valor_a_receber
 
-    def adicionar_glosa(
-        self,
-        descricao: str,
-        valor: Decimal,
-        motivo: str = None
-    ) -> None:
+    def adicionar_glosa(self, descricao: str, valor: Decimal, motivo: str = None) -> None:
         """Adiciona uma glosa a medicao."""
-        glosa = {
-            "descricao": descricao,
-            "valor": str(valor),
-            "motivo": motivo,
-            "data": datetime.utcnow().isoformat()
-        }
+        glosa = {"descricao": descricao, "valor": str(valor), "motivo": motivo, "data": datetime.utcnow().isoformat()}
 
         if not self.glosas_detalhamento:
             self.glosas_detalhamento = []
 
         self.glosas_detalhamento.append(glosa)
-        self.valor_glosas = sum(
-            Decimal(g["valor"]) for g in self.glosas_detalhamento
-        )
+        self.valor_glosas = sum(Decimal(g["valor"]) for g in self.glosas_detalhamento)
         self.valor_liquido = self.valor_a_receber
 
-    def adicionar_item_medido(
-        self,
-        descricao: str,
-        unidade: str,
-        quantidade: Decimal,
-        valor_unitario: Decimal
-    ) -> None:
+    def adicionar_item_medido(self, descricao: str, unidade: str, quantidade: Decimal, valor_unitario: Decimal) -> None:
         """Adiciona um item a medicao."""
         item = {
             "descricao": descricao,
             "unidade": unidade,
             "quantidade": str(quantidade),
             "valor_unitario": str(valor_unitario),
-            "valor_total": str(quantidade * valor_unitario)
+            "valor_total": str(quantidade * valor_unitario),
         }
 
         if not self.itens_medidos:

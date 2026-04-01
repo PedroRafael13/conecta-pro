@@ -4,12 +4,13 @@
  */
 
 // Re-export schemas gerados
-export { FolderResponse } from './schemas/folderResponse';
-export { DocumentResponse } from './schemas/documentResponse';
+export type { FolderResponse } from './schemas/folderResponse';
+export type { DocumentResponse } from './schemas/documentResponse';
 export { FolderType } from './schemas/folderType';
 export { DocumentType } from './schemas/documentType';
 export { DocumentCategory } from './schemas/documentCategory';
 export { DocumentStatus } from './schemas/documentStatus';
+export { DocumentConfidentiality } from './schemas/documentConfidentiality';
 
 // Aliases usados pelas páginas
 export type { FolderResponse as Folder } from './schemas/folderResponse';
@@ -79,13 +80,32 @@ export function getFileIcon(extension: string): string {
   return iconMap[ext] || 'file';
 }
 
-// Re-export tipos de DocumentKit do serviço existente
-export type {
-  DocumentKit,
-  DocumentKitItem,
-} from '@/lib/services/document-kits';
+// Types de DocumentKit (anteriormente re-exportados do service legado)
+export type DocumentKit = {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  items?: DocumentKitItem[];
+  created_at?: string;
+  updated_at?: string;
+};
 
-export {
-  KIT_TYPES,
-  KIT_TYPE_LABELS,
-} from '@/lib/services/document-kits';
+export type DocumentKitItem = {
+  id: string;
+  kit_id: string;
+  document_type: string;
+  name: string;
+  required: boolean;
+  status?: string;
+};
+
+export const KIT_TYPES = ['mensal', 'admissional', 'demissional', 'periodico', 'especial'] as const;
+
+export const KIT_TYPE_LABELS: Record<string, string> = {
+  mensal: 'Mensal',
+  admissional: 'Admissional',
+  demissional: 'Demissional',
+  periodico: 'Periodico',
+  especial: 'Especial',
+};

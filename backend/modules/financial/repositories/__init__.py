@@ -25,6 +25,9 @@ from modules.financial.repositories.cashflow_repository import (
     CashFlowForecastRepository,
 )
 
+# Fiscal
+from modules.financial.repositories.fiscal_repository import FiscalRepository
+
 # Estoque
 from modules.financial.repositories.inventory_repository import (
     StockInventoryItemRepository,
@@ -61,9 +64,6 @@ from modules.financial.repositories.receivable_repository import (
     ReceivablePaymentRepository,
 )
 from modules.financial.repositories.supplier_repository import SupplierRepository
-
-# Fiscal
-from modules.financial.repositories.fiscal_repository import FiscalRepository
 
 __all__ = [
     # Contas a Pagar

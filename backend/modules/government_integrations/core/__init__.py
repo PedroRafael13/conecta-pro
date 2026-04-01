@@ -15,271 +15,291 @@ Sprint 33: Suporte a Certificados Digitais A1
 
 # Certificados Digitais
 from .certificate_manager import (
-    CertificateType,
-    CertificateStatus,
-    CertificateInfo as CertInfo,
-    CertificateManager,
-    CertificateStore,
+    CertificateInfo as CertInfo,  # noqa: F401
 )
-
-# Assinatura XML
-from .xml_signer import (
-    SignatureType,
-    DigestMethod,
-    SignatureMethod,
-    CanonicalizationMethod,
-    TransformMethod,
-    SignatureConfig,
-    XMLSigner,
-    ESocialXMLSigner,
-    NFEXMLSigner,
-    CTEXMLSigner,
-    MDFEXMLSigner,
-)
-
-# eSocial
-from .esocial_transmitter import (
-    EventType,
-    TransmissionStatus,
-    Environment,
-    ESocialError,
-    CertificateInfo,
-    ESocialEvent,
-    XMLBuilder,
-    ESocialTransmitter,
-)
-
-# SEFAZ (NF-e/NFC-e)
-from .sefaz_manager import (
-    DocumentType,
-    DocumentStatus,
-    OperationType,
-    PaymentType,
-    ContingencyType,
-    SEFAZError,
-    UFConfig,
-    Endereco,
-    Emitente,
-    Destinatario,
-    Produto,
-    Pagamento,
-    NotaFiscal,
-    NFEXMLBuilder,
-    SEFAZManager,
-)
-
-# FGTS/INSS
-from .fgts_inss_manager import (
-    # Manager principal
-    FGTSINSSManager,
-    get_fgts_inss_manager,
-    init_fgts_inss_manager,
-    # Calculadoras
-    CalculadoraFGTS,
-    CalculadoraINSS,
-    TabelaINSS,
-    # Data classes
-    Trabalhador,
-    Remuneracao,
-    CalculoFGTS,
-    CalculoINSS,
-    Guia,
-    Certidao,
-    ExtratoFGTS,
-    # Enums
-    TipoRecolhimento,
-    CodigoRecolhimento,
-    ModalidadeSaque,
-    CategoriaContribuinte,
-    TipoGuia,
-    StatusGuia,
-    StatusCertidao,
-    TipoCertidao,
-    # Exceptions
-    FGTSINSSError,
-    CalculoError,
-    GuiaError,
-    ConsultaError,
-    TransmissaoError,
-    # Models
-    GuiaRecolhimentoModel,
-    RecolhimentoFGTSModel,
-    ContribuicaoINSSModel,
-    CertidaoModel,
-    # Geradores
-    GeradorGRF,
-    GeradorGRRF,
-    GeradorGPS,
-    # Utilitarios
-    validar_pis_pasep,
-    formatar_pis_pasep,
-    calcular_aliquota_efetiva_inss,
-)
-
-# NFS-e Manaus
-from .nfse_manaus import (
-    NFSeManausManager,
-    NFSeManaus,
-    Tomador,
-    Servico,
-    NFSeStatus,
-    TipoTributacao,
-    NaturezaOperacao,
-)
-
-# NFS-e Padrão Nacional (Preparação para migração 2026)
-from .nfse_nacional import (
-    NFSeNacionalManager,
-    DPSNacional,
-    PrestadorNacional,
-    TomadorNacional,
-    ServicoNacional,
-    AmbienteNacional,
-    RegimeEspecial,
-    MAPEAMENTO_SERVICOS_VIGILANCIA,
-)
-
-# EFD-Reinf
-from .efd_reinf import (
-    EFDReinfManager,
-    InfoContribuinte,
-    RetencaoServico,
-    PagamentoBeneficiarioPF,
-    PagamentoBeneficiarioPJ,
-    TipoAmbiente as TipoAmbienteReinf,
-    TipoInscricao,
-    ClassificacaoTributaria,
-)
-
-# DCTFWeb
-from .dctfweb import (
-    DCTFWebManager,
-    DCTFWebDeclaracao,
-    DebitoContribuicao,
-    CreditoVinculavel,
-    DARF,
-    TipoDeclaracao,
-    SituacaoDeclaracao,
-    TipoCredito,
-)
-
-# FGTS Digital
-from .fgts_digital import (
-    FGTSDigitalManager,
-    TrabalhadorFGTS,
-    DebitoFGTS,
-    GRFGTS,
-    GuiaRescisoria,
-    RecolhimentoRescisorio,
-    TipoRecolhimento as TipoRecolhimentoFGTS,
-    ModalidadeSaque as ModalidadeSaqueFGTS,
-    SituacaoGuia,
-)
-
-# Simples Nacional
-from .simples_nacional import (
-    SimplesNacionalManager,
-    PGDASD,
-    DAS,
-    DEFIS,
-    ReceitaCompetencia,
-    FaixaAliquota,
-    AnexoSimples,
-    SituacaoOpcao,
-    TipoReceita,
-)
-
-# SPED Fiscal
-from .sped_fiscal import (
-    SPEDFiscalManager,
-    Participante as ParticipanteFiscal,
-    Produto as ProdutoFiscal,
-    DocumentoFiscal,
-    ApuracaoICMS,
-    Inventario,
-    FinalidadeArquivo,
-    PerfilArquivo,
-)
-
-# SPED Contábil
-from .sped_contabil import (
-    SPEDContabilManager,
-    ContaContabil,
-    LancamentoContabil,
-    SaldoPeriodico,
-    DemonstrativoBalancoPatrimonial,
-    DemonstrativoDRE,
-    TipoECD,
-    NaturezaConta,
-    TipoConta,
+from .certificate_manager import (
+    CertificateManager,  # noqa: F401
+    CertificateStatus,  # noqa: F401
+    CertificateStore,  # noqa: F401
+    CertificateType,  # noqa: F401
 )
 
 # CT-e
 from .cte import (
-    CTeManager,
-    CTe,
-    Participante as ParticipanteCTe,
-    NFReferenciada,
     Carga,
     ComponenteValor,
+    CTe,
+    CTeManager,
     ModalTransporte,
+    NFReferenciada,
+    SituacaoCTe,
     TipoServico,
     TomadorServico,
-    SituacaoCTe,
+)
+from .cte import (
+    Participante as ParticipanteCTe,
 )
 
-# MDF-e
-from .mdfe import (
-    MDFeManager,
-    MDFe,
-    Condutor,
-    Veiculo,
-    Reboque,
-    DocumentoVinculado,
-    Municipio,
-    Percurso,
-    ModalTransporteMDFe,
-    TipoEmitente,
-    TipoCarroceria,
-    TipoRodado,
-    SituacaoMDFe,
+# DCTFWeb
+from .dctfweb import (
+    DARF,
+    CreditoVinculavel,
+    DCTFWebDeclaracao,
+    DCTFWebManager,
+    DebitoContribuicao,
+    SituacaoDeclaracao,
+    TipoCredito,
+    TipoDeclaracao,
+)
+from .ecac import (
+    Certidao as CertidaoEcac,
+)
+from .ecac import (
+    DebitoFiscal as DebitoFiscalEcac,
+)
+
+# e-CAC
+from .ecac import (
+    DeclaracaoConsultada,
+    EcacManager,
+    PendenciaFiscal,
+    ResultadoSituacaoFiscal,
+    SituacaoFiscal,
+    TipoDeclaracaoConsulta,
+    TipoPendencia,
+)
+from .ecac import (
+    TipoCertidao as TipoCertidaoEcac,
+)
+
+# EFD-Reinf
+from .efd_reinf import (
+    ClassificacaoTributaria,
+    EFDReinfManager,
+    InfoContribuinte,
+    PagamentoBeneficiarioPF,
+    PagamentoBeneficiarioPJ,
+    RetencaoServico,
+    TipoInscricao,
+)
+from .efd_reinf import (
+    TipoAmbiente as TipoAmbienteReinf,
+)
+
+# eSocial
+from .esocial_transmitter import (
+    CertificateInfo,
+    Environment,
+    ESocialError,
+    ESocialEvent,
+    ESocialTransmitter,
+    EventType,
+    TransmissionStatus,
+    XMLBuilder,
+)
+
+# FGTS Digital
+from .fgts_digital import (
+    GRFGTS,
+    DebitoFGTS,
+    FGTSDigitalManager,
+    GuiaRescisoria,
+    RecolhimentoRescisorio,
+    SituacaoGuia,
+    TrabalhadorFGTS,
+)
+from .fgts_digital import (
+    ModalidadeSaque as ModalidadeSaqueFGTS,
+)
+from .fgts_digital import (
+    TipoRecolhimento as TipoRecolhimentoFGTS,
+)
+
+# FGTS/INSS
+from .fgts_inss_manager import (
+    # Calculadoras
+    CalculadoraFGTS,
+    CalculadoraINSS,
+    CalculoError,
+    CalculoFGTS,
+    CalculoINSS,
+    CategoriaContribuinte,
+    Certidao,
+    CertidaoModel,
+    CodigoRecolhimento,
+    ConsultaError,
+    ContribuicaoINSSModel,
+    ExtratoFGTS,
+    # Exceptions
+    FGTSINSSError,
+    # Manager principal
+    FGTSINSSManager,
+    GeradorGPS,
+    # Geradores
+    GeradorGRF,
+    GeradorGRRF,
+    Guia,
+    GuiaError,
+    # Models
+    GuiaRecolhimentoModel,
+    ModalidadeSaque,
+    RecolhimentoFGTSModel,
+    Remuneracao,
+    StatusCertidao,
+    StatusGuia,
+    TabelaINSS,
+    TipoCertidao,
+    TipoGuia,
+    # Enums
+    TipoRecolhimento,
+    # Data classes
+    Trabalhador,
+    TransmissaoError,
+    calcular_aliquota_efetiva_inss,
+    formatar_pis_pasep,
+    get_fgts_inss_manager,
+    init_fgts_inss_manager,
+    # Utilitarios
+    validar_pis_pasep,
 )
 
 # Gov.br
 from .govbr import (
     GovBrManager,
-    UsuarioGovBr,
-    TokenGovBr,
     NivelAutenticacao,
     TipoDocumento,
+    TokenGovBr,
+    UsuarioGovBr,
 )
 
-# e-CAC
-from .ecac import (
-    EcacManager,
-    ResultadoSituacaoFiscal,
-    PendenciaFiscal,
-    DebitoFiscal as DebitoFiscalEcac,
-    Certidao as CertidaoEcac,
-    DeclaracaoConsultada,
-    TipoCertidao as TipoCertidaoEcac,
-    SituacaoFiscal,
-    TipoPendencia,
-    TipoDeclaracaoConsulta,
+# MDF-e
+from .mdfe import (
+    Condutor,
+    DocumentoVinculado,
+    MDFe,
+    MDFeManager,
+    ModalTransporteMDFe,
+    Municipio,
+    Percurso,
+    Reboque,
+    SituacaoMDFe,
+    TipoCarroceria,
+    TipoEmitente,
+    TipoRodado,
+    Veiculo,
+)
+
+# NFS-e Manaus
+from .nfse_manaus import (
+    NaturezaOperacao,
+    NFSeManaus,
+    NFSeManausManager,
+    NFSeStatus,
+    Servico,
+    TipoTributacao,
+    Tomador,
+)
+
+# NFS-e Padrão Nacional (Preparação para migração 2026)
+from .nfse_nacional import (
+    MAPEAMENTO_SERVICOS_VIGILANCIA,
+    AmbienteNacional,
+    DPSNacional,
+    NFSeNacionalManager,
+    PrestadorNacional,
+    RegimeEspecial,
+    ServicoNacional,
+    TomadorNacional,
 )
 
 # SEFAZ-AM (Amazonas)
 from .sefaz_am import (
+    ENDPOINTS_SEFAZ_AM,
+    AmbienteSEFAZ,
+    InformacaoCadastral,
+    ResultadoAutorizacao,
+    ResultadoConsulta,
+    ResultadoEvento,
     SefazAMClient,
     SefazAMService,
-    AmbienteSEFAZ,
-    TipoEvento,
     StatusServico,
-    ResultadoConsulta,
-    ResultadoAutorizacao,
-    ResultadoEvento,
-    InformacaoCadastral,
-    ENDPOINTS_SEFAZ_AM,
+    TipoEvento,
+)
+
+# SEFAZ (NF-e/NFC-e)
+from .sefaz_manager import (
+    ContingencyType,
+    Destinatario,
+    DocumentStatus,
+    DocumentType,
+    Emitente,
+    Endereco,
+    NFEXMLBuilder,
+    NotaFiscal,
+    OperationType,
+    Pagamento,
+    PaymentType,
+    Produto,
+    SEFAZError,
+    SEFAZManager,
+    UFConfig,
+)
+
+# Simples Nacional
+from .simples_nacional import (
+    DAS,
+    DEFIS,
+    PGDASD,
+    AnexoSimples,
+    FaixaAliquota,
+    ReceitaCompetencia,
+    SimplesNacionalManager,
+    SituacaoOpcao,
+    TipoReceita,
+)
+
+# SPED Contábil
+from .sped_contabil import (
+    ContaContabil,
+    DemonstrativoBalancoPatrimonial,
+    DemonstrativoDRE,
+    LancamentoContabil,
+    NaturezaConta,
+    SaldoPeriodico,
+    SPEDContabilManager,
+    TipoConta,
+    TipoECD,
+)
+
+# SPED Fiscal
+from .sped_fiscal import (
+    ApuracaoICMS,
+    DocumentoFiscal,
+    FinalidadeArquivo,
+    Inventario,
+    PerfilArquivo,
+    SPEDFiscalManager,
+)
+from .sped_fiscal import (
+    Participante as ParticipanteFiscal,
+)
+from .sped_fiscal import (
+    Produto as ProdutoFiscal,
+)
+
+# Assinatura XML
+from .xml_signer import (
+    CanonicalizationMethod,  # noqa: F401
+    CTEXMLSigner,  # noqa: F401
+    DigestMethod,  # noqa: F401
+    ESocialXMLSigner,  # noqa: F401
+    MDFEXMLSigner,  # noqa: F401
+    NFEXMLSigner,  # noqa: F401
+    SignatureConfig,  # noqa: F401
+    SignatureMethod,  # noqa: F401
+    SignatureType,  # noqa: F401
+    TransformMethod,  # noqa: F401
+    XMLSigner,  # noqa: F401
 )
 
 __all__ = [
@@ -352,9 +372,7 @@ __all__ = [
     "validar_pis_pasep",
     "formatar_pis_pasep",
     "calcular_aliquota_efetiva_inss",
-
     # ===== NOVAS INTEGRAÇÕES (Sprint 33) =====
-
     # NFS-e Manaus
     "NFSeManausManager",
     "NFSeManaus",
@@ -363,7 +381,6 @@ __all__ = [
     "NFSeStatus",
     "TipoTributacao",
     "NaturezaOperacao",
-
     # NFS-e Padrão Nacional (Preparação 2026)
     "NFSeNacionalManager",
     "DPSNacional",
@@ -373,7 +390,6 @@ __all__ = [
     "AmbienteNacional",
     "RegimeEspecial",
     "MAPEAMENTO_SERVICOS_VIGILANCIA",
-
     # EFD-Reinf
     "EFDReinfManager",
     "InfoContribuinte",
@@ -383,7 +399,6 @@ __all__ = [
     "TipoAmbienteReinf",
     "TipoInscricao",
     "ClassificacaoTributaria",
-
     # DCTFWeb
     "DCTFWebManager",
     "DCTFWebDeclaracao",
@@ -393,7 +408,6 @@ __all__ = [
     "TipoDeclaracao",
     "SituacaoDeclaracao",
     "TipoCredito",
-
     # FGTS Digital
     "FGTSDigitalManager",
     "TrabalhadorFGTS",
@@ -404,7 +418,6 @@ __all__ = [
     "TipoRecolhimentoFGTS",
     "ModalidadeSaqueFGTS",
     "SituacaoGuia",
-
     # Simples Nacional
     "SimplesNacionalManager",
     "PGDASD",
@@ -415,7 +428,6 @@ __all__ = [
     "AnexoSimples",
     "SituacaoOpcao",
     "TipoReceita",
-
     # SPED Fiscal
     "SPEDFiscalManager",
     "ParticipanteFiscal",
@@ -425,7 +437,6 @@ __all__ = [
     "Inventario",
     "FinalidadeArquivo",
     "PerfilArquivo",
-
     # SPED Contábil
     "SPEDContabilManager",
     "ContaContabil",
@@ -436,7 +447,6 @@ __all__ = [
     "TipoECD",
     "NaturezaConta",
     "TipoConta",
-
     # CT-e
     "CTeManager",
     "CTe",
@@ -448,7 +458,6 @@ __all__ = [
     "TipoServico",
     "TomadorServico",
     "SituacaoCTe",
-
     # MDF-e
     "MDFeManager",
     "MDFe",
@@ -463,14 +472,12 @@ __all__ = [
     "TipoCarroceria",
     "TipoRodado",
     "SituacaoMDFe",
-
     # Gov.br
     "GovBrManager",
     "UsuarioGovBr",
     "TokenGovBr",
     "NivelAutenticacao",
     "TipoDocumento",
-
     # e-CAC
     "EcacManager",
     "ResultadoSituacaoFiscal",
@@ -482,7 +489,6 @@ __all__ = [
     "SituacaoFiscal",
     "TipoPendencia",
     "TipoDeclaracaoConsulta",
-
     # SEFAZ-AM (Amazonas)
     "SefazAMClient",
     "SefazAMService",

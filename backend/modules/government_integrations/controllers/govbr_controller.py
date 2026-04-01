@@ -5,27 +5,21 @@ Endpoints para autenticacao OAuth2/OIDC com Gov.br.
 """
 
 import logging
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from core.auth.dependencies import CurrentActiveUser
 
 from ..schemas.common import StandardResponse
 from ..schemas.govbr import (
     GerarUrlAutorizacaoRequest,
-    TrocarCodigoRequest,
-    RenovarTokenRequest,
-    ObterDadosUsuarioRequest,
-    ValidarTokenRequest,
     GerarUrlLogoutRequest,
-    ObterEmpresasRequest,
     NivelAutenticacaoEnum,
-    AmbienteGovBrEnum,
-    UrlAutorizacaoResponse,
-    TokenGovBrResponse,
-    UsuarioGovBrResponse,
-    ValidacaoTokenResponse,
-    StatusGovBrResponse,
+    ObterDadosUsuarioRequest,
+    ObterEmpresasRequest,
+    RenovarTokenRequest,
+    TrocarCodigoRequest,
+    ValidarTokenRequest,
 )
 from ..services.govbr_service import GovBrService, get_govbr_service
 
@@ -43,38 +37,29 @@ def get_service() -> GovBrService:
     "/status",
     response_model=StandardResponse,
     summary="Status do Gov.br",
-    description="Retorna o status da configuracao e conexao do Gov.br"
+    description="Retorna o status da configuracao e conexao do Gov.br",
 )
-async def get_status(
-    service: GovBrService = Depends(get_service)
-) -> StandardResponse:
+async def get_status(current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)) -> StandardResponse:
     """Retorna status da configuracao Gov.br."""
     try:
         status_data = service.validar_status()
 
-        return StandardResponse(
-            success=True,
-            message="Status Gov.br obtido com sucesso",
-            data=status_data
-        )
+        return StandardResponse(success=True, message="Status Gov.br obtido com sucesso", data=status_data)
 
     except Exception as e:
         logger.error(f"Erro ao obter status Gov.br: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter status: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao obter status: {str(e)}")
 
 
 @router.post(
     "/autorizar",
     response_model=StandardResponse,
     summary="Gerar URL de autorizacao",
-    description="Gera URL OAuth2 para redirecionar o usuario ao Gov.br"
+    description="Gera URL OAuth2 para redirecionar o usuario ao Gov.br",
+    status_code=201,
 )
 async def gerar_url_autorizacao(
-    request: GerarUrlAutorizacaoRequest,
-    service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarUrlAutorizacaoRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Gera URL de autorizacao OAuth2."""
     try:
@@ -83,42 +68,27 @@ async def gerar_url_autorizacao(
             nivel_minimo=request.nivel_minimo.value if request.nivel_minimo else None,
         )
 
-        return StandardResponse(
-            success=True,
-            message="URL de autorizacao gerada com sucesso",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="URL de autorizacao gerada com sucesso", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validacao ao gerar URL: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao gerar URL de autorizacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar URL: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar URL: {str(e)}")
 
 
 @router.get(
     "/autorizar",
     response_model=StandardResponse,
     summary="Gerar URL de autorizacao (GET)",
-    description="Gera URL OAuth2 via GET com parametros opcionais"
+    description="Gera URL OAuth2 via GET com parametros opcionais",
 )
 async def gerar_url_autorizacao_get(
-    scopes: Optional[str] = Query(
-        None,
-        description="Scopes separados por virgula (ex: openid,email,profile)"
-    ),
-    nivel_minimo: Optional[NivelAutenticacaoEnum] = Query(
-        None,
-        description="Nivel minimo de autenticacao"
-    ),
-    service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    scopes: str | None = Query(None, description="Scopes separados por virgula (ex: openid,email,profile)"),
+    nivel_minimo: NivelAutenticacaoEnum | None = Query(None, description="Nivel minimo de autenticacao"),
+    service: GovBrService = Depends(get_service),
 ) -> StandardResponse:
     """Gera URL de autorizacao OAuth2 via GET."""
     try:
@@ -129,35 +99,25 @@ async def gerar_url_autorizacao_get(
             nivel_minimo=nivel_minimo.value if nivel_minimo else None,
         )
 
-        return StandardResponse(
-            success=True,
-            message="URL de autorizacao gerada com sucesso",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="URL de autorizacao gerada com sucesso", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validacao ao gerar URL: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao gerar URL de autorizacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar URL: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar URL: {str(e)}")
 
 
 @router.post(
     "/callback",
     response_model=StandardResponse,
     summary="Processar callback OAuth2",
-    description="Troca codigo de autorizacao por tokens"
+    description="Troca codigo de autorizacao por tokens",
+    status_code=201,
 )
 async def processar_callback(
-    request: TrocarCodigoRequest,
-    service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: TrocarCodigoRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Processa callback OAuth2 e troca codigo por tokens."""
     try:
@@ -167,23 +127,15 @@ async def processar_callback(
             code_verifier=request.code_verifier,
         )
 
-        return StandardResponse(
-            success=True,
-            message="Autenticacao Gov.br realizada com sucesso",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="Autenticacao Gov.br realizada com sucesso", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validacao no callback: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao processar callback: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao processar callback: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao processar callback: {str(e)}"
         )
 
 
@@ -191,12 +143,13 @@ async def processar_callback(
     "/callback",
     response_model=StandardResponse,
     summary="Processar callback OAuth2 (GET)",
-    description="Processa callback via GET (redirect do Gov.br)"
+    description="Processa callback via GET (redirect do Gov.br)",
 )
 async def processar_callback_get(
+    current_user: CurrentActiveUser,
     code: str = Query(..., description="Codigo de autorizacao"),
     state: str = Query(..., description="State para validacao CSRF"),
-    service: GovBrService = Depends(get_service)
+    service: GovBrService = Depends(get_service),
 ) -> StandardResponse:
     """Processa callback OAuth2 via GET."""
     try:
@@ -205,23 +158,15 @@ async def processar_callback_get(
             state=state,
         )
 
-        return StandardResponse(
-            success=True,
-            message="Autenticacao Gov.br realizada com sucesso",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="Autenticacao Gov.br realizada com sucesso", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validacao no callback: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao processar callback: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao processar callback: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao processar callback: {str(e)}"
         )
 
 
@@ -229,11 +174,11 @@ async def processar_callback_get(
     "/renovar-token",
     response_model=StandardResponse,
     summary="Renovar token",
-    description="Renova access_token usando refresh_token"
+    description="Renova access_token usando refresh_token",
+    status_code=201,
 )
 async def renovar_token(
-    request: RenovarTokenRequest,
-    service: GovBrService = Depends(get_service)
+    request: RenovarTokenRequest, current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Renova token de acesso."""
     try:
@@ -241,23 +186,15 @@ async def renovar_token(
             refresh_token=request.refresh_token,
         )
 
-        return StandardResponse(
-            success=True,
-            message="Token renovado com sucesso",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="Token renovado com sucesso", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validacao ao renovar token: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao renovar token: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao renovar token: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao renovar token: {str(e)}"
         )
 
 
@@ -265,11 +202,11 @@ async def renovar_token(
     "/usuario",
     response_model=StandardResponse,
     summary="Obter dados do usuario",
-    description="Obtem dados do usuario autenticado via access_token"
+    description="Obtem dados do usuario autenticado via access_token",
+    status_code=201,
 )
 async def obter_dados_usuario(
-    request: ObterDadosUsuarioRequest,
-    service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: ObterDadosUsuarioRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Obtem dados do usuario autenticado."""
     try:
@@ -277,35 +214,25 @@ async def obter_dados_usuario(
             access_token=request.access_token,
         )
 
-        return StandardResponse(
-            success=True,
-            message="Dados do usuario obtidos com sucesso",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="Dados do usuario obtidos com sucesso", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validacao ao obter usuario: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao obter dados do usuario: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter dados: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao obter dados: {str(e)}")
 
 
 @router.post(
     "/validar-token",
     response_model=StandardResponse,
     summary="Validar token",
-    description="Valida se o access_token ainda e valido"
+    description="Valida se o access_token ainda e valido",
+    status_code=201,
 )
 async def validar_token(
-    request: ValidarTokenRequest,
-    service: GovBrService = Depends(get_service)
+    request: ValidarTokenRequest, current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Valida token de acesso."""
     try:
@@ -318,23 +245,15 @@ async def validar_token(
 
         mensagem = "Token valido" if resultado["valido"] else "Token invalido ou expirado"
 
-        return StandardResponse(
-            success=True,
-            message=mensagem,
-            data=resultado
-        )
+        return StandardResponse(success=True, message=mensagem, data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao validar token: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao validar token: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao validar token: {str(e)}"
         )
 
 
@@ -342,11 +261,11 @@ async def validar_token(
     "/logout",
     response_model=StandardResponse,
     summary="Gerar URL de logout",
-    description="Gera URL para logout federado do Gov.br"
+    description="Gera URL para logout federado do Gov.br",
+    status_code=201,
 )
 async def gerar_url_logout(
-    request: GerarUrlLogoutRequest,
-    service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: GerarUrlLogoutRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Gera URL de logout."""
     try:
@@ -355,35 +274,24 @@ async def gerar_url_logout(
             post_logout_redirect_uri=request.post_logout_redirect_uri,
         )
 
-        return StandardResponse(
-            success=True,
-            message="URL de logout gerada com sucesso",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="URL de logout gerada com sucesso", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validacao ao gerar logout: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao gerar URL de logout: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar logout: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar logout: {str(e)}")
 
 
 @router.post(
     "/empresas",
     response_model=StandardResponse,
     summary="Obter empresas vinculadas",
-    description="Obtem empresas vinculadas ao CPF (requer scope govbr_empresa)"
+    description="Obtem empresas vinculadas ao CPF (requer scope govbr_empresa, status_code=201)",
 )
 async def obter_empresas_vinculadas(
-    request: ObterEmpresasRequest,
-    service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, request: ObterEmpresasRequest, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Obtem empresas vinculadas ao CPF."""
     try:
@@ -394,22 +302,16 @@ async def obter_empresas_vinculadas(
         )
 
         return StandardResponse(
-            success=True,
-            message=f"Empresas obtidas: {resultado['quantidade']} encontradas",
-            data=resultado
+            success=True, message=f"Empresas obtidas: {resultado['quantidade']} encontradas", data=resultado
         )
 
     except ValueError as e:
         logger.warning(f"Erro de validacao ao obter empresas: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao obter empresas: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter empresas: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao obter empresas: {str(e)}"
         )
 
 
@@ -417,10 +319,10 @@ async def obter_empresas_vinculadas(
     "/scopes",
     response_model=StandardResponse,
     summary="Listar scopes disponiveis",
-    description="Lista todos os scopes OAuth2 disponiveis no Gov.br"
+    description="Lista todos os scopes OAuth2 disponiveis no Gov.br",
 )
 async def listar_scopes(
-    service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser, service: GovBrService = Depends(get_service)
 ) -> StandardResponse:
     """Lista scopes disponiveis."""
     try:
@@ -432,14 +334,13 @@ async def listar_scopes(
             data={
                 "scopes": scopes,
                 "quantidade": len(scopes),
-            }
+            },
         )
 
     except Exception as e:
         logger.error(f"Erro ao listar scopes: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao listar scopes: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar scopes: {str(e)}"
         )
 
 
@@ -447,16 +348,12 @@ async def listar_scopes(
     "/limpar-pendentes",
     response_model=StandardResponse,
     summary="Limpar autenticacoes pendentes",
-    description="Limpa autenticacoes pendentes expiradas (uso interno)"
+    description="Limpa autenticacoes pendentes expiradas (uso interno, status_code=201)",
 )
 async def limpar_pendentes(
-    max_age_minutes: int = Query(
-        default=15,
-        ge=1,
-        le=60,
-        description="Idade maxima em minutos"
-    ),
-    service: GovBrService = Depends(get_service)
+    current_user: CurrentActiveUser,
+    max_age_minutes: int = Query(default=15, ge=1, le=60, description="Idade maxima em minutos"),
+    service: GovBrService = Depends(get_service),
 ) -> StandardResponse:
     """Limpa autenticacoes pendentes expiradas."""
     try:
@@ -468,12 +365,9 @@ async def limpar_pendentes(
             data={
                 "removidas": removidas,
                 "max_age_minutes": max_age_minutes,
-            }
+            },
         )
 
     except Exception as e:
         logger.error(f"Erro ao limpar pendentes: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao limpar: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao limpar: {str(e)}")

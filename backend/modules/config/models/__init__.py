@@ -10,12 +10,12 @@ from modules.config.models.feature_flag import (
     RolloutStrategy,
 )
 from modules.config.models.notification_template import (
-    ConfigNotificationTemplate as NotificationTemplate,
-)
-from modules.config.models.notification_template import (
-    NotificationChannel,
+    ConfigNotificationChannel,
     NotificationType,
     TemplateStatus,
+)
+from modules.config.models.notification_template import (
+    ConfigNotificationTemplate as NotificationTemplate,
 )
 from modules.config.models.system_config import (
     ConfigPriority,
@@ -33,6 +33,12 @@ from modules.config.models.tenant_settings import (
     SettingType,
     TenantSettings,
 )
+
+# Alias retroativo: ConfigNotificationChannel exportado como NotificationChannel
+# para não quebrar código existente que importa de modules.config.models.
+# NOTA: Este é um StrEnum, NÃO o modelo SQLAlchemy NotificationChannel que mapeia
+# a tabela 'notification_channels' (modules.notifications.models.notification_channel).
+NotificationChannel = ConfigNotificationChannel
 
 __all__ = [
     # Tenant
@@ -55,7 +61,8 @@ __all__ = [
     "RolloutStrategy",
     # NotificationTemplate
     "NotificationTemplate",
-    "NotificationChannel",
+    "ConfigNotificationChannel",  # nome canônico (StrEnum)
+    "NotificationChannel",  # alias retroativo de ConfigNotificationChannel
     "NotificationType",
     "TemplateStatus",
 ]

@@ -21,12 +21,7 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
   const { isSupported, permission } = usePushNotifications();
 
   useEffect(() => {
-    if (isSupported) {
-      console.log('[PushNotifications] Sistema inicializado');
-      console.log('[PushNotifications] Permissão atual:', permission);
-    } else {
-      console.log('[PushNotifications] Não suportado neste navegador');
-    }
+    // Sistema de push notifications inicializado
   }, [isSupported, permission]);
 
   return <>{children}</>;

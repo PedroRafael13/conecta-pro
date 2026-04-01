@@ -4,23 +4,20 @@ Meeting Model - Sprint 49.
 Define modelos para reuniões e participantes.
 """
 
-import enum
 import uuid
-from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
+from datetime import datetime
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Integer,
-    Float, ForeignKey, Enum
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class MeetingStatusEnum(str, enum.Enum):
+class MeetingStatusEnum(StrEnum):
     """Status da reunião."""
+
     SCHEDULED = "SCHEDULED"
     CONFIRMED = "CONFIRMED"
     IN_PROGRESS = "IN_PROGRESS"
@@ -30,8 +27,9 @@ class MeetingStatusEnum(str, enum.Enum):
     NO_SHOW = "NO_SHOW"
 
 
-class MeetingTypeEnum(str, enum.Enum):
+class MeetingTypeEnum(StrEnum):
     """Tipo de reunião."""
+
     INTERNAL = "INTERNAL"
     EXTERNAL = "EXTERNAL"
     ONE_ON_ONE = "ONE_ON_ONE"
@@ -50,8 +48,9 @@ class MeetingTypeEnum(str, enum.Enum):
     OTHER = "OTHER"
 
 
-class ParticipantStatusEnum(str, enum.Enum):
+class ParticipantStatusEnum(StrEnum):
     """Status do participante."""
+
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     DECLINED = "DECLINED"
@@ -59,8 +58,9 @@ class ParticipantStatusEnum(str, enum.Enum):
     NO_RESPONSE = "NO_RESPONSE"
 
 
-class ParticipantRoleEnum(str, enum.Enum):
+class ParticipantRoleEnum(StrEnum):
     """Papel do participante."""
+
     ORGANIZER = "ORGANIZER"
     REQUIRED = "REQUIRED"
     OPTIONAL = "OPTIONAL"
@@ -69,8 +69,9 @@ class ParticipantRoleEnum(str, enum.Enum):
     OBSERVER = "OBSERVER"
 
 
-class RecurrenceTypeEnum(str, enum.Enum):
+class RecurrenceTypeEnum(StrEnum):
     """Tipo de recorrência."""
+
     NONE = "NONE"
     DAILY = "DAILY"
     WEEKLY = "WEEKLY"
@@ -92,16 +93,8 @@ class Meeting(Base):
     description = Column(Text)
 
     # Tipo e status
-    meeting_type = Column(
-        Enum(MeetingTypeEnum),
-        nullable=False,
-        default=MeetingTypeEnum.INTERNAL
-    )
-    status = Column(
-        Enum(MeetingStatusEnum),
-        nullable=False,
-        default=MeetingStatusEnum.SCHEDULED
-    )
+    meeting_type = Column(Enum(MeetingTypeEnum), nullable=False, default=MeetingTypeEnum.INTERNAL)
+    status = Column(Enum(MeetingStatusEnum), nullable=False, default=MeetingStatusEnum.SCHEDULED)
 
     # Agendamento
     scheduled_start = Column(DateTime, nullable=False)
@@ -120,10 +113,7 @@ class Meeting(Base):
 
     # Recorrência
     is_recurring = Column(Boolean, default=False)
-    recurrence_type = Column(
-        Enum(RecurrenceTypeEnum),
-        default=RecurrenceTypeEnum.NONE
-    )
+    recurrence_type = Column(Enum(RecurrenceTypeEnum), default=RecurrenceTypeEnum.NONE)
     recurrence_pattern = Column(JSONB, default={})
     recurrence_end_date = Column(DateTime)
     parent_meeting_id = Column(UUID(as_uuid=True), ForeignKey("ai_meetings.id"))
@@ -206,7 +196,7 @@ class Meeting(Base):
         self.extra_metadata = self.extra_metadata or {}
         self.extra_metadata["previous_schedule"] = {
             "start": self.scheduled_start.isoformat() if self.scheduled_start else None,
-            "end": self.scheduled_end.isoformat() if self.scheduled_end else None
+            "end": self.scheduled_end.isoformat() if self.scheduled_end else None,
         }
         self.scheduled_start = new_start
         self.scheduled_end = new_end
@@ -216,34 +206,34 @@ class Meeting(Base):
         """Adiciona item à agenda."""
         if self.agenda is None:
             self.agenda = []
-        self.agenda.append({
-            "title": title,
-            "duration_minutes": duration_minutes,
-            "presenter": presenter,
-            "order": len(self.agenda) + 1
-        })
+        self.agenda.append(
+            {
+                "title": title,
+                "duration_minutes": duration_minutes,
+                "presenter": presenter,
+                "order": len(self.agenda) + 1,
+            }
+        )
 
     def add_action_item(self, description: str, assignee_id: str, due_date: datetime = None):
         """Adiciona item de ação."""
         if self.action_items is None:
             self.action_items = []
-        self.action_items.append({
-            "description": description,
-            "assignee_id": assignee_id,
-            "due_date": due_date.isoformat() if due_date else None,
-            "status": "pending",
-            "created_at": datetime.utcnow().isoformat()
-        })
+        self.action_items.append(
+            {
+                "description": description,
+                "assignee_id": assignee_id,
+                "due_date": due_date.isoformat() if due_date else None,
+                "status": "pending",
+                "created_at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def add_decision(self, decision: str, made_by: str = None):
         """Registra decisão tomada."""
         if self.decisions is None:
             self.decisions = []
-        self.decisions.append({
-            "decision": decision,
-            "made_by": made_by,
-            "recorded_at": datetime.utcnow().isoformat()
-        })
+        self.decisions.append({"decision": decision, "made_by": made_by, "recorded_at": datetime.utcnow().isoformat()})
 
 
 class MeetingParticipant(Base):
@@ -263,16 +253,8 @@ class MeetingParticipant(Base):
     company = Column(String(200))  # Para participantes externos
 
     # Papel e status
-    role = Column(
-        Enum(ParticipantRoleEnum),
-        nullable=False,
-        default=ParticipantRoleEnum.REQUIRED
-    )
-    status = Column(
-        Enum(ParticipantStatusEnum),
-        nullable=False,
-        default=ParticipantStatusEnum.PENDING
-    )
+    role = Column(Enum(ParticipantRoleEnum), nullable=False, default=ParticipantRoleEnum.REQUIRED)
+    status = Column(Enum(ParticipantStatusEnum), nullable=False, default=ParticipantStatusEnum.PENDING)
 
     # Resposta
     response_date = Column(DateTime)

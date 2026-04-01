@@ -4,15 +4,17 @@ tests/domains/conftest.py - DOMAIN TESTS FIXTURES
 Enterprise pytest fixtures for domain testing
 """
 
-import pytest
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from uuid import uuid4, UUID
-from typing import Dict, Any
+from typing import Any
+from uuid import UUID, uuid4
+
+import pytest
 
 # =============================================================================
 # Common Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def tenant_id() -> UUID:
@@ -36,8 +38,9 @@ def current_date() -> date:
 # Financial Fixtures
 # =============================================================================
 
+
 @pytest.fixture
-def sample_account_data(tenant_id: UUID, user_id: str) -> Dict[str, Any]:
+def sample_account_data(tenant_id: UUID, user_id: str) -> dict[str, Any]:
     """Fixture para dados de conta contabil."""
     return {
         "account_code": "1.1.1.01",
@@ -47,7 +50,7 @@ def sample_account_data(tenant_id: UUID, user_id: str) -> Dict[str, Any]:
         "is_analytical": True,
         "currency": "BRL",
         "tenant_id": tenant_id,
-        "created_by": user_id
+        "created_by": user_id,
     }
 
 
@@ -63,7 +66,7 @@ def sample_journal_lines() -> list:
             account_name="Caixa",
             debit_amount=Decimal("1000.00"),
             credit_amount=Decimal("0"),
-            description="Recebimento de venda"
+            description="Recebimento de venda",
         ),
         JournalLine(
             account_id=uuid4(),
@@ -71,8 +74,8 @@ def sample_journal_lines() -> list:
             account_name="Receita de Vendas",
             debit_amount=Decimal("0"),
             credit_amount=Decimal("1000.00"),
-            description="Venda de mercadorias"
-        )
+            description="Venda de mercadorias",
+        ),
     ]
 
 
@@ -80,8 +83,9 @@ def sample_journal_lines() -> list:
 # HR Fixtures
 # =============================================================================
 
+
 @pytest.fixture
-def sample_address() -> Dict[str, Any]:
+def sample_address() -> dict[str, Any]:
     """Fixture para endereco."""
     return {
         "street": "Rua das Flores",
@@ -91,29 +95,26 @@ def sample_address() -> Dict[str, Any]:
         "city": "Sao Paulo",
         "state": "SP",
         "postal_code": "01234-567",
-        "country": "BR"
+        "country": "BR",
     }
 
 
 @pytest.fixture
-def sample_bank_account() -> Dict[str, Any]:
+def sample_bank_account() -> dict[str, Any]:
     """Fixture para conta bancaria."""
     return {
         "bank_code": "001",
         "bank_name": "Banco do Brasil",
         "agency": "1234-5",
         "account_number": "12345-6",
-        "account_type": "corrente"
+        "account_type": "corrente",
     }
 
 
 @pytest.fixture
 def sample_employee_data(
-    tenant_id: UUID,
-    user_id: str,
-    sample_address: Dict[str, Any],
-    sample_bank_account: Dict[str, Any]
-) -> Dict[str, Any]:
+    tenant_id: UUID, user_id: str, sample_address: dict[str, Any], sample_bank_account: dict[str, Any]
+) -> dict[str, Any]:
     """Fixture para dados de colaborador."""
     return {
         "employee_code": "EMP-000001",
@@ -135,7 +136,7 @@ def sample_employee_data(
         "base_salary": Decimal("8500.00"),
         "bank_account": sample_bank_account,
         "tenant_id": tenant_id,
-        "created_by": user_id
+        "created_by": user_id,
     }
 
 
@@ -143,8 +144,9 @@ def sample_employee_data(
 # Inventory Fixtures
 # =============================================================================
 
+
 @pytest.fixture
-def sample_pricing() -> Dict[str, Any]:
+def sample_pricing() -> dict[str, Any]:
     """Fixture para precificacao."""
     return {
         "cost_price": Decimal("50.00"),
@@ -152,12 +154,12 @@ def sample_pricing() -> Dict[str, Any]:
         "last_purchase_price": Decimal("48.00"),
         "sale_price": Decimal("89.90"),
         "minimum_price": Decimal("70.00"),
-        "currency": "BRL"
+        "currency": "BRL",
     }
 
 
 @pytest.fixture
-def sample_stock_level() -> Dict[str, Any]:
+def sample_stock_level() -> dict[str, Any]:
     """Fixture para niveis de estoque."""
     return {
         "minimum_stock": Decimal("10"),
@@ -165,17 +167,14 @@ def sample_stock_level() -> Dict[str, Any]:
         "reorder_point": Decimal("50"),
         "reorder_quantity": Decimal("100"),
         "safety_stock": Decimal("20"),
-        "lead_time_days": 7
+        "lead_time_days": 7,
     }
 
 
 @pytest.fixture
 def sample_product_data(
-    tenant_id: UUID,
-    user_id: str,
-    sample_pricing: Dict[str, Any],
-    sample_stock_level: Dict[str, Any]
-) -> Dict[str, Any]:
+    tenant_id: UUID, user_id: str, sample_pricing: dict[str, Any], sample_stock_level: dict[str, Any]
+) -> dict[str, Any]:
     """Fixture para dados de produto."""
     return {
         "sku": "PROD-000001",
@@ -195,10 +194,10 @@ def sample_product_data(
             "origin": "0",
             "icms_cst": "00",
             "pis_cst": "01",
-            "cofins_cst": "01"
+            "cofins_cst": "01",
         },
         "tenant_id": tenant_id,
-        "created_by": user_id
+        "created_by": user_id,
     }
 
 
@@ -206,8 +205,9 @@ def sample_product_data(
 # Procurement Fixtures
 # =============================================================================
 
+
 @pytest.fixture
-def sample_budget_allocation(tenant_id: UUID) -> Dict[str, Any]:
+def sample_budget_allocation(tenant_id: UUID) -> dict[str, Any]:
     """Fixture para alocacao orcamentaria."""
     from domains.procurement import Money
 
@@ -217,12 +217,12 @@ def sample_budget_allocation(tenant_id: UUID) -> Dict[str, Any]:
         "allocated_amount": Money(Decimal("500000.00")),
         "available_amount": Money(Decimal("350000.00")),
         "fiscal_year": 2024,
-        "cost_center": "TI-001"
+        "cost_center": "TI-001",
     }
 
 
 @pytest.fixture
-def sample_contract_terms() -> Dict[str, Any]:
+def sample_contract_terms() -> dict[str, Any]:
     """Fixture para termos contratuais."""
     return {
         "payment_terms": "net_30",
@@ -233,5 +233,5 @@ def sample_contract_terms() -> Dict[str, Any]:
         "contract_type": "fixed_price",
         "acceptance_criteria": "Conforme especificacoes tecnicas do edital",
         "sla_requirements": {"uptime": "99.9%"},
-        "quality_standards": ["ISO 9001", "ISO 27001"]
+        "quality_standards": ["ISO 9001", "ISO 27001"],
     }

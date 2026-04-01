@@ -4,19 +4,19 @@ Workflow Optimizer Schemas - Sprint 55.
 Pydantic schemas para validacao e serializacao.
 """
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from enum import StrEnum
+from typing import Any
 from uuid import UUID
-from enum import Enum
 
+from pydantic import BaseModel, ConfigDict, Field
 
 # =============================================================================
 # Enums
 # =============================================================================
 
 
-class WorkflowStatusEnum(str, Enum):
+class WorkflowStatusEnum(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
     PAUSED = "paused"
@@ -24,7 +24,7 @@ class WorkflowStatusEnum(str, Enum):
     DISABLED = "disabled"
 
 
-class WorkflowTypeEnum(str, Enum):
+class WorkflowTypeEnum(StrEnum):
     APPROVAL = "approval"
     NOTIFICATION = "notification"
     DATA_PROCESSING = "data_processing"
@@ -38,7 +38,7 @@ class WorkflowTypeEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class TriggerTypeEnum(str, Enum):
+class TriggerTypeEnum(StrEnum):
     EVENT = "event"
     SCHEDULE = "schedule"
     WEBHOOK = "webhook"
@@ -47,7 +47,7 @@ class TriggerTypeEnum(str, Enum):
     API = "api"
 
 
-class StepTypeEnum(str, Enum):
+class StepTypeEnum(StrEnum):
     ACTION = "action"
     CONDITION = "condition"
     LOOP = "loop"
@@ -60,7 +60,7 @@ class StepTypeEnum(str, Enum):
     SCRIPT = "script"
 
 
-class ExecutionStatusEnum(str, Enum):
+class ExecutionStatusEnum(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -71,7 +71,7 @@ class ExecutionStatusEnum(str, Enum):
     PAUSED = "paused"
 
 
-class OptimizationTypeEnum(str, Enum):
+class OptimizationTypeEnum(StrEnum):
     PERFORMANCE = "performance"
     COST = "cost"
     RELIABILITY = "reliability"
@@ -90,22 +90,22 @@ class WorkflowStep(BaseModel):
     id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1, max_length=200)
     step_type: StepTypeEnum
-    config: Dict[str, Any] = Field(default_factory=dict)
-    next_steps: List[str] = Field(default_factory=list)
-    condition: Optional[str] = None
-    timeout: Optional[int] = None
-    retry_count: Optional[int] = None
+    config: dict[str, Any] = Field(default_factory=dict)
+    next_steps: list[str] = Field(default_factory=list)
+    condition: str | None = None
+    timeout: int | None = None
+    retry_count: int | None = None
 
 
 class TriggerConfig(BaseModel):
     """Schema para configuracao de trigger."""
 
     trigger_type: TriggerTypeEnum
-    event_name: Optional[str] = None
-    schedule: Optional[str] = None  # Cron expression
-    webhook_path: Optional[str] = None
-    condition: Optional[str] = None
-    params: Dict[str, Any] = Field(default_factory=dict)
+    event_name: str | None = None
+    schedule: str | None = None  # Cron expression
+    webhook_path: str | None = None
+    condition: str | None = None
+    params: dict[str, Any] = Field(default_factory=dict)
 
 
 # =============================================================================
@@ -118,35 +118,35 @@ class WorkflowCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     code: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     workflow_type: WorkflowTypeEnum = WorkflowTypeEnum.CUSTOM
-    category: Optional[str] = Field(None, max_length=100)
-    tags: List[str] = Field(default_factory=list)
-    trigger_config: Dict[str, Any] = Field(default_factory=dict)
-    steps: List[Dict[str, Any]] = Field(default_factory=list)
-    variables: Dict[str, Any] = Field(default_factory=dict)
-    settings: Dict[str, Any] = Field(default_factory=dict)
+    category: str | None = Field(None, max_length=100)
+    tags: list[str] = Field(default_factory=list)
+    trigger_config: dict[str, Any] = Field(default_factory=dict)
+    steps: list[dict[str, Any]] = Field(default_factory=list)
+    variables: dict[str, Any] = Field(default_factory=dict)
+    settings: dict[str, Any] = Field(default_factory=dict)
     max_concurrent: int = Field(default=1, ge=1, le=100)
     timeout_seconds: int = Field(default=300, ge=30, le=86400)
     retry_count: int = Field(default=3, ge=0, le=10)
-    condominio_id: Optional[UUID] = None
+    condominio_id: UUID | None = None
 
 
 class WorkflowUpdate(BaseModel):
     """Schema para atualizar workflow."""
 
-    name: Optional[str] = Field(None, max_length=200)
-    description: Optional[str] = None
-    status: Optional[WorkflowStatusEnum] = None
-    workflow_type: Optional[WorkflowTypeEnum] = None
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
-    trigger_config: Optional[Dict[str, Any]] = None
-    steps: Optional[List[Dict[str, Any]]] = None
-    variables: Optional[Dict[str, Any]] = None
-    settings: Optional[Dict[str, Any]] = None
-    max_concurrent: Optional[int] = Field(None, ge=1, le=100)
-    timeout_seconds: Optional[int] = Field(None, ge=30, le=86400)
+    name: str | None = Field(None, max_length=200)
+    description: str | None = None
+    status: WorkflowStatusEnum | None = None
+    workflow_type: WorkflowTypeEnum | None = None
+    category: str | None = None
+    tags: list[str] | None = None
+    trigger_config: dict[str, Any] | None = None
+    steps: list[dict[str, Any]] | None = None
+    variables: dict[str, Any] | None = None
+    settings: dict[str, Any] | None = None
+    max_concurrent: int | None = Field(None, ge=1, le=100)
+    timeout_seconds: int | None = Field(None, ge=30, le=86400)
 
 
 class WorkflowResponse(BaseModel):
@@ -157,15 +157,15 @@ class WorkflowResponse(BaseModel):
     id: UUID
     name: str
     code: str
-    description: Optional[str]
+    description: str | None
     version: str
     workflow_type: str
-    category: Optional[str]
-    tags: List[str]
+    category: str | None
+    tags: list[str]
     status: str
-    trigger_config: Dict[str, Any]
-    steps: List[Dict[str, Any]]
-    variables: Dict[str, Any]
+    trigger_config: dict[str, Any]
+    steps: list[dict[str, Any]]
+    variables: dict[str, Any]
     is_ai_optimized: bool
     optimization_score: float
     execution_count: int
@@ -176,7 +176,7 @@ class WorkflowResponse(BaseModel):
     max_concurrent: int
     timeout_seconds: int
     created_at: datetime
-    last_run_at: Optional[datetime]
+    last_run_at: datetime | None
     ativo: bool
 
 
@@ -192,7 +192,7 @@ class WorkflowListResponse(BaseModel):
     status: str
     execution_count: int
     success_rate: float
-    last_run_at: Optional[datetime]
+    last_run_at: datetime | None
 
 
 # =============================================================================
@@ -204,9 +204,9 @@ class ExecutionCreate(BaseModel):
     """Schema para criar execucao."""
 
     workflow_id: UUID
-    input_data: Dict[str, Any] = Field(default_factory=dict)
-    trigger_type: Optional[str] = None
-    trigger_data: Dict[str, Any] = Field(default_factory=dict)
+    input_data: dict[str, Any] = Field(default_factory=dict)
+    trigger_type: str | None = None
+    trigger_data: dict[str, Any] = Field(default_factory=dict)
 
 
 class ExecutionResponse(BaseModel):
@@ -220,14 +220,14 @@ class ExecutionResponse(BaseModel):
     current_step: int
     total_steps: int
     progress_percent: float
-    input_data: Dict[str, Any]
-    output_data: Dict[str, Any]
-    error_message: Optional[str]
-    error_step: Optional[str]
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
+    input_data: dict[str, Any]
+    output_data: dict[str, Any]
+    error_message: str | None
+    error_step: str | None
+    started_at: datetime | None
+    completed_at: datetime | None
     execution_time_ms: int
-    trigger_type: Optional[str]
+    trigger_type: str | None
     retry_attempt: int
     created_at: datetime
 
@@ -238,8 +238,8 @@ class ExecutionLog(BaseModel):
     timestamp: datetime
     level: str  # debug, info, warning, error
     message: str
-    step: Optional[str] = None
-    data: Dict[str, Any] = Field(default_factory=dict)
+    step: str | None = None
+    data: dict[str, Any] = Field(default_factory=dict)
 
 
 # =============================================================================
@@ -252,28 +252,28 @@ class TemplateCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     code: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     workflow_type: WorkflowTypeEnum = WorkflowTypeEnum.CUSTOM
-    category: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
-    trigger_template: Dict[str, Any] = Field(default_factory=dict)
-    steps_template: List[Dict[str, Any]] = Field(default_factory=list)
-    variables_template: Dict[str, Any] = Field(default_factory=dict)
-    required_params: List[Dict[str, Any]] = Field(default_factory=list)
-    use_cases: List[str] = Field(default_factory=list)
+    category: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    trigger_template: dict[str, Any] = Field(default_factory=dict)
+    steps_template: list[dict[str, Any]] = Field(default_factory=list)
+    variables_template: dict[str, Any] = Field(default_factory=dict)
+    required_params: list[dict[str, Any]] = Field(default_factory=list)
+    use_cases: list[str] = Field(default_factory=list)
     complexity: str = Field(default="medium")
 
 
 class TemplateUpdate(BaseModel):
     """Schema para atualizar template."""
 
-    name: Optional[str] = Field(None, max_length=200)
-    description: Optional[str] = None
-    workflow_type: Optional[WorkflowTypeEnum] = None
-    tags: Optional[List[str]] = None
-    trigger_template: Optional[Dict[str, Any]] = None
-    steps_template: Optional[List[Dict[str, Any]]] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, max_length=200)
+    description: str | None = None
+    workflow_type: WorkflowTypeEnum | None = None
+    tags: list[str] | None = None
+    trigger_template: dict[str, Any] | None = None
+    steps_template: list[dict[str, Any]] | None = None
+    is_active: bool | None = None
 
 
 class TemplateResponse(BaseModel):
@@ -284,15 +284,15 @@ class TemplateResponse(BaseModel):
     id: UUID
     name: str
     code: str
-    description: Optional[str]
+    description: str | None
     version: str
     workflow_type: str
-    category: Optional[str]
-    tags: List[str]
-    trigger_template: Dict[str, Any]
-    steps_template: List[Dict[str, Any]]
-    required_params: List[Dict[str, Any]]
-    use_cases: List[str]
+    category: str | None
+    tags: list[str]
+    trigger_template: dict[str, Any]
+    steps_template: list[dict[str, Any]]
+    required_params: list[dict[str, Any]]
+    use_cases: list[str]
     complexity: str
     ai_recommended: bool
     usage_count: int
@@ -316,9 +316,9 @@ class OptimizationSuggestion(BaseModel):
     estimated_improvement: float  # Percentual
     confidence: float  # 0-1
     priority: int  # 1-10
-    current_state: Dict[str, Any]
-    proposed_state: Dict[str, Any]
-    changes: List[Dict[str, Any]]
+    current_state: dict[str, Any]
+    proposed_state: dict[str, Any]
+    changes: list[dict[str, Any]]
 
 
 class OptimizationResponse(BaseModel):
@@ -330,14 +330,14 @@ class OptimizationResponse(BaseModel):
     workflow_id: UUID
     optimization_type: str
     title: str
-    description: Optional[str]
+    description: str | None
     suggestion: str
     estimated_improvement: float
     confidence: float
     priority: int
     status: str
-    applied_at: Optional[datetime]
-    actual_improvement: Optional[float]
+    applied_at: datetime | None
+    actual_improvement: float | None
     created_at: datetime
 
 
@@ -346,7 +346,7 @@ class ApplyOptimizationRequest(BaseModel):
 
     optimization_id: UUID
     apply_changes: bool = True
-    custom_changes: Optional[Dict[str, Any]] = None
+    custom_changes: dict[str, Any] | None = None
 
 
 # =============================================================================
@@ -380,11 +380,11 @@ class WorkflowAnalysisResult(BaseModel):
     p99_execution_time_ms: float
 
     # Bottlenecks
-    bottleneck_steps: List[Dict[str, Any]]
-    frequent_errors: List[Dict[str, Any]]
+    bottleneck_steps: list[dict[str, Any]]
+    frequent_errors: list[dict[str, Any]]
 
     # Sugestoes
-    optimizations: List[OptimizationSuggestion]
+    optimizations: list[OptimizationSuggestion]
 
     # Score geral
     health_score: float  # 0-100
@@ -409,11 +409,11 @@ class WorkflowDashboard(BaseModel):
     executions_today: int
 
     # Por status
-    workflows_by_status: Dict[str, int]
-    executions_by_status: Dict[str, int]
+    workflows_by_status: dict[str, int]
+    executions_by_status: dict[str, int]
 
     # Por tipo
-    workflows_by_type: Dict[str, int]
+    workflows_by_type: dict[str, int]
 
     # Performance
     avg_success_rate: float
@@ -421,13 +421,13 @@ class WorkflowDashboard(BaseModel):
     total_failures_today: int
 
     # Top workflows
-    top_executed: List[Dict[str, Any]]
-    top_failing: List[Dict[str, Any]]
-    recently_optimized: List[Dict[str, Any]]
+    top_executed: list[dict[str, Any]]
+    top_failing: list[dict[str, Any]]
+    recently_optimized: list[dict[str, Any]]
 
     # Tendencias
-    executions_trend: List[Dict[str, Any]]
-    success_rate_trend: List[Dict[str, Any]]
+    executions_trend: list[dict[str, Any]]
+    success_rate_trend: list[dict[str, Any]]
 
     # IA
     pending_optimizations: int

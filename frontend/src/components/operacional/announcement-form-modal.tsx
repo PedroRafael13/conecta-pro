@@ -1,11 +1,22 @@
 'use client';
 
 import { X, Megaphone, Save, Loader2, AlertTriangle, Users, Calendar, FileText } from 'lucide-react';
-import { useState, useEffect } from 'react';
-;
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAnnouncementMutations } from '@/hooks/useAnnouncements';
+import type {
+  Announcement,
+  AnnouncementCreate,
+  AnnouncementPriority,
+  AnnouncementCategory,
+  AnnouncementTargetType,
+} from '@/lib/services/announcements';
+import {
+  ANNOUNCEMENT_PRIORITY_LABELS,
+  ANNOUNCEMENT_CATEGORY_LABELS,
+  ANNOUNCEMENT_TARGET_TYPE_LABELS,
+} from '@/lib/services/announcements';
 
 interface AnnouncementFormModalProps {
   isOpen: boolean;
@@ -13,6 +24,34 @@ interface AnnouncementFormModalProps {
   onSuccess: () => void;
   editData?: Announcement | null;
 }
+
+// Default form data
+const defaultFormData: AnnouncementCreate = {
+  title: '',
+  content: '',
+  target_type: 'all',
+  priority: 'normal',
+  category: 'informativo',
+  requires_acknowledgment: false,
+};
+
+// Form state factory
+const createFormData = (editData?: Announcement | null): AnnouncementCreate => {
+  if (!editData) return defaultFormData;
+
+  return {
+    title: editData.title,
+    content: editData.content,
+    target_type: editData.target_type,
+    target_ids: editData.target_ids ?? undefined,
+    target_roles: editData.target_roles ?? undefined,
+    priority: editData.priority,
+    category: editData.category,
+    requires_acknowledgment: editData.requires_acknowledgment,
+    publish_at: editData.publish_at ?? undefined,
+    expires_at: editData.expires_at ?? undefined,
+  };
+};
 
 export function AnnouncementFormModal({
   isOpen,
@@ -22,45 +61,22 @@ export function AnnouncementFormModal({
 }: AnnouncementFormModalProps) {
   const { createAnnouncement, updateAnnouncement, isLoading, error } = useAnnouncementMutations();
 
-  const [formData, setFormData] = useState<AnnouncementCreate>({
-    title: '',
-    content: '',
-    target_type: 'all',
-    priority: 'normal',
-    category: 'informativo',
-    requires_acknowledgment: false,
-  });
+  const formKey = useMemo(() => {
+    return editData?.id || 'new';
+  }, [editData]);
+
+  const [formData, setFormData] = useState<AnnouncementCreate>(defaultFormData);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Reset form when modal opens/closes or editData changes
   useEffect(() => {
     if (isOpen) {
-      if (editData) {
-        setFormData({
-          title: editData.title,
-          content: editData.content,
-          target_type: editData.target_type,
-          target_ids: editData.target_ids ?? undefined,
-          target_roles: editData.target_roles ?? undefined,
-          priority: editData.priority,
-          category: editData.category,
-          requires_acknowledgment: editData.requires_acknowledgment,
-          publish_at: editData.publish_at ?? undefined,
-          expires_at: editData.expires_at ?? undefined,
-        });
-      } else {
-        setFormData({
-          title: '',
-          content: '',
-          target_type: 'all',
-          priority: 'normal',
-          category: 'informativo',
-          requires_acknowledgment: false,
-        });
-      }
+
+      setFormData(createFormData(editData));
+
       setFormError(null);
     }
-  }, [isOpen, editData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

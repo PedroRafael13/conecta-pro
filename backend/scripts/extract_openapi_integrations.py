@@ -11,15 +11,16 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
+from fastapi import FastAPI  # noqa: E402
+from fastapi.openapi.utils import get_openapi  # noqa: E402
 
-# Importa os routers do módulo integrations
-from modules.integrations.controllers import (
-    integration_router,
+# Importa os routers do módulo integrations  # noqa: E402
+from modules.integrations.controllers import (  # noqa: E402
     connector_router,
+    integration_router,
     solides_router,
 )
+
 
 def create_integrations_app() -> FastAPI:
     """Cria app FastAPI com routers de integrations."""
@@ -35,6 +36,7 @@ def create_integrations_app() -> FastAPI:
     app.include_router(solides_router, prefix="/api/v1/integrations")
 
     return app
+
 
 def extract_openapi():
     """Extrai OpenAPI spec do módulo integrations."""
@@ -82,13 +84,15 @@ def extract_openapi():
 
     return output_file
 
+
 if __name__ == "__main__":
     try:
         output_file = extract_openapi()
-        print(f"\n✅ Extração concluída com sucesso!")
+        print("\n✅ Extração concluída com sucesso!")
         print(f"📁 Arquivo: {output_file}")
     except Exception as e:
         print(f"\n❌ Erro na extração: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

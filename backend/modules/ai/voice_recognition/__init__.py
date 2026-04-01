@@ -12,53 +12,49 @@ Funcionalidades:
 - Métricas de qualidade de atendimento
 """
 
+from modules.ai.voice_recognition.controllers import voice_router
 from modules.ai.voice_recognition.models import (
-    VoiceRecording,
-    VoiceRecordingStatusEnum,
-    VoiceRecordingSourceEnum,
     AudioFormatEnum,
-    Transcription,
-    TranscriptionSegment,
-    TranscriptionStatusEnum,
-    TranscriptionProviderEnum,
-    VoiceCommand,
-    CommandDefinition,
-    VoiceCommandStatusEnum,
-    CommandCategoryEnum,
     CallAnalysis,
     CallAnalysisStatusEnum,
-    CallTypeEnum,
     CallSentimentEnum,
+    CallTypeEnum,
+    CommandCategoryEnum,
+    CommandDefinition,
+    Transcription,
+    TranscriptionProviderEnum,
+    TranscriptionSegment,
+    TranscriptionStatusEnum,
+    VoiceCommand,
+    VoiceCommandStatusEnum,
+    VoiceRecording,
+    VoiceRecordingSourceEnum,
+    VoiceRecordingStatusEnum,
 )
-
+from modules.ai.voice_recognition.repositories import VoiceRecognitionRepository
 from modules.ai.voice_recognition.schemas import (
-    VoiceRecordingCreate,
-    VoiceRecordingUpdate,
-    VoiceRecordingResponse,
-    TranscriptionCreate,
-    TranscriptionResponse,
-    TranscribeRequest,
-    CommandDefinitionCreate,
-    CommandDefinitionResponse,
-    VoiceCommandCreate,
-    VoiceCommandResponse,
-    CommandExecuteRequest,
-    CommandExecuteResponse,
+    AnalyzeCallRequest,
     CallAnalysisCreate,
     CallAnalysisResponse,
-    AnalyzeCallRequest,
+    CommandDefinitionCreate,
+    CommandDefinitionResponse,
+    CommandExecuteRequest,
+    CommandExecuteResponse,
+    TranscribeRequest,
+    TranscriptionCreate,
+    TranscriptionResponse,
+    VoiceCommandCreate,
+    VoiceCommandResponse,
     VoiceRecognitionDashboard,
+    VoiceRecordingCreate,
+    VoiceRecordingResponse,
+    VoiceRecordingUpdate,
 )
-
-from modules.ai.voice_recognition.repositories import VoiceRecognitionRepository
-
 from modules.ai.voice_recognition.services import (
+    CallAnalyzer,
     SpeechRecognizer,
     VoiceCommandProcessor,
-    CallAnalyzer,
 )
-
-from modules.ai.voice_recognition.controllers import voice_router
 
 __all__ = [
     # Models

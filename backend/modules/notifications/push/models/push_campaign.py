@@ -3,10 +3,9 @@
 Sprint 37 - Push Notifications Mobile.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -15,7 +14,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class CampaignStatus(str, enum.Enum):
+class CampaignStatus(StrEnum):
     """Status da campanha."""
 
     DRAFT = "draft"
@@ -28,7 +27,7 @@ class CampaignStatus(str, enum.Enum):
     FAILED = "failed"
 
 
-class CampaignType(str, enum.Enum):
+class CampaignType(StrEnum):
     """Tipo de campanha."""
 
     ONE_TIME = "one_time"  # Envio unico
@@ -39,7 +38,7 @@ class CampaignType(str, enum.Enum):
     GEOFENCE = "geofence"  # Por localizacao
 
 
-class TargetType(str, enum.Enum):
+class TargetType(StrEnum):
     """Tipo de segmentacao."""
 
     ALL = "all"  # Todos os devices

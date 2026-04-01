@@ -4,40 +4,40 @@ Sprint 31: Gestão de Serviços
 """
 
 from modules.services.schemas.service_schemas import (
+    # AI
+    ServiceAnalysis,
     # ServiceCatalog
     ServiceCatalogBase,
     ServiceCatalogCreate,
-    ServiceCatalogUpdate,
-    ServiceCatalogResponse,
     ServiceCatalogListResponse,
+    ServiceCatalogResponse,
     ServiceCatalogStats,
-    # ServiceOrder
-    ServiceOrderBase,
-    ServiceOrderCreate,
-    ServiceOrderUpdate,
-    ServiceOrderResponse,
-    ServiceOrderListResponse,
-    ServiceOrderStats,
-    ServiceOrderFilter,
+    ServiceCatalogUpdate,
     # ServiceExecution
     ServiceExecutionBase,
     ServiceExecutionCreate,
-    ServiceExecutionUpdate,
     ServiceExecutionResponse,
+    ServiceExecutionUpdate,
+    # ServiceOrder
+    ServiceOrderBase,
+    ServiceOrderCreate,
+    ServiceOrderFilter,
+    ServiceOrderListResponse,
+    ServiceOrderResponse,
+    ServiceOrderStats,
+    ServiceOrderUpdate,
+    ServiceRecommendation,
     # ServiceReport
     ServiceReportBase,
     ServiceReportCreate,
-    ServiceReportUpdate,
     ServiceReportResponse,
+    ServiceReportUpdate,
+    SLAAnalysis,
     # SLAConfig
     SLAConfigBase,
     SLAConfigCreate,
-    SLAConfigUpdate,
     SLAConfigResponse,
-    # AI
-    ServiceAnalysis,
-    ServiceRecommendation,
-    SLAAnalysis,
+    SLAConfigUpdate,
 )
 
 __all__ = [

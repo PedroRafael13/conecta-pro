@@ -2,17 +2,17 @@
 Model de Avaliacao de Impacto de Privacidade (PIA/DPIA).
 """
 
-import enum
 import uuid
 from datetime import datetime
+from enum import StrEnum
 
-from sqlalchemy import Column, DateTime, Enum, String, Text, Boolean
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy import Boolean, Column, DateTime, Enum, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 
 from core.models import Base
 
 
-class RiskLevel(str, enum.Enum):
+class RiskLevel(StrEnum):
     """Nivel de risco da avaliacao."""
 
     LOW = "low"
@@ -21,7 +21,7 @@ class RiskLevel(str, enum.Enum):
     CRITICAL = "critical"
 
 
-class AssessmentStatus(str, enum.Enum):
+class AssessmentStatus(StrEnum):
     """Status da avaliacao."""
 
     DRAFT = "draft"

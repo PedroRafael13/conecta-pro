@@ -6,19 +6,21 @@ Widgets reutilizáveis para compor relatórios (gráficos, KPIs, etc.).
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -26,7 +28,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class WidgetTypeEnum(str, Enum):
+class WidgetTypeEnum(StrEnum):
     """Tipos de widget."""
 
     # Gráficos básicos
@@ -79,7 +81,7 @@ class WidgetTypeEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class WidgetSizeEnum(str, Enum):
+class WidgetSizeEnum(StrEnum):
     """Tamanhos predefinidos."""
 
     SMALL = "small"  # 1/4 width
@@ -108,9 +110,7 @@ class ReportWidget(Base):
 
     # Tipo
     widget_type = Column(
-        SQLEnum(WidgetTypeEnum, name="widget_type_enum"),
-        nullable=False,
-        default=WidgetTypeEnum.BAR_CHART
+        SQLEnum(WidgetTypeEnum, name="widget_type_enum"), nullable=False, default=WidgetTypeEnum.BAR_CHART
     )
 
     # Posição e tamanho
@@ -119,10 +119,7 @@ class ReportWidget(Base):
     col = Column(Integer, default=0)
     row_span = Column(Integer, default=1)
     col_span = Column(Integer, default=1)
-    size = Column(
-        SQLEnum(WidgetSizeEnum, name="widget_size_enum"),
-        default=WidgetSizeEnum.MEDIUM
-    )
+    size = Column(SQLEnum(WidgetSizeEnum, name="widget_size_enum"), default=WidgetSizeEnum.MEDIUM)
 
     # Dimensões customizadas
     width = Column(String(50), nullable=True)
@@ -269,7 +266,7 @@ class ReportWidget(Base):
         elapsed = (datetime.utcnow() - self.last_cached_at).total_seconds()
         return elapsed > self.cache_ttl_seconds
 
-    def set_data(self, data: Dict[str, Any]) -> None:
+    def set_data(self, data: dict[str, Any]) -> None:
         """Define dados do widget."""
         self.data = data
         self.last_cached_at = datetime.utcnow()
@@ -282,7 +279,7 @@ class ReportWidget(Base):
         trend: str = None,
         change: float = None,
         target: float = None,
-        status: str = None
+        status: str = None,
     ) -> None:
         """Configura KPI."""
         self.widget_type = WidgetTypeEnum.KPI_CARD
@@ -310,12 +307,7 @@ class ReportWidget(Base):
             return "neutral"
 
     def set_chart_config(
-        self,
-        chart_type: str,
-        x_field: str,
-        y_field: str,
-        series_field: str = None,
-        colors: List[str] = None
+        self, chart_type: str, x_field: str, y_field: str, series_field: str = None, colors: list[str] = None
     ) -> None:
         """Configura gráfico."""
         type_map = {
@@ -337,37 +329,30 @@ class ReportWidget(Base):
         if colors:
             self.colors = colors
 
-    def add_threshold(
-        self,
-        value: float,
-        color: str,
-        label: str = None,
-        operator: str = "gte"
-    ) -> None:
+    def add_threshold(self, value: float, color: str, label: str = None, operator: str = "gte") -> None:
         """Adiciona threshold."""
         if not self.thresholds:
             self.thresholds = []
-        self.thresholds.append({
-            "value": value,
-            "color": color,
-            "label": label,
-            "operator": operator,
-        })
+        self.thresholds.append(
+            {
+                "value": value,
+                "color": color,
+                "label": label,
+                "operator": operator,
+            }
+        )
 
-    def add_highlight_condition(
-        self,
-        condition: str,
-        style: Dict[str, Any],
-        label: str = None
-    ) -> None:
+    def add_highlight_condition(self, condition: str, style: dict[str, Any], label: str = None) -> None:
         """Adiciona condição de destaque."""
         if not self.highlight_conditions:
             self.highlight_conditions = []
-        self.highlight_conditions.append({
-            "condition": condition,
-            "style": style,
-            "label": label,
-        })
+        self.highlight_conditions.append(
+            {
+                "condition": condition,
+                "style": style,
+                "label": label,
+            }
+        )
 
     def clone(self, new_code: str) -> "ReportWidget":
         """Cria cópia do widget."""
@@ -389,7 +374,7 @@ class ReportWidget(Base):
             is_reusable=True,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -402,7 +387,7 @@ class ReportWidget(Base):
             "is_visible": self.is_visible,
         }
 
-    def to_render_dict(self) -> Dict[str, Any]:
+    def to_render_dict(self) -> dict[str, Any]:
         """Converte para dicionário de renderização."""
         return {
             "id": str(self.id),

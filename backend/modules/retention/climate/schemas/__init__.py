@@ -14,8 +14,8 @@ from modules.retention.climate.schemas.climate_schemas import (
     CalculationResult,
     # Analytics Schemas
     ClimateAnalytics,
-    ClimateByEquipe,
     ClimateByEmpresa,
+    ClimateByEquipe,
     ClimateByPosto,
     # Dashboard Schemas
     ClimateDashboard,

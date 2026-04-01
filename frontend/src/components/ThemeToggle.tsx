@@ -1,9 +1,15 @@
 'use client';
 
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { Moon, Sun, Monitor, LucideIcon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-;
 import { useState, useRef, useEffect } from 'react';
+
+// Mapa de ícones fora do componente para evitar criação durante render
+const themeOptions: Array<{ value: string; label: string; icon: LucideIcon }> = [
+  { value: 'light', label: 'Claro', icon: Sun },
+  { value: 'dark', label: 'Escuro', icon: Moon },
+  { value: 'system', label: 'Sistema', icon: Monitor },
+];
 
 export function ThemeToggle() {
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -24,18 +30,9 @@ export function ThemeToggle() {
     }
   }, [isOpen]);
 
-  const themeOptions = [
-    { value: 'light', label: 'Claro', icon: Sun },
-    { value: 'dark', label: 'Escuro', icon: Moon },
-    { value: 'system', label: 'Sistema', icon: Monitor },
-  ] as const;
-
-  const getCurrentIcon = () => {
-    if (resolvedTheme === 'dark') return Moon;
-    return Sun;
-  };
-
-  const Icon = getCurrentIcon();
+  // Determinar qual ícone renderizar baseado no tema resolvido
+  const CurrentIcon = resolvedTheme === 'dark' ? Moon : Sun;
+  const currentLabel = themeOptions.find(opt => opt.value === theme)?.label || 'Sistema';
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -44,9 +41,9 @@ export function ThemeToggle() {
         onClick={() => setIsOpen(!isOpen)}
         className="relative w-10 h-10 rounded-lg bg-[hsl(var(--secondary))] hover:bg-[hsl(var(--muted))] border border-[hsl(var(--border))] flex items-center justify-center transition-all duration-200 group"
         aria-label="Toggle theme"
-        title={`Tema: ${themeOptions.find(opt => opt.value === theme)?.label || 'Sistema'}`}
+        title={`Tema: ${currentLabel}`}
       >
-        <Icon className="w-5 h-5 text-[hsl(var(--foreground))] transition-transform duration-200 group-hover:rotate-12" />
+        <CurrentIcon className="w-5 h-5 text-[hsl(var(--foreground))] transition-transform duration-200 group-hover:rotate-12" />
 
         {/* Indicador de tema system */}
         {theme === 'system' && (
@@ -71,7 +68,7 @@ export function ThemeToggle() {
               <button
                 key={option.value}
                 onClick={() => {
-                  setTheme(option.value);
+                  setTheme(option.value as 'light' | 'dark' | 'system');
                   setIsOpen(false);
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors ${

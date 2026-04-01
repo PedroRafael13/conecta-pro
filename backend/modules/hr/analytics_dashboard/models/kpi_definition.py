@@ -1,18 +1,18 @@
 """Modelo KPIDefinition - Definições de KPIs de RH."""
 
+import contextlib
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
     DateTime,
     Float,
+    Index,
     Integer,
     String,
     Text,
-    Index,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,21 +20,23 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 
-class KPICategory(str, Enum):
+class KPICategory(StrEnum):
     """Categoria do KPI."""
-    ATTENDANCE = "attendance"        # Frequência
-    PUNCTUALITY = "punctuality"      # Pontualidade
-    OVERTIME = "overtime"            # Horas extras
-    PRODUCTIVITY = "productivity"    # Produtividade
-    COMPLIANCE = "compliance"        # Conformidade CLT
-    COST = "cost"                    # Custos
-    TURNOVER = "turnover"            # Rotatividade
-    SATISFACTION = "satisfaction"    # Satisfação
-    CUSTOM = "custom"                # Personalizado
+
+    ATTENDANCE = "attendance"  # Frequência
+    PUNCTUALITY = "punctuality"  # Pontualidade
+    OVERTIME = "overtime"  # Horas extras
+    PRODUCTIVITY = "productivity"  # Produtividade
+    COMPLIANCE = "compliance"  # Conformidade CLT
+    COST = "cost"  # Custos
+    TURNOVER = "turnover"  # Rotatividade
+    SATISFACTION = "satisfaction"  # Satisfação
+    CUSTOM = "custom"  # Personalizado
 
 
-class KPIUnit(str, Enum):
+class KPIUnit(StrEnum):
     """Unidade de medida do KPI."""
+
     PERCENTAGE = "percentage"
     HOURS = "hours"
     MINUTES = "minutes"
@@ -45,16 +47,18 @@ class KPIUnit(str, Enum):
     SCORE = "score"
 
 
-class KPIDirection(str, Enum):
+class KPIDirection(StrEnum):
     """Direção desejada do KPI."""
-    UP = "up"              # Maior é melhor
-    DOWN = "down"          # Menor é melhor
-    TARGET = "target"      # Próximo ao alvo é melhor
-    NEUTRAL = "neutral"    # Sem preferência
+
+    UP = "up"  # Maior é melhor
+    DOWN = "down"  # Menor é melhor
+    TARGET = "target"  # Próximo ao alvo é melhor
+    NEUTRAL = "neutral"  # Sem preferência
 
 
-class KPIFrequency(str, Enum):
+class KPIFrequency(StrEnum):
     """Frequência de cálculo."""
+
     REALTIME = "realtime"
     HOURLY = "hourly"
     DAILY = "daily"
@@ -75,7 +79,7 @@ class KPIDefinition(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-    condominio_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    condominio_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         index=True,
     )  # None = KPI global/padrão
@@ -83,7 +87,7 @@ class KPIDefinition(Base):
     # Informações básicas
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
     category: Mapped[str] = mapped_column(
         String(20),
         default=KPICategory.ATTENDANCE.value,
@@ -96,29 +100,29 @@ class KPIDefinition(Base):
         default=KPIUnit.PERCENTAGE.value,
     )
     decimal_places: Mapped[int] = mapped_column(Integer, default=2)
-    format_pattern: Mapped[Optional[str]] = mapped_column(String(50))
-    prefix: Mapped[Optional[str]] = mapped_column(String(10))
-    suffix: Mapped[Optional[str]] = mapped_column(String(10))
+    format_pattern: Mapped[str | None] = mapped_column(String(50))
+    prefix: Mapped[str | None] = mapped_column(String(10))
+    suffix: Mapped[str | None] = mapped_column(String(10))
 
     # Direção e metas
     direction: Mapped[str] = mapped_column(
         String(10),
         default=KPIDirection.UP.value,
     )
-    target_value: Mapped[Optional[float]] = mapped_column(Float)
-    min_value: Mapped[Optional[float]] = mapped_column(Float)
-    max_value: Mapped[Optional[float]] = mapped_column(Float)
+    target_value: Mapped[float | None] = mapped_column(Float)
+    min_value: Mapped[float | None] = mapped_column(Float)
+    max_value: Mapped[float | None] = mapped_column(Float)
 
     # Thresholds (% do target ou valores absolutos)
-    threshold_critical: Mapped[Optional[float]] = mapped_column(Float)
-    threshold_warning: Mapped[Optional[float]] = mapped_column(Float)
-    threshold_good: Mapped[Optional[float]] = mapped_column(Float)
-    threshold_excellent: Mapped[Optional[float]] = mapped_column(Float)
+    threshold_critical: Mapped[float | None] = mapped_column(Float)
+    threshold_warning: Mapped[float | None] = mapped_column(Float)
+    threshold_good: Mapped[float | None] = mapped_column(Float)
+    threshold_excellent: Mapped[float | None] = mapped_column(Float)
 
     # Cálculo
-    calculation_formula: Mapped[Optional[str]] = mapped_column(Text)
-    calculation_query: Mapped[Optional[str]] = mapped_column(Text)
-    calculation_params: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    calculation_formula: Mapped[str | None] = mapped_column(Text)
+    calculation_query: Mapped[str | None] = mapped_column(Text)
+    calculation_params: Mapped[dict | None] = mapped_column(JSONB, default=dict)
     frequency: Mapped[str] = mapped_column(
         String(20),
         default=KPIFrequency.DAILY.value,
@@ -126,35 +130,35 @@ class KPIDefinition(Base):
 
     # Comparações
     enable_comparison: Mapped[bool] = mapped_column(Boolean, default=True)
-    comparison_periods: Mapped[Optional[list]] = mapped_column(
+    comparison_periods: Mapped[list | None] = mapped_column(
         JSONB,
         default=lambda: ["previous_period", "same_period_last_year"],
     )
 
     # Benchmark
-    industry_benchmark: Mapped[Optional[float]] = mapped_column(Float)
-    benchmark_source: Mapped[Optional[str]] = mapped_column(String(200))
+    industry_benchmark: Mapped[float | None] = mapped_column(Float)
+    benchmark_source: Mapped[str | None] = mapped_column(String(200))
 
     # Alertas
     alert_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    alert_recipients: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    alert_conditions: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    alert_recipients: Mapped[list | None] = mapped_column(JSONB, default=list)
+    alert_conditions: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Visualização
     default_chart_type: Mapped[str] = mapped_column(String(30), default="line_chart")
-    color_scheme: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    icon: Mapped[Optional[str]] = mapped_column(String(50))
+    color_scheme: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    icon: Mapped[str | None] = mapped_column(String(50))
 
     # Drill-down
     drill_down_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    drill_down_dimensions: Mapped[Optional[list]] = mapped_column(
+    drill_down_dimensions: Mapped[list | None] = mapped_column(
         JSONB,
         default=lambda: ["department", "employee", "date"],
     )
 
     # Metadados
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    settings: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    tags: Mapped[list | None] = mapped_column(JSONB, default=list)
+    settings: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Ordenação e visibilidade
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
@@ -162,7 +166,7 @@ class KPIDefinition(Base):
     is_system: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Auditoria
-    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -222,9 +226,8 @@ class KPIDefinition(Base):
             return {"direction": "neutral", "percentage": 0, "is_positive": True}
 
         change = ((current - previous) / previous) * 100
-        is_positive = (
-            (change > 0 and self.direction == KPIDirection.UP.value)
-            or (change < 0 and self.direction == KPIDirection.DOWN.value)
+        is_positive = (change > 0 and self.direction == KPIDirection.UP.value) or (
+            change < 0 and self.direction == KPIDirection.DOWN.value
         )
 
         return {
@@ -238,10 +241,8 @@ class KPIDefinition(Base):
         formatted = f"{value:.{self.decimal_places}f}"
 
         if self.format_pattern:
-            try:
+            with contextlib.suppress(ValueError, KeyError):
                 formatted = self.format_pattern.format(value=value)
-            except (ValueError, KeyError):
-                pass
 
         result = f"{self.prefix or ''}{formatted}{self.suffix or ''}"
 

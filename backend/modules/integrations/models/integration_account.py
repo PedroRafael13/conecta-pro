@@ -3,23 +3,19 @@ IntegrationAccount Model - Credenciais e Configurações por Tenant
 Sprint 33: Integration Framework
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index, ForeignKey
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class ConnectorType(str, enum.Enum):
+class ConnectorType(StrEnum):
     """Tipos de conectores disponíveis."""
+
     BLING = "bling"
     SOLIDES = "solides"
     DOMINIO = "dominio"
@@ -30,8 +26,9 @@ class ConnectorType(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class AuthType(str, enum.Enum):
+class AuthType(StrEnum):
     """Tipos de autenticação."""
+
     API_KEY = "api_key"
     OAUTH2 = "oauth2"
     OAUTH2_CLIENT_CREDENTIALS = "oauth2_client_credentials"
@@ -41,8 +38,9 @@ class AuthType(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class AccountStatus(str, enum.Enum):
+class AccountStatus(StrEnum):
     """Status da conta de integração."""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     SUSPENDED = "suspended"
@@ -56,6 +54,7 @@ class IntegrationAccount(Base):
     Model para credenciais e configurações de integração por tenant.
     Armazena tokens de forma criptografada.
     """
+
     __tablename__ = "integration_accounts"
 
     # Primary key
@@ -67,18 +66,10 @@ class IntegrationAccount(Base):
     # Identificação
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
-    connector_type = Column(
-        Enum(ConnectorType),
-        nullable=False,
-        default=ConnectorType.CUSTOM
-    )
+    connector_type = Column(Enum(ConnectorType), nullable=False, default=ConnectorType.CUSTOM)
 
     # Autenticação
-    auth_type = Column(
-        Enum(AuthType),
-        nullable=False,
-        default=AuthType.API_KEY
-    )
+    auth_type = Column(Enum(AuthType), nullable=False, default=AuthType.API_KEY)
 
     # Credenciais (CRIPTOGRAFADAS - usar security_lgpd)
     # Nunca armazenar em texto plano
@@ -113,11 +104,7 @@ class IntegrationAccount(Base):
     rate_limit_per_hour = Column(Integer, nullable=True)
 
     # Status
-    status = Column(
-        Enum(AccountStatus),
-        nullable=False,
-        default=AccountStatus.PENDING_AUTH
-    )
+    status = Column(Enum(AccountStatus), nullable=False, default=AccountStatus.PENDING_AUTH)
     status_message = Column(Text, nullable=True)
     last_error = Column(Text, nullable=True)
     last_error_at = Column(DateTime, nullable=True)
@@ -151,9 +138,7 @@ class IntegrationAccount(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -163,11 +148,7 @@ class IntegrationAccount(Base):
         Index("ix_integration_accounts_connector_type", "connector_type"),
         Index("ix_integration_accounts_status", "status"),
         Index("ix_integration_accounts_environment", "environment"),
-        Index(
-            "ix_integration_accounts_tenant_connector",
-            "tenant_id",
-            "connector_type"
-        ),
+        Index("ix_integration_accounts_tenant_connector", "tenant_id", "connector_type"),
         Index("ix_integration_accounts_next_sync_at", "next_sync_at"),
         Index("ix_integration_accounts_ativo", "ativo"),
     )
@@ -181,7 +162,7 @@ class IntegrationAccount(Base):
         self.status_message = None
         self.updated_at = datetime.utcnow()
 
-    def deactivate(self, reason: Optional[str] = None) -> None:
+    def deactivate(self, reason: str | None = None) -> None:
         """Desativa a conta."""
         self.status = AccountStatus.INACTIVE
         self.status_message = reason
@@ -206,12 +187,7 @@ class IntegrationAccount(Base):
         self.status_message = "Credenciais ou certificado expirado"
         self.updated_at = datetime.utcnow()
 
-    def update_health_check(
-        self,
-        success: bool,
-        latency_ms: Optional[int] = None,
-        error: Optional[str] = None
-    ) -> None:
+    def update_health_check(self, success: bool, latency_ms: int | None = None, error: str | None = None) -> None:
         """Atualiza resultado do health check."""
         self.last_health_check_at = datetime.utcnow()
         self.last_health_check_status = success
@@ -229,10 +205,7 @@ class IntegrationAccount(Base):
         self.updated_at = datetime.utcnow()
 
     def update_oauth2_tokens(
-        self,
-        access_token_encrypted: str,
-        refresh_token_encrypted: Optional[str],
-        expires_at: datetime
+        self, access_token_encrypted: str, refresh_token_encrypted: str | None, expires_at: datetime
     ) -> None:
         """Atualiza tokens OAuth2."""
         self.oauth2_access_token_encrypted = access_token_encrypted
@@ -242,9 +215,10 @@ class IntegrationAccount(Base):
         self.status = AccountStatus.ACTIVE
         self.updated_at = datetime.utcnow()
 
-    def schedule_next_sync(self, minutes_from_now: Optional[int] = None) -> None:
+    def schedule_next_sync(self, minutes_from_now: int | None = None) -> None:
         """Agenda próxima sincronização."""
         from datetime import timedelta
+
         interval = minutes_from_now or self.sync_interval_minutes
         self.next_sync_at = datetime.utcnow() + timedelta(minutes=interval)
         self.updated_at = datetime.utcnow()
@@ -261,6 +235,7 @@ class IntegrationAccount(Base):
             return True
         # Considera expirado 5 minutos antes para refresh proativo
         from datetime import timedelta
+
         return datetime.utcnow() >= (self.oauth2_token_expires_at - timedelta(minutes=5))
 
     @property

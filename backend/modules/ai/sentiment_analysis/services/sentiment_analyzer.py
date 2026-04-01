@@ -8,18 +8,16 @@ import logging
 import re
 import time
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
-from uuid import UUID
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai.sentiment_analysis.models import (
+    AnalysisStatus,
+    EmotionType,
     SentimentAnalysis,
     SentimentType,
-    EmotionType,
     SourceType,
-    AnalysisStatus,
-    SentimentRule,
 )
 from modules.ai.sentiment_analysis.repositories import SentimentRepository
 from modules.ai.sentiment_analysis.schemas import (
@@ -40,104 +38,282 @@ class SentimentAnalyzer:
 
     # Palavras-chave por categoria de sentimento (PT-BR)
     POSITIVE_WORDS = {
-        "excelente", "otimo", "perfeito", "maravilhoso", "incrivel",
-        "fantastico", "sensacional", "espetacular", "adorei", "amei",
-        "parabens", "satisfeito", "feliz", "contente", "grato",
-        "agradecer", "obrigado", "recomendo", "eficiente", "rapido",
-        "profissional", "atencioso", "competente", "dedicado", "prestativo",
-        "simpatico", "educado", "cordial", "gentil", "solucao",
-        "resolveu", "funcionou", "perfeicao", "qualidade", "top",
-        "nota 10", "show", "demais", "legal", "bom",
+        "excelente",
+        "otimo",
+        "perfeito",
+        "maravilhoso",
+        "incrivel",
+        "fantastico",
+        "sensacional",
+        "espetacular",
+        "adorei",
+        "amei",
+        "parabens",
+        "satisfeito",
+        "feliz",
+        "contente",
+        "grato",
+        "agradecer",
+        "obrigado",
+        "recomendo",
+        "eficiente",
+        "rapido",
+        "profissional",
+        "atencioso",
+        "competente",
+        "dedicado",
+        "prestativo",
+        "simpatico",
+        "educado",
+        "cordial",
+        "gentil",
+        "solucao",
+        "resolveu",
+        "funcionou",
+        "perfeicao",
+        "qualidade",
+        "top",
+        "nota 10",
+        "show",
+        "demais",
+        "legal",
+        "bom",
     }
 
     NEGATIVE_WORDS = {
-        "pessimo", "horrivel", "terrivel", "inaceitavel", "absurdo",
-        "ridiculo", "vergonha", "decepcionado", "frustrado", "irritado",
-        "raiva", "odio", "pior", "nunca", "jamais",
-        "insatisfeito", "ruim", "mal", "lento", "demorado",
-        "incompetente", "desrespeitoso", "grosseiro", "ignorante", "negligente",
-        "problema", "erro", "falha", "bug", "defeito",
-        "reclamar", "cancelar", "devolver", "reembolso", "procon",
-        "advogado", "processo", "judicial", "denunciar", "fraude",
-        "golpe", "enganado", "mentira", "descaso", "abandono",
+        "pessimo",
+        "horrivel",
+        "terrivel",
+        "inaceitavel",
+        "absurdo",
+        "ridiculo",
+        "vergonha",
+        "decepcionado",
+        "frustrado",
+        "irritado",
+        "raiva",
+        "odio",
+        "pior",
+        "nunca",
+        "jamais",
+        "insatisfeito",
+        "ruim",
+        "mal",
+        "lento",
+        "demorado",
+        "incompetente",
+        "desrespeitoso",
+        "grosseiro",
+        "ignorante",
+        "negligente",
+        "problema",
+        "erro",
+        "falha",
+        "bug",
+        "defeito",
+        "reclamar",
+        "cancelar",
+        "devolver",
+        "reembolso",
+        "procon",
+        "advogado",
+        "processo",
+        "judicial",
+        "denunciar",
+        "fraude",
+        "golpe",
+        "enganado",
+        "mentira",
+        "descaso",
+        "abandono",
     }
 
     URGENCY_WORDS = {
-        "urgente", "emergencia", "imediato", "agora", "rapido",
-        "pressa", "socorro", "help", "ajuda", "grave",
-        "critico", "serio", "importante", "prioridade", "deadline",
+        "urgente",
+        "emergencia",
+        "imediato",
+        "agora",
+        "rapido",
+        "pressa",
+        "socorro",
+        "help",
+        "ajuda",
+        "grave",
+        "critico",
+        "serio",
+        "importante",
+        "prioridade",
+        "deadline",
     }
 
     CHURN_INDICATORS = {
-        "cancelar", "cancelamento", "desistir", "trocar", "mudar",
-        "concorrente", "outro servico", "encerrar", "sair", "abandonar",
-        "nunca mais", "ultima vez", "fim", "tchau", "adeus",
+        "cancelar",
+        "cancelamento",
+        "desistir",
+        "trocar",
+        "mudar",
+        "concorrente",
+        "outro servico",
+        "encerrar",
+        "sair",
+        "abandonar",
+        "nunca mais",
+        "ultima vez",
+        "fim",
+        "tchau",
+        "adeus",
     }
 
     COMPLAINT_INDICATORS = {
-        "reclamacao", "reclamar", "problema", "erro", "falha",
-        "nao funciona", "defeito", "quebrado", "danificado", "procon",
-        "ouvidoria", "advogado", "processo", "indenizacao",
+        "reclamacao",
+        "reclamar",
+        "problema",
+        "erro",
+        "falha",
+        "nao funciona",
+        "defeito",
+        "quebrado",
+        "danificado",
+        "procon",
+        "ouvidoria",
+        "advogado",
+        "processo",
+        "indenizacao",
     }
 
     # Emocoes e suas palavras associadas
     EMOTION_KEYWORDS = {
         EmotionType.JOY: {
-            "feliz", "alegre", "contente", "animado", "empolgado",
+            "feliz",
+            "alegre",
+            "contente",
+            "animado",
+            "empolgado",
         },
         EmotionType.SATISFACTION: {
-            "satisfeito", "realizado", "completo", "atendido",
+            "satisfeito",
+            "realizado",
+            "completo",
+            "atendido",
         },
         EmotionType.GRATITUDE: {
-            "grato", "agradecido", "obrigado", "agradecer", "reconhecido",
+            "grato",
+            "agradecido",
+            "obrigado",
+            "agradecer",
+            "reconhecido",
         },
         EmotionType.TRUST: {
-            "confianca", "confio", "seguro", "tranquilo", "credibilidade",
+            "confianca",
+            "confio",
+            "seguro",
+            "tranquilo",
+            "credibilidade",
         },
         EmotionType.FRUSTRATION: {
-            "frustrado", "frustracao", "desapontado", "chateado",
+            "frustrado",
+            "frustracao",
+            "desapontado",
+            "chateado",
         },
         EmotionType.ANGER: {
-            "raiva", "irritado", "furioso", "revoltado", "indignado",
+            "raiva",
+            "irritado",
+            "furioso",
+            "revoltado",
+            "indignado",
         },
         EmotionType.DISAPPOINTMENT: {
-            "decepcionado", "decepcao", "esperava mais", "aquem",
+            "decepcionado",
+            "decepcao",
+            "esperava mais",
+            "aquem",
         },
         EmotionType.FEAR: {
-            "medo", "receio", "preocupado", "ansioso", "inseguro",
+            "medo",
+            "receio",
+            "preocupado",
+            "ansioso",
+            "inseguro",
         },
         EmotionType.SADNESS: {
-            "triste", "tristeza", "infeliz", "desanimado", "abatido",
+            "triste",
+            "tristeza",
+            "infeliz",
+            "desanimado",
+            "abatido",
         },
         EmotionType.URGENCY: {
-            "urgente", "emergencia", "imediato", "rapido", "agora",
+            "urgente",
+            "emergencia",
+            "imediato",
+            "rapido",
+            "agora",
         },
     }
 
     # Aspectos comuns em servicos
     ASPECT_KEYWORDS = {
         "atendimento": [
-            "atendimento", "atendente", "suporte", "sac", "call center",
-            "chat", "telefone", "email", "whatsapp",
+            "atendimento",
+            "atendente",
+            "suporte",
+            "sac",
+            "call center",
+            "chat",
+            "telefone",
+            "email",
+            "whatsapp",
         ],
         "preco": [
-            "preco", "valor", "custo", "caro", "barato", "taxa", "tarifa",
-            "cobranca", "fatura", "boleto", "pagamento",
+            "preco",
+            "valor",
+            "custo",
+            "caro",
+            "barato",
+            "taxa",
+            "tarifa",
+            "cobranca",
+            "fatura",
+            "boleto",
+            "pagamento",
         ],
         "qualidade": [
-            "qualidade", "produto", "material", "acabamento", "durabilidade",
+            "qualidade",
+            "produto",
+            "material",
+            "acabamento",
+            "durabilidade",
         ],
         "entrega": [
-            "entrega", "prazo", "chegou", "enviado", "frete", "transportadora",
+            "entrega",
+            "prazo",
+            "chegou",
+            "enviado",
+            "frete",
+            "transportadora",
         ],
         "plataforma": [
-            "site", "app", "aplicativo", "sistema", "plataforma", "interface",
+            "site",
+            "app",
+            "aplicativo",
+            "sistema",
+            "plataforma",
+            "interface",
         ],
         "instalacao": [
-            "instalacao", "tecnico", "visita", "montagem", "configuracao",
+            "instalacao",
+            "tecnico",
+            "visita",
+            "montagem",
+            "configuracao",
         ],
         "seguranca": [
-            "seguranca", "camera", "alarme", "monitoramento", "vigilancia",
+            "seguranca",
+            "camera",
+            "alarme",
+            "monitoramento",
+            "vigilancia",
         ],
     }
 
@@ -245,13 +421,15 @@ class SentimentAnalyzer:
                 for rule in rules:
                     result = rule.evaluate(self._analysis_to_dict(analysis))
                     if result["matched"]:
-                        triggered_rules.append({
-                            "rule_id": str(rule.id),
-                            "rule_code": rule.code,
-                            "rule_name": rule.name,
-                            "reasons": result["reasons"],
-                            "actions": rule.get_actions(),
-                        })
+                        triggered_rules.append(
+                            {
+                                "rule_id": str(rule.id),
+                                "rule_code": rule.code,
+                                "rule_name": rule.name,
+                                "reasons": result["reasons"],
+                                "actions": rule.get_actions(),
+                            }
+                        )
                         await self.repository.increment_rule_trigger(rule.id)
 
             analysis.triggered_rules = triggered_rules
@@ -296,11 +474,13 @@ class SentimentAnalyzer:
                 result = await self.analyze_text(text_request)
                 results.append(result)
             except Exception as e:
-                errors.append({
-                    "index": i,
-                    "error": str(e),
-                    "text_preview": text_request.text[:100],
-                })
+                errors.append(
+                    {
+                        "index": i,
+                        "error": str(e),
+                        "text_preview": text_request.text[:100],
+                    }
+                )
 
         processing_time = int((time.time() - start_time) * 1000)
 
@@ -319,20 +499,20 @@ class SentimentAnalyzer:
         normalized = text.lower()
 
         # Remover URLs
-        normalized = re.sub(r'http[s]?://\S+', '', normalized)
+        normalized = re.sub(r"http[s]?://\S+", "", normalized)
 
         # Remover emails
-        normalized = re.sub(r'\S+@\S+', '', normalized)
+        normalized = re.sub(r"\S+@\S+", "", normalized)
 
         # Remover caracteres especiais mas manter acentos
-        normalized = re.sub(r'[^\w\sáéíóúâêîôûãõàèìòùäëïöüç]', ' ', normalized)
+        normalized = re.sub(r"[^\w\sáéíóúâêîôûãõàèìòùäëïöüç]", " ", normalized)
 
         # Remover espacos extras
-        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        normalized = re.sub(r"\s+", " ", normalized).strip()
 
         return normalized
 
-    def _analyze_sentiment(self, text: str) -> Dict[str, Any]:
+    def _analyze_sentiment(self, text: str) -> dict[str, Any]:
         """Analisa polaridade do sentimento."""
         words = set(text.split())
 
@@ -405,7 +585,7 @@ class SentimentAnalyzer:
 
         return max(-100, min(100, score))
 
-    def _detect_emotions(self, text: str) -> Dict[str, Any]:
+    def _detect_emotions(self, text: str) -> dict[str, Any]:
         """Detecta emocoes no texto."""
         words = set(text.split())
         emotion_scores = {}
@@ -423,9 +603,7 @@ class SentimentAnalyzer:
             }
 
         # Ordenar por score
-        sorted_emotions = sorted(
-            emotion_scores.items(), key=lambda x: x[1], reverse=True
-        )
+        sorted_emotions = sorted(emotion_scores.items(), key=lambda x: x[1], reverse=True)
 
         primary = EmotionType(sorted_emotions[0][0])
         secondary = None
@@ -438,10 +616,10 @@ class SentimentAnalyzer:
             "scores": emotion_scores,
         }
 
-    def _extract_aspects(self, text: str) -> List[Dict[str, Any]]:
+    def _extract_aspects(self, text: str) -> list[dict[str, Any]]:
         """Extrai aspectos mencionados e seu sentimento."""
         aspects = []
-        words = text.split()
+        text.split()
 
         for aspect_name, keywords in self.ASPECT_KEYWORDS.items():
             for keyword in keywords:
@@ -450,15 +628,15 @@ class SentimentAnalyzer:
                     context = self._get_context(text, keyword, window=10)
                     aspect_sentiment = self._analyze_sentiment(context)
 
-                    aspects.append({
-                        "aspect": aspect_name,
-                        "keyword": keyword,
-                        "sentiment": self._score_to_sentiment_label(
-                            aspect_sentiment["score"]
-                        ),
-                        "score": aspect_sentiment["score"],
-                        "mentions": text.count(keyword),
-                    })
+                    aspects.append(
+                        {
+                            "aspect": aspect_name,
+                            "keyword": keyword,
+                            "sentiment": self._score_to_sentiment_label(aspect_sentiment["score"]),
+                            "score": aspect_sentiment["score"],
+                            "mentions": text.count(keyword),
+                        }
+                    )
                     break  # Apenas uma entrada por aspecto
 
         return aspects
@@ -494,19 +672,76 @@ class SentimentAnalyzer:
         else:
             return "very_negative"
 
-    def _extract_keywords(self, text: str) -> List[Dict[str, Any]]:
+    def _extract_keywords(self, text: str) -> list[dict[str, Any]]:
         """Extrai palavras-chave relevantes."""
         # Stop words em portugues
         stop_words = {
-            "de", "da", "do", "das", "dos", "a", "o", "as", "os",
-            "e", "em", "para", "com", "por", "um", "uma", "que",
-            "se", "na", "no", "nas", "nos", "ao", "aos", "pela",
-            "pelo", "pelas", "pelos", "este", "esta", "esse", "essa",
-            "aquele", "aquela", "seu", "sua", "seus", "suas", "meu",
-            "minha", "meus", "minhas", "ele", "ela", "eles", "elas",
-            "voce", "voces", "nos", "eu", "tu", "foi", "era", "ser",
-            "ter", "esta", "estou", "estava", "nao", "sim", "mais",
-            "muito", "tambem", "ja", "ainda", "quando", "onde", "como",
+            "de",
+            "da",
+            "do",
+            "das",
+            "dos",
+            "a",
+            "o",
+            "as",
+            "os",
+            "e",
+            "em",
+            "para",
+            "com",
+            "por",
+            "um",
+            "uma",
+            "que",
+            "se",
+            "na",
+            "no",
+            "nas",
+            "nos",
+            "ao",
+            "aos",
+            "pela",
+            "pelo",
+            "pelas",
+            "pelos",
+            "este",
+            "esta",
+            "esse",
+            "essa",
+            "aquele",
+            "aquela",
+            "seu",
+            "sua",
+            "seus",
+            "suas",
+            "meu",
+            "minha",
+            "meus",
+            "minhas",
+            "ele",
+            "ela",
+            "eles",
+            "elas",
+            "voce",
+            "voces",
+            "eu",
+            "tu",
+            "foi",
+            "era",
+            "ser",
+            "ter",
+            "estou",
+            "estava",
+            "nao",
+            "sim",
+            "mais",
+            "muito",
+            "tambem",
+            "ja",
+            "ainda",
+            "quando",
+            "onde",
+            "como",
         }
 
         words = text.split()
@@ -519,12 +754,9 @@ class SentimentAnalyzer:
         # Ordenar por frequencia
         sorted_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
 
-        return [
-            {"word": word, "frequency": freq}
-            for word, freq in sorted_words[:20]
-        ]
+        return [{"word": word, "frequency": freq} for word, freq in sorted_words[:20]]
 
-    def _identify_topics(self, text: str) -> List[str]:
+    def _identify_topics(self, text: str) -> list[str]:
         """Identifica topicos principais."""
         topics = []
 
@@ -549,9 +781,9 @@ class SentimentAnalyzer:
         self,
         text: str,
         sentiment_score: float,
-    ) -> Dict[str, List[str]]:
+    ) -> dict[str, list[str]]:
         """Extrai frases-chave do texto."""
-        sentences = re.split(r'[.!?]+', text)
+        sentences = re.split(r"[.!?]+", text)
         key_phrases = []
         positive_phrases = []
         negative_phrases = []
@@ -579,7 +811,7 @@ class SentimentAnalyzer:
             "negative": negative_phrases[:5],
         }
 
-    def _check_urgency(self, text: str) -> Dict[str, Any]:
+    def _check_urgency(self, text: str) -> dict[str, Any]:
         """Verifica indicadores de urgencia."""
         urgency_matches = sum(1 for word in self.URGENCY_WORDS if word in text)
 
@@ -608,8 +840,14 @@ class SentimentAnalyzer:
     def _check_suggestion(self, text: str) -> bool:
         """Verifica se tem sugestao."""
         suggestion_patterns = [
-            "sugiro", "sugestao", "poderia", "seria bom", "deveria",
-            "que tal", "melhorar", "melhoraria",
+            "sugiro",
+            "sugestao",
+            "poderia",
+            "seria bom",
+            "deveria",
+            "que tal",
+            "melhorar",
+            "melhoraria",
         ]
         return any(pattern in text.lower() for pattern in suggestion_patterns)
 
@@ -636,7 +874,7 @@ class SentimentAnalyzer:
         else:
             return "detractor"
 
-    def _analysis_to_dict(self, analysis: SentimentAnalysis) -> Dict[str, Any]:
+    def _analysis_to_dict(self, analysis: SentimentAnalysis) -> dict[str, Any]:
         """Converte analise para dicionario para avaliacao de regras."""
         return {
             "sentiment_score": analysis.sentiment_score,
@@ -693,9 +931,9 @@ class SentimentAnalyzer:
 
 
 # Import para response
-from modules.ai.sentiment_analysis.schemas.sentiment_schemas import (
-    SentimentTypeEnum,
-    EmotionTypeEnum,
+from modules.ai.sentiment_analysis.schemas.sentiment_schemas import (  # noqa: E402
     AspectSchema,
+    EmotionTypeEnum,
     KeywordSchema,
+    SentimentTypeEnum,
 )

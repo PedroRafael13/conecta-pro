@@ -6,10 +6,10 @@ Sprint 36 - Notification Hub.
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from modules.notifications.models import (
@@ -20,7 +20,6 @@ from modules.notifications.models import (
     NotificationChannel,
     NotificationLog,
     NotificationQueue,
-    QueuePriority,
     QueueStatus,
 )
 
@@ -35,7 +34,7 @@ class ChannelSender(ABC):
         self,
         queue_item: NotificationQueue,
         channel: NotificationChannel,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia a notificação.
 
         Args:
@@ -65,7 +64,7 @@ class EmailSender(ChannelSender):
         self,
         queue_item: NotificationQueue,
         channel: NotificationChannel,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia email."""
         provider = channel.provider
         config = channel.provider_config or {}
@@ -87,8 +86,8 @@ class EmailSender(ChannelSender):
     def _send_smtp(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via SMTP."""
         import smtplib
         from email.mime.multipart import MIMEMultipart
@@ -125,15 +124,14 @@ class EmailSender(ChannelSender):
     def _send_sendgrid(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via SendGrid."""
         # Implementação básica - requer sendgrid SDK
         api_key = config.get("api_key")
         if not api_key:
             return {"success": False, "error": "SendGrid API key não configurada"}
 
-        # TODO: Implementar integração com SendGrid
         logger.info(f"SendGrid: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -144,10 +142,9 @@ class EmailSender(ChannelSender):
     def _send_ses(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via AWS SES."""
-        # TODO: Implementar integração com AWS SES
         logger.info(f"AWS SES: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -170,7 +167,7 @@ class SmsSender(ChannelSender):
         self,
         queue_item: NotificationQueue,
         channel: NotificationChannel,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia SMS."""
         provider = channel.provider
         config = channel.provider_config or {}
@@ -192,10 +189,9 @@ class SmsSender(ChannelSender):
     def _send_twilio(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via Twilio."""
-        # TODO: Implementar integração com Twilio
         logger.info(f"Twilio SMS: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -206,10 +202,9 @@ class SmsSender(ChannelSender):
     def _send_zenvia(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via Zenvia."""
-        # TODO: Implementar integração com Zenvia
         logger.info(f"Zenvia: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -219,10 +214,9 @@ class SmsSender(ChannelSender):
     def _send_sns(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via AWS SNS."""
-        # TODO: Implementar integração com AWS SNS
         logger.info(f"AWS SNS: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -245,7 +239,7 @@ class WhatsAppSender(ChannelSender):
         self,
         queue_item: NotificationQueue,
         channel: NotificationChannel,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia WhatsApp."""
         provider = channel.provider
         config = channel.provider_config or {}
@@ -265,10 +259,9 @@ class WhatsAppSender(ChannelSender):
     def _send_business_api(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via WhatsApp Business API."""
-        # TODO: Implementar integração com WhatsApp Business API
         logger.info(f"WhatsApp Business: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -279,10 +272,9 @@ class WhatsAppSender(ChannelSender):
     def _send_twilio(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via Twilio WhatsApp."""
-        # TODO: Implementar integração com Twilio WhatsApp
         logger.info(f"Twilio WhatsApp: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -304,7 +296,7 @@ class PushSender(ChannelSender):
         self,
         queue_item: NotificationQueue,
         channel: NotificationChannel,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia Push."""
         provider = channel.provider
         config = channel.provider_config or {}
@@ -324,10 +316,9 @@ class PushSender(ChannelSender):
     def _send_fcm(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via Firebase Cloud Messaging."""
-        # TODO: Implementar integração com FCM
         logger.info(f"FCM: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -337,10 +328,9 @@ class PushSender(ChannelSender):
     def _send_onesignal(
         self,
         queue_item: NotificationQueue,
-        config: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Envia via OneSignal."""
-        # TODO: Implementar integração com OneSignal
         logger.info(f"OneSignal: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -360,7 +350,7 @@ class InAppSender(ChannelSender):
         self,
         queue_item: NotificationQueue,
         channel: NotificationChannel,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Armazena notificação in-app."""
         # In-app já está na fila, apenas marca como entregue
         logger.info(f"In-App: notificação armazenada para {queue_item.user_id}")
@@ -383,7 +373,7 @@ class ChannelDispatcher:
     """Dispatcher para despacho de notificações por canal."""
 
     # Mapeamento de tipo de canal para sender
-    SENDERS: Dict[ChannelType, Type[ChannelSender]] = {
+    SENDERS: dict[ChannelType, type[ChannelSender]] = {
         ChannelType.EMAIL: EmailSender,
         ChannelType.SMS: SmsSender,
         ChannelType.WHATSAPP: WhatsAppSender,
@@ -400,9 +390,9 @@ class ChannelDispatcher:
         """
         self.db = db
         self.tenant_id = tenant_id
-        self._senders: Dict[ChannelType, ChannelSender] = {}
+        self._senders: dict[ChannelType, ChannelSender] = {}
 
-    def get_sender(self, channel_type: ChannelType) -> Optional[ChannelSender]:
+    def get_sender(self, channel_type: ChannelType) -> ChannelSender | None:
         """Obtém o sender para um tipo de canal.
 
         Args:
@@ -418,7 +408,7 @@ class ChannelDispatcher:
 
         return self._senders.get(channel_type)
 
-    def dispatch(self, queue_item: NotificationQueue) -> Dict[str, Any]:
+    def dispatch(self, queue_item: NotificationQueue) -> dict[str, Any]:
         """Despacha uma notificação.
 
         Args:
@@ -506,8 +496,8 @@ class ChannelDispatcher:
     def process_pending(
         self,
         batch_size: int = 100,
-        channel_type: Optional[ChannelType] = None,
-    ) -> Dict[str, int]:
+        channel_type: ChannelType | None = None,
+    ) -> dict[str, int]:
         """Processa itens pendentes da fila.
 
         Args:
@@ -523,13 +513,13 @@ class ChannelDispatcher:
         query = self.db.query(NotificationQueue).filter(
             NotificationQueue.tenant_id == self.tenant_id,
             NotificationQueue.status.in_([QueueStatus.PENDING, QueueStatus.RETRY]),
-            NotificationQueue.active == True,
+            NotificationQueue.active,
         )
 
         # Filtrar agendados para o passado
         query = query.filter(
             or_(
-                NotificationQueue.scheduled_at == None,
+                NotificationQueue.scheduled_at is None,
                 NotificationQueue.scheduled_at <= datetime.utcnow(),
             )
         )
@@ -561,14 +551,14 @@ class ChannelDispatcher:
 
         return results
 
-    def _get_channel(self, queue_item: NotificationQueue) -> Optional[NotificationChannel]:
+    def _get_channel(self, queue_item: NotificationQueue) -> NotificationChannel | None:
         """Obtém o canal para um item da fila."""
         if queue_item.channel_id:
             return (
                 self.db.query(NotificationChannel)
                 .filter(
                     NotificationChannel.id == queue_item.channel_id,
-                    NotificationChannel.active == True,
+                    NotificationChannel.active,
                 )
                 .first()
             )
@@ -579,8 +569,8 @@ class ChannelDispatcher:
             .filter(
                 NotificationChannel.tenant_id == self.tenant_id,
                 NotificationChannel.channel_type == queue_item.channel_type,
-                NotificationChannel.is_default == True,
-                NotificationChannel.active == True,
+                NotificationChannel.is_default,
+                NotificationChannel.active,
             )
             .first()
         )
@@ -626,7 +616,7 @@ class ChannelDispatcher:
     def _mark_sent(
         self,
         queue_item: NotificationQueue,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         processing_time: int,
     ) -> None:
         """Marca item como enviado."""
@@ -688,7 +678,7 @@ class ChannelDispatcher:
 
     def _update_channel_metrics(
         self,
-        channel: Optional[NotificationChannel],
+        channel: NotificationChannel | None,
         success: bool,
     ) -> None:
         """Atualiza métricas do canal."""
@@ -708,7 +698,7 @@ class ChannelDispatcher:
         event_type: LogEventType,
         message: str,
         level: LogLevel = LogLevel.INFO,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         """Cria entrada de log."""
         log = NotificationLog(

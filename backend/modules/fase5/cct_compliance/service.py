@@ -5,25 +5,16 @@ Servico de validacao e compliance CCT SINDCOND 2026
 """
 
 import logging
-from typing import Dict, List, Optional, Any
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
-from .enums import (
-    TipoCargo,
-    TipoJornada,
-    TipoBeneficio,
-    StatusValidacao
-)
+from .enums import TipoBeneficio, TipoCargo, TipoJornada
 from .models import (
-    CargoSINDCOND,
-    SalarioBase,
-    Beneficio,
-    JornadaTrabalho,
-    ValidacaoCCT,
+    BENEFICIOS_CCT_2026,
     TABELA_PISOS_SINDCOND_2026,
-    BENEFICIOS_CCT_2026
+    ValidacaoCCT,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,19 +38,12 @@ class CCTComplianceService:
         self.ano_vigencia = 2026
         self.reajuste_percentual = Decimal("7.1")
 
-    def validar_salario(
-        self,
-        cargo: TipoCargo,
-        salario_informado: Decimal
-    ) -> Dict[str, Any]:
+    def validar_salario(self, cargo: TipoCargo, salario_informado: Decimal) -> dict[str, Any]:
         """Valida salario contra piso da CCT."""
         piso = self.tabela_pisos.get(cargo)
 
         if not piso:
-            return {
-                "valido": False,
-                "erro": f"Cargo {cargo.value} nao encontrado na tabela CCT"
-            }
+            return {"valido": False, "erro": f"Cargo {cargo.value} nao encontrado na tabela CCT"}
 
         diferenca = salario_informado - piso
         percentual_diferenca = ((salario_informado / piso) - 1) * 100
@@ -71,14 +55,10 @@ class CCTComplianceService:
             "salario_informado": str(salario_informado),
             "diferenca": str(diferenca),
             "percentual_diferenca": f"{percentual_diferenca:.2f}%",
-            "alerta": "Salario abaixo do piso CCT" if salario_informado < piso else None
+            "alerta": "Salario abaixo do piso CCT" if salario_informado < piso else None,
         }
 
-    def validar_jornada(
-        self,
-        cargo: TipoCargo,
-        jornada: TipoJornada
-    ) -> Dict[str, Any]:
+    def validar_jornada(self, cargo: TipoCargo, jornada: TipoJornada) -> dict[str, Any]:
         """Valida jornada de trabalho."""
         jornadas_validas = self._get_jornadas_permitidas(cargo)
 
@@ -87,13 +67,12 @@ class CCTComplianceService:
             "cargo": cargo.value,
             "jornada_informada": jornada.value,
             "jornadas_permitidas": [j.value for j in jornadas_validas],
-            "alerta": f"Jornada {jornada.value} nao permitida para {cargo.value}" if jornada not in jornadas_validas else None
+            "alerta": f"Jornada {jornada.value} nao permitida para {cargo.value}"
+            if jornada not in jornadas_validas
+            else None,
         }
 
-    def validar_beneficios(
-        self,
-        beneficios_informados: List[TipoBeneficio]
-    ) -> Dict[str, Any]:
+    def validar_beneficios(self, beneficios_informados: list[TipoBeneficio]) -> dict[str, Any]:
         """Valida beneficios contra obrigatorios da CCT."""
         obrigatorios = set(self.beneficios_obrigatorios.keys())
         informados = set(beneficios_informados)
@@ -107,7 +86,7 @@ class CCTComplianceService:
             "beneficios_informados": [b.value for b in informados],
             "beneficios_faltantes": [b.value for b in faltantes],
             "beneficios_extras": [b.value for b in extras],
-            "alerta": f"Beneficios faltantes: {[b.value for b in faltantes]}" if faltantes else None
+            "alerta": f"Beneficios faltantes: {[b.value for b in faltantes]}" if faltantes else None,
         }
 
     def validar_completo(
@@ -115,8 +94,8 @@ class CCTComplianceService:
         cargo: TipoCargo,
         salario: Decimal,
         jornada: TipoJornada,
-        beneficios: List[TipoBeneficio],
-        funcionario_id: Optional[UUID] = None
+        beneficios: list[TipoBeneficio],
+        funcionario_id: UUID | None = None,
     ) -> ValidacaoCCT:
         """Executa validacao completa de compliance CCT."""
         logger.info(f"Validando compliance CCT para cargo {cargo.value}")
@@ -141,14 +120,8 @@ class CCTComplianceService:
             jornada_conforme=resultado_jornada["valido"],
             jornada_informada=jornada,
             beneficios_conformes=resultado_beneficios["valido"],
-            beneficios_faltantes=[
-                TipoBeneficio(b) for b in resultado_beneficios.get("beneficios_faltantes", [])
-            ],
-            detalhes={
-                "salario": resultado_salario,
-                "jornada": resultado_jornada,
-                "beneficios": resultado_beneficios
-            }
+            beneficios_faltantes=[TipoBeneficio(b) for b in resultado_beneficios.get("beneficios_faltantes", [])],
+            detalhes={"salario": resultado_salario, "jornada": resultado_jornada, "beneficios": resultado_beneficios},
         )
 
         # Adicionar alertas
@@ -161,13 +134,9 @@ class CCTComplianceService:
 
         # Adicionar recomendacoes
         if not resultado_salario["valido"]:
-            validacao.recomendacoes.append(
-                f"Ajustar salario para minimo R$ {resultado_salario['piso_cct']}"
-            )
+            validacao.recomendacoes.append(f"Ajustar salario para minimo R$ {resultado_salario['piso_cct']}")
         if resultado_beneficios.get("beneficios_faltantes"):
-            validacao.recomendacoes.append(
-                f"Incluir beneficios: {resultado_beneficios['beneficios_faltantes']}"
-            )
+            validacao.recomendacoes.append(f"Incluir beneficios: {resultado_beneficios['beneficios_faltantes']}")
 
         # Calcular score
         validacao.calcular_score()
@@ -179,10 +148,10 @@ class CCTComplianceService:
     def calcular_custo_funcionario(
         self,
         cargo: TipoCargo,
-        salario_base: Optional[Decimal] = None,
+        salario_base: Decimal | None = None,
         jornada: TipoJornada = TipoJornada.JORNADA_44H,
-        incluir_encargos: bool = True
-    ) -> Dict[str, Any]:
+        incluir_encargos: bool = True,
+    ) -> dict[str, Any]:
         """Calcula custo total de um funcionario."""
         # Usar piso se salario nao informado
         salario = salario_base or self.tabela_pisos.get(cargo, Decimal("0"))
@@ -194,10 +163,7 @@ class CCTComplianceService:
         for tipo, beneficio in self.beneficios_obrigatorios.items():
             valor = beneficio.valor_estimado_mensal
             beneficios_total += valor
-            beneficios_detalhes.append({
-                "tipo": tipo.value,
-                "valor_mensal": str(valor)
-            })
+            beneficios_detalhes.append({"tipo": tipo.value, "valor_mensal": str(valor)})
 
         # Encargos (estimativa)
         if incluir_encargos:
@@ -226,24 +192,19 @@ class CCTComplianceService:
             "cargo": cargo.value,
             "jornada": jornada.value,
             "salario_base": str(salario),
-            "beneficios": {
-                "total": str(beneficios_total),
-                "detalhes": beneficios_detalhes
-            },
+            "beneficios": {"total": str(beneficios_total), "detalhes": beneficios_detalhes},
             "encargos": {
                 "total": str(encargos_total.quantize(Decimal("0.01"))),
                 "percentual": f"{encargos_percentual}%",
-                "incluido": incluir_encargos
+                "incluido": incluir_encargos,
             },
             "custo_total_mensal": str(custo_total.quantize(Decimal("0.01"))),
-            "custo_total_anual": str((custo_total * 12).quantize(Decimal("0.01")))
+            "custo_total_anual": str((custo_total * 12).quantize(Decimal("0.01"))),
         }
 
     def gerar_proposta_comercial(
-        self,
-        cargos: List[Dict[str, Any]],
-        margem_lucro_percentual: Decimal = Decimal("15")
-    ) -> Dict[str, Any]:
+        self, cargos: list[dict[str, Any]], margem_lucro_percentual: Decimal = Decimal("15")
+    ) -> dict[str, Any]:
         """Gera proposta comercial baseada na CCT."""
         itens_proposta = []
         custo_total = Decimal("0")
@@ -257,13 +218,15 @@ class CCTComplianceService:
             custo_mensal = Decimal(custo["custo_total_mensal"])
             custo_item = custo_mensal * quantidade
 
-            itens_proposta.append({
-                "cargo": cargo.value,
-                "quantidade": quantidade,
-                "jornada": jornada.value,
-                "custo_unitario": str(custo_mensal),
-                "custo_total": str(custo_item)
-            })
+            itens_proposta.append(
+                {
+                    "cargo": cargo.value,
+                    "quantidade": quantidade,
+                    "jornada": jornada.value,
+                    "custo_unitario": str(custo_mensal),
+                    "custo_total": str(custo_item),
+                }
+            )
 
             custo_total += custo_item
 
@@ -283,26 +246,22 @@ class CCTComplianceService:
             "observacoes": [
                 "Valores baseados na CCT SINDCOND 2026",
                 f"Reajuste anual previsto: {self.reajuste_percentual}%",
-                "Beneficios inclusos: VA, Cesta basica, VT, Seguro de vida"
-            ]
+                "Beneficios inclusos: VA, Cesta basica, VT, Seguro de vida",
+            ],
         }
 
-    def listar_cargos(self) -> List[Dict[str, Any]]:
+    def listar_cargos(self) -> list[dict[str, Any]]:
         """Lista todos os cargos com pisos salariais."""
         return [
-            {
-                "cargo": cargo.value,
-                "piso_salarial": str(piso),
-                "vigencia": self.ano_vigencia
-            }
+            {"cargo": cargo.value, "piso_salarial": str(piso), "vigencia": self.ano_vigencia}
             for cargo, piso in self.tabela_pisos.items()
         ]
 
-    def obter_piso_salarial(self, cargo: TipoCargo) -> Optional[Decimal]:
+    def obter_piso_salarial(self, cargo: TipoCargo) -> Decimal | None:
         """Obtem piso salarial de um cargo."""
         return self.tabela_pisos.get(cargo)
 
-    def _get_jornadas_permitidas(self, cargo: TipoCargo) -> List[TipoJornada]:
+    def _get_jornadas_permitidas(self, cargo: TipoCargo) -> list[TipoJornada]:
         """Retorna jornadas permitidas para um cargo."""
         # Cargos que permitem 12x36
         cargos_12x36 = [
@@ -311,15 +270,11 @@ class CCTComplianceService:
             TipoCargo.CONTROLADOR_ACESSO,
             TipoCargo.VIGIA,
             TipoCargo.VIGILANTE,
-            TipoCargo.FOLGUISTA
+            TipoCargo.FOLGUISTA,
         ]
 
         if cargo in cargos_12x36:
-            return [
-                TipoJornada.JORNADA_44H,
-                TipoJornada.ESCALA_12X36,
-                TipoJornada.ESCALA_6X1
-            ]
+            return [TipoJornada.JORNADA_44H, TipoJornada.ESCALA_12X36, TipoJornada.ESCALA_6X1]
 
         # Cargos administrativos
         cargos_administrativos = [
@@ -327,18 +282,11 @@ class CCTComplianceService:
             TipoCargo.RECEPCIONISTA,
             TipoCargo.SECRETARIA,
             TipoCargo.GERENTE_PREDIAL,
-            TipoCargo.SINDICO_PROFISSIONAL
+            TipoCargo.SINDICO_PROFISSIONAL,
         ]
 
         if cargo in cargos_administrativos:
-            return [
-                TipoJornada.JORNADA_44H,
-                TipoJornada.ESCALA_5X2,
-                TipoJornada.MEIO_PERIODO
-            ]
+            return [TipoJornada.JORNADA_44H, TipoJornada.ESCALA_5X2, TipoJornada.MEIO_PERIODO]
 
         # Padrao para demais cargos
-        return [
-            TipoJornada.JORNADA_44H,
-            TipoJornada.ESCALA_6X1
-        ]
+        return [TipoJornada.JORNADA_44H, TipoJornada.ESCALA_6X1]

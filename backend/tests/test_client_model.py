@@ -1,26 +1,40 @@
 """
-Testes para os Models do módulo Clients.
-Sprint 30 - Cadastro de Clientes/Condomínios
+Testes para os Models do modulo Clients.
+Sprint 30 - Cadastro de Clientes/Condominios
 """
 
-import pytest
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
-from modules.clients.models import (
-    Client, Condominium, Unit, ClientContract, IntegrationSettings,
-    ClientType, ClientStatus, ClientSegment, DocumentType,
-    CondominiumType, CondominiumStatus, AdministrationType,
-    UnitType, UnitStatus,
-    ContractServiceType, ServiceStatus,
-    IntegrationType, SyncStatus, SyncDirection
-)
+import pytest
 
+from modules.clients.models import (
+    AdministrationType,
+    Client,
+    ClientContract,
+    ClientSegment,
+    ClientStatus,
+    ClientType,
+    Condominium,
+    CondominiumStatus,
+    CondominiumType,
+    ContractServiceType,
+    DocumentType,
+    IntegrationSettings,
+    IntegrationType,
+    ServiceStatus,
+    SyncDirection,
+    SyncStatus,
+    Unit,
+    UnitStatus,
+    UnitType,
+)
 
 # ============================================================
 # FIXTURES
 # ============================================================
+
 
 @pytest.fixture
 def sample_client_data():
@@ -28,31 +42,30 @@ def sample_client_data():
     return {
         "id": uuid4(),
         "code": "CLI-001",
-        "name": "Empresa Teste Ltda",
-        "trading_name": "Empresa Teste",
-        "client_type": ClientType.PJ,
+        "legal_name": "Empresa Teste Ltda",
+        "trade_name": "Empresa Teste",
+        "type": ClientType.EMPRESA,
         "document_type": DocumentType.CNPJ,
         "document_number": "12.345.678/0001-90",
         "email": "contato@empresa.com.br",
         "phone": "(11) 3456-7890",
-        "mobile": "(11) 99876-5432",
-        "address_city": "São Paulo",
+        "phone_secondary": "(11) 99876-5432",
+        "address_city": "Sao Paulo",
         "address_state": "SP",
-        "status": ClientStatus.ACTIVE,
-        "segment": ClientSegment.MEDIUM,
+        "status": ClientStatus.ATIVO,
+        "segment": ClientSegment.MEDIO,
     }
 
 
 @pytest.fixture
 def sample_condominium_data(sample_client_data):
-    """Dados de exemplo para condomínio."""
+    """Dados de exemplo para condominio."""
     return {
         "id": uuid4(),
         "client_id": sample_client_data["id"],
         "code": "COND-001",
         "name": "Residencial Jardins",
         "cnpj": "98.765.432/0001-21",
-        "condominium_type": CondominiumType.RESIDENTIAL,
         "status": CondominiumStatus.ACTIVE,
         "total_units": 120,
         "total_towers": 3,
@@ -69,13 +82,13 @@ def sample_unit_data(sample_condominium_data):
         "id": uuid4(),
         "condominium_id": sample_condominium_data["id"],
         "code": "COND-001-A101",
-        "unit_number": "101",
+        "number": "101",
         "block": "A",
         "tower": "Torre Norte",
         "floor": 1,
-        "unit_type": UnitType.APARTMENT,
-        "status": UnitStatus.OCCUPIED,
-        "owner_name": "João da Silva",
+        "type": UnitType.APARTAMENTO,
+        "status": UnitStatus.OCUPADA,
+        "owner_name": "Joao da Silva",
         "owner_document": "123.456.789-00",
     }
 
@@ -87,9 +100,8 @@ def sample_contract_data(sample_client_data, sample_condominium_data):
         "id": uuid4(),
         "client_id": sample_client_data["id"],
         "condominium_id": sample_condominium_data["id"],
-        "contract_number": "CTR-2026-001",
         "service_type": ContractServiceType.PORTARIA_REMOTA,
-        "status": ServiceStatus.ACTIVE,
+        "status": ServiceStatus.ATIVO,
         "monthly_value": Decimal("5000.00"),
         "start_date": date.today(),
     }
@@ -97,15 +109,19 @@ def sample_contract_data(sample_client_data, sample_condominium_data):
 
 @pytest.fixture
 def sample_integration_data(sample_client_data):
-    """Dados de exemplo para integração."""
+    """Dados de exemplo para integracao."""
     return {
         "id": uuid4(),
         "client_id": sample_client_data["id"],
-        "integration_type": IntegrationType.GUARDIAN,
-        "name": "Guardian Integration",
-        "enabled": True,
-        "sync_status": SyncStatus.SYNCED,
+        "integration_type": IntegrationType.EXTERNAL,
+        "name": "External Integration",
+        "is_enabled": True,
+        "sync_status": SyncStatus.SINCRONIZADO,
         "sync_direction": SyncDirection.BIDIRECTIONAL,
+        "total_syncs": 0,
+        "successful_syncs": 0,
+        "failed_syncs": 0,
+        "records_synced": 0,
     }
 
 
@@ -113,39 +129,40 @@ def sample_integration_data(sample_client_data):
 # TESTES DE ENUMS
 # ============================================================
 
+
 class TestEnums:
-    """Testes para os Enums do módulo."""
+    """Testes para os Enums do modulo."""
 
     def test_client_type_values(self):
         """Testa valores do enum ClientType."""
-        assert ClientType.PF.value == "pf"
-        assert ClientType.PJ.value == "pj"
-        assert ClientType.CONDOMINIUM.value == "condominium"
-        assert ClientType.HOLDING.value == "holding"
-        assert ClientType.FRANCHISE.value == "franchise"
-        assert ClientType.GOVERNMENT.value == "government"
-        assert ClientType.OTHER.value == "other"
+        assert ClientType.CONDOMINIO.value == "condominio"
+        assert ClientType.EMPRESA.value == "empresa"
+        assert ClientType.RESIDENCIAL.value == "residencial"
+        assert ClientType.COMERCIAL.value == "comercial"
+        assert ClientType.INDUSTRIAL.value == "industrial"
+        assert ClientType.PUBLICO.value == "publico"
+        assert ClientType.OUTRO.value == "outro"
         assert len(ClientType) == 7
 
     def test_client_status_values(self):
         """Testa valores do enum ClientStatus."""
         assert ClientStatus.PROSPECT.value == "prospect"
-        assert ClientStatus.ACTIVE.value == "active"
-        assert ClientStatus.SUSPENDED.value == "suspended"
-        assert ClientStatus.BLOCKED.value == "blocked"
-        assert ClientStatus.CANCELLED.value == "cancelled"
-        assert ClientStatus.DEFAULTER.value == "defaulter"
-        assert ClientStatus.CHURNED.value == "churned"
+        assert ClientStatus.ATIVO.value == "ativo"
+        assert ClientStatus.INATIVO.value == "inativo"
+        assert ClientStatus.SUSPENSO.value == "suspenso"
+        assert ClientStatus.BLOQUEADO.value == "bloqueado"
+        assert ClientStatus.CANCELADO.value == "cancelado"
+        assert ClientStatus.INADIMPLENTE.value == "inadimplente"
         assert len(ClientStatus) == 7
 
     def test_client_segment_values(self):
         """Testa valores do enum ClientSegment."""
-        assert ClientSegment.SMALL.value == "small"
-        assert ClientSegment.MEDIUM.value == "medium"
-        assert ClientSegment.LARGE.value == "large"
+        assert ClientSegment.PEQUENO.value == "pequeno"
+        assert ClientSegment.MEDIO.value == "medio"
+        assert ClientSegment.GRANDE.value == "grande"
         assert ClientSegment.ENTERPRISE.value == "enterprise"
-        assert ClientSegment.VIP.value == "vip"
-        assert ClientSegment.STRATEGIC.value == "strategic"
+        assert ClientSegment.GOVERNO.value == "governo"
+        assert ClientSegment.ONG.value == "ong"
         assert len(ClientSegment) == 6
 
     def test_condominium_type_values(self):
@@ -155,16 +172,16 @@ class TestEnums:
         assert CondominiumType.MIXED.value == "mixed"
         assert CondominiumType.INDUSTRIAL.value == "industrial"
         assert CondominiumType.HORIZONTAL.value == "horizontal"
-        assert CondominiumType.GATED_COMMUNITY.value == "gated_community"
-        assert CondominiumType.SHOPPING.value == "shopping"
+        assert CondominiumType.VERTICAL.value == "vertical"
+        assert CondominiumType.SUBDIVISION.value == "subdivision"
         assert len(CondominiumType) == 7
 
     def test_unit_type_values(self):
         """Testa valores do enum UnitType."""
-        assert UnitType.APARTMENT.value == "apartment"
-        assert UnitType.HOUSE.value == "house"
-        assert UnitType.STORE.value == "store"
-        assert UnitType.OFFICE.value == "office"
+        assert UnitType.APARTAMENTO.value == "apartamento"
+        assert UnitType.CASA.value == "casa"
+        assert UnitType.LOJA.value == "loja"
+        assert UnitType.SALA_COMERCIAL.value == "sala_comercial"
         assert len(UnitType) == 14
 
     def test_contract_service_type_values(self):
@@ -177,10 +194,10 @@ class TestEnums:
 
     def test_integration_type_values(self):
         """Testa valores do enum IntegrationType."""
-        assert IntegrationType.GUARDIAN.value == "guardian"
+        assert IntegrationType.EXTERNAL.value == "external"
         assert IntegrationType.PLUS.value == "plus"
-        assert IntegrationType.ERP_EXTERNAL.value == "erp_external"
-        assert IntegrationType.BANKING.value == "banking"
+        assert IntegrationType.ERP_EXTERNO.value == "erp_externo"
+        assert IntegrationType.BANCO.value == "banco"
         assert len(IntegrationType) == 9
 
 
@@ -188,54 +205,57 @@ class TestEnums:
 # TESTES DO MODEL CLIENT
 # ============================================================
 
+
 class TestClientModel:
     """Testes para o model Client."""
 
     def test_client_creation(self, sample_client_data):
-        """Testa criação de cliente."""
+        """Testa criacao de cliente."""
         client = Client(**sample_client_data)
 
         assert client.id == sample_client_data["id"]
         assert client.code == "CLI-001"
-        assert client.name == "Empresa Teste Ltda"
-        assert client.client_type == ClientType.PJ
-        assert client.status == ClientStatus.ACTIVE
+        assert client.legal_name == "Empresa Teste Ltda"
+        assert client.type == ClientType.EMPRESA
+        assert client.status == ClientStatus.ATIVO
 
     def test_client_default_values(self):
-        """Testa valores padrão do cliente."""
+        """Testa valores padrao do cliente (SQLAlchemy defaults sao DB-level)."""
         client = Client(
             id=uuid4(),
             code="CLI-002",
-            name="Teste",
-            client_type=ClientType.PF,
+            legal_name="Teste",
+            type=ClientType.CONDOMINIO,
             document_type=DocumentType.CPF,
             document_number="123.456.789-00",
             email="teste@teste.com",
+            status=ClientStatus.PROSPECT,
+            is_active=True,
+            plus_enabled=False,
+            payment_terms=30,
         )
 
         assert client.status == ClientStatus.PROSPECT
-        assert client.ativo is True
-        assert client.guardian_enabled is False
+        assert client.is_active is True
         assert client.plus_enabled is False
         assert client.payment_terms == 30
-        assert client.billing_day == 10
 
     def test_client_activate(self, sample_client_data):
-        """Testa ativação de cliente."""
+        """Testa ativacao de cliente."""
         sample_client_data["status"] = ClientStatus.PROSPECT
         client = Client(**sample_client_data)
 
         client.activate()
 
-        assert client.status == ClientStatus.ACTIVE
+        assert client.status == ClientStatus.ATIVO
 
     def test_client_suspend(self, sample_client_data):
-        """Testa suspensão de cliente."""
+        """Testa suspensao de cliente."""
         client = Client(**sample_client_data)
 
         client.suspend()
 
-        assert client.status == ClientStatus.SUSPENDED
+        assert client.status == ClientStatus.SUSPENSO
 
     def test_client_block(self, sample_client_data):
         """Testa bloqueio de cliente."""
@@ -243,28 +263,19 @@ class TestClientModel:
 
         client.block()
 
-        assert client.status == ClientStatus.BLOCKED
+        assert client.status == ClientStatus.BLOQUEADO
 
     def test_client_set_defaulter(self, sample_client_data):
-        """Testa marcação como inadimplente."""
+        """Testa marcacao como inadimplente."""
         client = Client(**sample_client_data)
 
         client.set_defaulter(Decimal("1500.00"))
 
-        assert client.status == ClientStatus.DEFAULTER
+        assert client.status == ClientStatus.INADIMPLENTE
         assert client.total_debt == Decimal("1500.00")
 
-    def test_client_enable_guardian(self, sample_client_data):
-        """Testa habilitação do Guardian."""
-        client = Client(**sample_client_data)
-
-        client.enable_guardian("GRD-12345")
-
-        assert client.guardian_enabled is True
-        assert client.guardian_client_id == "GRD-12345"
-
     def test_client_enable_plus(self, sample_client_data):
-        """Testa habilitação do Plus."""
+        """Testa habilitacao do Plus."""
         client = Client(**sample_client_data)
 
         client.enable_plus("PLUS-67890")
@@ -273,81 +284,83 @@ class TestClientModel:
         assert client.plus_client_id == "PLUS-67890"
 
     def test_client_validate_cnpj_valid(self):
-        """Testa validação de CNPJ válido."""
-        # CNPJ válido de teste
+        """Testa validacao de CNPJ valido."""
         assert Client.validate_cnpj("11.222.333/0001-81") is True
         assert Client.validate_cnpj("11222333000181") is True
 
     def test_client_validate_cnpj_invalid(self):
-        """Testa validação de CNPJ inválido."""
+        """Testa validacao de CNPJ invalido."""
         assert Client.validate_cnpj("11.111.111/1111-11") is False
         assert Client.validate_cnpj("00.000.000/0000-00") is False
         assert Client.validate_cnpj("12345") is False
 
     def test_client_validate_cpf_valid(self):
-        """Testa validação de CPF válido."""
-        # CPF válido de teste
+        """Testa validacao de CPF valido."""
         assert Client.validate_cpf("529.982.247-25") is True
         assert Client.validate_cpf("52998224725") is True
 
     def test_client_validate_cpf_invalid(self):
-        """Testa validação de CPF inválido."""
+        """Testa validacao de CPF invalido."""
         assert Client.validate_cpf("111.111.111-11") is False
         assert Client.validate_cpf("000.000.000-00") is False
         assert Client.validate_cpf("12345") is False
 
-    def test_client_calculate_health_score(self, sample_client_data):
-        """Testa cálculo do health score."""
+    def test_client_health_score(self, sample_client_data):
+        """Testa calculo do health score."""
         client = Client(**sample_client_data)
         client.total_revenue = Decimal("50000.00")
         client.total_debt = Decimal("0")
         client.satisfaction_score = 4.5
-        client.engagement_score = 0.8
+        client.active_contracts = 0
+        client.is_defaulter = False
 
-        score = client.calculate_health_score()
+        score = client.health_score
 
         assert 0 <= score <= 100
-        assert client.health_score == score
 
 
 # ============================================================
 # TESTES DO MODEL CONDOMINIUM
 # ============================================================
 
+
 class TestCondominiumModel:
     """Testes para o model Condominium."""
 
     def test_condominium_creation(self, sample_condominium_data):
-        """Testa criação de condomínio."""
+        """Testa criacao de condominio."""
         condo = Condominium(**sample_condominium_data)
 
         assert condo.code == "COND-001"
         assert condo.name == "Residencial Jardins"
-        assert condo.condominium_type == CondominiumType.RESIDENTIAL
         assert condo.total_units == 120
         assert condo.total_towers == 3
 
     def test_condominium_default_values(self, sample_client_data):
-        """Testa valores padrão do condomínio."""
+        """Testa valores padrao do condominio (SQLAlchemy defaults sao DB-level)."""
         condo = Condominium(
             id=uuid4(),
             client_id=sample_client_data["id"],
             code="COND-002",
             name="Teste",
-            condominium_type=CondominiumType.COMMERCIAL,
+            status=CondominiumStatus.IMPLEMENTING,
+            total_units=0,
+            total_towers=1,
+            has_cctv=False,
+            has_access_control=False,
+            is_active=True,
         )
 
-        assert condo.status == CondominiumStatus.PROSPECT
+        assert condo.status == CondominiumStatus.IMPLEMENTING
         assert condo.total_units == 0
         assert condo.total_towers == 1
-        assert condo.total_floors == 1
         assert condo.has_cctv is False
         assert condo.has_access_control is False
-        assert condo.ativo is True
+        assert condo.is_active is True
 
     def test_condominium_activate(self, sample_condominium_data):
-        """Testa ativação de condomínio."""
-        sample_condominium_data["status"] = CondominiumStatus.IMPLANTATION
+        """Testa ativacao de condominio."""
+        sample_condominium_data["status"] = CondominiumStatus.IMPLEMENTING
         condo = Condominium(**sample_condominium_data)
 
         condo.activate()
@@ -356,28 +369,26 @@ class TestCondominiumModel:
         assert condo.activation_date is not None
 
     def test_condominium_start_implantation(self, sample_condominium_data):
-        """Testa início de implantação."""
-        sample_condominium_data["status"] = CondominiumStatus.PROSPECT
+        """Testa inicio de implantacao."""
         condo = Condominium(**sample_condominium_data)
 
         condo.start_implantation()
 
-        assert condo.status == CondominiumStatus.IMPLANTATION
-        assert condo.implantation_start_date is not None
+        assert condo.status == CondominiumStatus.IMPLEMENTING
+        assert condo.implantation_date is not None
 
     def test_condominium_finish_implantation(self, sample_condominium_data):
-        """Testa finalização de implantação."""
-        sample_condominium_data["status"] = CondominiumStatus.IMPLANTATION
+        """Testa finalizacao de implantacao."""
+        sample_condominium_data["status"] = CondominiumStatus.IMPLEMENTING
         condo = Condominium(**sample_condominium_data)
 
         condo.finish_implantation()
 
         assert condo.status == CondominiumStatus.ACTIVE
-        assert condo.implantation_end_date is not None
         assert condo.activation_date is not None
 
     def test_condominium_update_syndic(self, sample_condominium_data):
-        """Testa atualização de síndico."""
+        """Testa atualizacao de sindico."""
         condo = Condominium(**sample_condominium_data)
 
         condo.update_syndic(
@@ -385,8 +396,8 @@ class TestCondominiumModel:
             email="maria@email.com",
             phone="(11) 98765-4321",
             cpf="987.654.321-00",
-            mandate_start=date.today(),
-            mandate_end=date.today() + timedelta(days=730),
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=730),
         )
 
         assert condo.syndic_name == "Maria Santos"
@@ -395,7 +406,7 @@ class TestCondominiumModel:
         assert condo.syndic_cpf == "987.654.321-00"
 
     def test_condominium_security_features(self, sample_condominium_data):
-        """Testa características de segurança."""
+        """Testa caracteristicas de seguranca."""
         condo = Condominium(**sample_condominium_data)
         condo.has_cctv = True
         condo.has_access_control = True
@@ -415,38 +426,43 @@ class TestCondominiumModel:
 # TESTES DO MODEL UNIT
 # ============================================================
 
+
 class TestUnitModel:
     """Testes para o model Unit."""
 
     def test_unit_creation(self, sample_unit_data):
-        """Testa criação de unidade."""
+        """Testa criacao de unidade."""
         unit = Unit(**sample_unit_data)
 
         assert unit.code == "COND-001-A101"
-        assert unit.unit_number == "101"
+        assert unit.number == "101"
         assert unit.block == "A"
-        assert unit.unit_type == UnitType.APARTMENT
-        assert unit.status == UnitStatus.OCCUPIED
+        assert unit.type == UnitType.APARTAMENTO
+        assert unit.status == UnitStatus.OCUPADA
 
     def test_unit_default_values(self, sample_condominium_data):
-        """Testa valores padrão da unidade."""
+        """Testa valores padrao da unidade (SQLAlchemy defaults sao DB-level)."""
         unit = Unit(
             id=uuid4(),
             condominium_id=sample_condominium_data["id"],
             code="COND-001-B201",
-            unit_number="201",
-            unit_type=UnitType.APARTMENT,
+            number="201",
+            type=UnitType.APARTAMENTO,
+            status=UnitStatus.DISPONIVEL,
+            is_defaulter=False,
+            biometric_registered=False,
+            facial_registered=False,
+            is_active=True,
         )
 
-        assert unit.status == UnitStatus.AVAILABLE
+        assert unit.status == UnitStatus.DISPONIVEL
         assert unit.is_defaulter is False
         assert unit.biometric_registered is False
         assert unit.facial_registered is False
-        assert unit.app_registered is False
-        assert unit.ativo is True
+        assert unit.is_active is True
 
     def test_unit_set_owner(self, sample_unit_data):
-        """Testa definição de proprietário."""
+        """Testa definicao de proprietario."""
         unit = Unit(**sample_unit_data)
 
         unit.set_owner(
@@ -454,7 +470,6 @@ class TestUnitModel:
             document="111.222.333-44",
             email="carlos@email.com",
             phone="(11) 3456-7890",
-            mobile="(11) 98765-4321",
         )
 
         assert unit.owner_name == "Carlos Oliveira"
@@ -462,23 +477,23 @@ class TestUnitModel:
         assert unit.owner_email == "carlos@email.com"
 
     def test_unit_set_resident(self, sample_unit_data):
-        """Testa definição de morador."""
+        """Testa definicao de morador."""
         unit = Unit(**sample_unit_data)
 
         unit.set_resident(
             name="Ana Paula",
             document="555.666.777-88",
             email="ana@email.com",
-            resident_type="tenant",
+            is_tenant=True,
         )
 
         assert unit.resident_name == "Ana Paula"
         assert unit.resident_document == "555.666.777-88"
-        assert unit.resident_type == "tenant"
-        assert unit.status == UnitStatus.OCCUPIED
+        assert unit.is_tenant is True
+        assert unit.status == UnitStatus.ALUGADA
 
     def test_unit_clear_resident(self, sample_unit_data):
-        """Testa remoção de morador."""
+        """Testa remocao de morador."""
         unit = Unit(**sample_unit_data)
         unit.resident_name = "Morador Anterior"
 
@@ -487,94 +502,84 @@ class TestUnitModel:
         assert unit.resident_name is None
         assert unit.resident_document is None
         assert unit.resident_email is None
-        assert unit.status == UnitStatus.VACANT
+        assert unit.status == UnitStatus.DISPONIVEL
 
     def test_unit_set_defaulter(self, sample_unit_data):
-        """Testa marcação como inadimplente."""
+        """Testa marcacao como inadimplente."""
         unit = Unit(**sample_unit_data)
 
         unit.set_defaulter(Decimal("2500.00"))
 
         assert unit.is_defaulter is True
         assert unit.debt_amount == Decimal("2500.00")
-        assert unit.status == UnitStatus.DEFAULTER
 
-    def test_unit_clear_debt(self, sample_unit_data):
-        """Testa quitação de dívida."""
-        sample_unit_data["is_defaulter"] = True
-        sample_unit_data["debt_amount"] = Decimal("2500.00")
-        sample_unit_data["status"] = UnitStatus.DEFAULTER
+    def test_unit_clear_defaulter(self, sample_unit_data):
+        """Testa quitacao de divida."""
         unit = Unit(**sample_unit_data)
+        unit.is_defaulter = True
+        unit.debt_amount = Decimal("2500.00")
 
-        unit.clear_debt()
+        unit.clear_defaulter()
 
         assert unit.is_defaulter is False
         assert unit.debt_amount == Decimal("0")
         assert unit.last_payment_date is not None
-        assert unit.status == UnitStatus.OCCUPIED
 
 
 # ============================================================
 # TESTES DO MODEL CLIENT CONTRACT
 # ============================================================
 
+
 class TestClientContractModel:
     """Testes para o model ClientContract."""
 
     def test_contract_creation(self, sample_contract_data):
-        """Testa criação de contrato."""
+        """Testa criacao de contrato."""
         contract = ClientContract(**sample_contract_data)
 
-        assert contract.contract_number == "CTR-2026-001"
         assert contract.service_type == ContractServiceType.PORTARIA_REMOTA
-        assert contract.status == ServiceStatus.ACTIVE
+        assert contract.status == ServiceStatus.ATIVO
         assert contract.monthly_value == Decimal("5000.00")
 
     def test_contract_default_values(self, sample_client_data):
-        """Testa valores padrão do contrato."""
+        """Testa valores padrao do contrato (SQLAlchemy defaults sao DB-level)."""
         contract = ClientContract(
             id=uuid4(),
             client_id=sample_client_data["id"],
-            contract_number="CTR-2026-002",
             service_type=ContractServiceType.CFTV,
+            status=ServiceStatus.PENDENTE,
         )
 
-        assert contract.status == ServiceStatus.PENDING
-        assert contract.billing_day == 10
-        assert contract.sla_availability == 99.9
-        assert contract.auto_renewal is True
-        assert contract.renewal_period_months == 12
-        assert contract.notice_period_days == 30
-        assert contract.ativo is True
+        assert contract.status == ServiceStatus.PENDENTE
 
     def test_contract_start_implantation(self, sample_contract_data):
-        """Testa início de implantação."""
-        sample_contract_data["status"] = ServiceStatus.PENDING
+        """Testa inicio de implantacao."""
+        sample_contract_data["status"] = ServiceStatus.PENDENTE
         contract = ClientContract(**sample_contract_data)
 
         contract.start_implantation()
 
-        assert contract.status == ServiceStatus.IMPLANTATION
-        assert contract.implantation_start_date is not None
+        assert contract.status == ServiceStatus.EM_IMPLANTACAO
+        assert contract.implantation_date is not None
 
     def test_contract_activate(self, sample_contract_data):
-        """Testa ativação de contrato."""
-        sample_contract_data["status"] = ServiceStatus.IMPLANTATION
+        """Testa ativacao de contrato."""
+        sample_contract_data["status"] = ServiceStatus.EM_IMPLANTACAO
         contract = ClientContract(**sample_contract_data)
 
         contract.activate()
 
-        assert contract.status == ServiceStatus.ACTIVE
+        assert contract.status == ServiceStatus.ATIVO
         assert contract.activation_date is not None
-        assert contract.implantation_end_date is not None
 
     def test_contract_suspend(self, sample_contract_data):
-        """Testa suspensão de contrato."""
+        """Testa suspensao de contrato."""
         contract = ClientContract(**sample_contract_data)
 
         contract.suspend()
 
-        assert contract.status == ServiceStatus.SUSPENDED
+        assert contract.status == ServiceStatus.SUSPENSO
 
     def test_contract_cancel(self, sample_contract_data):
         """Testa cancelamento de contrato."""
@@ -582,124 +587,119 @@ class TestClientContractModel:
 
         contract.cancel()
 
-        assert contract.status == ServiceStatus.CANCELLED
+        assert contract.status == ServiceStatus.CANCELADO
         assert contract.cancellation_date is not None
 
     def test_contract_sla_configuration(self, sample_contract_data):
-        """Testa configuração de SLA."""
+        """Testa configuracao de SLA."""
         contract = ClientContract(**sample_contract_data)
-        contract.sla_response_time = 30  # 30 minutos
-        contract.sla_resolution_time = 4  # 4 horas
-        contract.sla_availability = 99.95
-        contract.sla_config = {
-            "max_incidents_month": 5,
-            "penalty_percentage": 10,
-        }
+        contract.sla_response_time_minutes = 30
+        contract.sla_resolution_time_hours = 4
+        contract.sla_availability_percentage = 99.95
 
-        assert contract.sla_response_time == 30
-        assert contract.sla_resolution_time == 4
-        assert contract.sla_availability == 99.95
-        assert contract.sla_config["max_incidents_month"] == 5
+        assert contract.sla_response_time_minutes == 30
+        assert contract.sla_resolution_time_hours == 4
+        assert contract.sla_availability_percentage == 99.95
 
 
 # ============================================================
 # TESTES DO MODEL INTEGRATION SETTINGS
 # ============================================================
 
+
 class TestIntegrationSettingsModel:
     """Testes para o model IntegrationSettings."""
 
     def test_integration_creation(self, sample_integration_data):
-        """Testa criação de integração."""
+        """Testa criacao de integracao."""
         integration = IntegrationSettings(**sample_integration_data)
 
-        assert integration.integration_type == IntegrationType.GUARDIAN
-        assert integration.name == "Guardian Integration"
-        assert integration.enabled is True
-        assert integration.sync_status == SyncStatus.SYNCED
+        assert integration.integration_type == IntegrationType.EXTERNAL
+        assert integration.name == "External Integration"
+        assert integration.is_enabled is True
+        assert integration.sync_status == SyncStatus.SINCRONIZADO
 
     def test_integration_default_values(self, sample_client_data):
-        """Testa valores padrão da integração."""
+        """Testa valores padrao da integracao (SQLAlchemy defaults sao DB-level)."""
         integration = IntegrationSettings(
             id=uuid4(),
             client_id=sample_client_data["id"],
             integration_type=IntegrationType.PLUS,
             name="Plus Integration",
+            is_enabled=False,
+            sync_status=SyncStatus.PENDENTE,
+            sync_direction=SyncDirection.BIDIRECTIONAL,
+            sync_interval_minutes=15,
+            is_active=True,
         )
 
-        assert integration.enabled is False
-        assert integration.sync_status == SyncStatus.PENDING
+        assert integration.is_enabled is False
+        assert integration.sync_status == SyncStatus.PENDENTE
         assert integration.sync_direction == SyncDirection.BIDIRECTIONAL
-        assert integration.sync_interval_minutes == 60
-        assert integration.ativo is True
+        assert integration.sync_interval_minutes == 15
+        assert integration.is_active is True
 
     def test_integration_enable(self, sample_integration_data):
-        """Testa habilitação de integração."""
-        sample_integration_data["enabled"] = False
+        """Testa habilitacao de integracao."""
+        sample_integration_data["is_enabled"] = False
         integration = IntegrationSettings(**sample_integration_data)
 
         integration.enable()
 
-        assert integration.enabled is True
+        assert integration.is_enabled is True
 
     def test_integration_disable(self, sample_integration_data):
-        """Testa desabilitação de integração."""
+        """Testa desabilitacao de integracao."""
         integration = IntegrationSettings(**sample_integration_data)
 
         integration.disable()
 
-        assert integration.enabled is False
-        assert integration.sync_status == SyncStatus.DISABLED
+        assert integration.is_enabled is False
+        assert integration.sync_status == SyncStatus.DESABILITADO
 
     def test_integration_start_sync(self, sample_integration_data):
-        """Testa início de sincronização."""
+        """Testa inicio de sincronizacao."""
         integration = IntegrationSettings(**sample_integration_data)
 
         integration.start_sync()
 
-        assert integration.sync_status == SyncStatus.SYNCING
+        assert integration.sync_status == SyncStatus.SINCRONIZANDO
 
     def test_integration_complete_sync(self, sample_integration_data):
-        """Testa conclusão de sincronização."""
-        sample_integration_data["sync_status"] = SyncStatus.SYNCING
+        """Testa conclusao de sincronizacao."""
+        sample_integration_data["sync_status"] = SyncStatus.SINCRONIZANDO
         integration = IntegrationSettings(**sample_integration_data)
 
         integration.complete_sync()
 
-        assert integration.sync_status == SyncStatus.SYNCED
-        assert integration.last_sync_at is not None
-        assert integration.last_sync_status == "success"
+        assert integration.sync_status == SyncStatus.SINCRONIZADO
+        assert integration.last_sync_success_at is not None
 
     def test_integration_fail_sync(self, sample_integration_data):
-        """Testa falha de sincronização."""
-        sample_integration_data["sync_status"] = SyncStatus.SYNCING
+        """Testa falha de sincronizacao."""
+        sample_integration_data["sync_status"] = SyncStatus.SINCRONIZANDO
         integration = IntegrationSettings(**sample_integration_data)
 
         integration.fail_sync("Connection timeout")
 
-        assert integration.sync_status == SyncStatus.ERROR
-        assert integration.last_sync_at is not None
-        assert integration.last_sync_status == "error"
-        assert integration.last_sync_message == "Connection timeout"
+        assert integration.sync_status == SyncStatus.ERRO
+        assert integration.last_sync_error_at is not None
+        assert integration.last_sync_error == "Connection timeout"
 
     def test_integration_api_configuration(self, sample_integration_data):
-        """Testa configuração de API."""
+        """Testa configuracao de API."""
         integration = IntegrationSettings(**sample_integration_data)
-        integration.api_url = "https://api.guardian.com/v1"
-        integration.api_key = "grd_api_key_12345"
-        integration.api_version = "v1"
-        integration.auth_type = "api_key"
-        integration.auth_config = {"header": "X-API-Key"}
+        integration.api_url = "https://api.external.com/v1"
+        integration.api_key = "ext_api_key_12345"  # pragma: allowlist secret
 
-        assert integration.api_url == "https://api.guardian.com/v1"
-        assert integration.api_key == "grd_api_key_12345"
-        assert integration.auth_type == "api_key"
+        assert integration.api_url == "https://api.external.com/v1"
+        assert integration.api_key == "ext_api_key_12345"  # pragma: allowlist secret
 
     def test_integration_webhook_configuration(self, sample_integration_data):
-        """Testa configuração de webhook."""
+        """Testa configuracao de webhook."""
         integration = IntegrationSettings(**sample_integration_data)
         integration.webhook_url = "https://erp.example.com/webhook"
-        integration.webhook_secret = "whsec_12345"
+        integration.webhook_secret = "whsec_12345"  # pragma: allowlist secret
         integration.webhook_events = ["client.created", "client.updated"]
 
         assert integration.webhook_url == "https://erp.example.com/webhook"
@@ -711,30 +711,25 @@ class TestIntegrationSettingsModel:
 # TESTES DE RELACIONAMENTOS
 # ============================================================
 
+
 class TestModelRelationships:
     """Testes para relacionamentos entre models."""
 
-    def test_client_condominium_relationship(
-        self, sample_client_data, sample_condominium_data
-    ):
-        """Testa relacionamento cliente-condomínio."""
+    def test_client_condominium_relationship(self, sample_client_data, sample_condominium_data):
+        """Testa relacionamento cliente-condominio."""
         client = Client(**sample_client_data)
         condo = Condominium(**sample_condominium_data)
 
         assert condo.client_id == client.id
 
-    def test_condominium_unit_relationship(
-        self, sample_condominium_data, sample_unit_data
-    ):
-        """Testa relacionamento condomínio-unidade."""
+    def test_condominium_unit_relationship(self, sample_condominium_data, sample_unit_data):
+        """Testa relacionamento condominio-unidade."""
         condo = Condominium(**sample_condominium_data)
         unit = Unit(**sample_unit_data)
 
         assert unit.condominium_id == condo.id
 
-    def test_client_contract_relationship(
-        self, sample_client_data, sample_condominium_data, sample_contract_data
-    ):
+    def test_client_contract_relationship(self, sample_client_data, sample_condominium_data, sample_contract_data):
         """Testa relacionamento cliente-contrato."""
         client = Client(**sample_client_data)
         condo = Condominium(**sample_condominium_data)
@@ -743,10 +738,8 @@ class TestModelRelationships:
         assert contract.client_id == client.id
         assert contract.condominium_id == condo.id
 
-    def test_client_integration_relationship(
-        self, sample_client_data, sample_integration_data
-    ):
-        """Testa relacionamento cliente-integração."""
+    def test_client_integration_relationship(self, sample_client_data, sample_integration_data):
+        """Testa relacionamento cliente-integracao."""
         client = Client(**sample_client_data)
         integration = IntegrationSettings(**sample_integration_data)
 
@@ -754,26 +747,22 @@ class TestModelRelationships:
 
 
 # ============================================================
-# TESTES DE VALIDAÇÃO
+# TESTES DE VALIDACAO
 # ============================================================
 
+
 class TestValidations:
-    """Testes de validação de dados."""
+    """Testes de validacao de dados."""
 
     def test_client_code_format(self, sample_client_data):
-        """Testa formato do código do cliente."""
+        """Testa formato do codigo do cliente."""
         client = Client(**sample_client_data)
         assert client.code.startswith("CLI-")
 
     def test_condominium_code_format(self, sample_condominium_data):
-        """Testa formato do código do condomínio."""
+        """Testa formato do codigo do condominio."""
         condo = Condominium(**sample_condominium_data)
         assert condo.code.startswith("COND-")
-
-    def test_contract_number_format(self, sample_contract_data):
-        """Testa formato do número do contrato."""
-        contract = ClientContract(**sample_contract_data)
-        assert contract.contract_number.startswith("CTR-")
 
     def test_email_format(self, sample_client_data):
         """Testa formato de email."""
@@ -788,18 +777,18 @@ class TestValidations:
         assert client.phone is None
 
     def test_status_transitions(self, sample_client_data):
-        """Testa transições de status válidas."""
+        """Testa transicoes de status validas."""
         client = Client(**sample_client_data)
         client.status = ClientStatus.PROSPECT
 
-        # Prospect -> Active
+        # Prospect -> Ativo
         client.activate()
-        assert client.status == ClientStatus.ACTIVE
+        assert client.status == ClientStatus.ATIVO
 
-        # Active -> Suspended
+        # Ativo -> Suspenso
         client.suspend()
-        assert client.status == ClientStatus.SUSPENDED
+        assert client.status == ClientStatus.SUSPENSO
 
-        # Suspended -> Blocked
+        # Suspenso -> Bloqueado
         client.block()
-        assert client.status == ClientStatus.BLOCKED
+        assert client.status == ClientStatus.BLOQUEADO

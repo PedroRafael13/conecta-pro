@@ -59,7 +59,7 @@ def sample_payable_account(sample_condominio_id, sample_supplier):
         issue_date=date.today(),
         due_date=date.today() + timedelta(days=30),
         status=PayableStatus.PENDENTE.value,
-        installments=1,
+        total_installments=1,
         ativo=True,
     )
 
@@ -70,7 +70,9 @@ def sample_installment(sample_payable_account):
     return PayableInstallment(
         id=uuid.uuid4(),
         payable_account_id=sample_payable_account.id,
+        condominio_id=sample_payable_account.condominio_id,
         installment_number=1,
+        total_installments=1,
         original_value=Decimal("1000.00"),
         current_value=Decimal("1000.00"),
         due_date=date.today() + timedelta(days=30),
@@ -94,9 +96,7 @@ class TestSupplierAPI:
         }
 
         # Mock do service
-        with patch(
-            "modules.financial.controllers.supplier_controller.SupplierService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.supplier_controller.SupplierService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -118,9 +118,7 @@ class TestSupplierAPI:
     @pytest.mark.asyncio
     async def test_list_suppliers(self, sample_user, sample_condominio_id):
         """Testa listagem de fornecedores."""
-        with patch(
-            "modules.financial.controllers.supplier_controller.SupplierService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.supplier_controller.SupplierService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -152,9 +150,7 @@ class TestSupplierAPI:
     @pytest.mark.asyncio
     async def test_block_supplier(self, sample_user, sample_supplier):
         """Testa bloqueio de fornecedor."""
-        with patch(
-            "modules.financial.controllers.supplier_controller.SupplierService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.supplier_controller.SupplierService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -165,7 +161,7 @@ class TestSupplierAPI:
                 name=sample_supplier.name,
                 status=SupplierStatus.BLOQUEADO.value,
                 is_blocked=True,
-                block_reason="Inadimplência",
+                blocked_reason="Inadimplência",
                 ativo=True,
             )
             mock_instance.block.return_value = blocked_supplier
@@ -184,9 +180,7 @@ class TestPayableAccountAPI:
     """Testes para API de Contas a Pagar."""
 
     @pytest.mark.asyncio
-    async def test_create_payable_account(
-        self, sample_user, sample_condominio_id, sample_supplier
-    ):
+    async def test_create_payable_account(self, sample_user, sample_condominio_id, sample_supplier):
         """Testa criação de conta a pagar."""
         account_data = {
             "condominio_id": str(sample_condominio_id),
@@ -197,9 +191,7 @@ class TestPayableAccountAPI:
             "due_date": (date.today() + timedelta(days=30)).isoformat(),
         }
 
-        with patch(
-            "modules.financial.controllers.payable_controller.PayableService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.payable_controller.PayableService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -228,9 +220,7 @@ class TestPayableAccountAPI:
     @pytest.mark.asyncio
     async def test_approve_account(self, sample_user, sample_payable_account):
         """Testa aprovação de conta."""
-        with patch(
-            "modules.financial.controllers.payable_controller.PayableService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.payable_controller.PayableService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -242,7 +232,7 @@ class TestPayableAccountAPI:
                 net_value=sample_payable_account.net_value,
                 issue_date=sample_payable_account.issue_date,
                 due_date=sample_payable_account.due_date,
-                status=PayableStatus.APROVADO.value,
+                status=PayableStatus.APROVADA.value,
                 approved_by=uuid.UUID(sample_user["id"]),
                 ativo=True,
             )
@@ -253,15 +243,13 @@ class TestPayableAccountAPI:
                 uuid.UUID(sample_user["id"]),
             )
 
-            assert result.status == PayableStatus.APROVADO.value
+            assert result.status == PayableStatus.APROVADA.value
             assert result.approved_by is not None
 
     @pytest.mark.asyncio
     async def test_get_overdue_accounts(self, sample_user, sample_condominio_id):
         """Testa busca de contas vencidas."""
-        with patch(
-            "modules.financial.controllers.payable_controller.PayableService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.payable_controller.PayableService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -288,9 +276,7 @@ class TestPayableAccountAPI:
     @pytest.mark.asyncio
     async def test_get_stats(self, sample_user, sample_condominio_id):
         """Testa estatísticas de contas a pagar."""
-        with patch(
-            "modules.financial.controllers.payable_controller.PayableService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.payable_controller.PayableService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -323,17 +309,15 @@ class TestPaymentAPI:
             "payment_date": date.today().isoformat(),
         }
 
-        with patch(
-            "modules.financial.controllers.payable_controller.PayableService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.payable_controller.PayableService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
             created_payment = PayablePayment(
                 id=uuid.uuid4(),
                 installment_id=sample_installment.id,
-                amount=Decimal("1000.00"),
-                net_amount=Decimal("1000.00"),
+                paid_value=Decimal("1000.00"),
+                net_value=Decimal("1000.00"),
                 payment_date=date.today(),
                 status=PaymentStatus.CONFIRMADO.value,
                 ativo=True,
@@ -346,7 +330,7 @@ class TestPaymentAPI:
                 uuid.UUID(sample_user["id"]),
             )
 
-            assert result.amount == Decimal("1000.00")
+            assert result.paid_value == Decimal("1000.00")
             assert result.status == PaymentStatus.CONFIRMADO.value
 
     @pytest.mark.asyncio
@@ -354,9 +338,7 @@ class TestPaymentAPI:
         """Testa pagamento em lote."""
         installment_ids = [uuid.uuid4() for _ in range(3)]
 
-        with patch(
-            "modules.financial.controllers.payable_controller.PayableService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.payable_controller.PayableService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -380,21 +362,19 @@ class TestPaymentAPI:
         """Testa estorno de pagamento."""
         payment_id = uuid.uuid4()
 
-        with patch(
-            "modules.financial.controllers.payable_controller.PayableService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.payable_controller.PayableService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
             reversed_payment = PayablePayment(
                 id=payment_id,
                 installment_id=uuid.uuid4(),
-                amount=Decimal("500.00"),
-                net_amount=Decimal("500.00"),
+                paid_value=Decimal("500.00"),
+                net_value=Decimal("500.00"),
                 payment_date=date.today(),
                 status=PaymentStatus.ESTORNADO.value,
                 is_reversed=True,
-                reverse_reason="Pagamento incorreto",
+                reversal_reason="Pagamento incorreto",
                 ativo=True,
             )
             mock_instance.reverse_payment.return_value = reversed_payment
@@ -415,9 +395,7 @@ class TestCashFlowAPI:
     @pytest.mark.asyncio
     async def test_get_projection(self, sample_user, sample_condominio_id):
         """Testa projeção de fluxo de caixa."""
-        with patch(
-            "modules.financial.controllers.cashflow_controller.CashFlowService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.cashflow_controller.CashFlowService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -443,9 +421,7 @@ class TestCashFlowAPI:
     @pytest.mark.asyncio
     async def test_detect_anomalies(self, sample_user, sample_condominio_id):
         """Testa detecção de anomalias."""
-        with patch(
-            "modules.financial.controllers.cashflow_controller.PayableAIService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.cashflow_controller.PayableAIService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 
@@ -467,9 +443,7 @@ class TestCashFlowAPI:
     @pytest.mark.asyncio
     async def test_predict_cashflow(self, sample_user, sample_condominio_id):
         """Testa previsão de fluxo de caixa."""
-        with patch(
-            "modules.financial.controllers.cashflow_controller.PayableAIService"
-        ) as mock_service:
+        with patch("modules.financial.controllers.cashflow_controller.PayableAIService") as mock_service:
             mock_instance = AsyncMock()
             mock_service.return_value = mock_instance
 

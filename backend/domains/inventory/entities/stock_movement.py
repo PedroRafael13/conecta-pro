@@ -4,24 +4,19 @@ domains/inventory/entities/stock_movement.py - STOCK MOVEMENT ENTITY
 Enterprise stock movement tracking with full traceability
 """
 
-from typing import Dict, List, Optional, Any, NewType
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any, NewType
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .enums import (
-    StockMovementType,
-    WarehouseType,
-    StockStatus,
-    BatchStatus
-)
+from .enums import BatchStatus, StockMovementType, StockStatus, WarehouseType
 
 # Strong typing for domain identifiers
-MovementId = NewType('MovementId', UUID)
-BatchId = NewType('BatchId', UUID)
-WarehouseId = NewType('WarehouseId', UUID)
+MovementId = NewType("MovementId", UUID)
+BatchId = NewType("BatchId", UUID)
+WarehouseId = NewType("WarehouseId", UUID)
 
 
 class BatchInfo(BaseModel):
@@ -31,10 +26,10 @@ class BatchInfo(BaseModel):
 
     batch_id: UUID = Field(default_factory=uuid4)
     batch_number: str = Field(..., pattern=r"^[A-Z0-9\-]{3,30}$")
-    manufacturing_date: Optional[date] = None
-    expiration_date: Optional[date] = None
+    manufacturing_date: date | None = None
+    expiration_date: date | None = None
     status: BatchStatus = Field(default=BatchStatus.ACTIVE)
-    supplier_batch: Optional[str] = None
+    supplier_batch: str | None = None
     quantity: Decimal = Field(..., gt=Decimal("0"))
     unit_cost: Decimal = Field(..., ge=Decimal("0"))
 
@@ -46,7 +41,7 @@ class BatchInfo(BaseModel):
         return self.expiration_date < date.today()
 
     @property
-    def days_to_expire(self) -> Optional[int]:
+    def days_to_expire(self) -> int | None:
         """Dias para vencimento."""
         if not self.expiration_date:
             return None
@@ -61,8 +56,8 @@ class SerialNumber(BaseModel):
     serial_id: UUID = Field(default_factory=uuid4)
     serial_number: str = Field(..., min_length=3, max_length=50)
     status: StockStatus = Field(default=StockStatus.AVAILABLE)
-    warranty_end_date: Optional[date] = None
-    notes: Optional[str] = None
+    warranty_end_date: date | None = None
+    notes: str | None = None
 
 
 class MovementLine(BaseModel):
@@ -80,20 +75,20 @@ class MovementLine(BaseModel):
     total_cost: Decimal = Field(..., ge=Decimal("0"))
 
     # Batch/Serial
-    batch_info: Optional[BatchInfo] = None
-    serial_numbers: List[str] = Field(default_factory=list)
+    batch_info: BatchInfo | None = None
+    serial_numbers: list[str] = Field(default_factory=list)
 
     # Location
-    from_location: Optional[str] = None
-    to_location: Optional[str] = None
+    from_location: str | None = None
+    to_location: str | None = None
 
-    @model_validator(mode='after')
-    def validate_line(self) -> 'MovementLine':
+    @model_validator(mode="after")
+    def validate_line(self) -> "MovementLine":
         """Valida que total = quantidade * custo."""
         expected_total = (self.quantity * self.unit_cost).quantize(Decimal("0.01"))
         if self.total_cost != expected_total:
             # Auto-corrige
-            object.__setattr__(self, 'total_cost', expected_total)
+            object.__setattr__(self, "total_cost", expected_total)
         return self
 
 
@@ -105,10 +100,7 @@ class StockMovementEntity(BaseModel):
     com rastreabilidade completa.
     """
 
-    model_config = ConfigDict(
-        use_enum_values=True,
-        validate_assignment=True
-    )
+    model_config = ConfigDict(use_enum_values=True, validate_assignment=True)
 
     # Identity
     movement_id: UUID = Field(default_factory=uuid4)
@@ -117,28 +109,28 @@ class StockMovementEntity(BaseModel):
     # Type
     movement_type: StockMovementType
     movement_date: datetime = Field(default_factory=datetime.utcnow)
-    posting_date: Optional[datetime] = None
+    posting_date: datetime | None = None
 
     # Warehouse
     warehouse_id: UUID
     warehouse_code: str
     warehouse_type: WarehouseType
-    destination_warehouse_id: Optional[UUID] = None  # Para transferencias
-    destination_warehouse_code: Optional[str] = None
+    destination_warehouse_id: UUID | None = None  # Para transferencias
+    destination_warehouse_code: str | None = None
 
     # Document
-    source_document_type: Optional[str] = None  # NF, PO, SO, etc.
-    source_document_id: Optional[UUID] = None
-    source_document_number: Optional[str] = None
-    fiscal_document_number: Optional[str] = None
-    fiscal_document_series: Optional[str] = None
+    source_document_type: str | None = None  # NF, PO, SO, etc.
+    source_document_id: UUID | None = None
+    source_document_number: str | None = None
+    fiscal_document_number: str | None = None
+    fiscal_document_series: str | None = None
 
     # Header
     description: str = Field(..., min_length=5, max_length=500)
-    notes: Optional[str] = Field(None, max_length=2000)
+    notes: str | None = Field(None, max_length=2000)
 
     # Lines
-    lines: List[MovementLine] = Field(..., min_length=1)
+    lines: list[MovementLine] = Field(..., min_length=1)
 
     # Totals
     total_quantity: Decimal = Field(default=Decimal("0"))
@@ -148,13 +140,13 @@ class StockMovementEntity(BaseModel):
     # Status
     is_posted: bool = Field(default=False)
     is_cancelled: bool = Field(default=False)
-    cancellation_reason: Optional[str] = None
-    cancelled_at: Optional[datetime] = None
-    cancelled_by: Optional[str] = None
+    cancellation_reason: str | None = None
+    cancelled_at: datetime | None = None
+    cancelled_by: str | None = None
 
     # Financial Integration
-    journal_entry_id: Optional[UUID] = None  # Lancamento contabil
-    cost_center_id: Optional[UUID] = None
+    journal_entry_id: UUID | None = None  # Lancamento contabil
+    cost_center_id: UUID | None = None
 
     # Multi-tenant
     tenant_id: UUID
@@ -163,12 +155,12 @@ class StockMovementEntity(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: str
-    updated_by: Optional[str] = None
-    posted_by: Optional[str] = None
-    posted_at: Optional[datetime] = None
+    updated_by: str | None = None
+    posted_by: str | None = None
+    posted_at: datetime | None = None
 
-    @model_validator(mode='after')
-    def validate_movement(self) -> 'StockMovementEntity':
+    @model_validator(mode="after")
+    def validate_movement(self) -> "StockMovementEntity":
         """Valida e calcula totais do movimento."""
         # Calcula totais
         self.total_quantity = sum(line.quantity for line in self.lines)
@@ -281,11 +273,11 @@ class StockMovementEntity(BaseModel):
         self.total_quantity = sum(line.quantity for line in self.lines)
         self.total_cost = sum(line.total_cost for line in self.lines)
 
-    def get_products_affected(self) -> List[UUID]:
+    def get_products_affected(self) -> list[UUID]:
         """Retorna IDs dos produtos afetados."""
-        return list(set(line.product_id for line in self.lines))
+        return list({line.product_id for line in self.lines})
 
-    def get_line_by_product(self, product_id: UUID) -> Optional[MovementLine]:
+    def get_line_by_product(self, product_id: UUID) -> MovementLine | None:
         """Busca linha por produto."""
         for line in self.lines:
             if line.product_id == product_id:
@@ -297,7 +289,7 @@ class StockMovementEntity(BaseModel):
         """Gera numero do movimento."""
         return f"MOV-{year}-{sequence:08d}"
 
-    def to_summary(self) -> Dict[str, Any]:
+    def to_summary(self) -> dict[str, Any]:
         """Retorna resumo do movimento."""
         return {
             "movement_id": str(self.movement_id),
@@ -309,14 +301,10 @@ class StockMovementEntity(BaseModel):
             "total_cost": str(self.total_cost),
             "lines_count": len(self.lines),
             "is_posted": self.is_posted,
-            "is_cancelled": self.is_cancelled
+            "is_cancelled": self.is_cancelled,
         }
 
-    def create_reversal(
-        self,
-        user_id: str,
-        reason: str
-    ) -> 'StockMovementEntity':
+    def create_reversal(self, user_id: str, reason: str) -> "StockMovementEntity":
         """Cria movimento de estorno."""
         if not self.is_posted:
             raise ValueError("Apenas movimentos contabilizados podem ser estornados")
@@ -333,7 +321,7 @@ class StockMovementEntity(BaseModel):
 
         reversal_type = reversal_type_map.get(
             StockMovementType(self.movement_type),
-            StockMovementType.ADJUSTMENT_OUT if self.is_entry else StockMovementType.ADJUSTMENT_IN
+            StockMovementType.ADJUSTMENT_OUT if self.is_entry else StockMovementType.ADJUSTMENT_IN,
         )
 
         reversal = StockMovementEntity(
@@ -351,7 +339,7 @@ class StockMovementEntity(BaseModel):
             notes=reason,
             lines=self.lines,  # Mesmas linhas
             tenant_id=self.tenant_id,
-            created_by=user_id
+            created_by=user_id,
         )
 
         return reversal

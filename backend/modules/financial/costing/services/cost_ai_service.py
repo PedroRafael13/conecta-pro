@@ -70,9 +70,7 @@ class CostAIService:
         total_margin = total_revenue - total_cost
 
         # Top 5 mais rentáveis
-        top_profitable = sorted(
-            objects, key=lambda x: x.net_margin_percent, reverse=True
-        )[:5]
+        top_profitable = sorted(objects, key=lambda x: x.net_margin_percent, reverse=True)[:5]
 
         # Top 5 menos rentáveis
         bottom_profitable = sorted(objects, key=lambda x: x.net_margin_percent)[:5]
@@ -81,44 +79,48 @@ class CostAIService:
         insights = []
 
         if len(unprofitable) > len(profitable):
-            insights.append({
-                "type": "critical",
-                "message": f"{len(unprofitable)} objetos não rentáveis vs "
-                           f"{len(profitable)} rentáveis",
-                "priority": "high",
-            })
+            insights.append(
+                {
+                    "type": "critical",
+                    "message": f"{len(unprofitable)} objetos não rentáveis vs {len(profitable)} rentáveis",
+                    "priority": "high",
+                }
+            )
 
         if total_margin < 0:
-            insights.append({
-                "type": "critical",
-                "message": f"Margem total negativa: R$ {total_margin:,.2f}",
-                "priority": "critical",
-            })
+            insights.append(
+                {
+                    "type": "critical",
+                    "message": f"Margem total negativa: R$ {total_margin:,.2f}",
+                    "priority": "critical",
+                }
+            )
 
         # Concentração de receita
         if profitable:
             top_revenue = max(o.revenue for o in profitable)
-            revenue_concentration = (
-                (top_revenue / total_revenue * 100) if total_revenue > 0 else 0
-            )
+            revenue_concentration = (top_revenue / total_revenue * 100) if total_revenue > 0 else 0
             if revenue_concentration > 50:
-                insights.append({
-                    "type": "warning",
-                    "message": f"Alta concentração de receita: "
-                               f"{revenue_concentration:.1f}% em um objeto",
-                    "priority": "medium",
-                })
+                insights.append(
+                    {
+                        "type": "warning",
+                        "message": f"Alta concentração de receita: {revenue_concentration:.1f}% em um objeto",
+                        "priority": "medium",
+                    }
+                )
 
         # Recomendações
         recommendations = []
 
         for obj in unprofitable[:3]:
-            recommendations.append({
-                "action": f"Revisar custos de {obj.name}",
-                "impact": abs(obj.net_margin),
-                "priority": "high" if obj.net_margin < Decimal("-1000") else "medium",
-                "details": f"Margem: {obj.net_margin_percent:.1f}%",
-            })
+            recommendations.append(
+                {
+                    "action": f"Revisar custos de {obj.name}",
+                    "impact": abs(obj.net_margin),
+                    "priority": "high" if obj.net_margin < Decimal("-1000") else "medium",
+                    "details": f"Margem: {obj.net_margin_percent:.1f}%",
+                }
+            )
 
         return {
             "summary": {
@@ -130,8 +132,7 @@ class CostAIService:
                 "total_cost": total_cost,
                 "total_margin": total_margin,
                 "avg_margin_percent": (
-                    sum(o.net_margin_percent for o in objects) / len(objects)
-                    if objects else Decimal("0")
+                    sum(o.net_margin_percent for o in objects) / len(objects) if objects else Decimal("0")
                 ),
             },
             "top_profitable": [
@@ -169,10 +170,7 @@ class CostAIService:
             limit=1000,
         )
 
-        activities_with_capacity = [
-            a for a in activities
-            if a.practical_capacity and a.practical_capacity > 0
-        ]
+        activities_with_capacity = [a for a in activities if a.practical_capacity and a.practical_capacity > 0]
 
         if not activities_with_capacity:
             return {"error": "Nenhuma atividade com capacidade definida"}
@@ -190,7 +188,8 @@ class CostAIService:
             idle = activity.practical_capacity - activity.used_capacity
             usage_percent = (
                 (activity.used_capacity / activity.practical_capacity) * 100
-                if activity.practical_capacity > 0 else Decimal("0")
+                if activity.practical_capacity > 0
+                else Decimal("0")
             )
 
             if activity.activity_rate:
@@ -198,15 +197,17 @@ class CostAIService:
                 idle_cost += cost
 
             if usage_percent < 50:
-                high_idle.append({
-                    "id": str(activity.id),
-                    "name": activity.name,
-                    "capacity": activity.practical_capacity,
-                    "used": activity.used_capacity,
-                    "idle": idle,
-                    "usage_percent": usage_percent,
-                    "idle_cost": idle * activity.activity_rate if activity.activity_rate else 0,
-                })
+                high_idle.append(
+                    {
+                        "id": str(activity.id),
+                        "name": activity.name,
+                        "capacity": activity.practical_capacity,
+                        "used": activity.used_capacity,
+                        "idle": idle,
+                        "usage_percent": usage_percent,
+                        "idle_cost": idle * activity.activity_rate if activity.activity_rate else 0,
+                    }
+                )
 
             if usage_percent < 30:
                 low_utilization.append(activity)
@@ -216,29 +217,35 @@ class CostAIService:
         overall_usage = (total_used / total_capacity * 100) if total_capacity > 0 else 0
 
         if overall_usage < 60:
-            insights.append({
-                "type": "warning",
-                "message": f"Utilização geral baixa: {overall_usage:.1f}%",
-                "priority": "high",
-            })
+            insights.append(
+                {
+                    "type": "warning",
+                    "message": f"Utilização geral baixa: {overall_usage:.1f}%",
+                    "priority": "high",
+                }
+            )
 
         if idle_cost > Decimal("10000"):
-            insights.append({
-                "type": "critical",
-                "message": f"Custo de ociosidade significativo: R$ {idle_cost:,.2f}",
-                "priority": "critical",
-            })
+            insights.append(
+                {
+                    "type": "critical",
+                    "message": f"Custo de ociosidade significativo: R$ {idle_cost:,.2f}",
+                    "priority": "critical",
+                }
+            )
 
         # Recomendações
         recommendations = []
 
         for activity in sorted(high_idle, key=lambda x: x["idle_cost"], reverse=True)[:3]:
-            recommendations.append({
-                "action": f"Otimizar capacidade de {activity['name']}",
-                "impact": activity["idle_cost"],
-                "priority": "high",
-                "details": f"Ociosidade: {100 - activity['usage_percent']:.1f}%",
-            })
+            recommendations.append(
+                {
+                    "action": f"Otimizar capacidade de {activity['name']}",
+                    "impact": activity["idle_cost"],
+                    "priority": "high",
+                    "details": f"Ociosidade: {100 - activity['usage_percent']:.1f}%",
+                }
+            )
 
         return {
             "summary": {
@@ -284,18 +291,17 @@ class CostAIService:
                 z_score = (float(allocation.allocated_amount) - mean) / stdev
                 if abs(z_score) > z_score_threshold:
                     severity = "high" if abs(z_score) > 3 else "medium"
-                    anomalies.append({
-                        "id": str(allocation.id),
-                        "allocation_number": allocation.allocation_number,
-                        "amount": allocation.allocated_amount,
-                        "z_score": round(z_score, 2),
-                        "severity": severity,
-                        "type": "high_value" if z_score > 0 else "low_value",
-                        "date": (
-                            allocation.allocation_date.isoformat()
-                            if allocation.allocation_date else None
-                        ),
-                    })
+                    anomalies.append(
+                        {
+                            "id": str(allocation.id),
+                            "allocation_number": allocation.allocation_number,
+                            "amount": allocation.allocated_amount,
+                            "z_score": round(z_score, 2),
+                            "severity": severity,
+                            "type": "high_value" if z_score > 0 else "low_value",
+                            "date": (allocation.allocation_date.isoformat() if allocation.allocation_date else None),
+                        }
+                    )
 
         # Ordenar por z_score absoluto
         anomalies.sort(key=lambda x: abs(x["z_score"]), reverse=True)
@@ -303,23 +309,25 @@ class CostAIService:
         # Insights
         insights = []
         if len(anomalies) > len(allocations) * 0.1:
-            insights.append({
-                "type": "warning",
-                "message": f"Alto número de anomalias: {len(anomalies)} "
-                           f"({len(anomalies) / len(allocations) * 100:.1f}%)",
-                "priority": "medium",
-            })
+            insights.append(
+                {
+                    "type": "warning",
+                    "message": f"Alto número de anomalias: {len(anomalies)} "
+                    f"({len(anomalies) / len(allocations) * 100:.1f}%)",
+                    "priority": "medium",
+                }
+            )
 
         high_value_anomalies = [a for a in anomalies if a["type"] == "high_value"]
         if high_value_anomalies:
-            total_excess = sum(
-                float(a["amount"]) - mean for a in high_value_anomalies
+            total_excess = sum(float(a["amount"]) - mean for a in high_value_anomalies)
+            insights.append(
+                {
+                    "type": "info",
+                    "message": f"Alocações acima da média representam R$ {total_excess:,.2f} extras",
+                    "priority": "low",
+                }
             )
-            insights.append({
-                "type": "info",
-                "message": f"Alocações acima da média representam R$ {total_excess:,.2f} extras",
-                "priority": "low",
-            })
 
         return {
             "summary": {
@@ -354,105 +362,93 @@ class CostAIService:
         suggestions = []
 
         # 1. Atividades que não agregam valor
-        non_value_activities = [
-            a for a in activities
-            if a.value_added_type == ValueAddedType.NON_VALUE_ADDED
-        ]
+        non_value_activities = [a for a in activities if a.value_added_type == ValueAddedType.NON_VALUE_ADDED]
         if non_value_activities:
             total_non_value_cost = sum(a.total_cost for a in non_value_activities)
-            suggestions.append({
-                "category": "value_analysis",
-                "title": "Eliminar atividades sem valor agregado",
-                "description": f"{len(non_value_activities)} atividades identificadas "
-                               f"como não agregando valor ao cliente",
-                "potential_savings": total_non_value_cost,
-                "priority": "high",
-                "activities": [
-                    {"id": str(a.id), "name": a.name, "cost": a.total_cost}
-                    for a in non_value_activities[:5]
-                ],
-            })
+            suggestions.append(
+                {
+                    "category": "value_analysis",
+                    "title": "Eliminar atividades sem valor agregado",
+                    "description": f"{len(non_value_activities)} atividades identificadas "
+                    f"como não agregando valor ao cliente",
+                    "potential_savings": total_non_value_cost,
+                    "priority": "high",
+                    "activities": [
+                        {"id": str(a.id), "name": a.name, "cost": a.total_cost} for a in non_value_activities[:5]
+                    ],
+                }
+            )
 
         # 2. Atividades terceirizáveis
-        outsourceable = [
-            a for a in activities
-            if a.is_outsourceable and a.total_cost > 0
-        ]
+        outsourceable = [a for a in activities if a.is_outsourceable and a.total_cost > 0]
         if outsourceable:
             # Estimativa: terceirização pode economizar 15-25%
             potential = sum(a.total_cost for a in outsourceable) * Decimal("0.20")
-            suggestions.append({
-                "category": "outsourcing",
-                "title": "Avaliar terceirização de atividades",
-                "description": f"{len(outsourceable)} atividades candidatas à terceirização",
-                "potential_savings": potential,
-                "priority": "medium",
-                "activities": [
-                    {"id": str(a.id), "name": a.name, "cost": a.total_cost}
-                    for a in outsourceable[:5]
-                ],
-            })
+            suggestions.append(
+                {
+                    "category": "outsourcing",
+                    "title": "Avaliar terceirização de atividades",
+                    "description": f"{len(outsourceable)} atividades candidatas à terceirização",
+                    "potential_savings": potential,
+                    "priority": "medium",
+                    "activities": [{"id": str(a.id), "name": a.name, "cost": a.total_cost} for a in outsourceable[:5]],
+                }
+            )
 
         # 3. Atividades automatizáveis
-        automatable = [
-            a for a in activities
-            if a.is_automatable and a.total_cost > 0
-        ]
+        automatable = [a for a in activities if a.is_automatable and a.total_cost > 0]
         if automatable:
             # Estimativa: automação pode economizar 30-50%
             potential = sum(a.total_cost for a in automatable) * Decimal("0.40")
-            suggestions.append({
-                "category": "automation",
-                "title": "Automatizar atividades repetitivas",
-                "description": f"{len(automatable)} atividades candidatas à automação",
-                "potential_savings": potential,
-                "priority": "high",
-                "activities": [
-                    {"id": str(a.id), "name": a.name, "cost": a.total_cost}
-                    for a in automatable[:5]
-                ],
-            })
+            suggestions.append(
+                {
+                    "category": "automation",
+                    "title": "Automatizar atividades repetitivas",
+                    "description": f"{len(automatable)} atividades candidatas à automação",
+                    "potential_savings": potential,
+                    "priority": "high",
+                    "activities": [{"id": str(a.id), "name": a.name, "cost": a.total_cost} for a in automatable[:5]],
+                }
+            )
 
         # 4. Objetos não rentáveis
-        unprofitable = [
-            o for o in objects
-            if o.profitability_level == ProfitabilityLevel.UNPROFITABLE
-        ]
+        unprofitable = [o for o in objects if o.profitability_level == ProfitabilityLevel.UNPROFITABLE]
         if unprofitable:
             total_loss = abs(sum(o.net_margin for o in unprofitable))
-            suggestions.append({
-                "category": "profitability",
-                "title": "Revisar produtos/serviços não rentáveis",
-                "description": f"{len(unprofitable)} objetos com margem negativa",
-                "potential_savings": total_loss,
-                "priority": "critical",
-                "objects": [
-                    {
-                        "id": str(o.id),
-                        "name": o.name,
-                        "margin": o.net_margin,
-                        "margin_percent": o.net_margin_percent,
-                    }
-                    for o in unprofitable[:5]
-                ],
-            })
+            suggestions.append(
+                {
+                    "category": "profitability",
+                    "title": "Revisar produtos/serviços não rentáveis",
+                    "description": f"{len(unprofitable)} objetos com margem negativa",
+                    "potential_savings": total_loss,
+                    "priority": "critical",
+                    "objects": [
+                        {
+                            "id": str(o.id),
+                            "name": o.name,
+                            "margin": o.net_margin,
+                            "margin_percent": o.net_margin_percent,
+                        }
+                        for o in unprofitable[:5]
+                    ],
+                }
+            )
 
         # 5. Capacidade ociosa
         high_idle = [
-            a for a in activities
-            if a.practical_capacity
-            and a.practical_capacity > 0
-            and a.capacity_usage_percent < 50
+            a for a in activities if a.practical_capacity and a.practical_capacity > 0 and a.capacity_usage_percent < 50
         ]
         if high_idle:
             idle_cost = sum(a.idle_capacity * a.activity_rate for a in high_idle if a.activity_rate)
-            suggestions.append({
-                "category": "capacity",
-                "title": "Otimizar capacidade ociosa",
-                "description": f"{len(high_idle)} atividades com utilização < 50%",
-                "potential_savings": idle_cost,
-                "priority": "medium",
-            })
+            suggestions.append(
+                {
+                    "category": "capacity",
+                    "title": "Otimizar capacidade ociosa",
+                    "description": f"{len(high_idle)} atividades com utilização < 50%",
+                    "potential_savings": idle_cost,
+                    "priority": "medium",
+                }
+            )
 
         # Ordenar por potencial de economia
         suggestions.sort(key=lambda x: x["potential_savings"], reverse=True)
@@ -506,8 +502,7 @@ class CostAIService:
         # Calcular variação mensal
         if len(recent_values) >= 2:
             changes = [
-                (recent_values[i] - recent_values[i - 1]) / recent_values[i - 1]
-                if recent_values[i - 1] != 0 else 0
+                (recent_values[i] - recent_values[i - 1]) / recent_values[i - 1] if recent_values[i - 1] != 0 else 0
                 for i in range(1, len(recent_values))
             ]
             avg_change = statistics.mean(changes) if changes else 0
@@ -536,13 +531,15 @@ class CostAIService:
             pessimist = projected * Decimal("1.10")  # +10%
             optimist = projected * Decimal("0.90")  # -10%
 
-            forecasts.append({
-                "period": next_period,
-                "pessimist": round(pessimist, 2),
-                "realistic": round(projected, 2),
-                "optimist": round(optimist, 2),
-                "confidence": max(0, min(100, 80 - i * 10)),  # Diminui com distância
-            })
+            forecasts.append(
+                {
+                    "period": next_period,
+                    "pessimist": round(pessimist, 2),
+                    "realistic": round(projected, 2),
+                    "optimist": round(optimist, 2),
+                    "confidence": max(0, min(100, 80 - i * 10)),  # Diminui com distância
+                }
+            )
 
         return {
             "historical_summary": {
@@ -600,13 +597,9 @@ class CostAIService:
                     "profitability": profitability.get("summary", {}),
                     "capacity": capacity.get("summary", {}),
                     "optimization": optimization.get("summary", {}),
-                    "all_insights": (
-                        profitability.get("insights", [])
-                        + capacity.get("insights", [])
-                    ),
+                    "all_insights": (profitability.get("insights", []) + capacity.get("insights", [])),
                     "all_recommendations": (
-                        profitability.get("recommendations", [])
-                        + optimization.get("suggestions", [])
+                        profitability.get("recommendations", []) + optimization.get("suggestions", [])
                     ),
                 }
 

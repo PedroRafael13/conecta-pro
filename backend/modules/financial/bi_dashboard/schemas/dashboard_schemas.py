@@ -1,16 +1,14 @@
 """Schemas de Dashboard Financeiro."""
 
 from datetime import datetime
-from decimal import Decimal
-from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.financial.bi_dashboard.models.dashboard_config import (
-    DashboardType,
-    DashboardStatus,
     DashboardLayout,
+    DashboardStatus,
+    DashboardType,
     RefreshInterval,
 )
 
@@ -19,7 +17,7 @@ class DashboardBase(BaseModel):
     """Schema base de Dashboard."""
 
     nome: str = Field(..., min_length=1, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
+    descricao: str | None = Field(None, max_length=2000)
     tipo: DashboardType = Field(default=DashboardType.OPERATIONAL)
     layout: DashboardLayout = Field(default=DashboardLayout.GRID_3X2)
     refresh_interval: RefreshInterval = Field(default=RefreshInterval.MINUTE_15)
@@ -40,31 +38,31 @@ class DashboardCreate(DashboardBase):
     codigo: str = Field(..., min_length=1, max_length=50)
     allowed_roles: list = Field(default_factory=list)
     allowed_users: list = Field(default_factory=list)
-    custom_css: Optional[str] = None
+    custom_css: str | None = None
 
 
 class DashboardUpdate(BaseModel):
     """Schema para atualizar Dashboard."""
 
-    nome: Optional[str] = Field(None, min_length=1, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
-    tipo: Optional[DashboardType] = None
-    status: Optional[DashboardStatus] = None
-    layout: Optional[DashboardLayout] = None
-    refresh_interval: Optional[RefreshInterval] = None
-    is_public: Optional[bool] = None
-    is_default: Optional[bool] = None
-    is_favorite: Optional[bool] = None
-    theme: Optional[str] = Field(None, max_length=50)
-    primary_color: Optional[str] = Field(None, max_length=20)
-    background_color: Optional[str] = Field(None, max_length=20)
-    custom_css: Optional[str] = None
-    default_period_days: Optional[int] = Field(None, ge=1, le=365)
-    default_filters: Optional[dict] = None
-    available_filters: Optional[list] = None
-    allowed_roles: Optional[list] = None
-    allowed_users: Optional[list] = None
-    tags: Optional[list] = None
+    nome: str | None = Field(None, min_length=1, max_length=200)
+    descricao: str | None = Field(None, max_length=2000)
+    tipo: DashboardType | None = None
+    status: DashboardStatus | None = None
+    layout: DashboardLayout | None = None
+    refresh_interval: RefreshInterval | None = None
+    is_public: bool | None = None
+    is_default: bool | None = None
+    is_favorite: bool | None = None
+    theme: str | None = Field(None, max_length=50)
+    primary_color: str | None = Field(None, max_length=20)
+    background_color: str | None = Field(None, max_length=20)
+    custom_css: str | None = None
+    default_period_days: int | None = Field(None, ge=1, le=365)
+    default_filters: dict | None = None
+    available_filters: list | None = None
+    allowed_roles: list | None = None
+    allowed_users: list | None = None
+    tags: list | None = None
 
 
 class WidgetSummary(BaseModel):
@@ -87,19 +85,19 @@ class DashboardResponse(DashboardBase):
     codigo: str
     status: DashboardStatus
     is_favorite: bool = False
-    owner_id: Optional[UUID] = None
+    owner_id: UUID | None = None
     allowed_roles: list = Field(default_factory=list)
     allowed_users: list = Field(default_factory=list)
-    custom_css: Optional[str] = None
+    custom_css: str | None = None
     version: int = 1
     view_count: int = 0
-    last_viewed_at: Optional[datetime] = None
-    last_modified_at: Optional[datetime] = None
+    last_viewed_at: datetime | None = None
+    last_modified_at: datetime | None = None
     widget_count: int = 0
     refresh_seconds: int = 900
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -117,15 +115,15 @@ class DashboardListResponse(BaseModel):
 class DashboardFilters(BaseModel):
     """Filtros para busca de Dashboards."""
 
-    tipo: Optional[DashboardType] = None
-    status: Optional[DashboardStatus] = None
-    is_public: Optional[bool] = None
-    is_favorite: Optional[bool] = None
-    owner_id: Optional[UUID] = None
-    search: Optional[str] = Field(None, max_length=200)
-    tags: Optional[list[str]] = None
-    created_after: Optional[datetime] = None
-    created_before: Optional[datetime] = None
+    tipo: DashboardType | None = None
+    status: DashboardStatus | None = None
+    is_public: bool | None = None
+    is_favorite: bool | None = None
+    owner_id: UUID | None = None
+    search: str | None = Field(None, max_length=200)
+    tags: list[str] | None = None
+    created_after: datetime | None = None
+    created_before: datetime | None = None
 
 
 class DashboardStats(BaseModel):
@@ -139,7 +137,7 @@ class DashboardStats(BaseModel):
     private: int = 0
     total_widgets: int = 0
     total_views: int = 0
-    most_viewed: Optional[dict] = None
+    most_viewed: dict | None = None
     by_type: dict = Field(default_factory=dict)
     by_layout: dict = Field(default_factory=dict)
 
@@ -148,7 +146,7 @@ class DashboardDuplicate(BaseModel):
     """Schema para duplicar Dashboard."""
 
     novo_nome: str = Field(..., min_length=1, max_length=200)
-    novo_codigo: Optional[str] = Field(None, max_length=50)
+    novo_codigo: str | None = Field(None, max_length=50)
     incluir_widgets: bool = Field(default=True)
 
 
@@ -167,4 +165,4 @@ class DashboardImport(BaseModel):
 
     data: dict
     override_existing: bool = Field(default=False)
-    new_name: Optional[str] = None
+    new_name: str | None = None

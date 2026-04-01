@@ -1,18 +1,52 @@
 'use client';
 
-import { Users, UserPlus, Target, Building2, FileText, RefreshCw, ArrowRight } from 'lucide-react';
+import { Users, UserPlus, Target, Building2, FileText, RefreshCw, ArrowRight, Phone, Mail, Calendar, MessageSquare, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-;
+import { Badge } from '@/components/ui/badge';
+import { customInstance } from '@/lib/api-client';
 import { useCRMDashboardKpis } from '@/hooks/crm';
 import { formatCurrency } from '@/lib/utils';
 
 export default function CRMDashboardPage() {
   const router = useRouter();
   const { data: kpis, isLoading, refetch } = useCRMDashboardKpis();
+  const { data: activitiesData, isLoading: activitiesLoading } = useQuery<any[]>({
+    queryKey: ['crm-activities-recent'],
+    queryFn: () => customInstance<any[]>({ url: '/api/v1/crm/activities/recent', method: 'GET' }),
+    staleTime: 30_000,
+  });
 
   const kpiData = kpis as any;
+
+  const activityTypeConfig: Record<string, { icon: typeof Phone; color: string; bg: string; label: string }> = {
+    call: { icon: Phone, color: 'text-blue-600', bg: 'bg-blue-100', label: 'Ligacao' },
+    email: { icon: Mail, color: 'text-purple-600', bg: 'bg-purple-100', label: 'Email' },
+    meeting: { icon: Calendar, color: 'text-green-600', bg: 'bg-green-100', label: 'Reuniao' },
+    note: { icon: MessageSquare, color: 'text-orange-600', bg: 'bg-orange-100', label: 'Nota' },
+  };
+
+  const getActivityConfig = (type: string) =>
+    activityTypeConfig[type] || { icon: Clock, color: 'text-gray-600', bg: 'bg-gray-100', label: type || 'Atividade' };
+
+  const formatRelativeTime = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMin = Math.floor(diffMs / 60000);
+      if (diffMin < 1) return 'agora';
+      if (diffMin < 60) return `${diffMin}min atras`;
+      const diffH = Math.floor(diffMin / 60);
+      if (diffH < 24) return `${diffH}h atras`;
+      const diffD = Math.floor(diffH / 24);
+      return `${diffD}d atras`;
+    } catch {
+      return dateStr || '-';
+    }
+  };
 
   const cards = [
     {
@@ -146,6 +180,65 @@ export default function CRMDashboardPage() {
             </div>
             <ArrowRight className="h-5 w-5 text-muted-foreground" />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Atividades Recentes */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Atividades Recentes
+          </CardTitle>
+          {activitiesData && (
+            <Badge variant="secondary">{activitiesData.length} atividade{activitiesData.length !== 1 ? 's' : ''}</Badge>
+          )}
+        </CardHeader>
+        <CardContent>
+          {activitiesLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+            </div>
+          ) : !activitiesData || activitiesData.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-12 w-12 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">Nenhuma atividade recente</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {(Array.isArray(activitiesData) ? activitiesData : []).slice(0, 10).map((activity: any, idx: number) => {
+                const config = getActivityConfig(activity.type || activity.activity_type);
+                const IconComp = config.icon;
+                return (
+                  <div key={activity.id || idx} className="flex items-start gap-3">
+                    <div className={`h-8 w-8 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      <IconComp className={`h-4 w-4 ${config.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">
+                          {activity.subject || activity.title || config.label}
+                        </span>
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
+                          {config.label}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {(activity.client_name || activity.lead_name) && (
+                          <span className="text-xs text-muted-foreground truncate">
+                            {activity.client_name || activity.lead_name}
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          {formatRelativeTime(activity.created_at || activity.date)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

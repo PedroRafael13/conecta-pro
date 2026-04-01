@@ -4,28 +4,27 @@ Risk Profile Model - AI Fraud Detection
 Modelo para perfis de risco de entidades.
 """
 
-import enum
 import uuid
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
+    Boolean,
     Column,
+    Date,
+    DateTime,
+    Enum,
+    Float,
+    Integer,
     String,
     Text,
-    Boolean,
-    Integer,
-    Float,
-    DateTime,
-    Date,
-    Enum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 
 from core.database import Base
 
 
-class EntityType(str, enum.Enum):
+class EntityType(StrEnum):
     """Tipo de entidade."""
 
     USER = "user"
@@ -44,7 +43,7 @@ class EntityType(str, enum.Enum):
     OTHER = "other"
 
 
-class RiskLevel(str, enum.Enum):
+class RiskLevel(StrEnum):
     """Nivel de risco."""
 
     MINIMAL = "minimal"
@@ -319,32 +318,32 @@ class RiskProfile(Base):
         score: float = 10,
     ) -> None:
         """Adiciona fator de risco."""
-        self.risk_factors = [
-            f for f in self.risk_factors if f.get("factor") != factor
-        ]
-        self.risk_factors.append({
-            "factor": factor,
-            "weight": weight,
-            "score": score,
-            "added_at": datetime.utcnow().isoformat(),
-        })
+        self.risk_factors = [f for f in self.risk_factors if f.get("factor") != factor]
+        self.risk_factors.append(
+            {
+                "factor": factor,
+                "weight": weight,
+                "score": score,
+                "added_at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def add_trust_indicator(self, indicator: str, bonus: float = -5) -> None:
         """Adiciona indicador de confianca."""
-        self.trust_indicators = [
-            i for i in self.trust_indicators if i.get("indicator") != indicator
-        ]
-        self.trust_indicators.append({
-            "indicator": indicator,
-            "bonus": bonus,
-            "added_at": datetime.utcnow().isoformat(),
-        })
+        self.trust_indicators = [i for i in self.trust_indicators if i.get("indicator") != indicator]
+        self.trust_indicators.append(
+            {
+                "indicator": indicator,
+                "bonus": bonus,
+                "added_at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def record_login(
         self,
         ip: str,
         device: str,
-        location: Optional[str] = None,
+        location: str | None = None,
         success: bool = True,
     ) -> None:
         """Registra login."""
@@ -379,9 +378,7 @@ class RiskProfile(Base):
         if value > (self.max_transaction_value or 0):
             self.max_transaction_value = value
 
-        self.avg_transaction_value = (
-            self.total_transaction_value / self.total_transactions
-        )
+        self.avg_transaction_value = self.total_transaction_value / self.total_transactions
 
         if suspicious:
             self.suspicious_transactions += 1

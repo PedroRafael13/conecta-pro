@@ -9,15 +9,16 @@ ROI Target: R$ 180K
 Sprint: FASE 3 - Otimização Total
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, asdict
-from enum import Enum
 import asyncio
-import json
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+from enum import StrEnum
+from typing import Any
 
-class DashboardMetricType(str, Enum):
+
+class DashboardMetricType(StrEnum):
     """Tipos de métricas do dashboard."""
+
     FINANCIAL = "financial"
     OPERATIONAL = "operational"
     HR = "hr"
@@ -26,22 +27,28 @@ class DashboardMetricType(str, Enum):
     PERFORMANCE = "performance"
     PREDICTION = "prediction"
 
-class TrendDirection(str, Enum):
+
+class TrendDirection(StrEnum):
     """Direção da tendência."""
+
     UP = "up"
     DOWN = "down"
     STABLE = "stable"
 
-class AlertLevel(str, Enum):
+
+class AlertLevel(StrEnum):
     """Níveis de alerta."""
+
     SUCCESS = "success"
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
 
+
 @dataclass
 class KPIMetric:
     """Métrica de KPI."""
+
     name: str
     value: float
     previous_value: float
@@ -52,9 +59,11 @@ class KPIMetric:
     category: DashboardMetricType
     updated_at: datetime
 
+
 @dataclass
 class DashboardAlert:
     """Alerta do dashboard."""
+
     title: str
     message: str
     level: AlertLevel
@@ -64,9 +73,11 @@ class DashboardAlert:
     created_at: datetime
     action_required: bool
 
+
 @dataclass
 class PredictiveInsight:
     """Insight preditivo."""
+
     title: str
     description: str
     confidence: float
@@ -75,87 +86,83 @@ class PredictiveInsight:
     timeline: str
     category: DashboardMetricType
 
+
 @dataclass
 class ExecutiveDashboard:
     """Dashboard executivo completo."""
+
     timestamp: datetime
-    kpis: List[KPIMetric]
-    alerts: List[DashboardAlert]
-    insights: List[PredictiveInsight]
-    summary: Dict[str, Any]
-    trends: Dict[str, List[float]]
+    kpis: list[KPIMetric]
+    alerts: list[DashboardAlert]
+    insights: list[PredictiveInsight]
+    summary: dict[str, Any]
+    trends: dict[str, list[float]]
+
 
 class ExecutiveDashboardService:
     """Serviço de Dashboard Executivo Avançado."""
-    
+
     def __init__(self):
         self.cache_duration = timedelta(minutes=5)
-        self._cache: Optional[ExecutiveDashboard] = None
-        self._last_update: Optional[datetime] = None
-    
+        self._cache: ExecutiveDashboard | None = None
+        self._last_update: datetime | None = None
+
     async def get_executive_dashboard(self, refresh: bool = False) -> ExecutiveDashboard:
         """
         Gera dashboard executivo completo.
-        
+
         Args:
             refresh: Forçar atualização dos dados
-            
+
         Returns:
             Dashboard executivo com KPIs, alertas e insights
         """
         if not refresh and self._is_cache_valid():
             return self._cache
-        
+
         # Coleta dados em paralelo
         kpis_task = self._collect_kpis()
         alerts_task = self._detect_alerts()
         insights_task = self._generate_insights()
         trends_task = self._calculate_trends()
-        
-        kpis, alerts, insights, trends = await asyncio.gather(
-            kpis_task, alerts_task, insights_task, trends_task
-        )
-        
+
+        kpis, alerts, insights, trends = await asyncio.gather(kpis_task, alerts_task, insights_task, trends_task)
+
         # Gera resumo executivo
         summary = await self._generate_summary(kpis, alerts, insights)
-        
+
         dashboard = ExecutiveDashboard(
-            timestamp=datetime.now(),
-            kpis=kpis,
-            alerts=alerts,
-            insights=insights,
-            summary=summary,
-            trends=trends
+            timestamp=datetime.now(), kpis=kpis, alerts=alerts, insights=insights, summary=summary, trends=trends
         )
-        
+
         # Cache do resultado
         self._cache = dashboard
         self._last_update = datetime.now()
-        
+
         return dashboard
-    
-    async def _collect_kpis(self) -> List[KPIMetric]:
+
+    async def _collect_kpis(self) -> list[KPIMetric]:
         """Coleta todos os KPIs principais."""
         kpis = []
-        
+
         # KPIs Financeiros
         kpis.extend(await self._get_financial_kpis())
-        
-        # KPIs Operacionais  
+
+        # KPIs Operacionais
         kpis.extend(await self._get_operational_kpis())
-        
+
         # KPIs de RH
         kpis.extend(await self._get_hr_kpis())
-        
+
         # KPIs de Segurança
         kpis.extend(await self._get_safety_kpis())
-        
+
         # KPIs de Clientes
         kpis.extend(await self._get_client_kpis())
-        
+
         return kpis
-    
-    async def _get_financial_kpis(self) -> List[KPIMetric]:
+
+    async def _get_financial_kpis(self) -> list[KPIMetric]:
         """KPIs financeiros principais."""
         # Simulação de dados - integração real com CFO Virtual
         return [
@@ -168,7 +175,7 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=7.5,
                 category=DashboardMetricType.FINANCIAL,
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             ),
             KPIMetric(
                 name="Margem EBITDA",
@@ -179,7 +186,7 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=11.9,
                 category=DashboardMetricType.FINANCIAL,
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             ),
             KPIMetric(
                 name="Inadimplência",
@@ -190,11 +197,11 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.DOWN,
                 change_percent=-22.0,
                 category=DashboardMetricType.FINANCIAL,
-                updated_at=datetime.now()
-            )
+                updated_at=datetime.now(),
+            ),
         ]
-    
-    async def _get_operational_kpis(self) -> List[KPIMetric]:
+
+    async def _get_operational_kpis(self) -> list[KPIMetric]:
         """KPIs operacionais."""
         return [
             KPIMetric(
@@ -206,7 +213,7 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=6.3,
                 category=DashboardMetricType.OPERATIONAL,
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             ),
             KPIMetric(
                 name="SLA Atendimento",
@@ -217,11 +224,11 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=1.5,
                 category=DashboardMetricType.OPERATIONAL,
-                updated_at=datetime.now()
-            )
+                updated_at=datetime.now(),
+            ),
         ]
-    
-    async def _get_hr_kpis(self) -> List[KPIMetric]:
+
+    async def _get_hr_kpis(self) -> list[KPIMetric]:
         """KPIs de recursos humanos."""
         return [
             KPIMetric(
@@ -233,7 +240,7 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=4.0,
                 category=DashboardMetricType.HR,
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             ),
             KPIMetric(
                 name="Satisfação Funcionários",
@@ -244,11 +251,11 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=6.3,
                 category=DashboardMetricType.HR,
-                updated_at=datetime.now()
-            )
+                updated_at=datetime.now(),
+            ),
         ]
-    
-    async def _get_safety_kpis(self) -> List[KPIMetric]:
+
+    async def _get_safety_kpis(self) -> list[KPIMetric]:
         """KPIs de segurança ocupacional."""
         return [
             KPIMetric(
@@ -260,7 +267,7 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=2.4,
                 category=DashboardMetricType.SAFETY,
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             ),
             KPIMetric(
                 name="Dias sem Acidentes",
@@ -271,11 +278,11 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=29.6,
                 category=DashboardMetricType.SAFETY,
-                updated_at=datetime.now()
-            )
+                updated_at=datetime.now(),
+            ),
         ]
-    
-    async def _get_client_kpis(self) -> List[KPIMetric]:
+
+    async def _get_client_kpis(self) -> list[KPIMetric]:
         """KPIs de clientes."""
         return [
             KPIMetric(
@@ -287,7 +294,7 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=5.9,
                 category=DashboardMetricType.CLIENT,
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             ),
             KPIMetric(
                 name="Retenção de Clientes",
@@ -298,92 +305,100 @@ class ExecutiveDashboardService:
                 trend=TrendDirection.UP,
                 change_percent=1.8,
                 category=DashboardMetricType.CLIENT,
-                updated_at=datetime.now()
-            )
+                updated_at=datetime.now(),
+            ),
         ]
-    
-    async def _detect_alerts(self) -> List[DashboardAlert]:
+
+    async def _detect_alerts(self) -> list[DashboardAlert]:
         """Detecta alertas automáticos."""
         alerts = []
-        
+
         # Algoritmo de detecção de alertas baseado em thresholds
         now = datetime.now()
-        
+
         # Alerta crítico - exemplo
-        alerts.append(DashboardAlert(
-            title="Meta de Receita em Risco",
-            message="Receita atual 95% da meta mensal. Ação requerida.",
-            level=AlertLevel.WARNING,
-            metric="Receita Mensal",
-            value=2850000.0,
-            threshold=3000000.0,
-            created_at=now,
-            action_required=True
-        ))
-        
+        alerts.append(
+            DashboardAlert(
+                title="Meta de Receita em Risco",
+                message="Receita atual 95% da meta mensal. Ação requerida.",
+                level=AlertLevel.WARNING,
+                metric="Receita Mensal",
+                value=2850000.0,
+                threshold=3000000.0,
+                created_at=now,
+                action_required=True,
+            )
+        )
+
         # Alerta positivo
-        alerts.append(DashboardAlert(
-            title="Recorde de Segurança",
-            message="127 dias sem acidentes - novo recorde da empresa!",
-            level=AlertLevel.SUCCESS,
-            metric="Dias sem Acidentes",
-            value=127,
-            threshold=120,
-            created_at=now,
-            action_required=False
-        ))
-        
+        alerts.append(
+            DashboardAlert(
+                title="Recorde de Segurança",
+                message="127 dias sem acidentes - novo recorde da empresa!",
+                level=AlertLevel.SUCCESS,
+                metric="Dias sem Acidentes",
+                value=127,
+                threshold=120,
+                created_at=now,
+                action_required=False,
+            )
+        )
+
         return alerts
-    
-    async def _generate_insights(self) -> List[PredictiveInsight]:
+
+    async def _generate_insights(self) -> list[PredictiveInsight]:
         """Gera insights preditivos com IA."""
         insights = []
-        
+
         # Insight financeiro
-        insights.append(PredictiveInsight(
-            title="Oportunidade de Crescimento Detectada",
-            description="Análise preditiva indica potencial aumento de 15% na receita com otimização de operações.",
-            confidence=0.87,
-            impact="Alto",
-            recommendation="Implementar automação adicional em 3 processos críticos",
-            timeline="30 dias",
-            category=DashboardMetricType.PREDICTION
-        ))
-        
+        insights.append(
+            PredictiveInsight(
+                title="Oportunidade de Crescimento Detectada",
+                description="Análise preditiva indica potencial aumento de 15% na receita com otimização de operações.",
+                confidence=0.87,
+                impact="Alto",
+                recommendation="Implementar automação adicional em 3 processos críticos",
+                timeline="30 dias",
+                category=DashboardMetricType.PREDICTION,
+            )
+        )
+
         # Insight operacional
-        insights.append(PredictiveInsight(
-            title="Risco de Sobrecarga Operacional",
-            description="Tendência indica possível gargalo operacional em 45 dias.",
-            confidence=0.73,
-            impact="Médio",
-            recommendation="Antecipar contratação de 2 técnicos especializados",
-            timeline="45 dias",
-            category=DashboardMetricType.OPERATIONAL
-        ))
-        
+        insights.append(
+            PredictiveInsight(
+                title="Risco de Sobrecarga Operacional",
+                description="Tendência indica possível gargalo operacional em 45 dias.",
+                confidence=0.73,
+                impact="Médio",
+                recommendation="Antecipar contratação de 2 técnicos especializados",
+                timeline="45 dias",
+                category=DashboardMetricType.OPERATIONAL,
+            )
+        )
+
         return insights
-    
-    async def _calculate_trends(self) -> Dict[str, List[float]]:
+
+    async def _calculate_trends(self) -> dict[str, list[float]]:
         """Calcula tendências históricas."""
         # Simulação de dados históricos
         return {
             "receita": [2200000, 2350000, 2480000, 2650000, 2850000],
             "margem": [18.2, 19.1, 19.8, 20.1, 22.5],
             "satisfacao": [7.1, 7.4, 7.6, 7.9, 8.4],
-            "seguranca": [91.2, 92.8, 93.5, 94.2, 96.5]
+            "seguranca": [91.2, 92.8, 93.5, 94.2, 96.5],
         }
-    
-    async def _generate_summary(self, kpis: List[KPIMetric], 
-                               alerts: List[DashboardAlert], 
-                               insights: List[PredictiveInsight]) -> Dict[str, Any]:
+
+    async def _generate_summary(
+        self, kpis: list[KPIMetric], alerts: list[DashboardAlert], insights: list[PredictiveInsight]
+    ) -> dict[str, Any]:
         """Gera resumo executivo inteligente."""
-        
+
         total_kpis = len(kpis)
         positive_trends = sum(1 for kpi in kpis if kpi.trend == TrendDirection.UP)
         critical_alerts = sum(1 for alert in alerts if alert.level == AlertLevel.CRITICAL)
-        
+
         performance_score = (positive_trends / total_kpis) * 100 if total_kpis > 0 else 0
-        
+
         return {
             "performance_score": round(performance_score, 1),
             "total_kpis": total_kpis,
@@ -393,36 +408,38 @@ class ExecutiveDashboardService:
             "total_insights": len(insights),
             "status": "excellent" if performance_score >= 80 else "good" if performance_score >= 60 else "attention",
             "main_highlight": "Crescimento consistente em todas as áreas principais",
-            "key_concern": "Meta de receita requer atenção" if critical_alerts == 0 else "Alertas críticos requerem ação imediata"
+            "key_concern": "Meta de receita requer atenção"
+            if critical_alerts == 0
+            else "Alertas críticos requerem ação imediata",
         }
-    
+
     def _is_cache_valid(self) -> bool:
         """Verifica se o cache ainda é válido."""
         if not self._cache or not self._last_update:
             return False
-        
+
         return datetime.now() - self._last_update < self.cache_duration
-    
-    async def export_dashboard_data(self, format_type: str = "json") -> Dict[str, Any]:
+
+    async def export_dashboard_data(self, format_type: str = "json") -> dict[str, Any]:
         """
         Exporta dados do dashboard para diferentes formatos.
-        
+
         Args:
             format_type: Formato de exportação (json, csv, excel)
-            
+
         Returns:
             Dados formatados para exportação
         """
         dashboard = await self.get_executive_dashboard()
-        
+
         if format_type.lower() == "json":
             return self._export_to_json(dashboard)
         elif format_type.lower() == "csv":
             return self._export_to_csv(dashboard)
         else:
             raise ValueError(f"Formato {format_type} não suportado")
-    
-    def _export_to_json(self, dashboard: ExecutiveDashboard) -> Dict[str, Any]:
+
+    def _export_to_json(self, dashboard: ExecutiveDashboard) -> dict[str, Any]:
         """Exporta dashboard para JSON."""
         return {
             "timestamp": dashboard.timestamp.isoformat(),
@@ -430,25 +447,28 @@ class ExecutiveDashboardService:
             "kpis": [asdict(kpi) for kpi in dashboard.kpis],
             "alerts": [asdict(alert) for alert in dashboard.alerts],
             "insights": [asdict(insight) for insight in dashboard.insights],
-            "trends": dashboard.trends
+            "trends": dashboard.trends,
         }
-    
-    def _export_to_csv(self, dashboard: ExecutiveDashboard) -> Dict[str, Any]:
+
+    def _export_to_csv(self, dashboard: ExecutiveDashboard) -> dict[str, Any]:
         """Exporta KPIs para formato CSV."""
         csv_data = []
         for kpi in dashboard.kpis:
-            csv_data.append({
-                "Métrica": kpi.name,
-                "Valor Atual": kpi.value,
-                "Valor Anterior": kpi.previous_value,
-                "Meta": kpi.target,
-                "Unidade": kpi.unit,
-                "Tendência": kpi.trend.value,
-                "Mudança %": kpi.change_percent,
-                "Categoria": kpi.category.value
-            })
-        
+            csv_data.append(
+                {
+                    "Métrica": kpi.name,
+                    "Valor Atual": kpi.value,
+                    "Valor Anterior": kpi.previous_value,
+                    "Meta": kpi.target,
+                    "Unidade": kpi.unit,
+                    "Tendência": kpi.trend.value,
+                    "Mudança %": kpi.change_percent,
+                    "Categoria": kpi.category.value,
+                }
+            )
+
         return {"kpis": csv_data}
+
 
 # Instância singleton do serviço
 executive_dashboard_service = ExecutiveDashboardService()

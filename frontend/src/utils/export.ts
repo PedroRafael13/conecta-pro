@@ -3,8 +3,6 @@
  * Suporta Excel (XLSX), PDF e CSV
  */
 
-import * as XLSX from 'xlsx';
-
 // Type para jspdf-autotable (já que @types não está disponível)
 declare module 'jspdf' {
   interface jsPDF {
@@ -20,11 +18,14 @@ declare module 'jspdf' {
  * @param data Array de objetos a serem exportados
  * @param filename Nome do arquivo (sem extensão)
  */
-export const exportToExcel = (data: any[], filename: string): void => {
+export const exportToExcel = async (data: any[], filename: string): Promise<void> => {
   try {
     if (!data || data.length === 0) {
       throw new Error('Nenhum dado disponível para exportação');
     }
+
+    // Lazy load xlsx (~800KB) - only when user actually exports
+    const XLSX = await import('xlsx');
 
     // Criar worksheet
     const ws = XLSX.utils.json_to_sheet(data);
@@ -162,11 +163,14 @@ export const exportToPDF = async (
  * @param data Array de objetos a serem exportados
  * @param filename Nome do arquivo (sem extensão)
  */
-export const exportToCSV = (data: any[], filename: string): void => {
+export const exportToCSV = async (data: any[], filename: string): Promise<void> => {
   try {
     if (!data || data.length === 0) {
       throw new Error('Nenhum dado disponível para exportação');
     }
+
+    // Lazy load xlsx (~800KB) - only when user actually exports
+    const XLSX = await import('xlsx');
 
     // Converter para sheet e depois para CSV
     const ws = XLSX.utils.json_to_sheet(data);

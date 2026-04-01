@@ -4,21 +4,16 @@ tests/domains/financial/test_journal_entry.py - JOURNAL ENTRY TESTS
 Enterprise tests for double-entry accounting
 """
 
-import pytest
+import sys
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
-import sys
-sys.path.insert(0, '/opt/conecta-pro/backend')
+import pytest
 
-from domains.financial import (
-    JournalEntryEntity,
-    JournalLine,
-    JournalEntryType,
-    JournalEntryStatus,
-    TransactionSource
-)
+sys.path.insert(0, "/opt/conecta-pro/backend")
+
+from domains.financial import JournalEntryEntity, JournalEntryStatus, JournalEntryType, JournalLine, TransactionSource
 
 
 class TestJournalLine:
@@ -32,7 +27,7 @@ class TestJournalLine:
             account_name="Caixa",
             debit_amount=Decimal("1000.00"),
             credit_amount=Decimal("0"),
-            description="Recebimento"
+            description="Recebimento",
         )
 
         assert line.is_debit is True
@@ -48,7 +43,7 @@ class TestJournalLine:
             account_name="Receita",
             debit_amount=Decimal("0"),
             credit_amount=Decimal("1000.00"),
-            description="Venda"
+            description="Venda",
         )
 
         assert line.is_debit is False
@@ -65,7 +60,7 @@ class TestJournalLine:
                 account_name="Caixa",
                 debit_amount=Decimal("1000.00"),
                 credit_amount=Decimal("500.00"),
-                description="Invalido"
+                description="Invalido",
             )
 
     def test_reject_line_with_zero_amounts(self):
@@ -77,7 +72,7 @@ class TestJournalLine:
                 account_name="Caixa",
                 debit_amount=Decimal("0"),
                 credit_amount=Decimal("0"),
-                description="Invalido"
+                description="Invalido",
             )
 
 
@@ -94,7 +89,7 @@ class TestJournalEntry:
                 account_name="Caixa",
                 debit_amount=Decimal("1000.00"),
                 credit_amount=Decimal("0"),
-                description="Recebimento"
+                description="Recebimento",
             ),
             JournalLine(
                 account_id=uuid4(),
@@ -102,8 +97,8 @@ class TestJournalEntry:
                 account_name="Receita",
                 debit_amount=Decimal("0"),
                 credit_amount=Decimal("1000.00"),
-                description="Venda"
-            )
+                description="Venda",
+            ),
         ]
 
     @pytest.fixture
@@ -119,7 +114,7 @@ class TestJournalEntry:
             description="Lancamento de teste",
             lines=balanced_lines,
             tenant_id=uuid4(),
-            created_by="test-user"
+            created_by="test-user",
         )
 
     def test_create_balanced_entry(self, sample_entry: JournalEntryEntity):
@@ -138,7 +133,7 @@ class TestJournalEntry:
                 account_name="Caixa",
                 debit_amount=Decimal("1000.00"),
                 credit_amount=Decimal("0"),
-                description="Recebimento"
+                description="Recebimento",
             ),
             JournalLine(
                 account_id=uuid4(),
@@ -146,8 +141,8 @@ class TestJournalEntry:
                 account_name="Receita",
                 debit_amount=Decimal("0"),
                 credit_amount=Decimal("800.00"),  # Desbalanceado
-                description="Venda"
-            )
+                description="Venda",
+            ),
         ]
 
         with pytest.raises(ValueError, match="desbalanceado"):
@@ -160,7 +155,7 @@ class TestJournalEntry:
                 description="Teste desbalanceado",
                 lines=unbalanced_lines,
                 tenant_id=uuid4(),
-                created_by="test-user"
+                created_by="test-user",
             )
 
     def test_submit_for_approval(self, sample_entry: JournalEntryEntity):
@@ -210,9 +205,7 @@ class TestJournalEntry:
 
         # Cria estorno
         reversal = sample_entry.create_reversal(
-            user_id="reverser",
-            reason="Lancamento incorreto",
-            reversal_date=date.today()
+            user_id="reverser", reason="Lancamento incorreto", reversal_date=date.today()
         )
 
         assert reversal.is_reversal is True
@@ -235,7 +228,7 @@ class TestDoubleEntryValidation:
                 account_name="Caixa",
                 debit_amount=Decimal("500.00"),
                 credit_amount=Decimal("0"),
-                description="Caixa 1"
+                description="Caixa 1",
             ),
             JournalLine(
                 account_id=uuid4(),
@@ -243,7 +236,7 @@ class TestDoubleEntryValidation:
                 account_name="Banco",
                 debit_amount=Decimal("500.00"),
                 credit_amount=Decimal("0"),
-                description="Banco"
+                description="Banco",
             ),
             JournalLine(
                 account_id=uuid4(),
@@ -251,8 +244,8 @@ class TestDoubleEntryValidation:
                 account_name="Receita",
                 debit_amount=Decimal("0"),
                 credit_amount=Decimal("1000.00"),
-                description="Venda"
-            )
+                description="Venda",
+            ),
         ]
 
         entry = JournalEntryEntity(
@@ -264,7 +257,7 @@ class TestDoubleEntryValidation:
             description="Multiplos debitos",
             lines=lines,
             tenant_id=uuid4(),
-            created_by="test-user"
+            created_by="test-user",
         )
 
         assert entry.is_balanced is True
@@ -281,7 +274,7 @@ class TestDoubleEntryValidation:
                 account_name="CMV",
                 debit_amount=Decimal("600.00"),
                 credit_amount=Decimal("0"),
-                description="Custo"
+                description="Custo",
             ),
             JournalLine(
                 account_id=uuid4(),
@@ -289,7 +282,7 @@ class TestDoubleEntryValidation:
                 account_name="Caixa",
                 debit_amount=Decimal("1000.00"),
                 credit_amount=Decimal("0"),
-                description="Recebimento"
+                description="Recebimento",
             ),
             # Creditos
             JournalLine(
@@ -298,7 +291,7 @@ class TestDoubleEntryValidation:
                 account_name="Estoque",
                 debit_amount=Decimal("0"),
                 credit_amount=Decimal("600.00"),
-                description="Baixa estoque"
+                description="Baixa estoque",
             ),
             JournalLine(
                 account_id=uuid4(),
@@ -306,8 +299,8 @@ class TestDoubleEntryValidation:
                 account_name="Receita",
                 debit_amount=Decimal("0"),
                 credit_amount=Decimal("1000.00"),
-                description="Venda"
-            )
+                description="Venda",
+            ),
         ]
 
         entry = JournalEntryEntity(
@@ -319,7 +312,7 @@ class TestDoubleEntryValidation:
             description="Venda com baixa de estoque",
             lines=lines,
             tenant_id=uuid4(),
-            created_by="test-user"
+            created_by="test-user",
         )
 
         assert entry.is_balanced is True

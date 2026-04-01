@@ -4,28 +4,28 @@ Fraud Rule Model - AI Fraud Detection
 Modelo para regras de deteccao de fraude configuraveis.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
     Boolean,
-    Integer,
-    Float,
+    Column,
     DateTime,
     Enum,
+    Float,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class RuleType(str, enum.Enum):
+class RuleType(StrEnum):
     """Tipo de regra."""
 
     THRESHOLD = "threshold"
@@ -43,7 +43,7 @@ class RuleType(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class RuleOperator(str, enum.Enum):
+class RuleOperator(StrEnum):
     """Operador de comparacao."""
 
     EQUALS = "equals"
@@ -65,7 +65,7 @@ class RuleOperator(str, enum.Enum):
     IS_NOT_NULL = "is_not_null"
 
 
-class RuleAction(str, enum.Enum):
+class RuleAction(StrEnum):
     """Acao da regra quando acionada."""
 
     ALERT = "alert"
@@ -222,7 +222,7 @@ class FraudRule(Base):
         """Verifica se regra e efetiva (>70% precision)."""
         return self.effectiveness >= 70.0
 
-    def increment_trigger(self, is_true_positive: Optional[bool] = None) -> None:
+    def increment_trigger(self, is_true_positive: bool | None = None) -> None:
         """Incrementa contador de triggers."""
         self.total_triggers += 1
         self.last_triggered_at = datetime.utcnow()
@@ -238,7 +238,7 @@ class FraudRule(Base):
         if total > 0:
             self.precision_rate = self.true_positives / total
 
-    def evaluate(self, data: Dict[str, Any]) -> tuple[bool, float, List[str]]:
+    def evaluate(self, data: dict[str, Any]) -> tuple[bool, float, list[str]]:
         """
         Avalia dados contra a regra.
 

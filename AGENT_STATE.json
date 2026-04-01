@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-03-21T01:40:08.320063+00:00Z",
+  "status": "idle",
+  "active_agents": [],
+  "current_issues": [
+    {
+      "severity": "high",
+      "description": "celery_beat: Celery Beat (scheduler)",
+      "detected_at": "2026-03-21T01:40:07.804807+00:00"
+    }
+  ],
+  "fixed_issues": [],
+  "blocked_files": [],
+  "last_build": {
+    "frontend": {
+      "status": "success",
+      "timestamp": null,
+      "duration_seconds": null,
+      "errors": 0
+    },
+    "backend": {
+      "status": "success",
+      "timestamp": null,
+      "duration_seconds": null,
+      "tests_passed": 0,
+      "tests_failed": 0
+    }
+  },
+  "episodic_memory": []
+}

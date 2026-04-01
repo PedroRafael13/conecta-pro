@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from modules.hr.payroll_integration.models.payroll_event import PayrollEvent
 
 
-class PeriodType(str, Enum):
+class PeriodType(StrEnum):
     """Tipo de período de folha."""
 
     MONTHLY = "monthly"  # Mensal
@@ -39,7 +39,7 @@ class PeriodType(str, Enum):
     ADVANCE = "advance"  # Adiantamento
 
 
-class PeriodStatus(str, Enum):
+class PeriodStatus(StrEnum):
     """Status do período de folha."""
 
     DRAFT = "draft"  # Rascunho
@@ -124,7 +124,7 @@ class PayrollPeriod(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    events: List["PayrollEvent"] = relationship(
+    events: list["PayrollEvent"] = relationship(
         "PayrollEvent",
         back_populates="period",
         lazy="dynamic",
@@ -193,16 +193,12 @@ class PayrollPeriod(Base):
         """Quantidade de dias no período."""
         return (self.end_date - self.start_date).days + 1
 
-    def calculate_totals(self, events: List["PayrollEvent"]) -> None:
+    def calculate_totals(self, events: list["PayrollEvent"]) -> None:
         """Calcula totalizadores baseado nos eventos."""
-        self.total_earnings = sum(
-            e.value for e in events if e.event_type == "earning" and e.ativo
-        )
-        self.total_deductions = sum(
-            e.value for e in events if e.event_type == "deduction" and e.ativo
-        )
+        self.total_earnings = sum(e.value for e in events if e.event_type == "earning" and e.ativo)
+        self.total_deductions = sum(e.value for e in events if e.event_type == "deduction" and e.ativo)
         self.total_net = self.total_earnings - self.total_deductions
-        self.total_employees = len(set(e.employee_id for e in events if e.ativo))
+        self.total_employees = len({e.employee_id for e in events if e.ativo})
 
     def to_dict(self) -> dict:
         """Converte para dicionário."""

@@ -4,7 +4,6 @@ import { UserX, Search, Plus, Eye, Check, X, ArrowLeft, ChevronLeft, ChevronRigh
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
@@ -17,21 +16,33 @@ import {
   useRejectSubstitution,
 } from '@/hooks/operacional/useSubstitutions';
 import {
-  type Substitution,
   type SubstitutionStatus,
   type SubstitutionReason,
-  type SubstituteSuggestion,
   SUBSTITUTION_STATUS_LABELS,
   SUBSTITUTION_REASON_LABELS,
   SUBSTITUTION_STATUS_COLORS,
   SUBSTITUTION_REASON_COLORS,
 } from '@/lib/services/substitutions';
+import type {
+  SubstitutionResponse,
+  SubstituteSuggestion,
+} from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';
+
+/** Extensão do SubstitutionResponse com campos denormalizados retornados pelo backend */
+interface SubstitutionWithDenormalized extends SubstitutionResponse {
+  original_employee_name?: string;
+  substitute_employee_name?: string;
+  post_name?: string;
+  shift_date?: string;
+  shift_time?: string;
+}
 
 export default function SubstituicoesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const { data: substitutions = [], isLoading, error, refetch } = useSubstitutions();
+  const { data: substitutionsData, isLoading, error, refetch } = useSubstitutions();
+  const substitutions = (substitutionsData?.items ?? []) as SubstitutionWithDenormalized[];
   const { data: pendingSubstitutions = [] } = usePendingSubstitutions();
   const suggestMutation = useSuggestSubstitutes();
   const confirmMutation = useConfirmSubstitution();
@@ -49,9 +60,15 @@ export default function SubstituicoesPage() {
 
   // Modal states
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
-  const [selectedSubstitution, setSelectedSubstitution] = useState<Substitution | null>(null);
+  const [selectedSubstitution, setSelectedSubstitution] = useState<SubstitutionWithDenormalized | null>(null);
   const [suggestions, setSuggestions] = useState<SubstituteSuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+  // Rejection modal states
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<SubstitutionWithDenormalized | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
 
   const loadPending = useCallback(() => {
     // Dados pendentes agora vêm do hook usePendingSubstitutions
@@ -78,7 +95,7 @@ export default function SubstituicoesPage() {
     }
   }, [isAuthenticated, refetch, loadPending]);
 
-  const handleGetSuggestions = async (substitution: Substitution) => {
+  const handleGetSuggestions = async (substitution: SubstitutionWithDenormalized) => {
     setSelectedSubstitution(substitution);
     setShowSuggestionsModal(true);
     setLoadingSuggestions(true);
@@ -93,15 +110,14 @@ export default function SubstituicoesPage() {
         },
       });
       setSuggestions(result ?? []);
-    } catch (err) {
-      console.error('Erro ao buscar sugestoes:', err);
+    } catch {
       setSuggestions([]);
     } finally {
       setLoadingSuggestions(false);
     }
   };
 
-  const handleConfirm = async (substitution: Substitution, employeeId: string) => {
+  const handleConfirm = async (substitution: SubstitutionWithDenormalized, employeeId: string) => {
     try {
       await confirmMutation.mutateAsync({
         substitutionId: substitution.id,
@@ -109,23 +125,33 @@ export default function SubstituicoesPage() {
       });
       setShowSuggestionsModal(false);
       refetch();
-    } catch (err) {
-      console.error('Erro ao confirmar substituicao:', err);
+    } catch {
+      // silenced
     }
   };
 
-  const handleReject = async (substitution: Substitution) => {
-    const reason = prompt('Motivo da rejeicao:');
-    if (!reason) return;
+  const handleReject = (substitution: SubstitutionWithDenormalized) => {
+    setRejectTarget(substitution);
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
 
+  const handleConfirmReject = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return;
+    setIsRejecting(true);
     try {
       await rejectMutation.mutateAsync({
-        substitutionId: substitution.id,
-        data: { rejection_reason: reason },
+        substitutionId: rejectTarget.id,
+        data: { rejection_reason: rejectReason.trim() },
       });
+      setShowRejectModal(false);
+      setRejectTarget(null);
+      setRejectReason('');
       refetch();
-    } catch (err) {
-      console.error('Erro ao rejeitar substituicao:', err);
+    } catch {
+      // silenced
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -180,7 +206,7 @@ export default function SubstituicoesPage() {
     if (selectedReason && sub.reason !== selectedReason) return false;
     // Filtro de data
     if (selectedDate) {
-      const subDate = new Date(sub.shift_date).toISOString().split('T')[0];
+      const subDate = new Date(sub.shift_date ?? sub.substitution_date).toISOString().split('T')[0];
       if (subDate !== selectedDate) return false;
     }
     return true;
@@ -224,7 +250,7 @@ export default function SubstituicoesPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
@@ -249,7 +275,9 @@ export default function SubstituicoesPage() {
                   {pendingSubstitutions.length} substituicoes pendentes
                 </p>
                 <p className="text-sm text-yellow-500/80">
-                  Clique em "Sugerir IA" para obter recomendacoes automaticas de substitutos
+                  {pendingSubstitutions.slice(0, 3).map((s: any) => s.original_employee_name || 'N/A').join(', ')}
+                  {pendingSubstitutions.length > 3 ? ` e mais ${pendingSubstitutions.length - 3}` : ''}
+                  {' '}— Clique em &quot;Sugerir IA&quot; para obter recomendacoes
                 </p>
               </div>
             </div>
@@ -374,8 +402,8 @@ export default function SubstituicoesPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-500" />
-            <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
+            <p className="text-red-500">{error.detail?.[0]?.msg ?? 'Erro ao carregar substituições'}</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -467,14 +495,14 @@ export default function SubstituicoesPage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${SUBSTITUTION_REASON_COLORS[sub.reason]}`}>
-                            {SUBSTITUTION_REASON_LABELS[sub.reason]}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${SUBSTITUTION_REASON_COLORS[sub.reason as SubstitutionReason]}`}>
+                            {SUBSTITUTION_REASON_LABELS[sub.reason as SubstitutionReason]}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${SUBSTITUTION_STATUS_COLORS[sub.status]}`}>
-                            {getStatusIcon(sub.status)}
-                            {SUBSTITUTION_STATUS_LABELS[sub.status]}
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${SUBSTITUTION_STATUS_COLORS[sub.status as SubstitutionStatus]}`}>
+                            {getStatusIcon(sub.status as SubstitutionStatus)}
+                            {SUBSTITUTION_STATUS_LABELS[sub.status as SubstitutionStatus]}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -605,8 +633,24 @@ export default function SubstituicoesPage() {
                           {suggestion.distance_km.toFixed(1)} km
                         </span>
                       )}
-                      <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                        Score: {suggestion.score.toFixed(0)}
+                    </div>
+                    {/* Score bar */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-[hsl(var(--muted))] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(suggestion.score, 100)}%`,
+                            background: suggestion.score >= 70
+                              ? '#22c55e'
+                              : suggestion.score >= 40
+                              ? '#f97707'
+                              : '#ef4444',
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-[hsl(var(--muted-foreground))] w-10 text-right">
+                        {suggestion.score.toFixed(0)}pts
                       </span>
                     </div>
                     <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
@@ -648,6 +692,63 @@ export default function SubstituicoesPage() {
         <ModalFooter>
           <Button variant="outline" onClick={() => setShowSuggestionsModal(false)}>
             Fechar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Rejection Modal */}
+      <Modal
+        isOpen={showRejectModal}
+        onClose={() => {
+          setShowRejectModal(false);
+          setRejectTarget(null);
+          setRejectReason('');
+        }}
+        title="Rejeitar Substituição"
+        description="Informe o motivo da rejeição para registrar no histórico"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-[hsl(var(--foreground))] block mb-1">
+              Funcionário original
+            </label>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {rejectTarget?.original_employee_name || 'N/A'} — {rejectTarget?.post_name || 'Posto N/A'}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-[hsl(var(--foreground))] block mb-1">
+              Motivo da rejeição <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Descreva o motivo da rejeição..."
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/20"
+            />
+          </div>
+        </div>
+        <ModalFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowRejectModal(false);
+              setRejectTarget(null);
+              setRejectReason('');
+            }}
+            disabled={isRejecting}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleConfirmReject}
+            disabled={!rejectReason.trim() || isRejecting}
+            className="bg-red-500 hover:bg-red-600 text-white border-red-500"
+          >
+            {isRejecting ? 'Rejeitando...' : 'Confirmar Rejeição'}
           </Button>
         </ModalFooter>
       </Modal>

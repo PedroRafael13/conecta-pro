@@ -23,4 +23,5 @@
 
 ## Lições Aprendidas
 
-*(a ser preenchido)*
+- Sempre confirmar a conclusão real de uma tarefa antes de reportar como completa. Se houver dificuldades, comunicar imediatamente para buscar soluções. (Aprendido em 2026-02-03)
+- **AUDITORIA TASK-002 (2026-02-09):** Reportar métricas com rigor absoluto. "Código morto removido" deve ser verificado via `ruff check . --select F401,F841` e não apenas por arquivos deletados. Sempre confirmar redução REAL de erros antes de declarar sucesso. (Aprendido em 2026-02-09)

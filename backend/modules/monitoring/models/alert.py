@@ -2,19 +2,18 @@
 Modelo de Alertas para Early Warning System.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import DateTime, Enum, Float, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
-from core.models.base import Base, BaseModel
+from core.models.base import BaseModel
 
 
-class AlertLevel(str, enum.Enum):
+class AlertLevel(StrEnum):
     """Niveis de alerta do Early Warning System."""
 
     GREEN = "green"  # Operacao normal
@@ -23,7 +22,7 @@ class AlertLevel(str, enum.Enum):
     RED = "red"  # Intervencao imediata
 
 
-class AlertStatus(str, enum.Enum):
+class AlertStatus(StrEnum):
     """Status do alerta."""
 
     ACTIVE = "active"  # Alerta ativo
@@ -98,33 +97,33 @@ class Alert(BaseModel):
         server_default=func.now(),
         nullable=False,
     )
-    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(
+    acknowledged_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    resolved_at: Mapped[Optional[datetime]] = mapped_column(
+    resolved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
 
     # Usuario que resolveu/reconheceu
-    acknowledged_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+    acknowledged_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
-    resolved_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+    resolved_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
 
     # Notas de resolucao
-    resolution_notes: Mapped[Optional[str]] = mapped_column(
+    resolution_notes: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
     # Threshold relacionado
-    threshold_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    threshold_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("monitoring_thresholds.id"),
         nullable=True,
@@ -150,7 +149,7 @@ class Alert(BaseModel):
         self.acknowledged_at = datetime.utcnow()
         self.acknowledged_by = user_id
 
-    def resolve(self, user_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def resolve(self, user_id: uuid.UUID, notes: str | None = None) -> None:
         """Resolve o alerta."""
         self.status = AlertStatus.RESOLVED
         self.resolved_at = datetime.utcnow()

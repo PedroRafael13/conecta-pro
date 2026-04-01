@@ -1,8 +1,18 @@
 /**
- * Service Layer - Documents (Documentos de Licitação)
+ * Service Layer - Documents (Documentos de Licitacao)
  *
- * Endpoints: Upload, gestão de documentos exigidos em editais
- * Atestados, declarações, documentação técnica
+ * Cobertura 100% dos endpoints backend:
+ * GET  /documents/                -> listarDocumentos
+ * GET  /documents/expiring        -> listarVencendo
+ * GET  /documents/status          -> getStatusGeral
+ * GET  /documents/habilitacao     -> verificarHabilitacao
+ * GET  /documents/tipos           -> listarTipos
+ * GET  /documents/tipo/{tipo}     -> buscarPorTipo
+ * GET  /documents/{id}            -> buscarDocumentoPorId
+ * POST /documents/                -> criarDocumento
+ * PUT  /documents/{id}            -> atualizarDocumento
+ * DEL  /documents/{id}            -> removerDocumento
+ * POST /documents/atualizar-status -> atualizarStatusEmLote
  */
 
 import api from '@/lib/api';
@@ -12,237 +22,125 @@ import type {
   CompanyDocumentResponse,
 } from '@/types/generated/bidding';
 
-// Tipos para documentos de edital (não disponíveis nos schemas gerados)
-interface TenderDocumentCreate {
-  nome: string;
-  tipo: string;
-  obrigatorio?: boolean;
-  descricao?: string;
-  [key: string]: any;
-}
+const BASE = '/api/v1/bidding/documents';
 
-interface TenderDocumentUpdate {
-  nome?: string;
-  tipo?: string;
-  obrigatorio?: boolean;
-  descricao?: string;
-  [key: string]: any;
-}
-
-interface TenderDocumentResponse {
-  id: string;
-  nome: string;
-  tipo: string;
-  obrigatorio: boolean;
-  descricao?: string;
-  created_at: string;
-  updated_at?: string;
-  [key: string]: any;
-}
-
-export interface ListTenderDocumentsParams {
-  tender_id?: string;
-  tipo?: string;
-  obrigatorio?: boolean;
-}
-
-export interface ListCompanyDocumentsParams {
-  cnpj?: string;
+export interface ListDocumentsParams {
   tipo?: string;
   status?: string;
-  validade_min?: string;
-  validade_max?: string;
+  page?: number;
+  size?: number;
 }
 
-// ========== DOCUMENTOS DO EDITAL ==========
+export interface DocumentExpiringResponse {
+  total: number;
+  vencendo_7d: number;
+  vencendo_15d: number;
+  vencendo_30d: number;
+  documentos: CompanyDocumentResponse[];
+  [key: string]: unknown;
+}
 
-/**
- * Lista documentos exigidos de um edital
- */
-export async function listarDocumentosEdital(
-  tenderId: string,
-  params?: ListTenderDocumentsParams
-): Promise<TenderDocumentResponse[]> {
-  const { data } = await api.get<TenderDocumentResponse[]>(
-    `/api/v1/bidding/tenders/${tenderId}/documents`,
-    { params }
-  );
+export interface StatusGeralResponse {
+  total: number;
+  validos: number;
+  vencidos: number;
+  vencendo: number;
+  por_tipo: Record<string, number>;
+  [key: string]: unknown;
+}
+
+export interface HabilitacaoResponse {
+  habilitado: boolean;
+  documentos_presentes: string[];
+  documentos_faltantes: string[];
+  documentos_vencidos: string[];
+  [key: string]: unknown;
+}
+
+export interface DocumentTypeInfo {
+  codigo: string;
+  nome: string;
+  descricao: string;
+  obrigatorio: boolean;
+}
+
+// GET /documents/
+export async function listarDocumentos(params?: ListDocumentsParams): Promise<CompanyDocumentResponse[]> {
+  const { data } = await api.get<CompanyDocumentResponse[]>(`${BASE}/`, { params });
   return data;
 }
 
-/**
- * Adiciona documento exigido ao edital
- */
-export async function adicionarDocumentoEdital(
-  tenderId: string,
-  payload: TenderDocumentCreate
-): Promise<TenderDocumentResponse> {
-  const { data } = await api.post<TenderDocumentResponse>(
-    `/api/v1/bidding/tenders/${tenderId}/documents`,
-    payload
-  );
+// GET /documents/expiring
+export async function listarVencendo(params?: { dias?: number }): Promise<DocumentExpiringResponse> {
+  const { data } = await api.get<DocumentExpiringResponse>(`${BASE}/expiring`, { params });
   return data;
 }
 
-/**
- * Atualiza documento do edital
- */
-export async function atualizarDocumentoEdital(
-  tenderId: string,
-  documentId: string,
-  payload: TenderDocumentUpdate
-): Promise<TenderDocumentResponse> {
-  const { data } = await api.put<TenderDocumentResponse>(
-    `/api/v1/bidding/tenders/${tenderId}/documents/${documentId}`,
-    payload
-  );
+// GET /documents/status
+export async function getStatusGeral(): Promise<StatusGeralResponse> {
+  const { data } = await api.get<StatusGeralResponse>(`${BASE}/status`);
   return data;
 }
 
-/**
- * Remove documento do edital
- */
-export async function removerDocumentoEdital(
-  tenderId: string,
-  documentId: string
-): Promise<void> {
-  await api.delete(
-    `/api/v1/bidding/tenders/${tenderId}/documents/${documentId}`
-  );
-}
-
-// ========== DOCUMENTOS DA EMPRESA ==========
-
-/**
- * Lista documentos da empresa
- */
-export async function listarDocumentosEmpresa(
-  params?: ListCompanyDocumentsParams
-): Promise<CompanyDocumentResponse[]> {
-  const { data } = await api.get<CompanyDocumentResponse[]>(
-    '/api/v1/bidding/company-documents/',
-    { params }
-  );
+// GET /documents/habilitacao
+export async function verificarHabilitacao(): Promise<HabilitacaoResponse> {
+  const { data } = await api.get<HabilitacaoResponse>(`${BASE}/habilitacao`);
   return data;
 }
 
-/**
- * Busca documento da empresa por ID
- */
-export async function buscarDocumentoEmpresaPorId(
-  documentId: string
-): Promise<CompanyDocumentResponse> {
-  const { data } = await api.get<CompanyDocumentResponse>(
-    `/api/v1/bidding/company-documents/${documentId}`
-  );
+// GET /documents/tipos
+export async function listarTipos(): Promise<DocumentTypeInfo[]> {
+  const { data } = await api.get<DocumentTypeInfo[]>(`${BASE}/tipos`);
   return data;
 }
 
-/**
- * Faz upload de documento da empresa
- */
-export async function uploadDocumentoEmpresa(
-  payload: CompanyDocumentCreate
-): Promise<CompanyDocumentResponse> {
-  const { data } = await api.post<CompanyDocumentResponse>(
-    '/api/v1/bidding/company-documents/',
-    payload
-  );
+// GET /documents/tipo/{tipo}
+export async function buscarPorTipo(tipo: string): Promise<CompanyDocumentResponse> {
+  const { data } = await api.get<CompanyDocumentResponse>(`${BASE}/tipo/${tipo}`);
   return data;
 }
 
-/**
- * Atualiza documento da empresa
- */
-export async function atualizarDocumentoEmpresa(
-  documentId: string,
-  payload: CompanyDocumentUpdate
-): Promise<CompanyDocumentResponse> {
-  const { data } = await api.put<CompanyDocumentResponse>(
-    `/api/v1/bidding/company-documents/${documentId}`,
-    payload
-  );
+// GET /documents/{id}
+export async function buscarDocumentoPorId(documentId: string): Promise<CompanyDocumentResponse> {
+  const { data } = await api.get<CompanyDocumentResponse>(`${BASE}/${documentId}`);
   return data;
 }
 
-/**
- * Remove documento da empresa
- */
-export async function removerDocumentoEmpresa(
-  documentId: string
-): Promise<void> {
-  await api.delete(`/api/v1/bidding/company-documents/${documentId}`);
-}
-
-/**
- * Download de documento da empresa (PDF/arquivo)
- */
-export async function downloadDocumentoEmpresa(
-  documentId: string
-): Promise<Blob> {
-  const { data } = await api.get<Blob>(
-    `/api/v1/bidding/company-documents/${documentId}/download`,
-    { responseType: 'blob' }
-  );
+// POST /documents/
+export async function criarDocumento(payload: CompanyDocumentCreate): Promise<CompanyDocumentResponse> {
+  const { data } = await api.post<CompanyDocumentResponse>(`${BASE}/`, payload);
   return data;
 }
 
-/**
- * Lista documentos pendentes de envio
- */
-export async function listarDocumentosPendentes(params?: {
-  cnpj?: string;
-  tender_id?: string;
-}): Promise<
-  {
-    documento_exigido: TenderDocumentResponse;
-    documento_empresa?: CompanyDocumentResponse;
-    status: 'PENDENTE' | 'ENVIADO' | 'VALIDO' | 'INVALIDO';
-  }[]
-> {
-  const { data } = await api.get<
-    {
-      documento_exigido: TenderDocumentResponse;
-      documento_empresa?: CompanyDocumentResponse;
-      status: 'PENDENTE' | 'ENVIADO' | 'VALIDO' | 'INVALIDO';
-    }[]
-  >('/api/v1/bidding/company-documents/pendentes', { params });
+// PUT /documents/{id}
+export async function atualizarDocumento(documentId: string, payload: CompanyDocumentUpdate): Promise<CompanyDocumentResponse> {
+  const { data } = await api.put<CompanyDocumentResponse>(`${BASE}/${documentId}`, payload);
   return data;
 }
 
-/**
- * Valida documento (análise automática ou manual)
- */
-export async function validarDocumento(
-  documentId: string
-): Promise<{
-  valido: boolean;
-  status: string;
-  mensagem: string;
-  data_validacao: string;
-}> {
-  const { data } = await api.post<{
-    valido: boolean;
-    status: string;
-    mensagem: string;
-    data_validacao: string;
-  }>(`/api/v1/bidding/company-documents/${documentId}/validar`);
+// DELETE /documents/{id}
+export async function removerDocumento(documentId: string): Promise<void> {
+  await api.delete(`${BASE}/${documentId}`);
+}
+
+// POST /documents/atualizar-status
+export async function atualizarStatusEmLote(): Promise<{ total_atualizado: number; detalhes: unknown[] }> {
+  const { data } = await api.post<{ total_atualizado: number; detalhes: unknown[] }>(`${BASE}/atualizar-status`);
   return data;
 }
 
 const documentsService = {
-  listarDocumentosEdital,
-  adicionarDocumentoEdital,
-  atualizarDocumentoEdital,
-  removerDocumentoEdital,
-  listarDocumentosEmpresa,
-  buscarDocumentoEmpresaPorId,
-  uploadDocumentoEmpresa,
-  atualizarDocumentoEmpresa,
-  removerDocumentoEmpresa,
-  downloadDocumentoEmpresa,
-  listarDocumentosPendentes,
-  validarDocumento,
+  listarDocumentos,
+  listarVencendo,
+  getStatusGeral,
+  verificarHabilitacao,
+  listarTipos,
+  buscarPorTipo,
+  buscarDocumentoPorId,
+  criarDocumento,
+  atualizarDocumento,
+  removerDocumento,
+  atualizarStatusEmLote,
 };
 
 export default documentsService;

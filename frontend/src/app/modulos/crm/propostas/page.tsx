@@ -1,7 +1,9 @@
 'use client';
 
-import { FileText, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Trash2, AlertCircle, DollarSign, Clock } from 'lucide-react';
+import { FileText, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Trash2, AlertCircle, DollarSign, Clock, CheckCircle, XCircle, Send, ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { customInstance } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +31,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-;
 import { toast } from 'sonner';
 import {
   useProposals,
@@ -55,9 +56,34 @@ export default function PropostasPage() {
 
   const { data: statsData } = useProposalStats();
 
+  const queryClient = useQueryClient();
   const createMutation = useCreateProposal();
   const updateMutation = useUpdateProposal();
   const deleteMutation = useDeleteProposal();
+
+  const approveMutation = useMutation({
+    mutationFn: (id: string) => customInstance({ url: `/api/v1/crm/proposals/${id}/approve`, method: 'POST', data: { action: 'approve' } }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['proposals'] }); toast.success('Proposta aprovada'); },
+    onError: () => { toast.error('Erro ao aprovar proposta'); },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, comments }: { id: string; comments?: string }) => customInstance({ url: `/api/v1/crm/proposals/${id}/approve`, method: 'POST', data: { action: 'reject', comments: comments || '' } }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['proposals'] }); toast.success('Proposta rejeitada'); },
+    onError: () => { toast.error('Erro ao rejeitar proposta'); },
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: (id: string) => customInstance({ url: `/api/v1/crm/proposals/${id}/send`, method: 'POST' }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['proposals'] }); toast.success('Proposta enviada ao cliente'); },
+    onError: () => { toast.error('Erro ao enviar proposta'); },
+  });
+
+  const acceptMutation = useMutation({
+    mutationFn: (id: string) => customInstance({ url: `/api/v1/crm/proposals/${id}/approve`, method: 'POST', data: { action: 'approve' } }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['proposals'] }); toast.success('Proposta aceita pelo cliente'); },
+    onError: () => { toast.error('Erro ao aceitar proposta'); },
+  });
 
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<any | null>(null);
@@ -150,6 +176,8 @@ export default function PropostasPage() {
     const map: Record<string, string> = {
       draft: 'bg-gray-100 text-gray-800',
       rascunho: 'bg-gray-100 text-gray-800',
+      pending_approval: 'bg-yellow-100 text-yellow-800',
+      approved: 'bg-emerald-100 text-emerald-800',
       sent: 'bg-blue-100 text-blue-800',
       enviada: 'bg-blue-100 text-blue-800',
       accepted: 'bg-green-100 text-green-800',
@@ -160,6 +188,8 @@ export default function PropostasPage() {
     const labels: Record<string, string> = {
       draft: 'Rascunho',
       rascunho: 'Rascunho',
+      pending_approval: 'Aguardando Aprovacao',
+      approved: 'Aprovada',
       sent: 'Enviada',
       enviada: 'Enviada',
       accepted: 'Aprovada',
@@ -253,8 +283,10 @@ export default function PropostasPage() {
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="draft">Rascunho</SelectItem>
+                <SelectItem value="pending_approval">Aguardando Aprovacao</SelectItem>
+                <SelectItem value="approved">Aprovada Internamente</SelectItem>
                 <SelectItem value="sent">Enviada</SelectItem>
-                <SelectItem value="accepted">Aprovada</SelectItem>
+                <SelectItem value="accepted">Aceita</SelectItem>
                 <SelectItem value="rejected">Rejeitada</SelectItem>
               </SelectContent>
             </Select>
@@ -405,6 +437,59 @@ export default function PropostasPage() {
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          {proposta.status === 'pending_approval' && (
+                            <>
+                              <DropdownMenuItem
+                                className="text-green-600"
+                                onClick={() => approveMutation.mutate(proposta.id)}
+                                disabled={approveMutation.isPending}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Aprovar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() =>
+                                  openConfirm(
+                                    'Rejeitar Proposta',
+                                    `Rejeitar "${proposta.title || proposta.titulo}"?`,
+                                    async () => { await rejectMutation.mutateAsync({ id: proposta.id }); },
+                                    'warning'
+                                  )
+                                }
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Rejeitar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
+                          {proposta.status === 'approved' && (
+                            <>
+                              <DropdownMenuItem
+                                className="text-blue-600"
+                                onClick={() => sendMutation.mutate(proposta.id)}
+                                disabled={sendMutation.isPending}
+                              >
+                                <Send className="h-4 w-4 mr-2" />
+                                Enviar ao Cliente
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
+                          {proposta.status === 'sent' && (
+                            <>
+                              <DropdownMenuItem
+                                className="text-green-600"
+                                onClick={() => acceptMutation.mutate(proposta.id)}
+                                disabled={acceptMutation.isPending}
+                              >
+                                <ThumbsUp className="h-4 w-4 mr-2" />
+                                Aceitar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() =>

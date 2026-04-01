@@ -12,11 +12,11 @@ from pathlib import Path
 backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
+from fastapi import FastAPI  # noqa: E402
+from fastapi.openapi.utils import get_openapi  # noqa: E402
 
 # Importa o router do módulo reimbursement
-from modules.reimbursement.controllers import router as reimbursement_router
+from modules.reimbursement.controllers import router as reimbursement_router  # noqa: E402
 
 
 def extract_reimbursement_openapi():
@@ -55,11 +55,11 @@ def extract_reimbursement_openapi():
     endpoints = len([r for r in app.routes if hasattr(r, "methods")])
     schemas = len(openapi_schema.get("components", {}).get("schemas", {}))
 
-    print(f"✅ OpenAPI spec extraído com sucesso!")
+    print("✅ OpenAPI spec extraído com sucesso!")
     print(f"📁 Arquivo: {output_file}")
     print(f"📊 Endpoints: {endpoints}")
     print(f"📦 Schemas: {schemas}")
-    print(f"\nEndpoints disponíveis:")
+    print("\nEndpoints disponíveis:")
 
     # Lista endpoints
     for route in app.routes:
@@ -77,5 +77,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Erro ao extrair OpenAPI spec: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

@@ -2,9 +2,12 @@
 Gerenciamento de sessões do banco de dados.
 """
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager, contextmanager
 
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from core.config import settings
 
@@ -13,6 +16,8 @@ engine = create_async_engine(
     settings.database_url,
     pool_size=settings.database_pool_size,
     max_overflow=settings.database_max_overflow,
+    pool_pre_ping=True,
+    pool_recycle=1800,
     echo=settings.debug,
 )
 
@@ -58,23 +63,26 @@ async def init_db() -> None:
 
 
 async def close_db() -> None:
-    """Fecha conexões do banco de dados."""
+    """Fecha conexões do banco de dados (async + sync)."""
     await engine.dispose()
+    sync_engine.dispose()
+
+
+# Alias para Celery async tasks
+get_async_db_session = asynccontextmanager(get_db)
 
 
 # ============================================================================
 # Sessão Síncrona para Celery Tasks
 # ============================================================================
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from contextlib import contextmanager
-
 # Engine síncrono para Celery
 sync_engine = create_engine(
     settings.database_url.replace("+asyncpg", ""),  # Remove asyncpg para usar psycopg2
     pool_size=settings.database_pool_size,
     max_overflow=settings.database_max_overflow,
+    pool_pre_ping=True,
+    pool_recycle=1800,
     echo=settings.debug,
 )
 
@@ -84,6 +92,19 @@ SyncSessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
 )
+
+
+def get_sync_db_dependency():
+    """FastAPI dependency para sessão síncrona do banco."""
+    session = SyncSessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 @contextmanager

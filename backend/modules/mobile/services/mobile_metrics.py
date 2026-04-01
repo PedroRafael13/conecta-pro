@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,9 @@ class PushMetric:
     user_id: int
     platform: str
     sent_at: datetime
-    delivered_at: Optional[datetime] = None
-    read_at: Optional[datetime] = None
-    delivery_time_ms: Optional[float] = None
+    delivered_at: datetime | None = None
+    read_at: datetime | None = None
+    delivery_time_ms: float | None = None
 
 
 class MobileMetrics:
@@ -169,9 +169,7 @@ class MobileMetrics:
         conn_stats = self._connection_stats[connection_type]
         conn_stats["requests"] += 1
         conn_stats["total_time_ms"] += response_time_ms
-        conn_stats["avg_response_time_ms"] = (
-            conn_stats["total_time_ms"] / conn_stats["requests"]
-        )
+        conn_stats["avg_response_time_ms"] = conn_stats["total_time_ms"] / conn_stats["requests"]
 
         # Stats por dispositivo
         self._device_stats[device_type]["requests"] += 1
@@ -263,8 +261,7 @@ class MobileMetrics:
     def _check_flush(self) -> None:
         """Verifica se deve fazer flush das métricas."""
         should_flush = (
-            time.time() - self._last_flush > self.flush_interval
-            or len(self._request_metrics) >= self.max_buffer
+            time.time() - self._last_flush > self.flush_interval or len(self._request_metrics) >= self.max_buffer
         )
 
         if should_flush:
@@ -272,7 +269,6 @@ class MobileMetrics:
 
     def _flush_metrics(self) -> None:
         """Persiste métricas em storage."""
-        # TODO: Implementar persistência real (Prometheus, InfluxDB, etc)
 
         if self._request_metrics:
             logger.info(f"Flushing {len(self._request_metrics)} request metrics")
@@ -285,9 +281,7 @@ class MobileMetrics:
         if self._push_metrics:
             # Manter apenas métricas recentes (últimas 24h)
             cutoff = datetime.utcnow() - timedelta(hours=24)
-            self._push_metrics = [
-                m for m in self._push_metrics if m.sent_at > cutoff
-            ]
+            self._push_metrics = [m for m in self._push_metrics if m.sent_at > cutoff]
 
         self._last_flush = time.time()
 
@@ -319,11 +313,7 @@ class MobileMetrics:
         total_delivered = sum(1 for m in self._push_metrics if m.delivered_at)
         total_read = sum(1 for m in self._push_metrics if m.read_at)
 
-        delivery_times = [
-            m.delivery_time_ms
-            for m in self._push_metrics
-            if m.delivery_time_ms is not None
-        ]
+        delivery_times = [m.delivery_time_ms for m in self._push_metrics if m.delivery_time_ms is not None]
 
         return {
             "total_sent": total_sent,
@@ -340,7 +330,7 @@ class MobileMetrics:
         total_requests = sum(s["count"] for s in endpoint_stats.values())
 
         all_times = []
-        for key, stats in self._endpoint_stats.items():
+        for _key, stats in self._endpoint_stats.items():
             if stats["count"] > 0:
                 all_times.append(stats["total_time_ms"] / stats["count"])
 

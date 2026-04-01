@@ -1,16 +1,16 @@
 """Inventory Forecast Models."""
 
-from modules.ai.inventory_forecast.models.forecast import (
-    Forecast,
-    ForecastResult,
-    ForecastStatus,
-    ForecastType,
-)
 from modules.ai.inventory_forecast.models.demand_pattern import (
     DemandPattern,
     PatternType,
     SeasonalityType,
     TrendDirection,
+)
+from modules.ai.inventory_forecast.models.forecast import (
+    Forecast,
+    ForecastResult,
+    ForecastStatus,
+    ForecastType,
 )
 
 __all__ = [

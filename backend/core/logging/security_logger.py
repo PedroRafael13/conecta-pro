@@ -4,14 +4,14 @@ Security Logger - Logs especificos para eventos de seguranca.
 Conecta PRO - Sistema de logging para auditoria de seguranca.
 """
 
-from datetime import datetime, UTC
-from enum import Enum
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 
 from core.logging import logger
 
 
-class SecurityEventType(str, Enum):
+class SecurityEventType(StrEnum):
     """Tipos de eventos de seguranca."""
 
     # Autenticacao
@@ -19,9 +19,9 @@ class SecurityEventType(str, Enum):
     LOGIN_FAILED = "login_failed"
     LOGIN_BLOCKED = "login_blocked"
     LOGOUT = "logout"
-    TOKEN_REFRESH = "token_refresh"
-    TOKEN_EXPIRED = "token_expired"
-    TOKEN_INVALID = "token_invalid"
+    TOKEN_REFRESH = "token_refresh"  # noqa: S105
+    TOKEN_EXPIRED = "token_expired"  # noqa: S105
+    TOKEN_INVALID = "token_invalid"  # noqa: S105
 
     # Autorizacao
     ACCESS_DENIED = "access_denied"
@@ -46,11 +46,11 @@ class SecurityEventType(str, Enum):
     CONFIG_CHANGED = "config_changed"
     USER_CREATED = "user_created"
     USER_DELETED = "user_deleted"
-    PASSWORD_CHANGED = "password_changed"
-    PASSWORD_RESET = "password_reset"
+    PASSWORD_CHANGED = "password_changed"  # noqa: S105
+    PASSWORD_RESET = "password_reset"  # noqa: S105
 
 
-class SecuritySeverity(str, Enum):
+class SecuritySeverity(StrEnum):
     """Severidade do evento de seguranca."""
 
     LOW = "low"
@@ -90,19 +90,19 @@ class SecurityLogger:
     }
 
     def __init__(self):
-        self._failed_logins: Dict[str, list] = {}  # Rastreia tentativas falhas
+        self._failed_logins: dict[str, list] = {}  # Rastreia tentativas falhas
 
     def log_event(
         self,
         event_type: SecurityEventType,
         message: str,
-        user_id: Optional[str] = None,
-        user_email: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        resource: Optional[str] = None,
-        severity: Optional[SecuritySeverity] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        user_id: str | None = None,
+        user_email: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        resource: str | None = None,
+        severity: SecuritySeverity | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         Registra evento de seguranca.
@@ -119,9 +119,7 @@ class SecurityLogger:
             metadata: Dados adicionais
         """
         # Determina severidade
-        sev = severity or self.DEFAULT_SEVERITY.get(
-            event_type, SecuritySeverity.MEDIUM
-        )
+        sev = severity or self.DEFAULT_SEVERITY.get(event_type, SecuritySeverity.MEDIUM)
 
         # Monta log estruturado
         log_data = {
@@ -171,7 +169,7 @@ class SecurityLogger:
         user_id: str,
         user_email: str,
         ip_address: str,
-        user_agent: Optional[str] = None,
+        user_agent: str | None = None,
     ) -> None:
         """Registra login bem-sucedido."""
         # Limpa tentativas falhas
@@ -192,7 +190,7 @@ class SecurityLogger:
         user_email: str,
         ip_address: str,
         reason: str = "invalid_credentials",
-        user_agent: Optional[str] = None,
+        user_agent: str | None = None,
     ) -> bool:
         """
         Registra tentativa de login falha.
@@ -207,7 +205,8 @@ class SecurityLogger:
 
         # Limpa tentativas antigas (ultimos 15 minutos)
         self._failed_logins[ip_address] = [
-            ts for ts in self._failed_logins[ip_address]
+            ts
+            for ts in self._failed_logins[ip_address]
             if now - ts < 900  # 15 minutos
         ]
         self._failed_logins[ip_address].append(now)
@@ -247,7 +246,7 @@ class SecurityLogger:
         user_id: str,
         resource: str,
         action: str,
-        ip_address: Optional[str] = None,
+        ip_address: str | None = None,
         reason: str = "insufficient_permissions",
     ) -> None:
         """Registra acesso negado."""
@@ -285,9 +284,9 @@ class SecurityLogger:
     def log_token_event(
         self,
         event_type: SecurityEventType,
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        reason: Optional[str] = None,
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        reason: str | None = None,
     ) -> None:
         """Registra evento relacionado a token."""
         messages = {

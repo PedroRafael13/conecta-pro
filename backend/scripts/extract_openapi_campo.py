@@ -4,8 +4,8 @@ Script para extrair OpenAPI spec do módulo CAMPO
 Gera campo.openapi.json com todos os 147 endpoints
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add backend to path
@@ -16,19 +16,20 @@ from fastapi.openapi.utils import get_openapi
 
 # Import CAMPO routers
 from modules.campo.controllers import (
-    campo_service_router,
     access_log_router,
-    occurrence_router,
-    equipment_status_router,
-    sync_router,
-    security_audit_router,
-    monitoring_router,
-    ordem_servico_router,
-    visita_router,
+    campo_service_router,
     checklist_router,
+    equipment_status_router,
+    estoque_router,
+    monitoring_router,
+    occurrence_router,
+    ordem_servico_router,
     roteirizacao_router,
-    estoque_router
+    security_audit_router,
+    sync_router,
+    visita_router,
 )
+
 
 def extract_campo_openapi():
     """Extrai OpenAPI spec completo do módulo CAMPO."""
@@ -43,10 +44,10 @@ def extract_campo_openapi():
     # Include all CAMPO routers
     routers = [
         (campo_service_router, "/api/v1/campo", ["Campo Service"]),
-        (access_log_router, "/api/v1/campo/guardian/access-logs", ["Guardian Access Logs"]),
-        (occurrence_router, "/api/v1/campo/guardian/occurrences", ["Guardian Occurrences"]),
-        (equipment_status_router, "/api/v1/campo/guardian/equipment-status", ["Guardian Equipment"]),
-        (sync_router, "/api/v1/campo/guardian/sync", ["Guardian Sync"]),
+        (access_log_router, "/api/v1/campo/access-logs", ["Campo Access Logs"]),
+        (occurrence_router, "/api/v1/campo/occurrences", ["Campo Occurrences"]),
+        (equipment_status_router, "/api/v1/campo/equipment-status", ["Campo Equipment"]),
+        (sync_router, "/api/v1/campo/sync", ["Campo Sync"]),
         (security_audit_router, "/api/v1/campo/security-audit", ["Security Audit"]),
         (monitoring_router, "/api/v1/campo/monitoring", ["Monitoring"]),
         (ordem_servico_router, "/api/v1/campo/ordens-servico", ["Ordens de Serviço"]),
@@ -76,7 +77,7 @@ def extract_campo_openapi():
 
     # Count endpoints
     total_endpoints = sum(len(methods) for methods in openapi_schema.get("paths", {}).values())
-    print(f"✅ OpenAPI spec gerado com sucesso!")
+    print("✅ OpenAPI spec gerado com sucesso!")
     print(f"📊 Total de paths: {len(openapi_schema.get('paths', {}))}")
     print(f"📊 Total de endpoints: {total_endpoints}")
 
@@ -98,10 +99,10 @@ def extract_campo_openapi():
         "Checklists": [],
         "Roteirização": [],
         "Estoque": [],
-        "Guardian Access Logs": [],
-        "Guardian Occurrences": [],
-        "Guardian Equipment": [],
-        "Guardian Sync": [],
+        "Campo Access Logs": [],
+        "Campo Occurrences": [],
+        "Campo Equipment": [],
+        "Campo Sync": [],
         "Security Audit": [],
         "Monitoring": [],
     }
@@ -119,13 +120,13 @@ def extract_campo_openapi():
         elif "/estoque" in path:
             categories["Estoque"].append((path, list(methods.keys())))
         elif "/access-logs" in path:
-            categories["Guardian Access Logs"].append((path, list(methods.keys())))
+            categories["Campo Access Logs"].append((path, list(methods.keys())))
         elif "/occurrences" in path:
-            categories["Guardian Occurrences"].append((path, list(methods.keys())))
+            categories["Campo Occurrences"].append((path, list(methods.keys())))
         elif "/equipment-status" in path:
-            categories["Guardian Equipment"].append((path, list(methods.keys())))
+            categories["Campo Equipment"].append((path, list(methods.keys())))
         elif "/sync" in path:
-            categories["Guardian Sync"].append((path, list(methods.keys())))
+            categories["Campo Sync"].append((path, list(methods.keys())))
         elif "/security-audit" in path:
             categories["Security Audit"].append((path, list(methods.keys())))
         elif "/monitoring" in path:
@@ -143,6 +144,7 @@ def extract_campo_openapi():
 
     return openapi_schema
 
+
 if __name__ == "__main__":
     try:
         extract_campo_openapi()
@@ -150,5 +152,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Erro: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

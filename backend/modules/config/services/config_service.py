@@ -6,48 +6,48 @@ Sprint 35: Configurações e Multi-tenant
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.config.models import (
-    Tenant,
-    TenantSettings,
-    SystemConfig,
-    FeatureFlag,
-    NotificationTemplate,
-    TenantStatus,
-    TenantPlan,
-    TenantType,
-    SettingCategory,
-    SettingType,
     ConfigScope,
+    FeatureFlag,
     FlagStatus,
     FlagType,
-    RolloutStrategy,
     NotificationChannel,
+    NotificationTemplate,
     NotificationType,
+    RolloutStrategy,
+    SettingCategory,
+    SettingType,
+    SystemConfig,
     TemplateStatus,
-)
-from modules.config.schemas import (
-    TenantCreate,
-    TenantUpdate,
-    TenantPlanUpdate,
-    TenantAddressUpdate,
-    TenantSettingsCreate,
-    TenantSettingsUpdate,
-    SystemConfigCreate,
-    SystemConfigUpdate,
-    FeatureFlagCreate,
-    FeatureFlagUpdate,
-    FeatureFlagGradualRollout,
-    NotificationTemplateCreate,
-    NotificationTemplateUpdate,
-    ConfigDashboard,
-    TenantDashboard,
+    Tenant,
+    TenantPlan,
+    TenantSettings,
+    TenantStatus,
+    TenantType,
 )
 from modules.config.repositories import ConfigRepository
+from modules.config.schemas import (
+    ConfigDashboard,
+    FeatureFlagCreate,
+    FeatureFlagGradualRollout,
+    FeatureFlagUpdate,
+    NotificationTemplateCreate,
+    NotificationTemplateUpdate,
+    SystemConfigCreate,
+    SystemConfigUpdate,
+    TenantAddressUpdate,
+    TenantCreate,
+    TenantDashboard,
+    TenantPlanUpdate,
+    TenantSettingsCreate,
+    TenantSettingsUpdate,
+    TenantUpdate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -88,15 +88,15 @@ class ConfigService:
         logger.info("Tenant criado: %s", result.codigo)
         return result
 
-    async def get_tenant(self, tenant_id: UUID) -> Optional[Tenant]:
+    async def get_tenant(self, tenant_id: UUID) -> Tenant | None:
         """Busca tenant por ID."""
         return await self.repository.get_tenant_by_id(tenant_id)
 
-    async def get_tenant_by_codigo(self, codigo: str) -> Optional[Tenant]:
+    async def get_tenant_by_codigo(self, codigo: str) -> Tenant | None:
         """Busca tenant por código."""
         return await self.repository.get_tenant_by_codigo(codigo)
 
-    async def get_tenant_by_domain(self, domain: str) -> Optional[Tenant]:
+    async def get_tenant_by_domain(self, domain: str) -> Tenant | None:
         """Busca tenant por domínio."""
         return await self.repository.get_tenant_by_domain(domain)
 
@@ -107,26 +107,17 @@ class ConfigService:
         status: str = None,
         plan: str = None,
         tenant_type: str = None,
-        search: str = None
-    ) -> Tuple[List[Tenant], int]:
+        search: str = None,
+    ) -> tuple[list[Tenant], int]:
         """Lista tenants."""
         status_enum = TenantStatus(status) if status else None
         plan_enum = TenantPlan(plan) if plan else None
         type_enum = TenantType(tenant_type) if tenant_type else None
         return await self.repository.list_tenants(
-            skip=skip,
-            limit=limit,
-            status=status_enum,
-            plan=plan_enum,
-            tenant_type=type_enum,
-            search=search
+            skip=skip, limit=limit, status=status_enum, plan=plan_enum, tenant_type=type_enum, search=search
         )
 
-    async def update_tenant(
-        self,
-        tenant_id: UUID,
-        data: TenantUpdate
-    ) -> Optional[Tenant]:
+    async def update_tenant(self, tenant_id: UUID, data: TenantUpdate) -> Tenant | None:
         """Atualiza tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -138,11 +129,7 @@ class ConfigService:
 
         return await self.repository.update_tenant(tenant)
 
-    async def update_tenant_plan(
-        self,
-        tenant_id: UUID,
-        data: TenantPlanUpdate
-    ) -> Optional[Tenant]:
+    async def update_tenant_plan(self, tenant_id: UUID, data: TenantPlanUpdate) -> Tenant | None:
         """Atualiza plano do tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -159,11 +146,7 @@ class ConfigService:
         tenant.upgrade_plan(TenantPlan(data.plan), limits)
         return await self.repository.update_tenant(tenant)
 
-    async def update_tenant_address(
-        self,
-        tenant_id: UUID,
-        data: TenantAddressUpdate
-    ) -> Optional[Tenant]:
+    async def update_tenant_address(self, tenant_id: UUID, data: TenantAddressUpdate) -> Tenant | None:
         """Atualiza endereço do tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -176,11 +159,11 @@ class ConfigService:
             bairro=data.bairro,
             cidade=data.cidade,
             estado=data.estado,
-            cep=data.cep
+            cep=data.cep,
         )
         return await self.repository.update_tenant(tenant)
 
-    async def activate_tenant(self, tenant_id: UUID) -> Optional[Tenant]:
+    async def activate_tenant(self, tenant_id: UUID) -> Tenant | None:
         """Ativa tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -188,11 +171,7 @@ class ConfigService:
         tenant.activate()
         return await self.repository.update_tenant(tenant)
 
-    async def suspend_tenant(
-        self,
-        tenant_id: UUID,
-        reason: str = None
-    ) -> Optional[Tenant]:
+    async def suspend_tenant(self, tenant_id: UUID, reason: str = None) -> Tenant | None:
         """Suspende tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -200,7 +179,7 @@ class ConfigService:
         tenant.suspend(reason)
         return await self.repository.update_tenant(tenant)
 
-    async def cancel_tenant(self, tenant_id: UUID) -> Optional[Tenant]:
+    async def cancel_tenant(self, tenant_id: UUID) -> Tenant | None:
         """Cancela tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -208,11 +187,7 @@ class ConfigService:
         tenant.cancel()
         return await self.repository.update_tenant(tenant)
 
-    async def convert_trial(
-        self,
-        tenant_id: UUID,
-        plan: str = "starter"
-    ) -> Optional[Tenant]:
+    async def convert_trial(self, tenant_id: UUID, plan: str = "starter") -> Tenant | None:
         """Converte trial para plano pago."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -220,11 +195,7 @@ class ConfigService:
         tenant.convert_from_trial(TenantPlan(plan))
         return await self.repository.update_tenant(tenant)
 
-    async def enable_feature(
-        self,
-        tenant_id: UUID,
-        feature: str
-    ) -> Optional[Tenant]:
+    async def enable_feature(self, tenant_id: UUID, feature: str) -> Tenant | None:
         """Habilita feature para tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -232,11 +203,7 @@ class ConfigService:
         tenant.enable_feature(feature)
         return await self.repository.update_tenant(tenant)
 
-    async def disable_feature(
-        self,
-        tenant_id: UUID,
-        feature: str
-    ) -> Optional[Tenant]:
+    async def disable_feature(self, tenant_id: UUID, feature: str) -> Tenant | None:
         """Desabilita feature para tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
@@ -262,31 +229,22 @@ class ConfigService:
             required=data.required,
             visible=data.visible,
             editable=data.editable,
-            group=data.group
+            group=data.group,
         )
         if data.valor:
             setting.valor = data.valor
 
         return await self.repository.create_setting(setting)
 
-    async def get_setting(self, setting_id: UUID) -> Optional[TenantSettings]:
+    async def get_setting(self, setting_id: UUID) -> TenantSettings | None:
         """Busca configuração por ID."""
         return await self.repository.get_setting_by_id(setting_id)
 
-    async def get_setting_by_key(
-        self,
-        tenant_id: UUID,
-        chave: str
-    ) -> Optional[TenantSettings]:
+    async def get_setting_by_key(self, tenant_id: UUID, chave: str) -> TenantSettings | None:
         """Busca configuração por chave."""
         return await self.repository.get_setting_by_key(tenant_id, chave)
 
-    async def get_setting_value(
-        self,
-        tenant_id: UUID,
-        chave: str,
-        default: Any = None
-    ) -> Any:
+    async def get_setting_value(self, tenant_id: UUID, chave: str, default: Any = None) -> Any:
         """Retorna valor de configuração."""
         setting = await self.repository.get_setting_by_key(tenant_id, chave)
         if not setting:
@@ -294,27 +252,17 @@ class ConfigService:
         return setting.typed_value or default
 
     async def list_tenant_settings(
-        self,
-        tenant_id: UUID,
-        category: str = None,
-        group: str = None,
-        visible: bool = None
-    ) -> Tuple[List[TenantSettings], int]:
+        self, tenant_id: UUID, category: str = None, group: str = None, visible: bool = None
+    ) -> tuple[list[TenantSettings], int]:
         """Lista configurações do tenant."""
         category_enum = SettingCategory(category) if category else None
         return await self.repository.list_tenant_settings(
-            tenant_id=tenant_id,
-            category=category_enum,
-            group=group,
-            visible=visible
+            tenant_id=tenant_id, category=category_enum, group=group, visible=visible
         )
 
     async def update_setting(
-        self,
-        setting_id: UUID,
-        data: TenantSettingsUpdate,
-        modified_by: UUID = None
-    ) -> Optional[TenantSettings]:
+        self, setting_id: UUID, data: TenantSettingsUpdate, modified_by: UUID = None
+    ) -> TenantSettings | None:
         """Atualiza configuração."""
         setting = await self.repository.get_setting_by_id(setting_id)
         if not setting:
@@ -333,12 +281,8 @@ class ConfigService:
         return await self.repository.update_setting(setting)
 
     async def set_setting_value(
-        self,
-        tenant_id: UUID,
-        chave: str,
-        valor: Any,
-        modified_by: UUID = None
-    ) -> Optional[TenantSettings]:
+        self, tenant_id: UUID, chave: str, valor: Any, modified_by: UUID = None
+    ) -> TenantSettings | None:
         """Define valor de configuração."""
         setting = await self.repository.get_setting_by_key(tenant_id, chave)
         if not setting:
@@ -346,11 +290,7 @@ class ConfigService:
         setting.set_value(valor, modified_by)
         return await self.repository.update_setting(setting)
 
-    async def reset_setting(
-        self,
-        setting_id: UUID,
-        modified_by: UUID = None
-    ) -> Optional[TenantSettings]:
+    async def reset_setting(self, setting_id: UUID, modified_by: UUID = None) -> TenantSettings | None:
         """Reseta configuração para valor padrão."""
         setting = await self.repository.get_setting_by_id(setting_id)
         if not setting:
@@ -364,10 +304,7 @@ class ConfigService:
 
     # ==================== SystemConfig ====================
 
-    async def create_system_config(
-        self,
-        data: SystemConfigCreate
-    ) -> SystemConfig:
+    async def create_system_config(self, data: SystemConfigCreate) -> SystemConfig:
         """Cria configuração global."""
         config = SystemConfig.create_config(
             chave=data.chave,
@@ -380,32 +317,22 @@ class ConfigService:
             override_allowed=data.override_allowed,
             admin_only=data.admin_only,
             category=data.category,
-            group=data.group
+            group=data.group,
         )
         if data.valor:
             config.valor = data.valor
 
         return await self.repository.create_system_config(config)
 
-    async def get_system_config(
-        self,
-        config_id: UUID
-    ) -> Optional[SystemConfig]:
+    async def get_system_config(self, config_id: UUID) -> SystemConfig | None:
         """Busca configuração global por ID."""
         return await self.repository.get_system_config_by_id(config_id)
 
-    async def get_system_config_by_key(
-        self,
-        chave: str
-    ) -> Optional[SystemConfig]:
+    async def get_system_config_by_key(self, chave: str) -> SystemConfig | None:
         """Busca configuração global por chave."""
         return await self.repository.get_system_config_by_key(chave)
 
-    async def get_system_config_value(
-        self,
-        chave: str,
-        default: Any = None
-    ) -> Any:
+    async def get_system_config_value(self, chave: str, default: Any = None) -> Any:
         """Retorna valor de configuração global."""
         config = await self.repository.get_system_config_by_key(chave)
         if not config:
@@ -413,29 +340,17 @@ class ConfigService:
         return config.typed_value or default
 
     async def list_system_configs(
-        self,
-        scope: str = None,
-        category: str = None,
-        admin_only: bool = None,
-        skip: int = 0,
-        limit: int = 100
-    ) -> Tuple[List[SystemConfig], int]:
+        self, scope: str = None, category: str = None, admin_only: bool = None, skip: int = 0, limit: int = 100
+    ) -> tuple[list[SystemConfig], int]:
         """Lista configurações globais."""
         scope_enum = ConfigScope(scope) if scope else None
         return await self.repository.list_system_configs(
-            scope=scope_enum,
-            category=category,
-            admin_only=admin_only,
-            skip=skip,
-            limit=limit
+            scope=scope_enum, category=category, admin_only=admin_only, skip=skip, limit=limit
         )
 
     async def update_system_config(
-        self,
-        config_id: UUID,
-        data: SystemConfigUpdate,
-        modified_by: UUID = None
-    ) -> Optional[SystemConfig]:
+        self, config_id: UUID, data: SystemConfigUpdate, modified_by: UUID = None
+    ) -> SystemConfig | None:
         """Atualiza configuração global."""
         config = await self.repository.get_system_config_by_id(config_id)
         if not config:
@@ -471,18 +386,15 @@ class ConfigService:
             rollout_percentage=data.rollout_percentage,
             category=data.category,
             owner_team=data.owner_team,
-            jira_ticket=data.jira_ticket
+            jira_ticket=data.jira_ticket,
         )
         return await self.repository.create_feature_flag(flag)
 
-    async def get_feature_flag(self, flag_id: UUID) -> Optional[FeatureFlag]:
+    async def get_feature_flag(self, flag_id: UUID) -> FeatureFlag | None:
         """Busca feature flag por ID."""
         return await self.repository.get_feature_flag_by_id(flag_id)
 
-    async def get_feature_flag_by_codigo(
-        self,
-        codigo: str
-    ) -> Optional[FeatureFlag]:
+    async def get_feature_flag_by_codigo(self, codigo: str) -> FeatureFlag | None:
         """Busca feature flag por código."""
         return await self.repository.get_feature_flag_by_codigo(codigo)
 
@@ -493,27 +405,18 @@ class ConfigService:
         category: str = None,
         owner_team: str = None,
         skip: int = 0,
-        limit: int = 100
-    ) -> Tuple[List[FeatureFlag], int]:
+        limit: int = 100,
+    ) -> tuple[list[FeatureFlag], int]:
         """Lista feature flags."""
         status_enum = FlagStatus(status) if status else None
         type_enum = None
         if flag_type:
             type_enum = FlagType(flag_type)
         return await self.repository.list_feature_flags(
-            status=status_enum,
-            flag_type=type_enum,
-            category=category,
-            owner_team=owner_team,
-            skip=skip,
-            limit=limit
+            status=status_enum, flag_type=type_enum, category=category, owner_team=owner_team, skip=skip, limit=limit
         )
 
-    async def update_feature_flag(
-        self,
-        flag_id: UUID,
-        data: FeatureFlagUpdate
-    ) -> Optional[FeatureFlag]:
+    async def update_feature_flag(self, flag_id: UUID, data: FeatureFlagUpdate) -> FeatureFlag | None:
         """Atualiza feature flag."""
         flag = await self.repository.get_feature_flag_by_id(flag_id)
         if not flag:
@@ -525,7 +428,7 @@ class ConfigService:
 
         return await self.repository.update_feature_flag(flag)
 
-    async def enable_flag(self, flag_id: UUID) -> Optional[FeatureFlag]:
+    async def enable_flag(self, flag_id: UUID) -> FeatureFlag | None:
         """Habilita feature flag."""
         flag = await self.repository.get_feature_flag_by_id(flag_id)
         if not flag:
@@ -533,7 +436,7 @@ class ConfigService:
         flag.enable()
         return await self.repository.update_feature_flag(flag)
 
-    async def disable_flag(self, flag_id: UUID) -> Optional[FeatureFlag]:
+    async def disable_flag(self, flag_id: UUID) -> FeatureFlag | None:
         """Desabilita feature flag."""
         flag = await self.repository.get_feature_flag_by_id(flag_id)
         if not flag:
@@ -541,11 +444,7 @@ class ConfigService:
         flag.disable()
         return await self.repository.update_feature_flag(flag)
 
-    async def set_flag_percentage(
-        self,
-        flag_id: UUID,
-        percentage: float
-    ) -> Optional[FeatureFlag]:
+    async def set_flag_percentage(self, flag_id: UUID, percentage: float) -> FeatureFlag | None:
         """Define percentual de rollout."""
         flag = await self.repository.get_feature_flag_by_id(flag_id)
         if not flag:
@@ -553,27 +452,17 @@ class ConfigService:
         flag.set_percentage(percentage)
         return await self.repository.update_feature_flag(flag)
 
-    async def start_gradual_rollout(
-        self,
-        flag_id: UUID,
-        data: FeatureFlagGradualRollout
-    ) -> Optional[FeatureFlag]:
+    async def start_gradual_rollout(self, flag_id: UUID, data: FeatureFlagGradualRollout) -> FeatureFlag | None:
         """Inicia rollout gradual."""
         flag = await self.repository.get_feature_flag_by_id(flag_id)
         if not flag:
             return None
         flag.start_gradual_rollout(
-            start_percentage=data.start_percentage,
-            end_percentage=data.end_percentage,
-            duration_days=data.duration_days
+            start_percentage=data.start_percentage, end_percentage=data.end_percentage, duration_days=data.duration_days
         )
         return await self.repository.update_feature_flag(flag)
 
-    async def enable_flag_for_tenant(
-        self,
-        flag_id: UUID,
-        tenant_id: str
-    ) -> Optional[FeatureFlag]:
+    async def enable_flag_for_tenant(self, flag_id: UUID, tenant_id: str) -> FeatureFlag | None:
         """Habilita flag para tenant específico."""
         flag = await self.repository.get_feature_flag_by_id(flag_id)
         if not flag:
@@ -581,11 +470,7 @@ class ConfigService:
         flag.enable_for_tenant(tenant_id)
         return await self.repository.update_feature_flag(flag)
 
-    async def disable_flag_for_tenant(
-        self,
-        flag_id: UUID,
-        tenant_id: str
-    ) -> Optional[FeatureFlag]:
+    async def disable_flag_for_tenant(self, flag_id: UUID, tenant_id: str) -> FeatureFlag | None:
         """Desabilita flag para tenant específico."""
         flag = await self.repository.get_feature_flag_by_id(flag_id)
         if not flag:
@@ -594,12 +479,8 @@ class ConfigService:
         return await self.repository.update_feature_flag(flag)
 
     async def evaluate_flag(
-        self,
-        codigo: str,
-        tenant_id: str = None,
-        user_id: str = None,
-        attributes: Dict[str, Any] = None
-    ) -> Tuple[bool, Optional[str]]:
+        self, codigo: str, tenant_id: str = None, user_id: str = None, attributes: dict[str, Any] = None
+    ) -> tuple[bool, str | None]:
         """Avalia feature flag."""
         flag = await self.repository.get_feature_flag_by_codigo(codigo)
         if not flag:
@@ -614,17 +495,14 @@ class ConfigService:
 
     # ==================== NotificationTemplate ====================
 
-    async def create_notification_template(
-        self,
-        data: NotificationTemplateCreate
-    ) -> NotificationTemplate:
+    async def create_notification_template(self, data: NotificationTemplateCreate) -> NotificationTemplate:
         """Cria template de notificação."""
         template = NotificationTemplate(
             tenant_id=data.tenant_id,
             codigo=data.codigo,
             nome=data.nome,
             descricao=data.descricao,
-            channel=NotificationChannel(data.channel),
+            channel_id=None,
             notification_type=data.notification_type,
             status=TemplateStatus.RASCUNHO,
             email_subject=data.email_subject,
@@ -636,26 +514,17 @@ class ConfigService:
             in_app_title=data.in_app_title,
             in_app_body=data.in_app_body,
             language=data.language,
-            category=data.category
+            category=data.category,
         )
         return await self.repository.create_notification_template(template)
 
-    async def get_notification_template(
-        self,
-        template_id: UUID
-    ) -> Optional[NotificationTemplate]:
+    async def get_notification_template(self, template_id: UUID) -> NotificationTemplate | None:
         """Busca template por ID."""
         return await self.repository.get_notification_template_by_id(template_id)
 
-    async def get_notification_template_by_codigo(
-        self,
-        tenant_id: UUID,
-        codigo: str
-    ) -> Optional[NotificationTemplate]:
+    async def get_notification_template_by_codigo(self, tenant_id: UUID, codigo: str) -> NotificationTemplate | None:
         """Busca template por código."""
-        return await self.repository.get_notification_template_by_codigo(
-            tenant_id, codigo
-        )
+        return await self.repository.get_notification_template_by_codigo(tenant_id, codigo)
 
     async def list_notification_templates(
         self,
@@ -666,8 +535,8 @@ class ConfigService:
         category: str = None,
         include_global: bool = True,
         skip: int = 0,
-        limit: int = 100
-    ) -> Tuple[List[NotificationTemplate], int]:
+        limit: int = 100,
+    ) -> tuple[list[NotificationTemplate], int]:
         """Lista templates."""
         channel_enum = NotificationChannel(channel) if channel else None
         type_enum = None
@@ -683,14 +552,12 @@ class ConfigService:
             category=category,
             include_global=include_global,
             skip=skip,
-            limit=limit
+            limit=limit,
         )
 
     async def update_notification_template(
-        self,
-        template_id: UUID,
-        data: NotificationTemplateUpdate
-    ) -> Optional[NotificationTemplate]:
+        self, template_id: UUID, data: NotificationTemplateUpdate
+    ) -> NotificationTemplate | None:
         """Atualiza template."""
         template = await self.repository.get_notification_template_by_id(template_id)
         if not template:
@@ -703,10 +570,7 @@ class ConfigService:
         template.increment_version()
         return await self.repository.update_notification_template(template)
 
-    async def activate_template(
-        self,
-        template_id: UUID
-    ) -> Optional[NotificationTemplate]:
+    async def activate_template(self, template_id: UUID) -> NotificationTemplate | None:
         """Ativa template."""
         template = await self.repository.get_notification_template_by_id(template_id)
         if not template:
@@ -714,10 +578,7 @@ class ConfigService:
         template.activate()
         return await self.repository.update_notification_template(template)
 
-    async def deactivate_template(
-        self,
-        template_id: UUID
-    ) -> Optional[NotificationTemplate]:
+    async def deactivate_template(self, template_id: UUID) -> NotificationTemplate | None:
         """Desativa template."""
         template = await self.repository.get_notification_template_by_id(template_id)
         if not template:
@@ -725,11 +586,7 @@ class ConfigService:
         template.deactivate()
         return await self.repository.update_notification_template(template)
 
-    async def render_template(
-        self,
-        template_id: UUID,
-        variables: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def render_template(self, template_id: UUID, variables: dict[str, Any]) -> dict[str, Any]:
         """Renderiza template com variáveis."""
         template = await self.repository.get_notification_template_by_id(template_id)
         if not template:
@@ -741,11 +598,7 @@ class ConfigService:
 
         return template.render(variables)
 
-    async def clone_template(
-        self,
-        template_id: UUID,
-        new_codigo: str = None
-    ) -> Optional[NotificationTemplate]:
+    async def clone_template(self, template_id: UUID, new_codigo: str = None) -> NotificationTemplate | None:
         """Clona template."""
         template = await self.repository.get_notification_template_by_id(template_id)
         if not template:
@@ -774,30 +627,18 @@ class ConfigService:
             total_feature_flags=stats["total_feature_flags"],
             active_feature_flags=stats["active_feature_flags"],
             total_notification_templates=stats["total_notification_templates"],
-            recent_tenants=[
-                {"id": str(t.id), "nome": t.nome, "status": t.status.value}
-                for t in recent
-            ],
-            feature_flags_stats={
-                "total": stats["total_feature_flags"],
-                "active": stats["active_feature_flags"]
-            }
+            recent_tenants=[{"id": str(t.id), "nome": t.nome, "status": t.status.value} for t in recent],
+            feature_flags_stats={"total": stats["total_feature_flags"], "active": stats["active_feature_flags"]},
         )
 
-    async def get_tenant_dashboard(
-        self,
-        tenant_id: UUID
-    ) -> Optional[TenantDashboard]:
+    async def get_tenant_dashboard(self, tenant_id: UUID) -> TenantDashboard | None:
         """Retorna dashboard do tenant."""
         tenant = await self.repository.get_tenant_by_id(tenant_id)
         if not tenant:
             return None
 
         settings, _ = await self.repository.list_tenant_settings(tenant_id)
-        templates, _ = await self.repository.list_notification_templates(
-            tenant_id=tenant_id,
-            include_global=False
-        )
+        templates, _ = await self.repository.list_notification_templates(tenant_id=tenant_id, include_global=False)
 
         flags_enabled = 0
         if tenant.features_enabled:
@@ -810,5 +651,5 @@ class ConfigService:
             notification_templates=len(templates),
             storage_usage_percent=tenant.storage_usage_percent,
             users_usage_percent=tenant.users_usage_percent,
-            api_usage_percent=tenant.api_usage_percent
+            api_usage_percent=tenant.api_usage_percent,
         )

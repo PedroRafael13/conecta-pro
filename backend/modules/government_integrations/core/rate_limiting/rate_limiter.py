@@ -4,12 +4,11 @@ Rate Limiter para Serviços Governamentais.
 Implementa Token Bucket com limites específicos por serviço.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
-from dataclasses import dataclass
-from enum import Enum
 import asyncio
 import logging
+from dataclasses import dataclass
+from datetime import datetime
+
 import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
@@ -18,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class LimiteServico:
     """Configuração de limite para um serviço."""
+
     requisicoes_por_minuto: int
     requisicoes_por_hora: int
     burst_maximo: int  # Máximo de requisições em burst
@@ -26,7 +26,7 @@ class LimiteServico:
 
 
 # Limites baseados em documentação oficial e observação empírica
-LIMITES_SERVICOS: Dict[str, LimiteServico] = {
+LIMITES_SERVICOS: dict[str, LimiteServico] = {
     # SEFAZ (NF-e, CT-e, MDF-e) - limites mais conservadores
     "sefaz_nfe": LimiteServico(
         requisicoes_por_minuto=60,
@@ -111,15 +111,11 @@ class RateLimiter:
     - Filas de espera com prioridade
     """
 
-    def __init__(
-        self,
-        redis_client: Optional[redis.Redis] = None,
-        redis_url: str = "redis://localhost:6379/1"
-    ):
+    def __init__(self, redis_client: redis.Redis | None = None, redis_url: str = "redis://localhost:6379/1"):
         self._redis = redis_client
         self._redis_url = redis_url
-        self._locks: Dict[str, asyncio.Lock] = {}
-        self._local_buckets: Dict[str, Dict] = {}  # Fallback sem Redis
+        self._locks: dict[str, asyncio.Lock] = {}
+        self._local_buckets: dict[str, dict] = {}  # Fallback sem Redis
 
     async def _get_redis(self) -> redis.Redis:
         """Obtém conexão Redis."""
@@ -133,12 +129,7 @@ class RateLimiter:
             self._locks[servico] = asyncio.Lock()
         return self._locks[servico]
 
-    async def pode_executar(
-        self,
-        servico: str,
-        tenant_id: str,
-        uf: Optional[str] = None
-    ) -> Tuple[bool, float]:
+    async def pode_executar(self, servico: str, tenant_id: str, uf: str | None = None) -> tuple[bool, float]:
         """
         Verifica se pode executar requisição.
 
@@ -163,11 +154,8 @@ class RateLimiter:
             return await self._verificar_local(chave_base, limite)
 
     async def _verificar_redis(
-        self,
-        redis_client: redis.Redis,
-        chave_base: str,
-        limite: LimiteServico
-    ) -> Tuple[bool, float]:
+        self, redis_client: redis.Redis, chave_base: str, limite: LimiteServico
+    ) -> tuple[bool, float]:
         """Verifica rate limit usando Redis."""
         agora = datetime.utcnow()
         minuto_atual = agora.strftime("%Y%m%d%H%M")
@@ -208,14 +196,9 @@ class RateLimiter:
 
         return True, 0
 
-    async def registrar_requisicao(
-        self,
-        servico: str,
-        tenant_id: str,
-        uf: Optional[str] = None
-    ):
+    async def registrar_requisicao(self, servico: str, tenant_id: str, uf: str | None = None):
         """Registra uma requisição executada."""
-        limite = LIMITES_SERVICOS.get(servico, LIMITES_SERVICOS["prefeitura_default"])
+        LIMITES_SERVICOS.get(servico, LIMITES_SERVICOS["prefeitura_default"])
         chave_base = f"rate:{servico}:{tenant_id}"
         if uf:
             chave_base += f":{uf}"
@@ -246,20 +229,19 @@ class RateLimiter:
         pipe.expire(chave_ultima, 60)
         await pipe.execute()
 
-    async def _verificar_local(
-        self,
-        chave_base: str,
-        limite: LimiteServico
-    ) -> Tuple[bool, float]:
+    async def _verificar_local(self, chave_base: str, limite: LimiteServico) -> tuple[bool, float]:
         """Fallback: verifica rate limit localmente."""
         async with self._get_lock(chave_base):
             agora = datetime.utcnow()
-            bucket = self._local_buckets.get(chave_base, {
-                "tokens": limite.burst_maximo,
-                "ultima_atualizacao": agora,
-                "contagem_minuto": 0,
-                "minuto_atual": agora.minute,
-            })
+            bucket = self._local_buckets.get(
+                chave_base,
+                {
+                    "tokens": limite.burst_maximo,
+                    "ultima_atualizacao": agora,
+                    "contagem_minuto": 0,
+                    "minuto_atual": agora.minute,
+                },
+            )
 
             # Resetar contagem se mudou o minuto
             if bucket["minuto_atual"] != agora.minute:
@@ -288,23 +270,22 @@ class RateLimiter:
         """Fallback: registra requisição localmente."""
         async with self._get_lock(chave_base):
             agora = datetime.utcnow()
-            bucket = self._local_buckets.get(chave_base, {
-                "tokens": 10,
-                "ultima_atualizacao": agora,
-                "contagem_minuto": 0,
-                "minuto_atual": agora.minute,
-            })
+            bucket = self._local_buckets.get(
+                chave_base,
+                {
+                    "tokens": 10,
+                    "ultima_atualizacao": agora,
+                    "contagem_minuto": 0,
+                    "minuto_atual": agora.minute,
+                },
+            )
 
             bucket["tokens"] -= 1
             bucket["contagem_minuto"] += 1
             self._local_buckets[chave_base] = bucket
 
     async def aguardar_permissao(
-        self,
-        servico: str,
-        tenant_id: str,
-        uf: Optional[str] = None,
-        timeout: float = 60.0
+        self, servico: str, tenant_id: str, uf: str | None = None, timeout: float = 60.0
     ) -> bool:
         """
         Aguarda até poder executar ou timeout.
@@ -330,22 +311,13 @@ class RateLimiter:
             # Verificar timeout
             decorrido = (datetime.utcnow() - inicio).total_seconds()
             if decorrido + espera > timeout:
-                logger.warning(
-                    f"Timeout aguardando rate limit: {servico}/{tenant_id}"
-                )
+                logger.warning(f"Timeout aguardando rate limit: {servico}/{tenant_id}")
                 return False
 
-            logger.debug(
-                f"Rate limit ativo, aguardando {espera:.1f}s: {servico}/{tenant_id}"
-            )
+            logger.debug(f"Rate limit ativo, aguardando {espera:.1f}s: {servico}/{tenant_id}")
             await asyncio.sleep(min(espera, timeout - decorrido))
 
-    async def obter_status(
-        self,
-        servico: str,
-        tenant_id: str,
-        uf: Optional[str] = None
-    ) -> Dict:
+    async def obter_status(self, servico: str, tenant_id: str, uf: str | None = None) -> dict:
         """Obtém status atual do rate limit."""
         limite = LIMITES_SERVICOS.get(servico, LIMITES_SERVICOS["prefeitura_default"])
         chave_base = f"rate:{servico}:{tenant_id}"
@@ -388,12 +360,7 @@ class RateLimiter:
                 "erro": str(e),
             }
 
-    async def resetar_limites(
-        self,
-        servico: str,
-        tenant_id: str,
-        uf: Optional[str] = None
-    ):
+    async def resetar_limites(self, servico: str, tenant_id: str, uf: str | None = None):
         """Reseta limites para um serviço/tenant (uso administrativo)."""
         chave_base = f"rate:{servico}:{tenant_id}"
         if uf:
@@ -417,7 +384,7 @@ class RateLimiter:
 
 
 # Instância singleton
-_rate_limiter_instance: Optional[RateLimiter] = None
+_rate_limiter_instance: RateLimiter | None = None
 
 
 def get_rate_limiter() -> RateLimiter:

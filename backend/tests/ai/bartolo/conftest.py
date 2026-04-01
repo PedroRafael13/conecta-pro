@@ -2,15 +2,18 @@
 Fixtures compartilhadas para testes do Bartolo
 """
 
-import pytest
 import sys
-sys.path.insert(0, '/app')
+
+import pytest
+
+sys.path.insert(0, "/app")
 
 
 @pytest.fixture
 def data_connector():
     """Fixture para DataConnector"""
     from modules.ai.bartolo.services.data_connector import DataConnector
+
     return DataConnector()
 
 
@@ -18,6 +21,7 @@ def data_connector():
 def escala_agent():
     """Fixture para EscalaAgent"""
     from modules.ai.bartolo.agents.escala_agent import EscalaAgent
+
     return EscalaAgent()
 
 
@@ -25,6 +29,7 @@ def escala_agent():
 def substituicao_agent():
     """Fixture para SubstituicaoAgent"""
     from modules.ai.bartolo.agents.substituicao_agent import SubstituicaoAgent
+
     return SubstituicaoAgent()
 
 
@@ -32,6 +37,7 @@ def substituicao_agent():
 def alerta_agent():
     """Fixture para AlertaAgent"""
     from modules.ai.bartolo.agents.alerta_agent import AlertaAgent
+
     return AlertaAgent()
 
 
@@ -39,6 +45,7 @@ def alerta_agent():
 def bartolo_engine():
     """Fixture para BartoloEngine"""
     from modules.ai.bartolo.services.bartolo_engine import BartoloEngine
+
     return BartoloEngine()
 
 
@@ -46,6 +53,7 @@ def bartolo_engine():
 def action_detector():
     """Fixture para ActionDetector"""
     from modules.ai.bartolo.actions.action_detector import ActionDetector
+
     return ActionDetector()
 
 
@@ -53,4 +61,5 @@ def action_detector():
 def wizard_manager():
     """Fixture para WizardManager"""
     from modules.ai.bartolo.wizards.wizard_manager import WizardManager
+
     return WizardManager()

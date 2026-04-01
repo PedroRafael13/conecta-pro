@@ -11,19 +11,19 @@ Tabelas para:
 - LGPD Compliance
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy import inspect
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "sprint03_intelligent"
-down_revision: Union[str, None] = "sprint02_mobile_api"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "sprint02_mobile_api"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def table_exists(table_name: str) -> bool:
@@ -88,7 +88,13 @@ def upgrade() -> None:
         op.create_table(
             "ab_experiment_variants",
             sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-            sa.Column("experiment_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("ab_experiments.id", ondelete="CASCADE"), nullable=False, index=True),
+            sa.Column(
+                "experiment_id",
+                postgresql.UUID(as_uuid=True),
+                sa.ForeignKey("ab_experiments.id", ondelete="CASCADE"),
+                nullable=False,
+                index=True,
+            ),
             sa.Column("variant_id", sa.String(50), nullable=False),
             sa.Column("name", sa.String(255), nullable=False),
             sa.Column("description", sa.Text()),
@@ -108,7 +114,13 @@ def upgrade() -> None:
         op.create_table(
             "ab_experiment_events",
             sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-            sa.Column("experiment_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("ab_experiments.id", ondelete="CASCADE"), nullable=False, index=True),
+            sa.Column(
+                "experiment_id",
+                postgresql.UUID(as_uuid=True),
+                sa.ForeignKey("ab_experiments.id", ondelete="CASCADE"),
+                nullable=False,
+                index=True,
+            ),
             sa.Column("variant_id", sa.String(50), nullable=False),
             sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False, index=True),
             sa.Column("event_type", sa.String(50), nullable=False, index=True),
@@ -139,7 +151,9 @@ def upgrade() -> None:
             sa.Column("cost", sa.Numeric(10, 4), server_default="0"),
             sa.Column("revenue", sa.Numeric(10, 2), server_default="0"),
             sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
-            sa.UniqueConstraint("date", "hour", "channel", "notification_type", "tenant_id", name="uq_analytics_granularity"),
+            sa.UniqueConstraint(
+                "date", "hour", "channel", "notification_type", "tenant_id", name="uq_analytics_granularity"
+            ),
         )
 
     if not table_exists("user_consents"):

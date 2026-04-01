@@ -1,26 +1,26 @@
 """Fraud Detection Models."""
 
 from modules.ai.fraud_detection.models.fraud_alert import (
-    FraudAlert,
     AlertSeverity,
     AlertStatus,
+    FraudAlert,
     FraudCategory,
-)
-from modules.ai.fraud_detection.models.fraud_rule import (
-    FraudRule,
-    RuleType,
-    RuleOperator,
-    RuleAction,
 )
 from modules.ai.fraud_detection.models.fraud_pattern import (
     FraudPattern,
-    PatternType,
     PatternStatus,
+    PatternType,
+)
+from modules.ai.fraud_detection.models.fraud_rule import (
+    FraudRule,
+    RuleAction,
+    RuleOperator,
+    RuleType,
 )
 from modules.ai.fraud_detection.models.risk_profile import (
-    RiskProfile,
     EntityType,
     RiskLevel,
+    RiskProfile,
 )
 
 __all__ = [

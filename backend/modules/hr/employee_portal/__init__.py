@@ -14,23 +14,23 @@ Funcionalidades:
 
 from modules.hr.employee_portal.controllers import router as portal_router
 from modules.hr.employee_portal.models import (
-    PaySlip,
-    PaySlipStatus,
-    PaySlipType,
-    VacationRequest,
-    VacationStatus,
-    VacationType,
-    VacationPeriod,
     EmployeeDocument,
     EmployeeNotification,
     EmployeePreferences,
+    PaySlip,
+    PaySlipStatus,
+    PaySlipType,
+    VacationPeriod,
+    VacationRequest,
+    VacationStatus,
+    VacationType,
 )
 from modules.hr.employee_portal.services import (
-    PaySlipService,
-    VacationService,
     DocumentService,
+    PaySlipService,
     PortalNotificationService,
     PreferencesService,
+    VacationService,
 )
 
 __all__ = [

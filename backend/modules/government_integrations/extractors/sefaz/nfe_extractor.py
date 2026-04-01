@@ -7,17 +7,17 @@ Implementa:
 - Download de XML
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
-import re
-from xml.etree import ElementTree as ET
+from datetime import datetime, timedelta
+from uuid import UUID
+from xml.etree.ElementTree import Element  # noqa: S405
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
-from ...core.contingency import ComutadorEndpoints, MatrizContingencia
+from defusedxml import ElementTree as ET  # noqa: N817
+
+from ...core.contingency import MatrizContingencia
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +59,10 @@ class ExtratorNFe(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -90,16 +90,11 @@ class ExtratorNFe(ExtratorBase):
         if data_inicio is None:
             data_inicio = data_fim - timedelta(days=30)
 
-        logger.info(
-            f"Iniciando extração NF-e: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
-        )
+        logger.info(f"Iniciando extração NF-e: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}")
 
         try:
             # Obter credenciais
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -113,9 +108,7 @@ class ExtratorNFe(ExtratorBase):
                 logger.info(f"Extraindo NF-e para CNPJ: {cnpj}")
 
                 # Usar distribuição DFe para obter documentos
-                docs = await self._extrair_distribuicao(
-                    tenant_id, cnpj, data_inicio, data_fim, incremental
-                )
+                docs = await self._extrair_distribuicao(tenant_id, cnpj, data_inicio, data_fim, incremental)
 
                 for doc in docs:
                     resultado.documentos.append(doc)
@@ -150,7 +143,7 @@ class ExtratorNFe(ExtratorBase):
         data_inicio: datetime,
         data_fim: datetime,
         incremental: bool,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """
         Extrai documentos via NFeDistribuicaoDFe.
 
@@ -179,23 +172,17 @@ class ExtratorNFe(ExtratorBase):
 
                 # Headers SOAP 1.2 - action deve estar no Content-Type
                 soap_action = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse"
-                headers = {
-                    "Content-Type": f'application/soap+xml; charset=utf-8; action="{soap_action}"'
-                }
+                headers = {"Content-Type": f'application/soap+xml; charset=utf-8; action="{soap_action}"'}
 
                 # Fazer requisição
-                resposta = await self._fazer_requisicao(
-                    tenant_id, url, data=envelope, headers=headers
-                )
+                resposta = await self._fazer_requisicao(tenant_id, url, data=envelope, headers=headers)
 
                 if not resposta:
                     logger.warning("Sem resposta do serviço de distribuição")
                     break
 
                 # Processar resposta
-                docs, ultimo_nsu, tem_mais = self._processar_resposta_distribuicao(
-                    resposta
-                )
+                docs, ultimo_nsu, tem_mais = self._processar_resposta_distribuicao(resposta)
 
                 for doc in docs:
                     # Processar documento
@@ -221,7 +208,7 @@ class ExtratorNFe(ExtratorBase):
         self,
         cnpj: str,
         nsu: str,
-        tipo_consulta: str = "distNSU"  # distNSU ou consNSU
+        tipo_consulta: str = "distNSU",  # distNSU ou consNSU
     ) -> str:
         """Monta envelope SOAP para distribuição DFe."""
 
@@ -251,10 +238,7 @@ class ExtratorNFe(ExtratorBase):
 
         return envelope
 
-    def _processar_resposta_distribuicao(
-        self,
-        xml_resposta: str
-    ) -> tuple[List[DocumentoExtraido], str, bool]:
+    def _processar_resposta_distribuicao(self, xml_resposta: str) -> tuple[list[DocumentoExtraido], str, bool]:
         """
         Processa resposta da distribuição DFe.
 
@@ -269,26 +253,26 @@ class ExtratorNFe(ExtratorBase):
             root = ET.fromstring(xml_resposta.encode())
 
             # Buscar retorno
-            ret = root.find(".//{%s}retDistDFeInt" % NS_NFE)
+            ret = root.find(f".//{{{NS_NFE}}}retDistDFeInt")
             if ret is None:
                 return documentos, ultimo_nsu, False
 
             # Verificar status
-            cStat = ret.findtext("{%s}cStat" % NS_NFE)
-            if cStat not in ["137", "138"]:  # 137 = docs encontrados, 138 = fim
-                logger.warning(f"Status distribuição: {cStat}")
+            c_stat = ret.findtext(f"{{{NS_NFE}}}cStat")
+            if c_stat not in ["137", "138"]:  # 137 = docs encontrados, 138 = fim
+                logger.warning(f"Status distribuição: {c_stat}")
                 return documentos, ultimo_nsu, False
 
             # Obter último NSU
-            ultimo_nsu = ret.findtext("{%s}ultNSU" % NS_NFE) or ultimo_nsu
-            max_nsu = ret.findtext("{%s}maxNSU" % NS_NFE) or ultimo_nsu
+            ultimo_nsu = ret.findtext(f"{{{NS_NFE}}}ultNSU") or ultimo_nsu
+            max_nsu = ret.findtext(f"{{{NS_NFE}}}maxNSU") or ultimo_nsu
 
             tem_mais = ultimo_nsu < max_nsu
 
             # Processar documentos
-            lote = ret.find("{%s}loteDistDFeInt" % NS_NFE)
+            lote = ret.find(f"{{{NS_NFE}}}loteDistDFeInt")
             if lote is not None:
-                for doc_zip in lote.findall("{%s}docZip" % NS_NFE):
+                for doc_zip in lote.findall(f"{{{NS_NFE}}}docZip"):
                     nsu = doc_zip.get("NSU")
                     schema = doc_zip.get("schema", "")
 
@@ -315,12 +299,7 @@ class ExtratorNFe(ExtratorBase):
 
         return documentos, ultimo_nsu, tem_mais
 
-    def _extrair_dados_documento(
-        self,
-        xml: str,
-        schema: str,
-        nsu: str
-    ) -> Optional[DocumentoExtraido]:
+    def _extrair_dados_documento(self, xml: str, schema: str, nsu: str) -> DocumentoExtraido | None:
         """Extrai dados de um documento XML."""
         try:
             root = ET.fromstring(xml.encode())
@@ -340,15 +319,10 @@ class ExtratorNFe(ExtratorBase):
             logger.error(f"Erro ao extrair dados do documento: {e}")
             return None
 
-    def _extrair_nfe(
-        self,
-        root: ET.Element,
-        xml: str,
-        nsu: str
-    ) -> DocumentoExtraido:
+    def _extrair_nfe(self, root: Element, xml: str, nsu: str) -> DocumentoExtraido:
         """Extrai dados de NF-e completa."""
         # Buscar infNFe
-        inf_nfe = root.find(".//{%s}infNFe" % NS_NFE)
+        inf_nfe = root.find(f".//{{{NS_NFE}}}infNFe")
 
         if inf_nfe is None:
             return DocumentoExtraido(
@@ -363,42 +337,38 @@ class ExtratorNFe(ExtratorBase):
         chave = inf_nfe.get("Id", "").replace("NFe", "")
 
         # Extrair campos principais
-        ide = inf_nfe.find("{%s}ide" % NS_NFE) or ET.Element("ide")
-        emit = inf_nfe.find("{%s}emit" % NS_NFE) or ET.Element("emit")
-        dest = inf_nfe.find("{%s}dest" % NS_NFE) or ET.Element("dest")
-        total = inf_nfe.find("{%s}total" % NS_NFE) or ET.Element("total")
-        icms_tot = total.find("{%s}ICMSTot" % NS_NFE) or ET.Element("ICMSTot")
+        ide = inf_nfe.find(f"{{{NS_NFE}}}ide") or ET.Element("ide")
+        emit = inf_nfe.find(f"{{{NS_NFE}}}emit") or ET.Element("emit")
+        dest = inf_nfe.find(f"{{{NS_NFE}}}dest") or ET.Element("dest")
+        total = inf_nfe.find(f"{{{NS_NFE}}}total") or ET.Element("total")
+        icms_tot = total.find(f"{{{NS_NFE}}}ICMSTot") or ET.Element("ICMSTot")
 
         dados = {
             "chave_acesso": chave,
-            "numero": ide.findtext("{%s}nNF" % NS_NFE),
-            "serie": ide.findtext("{%s}serie" % NS_NFE),
-            "data_emissao": ide.findtext("{%s}dhEmi" % NS_NFE),
-            "natureza_operacao": ide.findtext("{%s}natOp" % NS_NFE),
-            "tipo_operacao": ide.findtext("{%s}tpNF" % NS_NFE),
-
-            "emit_cnpj": emit.findtext("{%s}CNPJ" % NS_NFE),
-            "emit_nome": emit.findtext("{%s}xNome" % NS_NFE),
+            "numero": ide.findtext(f"{{{NS_NFE}}}nNF"),
+            "serie": ide.findtext(f"{{{NS_NFE}}}serie"),
+            "data_emissao": ide.findtext(f"{{{NS_NFE}}}dhEmi"),
+            "natureza_operacao": ide.findtext(f"{{{NS_NFE}}}natOp"),
+            "tipo_operacao": ide.findtext(f"{{{NS_NFE}}}tpNF"),
+            "emit_cnpj": emit.findtext(f"{{{NS_NFE}}}CNPJ"),
+            "emit_nome": emit.findtext(f"{{{NS_NFE}}}xNome"),
             "emit_uf": self._extrair_uf_emitente(emit),
-
-            "dest_cnpj": dest.findtext("{%s}CNPJ" % NS_NFE) or dest.findtext("{%s}CPF" % NS_NFE),
-            "dest_nome": dest.findtext("{%s}xNome" % NS_NFE),
-
-            "valor_produtos": icms_tot.findtext("{%s}vProd" % NS_NFE),
-            "valor_total": icms_tot.findtext("{%s}vNF" % NS_NFE),
-            "valor_icms": icms_tot.findtext("{%s}vICMS" % NS_NFE),
-
+            "dest_cnpj": dest.findtext(f"{{{NS_NFE}}}CNPJ") or dest.findtext(f"{{{NS_NFE}}}CPF"),
+            "dest_nome": dest.findtext(f"{{{NS_NFE}}}xNome"),
+            "valor_produtos": icms_tot.findtext(f"{{{NS_NFE}}}vProd"),
+            "valor_total": icms_tot.findtext(f"{{{NS_NFE}}}vNF"),
+            "valor_icms": icms_tot.findtext(f"{{{NS_NFE}}}vICMS"),
             "nsu": nsu,
         }
 
         # Buscar protocolo de autorização
-        prot = root.find(".//{%s}protNFe" % NS_NFE)
+        prot = root.find(f".//{{{NS_NFE}}}protNFe")
         if prot is not None:
-            inf_prot = prot.find("{%s}infProt" % NS_NFE)
+            inf_prot = prot.find(f"{{{NS_NFE}}}infProt")
             if inf_prot is not None:
-                dados["protocolo"] = inf_prot.findtext("{%s}nProt" % NS_NFE)
-                dados["status_sefaz"] = inf_prot.findtext("{%s}cStat" % NS_NFE)
-                dados["data_autorizacao"] = inf_prot.findtext("{%s}dhRecbto" % NS_NFE)
+                dados["protocolo"] = inf_prot.findtext(f"{{{NS_NFE}}}nProt")
+                dados["status_sefaz"] = inf_prot.findtext(f"{{{NS_NFE}}}cStat")
+                dados["data_autorizacao"] = inf_prot.findtext(f"{{{NS_NFE}}}dhRecbto")
 
         return DocumentoExtraido(
             id=chave or nsu,
@@ -408,14 +378,9 @@ class ExtratorNFe(ExtratorBase):
             data_documento=self._parse_data(dados.get("data_emissao")),
         )
 
-    def _extrair_resumo_nfe(
-        self,
-        root: ET.Element,
-        xml: str,
-        nsu: str
-    ) -> DocumentoExtraido:
+    def _extrair_resumo_nfe(self, root: Element, xml: str, nsu: str) -> DocumentoExtraido:
         """Extrai dados de resumo de NF-e."""
-        res = root if root.tag.endswith("resNFe") else root.find(".//{%s}resNFe" % NS_NFE)
+        res = root if root.tag.endswith("resNFe") else root.find(f".//{{{NS_NFE}}}resNFe")
 
         if res is None:
             return DocumentoExtraido(
@@ -425,17 +390,17 @@ class ExtratorNFe(ExtratorBase):
                 xml_original=xml,
             )
 
-        chave = res.findtext("{%s}chNFe" % NS_NFE)
+        chave = res.findtext(f"{{{NS_NFE}}}chNFe")
 
         dados = {
             "chave_acesso": chave,
-            "cnpj_emitente": res.findtext("{%s}CNPJ" % NS_NFE),
-            "nome_emitente": res.findtext("{%s}xNome" % NS_NFE),
-            "ie_emitente": res.findtext("{%s}IE" % NS_NFE),
-            "data_emissao": res.findtext("{%s}dhEmi" % NS_NFE),
-            "tipo_operacao": res.findtext("{%s}tpNF" % NS_NFE),
-            "valor_total": res.findtext("{%s}vNF" % NS_NFE),
-            "situacao": res.findtext("{%s}cSitNFe" % NS_NFE),
+            "cnpj_emitente": res.findtext(f"{{{NS_NFE}}}CNPJ"),
+            "nome_emitente": res.findtext(f"{{{NS_NFE}}}xNome"),
+            "ie_emitente": res.findtext(f"{{{NS_NFE}}}IE"),
+            "data_emissao": res.findtext(f"{{{NS_NFE}}}dhEmi"),
+            "tipo_operacao": res.findtext(f"{{{NS_NFE}}}tpNF"),
+            "valor_total": res.findtext(f"{{{NS_NFE}}}vNF"),
+            "situacao": res.findtext(f"{{{NS_NFE}}}cSitNFe"),
             "nsu": nsu,
         }
 
@@ -447,14 +412,9 @@ class ExtratorNFe(ExtratorBase):
             data_documento=self._parse_data(dados.get("data_emissao")),
         )
 
-    def _extrair_evento(
-        self,
-        root: ET.Element,
-        xml: str,
-        nsu: str
-    ) -> DocumentoExtraido:
+    def _extrair_evento(self, root: Element, xml: str, nsu: str) -> DocumentoExtraido:
         """Extrai dados de evento (cancelamento, carta correção, etc)."""
-        res = root if root.tag.endswith("resEvento") else root.find(".//{%s}resEvento" % NS_NFE)
+        res = root if root.tag.endswith("resEvento") else root.find(f".//{{{NS_NFE}}}resEvento")
 
         if res is None:
             return DocumentoExtraido(
@@ -464,16 +424,16 @@ class ExtratorNFe(ExtratorBase):
                 xml_original=xml,
             )
 
-        chave = res.findtext("{%s}chNFe" % NS_NFE)
-        tipo_evento = res.findtext("{%s}tpEvento" % NS_NFE)
+        chave = res.findtext(f"{{{NS_NFE}}}chNFe")
+        tipo_evento = res.findtext(f"{{{NS_NFE}}}tpEvento")
 
         dados = {
             "chave_acesso": chave,
             "tipo_evento": tipo_evento,
-            "descricao_evento": res.findtext("{%s}xEvento" % NS_NFE),
-            "numero_sequencial": res.findtext("{%s}nSeqEvento" % NS_NFE),
-            "cnpj_destino": res.findtext("{%s}CNPJ" % NS_NFE),
-            "data_evento": res.findtext("{%s}dhEvento" % NS_NFE),
+            "descricao_evento": res.findtext(f"{{{NS_NFE}}}xEvento"),
+            "numero_sequencial": res.findtext(f"{{{NS_NFE}}}nSeqEvento"),
+            "cnpj_destino": res.findtext(f"{{{NS_NFE}}}CNPJ"),
+            "data_evento": res.findtext(f"{{{NS_NFE}}}dhEvento"),
             "nsu": nsu,
         }
 
@@ -485,25 +445,25 @@ class ExtratorNFe(ExtratorBase):
             data_documento=self._parse_data(dados.get("data_evento")),
         )
 
-    def _extrair_uf_emitente(self, emit: ET.Element) -> Optional[str]:
+    def _extrair_uf_emitente(self, emit: Element) -> str | None:
         """Extrai UF do emitente."""
-        ender = emit.find("{%s}enderEmit" % NS_NFE)
+        ender = emit.find(f"{{{NS_NFE}}}enderEmit")
         if ender is not None:
-            return ender.findtext("{%s}UF" % NS_NFE)
+            return ender.findtext(f"{{{NS_NFE}}}UF")
         return None
 
-    def _parse_data(self, data_str: Optional[str]) -> Optional[datetime]:
+    def _parse_data(self, data_str: str | None) -> datetime | None:
         """Parseia string de data para datetime."""
         if not data_str:
             return None
         try:
             # Formato ISO com timezone
             return datetime.fromisoformat(data_str.replace("Z", "+00:00"))
-        except:
+        except Exception:
             try:
                 # Formato sem timezone
                 return datetime.strptime(data_str[:19], "%Y-%m-%dT%H:%M:%S")
-            except:
+            except Exception:
                 return None
 
     async def _obter_url_servico(self, uf: str, servico: str) -> str:
@@ -518,20 +478,14 @@ class ExtratorNFe(ExtratorBase):
             return url
 
         # Usar comutador para obter endpoint (com fallback para contingência)
-        url, usando_contingencia = await self.comutador.obter_endpoint(
-            uf, "nfe", nome_servico
-        )
+        url, usando_contingencia = await self.comutador.obter_endpoint(uf, "nfe", nome_servico)
 
         if usando_contingencia:
             logger.warning(f"Usando contingência para {uf}")
 
         return url
 
-    async def consultar_nfe(
-        self,
-        tenant_id: UUID,
-        chave: str
-    ) -> Optional[DocumentoExtraido]:
+    async def consultar_nfe(self, tenant_id: UUID, chave: str) -> DocumentoExtraido | None:
         """
         Consulta uma NF-e específica por chave de acesso.
 
@@ -579,35 +533,31 @@ class ExtratorNFe(ExtratorBase):
     </soap12:Body>
 </soap12:Envelope>"""
 
-    def _processar_resposta_consulta(
-        self,
-        xml_resposta: str,
-        chave: str
-    ) -> Optional[DocumentoExtraido]:
+    def _processar_resposta_consulta(self, xml_resposta: str, chave: str) -> DocumentoExtraido | None:
         """Processa resposta da consulta de NF-e."""
         try:
             root = ET.fromstring(xml_resposta.encode())
 
-            ret = root.find(".//{%s}retConsSitNFe" % NS_NFE)
+            ret = root.find(f".//{{{NS_NFE}}}retConsSitNFe")
             if ret is None:
                 return None
 
-            cStat = ret.findtext("{%s}cStat" % NS_NFE)
+            c_stat = ret.findtext(f"{{{NS_NFE}}}cStat")
 
             dados = {
                 "chave_acesso": chave,
-                "status_sefaz": cStat,
-                "motivo": ret.findtext("{%s}xMotivo" % NS_NFE),
+                "status_sefaz": c_stat,
+                "motivo": ret.findtext(f"{{{NS_NFE}}}xMotivo"),
             }
 
             # Se autorizada (100) ou cancelada (101, 135)
-            if cStat in ["100", "101", "135"]:
-                prot = ret.find("{%s}protNFe" % NS_NFE)
+            if c_stat in ["100", "101", "135"]:
+                prot = ret.find(f"{{{NS_NFE}}}protNFe")
                 if prot is not None:
-                    inf_prot = prot.find("{%s}infProt" % NS_NFE)
+                    inf_prot = prot.find(f"{{{NS_NFE}}}infProt")
                     if inf_prot is not None:
-                        dados["protocolo"] = inf_prot.findtext("{%s}nProt" % NS_NFE)
-                        dados["data_autorizacao"] = inf_prot.findtext("{%s}dhRecbto" % NS_NFE)
+                        dados["protocolo"] = inf_prot.findtext(f"{{{NS_NFE}}}nProt")
+                        dados["data_autorizacao"] = inf_prot.findtext(f"{{{NS_NFE}}}dhRecbto")
 
             return DocumentoExtraido(
                 id=chave,
@@ -623,11 +573,32 @@ class ExtratorNFe(ExtratorBase):
     def _cod_uf_para_sigla(self, cod: str) -> str:
         """Converte código IBGE para sigla da UF."""
         mapeamento = {
-            "11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA",
-            "16": "AP", "17": "TO", "21": "MA", "22": "PI", "23": "CE",
-            "24": "RN", "25": "PB", "26": "PE", "27": "AL", "28": "SE",
-            "29": "BA", "31": "MG", "32": "ES", "33": "RJ", "35": "SP",
-            "41": "PR", "42": "SC", "43": "RS", "50": "MS", "51": "MT",
-            "52": "GO", "53": "DF",
+            "11": "RO",
+            "12": "AC",
+            "13": "AM",
+            "14": "RR",
+            "15": "PA",
+            "16": "AP",
+            "17": "TO",
+            "21": "MA",
+            "22": "PI",
+            "23": "CE",
+            "24": "RN",
+            "25": "PB",
+            "26": "PE",
+            "27": "AL",
+            "28": "SE",
+            "29": "BA",
+            "31": "MG",
+            "32": "ES",
+            "33": "RJ",
+            "35": "SP",
+            "41": "PR",
+            "42": "SC",
+            "43": "RS",
+            "50": "MS",
+            "51": "MT",
+            "52": "GO",
+            "53": "DF",
         }
         return mapeamento.get(cod, "SP")

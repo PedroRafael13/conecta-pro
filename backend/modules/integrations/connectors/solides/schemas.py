@@ -6,17 +6,19 @@ Documentação API V1: https://app.solides.com/pt-BR/api/v1/
 Documentação API V3: https://apigw.solides.com.br/management/
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, List, Any, Dict
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from enum import StrEnum
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field
 
 # ==================== ENUMS ====================
 
-class SituacaoColaborador(str, Enum):
+
+class SituacaoColaborador(StrEnum):
     """Situação do colaborador no Sólides."""
+
     ATIVO = "ativo"
     INATIVO = "inativo"
     FERIAS = "ferias"
@@ -24,8 +26,9 @@ class SituacaoColaborador(str, Enum):
     DEMITIDO = "demitido"
 
 
-class TipoContrato(str, Enum):
+class TipoContrato(StrEnum):
     """Tipo de contrato de trabalho."""
+
     CLT = "CLT"
     PJ = "PJ"
     ESTAGIO = "Estagio"
@@ -34,8 +37,9 @@ class TipoContrato(str, Enum):
     JOVEM_APRENDIZ = "Jovem Aprendiz"
 
 
-class TipoOcorrencia(str, Enum):
+class TipoOcorrencia(StrEnum):
     """Tipos de ocorrência no Sólides."""
+
     ADVERTENCIA_VERBAL = "advertencia_verbal"
     ADVERTENCIA_ESCRITA = "advertencia_escrita"
     SUSPENSAO = "suspensao"
@@ -48,8 +52,9 @@ class TipoOcorrencia(str, Enum):
     OUTRO = "outro"
 
 
-class TipoAbsenteismo(str, Enum):
+class TipoAbsenteismo(StrEnum):
     """Tipos de absenteísmo."""
+
     FALTA = "falta"
     ATRASO = "atraso"
     SAIDA_ANTECIPADA = "saida_antecipada"
@@ -64,24 +69,27 @@ class TipoAbsenteismo(str, Enum):
     OUTRO = "outro"
 
 
-class PerfilDISC(str, Enum):
+class PerfilDISC(StrEnum):
     """Perfis DISC."""
+
     DOMINANCIA = "D"
     INFLUENCIA = "I"
     ESTABILIDADE = "S"
     CONFORMIDADE = "C"
 
 
-class StatusVaga(str, Enum):
+class StatusVaga(StrEnum):
     """Status da vaga."""
+
     ABERTA = "aberta"
     EM_ANDAMENTO = "em_andamento"
     CONGELADA = "congelada"
     ENCERRADA = "encerrada"
 
 
-class StatusCandidato(str, Enum):
+class StatusCandidato(StrEnum):
     """Status do candidato."""
+
     NOVO = "novo"
     EM_ANALISE = "em_analise"
     APROVADO = "aprovado"
@@ -91,579 +99,614 @@ class StatusCandidato(str, Enum):
 
 # ==================== ENDEREÇO ====================
 
+
 class SolidesEndereco(BaseModel):
     """Endereço no Sólides."""
-    logradouro: Optional[str] = None
-    numero: Optional[str] = None
-    complemento: Optional[str] = None
-    bairro: Optional[str] = None
-    cidade: Optional[str] = None
-    estado: Optional[str] = None
-    cep: Optional[str] = None
-    pais: Optional[str] = Field(default="Brasil")
+
+    logradouro: str | None = None
+    numero: str | None = None
+    complemento: str | None = None
+    bairro: str | None = None
+    cidade: str | None = None
+    estado: str | None = None
+    cep: str | None = None
+    pais: str | None = Field(default="Brasil")
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== UNIDADE ====================
 
+
 class SolidesUnidade(BaseModel):
     """Unidade/filial no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     nome: str
-    codigo: Optional[str] = None
-    cnpj: Optional[str] = None
-    endereco: Optional[SolidesEndereco] = None
-    telefone: Optional[str] = None
-    email: Optional[str] = None
+    codigo: str | None = None
+    cnpj: str | None = None
+    endereco: SolidesEndereco | None = None
+    telefone: str | None = None
+    email: str | None = None
     ativo: bool = True
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== DEPARTAMENTO ====================
 
+
 class SolidesDepartamento(BaseModel):
     """Departamento no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     nome: str
-    codigo: Optional[str] = None
-    departamento_pai_id: Optional[int] = None
-    gestor_id: Optional[int] = None
-    unidade_id: Optional[int] = None
+    codigo: str | None = None
+    departamento_pai_id: int | None = None
+    gestor_id: int | None = None
+    unidade_id: int | None = None
     ativo: bool = True
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== CARGO ====================
 
+
 class SolidesCargo(BaseModel):
     """Cargo no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     nome: str
-    codigo: Optional[str] = None
-    descricao: Optional[str] = None
-    departamento_id: Optional[int] = None
-    cbo_id: Optional[int] = None
-    cbo_codigo: Optional[str] = None
-    nivel: Optional[str] = None  # junior, pleno, senior, etc.
-    faixa_salarial_min: Optional[Decimal] = None
-    faixa_salarial_max: Optional[Decimal] = None
+    codigo: str | None = None
+    descricao: str | None = None
+    departamento_id: int | None = None
+    cbo_id: int | None = None
+    cbo_codigo: str | None = None
+    nivel: str | None = None  # junior, pleno, senior, etc.
+    faixa_salarial_min: Decimal | None = None
+    faixa_salarial_max: Decimal | None = None
     ativo: bool = True
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== CBO ====================
 
+
 class SolidesCBO(BaseModel):
     """Código Brasileiro de Ocupações."""
-    id: Optional[int] = None
+
+    id: int | None = None
     codigo: str
     nome: str
-    descricao: Optional[str] = None
+    descricao: str | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== COLABORADOR ====================
 
+
 class SolidesColaborador(BaseModel):
     """Colaborador no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     nome: str
-    email: Optional[str] = None
-    cpf: Optional[str] = None
-    rg: Optional[str] = None
-    data_nascimento: Optional[date] = None
-    sexo: Optional[str] = None  # M, F, O
-    estado_civil: Optional[str] = None
-    telefone: Optional[str] = None
-    celular: Optional[str] = None
+    email: str | None = None
+    cpf: str | None = None
+    rg: str | None = None
+    data_nascimento: date | None = None
+    sexo: str | None = None  # M, F, O
+    estado_civil: str | None = None
+    telefone: str | None = None
+    celular: str | None = None
 
     # Endereço
-    endereco: Optional[SolidesEndereco] = None
+    endereco: SolidesEndereco | None = None
 
     # Dados profissionais
-    matricula: Optional[str] = None
-    cargo_id: Optional[int] = None
-    cargo: Optional[SolidesCargo] = None
-    departamento_id: Optional[int] = None
-    departamento: Optional[SolidesDepartamento] = None
-    unidade_id: Optional[int] = None
-    unidade: Optional[SolidesUnidade] = None
-    gestor_id: Optional[int] = None
-    gestor_nome: Optional[str] = None
+    matricula: str | None = None
+    cargo_id: int | None = None
+    cargo: SolidesCargo | None = None
+    departamento_id: int | None = None
+    departamento: SolidesDepartamento | None = None
+    unidade_id: int | None = None
+    unidade: SolidesUnidade | None = None
+    gestor_id: int | None = None
+    gestor_nome: str | None = None
 
     # Contrato
-    data_admissao: Optional[date] = None
-    data_demissao: Optional[date] = None
-    tipo_contrato: Optional[str] = None  # CLT, PJ, Estagio, etc.
-    regime_trabalho: Optional[str] = None  # Presencial, Remoto, Hibrido
-    jornada_trabalho: Optional[str] = None
-    carga_horaria_semanal: Optional[int] = None
-    salario: Optional[Decimal] = None
+    data_admissao: date | None = None
+    data_demissao: date | None = None
+    tipo_contrato: str | None = None  # CLT, PJ, Estagio, etc.
+    regime_trabalho: str | None = None  # Presencial, Remoto, Hibrido
+    jornada_trabalho: str | None = None
+    carga_horaria_semanal: int | None = None
+    salario: Decimal | None = None
 
     # Dados DP
-    ctps_numero: Optional[str] = None
-    ctps_serie: Optional[str] = None
-    ctps_uf: Optional[str] = None
-    pis: Optional[str] = None
-    titulo_eleitor: Optional[str] = None
-    certificado_reservista: Optional[str] = None
+    ctps_numero: str | None = None
+    ctps_serie: str | None = None
+    ctps_uf: str | None = None
+    pis: str | None = None
+    titulo_eleitor: str | None = None
+    certificado_reservista: str | None = None
 
     # Dependentes
-    dependentes: Optional[List[Dict[str, Any]]] = None
+    dependentes: list[dict[str, Any]] | None = None
 
     # Status
-    situacao: Optional[str] = None  # ativo, inativo, ferias, afastado, demitido
+    situacao: str | None = None  # ativo, inativo, ferias, afastado, demitido
 
     # Perfil comportamental
-    perfil_disc: Optional[Dict[str, Any]] = None  # Resultados DISC
-    perfil_profiler: Optional[Dict[str, Any]] = None  # Resultados Profiler
+    perfil_disc: dict[str, Any] | None = None  # Resultados DISC
+    perfil_profiler: dict[str, Any] | None = None  # Resultados Profiler
 
     # Metadados
-    foto_url: Optional[str] = None
-    dados_adicionais: Optional[Dict[str, Any]] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    foto_url: str | None = None
+    dados_adicionais: dict[str, Any] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesColaboradorCreate(BaseModel):
     """Schema para criar colaborador no Sólides."""
+
     nome: str = Field(..., min_length=2, max_length=200)
     email: str = Field(..., max_length=200)
-    cpf: Optional[str] = None
-    data_nascimento: Optional[date] = None
-    telefone: Optional[str] = None
-    celular: Optional[str] = None
-    cargo_id: Optional[int] = None
-    departamento_id: Optional[int] = None
-    unidade_id: Optional[int] = None
-    data_admissao: Optional[date] = None
+    cpf: str | None = None
+    data_nascimento: date | None = None
+    telefone: str | None = None
+    celular: str | None = None
+    cargo_id: int | None = None
+    departamento_id: int | None = None
+    unidade_id: int | None = None
+    data_admissao: date | None = None
     tipo_contrato: str = Field(default="CLT")
-    salario: Optional[Decimal] = None
+    salario: Decimal | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesColaboradorUpdate(BaseModel):
     """Schema para atualizar colaborador no Sólides."""
-    nome: Optional[str] = Field(None, min_length=2, max_length=200)
-    email: Optional[str] = Field(None, max_length=200)
-    telefone: Optional[str] = None
-    celular: Optional[str] = None
-    cargo_id: Optional[int] = None
-    departamento_id: Optional[int] = None
-    unidade_id: Optional[int] = None
-    situacao: Optional[str] = None
-    salario: Optional[Decimal] = None
-    data_demissao: Optional[date] = None
-    motivo_demissao: Optional[str] = None
+
+    nome: str | None = Field(None, min_length=2, max_length=200)
+    email: str | None = Field(None, max_length=200)
+    telefone: str | None = None
+    celular: str | None = None
+    cargo_id: int | None = None
+    departamento_id: int | None = None
+    unidade_id: int | None = None
+    situacao: str | None = None
+    salario: Decimal | None = None
+    data_demissao: date | None = None
+    motivo_demissao: str | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== OCORRÊNCIAS ====================
 
+
 class SolidesOcorrencia(BaseModel):
     """Ocorrência de colaborador no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     colaborador_id: int
-    colaborador_nome: Optional[str] = None
+    colaborador_nome: str | None = None
     tipo: str  # advertencia_verbal, advertencia_escrita, elogio, promocao, etc.
     descricao: str
     data: date
-    data_vigencia: Optional[date] = None  # Para suspensões
+    data_vigencia: date | None = None  # Para suspensões
 
     # Detalhes específicos por tipo
-    duracao_dias: Optional[int] = None  # Para suspensões
-    valor_aumento: Optional[Decimal] = None  # Para promoções/méritos
-    percentual_aumento: Optional[Decimal] = None
-    novo_cargo_id: Optional[int] = None  # Para promoções
-    novo_cargo_nome: Optional[str] = None
+    duracao_dias: int | None = None  # Para suspensões
+    valor_aumento: Decimal | None = None  # Para promoções/méritos
+    percentual_aumento: Decimal | None = None
+    novo_cargo_id: int | None = None  # Para promoções
+    novo_cargo_nome: str | None = None
 
     # Responsável
-    registrado_por_id: Optional[int] = None
-    registrado_por_nome: Optional[str] = None
+    registrado_por_id: int | None = None
+    registrado_por_nome: str | None = None
 
     # Arquivos anexos
-    anexos: Optional[List[Dict[str, str]]] = None  # [{nome, url}]
+    anexos: list[dict[str, str]] | None = None  # [{nome, url}]
 
     # Metadados
-    observacoes: Optional[str] = None
-    dados_adicionais: Optional[Dict[str, Any]] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    observacoes: str | None = None
+    dados_adicionais: dict[str, Any] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesOcorrenciaCreate(BaseModel):
     """Schema para criar ocorrência no Sólides."""
+
     colaborador_id: int
     tipo: str
     descricao: str
     data: date
-    data_vigencia: Optional[date] = None
-    duracao_dias: Optional[int] = None
-    valor_aumento: Optional[Decimal] = None
-    percentual_aumento: Optional[Decimal] = None
-    novo_cargo_id: Optional[int] = None
-    observacoes: Optional[str] = None
+    data_vigencia: date | None = None
+    duracao_dias: int | None = None
+    valor_aumento: Decimal | None = None
+    percentual_aumento: Decimal | None = None
+    novo_cargo_id: int | None = None
+    observacoes: str | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== ABSENTEÍSMOS ====================
 
+
 class SolidesAbsenteismo(BaseModel):
     """Absenteísmo (falta, atraso, afastamento) no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     colaborador_id: int
-    colaborador_nome: Optional[str] = None
+    colaborador_nome: str | None = None
     tipo: str  # falta, atraso, saida_antecipada, atestado, licenca, etc.
-    motivo: Optional[str] = None
+    motivo: str | None = None
     data_inicio: date
-    data_fim: Optional[date] = None
-    horas: Optional[Decimal] = None  # Para atrasos/saídas antecipadas
-    minutos_atraso: Optional[int] = None
+    data_fim: date | None = None
+    horas: Decimal | None = None  # Para atrasos/saídas antecipadas
+    minutos_atraso: int | None = None
 
     # Justificativa
     justificado: bool = False
-    documento_anexo: Optional[str] = None  # URL do atestado/documento
-    cid: Optional[str] = None  # Código CID (para atestados médicos)
+    documento_anexo: str | None = None  # URL do atestado/documento
+    cid: str | None = None  # Código CID (para atestados médicos)
 
     # Impacto
     desconto_em_folha: bool = True
-    dias_descontados: Optional[int] = None
+    dias_descontados: int | None = None
 
     # INSS (para afastamentos longos)
-    numero_beneficio_inss: Optional[str] = None
-    data_inicio_inss: Optional[date] = None
-    data_fim_inss: Optional[date] = None
+    numero_beneficio_inss: str | None = None
+    data_inicio_inss: date | None = None
+    data_fim_inss: date | None = None
 
     # Responsável
-    registrado_por_id: Optional[int] = None
-    registrado_por_nome: Optional[str] = None
+    registrado_por_id: int | None = None
+    registrado_por_nome: str | None = None
 
     # Metadados
-    observacoes: Optional[str] = None
-    dados_adicionais: Optional[Dict[str, Any]] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    observacoes: str | None = None
+    dados_adicionais: dict[str, Any] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesAbsenteismoCreate(BaseModel):
     """Schema para criar absenteísmo no Sólides."""
+
     colaborador_id: int
     tipo: str
-    motivo: Optional[str] = None
+    motivo: str | None = None
     data_inicio: date
-    data_fim: Optional[date] = None
-    horas: Optional[Decimal] = None
+    data_fim: date | None = None
+    horas: Decimal | None = None
     justificado: bool = False
-    documento_anexo: Optional[str] = None
-    cid: Optional[str] = None
+    documento_anexo: str | None = None
+    cid: str | None = None
     desconto_em_folha: bool = True
-    observacoes: Optional[str] = None
+    observacoes: str | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== PASSAPORTE COMPORTAMENTAL ====================
 
+
 class SolidesPerfilDISC(BaseModel):
     """Perfil DISC detalhado."""
+
     dominancia: Decimal = Field(alias="D")
     influencia: Decimal = Field(alias="I")
     estabilidade: Decimal = Field(alias="S")
     conformidade: Decimal = Field(alias="C")
     perfil_predominante: str
-    perfil_secundario: Optional[str] = None
+    perfil_secundario: str | None = None
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class SolidesCompetencia(BaseModel):
     """Competência avaliada."""
+
     nome: str
     nivel: Decimal  # 0-100
-    descricao: Optional[str] = None
+    descricao: str | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesPassaporte(BaseModel):
     """Passaporte comportamental do Sólides (API V3)."""
+
     colaborador_id: int
-    colaborador_nome: Optional[str] = None
+    colaborador_nome: str | None = None
 
     # Perfil DISC
-    perfil_disc: Optional[SolidesPerfilDISC] = None
-    perfil_predominante: Optional[str] = None  # D, I, S, C ou combinações
-    perfis_secundarios: Optional[List[str]] = None
+    perfil_disc: SolidesPerfilDISC | None = None
+    perfil_predominante: str | None = None  # D, I, S, C ou combinações
+    perfis_secundarios: list[str] | None = None
 
     # Intensidade
-    intensidade: Optional[Decimal] = None  # 0-100
+    intensidade: Decimal | None = None  # 0-100
 
     # Competências mapeadas
-    competencias: Optional[List[SolidesCompetencia]] = None
+    competencias: list[SolidesCompetencia] | None = None
 
     # Pontos fortes e desenvolvimento
-    pontos_fortes: Optional[List[str]] = None
-    pontos_desenvolvimento: Optional[List[str]] = None
+    pontos_fortes: list[str] | None = None
+    pontos_desenvolvimento: list[str] | None = None
 
     # Estilo de trabalho
-    estilo_comunicacao: Optional[str] = None
-    estilo_lideranca: Optional[str] = None
-    ambiente_ideal: Optional[str] = None
-    motivadores: Optional[List[str]] = None
-    desmotivadores: Optional[List[str]] = None
+    estilo_comunicacao: str | None = None
+    estilo_lideranca: str | None = None
+    ambiente_ideal: str | None = None
+    motivadores: list[str] | None = None
+    desmotivadores: list[str] | None = None
 
     # Compatibilidade
-    compatibilidade_cargo: Optional[Decimal] = None  # 0-100
-    compatibilidade_equipe: Optional[Decimal] = None
+    compatibilidade_cargo: Decimal | None = None  # 0-100
+    compatibilidade_equipe: Decimal | None = None
 
     # Relatório completo
-    relatorio_url: Optional[str] = None
-    relatorio_pdf_url: Optional[str] = None
+    relatorio_url: str | None = None
+    relatorio_pdf_url: str | None = None
 
     # Metadados
-    data_avaliacao: Optional[datetime] = None
-    versao_instrumento: Optional[str] = None
-    dados_adicionais: Optional[Dict[str, Any]] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    data_avaliacao: datetime | None = None
+    versao_instrumento: str | None = None
+    dados_adicionais: dict[str, Any] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== RECRUTAMENTO ====================
 
+
 class SolidesVaga(BaseModel):
     """Vaga de emprego no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     titulo: str
-    codigo: Optional[str] = None
-    descricao: Optional[str] = None
-    requisitos: Optional[str] = None
-    beneficios: Optional[str] = None
+    codigo: str | None = None
+    descricao: str | None = None
+    requisitos: str | None = None
+    beneficios: str | None = None
 
     # Localização
-    cargo_id: Optional[int] = None
-    departamento_id: Optional[int] = None
-    unidade_id: Optional[int] = None
-    local_trabalho: Optional[str] = None
-    regime_trabalho: Optional[str] = None
+    cargo_id: int | None = None
+    departamento_id: int | None = None
+    unidade_id: int | None = None
+    local_trabalho: str | None = None
+    regime_trabalho: str | None = None
 
     # Faixa salarial
-    salario_min: Optional[Decimal] = None
-    salario_max: Optional[Decimal] = None
+    salario_min: Decimal | None = None
+    salario_max: Decimal | None = None
     esconder_salario: bool = True
 
     # Status
-    status: Optional[str] = None  # aberta, em_andamento, congelada, encerrada
+    status: str | None = None  # aberta, em_andamento, congelada, encerrada
     quantidade_vagas: int = 1
     vagas_preenchidas: int = 0
 
     # Datas
-    data_abertura: Optional[date] = None
-    data_encerramento: Optional[date] = None
+    data_abertura: date | None = None
+    data_encerramento: date | None = None
 
     # Responsável
-    recrutador_id: Optional[int] = None
-    gestor_id: Optional[int] = None
+    recrutador_id: int | None = None
+    gestor_id: int | None = None
 
     # Metadados
-    url_inscricao: Optional[str] = None
-    tags: Optional[List[str]] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    url_inscricao: str | None = None
+    tags: list[str] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesCandidato(BaseModel):
     """Candidato no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     nome: str
-    email: Optional[str] = None
-    cpf: Optional[str] = None
-    telefone: Optional[str] = None
-    celular: Optional[str] = None
+    email: str | None = None
+    cpf: str | None = None
+    telefone: str | None = None
+    celular: str | None = None
 
     # Dados pessoais
-    data_nascimento: Optional[date] = None
-    sexo: Optional[str] = None
-    estado_civil: Optional[str] = None
-    endereco: Optional[SolidesEndereco] = None
+    data_nascimento: date | None = None
+    sexo: str | None = None
+    estado_civil: str | None = None
+    endereco: SolidesEndereco | None = None
 
     # Dados profissionais
-    cargo_pretendido: Optional[str] = None
-    pretensao_salarial: Optional[Decimal] = None
-    disponibilidade: Optional[str] = None
+    cargo_pretendido: str | None = None
+    pretensao_salarial: Decimal | None = None
+    disponibilidade: str | None = None
 
     # Currículo
-    curriculo_url: Optional[str] = None
-    linkedin_url: Optional[str] = None
-    portfolio_url: Optional[str] = None
+    curriculo_url: str | None = None
+    linkedin_url: str | None = None
+    portfolio_url: str | None = None
 
     # Formação
-    formacao: Optional[List[Dict[str, Any]]] = None  # [{instituicao, curso, nivel, conclusao}]
-    experiencias: Optional[List[Dict[str, Any]]] = None  # [{empresa, cargo, periodo, descricao}]
-    habilidades: Optional[List[str]] = None
-    idiomas: Optional[List[Dict[str, Any]]] = None  # [{idioma, nivel}]
+    formacao: list[dict[str, Any]] | None = None  # [{instituicao, curso, nivel, conclusao}]
+    experiencias: list[dict[str, Any]] | None = None  # [{empresa, cargo, periodo, descricao}]
+    habilidades: list[str] | None = None
+    idiomas: list[dict[str, Any]] | None = None  # [{idioma, nivel}]
 
     # Status
-    status: Optional[str] = None  # novo, em_analise, aprovado, reprovado, contratado
+    status: str | None = None  # novo, em_analise, aprovado, reprovado, contratado
 
     # Perfil comportamental (se aplicado)
-    perfil_disc: Optional[Dict[str, Any]] = None
-    perfil_profiler: Optional[Dict[str, Any]] = None
+    perfil_disc: dict[str, Any] | None = None
+    perfil_profiler: dict[str, Any] | None = None
 
     # Metadados
-    fonte: Optional[str] = None  # linkedin, indeed, indicacao, site
-    tags: Optional[List[str]] = None
-    notas: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    fonte: str | None = None  # linkedin, indeed, indicacao, site
+    tags: list[str] | None = None
+    notas: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesInscricao(BaseModel):
     """Inscrição de candidato em vaga."""
-    id: Optional[int] = None
+
+    id: int | None = None
     vaga_id: int
     candidato_id: int
-    vaga: Optional[SolidesVaga] = None
-    candidato: Optional[SolidesCandidato] = None
+    vaga: SolidesVaga | None = None
+    candidato: SolidesCandidato | None = None
 
     # Status no processo
-    etapa: Optional[str] = None  # triagem, entrevista_rh, entrevista_tecnica, proposta
-    status: Optional[str] = None  # em_andamento, aprovado, reprovado, desistencia
+    etapa: str | None = None  # triagem, entrevista_rh, entrevista_tecnica, proposta
+    status: str | None = None  # em_andamento, aprovado, reprovado, desistencia
 
     # Avaliações
-    nota_triagem: Optional[Decimal] = None
-    nota_entrevista: Optional[Decimal] = None
-    nota_tecnica: Optional[Decimal] = None
-    nota_final: Optional[Decimal] = None
+    nota_triagem: Decimal | None = None
+    nota_entrevista: Decimal | None = None
+    nota_tecnica: Decimal | None = None
+    nota_final: Decimal | None = None
 
     # Histórico
-    historico_etapas: Optional[List[Dict[str, Any]]] = None
-    feedback: Optional[str] = None
+    historico_etapas: list[dict[str, Any]] | None = None
+    feedback: str | None = None
 
     # Datas
-    data_inscricao: Optional[datetime] = None
-    data_ultima_etapa: Optional[datetime] = None
-    data_conclusao: Optional[datetime] = None
+    data_inscricao: datetime | None = None
+    data_ultima_etapa: datetime | None = None
+    data_conclusao: datetime | None = None
 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== AVALIAÇÕES ====================
 
+
 class SolidesAvaliacao(BaseModel):
     """Avaliação de desempenho no Sólides."""
-    id: Optional[int] = None
+
+    id: int | None = None
     titulo: str
-    tipo: Optional[str] = None  # autoavaliacao, gestor, 360, pares
+    tipo: str | None = None  # autoavaliacao, gestor, 360, pares
 
     # Período
-    ciclo: Optional[str] = None
-    data_inicio: Optional[date] = None
-    data_fim: Optional[date] = None
+    ciclo: str | None = None
+    data_inicio: date | None = None
+    data_fim: date | None = None
 
     # Avaliado
-    colaborador_id: Optional[int] = None
-    colaborador_nome: Optional[str] = None
+    colaborador_id: int | None = None
+    colaborador_nome: str | None = None
 
     # Avaliador
-    avaliador_id: Optional[int] = None
-    avaliador_nome: Optional[str] = None
+    avaliador_id: int | None = None
+    avaliador_nome: str | None = None
 
     # Resultados
-    status: Optional[str] = None  # pendente, em_andamento, concluida
-    nota_final: Optional[Decimal] = None
-    competencias: Optional[List[Dict[str, Any]]] = None  # [{competencia, nota, peso}]
-    metas: Optional[List[Dict[str, Any]]] = None  # [{meta, resultado, percentual}]
-    pontos_fortes: Optional[str] = None
-    pontos_desenvolvimento: Optional[str] = None
+    status: str | None = None  # pendente, em_andamento, concluida
+    nota_final: Decimal | None = None
+    competencias: list[dict[str, Any]] | None = None  # [{competencia, nota, peso}]
+    metas: list[dict[str, Any]] | None = None  # [{meta, resultado, percentual}]
+    pontos_fortes: str | None = None
+    pontos_desenvolvimento: str | None = None
 
     # Feedback
-    feedback_gestor: Optional[str] = None
-    feedback_colaborador: Optional[str] = None
-    plano_desenvolvimento: Optional[str] = None
+    feedback_gestor: str | None = None
+    feedback_colaborador: str | None = None
+    plano_desenvolvimento: str | None = None
 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== PESQUISA DE CLIMA ====================
 
+
 class SolidesPesquisaClima(BaseModel):
     """Pesquisa de clima organizacional."""
-    id: Optional[int] = None
+
+    id: int | None = None
     titulo: str
-    descricao: Optional[str] = None
+    descricao: str | None = None
 
     # Período
-    data_inicio: Optional[date] = None
-    data_fim: Optional[date] = None
+    data_inicio: date | None = None
+    data_fim: date | None = None
 
     # Configuração
     anonima: bool = True
-    departamentos: Optional[List[int]] = None  # IDs dos departamentos
+    departamentos: list[int] | None = None  # IDs dos departamentos
 
     # Status
-    status: Optional[str] = None  # rascunho, ativa, encerrada
+    status: str | None = None  # rascunho, ativa, encerrada
     total_convidados: int = 0
     total_respostas: int = 0
-    taxa_adesao: Optional[Decimal] = None
+    taxa_adesao: Decimal | None = None
 
     # Resultados agregados
-    nota_geral: Optional[Decimal] = None
-    enps: Optional[int] = None  # Employee Net Promoter Score
-    dimensoes: Optional[List[Dict[str, Any]]] = None  # [{dimensao, nota, respostas}]
+    nota_geral: Decimal | None = None
+    enps: int | None = None  # Employee Net Promoter Score
+    dimensoes: list[dict[str, Any]] | None = None  # [{dimensao, nota, respostas}]
 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== WEBHOOKS ====================
 
+
 class SolidesWebhookEvent(BaseModel):
     """Evento de webhook do Sólides."""
+
     event: str  # novo_colaborador, edicao_colaborador, demissao, etc.
     timestamp: datetime
-    data: Dict[str, Any]
-    empresa_id: Optional[int] = None
-    versao: Optional[str] = None
+    data: dict[str, Any]
+    empresa_id: int | None = None
+    versao: str | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
-class SolidesWebhookEventType(str, Enum):
+class SolidesWebhookEventType(StrEnum):
     """Tipos de eventos de webhook suportados."""
+
     NOVO_COLABORADOR = "novo_colaborador"
     EDICAO_COLABORADOR = "edicao_colaborador"
     DEMISSAO_COLABORADOR = "demissao_colaborador"
@@ -677,51 +720,57 @@ class SolidesWebhookEventType(str, Enum):
 
 # ==================== RESPONSES ====================
 
+
 class SolidesPaginatedResponse(BaseModel):
     """Resposta paginada do Sólides."""
-    data: List[Any] = Field(default_factory=list)
-    total: Optional[int] = None
-    page: Optional[int] = None
-    per_page: Optional[int] = None
-    total_pages: Optional[int] = None
-    current_page: Optional[int] = None
-    last_page: Optional[int] = None
+
+    data: list[Any] = Field(default_factory=list)
+    total: int | None = None
+    page: int | None = None
+    per_page: int | None = None
+    total_pages: int | None = None
+    current_page: int | None = None
+    last_page: int | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesSingleResponse(BaseModel):
     """Resposta de item único do Sólides."""
-    data: Optional[Dict[str, Any]] = None
+
+    data: dict[str, Any] | None = None
     success: bool = True
-    message: Optional[str] = None
+    message: str | None = None
 
     model_config = ConfigDict(extra="allow")
 
 
 class SolidesErrorResponse(BaseModel):
     """Resposta de erro do Sólides."""
-    error: Optional[str] = None
-    message: Optional[str] = None
-    code: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
-    errors: Optional[Dict[str, List[str]]] = None  # Erros de validação
+
+    error: str | None = None
+    message: str | None = None
+    code: str | None = None
+    details: dict[str, Any] | None = None
+    errors: dict[str, list[str]] | None = None  # Erros de validação
 
     model_config = ConfigDict(extra="allow")
 
 
 # ==================== SYNC STATUS ====================
 
+
 class SolidesSyncStatus(BaseModel):
     """Status de sincronização com Sólides."""
+
     connected: bool
-    last_sync_at: Optional[datetime] = None
-    last_full_sync_at: Optional[datetime] = None
+    last_sync_at: datetime | None = None
+    last_full_sync_at: datetime | None = None
     total_colaboradores: int = 0
     total_departamentos: int = 0
     total_cargos: int = 0
     pending_conflicts: int = 0
-    last_error: Optional[str] = None
+    last_error: str | None = None
     api_version: str = "v1"
 
     model_config = ConfigDict(extra="allow")

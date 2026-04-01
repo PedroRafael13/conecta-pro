@@ -8,7 +8,6 @@ import logging
 import re
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional
 
 from croniter import croniter
 from sqlalchemy import Integer, func, or_
@@ -49,18 +48,18 @@ class SchedulerService:
         handler: str,
         task_type: TaskType = TaskType.CRON,
         category: TaskCategory = TaskCategory.CUSTOM,
-        cron_expression: Optional[str] = None,
-        interval_seconds: Optional[int] = None,
-        scheduled_at: Optional[datetime] = None,
-        handler_module: Optional[str] = None,
-        handler_args: Optional[dict] = None,
-        handler_kwargs: Optional[dict] = None,
+        cron_expression: str | None = None,
+        interval_seconds: int | None = None,
+        scheduled_at: datetime | None = None,
+        handler_module: str | None = None,
+        handler_args: dict | None = None,
+        handler_kwargs: dict | None = None,
         timeout_seconds: int = 3600,
         max_retries: int = 3,
         priority: int = 5,
         queue_name: str = "default",
-        tags: Optional[list[str]] = None,
-        created_by: Optional[uuid.UUID] = None,
+        tags: list[str] | None = None,
+        created_by: uuid.UUID | None = None,
         **kwargs,
     ) -> ScheduledTask:
         """Cria uma nova tarefa agendada."""
@@ -109,9 +108,9 @@ class SchedulerService:
         self,
         task_id: uuid.UUID,
         tenant_id: uuid.UUID,
-        updated_by: Optional[uuid.UUID] = None,
+        updated_by: uuid.UUID | None = None,
         **updates,
-    ) -> Optional[ScheduledTask]:
+    ) -> ScheduledTask | None:
         """Atualiza uma tarefa."""
         task = self.get_task(task_id, tenant_id)
         if not task:
@@ -141,7 +140,7 @@ class SchedulerService:
         self,
         task_id: uuid.UUID,
         tenant_id: uuid.UUID,
-    ) -> Optional[ScheduledTask]:
+    ) -> ScheduledTask | None:
         """Busca uma tarefa por ID."""
         return (
             self.db.query(ScheduledTask)
@@ -155,12 +154,12 @@ class SchedulerService:
     def list_tasks(
         self,
         tenant_id: uuid.UUID,
-        status: Optional[TaskStatus] = None,
-        category: Optional[TaskCategory] = None,
-        task_type: Optional[TaskType] = None,
-        queue_name: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        search: Optional[str] = None,
+        status: TaskStatus | None = None,
+        category: TaskCategory | None = None,
+        task_type: TaskType | None = None,
+        queue_name: str | None = None,
+        tags: list[str] | None = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 50,
     ) -> tuple[list[ScheduledTask], int]:
@@ -197,7 +196,7 @@ class SchedulerService:
         self,
         task_id: uuid.UUID,
         tenant_id: uuid.UUID,
-    ) -> Optional[ScheduledTask]:
+    ) -> ScheduledTask | None:
         """Ativa uma tarefa."""
         task = self.get_task(task_id, tenant_id)
         if not task:
@@ -214,7 +213,7 @@ class SchedulerService:
         self,
         task_id: uuid.UUID,
         tenant_id: uuid.UUID,
-    ) -> Optional[ScheduledTask]:
+    ) -> ScheduledTask | None:
         """Pausa uma tarefa."""
         task = self.get_task(task_id, tenant_id)
         if not task:
@@ -253,7 +252,7 @@ class SchedulerService:
         self,
         task: ScheduledTask,
         trigger_type: str = "scheduler",
-        triggered_by: Optional[uuid.UUID] = None,
+        triggered_by: uuid.UUID | None = None,
     ) -> TaskExecution:
         """Cria uma nova execução de tarefa."""
         # Gerar run_id único
@@ -261,9 +260,7 @@ class SchedulerService:
 
         # Buscar próximo número de execução
         execution_number = (
-            self.db.query(func.max(TaskExecution.execution_number))
-            .filter(TaskExecution.task_id == task.id)
-            .scalar()
+            self.db.query(func.max(TaskExecution.execution_number)).filter(TaskExecution.task_id == task.id).scalar()
             or 0
         ) + 1
 
@@ -292,7 +289,7 @@ class SchedulerService:
         self,
         execution_id: uuid.UUID,
         tenant_id: uuid.UUID,
-    ) -> Optional[TaskExecution]:
+    ) -> TaskExecution | None:
         """Busca uma execução."""
         return (
             self.db.query(TaskExecution)
@@ -306,10 +303,10 @@ class SchedulerService:
     def list_executions(
         self,
         tenant_id: uuid.UUID,
-        task_id: Optional[uuid.UUID] = None,
-        status: Optional[ExecutionStatus] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        task_id: uuid.UUID | None = None,
+        status: ExecutionStatus | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         skip: int = 0,
         limit: int = 50,
     ) -> tuple[list[TaskExecution], int]:
@@ -336,10 +333,10 @@ class SchedulerService:
         self,
         execution_id: uuid.UUID,
         status: ExecutionStatus,
-        result: Optional[dict] = None,
-        error_message: Optional[str] = None,
-        error_traceback: Optional[str] = None,
-    ) -> Optional[TaskExecution]:
+        result: dict | None = None,
+        error_message: str | None = None,
+        error_traceback: str | None = None,
+    ) -> TaskExecution | None:
         """Atualiza o status de uma execução."""
         execution = self.db.query(TaskExecution).filter(TaskExecution.id == execution_id).first()
         if not execution:
@@ -352,9 +349,7 @@ class SchedulerService:
         elif status in [ExecutionStatus.SUCCESS, ExecutionStatus.FAILED, ExecutionStatus.TIMEOUT]:
             execution.completed_at = datetime.utcnow()
             if execution.started_at:
-                execution.duration_seconds = (
-                    execution.completed_at - execution.started_at
-                ).total_seconds()
+                execution.duration_seconds = (execution.completed_at - execution.started_at).total_seconds()
 
         if result:
             execution.output_result = result
@@ -380,9 +375,7 @@ class SchedulerService:
                 task.last_duration_seconds = execution.duration_seconds
                 # Atualizar média
                 if task.avg_duration_seconds:
-                    task.avg_duration_seconds = (
-                        task.avg_duration_seconds * 0.9 + execution.duration_seconds * 0.1
-                    )
+                    task.avg_duration_seconds = task.avg_duration_seconds * 0.9 + execution.duration_seconds * 0.1
                 else:
                     task.avg_duration_seconds = execution.duration_seconds
 
@@ -397,7 +390,7 @@ class SchedulerService:
         execution_id: uuid.UUID,
         level: str,
         message: str,
-        context: Optional[dict] = None,
+        context: dict | None = None,
     ) -> TaskExecutionLog:
         """Adiciona log à execução."""
         log = TaskExecutionLog(
@@ -419,11 +412,11 @@ class SchedulerService:
         payload: dict,
         queue_name: str = "default",
         priority: QueuePriority = QueuePriority.NORMAL,
-        scheduled_at: Optional[datetime] = None,
-        deduplication_id: Optional[str] = None,
-        task_id: Optional[uuid.UUID] = None,
-        execution_id: Optional[uuid.UUID] = None,
-        created_by: Optional[uuid.UUID] = None,
+        scheduled_at: datetime | None = None,
+        deduplication_id: str | None = None,
+        task_id: uuid.UUID | None = None,
+        execution_id: uuid.UUID | None = None,
+        created_by: uuid.UUID | None = None,
         **kwargs,
     ) -> TaskQueue:
         """Adiciona item à fila."""
@@ -472,7 +465,7 @@ class SchedulerService:
     def dequeue(
         self,
         queue_name: str = "default",
-        worker_id: Optional[uuid.UUID] = None,
+        worker_id: uuid.UUID | None = None,
         limit: int = 1,
     ) -> list[TaskQueue]:
         """Busca itens da fila para processar."""
@@ -507,9 +500,9 @@ class SchedulerService:
     def complete_queue_item(
         self,
         item_id: uuid.UUID,
-        result: Optional[dict] = None,
+        result: dict | None = None,
         success: bool = True,
-    ) -> Optional[TaskQueue]:
+    ) -> TaskQueue | None:
         """Completa um item da fila."""
         item = self.db.query(TaskQueue).filter(TaskQueue.id == item_id).first()
         if not item:
@@ -518,9 +511,7 @@ class SchedulerService:
         item.status = QueueStatus.COMPLETED if success else QueueStatus.FAILED
         item.completed_at = datetime.utcnow()
         if item.started_at:
-            item.processing_time_ms = int(
-                (item.completed_at - item.started_at).total_seconds() * 1000
-            )
+            item.processing_time_ms = int((item.completed_at - item.started_at).total_seconds() * 1000)
         if result:
             item.result = result
 
@@ -530,7 +521,7 @@ class SchedulerService:
     def requeue_failed(
         self,
         item_id: uuid.UUID,
-    ) -> Optional[TaskQueue]:
+    ) -> TaskQueue | None:
         """Reenfileira item que falhou."""
         item = self.db.query(TaskQueue).filter(TaskQueue.id == item_id).first()
         if not item:
@@ -564,7 +555,7 @@ class SchedulerService:
         wait: bool = False,
         wait_timeout: int = 30,
         **kwargs,
-    ) -> Optional[TaskLock]:
+    ) -> TaskLock | None:
         """Adquire um lock."""
         # Verificar se já existe lock ativo
         existing = (
@@ -643,8 +634,8 @@ class SchedulerService:
         tenant_id: uuid.UUID,
         lock_key: str,
         owner_id: str,
-        ttl_seconds: Optional[int] = None,
-    ) -> Optional[TaskLock]:
+        ttl_seconds: int | None = None,
+    ) -> TaskLock | None:
         """Renova um lock."""
         lock = (
             self.db.query(TaskLock)
@@ -672,7 +663,7 @@ class SchedulerService:
         self,
         name: str,
         hostname: str,
-        queues: Optional[list[str]] = None,
+        queues: list[str] | None = None,
         concurrency: int = 4,
         **kwargs,
     ) -> TaskWorker:
@@ -701,10 +692,10 @@ class SchedulerService:
     def heartbeat(
         self,
         worker_id: str,
-        cpu_percent: Optional[float] = None,
-        memory_percent: Optional[float] = None,
-        tasks_in_progress: Optional[int] = None,
-    ) -> Optional[TaskWorker]:
+        cpu_percent: float | None = None,
+        memory_percent: float | None = None,
+        tasks_in_progress: int | None = None,
+    ) -> TaskWorker | None:
         """Atualiza heartbeat do worker."""
         worker = self.db.query(TaskWorker).filter(TaskWorker.worker_id == worker_id).first()
         if not worker:
@@ -764,7 +755,7 @@ class SchedulerService:
     def schedule_task_execution(
         self,
         task: ScheduledTask,
-    ) -> Optional[TaskExecution]:
+    ) -> TaskExecution | None:
         """Agenda execução de uma tarefa."""
         # Verificar lock se não permite overlap
         if not task.allow_overlap:
@@ -886,12 +877,8 @@ class SchedulerService:
         executions = (
             self.db.query(
                 func.count(TaskExecution.id).label("total"),
-                func.sum(func.cast(TaskExecution.status == ExecutionStatus.SUCCESS, Integer)).label(
-                    "success"
-                ),
-                func.sum(func.cast(TaskExecution.status == ExecutionStatus.FAILED, Integer)).label(
-                    "failed"
-                ),
+                func.sum(func.cast(TaskExecution.status == ExecutionStatus.SUCCESS, Integer)).label("success"),
+                func.sum(func.cast(TaskExecution.status == ExecutionStatus.FAILED, Integer)).label("failed"),
                 func.avg(TaskExecution.duration_seconds).label("avg_duration"),
             )
             .filter(
@@ -909,9 +896,7 @@ class SchedulerService:
                 "total": executions.total or 0,
                 "success": executions.success or 0,
                 "failed": executions.failed or 0,
-                "success_rate": (
-                    (executions.success / executions.total * 100) if executions.total else 0
-                ),
+                "success_rate": ((executions.success / executions.total * 100) if executions.total else 0),
                 "avg_duration_seconds": float(executions.avg_duration or 0),
             },
         }
@@ -951,7 +936,7 @@ class SchedulerService:
     def _generate_slug(self, name: str) -> str:
         """Gera slug único a partir do nome."""
         slug = re.sub(r"[^a-zA-Z0-9]+", "-", name.lower()).strip("-")
-        hash_suffix = hashlib.md5(f"{name}{datetime.utcnow()}".encode()).hexdigest()[:6]
+        hash_suffix = hashlib.sha256(f"{name}{datetime.utcnow()}".encode()).hexdigest()[:6]
         return f"{slug}-{hash_suffix}"
 
     def _validate_cron(self, expression: str) -> bool:
@@ -962,7 +947,7 @@ class SchedulerService:
         except (ValueError, KeyError):
             return False
 
-    def _calculate_next_run(self, task: ScheduledTask) -> Optional[datetime]:
+    def _calculate_next_run(self, task: ScheduledTask) -> datetime | None:
         """Calcula a próxima execução da tarefa."""
         now = datetime.utcnow()
 

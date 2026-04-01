@@ -4,7 +4,9 @@ Sistema de De-duplicação de Documentos.
 Gerencia unicidade de documentos fiscais e eventos.
 """
 
+import importlib.util as _ilu
 import logging
+import os as _os
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -14,7 +16,14 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security.sql_validator import validate_table_name
+_validator_path = _os.path.join(
+    _os.path.dirname(__file__), "..", "..", "..", "..", "core", "security", "sql_validator.py"
+)
+_validator_path = _os.path.abspath(_validator_path)
+_spec = _ilu.spec_from_file_location("_sql_validator", _validator_path)
+_sql_validator = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_sql_validator)
+validate_table_name = _sql_validator.validate_table_name
 
 logger = logging.getLogger(__name__)
 

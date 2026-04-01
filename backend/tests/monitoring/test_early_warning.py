@@ -2,9 +2,10 @@
 Testes do Early Warning System.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
+
+import pytest
 
 from modules.monitoring.models.alert import Alert, AlertLevel, AlertStatus
 from modules.monitoring.models.metric_threshold import MetricThreshold, ThresholdType
@@ -210,6 +211,7 @@ class TestMetricThreshold:
             orange_threshold=75,
             red_threshold=90,
             cooldown_seconds=300,
+            enabled=True,
         )
 
         # Alerta ha menos de 5 minutos

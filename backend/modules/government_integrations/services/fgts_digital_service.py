@@ -4,19 +4,17 @@ Service para FGTS Digital.
 Camada de serviço que encapsula a lógica de negócio do FGTS Digital.
 """
 
-import os
 import logging
-from datetime import datetime, date
+import os
+from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 from ..core.fgts_digital import (
     FGTSDigitalManager,
-    TrabalhadorFGTS,
-    TipoRecolhimento,
     ModalidadeSaque,
     RecolhimentoRescisorio,
-    SituacaoGuia,
+    TrabalhadorFGTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,7 +60,7 @@ class FGTSDigitalService:
 
         logger.info(f"FGTSDigitalService iniciado: CNPJ={self.cnpj}, ambiente={self.ambiente}")
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """Valida e retorna status da configuração."""
         return {
             "cnpj": self.cnpj,
@@ -83,11 +81,7 @@ class FGTSDigitalService:
             ],
         }
 
-    def calcular_folha(
-        self,
-        competencia: str,
-        trabalhadores: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def calcular_folha(self, competencia: str, trabalhadores: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Calcula FGTS da folha de pagamento.
 
@@ -126,11 +120,7 @@ class FGTSDigitalService:
 
         return resultado
 
-    def importar_esocial(
-        self,
-        competencia: str,
-        eventos_s1200: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def importar_esocial(self, competencia: str, eventos_s1200: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Importa dados do eSocial.
 
@@ -163,15 +153,12 @@ class FGTSDigitalService:
                     "fgts_total": str(t.valor_total),
                 }
                 for t in trabalhadores
-            ]
+            ],
         }
 
     def gerar_guia_mensal(
-        self,
-        competencia: str,
-        trabalhadores: List[Dict[str, Any]],
-        data_vencimento: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, competencia: str, trabalhadores: list[dict[str, Any]], data_vencimento: str | None = None
+    ) -> dict[str, Any]:
         """
         Gera guia de recolhimento mensal (GRFGTS).
 
@@ -237,10 +224,7 @@ class FGTSDigitalService:
             ],
         }
 
-    def gerar_guia_rescisoria(
-        self,
-        dados_rescisao: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def gerar_guia_rescisoria(self, dados_rescisao: dict[str, Any]) -> dict[str, Any]:
         """
         Gera guia de recolhimento rescisório (GRRF).
 
@@ -289,14 +273,12 @@ class FGTSDigitalService:
                 "aviso_previo": rescisao.aviso_previo,
                 "saldo_fgts": str(rescisao.saldo_fgts),
                 "multa_40_percent": str(rescisao.multa_40_percent),
-            }
+            },
         }
 
     def consultar_debitos(
-        self,
-        competencia_inicio: Optional[str] = None,
-        competencia_fim: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, competencia_inicio: str | None = None, competencia_fim: str | None = None
+    ) -> dict[str, Any]:
         """
         Consulta débitos de FGTS.
 
@@ -328,14 +310,10 @@ class FGTSDigitalService:
                     "data_vencimento": d.data_vencimento.isoformat() if d.data_vencimento else None,
                 }
                 for d in debitos
-            ]
+            ],
         }
 
-    def consultar_extrato(
-        self,
-        cpf: str,
-        pis_pasep: str
-    ) -> Dict[str, Any]:
+    def consultar_extrato(self, cpf: str, pis_pasep: str) -> dict[str, Any]:
         """
         Consulta extrato do FGTS de um trabalhador.
 
@@ -348,12 +326,7 @@ class FGTSDigitalService:
         """
         return self.manager.consultar_extrato_trabalhador(cpf, pis_pasep)
 
-    def simular_saque(
-        self,
-        cpf: str,
-        modalidade: str,
-        valor_solicitado: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def simular_saque(self, cpf: str, modalidade: str, valor_solicitado: str | None = None) -> dict[str, Any]:
         """
         Simula saque do FGTS.
 
@@ -370,11 +343,7 @@ class FGTSDigitalService:
 
         return self.manager.simular_saque(cpf, mod, valor)
 
-    def gerar_relatorio_mensal(
-        self,
-        competencia: str,
-        trabalhadores: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def gerar_relatorio_mensal(self, competencia: str, trabalhadores: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Gera relatório mensal de FGTS.
 
@@ -408,27 +377,17 @@ class FGTSDigitalService:
 
         return self.manager.gerar_relatorio_mensal(lista_trabalhadores, competencia)
 
-    def listar_categorias(self) -> Dict[str, Any]:
+    def listar_categorias(self) -> dict[str, Any]:
         """Lista categorias de trabalhadores."""
-        return {
-            "categorias": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.CATEGORIAS.items()
-            ]
-        }
+        return {"categorias": [{"codigo": k, "descricao": v} for k, v in self.CATEGORIAS.items()]}
 
-    def listar_modalidades_saque(self) -> Dict[str, Any]:
+    def listar_modalidades_saque(self) -> dict[str, Any]:
         """Lista modalidades de saque."""
-        return {
-            "modalidades": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.MODALIDADES_SAQUE.items()
-            ]
-        }
+        return {"modalidades": [{"codigo": k, "descricao": v} for k, v in self.MODALIDADES_SAQUE.items()]}
 
 
 # Singleton
-_service_instance: Optional[FGTSDigitalService] = None
+_service_instance: FGTSDigitalService | None = None
 
 
 def get_fgts_digital_service() -> FGTSDigitalService:

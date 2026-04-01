@@ -10,9 +10,8 @@ Implementa logica de negocio para:
 """
 
 import hashlib
-import secrets
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,13 +30,11 @@ from modules.retention.climate.repositories.climate_repository import (
 )
 from modules.retention.climate.schemas.climate_schemas import (
     CalculationResult,
-    ClimateAnalytics,
-    ClimateByEquipe,
     ClimateByEmpresa,
+    ClimateByEquipe,
     ClimateByPosto,
     ClimateDashboard,
     ClimateTrend,
-    DimensionAnalysis,
     EntityScore,
     QuestionSchema,
     ResponseConfirmation,
@@ -47,12 +44,11 @@ from modules.retention.climate.schemas.climate_schemas import (
     TrendPoint,
 )
 
-
 # =============================================================================
 # Perguntas Padrao do Sistema
 # =============================================================================
 
-PERGUNTAS_CLIMA_PADRAO: List[QuestionSchema] = [
+PERGUNTAS_CLIMA_PADRAO: list[QuestionSchema] = [
     QuestionSchema(
         id="sat_posto",
         texto="Estou satisfeito com o posto onde trabalho",
@@ -145,7 +141,7 @@ PERGUNTAS_CLIMA_PADRAO: List[QuestionSchema] = [
 ]
 
 # Mapeamento de perguntas para dimensoes
-PERGUNTAS_POR_DIMENSAO: Dict[str, List[str]] = {
+PERGUNTAS_POR_DIMENSAO: dict[str, list[str]] = {
     ClimateDimension.SATISFACAO.value: ["sat_posto"],
     ClimateDimension.LIDERANCA.value: ["rel_supervisor", "suporte_supervisor"],
     ClimateDimension.OPERACIONAL.value: ["carga_trabalho", "equipamentos"],
@@ -201,7 +197,7 @@ class ClimateService:
     async def criar_pesquisa(
         self,
         data: SurveyCreate,
-        created_by: Optional[str] = None,
+        created_by: str | None = None,
     ) -> Any:
         """
         Cria uma nova pesquisa de clima.
@@ -224,8 +220,8 @@ class ClimateService:
 
     async def get_pesquisa_ativa(
         self,
-        empresa_id: Optional[str] = None,
-    ) -> Optional[Any]:
+        empresa_id: str | None = None,
+    ) -> Any | None:
         """
         Busca pesquisa ativa para uma empresa.
 
@@ -237,7 +233,7 @@ class ClimateService:
         """
         return await self.survey_repo.get_active(empresa_id)
 
-    async def get_perguntas_padrao(self) -> List[QuestionSchema]:
+    async def get_perguntas_padrao(self) -> list[QuestionSchema]:
         """
         Retorna lista de perguntas padrao.
 
@@ -278,9 +274,9 @@ class ClimateService:
 
     def _calcular_score_resposta(
         self,
-        respostas: Dict[str, int],
-        perguntas: List[Dict[str, Any]],
-    ) -> Tuple[float, Dict[str, float]]:
+        respostas: dict[str, int],
+        perguntas: list[dict[str, Any]],
+    ) -> tuple[float, dict[str, float]]:
         """
         Calcula score normalizado (0-100) das respostas.
 
@@ -298,16 +294,14 @@ class ClimateService:
             Tupla (score_geral, scores_por_dimensao)
         """
         # Criar mapa de pergunta para dimensao
-        pergunta_dimensao: Dict[str, str] = {}
+        pergunta_dimensao: dict[str, str] = {}
         for pergunta in perguntas:
             if isinstance(pergunta, dict):
-                pergunta_dimensao[pergunta.get("id", "")] = pergunta.get(
-                    "dimensao", ClimateDimension.SATISFACAO.value
-                )
+                pergunta_dimensao[pergunta.get("id", "")] = pergunta.get("dimensao", ClimateDimension.SATISFACAO.value)
 
         # Agrupar respostas por dimensao
-        dimensoes_valores: Dict[str, List[float]] = {}
-        todos_valores: List[float] = []
+        dimensoes_valores: dict[str, list[float]] = {}
+        todos_valores: list[float] = []
 
         for pergunta_id, valor in respostas.items():
             # Normalizar para 0-100
@@ -325,18 +319,15 @@ class ClimateService:
         score_geral = sum(todos_valores) / len(todos_valores) if todos_valores else 0.0
 
         # Calcular score por dimensao
-        scores_dimensao = {
-            dim: round(sum(vals) / len(vals), 2)
-            for dim, vals in dimensoes_valores.items()
-        }
+        scores_dimensao = {dim: round(sum(vals) / len(vals), 2) for dim, vals in dimensoes_valores.items()}
 
         return round(score_geral, 2), scores_dimensao
 
     async def responder_pesquisa(
         self,
         data: ResponseCreate,
-        ip: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        ip: str | None = None,
+        user_agent: str | None = None,
     ) -> ResponseConfirmation:
         """
         Registra resposta de pesquisa (anonimizada).
@@ -354,9 +345,7 @@ class ClimateService:
         """
         # Validar tempo minimo
         if data.tempo_resposta_segundos < self.TEMPO_MINIMO_RESPOSTA:
-            logger.warning(
-                f"Resposta muito rapida: {data.tempo_resposta_segundos}s < {self.TEMPO_MINIMO_RESPOSTA}s"
-            )
+            logger.warning(f"Resposta muito rapida: {data.tempo_resposta_segundos}s < {self.TEMPO_MINIMO_RESPOSTA}s")
             # Permite, mas marca como suspeita
 
         # Gerar hash do funcionario
@@ -366,9 +355,7 @@ class ClimateService:
         periodo = datetime.now().strftime("%Y-%m")
 
         # Verificar se ja respondeu
-        ja_respondeu = await self.response_repo.check_already_responded(
-            data.survey_id, funcionario_hash, periodo
-        )
+        ja_respondeu = await self.response_repo.check_already_responded(data.survey_id, funcionario_hash, periodo)
         if ja_respondeu:
             raise ValueError("Funcionario ja respondeu esta pesquisa no periodo atual")
 
@@ -381,17 +368,11 @@ class ClimateService:
             raise ValueError("Pesquisa nao esta ativa")
 
         # Calcular scores
-        score_geral, scores_dimensao = self._calcular_score_resposta(
-            data.respostas, survey.perguntas
-        )
+        score_geral, scores_dimensao = self._calcular_score_resposta(data.respostas, survey.perguntas)
 
         # Hashes de seguranca
         ip_hash = self._hash_ip(ip) if ip else None
-        ua_hash = (
-            hashlib.sha256(f"{HASH_SALT}:ua:{user_agent}".encode()).hexdigest()
-            if user_agent
-            else None
-        )
+        ua_hash = hashlib.sha256(f"{HASH_SALT}:ua:{user_agent}".encode()).hexdigest() if user_agent else None
 
         # Criar resposta
         await self.response_repo.create(
@@ -446,7 +427,7 @@ class ClimateService:
     async def calcular_scores_periodo(
         self,
         periodo: str,
-        empresa_id: Optional[str] = None,
+        empresa_id: str | None = None,
         recalcular: bool = False,
     ) -> CalculationResult:
         """
@@ -467,7 +448,7 @@ class ClimateService:
         inicio = time.time()
         scores_calculados = 0
         alertas_gerados = 0
-        erros: List[str] = []
+        erros: list[str] = []
 
         try:
             # Buscar todas as respostas do periodo
@@ -504,9 +485,9 @@ class ClimateService:
                 )
 
             # Agrupar por entidade
-            postos: Dict[str, List] = {}
-            equipes: Dict[str, List] = {}
-            empresas: Dict[str, List] = {}
+            postos: dict[str, list] = {}
+            equipes: dict[str, list] = {}
+            empresas: dict[str, list] = {}
 
             for resposta in respostas:
                 if resposta.posto_id:
@@ -574,8 +555,7 @@ class ClimateService:
 
             tempo_ms = int((time.time() - inicio) * 1000)
             logger.info(
-                f"Calculo de scores concluido: {scores_calculados} scores, "
-                f"{alertas_gerados} alertas em {tempo_ms}ms"
+                f"Calculo de scores concluido: {scores_calculados} scores, {alertas_gerados} alertas em {tempo_ms}ms"
             )
 
             return CalculationResult(
@@ -603,9 +583,9 @@ class ClimateService:
         entidade_tipo: EntityType,
         entidade_id: str,
         periodo: str,
-        respostas: List,
-        empresa_id: Optional[str] = None,
-    ) -> List:
+        respostas: list,
+        empresa_id: str | None = None,
+    ) -> list:
         """
         Calcula e salva score de uma entidade.
 
@@ -629,27 +609,21 @@ class ClimateService:
         score_medio = sum(scores) / len(scores)
 
         # Agregar scores por dimensao
-        dimensoes: Dict[str, List[float]] = {}
+        dimensoes: dict[str, list[float]] = {}
         for resposta in respostas:
             for dim, score in resposta.scores_por_dimensao.items():
                 if dim not in dimensoes:
                     dimensoes[dim] = []
                 dimensoes[dim].append(score)
 
-        scores_dimensao = {
-            dim: round(sum(vals) / len(vals), 2) for dim, vals in dimensoes.items()
-        }
+        scores_dimensao = {dim: round(sum(vals) / len(vals), 2) for dim, vals in dimensoes.items()}
 
         # Calcular eNPS
-        enps_score, enps_promotores, enps_neutros, enps_detratores = self._calcular_enps(
-            respostas
-        )
+        enps_score, enps_promotores, enps_neutros, enps_detratores = self._calcular_enps(respostas)
 
         # Buscar score anterior para tendencia
         periodo_anterior = self._get_periodo_anterior(periodo)
-        score_anterior = await self.score_repo.get_by_entidade_periodo(
-            entidade_tipo, entidade_id, periodo_anterior
-        )
+        score_anterior = await self.score_repo.get_by_entidade_periodo(entidade_tipo, entidade_id, periodo_anterior)
 
         tendencia = 0.0
         if score_anterior and score_anterior.score > 0:
@@ -693,8 +667,8 @@ class ClimateService:
 
     def _calcular_enps(
         self,
-        respostas: List,
-    ) -> Tuple[float, int, int, int]:
+        respostas: list,
+    ) -> tuple[float, int, int, int]:
         """
         Calcula eNPS (Employee Net Promoter Score).
 
@@ -753,8 +727,8 @@ class ClimateService:
 
     def _identificar_fatores(
         self,
-        scores_dimensao: Dict[str, float],
-    ) -> Tuple[List[str], List[str]]:
+        scores_dimensao: dict[str, float],
+    ) -> tuple[list[str], list[str]]:
         """
         Identifica fatores positivos e negativos.
 
@@ -793,11 +767,11 @@ class ClimateService:
         entidade_id: str,
         periodo: str,
         score_atual: float,
-        score_anterior: Optional[float],
+        score_anterior: float | None,
         tendencia: float,
-        scores_dimensao: Dict[str, float],
-        empresa_id: Optional[str],
-    ) -> List[Dict[str, Any]]:
+        scores_dimensao: dict[str, float],
+        empresa_id: str | None,
+    ) -> list[dict[str, Any]]:
         """
         Verifica e cria alertas de clima.
 
@@ -841,9 +815,7 @@ class ClimateService:
                     variacao=tendencia,
                     empresa_id=empresa_id,
                 )
-                alertas.append(
-                    {"tipo": "queda_score", "severidade": severidade.value, "id": alerta.id}
-                )
+                alertas.append({"tipo": "queda_score", "severidade": severidade.value, "id": alerta.id})
 
         # Alerta de score critico
         if score_atual < self.SCORE_CRITICO:
@@ -861,9 +833,7 @@ class ClimateService:
                     score_atual=score_atual,
                     empresa_id=empresa_id,
                 )
-                alertas.append(
-                    {"tipo": "score_critico", "severidade": "critica", "id": alerta.id}
-                )
+                alertas.append({"tipo": "score_critico", "severidade": "critica", "id": alerta.id})
 
         # Alerta de dimensao critica
         for dim, score in scores_dimensao.items():
@@ -876,16 +846,14 @@ class ClimateService:
                         entidade_tipo=entidade_tipo,
                         entidade_id=entidade_id,
                         periodo=periodo,
-                        tipo_alerta=f"dimensao_critica",
+                        tipo_alerta="dimensao_critica",
                         dimensao=dim,
                         mensagem=f"Dimensao {dim} com score critico: {score:.1f}",
                         severidade=AlertSeverity.ALTA,
                         score_atual=score,
                         empresa_id=empresa_id,
                     )
-                    alertas.append(
-                        {"tipo": "dimensao_critica", "dimensao": dim, "id": alerta.id}
-                    )
+                    alertas.append({"tipo": "dimensao_critica", "dimensao": dim, "id": alerta.id})
 
         return alertas
 
@@ -895,7 +863,7 @@ class ClimateService:
 
     async def get_dashboard(
         self,
-        empresa_id: Optional[str] = None,
+        empresa_id: str | None = None,
     ) -> ClimateDashboard:
         """
         Retorna dashboard geral de clima.
@@ -910,21 +878,15 @@ class ClimateService:
         periodo_anterior = self._get_periodo_anterior(periodo_atual)
 
         # Score geral atual
-        score_atual = await self.response_repo.get_score_medio_periodo(
-            periodo_atual, empresa_id
-        )
-        score_anterior = await self.response_repo.get_score_medio_periodo(
-            periodo_anterior, empresa_id
-        )
+        score_atual = await self.response_repo.get_score_medio_periodo(periodo_atual, empresa_id)
+        score_anterior = await self.response_repo.get_score_medio_periodo(periodo_anterior, empresa_id)
 
         variacao = 0.0
         if score_anterior > 0:
             variacao = ((score_atual - score_anterior) / score_anterior) * 100
 
         # Total de respostas
-        total_respostas = await self.response_repo.count_by_periodo(
-            periodo_atual, empresa_id
-        )
+        total_respostas = await self.response_repo.count_by_periodo(periodo_atual, empresa_id)
 
         # Buscar scores por dimensao
         respostas, _ = await self.response_repo.list_by_filters(
@@ -949,7 +911,7 @@ class ClimateService:
         )
 
         # Agregar por dimensao
-        dimensoes: Dict[str, List[float]] = {}
+        dimensoes: dict[str, list[float]] = {}
         for resposta in respostas:
             for dim, score in resposta.scores_por_dimensao.items():
                 if dim not in dimensoes:
@@ -964,26 +926,18 @@ class ClimateService:
                     dimensao=ClimateDimension(dim),
                     score=round(score_dim, 2),
                     total_respostas=len(valores),
-                    tendencia=0.0,  # TODO: calcular tendencia por dimensao
+                    tendencia=0.0,
                     classificacao=self._classificar_score(score_dim),
                 )
             )
 
         # Top e Bottom postos
-        top_postos = await self.score_repo.get_top_scores(
-            periodo_atual, EntityType.POSTO, 5, empresa_id
-        )
-        bottom_postos = await self.score_repo.get_bottom_scores(
-            periodo_atual, EntityType.POSTO, 5, empresa_id
-        )
+        top_postos = await self.score_repo.get_top_scores(periodo_atual, EntityType.POSTO, 5, empresa_id)
+        bottom_postos = await self.score_repo.get_bottom_scores(periodo_atual, EntityType.POSTO, 5, empresa_id)
 
         # Top e Bottom equipes
-        top_equipes = await self.score_repo.get_top_scores(
-            periodo_atual, EntityType.EQUIPE, 5, empresa_id
-        )
-        bottom_equipes = await self.score_repo.get_bottom_scores(
-            periodo_atual, EntityType.EQUIPE, 5, empresa_id
-        )
+        top_equipes = await self.score_repo.get_top_scores(periodo_atual, EntityType.EQUIPE, 5, empresa_id)
+        bottom_equipes = await self.score_repo.get_bottom_scores(periodo_atual, EntityType.EQUIPE, 5, empresa_id)
 
         # Converter para EntityScore
         def to_entity_score(score) -> EntityScore:
@@ -1001,9 +955,7 @@ class ClimateService:
         total_alertas = sum(alertas_counts.values())
 
         # Tendencia 6 meses
-        tendencia_6_meses = await self._get_tendencia_periodos(
-            empresa_id=empresa_id, periodos=6
-        )
+        tendencia_6_meses = await self._get_tendencia_periodos(empresa_id=empresa_id, periodos=6)
 
         # Calcular eNPS geral
         enps_score = 0.0
@@ -1020,11 +972,9 @@ class ClimateService:
             variacao=round(variacao, 2),
             classificacao=self._classificar_score(score_atual),
             total_respostas=total_respostas,
-            taxa_participacao=0.0,  # TODO: calcular baseado em total de funcionarios
+            taxa_participacao=0.0,
             enps_score=round(enps_score, 2),
-            scores_por_dimensao=sorted(
-                scores_dimensao_list, key=lambda x: x.score, reverse=True
-            ),
+            scores_por_dimensao=sorted(scores_dimensao_list, key=lambda x: x.score, reverse=True),
             top_postos=[to_entity_score(s) for s in top_postos],
             bottom_postos=[to_entity_score(s) for s in bottom_postos],
             top_equipes=[to_entity_score(s) for s in top_equipes],
@@ -1036,9 +986,9 @@ class ClimateService:
 
     async def _get_tendencia_periodos(
         self,
-        empresa_id: Optional[str] = None,
+        empresa_id: str | None = None,
         periodos: int = 6,
-    ) -> List[TrendPoint]:
+    ) -> list[TrendPoint]:
         """
         Retorna tendencia dos ultimos periodos.
 
@@ -1093,9 +1043,7 @@ class ClimateService:
         Returns:
             ClimateTrend com evolucao historica
         """
-        scores = await self.score_repo.get_scores_by_entidade(
-            entidade_tipo, entidade_id, periodos
-        )
+        scores = await self.score_repo.get_scores_by_entidade(entidade_tipo, entidade_id, periodos)
 
         if not scores:
             return ClimateTrend(
@@ -1167,8 +1115,8 @@ class ClimateService:
     async def get_results_by_posto(
         self,
         posto_id: str,
-        periodo: Optional[str] = None,
-    ) -> Optional[ClimateByPosto]:
+        periodo: str | None = None,
+    ) -> ClimateByPosto | None:
         """
         Retorna resultados de clima de um posto.
 
@@ -1182,16 +1130,12 @@ class ClimateService:
         periodo = periodo or datetime.now().strftime("%Y-%m")
         periodo_anterior = self._get_periodo_anterior(periodo)
 
-        score = await self.score_repo.get_by_entidade_periodo(
-            EntityType.POSTO, posto_id, periodo
-        )
+        score = await self.score_repo.get_by_entidade_periodo(EntityType.POSTO, posto_id, periodo)
 
         if not score:
             return None
 
-        score_ant = await self.score_repo.get_by_entidade_periodo(
-            EntityType.POSTO, posto_id, periodo_anterior
-        )
+        score_ant = await self.score_repo.get_by_entidade_periodo(EntityType.POSTO, posto_id, periodo_anterior)
 
         variacao = 0.0
         if score_ant and score_ant.score > 0:
@@ -1200,14 +1144,14 @@ class ClimateService:
         return ClimateByPosto(
             posto_id=posto_id,
             posto_nome=score.entidade_nome or posto_id[:8],
-            cliente_nome=None,  # TODO: buscar nome do cliente
+            cliente_nome=None,
             periodo=periodo,
             score=score.score,
             score_anterior=score_ant.score if score_ant else 0.0,
             variacao=round(variacao, 2),
             classificacao=self._classificar_score(score.score),
             total_respostas=score.total_respostas,
-            total_funcionarios=0,  # TODO: buscar total de funcionarios
+            total_funcionarios=0,
             taxa_participacao=score.taxa_participacao,
             scores_dimensao=score.scores_dimensao,
             enps_score=score.enps_score,
@@ -1219,8 +1163,8 @@ class ClimateService:
     async def get_results_by_equipe(
         self,
         equipe_id: str,
-        periodo: Optional[str] = None,
-    ) -> Optional[ClimateByEquipe]:
+        periodo: str | None = None,
+    ) -> ClimateByEquipe | None:
         """
         Retorna resultados de clima de uma equipe.
 
@@ -1234,16 +1178,12 @@ class ClimateService:
         periodo = periodo or datetime.now().strftime("%Y-%m")
         periodo_anterior = self._get_periodo_anterior(periodo)
 
-        score = await self.score_repo.get_by_entidade_periodo(
-            EntityType.EQUIPE, equipe_id, periodo
-        )
+        score = await self.score_repo.get_by_entidade_periodo(EntityType.EQUIPE, equipe_id, periodo)
 
         if not score:
             return None
 
-        score_ant = await self.score_repo.get_by_entidade_periodo(
-            EntityType.EQUIPE, equipe_id, periodo_anterior
-        )
+        score_ant = await self.score_repo.get_by_entidade_periodo(EntityType.EQUIPE, equipe_id, periodo_anterior)
 
         variacao = 0.0
         if score_ant and score_ant.score > 0:
@@ -1252,25 +1192,25 @@ class ClimateService:
         return ClimateByEquipe(
             equipe_id=equipe_id,
             equipe_nome=score.entidade_nome or equipe_id[:8],
-            supervisor_nome=None,  # TODO: buscar nome do supervisor
+            supervisor_nome=None,
             periodo=periodo,
             score=score.score,
             score_anterior=score_ant.score if score_ant else 0.0,
             variacao=round(variacao, 2),
             classificacao=self._classificar_score(score.score),
             total_respostas=score.total_respostas,
-            total_funcionarios=0,  # TODO: buscar total
+            total_funcionarios=0,
             taxa_participacao=score.taxa_participacao,
             scores_dimensao=score.scores_dimensao,
             enps_score=score.enps_score,
-            postos_vinculados=0,  # TODO: contar postos
+            postos_vinculados=0,
         )
 
     async def get_results_empresa(
         self,
         empresa_id: str,
-        periodo: Optional[str] = None,
-    ) -> Optional[ClimateByEmpresa]:
+        periodo: str | None = None,
+    ) -> ClimateByEmpresa | None:
         """
         Retorna resultados de clima da empresa.
 
@@ -1284,15 +1224,11 @@ class ClimateService:
         periodo = periodo or datetime.now().strftime("%Y-%m")
         periodo_anterior = self._get_periodo_anterior(periodo)
 
-        score = await self.score_repo.get_by_entidade_periodo(
-            EntityType.EMPRESA, empresa_id, periodo
-        )
+        score = await self.score_repo.get_by_entidade_periodo(EntityType.EMPRESA, empresa_id, periodo)
 
         if not score:
             # Tentar calcular em tempo real
-            score_valor = await self.response_repo.get_score_medio_periodo(
-                periodo, empresa_id
-            )
+            score_valor = await self.response_repo.get_score_medio_periodo(periodo, empresa_id)
             total = await self.response_repo.count_by_periodo(periodo, empresa_id)
 
             if total == 0:
@@ -1317,25 +1253,15 @@ class ClimateService:
                 equipes_criticas=0,
             )
 
-        score_ant = await self.score_repo.get_by_entidade_periodo(
-            EntityType.EMPRESA, empresa_id, periodo_anterior
-        )
+        score_ant = await self.score_repo.get_by_entidade_periodo(EntityType.EMPRESA, empresa_id, periodo_anterior)
 
         variacao = 0.0
         if score_ant and score_ant.score > 0:
             variacao = ((score.score - score_ant.score) / score_ant.score) * 100
 
         # Contar postos e equipes criticos
-        postos_criticos = len(
-            await self.score_repo.get_bottom_scores(
-                periodo, EntityType.POSTO, 100, empresa_id
-            )
-        )
-        equipes_criticas = len(
-            await self.score_repo.get_bottom_scores(
-                periodo, EntityType.EQUIPE, 100, empresa_id
-            )
-        )
+        postos_criticos = len(await self.score_repo.get_bottom_scores(periodo, EntityType.POSTO, 100, empresa_id))
+        equipes_criticas = len(await self.score_repo.get_bottom_scores(periodo, EntityType.EQUIPE, 100, empresa_id))
 
         return ClimateByEmpresa(
             empresa_id=empresa_id,
@@ -1346,12 +1272,12 @@ class ClimateService:
             variacao=round(variacao, 2),
             classificacao=self._classificar_score(score.score),
             total_respostas=score.total_respostas,
-            total_funcionarios=0,  # TODO
+            total_funcionarios=0,
             taxa_participacao=score.taxa_participacao,
             scores_dimensao=score.scores_dimensao,
             enps_score=score.enps_score,
-            total_postos=0,  # TODO
-            total_equipes=0,  # TODO
+            total_postos=0,
+            total_equipes=0,
             postos_criticos=postos_criticos,
             equipes_criticas=equipes_criticas,
         )
@@ -1362,8 +1288,8 @@ class ClimateService:
 
     async def verificar_quedas(
         self,
-        empresa_id: Optional[str] = None,
-    ) -> List[Any]:
+        empresa_id: str | None = None,
+    ) -> list[Any]:
         """
         Detecta quedas significativas (>20%) para alertar.
 
@@ -1376,9 +1302,7 @@ class ClimateService:
         periodo_atual = datetime.now().strftime("%Y-%m")
 
         # Buscar scores atuais
-        scores = await self.score_repo.get_scores_by_periodo(
-            periodo_atual, empresa_id=empresa_id
-        )
+        scores = await self.score_repo.get_scores_by_periodo(periodo_atual, empresa_id=empresa_id)
 
         alertas_gerados = []
 
@@ -1399,11 +1323,7 @@ class ClimateService:
                         periodo=periodo_atual,
                         tipo_alerta="queda_score",
                         mensagem=f"Queda de {abs(score.tendencia):.1f}% no score",
-                        severidade=(
-                            AlertSeverity.CRITICA
-                            if score.tendencia < -40
-                            else AlertSeverity.ALTA
-                        ),
+                        severidade=(AlertSeverity.CRITICA if score.tendencia < -40 else AlertSeverity.ALTA),
                         score_atual=score.score,
                         variacao=score.tendencia,
                         entidade_nome=score.entidade_nome,

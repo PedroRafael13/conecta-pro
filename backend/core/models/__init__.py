@@ -1,6 +1,6 @@
 """Módulo de models SQLAlchemy."""
 
-from .base import Base, BaseModel, TimestampMixin, SoftDeleteMixin
+from .base import Base, BaseModel, SoftDeleteMixin, TimestampMixin
 from .user import ROLE_HIERARCHY, User, UserRole
 
 __all__ = [

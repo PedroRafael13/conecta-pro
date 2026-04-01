@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -37,9 +36,7 @@ class CostDriverRepository:
         await self.db.refresh(driver)
         return driver
 
-    async def get_by_id(
-        self, driver_id: UUID, condominio_id: UUID
-    ) -> Optional[CostDriver]:
+    async def get_by_id(self, driver_id: UUID, condominio_id: UUID) -> CostDriver | None:
         """Busca driver por ID."""
         result = await self.db.execute(
             select(CostDriver).where(
@@ -52,9 +49,7 @@ class CostDriverRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(
-        self, code: str, condominio_id: UUID
-    ) -> Optional[CostDriver]:
+    async def get_by_code(self, code: str, condominio_id: UUID) -> CostDriver | None:
         """Busca driver por código."""
         result = await self.db.execute(
             select(CostDriver).where(
@@ -107,9 +102,7 @@ class CostDriverRepository:
             )
 
         # Count
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar_one()
 
         # Pagination
@@ -138,9 +131,7 @@ class CostDriverRepository:
         result = await self.db.execute(
             select(
                 func.count(CostDriver.id).label("total"),
-                func.count(CostDriver.id).filter(
-                    CostDriver.status == DriverStatus.ACTIVE
-                ).label("active"),
+                func.count(CostDriver.id).filter(CostDriver.status == DriverStatus.ACTIVE).label("active"),
                 func.sum(CostDriver.total_allocated_amount).label("total_allocated"),
                 func.avg(CostDriver.unit_cost).label("avg_unit_cost"),
             ).where(
@@ -173,9 +164,7 @@ class CostActivityRepository:
         await self.db.refresh(activity)
         return activity
 
-    async def get_by_id(
-        self, activity_id: UUID, condominio_id: UUID
-    ) -> Optional[CostActivity]:
+    async def get_by_id(self, activity_id: UUID, condominio_id: UUID) -> CostActivity | None:
         """Busca atividade por ID."""
         result = await self.db.execute(
             select(CostActivity)
@@ -191,9 +180,7 @@ class CostActivityRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(
-        self, code: str, condominio_id: UUID
-    ) -> Optional[CostActivity]:
+    async def get_by_code(self, code: str, condominio_id: UUID) -> CostActivity | None:
         """Busca atividade por código."""
         result = await self.db.execute(
             select(CostActivity).where(
@@ -255,9 +242,7 @@ class CostActivityRepository:
             )
 
         # Count
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar_one()
 
         # Pagination
@@ -295,9 +280,7 @@ class CostActivityRepository:
         activity.active = False
         await self.db.commit()
 
-    async def get_by_pool(
-        self, pool_id: UUID, condominio_id: UUID
-    ) -> list[CostActivity]:
+    async def get_by_pool(self, pool_id: UUID, condominio_id: UUID) -> list[CostActivity]:
         """Busca atividades por pool."""
         result = await self.db.execute(
             select(CostActivity).where(
@@ -325,9 +308,7 @@ class CostPoolRepository:
         await self.db.refresh(pool)
         return pool
 
-    async def get_by_id(
-        self, pool_id: UUID, condominio_id: UUID
-    ) -> Optional[CostPool]:
+    async def get_by_id(self, pool_id: UUID, condominio_id: UUID) -> CostPool | None:
         """Busca pool por ID."""
         result = await self.db.execute(
             select(CostPool).where(
@@ -340,9 +321,7 @@ class CostPoolRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(
-        self, code: str, condominio_id: UUID
-    ) -> Optional[CostPool]:
+    async def get_by_code(self, code: str, condominio_id: UUID) -> CostPool | None:
         """Busca pool por código."""
         result = await self.db.execute(
             select(CostPool).where(
@@ -398,9 +377,7 @@ class CostPoolRepository:
             )
 
         # Count
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar_one()
 
         # Pagination
@@ -453,9 +430,7 @@ class CostObjectRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def get_by_id(
-        self, object_id: UUID, condominio_id: UUID
-    ) -> Optional[CostObject]:
+    async def get_by_id(self, object_id: UUID, condominio_id: UUID) -> CostObject | None:
         """Busca objeto por ID."""
         result = await self.db.execute(
             select(CostObject).where(
@@ -468,9 +443,7 @@ class CostObjectRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(
-        self, code: str, condominio_id: UUID
-    ) -> Optional[CostObject]:
+    async def get_by_code(self, code: str, condominio_id: UUID) -> CostObject | None:
         """Busca objeto por código."""
         result = await self.db.execute(
             select(CostObject).where(
@@ -531,9 +504,7 @@ class CostObjectRepository:
             )
 
         # Count
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar_one()
 
         # Pagination
@@ -557,9 +528,7 @@ class CostObjectRepository:
         obj.active = False
         await self.db.commit()
 
-    async def get_profitability_ranking(
-        self, condominio_id: UUID, limit: int = 10
-    ) -> list[CostObject]:
+    async def get_profitability_ranking(self, condominio_id: UUID, limit: int = 10) -> list[CostObject]:
         """Ranking de rentabilidade."""
         result = await self.db.execute(
             select(CostObject)
@@ -601,9 +570,7 @@ class CostAllocationRepository:
         """Cria uma nova alocação."""
         # Gera número sequencial
         result = await self.db.execute(
-            select(func.count(CostAllocation.id)).where(
-                CostAllocation.condominio_id == allocation.condominio_id
-            )
+            select(func.count(CostAllocation.id)).where(CostAllocation.condominio_id == allocation.condominio_id)
         )
         count = result.scalar_one() + 1
         allocation.allocation_number = f"ALLOC-{datetime.utcnow().strftime('%Y%m')}-{count:06d}"
@@ -613,22 +580,16 @@ class CostAllocationRepository:
         await self.db.refresh(allocation)
         return allocation
 
-    async def create_batch(
-        self, allocations: list[CostAllocation]
-    ) -> list[CostAllocation]:
+    async def create_batch(self, allocations: list[CostAllocation]) -> list[CostAllocation]:
         """Cria lote de alocações."""
         _batch_id = allocations[0].batch_id if allocations else None  # Reserved
         for i, allocation in enumerate(allocations):
             allocation.batch_sequence = i + 1
             result = await self.db.execute(
-                select(func.count(CostAllocation.id)).where(
-                    CostAllocation.condominio_id == allocation.condominio_id
-                )
+                select(func.count(CostAllocation.id)).where(CostAllocation.condominio_id == allocation.condominio_id)
             )
             count = result.scalar_one() + 1
-            allocation.allocation_number = (
-                f"ALLOC-{datetime.utcnow().strftime('%Y%m')}-{count:06d}"
-            )
+            allocation.allocation_number = f"ALLOC-{datetime.utcnow().strftime('%Y%m')}-{count:06d}"
             self.db.add(allocation)
 
         await self.db.commit()
@@ -636,9 +597,7 @@ class CostAllocationRepository:
             await self.db.refresh(allocation)
         return allocations
 
-    async def get_by_id(
-        self, allocation_id: UUID, condominio_id: UUID
-    ) -> Optional[CostAllocation]:
+    async def get_by_id(self, allocation_id: UUID, condominio_id: UUID) -> CostAllocation | None:
         """Busca alocação por ID."""
         result = await self.db.execute(
             select(CostAllocation)
@@ -655,9 +614,7 @@ class CostAllocationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_number(
-        self, allocation_number: str, condominio_id: UUID
-    ) -> Optional[CostAllocation]:
+    async def get_by_number(self, allocation_number: str, condominio_id: UUID) -> CostAllocation | None:
         """Busca alocação por número."""
         result = await self.db.execute(
             select(CostAllocation).where(
@@ -723,17 +680,11 @@ class CostAllocationRepository:
             query = query.where(CostAllocation.active == active)
 
         # Count
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar_one()
 
         # Pagination
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(CostAllocation.allocation_date.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(CostAllocation.allocation_date.desc())
         result = await self.db.execute(query)
         allocations = result.scalars().all()
 
@@ -759,9 +710,7 @@ class CostAllocationRepository:
         )
         return list(result.scalars().all())
 
-    async def get_by_period(
-        self, condominio_id: UUID, period: str
-    ) -> list[CostAllocation]:
+    async def get_by_period(self, condominio_id: UUID, period: str) -> list[CostAllocation]:
         """Busca alocações por período."""
         result = await self.db.execute(
             select(CostAllocation).where(
@@ -775,9 +724,7 @@ class CostAllocationRepository:
         )
         return list(result.scalars().all())
 
-    async def get_summary_by_period(
-        self, condominio_id: UUID, period: str
-    ) -> dict:
+    async def get_summary_by_period(self, condominio_id: UUID, period: str) -> dict:
         """Resumo de alocações por período."""
         result = await self.db.execute(
             select(
@@ -822,9 +769,7 @@ class CostAnalysisRepository:
         await self.db.refresh(analysis)
         return analysis
 
-    async def get_by_id(
-        self, analysis_id: UUID, condominio_id: UUID
-    ) -> Optional[CostAnalysis]:
+    async def get_by_id(self, analysis_id: UUID, condominio_id: UUID) -> CostAnalysis | None:
         """Busca análise por ID."""
         result = await self.db.execute(
             select(CostAnalysis).where(
@@ -837,9 +782,7 @@ class CostAnalysisRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(
-        self, code: str, condominio_id: UUID
-    ) -> Optional[CostAnalysis]:
+    async def get_by_code(self, code: str, condominio_id: UUID) -> CostAnalysis | None:
         """Busca análise por código."""
         result = await self.db.execute(
             select(CostAnalysis).where(
@@ -898,15 +841,11 @@ class CostAnalysisRepository:
             )
 
         # Count
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar_one()
 
         # Pagination
-        query = (
-            query.offset(skip).limit(limit).order_by(CostAnalysis.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(CostAnalysis.created_at.desc())
         result = await self.db.execute(query)
         analyses = result.scalars().all()
 

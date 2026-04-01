@@ -2,8 +2,9 @@
 Skill /diarista - Gerenciamento de diaristas via comando
 """
 
+import contextlib
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -34,8 +35,15 @@ class DiaristaSkill(BaseSkill):
     name = "diarista"
     description = "Gerenciamento de diaristas"
     commands = [
-        "listar", "disponiveis", "escalados", "stats",
-        "avaliar", "avaliacoes", "pagamento", "pagamentos", "agenda",
+        "listar",
+        "disponiveis",
+        "escalados",
+        "stats",
+        "avaliar",
+        "avaliacoes",
+        "pagamento",
+        "pagamentos",
+        "agenda",
         "help",
     ]
 
@@ -43,7 +51,7 @@ class DiaristaSkill(BaseSkill):
         super().__init__(data_connector=data_connector)
         self.diarist_repo = diarist_repo
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando de diarista"""
 
         if not command or command == "help":
@@ -70,13 +78,13 @@ class DiaristaSkill(BaseSkill):
             "suggestions": self.commands[:4],
         }
 
-    async def _listar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _listar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar diaristas ativas"""
         # Tenta buscar dados reais via repository do DataConnector
         if self.has_data_connector:
             try:
-                from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
                 from modules.operacional.diaristas.models.diarist import DiaristStatus
+                from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 
                 repo = DiaristRepository(self.data_connector.db)
 
@@ -95,9 +103,7 @@ class DiaristaSkill(BaseSkill):
                         tipos = ", ".join(d.tipos_servico or []) or "N/A"
                         avaliacao = f"{float(d.avaliacao_media or 0):.1f}" if d.avaliacao_media else "N/A"
                         valor = f"R$ {float(d.valor_diaria or 0):,.2f}"
-                        lines.append(
-                            f"| {i} | {d.nome} | {tipos} | {avaliacao} | {valor} |"
-                        )
+                        lines.append(f"| {i} | {d.nome} | {tipos} | {avaliacao} | {valor} |")
 
                     tabela = "\n".join(lines)
                     filtro_info = f" (busca: {search_term})" if search_term else ""
@@ -112,10 +118,7 @@ class DiaristaSkill(BaseSkill):
 **Total:** {len(diaristas)} diarista(s)""",
                         "data": {
                             "total": len(diaristas),
-                            "diaristas": [
-                                {"id": str(d.id), "nome": d.nome, "status": d.status}
-                                for d in diaristas
-                            ],
+                            "diaristas": [{"id": str(d.id), "nome": d.nome, "status": d.status} for d in diaristas],
                         },
                         "suggestions": ["/diarista disponiveis", "/diarista stats"],
                     }
@@ -142,7 +145,7 @@ class DiaristaSkill(BaseSkill):
             "suggestions": ["/diarista disponiveis", "/diarista stats"],
         }
 
-    async def _disponiveis(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _disponiveis(self, args: list[str], context: dict) -> dict[str, Any]:
         """Diaristas disponiveis para trabalho"""
         from datetime import date, timedelta
 
@@ -176,13 +179,11 @@ class DiaristaSkill(BaseSkill):
                         tipos = ", ".join(d.tipos_servico or []) or "N/A"
                         avaliacao = f"{float(d.avaliacao_media or 0):.1f}" if d.avaliacao_media else "N/A"
                         valor = f"R$ {float(d.valor_diaria or 0):,.2f}"
-                        lines.append(
-                            f"| {i} | {d.nome} | {tipos} | {avaliacao} | {valor} |"
-                        )
+                        lines.append(f"| {i} | {d.nome} | {tipos} | {avaliacao} | {valor} |")
 
                     tabela = "\n".join(lines)
                     return {
-                        "response": f"""**Diaristas Disponiveis - {data_busca.strftime('%d/%m/%Y')}**
+                        "response": f"""**Diaristas Disponiveis - {data_busca.strftime("%d/%m/%Y")}**
 
 | # | Nome | Tipo | Avaliacao | Diaria |
 |---|------|------|-----------|--------|
@@ -204,7 +205,7 @@ class DiaristaSkill(BaseSkill):
 
         # Fallback estatico
         return {
-            "response": f"""**Diaristas Disponiveis - {data_busca.strftime('%d/%m/%Y')}**
+            "response": f"""**Diaristas Disponiveis - {data_busca.strftime("%d/%m/%Y")}**
 
 | # | Nome | Tipo | Avaliacao | Diaria |
 |---|------|------|-----------|--------|
@@ -216,7 +217,7 @@ class DiaristaSkill(BaseSkill):
             "suggestions": ["/diarista escalados", "/diarista listar"],
         }
 
-    async def _escalados(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _escalados(self, args: list[str], context: dict) -> dict[str, Any]:
         """Diaristas escalados hoje"""
         from datetime import date
 
@@ -233,17 +234,15 @@ class DiaristaSkill(BaseSkill):
                     lines = []
                     for i, s in enumerate(schedules[:20], 1):
                         nome = s.diarist.nome if s.diarist else "N/A"
-                        hora_ini = s.hora_inicio.strftime('%H:%M') if s.hora_inicio else "08:00"
-                        hora_fim = s.hora_fim.strftime('%H:%M') if s.hora_fim else "17:00"
-                        status_str = s.status.value if hasattr(s.status, 'value') else str(s.status)
+                        hora_ini = s.hora_inicio.strftime("%H:%M") if s.hora_inicio else "08:00"
+                        hora_fim = s.hora_fim.strftime("%H:%M") if s.hora_fim else "17:00"
+                        status_str = s.status.value if hasattr(s.status, "value") else str(s.status)
                         checkin = "Sim" if s.checkin_real else "Nao"
-                        lines.append(
-                            f"| {i} | {nome} | {hora_ini}-{hora_fim} | {status_str} | {checkin} |"
-                        )
+                        lines.append(f"| {i} | {nome} | {hora_ini}-{hora_fim} | {status_str} | {checkin} |")
 
                     tabela = "\n".join(lines)
                     return {
-                        "response": f"""**Diaristas Escalados Hoje - {hoje.strftime('%d/%m/%Y')}**
+                        "response": f"""**Diaristas Escalados Hoje - {hoje.strftime("%d/%m/%Y")}**
 
 | # | Nome | Horario | Status | Check-in |
 |---|------|---------|--------|----------|
@@ -264,7 +263,7 @@ class DiaristaSkill(BaseSkill):
 
         # Fallback estatico
         return {
-            "response": f"""**Diaristas Escalados Hoje - {hoje.strftime('%d/%m/%Y')}**
+            "response": f"""**Diaristas Escalados Hoje - {hoje.strftime("%d/%m/%Y")}**
 
 | # | Nome | Horario | Status | Check-in |
 |---|------|---------|--------|----------|
@@ -276,12 +275,12 @@ class DiaristaSkill(BaseSkill):
             "suggestions": ["/diarista disponiveis", "/diarista stats"],
         }
 
-    async def _stats(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _stats(self, args: list[str], context: dict) -> dict[str, Any]:
         """Estatisticas de diaristas"""
         if self.has_data_connector:
             try:
-                from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
                 from modules.operacional.diaristas.models.diarist import DiaristStatus
+                from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 
                 repo = DiaristRepository(self.data_connector.db)
 
@@ -295,9 +294,7 @@ class DiaristaSkill(BaseSkill):
                 top_lines = []
                 for i, t in enumerate(top, 1):
                     d = t["diarist"]
-                    top_lines.append(
-                        f"| {i} | {d.nome} | {t['avaliacao_media']:.1f} | {t['total_servicos']} |"
-                    )
+                    top_lines.append(f"| {i} | {d.nome} | {t['avaliacao_media']:.1f} | {t['total_servicos']} |")
 
                 top_tabela = "\n".join(top_lines) if top_lines else "| - | Sem dados | - | - |"
 
@@ -308,11 +305,11 @@ class DiaristaSkill(BaseSkill):
 - Total: **{total_geral}** | Ativas: **{total_ativos}** | Inativas: **{total_inativos}**
 
 **Ultimos 30 dias:**
-- Agendamentos: **{stats.get('agendamentos', {}).get('total', 0)}**
-- Concluidos: **{stats.get('agendamentos', {}).get('concluidos', 0)}**
-- Taxa conclusao: **{stats.get('agendamentos', {}).get('taxa_conclusao', 0):.1f}%**
-- Gastos: **R$ {stats.get('gastos_total', 0):,.2f}**
-- Media avaliacoes: **{stats.get('media_avaliacoes', 0):.1f}/5.0**
+- Agendamentos: **{stats.get("agendamentos", {}).get("total", 0)}**
+- Concluidos: **{stats.get("agendamentos", {}).get("concluidos", 0)}**
+- Taxa conclusao: **{stats.get("agendamentos", {}).get("taxa_conclusao", 0):.1f}%**
+- Gastos: **R$ {stats.get("gastos_total", 0):,.2f}**
+- Media avaliacoes: **{stats.get("media_avaliacoes", 0):.1f}/5.0**
 
 **Top 5 Diaristas:**
 
@@ -348,7 +345,7 @@ class DiaristaSkill(BaseSkill):
             "suggestions": ["/diarista listar", "/diarista disponiveis"],
         }
 
-    async def _avaliar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _avaliar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Iniciar avaliacao de diarista"""
         if not args:
             return {
@@ -368,11 +365,12 @@ Exemplo: `/diarista avaliar abc123-... def456-...`""",
 
         if self.has_data_connector:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
+
                 from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 
                 repo = DiaristRepository(self.data_connector.db)
-                diarista = await repo.get_by_id(UUIDType(diarist_id))
+                diarista = await repo.get_by_id(UUID(diarist_id))
 
                 if not diarista:
                     return {
@@ -383,14 +381,14 @@ Exemplo: `/diarista avaliar abc123-... def456-...`""",
                 # Verificar avaliacao existente para o schedule
                 if schedule_id:
                     try:
-                        avaliacao_existente = await repo.get_evaluation_by_schedule(UUIDType(schedule_id))
+                        avaliacao_existente = await repo.get_evaluation_by_schedule(UUID(schedule_id))
                         if avaliacao_existente:
                             return {
                                 "response": f"**Avaliacao ja existe** para o agendamento `{schedule_id}` da diarista **{diarista.nome}**.\nNota geral: **{avaliacao_existente.nota_geral}/5**",
                                 "suggestions": [f"/diarista avaliacoes {diarist_id}", "/diarista listar"],
                             }
                     except Exception:
-                        pass
+                        logger.debug(f"Erro ao verificar avaliacao existente para agendamento {schedule_id}")
 
                 schedule_info = f"\n- **Agendamento:** `{schedule_id}`" if schedule_id else ""
                 return {
@@ -432,7 +430,7 @@ Confirme os dados para registrar a avaliacao.""",
             "suggestions": ["/diarista listar", "/diarista help"],
         }
 
-    async def _avaliacoes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _avaliacoes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ver historico de avaliacoes"""
         if not args:
             return {
@@ -448,11 +446,12 @@ Exemplo: `/diarista avaliacoes abc123-...`""",
 
         if self.has_data_connector:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
+
                 from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 
                 repo = DiaristRepository(self.data_connector.db)
-                diarista = await repo.get_by_id(UUIDType(diarist_id))
+                diarista = await repo.get_by_id(UUID(diarist_id))
 
                 if not diarista:
                     return {
@@ -465,7 +464,7 @@ Exemplo: `/diarista avaliacoes abc123-...`""",
                 if avaliacoes:
                     lines = []
                     for i, av in enumerate(avaliacoes[:15], 1):
-                        data_str = av.created_at.strftime('%d/%m/%Y') if av.created_at else "N/A"
+                        data_str = av.created_at.strftime("%d/%m/%Y") if av.created_at else "N/A"
                         pont = av.nota_pontualidade or "-"
                         qual = av.nota_qualidade or "-"
                         comp = av.nota_comportamento or "-"
@@ -507,7 +506,7 @@ Exemplo: `/diarista avaliacoes abc123-...`""",
             "suggestions": ["/diarista listar"],
         }
 
-    async def _pagamento(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pagamento(self, args: list[str], context: dict) -> dict[str, Any]:
         """Subcomando de pagamento: gerar ou aprovar"""
         if not args:
             return {
@@ -538,7 +537,7 @@ Exemplo:
                 "suggestions": ["/diarista pagamento gerar", "/diarista pagamento aprovar"],
             }
 
-    async def _pagamento_gerar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pagamento_gerar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Gerar pagamento para diarista em periodo"""
         from datetime import date, timedelta
 
@@ -555,15 +554,17 @@ Exemplo: `/diarista pagamento gerar abc123-... 2026-01`""",
 
         diarist_id = args[0]
         from datetime import datetime as dt
+
         periodo = args[1] if len(args) > 1 else dt.now().strftime("%Y-%m")
 
         if self.has_data_connector:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
+
                 from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 
                 repo = DiaristRepository(self.data_connector.db)
-                diarista = await repo.get_by_id(UUIDType(diarist_id))
+                diarista = await repo.get_by_id(UUID(diarist_id))
 
                 if not diarista:
                     return {
@@ -586,8 +587,9 @@ Exemplo: `/diarista pagamento gerar abc123-... 2026-01`""",
                     data_fim=data_fim,
                 )
                 concluidos = [
-                    s for s in schedules
-                    if (s.status.value if hasattr(s.status, 'value') else str(s.status)) == "CONCLUIDO"
+                    s
+                    for s in schedules
+                    if (s.status.value if hasattr(s.status, "value") else str(s.status)) == "CONCLUIDO"
                 ]
 
                 qtd = len(concluidos)
@@ -604,7 +606,7 @@ Exemplo: `/diarista pagamento gerar abc123-... 2026-01`""",
                 return {
                     "response": f"""**Gerar Pagamento - {diarista.nome}**
 
-**Periodo:** {periodo} ({data_inicio.strftime('%d/%m')} a {data_fim.strftime('%d/%m/%Y')})
+**Periodo:** {periodo} ({data_inicio.strftime("%d/%m")} a {data_fim.strftime("%d/%m/%Y")})
 
 **Resumo:**
 - Diarias concluidas: **{qtd}**
@@ -659,7 +661,7 @@ Confirme para gerar o pagamento.""",
             "suggestions": ["/diarista listar"],
         }
 
-    async def _pagamento_aprovar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pagamento_aprovar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Aprovar pagamento pendente"""
         if not args:
             return {
@@ -675,12 +677,12 @@ Exemplo: `/diarista pagamento aprovar abc123-...`""",
 
         if self.has_data_connector:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
+
                 from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
-                from modules.operacional.diaristas.models.diarist import PaymentStatus
 
                 repo = DiaristRepository(self.data_connector.db)
-                pagamento = await repo.get_payment_by_id(UUIDType(pagamento_id))
+                pagamento = await repo.get_payment_by_id(UUID(pagamento_id))
 
                 if not pagamento:
                     return {
@@ -688,7 +690,11 @@ Exemplo: `/diarista pagamento aprovar abc123-...`""",
                         "suggestions": ["/diarista pagamentos"],
                     }
 
-                status_str = pagamento.status if isinstance(pagamento.status, str) else (pagamento.status.value if hasattr(pagamento.status, 'value') else str(pagamento.status))
+                status_str = (
+                    pagamento.status
+                    if isinstance(pagamento.status, str)
+                    else (pagamento.status.value if hasattr(pagamento.status, "value") else str(pagamento.status))
+                )
                 nome = pagamento.diarist.nome if pagamento.diarist else "N/A"
 
                 if status_str != "PENDENTE":
@@ -699,7 +705,7 @@ Exemplo: `/diarista pagamento aprovar abc123-...`""",
 
                 bruto = float(pagamento.valor_bruto or 0)
                 liquido = float(pagamento.valor_liquido or 0)
-                ref = pagamento.data_referencia.strftime('%m/%Y') if pagamento.data_referencia else "N/A"
+                ref = pagamento.data_referencia.strftime("%m/%Y") if pagamento.data_referencia else "N/A"
 
                 return {
                     "response": f"""**Aprovar Pagamento**
@@ -729,7 +735,7 @@ Confirme para aprovar.""",
             "suggestions": ["/diarista pagamentos"],
         }
 
-    async def _pagamentos(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pagamentos(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar pagamentos de diaristas"""
         diarist_id = args[0] if args else None
         status_filtro = None
@@ -746,9 +752,10 @@ Confirme para aprovar.""",
 
         if self.has_data_connector:
             try:
-                from uuid import UUID as UUIDType
-                from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
+                from uuid import UUID
+
                 from modules.operacional.diaristas.models.diarist import PaymentStatus
+                from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 
                 repo = DiaristRepository(self.data_connector.db)
 
@@ -756,7 +763,7 @@ Confirme para aprovar.""",
                 if diarist_id and not status_filtro:
                     # Verificar se o primeiro arg eh UUID ou filtro de status
                     try:
-                        diarist_uuid = UUIDType(diarist_id)
+                        diarist_uuid = UUID(diarist_id)
                     except ValueError:
                         # Nao eh UUID, pode ser filtro
                         if diarist_id.lower() in ("pendente", "pendentes"):
@@ -768,10 +775,8 @@ Confirme para aprovar.""",
 
                 status_enum = None
                 if status_filtro:
-                    try:
+                    with contextlib.suppress(ValueError):
                         status_enum = PaymentStatus(status_filtro)
-                    except ValueError:
-                        pass
 
                 pagamentos = await repo.list_payments(
                     diarist_id=diarist_uuid,
@@ -785,11 +790,15 @@ Confirme para aprovar.""",
                     total_liquido = 0
                     for i, p in enumerate(pagamentos[:15], 1):
                         nome = p.diarist.nome if p.diarist else "N/A"
-                        ref = p.data_referencia.strftime('%m/%Y') if p.data_referencia else "N/A"
+                        ref = p.data_referencia.strftime("%m/%Y") if p.data_referencia else "N/A"
                         bruto = float(p.valor_bruto or 0)
                         liquido = float(p.valor_liquido or 0)
-                        status_str = p.status if isinstance(p.status, str) else (p.status.value if hasattr(p.status, 'value') else str(p.status))
-                        venc = p.data_vencimento.strftime('%d/%m') if p.data_vencimento else "N/A"
+                        status_str = (
+                            p.status
+                            if isinstance(p.status, str)
+                            else (p.status.value if hasattr(p.status, "value") else str(p.status))
+                        )
+                        venc = p.data_vencimento.strftime("%d/%m") if p.data_vencimento else "N/A"
                         total_bruto += bruto
                         total_liquido += liquido
                         lines.append(
@@ -832,7 +841,7 @@ Confirme para aprovar.""",
             "suggestions": ["/diarista pagamento gerar", "/diarista stats"],
         }
 
-    async def _agenda(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _agenda(self, args: list[str], context: dict) -> dict[str, Any]:
         """Ver agenda detalhada com check-ins/outs e status"""
         from datetime import date, timedelta
 
@@ -879,7 +888,8 @@ Confirme para aprovar.""",
 
         if self.has_data_connector:
             try:
-                from uuid import UUID as UUIDType
+                from uuid import UUID
+
                 from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 
                 repo = DiaristRepository(self.data_connector.db)
@@ -887,7 +897,7 @@ Confirme para aprovar.""",
                 diarist_uuid = None
                 if diarist_id:
                     try:
-                        diarist_uuid = UUIDType(diarist_id)
+                        diarist_uuid = UUID(diarist_id)
                     except ValueError:
                         # Nao eh UUID, talvez seja periodo
                         if diarist_id.lower() in ("semana", "mes") or "-" in diarist_id:
@@ -907,13 +917,17 @@ Confirme para aprovar.""",
                     total_faltas = 0
                     for i, s in enumerate(schedules[:30], 1):
                         nome = s.diarist.nome if s.diarist else "N/A"
-                        data_str = s.data_trabalho.strftime('%d/%m') if s.data_trabalho else "N/A"
-                        hora_ini = s.hora_inicio.strftime('%H:%M') if s.hora_inicio else "08:00"
-                        hora_fim = s.hora_fim.strftime('%H:%M') if s.hora_fim else "17:00"
-                        status_str = s.status if isinstance(s.status, str) else (s.status.value if hasattr(s.status, 'value') else str(s.status))
+                        data_str = s.data_trabalho.strftime("%d/%m") if s.data_trabalho else "N/A"
+                        hora_ini = s.hora_inicio.strftime("%H:%M") if s.hora_inicio else "08:00"
+                        hora_fim = s.hora_fim.strftime("%H:%M") if s.hora_fim else "17:00"
+                        status_str = (
+                            s.status
+                            if isinstance(s.status, str)
+                            else (s.status.value if hasattr(s.status, "value") else str(s.status))
+                        )
 
-                        checkin_str = s.checkin_real.strftime('%H:%M') if s.checkin_real else "-"
-                        checkout_str = s.checkout_real.strftime('%H:%M') if s.checkout_real else "-"
+                        checkin_str = s.checkin_real.strftime("%H:%M") if s.checkin_real else "-"
+                        checkout_str = s.checkout_real.strftime("%H:%M") if s.checkout_real else "-"
 
                         duracao = "-"
                         if s.checkin_real and s.checkout_real:
@@ -958,8 +972,8 @@ Confirme para aprovar.""",
 
 | # | Diarista | Data | Horario | Check-in | Check-out | Duracao | Status |
 |---|----------|------|---------|----------|-----------|---------|--------|
-| 1 | Maria Silva | {hoje.strftime('%d/%m')} | 08:00-17:00 | 07:55 | 17:10 | 9h15 | CONCLUIDO |
-| 2 | Ana Souza | {hoje.strftime('%d/%m')} | 08:00-12:00 | 08:10 | - | - | EM_ANDAMENTO |
+| 1 | Maria Silva | {hoje.strftime("%d/%m")} | 08:00-17:00 | 07:55 | 17:10 | 9h15 | CONCLUIDO |
+| 2 | Ana Souza | {hoje.strftime("%d/%m")} | 08:00-12:00 | 08:10 | - | - | EM_ANDAMENTO |
 
 *Dados ilustrativos - conecte ao banco para dados reais.*""",
             "suggestions": ["/diarista escalados", "/diarista stats"],

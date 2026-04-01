@@ -4,9 +4,10 @@ Testes dos Modelos Document Intelligence.
 Testes para Document, OCRResult, ExtractedField, Template.
 """
 
-import pytest
 from datetime import datetime
 from decimal import Decimal
+
+import pytest
 
 from modules.documents.models.document import (
     Document,
@@ -15,15 +16,6 @@ from modules.documents.models.document import (
     DocumentType,
     ProcessingStatus,
     ProcessingStep,
-)
-from modules.documents.models.ocr_result import (
-    BoundingBox,
-    OCRBlock,
-    OCRLine,
-    OCRPage,
-    OCRProvider,
-    OCRResult,
-    OCRWord,
 )
 from modules.documents.models.extracted_field import (
     ExtractedField,
@@ -39,6 +31,15 @@ from modules.documents.models.extraction_template import (
     TemplateField,
     TemplateRule,
     TemplateStatus,
+)
+from modules.documents.models.ocr_result import (
+    BoundingBox,
+    OCRBlock,
+    OCRLine,
+    OCRPage,
+    OCRProvider,
+    OCRResult,
+    OCRWord,
 )
 
 
@@ -436,9 +437,7 @@ class TestTemplateRule:
 
     def test_digits_only(self):
         """Testa extrator de digitos."""
-        rule = TemplateRule(
-            post_processors=[PostProcessor.DIGITS_ONLY]
-        )
+        rule = TemplateRule(post_processors=[PostProcessor.DIGITS_ONLY])
 
         result = rule.apply_post_processors("529.982.247-25")
         assert result == "52998224725"

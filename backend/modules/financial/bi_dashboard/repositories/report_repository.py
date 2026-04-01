@@ -1,26 +1,24 @@
 """Repository de Relatorio Agendado Financeiro."""
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from modules.financial.bi_dashboard.models.scheduled_report import (
-    ScheduledReport,
-    ReportType,
     ReportFormat,
     ReportFrequency,
     ReportStatus,
-    DeliveryMethod,
+    ReportType,
+    ScheduledReport,
 )
 from modules.financial.bi_dashboard.schemas.report_schemas import (
     ReportCreate,
-    ReportUpdate,
     ReportFilters,
     ReportStats,
+    ReportUpdate,
 )
 
 
@@ -91,11 +89,9 @@ class ReportRepository:
         self,
         report_id: UUID,
         condominio_id: UUID = None,
-    ) -> Optional[ScheduledReport]:
+    ) -> ScheduledReport | None:
         """Busca relatorio por ID."""
-        query = self.db.query(ScheduledReport).filter(
-            ScheduledReport.id == report_id
-        )
+        query = self.db.query(ScheduledReport).filter(ScheduledReport.id == report_id)
         if condominio_id:
             query = query.filter(ScheduledReport.condominio_id == condominio_id)
         return query.first()
@@ -104,12 +100,16 @@ class ReportRepository:
         self,
         codigo: str,
         condominio_id: UUID,
-    ) -> Optional[ScheduledReport]:
+    ) -> ScheduledReport | None:
         """Busca relatorio por codigo."""
-        return self.db.query(ScheduledReport).filter(
-            ScheduledReport.codigo == codigo,
-            ScheduledReport.condominio_id == condominio_id,
-        ).first()
+        return (
+            self.db.query(ScheduledReport)
+            .filter(
+                ScheduledReport.codigo == codigo,
+                ScheduledReport.condominio_id == condominio_id,
+            )
+            .first()
+        )
 
     def list_all(
         self,
@@ -119,9 +119,7 @@ class ReportRepository:
         limit: int = 100,
     ) -> tuple[list[ScheduledReport], int]:
         """Lista relatorios com filtros."""
-        query = self.db.query(ScheduledReport).filter(
-            ScheduledReport.condominio_id == condominio_id
-        )
+        query = self.db.query(ScheduledReport).filter(ScheduledReport.condominio_id == condominio_id)
 
         if filters:
             if filters.tipo:
@@ -133,9 +131,7 @@ class ReportRepository:
             if filters.frequencia:
                 query = query.filter(ScheduledReport.frequencia == filters.frequencia)
             if filters.metodo_entrega:
-                query = query.filter(
-                    ScheduledReport.metodo_entrega == filters.metodo_entrega
-                )
+                query = query.filter(ScheduledReport.metodo_entrega == filters.metodo_entrega)
             if filters.is_due:
                 now = datetime.utcnow()
                 query = query.filter(
@@ -154,21 +150,12 @@ class ReportRepository:
                     )
                 )
             if filters.created_after:
-                query = query.filter(
-                    ScheduledReport.created_at >= filters.created_after
-                )
+                query = query.filter(ScheduledReport.created_at >= filters.created_after)
             if filters.created_before:
-                query = query.filter(
-                    ScheduledReport.created_at <= filters.created_before
-                )
+                query = query.filter(ScheduledReport.created_at <= filters.created_before)
 
         total = query.count()
-        items = (
-            query.order_by(ScheduledReport.proxima_execucao_at)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        items = query.order_by(ScheduledReport.proxima_execucao_at).offset(skip).limit(limit).all()
         return items, total
 
     def update(
@@ -292,20 +279,12 @@ class ReportRepository:
 
     def get_stats(self, condominio_id: UUID) -> ReportStats:
         """Retorna estatisticas de relatorios."""
-        base_query = self.db.query(ScheduledReport).filter(
-            ScheduledReport.condominio_id == condominio_id
-        )
+        base_query = self.db.query(ScheduledReport).filter(ScheduledReport.condominio_id == condominio_id)
 
         total = base_query.count()
-        active = base_query.filter(
-            ScheduledReport.status == ReportStatus.ACTIVE
-        ).count()
-        paused = base_query.filter(
-            ScheduledReport.status == ReportStatus.PAUSED
-        ).count()
-        expired = base_query.filter(
-            ScheduledReport.status == ReportStatus.EXPIRED
-        ).count()
+        active = base_query.filter(ScheduledReport.status == ReportStatus.ACTIVE).count()
+        paused = base_query.filter(ScheduledReport.status == ReportStatus.PAUSED).count()
+        expired = base_query.filter(ScheduledReport.status == ReportStatus.EXPIRED).count()
 
         now = datetime.utcnow()
         due_today = base_query.filter(
@@ -313,18 +292,12 @@ class ReportRepository:
             ScheduledReport.proxima_execucao_at <= now,
         ).count()
 
-        total_executions = base_query.with_entities(
-            func.sum(ScheduledReport.total_execucoes)
-        ).scalar() or 0
-        total_errors = base_query.with_entities(
-            func.sum(ScheduledReport.total_erros)
-        ).scalar() or 0
+        total_executions = base_query.with_entities(func.sum(ScheduledReport.total_execucoes)).scalar() or 0
+        total_errors = base_query.with_entities(func.sum(ScheduledReport.total_erros)).scalar() or 0
 
         success_rate = Decimal("100")
         if total_executions > 0:
-            success_rate = Decimal(
-                str(((total_executions - total_errors) / total_executions) * 100)
-            )
+            success_rate = Decimal(str(((total_executions - total_errors) / total_executions) * 100))
 
         by_type = {}
         for tipo in ReportType:
@@ -364,11 +337,15 @@ class ReportRepository:
         tipo: ReportType,
     ) -> list[ScheduledReport]:
         """Lista relatorios por tipo."""
-        return self.db.query(ScheduledReport).filter(
-            ScheduledReport.condominio_id == condominio_id,
-            ScheduledReport.tipo == tipo,
-            ScheduledReport.status == ReportStatus.ACTIVE,
-        ).all()
+        return (
+            self.db.query(ScheduledReport)
+            .filter(
+                ScheduledReport.condominio_id == condominio_id,
+                ScheduledReport.tipo == tipo,
+                ScheduledReport.status == ReportStatus.ACTIVE,
+            )
+            .all()
+        )
 
     def get_expiring_soon(
         self,
@@ -377,11 +354,13 @@ class ReportRepository:
     ) -> list[ScheduledReport]:
         """Lista relatorios expirando em breve."""
         cutoff = date.today() + timedelta(days=days)
-        return self.db.query(ScheduledReport).filter(
-            ScheduledReport.condominio_id == condominio_id,
-            ScheduledReport.status == ReportStatus.ACTIVE,
-            ScheduledReport.valido_ate.isnot(None),
-            ScheduledReport.valido_ate <= cutoff,
-        ).all()
-
-
+        return (
+            self.db.query(ScheduledReport)
+            .filter(
+                ScheduledReport.condominio_id == condominio_id,
+                ScheduledReport.status == ReportStatus.ACTIVE,
+                ScheduledReport.valido_ate.isnot(None),
+                ScheduledReport.valido_ate <= cutoff,
+            )
+            .all()
+        )

@@ -20,17 +20,17 @@ Date: 2026-01-16
 
 import logging
 import uuid
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 
-class SyncJobType(str, Enum):
+class SyncJobType(StrEnum):
     """Tipos de jobs de sincronizacao."""
+
     NFE_EMITIDAS = "nfe_emitidas"
     NFE_DESTINADAS = "nfe_destinadas"
     CTE = "cte"
@@ -62,7 +62,7 @@ class SyncJobConfig:
         timeout_seconds: int = 3600,
         max_retries: int = 3,
         ativo: bool = True,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ):
         self.job_type = job_type
         self.nome = nome
@@ -78,7 +78,7 @@ class SyncJobConfig:
 
 
 # Configuracoes padrao dos jobs
-SYNC_JOBS_CONFIG: Dict[SyncJobType, SyncJobConfig] = {
+SYNC_JOBS_CONFIG: dict[SyncJobType, SyncJobConfig] = {
     # =========================================================================
     # DOCUMENTOS FISCAIS ESTADUAIS (Alta Frequencia)
     # =========================================================================
@@ -126,7 +126,6 @@ SYNC_JOBS_CONFIG: Dict[SyncJobType, SyncJobConfig] = {
         timeout_seconds=1800,
         tags=["fiscal", "mdfe", "transporte"],
     ),
-
     # =========================================================================
     # OBRIGACOES FEDERAIS (Diarias)
     # =========================================================================
@@ -175,7 +174,6 @@ SYNC_JOBS_CONFIG: Dict[SyncJobType, SyncJobConfig] = {
         timeout_seconds=3600,
         tags=["fiscal", "reinf", "federal"],
     ),
-
     # =========================================================================
     # SPED (Semanal/Mensal)
     # =========================================================================
@@ -201,7 +199,6 @@ SYNC_JOBS_CONFIG: Dict[SyncJobType, SyncJobConfig] = {
         timeout_seconds=7200,
         tags=["contabil", "sped", "ecd"],
     ),
-
     # =========================================================================
     # NFS-e MUNICIPAL
     # =========================================================================
@@ -227,7 +224,6 @@ SYNC_JOBS_CONFIG: Dict[SyncJobType, SyncJobConfig] = {
         timeout_seconds=1800,
         tags=["fiscal", "nfse", "nacional"],
     ),
-
     # =========================================================================
     # RECEITA FEDERAL
     # =========================================================================
@@ -270,7 +266,7 @@ class GovSyncJobManager:
         self.db = db
         self.scheduler_service = scheduler_service
 
-    def registrar_todos_jobs(self, tenant_id: uuid.UUID) -> Dict[str, Any]:
+    def registrar_todos_jobs(self, tenant_id: uuid.UUID) -> dict[str, Any]:
         """
         Registra todos os jobs de sincronizacao para um tenant.
 
@@ -286,27 +282,28 @@ class GovSyncJobManager:
             "total": len(SYNC_JOBS_CONFIG),
         }
 
-        for job_type, config in SYNC_JOBS_CONFIG.items():
+        for _job_type, config in SYNC_JOBS_CONFIG.items():
             try:
                 resultado = self.registrar_job(tenant_id, config)
                 if resultado.get("sucesso"):
                     resultados["sucesso"].append(config.nome)
                 else:
-                    resultados["erros"].append({
-                        "job": config.nome,
-                        "erro": resultado.get("erro"),
-                    })
+                    resultados["erros"].append(
+                        {
+                            "job": config.nome,
+                            "erro": resultado.get("erro"),
+                        }
+                    )
             except Exception as e:
                 logger.error(f"Erro registrando job {config.nome}: {e}")
-                resultados["erros"].append({
-                    "job": config.nome,
-                    "erro": str(e),
-                })
+                resultados["erros"].append(
+                    {
+                        "job": config.nome,
+                        "erro": str(e),
+                    }
+                )
 
-        logger.info(
-            f"Jobs registrados: {len(resultados['sucesso'])}/{resultados['total']} "
-            f"para tenant {tenant_id}"
-        )
+        logger.info(f"Jobs registrados: {len(resultados['sucesso'])}/{resultados['total']} para tenant {tenant_id}")
 
         return resultados
 
@@ -314,7 +311,7 @@ class GovSyncJobManager:
         self,
         tenant_id: uuid.UUID,
         config: SyncJobConfig,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Registra um job individual no scheduler.
 
@@ -343,7 +340,7 @@ class GovSyncJobManager:
                 }
 
             # Criar novo job
-            from modules.scheduler.models.scheduled_task import TaskType, TaskCategory
+            from modules.scheduler.models.scheduled_task import TaskCategory, TaskType
 
             task = self.scheduler_service.create_task(
                 tenant_id=tenant_id,
@@ -387,15 +384,19 @@ class GovSyncJobManager:
         self,
         tenant_id: uuid.UUID,
         job_type: SyncJobType,
-    ) -> Optional[uuid.UUID]:
+    ) -> uuid.UUID | None:
         """Verifica se job ja existe."""
         try:
             from modules.scheduler.models.scheduled_task import ScheduledTask
 
-            task = self.db.query(ScheduledTask).filter(
-                ScheduledTask.tenant_id == tenant_id,
-                ScheduledTask.handler_kwargs.contains({"job_type": job_type.value}),
-            ).first()
+            task = (
+                self.db.query(ScheduledTask)
+                .filter(
+                    ScheduledTask.tenant_id == tenant_id,
+                    ScheduledTask.handler_kwargs.contains({"job_type": job_type.value}),
+                )
+                .first()
+            )
 
             return task.id if task else None
         except Exception:
@@ -404,10 +405,10 @@ class GovSyncJobManager:
     def atualizar_job(
         self,
         job_id: uuid.UUID,
-        cron_expression: Optional[str] = None,
-        ativo: Optional[bool] = None,
-        prioridade: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        cron_expression: str | None = None,
+        ativo: bool | None = None,
+        prioridade: int | None = None,
+    ) -> dict[str, Any]:
         """
         Atualiza configuracao de um job.
 
@@ -445,7 +446,7 @@ class GovSyncJobManager:
             logger.error(f"Erro atualizando job {job_id}: {e}")
             return {"sucesso": False, "erro": str(e)}
 
-    def listar_jobs(self, tenant_id: uuid.UUID) -> List[Dict[str, Any]]:
+    def listar_jobs(self, tenant_id: uuid.UUID) -> list[dict[str, Any]]:
         """
         Lista todos os jobs de sincronizacao do tenant.
 
@@ -458,10 +459,14 @@ class GovSyncJobManager:
         try:
             from modules.scheduler.models.scheduled_task import ScheduledTask
 
-            tasks = self.db.query(ScheduledTask).filter(
-                ScheduledTask.tenant_id == tenant_id,
-                ScheduledTask.queue_name == "gov_sync",
-            ).all()
+            tasks = (
+                self.db.query(ScheduledTask)
+                .filter(
+                    ScheduledTask.tenant_id == tenant_id,
+                    ScheduledTask.queue_name == "gov_sync",
+                )
+                .all()
+            )
 
             return [
                 {
@@ -486,7 +491,7 @@ class GovSyncJobManager:
         self,
         tenant_id: uuid.UUID,
         job_type: SyncJobType,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Executa um job imediatamente (fora do agendamento).
 
@@ -517,7 +522,7 @@ class GovSyncJobManager:
             logger.error(f"Erro executando job {job_type}: {e}")
             return {"sucesso": False, "erro": str(e)}
 
-    def obter_status_sincronizacao(self, tenant_id: uuid.UUID) -> Dict[str, Any]:
+    def obter_status_sincronizacao(self, tenant_id: uuid.UUID) -> dict[str, Any]:
         """
         Obtem status geral da sincronizacao governamental.
 
@@ -555,12 +560,14 @@ class GovSyncJobManager:
             else:
                 categoria = "federal"  # default
 
-            status[categoria].append({
-                "nome": job["nome"],
-                "status": job["status"],
-                "ultima_execucao": job["ultima_execucao"],
-                "proxima_execucao": job["proxima_execucao"],
-            })
+            status[categoria].append(
+                {
+                    "nome": job["nome"],
+                    "status": job["status"],
+                    "ultima_execucao": job["ultima_execucao"],
+                    "proxima_execucao": job["proxima_execucao"],
+                }
+            )
 
             # Atualizar resumo
             if job["status"] == "active":
@@ -570,10 +577,7 @@ class GovSyncJobManager:
 
             # Ultima sync global
             if job["ultima_execucao"]:
-                if (
-                    status["resumo"]["ultima_sync"] is None or
-                    job["ultima_execucao"] > status["resumo"]["ultima_sync"]
-                ):
+                if status["resumo"]["ultima_sync"] is None or job["ultima_execucao"] > status["resumo"]["ultima_sync"]:
                     status["resumo"]["ultima_sync"] = job["ultima_execucao"]
 
         return status
@@ -583,12 +587,13 @@ class GovSyncJobManager:
 # HANDLERS DOS JOBS (Funcoes que serao executadas pelo scheduler)
 # =========================================================================
 
+
 async def executar_sync_job(
     db: Session,
     job_type: str,
     tenant_id: str,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Handler generico para execucao de jobs de sincronizacao.
 
@@ -665,10 +670,10 @@ async def executar_sync_job(
         }
 
 
-async def _obter_cnpj_tenant(db: Session, tenant_id: str) -> Optional[str]:
+async def _obter_cnpj_tenant(db: Session, tenant_id: str) -> str | None:
     """Obtem CNPJ do tenant."""
     try:
-        from modules.core.models.tenant import Tenant
+        from core.models.user import User as Tenant  # Single-tenant: user model como fallback
 
         tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
         return tenant.cnpj if tenant else None
@@ -681,6 +686,6 @@ async def _obter_cnpj_tenant(db: Session, tenant_id: str) -> Optional[str]:
             certs = store.listar_certificados_ativos()
             if certs:
                 return certs[0].get("cnpj")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Erro ao buscar CNPJ do certificado: {e}")
     return None

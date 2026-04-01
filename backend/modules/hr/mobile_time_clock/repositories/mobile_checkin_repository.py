@@ -1,15 +1,14 @@
 """Repository para MobileCheckIn."""
 
-from datetime import datetime, date, timedelta
-from typing import Optional, List, Tuple
+from datetime import date, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import select, func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
-    MobileCheckIn,
     CheckInStatus,
+    MobileCheckIn,
 )
 from modules.hr.mobile_time_clock.schemas import (
     MobileCheckInCreate,
@@ -41,9 +40,7 @@ class MobileCheckInRepository:
             checkin_time=data.device_timestamp.time(),
             device_timestamp=data.device_timestamp,
             server_timestamp=datetime.utcnow(),
-            time_drift_seconds=int(
-                (datetime.utcnow() - data.device_timestamp).total_seconds()
-            ),
+            time_drift_seconds=int((datetime.utcnow() - data.device_timestamp).total_seconds()),
             app_version=data.app_version,
             device_info=data.device_info or {},
         )
@@ -82,18 +79,16 @@ class MobileCheckInRepository:
         await self.db.refresh(checkin)
         return checkin
 
-    async def get_by_id(self, checkin_id: UUID) -> Optional[MobileCheckIn]:
+    async def get_by_id(self, checkin_id: UUID) -> MobileCheckIn | None:
         """Busca check-in por ID."""
-        result = await self.db.execute(
-            select(MobileCheckIn).where(MobileCheckIn.id == checkin_id)
-        )
+        result = await self.db.execute(select(MobileCheckIn).where(MobileCheckIn.id == checkin_id))
         return result.scalar_one_or_none()
 
     async def get_employee_today(
         self,
         employee_id: UUID,
         today: date = None,
-    ) -> List[MobileCheckIn]:
+    ) -> list[MobileCheckIn]:
         """Busca check-ins do funcionário hoje."""
         today = today or date.today()
         result = await self.db.execute(
@@ -107,7 +102,7 @@ class MobileCheckInRepository:
     async def get_last_checkin(
         self,
         employee_id: UUID,
-    ) -> Optional[MobileCheckIn]:
+    ) -> MobileCheckIn | None:
         """Busca último check-in do funcionário."""
         result = await self.db.execute(
             select(MobileCheckIn)
@@ -140,7 +135,7 @@ class MobileCheckInRepository:
         self,
         checkin_id: UUID,
         status: str,
-        validation_methods: List[str],
+        validation_methods: list[str],
         validation_score: int,
         is_valid: bool,
     ) -> None:
@@ -200,7 +195,7 @@ class MobileCheckInRepository:
         approved: bool,
         notes: str = None,
         rejection_reason: str = None,
-    ) -> Optional[MobileCheckIn]:
+    ) -> MobileCheckIn | None:
         """Revisa check-in."""
         checkin = await self.get_by_id(checkin_id)
         if not checkin:
@@ -226,7 +221,7 @@ class MobileCheckInRepository:
         filters: MobileCheckInFilter,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[MobileCheckIn], int]:
+    ) -> tuple[list[MobileCheckIn], int]:
         """Lista check-ins com filtros."""
         query = select(MobileCheckIn)
 
@@ -272,7 +267,7 @@ class MobileCheckInRepository:
     async def get_pending_review(
         self,
         condominio_id: UUID,
-    ) -> List[MobileCheckIn]:
+    ) -> list[MobileCheckIn]:
         """Lista check-ins pendentes de revisão."""
         result = await self.db.execute(
             select(MobileCheckIn)
@@ -329,18 +324,9 @@ class MobileCheckInRepository:
             "anomalies_detected": anomaly_count,
             "by_type": by_type,
             "by_status": by_status,
-            "avg_validation_score": (
-                sum(validation_scores) / len(validation_scores)
-                if validation_scores else 0
-            ),
-            "geofence_compliance": (
-                geofence_inside / len(checkins) * 100
-                if checkins else 0
-            ),
-            "biometric_usage": (
-                biometric_used / len(checkins) * 100
-                if checkins else 0
-            ),
+            "avg_validation_score": (sum(validation_scores) / len(validation_scores) if validation_scores else 0),
+            "geofence_compliance": (geofence_inside / len(checkins) * 100 if checkins else 0),
+            "biometric_usage": (biometric_used / len(checkins) * 100 if checkins else 0),
         }
 
     async def check_duplicate(

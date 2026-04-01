@@ -1,12 +1,11 @@
 'use client';
 
 import { Receipt } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-;
 
 interface BillingRuleFormModalProps {
   isOpen: boolean;
@@ -16,34 +15,29 @@ interface BillingRuleFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (rule?: any) => ({
+  name: rule?.name || '',
+  type: rule?.type || 'fixed',
+  value: rule?.value?.toString() || '',
+  frequency: rule?.frequency || 'monthly',
+  description: rule?.description || '',
+});
+
 export function BillingRuleFormModal({ isOpen, onClose, onSubmit, rule, isLoading = false }: BillingRuleFormModalProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    type: 'fixed',
-    value: '',
-    frequency: 'monthly',
-    description: '',
-  });
+  const formKey = useMemo(() => {
+    return rule?.id || rule?.codigo || 'new';
+  }, [rule]);
+
+  const [formData, setFormData] = useState(createInitialForm(rule));
 
   useEffect(() => {
-    if (rule) {
-      setFormData({
-        name: rule.name || '',
-        type: rule.type || 'fixed',
-        value: rule.value?.toString() || '',
-        frequency: rule.frequency || 'monthly',
-        description: rule.description || '',
-      });
-    } else {
-      setFormData({
-        name: '',
-        type: 'fixed',
-        value: '',
-        frequency: 'monthly',
-        description: '',
-      });
+    if (isOpen) {
+
+      setFormData(createInitialForm(rule));
     }
-  }, [rule, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -61,13 +55,7 @@ export function BillingRuleFormModal({ isOpen, onClose, onSubmit, rule, isLoadin
   };
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      type: 'fixed',
-      value: '',
-      frequency: 'monthly',
-      description: '',
-    });
+    setFormData(createInitialForm());
     onClose();
   };
 

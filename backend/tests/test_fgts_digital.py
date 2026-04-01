@@ -4,36 +4,37 @@ Testes para FGTS Digital.
 Testes unitários e de integração para FGTS Digital.
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
 from unittest.mock import Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.fgts_digital import (
+    GRFGTS,
+    DebitoFGTS,
+    FGTSDigitalManager,
+    GuiaRescisoria,
+    ModalidadeSaque,
+    RecolhimentoRescisorio,
+    SituacaoGuia,
+    TipoRecolhimento,
+    TrabalhadorFGTS,
+)
 from modules.government_integrations.schemas.fgts_digital import (
-    TrabalhadorRequest,
     CalcularFolhaRequest,
-    ImportarESocialRequest,
-    GerarGuiaMensalRequest,
-    RescisaoRequest,
+    CategoriaTrabalhadoEnum,
     ConsultarDebitosRequest,
     ConsultarExtratoRequest,
-    SimularSaqueRequest,
+    GerarGuiaMensalRequest,
+    ImportarESocialRequest,
     ModalidadeSaqueEnum,
-    CategoriaTrabalhadoEnum,
+    RescisaoRequest,
+    SimularSaqueRequest,
+    TrabalhadorRequest,
 )
 from modules.government_integrations.services.fgts_digital_service import (
     FGTSDigitalService,
-)
-from modules.government_integrations.core.fgts_digital import (
-    FGTSDigitalManager,
-    TrabalhadorFGTS,
-    DebitoFGTS,
-    GRFGTS,
-    GuiaRescisoria,
-    RecolhimentoRescisorio,
-    TipoRecolhimento,
-    ModalidadeSaque,
-    SituacaoGuia,
 )
 
 
@@ -111,7 +112,7 @@ class TestFGTSDigitalManager:
         """Testa inicialização do manager."""
         assert manager.cnpj == "35710481000103"
         assert manager.ambiente == "homologacao"
-        assert manager.ALIQUOTA_FGTS == Decimal("0.08")
+        assert Decimal("0.08") == manager.ALIQUOTA_FGTS
 
     def test_calcular_fgts_folha(self, manager):
         """Testa cálculo de FGTS da folha."""
@@ -241,11 +242,7 @@ class TestFGTSDigitalManager:
 
     def test_simular_saque(self, manager):
         """Testa simulação de saque."""
-        resultado = manager.simular_saque(
-            "12345678901",
-            ModalidadeSaque.RESCISAO,
-            Decimal("5000.00")
-        )
+        resultado = manager.simular_saque("12345678901", ModalidadeSaque.RESCISAO, Decimal("5000.00"))
 
         assert resultado["cpf"] == "12345678901"
         assert resultado["modalidade"] == "01"
@@ -276,11 +273,14 @@ class TestFGTSDigitalService:
     @pytest.fixture
     def service(self):
         """Cria instância do service."""
-        with patch.dict('os.environ', {
-            'FGTS_CNPJ': '35710481000103',
-            'EMPRESA_RAZAO_SOCIAL': 'Empresa Teste',
-            'FGTS_AMBIENTE': 'homologacao',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "FGTS_CNPJ": "35710481000103",
+                "EMPRESA_RAZAO_SOCIAL": "Empresa Teste",
+                "FGTS_AMBIENTE": "homologacao",
+            },
+        ):
             return FGTSDigitalService()
 
     def test_service_init(self, service):
@@ -390,12 +390,13 @@ class TestFGTSDigitalEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.fgts_digital_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -436,15 +437,12 @@ class TestFGTSDigitalEndpoints:
                     "nome": "João da Silva",
                     "pis_pasep": "12345678901",
                     "data_admissao": "2020-01-15",
-                    "remuneracao": "5000.00"
+                    "remuneracao": "5000.00",
                 }
-            ]
+            ],
         }
 
-        response = client.post(
-            "/api/v1/government/fgts-digital/calcular-folha",
-            json=payload
-        )
+        response = client.post("/api/v1/government/fgts-digital/calcular-folha", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -460,15 +458,12 @@ class TestFGTSDigitalEndpoints:
                     "nome": "João da Silva",
                     "pis_pasep": "12345678901",
                     "data_admissao": "2020-01-15",
-                    "remuneracao": "5000.00"
+                    "remuneracao": "5000.00",
                 }
-            ]
+            ],
         }
 
-        response = client.post(
-            "/api/v1/government/fgts-digital/guia-mensal",
-            json=payload
-        )
+        response = client.post("/api/v1/government/fgts-digital/guia-mensal", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -486,13 +481,10 @@ class TestFGTSDigitalEndpoints:
             "motivo_desligamento": "Demissão sem justa causa",
             "aviso_previo": "indenizado",
             "remuneracao": "5000.00",
-            "saldo_fgts": "15000.00"
+            "saldo_fgts": "15000.00",
         }
 
-        response = client.post(
-            "/api/v1/government/fgts-digital/guia-rescisoria",
-            json=payload
-        )
+        response = client.post("/api/v1/government/fgts-digital/guia-rescisoria", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -510,15 +502,12 @@ class TestFGTSDigitalEndpoints:
                     "pis_pasep": "12345678901",
                     "data_admissao": "2020-01-15",
                     "remuneracao_total": "5000.00",
-                    "base_fgts": "5000.00"
+                    "base_fgts": "5000.00",
                 }
-            ]
+            ],
         }
 
-        response = client.post(
-            "/api/v1/government/fgts-digital/importar-esocial",
-            json=payload
-        )
+        response = client.post("/api/v1/government/fgts-digital/importar-esocial", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -526,15 +515,9 @@ class TestFGTSDigitalEndpoints:
 
     def test_consultar_debitos_endpoint(self, client):
         """Testa endpoint de consulta de débitos."""
-        payload = {
-            "competencia_inicio": "2025-01",
-            "competencia_fim": "2025-12"
-        }
+        payload = {"competencia_inicio": "2025-01", "competencia_fim": "2025-12"}
 
-        response = client.post(
-            "/api/v1/government/fgts-digital/debitos",
-            json=payload
-        )
+        response = client.post("/api/v1/government/fgts-digital/debitos", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -542,16 +525,9 @@ class TestFGTSDigitalEndpoints:
 
     def test_simular_saque_endpoint(self, client):
         """Testa endpoint de simulação de saque."""
-        payload = {
-            "cpf": "12345678901",
-            "modalidade": "01",
-            "valor_solicitado": "5000.00"
-        }
+        payload = {"cpf": "12345678901", "modalidade": "01", "valor_solicitado": "5000.00"}
 
-        response = client.post(
-            "/api/v1/government/fgts-digital/simular-saque",
-            json=payload
-        )
+        response = client.post("/api/v1/government/fgts-digital/simular-saque", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -567,15 +543,12 @@ class TestFGTSDigitalEndpoints:
                     "nome": "João da Silva",
                     "pis_pasep": "12345678901",
                     "data_admissao": "2020-01-15",
-                    "remuneracao": "5000.00"
+                    "remuneracao": "5000.00",
                 }
-            ]
+            ],
         }
 
-        response = client.post(
-            "/api/v1/government/fgts-digital/relatorio-mensal",
-            json=payload
-        )
+        response = client.post("/api/v1/government/fgts-digital/relatorio-mensal", json=payload)
 
         assert response.status_code == 200
         data = response.json()

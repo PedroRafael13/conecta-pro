@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from modules.financial.models.supplier import Supplier
 
 
-class PayableStatus(str, Enum):
+class PayableStatus(StrEnum):
     """Status da conta a pagar."""
 
     PENDENTE = "pendente"  # Aguardando vencimento
@@ -42,7 +42,7 @@ class PayableStatus(str, Enum):
     APROVADA = "aprovada"  # Aprovada para pagamento
 
 
-class PayableType(str, Enum):
+class PayableType(StrEnum):
     """Tipo de conta a pagar."""
 
     AVULSA = "avulsa"  # Conta avulsa (única)
@@ -51,7 +51,7 @@ class PayableType(str, Enum):
     CONTRATO = "contrato"  # Vinculada a contrato
 
 
-class PayablePriority(str, Enum):
+class PayablePriority(StrEnum):
     """Prioridade de pagamento."""
 
     BAIXA = "baixa"
@@ -61,7 +61,7 @@ class PayablePriority(str, Enum):
     CRITICA = "critica"
 
 
-class RecurrenceType(str, Enum):
+class RecurrenceType(StrEnum):
     """Tipo de recorrência."""
 
     DIARIA = "diaria"

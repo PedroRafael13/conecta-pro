@@ -1,7 +1,9 @@
 'use client';
 
 import { Target, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Trash2, AlertCircle, TrendingUp, DollarSign } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,10 +43,94 @@ import type { OpportunityResponse } from '@/types/generated/crm/models';
 import { OportunidadeFormModal } from '@/components/crm/oportunidade-form-modal';
 import { OportunidadeDetailModal } from '@/components/crm/oportunidade-detail-modal';
 import { formatCurrency } from '@/lib/utils';
+import { customInstance } from '@/lib/api-client';
+import { toast } from 'sonner';
+
+/* === KANBAN COMPONENTS === */
+const STAGES = ['qualification', 'needs_analysis', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] as const;
+const STAGE_NAMES: Record<string, string> = { qualification: 'Qualificação', needs_analysis: 'Análise', proposal: 'Proposta', negotiation: 'Negociação', closed_won: 'Ganho', closed_lost: 'Perdido' };
+const STAGE_COLORS: Record<string, string> = { qualification: 'border-blue-400', needs_analysis: 'border-cyan-400', proposal: 'border-yellow-400', negotiation: 'border-orange-400', closed_won: 'border-green-400', closed_lost: 'border-red-400' };
+const STAGE_BG: Record<string, string> = { qualification: 'bg-blue-50', needs_analysis: 'bg-cyan-50', proposal: 'bg-yellow-50', negotiation: 'bg-orange-50', closed_won: 'bg-green-50', closed_lost: 'bg-red-50' };
+
+function DraggableCard({ item, onItemClick }: { item: any; onItemClick: (item: any) => void }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: item.id });
+  const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)`, opacity: isDragging ? 0.5 : 1 } : undefined;
+  return (
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes}
+      className="bg-white rounded-lg border p-3 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+      onClick={(e) => { if (!isDragging) { e.stopPropagation(); onItemClick(item); } }}>
+      <p className="font-medium text-sm">{item.title}</p>
+      <p className="text-xs text-gray-500">{item.company_name || item.contact_name}</p>
+      <div className="flex justify-between mt-2">
+        <span className="text-green-600 font-semibold text-sm">R$ {item.value?.toLocaleString('pt-BR')}</span>
+        <span className="text-xs text-gray-400">{item.probability}%</span>
+      </div>
+    </div>
+  );
+}
+
+function DroppableColumn({ stage, children }: { stage: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage });
+  return (
+    <div ref={setNodeRef} className={`space-y-2 p-2 min-h-[200px] rounded-b-lg transition-colors ${STAGE_BG[stage] || 'bg-gray-50'} ${isOver ? 'ring-2 ring-cyan-400 bg-cyan-100' : ''}`}>
+      {children}
+    </div>
+  );
+}
+
+function KanbanBoard({ items, onStageChange, onItemClick }: { items: any[]; onStageChange: (id: string, stage: string) => void; onItemClick: (item: any) => void }) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const activeItem = items.find((i: any) => i.id === activeId);
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over) return;
+    const item = items.find((i: any) => i.id === active.id);
+    if (item && item.stage !== over.id) {
+      onStageChange(String(active.id), String(over.id));
+    }
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter}
+      onDragStart={(e: DragStartEvent) => setActiveId(String(e.active.id))}
+      onDragEnd={handleDragEnd}>
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        {STAGES.map(stage => {
+          const stageItems = items.filter((i: any) => i.stage === stage);
+          return (
+            <div key={stage} className="min-w-[260px] flex-shrink-0">
+              <div className={`rounded-t-lg border-t-4 ${STAGE_COLORS[stage]} p-2 bg-gray-50 font-semibold text-sm flex justify-between`}>
+                <span>{STAGE_NAMES[stage]}</span>
+                <span className="bg-white px-2 rounded-full text-xs">{stageItems.length}</span>
+              </div>
+              <DroppableColumn stage={stage}>
+                {stageItems.map((item: any) => (
+                  <DraggableCard key={item.id} item={item} onItemClick={onItemClick} />
+                ))}
+              </DroppableColumn>
+            </div>
+          );
+        })}
+      </div>
+      <DragOverlay>
+        {activeItem ? (
+          <div className="bg-white rounded-lg border p-3 shadow-lg rotate-3 w-[240px]">
+            <p className="font-medium text-sm">{activeItem.title}</p>
+            <p className="text-green-600 font-semibold text-sm">R$ {activeItem.value?.toLocaleString('pt-BR')}</p>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
 
 export default function OportunidadesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('kanban');
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
@@ -133,6 +219,10 @@ export default function OportunidadesPage() {
           <p className="text-muted-foreground">Pipeline de oportunidades comerciais</p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex border rounded-lg overflow-hidden">
+            <button onClick={() => setViewMode('kanban')} className={`px-3 py-1.5 text-sm ${viewMode === 'kanban' ? 'bg-cyan-600 text-white' : 'bg-white'}`}>Kanban</button>
+            <button onClick={() => setViewMode('table')} className={`px-3 py-1.5 text-sm ${viewMode === 'table' ? 'bg-cyan-600 text-white' : 'bg-white'}`}>Tabela</button>
+          </div>
           <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
@@ -242,6 +332,19 @@ export default function OportunidadesPage() {
                 Nova Oportunidade
               </Button>
             </div>
+          ) : viewMode === 'kanban' ? (
+            /* === KANBAN VIEW COM DRAG-AND-DROP (@dnd-kit) === */
+            <KanbanBoard
+              items={oportunidades}
+              onStageChange={async (itemId: string, newStage: string) => {
+                try {
+                  await customInstance({ url: `/api/v1/crm/opportunities/${itemId}/stage`, method: 'PATCH', data: { stage: newStage } });
+                  refetch();
+                  toast.success('Stage atualizado');
+                } catch { toast.error('Erro ao mover'); }
+              }}
+              onItemClick={(item: any) => { setSelectedItem(item); setDetailOpen(true); }}
+            />
           ) : (
             <Table>
               <TableHeader>

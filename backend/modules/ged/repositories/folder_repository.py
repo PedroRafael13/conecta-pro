@@ -1,14 +1,14 @@
 """Repository para Folder."""
 
 import logging
-from typing import Optional, List, Tuple
 from uuid import uuid4
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.folder import Folder, FolderStatus, FolderType
-from modules.ged.schemas.folder import FolderCreate, FolderUpdate, FolderFilter
+from modules.ged.schemas.folder import FolderCreate, FolderFilter, FolderUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -42,28 +42,22 @@ class FolderRepository:
         await self.session.flush()
         return folder
 
-    async def get_by_id(self, folder_id: str) -> Optional[Folder]:
+    async def get_by_id(self, folder_id: str) -> Folder | None:
         """Busca pasta por ID."""
-        result = await self.session.execute(
-            select(Folder).where(Folder.id == folder_id)
-        )
+        result = await self.session.execute(select(Folder).where(Folder.id == folder_id))
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[Folder]:
+    async def get_by_code(self, code: str) -> Folder | None:
         """Busca pasta por código."""
-        result = await self.session.execute(
-            select(Folder).where(Folder.code == code)
-        )
+        result = await self.session.execute(select(Folder).where(Folder.code == code))
         return result.scalar_one_or_none()
 
-    async def get_by_path(self, path: str) -> Optional[Folder]:
+    async def get_by_path(self, path: str) -> Folder | None:
         """Busca pasta por caminho (usando coluna path)."""
-        result = await self.session.execute(
-            select(Folder).where(Folder.path == path)
-        )
+        result = await self.session.execute(select(Folder).where(Folder.path == path))
         return result.scalar_one_or_none()
 
-    async def update(self, folder_id: str, data: FolderUpdate) -> Optional[Folder]:
+    async def update(self, folder_id: str, data: FolderUpdate) -> Folder | None:
         """Atualiza uma pasta."""
         folder = await self.get_by_id(folder_id)
         if not folder:
@@ -95,12 +89,12 @@ class FolderRepository:
 
     async def list_with_filters(
         self,
-        filters: Optional[FolderFilter] = None,
+        filters: FolderFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[Folder], int]:
+    ) -> tuple[list[Folder], int]:
         """Lista pastas com filtros e paginação."""
         query = select(Folder).where(Folder.status != FolderStatus.EXCLUIDA)
 
@@ -135,7 +129,8 @@ class FolderRepository:
         total = total_result.scalar() or 0
 
         # Ordenação
-        order_column = getattr(Folder, order_by, Folder.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(Folder).mapper.column_attrs}
+        order_column = getattr(Folder, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:
@@ -149,9 +144,7 @@ class FolderRepository:
 
         return list(folders), total
 
-    async def get_root_folders(
-        self, condominium_id: str = None
-    ) -> List[Folder]:
+    async def get_root_folders(self, condominium_id: str = None) -> list[Folder]:
         """Retorna pastas raiz."""
         query = select(Folder).where(
             and_(
@@ -165,7 +158,7 @@ class FolderRepository:
         result = await self.session.execute(query.order_by(Folder.order, Folder.name))
         return list(result.scalars().all())
 
-    async def get_children(self, folder_id: str) -> List[Folder]:
+    async def get_children(self, folder_id: str) -> list[Folder]:
         """Retorna subpastas."""
         query = select(Folder).where(
             and_(
@@ -176,9 +169,7 @@ class FolderRepository:
         result = await self.session.execute(query.order_by(Folder.order, Folder.name))
         return list(result.scalars().all())
 
-    async def get_tree(
-        self, root_id: str = None, condominium_id: str = None
-    ) -> List[Folder]:
+    async def get_tree(self, root_id: str = None, condominium_id: str = None) -> list[Folder]:
         """Retorna árvore de pastas."""
         if root_id:
             # Retorna subárvore a partir de root_id
@@ -197,14 +188,10 @@ class FolderRepository:
             if condominium_id:
                 query = query.where(Folder.condominium_id == condominium_id)
 
-        result = await self.session.execute(
-            query.order_by(Folder.level, Folder.order, Folder.name)
-        )
+        result = await self.session.execute(query.order_by(Folder.level, Folder.order, Folder.name))
         return list(result.scalars().all())
 
-    async def get_by_type(
-        self, folder_type: FolderType, condominium_id: str = None
-    ) -> List[Folder]:
+    async def get_by_type(self, folder_type: FolderType, condominium_id: str = None) -> list[Folder]:
         """Retorna pastas por tipo."""
         query = select(Folder).where(
             and_(
@@ -218,9 +205,7 @@ class FolderRepository:
         result = await self.session.execute(query.order_by(Folder.name))
         return list(result.scalars().all())
 
-    async def archive(
-        self, folder_id: str, archived_by: str
-    ) -> Optional[Folder]:
+    async def archive(self, folder_id: str, archived_by: str) -> Folder | None:
         """Arquiva pasta."""
         folder = await self.get_by_id(folder_id)
         if not folder:
@@ -229,7 +214,7 @@ class FolderRepository:
         await self.session.flush()
         return folder
 
-    async def unarchive(self, folder_id: str) -> Optional[Folder]:
+    async def unarchive(self, folder_id: str) -> Folder | None:
         """Desarquiva pasta."""
         folder = await self.get_by_id(folder_id)
         if not folder:
@@ -238,7 +223,7 @@ class FolderRepository:
         await self.session.flush()
         return folder
 
-    async def block(self, folder_id: str) -> Optional[Folder]:
+    async def block(self, folder_id: str) -> Folder | None:
         """Bloqueia pasta."""
         folder = await self.get_by_id(folder_id)
         if not folder:
@@ -247,7 +232,7 @@ class FolderRepository:
         await self.session.flush()
         return folder
 
-    async def unblock(self, folder_id: str) -> Optional[Folder]:
+    async def unblock(self, folder_id: str) -> Folder | None:
         """Desbloqueia pasta."""
         folder = await self.get_by_id(folder_id)
         if not folder:
@@ -256,9 +241,7 @@ class FolderRepository:
         await self.session.flush()
         return folder
 
-    async def move(
-        self, folder_id: str, new_parent_id: str = None
-    ) -> Optional[Folder]:
+    async def move(self, folder_id: str, new_parent_id: str = None) -> Folder | None:
         """Move pasta para novo pai."""
         folder = await self.get_by_id(folder_id)
         if not folder:
@@ -283,9 +266,7 @@ class FolderRepository:
         await self.session.flush()
         return folder
 
-    async def update_document_stats(
-        self, folder_id: str, size_diff: int, count_diff: int = 1
-    ) -> None:
+    async def update_document_stats(self, folder_id: str, size_diff: int, count_diff: int = 1) -> None:
         """Atualiza estatísticas de documentos."""
         folder = await self.get_by_id(folder_id)
         if folder:
@@ -328,9 +309,7 @@ class FolderRepository:
         stats["total_size_mb"] = round(stats["total_size_bytes"] / (1024 * 1024), 2)
         return stats
 
-    async def search(
-        self, query: str, condominium_id: str = None, limit: int = 10
-    ) -> List[Folder]:
+    async def search(self, query: str, condominium_id: str = None, limit: int = 10) -> list[Folder]:
         """Busca pastas por texto."""
         search_term = f"%{query}%"
         stmt = (

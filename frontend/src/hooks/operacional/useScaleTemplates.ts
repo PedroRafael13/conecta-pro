@@ -5,30 +5,29 @@
  */
 
 import {
-  useListScaleTemplatesApiV1OperacionalScaleTemplatesGet,
-  useCreateScaleTemplateApiV1OperacionalScaleTemplatesPost,
-  useGetScaleTemplateApiV1OperacionalScaleTemplatesTemplateIdGet,
-  useUpdateScaleTemplateApiV1OperacionalScaleTemplatesTemplateIdPatch,
-  useDeleteScaleTemplateApiV1OperacionalScaleTemplatesTemplateIdDelete,
-  useGetActiveScaleTemplatesApiV1OperacionalScaleTemplatesActiveGet,
-  useApplyScaleTemplateApiV1OperacionalScaleTemplatesTemplateIdApplyPost,
+  useListTemplatesApiV1OperacionalScalesTemplatesGet,
+  useCreateTemplateApiV1OperacionalScalesTemplatesPost,
+  useGetTemplateApiV1OperacionalScalesTemplatesTemplateIdGet,
+  useUpdateTemplateApiV1OperacionalScalesTemplatesTemplateIdPatch,
+  useDeleteTemplateApiV1OperacionalScalesTemplatesTemplateIdDelete,
+  useApplyTemplateApiV1OperacionalScalesTemplatesTemplateIdApplyPost,
 } from '@/types/generated/operacional/operacional-templates-de-escalas/operacional-templates-de-escalas';
 
 // List & Read
-export const useScaleTemplates = useListScaleTemplatesApiV1OperacionalScaleTemplatesGet;
-export const useScaleTemplate = useGetScaleTemplateApiV1OperacionalScaleTemplatesTemplateIdGet;
-export const useActiveScaleTemplates = useGetActiveScaleTemplatesApiV1OperacionalScaleTemplatesActiveGet;
+export const useScaleTemplates = useListTemplatesApiV1OperacionalScalesTemplatesGet;
+export const useScaleTemplate = useGetTemplateApiV1OperacionalScalesTemplatesTemplateIdGet;
+export const useActiveScaleTemplates = useListTemplatesApiV1OperacionalScalesTemplatesGet;
 
 // Mutations
-export const useCreateScaleTemplate = useCreateScaleTemplateApiV1OperacionalScaleTemplatesPost;
-export const useUpdateScaleTemplate = useUpdateScaleTemplateApiV1OperacionalScaleTemplatesTemplateIdPatch;
-export const useDeleteScaleTemplate = useDeleteScaleTemplateApiV1OperacionalScaleTemplatesTemplateIdDelete;
-export const useApplyScaleTemplate = useApplyScaleTemplateApiV1OperacionalScaleTemplatesTemplateIdApplyPost;
+export const useCreateScaleTemplate = useCreateTemplateApiV1OperacionalScalesTemplatesPost;
+export const useUpdateScaleTemplate = useUpdateTemplateApiV1OperacionalScalesTemplatesTemplateIdPatch;
+export const useDeleteScaleTemplate = useDeleteTemplateApiV1OperacionalScalesTemplatesTemplateIdDelete;
+export const useApplyScaleTemplate = useApplyTemplateApiV1OperacionalScalesTemplatesTemplateIdApplyPost;
 
 // Re-export types
 export type {
   ScaleTemplateCreate,
   ScaleTemplateUpdate,
   ScaleTemplateResponse,
-  ScaleTemplateApply,
+  ScaleTemplateApplyRequest,
 } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';

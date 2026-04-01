@@ -1,9 +1,8 @@
 """Signature Template model for storing reference signatures."""
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, List
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -21,7 +20,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class TemplateStatus(str, enum.Enum):
+class TemplateStatus(StrEnum):
     """Status of signature template."""
 
     DRAFT = "draft"
@@ -32,7 +31,7 @@ class TemplateStatus(str, enum.Enum):
     REVOKED = "revoked"
 
 
-class TemplateType(str, enum.Enum):
+class TemplateType(StrEnum):
     """Type of template."""
 
     PERSONAL = "personal"  # Individual's signature
@@ -42,7 +41,7 @@ class TemplateType(str, enum.Enum):
     PROXY = "proxy"  # Proxy/delegation signature
 
 
-class MatchingMode(str, enum.Enum):
+class MatchingMode(StrEnum):
     """Matching mode for comparison."""
 
     STRICT = "strict"  # High similarity required
@@ -203,7 +202,7 @@ class SignatureTemplate(Base):
         return self.sample_count >= self.min_samples_required
 
     @property
-    def success_rate(self) -> Optional[float]:
+    def success_rate(self) -> float | None:
         """Calculate verification success rate."""
         if self.total_verifications == 0:
             return None

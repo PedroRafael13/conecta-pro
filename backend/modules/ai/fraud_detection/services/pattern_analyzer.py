@@ -5,21 +5,19 @@ Servico para analise de padroes comportamentais e deteccao de anomalias.
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
-from uuid import UUID
-from collections import defaultdict
 import statistics
+from datetime import datetime
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
 
 from modules.ai.fraud_detection.models.fraud_pattern import (
     FraudPattern,
-    PatternType,
     PatternStatus,
+    PatternType,
 )
-from modules.ai.fraud_detection.models.risk_profile import RiskProfile, EntityType
+from modules.ai.fraud_detection.models.risk_profile import EntityType, RiskProfile
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +39,9 @@ class PatternAnalyzer:
         self,
         entity_type: str,
         entity_id: UUID,
-        transaction_data: Dict[str, Any],
-        historical_transactions: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+        transaction_data: dict[str, Any],
+        historical_transactions: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         """
         Analisa padroes de transacao para detectar anomalias.
 
@@ -69,19 +67,11 @@ class PatternAnalyzer:
             profile = await self._get_or_create_profile(entity_type, entity_id)
 
             # Analises
-            velocity_result = await self._analyze_velocity(
-                entity_id, transaction_data, profile
-            )
-            amount_result = await self._analyze_amount_pattern(
-                transaction_data, historical_transactions, profile
-            )
+            velocity_result = await self._analyze_velocity(entity_id, transaction_data, profile)
+            amount_result = await self._analyze_amount_pattern(transaction_data, historical_transactions, profile)
             time_result = await self._analyze_time_pattern(transaction_data, profile)
-            location_result = await self._analyze_location_pattern(
-                transaction_data, profile
-            )
-            recipient_result = await self._analyze_recipient_pattern(
-                transaction_data, historical_transactions
-            )
+            location_result = await self._analyze_location_pattern(transaction_data, profile)
+            recipient_result = await self._analyze_recipient_pattern(transaction_data, historical_transactions)
 
             # Consolidar resultados
             all_results = [
@@ -95,28 +85,19 @@ class PatternAnalyzer:
             for analysis in all_results:
                 if analysis.get("anomaly_detected"):
                     result["anomalies"].append(analysis.get("anomaly_type"))
-                    result["patterns_detected"].extend(
-                        analysis.get("matched_patterns", [])
-                    )
-                    result["risk_indicators"].extend(
-                        analysis.get("risk_indicators", [])
-                    )
-                    result["confidence_scores"][analysis.get("analysis_type")] = (
-                        analysis.get("confidence", 0)
-                    )
+                    result["patterns_detected"].extend(analysis.get("matched_patterns", []))
+                    result["risk_indicators"].extend(analysis.get("risk_indicators", []))
+                    result["confidence_scores"][analysis.get("analysis_type")] = analysis.get("confidence", 0)
 
             # Calcular score total
             result["total_risk_score"] = self._calculate_combined_score(all_results)
 
             # Verificar padroes conhecidos
-            known_patterns = await self._match_known_patterns(
-                transaction_data, result["anomalies"]
-            )
+            known_patterns = await self._match_known_patterns(transaction_data, result["anomalies"])
             result["patterns_detected"].extend(known_patterns)
 
             logger.info(
-                f"Analise de padroes concluida para {entity_type}:{entity_id} - "
-                f"Score: {result['total_risk_score']:.2f}"
+                f"Analise de padroes concluida para {entity_type}:{entity_id} - Score: {result['total_risk_score']:.2f}"
             )
 
         except Exception as e:
@@ -128,9 +109,9 @@ class PatternAnalyzer:
     async def analyze_access_patterns(
         self,
         user_id: UUID,
-        access_data: Dict[str, Any],
-        historical_accesses: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+        access_data: dict[str, Any],
+        historical_accesses: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         """
         Analisa padroes de acesso para detectar comportamento anomalo.
 
@@ -162,9 +143,7 @@ class PatternAnalyzer:
                 if device_id not in known_devices:
                     result["is_new_device"] = True
                     result["anomalies"].append("new_device")
-                    result["risk_indicators"].append(
-                        f"Novo dispositivo: {device_id[:8]}..."
-                    )
+                    result["risk_indicators"].append(f"Novo dispositivo: {device_id[:8]}...")
 
             # Verificar IP
             ip_address = access_data.get("ip_address")
@@ -197,15 +176,12 @@ class PatternAnalyzer:
                 result["anomalies"].append("excessive_logins")
                 result["patterns_detected"].append("credential_stuffing")
                 result["risk_indicators"].append(
-                    f"Muitos logins: {login_velocity.get('count')} em "
-                    f"{login_velocity.get('period_minutes')} min"
+                    f"Muitos logins: {login_velocity.get('count')} em {login_velocity.get('period_minutes')} min"
                 )
 
             # Verificar viagem impossivel
             if historical_accesses:
-                impossible_travel = await self._check_impossible_travel(
-                    access_data, historical_accesses
-                )
+                impossible_travel = await self._check_impossible_travel(access_data, historical_accesses)
                 if impossible_travel.get("detected"):
                     result["anomalies"].append("impossible_travel")
                     result["patterns_detected"].append("account_takeover")
@@ -226,9 +202,9 @@ class PatternAnalyzer:
     async def detect_fraud_pattern(
         self,
         pattern_type: PatternType,
-        data: Dict[str, Any],
-        indicators: List[str],
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        indicators: list[str],
+    ) -> dict[str, Any]:
         """
         Detecta um padrao de fraude especifico.
 
@@ -254,7 +230,7 @@ class PatternAnalyzer:
                 self.db.query(FraudPattern)
                 .filter(
                     FraudPattern.pattern_type == pattern_type,
-                    FraudPattern.is_active == True,
+                    FraudPattern.is_active,
                     FraudPattern.status == PatternStatus.ACTIVE,
                 )
                 .first()
@@ -272,9 +248,7 @@ class PatternAnalyzer:
                 result["pattern_name"] = pattern.name
                 result["confidence"] = match_result["confidence"]
                 result["indicators_found"] = match_result["matched_indicators"]
-                result["risk_score"] = (
-                    pattern.risk_score * match_result["confidence"]
-                )
+                result["risk_score"] = pattern.risk_score * match_result["confidence"]
 
                 # Registrar deteccao
                 pattern.record_detection(is_confirmed=False)
@@ -289,9 +263,9 @@ class PatternAnalyzer:
     async def _analyze_velocity(
         self,
         entity_id: UUID,
-        transaction_data: Dict[str, Any],
+        transaction_data: dict[str, Any],
         profile: RiskProfile,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analisa velocidade de transacoes."""
         result = {
             "analysis_type": "velocity",
@@ -314,9 +288,7 @@ class PatternAnalyzer:
                 result["anomaly_detected"] = True
                 result["anomaly_type"] = "high_velocity"
                 result["confidence"] = min(1.0, recent_count / (threshold * 2))
-                result["risk_indicators"].append(
-                    f"Alta velocidade: {recent_count} transacoes em {period_minutes}min"
-                )
+                result["risk_indicators"].append(f"Alta velocidade: {recent_count} transacoes em {period_minutes}min")
                 result["matched_patterns"].append("velocity_abuse")
 
         except Exception as e:
@@ -326,10 +298,10 @@ class PatternAnalyzer:
 
     async def _analyze_amount_pattern(
         self,
-        transaction_data: Dict[str, Any],
-        historical: Optional[List[Dict[str, Any]]],
+        transaction_data: dict[str, Any],
+        historical: list[dict[str, Any]] | None,
         profile: RiskProfile,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analisa padrao de valores."""
         result = {
             "analysis_type": "amount",
@@ -356,8 +328,7 @@ class PatternAnalyzer:
                             result["anomaly_type"] = "unusual_amount"
                             result["confidence"] = min(1.0, z_score / 5)
                             result["risk_indicators"].append(
-                                f"Valor atipico: R${current_amount:.2f} "
-                                f"(media: R${avg:.2f}, desvio: {z_score:.1f}σ)"
+                                f"Valor atipico: R${current_amount:.2f} (media: R${avg:.2f}, desvio: {z_score:.1f}σ)"
                             )
             else:
                 # Usar perfil
@@ -366,9 +337,7 @@ class PatternAnalyzer:
                     result["anomaly_detected"] = True
                     result["anomaly_type"] = "unusual_amount"
                     result["confidence"] = 0.6
-                    result["risk_indicators"].append(
-                        f"Valor 3x acima da media: R${current_amount:.2f}"
-                    )
+                    result["risk_indicators"].append(f"Valor 3x acima da media: R${current_amount:.2f}")
 
         except Exception as e:
             logger.error(f"Erro na analise de valor: {e}")
@@ -377,9 +346,9 @@ class PatternAnalyzer:
 
     async def _analyze_time_pattern(
         self,
-        transaction_data: Dict[str, Any],
+        transaction_data: dict[str, Any],
         profile: RiskProfile,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analisa padrao temporal."""
         result = {
             "analysis_type": "time",
@@ -399,9 +368,7 @@ class PatternAnalyzer:
                     result["anomaly_detected"] = True
                     result["anomaly_type"] = "unusual_time"
                     result["confidence"] = 0.5
-                    result["risk_indicators"].append(
-                        f"Transacao em horario incomum: {current_hour}h"
-                    )
+                    result["risk_indicators"].append(f"Transacao em horario incomum: {current_hour}h")
 
         except Exception as e:
             logger.error(f"Erro na analise temporal: {e}")
@@ -410,9 +377,9 @@ class PatternAnalyzer:
 
     async def _analyze_location_pattern(
         self,
-        transaction_data: Dict[str, Any],
+        transaction_data: dict[str, Any],
         profile: RiskProfile,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analisa padrao de localizacao."""
         result = {
             "analysis_type": "location",
@@ -447,9 +414,9 @@ class PatternAnalyzer:
 
     async def _analyze_recipient_pattern(
         self,
-        transaction_data: Dict[str, Any],
-        historical: Optional[List[Dict[str, Any]]],
-    ) -> Dict[str, Any]:
+        transaction_data: dict[str, Any],
+        historical: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
         """Analisa padrao de destinatarios."""
         result = {
             "analysis_type": "recipient",
@@ -476,7 +443,7 @@ class PatternAnalyzer:
 
         return result
 
-    async def _check_login_velocity(self, user_id: UUID) -> Dict[str, Any]:
+    async def _check_login_velocity(self, user_id: UUID) -> dict[str, Any]:
         """Verifica velocidade de tentativas de login."""
         # Simplificado - em producao, consultar logs de auth
         return {
@@ -488,9 +455,9 @@ class PatternAnalyzer:
 
     async def _check_impossible_travel(
         self,
-        current_access: Dict[str, Any],
-        historical: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        current_access: dict[str, Any],
+        historical: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Verifica viagem impossivel (localizacoes distantes em pouco tempo)."""
         result = {
             "detected": False,
@@ -515,7 +482,7 @@ class PatternAnalyzer:
                 return result
 
             # Calcular distancia (formula de Haversine simplificada)
-            from math import radians, sin, cos, sqrt, atan2
+            from math import atan2, cos, radians, sin, sqrt
 
             lat1 = radians(current_coords.get("lat", 0))
             lon1 = radians(current_coords.get("lon", 0))
@@ -549,9 +516,9 @@ class PatternAnalyzer:
 
     async def _match_known_patterns(
         self,
-        transaction_data: Dict[str, Any],
-        anomalies: List[str],
-    ) -> List[str]:
+        transaction_data: dict[str, Any],
+        anomalies: list[str],
+    ) -> list[str]:
         """Verifica se as anomalias correspondem a padroes conhecidos."""
         matched = []
 
@@ -571,7 +538,7 @@ class PatternAnalyzer:
 
         return list(set(matched))
 
-    def _calculate_combined_score(self, results: List[Dict[str, Any]]) -> float:
+    def _calculate_combined_score(self, results: list[dict[str, Any]]) -> float:
         """Calcula score combinado das analises."""
         total_score = 0.0
         weights = {
@@ -591,7 +558,7 @@ class PatternAnalyzer:
 
         return min(100.0, total_score)
 
-    def _calculate_access_risk_score(self, result: Dict[str, Any]) -> float:
+    def _calculate_access_risk_score(self, result: dict[str, Any]) -> float:
         """Calcula score de risco de acesso."""
         score = 0.0
 

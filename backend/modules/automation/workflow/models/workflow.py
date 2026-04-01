@@ -3,17 +3,14 @@
 Sprint 33 - Workflow Engine (Unificado).
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
     Enum,
-    Float,
-    ForeignKey,
     Integer,
     String,
     Text,
@@ -24,7 +21,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class WorkflowStatus(str, enum.Enum):
+class WorkflowStatus(StrEnum):
     """Status do workflow."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -35,7 +32,7 @@ class WorkflowStatus(str, enum.Enum):
     ERROR = "ERROR"  # Em erro
 
 
-class WorkflowPriority(str, enum.Enum):
+class WorkflowPriority(StrEnum):
     """Prioridade de execucao."""
 
     LOW = "LOW"
@@ -44,7 +41,7 @@ class WorkflowPriority(str, enum.Enum):
     CRITICAL = "CRITICAL"
 
 
-class WorkflowCategory(str, enum.Enum):
+class WorkflowCategory(StrEnum):
     """Categoria do workflow."""
 
     CRM = "CRM"  # Workflows de CRM
@@ -250,7 +247,7 @@ class Workflow(Base):
     def record_execution(
         self,
         success: bool,
-        execution_time_ms: Optional[int] = None,
+        execution_time_ms: int | None = None,
     ) -> None:
         """Registra execucao.
 
@@ -302,12 +299,14 @@ class Workflow(Base):
             if var.get("name") == name:
                 return
 
-        self.variables.append({
-            "name": name,
-            "type": var_type,
-            "default": default,
-            "required": required,
-        })
+        self.variables.append(
+            {
+                "name": name,
+                "type": var_type,
+                "default": default,
+                "required": required,
+            }
+        )
 
     def get_variable(self, name: str) -> dict | None:
         """Obtem variavel por nome.

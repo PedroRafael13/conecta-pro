@@ -7,30 +7,25 @@ import hashlib
 import logging
 import uuid as uuid_module
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from modules.notifications.push.models import (
     CampaignStatus,
-    CampaignType,
     DevicePlatform,
     DeviceStatus,
-    MetricPeriod,
     NotificationPriority,
     NotificationStatus,
     PushCampaign,
     PushDevice,
-    PushDeviceSession,
-    PushMetric,
     PushNotification,
     PushNotificationAction,
-    PushSegment,
     TargetType,
 )
-from modules.notifications.push.services.apns_service import APNsPayload, APNsService
+from modules.notifications.push.services.apns_service import APNsService
 from modules.notifications.push.services.fcm_service import FCMMessage, FCMService
 
 logger = logging.getLogger(__name__)
@@ -48,8 +43,8 @@ class PushService:
         """
         self.db = db
         self.tenant_id = tenant_id
-        self._fcm_service: Optional[FCMService] = None
-        self._apns_service: Optional[APNsService] = None
+        self._fcm_service: FCMService | None = None
+        self._apns_service: APNsService | None = None
 
     # ========================================================================
     # Device Management
@@ -159,7 +154,7 @@ class PushService:
         self,
         user_id: UUID,
         active_only: bool = True,
-    ) -> List[PushDevice]:
+    ) -> list[PushDevice]:
         """Obtém dispositivos de um usuário.
 
         Args:
@@ -197,9 +192,9 @@ class PushService:
     def subscribe_to_topic(
         self,
         topic: str,
-        device_ids: Optional[List[UUID]] = None,
-        user_ids: Optional[List[UUID]] = None,
-    ) -> Dict[str, Any]:
+        device_ids: list[UUID] | None = None,
+        user_ids: list[UUID] | None = None,
+    ) -> dict[str, Any]:
         """Inscreve dispositivos em um tópico.
 
         Args:
@@ -245,9 +240,9 @@ class PushService:
     def unsubscribe_from_topic(
         self,
         topic: str,
-        device_ids: Optional[List[UUID]] = None,
-        user_ids: Optional[List[UUID]] = None,
-    ) -> Dict[str, Any]:
+        device_ids: list[UUID] | None = None,
+        user_ids: list[UUID] | None = None,
+    ) -> dict[str, Any]:
         """Remove dispositivos de um tópico.
 
         Args:
@@ -294,7 +289,7 @@ class PushService:
         title: str,
         body: str,
         **kwargs: Any,
-    ) -> List[PushNotification]:
+    ) -> list[PushNotification]:
         """Envia notificação para todos os dispositivos de um usuário.
 
         Args:
@@ -316,11 +311,11 @@ class PushService:
 
     def send_to_devices(
         self,
-        device_ids: List[UUID],
+        device_ids: list[UUID],
         title: str,
         body: str,
         **kwargs: Any,
-    ) -> List[PushNotification]:
+    ) -> list[PushNotification]:
         """Envia notificação para dispositivos específicos.
 
         Args:
@@ -351,7 +346,7 @@ class PushService:
         title: str,
         body: str,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia notificação para um tópico.
 
         Args:
@@ -390,11 +385,11 @@ class PushService:
 
     def _send_to_devices(
         self,
-        devices: List[PushDevice],
+        devices: list[PushDevice],
         title: str,
         body: str,
         **kwargs: Any,
-    ) -> List[PushNotification]:
+    ) -> list[PushNotification]:
         """Envia notificação para lista de dispositivos.
 
         Args:
@@ -577,9 +572,9 @@ class PushService:
 
     def _get_devices_by_ids_or_users(
         self,
-        device_ids: Optional[List[UUID]],
-        user_ids: Optional[List[UUID]],
-    ) -> List[PushDevice]:
+        device_ids: list[UUID] | None,
+        user_ids: list[UUID] | None,
+    ) -> list[PushDevice]:
         """Obtém dispositivos por IDs ou usuários."""
         query = self.db.query(PushDevice).filter(
             PushDevice.tenant_id == self.tenant_id,
@@ -636,7 +631,7 @@ class PushService:
         logger.info("Campaign created: %s", campaign.name)
         return campaign
 
-    def send_campaign(self, campaign_id: UUID) -> Dict[str, Any]:
+    def send_campaign(self, campaign_id: UUID) -> dict[str, Any]:
         """Executa envio de campanha.
 
         Args:
@@ -714,7 +709,7 @@ class PushService:
             self.db.commit()
             raise
 
-    def _get_campaign_targets(self, campaign: PushCampaign) -> List[PushDevice]:
+    def _get_campaign_targets(self, campaign: PushCampaign) -> list[PushDevice]:
         """Obtém dispositivos alvo da campanha."""
         query = self.db.query(PushDevice).filter(
             PushDevice.tenant_id == self.tenant_id,
@@ -751,8 +746,8 @@ class PushService:
         self,
         start_date: datetime,
         end_date: datetime,
-        platform: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        platform: str | None = None,
+    ) -> dict[str, Any]:
         """Obtém resumo de métricas.
 
         Args:
@@ -765,9 +760,9 @@ class PushService:
         """
         query = self.db.query(
             func.count(PushNotification.id).label("total_sent"),
-            func.sum(
-                func.cast(PushNotification.status == NotificationStatus.DELIVERED, Integer)
-            ).label("total_delivered"),
+            func.sum(func.cast(PushNotification.status == NotificationStatus.DELIVERED, Integer)).label(
+                "total_delivered"
+            ),
             func.sum(
                 func.cast(PushNotification.opened == True, Integer)  # noqa: E712
             ).label("total_opened"),
@@ -803,8 +798,8 @@ class PushService:
     def record_notification_opened(
         self,
         notification_id: str,
-        platform: Optional[str] = None,
-        source: Optional[str] = None,
+        platform: str | None = None,
+        source: str | None = None,
     ) -> bool:
         """Registra abertura de notificação.
 
@@ -858,8 +853,8 @@ class PushService:
     def record_notification_clicked(
         self,
         notification_id: str,
-        action_id: Optional[str] = None,
-        url: Optional[str] = None,
+        action_id: str | None = None,
+        url: str | None = None,
     ) -> bool:
         """Registra clique em notificação.
 

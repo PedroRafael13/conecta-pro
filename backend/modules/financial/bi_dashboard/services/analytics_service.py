@@ -1,8 +1,8 @@
 """Service de Analytics Financeiro com IA."""
 
+import statistics
 from datetime import datetime
 from decimal import Decimal
-import statistics
 
 from sqlalchemy.orm import Session
 
@@ -35,14 +35,16 @@ class AnalyticsService:
             z_score = abs((value - mean) / stdev)
             if z_score > threshold:
                 deviation = round((value - mean) / mean * 100, 2) if mean != 0 else 0
-                anomalies.append({
-                    "index": i,
-                    "value": Decimal(str(value)),
-                    "z_score": round(z_score, 2),
-                    "deviation": deviation,
-                    "type": "valor_atipico",
-                    "severity": self._get_severity(z_score),
-                })
+                anomalies.append(
+                    {
+                        "index": i,
+                        "value": Decimal(str(value)),
+                        "z_score": round(z_score, 2),
+                        "deviation": deviation,
+                        "type": "valor_atipico",
+                        "severity": self._get_severity(z_score),
+                    }
+                )
 
         return anomalies
 
@@ -100,7 +102,7 @@ class AnalyticsService:
         x_mean = statistics.mean(x_vals)
         y_mean = statistics.mean(values)
 
-        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_vals, values))
+        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_vals, values, strict=False))
         x_var = sum((x - x_mean) ** 2 for x in x_vals)
         y_var = sum((y - y_mean) ** 2 for y in values)
 
@@ -149,9 +151,13 @@ class AnalyticsService:
         """Analisa distribuicao dos dados."""
         if not values:
             return {
-                "count": 0, "sum": Decimal("0"), "mean": Decimal("0"),
-                "median": Decimal("0"), "stdev": Decimal("0"),
-                "min": Decimal("0"), "max": Decimal("0"),
+                "count": 0,
+                "sum": Decimal("0"),
+                "mean": Decimal("0"),
+                "median": Decimal("0"),
+                "stdev": Decimal("0"),
+                "min": Decimal("0"),
+                "max": Decimal("0"),
             }
 
         float_values = [float(v) for v in values]
@@ -293,12 +299,14 @@ class AnalyticsService:
             value = float(item.get(value_field, 0))
             cumulative += value
             percentage = (cumulative / total) * 100
-            top_items.append({
-                "name": item.get(name_field, "N/A"),
-                "value": Decimal(str(value)),
-                "percentage": Decimal(str(round(value / total * 100, 2))),
-                "cumulative": Decimal(str(round(percentage, 2))),
-            })
+            top_items.append(
+                {
+                    "name": item.get(name_field, "N/A"),
+                    "value": Decimal(str(value)),
+                    "percentage": Decimal(str(round(value / total * 100, 2))),
+                    "cumulative": Decimal(str(round(percentage, 2))),
+                }
+            )
             if percentage >= 80:
                 break
         return top_items

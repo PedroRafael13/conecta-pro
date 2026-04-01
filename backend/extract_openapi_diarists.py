@@ -1,14 +1,10 @@
 """
 Script para extrair OpenAPI spec do módulo DIARISTS.
 """
+
 import json
-from datetime import date, datetime
-from decimal import Decimal
-from typing import Optional
-from uuid import UUID
 
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
 
 # Criar app FastAPI minimal
 app = FastAPI(
@@ -20,26 +16,22 @@ app = FastAPI(
 # Importar routers DIARISTS
 try:
     from modules.operacional.diaristas.controllers import (
-        router as diarist_router,
-        notificacao_router,
         fiscal_router,
+        notificacao_router,
+    )
+    from modules.operacional.diaristas.controllers import (
+        router as diarist_router,
     )
 
     # Registrar routers
-    app.include_router(
-        diarist_router,
-        prefix="/api/v1/operacional/diaristas",
-        tags=["Operacional - Diaristas"]
-    )
+    app.include_router(diarist_router, prefix="/api/v1/operacional/diaristas", tags=["Operacional - Diaristas"])
     app.include_router(
         notificacao_router,
         prefix="/api/v1/operacional/diaristas/notificacoes",
-        tags=["Operacional - Diaristas Notificações"]
+        tags=["Operacional - Diaristas Notificações"],
     )
     app.include_router(
-        fiscal_router,
-        prefix="/api/v1/operacional/diaristas/fiscal",
-        tags=["Operacional - Diaristas Fiscal"]
+        fiscal_router, prefix="/api/v1/operacional/diaristas/fiscal", tags=["Operacional - Diaristas Fiscal"]
     )
 
     # Gerar OpenAPI spec
@@ -56,10 +48,10 @@ try:
     total_paths = len(openapi_spec.get("paths", {}))
     total_schemas = len(openapi_spec.get("components", {}).get("schemas", {}))
 
-    print(f"\n📊 Estatísticas:")
+    print("\n📊 Estatísticas:")
     print(f"   - Total de endpoints: {total_paths}")
     print(f"   - Total de schemas: {total_schemas}")
-    print(f"\n📝 Endpoints encontrados:")
+    print("\n📝 Endpoints encontrados:")
     for path in sorted(openapi_spec.get("paths", {}).keys()):
         methods = list(openapi_spec["paths"][path].keys())
         print(f"   {path} [{', '.join(m.upper() for m in methods)}]")
@@ -67,5 +59,6 @@ try:
 except Exception as e:
     print(f"❌ Erro ao extrair OpenAPI spec: {e}")
     import traceback
+
     traceback.print_exc()
     exit(1)

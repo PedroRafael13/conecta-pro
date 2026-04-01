@@ -1,0 +1,20 @@
+{
+  "id": "task-001",
+  "from": "kimi",
+  "to": "opus",
+  "timestamp": "2026-02-07T04:15:00Z",
+  "type": "request",
+  "priority": "high",
+  "subject": "Revisar módulo financial",
+  "payload": {
+    "action": "code_review",
+    "module": "financial",
+    "files": [
+      "modules/financial/controllers/account_controller.py",
+      "modules/financial/services/account_service.py"
+    ],
+    "context": "Verificar padrão de camadas e tratamento de erros"
+  },
+  "expected_response": true,
+  "response_deadline": "2026-02-07T04:30:00Z"
+}

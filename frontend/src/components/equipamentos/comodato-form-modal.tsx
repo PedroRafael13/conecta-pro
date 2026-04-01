@@ -1,13 +1,12 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-;
 
 interface ComodatoFormModalProps {
   isOpen: boolean;
@@ -17,7 +16,7 @@ interface ComodatoFormModalProps {
   isLoading?: boolean;
 }
 
-const initialFormData = {
+const defaultFormData = {
   client_name: '',
   equipment_name: '',
   start_date: '',
@@ -26,6 +25,16 @@ const initialFormData = {
   observacoes: '',
 };
 
+// Form state factory
+const createFormData = (comodato?: any) => ({
+  client_name: comodato?.client_name ?? '',
+  equipment_name: comodato?.equipment_name ?? '',
+  start_date: comodato?.start_date ? comodato.start_date.substring(0, 10) : '',
+  end_date: comodato?.end_date ? comodato.end_date.substring(0, 10) : '',
+  terms: comodato?.terms ?? '',
+  observacoes: comodato?.observacoes ?? '',
+});
+
 export function ComodatoFormModal({
   isOpen,
   onClose,
@@ -33,28 +42,29 @@ export function ComodatoFormModal({
   onSubmit,
   isLoading = false,
 }: ComodatoFormModalProps) {
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState(defaultFormData);
   const [error, setError] = useState<string | null>(null);
 
   const isEditing = !!comodato;
 
+  const formKey = useMemo(() => {
+    return comodato?.id || comodato?.codigo || 'new';
+  }, [comodato]);
+
   useEffect(() => {
     if (isOpen) {
       if (comodato) {
-        setFormData({
-          client_name: comodato.client_name ?? '',
-          equipment_name: comodato.equipment_name ?? '',
-          start_date: comodato.start_date ? comodato.start_date.substring(0, 10) : '',
-          end_date: comodato.end_date ? comodato.end_date.substring(0, 10) : '',
-          terms: comodato.terms ?? '',
-          observacoes: comodato.observacoes ?? '',
-        });
+
+        setFormData(createFormData(comodato));
       } else {
-        setFormData(initialFormData);
+
+        setFormData(defaultFormData);
       }
+
       setError(null);
     }
-  }, [isOpen, comodato]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -126,7 +136,7 @@ export function ComodatoFormModal({
               onChange={handleChange}
               placeholder="Nome do cliente"
               required
-            />
+             aria-label="Nome Do Cliente" />
           </div>
 
           <div className="space-y-2">
@@ -138,7 +148,7 @@ export function ComodatoFormModal({
               onChange={handleChange}
               placeholder="Nome do equipamento"
               required
-            />
+             aria-label="Nome Do Equipamento" />
           </div>
 
           <div className="space-y-2">
@@ -150,7 +160,7 @@ export function ComodatoFormModal({
               value={formData.start_date}
               onChange={handleChange}
               required
-            />
+             aria-label="Start Date" />
           </div>
 
           <div className="space-y-2">
@@ -162,7 +172,7 @@ export function ComodatoFormModal({
               value={formData.end_date}
               onChange={handleChange}
               required
-            />
+             aria-label="End Date" />
           </div>
         </div>
 
@@ -175,7 +185,7 @@ export function ComodatoFormModal({
             onChange={handleChange}
             placeholder="Termos e condicoes do comodato..."
             rows={4}
-          />
+           aria-label="Termos E Condicoes Do Comodato..." />
         </div>
 
         <div className="space-y-2">
@@ -187,7 +197,7 @@ export function ComodatoFormModal({
             onChange={handleChange}
             placeholder="Observacoes adicionais..."
             rows={3}
-          />
+           aria-label="Observacoes Adicionais..." />
         </div>
 
         <ModalFooter>

@@ -1,29 +1,28 @@
 """Controller para Interview."""
 
 import logging
-from typing import Optional, List
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
+from modules.recruitment.models.interview import InterviewStatus, InterviewType
 from modules.recruitment.schemas.interview import (
-    InterviewCreate,
-    InterviewUpdate,
-    InterviewResponse,
-    InterviewListResponse,
-    InterviewFilter,
-    InterviewStats,
-    InterviewComplete,
-    InterviewReschedule,
-    InterviewCancel,
-    InterviewEvaluation,
-    InterviewSlot,
     InterviewCalendar,
+    InterviewCancel,
+    InterviewComplete,
+    InterviewCreate,
+    InterviewEvaluation,
+    InterviewFilter,
+    InterviewListResponse,
+    InterviewReschedule,
+    InterviewResponse,
+    InterviewSlot,
+    InterviewStats,
+    InterviewUpdate,
 )
-from modules.recruitment.models.interview import InterviewType, InterviewStatus
 from modules.recruitment.services.interview_service import InterviewService
 
 logger = logging.getLogger(__name__)
@@ -66,12 +65,12 @@ async def create_interview(
 async def list_interviews(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    application_id: Optional[str] = None,
-    interview_type: Optional[InterviewType] = None,
-    status_filter: Optional[InterviewStatus] = Query(None, alias="status"),
-    interviewer_id: Optional[str] = None,
-    scheduled_after: Optional[date] = None,
-    scheduled_before: Optional[date] = None,
+    application_id: str | None = None,
+    interview_type: InterviewType | None = None,
+    status_filter: InterviewStatus | None = Query(None, alias="status"),
+    interviewer_id: str | None = None,
+    scheduled_after: date | None = None,
+    scheduled_before: date | None = None,
     is_today: bool = False,
     is_upcoming: bool = False,
     order_by: str = "scheduled_date",
@@ -93,9 +92,7 @@ async def list_interviews(  # pylint: disable=too-many-locals
         is_upcoming=is_upcoming,
     )
 
-    interviews, total = await service.list_with_filters(
-        filters, skip, limit, order_by, order_desc
-    )
+    interviews, total = await service.list_with_filters(filters, skip, limit, order_by, order_desc)
 
     return InterviewListResponse(
         items=[InterviewResponse.model_validate(i) for i in interviews],
@@ -111,7 +108,7 @@ async def list_interviews(  # pylint: disable=too-many-locals
     summary="Entrevistas de hoje",
 )
 async def list_today(
-    interviewer_id: Optional[str] = None,
+    interviewer_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
@@ -134,7 +131,7 @@ async def list_today(
 )
 async def list_upcoming(
     days: int = Query(7, ge=1, le=30),
-    interviewer_id: Optional[str] = None,
+    interviewer_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
@@ -200,7 +197,7 @@ async def list_pending_result(
 async def list_by_date_range(
     start_date: date,
     end_date: date,
-    interviewer_id: Optional[str] = None,
+    interviewer_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
@@ -218,22 +215,20 @@ async def list_by_date_range(
 
 @router.get(
     "/available-slots",
-    response_model=List[InterviewSlot],
+    response_model=list[InterviewSlot],
     summary="Horários disponíveis",
 )
 async def get_available_slots(
-    interviewer_ids: List[str] = Query(..., min_length=1),
+    interviewer_ids: list[str] = Query(..., min_length=1),
     start_date: date = Query(...),
     end_date: date = Query(...),
     duration_minutes: int = Query(60, ge=15, le=180),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[InterviewSlot]:
+) -> list[InterviewSlot]:
     """Retorna horários disponíveis para agendamento."""
     service = InterviewService(db)
-    slots = await service.get_available_slots(
-        interviewer_ids, start_date, end_date, duration_minutes
-    )
+    slots = await service.get_available_slots(interviewer_ids, start_date, end_date, duration_minutes)
     return slots
 
 
@@ -260,7 +255,7 @@ async def get_calendar(
     summary="Estatísticas de entrevistas",
 )
 async def get_interview_stats(
-    application_id: Optional[str] = None,
+    application_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewStats:
@@ -511,9 +506,7 @@ async def mark_no_show(
 
 
 @router.post(
-    "/{interview_id}/evaluation",
-    response_model=InterviewResponse,
-    summary="Adicionar avaliação",
+    "/{interview_id}/evaluation", response_model=InterviewResponse, summary="Adicionar avaliação", status_code=201
 )
 async def add_evaluation(
     interview_id: str,
@@ -542,7 +535,7 @@ async def get_suggested_questions(
     interview_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[dict]:
+) -> list[dict]:
     """Retorna sugestões de perguntas para a entrevista."""
     service = InterviewService(db)
 
@@ -563,7 +556,7 @@ async def get_suggested_questions(
 )
 async def list_by_application(
     application_id: str,
-    status_filter: Optional[InterviewStatus] = Query(None, alias="status"),
+    status_filter: InterviewStatus | None = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:

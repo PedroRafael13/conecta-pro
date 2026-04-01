@@ -8,14 +8,14 @@ e consulta de saldo via sistema de acoes do Bartolo.
 import logging
 from datetime import datetime
 from uuid import uuid4
-from typing import Optional
 
-from modules.operacional.repositories.time_bank_repository import TimeBankRepository
-from modules.operacional.models.time_bank import TimeBankStatus, TimeBankEntryType
-from modules.operacional.schemas.time_bank import TimeBankCreate, TimeBankFilter
+from modules.operacional.models.time_bank import TimeBankEntryType, TimeBankStatus
 from modules.operacional.permissions import Permission, has_permission
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionCategory, ActionStatus
+from modules.operacional.repositories.time_bank_repository import TimeBankRepository
+from modules.operacional.schemas.time_bank import TimeBankCreate
+
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,9 @@ class TimeBankActionExecutor(BaseActionExecutor):
 
     async def create_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para acao de banco de horas."""
-        action_type_value = request.action_type.value if hasattr(request.action_type, 'value') else str(request.action_type)
+        action_type_value = (
+            request.action_type.value if hasattr(request.action_type, "value") else str(request.action_type)
+        )
 
         if action_type_value == TIMEBANK_APPROVE_OVERTIME:
             return await self._approve_overtime_preview(request)
@@ -52,7 +54,9 @@ class TimeBankActionExecutor(BaseActionExecutor):
 
     async def execute(self, request: ActionRequest, action_id: str) -> ActionResult:
         """Executa acao de banco de horas."""
-        action_type_value = request.action_type.value if hasattr(request.action_type, 'value') else str(request.action_type)
+        action_type_value = (
+            request.action_type.value if hasattr(request.action_type, "value") else str(request.action_type)
+        )
         started_at = datetime.utcnow()
 
         try:
@@ -88,7 +92,7 @@ class TimeBankActionExecutor(BaseActionExecutor):
     async def _approve_overtime_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para aprovacao de hora extra."""
         params = request.parameters
-        entry_id = params.get('entry_id') or params.get('id')
+        entry_id = params.get("entry_id") or params.get("id")
 
         warnings = []
         affected_entities = []
@@ -105,13 +109,15 @@ class TimeBankActionExecutor(BaseActionExecutor):
             title = "Aprovar Hora Extra"
             description = "Registro nao encontrado"
         else:
-            affected_entities.append({
-                "type": "time_bank",
-                "id": entry.id,
-                "employee_id": entry.employee_id,
-            })
+            affected_entities.append(
+                {
+                    "type": "time_bank",
+                    "id": entry.id,
+                    "employee_id": entry.employee_id,
+                }
+            )
 
-            ref_date = entry.reference_date.strftime('%d/%m/%Y') if entry.reference_date else 'N/A'
+            ref_date = entry.reference_date.strftime("%d/%m/%Y") if entry.reference_date else "N/A"
             changes_summary.append(f"Funcionario: {entry.employee_id}")
             changes_summary.append(f"Horas: {entry.hours:.1f}h")
             changes_summary.append(f"Data referencia: {ref_date}")
@@ -119,21 +125,17 @@ class TimeBankActionExecutor(BaseActionExecutor):
             changes_summary.append(f"Novo status: {TimeBankStatus.APPROVED.value}")
 
             if entry.status != TimeBankStatus.PENDING.value:
-                warnings.append(
-                    f"Registro nao esta pendente (status atual: {entry.status})"
-                )
+                warnings.append(f"Registro nao esta pendente (status atual: {entry.status})")
 
             if entry.hours > 10:
-                warnings.append(
-                    f"Quantidade de horas acima de 10h ({entry.hours:.1f}h) - verificar necessidade"
-                )
+                warnings.append(f"Quantidade de horas acima de 10h ({entry.hours:.1f}h) - verificar necessidade")
 
             title = f"Aprovar Hora Extra - {entry.hours:.1f}h"
             description = f"Aprovar {entry.hours:.1f}h extras do funcionario {entry.employee_id}"
 
         # Verificar permissao
         required_perm = TIMEBANK_PERMISSIONS[TIMEBANK_APPROVE_OVERTIME]
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissao {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -155,9 +157,9 @@ class TimeBankActionExecutor(BaseActionExecutor):
     async def _request_compensation_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para solicitacao de compensacao."""
         params = request.parameters
-        employee_id = params.get('employee_id')
-        hours = params.get('hours', 0)
-        compensation_date = params.get('compensation_date')
+        employee_id = params.get("employee_id")
+        hours = params.get("hours", 0)
+        compensation_date = params.get("compensation_date")
 
         warnings = []
         affected_entities = []
@@ -179,11 +181,13 @@ class TimeBankActionExecutor(BaseActionExecutor):
                 summary = await repo.get_summary(employee_id)
                 current_balance = summary.current_balance
 
-                affected_entities.append({
-                    "type": "employee",
-                    "id": employee_id,
-                    "current_balance": current_balance,
-                })
+                affected_entities.append(
+                    {
+                        "type": "employee",
+                        "id": employee_id,
+                        "current_balance": current_balance,
+                    }
+                )
 
                 changes_summary.append(f"Funcionario: {employee_id}")
                 changes_summary.append(f"Saldo atual: {current_balance:+.1f}h")
@@ -191,10 +195,7 @@ class TimeBankActionExecutor(BaseActionExecutor):
                 changes_summary.append(f"Saldo apos compensacao: {current_balance - hours:+.1f}h")
 
                 if hours > current_balance:
-                    warnings.append(
-                        f"Saldo insuficiente! Disponivel: {current_balance:.1f}h, "
-                        f"Solicitado: {hours:.1f}h"
-                    )
+                    warnings.append(f"Saldo insuficiente! Disponivel: {current_balance:.1f}h, Solicitado: {hours:.1f}h")
 
                 if compensation_date:
                     changes_summary.append(f"Data da compensacao: {compensation_date}")
@@ -210,7 +211,7 @@ class TimeBankActionExecutor(BaseActionExecutor):
 
         # Verificar permissao
         required_perm = TIMEBANK_PERMISSIONS[TIMEBANK_REQUEST_COMPENSATION]
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissao {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -236,7 +237,7 @@ class TimeBankActionExecutor(BaseActionExecutor):
         Esta acao e apenas leitura, nao requer confirmacao do usuario.
         """
         params = request.parameters
-        employee_id = params.get('employee_id')
+        employee_id = params.get("employee_id")
 
         warnings = []
         affected_entities = []
@@ -246,15 +247,17 @@ class TimeBankActionExecutor(BaseActionExecutor):
             warnings.append("ID do funcionario nao informado")
 
         if employee_id:
-            affected_entities.append({
-                "type": "employee",
-                "id": employee_id,
-            })
+            affected_entities.append(
+                {
+                    "type": "employee",
+                    "id": employee_id,
+                }
+            )
             changes_summary.append(f"Consulta de saldo para: {employee_id}")
 
         # Verificar permissao
         required_perm = TIMEBANK_PERMISSIONS[TIMEBANK_VIEW_BALANCE]
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissao {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -285,8 +288,8 @@ class TimeBankActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa aprovacao de hora extra."""
         params = request.parameters
-        entry_id = params.get('entry_id') or params.get('id')
-        notes = params.get('notes')
+        entry_id = params.get("entry_id") or params.get("id")
+        notes = params.get("notes")
 
         if not entry_id:
             raise ValueError("ID do registro de hora extra nao informado")
@@ -298,12 +301,10 @@ class TimeBankActionExecutor(BaseActionExecutor):
             raise ValueError(f"Registro '{entry_id}' nao encontrado")
 
         if entry.status != TimeBankStatus.PENDING.value:
-            raise ValueError(
-                f"Registro nao esta pendente. Status atual: {entry.status}"
-            )
+            raise ValueError(f"Registro nao esta pendente. Status atual: {entry.status}")
 
         # Usar UUID real do usuario
-        user_uuid = getattr(self, 'user_uuid', None)
+        user_uuid = getattr(self, "user_uuid", None)
 
         # Aprovar via repository
         approved_entry = await repo.approve(
@@ -313,10 +314,7 @@ class TimeBankActionExecutor(BaseActionExecutor):
         )
 
         if not approved_entry:
-            raise ValueError(
-                f"Nao foi possivel aprovar o registro. "
-                f"Status atual: {entry.status}"
-            )
+            raise ValueError(f"Nao foi possivel aprovar o registro. Status atual: {entry.status}")
 
         logger.info(f"Hora extra aprovada via Bartolo: {approved_entry.id}")
 
@@ -353,10 +351,10 @@ class TimeBankActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa solicitacao de compensacao de horas."""
         params = request.parameters
-        employee_id = params.get('employee_id')
-        hours = params.get('hours')
-        compensation_date_str = params.get('compensation_date')
-        reason = params.get('reason', 'Compensacao de horas via Bartolo')
+        employee_id = params.get("employee_id")
+        hours = params.get("hours")
+        compensation_date_str = params.get("compensation_date")
+        reason = params.get("reason", "Compensacao de horas via Bartolo")
 
         if not employee_id:
             raise ValueError("ID do funcionario nao informado")
@@ -369,12 +367,12 @@ class TimeBankActionExecutor(BaseActionExecutor):
         summary = await repo.get_summary(employee_id)
         if hours > summary.current_balance:
             raise ValueError(
-                f"Saldo insuficiente. Disponivel: {summary.current_balance:.1f}h, "
-                f"Solicitado: {hours:.1f}h"
+                f"Saldo insuficiente. Disponivel: {summary.current_balance:.1f}h, Solicitado: {hours:.1f}h"
             )
 
         # Criar entrada de compensacao
         from datetime import date as date_type
+
         if compensation_date_str:
             try:
                 # Tentar dd/mm/yyyy
@@ -397,7 +395,7 @@ class TimeBankActionExecutor(BaseActionExecutor):
             reason=reason,
         )
 
-        user_uuid = getattr(self, 'user_uuid', None)
+        user_uuid = getattr(self, "user_uuid", None)
         new_entry = await repo.create(create_data, created_by=user_uuid)
 
         logger.info(f"Compensacao solicitada via Bartolo: {new_entry.id}")
@@ -435,7 +433,7 @@ class TimeBankActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa consulta de saldo (read-only)."""
         params = request.parameters
-        employee_id = params.get('employee_id')
+        employee_id = params.get("employee_id")
 
         if not employee_id:
             raise ValueError("ID do funcionario nao informado")

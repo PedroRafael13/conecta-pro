@@ -3,16 +3,13 @@ ServiceReport Model - Relatórios de Serviços
 Sprint 31: Gestão de Serviços
 """
 
-import enum
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -21,8 +18,9 @@ if TYPE_CHECKING:
     from modules.services.models.service_order import ServiceOrder
 
 
-class ReportType(str, enum.Enum):
+class ReportType(StrEnum):
     """Tipo de relatório."""
+
     EXECUCAO = "execucao"
     TECNICO = "tecnico"
     FOTOGRAFICO = "fotografico"
@@ -40,23 +38,18 @@ class ServiceReport(Base):
     Model para relatórios de serviços.
     Documenta os serviços executados.
     """
+
     __tablename__ = "service_reports"
 
     # Primary key
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     # Foreign key
-    order_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("service_orders.id", ondelete="CASCADE"),
-        nullable=False
-    )
+    order_id = Column(UUID(as_uuid=True), ForeignKey("service_orders.id", ondelete="CASCADE"), nullable=False)
 
     # Identificação
     report_number = Column(String(30), nullable=False, unique=True)
-    report_type = Column(
-        Enum(ReportType), nullable=False, default=ReportType.EXECUCAO
-    )
+    report_type = Column(Enum(ReportType), nullable=False, default=ReportType.EXECUCAO)
     title = Column(String(200), nullable=False)
 
     # Conteúdo
@@ -127,16 +120,12 @@ class ServiceReport(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    order: "ServiceOrder" = relationship(
-        "ServiceOrder", back_populates="reports"
-    )
+    order: "ServiceOrder" = relationship("ServiceOrder", back_populates="reports")
 
     # Índices
     __table_args__ = (
@@ -189,11 +178,13 @@ class ServiceReport(Base):
         """Cria nova versão do relatório."""
         if self.version_history is None:
             self.version_history = []
-        self.version_history.append({
-            "version": self.version,
-            "created_at": self.updated_at.isoformat() if self.updated_at else None,
-            "author_id": str(self.updated_by) if self.updated_by else None
-        })
+        self.version_history.append(
+            {
+                "version": self.version,
+                "created_at": self.updated_at.isoformat() if self.updated_at else None,
+                "author_id": str(self.updated_by) if self.updated_by else None,
+            }
+        )
         self.version += 1
         self.is_draft = True
         self.is_reviewed = False
@@ -201,24 +192,15 @@ class ServiceReport(Base):
         self.is_sent = False
         self.updated_at = datetime.utcnow()
 
-    def add_section(
-        self, title: str, content: str, order: Optional[int] = None
-    ) -> None:
+    def add_section(self, title: str, content: str, order: int | None = None) -> None:
         """Adiciona seção ao relatório."""
         if self.sections is None:
             self.sections = []
-        section = {
-            "id": str(uuid4()),
-            "title": title,
-            "content": content,
-            "order": order or len(self.sections) + 1
-        }
+        section = {"id": str(uuid4()), "title": title, "content": content, "order": order or len(self.sections) + 1}
         self.sections.append(section)
         self.updated_at = datetime.utcnow()
 
-    def add_photo(
-        self, url: str, caption: str, category: Optional[str] = None
-    ) -> None:
+    def add_photo(self, url: str, caption: str, category: str | None = None) -> None:
         """Adiciona foto ao relatório."""
         if self.photos is None:
             self.photos = []
@@ -227,17 +209,12 @@ class ServiceReport(Base):
             "url": url,
             "caption": caption,
             "category": category,
-            "added_at": datetime.utcnow().isoformat()
+            "added_at": datetime.utcnow().isoformat(),
         }
         self.photos.append(photo)
         self.updated_at = datetime.utcnow()
 
-    def add_non_conformity(
-        self,
-        description: str,
-        severity: str,
-        corrective_action: Optional[str] = None
-    ) -> None:
+    def add_non_conformity(self, description: str, severity: str, corrective_action: str | None = None) -> None:
         """Adiciona não conformidade."""
         if self.non_conformities is None:
             self.non_conformities = []
@@ -246,7 +223,7 @@ class ServiceReport(Base):
             "description": description,
             "severity": severity,
             "corrective_action": corrective_action,
-            "identified_at": datetime.utcnow().isoformat()
+            "identified_at": datetime.utcnow().isoformat(),
         }
         self.non_conformities.append(nc_entry)
         self.updated_at = datetime.utcnow()

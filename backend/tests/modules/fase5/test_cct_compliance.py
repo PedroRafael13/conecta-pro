@@ -4,22 +4,14 @@ tests/modules/fase5/test_cct_compliance.py - CCT Compliance Tests
 Testes de integracao para CCT Compliance SINDCOND 2026
 """
 
-import pytest
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
+from modules.fase5.cct_compliance.enums import StatusValidacao, TipoBeneficio, TipoCargo, TipoJornada
+from modules.fase5.cct_compliance.models import BENEFICIOS_CCT_2026, TABELA_PISOS_SINDCOND_2026, ValidacaoCCT
 from modules.fase5.cct_compliance.service import CCTComplianceService
-from modules.fase5.cct_compliance.enums import (
-    TipoCargo,
-    TipoJornada,
-    TipoBeneficio,
-    StatusValidacao
-)
-from modules.fase5.cct_compliance.models import (
-    TABELA_PISOS_SINDCOND_2026,
-    BENEFICIOS_CCT_2026,
-    ValidacaoCCT
-)
 
 
 class TestCCTComplianceService:
@@ -79,19 +71,13 @@ class TestCCTComplianceService:
 
     def test_validar_salario_conforme(self, service):
         """Salario acima do piso deve ser conforme."""
-        resultado = service.validar_salario(
-            TipoCargo.PORTEIRO,
-            Decimal("2000.00")
-        )
+        resultado = service.validar_salario(TipoCargo.PORTEIRO, Decimal("2000.00"))
         assert resultado["valido"] is True
         assert resultado["alerta"] is None
 
     def test_validar_salario_nao_conforme(self, service):
         """Salario abaixo do piso deve ser nao conforme."""
-        resultado = service.validar_salario(
-            TipoCargo.PORTEIRO,
-            Decimal("1500.00")
-        )
+        resultado = service.validar_salario(TipoCargo.PORTEIRO, Decimal("1500.00"))
         assert resultado["valido"] is False
         assert "abaixo" in resultado["alerta"].lower()
 
@@ -103,10 +89,7 @@ class TestCCTComplianceService:
 
     def test_validar_salario_diferenca_calculada(self, service):
         """Deve calcular diferenca corretamente."""
-        resultado = service.validar_salario(
-            TipoCargo.PORTEIRO,
-            Decimal("1800.00")
-        )
+        resultado = service.validar_salario(TipoCargo.PORTEIRO, Decimal("1800.00"))
         # Piso: 1847.12, Informado: 1800.00, Diferenca: -47.12
         assert Decimal(resultado["diferenca"]) == Decimal("-47.12")
 
@@ -124,8 +107,8 @@ class TestCCTComplianceService:
                 TipoBeneficio.VALE_ALIMENTACAO,
                 TipoBeneficio.CESTA_BASICA,
                 TipoBeneficio.VALE_TRANSPORTE,
-                TipoBeneficio.SEGURO_VIDA
-            ]
+                TipoBeneficio.SEGURO_VIDA,
+            ],
         )
         assert validacao.salario_conforme is True
         assert validacao.jornada_conforme is True
@@ -142,8 +125,8 @@ class TestCCTComplianceService:
                 TipoBeneficio.VALE_ALIMENTACAO,
                 TipoBeneficio.CESTA_BASICA,
                 TipoBeneficio.VALE_TRANSPORTE,
-                TipoBeneficio.SEGURO_VIDA
-            ]
+                TipoBeneficio.SEGURO_VIDA,
+            ],
         )
         assert validacao.salario_conforme is False
         assert validacao.status in [StatusValidacao.NAO_CONFORME, StatusValidacao.ALERTA]
@@ -154,7 +137,7 @@ class TestCCTComplianceService:
             cargo=TipoCargo.PORTEIRO,
             salario=Decimal("2000.00"),
             jornada=TipoJornada.JORNADA_44H,
-            beneficios=[TipoBeneficio.VALE_ALIMENTACAO]  # Faltam outros
+            beneficios=[TipoBeneficio.VALE_ALIMENTACAO],  # Faltam outros
         )
         assert validacao.beneficios_conformes is False
         assert len(validacao.beneficios_faltantes) > 0
@@ -169,8 +152,8 @@ class TestCCTComplianceService:
                 TipoBeneficio.VALE_ALIMENTACAO,
                 TipoBeneficio.CESTA_BASICA,
                 TipoBeneficio.VALE_TRANSPORTE,
-                TipoBeneficio.SEGURO_VIDA
-            ]
+                TipoBeneficio.SEGURO_VIDA,
+            ],
         )
         # Score maximo: 100 (40 salario + 30 jornada + 30 beneficios)
         assert validacao.score == Decimal("100")
@@ -181,10 +164,7 @@ class TestCCTComplianceService:
 
     def test_calcular_custo_com_encargos(self, service):
         """Deve calcular custo total com encargos."""
-        resultado = service.calcular_custo_funcionario(
-            cargo=TipoCargo.PORTEIRO,
-            incluir_encargos=True
-        )
+        resultado = service.calcular_custo_funcionario(cargo=TipoCargo.PORTEIRO, incluir_encargos=True)
         assert "custo_total_mensal" in resultado
         assert "encargos" in resultado
         assert resultado["encargos"]["incluido"] is True
@@ -193,29 +173,22 @@ class TestCCTComplianceService:
 
     def test_calcular_custo_sem_encargos(self, service):
         """Deve calcular custo sem encargos."""
-        resultado = service.calcular_custo_funcionario(
-            cargo=TipoCargo.PORTEIRO,
-            incluir_encargos=False
-        )
+        resultado = service.calcular_custo_funcionario(cargo=TipoCargo.PORTEIRO, incluir_encargos=False)
         assert resultado["encargos"]["incluido"] is False
 
     def test_calcular_custo_salario_customizado(self, service):
         """Deve usar salario customizado quando informado."""
         resultado = service.calcular_custo_funcionario(
-            cargo=TipoCargo.PORTEIRO,
-            salario_base=Decimal("2500.00"),
-            incluir_encargos=True
+            cargo=TipoCargo.PORTEIRO, salario_base=Decimal("2500.00"), incluir_encargos=True
         )
         assert Decimal(resultado["salario_base"]) == Decimal("2500.00")
 
     def test_calcular_custo_beneficios_incluidos(self, service):
         """Deve incluir beneficios no calculo."""
-        resultado = service.calcular_custo_funcionario(
-            cargo=TipoCargo.PORTEIRO,
-            incluir_encargos=True
-        )
+        resultado = service.calcular_custo_funcionario(cargo=TipoCargo.PORTEIRO, incluir_encargos=True)
         assert "beneficios" in resultado
         assert Decimal(resultado["beneficios"]["total"]) > Decimal("0")
+
 
 class TestTabelaPisos:
     """Testes para tabela de pisos salariais."""
@@ -271,10 +244,7 @@ class TestValidacaoCCT:
     def test_calcular_score_maximo(self):
         """Score maximo deve ser 100."""
         validacao = ValidacaoCCT(
-            cargo=TipoCargo.PORTEIRO,
-            salario_conforme=True,
-            jornada_conforme=True,
-            beneficios_conformes=True
+            cargo=TipoCargo.PORTEIRO, salario_conforme=True, jornada_conforme=True, beneficios_conformes=True
         )
         validacao.calcular_score()
         assert validacao.score == Decimal("100")
@@ -283,10 +253,7 @@ class TestValidacaoCCT:
     def test_calcular_score_parcial(self):
         """Score parcial deve refletir itens conformes."""
         validacao = ValidacaoCCT(
-            cargo=TipoCargo.PORTEIRO,
-            salario_conforme=True,
-            jornada_conforme=True,
-            beneficios_conformes=False
+            cargo=TipoCargo.PORTEIRO, salario_conforme=True, jornada_conforme=True, beneficios_conformes=False
         )
         validacao.calcular_score()
         assert validacao.score == Decimal("70")  # 40 + 30
@@ -295,10 +262,7 @@ class TestValidacaoCCT:
     def test_calcular_score_minimo(self):
         """Score minimo quando nada conforme."""
         validacao = ValidacaoCCT(
-            cargo=TipoCargo.PORTEIRO,
-            salario_conforme=False,
-            jornada_conforme=False,
-            beneficios_conformes=False
+            cargo=TipoCargo.PORTEIRO, salario_conforme=False, jornada_conforme=False, beneficios_conformes=False
         )
         validacao.calcular_score()
         assert validacao.score == Decimal("0")

@@ -7,7 +7,7 @@ endpoints da API de turnover.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -18,10 +18,10 @@ from modules.retention.turnover.models.turnover_models import (
     TipoAlerta,
 )
 
-
 # =============================================================================
 # Base Schemas
 # =============================================================================
+
 
 class TurnoverBaseSchema(BaseModel):
     """Schema base com configuracao padrao."""
@@ -36,6 +36,7 @@ class TurnoverBaseSchema(BaseModel):
 # =============================================================================
 # Risk Factor Schemas
 # =============================================================================
+
 
 class RiskFactorBase(TurnoverBaseSchema):
     """Schema base para fatores de risco."""
@@ -66,8 +67,8 @@ class RiskFactorCreate(RiskFactorBase):
     valor_normalizado: Decimal = Field(..., ge=0, le=1)
     contribuicao_score: Decimal = Field(..., ge=0)
     threshold_violado: bool = False
-    recomendacao_acao: Optional[str] = None
-    dados_brutos: Optional[Dict[str, Any]] = None
+    recomendacao_acao: str | None = None
+    dados_brutos: dict[str, Any] | None = None
 
 
 class RiskFactorResponse(RiskFactorBase):
@@ -79,7 +80,7 @@ class RiskFactorResponse(RiskFactorBase):
     valor_normalizado: Decimal
     contribuicao_score: Decimal
     threshold_violado: bool
-    recomendacao_acao: Optional[str] = None
+    recomendacao_acao: str | None = None
     is_critico: bool
     is_significativo: bool
     created_at: datetime
@@ -98,6 +99,7 @@ class RiskFactorSummary(TurnoverBaseSchema):
 # =============================================================================
 # Prediction Schemas
 # =============================================================================
+
 
 class PredictionBase(TurnoverBaseSchema):
     """Schema base para predicao."""
@@ -118,10 +120,10 @@ class PredictionCreate(PredictionBase):
     score_risco: Decimal = Field(..., ge=0, le=100)
     nivel: NivelRisco
     modelo_versao: str = Field(default="heuristic_v1.0", max_length=50)
-    features_usadas: Dict[str, Any] = Field(default_factory=dict)
-    metricas_modelo: Optional[Dict[str, Any]] = None
-    valido_ate: Optional[datetime] = None
-    calculado_por: Optional[UUID] = None
+    features_usadas: dict[str, Any] = Field(default_factory=dict)
+    metricas_modelo: dict[str, Any] | None = None
+    valido_ate: datetime | None = None
+    calculado_por: UUID | None = None
 
 
 class PredictionResponse(PredictionBase):
@@ -132,13 +134,13 @@ class PredictionResponse(PredictionBase):
     score_risco: Decimal
     nivel: NivelRisco
     modelo_versao: str
-    features_usadas: Dict[str, Any]
-    metricas_modelo: Optional[Dict[str, Any]] = None
-    valido_ate: Optional[datetime] = None
+    features_usadas: dict[str, Any]
+    metricas_modelo: dict[str, Any] | None = None
+    valido_ate: datetime | None = None
     recalculado: bool
     is_alerta_necessario: bool
     is_critico: bool
-    fatores: List[RiskFactorResponse] = Field(default_factory=list)
+    fatores: list[RiskFactorResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -152,22 +154,23 @@ class PredictionSummary(TurnoverBaseSchema):
     score_risco: Decimal
     nivel: NivelRisco
     is_alerta_necessario: bool
-    principais_fatores: List[RiskFactorSummary] = Field(default_factory=list)
+    principais_fatores: list[RiskFactorSummary] = Field(default_factory=list)
 
 
 class PredictionListResponse(TurnoverBaseSchema):
     """Schema de lista paginada de predicoes."""
 
-    items: List[PredictionSummary]
+    items: list[PredictionSummary]
     total: int
     skip: int
     limit: int
-    nivel_filtro: Optional[NivelRisco] = None
+    nivel_filtro: NivelRisco | None = None
 
 
 # =============================================================================
 # Alert Schemas
 # =============================================================================
+
 
 class AlertBase(TurnoverBaseSchema):
     """Schema base para alerta."""
@@ -184,14 +187,14 @@ class AlertCreate(AlertBase):
     prediction_id: UUID
     condominium_id: UUID
     score_atual: Decimal = Field(..., ge=0, le=100)
-    score_anterior: Optional[Decimal] = Field(None, ge=0, le=100)
-    variacao_score: Optional[Decimal] = None
+    score_anterior: Decimal | None = Field(None, ge=0, le=100)
+    variacao_score: Decimal | None = None
     nivel_atual: NivelRisco
-    nivel_anterior: Optional[NivelRisco] = None
-    enviado_para: List[str] = Field(default_factory=list)
+    nivel_anterior: NivelRisco | None = None
+    enviado_para: list[str] = Field(default_factory=list)
     prioridade: int = Field(default=3, ge=1, le=5)
-    expira_em: Optional[datetime] = None
-    dados_extras: Optional[Dict[str, Any]] = None
+    expira_em: datetime | None = None
+    dados_extras: dict[str, Any] | None = None
 
 
 class AlertResponse(AlertBase):
@@ -201,19 +204,19 @@ class AlertResponse(AlertBase):
     prediction_id: UUID
     condominium_id: UUID
     score_atual: Decimal
-    score_anterior: Optional[Decimal] = None
-    variacao_score: Optional[Decimal] = None
+    score_anterior: Decimal | None = None
+    variacao_score: Decimal | None = None
     nivel_atual: NivelRisco
-    nivel_anterior: Optional[NivelRisco] = None
-    enviado_para: List[str]
+    nivel_anterior: NivelRisco | None = None
+    enviado_para: list[str]
     visualizado: bool
-    data_visualizacao: Optional[datetime] = None
-    visualizado_por: Optional[UUID] = None
-    acao_tomada: Optional[str] = None
-    acao_por: Optional[UUID] = None
-    data_acao: Optional[datetime] = None
+    data_visualizacao: datetime | None = None
+    visualizado_por: UUID | None = None
+    acao_tomada: str | None = None
+    acao_por: UUID | None = None
+    data_acao: datetime | None = None
     prioridade: int
-    expira_em: Optional[datetime] = None
+    expira_em: datetime | None = None
     is_pendente: bool
     is_expirado: bool
     is_acao_pendente: bool
@@ -237,7 +240,7 @@ class AlertSummary(TurnoverBaseSchema):
 class AlertListResponse(TurnoverBaseSchema):
     """Schema de lista paginada de alertas."""
 
-    items: List[AlertSummary]
+    items: list[AlertSummary]
     total: int
     skip: int
     limit: int
@@ -266,10 +269,11 @@ class AlertAcaoRequest(TurnoverBaseSchema):
 # Recalcular Schemas
 # =============================================================================
 
+
 class RecalcularRequest(TurnoverBaseSchema):
     """Schema para solicitar recalculo de risco."""
 
-    motivo: Optional[str] = Field(
+    motivo: str | None = Field(
         None,
         max_length=500,
         description="Motivo do recalculo manual",
@@ -279,7 +283,7 @@ class RecalcularRequest(TurnoverBaseSchema):
 class RecalcularBatchRequest(TurnoverBaseSchema):
     """Schema para recalculo em lote."""
 
-    funcionario_ids: Optional[List[UUID]] = Field(
+    funcionario_ids: list[UUID] | None = Field(
         None,
         max_length=1000,
         description="Lista de funcionarios (None = todos)",
@@ -295,9 +299,9 @@ class RecalcularResponse(TurnoverBaseSchema):
 
     funcionario_id: UUID
     predicao_id: UUID
-    score_anterior: Optional[Decimal] = None
+    score_anterior: Decimal | None = None
     score_novo: Decimal
-    nivel_anterior: Optional[NivelRisco] = None
+    nivel_anterior: NivelRisco | None = None
     nivel_novo: NivelRisco
     alerta_gerado: bool
     data_calculo: datetime
@@ -311,12 +315,13 @@ class RecalcularBatchResponse(TurnoverBaseSchema):
     total_erros: int
     alertas_gerados: int
     tempo_execucao_segundos: float
-    erros: List[Dict[str, Any]] = Field(default_factory=list)
+    erros: list[dict[str, Any]] = Field(default_factory=list)
 
 
 # =============================================================================
 # Dashboard Schemas
 # =============================================================================
+
 
 class DashboardDistribuicaoNivel(TurnoverBaseSchema):
     """Distribuicao por nivel de risco."""
@@ -353,20 +358,20 @@ class DashboardResponse(TurnoverBaseSchema):
     score_medio_geral: Decimal
 
     # Distribuicao por nivel
-    distribuicao_niveis: List[DashboardDistribuicaoNivel]
+    distribuicao_niveis: list[DashboardDistribuicaoNivel]
 
     # Alertas
     alertas_pendentes: int
     alertas_ultimo_mes: int
 
     # Top fatores
-    fatores_mais_frequentes: List[DashboardFatorFrequente]
+    fatores_mais_frequentes: list[DashboardFatorFrequente]
 
     # Tendencia
-    tendencia_30_dias: List[DashboardTendencia]
+    tendencia_30_dias: list[DashboardTendencia]
 
     # Comparativo
-    variacao_score_medio_mensal: Optional[Decimal] = None
+    variacao_score_medio_mensal: Decimal | None = None
     funcionarios_risco_crescente: int = 0
     funcionarios_risco_decrescente: int = 0
 
@@ -378,15 +383,16 @@ class DashboardFiltro(TurnoverBaseSchema):
     """Filtro para dashboard."""
 
     condominium_id: UUID
-    setor_id: Optional[UUID] = None
-    cargo_id: Optional[UUID] = None
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
+    setor_id: UUID | None = None
+    cargo_id: UUID | None = None
+    data_inicio: datetime | None = None
+    data_fim: datetime | None = None
 
 
 # =============================================================================
 # Historico Schemas
 # =============================================================================
+
 
 class HistoricoItemResponse(TurnoverBaseSchema):
     """Item do historico de predicoes."""
@@ -395,9 +401,9 @@ class HistoricoItemResponse(TurnoverBaseSchema):
     data_calculo: datetime
     score_risco: Decimal
     nivel: NivelRisco
-    variacao_anterior: Optional[Decimal] = None
+    variacao_anterior: Decimal | None = None
     alertas_gerados: int
-    principais_fatores: List[RiskFactorSummary]
+    principais_fatores: list[RiskFactorSummary]
 
 
 class HistoricoResponse(TurnoverBaseSchema):
@@ -405,20 +411,21 @@ class HistoricoResponse(TurnoverBaseSchema):
 
     funcionario_id: UUID
     total_predicoes: int
-    predicao_atual: Optional[PredictionResponse] = None
-    score_minimo: Optional[Decimal] = None
-    score_maximo: Optional[Decimal] = None
-    score_medio: Optional[Decimal] = None
+    predicao_atual: PredictionResponse | None = None
+    score_minimo: Decimal | None = None
+    score_maximo: Decimal | None = None
+    score_medio: Decimal | None = None
     tendencia: str = Field(
         default="estavel",
         description="estavel, crescente, decrescente",
     )
-    historico: List[HistoricoItemResponse]
+    historico: list[HistoricoItemResponse]
 
 
 # =============================================================================
 # Fatores Agregados Schemas
 # =============================================================================
+
 
 class FatorAgregadoResponse(TurnoverBaseSchema):
     """Fator de risco agregado (estatisticas)."""
@@ -431,48 +438,43 @@ class FatorAgregadoResponse(TurnoverBaseSchema):
     percentual_threshold_violado: Decimal
     funcionarios_afetados: int
     descricao_padrao: str
-    recomendacoes_comuns: List[str]
+    recomendacoes_comuns: list[str]
 
 
 class FatoresListResponse(TurnoverBaseSchema):
     """Lista de fatores agregados."""
 
-    items: List[FatorAgregadoResponse]
+    items: list[FatorAgregadoResponse]
     total_fatores: int
-    categoria_filtro: Optional[CategoriaFator] = None
+    categoria_filtro: CategoriaFator | None = None
 
 
 # =============================================================================
 # Filtros e Queries
 # =============================================================================
 
+
 class PredictionFilter(TurnoverBaseSchema):
     """Filtros para consulta de predicoes."""
 
     condominium_id: UUID
-    nivel: Optional[NivelRisco] = None
-    score_minimo: Optional[Decimal] = Field(None, ge=0, le=100)
-    score_maximo: Optional[Decimal] = Field(None, ge=0, le=100)
+    nivel: NivelRisco | None = None
+    score_minimo: Decimal | None = Field(None, ge=0, le=100)
+    score_maximo: Decimal | None = Field(None, ge=0, le=100)
     apenas_alerta: bool = False
-    setor_id: Optional[UUID] = None
-    cargo_id: Optional[UUID] = None
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
+    setor_id: UUID | None = None
+    cargo_id: UUID | None = None
+    data_inicio: datetime | None = None
+    data_fim: datetime | None = None
 
     @field_validator("score_maximo")
     @classmethod
-    def validar_score_maximo(
-        cls,
-        v: Optional[Decimal],
-        info
-    ) -> Optional[Decimal]:
+    def validar_score_maximo(cls, v: Decimal | None, info) -> Decimal | None:
         """Valida que score_maximo >= score_minimo."""
         if v is not None:
             score_minimo = info.data.get("score_minimo")
             if score_minimo is not None and v < score_minimo:
-                raise ValueError(
-                    "score_maximo deve ser maior ou igual a score_minimo"
-                )
+                raise ValueError("score_maximo deve ser maior ou igual a score_minimo")
         return v
 
 
@@ -480,16 +482,17 @@ class AlertFilter(TurnoverBaseSchema):
     """Filtros para consulta de alertas."""
 
     condominium_id: UUID
-    tipo: Optional[TipoAlerta] = None
-    visualizado: Optional[bool] = None
-    prioridade_maxima: Optional[int] = Field(None, ge=1, le=5)
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
+    tipo: TipoAlerta | None = None
+    visualizado: bool | None = None
+    prioridade_maxima: int | None = Field(None, ge=1, le=5)
+    data_inicio: datetime | None = None
+    data_fim: datetime | None = None
 
 
 # =============================================================================
 # Features Configuration Schema
 # =============================================================================
+
 
 class FeatureConfig(TurnoverBaseSchema):
     """Configuracao de uma feature do modelo."""
@@ -498,17 +501,17 @@ class FeatureConfig(TurnoverBaseSchema):
     categoria: CategoriaFator
     peso: Decimal = Field(..., ge=0, le=1)
     descricao: str
-    threshold_alto: Optional[Decimal] = None
-    threshold_baixo: Optional[Decimal] = None
-    threshold_negativo: Optional[Decimal] = None
-    threshold_critico: Optional[Decimal] = None
+    threshold_alto: Decimal | None = None
+    threshold_baixo: Decimal | None = None
+    threshold_negativo: Decimal | None = None
+    threshold_critico: Decimal | None = None
     ativo: bool = True
 
 
 class FeaturesConfigResponse(TurnoverBaseSchema):
     """Lista de configuracoes de features."""
 
-    features: List[FeatureConfig]
+    features: list[FeatureConfig]
     total_peso: Decimal
     modelo_versao: str
 
@@ -516,6 +519,7 @@ class FeaturesConfigResponse(TurnoverBaseSchema):
 # =============================================================================
 # Export Schemas
 # =============================================================================
+
 
 class ExportRequest(TurnoverBaseSchema):
     """Request para exportacao de dados."""
@@ -527,7 +531,7 @@ class ExportRequest(TurnoverBaseSchema):
     )
     incluir_fatores: bool = True
     incluir_historico: bool = False
-    filtros: Optional[PredictionFilter] = None
+    filtros: PredictionFilter | None = None
 
 
 class ExportResponse(TurnoverBaseSchema):

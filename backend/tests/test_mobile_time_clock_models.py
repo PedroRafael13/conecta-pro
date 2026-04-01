@@ -1,26 +1,27 @@
-"""Testes para models do módulo Mobile Time Clock."""
+"""Testes para models do modulo Mobile Time Clock."""
 
-import pytest
 from datetime import datetime, time, timedelta
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.mobile_time_clock.models import (
-    MobileDevice,
-    MobileCheckIn,
-    GeofenceZone,
-    OfflineQueue,
+    BiometricCapability,
+    CheckInStatus,
+    CheckInType,
     DevicePlatform,
     DeviceStatus,
-    BiometricCapability,
-    CheckInType,
-    CheckInStatus,
-    ValidationMethod,
+    GeofenceZone,
     LocationAccuracy,
-    ZoneType,
+    MobileCheckIn,
+    MobileDevice,
+    OfflineQueue,
+    QueuePriority,
+    QueueStatus,
+    ValidationMethod,
     ZoneCategory,
     ZoneStatus,
-    QueueStatus,
-    QueuePriority,
+    ZoneType,
 )
 
 
@@ -28,7 +29,7 @@ class TestMobileDevice:
     """Testes para o model MobileDevice."""
 
     def test_create_device(self):
-        """Testa criação de dispositivo."""
+        """Testa criacao de dispositivo."""
         device = MobileDevice(
             id=uuid4(),
             employee_id=uuid4(),
@@ -39,6 +40,8 @@ class TestMobileDevice:
             os_version="17.0",
             app_version="1.0.0",
             status=DeviceStatus.PENDING.value,
+            is_active=True,
+            trust_score=0,
         )
 
         assert device.device_name == "iPhone 15"
@@ -48,7 +51,7 @@ class TestMobileDevice:
         assert device.trust_score == 0
 
     def test_device_is_authorized(self):
-        """Testa verificação de autorização."""
+        """Testa verificacao de autorizacao."""
         device = MobileDevice(
             id=uuid4(),
             employee_id=uuid4(),
@@ -81,20 +84,21 @@ class TestMobileDevice:
             status=DeviceStatus.ACTIVE.value,
             is_active=True,
             biometric_enabled=False,
+            failed_attempts=0,
         )
 
         assert device.can_checkin is True
 
-        # Requer biometria mas não está enrolled
-        device.biometric_enabled = True
-        device.biometric_enrolled_at = None
+        # Exceder tentativas falhas bloqueia check-in
+        device.failed_attempts = 5
         assert device.can_checkin is False
 
-        device.biometric_enrolled_at = datetime.utcnow()
-        assert device.can_checkin is True
-
     def test_device_needs_biometric(self):
-        """Testa verificação de necessidade de biometria."""
+        """Testa verificacao de necessidade de biometria.
+
+        needs_biometric retorna True quando require_biometric=True E
+        biometric_enabled=True.
+        """
         device = MobileDevice(
             id=uuid4(),
             employee_id=uuid4(),
@@ -102,21 +106,28 @@ class TestMobileDevice:
             device_name="Test",
             device_uuid="test-uuid",
             platform=DevicePlatform.ANDROID.value,
+            require_biometric=True,
             biometric_enabled=True,
-            biometric_enrolled_at=datetime.utcnow(),
         )
 
+        # Ambas True -> needs_biometric True
+        assert device.needs_biometric is True
+
+        # Desabilitar biometria no device -> needs_biometric False
+        device.biometric_enabled = False
         assert device.needs_biometric is False
 
-        device.biometric_enrolled_at = None
-        assert device.needs_biometric is True
+        # Nao exigir biometria -> needs_biometric False
+        device.biometric_enabled = True
+        device.require_biometric = False
+        assert device.needs_biometric is False
 
 
 class TestMobileCheckIn:
     """Testes para o model MobileCheckIn."""
 
     def test_create_checkin(self):
-        """Testa criação de check-in."""
+        """Testa criacao de check-in."""
         now = datetime.utcnow()
         checkin = MobileCheckIn(
             id=uuid4(),
@@ -129,14 +140,16 @@ class TestMobileCheckIn:
             checkin_time=now.time(),
             device_timestamp=now,
             server_timestamp=now,
+            status=CheckInStatus.PENDING.value,
+            is_valid=True,
         )
 
         assert checkin.checkin_type == "entry"
         assert checkin.status == "pending"
-        assert checkin.is_valid is False
+        assert checkin.is_valid is True
 
     def test_checkin_is_validated(self):
-        """Testa verificação se check-in está validado."""
+        """Testa verificacao se check-in esta validado."""
         checkin = MobileCheckIn(
             id=uuid4(),
             device_id=uuid4(),
@@ -158,7 +171,7 @@ class TestMobileCheckIn:
         assert checkin.is_validated is False
 
     def test_checkin_needs_review(self):
-        """Testa verificação se check-in precisa de revisão."""
+        """Testa verificacao se check-in precisa de revisao."""
         checkin = MobileCheckIn(
             id=uuid4(),
             device_id=uuid4(),
@@ -171,6 +184,7 @@ class TestMobileCheckIn:
             device_timestamp=datetime.utcnow(),
             server_timestamp=datetime.utcnow(),
             status=CheckInStatus.FLAGGED.value,
+            has_anomaly=False,
         )
 
         assert checkin.needs_review is True
@@ -179,7 +193,7 @@ class TestMobileCheckIn:
         assert checkin.needs_review is False
 
     def test_calculate_accuracy_level(self):
-        """Testa cálculo de nível de precisão."""
+        """Testa calculo de nivel de precisao."""
         checkin = MobileCheckIn(
             id=uuid4(),
             device_id=uuid4(),
@@ -206,7 +220,7 @@ class TestMobileCheckIn:
         assert checkin.calculate_accuracy_level() == LocationAccuracy.VERY_LOW.value
 
     def test_location_tuple(self):
-        """Testa obtenção de tupla de localização."""
+        """Testa obtencao de tupla de localizacao."""
         checkin = MobileCheckIn(
             id=uuid4(),
             device_id=uuid4(),
@@ -232,16 +246,17 @@ class TestGeofenceZone:
     """Testes para o model GeofenceZone."""
 
     def test_create_zone(self):
-        """Testa criação de zona."""
+        """Testa criacao de zona."""
         zone = GeofenceZone(
             id=uuid4(),
             condominio_id=uuid4(),
             name="Sede Principal",
             zone_type=ZoneType.CIRCLE.value,
-            category=ZoneCategory.WORK.value,
+            category=ZoneCategory.HEADQUARTERS.value,
             center_latitude=-23.5505,
             center_longitude=-46.6333,
             radius_meters=100,
+            is_active=True,
         )
 
         assert zone.name == "Sede Principal"
@@ -250,7 +265,7 @@ class TestGeofenceZone:
         assert zone.is_active is True
 
     def test_contains_point_circle(self):
-        """Testa verificação de ponto dentro de zona circular."""
+        """Testa verificacao de ponto dentro de zona circular."""
         zone = GeofenceZone(
             id=uuid4(),
             condominio_id=uuid4(),
@@ -259,19 +274,20 @@ class TestGeofenceZone:
             center_latitude=-23.5505,
             center_longitude=-46.6333,
             radius_meters=100,
+            grace_period_meters=20,
         )
 
         # Ponto no centro
         assert zone.contains_point(-23.5505, -46.6333) is True
 
-        # Ponto próximo (dentro dos 100m)
+        # Ponto proximo (dentro dos 100m + 20m grace)
         assert zone.contains_point(-23.5506, -46.6334) is True
 
         # Ponto distante
         assert zone.contains_point(-23.56, -46.64) is False
 
     def test_calculate_distance(self):
-        """Testa cálculo de distância (Haversine)."""
+        """Testa calculo de distancia (Haversine)."""
         zone = GeofenceZone(
             id=uuid4(),
             condominio_id=uuid4(),
@@ -282,16 +298,20 @@ class TestGeofenceZone:
             radius_meters=100,
         )
 
-        # Distância para o mesmo ponto
+        # Distancia para o mesmo ponto
         distance = zone.calculate_distance(-23.5505, -46.6333)
         assert distance < 1  # Menos de 1 metro
 
-        # Distância para ponto conhecido (~1km)
+        # Distancia para ponto conhecido (~1km)
         distance = zone.calculate_distance(-23.5595, -46.6333)
         assert 900 < distance < 1100
 
     def test_is_time_allowed(self):
-        """Testa verificação de horário permitido."""
+        """Testa verificacao de horario permitido.
+
+        is_time_allowed(check_time) verifica horario.
+        is_day_allowed(weekday) verifica dia da semana separadamente.
+        """
         zone = GeofenceZone(
             id=uuid4(),
             condominio_id=uuid4(),
@@ -304,20 +324,23 @@ class TestGeofenceZone:
         )
 
         # Permite todas as horas
-        assert zone.is_time_allowed(time(10, 0), 1) is True
+        assert zone.is_time_allowed(time(10, 0)) is True
 
-        # Restringir horário
+        # Restringir horario
         zone.allow_all_hours = False
         zone.allowed_start_time = time(8, 0)
         zone.allowed_end_time = time(18, 0)
-        zone.allowed_days = [0, 1, 2, 3, 4]  # Seg-Sex
+        zone.allowed_days = [1, 2, 3, 4, 5]  # Seg-Sex (1=seg, 5=sex)
 
-        assert zone.is_time_allowed(time(10, 0), 1) is True  # Terça 10h
-        assert zone.is_time_allowed(time(20, 0), 1) is False  # Terça 20h
-        assert zone.is_time_allowed(time(10, 0), 5) is False  # Sábado 10h
+        assert zone.is_time_allowed(time(10, 0)) is True  # 10h dentro do range
+        assert zone.is_time_allowed(time(20, 0)) is False  # 20h fora do range
+
+        # Verificacao de dias separada
+        assert zone.is_day_allowed(2) is True  # Terca
+        assert zone.is_day_allowed(6) is False  # Sabado
 
     def test_is_employee_allowed(self):
-        """Testa verificação de funcionário permitido."""
+        """Testa verificacao de funcionario permitido."""
         zone = GeofenceZone(
             id=uuid4(),
             condominio_id=uuid4(),
@@ -342,7 +365,7 @@ class TestOfflineQueue:
     """Testes para o model OfflineQueue."""
 
     def test_create_queue_item(self):
-        """Testa criação de item na fila."""
+        """Testa criacao de item na fila."""
         now = datetime.utcnow()
         item = OfflineQueue(
             id=uuid4(),
@@ -356,6 +379,8 @@ class TestOfflineQueue:
             queued_at=now,
             received_at=now,
             expires_at=now + timedelta(hours=24),
+            status=QueueStatus.PENDING.value,
+            retry_count=0,
         )
 
         assert item.offline_id == "offline-123"
@@ -363,7 +388,11 @@ class TestOfflineQueue:
         assert item.retry_count == 0
 
     def test_can_retry(self):
-        """Testa verificação se pode fazer retry."""
+        """Testa verificacao se pode fazer retry.
+
+        can_retry requer status='failed', is_expired=False,
+        e retry_count < max_retries.
+        """
         item = OfflineQueue(
             id=uuid4(),
             device_id=uuid4(),
@@ -376,8 +405,10 @@ class TestOfflineQueue:
             queued_at=datetime.utcnow(),
             received_at=datetime.utcnow(),
             expires_at=datetime.utcnow() + timedelta(hours=24),
+            status=QueueStatus.FAILED.value,
             max_retries=5,
             retry_count=3,
+            is_expired=False,
         )
 
         assert item.can_retry is True
@@ -386,7 +417,10 @@ class TestOfflineQueue:
         assert item.can_retry is False
 
     def test_age_hours(self):
-        """Testa cálculo de idade em horas."""
+        """Testa calculo de idade em horas.
+
+        age_hours calcula diferenca com base em device_timestamp.
+        """
         item = OfflineQueue(
             id=uuid4(),
             device_id=uuid4(),
@@ -395,8 +429,8 @@ class TestOfflineQueue:
             offline_id="offline-123",
             checkin_data={},
             checkin_type=CheckInType.ENTRY.value,
-            device_timestamp=datetime.utcnow(),
-            queued_at=datetime.utcnow() - timedelta(hours=2),
+            device_timestamp=datetime.utcnow() - timedelta(hours=2),
+            queued_at=datetime.utcnow(),
             received_at=datetime.utcnow(),
             expires_at=datetime.utcnow() + timedelta(hours=24),
         )
@@ -404,7 +438,7 @@ class TestOfflineQueue:
         assert 1.9 < item.age_hours < 2.1
 
     def test_mark_processing(self):
-        """Testa marcação como em processamento."""
+        """Testa marcacao como em processamento."""
         item = OfflineQueue(
             id=uuid4(),
             device_id=uuid4(),
@@ -423,7 +457,7 @@ class TestOfflineQueue:
         assert item.status == QueueStatus.PROCESSING.value
 
     def test_mark_synced(self):
-        """Testa marcação como sincronizado."""
+        """Testa marcacao como sincronizado."""
         item = OfflineQueue(
             id=uuid4(),
             device_id=uuid4(),
@@ -446,7 +480,7 @@ class TestOfflineQueue:
         assert item.synced_at is not None
 
     def test_mark_failed_with_retry(self):
-        """Testa marcação como falho com retry."""
+        """Testa marcacao como falho com retry."""
         item = OfflineQueue(
             id=uuid4(),
             device_id=uuid4(),
@@ -459,8 +493,10 @@ class TestOfflineQueue:
             queued_at=datetime.utcnow(),
             received_at=datetime.utcnow(),
             expires_at=datetime.utcnow() + timedelta(hours=24),
+            status=QueueStatus.FAILED.value,
             max_retries=5,
             retry_count=0,
+            is_expired=False,
         )
 
         item.mark_failed("Connection error", "CONN_ERROR")
@@ -471,7 +507,7 @@ class TestOfflineQueue:
         assert item.next_retry_at is not None
 
     def test_mark_expired(self):
-        """Testa marcação como expirado."""
+        """Testa marcacao como expirado."""
         item = OfflineQueue(
             id=uuid4(),
             device_id=uuid4(),

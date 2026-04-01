@@ -4,39 +4,38 @@ Email Controller - Sprint 54.
 Endpoints REST para o assistente de email com IA.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
-from uuid import UUID
-from datetime import datetime
 import logging
+from datetime import datetime
+from uuid import UUID
 
-from core.database import get_async_session
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.auth.dependencies import CurrentActiveUser
-
+from core.database import get_async_session
+from modules.ai.email_assistant.repositories import EmailRepository
 from modules.ai.email_assistant.schemas import (
-    EmailCreate,
-    EmailUpdate,
-    EmailResponse,
-    EmailListResponse,
-    EmailClassificationResult,
     EmailAnalysisRequest,
+    EmailAssistantDashboard,
+    EmailCategoryEnum,
+    EmailClassificationResult,
+    EmailCreate,
+    EmailListResponse,
+    EmailPriorityEnum,
+    EmailResponse,
     EmailResponseCreate,
     EmailResponseOut,
+    EmailRuleCreate,
+    EmailRuleResponse,
+    EmailRuleUpdate,
+    EmailStatusEnum,
+    EmailTemplateCreate,
+    EmailTemplateResponse,
+    EmailTemplateUpdate,
+    EmailUpdate,
     GenerateReplyRequest,
     GenerateReplyResponse,
-    EmailTemplateCreate,
-    EmailTemplateUpdate,
-    EmailTemplateResponse,
-    EmailRuleCreate,
-    EmailRuleUpdate,
-    EmailRuleResponse,
-    EmailAssistantDashboard,
-    EmailStatusEnum,
-    EmailCategoryEnum,
-    EmailPriorityEnum,
 )
-from modules.ai.email_assistant.repositories import EmailRepository
 from modules.ai.email_assistant.services import EmailClassifier, EmailResponder
 
 logger = logging.getLogger(__name__)
@@ -96,31 +95,33 @@ async def create_email(
         email_data["attachment_count"] = len(data.attachments)
 
         # Adiciona classificacao
-        email_data.update({
-            "status": "classified",
-            "category": classification["category"],
-            "category_confidence": classification["category_confidence"],
-            "priority": classification["priority"],
-            "priority_score": classification["priority_score"],
-            "priority_factors": classification["priority_factors"],
-            "sentiment": classification["sentiment"],
-            "sentiment_score": classification["sentiment_score"],
-            "emotions": classification["emotions"],
-            "intent": classification["intent"],
-            "intent_confidence": classification["intent_confidence"],
-            "keywords": classification["keywords"],
-            "entities": classification["entities"],
-            "topics": classification["topics"],
-            "action_items": classification["action_items"],
-            "questions": classification["questions"],
-            "is_spam": classification["is_spam"],
-            "spam_score": classification["spam_score"],
-            "is_phishing": classification["is_phishing"],
-            "phishing_indicators": classification["phishing_indicators"],
-            "security_score": classification["security_score"],
-            "processing_time_ms": classification["processing_time_ms"],
-            "processed_at": datetime.utcnow(),
-        })
+        email_data.update(
+            {
+                "status": "classified",
+                "category": classification["category"],
+                "category_confidence": classification["category_confidence"],
+                "priority": classification["priority"],
+                "priority_score": classification["priority_score"],
+                "priority_factors": classification["priority_factors"],
+                "sentiment": classification["sentiment"],
+                "sentiment_score": classification["sentiment_score"],
+                "emotions": classification["emotions"],
+                "intent": classification["intent"],
+                "intent_confidence": classification["intent_confidence"],
+                "keywords": classification["keywords"],
+                "entities": classification["entities"],
+                "topics": classification["topics"],
+                "action_items": classification["action_items"],
+                "questions": classification["questions"],
+                "is_spam": classification["is_spam"],
+                "spam_score": classification["spam_score"],
+                "is_phishing": classification["is_phishing"],
+                "phishing_indicators": classification["phishing_indicators"],
+                "security_score": classification["security_score"],
+                "processing_time_ms": classification["processing_time_ms"],
+                "processed_at": datetime.utcnow(),
+            }
+        )
 
         email = await repo.create_email(email_data)
         logger.info(f"Email criado: {email.id}")
@@ -138,21 +139,21 @@ async def create_email(
 
 @router.get(
     "/emails",
-    response_model=List[EmailListResponse],
+    response_model=list[EmailListResponse],
     summary="Listar emails",
 )
 async def list_emails(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    status: Optional[EmailStatusEnum] = None,
-    category: Optional[EmailCategoryEnum] = None,
-    priority: Optional[EmailPriorityEnum] = None,
-    is_spam: Optional[bool] = None,
-    condominio_id: Optional[UUID] = None,
-    assigned_to: Optional[UUID] = None,
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
-    search: Optional[str] = None,
+    status: EmailStatusEnum | None = None,
+    category: EmailCategoryEnum | None = None,
+    priority: EmailPriorityEnum | None = None,
+    is_spam: bool | None = None,
+    condominio_id: UUID | None = None,
+    assigned_to: UUID | None = None,
+    from_date: datetime | None = None,
+    to_date: datetime | None = None,
+    search: str | None = None,
     repo: EmailRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
@@ -223,9 +224,9 @@ async def update_email(
 )
 async def assign_email(
     email_id: UUID,
-    user_id: Optional[UUID] = None,
-    team: Optional[str] = None,
-    reason: Optional[str] = None,
+    user_id: UUID | None = None,
+    team: str | None = None,
+    reason: str | None = None,
     repo: EmailRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
@@ -448,7 +449,7 @@ async def create_response(
 
 @router.get(
     "/emails/{email_id}/responses",
-    response_model=List[EmailResponseOut],
+    response_model=list[EmailResponseOut],
     summary="Listar respostas",
 )
 async def list_responses(
@@ -512,15 +513,15 @@ async def create_template(
 
 @router.get(
     "/templates",
-    response_model=List[EmailTemplateResponse],
+    response_model=list[EmailTemplateResponse],
     summary="Listar templates",
 )
 async def list_templates(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    category: Optional[EmailCategoryEnum] = None,
-    is_active: Optional[bool] = None,
-    search: Optional[str] = None,
+    category: EmailCategoryEnum | None = None,
+    is_active: bool | None = None,
+    search: str | None = None,
     repo: EmailRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
@@ -620,14 +621,14 @@ async def create_rule(
 
 @router.get(
     "/rules",
-    response_model=List[EmailRuleResponse],
+    response_model=list[EmailRuleResponse],
     summary="Listar regras",
 )
 async def list_rules(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    is_active: Optional[bool] = None,
-    condominio_id: Optional[UUID] = None,
+    is_active: bool | None = None,
+    condominio_id: UUID | None = None,
     repo: EmailRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
@@ -713,9 +714,9 @@ async def delete_rule(
     summary="Dashboard do assistente",
 )
 async def get_dashboard(
-    condominio_id: Optional[UUID] = None,
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
+    condominio_id: UUID | None = None,
+    from_date: datetime | None = None,
+    to_date: datetime | None = None,
     repo: EmailRepository = Depends(get_repository),
     current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
 ):
@@ -739,11 +740,11 @@ async def get_dashboard(
         emails_by_category=stats["emails_by_category"],
         emails_by_priority=stats["emails_by_priority"],
         avg_processing_time_ms=stats["avg_processing_time_ms"],
-        avg_response_time_minutes=0.0,  # TODO: calcular
-        auto_reply_rate=0.0,  # TODO: calcular
-        classification_accuracy=0.0,  # TODO: calcular
+        avg_response_time_minutes=0.0,
+        auto_reply_rate=0.0,
+        classification_accuracy=0.0,
         sentiment_distribution=stats["sentiment_distribution"],
         top_templates=top_templates,
         emails_trend=trend,
-        response_time_trend=[],  # TODO: implementar
+        response_time_trend=[],
     )

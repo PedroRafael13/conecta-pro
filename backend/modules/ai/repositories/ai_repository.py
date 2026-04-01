@@ -5,17 +5,15 @@ Sprint 34 - AI Predictions.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Optional
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from modules.ai.models.anomaly_log import AnomalyLog, AnomalySeverity, AnomalyStatus
-from modules.ai.models.feature_store import Feature, FeatureStore
+from modules.ai.models.feature_store import FeatureStore
 from modules.ai.models.ml_model import MLModel, ModelStatus, ModelType
 from modules.ai.models.prediction import Prediction, PredictionStatus, PredictionType
-from modules.ai.models.prediction_log import PredictionLog
 from modules.ai.models.recommendation import Recommendation, RecommendationStatus, RecommendationType
 from modules.ai.models.training_job import TrainingJob, TrainingStatus
 
@@ -52,8 +50,8 @@ class AIRepository:
     async def get_prediction(
         self,
         prediction_id: UUID,
-        tenant_id: Optional[UUID] = None,
-    ) -> Optional[Prediction]:
+        tenant_id: UUID | None = None,
+    ) -> Prediction | None:
         """Busca previsao por ID.
 
         Args:
@@ -71,11 +69,11 @@ class AIRepository:
     async def list_predictions(
         self,
         tenant_id: UUID,
-        prediction_type: Optional[PredictionType] = None,
-        status: Optional[PredictionStatus] = None,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
-        model_id: Optional[UUID] = None,
+        prediction_type: PredictionType | None = None,
+        status: PredictionStatus | None = None,
+        entity_type: str | None = None,
+        entity_id: UUID | None = None,
+        model_id: UUID | None = None,
         skip: int = 0,
         limit: int = 20,
     ) -> tuple[list[Prediction], int]:
@@ -144,8 +142,8 @@ class AIRepository:
     async def get_model(
         self,
         model_id: UUID,
-        tenant_id: Optional[UUID] = None,
-    ) -> Optional[MLModel]:
+        tenant_id: UUID | None = None,
+    ) -> MLModel | None:
         """Busca modelo por ID.
 
         Args:
@@ -164,7 +162,7 @@ class AIRepository:
         self,
         tenant_id: UUID,
         slug: str,
-    ) -> Optional[MLModel]:
+    ) -> MLModel | None:
         """Busca modelo por slug.
 
         Args:
@@ -174,18 +172,13 @@ class AIRepository:
         Returns:
             Modelo ou None.
         """
-        return await (
-            self.db.query(MLModel)
-            .filter(MLModel.tenant_id == tenant_id)
-            .filter(MLModel.slug == slug)
-            .first()
-        )
+        return await self.db.query(MLModel).filter(MLModel.tenant_id == tenant_id).filter(MLModel.slug == slug).first()
 
     async def list_models(
         self,
         tenant_id: UUID,
-        model_type: Optional[ModelType] = None,
-        status: Optional[ModelStatus] = None,
+        model_type: ModelType | None = None,
+        status: ModelStatus | None = None,
         skip: int = 0,
         limit: int = 20,
     ) -> tuple[list[MLModel], int]:
@@ -217,7 +210,7 @@ class AIRepository:
         self,
         tenant_id: UUID,
         model_type: ModelType,
-    ) -> Optional[MLModel]:
+    ) -> MLModel | None:
         """Busca modelo default para um tipo.
 
         Args:
@@ -268,8 +261,8 @@ class AIRepository:
     async def get_feature_store(
         self,
         store_id: UUID,
-        tenant_id: Optional[UUID] = None,
-    ) -> Optional[FeatureStore]:
+        tenant_id: UUID | None = None,
+    ) -> FeatureStore | None:
         """Busca feature store por ID.
 
         Args:
@@ -287,7 +280,7 @@ class AIRepository:
     async def list_feature_stores(
         self,
         tenant_id: UUID,
-        entity_type: Optional[str] = None,
+        entity_type: str | None = None,
         skip: int = 0,
         limit: int = 20,
     ) -> tuple[list[FeatureStore], int]:
@@ -331,8 +324,8 @@ class AIRepository:
     async def get_training_job(
         self,
         job_id: UUID,
-        tenant_id: Optional[UUID] = None,
-    ) -> Optional[TrainingJob]:
+        tenant_id: UUID | None = None,
+    ) -> TrainingJob | None:
         """Busca job por ID.
 
         Args:
@@ -350,8 +343,8 @@ class AIRepository:
     async def list_training_jobs(
         self,
         tenant_id: UUID,
-        model_id: Optional[UUID] = None,
-        status: Optional[TrainingStatus] = None,
+        model_id: UUID | None = None,
+        status: TrainingStatus | None = None,
         skip: int = 0,
         limit: int = 20,
     ) -> tuple[list[TrainingJob], int]:
@@ -411,8 +404,8 @@ class AIRepository:
     async def get_anomaly(
         self,
         anomaly_id: UUID,
-        tenant_id: Optional[UUID] = None,
-    ) -> Optional[AnomalyLog]:
+        tenant_id: UUID | None = None,
+    ) -> AnomalyLog | None:
         """Busca anomalia por ID.
 
         Args:
@@ -430,9 +423,9 @@ class AIRepository:
     async def list_anomalies(
         self,
         tenant_id: UUID,
-        entity_type: Optional[str] = None,
-        severity: Optional[AnomalySeverity] = None,
-        status: Optional[AnomalyStatus] = None,
+        entity_type: str | None = None,
+        severity: AnomalySeverity | None = None,
+        status: AnomalyStatus | None = None,
         days: int = 30,
         skip: int = 0,
         limit: int = 20,
@@ -453,9 +446,7 @@ class AIRepository:
         """
         since = datetime.utcnow() - timedelta(days=days)
         query = (
-            self.db.query(AnomalyLog)
-            .filter(AnomalyLog.tenant_id == tenant_id)
-            .filter(AnomalyLog.detected_at >= since)
+            self.db.query(AnomalyLog).filter(AnomalyLog.tenant_id == tenant_id).filter(AnomalyLog.detected_at >= since)
         )
 
         if entity_type:
@@ -502,8 +493,8 @@ class AIRepository:
     async def get_recommendation(
         self,
         rec_id: UUID,
-        tenant_id: Optional[UUID] = None,
-    ) -> Optional[Recommendation]:
+        tenant_id: UUID | None = None,
+    ) -> Recommendation | None:
         """Busca recomendacao por ID.
 
         Args:
@@ -521,10 +512,10 @@ class AIRepository:
     async def list_recommendations(
         self,
         tenant_id: UUID,
-        target_entity_type: Optional[str] = None,
-        target_entity_id: Optional[UUID] = None,
-        recommendation_type: Optional[RecommendationType] = None,
-        status: Optional[RecommendationStatus] = None,
+        target_entity_type: str | None = None,
+        target_entity_id: UUID | None = None,
+        recommendation_type: RecommendationType | None = None,
+        status: RecommendationStatus | None = None,
         only_valid: bool = True,
         skip: int = 0,
         limit: int = 20,
@@ -565,12 +556,7 @@ class AIRepository:
             )
 
         total = await query.count()
-        items = (
-            await query.order_by(Recommendation.relevance_score.desc())
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        items = await query.order_by(Recommendation.relevance_score.desc()).offset(skip).limit(limit).all()
 
         return items, total
 

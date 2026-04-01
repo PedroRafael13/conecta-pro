@@ -7,15 +7,14 @@ Implementa:
 - Consulta de situação fiscal estadual
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
-from xml.etree import ElementTree as ET
+from datetime import datetime, timedelta
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +61,10 @@ class ExtratorSEFAZAM(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -91,15 +90,10 @@ class ExtratorSEFAZAM(ExtratorBase):
         if data_inicio is None:
             data_inicio = data_fim - timedelta(days=30)
 
-        logger.info(
-            f"Iniciando extração SEFAZ-AM: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
-        )
+        logger.info(f"Iniciando extração SEFAZ-AM: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}")
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -120,17 +114,13 @@ class ExtratorSEFAZAM(ExtratorBase):
                         resultado.documentos_novos += 1
 
                 # DT-e - Comunicados
-                docs_dte = await self._consultar_dte(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs_dte = await self._consultar_dte(tenant_id, cnpj, data_inicio, data_fim)
                 for doc in docs_dte:
                     resultado.documentos.append(doc)
                     resultado.documentos_processados += 1
 
                 # Documentos fiscais estaduais
-                docs_fiscais = await self._consultar_documentos_fiscais(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs_fiscais = await self._consultar_documentos_fiscais(tenant_id, cnpj, data_inicio, data_fim)
                 for doc in docs_fiscais:
                     resultado.documentos.append(doc)
                     resultado.documentos_processados += 1
@@ -160,23 +150,21 @@ class ExtratorSEFAZAM(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta situação fiscal na SEFAZ-AM."""
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             dados = {
                 "cnpj": cnpj,
                 "uf": "AM",
                 "tipo": "situacao_fiscal",
-
                 "inscricao_estadual": {
                     "numero": None,
                     "situacao": "verificar",
                     "data_inicio_atividade": None,
                     "regime_tributacao": None,
                 },
-
                 "cadastro": {
                     "razao_social": None,
                     "nome_fantasia": None,
@@ -189,22 +177,18 @@ class ExtratorSEFAZAM(ExtratorBase):
                         "cep": None,
                     },
                 },
-
                 "debitos": {
                     "existem": None,
                     "valor_total": 0.0,
                     "quantidade": 0,
                 },
-
                 "certidao": {
                     "tipo": None,  # CND, CPEND, CPEN
                     "data_emissao": None,
                     "data_validade": None,
                     "codigo_verificacao": None,
                 },
-
                 "consultas_recentes": [],
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -231,12 +215,12 @@ class ExtratorSEFAZAM(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta DT-e (Domicílio Tributário Eletrônico)."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             dados = {
                 "cnpj": cnpj,
@@ -244,7 +228,6 @@ class ExtratorSEFAZAM(ExtratorBase):
                 "tipo": "dte",
                 "periodo_inicio": data_inicio.isoformat(),
                 "periodo_fim": data_fim.isoformat(),
-
                 "comunicados": [],
                 # Exemplo de comunicado:
                 # {
@@ -256,13 +239,11 @@ class ExtratorSEFAZAM(ExtratorBase):
                 #     "prazo_resposta": "2024-02-15",
                 #     "situacao": "LIDO",
                 # }
-
                 "resumo": {
                     "total_comunicados": 0,
                     "nao_lidos": 0,
                     "pendente_resposta": 0,
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -287,12 +268,12 @@ class ExtratorSEFAZAM(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta documentos fiscais estaduais."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             dados = {
                 "cnpj": cnpj,
@@ -300,33 +281,27 @@ class ExtratorSEFAZAM(ExtratorBase):
                 "tipo": "documentos_fiscais",
                 "periodo_inicio": data_inicio.isoformat(),
                 "periodo_fim": data_fim.isoformat(),
-
                 "nfe_emitidas": {
                     "quantidade": 0,
                     "valor_total": 0.0,
                     "icms_total": 0.0,
                 },
-
                 "nfe_recebidas": {
                     "quantidade": 0,
                     "valor_total": 0.0,
                     "icms_total": 0.0,
                 },
-
                 "nfce_emitidas": {
                     "quantidade": 0,
                     "valor_total": 0.0,
                 },
-
                 "cte_emitidos": {
                     "quantidade": 0,
                     "valor_total": 0.0,
                 },
-
                 "mdfe_emitidos": {
                     "quantidade": 0,
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -349,23 +324,21 @@ class ExtratorSEFAZAM(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta incentivos fiscais da Zona Franca de Manaus."""
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             dados = {
                 "cnpj": cnpj,
                 "uf": "AM",
                 "tipo": "incentivos_zfm",
-
                 "cadastro_suframa": {
                     "inscricao": None,
                     "situacao": "verificar",
                     "data_vigencia": None,
                     "tipo_incentivo": None,
                 },
-
                 "incentivos": {
                     "ipi": {
                         "ativo": None,
@@ -381,14 +354,12 @@ class ExtratorSEFAZAM(ExtratorBase):
                         "suspensao_ativa": None,
                     },
                 },
-
                 "laudo_tecnico": {
                     "numero": None,
                     "data_emissao": None,
                     "validade": None,
                     "produto": None,
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -408,7 +379,7 @@ class ExtratorSEFAZAM(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Tenta emitir Certidão Negativa de Débitos estadual.
 
@@ -420,7 +391,7 @@ class ExtratorSEFAZAM(ExtratorBase):
             Resultado da emissão
         """
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Em produção, acessar serviço de emissão
             return {
@@ -444,7 +415,7 @@ class ExtratorSEFAZAM(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Consulta débitos de ICMS estadual.
 
@@ -456,12 +427,11 @@ class ExtratorSEFAZAM(ExtratorBase):
             Débitos encontrados
         """
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             return {
                 "cnpj": cnpj,
                 "uf": "AM",
-
                 "debitos": [],
                 # Exemplo:
                 # {
@@ -472,15 +442,12 @@ class ExtratorSEFAZAM(ExtratorBase):
                 #     "vencimento": "2024-02-15",
                 #     "situacao": "em_aberto",
                 # }
-
                 "parcelamentos": [],
-
                 "totais": {
                     "quantidade": 0,
                     "valor_total": 0.0,
                     "valor_vencido": 0.0,
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -494,7 +461,7 @@ class ExtratorSEFAZAM(ExtratorBase):
         tenant_id: UUID,
         cnpj: str,
         periodo: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """
         Consulta GIA (Guia de Informação e Apuração) do ICMS.
 
@@ -507,19 +474,17 @@ class ExtratorSEFAZAM(ExtratorBase):
             Documento com dados da GIA
         """
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             dados = {
                 "cnpj": cnpj,
                 "uf": "AM",
                 "tipo": "gia",
                 "periodo": periodo,
-
                 "gia": {
                     "transmitida": None,
                     "data_transmissao": None,
                     "numero_recibo": None,
-
                     "valores_saidas": {
                         "valor_contabil": 0.0,
                         "base_calculo": 0.0,
@@ -527,7 +492,6 @@ class ExtratorSEFAZAM(ExtratorBase):
                         "isentas": 0.0,
                         "outras": 0.0,
                     },
-
                     "valores_entradas": {
                         "valor_contabil": 0.0,
                         "base_calculo": 0.0,
@@ -535,7 +499,6 @@ class ExtratorSEFAZAM(ExtratorBase):
                         "isentas": 0.0,
                         "outras": 0.0,
                     },
-
                     "apuracao": {
                         "debito": 0.0,
                         "credito": 0.0,
@@ -545,7 +508,6 @@ class ExtratorSEFAZAM(ExtratorBase):
                         "saldo_credor": 0.0,
                     },
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }

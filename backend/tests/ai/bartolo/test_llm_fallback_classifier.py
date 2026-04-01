@@ -3,15 +3,17 @@ Testes para o LLM Fallback Classifier.
 Fase 3 do Plano de Refinamento do Bartolo.
 """
 
-import pytest
 import sys
-sys.path.insert(0, '/app')
+
+import pytest
+
+sys.path.insert(0, "/app")
 
 from modules.ai.bartolo.services.llm_fallback_classifier import (
-    LLMFallbackClassifier,
-    FallbackResult,
-    FallbackIntentCategory,
     INTENT_MAPPING,
+    FallbackIntentCategory,
+    FallbackResult,
+    LLMFallbackClassifier,
 )
 
 
@@ -97,7 +99,7 @@ class TestIntentMapping:
 
     def test_mapping_structure(self):
         """Verifica estrutura do mapeamento."""
-        for intent, mapping in INTENT_MAPPING.items():
+        for _intent, mapping in INTENT_MAPPING.items():
             assert isinstance(mapping, tuple)
             assert len(mapping) == 2
             assert isinstance(mapping[0], str)  # agent_type
@@ -222,7 +224,9 @@ class TestParseResponse:
         """Testa parsing de JSON com texto ao redor."""
         classifier = LLMFallbackClassifier()
 
-        response = 'Aqui está a classificação: {"intent": "alerta_ver", "confidence": 0.85, "reasoning": "ver alertas"} fim.'
+        response = (
+            'Aqui está a classificação: {"intent": "alerta_ver", "confidence": 0.85, "reasoning": "ver alertas"} fim.'
+        )
         result = classifier._parse_llm_response(response)
 
         assert result.intent == FallbackIntentCategory.ALERTA_VER
@@ -232,7 +236,7 @@ class TestParseResponse:
         """Testa parsing de JSON inválido."""
         classifier = LLMFallbackClassifier()
 
-        response = 'not a json response'
+        response = "not a json response"
         result = classifier._parse_llm_response(response)
 
         assert result.intent == FallbackIntentCategory.UNKNOWN
@@ -320,31 +324,31 @@ class TestFallbackIntentCategories:
     def test_all_categories_defined(self):
         """Verifica que todas as categorias estão definidas."""
         # Escalas
-        assert hasattr(FallbackIntentCategory, 'ESCALA_GERAR')
-        assert hasattr(FallbackIntentCategory, 'ESCALA_CONSULTAR')
-        assert hasattr(FallbackIntentCategory, 'ESCALA_OTIMIZAR')
-        assert hasattr(FallbackIntentCategory, 'ESCALA_VALIDAR')
+        assert hasattr(FallbackIntentCategory, "ESCALA_GERAR")
+        assert hasattr(FallbackIntentCategory, "ESCALA_CONSULTAR")
+        assert hasattr(FallbackIntentCategory, "ESCALA_OTIMIZAR")
+        assert hasattr(FallbackIntentCategory, "ESCALA_VALIDAR")
 
         # Substituições
-        assert hasattr(FallbackIntentCategory, 'SUBSTITUICAO_BUSCAR')
-        assert hasattr(FallbackIntentCategory, 'SUBSTITUICAO_URGENTE')
-        assert hasattr(FallbackIntentCategory, 'SUBSTITUICAO_HISTORICO')
+        assert hasattr(FallbackIntentCategory, "SUBSTITUICAO_BUSCAR")
+        assert hasattr(FallbackIntentCategory, "SUBSTITUICAO_URGENTE")
+        assert hasattr(FallbackIntentCategory, "SUBSTITUICAO_HISTORICO")
 
         # Alertas
-        assert hasattr(FallbackIntentCategory, 'ALERTA_VER')
-        assert hasattr(FallbackIntentCategory, 'ALERTA_CRITICO')
-        assert hasattr(FallbackIntentCategory, 'ALERTA_RESOLVER')
+        assert hasattr(FallbackIntentCategory, "ALERTA_VER")
+        assert hasattr(FallbackIntentCategory, "ALERTA_CRITICO")
+        assert hasattr(FallbackIntentCategory, "ALERTA_RESOLVER")
 
         # Data
-        assert hasattr(FallbackIntentCategory, 'DATA_COBERTURA')
-        assert hasattr(FallbackIntentCategory, 'DATA_FUNCIONARIOS')
-        assert hasattr(FallbackIntentCategory, 'DATA_POSTOS')
-        assert hasattr(FallbackIntentCategory, 'DATA_RESUMO')
-        assert hasattr(FallbackIntentCategory, 'DATA_KPIS')
+        assert hasattr(FallbackIntentCategory, "DATA_COBERTURA")
+        assert hasattr(FallbackIntentCategory, "DATA_FUNCIONARIOS")
+        assert hasattr(FallbackIntentCategory, "DATA_POSTOS")
+        assert hasattr(FallbackIntentCategory, "DATA_RESUMO")
+        assert hasattr(FallbackIntentCategory, "DATA_KPIS")
 
         # Genéricas
-        assert hasattr(FallbackIntentCategory, 'UNKNOWN')
-        assert hasattr(FallbackIntentCategory, 'GREETING')
+        assert hasattr(FallbackIntentCategory, "UNKNOWN")
+        assert hasattr(FallbackIntentCategory, "GREETING")
 
     def test_categories_are_strings(self):
         """Verifica que categorias são strings."""

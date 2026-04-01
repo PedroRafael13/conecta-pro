@@ -9,8 +9,8 @@ Gerencia:
 """
 
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Optional
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -26,10 +26,10 @@ class RenewalResult(BaseModel):
     """Resultado de renovação de contrato."""
 
     success: bool
-    new_end_date: Optional[date] = None
-    new_value: Optional[Decimal] = None
+    new_end_date: date | None = None
+    new_value: Decimal | None = None
     adjustment_applied: bool = False
-    adjustment_percent: Optional[Decimal] = None
+    adjustment_percent: Decimal | None = None
     message: str = ""
 
 
@@ -40,7 +40,7 @@ class AdjustmentResult(BaseModel):
     previous_value: Decimal
     new_value: Decimal
     adjustment_percent: Decimal
-    index_used: Optional[AdjustmentIndex] = None
+    index_used: AdjustmentIndex | None = None
     effective_date: date
     message: str = ""
 
@@ -64,7 +64,7 @@ class ContractAlert(BaseModel):
     alert_type: str  # expiring, needs_adjustment, sla_warning
     severity: str  # low, medium, high, critical
     message: str
-    days_until_event: Optional[int] = None
+    days_until_event: int | None = None
 
 
 class ContractService:
@@ -80,8 +80,8 @@ class ContractService:
     def calculate_renewal(
         self,
         contract: Contract,
-        custom_adjustment_percent: Optional[Decimal] = None,
-        new_end_date: Optional[date] = None,
+        custom_adjustment_percent: Decimal | None = None,
+        new_end_date: date | None = None,
     ) -> RenewalResult:
         """
         Calcula renovação do contrato.
@@ -129,9 +129,7 @@ class ContractService:
 
             if adjustment_percent > 0:
                 multiplier = Decimal("1") + (adjustment_percent / Decimal("100"))
-                new_value = (contract.monthly_value * multiplier).quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                )
+                new_value = (contract.monthly_value * multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 adjustment_applied = True
 
         return RenewalResult(
@@ -146,8 +144,8 @@ class ContractService:
     def calculate_adjustment(
         self,
         contract: Contract,
-        custom_percent: Optional[Decimal] = None,
-        effective_date: Optional[date] = None,
+        custom_percent: Decimal | None = None,
+        effective_date: date | None = None,
     ) -> AdjustmentResult:
         """
         Calcula reajuste do contrato.
@@ -186,9 +184,7 @@ class ContractService:
 
         # Calcular novo valor
         multiplier = Decimal("1") + (percent / Decimal("100"))
-        new_value = (contract.monthly_value * multiplier).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        new_value = (contract.monthly_value * multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         return AdjustmentResult(
             success=True,
@@ -241,9 +237,7 @@ class ContractService:
 
             # Score do indicador: (actual / target) * 100
             if target > 0:
-                score = (actual / target * Decimal("100")).quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                )
+                score = (actual / target * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             else:
                 score = Decimal("100")
 
@@ -251,20 +245,20 @@ class ContractService:
             total_weight += weight
             weighted_score += score * weight
 
-            processed_indicators.append({
-                "name": name,
-                "target": float(target),
-                "actual": float(actual),
-                "score": float(score),
-                "weight": float(weight),
-                "achieved": achieved,
-            })
+            processed_indicators.append(
+                {
+                    "name": name,
+                    "target": float(target),
+                    "actual": float(actual),
+                    "score": float(score),
+                    "weight": float(weight),
+                    "achieved": achieved,
+                }
+            )
 
         # Score final
         if total_weight > 0:
-            overall_score = (weighted_score / total_weight).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            overall_score = (weighted_score / total_weight).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         else:
             overall_score = Decimal("100")
 
@@ -320,48 +314,54 @@ class ContractService:
                 days_until_end = (contract.end_date - date.today()).days
 
                 if 0 < days_until_end <= days_ahead:
-                    severity = "critical" if days_until_end <= 7 else (
-                        "high" if days_until_end <= 15 else "medium"
+                    severity = "critical" if days_until_end <= 7 else ("high" if days_until_end <= 15 else "medium")
+                    alerts.append(
+                        ContractAlert(
+                            contract_id=str(contract.id),
+                            contract_number=contract.contract_number,
+                            alert_type="expiring",
+                            severity=severity,
+                            message=f"Contrato vence em {days_until_end} dias",
+                            days_until_event=days_until_end,
+                        )
                     )
-                    alerts.append(ContractAlert(
-                        contract_id=str(contract.id),
-                        contract_number=contract.contract_number,
-                        alert_type="expiring",
-                        severity=severity,
-                        message=f"Contrato vence em {days_until_end} dias",
-                        days_until_event=days_until_end,
-                    ))
                 elif days_until_end <= 0:
-                    alerts.append(ContractAlert(
-                        contract_id=str(contract.id),
-                        contract_number=contract.contract_number,
-                        alert_type="expiring",
-                        severity="critical",
-                        message="Contrato vencido",
-                        days_until_event=days_until_end,
-                    ))
+                    alerts.append(
+                        ContractAlert(
+                            contract_id=str(contract.id),
+                            contract_number=contract.contract_number,
+                            alert_type="expiring",
+                            severity="critical",
+                            message="Contrato vencido",
+                            days_until_event=days_until_end,
+                        )
+                    )
 
             # Alerta de reajuste
             if contract.needs_adjustment:
-                alerts.append(ContractAlert(
-                    contract_id=str(contract.id),
-                    contract_number=contract.contract_number,
-                    alert_type="needs_adjustment",
-                    severity="medium",
-                    message="Contrato necessita de reajuste",
-                    days_until_event=contract.days_until_adjustment,
-                ))
-            elif contract.days_until_adjustment is not None:
-                days = contract.days_until_adjustment
-                if 0 < days <= days_ahead:
-                    alerts.append(ContractAlert(
+                alerts.append(
+                    ContractAlert(
                         contract_id=str(contract.id),
                         contract_number=contract.contract_number,
                         alert_type="needs_adjustment",
-                        severity="low",
-                        message=f"Reajuste em {days} dias",
-                        days_until_event=days,
-                    ))
+                        severity="medium",
+                        message="Contrato necessita de reajuste",
+                        days_until_event=contract.days_until_adjustment,
+                    )
+                )
+            elif contract.days_until_adjustment is not None:
+                days = contract.days_until_adjustment
+                if 0 < days <= days_ahead:
+                    alerts.append(
+                        ContractAlert(
+                            contract_id=str(contract.id),
+                            contract_number=contract.contract_number,
+                            alert_type="needs_adjustment",
+                            severity="low",
+                            message=f"Reajuste em {days} dias",
+                            days_until_event=days,
+                        )
+                    )
 
         # Ordenar por severidade
         severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
@@ -397,10 +397,7 @@ class ContractService:
             "expiring_soon": len([c for c in active if c.is_expiring_soon]),
             "needs_adjustment": len([c for c in active if c.needs_adjustment]),
             "with_sla": len([c for c in active if c.has_sla]),
-            "by_status": {
-                status.value: len([c for c in contracts if c.status == status])
-                for status in ContractStatus
-            },
+            "by_status": {status.value: len([c for c in contracts if c.status == status]) for status in ContractStatus},
         }
 
     def get_current_economic_index(

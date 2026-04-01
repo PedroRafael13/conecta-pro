@@ -4,17 +4,16 @@ application/dto/inventory.py - INVENTORY DTOs
 Data Transfer Objects for inventory use cases
 """
 
-from typing import Optional, List, Dict, Any
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # =============================================================================
 # Product DTOs
 # =============================================================================
+
 
 class CreateProductDTO(BaseModel):
     """DTO para criacao de produto."""
@@ -22,9 +21,9 @@ class CreateProductDTO(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     sku: str = Field(..., pattern=r"^[A-Z0-9\-]{3,30}$")
-    barcode: Optional[str] = Field(None, pattern=r"^\d{8,14}$")
+    barcode: str | None = Field(None, pattern=r"^\d{8,14}$")
     name: str = Field(..., min_length=3, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
     product_type: str
     category_id: UUID
     unit_of_measure: str
@@ -52,12 +51,12 @@ class UpdateProductDTO(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     product_id: UUID
-    name: Optional[str] = Field(None, min_length=3, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
-    sale_price: Optional[Decimal] = Field(None, ge=Decimal("0"))
-    minimum_stock: Optional[Decimal] = None
-    maximum_stock: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
+    name: str | None = Field(None, min_length=3, max_length=200)
+    description: str | None = Field(None, max_length=2000)
+    sale_price: Decimal | None = Field(None, ge=Decimal("0"))
+    minimum_stock: Decimal | None = None
+    maximum_stock: Decimal | None = None
+    reorder_point: Decimal | None = None
     updated_by: str
 
 
@@ -69,7 +68,7 @@ class ProductResponseDTO(BaseModel):
     product_id: UUID
     sku: str
     name: str
-    description: Optional[str]
+    description: str | None
     product_type: str
     status: str
     category_id: UUID
@@ -98,7 +97,7 @@ class ProductListDTO(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    items: List[ProductResponseDTO]
+    items: list[ProductResponseDTO]
     total: int
     page: int
     page_size: int
@@ -109,6 +108,7 @@ class ProductListDTO(BaseModel):
 # Stock Movement DTOs
 # =============================================================================
 
+
 class MovementLineDTO(BaseModel):
     """DTO para linha de movimento."""
 
@@ -117,8 +117,8 @@ class MovementLineDTO(BaseModel):
     product_id: UUID
     quantity: Decimal = Field(..., gt=Decimal("0"))
     unit_cost: Decimal = Field(..., ge=Decimal("0"))
-    batch_number: Optional[str] = None
-    serial_numbers: List[str] = Field(default_factory=list)
+    batch_number: str | None = None
+    serial_numbers: list[str] = Field(default_factory=list)
 
 
 class CreateStockMovementDTO(BaseModel):
@@ -128,14 +128,14 @@ class CreateStockMovementDTO(BaseModel):
 
     movement_type: str
     warehouse_id: UUID
-    destination_warehouse_id: Optional[UUID] = None
+    destination_warehouse_id: UUID | None = None
     description: str = Field(..., min_length=5, max_length=500)
-    lines: List[MovementLineDTO] = Field(..., min_length=1)
+    lines: list[MovementLineDTO] = Field(..., min_length=1)
 
     # Document
-    source_document_type: Optional[str] = None
-    source_document_id: Optional[UUID] = None
-    source_document_number: Optional[str] = None
+    source_document_type: str | None = None
+    source_document_id: UUID | None = None
+    source_document_number: str | None = None
 
     # Context
     tenant_id: UUID
@@ -171,6 +171,7 @@ class StockMovementResponseDTO(BaseModel):
 # Inventory Report DTOs
 # =============================================================================
 
+
 class StockPositionDTO(BaseModel):
     """DTO para posicao de estoque."""
 
@@ -186,7 +187,7 @@ class StockPositionDTO(BaseModel):
     average_cost: Decimal
     stock_value: Decimal
     stock_status: str
-    last_movement_date: Optional[datetime]
+    last_movement_date: datetime | None
 
 
 class StockValuationDTO(BaseModel):

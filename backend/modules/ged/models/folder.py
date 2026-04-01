@@ -1,21 +1,23 @@
 """Model de Pasta/Diretório para GED."""
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
 from sqlalchemy import (
-    String,
     Boolean,
     DateTime,
-    Text,
     ForeignKey,
     Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
     from modules.ged.models.document import Document
 
 
-class FolderType(str, Enum):
+class FolderType(StrEnum):
     """Tipos de pasta."""
 
     SISTEMA = "sistema"  # Pasta do sistema (não pode ser deletada)
@@ -36,9 +38,12 @@ class FolderType(str, Enum):
     PESSOAL = "pessoal"  # Pasta pessoal do usuário
     COMPARTILHADA = "compartilhada"  # Pasta compartilhada
     ARQUIVO = "arquivo"  # Pasta de arquivo morto
+    OPERACIONAL = "operacional"  # Pasta operacional
+    DP = "dp"  # Pasta departamento pessoal
+    FISCAL = "fiscal"  # Pasta fiscal
 
 
-class FolderStatus(str, Enum):
+class FolderStatus(StrEnum):
     """Status da pasta."""
 
     ATIVA = "ativa"
@@ -47,7 +52,7 @@ class FolderStatus(str, Enum):
     EXCLUIDA = "excluida"
 
 
-class FolderPermission(str, Enum):
+class FolderPermission(StrEnum):
     """Permissões de pasta."""
 
     LEITURA = "leitura"
@@ -62,71 +67,67 @@ class Folder(Base):
     __tablename__ = "ged_folders"
 
     # Identificação
-    id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
-    )
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Hierarquia
-    parent_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), ForeignKey("ged_folders.id"), nullable=True
-    )
+    parent_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), ForeignKey("ged_folders.id"), nullable=True)
     path: Mapped[str] = mapped_column(String(1000), nullable=False, default="/")
     level: Mapped[int] = mapped_column(Integer, default=0)
 
     # Classificação
     folder_type: Mapped[FolderType] = mapped_column(
-        SQLEnum(FolderType, native_enum=False, create_constraint=False),
-        default=FolderType.CONDOMINIO
+        SQLEnum(
+            FolderType,
+            native_enum=False,
+            create_constraint=False,
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        default=FolderType.CONDOMINIO,
     )
     status: Mapped[FolderStatus] = mapped_column(
-        SQLEnum(FolderStatus, native_enum=False, create_constraint=False),
-        default=FolderStatus.ATIVA
+        SQLEnum(
+            FolderStatus,
+            native_enum=False,
+            create_constraint=False,
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        default=FolderStatus.ATIVA,
     )
 
     # Vínculo com entidades
-    condominium_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
-    )
-    contract_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    employee_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    client_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
+    condominium_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True, index=True)
+    contract_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    employee_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    client_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
 
     # Permissões
     owner_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     inherit_permissions: Mapped[bool] = mapped_column(Boolean, default=True)
-    permissions: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    permissions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # {"user_id": ["leitura", "escrita"], "role": ["leitura"]}
 
     # Configurações
-    max_file_size_mb: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    allowed_extensions: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), nullable=True
-    )
+    max_file_size_mb: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    allowed_extensions: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
     # ["pdf", "doc", "docx", "xls", "xlsx"]
     require_approval: Mapped[bool] = mapped_column(Boolean, default=False)
     auto_versioning: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Retenção
-    retention_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    retention_policy: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    retention_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    retention_policy: Mapped[str | None] = mapped_column(String(100), nullable=True)
     delete_after_retention: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Metadados
-    icon: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    color: Mapped[Optional[str]] = mapped_column(String(7), nullable=True)
+    icon: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     order: Mapped[int] = mapped_column(Integer, default=0)
-    tags: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), nullable=True)
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    tags: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Estatísticas
     document_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -135,29 +136,19 @@ class Folder(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Auditoria
     created_by: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
-    updated_by: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    archived_by: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
+    updated_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    archived_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
 
     # Relacionamentos
-    parent: Mapped[Optional["Folder"]] = relationship(
-        "Folder", remote_side=[id], back_populates="children"
-    )
-    children: Mapped[List["Folder"]] = relationship(
-        "Folder", back_populates="parent", cascade="all, delete-orphan"
-    )
-    documents: Mapped[List["Document"]] = relationship(
+    parent: Mapped[Optional["Folder"]] = relationship("Folder", remote_side=[id], back_populates="children")  # noqa: A003
+    children: Mapped[list["Folder"]] = relationship("Folder", back_populates="parent", cascade="all, delete-orphan")
+    documents: Mapped[list["Document"]] = relationship(
         "Document", back_populates="folder", cascade="all, delete-orphan"
     )
 
@@ -276,9 +267,7 @@ class Folder(Base):
         """Verifica se extensão é permitida."""
         if not self.allowed_extensions:
             return True
-        return extension.lower().lstrip(".") in [
-            ext.lower() for ext in self.allowed_extensions
-        ]
+        return extension.lower().lstrip(".") in [ext.lower() for ext in self.allowed_extensions]
 
     def is_size_allowed(self, size_bytes: int) -> bool:
         """Verifica se tamanho é permitido."""

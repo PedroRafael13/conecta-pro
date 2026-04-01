@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,23 @@ interface TemplateFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (template?: NotificationTemplateResponse | null) => ({
+  codigo: template?.codigo || '',
+  nome: template?.nome || '',
+  descricao: template?.descricao || '',
+  channel: template?.channel || 'email',
+  category: template?.category || 'system',
+  email_subject: template?.email_subject || template?.subject || '',
+  body_html: template?.body_html || '',
+  body_text: template?.body_text || '',
+  sms_body: template?.sms_body || '',
+  push_title: template?.push_title || '',
+  push_body: template?.push_body || '',
+  in_app_title: template?.in_app_title || '',
+  in_app_body: template?.in_app_body || '',
+});
+
 export function TemplateFormModal({
   isOpen,
   onClose,
@@ -32,61 +49,20 @@ export function TemplateFormModal({
   isLoading,
 }: TemplateFormModalProps) {
   const isEditing = !!template;
-  const [form, setForm] = useState({
-    codigo: '',
-    nome: '',
-    descricao: '',
-    channel: 'email' as string,
-    category: 'system',
-    // Email
-    email_subject: '',
-    body_html: '',
-    body_text: '',
-    // SMS
-    sms_body: '',
-    // Push
-    push_title: '',
-    push_body: '',
-    // In-App
-    in_app_title: '',
-    in_app_body: '',
-  });
+
+  const formKey = useMemo(() => {
+    return template?.id || template?.codigo || 'new';
+  }, [template]);
+
+  const [form, setForm] = useState(createInitialForm(template));
 
   useEffect(() => {
-    if (template) {
-      setForm({
-        codigo: template.codigo || '',
-        nome: template.nome || '',
-        descricao: template.descricao || '',
-        channel: template.channel || 'email',
-        category: template.category || 'system',
-        email_subject: template.email_subject || template.subject || '',
-        body_html: template.body_html || '',
-        body_text: template.body_text || '',
-        sms_body: template.sms_body || '',
-        push_title: template.push_title || '',
-        push_body: template.push_body || '',
-        in_app_title: template.in_app_title || '',
-        in_app_body: template.in_app_body || '',
-      });
-    } else {
-      setForm({
-        codigo: '',
-        nome: '',
-        descricao: '',
-        channel: 'email',
-        category: 'system',
-        email_subject: '',
-        body_html: '',
-        body_text: '',
-        sms_body: '',
-        push_title: '',
-        push_body: '',
-        in_app_title: '',
-        in_app_body: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(template));
     }
-  }, [template, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

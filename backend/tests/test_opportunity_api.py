@@ -28,7 +28,7 @@ from modules.crm.schemas.opportunity import (
     OpportunityUpdate,
     PipelineStats,
 )
-from tests.factories import OpportunityFactory, TEST_OPPORTUNITY_DATA
+from tests.factories import TEST_OPPORTUNITY_DATA, OpportunityFactory
 
 
 class TestCreateOpportunityEndpoint:
@@ -53,8 +53,8 @@ class TestCreateOpportunityEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.create = AsyncMock(return_value=mock_opp)
 
             result = await create_opportunity(opp_data, mock_user, mock_db)
@@ -85,8 +85,8 @@ class TestCreateOpportunityFromLeadEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.create_from_lead = AsyncMock(return_value=mock_opp)
 
             result = await create_opportunity_from_lead(opp_data, mock_user, mock_db)
@@ -106,8 +106,8 @@ class TestCreateOpportunityFromLeadEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.create_from_lead = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -127,8 +127,8 @@ class TestListOpportunitiesEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.list = AsyncMock(return_value=(mock_opps, 3))
 
             result = await list_opportunities(
@@ -157,8 +157,8 @@ class TestListOpportunitiesEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.list = AsyncMock(return_value=(mock_opps, 1))
 
             result = await list_opportunities(
@@ -187,8 +187,8 @@ class TestListOpportunitiesEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.list = AsyncMock(return_value=(mock_opps, 25))
 
             result = await list_opportunities(
@@ -223,8 +223,8 @@ class TestGetOpportunityEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_id = AsyncMock(return_value=mock_opp)
 
             result = await get_opportunity(opp_id, mock_user, mock_db)
@@ -239,8 +239,8 @@ class TestGetOpportunityEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_id = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -264,8 +264,8 @@ class TestUpdateOpportunityEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update = AsyncMock(return_value=mock_opp)
 
             result = await update_opportunity(opp_id, update_data, mock_user, mock_db)
@@ -281,8 +281,8 @@ class TestUpdateOpportunityEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -309,8 +309,8 @@ class TestUpdateOpportunityStageEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update_stage = AsyncMock(return_value=mock_opp)
 
             result = await update_opportunity_stage(opp_id, stage_data, mock_user, mock_db)
@@ -331,8 +331,8 @@ class TestUpdateOpportunityStageEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update_stage = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -359,8 +359,8 @@ class TestCloseOpportunityEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.close = AsyncMock(return_value=mock_opp)
 
             result = await close_opportunity(opp_id, close_data, mock_user, mock_db)
@@ -386,8 +386,8 @@ class TestCloseOpportunityEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.close = AsyncMock(return_value=mock_opp)
 
             result = await close_opportunity(opp_id, close_data, mock_user, mock_db)
@@ -403,8 +403,8 @@ class TestCloseOpportunityEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.close = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -425,8 +425,8 @@ class TestDeleteOpportunityEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.delete = AsyncMock(return_value=True)
 
             # Nao deve lancar excecao
@@ -442,8 +442,8 @@ class TestDeleteOpportunityEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.delete = AsyncMock(return_value=False)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -478,8 +478,8 @@ class TestGetPipelineStatsEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_pipeline_stats = AsyncMock(return_value=mock_stats)
 
             result = await get_pipeline_stats(mock_user, mock_db)
@@ -511,11 +511,11 @@ class TestGetPipelineStatsEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.opportunity_controller.OpportunityRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_pipeline_stats = AsyncMock(return_value=mock_stats)
 
-            result = await get_pipeline_stats(mock_user, mock_db, owner_id=owner_id)
+            await get_pipeline_stats(mock_user, mock_db, owner_id=owner_id)
 
             mock_repo.get_pipeline_stats.assert_called_once_with(owner_id=owner_id)
 

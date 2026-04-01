@@ -1,17 +1,24 @@
 'use client';
 
-import { Activity, Search, RefreshCw, Plus, TrendingUp, TrendingDown, DollarSign, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Activity, Search, RefreshCw, Plus, TrendingUp, TrendingDown, DollarSign, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Brain, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
-import { useCashflowEntries, useCashflowDashboard, useCreateCashflowEntry } from '@/hooks/financial/useFinancial';
+import { useCondominio } from '@/contexts/CondominioContext';
+import { useCashflowEntries, useCashflowDashboard, useCreateCashflowEntry, useCashflowProjection } from '@/hooks/financial/useFinancial';
+import type { CashFlowEntryResponse } from '@/types/generated/financial/models/cashFlowEntryResponse';
 import { CashflowFormModal } from '@/components/financeiro/cashflow-form-modal';
+import type { CashFlowEntryCreate } from '@/types/generated/financial/models/cashFlowEntryCreate';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
+import {
+  BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
+import axios from 'axios';
 
 export default function FluxoCaixaPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [entryType, setEntryType] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
@@ -26,16 +33,64 @@ export default function FluxoCaixaPage() {
     error,
     refetch,
   } = useCashflowEntries({
+    condominio_id: condominioId,
     skip: (page - 1) * pageSize,
     limit: pageSize,
-    ...(entryType && { entry_type: entryType }),
   });
 
-  const { data: dashboard, refetch: refetchDashboard } = useCashflowDashboard();
+  const { data: dashboardRaw, refetch: refetchDashboard } = useCashflowDashboard({ condominio_id: condominioId });
+  const dashboard = dashboardRaw as any;
   const createEntry = useCreateCashflowEntry();
 
-  const entries = entriesData?.data || entriesData?.items || [];
-  const total = entriesData?.total || entries.length;
+  // Projection hook for chart
+  const { data: projectionRaw } = useCashflowProjection({ condominio_id: condominioId });
+  const projectionData: any[] = Array.isArray(projectionRaw) ? projectionRaw : (projectionRaw as any)?.items ?? [];
+
+  // AI Insights state
+  const [aiRisks, setAiRisks] = useState<any[]>([]);
+  const [aiOpportunities, setAiOpportunities] = useState<any[]>([]);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiError, setAiError] = useState(false);
+
+  // finApi axios instance (no redirect on 401)
+  const finApi = axios.create({ timeout: 8000 });
+  finApi.interceptors.request.use((config) => {
+    config.baseURL =
+      typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        ? 'http://localhost:8080'
+        : 'https://erp.conectamais.pro';
+    const token =
+      typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) config.headers = { ...config.headers, Authorization: `Bearer ${token}` } as any;
+    return config;
+  });
+
+  // Fetch AI insights on mount
+  useEffect(() => {
+    let cancelled = false;
+    setAiLoading(true);
+    setAiError(false);
+    Promise.all([
+      finApi.get(`/api/v1/financial/cashflow/ai/risks?condominio_id=${condominioId}`),
+      finApi.get(`/api/v1/financial/cashflow/ai/opportunities?condominio_id=${condominioId}`),
+    ])
+      .then(([risksRes, oppsRes]) => {
+        if (cancelled) return;
+        const risks = Array.isArray(risksRes.data) ? risksRes.data : (risksRes.data?.items ?? []);
+        const opps = Array.isArray(oppsRes.data) ? oppsRes.data : (oppsRes.data?.items ?? []);
+        setAiRisks(risks);
+        setAiOpportunities(opps);
+        setAiLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) { setAiError(true); setAiLoading(false); }
+      });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const entries: any[] = (entriesData as any)?.items ?? [];
+  const total = (entriesData as any)?.total ?? entries.length;
   const totalPages = Math.ceil(total / pageSize);
 
   // Debounce search
@@ -58,7 +113,6 @@ export default function FluxoCaixaPage() {
       setShowFormModal(false);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
-      console.error('Erro ao criar lancamento:', err);
       throw err;
     }
   };
@@ -89,9 +143,39 @@ export default function FluxoCaixaPage() {
   const filteredEntries = search
     ? entries.filter((entry: any) =>
         entry.description?.toLowerCase().includes(search.toLowerCase()) ||
-        entry.category?.toLowerCase().includes(search.toLowerCase())
+        entry.memo?.toLowerCase().includes(search.toLowerCase())
       )
     : entries;
+
+  // Build last-6-months bar chart data from entries
+  const monthLabels: string[] = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const barChartData = (() => {
+    const now = new Date();
+    const months: { month: string; Receitas: number; Despesas: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ month: monthLabels[d.getMonth()] ?? '', Receitas: 0, Despesas: 0 });
+    }
+    entries.forEach((e: any) => {
+      if (!e.entry_date) return;
+      const d = new Date(e.entry_date);
+      const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
+      if (diffMonths < 0 || diffMonths > 5) return;
+      const idx = 5 - diffMonths;
+      const bucket = months[idx];
+      if (!bucket) return;
+      const val = Math.abs(parseFloat(e.expected_amount || e.amount || 0));
+      if (e.entry_type === 'income') bucket.Receitas += val;
+      else bucket.Despesas += val;
+    });
+    return months;
+  })();
+
+  // Projection area chart data
+  const areaChartData = projectionData.slice(0, 30).map((p: any) => ({
+    date: p.date ? String(p.date).slice(5) : '',
+    Saldo: Number(p.cumulative_balance ?? p.balance ?? 0),
+  }));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -143,7 +227,7 @@ export default function FluxoCaixaPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : formatCurrency(dashboard?.total_income || 0)}
+                {isLoading ? '...' : formatCurrency(Number(dashboard?.summary?.total_inflows ?? 0))}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Entradas</p>
             </div>
@@ -157,7 +241,7 @@ export default function FluxoCaixaPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : formatCurrency(dashboard?.total_expense || 0)}
+                {isLoading ? '...' : formatCurrency(Number(dashboard?.summary?.total_outflows ?? 0))}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Saidas</p>
             </div>
@@ -171,7 +255,7 @@ export default function FluxoCaixaPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : formatCurrency(dashboard?.balance || 0)}
+                {isLoading ? '...' : formatCurrency(Number(dashboard?.summary?.closing_balance ?? 0))}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Saldo Atual</p>
             </div>
@@ -185,12 +269,186 @@ export default function FluxoCaixaPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : formatCurrency(dashboard?.forecast_30d || 0)}
+                {isLoading ? '...' : formatCurrency(Number(dashboard?.upcoming_receivables ?? 0) - Number(dashboard?.upcoming_payables ?? 0))}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Projecao 30d</p>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Visualização — Charts */}
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide px-1">
+          Visualização
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Bar Chart: Receitas vs Despesas */}
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
+            <p className="text-sm font-medium text-[hsl(var(--foreground))] mb-4">
+              Receitas vs Despesas (6 meses)
+            </p>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={barChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v: any) => `${(Number(v) / 1000).toFixed(0)}k`}
+                  width={40}
+                />
+                <Tooltip
+                  formatter={(value: any) => formatCurrency(Number(value))}
+                  contentStyle={{
+                    background: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: 12,
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="Receitas" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Area Chart: Projeção de Saldo */}
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
+            <p className="text-sm font-medium text-[hsl(var(--foreground))] mb-4">
+              Projeção de Saldo
+            </p>
+            {areaChartData.length === 0 ? (
+              <div className="h-[220px] flex items-center justify-center">
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">Sem dados de projeção</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={areaChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gradSaldo" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: any) => `${(Number(v) / 1000).toFixed(0)}k`}
+                    width={40}
+                  />
+                  <Tooltip
+                    formatter={(value: any) => formatCurrency(Number(value))}
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: 12,
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="Saldo"
+                    stroke="#22c55e"
+                    strokeWidth={2}
+                    fill="url(#gradSaldo)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* AI Insights Panel */}
+      <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+            <Brain className="w-4 h-4 text-purple-500" />
+          </div>
+          <h2 className="text-sm font-semibold text-[hsl(var(--foreground))]">Insights Financeiros</h2>
+          {aiLoading && (
+            <span className="text-xs text-[hsl(var(--muted-foreground))] ml-2 animate-pulse">
+              Analisando...
+            </span>
+          )}
+        </div>
+
+        {aiLoading ? (
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-10 rounded-lg bg-[hsl(var(--secondary))] animate-shimmer" />
+            ))}
+          </div>
+        ) : aiError ? (
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            Análise IA temporariamente indisponível. Tente novamente mais tarde.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Riscos */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 text-orange-400" />
+                Riscos Identificados
+              </p>
+              {aiRisks.length === 0 ? (
+                <p className="text-sm text-[hsl(var(--muted-foreground))] italic">Nenhum risco identificado.</p>
+              ) : (
+                aiRisks.map((risk: any, i: number) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
+                    <p className="text-sm text-[hsl(var(--foreground))]">
+                      {typeof risk === 'string' ? risk : (risk.description ?? risk.message ?? JSON.stringify(risk))}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Oportunidades */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide flex items-center gap-1">
+                <Lightbulb className="w-3 h-3 text-green-400" />
+                Oportunidades
+              </p>
+              {aiOpportunities.length === 0 ? (
+                <p className="text-sm text-[hsl(var(--muted-foreground))] italic">Nenhuma oportunidade detectada.</p>
+              ) : (
+                aiOpportunities.map((opp: any, i: number) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
+                  >
+                    <Lightbulb className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                    <p className="text-sm text-[hsl(var(--foreground))]">
+                      {typeof opp === 'string' ? opp : (opp.description ?? opp.message ?? JSON.stringify(opp))}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -294,7 +552,7 @@ export default function FluxoCaixaPage() {
                     >
                       <td className="p-4">
                         <span className="text-sm text-[hsl(var(--foreground))]">
-                          {entry.date ? formatDate(entry.date) : '-'}
+                          {entry.entry_date ? formatDate(entry.entry_date) : '-'}
                         </span>
                       </td>
                       <td className="p-4">
@@ -322,17 +580,17 @@ export default function FluxoCaixaPage() {
                           )}
                         >
                           {entry.entry_type === 'income' ? '+' : '-'}
-                          {formatCurrency(Math.abs(entry.amount || 0))}
+                          {formatCurrency(Math.abs(parseFloat(entry.expected_amount || entry.amount || 0)))}
                         </span>
                       </td>
                       <td className="p-4 text-right">
                         <span className="font-mono text-sm text-[hsl(var(--foreground))]">
-                          {formatCurrency(entry.balance || 0)}
+                          {formatCurrency(parseFloat(entry.realized_amount ?? entry.balance ?? 0))}
                         </span>
                       </td>
                       <td className="p-4 hidden md:table-cell">
                         <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                          {entry.category || '-'}
+                          {entry.memo || entry.category || '-'}
                         </span>
                       </td>
                     </tr>
@@ -343,7 +601,7 @@ export default function FluxoCaixaPage() {
           )}
 
           {/* Empty state */}
-          {!isLoading && !isError && filteredEntries.length === 0 && (
+          {!isLoading && filteredEntries.length === 0 && (
             <div className="text-center py-12">
               <Activity className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
               <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">

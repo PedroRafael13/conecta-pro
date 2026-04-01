@@ -10,21 +10,21 @@ Fornece endpoints para:
 
 from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from modules.operacional.diaristas.services.fiscal_service import (
-    FiscalService,
-    get_fiscal_service,
-)
 from modules.operacional.diaristas.models.documento_fiscal import (
-    TipoDocumentoFiscal,
     StatusDocumentoFiscal,
+    TipoDocumentoFiscal,
+)
+from modules.operacional.diaristas.services.fiscal_service import (
+    get_fiscal_service,
 )
 
 router = APIRouter()
@@ -34,15 +34,18 @@ router = APIRouter()
 # SCHEMAS
 # =============================================================================
 
+
 class CalculoRetencoesRequest(BaseModel):
     """Request para calcular retenções."""
+
     valor_bruto: Decimal = Field(..., gt=0, description="Valor bruto do serviço")
     dependentes: int = Field(0, ge=0, description="Número de dependentes (IRRF)")
-    aliquota_iss: Optional[Decimal] = Field(None, ge=0, le=5, description="Alíquota ISS (%)")
+    aliquota_iss: Decimal | None = Field(None, ge=0, le=5, description="Alíquota ISS (%)")
 
 
 class RetencaoResponse(BaseModel):
     """Response de uma retenção."""
+
     base_calculo: float
     aliquota: float
     valor: float
@@ -50,9 +53,10 @@ class RetencaoResponse(BaseModel):
 
 class RetencoesResponse(BaseModel):
     """Response completo de retenções."""
+
     valor_bruto: float
     inss: RetencaoResponse
-    irrf: Dict[str, Any]
+    irrf: dict[str, Any]
     iss: RetencaoResponse
     total_retencoes: float
     valor_liquido: float
@@ -60,23 +64,22 @@ class RetencoesResponse(BaseModel):
 
 class GerarRPARequest(BaseModel):
     """Request para gerar RPA."""
+
     diarist_id: UUID
-    payment_id: Optional[UUID] = None
-    valor_bruto: Optional[Decimal] = Field(None, gt=0)
-    competencia: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}$")
-    descricao_servico: str = Field(
-        "Prestação de serviços de limpeza e conservação",
-        max_length=500
-    )
+    payment_id: UUID | None = None
+    valor_bruto: Decimal | None = Field(None, gt=0)
+    competencia: str | None = Field(None, pattern=r"^\d{4}-\d{2}$")
+    descricao_servico: str = Field("Prestação de serviços de limpeza e conservação", max_length=500)
     codigo_servico: str = Field("7.10", max_length=20)
     dependentes: int = Field(0, ge=0)
-    aliquota_iss: Optional[Decimal] = Field(None)
-    tomador_cnpj: Optional[str] = Field(None, max_length=18)
-    tomador_razao_social: Optional[str] = Field(None, max_length=200)
+    aliquota_iss: Decimal | None = Field(None)
+    tomador_cnpj: str | None = Field(None, max_length=18)
+    tomador_razao_social: str | None = Field(None, max_length=200)
 
 
 class DocumentoFiscalResponse(BaseModel):
     """Response de documento fiscal."""
+
     id: str
     numero: str
     tipo: str
@@ -94,8 +97,9 @@ class DocumentoFiscalResponse(BaseModel):
 
 class RelatorioRetencoesResponse(BaseModel):
     """Response de relatório de retenções."""
-    periodo: Dict[str, str]
-    totais: Dict[str, float]
+
+    periodo: dict[str, str]
+    totais: dict[str, float]
     documentos: int
 
 
@@ -103,14 +107,16 @@ class RelatorioRetencoesResponse(BaseModel):
 # ENDPOINTS - CÁLCULOS
 # =============================================================================
 
+
 @router.post(
     "/calcular-retencoes",
     response_model=RetencoesResponse,
     summary="Calcular retenções",
-    description="Calcula todas as retenções fiscais (INSS, ISS, IRRF)"
+    description="Calcula todas as retenções fiscais (INSS, ISS, IRRF, status_code=201)",
 )
 async def calcular_retencoes(
     request: CalculoRetencoesRequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -157,20 +163,18 @@ async def calcular_retencoes(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao calcular retenções: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao calcular retenções: {str(e)}"
         )
 
 
 @router.get(
-    "/simular/{valor_bruto}",
-    summary="Simular retenções",
-    description="Simulação rápida de retenções para um valor"
+    "/simular/{valor_bruto}", summary="Simular retenções", description="Simulação rápida de retenções para um valor"
 )
 async def simular_retencoes(
     valor_bruto: Decimal,
+    current_user: CurrentActiveUser,
     dependentes: int = Query(0, ge=0),
-    aliquota_iss: Optional[Decimal] = Query(None),
+    aliquota_iss: Decimal | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Simulação rápida de retenções."""
@@ -198,14 +202,17 @@ async def simular_retencoes(
 # ENDPOINTS - DOCUMENTOS
 # =============================================================================
 
+
 @router.post(
     "/rpa",
     response_model=DocumentoFiscalResponse,
     summary="Gerar RPA",
-    description="Gera Recibo de Pagamento Autônomo"
+    description="Gera Recibo de Pagamento Autônomo",
+    status_code=201,
 )
 async def gerar_rpa(
     request: GerarRPARequest,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """
@@ -247,28 +254,23 @@ async def gerar_rpa(
         }
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar RPA: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar RPA: {str(e)}")
 
 
 @router.get(
     "/documentos",
-    response_model=List[DocumentoFiscalResponse],
+    response_model=list[DocumentoFiscalResponse],
     summary="Listar documentos",
-    description="Lista documentos fiscais com filtros"
+    description="Lista documentos fiscais com filtros",
 )
 async def listar_documentos(
-    diarist_id: Optional[UUID] = Query(None),
-    tipo: Optional[TipoDocumentoFiscal] = Query(None),
-    competencia: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$"),
-    status_filter: Optional[StatusDocumentoFiscal] = Query(None, alias="status"),
+    current_user: CurrentActiveUser,
+    diarist_id: UUID | None = Query(None),
+    tipo: TipoDocumentoFiscal | None = Query(None),
+    competencia: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
+    status_filter: StatusDocumentoFiscal | None = Query(None, alias="status"),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
@@ -305,32 +307,25 @@ async def listar_documentos(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao listar documentos: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar documentos: {str(e)}"
         )
 
 
 @router.get(
-    "/documentos/{documento_id}",
-    summary="Obter documento",
-    description="Retorna detalhes de um documento fiscal"
+    "/documentos/{documento_id}", summary="Obter documento", description="Retorna detalhes de um documento fiscal"
 )
 async def get_documento(
     documento_id: UUID,
+    current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
 ):
     """Retorna detalhes de um documento fiscal."""
     from modules.operacional.diaristas.models.documento_fiscal import DocumentoFiscal
 
-    documento = db.query(DocumentoFiscal).filter(
-        DocumentoFiscal.id == documento_id
-    ).first()
+    documento = db.query(DocumentoFiscal).filter(DocumentoFiscal.id == documento_id).first()
 
     if not documento:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
     return {
         "id": str(documento.id),
@@ -389,16 +384,18 @@ async def get_documento(
 # ENDPOINTS - RELATÓRIOS
 # =============================================================================
 
+
 @router.get(
     "/relatorio/retencoes",
     response_model=RelatorioRetencoesResponse,
     summary="Relatório de retenções",
-    description="Gera relatório de retenções por período"
+    description="Gera relatório de retenções por período",
 )
 async def relatorio_retencoes(
+    current_user: CurrentActiveUser,
     data_inicio: date = Query(..., description="Data inicial"),
     data_fim: date = Query(..., description="Data final"),
-    diarist_id: Optional[UUID] = Query(None),
+    diarist_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """
@@ -411,8 +408,7 @@ async def relatorio_retencoes(
     """
     if data_fim < data_inicio:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Data fim deve ser maior ou igual a data início"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Data fim deve ser maior ou igual a data início"
         )
 
     service = get_fiscal_service(db)
@@ -427,32 +423,37 @@ async def relatorio_retencoes(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar relatório: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório: {str(e)}"
         )
 
 
 @router.get(
     "/relatorio/diarista/{diarist_id}",
     summary="Relatório do diarista",
-    description="Relatório fiscal consolidado de um diarista"
+    description="Relatório fiscal consolidado de um diarista",
 )
 async def relatorio_diarista(
     diarist_id: UUID,
+    current_user: CurrentActiveUser,
     ano: int = Query(..., ge=2020, le=2030),
     db: Session = Depends(get_db),
 ):
     """Relatório fiscal consolidado de um diarista para um ano."""
-    service = get_fiscal_service(db)
+    get_fiscal_service(db)
 
     from modules.operacional.diaristas.models.documento_fiscal import DocumentoFiscal
 
     # Buscar todos os documentos do ano
-    documentos = db.query(DocumentoFiscal).filter(
-        DocumentoFiscal.diarist_id == diarist_id,
-        DocumentoFiscal.is_active == True,
-        DocumentoFiscal.competencia.like(f"{ano}-%"),
-    ).order_by(DocumentoFiscal.competencia).all()
+    documentos = (
+        db.query(DocumentoFiscal)
+        .filter(
+            DocumentoFiscal.diarist_id == diarist_id,
+            DocumentoFiscal.is_active,
+            DocumentoFiscal.competencia.like(f"{ano}-%"),
+        )
+        .order_by(DocumentoFiscal.competencia)
+        .all()
+    )
 
     # Agrupar por mês
     por_mes = {}
@@ -519,12 +520,9 @@ async def relatorio_diarista(
 # ENDPOINTS - TABELAS
 # =============================================================================
 
-@router.get(
-    "/tabelas/inss",
-    summary="Tabela INSS",
-    description="Retorna tabela INSS vigente"
-)
-async def get_tabela_inss():
+
+@router.get("/tabelas/inss", summary="Tabela INSS", description="Retorna tabela INSS vigente")
+async def get_tabela_inss(current_user: CurrentActiveUser):
     """Retorna tabela INSS vigente para contribuintes individuais."""
     # Tabela INSS 2026 para contribuinte individual (autonomo)
     return {
@@ -536,12 +534,8 @@ async def get_tabela_inss():
     }
 
 
-@router.get(
-    "/tabelas/irrf",
-    summary="Tabela IRRF",
-    description="Retorna tabela IRRF vigente"
-)
-async def get_tabela_irrf():
+@router.get("/tabelas/irrf", summary="Tabela IRRF", description="Retorna tabela IRRF vigente")
+async def get_tabela_irrf(current_user: CurrentActiveUser):
     """Retorna tabela IRRF vigente."""
     # Tabela IRRF 2026
     faixas = [
@@ -558,12 +552,8 @@ async def get_tabela_irrf():
     }
 
 
-@router.get(
-    "/codigos-servico",
-    summary="Códigos de serviço",
-    description="Lista códigos de serviço (LC 116/2003)"
-)
-async def listar_codigos_servico():
+@router.get("/codigos-servico", summary="Códigos de serviço", description="Lista códigos de serviço (LC 116/2003)")
+async def listar_codigos_servico(current_user: CurrentActiveUser):
     """Lista códigos de serviço relevantes para diaristas."""
     return {
         "codigos": [

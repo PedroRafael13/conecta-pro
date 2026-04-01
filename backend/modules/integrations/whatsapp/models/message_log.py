@@ -3,9 +3,9 @@
 Sprint 31 - Automacoes WhatsApp.
 """
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -14,14 +14,14 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class MessageDirection(str, enum.Enum):
+class MessageDirection(StrEnum):
     """Direcao da mensagem."""
 
     OUTBOUND = "OUTBOUND"  # Enviada
     INBOUND = "INBOUND"  # Recebida
 
 
-class ConversationType(str, enum.Enum):
+class ConversationType(StrEnum):
     """Tipo de conversa (para billing do WhatsApp)."""
 
     BUSINESS_INITIATED = "BUSINESS_INITIATED"  # Iniciada pela empresa

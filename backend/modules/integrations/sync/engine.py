@@ -3,9 +3,9 @@ SyncEngine - Orquestrador de sincronizações.
 Sprint 33: Integration Framework
 """
 
+import builtins
 import logging
-from datetime import datetime
-from typing import Optional, Dict, Any, List, Type
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import select
@@ -13,10 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.integrations.connectors.base.connector import BaseConnector
 from modules.integrations.connectors.base.exceptions import ConnectorError
-from modules.integrations.models.integration_account import IntegrationAccount, AccountStatus
-from modules.integrations.models.sync_run import SyncRun, SyncRunStatus, SyncRunMode, SyncRunTrigger
+from modules.integrations.models.integration_account import AccountStatus, IntegrationAccount
+from modules.integrations.models.sync_run import SyncRun, SyncRunMode, SyncRunStatus, SyncRunTrigger
 from modules.integrations.models.sync_state import SyncState
-from modules.integrations.sync.jobs.base import SyncJob, SyncJobResult
+from modules.integrations.sync.jobs.base import SyncJob
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +25,11 @@ class ConnectorRegistry:
     """
     Registry de conectores disponíveis.
     """
-    _connectors: Dict[str, Type[BaseConnector]] = {}
+
+    _connectors: dict[str, type[BaseConnector]] = {}
 
     @classmethod
-    def register(cls, connector_class: Type[BaseConnector]) -> Type[BaseConnector]:
+    def register(cls, connector_class: type[BaseConnector]) -> type[BaseConnector]:
         """
         Registra um conector.
         Pode ser usado como decorator.
@@ -38,31 +39,35 @@ class ConnectorRegistry:
         return connector_class
 
     @classmethod
-    def get(cls, name: str) -> Optional[Type[BaseConnector]]:
+    def get(cls, name: str) -> type[BaseConnector] | None:
         """Retorna classe do conector pelo nome."""
         return cls._connectors.get(name)
 
     @classmethod
-    def list(cls) -> List[str]:
+    def list(cls) -> list[str]:
         """Lista conectores disponíveis."""
         return list(cls._connectors.keys())
 
     @classmethod
-    def get_info(cls) -> List[Dict[str, Any]]:
+    def get_info(cls) -> builtins.list[dict[str, Any]]:
         """Retorna informações de todos os conectores."""
         result = []
         for name, connector_class in cls._connectors.items():
             # Criar instância temporária para pegar capabilities
-            caps = connector_class.capabilities.fget(None) if hasattr(connector_class, 'capabilities') else None
-            result.append({
-                "name": name,
-                "version": connector_class.VERSION,
-                "capabilities": {
-                    "entities": caps.supported_entities if caps else [],
-                    "webhooks": caps.supports_webhooks if caps else False,
-                    "write": caps.supports_write if caps else False,
-                } if caps else {}
-            })
+            caps = connector_class.capabilities.fget(None) if hasattr(connector_class, "capabilities") else None
+            result.append(
+                {
+                    "name": name,
+                    "version": connector_class.VERSION,
+                    "capabilities": {
+                        "entities": caps.supported_entities if caps else [],
+                        "webhooks": caps.supports_webhooks if caps else False,
+                        "write": caps.supports_write if caps else False,
+                    }
+                    if caps
+                    else {},
+                }
+            )
         return result
 
 
@@ -70,15 +75,11 @@ class SyncJobRegistry:
     """
     Registry de sync jobs por conector e entidade.
     """
-    _jobs: Dict[str, Dict[str, Type[SyncJob]]] = {}
+
+    _jobs: dict[str, dict[str, type[SyncJob]]] = {}
 
     @classmethod
-    def register(
-        cls,
-        connector_name: str,
-        entity_type: str,
-        job_class: Type[SyncJob]
-    ) -> None:
+    def register(cls, connector_name: str, entity_type: str, job_class: type[SyncJob]) -> None:
         """Registra um sync job."""
         if connector_name not in cls._jobs:
             cls._jobs[connector_name] = {}
@@ -86,12 +87,12 @@ class SyncJobRegistry:
         logger.debug(f"SyncJob registrado: {connector_name}/{entity_type}")
 
     @classmethod
-    def get(cls, connector_name: str, entity_type: str) -> Optional[Type[SyncJob]]:
+    def get(cls, connector_name: str, entity_type: str) -> type[SyncJob] | None:
         """Retorna classe do sync job."""
         return cls._jobs.get(connector_name, {}).get(entity_type)
 
     @classmethod
-    def list_entities(cls, connector_name: str) -> List[str]:
+    def list_entities(cls, connector_name: str) -> list[str]:
         """Lista entidades disponíveis para um conector."""
         return list(cls._jobs.get(connector_name, {}).keys())
 
@@ -111,22 +112,15 @@ class SyncEngine:
         """
         self.db = db
 
-    async def get_account(self, account_id: UUID) -> Optional[IntegrationAccount]:
+    async def get_account(self, account_id: UUID) -> IntegrationAccount | None:
         """Busca conta de integração."""
         result = await self.db.execute(
-            select(IntegrationAccount).where(
-                IntegrationAccount.id == account_id,
-                IntegrationAccount.ativo.is_(True)
-            )
+            select(IntegrationAccount).where(IntegrationAccount.id == account_id, IntegrationAccount.ativo.is_(True))
         )
         return result.scalar_one_or_none()
 
     async def get_or_create_sync_state(
-        self,
-        account_id: UUID,
-        tenant_id: UUID,
-        connector_type: str,
-        entity_type: str
+        self, account_id: UUID, tenant_id: UUID, connector_type: str, entity_type: str
     ) -> SyncState:
         """Busca ou cria estado de sync."""
         result = await self.db.execute(
@@ -134,17 +128,14 @@ class SyncEngine:
                 SyncState.tenant_id == tenant_id,
                 SyncState.account_id == account_id,
                 SyncState.entity_type == entity_type,
-                SyncState.ativo.is_(True)
+                SyncState.ativo.is_(True),
             )
         )
         state = result.scalar_one_or_none()
 
         if not state:
             state = SyncState(
-                tenant_id=tenant_id,
-                account_id=account_id,
-                connector_type=connector_type,
-                entity_type=entity_type
+                tenant_id=tenant_id, account_id=account_id, connector_type=connector_type, entity_type=entity_type
             )
             self.db.add(state)
             await self.db.flush()
@@ -154,10 +145,10 @@ class SyncEngine:
     async def create_sync_run(
         self,
         account: IntegrationAccount,
-        entities: List[str],
+        entities: list[str],
         mode: SyncRunMode = SyncRunMode.INCREMENTAL,
         trigger: SyncRunTrigger = SyncRunTrigger.MANUAL,
-        triggered_by: Optional[UUID] = None
+        triggered_by: UUID | None = None,
     ) -> SyncRun:
         """Cria registro de execução de sync."""
         run = SyncRun(
@@ -169,7 +160,7 @@ class SyncEngine:
             triggered_by=triggered_by,
             entities=entities,
             status=SyncRunStatus.PENDING,
-            correlation_id=f"sync-{uuid4().hex[:8]}"
+            correlation_id=f"sync-{uuid4().hex[:8]}",
         )
         self.db.add(run)
         await self.db.flush()
@@ -178,11 +169,11 @@ class SyncEngine:
     async def run_sync(
         self,
         account_id: UUID,
-        entities: Optional[List[str]] = None,
+        entities: list[str] | None = None,
         mode: SyncRunMode = SyncRunMode.INCREMENTAL,
         trigger: SyncRunTrigger = SyncRunTrigger.MANUAL,
-        triggered_by: Optional[UUID] = None,
-        credentials_decrypted: Optional[Dict[str, Any]] = None
+        triggered_by: UUID | None = None,
+        credentials_decrypted: dict[str, Any] | None = None,
     ) -> SyncRun:
         """
         Executa sincronização.
@@ -204,23 +195,18 @@ class SyncEngine:
         # Buscar conta
         account = await self.get_account(account_id)
         if not account:
-            raise ConnectorError(
-                "Conta de integração não encontrada",
-                error_code="ACCOUNT_NOT_FOUND"
-            )
+            raise ConnectorError("Conta de integração não encontrada", error_code="ACCOUNT_NOT_FOUND")
 
         if account.status != AccountStatus.ACTIVE:
             raise ConnectorError(
-                f"Conta não está ativa (status={account.status.value})",
-                error_code="ACCOUNT_NOT_ACTIVE"
+                f"Conta não está ativa (status={account.status.value})", error_code="ACCOUNT_NOT_ACTIVE"
             )
 
         # Buscar classe do conector
         connector_class = ConnectorRegistry.get(account.connector_type.value)
         if not connector_class:
             raise ConnectorError(
-                f"Conector não encontrado: {account.connector_type.value}",
-                error_code="CONNECTOR_NOT_FOUND"
+                f"Conector não encontrado: {account.connector_type.value}", error_code="CONNECTOR_NOT_FOUND"
             )
 
         # Determinar entidades
@@ -229,27 +215,17 @@ class SyncEngine:
             # Validar entidades solicitadas
             invalid = set(entities) - set(available_entities)
             if invalid:
-                raise ConnectorError(
-                    f"Entidades não suportadas: {invalid}",
-                    error_code="INVALID_ENTITIES"
-                )
+                raise ConnectorError(f"Entidades não suportadas: {invalid}", error_code="INVALID_ENTITIES")
             sync_entities = entities
         else:
             sync_entities = available_entities
 
         if not sync_entities:
-            raise ConnectorError(
-                "Nenhuma entidade para sincronizar",
-                error_code="NO_ENTITIES"
-            )
+            raise ConnectorError("Nenhuma entidade para sincronizar", error_code="NO_ENTITIES")
 
         # Criar sync run
         sync_run = await self.create_sync_run(
-            account=account,
-            entities=sync_entities,
-            mode=mode,
-            trigger=trigger,
-            triggered_by=triggered_by
+            account=account, entities=sync_entities, mode=mode, trigger=trigger, triggered_by=triggered_by
         )
 
         logger.info(
@@ -259,10 +235,7 @@ class SyncEngine:
         )
 
         # Iniciar execução
-        sync_run.start(
-            worker_id=f"engine-{uuid4().hex[:8]}",
-            worker_host="localhost"
-        )
+        sync_run.start(worker_id=f"engine-{uuid4().hex[:8]}", worker_host="localhost")
         await self.db.commit()
 
         try:
@@ -271,29 +244,19 @@ class SyncEngine:
                 account_id=account.id,
                 tenant_id=account.tenant_id,
                 credentials=credentials_decrypted or {},
-                config=account.extra_config
+                config=account.extra_config,
             ) as connector:
-
                 # Health check
                 health = await connector.health_check()
                 if not health.healthy:
-                    raise ConnectorError(
-                        f"Health check falhou: {health.message}",
-                        connector=connector.NAME
-                    )
+                    raise ConnectorError(f"Health check falhou: {health.message}", connector=connector.NAME)
 
                 # Executar sync para cada entidade
                 for entity_type in sync_entities:
-                    job_class = SyncJobRegistry.get(
-                        account.connector_type.value,
-                        entity_type
-                    )
+                    job_class = SyncJobRegistry.get(account.connector_type.value, entity_type)
 
                     if not job_class:
-                        logger.warning(
-                            f"[{sync_run.correlation_id}] "
-                            f"Job não encontrado para {entity_type}"
-                        )
+                        logger.warning(f"[{sync_run.correlation_id}] Job não encontrado para {entity_type}")
                         continue
 
                     # Buscar estado
@@ -301,7 +264,7 @@ class SyncEngine:
                         account_id=account.id,
                         tenant_id=account.tenant_id,
                         connector_type=account.connector_type.value,
-                        entity_type=entity_type
+                        entity_type=entity_type,
                     )
 
                     # Criar e executar job
@@ -310,14 +273,11 @@ class SyncEngine:
                         db=self.db,
                         tenant_id=account.tenant_id,
                         account_id=account.id,
-                        correlation_id=sync_run.correlation_id
+                        correlation_id=sync_run.correlation_id,
                     )
 
                     full_sync = mode == SyncRunMode.FULL or sync_state.needs_full_sync
-                    result = await job.run(
-                        sync_state=sync_state if not full_sync else None,
-                        full_sync=full_sync
-                    )
+                    result = await job.run(sync_state=sync_state if not full_sync else None, full_sync=full_sync)
 
                     # Atualizar estatísticas do run
                     sync_run.increment_items(
@@ -325,7 +285,7 @@ class SyncEngine:
                         created=result.items_created,
                         updated=result.items_updated,
                         skipped=result.items_skipped,
-                        failed=result.items_failed
+                        failed=result.items_failed,
                     )
                     sync_run.items_total += result.items_total
 
@@ -333,52 +293,41 @@ class SyncEngine:
                     if result.success:
                         if full_sync:
                             sync_state.complete_full_sync(
-                                items_synced=result.items_processed,
-                                duration_ms=result.duration_ms
+                                items_synced=result.items_processed, duration_ms=result.duration_ms
                             )
                         else:
                             sync_state.complete_sync(
                                 items_synced=result.items_processed,
                                 duration_ms=result.duration_ms,
-                                cursor=result.last_cursor
+                                cursor=result.last_cursor,
                             )
                     else:
                         sync_state.mark_failure(
-                            result.errors[0].get("error", "Unknown error")
-                            if result.errors else "Unknown error"
+                            result.errors[0].get("error", "Unknown error") if result.errors else "Unknown error"
                         )
 
                     # Adicionar erros ao run
                     for error in result.errors:
-                        sync_run.add_error({
-                            "entity": entity_type,
-                            **error
-                        })
+                        sync_run.add_error({"entity": entity_type, **error})
 
                 # Finalizar run
                 if sync_run.items_failed == 0:
-                    sync_run.complete_success(summary={
-                        "entities_synced": sync_entities,
-                    })
+                    sync_run.complete_success(
+                        summary={
+                            "entities_synced": sync_entities,
+                        }
+                    )
                 else:
                     sync_run.complete_partial(
-                        summary={"entities_synced": sync_entities},
-                        warnings=[
-                            f"{sync_run.items_failed} itens falharam"
-                        ]
+                        summary={"entities_synced": sync_entities}, warnings=[f"{sync_run.items_failed} itens falharam"]
                     )
 
                 # Atualizar account
                 account.mark_sync_completed()
 
         except Exception as e:
-            logger.error(
-                f"[{sync_run.correlation_id}] Erro no sync: {e}"
-            )
-            sync_run.complete_failed(
-                error_code="SYNC_ERROR",
-                error_message=str(e)
-            )
+            logger.error(f"[{sync_run.correlation_id}] Erro no sync: {e}")
+            sync_run.complete_failed(error_code="SYNC_ERROR", error_message=str(e))
             account.mark_error(str(e))
 
         await self.db.commit()
@@ -397,10 +346,7 @@ class SyncEngine:
     async def cancel_sync(self, sync_run_id: UUID, reason: str = "Cancelado pelo usuário") -> bool:
         """Cancela uma execução de sync em andamento."""
         result = await self.db.execute(
-            select(SyncRun).where(
-                SyncRun.id == sync_run_id,
-                SyncRun.status == SyncRunStatus.RUNNING
-            )
+            select(SyncRun).where(SyncRun.id == sync_run_id, SyncRun.status == SyncRunStatus.RUNNING)
         )
         run = result.scalar_one_or_none()
 
@@ -415,12 +361,12 @@ class SyncEngine:
 
     async def get_sync_runs(
         self,
-        account_id: Optional[UUID] = None,
-        tenant_id: Optional[UUID] = None,
-        status: Optional[SyncRunStatus] = None,
+        account_id: UUID | None = None,
+        tenant_id: UUID | None = None,
+        status: SyncRunStatus | None = None,
         limit: int = 50,
-        offset: int = 0
-    ) -> List[SyncRun]:
+        offset: int = 0,
+    ) -> list[SyncRun]:
         """Lista execuções de sync com filtros."""
         query = select(SyncRun).where(SyncRun.ativo.is_(True))
 
@@ -436,9 +382,7 @@ class SyncEngine:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_sync_run(self, sync_run_id: UUID) -> Optional[SyncRun]:
+    async def get_sync_run(self, sync_run_id: UUID) -> SyncRun | None:
         """Busca uma execução específica."""
-        result = await self.db.execute(
-            select(SyncRun).where(SyncRun.id == sync_run_id)
-        )
+        result = await self.db.execute(select(SyncRun).where(SyncRun.id == sync_run_id))
         return result.scalar_one_or_none()

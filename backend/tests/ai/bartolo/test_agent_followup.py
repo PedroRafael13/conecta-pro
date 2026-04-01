@@ -5,11 +5,14 @@ Verifica que o engine detecta quando a última interação foi com um
 agente especializado e roteia follow-up de volta para o mesmo agente.
 """
 
-import pytest
 import sys
-sys.path.insert(0, '/app')
+
+import pytest
+
+sys.path.insert(0, "/app")
 
 from unittest.mock import AsyncMock, MagicMock, patch
+
 from modules.ai.bartolo.services.bartolo_engine import BartoloEngine
 
 
@@ -41,22 +44,26 @@ class TestFollowupDetection:
     @pytest.mark.asyncio
     async def test_followup_detected_with_agent_context(self, engine):
         """Testa que follow-up é detectado quando há contexto de agente."""
-        engine.context_manager.get_context = AsyncMock(return_value=_make_context_mock([
-            {
-                "role": "user",
-                "content": "gere uma escala para porteiros",
-                "metadata": {"intent": "gerar_escala"},
-            },
-            {
-                "role": "assistant",
-                "content": "Qual tipo de escala deseja?",
-                "metadata": {
-                    "model": "specialized_agent",
-                    "agent_type": "escala",
-                    "agent_intent": "gerar_escala",
-                },
-            },
-        ]))
+        engine.context_manager.get_context = AsyncMock(
+            return_value=_make_context_mock(
+                [
+                    {
+                        "role": "user",
+                        "content": "gere uma escala para porteiros",
+                        "metadata": {"intent": "gerar_escala"},
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "Qual tipo de escala deseja?",
+                        "metadata": {
+                            "model": "specialized_agent",
+                            "agent_type": "escala",
+                            "agent_intent": "gerar_escala",
+                        },
+                    },
+                ]
+            )
+        )
 
         followup_response = {
             "response": "Escala 12x36 selecionada.",
@@ -75,18 +82,22 @@ class TestFollowupDetection:
     @pytest.mark.asyncio
     async def test_no_followup_without_agent_context(self, engine):
         """Testa que não detecta follow-up sem contexto de agente."""
-        engine.context_manager.get_context = AsyncMock(return_value=_make_context_mock([
-            {
-                "role": "user",
-                "content": "bom dia",
-                "metadata": {},
-            },
-            {
-                "role": "assistant",
-                "content": "Bom dia! Como posso ajudar?",
-                "metadata": {"model": "claude-3-haiku"},
-            },
-        ]))
+        engine.context_manager.get_context = AsyncMock(
+            return_value=_make_context_mock(
+                [
+                    {
+                        "role": "user",
+                        "content": "bom dia",
+                        "metadata": {},
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "Bom dia! Como posso ajudar?",
+                        "metadata": {"model": "claude-3-haiku"},
+                    },
+                ]
+            )
+        )
 
         result = await engine._check_agent_followup(1, "session-1", "12x36")
         assert result is None
@@ -110,23 +121,29 @@ class TestFollowupDetection:
     @pytest.mark.asyncio
     async def test_followup_falls_through_to_process(self, engine):
         """Testa que se process_followup retorna None, tenta process normal."""
-        engine.context_manager.get_context = AsyncMock(return_value=_make_context_mock([
-            {
-                "role": "assistant",
-                "content": "Qual tipo de escala?",
-                "metadata": {
-                    "model": "specialized_agent",
-                    "agent_type": "escala",
-                    "agent_intent": "gerar_escala",
-                },
-            },
-        ]))
+        engine.context_manager.get_context = AsyncMock(
+            return_value=_make_context_mock(
+                [
+                    {
+                        "role": "assistant",
+                        "content": "Qual tipo de escala?",
+                        "metadata": {
+                            "model": "specialized_agent",
+                            "agent_type": "escala",
+                            "agent_intent": "gerar_escala",
+                        },
+                    },
+                ]
+            )
+        )
 
         engine.escala_agent.process_followup = AsyncMock(return_value=None)
-        engine.escala_agent.process = AsyncMock(return_value={
-            "response": "Resposta do process normal",
-            "intent": "escala_semana",
-        })
+        engine.escala_agent.process = AsyncMock(
+            return_value={
+                "response": "Resposta do process normal",
+                "intent": "escala_semana",
+            }
+        )
 
         result = await engine._check_agent_followup(1, "session-1", "ver escalas")
 
@@ -136,9 +153,7 @@ class TestFollowupDetection:
     @pytest.mark.asyncio
     async def test_followup_error_handling(self, engine):
         """Testa que erros no follow-up são tratados graciosamente."""
-        engine.context_manager.get_context = AsyncMock(
-            side_effect=Exception("DB error")
-        )
+        engine.context_manager.get_context = AsyncMock(side_effect=Exception("DB error"))
 
         result = await engine._check_agent_followup(1, "session-1", "12x36")
         assert result is None
@@ -149,7 +164,7 @@ class TestWizardFuzzyMatching:
 
     def test_fuzzy_match_validates_substring(self):
         """Testa que substring parcial é aceita na validação."""
-        from modules.ai.bartolo.wizards.base_wizard import BaseWizard, WizardStep, StepType
+        from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
         step = WizardStep(
             id="tipo_escala",
@@ -161,11 +176,20 @@ class TestWizardFuzzyMatching:
         )
 
         class TestWizard(BaseWizard):
-            def get_wizard_type(self): return "test"
-            def get_wizard_name(self): return "Test"
-            def get_wizard_description(self): return "Test"
-            def _setup_steps(self): self.steps = [step]
-            async def process_result(self, data): return {}
+            def get_wizard_type(self):
+                return "test"
+
+            def get_wizard_name(self):
+                return "Test"
+
+            def get_wizard_description(self):
+                return "Test"
+
+            def _setup_steps(self):
+                self.steps = [step]
+
+            async def process_result(self, data):
+                return {}
 
         wizard = TestWizard(user_id=1, session_id="test")
 
@@ -177,7 +201,7 @@ class TestWizardFuzzyMatching:
 
     def test_fuzzy_match_processes_correct_option(self):
         """Testa que _process_value retorna a opção correta no fuzzy match."""
-        from modules.ai.bartolo.wizards.base_wizard import BaseWizard, WizardStep, StepType
+        from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
         step = WizardStep(
             id="tipo_escala",
@@ -189,11 +213,20 @@ class TestWizardFuzzyMatching:
         )
 
         class TestWizard(BaseWizard):
-            def get_wizard_type(self): return "test"
-            def get_wizard_name(self): return "Test"
-            def get_wizard_description(self): return "Test"
-            def _setup_steps(self): self.steps = [step]
-            async def process_result(self, data): return {}
+            def get_wizard_type(self):
+                return "test"
+
+            def get_wizard_name(self):
+                return "Test"
+
+            def get_wizard_description(self):
+                return "Test"
+
+            def _setup_steps(self):
+                self.steps = [step]
+
+            async def process_result(self, data):
+                return {}
 
         wizard = TestWizard(user_id=1, session_id="test")
 
@@ -205,7 +238,7 @@ class TestWizardFuzzyMatching:
 
     def test_short_input_rejected(self):
         """Testa que inputs muito curtos não fazem fuzzy match."""
-        from modules.ai.bartolo.wizards.base_wizard import BaseWizard, WizardStep, StepType
+        from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
         step = WizardStep(
             id="test",
@@ -217,11 +250,20 @@ class TestWizardFuzzyMatching:
         )
 
         class TestWizard(BaseWizard):
-            def get_wizard_type(self): return "test"
-            def get_wizard_name(self): return "Test"
-            def get_wizard_description(self): return "Test"
-            def _setup_steps(self): self.steps = [step]
-            async def process_result(self, data): return {}
+            def get_wizard_type(self):
+                return "test"
+
+            def get_wizard_name(self):
+                return "Test"
+
+            def get_wizard_description(self):
+                return "Test"
+
+            def _setup_steps(self):
+                self.steps = [step]
+
+            async def process_result(self, data):
+                return {}
 
         wizard = TestWizard(user_id=1, session_id="test")
 

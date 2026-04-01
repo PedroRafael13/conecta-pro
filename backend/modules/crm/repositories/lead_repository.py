@@ -3,7 +3,6 @@ Repository para operações de banco de dados com Lead.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import func, or_, select
@@ -59,7 +58,7 @@ class LeadRepository:
         logger.info(f"Lead criado: {lead.id} ({lead.email})")
         return lead
 
-    async def get_by_id(self, lead_id: str) -> Optional[Lead]:
+    async def get_by_id(self, lead_id: str) -> Lead | None:
         """
         Busca lead por ID.
 
@@ -69,12 +68,10 @@ class LeadRepository:
         Returns:
             Lead ou None
         """
-        result = await self.db.execute(
-            select(Lead).where(Lead.id == lead_id, Lead.is_active.is_(True))
-        )
+        result = await self.db.execute(select(Lead).where(Lead.id == lead_id, Lead.is_active.is_(True)))
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[Lead]:
+    async def get_by_email(self, email: str) -> Lead | None:
         """
         Busca lead por email.
 
@@ -84,14 +81,12 @@ class LeadRepository:
         Returns:
             Lead ou None
         """
-        result = await self.db.execute(
-            select(Lead).where(Lead.email == email, Lead.is_active.is_(True))
-        )
+        result = await self.db.execute(select(Lead).where(Lead.email == email, Lead.is_active.is_(True)))
         return result.scalar_one_or_none()
 
     async def list(
         self,
-        filters: Optional[LeadFilter] = None,
+        filters: LeadFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Lead], int]:
@@ -166,7 +161,7 @@ class LeadRepository:
 
         return query
 
-    async def update(self, lead_id: str, data: LeadUpdate) -> Optional[Lead]:
+    async def update(self, lead_id: str, data: LeadUpdate) -> Lead | None:
         """
         Atualiza um lead.
 
@@ -185,9 +180,7 @@ class LeadRepository:
         update_data = data.model_dump(exclude_unset=True)
 
         for field, value in update_data.items():
-            if field == "status" and value:
-                setattr(lead, field, value.value)
-            elif field == "source" and value:
+            if field == "status" and value or field == "source" and value:
                 setattr(lead, field, value.value)
             else:
                 setattr(lead, field, value)
@@ -207,7 +200,7 @@ class LeadRepository:
         logger.info(f"Lead atualizado: {lead.id}")
         return lead
 
-    async def update_score(self, lead_id: str) -> Optional[Lead]:
+    async def update_score(self, lead_id: str) -> Lead | None:
         """
         Recalcula e atualiza o score do lead.
 
@@ -235,8 +228,8 @@ class LeadRepository:
         self,
         lead_id: str,
         status: LeadStatus,
-        notes: Optional[str] = None,
-    ) -> Optional[Lead]:
+        notes: str | None = None,
+    ) -> Lead | None:
         """
         Atualiza status do lead.
 
@@ -298,7 +291,7 @@ class LeadRepository:
 
     async def get_stats(
         self,
-        assigned_to_id: Optional[str] = None,
+        assigned_to_id: str | None = None,
     ) -> LeadStats:
         """
         Obtém estatísticas de leads.

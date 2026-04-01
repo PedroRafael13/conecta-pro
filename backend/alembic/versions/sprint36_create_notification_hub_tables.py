@@ -16,19 +16,18 @@ Tabelas:
 - notification_metrics: Métricas agregadas
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "sprint36_notifications"
-down_revision: Union[str, None] = "sprint35_scheduler"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "sprint35_scheduler"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -401,7 +400,9 @@ def upgrade() -> None:
         sa.Column("updated_by", postgresql.UUID(as_uuid=True)),
     )
 
-    op.create_index("ix_notification_templates_tenant_slug", "notification_templates", ["tenant_id", "slug"], unique=True)
+    op.create_index(
+        "ix_notification_templates_tenant_slug", "notification_templates", ["tenant_id", "slug"], unique=True
+    )
 
     # =========================================================================
     # notification_preferences
@@ -487,7 +488,9 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime, onupdate=sa.func.now()),
     )
 
-    op.create_index("ix_notification_preferences_tenant_user", "notification_preferences", ["tenant_id", "user_id"], unique=True)
+    op.create_index(
+        "ix_notification_preferences_tenant_user", "notification_preferences", ["tenant_id", "user_id"], unique=True
+    )
 
     # =========================================================================
     # notification_subscriptions

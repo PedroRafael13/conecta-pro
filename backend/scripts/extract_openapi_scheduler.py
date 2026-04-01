@@ -22,7 +22,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
-from core.database import init_db
 from modules.scheduler.controllers.scheduler_controller import router as scheduler_router
 
 
@@ -81,10 +80,10 @@ def extract_scheduler_openapi():
 if __name__ == "__main__":
     try:
         output = extract_scheduler_openapi()
-        print(f"\n🎯 Próximos passos:")
-        print(f"   1. Copiar para frontend")
-        print(f"   2. Criar orval.config.scheduler.ts")
-        print(f"   3. npm run orval:scheduler")
+        print("\n🎯 Próximos passos:")
+        print("   1. Copiar para frontend")
+        print("   2. Criar orval.config.scheduler.ts")
+        print("   3. npm run orval:scheduler")
     except Exception as e:
         print(f"❌ Erro ao extrair OpenAPI: {e}")
         import traceback

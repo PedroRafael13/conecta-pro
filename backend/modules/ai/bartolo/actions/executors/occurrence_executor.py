@@ -1,27 +1,28 @@
 """
 Executor de acoes relacionadas a ocorrencias disciplinares.
 """
+
+import contextlib
 import logging
 from datetime import datetime
 from uuid import uuid4
-from typing import Optional
 
+from modules.operacional.occurrences.models import (
+    OccurrenceCategory,
+    OccurrenceSeverity,
+    OccurrenceStatus,
+    OccurrenceType,
+)
 from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
 from modules.operacional.occurrences.schemas import (
     OccurrenceCreate,
-    OccurrenceUpdate,
     OccurrenceResolve,
-    OccurrenceFilter,
+    OccurrenceUpdate,
 )
-from modules.operacional.occurrences.models import (
-    OccurrenceType,
-    OccurrenceSeverity,
-    OccurrenceCategory,
-    OccurrenceStatus,
-)
-from modules.operacional.permissions import has_permission, Permission
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionStatus
+from modules.operacional.permissions import Permission, has_permission
+
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus, ActionType
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,6 @@ class OccurrenceActionExecutor(BaseActionExecutor):
     async def create_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para acao de ocorrencia."""
         action_type = request.action_type
-        params = request.parameters
 
         if action_type == ActionType.CREATE_OCCURRENCE:
             return await self._create_occurrence_preview(request)
@@ -193,11 +193,13 @@ class OccurrenceActionExecutor(BaseActionExecutor):
             title = "Resolver Ocorrencia"
             description = "Ocorrencia nao encontrada"
         else:
-            affected_entities.append({
-                "type": "occurrence",
-                "id": occurrence.id,
-                "code": occurrence.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "occurrence",
+                    "id": occurrence.id,
+                    "code": occurrence.code,
+                }
+            )
 
             changes_summary.append(f"Ocorrencia: {occurrence.code}")
             changes_summary.append(f"Titulo: {occurrence.title}")
@@ -273,11 +275,13 @@ class OccurrenceActionExecutor(BaseActionExecutor):
             title = "Atualizar Ocorrencia"
             description = "Ocorrencia nao encontrada"
         else:
-            affected_entities.append({
-                "type": "occurrence",
-                "id": occurrence.id,
-                "code": occurrence.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "occurrence",
+                    "id": occurrence.id,
+                    "code": occurrence.code,
+                }
+            )
 
             changes_summary.append(f"Ocorrencia: {occurrence.code}")
             changes_summary.append(f"Status atual: {occurrence.status}")
@@ -538,25 +542,17 @@ class OccurrenceActionExecutor(BaseActionExecutor):
                 value = params[param_key]
                 # Converter strings para enums quando necessario
                 if param_key == "occurrence_type":
-                    try:
+                    with contextlib.suppress(ValueError):
                         value = OccurrenceType(value)
-                    except ValueError:
-                        pass
                 elif param_key == "severity":
-                    try:
+                    with contextlib.suppress(ValueError):
                         value = OccurrenceSeverity(value)
-                    except ValueError:
-                        pass
                 elif param_key == "category":
-                    try:
+                    with contextlib.suppress(ValueError):
                         value = OccurrenceCategory(value)
-                    except ValueError:
-                        pass
                 elif param_key == "status":
-                    try:
+                    with contextlib.suppress(ValueError):
                         value = OccurrenceStatus(value)
-                    except ValueError:
-                        pass
                 update_fields[schema_key] = value
 
         if not update_fields:

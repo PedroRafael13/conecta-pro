@@ -15,21 +15,22 @@ CT-e 4.00:
 - Assinatura digital obrigatoria
 """
 
-import re
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
-from enum import Enum
-from typing import Dict, List, Optional, Any, Tuple
-from uuid import UUID, uuid4
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
+import re
 import ssl
 import time
+import xml.etree.ElementTree as ET  # noqa: N817, S405
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from enum import StrEnum
+from uuid import UUID, uuid4
+from xml.dom import minidom  # noqa: S408
+from xml.etree.ElementTree import Element  # noqa: S405
 
 try:
     import httpx
+
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
@@ -82,36 +83,79 @@ CTE_ENDPOINTS = {
 
 # Mapeamento UF -> Autorizador
 UF_AUTORIZADOR_CTE = {
-    "AC": "SVRS", "AL": "SVRS", "AM": "SVRS", "AP": "SVSP",
-    "BA": "SVRS", "CE": "SVRS", "DF": "SVRS", "ES": "SVRS",
-    "GO": "SVRS", "MA": "SVRS", "MG": "MG",   "MS": "MS",
-    "MT": "MT",   "PA": "SVRS", "PB": "SVRS", "PE": "SVSP",
-    "PI": "SVRS", "PR": "PR",   "RJ": "SVRS", "RN": "SVRS",
-    "RO": "SVRS", "RR": "SVSP", "RS": "RS",   "SC": "SVRS",
-    "SE": "SVRS", "SP": "SP",   "TO": "SVRS",
+    "AC": "SVRS",
+    "AL": "SVRS",
+    "AM": "SVRS",
+    "AP": "SVSP",
+    "BA": "SVRS",
+    "CE": "SVRS",
+    "DF": "SVRS",
+    "ES": "SVRS",
+    "GO": "SVRS",
+    "MA": "SVRS",
+    "MG": "MG",
+    "MS": "MS",
+    "MT": "MT",
+    "PA": "SVRS",
+    "PB": "SVRS",
+    "PE": "SVSP",
+    "PI": "SVRS",
+    "PR": "PR",
+    "RJ": "SVRS",
+    "RN": "SVRS",
+    "RO": "SVRS",
+    "RR": "SVSP",
+    "RS": "RS",
+    "SC": "SVRS",
+    "SE": "SVRS",
+    "SP": "SP",
+    "TO": "SVRS",
 }
 
 # Codigo IBGE UFs
 UF_CODIGO_IBGE = {
-    "AC": "12", "AL": "27", "AM": "13", "AP": "16", "BA": "29",
-    "CE": "23", "DF": "53", "ES": "32", "GO": "52", "MA": "21",
-    "MG": "31", "MS": "50", "MT": "51", "PA": "15", "PB": "25",
-    "PE": "26", "PI": "22", "PR": "41", "RJ": "33", "RN": "24",
-    "RO": "11", "RR": "14", "RS": "43", "SC": "42", "SE": "28",
-    "SP": "35", "TO": "17",
+    "AC": "12",
+    "AL": "27",
+    "AM": "13",
+    "AP": "16",
+    "BA": "29",
+    "CE": "23",
+    "DF": "53",
+    "ES": "32",
+    "GO": "52",
+    "MA": "21",
+    "MG": "31",
+    "MS": "50",
+    "MT": "51",
+    "PA": "15",
+    "PB": "25",
+    "PE": "26",
+    "PI": "22",
+    "PR": "41",
+    "RJ": "33",
+    "RN": "24",
+    "RO": "11",
+    "RR": "14",
+    "RS": "43",
+    "SC": "42",
+    "SE": "28",
+    "SP": "35",
+    "TO": "17",
 }
 
 
-class TipoCTe(str, Enum):
+class TipoCTe(StrEnum):
     """Tipo de CT-e."""
-    NORMAL = "0"                    # Normal
-    COMPLEMENTO_VALORES = "1"       # CT-e de Complemento de Valores
-    ANULACAO = "2"                  # CT-e de Anulacao
-    SUBSTITUTO = "3"                # CT-e Substituto
+
+    NORMAL = "0"  # Normal
+    COMPLEMENTO_VALORES = "1"  # CT-e de Complemento de Valores
+    ANULACAO = "2"  # CT-e de Anulacao
+    SUBSTITUTO = "3"  # CT-e Substituto
 
 
-class ModalTransporte(str, Enum):
+class ModalTransporte(StrEnum):
     """Modal de transporte."""
+
     RODOVIARIO = "01"
     AEREO = "02"
     AQUAVIARIO = "03"
@@ -120,8 +164,9 @@ class ModalTransporte(str, Enum):
     MULTIMODAL = "06"
 
 
-class TipoServico(str, Enum):
+class TipoServico(StrEnum):
     """Tipo de servico de transporte."""
+
     NORMAL = "0"
     SUBCONTRATACAO = "1"
     REDESPACHO = "2"
@@ -129,8 +174,9 @@ class TipoServico(str, Enum):
     VINCULADO_MULTIMODAL = "4"
 
 
-class TomadorServico(str, Enum):
+class TomadorServico(StrEnum):
     """Tomador do servico."""
+
     REMETENTE = "0"
     EXPEDIDOR = "1"
     RECEBEDOR = "2"
@@ -141,6 +187,7 @@ class TomadorServico(str, Enum):
 @dataclass
 class Endereco:
     """Endereco."""
+
     logradouro: str
     numero: str
     bairro: str
@@ -148,7 +195,7 @@ class Endereco:
     uf: str
     cep: str
     codigo_municipio: str
-    complemento: Optional[str] = None
+    complemento: str | None = None
     pais: str = "Brasil"
     codigo_pais: str = "1058"
 
@@ -156,60 +203,65 @@ class Endereco:
 @dataclass
 class Emitente:
     """Dados do emitente do CT-e."""
+
     cnpj: str
     razao_social: str
-    nome_fantasia: Optional[str]
+    nome_fantasia: str | None
     inscricao_estadual: str
     endereco: Endereco
-    rntrc: Optional[str] = None  # Registro Nacional de Transportadores Rodoviarios
+    rntrc: str | None = None  # Registro Nacional de Transportadores Rodoviarios
 
 
 @dataclass
 class Remetente:
     """Dados do remetente (quem envia a carga)."""
+
     cpf_cnpj: str
     razao_social: str
     endereco: Endereco
-    inscricao_estadual: Optional[str] = None
-    email: Optional[str] = None
-    telefone: Optional[str] = None
+    inscricao_estadual: str | None = None
+    email: str | None = None
+    telefone: str | None = None
 
     @property
     def is_cpf(self) -> bool:
-        return len(re.sub(r'[^\d]', '', self.cpf_cnpj)) == 11
+        return len(re.sub(r"[^\d]", "", self.cpf_cnpj)) == 11
 
 
 @dataclass
 class Destinatario:
     """Dados do destinatario (quem recebe a carga)."""
+
     cpf_cnpj: str
     razao_social: str
     endereco: Endereco
-    inscricao_estadual: Optional[str] = None
-    email: Optional[str] = None
-    telefone: Optional[str] = None
+    inscricao_estadual: str | None = None
+    email: str | None = None
+    telefone: str | None = None
 
     @property
     def is_cpf(self) -> bool:
-        return len(re.sub(r'[^\d]', '', self.cpf_cnpj)) == 11
+        return len(re.sub(r"[^\d]", "", self.cpf_cnpj)) == 11
 
 
 @dataclass
 class Carga:
     """Dados da carga transportada."""
+
     valor_carga: Decimal
     produto_predominante: str
     quantidade: Decimal = Decimal("1")
     unidade: str = "UN"
-    peso_bruto: Optional[Decimal] = None
-    peso_liquido: Optional[Decimal] = None
-    cubagem: Optional[Decimal] = None  # m3
-    caracteristica_adicional: Optional[str] = None
+    peso_bruto: Decimal | None = None
+    peso_liquido: Decimal | None = None
+    cubagem: Decimal | None = None  # m3
+    caracteristica_adicional: str | None = None
 
 
 @dataclass
 class ComponenteValor:
     """Componente do valor do frete."""
+
     nome: str  # Ex: "FRETE PESO", "GRIS", "PEDÁGIO"
     valor: Decimal
 
@@ -217,6 +269,7 @@ class ComponenteValor:
 @dataclass
 class CTe:
     """Conhecimento de Transporte Eletronico."""
+
     id: UUID = field(default_factory=uuid4)
     numero: int = 0
     serie: int = 1
@@ -230,11 +283,11 @@ class CTe:
     destinatario: Destinatario = None
 
     carga: Carga = None
-    componentes_frete: List[ComponenteValor] = field(default_factory=list)
+    componentes_frete: list[ComponenteValor] = field(default_factory=list)
 
     # Locais
     municipio_inicio: str = ""  # Codigo IBGE
-    municipio_fim: str = ""     # Codigo IBGE
+    municipio_fim: str = ""  # Codigo IBGE
     uf_inicio: str = ""
     uf_fim: str = ""
 
@@ -247,25 +300,25 @@ class CTe:
 
     # Datas
     data_emissao: datetime = None
-    data_previsao_entrega: Optional[datetime] = None
+    data_previsao_entrega: datetime | None = None
 
     # Chave de acesso
-    chave_acesso: Optional[str] = None
+    chave_acesso: str | None = None
 
     # Protocolo
-    protocolo: Optional[str] = None
+    protocolo: str | None = None
     status: str = "draft"
 
     def __post_init__(self):
         if self.data_emissao is None:
-            self.data_emissao = datetime.now(timezone.utc)
+            self.data_emissao = datetime.now(UTC)
 
     def generate_chave_acesso(self) -> str:
         """Gera a chave de acesso do CT-e (44 digitos)."""
         # Formato: UF(2) + AAMM(4) + CNPJ(14) + Modelo(2) + Serie(3) + Numero(9) + tpEmis(1) + cCT(8) + DV(1)
         uf_code = UF_CODIGO_IBGE.get(self.emitente.endereco.uf, "13")
         aamm = self.data_emissao.strftime("%y%m")
-        cnpj = re.sub(r'[^\d]', '', self.emitente.cnpj).zfill(14)
+        cnpj = re.sub(r"[^\d]", "", self.emitente.cnpj).zfill(14)
         modelo = "57"
         serie = str(self.serie).zfill(3)
         numero = str(self.numero).zfill(9)
@@ -359,7 +412,7 @@ class CTeXMLBuilder:
 
         # emit - Emitente
         emit = ET.SubElement(inf, "emit")
-        ET.SubElement(emit, "CNPJ").text = re.sub(r'[^\d]', '', cte.emitente.cnpj)
+        ET.SubElement(emit, "CNPJ").text = re.sub(r"[^\d]", "", cte.emitente.cnpj)
         ET.SubElement(emit, "IE").text = cte.emitente.inscricao_estadual
         if ambiente == "2":
             ET.SubElement(emit, "xNome").text = "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
@@ -372,7 +425,7 @@ class CTeXMLBuilder:
         # rem - Remetente
         if cte.remetente:
             rem = ET.SubElement(inf, "rem")
-            doc = re.sub(r'[^\d]', '', cte.remetente.cpf_cnpj)
+            doc = re.sub(r"[^\d]", "", cte.remetente.cpf_cnpj)
             if cte.remetente.is_cpf:
                 ET.SubElement(rem, "CPF").text = doc
             else:
@@ -385,7 +438,7 @@ class CTeXMLBuilder:
         # dest - Destinatario
         if cte.destinatario:
             dest = ET.SubElement(inf, "dest")
-            doc = re.sub(r'[^\d]', '', cte.destinatario.cpf_cnpj)
+            doc = re.sub(r"[^\d]", "", cte.destinatario.cpf_cnpj)
             if cte.destinatario.is_cpf:
                 ET.SubElement(dest, "CPF").text = doc
             else:
@@ -436,14 +489,14 @@ class CTeXMLBuilder:
 
         # infRespTec - Responsavel tecnico
         inf_resp = ET.SubElement(inf, "infRespTec")
-        ET.SubElement(inf_resp, "CNPJ").text = re.sub(r'[^\d]', '', cte.emitente.cnpj)
+        ET.SubElement(inf_resp, "CNPJ").text = re.sub(r"[^\d]", "", cte.emitente.cnpj)
         ET.SubElement(inf_resp, "xContato").text = "Suporte Tecnico"
         ET.SubElement(inf_resp, "email").text = "suporte@conectapro.com.br"
         ET.SubElement(inf_resp, "fone").text = "92999999999"
 
         return self._prettify(root)
 
-    def _add_endereco(self, parent: ET.Element, tag: str, endereco: Endereco) -> None:
+    def _add_endereco(self, parent: Element, tag: str, endereco: Endereco) -> None:
         """Adiciona endereco ao XML."""
         end = ET.SubElement(parent, tag)
         ET.SubElement(end, "xLgr").text = endereco.logradouro
@@ -453,25 +506,26 @@ class CTeXMLBuilder:
         ET.SubElement(end, "xBairro").text = endereco.bairro
         ET.SubElement(end, "cMun").text = endereco.codigo_municipio
         ET.SubElement(end, "xMun").text = endereco.cidade
-        ET.SubElement(end, "CEP").text = re.sub(r'[^\d]', '', endereco.cep)
+        ET.SubElement(end, "CEP").text = re.sub(r"[^\d]", "", endereco.cep)
         ET.SubElement(end, "UF").text = endereco.uf
 
-    def _prettify(self, elem: ET.Element) -> str:
+    def _prettify(self, elem: Element) -> str:
         """Formata XML."""
-        rough_string = ET.tostring(elem, encoding='unicode')
-        reparsed = minidom.parseString(rough_string)
+        rough_string = ET.tostring(elem, encoding="unicode")
+        reparsed = minidom.parseString(rough_string)  # noqa: S318 - Apenas formata XML gerado internamente
         return reparsed.toprettyxml(indent="  ")
 
 
 @dataclass
 class CTeResult:
     """Resultado de operacao com CT-e."""
+
     sucesso: bool
     mensagem: str
-    status_code: Optional[str] = None
-    protocolo: Optional[str] = None
-    chave_acesso: Optional[str] = None
-    xml_retorno: Optional[str] = None
+    status_code: str | None = None
+    protocolo: str | None = None
+    chave_acesso: str | None = None
+    xml_retorno: str | None = None
     tempo_resposta: float = 0.0
 
 
@@ -486,8 +540,8 @@ class CTeTransmitter:
         self,
         uf: str,
         ambiente: str = "2",
-        cert_path: Optional[str] = None,
-        cert_password: Optional[str] = None,
+        cert_path: str | None = None,
+        cert_password: str | None = None,
     ):
         """
         Inicializa o transmissor de CT-e.
@@ -519,7 +573,9 @@ class CTeTransmitter:
         self._cert_pem_path = None
         self._key_pem_path = None
 
-        logger.info(f"CTeTransmitter inicializado: UF={uf}, Autorizador={autorizador}, Ambiente={'Producao' if ambiente == '1' else 'Homologacao'}")
+        logger.info(
+            f"CTeTransmitter inicializado: UF={uf}, Autorizador={autorizador}, Ambiente={'Producao' if ambiente == '1' else 'Homologacao'}"
+        )
 
     def get_endpoint(self, service: str) -> str:
         """Retorna endpoint do servico."""
@@ -540,26 +596,26 @@ class CTeTransmitter:
             envelope = (
                 f'<?xml version="1.0" encoding="UTF-8"?>'
                 f'<soap12:Envelope xmlns:soap12="{self.NS_SOAP12}">'
-                f'<soap12:Body>'
+                f"<soap12:Body>"
                 f'<cteDadosMsg xmlns="{wsdl_ns}">'
                 f'<consStatServCTe xmlns="{self.NS_CTE}" versao="{self.VERSION}">'
-                f'<tpAmb>{self.ambiente}</tpAmb>'
-                f'<cUF>{cod_uf}</cUF>'
-                f'<xServ>STATUS</xServ>'
-                f'</consStatServCTe>'
-                f'</cteDadosMsg>'
-                f'</soap12:Body>'
-                f'</soap12:Envelope>'
+                f"<tpAmb>{self.ambiente}</tpAmb>"
+                f"<cUF>{cod_uf}</cUF>"
+                f"<xServ>STATUS</xServ>"
+                f"</consStatServCTe>"
+                f"</cteDadosMsg>"
+                f"</soap12:Body>"
+                f"</soap12:Envelope>"
             )
 
             client = await self._get_client()
             response = await client.post(
                 url,
-                content=envelope.encode('utf-8'),
+                content=envelope.encode("utf-8"),
                 headers={
                     "Content-Type": "application/soap+xml; charset=utf-8",
-                    "SOAPAction": f"{wsdl_ns}/cteStatusServicoCT"
-                }
+                    "SOAPAction": f"{wsdl_ns}/cteStatusServicoCT",
+                },
             )
 
             tempo = time.time() - start_time
@@ -569,8 +625,9 @@ class CTeTransmitter:
                 xml_retorno = response.text
                 # Extrair cStat e xMotivo
                 import re
-                cstat_match = re.search(r'<cStat>(\d+)</cStat>', xml_retorno)
-                xmotivo_match = re.search(r'<xMotivo>([^<]+)</xMotivo>', xml_retorno)
+
+                cstat_match = re.search(r"<cStat>(\d+)</cStat>", xml_retorno)
+                xmotivo_match = re.search(r"<xMotivo>([^<]+)</xMotivo>", xml_retorno)
 
                 cstat = cstat_match.group(1) if cstat_match else "0"
                 xmotivo = xmotivo_match.group(1) if xmotivo_match else "Resposta invalida"
@@ -580,22 +637,14 @@ class CTeTransmitter:
                     mensagem=xmotivo,
                     status_code=cstat,
                     xml_retorno=xml_retorno,
-                    tempo_resposta=tempo
+                    tempo_resposta=tempo,
                 )
             else:
-                return CTeResult(
-                    sucesso=False,
-                    mensagem=f"Erro HTTP {response.status_code}",
-                    tempo_resposta=tempo
-                )
+                return CTeResult(sucesso=False, mensagem=f"Erro HTTP {response.status_code}", tempo_resposta=tempo)
 
         except Exception as e:
             logger.error(f"Erro ao consultar status: {e}")
-            return CTeResult(
-                sucesso=False,
-                mensagem=str(e),
-                tempo_resposta=time.time() - start_time
-            )
+            return CTeResult(sucesso=False, mensagem=str(e), tempo_resposta=time.time() - start_time)
 
     async def transmitir(self, xml_assinado: str) -> CTeResult:
         """
@@ -617,27 +666,27 @@ class CTeTransmitter:
             wsdl_ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4"
 
             # Extrair apenas o conteudo do CT-e (sem declaracao XML)
-            xml_cte = re.sub(r'<\?xml[^>]+\?>\s*', '', xml_assinado)
+            xml_cte = re.sub(r"<\?xml[^>]+\?>\s*", "", xml_assinado)
 
             envelope = (
                 f'<?xml version="1.0" encoding="UTF-8"?>'
                 f'<soap12:Envelope xmlns:soap12="{self.NS_SOAP12}">'
-                f'<soap12:Body>'
+                f"<soap12:Body>"
                 f'<cteDadosMsg xmlns="{wsdl_ns}">'
-                f'{xml_cte}'
-                f'</cteDadosMsg>'
-                f'</soap12:Body>'
-                f'</soap12:Envelope>'
+                f"{xml_cte}"
+                f"</cteDadosMsg>"
+                f"</soap12:Body>"
+                f"</soap12:Envelope>"
             )
 
             client = await self._get_client()
             response = await client.post(
                 url,
-                content=envelope.encode('utf-8'),
+                content=envelope.encode("utf-8"),
                 headers={
                     "Content-Type": "application/soap+xml; charset=utf-8",
-                    "SOAPAction": f"{wsdl_ns}/cteRecepcaoSinc"
-                }
+                    "SOAPAction": f"{wsdl_ns}/cteRecepcaoSinc",
+                },
             )
 
             tempo = time.time() - start_time
@@ -646,10 +695,10 @@ class CTeTransmitter:
                 xml_retorno = response.text
 
                 # Parse resultado
-                cstat_match = re.search(r'<cStat>(\d+)</cStat>', xml_retorno)
-                xmotivo_match = re.search(r'<xMotivo>([^<]+)</xMotivo>', xml_retorno)
-                nprot_match = re.search(r'<nProt>(\d+)</nProt>', xml_retorno)
-                chave_match = re.search(r'<chCTe>(\d{44})</chCTe>', xml_retorno)
+                cstat_match = re.search(r"<cStat>(\d+)</cStat>", xml_retorno)
+                xmotivo_match = re.search(r"<xMotivo>([^<]+)</xMotivo>", xml_retorno)
+                nprot_match = re.search(r"<nProt>(\d+)</nProt>", xml_retorno)
+                chave_match = re.search(r"<chCTe>(\d{44})</chCTe>", xml_retorno)
 
                 cstat = cstat_match.group(1) if cstat_match else "0"
                 xmotivo = xmotivo_match.group(1) if xmotivo_match else "Resposta invalida"
@@ -665,22 +714,14 @@ class CTeTransmitter:
                     protocolo=protocolo,
                     chave_acesso=chave,
                     xml_retorno=xml_retorno,
-                    tempo_resposta=tempo
+                    tempo_resposta=tempo,
                 )
             else:
-                return CTeResult(
-                    sucesso=False,
-                    mensagem=f"Erro HTTP {response.status_code}",
-                    tempo_resposta=tempo
-                )
+                return CTeResult(sucesso=False, mensagem=f"Erro HTTP {response.status_code}", tempo_resposta=tempo)
 
         except Exception as e:
             logger.error(f"Erro ao transmitir CT-e: {e}")
-            return CTeResult(
-                sucesso=False,
-                mensagem=str(e),
-                tempo_resposta=time.time() - start_time
-            )
+            return CTeResult(sucesso=False, mensagem=str(e), tempo_resposta=time.time() - start_time)
 
     async def _get_client(self):
         """Obtem cliente HTTP com certificado mTLS."""
@@ -694,17 +735,15 @@ class CTeTransmitter:
 
             if self.cert_path:
                 from .certificate_manager import CertificateManager
-                cert_manager = CertificateManager(
-                    pfx_path=self.cert_path,
-                    password=self.cert_password
-                )
+
+                cert_manager = CertificateManager(pfx_path=self.cert_path, password=self.cert_password)
                 cert_manager.load()
 
-                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as f:
+                with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as f:
                     f.write(cert_manager.get_certificate_pem())
                     self._cert_pem_path = f.name
 
-                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as f:
+                with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as f:
                     f.write(cert_manager.get_private_key_pem())
                     self._key_pem_path = f.name
 
@@ -721,6 +760,7 @@ class CTeTransmitter:
             self._client = None
 
         import os
+
         if self._cert_pem_path and os.path.exists(self._cert_pem_path):
             os.unlink(self._cert_pem_path)
         if self._key_pem_path and os.path.exists(self._key_pem_path):

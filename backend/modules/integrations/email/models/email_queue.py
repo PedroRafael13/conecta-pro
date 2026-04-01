@@ -3,9 +3,8 @@
 Sprint 32 - Automacoes Email.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Column,
@@ -22,7 +21,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class EmailStatus(str, enum.Enum):
+class EmailStatus(StrEnum):
     """Status do email na fila."""
 
     QUEUED = "QUEUED"  # Na fila
@@ -37,7 +36,7 @@ class EmailStatus(str, enum.Enum):
     UNSUBSCRIBED = "UNSUBSCRIBED"  # Descadastrado
 
 
-class BounceType(str, enum.Enum):
+class BounceType(StrEnum):
     """Tipo de bounce."""
 
     HARD = "HARD"  # Bounce permanente (email invalido)
@@ -45,7 +44,7 @@ class BounceType(str, enum.Enum):
     COMPLAINT = "COMPLAINT"  # Marcado como spam
 
 
-class EmailPriority(str, enum.Enum):
+class EmailPriority(StrEnum):
     """Prioridade do email."""
 
     LOW = "LOW"  # Baixa (newsletters)
@@ -208,7 +207,7 @@ class EmailQueue(Base):
         """Marca como processando."""
         self.status = EmailStatus.PROCESSING
 
-    def mark_sent(self, message_id: Optional[str] = None) -> None:
+    def mark_sent(self, message_id: str | None = None) -> None:
         """Marca como enviado."""
         self.status = EmailStatus.SENT
         self.sent_at = datetime.utcnow()
@@ -236,7 +235,7 @@ class EmailQueue(Base):
     def mark_bounced(
         self,
         bounce_type: BounceType,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> None:
         """Marca como retornado."""
         self.status = EmailStatus.BOUNCED
@@ -252,7 +251,7 @@ class EmailQueue(Base):
         self.failed_at = datetime.utcnow()
         self.retry_count = (self.retry_count or 0) + 1
 
-    def schedule_retry(self, next_retry: Optional[datetime] = None) -> None:
+    def schedule_retry(self, next_retry: datetime | None = None) -> None:
         """Agenda retentativa."""
         if not self.can_retry:
             return

@@ -1,7 +1,6 @@
 """Controller para integração eSocial."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -24,13 +23,13 @@ router = APIRouter(prefix="/esocial", tags=["eSocial"])
 
 @router.get(
     "/integration",
-    response_model=Optional[PayrollIntegrationResponse],
+    response_model=PayrollIntegrationResponse | None,
     summary="Configuração eSocial",
 )
 async def get_integration(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-) -> Optional[PayrollIntegrationResponse]:
+) -> PayrollIntegrationResponse | None:
     """Retorna configuração de integração eSocial."""
     try:
         service = ESocialService(db)
@@ -366,10 +365,7 @@ async def get_esocial_status(
             "valid": validation["valid"],
             "errors": validation["errors"],
             "warnings": validation["warnings"],
-            "last_sync": (
-                integration.last_sync_at.isoformat()
-                if integration and integration.last_sync_at else None
-            ),
+            "last_sync": (integration.last_sync_at.isoformat() if integration and integration.last_sync_at else None),
             "sync_status": integration.sync_status if integration else None,
             "ambiente": (integration.esocial_config or {}).get("ambiente") if integration else None,
         }

@@ -15,31 +15,29 @@ Date: 2026-01-29
 
 import logging
 from datetime import datetime
+from typing import Any
 from uuid import uuid4
-from typing import Any, Dict, List, Optional
 
-from modules.operacional.inspection_rounds.repositories import InspectionRoundRepository
 from modules.operacional.inspection_rounds.models import (
+    CheckpointStatus,
+    CheckpointType,
     InspectionRound,
     InspectionRoundStatus,
     InspectorRole,
-    InspectionCheckpoint,
-    CheckpointType,
-    CheckpointStatus,
 )
+from modules.operacional.inspection_rounds.repositories import InspectionRoundRepository
 from modules.operacional.inspection_rounds.schemas import (
-    InspectionRoundCreate,
     CheckpointCreate,
-    StartRoundRequest,
     CompleteRoundRequest,
+    InspectionRoundCreate,
+    StartRoundRequest,
 )
 from modules.operacional.inspection_rounds.services.inspection_round_service import (
     InspectionRoundService,
-    InspectionRoundNotFoundError,
-    InspectionRoundValidationError,
 )
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionStatus
+
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus
 from .base_executor import BaseActionExecutor
 
 # Import opcional de GeolocationService para validacao de checkpoint
@@ -48,6 +46,7 @@ try:
         GeolocationService,
         GeoPoint,
     )
+
     _HAS_GEO_SERVICE = True
 except ImportError:
     _HAS_GEO_SERVICE = False
@@ -79,7 +78,7 @@ class InspectionActionExecutor(BaseActionExecutor):
         """Cria preview para acao de ronda de inspecao."""
         action_type_value = request.action_type
         # Suporta tanto ActionType enum quanto string
-        action_str = action_type_value.value if hasattr(action_type_value, 'value') else str(action_type_value)
+        action_str = action_type_value.value if hasattr(action_type_value, "value") else str(action_type_value)
 
         try:
             if action_str == INSPECTION_ACTION_TYPES["create_round"]:
@@ -116,7 +115,7 @@ class InspectionActionExecutor(BaseActionExecutor):
     async def execute(self, request: ActionRequest, action_id: str) -> ActionResult:
         """Executa acao de ronda de inspecao."""
         action_type_value = request.action_type
-        action_str = action_type_value.value if hasattr(action_type_value, 'value') else str(action_type_value)
+        action_str = action_type_value.value if hasattr(action_type_value, "value") else str(action_type_value)
         started_at = datetime.utcnow()
 
         try:
@@ -155,7 +154,7 @@ class InspectionActionExecutor(BaseActionExecutor):
     # HELPER - Buscar ronda por ID ou codigo
     # ==========================================================================
 
-    async def _find_round(self, params: Dict[str, Any]) -> Optional[InspectionRound]:
+    async def _find_round(self, params: dict[str, Any]) -> InspectionRound | None:
         """Busca ronda por ID ou codigo a partir dos parametros."""
         round_id = params.get("round_id")
         round_code = params.get("round_code")
@@ -223,7 +222,7 @@ class InspectionActionExecutor(BaseActionExecutor):
         if observations:
             changes_summary.append(f"Observacoes: {observations[:100]}...")
 
-        title = f"Criar Ronda de Inspecao"
+        title = "Criar Ronda de Inspecao"
         description = f"Criar ronda para {inspector_name} ({role_display.get(inspector_role, inspector_role)})"
 
         return ActionPreview(
@@ -268,16 +267,18 @@ class InspectionActionExecutor(BaseActionExecutor):
             title = "Iniciar Ronda"
             description = "Ronda nao encontrada"
         else:
-            affected_entities.append({
-                "type": "inspection_round",
-                "id": inspection_round.id,
-                "code": inspection_round.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "inspection_round",
+                    "id": inspection_round.id,
+                    "code": inspection_round.code,
+                }
+            )
 
             changes_summary.append(f"Ronda: {inspection_round.code}")
             changes_summary.append(f"Inspetor: {inspection_round.inspector_name}")
             changes_summary.append(f"Status atual: {inspection_round.status_display}")
-            changes_summary.append(f"Novo status: Em Andamento")
+            changes_summary.append("Novo status: Em Andamento")
 
             if inspection_round.status != InspectionRoundStatus.AGENDADA.value:
                 if inspection_round.status == InspectionRoundStatus.EM_ANDAMENTO.value:
@@ -340,16 +341,18 @@ class InspectionActionExecutor(BaseActionExecutor):
             title = "Completar Ronda"
             description = "Ronda nao encontrada"
         else:
-            affected_entities.append({
-                "type": "inspection_round",
-                "id": inspection_round.id,
-                "code": inspection_round.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "inspection_round",
+                    "id": inspection_round.id,
+                    "code": inspection_round.code,
+                }
+            )
 
             changes_summary.append(f"Ronda: {inspection_round.code}")
             changes_summary.append(f"Inspetor: {inspection_round.inspector_name}")
             changes_summary.append(f"Status atual: {inspection_round.status_display}")
-            changes_summary.append(f"Novo status: Concluida")
+            changes_summary.append("Novo status: Concluida")
             changes_summary.append(f"Checkpoints realizados: {inspection_round.total_checkpoints}")
             changes_summary.append(f"Ocorrencias registradas: {inspection_round.total_occurrences}")
 
@@ -359,7 +362,9 @@ class InspectionActionExecutor(BaseActionExecutor):
                 elif inspection_round.status == InspectionRoundStatus.AGENDADA.value:
                     warnings.append("Ronda ainda nao foi iniciada")
                 else:
-                    warnings.append(f"Ronda no status '{inspection_round.status_display}' nao pode ser concluida diretamente")
+                    warnings.append(
+                        f"Ronda no status '{inspection_round.status_display}' nao pode ser concluida diretamente"
+                    )
 
             # Verificar postos nao visitados
             remaining = inspection_round.posts_remaining
@@ -428,7 +433,9 @@ class InspectionActionExecutor(BaseActionExecutor):
                 "inspector_name": inspection_round.inspector_name,
                 "inspector_role": inspection_round.inspector_role,
                 "status": inspection_round.status,
-                "scheduled_date": inspection_round.scheduled_date.isoformat() if inspection_round.scheduled_date else None,
+                "scheduled_date": inspection_round.scheduled_date.isoformat()
+                if inspection_round.scheduled_date
+                else None,
                 "posts_to_visit": inspection_round.posts_to_visit,
             },
             affected_entities=[
@@ -529,8 +536,7 @@ class InspectionActionExecutor(BaseActionExecutor):
         inspection_round = await service.complete_round(inspection_round.id, complete_data)
 
         logger.info(
-            f"Ronda concluida via Bartolo: {inspection_round.code} - "
-            f"{inspection_round.total_occurrences} ocorrencias"
+            f"Ronda concluida via Bartolo: {inspection_round.code} - {inspection_round.total_occurrences} ocorrencias"
         )
 
         return ActionResult(
@@ -572,9 +578,9 @@ class InspectionActionExecutor(BaseActionExecutor):
         """Cria preview para registro de checkpoint durante ronda."""
         params = request.parameters
 
-        warnings: List[str] = []
-        affected_entities: List[Dict[str, Any]] = []
-        changes_summary: List[str] = []
+        warnings: list[str] = []
+        affected_entities: list[dict[str, Any]] = []
+        changes_summary: list[str] = []
 
         # Buscar ronda
         inspection_round = await self._find_round(params)
@@ -584,11 +590,13 @@ class InspectionActionExecutor(BaseActionExecutor):
             title = "Registrar Checkpoint"
             description = "Ronda nao encontrada"
         else:
-            affected_entities.append({
-                "type": "inspection_round",
-                "id": inspection_round.id,
-                "code": inspection_round.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "inspection_round",
+                    "id": inspection_round.id,
+                    "code": inspection_round.code,
+                }
+            )
 
             changes_summary.append(f"Ronda: {inspection_round.code}")
             changes_summary.append(f"Inspetor: {inspection_round.inspector_name}")
@@ -665,6 +673,7 @@ class InspectionActionExecutor(BaseActionExecutor):
                 if _HAS_GEO_SERVICE and post_id:
                     try:
                         from modules.operacional.repositories.post_repository import PostRepository
+
                         post_repo = PostRepository(self.db)
                         post = await post_repo.get_by_id(post_id)
                         if post:
@@ -677,9 +686,7 @@ class InspectionActionExecutor(BaseActionExecutor):
                                 distance = geo_service.calculate_distance(user_point, post_point)
                                 changes_summary.append(f"Distancia do posto: {distance:.0f}m")
                                 if distance > 200:
-                                    warnings.append(
-                                        f"Inspetor a {distance:.0f}m do posto (distancia elevada)"
-                                    )
+                                    warnings.append(f"Inspetor a {distance:.0f}m do posto (distancia elevada)")
                     except Exception as e:
                         logger.warning(f"Erro ao calcular distancia GPS no checkpoint: {e}")
             else:
@@ -688,7 +695,9 @@ class InspectionActionExecutor(BaseActionExecutor):
             # Progresso da ronda
             total_posts = len(inspection_round.posts_to_visit or [])
             visited = len(inspection_round.posts_visited or [])
-            changes_summary.append(f"Progresso ronda: {visited}/{total_posts} postos ({inspection_round.progress_percentage:.0f}%)")
+            changes_summary.append(
+                f"Progresso ronda: {visited}/{total_posts} postos ({inspection_round.progress_percentage:.0f}%)"
+            )
             changes_summary.append(f"Checkpoints ja realizados: {inspection_round.total_checkpoints}")
 
             title = f"Registrar Checkpoint - {inspection_round.code}"
@@ -772,12 +781,13 @@ class InspectionActionExecutor(BaseActionExecutor):
         )
 
         # Detalhes de GPS para o resultado
-        geo_details: Dict[str, Any] = {}
+        geo_details: dict[str, Any] = {}
         if lat is not None and lon is not None and _HAS_GEO_SERVICE:
             try:
                 post_id = params.get("post_id")
                 if post_id:
                     from modules.operacional.repositories.post_repository import PostRepository
+
                     post_repo = PostRepository(self.db)
                     post = await post_repo.get_by_id(post_id)
                     if post:
@@ -841,9 +851,9 @@ class InspectionActionExecutor(BaseActionExecutor):
         """Cria preview para pausar ronda."""
         params = request.parameters
 
-        warnings: List[str] = []
-        affected_entities: List[Dict[str, Any]] = []
-        changes_summary: List[str] = []
+        warnings: list[str] = []
+        affected_entities: list[dict[str, Any]] = []
+        changes_summary: list[str] = []
 
         inspection_round = await self._find_round(params)
 
@@ -852,16 +862,18 @@ class InspectionActionExecutor(BaseActionExecutor):
             title = "Pausar Ronda"
             description = "Ronda nao encontrada"
         else:
-            affected_entities.append({
-                "type": "inspection_round",
-                "id": inspection_round.id,
-                "code": inspection_round.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "inspection_round",
+                    "id": inspection_round.id,
+                    "code": inspection_round.code,
+                }
+            )
 
             changes_summary.append(f"Ronda: {inspection_round.code}")
             changes_summary.append(f"Inspetor: {inspection_round.inspector_name}")
             changes_summary.append(f"Status atual: {inspection_round.status_display}")
-            changes_summary.append(f"Novo status: Pausada")
+            changes_summary.append("Novo status: Pausada")
             changes_summary.append(f"Checkpoints realizados: {inspection_round.total_checkpoints}")
             changes_summary.append(f"Progresso: {inspection_round.progress_percentage:.0f}%")
 
@@ -957,9 +969,9 @@ class InspectionActionExecutor(BaseActionExecutor):
         """Cria preview para retomar ronda pausada."""
         params = request.parameters
 
-        warnings: List[str] = []
-        affected_entities: List[Dict[str, Any]] = []
-        changes_summary: List[str] = []
+        warnings: list[str] = []
+        affected_entities: list[dict[str, Any]] = []
+        changes_summary: list[str] = []
 
         inspection_round = await self._find_round(params)
 
@@ -968,16 +980,18 @@ class InspectionActionExecutor(BaseActionExecutor):
             title = "Retomar Ronda"
             description = "Ronda nao encontrada"
         else:
-            affected_entities.append({
-                "type": "inspection_round",
-                "id": inspection_round.id,
-                "code": inspection_round.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "inspection_round",
+                    "id": inspection_round.id,
+                    "code": inspection_round.code,
+                }
+            )
 
             changes_summary.append(f"Ronda: {inspection_round.code}")
             changes_summary.append(f"Inspetor: {inspection_round.inspector_name}")
             changes_summary.append(f"Status atual: {inspection_round.status_display}")
-            changes_summary.append(f"Novo status: Em Andamento")
+            changes_summary.append("Novo status: Em Andamento")
             changes_summary.append(f"Checkpoints realizados: {inspection_round.total_checkpoints}")
             changes_summary.append(f"Progresso: {inspection_round.progress_percentage:.0f}%")
 

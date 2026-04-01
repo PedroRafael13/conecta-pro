@@ -12,8 +12,9 @@ import sys
 import time
 import traceback
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -40,7 +41,7 @@ class TaskExecutor:
         self,
         db: Session,
         worker_name: str = "worker",
-        queues: Optional[list[str]] = None,
+        queues: list[str] | None = None,
         concurrency: int = 4,
     ):
         """Inicializa o executor."""
@@ -49,7 +50,7 @@ class TaskExecutor:
         self.worker_name = worker_name
         self.queues = queues or ["default"]
         self.concurrency = concurrency
-        self.worker: Optional[TaskWorker] = None
+        self.worker: TaskWorker | None = None
         self.running = False
         self._handlers: dict[str, Callable] = {}
         self._current_tasks: dict[str, TaskExecution] = {}
@@ -59,7 +60,7 @@ class TaskExecutor:
         self._handlers[name] = handler
         logger.info(f"Handler registrado: {name}")
 
-    def get_handler(self, name: str) -> Optional[Callable]:
+    def get_handler(self, name: str) -> Callable | None:
         """Busca um handler registrado ou tenta importar dinamicamente."""
         if name in self._handlers:
             return self._handlers[name]
@@ -285,7 +286,7 @@ class TaskExecutor:
         item: TaskQueue,
         error_type: str,
         error_message: str,
-        error_traceback: Optional[str] = None,
+        error_traceback: str | None = None,
     ) -> None:
         """Trata falha na execução."""
         logger.error(f"Falha na tarefa {item.message_id}: {error_message}")
@@ -319,7 +320,7 @@ class TaskExecutor:
     def execute_task_now(
         self,
         task: ScheduledTask,
-        triggered_by: Optional[uuid.UUID] = None,
+        triggered_by: uuid.UUID | None = None,
     ) -> TaskExecution:
         """Executa uma tarefa imediatamente (bypass da fila)."""
         execution = self.scheduler_service.create_execution(
@@ -370,7 +371,7 @@ class TaskExecutor:
         self,
         execution_id: uuid.UUID,
         reason: str = "Cancelled by user",
-    ) -> Optional[TaskExecution]:
+    ) -> TaskExecution | None:
         """Cancela uma execução em andamento."""
         execution = self.db.query(TaskExecution).filter(TaskExecution.id == execution_id).first()
 
@@ -519,10 +520,7 @@ def generate_scheduler_report(
 
     return {
         "tasks": service.get_task_stats(tenant_id),
-        "queues": {
-            queue: service.get_queue_stats(queue)
-            for queue in ["default", "high", "low", "background"]
-        },
+        "queues": {queue: service.get_queue_stats(queue) for queue in ["default", "high", "low", "background"]},
         "generated_at": datetime.utcnow().isoformat(),
     }
 

@@ -4,24 +4,25 @@ tests/domains/inventory/test_product.py - PRODUCT ENTITY TESTS
 Enterprise tests for product management
 """
 
-import pytest
+import sys
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
-import sys
-sys.path.insert(0, '/opt/conecta-pro/backend')
+import pytest
+
+sys.path.insert(0, "/opt/conecta-pro/backend")
 
 from domains.inventory import (
+    ProductDimensions,
     ProductEntity,
-    ProductType,
-    ProductStatus,
-    UnitOfMeasure,
     ProductPricing,
+    ProductStatus,
+    ProductType,
+    ReorderPointStatus,
     StockLevel,
     TaxClassification,
-    ProductDimensions,
-    ReorderPointStatus
+    UnitOfMeasure,
 )
 
 
@@ -36,7 +37,7 @@ class TestProductPricing:
             last_purchase_price=Decimal("48.00"),
             sale_price=Decimal("100.00"),
             minimum_price=Decimal("70.00"),
-            currency="BRL"
+            currency="BRL",
         )
 
         assert pricing.markup_percent == Decimal("100.00")
@@ -49,7 +50,7 @@ class TestProductPricing:
             last_purchase_price=Decimal("48.00"),
             sale_price=Decimal("100.00"),
             minimum_price=Decimal("70.00"),
-            currency="BRL"
+            currency="BRL",
         )
 
         assert pricing.margin_percent == Decimal("50.00")
@@ -66,7 +67,7 @@ class TestStockLevel:
             reorder_point=Decimal("20"),
             reorder_quantity=Decimal("50"),
             safety_stock=Decimal("5"),
-            lead_time_days=7
+            lead_time_days=7,
         )
 
         assert level.minimum_stock == Decimal("10")
@@ -81,7 +82,7 @@ class TestStockLevel:
                 reorder_point=Decimal("20"),
                 reorder_quantity=Decimal("50"),
                 safety_stock=Decimal("5"),
-                lead_time_days=7
+                lead_time_days=7,
             )
 
 
@@ -102,10 +103,7 @@ class TestProductEntity:
             category_name="Categoria Teste",
             unit_of_measure=UnitOfMeasure.UNIT,
             dimensions=ProductDimensions(
-                weight_kg=Decimal("1.5"),
-                length_cm=Decimal("30"),
-                width_cm=Decimal("20"),
-                height_cm=Decimal("10")
+                weight_kg=Decimal("1.5"), length_cm=Decimal("30"), width_cm=Decimal("20"), height_cm=Decimal("10")
             ),
             pricing=ProductPricing(
                 cost_price=Decimal("50.00"),
@@ -113,7 +111,7 @@ class TestProductEntity:
                 last_purchase_price=Decimal("48.00"),
                 sale_price=Decimal("89.90"),
                 minimum_price=Decimal("70.00"),
-                currency="BRL"
+                currency="BRL",
             ),
             stock_level=StockLevel(
                 minimum_stock=Decimal("10"),
@@ -121,7 +119,7 @@ class TestProductEntity:
                 reorder_point=Decimal("50"),
                 reorder_quantity=Decimal("100"),
                 safety_stock=Decimal("20"),
-                lead_time_days=7
+                lead_time_days=7,
             ),
             tax_classification=TaxClassification(
                 ncm="12345678",
@@ -130,12 +128,12 @@ class TestProductEntity:
                 origin="0",
                 icms_cst="00",
                 pis_cst="01",
-                cofins_cst="01"
+                cofins_cst="01",
             ),
             current_stock=Decimal("100"),
             reserved_stock=Decimal("10"),
             tenant_id=uuid4(),
-            created_by="test-user"
+            created_by="test-user",
         )
 
     def test_create_product(self, sample_product: ProductEntity):
@@ -195,10 +193,7 @@ class TestStockOperations:
             category_name="Teste",
             unit_of_measure=UnitOfMeasure.UNIT,
             dimensions=ProductDimensions(
-                weight_kg=Decimal("0"),
-                length_cm=Decimal("0"),
-                width_cm=Decimal("0"),
-                height_cm=Decimal("0")
+                weight_kg=Decimal("0"), length_cm=Decimal("0"), width_cm=Decimal("0"), height_cm=Decimal("0")
             ),
             pricing=ProductPricing(
                 cost_price=Decimal("100.00"),
@@ -206,7 +201,7 @@ class TestStockOperations:
                 last_purchase_price=Decimal("0"),
                 sale_price=Decimal("150.00"),
                 minimum_price=Decimal("0"),
-                currency="BRL"
+                currency="BRL",
             ),
             stock_level=StockLevel(
                 minimum_stock=Decimal("0"),
@@ -214,7 +209,7 @@ class TestStockOperations:
                 reorder_point=Decimal("0"),
                 reorder_quantity=Decimal("0"),
                 safety_stock=Decimal("0"),
-                lead_time_days=0
+                lead_time_days=0,
             ),
             tax_classification=TaxClassification(
                 ncm="12345678",
@@ -223,20 +218,18 @@ class TestStockOperations:
                 origin="0",
                 icms_cst="00",
                 pis_cst="01",
-                cofins_cst="01"
+                cofins_cst="01",
             ),
             current_stock=Decimal("100"),
             reserved_stock=Decimal("0"),
             tenant_id=uuid4(),
-            created_by="test-user"
+            created_by="test-user",
         )
 
     def test_receive_stock(self, product_with_stock: ProductEntity):
         """Testa recebimento de estoque."""
         new_stock = product_with_stock.receive_stock(
-            quantity=Decimal("50"),
-            unit_cost=Decimal("90.00"),
-            user_id="test-user"
+            quantity=Decimal("50"), unit_cost=Decimal("90.00"), user_id="test-user"
         )
 
         assert new_stock == Decimal("150")
@@ -245,27 +238,18 @@ class TestStockOperations:
 
     def test_ship_stock(self, product_with_stock: ProductEntity):
         """Testa expedicao de estoque."""
-        new_stock = product_with_stock.ship_stock(
-            quantity=Decimal("30"),
-            user_id="test-user"
-        )
+        new_stock = product_with_stock.ship_stock(quantity=Decimal("30"), user_id="test-user")
 
         assert new_stock == Decimal("70")
 
     def test_ship_stock_insufficient(self, product_with_stock: ProductEntity):
         """Testa expedicao com estoque insuficiente."""
         with pytest.raises(ValueError, match="insuficiente"):
-            product_with_stock.ship_stock(
-                quantity=Decimal("150"),
-                user_id="test-user"
-            )
+            product_with_stock.ship_stock(quantity=Decimal("150"), user_id="test-user")
 
     def test_reserve_stock(self, product_with_stock: ProductEntity):
         """Testa reserva de estoque."""
-        result = product_with_stock.reserve_stock(
-            quantity=Decimal("20"),
-            user_id="test-user"
-        )
+        result = product_with_stock.reserve_stock(quantity=Decimal("20"), user_id="test-user")
 
         assert result is True
         assert product_with_stock.reserved_stock == Decimal("20")
@@ -274,10 +258,7 @@ class TestStockOperations:
     def test_release_reservation(self, product_with_stock: ProductEntity):
         """Testa liberacao de reserva."""
         product_with_stock.reserve_stock(Decimal("20"), "test-user")
-        result = product_with_stock.release_reservation(
-            quantity=Decimal("10"),
-            user_id="test-user"
-        )
+        result = product_with_stock.release_reservation(quantity=Decimal("10"), user_id="test-user")
 
         assert result is True
         assert product_with_stock.reserved_stock == Decimal("10")
@@ -286,9 +267,7 @@ class TestStockOperations:
     def test_adjust_stock(self, product_with_stock: ProductEntity):
         """Testa ajuste de estoque (inventario)."""
         difference = product_with_stock.adjust_stock(
-            new_quantity=Decimal("95"),
-            user_id="test-user",
-            reason="Ajuste de inventario"
+            new_quantity=Decimal("95"), user_id="test-user", reason="Ajuste de inventario"
         )
 
         assert difference == Decimal("-5")
@@ -309,10 +288,7 @@ class TestProductLifecycle:
             category_name="Teste",
             unit_of_measure=UnitOfMeasure.UNIT,
             dimensions=ProductDimensions(
-                weight_kg=Decimal("0"),
-                length_cm=Decimal("0"),
-                width_cm=Decimal("0"),
-                height_cm=Decimal("0")
+                weight_kg=Decimal("0"), length_cm=Decimal("0"), width_cm=Decimal("0"), height_cm=Decimal("0")
             ),
             pricing=ProductPricing(
                 cost_price=Decimal("100.00"),
@@ -320,7 +296,7 @@ class TestProductLifecycle:
                 last_purchase_price=Decimal("0"),
                 sale_price=Decimal("150.00"),
                 minimum_price=Decimal("0"),
-                currency="BRL"
+                currency="BRL",
             ),
             stock_level=StockLevel(
                 minimum_stock=Decimal("0"),
@@ -328,7 +304,7 @@ class TestProductLifecycle:
                 reorder_point=Decimal("0"),
                 reorder_quantity=Decimal("0"),
                 safety_stock=Decimal("0"),
-                lead_time_days=0
+                lead_time_days=0,
             ),
             tax_classification=TaxClassification(
                 ncm="12345678",
@@ -337,11 +313,11 @@ class TestProductLifecycle:
                 origin="0",
                 icms_cst="00",
                 pis_cst="01",
-                cofins_cst="01"
+                cofins_cst="01",
             ),
             current_stock=Decimal("0"),
             tenant_id=uuid4(),
-            created_by="test-user"
+            created_by="test-user",
         )
 
     def test_deactivate_product_without_stock(self, active_product: ProductEntity):

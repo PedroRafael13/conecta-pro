@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import date, datetime
-from typing import Optional
 
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session, joinedload
@@ -53,11 +52,11 @@ class ChartOfAccountsRepository:
         self.db.flush()
         return chart
 
-    def get_by_id(self, chart_id: uuid.UUID) -> Optional[ChartOfAccounts]:
+    def get_by_id(self, chart_id: uuid.UUID) -> ChartOfAccounts | None:
         """Busca plano de contas por ID."""
         return self.db.query(ChartOfAccounts).filter(ChartOfAccounts.id == chart_id).first()
 
-    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> Optional[ChartOfAccounts]:
+    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> ChartOfAccounts | None:
         """Busca plano de contas por codigo."""
         return (
             self.db.query(ChartOfAccounts)
@@ -71,7 +70,7 @@ class ChartOfAccountsRepository:
             .first()
         )
 
-    def get_active(self, condominio_id: uuid.UUID) -> Optional[ChartOfAccounts]:
+    def get_active(self, condominio_id: uuid.UUID) -> ChartOfAccounts | None:
         """Busca plano de contas ativo do condominio."""
         return (
             self.db.query(ChartOfAccounts)
@@ -88,8 +87,8 @@ class ChartOfAccountsRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        chart_type: Optional[ChartType] = None,
-        status: Optional[ChartStatus] = None,
+        chart_type: ChartType | None = None,
+        status: ChartStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[ChartOfAccounts]:
@@ -111,7 +110,7 @@ class ChartOfAccountsRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[ChartStatus] = None,
+        status: ChartStatus | None = None,
     ) -> int:
         """Conta planos de contas."""
         query = self.db.query(func.count(ChartOfAccounts.id)).filter(
@@ -200,11 +199,11 @@ class AccountingAccountRepository:
         self.db.flush()
         return account
 
-    def get_by_id(self, account_id: uuid.UUID) -> Optional[AccountingAccount]:
+    def get_by_id(self, account_id: uuid.UUID) -> AccountingAccount | None:
         """Busca conta por ID."""
         return self.db.query(AccountingAccount).filter(AccountingAccount.id == account_id).first()
 
-    def get_by_code(self, code: str, chart_id: uuid.UUID) -> Optional[AccountingAccount]:
+    def get_by_code(self, code: str, chart_id: uuid.UUID) -> AccountingAccount | None:
         """Busca conta por codigo no plano."""
         return (
             self.db.query(AccountingAccount)
@@ -221,12 +220,12 @@ class AccountingAccountRepository:
     def list_all(
         self,
         chart_id: uuid.UUID,
-        account_type: Optional[AccountType] = None,
-        nature: Optional[AccountNature] = None,
-        classification: Optional[AccountClassification] = None,
-        status: Optional[AccountStatus] = None,
-        parent_id: Optional[uuid.UUID] = None,
-        level: Optional[int] = None,
+        account_type: AccountType | None = None,
+        nature: AccountNature | None = None,
+        classification: AccountClassification | None = None,
+        status: AccountStatus | None = None,
+        parent_id: uuid.UUID | None = None,
+        level: int | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[AccountingAccount]:
@@ -285,9 +284,7 @@ class AccountingAccountRepository:
             .all()
         )
 
-    def list_by_type(
-        self, chart_id: uuid.UUID, account_type: AccountType
-    ) -> list[AccountingAccount]:
+    def list_by_type(self, chart_id: uuid.UUID, account_type: AccountType) -> list[AccountingAccount]:
         """Lista contas por tipo."""
         return (
             self.db.query(AccountingAccount)
@@ -334,8 +331,8 @@ class AccountingAccountRepository:
     def count(
         self,
         chart_id: uuid.UUID,
-        account_type: Optional[AccountType] = None,
-        classification: Optional[AccountClassification] = None,
+        account_type: AccountType | None = None,
+        classification: AccountClassification | None = None,
     ) -> int:
         """Conta contas contabeis."""
         query = self.db.query(func.count(AccountingAccount.id)).filter(
@@ -404,7 +401,7 @@ class AccountingAccountRepository:
             .all()
         )
 
-    def generate_next_code(self, chart_id: uuid.UUID, parent_code: Optional[str] = None) -> str:
+    def generate_next_code(self, chart_id: uuid.UUID, parent_code: str | None = None) -> str:
         """Gera proximo codigo de conta."""
         if parent_code:
             prefix = f"{parent_code}."
@@ -472,11 +469,11 @@ class CostCenterRepository:
         self.db.flush()
         return cost_center
 
-    def get_by_id(self, cost_center_id: uuid.UUID) -> Optional[CostCenter]:
+    def get_by_id(self, cost_center_id: uuid.UUID) -> CostCenter | None:
         """Busca centro de custo por ID."""
         return self.db.query(CostCenter).filter(CostCenter.id == cost_center_id).first()
 
-    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> Optional[CostCenter]:
+    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> CostCenter | None:
         """Busca centro de custo por codigo."""
         return (
             self.db.query(CostCenter)
@@ -493,9 +490,9 @@ class CostCenterRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        center_type: Optional[CostCenterType] = None,
-        status: Optional[CostCenterStatus] = None,
-        parent_id: Optional[uuid.UUID] = None,
+        center_type: CostCenterType | None = None,
+        status: CostCenterStatus | None = None,
+        parent_id: uuid.UUID | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[CostCenter]:
@@ -548,7 +545,7 @@ class CostCenterRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[CostCenterStatus] = None,
+        status: CostCenterStatus | None = None,
     ) -> int:
         """Conta centros de custo."""
         query = self.db.query(func.count(CostCenter.id)).filter(
@@ -652,11 +649,11 @@ class AccountingPeriodRepository:
         self.db.flush()
         return period
 
-    def get_by_id(self, period_id: uuid.UUID) -> Optional[AccountingPeriod]:
+    def get_by_id(self, period_id: uuid.UUID) -> AccountingPeriod | None:
         """Busca periodo por ID."""
         return self.db.query(AccountingPeriod).filter(AccountingPeriod.id == period_id).first()
 
-    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> Optional[AccountingPeriod]:
+    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> AccountingPeriod | None:
         """Busca periodo por codigo."""
         return (
             self.db.query(AccountingPeriod)
@@ -670,7 +667,7 @@ class AccountingPeriodRepository:
             .first()
         )
 
-    def get_current(self, condominio_id: uuid.UUID) -> Optional[AccountingPeriod]:
+    def get_current(self, condominio_id: uuid.UUID) -> AccountingPeriod | None:
         """Busca periodo contabil atual (aberto)."""
         today = date.today()
         return (
@@ -687,9 +684,7 @@ class AccountingPeriodRepository:
             .first()
         )
 
-    def get_by_date(
-        self, reference_date: date, condominio_id: uuid.UUID
-    ) -> Optional[AccountingPeriod]:
+    def get_by_date(self, reference_date: date, condominio_id: uuid.UUID) -> AccountingPeriod | None:
         """Busca periodo por data de referencia."""
         return (
             self.db.query(AccountingPeriod)
@@ -707,9 +702,9 @@ class AccountingPeriodRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        year: Optional[int] = None,
-        period_type: Optional[PeriodType] = None,
-        status: Optional[PeriodStatus] = None,
+        year: int | None = None,
+        period_type: PeriodType | None = None,
+        status: PeriodStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[AccountingPeriod]:
@@ -763,7 +758,7 @@ class AccountingPeriodRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[PeriodStatus] = None,
+        status: PeriodStatus | None = None,
     ) -> int:
         """Conta periodos contabeis."""
         query = self.db.query(func.count(AccountingPeriod.id)).filter(
@@ -795,7 +790,7 @@ class AccountingPeriodRepository:
         period: AccountingPeriod,
         closed_by: uuid.UUID,
         closing_type: ClosingType = ClosingType.PROVISIONAL,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> AccountingPeriod:
         """Fecha um periodo contabil."""
         period.status = PeriodStatus.CLOSED
@@ -823,7 +818,7 @@ class AccountingPeriodRepository:
         self.db.flush()
         return period
 
-    def get_stats(self, condominio_id: uuid.UUID, year: Optional[int] = None) -> dict:
+    def get_stats(self, condominio_id: uuid.UUID, year: int | None = None) -> dict:
         """Retorna estatisticas dos periodos."""
         if not year:
             year = datetime.utcnow().year
@@ -885,7 +880,7 @@ class JournalEntryRepository:
         self.db.flush()
         return entry
 
-    def get_by_id(self, entry_id: uuid.UUID, include_lines: bool = True) -> Optional[JournalEntry]:
+    def get_by_id(self, entry_id: uuid.UUID, include_lines: bool = True) -> JournalEntry | None:
         """Busca lancamento por ID."""
         query = self.db.query(JournalEntry).filter(JournalEntry.id == entry_id)
 
@@ -894,7 +889,7 @@ class JournalEntryRepository:
 
         return query.first()
 
-    def get_by_number(self, entry_number: str, condominio_id: uuid.UUID) -> Optional[JournalEntry]:
+    def get_by_number(self, entry_number: str, condominio_id: uuid.UUID) -> JournalEntry | None:
         """Busca lancamento por numero."""
         return (
             self.db.query(JournalEntry)
@@ -911,12 +906,12 @@ class JournalEntryRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        period_id: Optional[uuid.UUID] = None,
-        entry_type: Optional[EntryType] = None,
-        status: Optional[EntryStatus] = None,
-        origin: Optional[EntryOrigin] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        period_id: uuid.UUID | None = None,
+        entry_type: EntryType | None = None,
+        status: EntryStatus | None = None,
+        origin: EntryOrigin | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[JournalEntry]:
@@ -996,8 +991,8 @@ class JournalEntryRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[EntryStatus] = None,
-        period_id: Optional[uuid.UUID] = None,
+        status: EntryStatus | None = None,
+        period_id: uuid.UUID | None = None,
     ) -> int:
         """Conta lancamentos."""
         query = self.db.query(func.count(JournalEntry.id)).filter(
@@ -1035,9 +1030,7 @@ class JournalEntryRepository:
         self.db.flush()
         return entry
 
-    def approve_entry(
-        self, entry: JournalEntry, approved_by: uuid.UUID, notes: Optional[str] = None
-    ) -> JournalEntry:
+    def approve_entry(self, entry: JournalEntry, approved_by: uuid.UUID, notes: str | None = None) -> JournalEntry:
         """Aprova o lancamento."""
         entry.status = EntryStatus.APPROVED
         entry.approved_by = approved_by
@@ -1047,9 +1040,7 @@ class JournalEntryRepository:
         self.db.flush()
         return entry
 
-    def reject_entry(
-        self, entry: JournalEntry, rejected_by: uuid.UUID, reason: str
-    ) -> JournalEntry:
+    def reject_entry(self, entry: JournalEntry, rejected_by: uuid.UUID, reason: str) -> JournalEntry:
         """Rejeita o lancamento."""
         entry.status = EntryStatus.DRAFT
         entry.rejected_by = rejected_by
@@ -1081,7 +1072,7 @@ class JournalEntryRepository:
     def get_stats(
         self,
         condominio_id: uuid.UUID,
-        period_id: Optional[uuid.UUID] = None,
+        period_id: uuid.UUID | None = None,
     ) -> dict:
         """Retorna estatisticas dos lancamentos."""
         total = self.count(condominio_id, period_id=period_id)
@@ -1184,7 +1175,7 @@ class JournalEntryLineRepository:
         self.db.flush()
         return lines
 
-    def get_by_id(self, line_id: uuid.UUID) -> Optional[JournalEntryLine]:
+    def get_by_id(self, line_id: uuid.UUID) -> JournalEntryLine | None:
         """Busca partida por ID."""
         return self.db.query(JournalEntryLine).filter(JournalEntryLine.id == line_id).first()
 
@@ -1200,8 +1191,8 @@ class JournalEntryLineRepository:
     def list_by_account(
         self,
         account_id: uuid.UUID,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[JournalEntryLine]:
@@ -1223,18 +1214,13 @@ class JournalEntryLineRepository:
         if date_to:
             query = query.filter(JournalEntry.entry_date <= date_to)
 
-        return (
-            query.order_by(JournalEntry.entry_date, JournalEntryLine.line_number)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(JournalEntry.entry_date, JournalEntryLine.line_number).offset(skip).limit(limit).all()
 
     def list_by_cost_center(
         self,
         cost_center_id: uuid.UUID,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
     ) -> list[JournalEntryLine]:
         """Lista partidas de um centro de custo."""
         query = (
@@ -1270,8 +1256,8 @@ class JournalEntryLineRepository:
     def get_account_balance(
         self,
         account_id: uuid.UUID,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
     ) -> dict:
         """Retorna saldo de uma conta."""
         query = (
@@ -1320,9 +1306,7 @@ class TrialBalanceRepository:
         self.db.flush()
         return balance
 
-    def create_with_items(
-        self, balance: TrialBalance, items: list[TrialBalanceItem]
-    ) -> TrialBalance:
+    def create_with_items(self, balance: TrialBalance, items: list[TrialBalanceItem]) -> TrialBalance:
         """Cria balancete com itens."""
         self.db.add(balance)
         self.db.flush()
@@ -1338,9 +1322,7 @@ class TrialBalanceRepository:
         self.db.flush()
         return balance
 
-    def get_by_id(
-        self, balance_id: uuid.UUID, include_items: bool = False
-    ) -> Optional[TrialBalance]:
+    def get_by_id(self, balance_id: uuid.UUID, include_items: bool = False) -> TrialBalance | None:
         """Busca balancete por ID."""
         query = self.db.query(TrialBalance).filter(TrialBalance.id == balance_id)
 
@@ -1349,7 +1331,7 @@ class TrialBalanceRepository:
 
         return query.first()
 
-    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> Optional[TrialBalance]:
+    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> TrialBalance | None:
         """Busca balancete por codigo."""
         return (
             self.db.query(TrialBalance)
@@ -1366,10 +1348,10 @@ class TrialBalanceRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        chart_id: Optional[uuid.UUID] = None,
-        balance_type: Optional[BalanceType] = None,
-        status: Optional[BalanceStatus] = None,
-        year: Optional[int] = None,
+        chart_id: uuid.UUID | None = None,
+        balance_type: BalanceType | None = None,
+        status: BalanceStatus | None = None,
+        year: int | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[TrialBalance]:
@@ -1407,7 +1389,7 @@ class TrialBalanceRepository:
             .all()
         )
 
-    def get_latest(self, condominio_id: uuid.UUID) -> Optional[TrialBalance]:
+    def get_latest(self, condominio_id: uuid.UUID) -> TrialBalance | None:
         """Busca ultimo balancete."""
         return (
             self.db.query(TrialBalance)
@@ -1425,7 +1407,7 @@ class TrialBalanceRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[BalanceStatus] = None,
+        status: BalanceStatus | None = None,
     ) -> int:
         """Conta balancetes."""
         query = self.db.query(func.count(TrialBalance.id)).filter(
@@ -1452,9 +1434,7 @@ class TrialBalanceRepository:
         balance.updated_at = datetime.utcnow()
         self.db.flush()
 
-    def approve(
-        self, balance: TrialBalance, approved_by: uuid.UUID, notes: Optional[str] = None
-    ) -> TrialBalance:
+    def approve(self, balance: TrialBalance, approved_by: uuid.UUID, notes: str | None = None) -> TrialBalance:
         """Aprova o balancete."""
         balance.status = BalanceStatus.APPROVED
         balance.approved_by = approved_by
@@ -1473,7 +1453,7 @@ class TrialBalanceRepository:
         self.db.flush()
         return balance
 
-    def get_stats(self, condominio_id: uuid.UUID, year: Optional[int] = None) -> dict:
+    def get_stats(self, condominio_id: uuid.UUID, year: int | None = None) -> dict:
         """Retorna estatisticas dos balancetes."""
         if not year:
             year = datetime.utcnow().year
@@ -1523,21 +1503,19 @@ class TrialBalanceItemRepository:
         self.db.flush()
         return items
 
-    def get_by_id(self, item_id: uuid.UUID) -> Optional[TrialBalanceItem]:
+    def get_by_id(self, item_id: uuid.UUID) -> TrialBalanceItem | None:
         """Busca item por ID."""
         return self.db.query(TrialBalanceItem).filter(TrialBalanceItem.id == item_id).first()
 
     def list_by_balance(
         self,
         balance_id: uuid.UUID,
-        account_type: Optional[str] = None,
+        account_type: str | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[TrialBalanceItem]:
         """Lista itens de um balancete."""
-        query = self.db.query(TrialBalanceItem).filter(
-            TrialBalanceItem.trial_balance_id == balance_id
-        )
+        query = self.db.query(TrialBalanceItem).filter(TrialBalanceItem.trial_balance_id == balance_id)
 
         if account_type:
             query = query.filter(TrialBalanceItem.account_type == account_type)
@@ -1587,10 +1565,6 @@ class TrialBalanceItemRepository:
 
     def delete_by_balance(self, balance_id: uuid.UUID) -> int:
         """Deleta todos os itens de um balancete."""
-        count = (
-            self.db.query(TrialBalanceItem)
-            .filter(TrialBalanceItem.trial_balance_id == balance_id)
-            .delete()
-        )
+        count = self.db.query(TrialBalanceItem).filter(TrialBalanceItem.trial_balance_id == balance_id).delete()
         self.db.flush()
         return count

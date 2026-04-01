@@ -3,18 +3,17 @@
 Sprint 37 - Push Notifications Mobile.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models.base import Base
 
 
-class MetricPeriod(str, enum.Enum):
+class MetricPeriod(StrEnum):
     """Periodo da metrica."""
 
     HOURLY = "hourly"

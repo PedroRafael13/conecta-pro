@@ -1,7 +1,6 @@
 """Controller para exportação de folha de pagamento."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -66,9 +65,9 @@ async def create_export(
     summary="Listar exportações",
 )
 async def list_exports(
-    period_id: Optional[UUID] = Query(None, description="Filtrar por período"),
-    export_format: Optional[ExportFormat] = Query(None, description="Formato"),
-    status_filter: Optional[ExportStatus] = Query(
+    period_id: UUID | None = Query(None, description="Filtrar por período"),
+    export_format: ExportFormat | None = Query(None, description="Formato"),
+    status_filter: ExportStatus | None = Query(
         None,
         alias="status",
         description="Status",

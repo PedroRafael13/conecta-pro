@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from modules.financial.models.product import Product
 
 
-class ProductCategoryType(str, Enum):
+class ProductCategoryType(StrEnum):
     """Tipo de categoria."""
 
     PRODUTO = "produto"
@@ -26,7 +26,7 @@ class ProductCategoryType(str, Enum):
     ATIVO_FIXO = "ativo_fixo"
 
 
-class ProductCategoryStatus(str, Enum):
+class ProductCategoryStatus(StrEnum):
     """Status da categoria."""
 
     ATIVA = "ativa"
@@ -56,9 +56,7 @@ class ProductCategory(Base):
     code = Column(String(20), nullable=True)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    category_type = Column(
-        String(20), nullable=False, default=ProductCategoryType.PRODUTO.value
-    )
+    category_type = Column(String(20), nullable=False, default=ProductCategoryType.PRODUTO.value)
     status = Column(String(20), nullable=False, default=ProductCategoryStatus.ATIVA.value)
 
     # Configurações
@@ -82,8 +80,8 @@ class ProductCategory(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    parent = relationship("ProductCategory", remote_side=[id], backref="children")
-    products: List["Product"] = relationship("Product", back_populates="category")
+    parent = relationship("ProductCategory", remote_side=[id], backref="children")  # noqa: A003
+    products: list["Product"] = relationship("Product", back_populates="category")
 
     __table_args__ = (
         Index("ix_product_categories_code", "code"),
@@ -110,7 +108,7 @@ class ProductCategory(Base):
         """Verifica se tem subcategorias."""
         return bool(self.children) if hasattr(self, "children") else False
 
-    def update_path(self, parent_path: Optional[str] = None) -> None:
+    def update_path(self, parent_path: str | None = None) -> None:
         """Atualiza o path baseado no parent."""
         if parent_path:
             self.path = f"{parent_path}/{self.id}"

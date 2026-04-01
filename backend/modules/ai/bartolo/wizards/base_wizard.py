@@ -5,15 +5,17 @@ Define a estrutura padrao para todos os wizards do Bartolo.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Optional, Callable
+from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
 
 
-class WizardState(str, Enum):
+class WizardState(StrEnum):
     """Estado do wizard."""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     WAITING_INPUT = "waiting_input"
@@ -23,22 +25,24 @@ class WizardState(str, Enum):
     ERROR = "error"
 
 
-class StepType(str, Enum):
+class StepType(StrEnum):
     """Tipo de passo do wizard."""
-    TEXT_INPUT = "text_input"           # Entrada de texto livre
-    NUMBER_INPUT = "number_input"       # Entrada numerica
-    CHOICE = "choice"                   # Selecao unica
-    MULTI_CHOICE = "multi_choice"       # Selecao multipla
-    DATE_INPUT = "date_input"           # Entrada de data
-    CONFIRMATION = "confirmation"       # Confirmacao sim/nao
-    DISPLAY = "display"                 # Apenas exibicao
-    CALCULATION = "calculation"         # Passo de calculo
-    REVIEW = "review"                   # Revisao de dados
+
+    TEXT_INPUT = "text_input"  # Entrada de texto livre
+    NUMBER_INPUT = "number_input"  # Entrada numerica
+    CHOICE = "choice"  # Selecao unica
+    MULTI_CHOICE = "multi_choice"  # Selecao multipla
+    DATE_INPUT = "date_input"  # Entrada de data
+    CONFIRMATION = "confirmation"  # Confirmacao sim/nao
+    DISPLAY = "display"  # Apenas exibicao
+    CALCULATION = "calculation"  # Passo de calculo
+    REVIEW = "review"  # Revisao de dados
 
 
 @dataclass
 class WizardStep:
     """Passo do wizard."""
+
     id: str
     name: str
     description: str
@@ -48,14 +52,15 @@ class WizardStep:
     options: list = field(default_factory=list)
     default_value: Any = None
     validation_rules: dict = field(default_factory=dict)
-    help_text: Optional[str] = None
-    depends_on: Optional[str] = None
-    skip_condition: Optional[Callable] = None
+    help_text: str | None = None
+    depends_on: str | None = None
+    skip_condition: Callable | None = None
 
 
 @dataclass
 class WizardData:
     """Dados coletados pelo wizard."""
+
     wizard_id: UUID
     wizard_type: str
     user_id: int
@@ -65,26 +70,27 @@ class WizardData:
     total_steps: int = 0
     collected_data: dict = field(default_factory=dict)
     validation_errors: list = field(default_factory=list)
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     metadata: dict = field(default_factory=dict)
 
 
 @dataclass
 class WizardResponse:
     """Resposta de um passo do wizard."""
+
     wizard_id: UUID
     step_id: str
     step_number: int
     total_steps: int
     state: WizardState
     message: str
-    question: Optional[str] = None
-    step_type: Optional[StepType] = None
+    question: str | None = None
+    step_type: StepType | None = None
     options: list = field(default_factory=list)
-    help_text: Optional[str] = None
+    help_text: str | None = None
     collected_data: dict = field(default_factory=dict)
-    validation_error: Optional[str] = None
+    validation_error: str | None = None
     can_go_back: bool = True
     progress_percent: float = 0.0
 
@@ -143,9 +149,7 @@ class BaseWizard(ABC):
         self.data.total_steps = len(self.steps)
         self.data.current_step = 0
 
-        return self._get_current_step_response(
-            message=f"Vamos comecar! {self.get_wizard_description()}"
-        )
+        return self._get_current_step_response(message=f"Vamos comecar! {self.get_wizard_description()}")
 
     def process_input(self, user_input: str) -> WizardResponse:
         """
@@ -208,13 +212,9 @@ class BaseWizard(ABC):
         """Volta ao passo anterior."""
         if self.data.current_step > 0:
             self.data.current_step -= 1
-            return self._get_current_step_response(
-                message="Ok, voltando ao passo anterior."
-            )
+            return self._get_current_step_response(message="Ok, voltando ao passo anterior.")
         else:
-            return self._get_current_step_response(
-                message="Voce ja esta no primeiro passo."
-            )
+            return self._get_current_step_response(message="Voce ja esta no primeiro passo.")
 
     def cancel(self) -> WizardResponse:
         """Cancela o wizard."""
@@ -245,9 +245,7 @@ class BaseWizard(ABC):
         if self.data.current_step >= len(self.steps):
             return self._complete_wizard()
 
-        return self._get_current_step_response(
-            message="Otimo! Vamos continuar."
-        )
+        return self._get_current_step_response(message="Otimo! Vamos continuar.")
 
     def _complete_wizard(self) -> WizardResponse:
         """Completa o wizard."""
@@ -273,7 +271,7 @@ class BaseWizard(ABC):
     def _get_current_step_response(
         self,
         message: str,
-        validation_error: Optional[str] = None,
+        validation_error: str | None = None,
     ) -> WizardResponse:
         """Gera resposta para o passo atual."""
         if self.data.current_step >= len(self.steps):
@@ -299,7 +297,7 @@ class BaseWizard(ABC):
             progress_percent=progress,
         )
 
-    def _validate_input(self, step: WizardStep, user_input: str) -> Optional[str]:
+    def _validate_input(self, step: WizardStep, user_input: str) -> str | None:
         """Valida entrada do usuario."""
         # Verifica se e obrigatorio
         if step.required and not user_input.strip():
@@ -321,8 +319,7 @@ class BaseWizard(ABC):
                 if len(user_input.strip()) >= 3:
                     input_lower = user_input.lower().strip()
                     matched = any(
-                        input_lower in opt.lower() or opt.lower().startswith(input_lower)
-                        for opt in step.options
+                        input_lower in opt.lower() or opt.lower().startswith(input_lower) for opt in step.options
                     )
                     if matched:
                         return None  # Aceita fuzzy match

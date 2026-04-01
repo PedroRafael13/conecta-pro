@@ -9,15 +9,12 @@ Autor: Jordan Santos de Jesus LTDA
 Data: 23/01/2026
 """
 
-from datetime import date, datetime, timedelta
-from typing import Dict, List, Optional
+from datetime import date, timedelta
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
-from modules.clients.models.condominium import Condominium
 from modules.operacional.models.allocation import Allocation, AllocationStatus
 from modules.operacional.models.employee import Employee
 from modules.operacional.models.post import Post
@@ -31,7 +28,7 @@ class EmployeeAllocationData:
         self.allocation = allocation
         self.post = post
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Serializa para dicionário."""
         return {
             "employee": {
@@ -82,10 +79,10 @@ class KitOperationalService:
     async def get_employees_by_condominium(
         self,
         condominium_id: str,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         include_inactive: bool = False,
-    ) -> List[EmployeeAllocationData]:
+    ) -> list[EmployeeAllocationData]:
         """
         Busca TODOS os colaboradores alocados em um condomínio no período.
 
@@ -113,9 +110,9 @@ class KitOperationalService:
 
         # 1. Buscar client_id do condomínio (raw SQL para evitar model quebrado)
         from sqlalchemy import text
+
         cond_result = await self.db.execute(
-            text("SELECT client_id FROM condominiums WHERE id = :cond_id LIMIT 1"),
-            {"cond_id": condominium_id}
+            text("SELECT client_id FROM condominiums WHERE id = :cond_id LIMIT 1"), {"cond_id": condominium_id}
         )
         cond_row = cond_result.fetchone()
 
@@ -171,8 +168,7 @@ class KitOperationalService:
 
         # 4. Criar objetos EmployeeAllocationData
         employees_data = [
-            EmployeeAllocationData(employee=emp, allocation=alloc, post=post)
-            for alloc, emp, post in rows
+            EmployeeAllocationData(employee=emp, allocation=alloc, post=post) for alloc, emp, post in rows
         ]
 
         return employees_data
@@ -183,7 +179,7 @@ class KitOperationalService:
         month: int,
         year: int,
         include_inactive: bool = False,
-    ) -> List[EmployeeAllocationData]:
+    ) -> list[EmployeeAllocationData]:
         """
         Busca colaboradores de um condomínio em um mês específico.
 
@@ -226,10 +222,10 @@ class KitOperationalService:
     async def get_employees_by_post(
         self,
         post_id: str,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         include_inactive: bool = False,
-    ) -> List[EmployeeAllocationData]:
+    ) -> list[EmployeeAllocationData]:
         """
         Busca colaboradores de um posto específico no período.
 
@@ -270,16 +266,13 @@ class KitOperationalService:
         result = await self.db.execute(query)
         rows = result.all()
 
-        return [
-            EmployeeAllocationData(employee=emp, allocation=alloc, post=post)
-            for alloc, emp, post in rows
-        ]
+        return [EmployeeAllocationData(employee=emp, allocation=alloc, post=post) for alloc, emp, post in rows]
 
     async def count_employees_by_condominium(
         self,
         condominium_id: str,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> int:
         """
         Conta o número de colaboradores de um condomínio no período.
@@ -301,7 +294,7 @@ class KitOperationalService:
 
         return len(employees)
 
-    async def get_condominiums_with_employees(self) -> List[Dict]:
+    async def get_condominiums_with_employees(self) -> list[dict]:
         """
         Busca TODOS os condomínios que possuem funcionários alocados atualmente.
 
@@ -323,9 +316,8 @@ class KitOperationalService:
 
         # Buscar todos os condominios ativos (raw SQL para evitar model quebrado)
         from sqlalchemy import text
-        conds_result = await self.db.execute(
-            text("SELECT id, name, client_id FROM condominiums WHERE ativo = true")
-        )
+
+        conds_result = await self.db.execute(text("SELECT id, name, client_id FROM condominiums WHERE ativo = true"))
         condominiums = conds_result.fetchall()
 
         result_list = []
@@ -363,22 +355,24 @@ class KitOperationalService:
             employee_count = count_result.scalar()
 
             if employee_count > 0:
-                result_list.append({
-                    "condominium_id": str(cond_id),
-                    "condominium_name": cond_name,
-                    "client_id": str(cond_client_id),
-                    "employee_count": employee_count,
-                    "post_count": len(posts),
-                })
+                result_list.append(
+                    {
+                        "condominium_id": str(cond_id),
+                        "condominium_name": cond_name,
+                        "client_id": str(cond_client_id),
+                        "employee_count": employee_count,
+                        "post_count": len(posts),
+                    }
+                )
 
         return result_list
 
     async def validate_condominium_has_employees(
         self,
         condominium_id: str,
-        month: Optional[int] = None,
-        year: Optional[int] = None,
-    ) -> Dict:
+        month: int | None = None,
+        year: int | None = None,
+    ) -> dict:
         """
         Valida se um condomínio possui funcionários no período.
 

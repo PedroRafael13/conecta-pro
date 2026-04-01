@@ -5,7 +5,7 @@
 import logging
 from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, desc, extract, func, or_, select
@@ -37,7 +37,7 @@ class FiscalRepository:
     # CFOP
     # ============================================================
 
-    async def create_cfop(self, data: Dict[str, Any]) -> CFOP:
+    async def create_cfop(self, data: dict[str, Any]) -> CFOP:
         """Cria um CFOP."""
         cfop = CFOP(**data)
         self.session.add(cfop)
@@ -45,27 +45,27 @@ class FiscalRepository:
         await self.session.refresh(cfop)
         return cfop
 
-    async def get_cfop_by_id(self, cfop_id: UUID) -> Optional[CFOP]:
+    async def get_cfop_by_id(self, cfop_id: UUID) -> CFOP | None:
         """Busca CFOP por ID."""
         result = await self.session.execute(select(CFOP).where(CFOP.id == cfop_id))
         return result.scalar_one_or_none()
 
-    async def get_cfop_by_codigo(self, codigo: str) -> Optional[CFOP]:
+    async def get_cfop_by_codigo(self, codigo: str) -> CFOP | None:
         """Busca CFOP por codigo."""
         result = await self.session.execute(select(CFOP).where(CFOP.codigo == codigo))
         return result.scalar_one_or_none()
 
     async def list_cfops(
         self,
-        tipo: Optional[str] = None,
-        grupo: Optional[str] = None,
-        natureza: Optional[str] = None,
-        zfm_aplicavel: Optional[bool] = None,
+        tipo: str | None = None,
+        grupo: str | None = None,
+        natureza: str | None = None,
+        zfm_aplicavel: bool | None = None,
         active: bool = True,
-        search: Optional[str] = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[CFOP], int]:
+    ) -> tuple[list[CFOP], int]:
         """Lista CFOPs com filtros."""
         query = select(CFOP).where(CFOP.active == active)
 
@@ -96,7 +96,7 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
-    async def update_cfop(self, cfop_id: UUID, data: Dict[str, Any]) -> Optional[CFOP]:
+    async def update_cfop(self, cfop_id: UUID, data: dict[str, Any]) -> CFOP | None:
         """Atualiza CFOP."""
         cfop = await self.get_cfop_by_id(cfop_id)
         if not cfop:
@@ -112,7 +112,7 @@ class FiscalRepository:
     # NCM
     # ============================================================
 
-    async def create_ncm(self, data: Dict[str, Any]) -> NCM:
+    async def create_ncm(self, data: dict[str, Any]) -> NCM:
         """Cria um NCM."""
         ncm = NCM(**data)
         self.session.add(ncm)
@@ -120,28 +120,28 @@ class FiscalRepository:
         await self.session.refresh(ncm)
         return ncm
 
-    async def get_ncm_by_id(self, ncm_id: UUID) -> Optional[NCM]:
+    async def get_ncm_by_id(self, ncm_id: UUID) -> NCM | None:
         """Busca NCM por ID."""
         result = await self.session.execute(select(NCM).where(NCM.id == ncm_id))
         return result.scalar_one_or_none()
 
-    async def get_ncm_by_codigo(self, codigo: str) -> Optional[NCM]:
+    async def get_ncm_by_codigo(self, codigo: str) -> NCM | None:
         """Busca NCM por codigo."""
         result = await self.session.execute(select(NCM).where(NCM.codigo == codigo))
         return result.scalar_one_or_none()
 
     async def list_ncms(
         self,
-        capitulo: Optional[str] = None,
-        posicao: Optional[str] = None,
-        tributacao_monofasica: Optional[bool] = None,
-        zfm_isento_ipi: Optional[bool] = None,
+        capitulo: str | None = None,
+        posicao: str | None = None,
+        tributacao_monofasica: bool | None = None,
+        zfm_isento_ipi: bool | None = None,
         active: bool = True,
         vigente: bool = True,
-        search: Optional[str] = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[NCM], int]:
+    ) -> tuple[list[NCM], int]:
         """Lista NCMs com filtros."""
         query = select(NCM).where(NCM.active == active)
 
@@ -175,7 +175,7 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
-    async def update_ncm(self, ncm_id: UUID, data: Dict[str, Any]) -> Optional[NCM]:
+    async def update_ncm(self, ncm_id: UUID, data: dict[str, Any]) -> NCM | None:
         """Atualiza NCM."""
         ncm = await self.get_ncm_by_id(ncm_id)
         if not ncm:
@@ -191,7 +191,7 @@ class FiscalRepository:
     # Retencao Federal
     # ============================================================
 
-    async def create_retencao(self, condominio_id: UUID, data: Dict[str, Any]) -> RetencaoFederal:
+    async def create_retencao(self, condominio_id: UUID, data: dict[str, Any]) -> RetencaoFederal:
         """Cria configuracao de retencao federal."""
         retencao = RetencaoFederal(condominio_id=condominio_id, **data)
         self.session.add(retencao)
@@ -199,19 +199,17 @@ class FiscalRepository:
         await self.session.refresh(retencao)
         return retencao
 
-    async def get_retencao_by_id(self, retencao_id: UUID) -> Optional[RetencaoFederal]:
+    async def get_retencao_by_id(self, retencao_id: UUID) -> RetencaoFederal | None:
         """Busca retencao por ID."""
-        result = await self.session.execute(
-            select(RetencaoFederal).where(RetencaoFederal.id == retencao_id)
-        )
+        result = await self.session.execute(select(RetencaoFederal).where(RetencaoFederal.id == retencao_id))
         return result.scalar_one_or_none()
 
     async def list_retencoes(
         self,
         condominio_id: UUID,
-        servico_vigilancia: Optional[bool] = None,
+        servico_vigilancia: bool | None = None,
         active: bool = True,
-    ) -> List[RetencaoFederal]:
+    ) -> list[RetencaoFederal]:
         """Lista configuracoes de retencao."""
         query = select(RetencaoFederal).where(
             and_(
@@ -227,26 +225,22 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_retencao_padrao_vigilancia(
-        self, condominio_id: UUID
-    ) -> Optional[RetencaoFederal]:
+    async def get_retencao_padrao_vigilancia(self, condominio_id: UUID) -> RetencaoFederal | None:
         """Busca configuracao padrao para servicos de vigilancia."""
         result = await self.session.execute(
             select(RetencaoFederal)
             .where(
                 and_(
                     RetencaoFederal.condominio_id == condominio_id,
-                    RetencaoFederal.servico_vigilancia .is_(True),
-                    RetencaoFederal.active .is_(True),
+                    RetencaoFederal.servico_vigilancia.is_(True),
+                    RetencaoFederal.active.is_(True),
                 )
             )
             .order_by(RetencaoFederal.created_at.desc())
         )
         return result.scalar_one_or_none()
 
-    async def update_retencao(
-        self, retencao_id: UUID, data: Dict[str, Any]
-    ) -> Optional[RetencaoFederal]:
+    async def update_retencao(self, retencao_id: UUID, data: dict[str, Any]) -> RetencaoFederal | None:
         """Atualiza configuracao de retencao."""
         retencao = await self.get_retencao_by_id(retencao_id)
         if not retencao:
@@ -262,9 +256,7 @@ class FiscalRepository:
     # NF-e
     # ============================================================
 
-    async def create_nfe(
-        self, condominio_id: UUID, data: Dict[str, Any], itens: List[Dict[str, Any]]
-    ) -> NFe:
+    async def create_nfe(self, condominio_id: UUID, data: dict[str, Any], itens: list[dict[str, Any]]) -> NFe:
         """Cria uma NF-e com itens."""
         nfe_data = {k: v for k, v in data.items() if k != "itens"}
         nfe = NFe(condominio_id=condominio_id, **nfe_data)
@@ -280,14 +272,12 @@ class FiscalRepository:
         await self.session.refresh(nfe)
         return nfe
 
-    async def get_nfe_by_id(self, nfe_id: UUID) -> Optional[NFe]:
+    async def get_nfe_by_id(self, nfe_id: UUID) -> NFe | None:
         """Busca NF-e por ID com itens."""
-        result = await self.session.execute(
-            select(NFe).options(selectinload(NFe.itens)).where(NFe.id == nfe_id)
-        )
+        result = await self.session.execute(select(NFe).options(selectinload(NFe.itens)).where(NFe.id == nfe_id))
         return result.scalar_one_or_none()
 
-    async def get_nfe_by_chave(self, chave_acesso: str) -> Optional[NFe]:
+    async def get_nfe_by_chave(self, chave_acesso: str) -> NFe | None:
         """Busca NF-e por chave de acesso."""
         result = await self.session.execute(
             select(NFe).options(selectinload(NFe.itens)).where(NFe.chave_acesso == chave_acesso)
@@ -297,23 +287,23 @@ class FiscalRepository:
     async def list_nfes(
         self,
         condominio_id: UUID,
-        tipo: Optional[str] = None,
-        status: Optional[str] = None,
-        serie: Optional[int] = None,
-        numero_inicial: Optional[int] = None,
-        numero_final: Optional[int] = None,
-        data_inicial: Optional[date] = None,
-        data_final: Optional[date] = None,
-        destinatario_cpf_cnpj: Optional[str] = None,
-        search: Optional[str] = None,
+        tipo: str | None = None,
+        status: str | None = None,
+        serie: int | None = None,
+        numero_inicial: int | None = None,
+        numero_final: int | None = None,
+        data_inicial: date | None = None,
+        data_final: date | None = None,
+        destinatario_cpf_cnpj: str | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[NFe], int]:
+    ) -> tuple[list[NFe], int]:
         """Lista NF-es com filtros."""
         query = select(NFe).where(
             and_(
                 NFe.condominio_id == condominio_id,
-                NFe.active .is_(True),
+                NFe.active.is_(True),
             )
         )
 
@@ -352,7 +342,7 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
-    async def update_nfe(self, nfe_id: UUID, data: Dict[str, Any]) -> Optional[NFe]:
+    async def update_nfe(self, nfe_id: UUID, data: dict[str, Any]) -> NFe | None:
         """Atualiza NF-e."""
         nfe = await self.get_nfe_by_id(nfe_id)
         if not nfe:
@@ -382,15 +372,15 @@ class FiscalRepository:
         condominio_id: UUID,
         data_inicial: date,
         data_final: date,
-        status: Optional[str] = "autorizada",
-    ) -> List[NFe]:
+        status: str | None = "autorizada",
+    ) -> list[NFe]:
         """Busca NF-es de um periodo para relatorios."""
         query = select(NFe).where(
             and_(
                 NFe.condominio_id == condominio_id,
                 func.date(NFe.data_emissao) >= data_inicial,
                 func.date(NFe.data_emissao) <= data_final,
-                NFe.active .is_(True),
+                NFe.active.is_(True),
             )
         )
         if status:
@@ -406,7 +396,7 @@ class FiscalRepository:
     # NFS-e
     # ============================================================
 
-    async def create_nfse(self, condominio_id: UUID, data: Dict[str, Any]) -> NFSe:
+    async def create_nfse(self, condominio_id: UUID, data: dict[str, Any]) -> NFSe:
         """Cria uma NFS-e."""
         nfse = NFSe(condominio_id=condominio_id, **data)
         self.session.add(nfse)
@@ -414,12 +404,12 @@ class FiscalRepository:
         await self.session.refresh(nfse)
         return nfse
 
-    async def get_nfse_by_id(self, nfse_id: UUID) -> Optional[NFSe]:
+    async def get_nfse_by_id(self, nfse_id: UUID) -> NFSe | None:
         """Busca NFS-e por ID."""
         result = await self.session.execute(select(NFSe).where(NFSe.id == nfse_id))
         return result.scalar_one_or_none()
 
-    async def get_nfse_by_numero(self, condominio_id: UUID, numero: str) -> Optional[NFSe]:
+    async def get_nfse_by_numero(self, condominio_id: UUID, numero: str) -> NFSe | None:
         """Busca NFS-e por numero."""
         result = await self.session.execute(
             select(NFSe).where(
@@ -434,22 +424,22 @@ class FiscalRepository:
     async def list_nfses(
         self,
         condominio_id: UUID,
-        status: Optional[str] = None,
-        data_inicial: Optional[date] = None,
-        data_final: Optional[date] = None,
-        competencia_mes: Optional[int] = None,
-        competencia_ano: Optional[int] = None,
-        tomador_cpf_cnpj: Optional[str] = None,
-        codigo_servico: Optional[str] = None,
-        search: Optional[str] = None,
+        status: str | None = None,
+        data_inicial: date | None = None,
+        data_final: date | None = None,
+        competencia_mes: int | None = None,
+        competencia_ano: int | None = None,
+        tomador_cpf_cnpj: str | None = None,
+        codigo_servico: str | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[NFSe], int]:
+    ) -> tuple[list[NFSe], int]:
         """Lista NFS-es com filtros."""
         query = select(NFSe).where(
             and_(
                 NFSe.condominio_id == condominio_id,
-                NFSe.active .is_(True),
+                NFSe.active.is_(True),
             )
         )
 
@@ -485,7 +475,7 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
-    async def update_nfse(self, nfse_id: UUID, data: Dict[str, Any]) -> Optional[NFSe]:
+    async def update_nfse(self, nfse_id: UUID, data: dict[str, Any]) -> NFSe | None:
         """Atualiza NFS-e."""
         nfse = await self.get_nfse_by_id(nfse_id)
         if not nfse:
@@ -515,15 +505,15 @@ class FiscalRepository:
         condominio_id: UUID,
         mes: int,
         ano: int,
-        status: Optional[str] = "autorizada",
-    ) -> List[NFSe]:
+        status: str | None = "autorizada",
+    ) -> list[NFSe]:
         """Busca NFS-es de uma competencia."""
         query = select(NFSe).where(
             and_(
                 NFSe.condominio_id == condominio_id,
                 extract("month", NFSe.data_competencia) == mes,
                 extract("year", NFSe.data_competencia) == ano,
-                NFSe.active .is_(True),
+                NFSe.active.is_(True),
             )
         )
         if status:
@@ -533,9 +523,7 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def calcular_total_retencoes_competencia(
-        self, condominio_id: UUID, mes: int, ano: int
-    ) -> Dict[str, Decimal]:
+    async def calcular_total_retencoes_competencia(self, condominio_id: UUID, mes: int, ano: int) -> dict[str, Decimal]:
         """Calcula total de retencoes de uma competencia."""
         nfses = await self.get_nfses_competencia(condominio_id, mes, ano)
 
@@ -567,12 +555,7 @@ class FiscalRepository:
                 totais["economia_liminar"] += economia
 
         totais["total_retencoes"] = (
-            totais["inss"]
-            + totais["ir"]
-            + totais["csll"]
-            + totais["pis"]
-            + totais["cofins"]
-            + totais["iss"]
+            totais["inss"] + totais["ir"] + totais["csll"] + totais["pis"] + totais["cofins"] + totais["iss"]
         )
 
         return totais
@@ -581,16 +564,14 @@ class FiscalRepository:
     # Codigo de Servico
     # ============================================================
 
-    async def get_codigo_servico(self, codigo: str) -> Optional[CodigoServico]:
+    async def get_codigo_servico(self, codigo: str) -> CodigoServico | None:
         """Busca codigo de servico LC 116."""
-        result = await self.session.execute(
-            select(CodigoServico).where(CodigoServico.codigo == codigo)
-        )
+        result = await self.session.execute(select(CodigoServico).where(CodigoServico.codigo == codigo))
         return result.scalar_one_or_none()
 
-    async def list_codigos_servico(self, search: Optional[str] = None) -> List[CodigoServico]:
+    async def list_codigos_servico(self, search: str | None = None) -> list[CodigoServico]:
         """Lista codigos de servico."""
-        query = select(CodigoServico).where(CodigoServico.active .is_(True))
+        query = select(CodigoServico).where(CodigoServico.active.is_(True))
 
         if search:
             query = query.where(
@@ -608,7 +589,7 @@ class FiscalRepository:
     # SPED
     # ============================================================
 
-    async def create_sped_file(self, condominio_id: UUID, data: Dict[str, Any]) -> SPEDFile:
+    async def create_sped_file(self, condominio_id: UUID, data: dict[str, Any]) -> SPEDFile:
         """Cria arquivo SPED."""
         sped = SPEDFile(condominio_id=condominio_id, **data)
         self.session.add(sped)
@@ -616,7 +597,7 @@ class FiscalRepository:
         await self.session.refresh(sped)
         return sped
 
-    async def get_sped_file_by_id(self, sped_id: UUID) -> Optional[SPEDFile]:
+    async def get_sped_file_by_id(self, sped_id: UUID) -> SPEDFile | None:
         """Busca arquivo SPED por ID."""
         result = await self.session.execute(select(SPEDFile).where(SPEDFile.id == sped_id))
         return result.scalar_one_or_none()
@@ -624,18 +605,18 @@ class FiscalRepository:
     async def list_sped_files(
         self,
         condominio_id: UUID,
-        tipo: Optional[str] = None,
-        status: Optional[str] = None,
-        ano: Optional[int] = None,
-        mes: Optional[int] = None,
+        tipo: str | None = None,
+        status: str | None = None,
+        ano: int | None = None,
+        mes: int | None = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[SPEDFile], int]:
+    ) -> tuple[list[SPEDFile], int]:
         """Lista arquivos SPED com filtros."""
         query = select(SPEDFile).where(
             and_(
                 SPEDFile.condominio_id == condominio_id,
-                SPEDFile.active .is_(True),
+                SPEDFile.active.is_(True),
             )
         )
 
@@ -657,7 +638,7 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
-    async def update_sped_file(self, sped_id: UUID, data: Dict[str, Any]) -> Optional[SPEDFile]:
+    async def update_sped_file(self, sped_id: UUID, data: dict[str, Any]) -> SPEDFile | None:
         """Atualiza arquivo SPED."""
         sped = await self.get_sped_file_by_id(sped_id)
         if not sped:
@@ -673,7 +654,7 @@ class FiscalRepository:
     # Obrigacao Fiscal
     # ============================================================
 
-    async def create_obrigacao(self, condominio_id: UUID, data: Dict[str, Any]) -> FiscalObligation:
+    async def create_obrigacao(self, condominio_id: UUID, data: dict[str, Any]) -> FiscalObligation:
         """Cria obrigacao fiscal."""
         obrigacao = FiscalObligation(condominio_id=condominio_id, **data)
         self.session.add(obrigacao)
@@ -681,30 +662,28 @@ class FiscalRepository:
         await self.session.refresh(obrigacao)
         return obrigacao
 
-    async def get_obrigacao_by_id(self, obrigacao_id: UUID) -> Optional[FiscalObligation]:
+    async def get_obrigacao_by_id(self, obrigacao_id: UUID) -> FiscalObligation | None:
         """Busca obrigacao por ID."""
-        result = await self.session.execute(
-            select(FiscalObligation).where(FiscalObligation.id == obrigacao_id)
-        )
+        result = await self.session.execute(select(FiscalObligation).where(FiscalObligation.id == obrigacao_id))
         return result.scalar_one_or_none()
 
     async def list_obrigacoes(
         self,
         condominio_id: UUID,
-        tipo: Optional[str] = None,
-        status: Optional[str] = None,
-        mes: Optional[int] = None,
-        ano: Optional[int] = None,
-        vencimento_inicio: Optional[date] = None,
-        vencimento_fim: Optional[date] = None,
+        tipo: str | None = None,
+        status: str | None = None,
+        mes: int | None = None,
+        ano: int | None = None,
+        vencimento_inicio: date | None = None,
+        vencimento_fim: date | None = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[FiscalObligation], int]:
+    ) -> tuple[list[FiscalObligation], int]:
         """Lista obrigacoes fiscais com filtros."""
         query = select(FiscalObligation).where(
             and_(
                 FiscalObligation.condominio_id == condominio_id,
-                FiscalObligation.active .is_(True),
+                FiscalObligation.active.is_(True),
             )
         )
 
@@ -730,7 +709,7 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
-    async def get_obrigacoes_pendentes(self, condominio_id: UUID) -> List[FiscalObligation]:
+    async def get_obrigacoes_pendentes(self, condominio_id: UUID) -> list[FiscalObligation]:
         """Lista obrigacoes pendentes ordenadas por vencimento."""
         result = await self.session.execute(
             select(FiscalObligation)
@@ -738,14 +717,14 @@ class FiscalRepository:
                 and_(
                     FiscalObligation.condominio_id == condominio_id,
                     FiscalObligation.status.in_(["pendente", "em_andamento"]),
-                    FiscalObligation.active .is_(True),
+                    FiscalObligation.active.is_(True),
                 )
             )
             .order_by(FiscalObligation.data_vencimento)
         )
         return list(result.scalars().all())
 
-    async def get_obrigacoes_atrasadas(self, condominio_id: UUID) -> List[FiscalObligation]:
+    async def get_obrigacoes_atrasadas(self, condominio_id: UUID) -> list[FiscalObligation]:
         """Lista obrigacoes atrasadas."""
         result = await self.session.execute(
             select(FiscalObligation)
@@ -753,16 +732,14 @@ class FiscalRepository:
                 and_(
                     FiscalObligation.condominio_id == condominio_id,
                     FiscalObligation.status == "atrasada",
-                    FiscalObligation.active .is_(True),
+                    FiscalObligation.active.is_(True),
                 )
             )
             .order_by(FiscalObligation.data_vencimento)
         )
         return list(result.scalars().all())
 
-    async def update_obrigacao(
-        self, obrigacao_id: UUID, data: Dict[str, Any]
-    ) -> Optional[FiscalObligation]:
+    async def update_obrigacao(self, obrigacao_id: UUID, data: dict[str, Any]) -> FiscalObligation | None:
         """Atualiza obrigacao fiscal."""
         obrigacao = await self.get_obrigacao_by_id(obrigacao_id)
         if not obrigacao:
@@ -778,7 +755,7 @@ class FiscalRepository:
     # Simples Nacional / DAS
     # ============================================================
 
-    async def create_das(self, condominio_id: UUID, data: Dict[str, Any]) -> SimplesNacionalDAS:
+    async def create_das(self, condominio_id: UUID, data: dict[str, Any]) -> SimplesNacionalDAS:
         """Cria DAS do Simples Nacional."""
         das = SimplesNacionalDAS(condominio_id=condominio_id, **data)
         self.session.add(das)
@@ -786,16 +763,12 @@ class FiscalRepository:
         await self.session.refresh(das)
         return das
 
-    async def get_das_by_id(self, das_id: UUID) -> Optional[SimplesNacionalDAS]:
+    async def get_das_by_id(self, das_id: UUID) -> SimplesNacionalDAS | None:
         """Busca DAS por ID."""
-        result = await self.session.execute(
-            select(SimplesNacionalDAS).where(SimplesNacionalDAS.id == das_id)
-        )
+        result = await self.session.execute(select(SimplesNacionalDAS).where(SimplesNacionalDAS.id == das_id))
         return result.scalar_one_or_none()
 
-    async def get_das_competencia(
-        self, condominio_id: UUID, mes: int, ano: int
-    ) -> Optional[SimplesNacionalDAS]:
+    async def get_das_competencia(self, condominio_id: UUID, mes: int, ano: int) -> SimplesNacionalDAS | None:
         """Busca DAS de uma competencia."""
         result = await self.session.execute(
             select(SimplesNacionalDAS).where(
@@ -803,20 +776,18 @@ class FiscalRepository:
                     SimplesNacionalDAS.condominio_id == condominio_id,
                     SimplesNacionalDAS.competencia_mes == mes,
                     SimplesNacionalDAS.competencia_ano == ano,
-                    SimplesNacionalDAS.active .is_(True),
+                    SimplesNacionalDAS.active.is_(True),
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def list_das(
-        self, condominio_id: UUID, ano: Optional[int] = None
-    ) -> List[SimplesNacionalDAS]:
+    async def list_das(self, condominio_id: UUID, ano: int | None = None) -> list[SimplesNacionalDAS]:
         """Lista DAS de um condominio."""
         query = select(SimplesNacionalDAS).where(
             and_(
                 SimplesNacionalDAS.condominio_id == condominio_id,
-                SimplesNacionalDAS.active .is_(True),
+                SimplesNacionalDAS.active.is_(True),
             )
         )
         if ano:
@@ -829,9 +800,7 @@ class FiscalRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_receita_12_meses(
-        self, condominio_id: UUID, mes_referencia: int, ano_referencia: int
-    ) -> Decimal:
+    async def get_receita_12_meses(self, condominio_id: UUID, mes_referencia: int, ano_referencia: int) -> Decimal:
         """Calcula receita bruta dos ultimos 12 meses para DAS."""
         # Calcula range de 12 meses
         total = Decimal("0")
@@ -864,9 +833,7 @@ class FiscalRepository:
     # SUFRAMA
     # ============================================================
 
-    async def create_suframa_config(
-        self, condominio_id: UUID, data: Dict[str, Any]
-    ) -> SUFRAMAConfig:
+    async def create_suframa_config(self, condominio_id: UUID, data: dict[str, Any]) -> SUFRAMAConfig:
         """Cria configuracao SUFRAMA."""
         config = SUFRAMAConfig(condominio_id=condominio_id, **data)
         self.session.add(config)
@@ -874,23 +841,21 @@ class FiscalRepository:
         await self.session.refresh(config)
         return config
 
-    async def get_suframa_config(self, condominio_id: UUID) -> Optional[SUFRAMAConfig]:
+    async def get_suframa_config(self, condominio_id: UUID) -> SUFRAMAConfig | None:
         """Busca configuracao SUFRAMA ativa."""
         result = await self.session.execute(
             select(SUFRAMAConfig)
             .where(
                 and_(
                     SUFRAMAConfig.condominio_id == condominio_id,
-                    SUFRAMAConfig.active .is_(True),
+                    SUFRAMAConfig.active.is_(True),
                 )
             )
             .order_by(SUFRAMAConfig.created_at.desc())
         )
         return result.scalar_one_or_none()
 
-    async def create_suframa_operacao(
-        self, condominio_id: UUID, data: Dict[str, Any]
-    ) -> SUFRAMAOperacao:
+    async def create_suframa_operacao(self, condominio_id: UUID, data: dict[str, Any]) -> SUFRAMAOperacao:
         """Registra operacao com beneficio SUFRAMA."""
         operacao = SUFRAMAOperacao(condominio_id=condominio_id, **data)
         self.session.add(operacao)
@@ -901,16 +866,16 @@ class FiscalRepository:
     async def list_suframa_operacoes(
         self,
         condominio_id: UUID,
-        data_inicial: Optional[date] = None,
-        data_final: Optional[date] = None,
+        data_inicial: date | None = None,
+        data_final: date | None = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[SUFRAMAOperacao], int]:
+    ) -> tuple[list[SUFRAMAOperacao], int]:
         """Lista operacoes com beneficio SUFRAMA."""
         query = select(SUFRAMAOperacao).where(
             and_(
                 SUFRAMAOperacao.condominio_id == condominio_id,
-                SUFRAMAOperacao.active .is_(True),
+                SUFRAMAOperacao.active.is_(True),
             )
         )
 
@@ -933,11 +898,9 @@ class FiscalRepository:
         condominio_id: UUID,
         data_inicial: date,
         data_final: date,
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Calcula economia SUFRAMA de um periodo."""
-        operacoes, _ = await self.list_suframa_operacoes(
-            condominio_id, data_inicial, data_final, page_size=10000
-        )
+        operacoes, _ = await self.list_suframa_operacoes(condominio_id, data_inicial, data_final, page_size=10000)
 
         economia = {
             "ipi": Decimal("0"),
@@ -961,7 +924,7 @@ class FiscalRepository:
     # Estatisticas e Dashboard
     # ============================================================
 
-    async def get_fiscal_stats(self, condominio_id: UUID, mes: int, ano: int) -> Dict[str, Any]:
+    async def get_fiscal_stats(self, condominio_id: UUID, mes: int, ano: int) -> dict[str, Any]:
         """Retorna estatisticas fiscais do mes."""
         # NF-e
         nfes_mes = await self.get_nfes_periodo(
@@ -986,9 +949,7 @@ class FiscalRepository:
         das = await self.get_das_competencia(condominio_id, mes, ano)
 
         # SUFRAMA economia ano
-        economia_zfm = await self.get_economia_suframa_periodo(
-            condominio_id, date(ano, 1, 1), date(ano, 12, 31)
-        )
+        economia_zfm = await self.get_economia_suframa_periodo(condominio_id, date(ano, 1, 1), date(ano, 12, 31))
 
         return {
             "total_nfe_emitidas": len(nfes_mes),

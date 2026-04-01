@@ -6,14 +6,14 @@ incluindo tipo, valor, confianca e validacao.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 
-class FieldType(str, Enum):
+class FieldType(StrEnum):
     """Tipos de campos suportados."""
 
     # Texto
@@ -70,7 +70,7 @@ class FieldType(str, Enum):
     UNKNOWN = "unknown"
 
 
-class FieldConfidence(str, Enum):
+class FieldConfidence(StrEnum):
     """Niveis de confianca."""
 
     VERY_HIGH = "very_high"  # >= 95%
@@ -93,7 +93,7 @@ class FieldConfidence(str, Enum):
         return cls.VERY_LOW
 
 
-class ExtractionMethod(str, Enum):
+class ExtractionMethod(StrEnum):
     """Metodo de extracao utilizado."""
 
     REGEX = "regex"
@@ -119,10 +119,10 @@ class FieldLocation:
     y: int = 0
     width: int = 0
     height: int = 0
-    line_number: Optional[int] = None
-    word_indices: List[int] = field(default_factory=list)
+    line_number: int | None = None
+    word_indices: list[int] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "page": self.page,
@@ -139,10 +139,10 @@ class FieldValidation:
     """Resultado de validacao do campo."""
 
     is_valid: bool = True
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    formatted_value: Optional[str] = None
-    normalized_value: Optional[Any] = None
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    formatted_value: str | None = None
+    normalized_value: Any | None = None
 
     def add_error(self, error: str) -> None:
         """Adiciona erro de validacao."""
@@ -153,7 +153,7 @@ class FieldValidation:
         """Adiciona aviso de validacao."""
         self.warnings.append(warning)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "is_valid": self.is_valid,
@@ -189,20 +189,20 @@ class ExtractedField:
 
     id: str = field(default_factory=lambda: str(uuid4()))
     document_id: str = ""
-    ocr_result_id: Optional[str] = None
-    template_id: Optional[str] = None
+    ocr_result_id: str | None = None
+    template_id: str | None = None
 
     # Identificacao
     field_name: str = ""
-    field_label: Optional[str] = None
+    field_label: str | None = None
     field_type: FieldType = FieldType.TEXT
-    field_group: Optional[str] = None  # Agrupamento logico
+    field_group: str | None = None  # Agrupamento logico
 
     # Valores
     raw_value: str = ""
-    normalized_value: Optional[Any] = None
-    display_value: Optional[str] = None
-    original_text: Optional[str] = None  # Texto original do OCR
+    normalized_value: Any | None = None
+    display_value: str | None = None
+    original_text: str | None = None  # Texto original do OCR
 
     # Confianca
     confidence: float = 0.0
@@ -210,26 +210,26 @@ class ExtractedField:
     method: ExtractionMethod = ExtractionMethod.REGEX
 
     # Localizacao
-    location: Optional[FieldLocation] = None
-    anchor_text: Optional[str] = None  # Texto ancora para extracao
+    location: FieldLocation | None = None
+    anchor_text: str | None = None  # Texto ancora para extracao
 
     # Validacao
-    validation: Optional[FieldValidation] = None
+    validation: FieldValidation | None = None
     is_valid: bool = True
-    validation_errors: List[str] = field(default_factory=list)
+    validation_errors: list[str] = field(default_factory=list)
 
     # Status
     is_required: bool = False
     is_verified: bool = False
-    verified_by: Optional[str] = None
-    verified_at: Optional[datetime] = None
+    verified_by: str | None = None
+    verified_at: datetime | None = None
     is_editable: bool = True
 
     # Alternativas
-    alternatives: List[Dict[str, Any]] = field(default_factory=list)
+    alternatives: list[dict[str, Any]] = field(default_factory=list)
 
     # Metadados
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -285,7 +285,7 @@ class ExtractedField:
         return value
 
     @staticmethod
-    def _format_currency(value: Union[Decimal, float, int]) -> str:
+    def _format_currency(value: Decimal | float | int) -> str:
         """Formata moeda."""
         try:
             amount = Decimal(str(value))
@@ -331,7 +331,7 @@ class ExtractedField:
         """Normaliza telefone."""
         return "".join(filter(str.isdigit, value))
 
-    def _normalize_date(self, value: str) -> Optional[date]:
+    def _normalize_date(self, value: str) -> date | None:
         """Normaliza data."""
         import re
 
@@ -352,7 +352,7 @@ class ExtractedField:
 
         return None
 
-    def _normalize_currency(self, value: str) -> Optional[Decimal]:
+    def _normalize_currency(self, value: str) -> Decimal | None:
         """Normaliza valor monetario."""
         try:
             # Remove simbolos e formata
@@ -366,7 +366,7 @@ class ExtractedField:
         except (ValueError, TypeError):
             return None
 
-    def _normalize_number(self, value: str) -> Optional[float]:
+    def _normalize_number(self, value: str) -> float | None:
         """Normaliza numero."""
         try:
             clean = value.replace(",", ".")
@@ -374,14 +374,14 @@ class ExtractedField:
         except ValueError:
             return None
 
-    def _normalize_integer(self, value: str) -> Optional[int]:
+    def _normalize_integer(self, value: str) -> int | None:
         """Normaliza inteiro."""
         try:
             return int("".join(filter(str.isdigit, value)))
         except ValueError:
             return None
 
-    def _normalize_decimal(self, value: str) -> Optional[Decimal]:
+    def _normalize_decimal(self, value: str) -> Decimal | None:
         """Normaliza decimal."""
         try:
             clean = value.replace(",", ".")
@@ -393,7 +393,7 @@ class ExtractedField:
         """Normaliza email."""
         return value.strip().lower()
 
-    def verify(self, user_id: str, corrected_value: Optional[str] = None) -> None:
+    def verify(self, user_id: str, corrected_value: str | None = None) -> None:
         """Marca campo como verificado."""
         self.is_verified = True
         self.verified_by = user_id
@@ -403,9 +403,7 @@ class ExtractedField:
             self.normalize()
         self.updated_at = datetime.utcnow()
 
-    def add_alternative(
-        self, value: str, confidence: float, source: str
-    ) -> None:
+    def add_alternative(self, value: str, confidence: float, source: str) -> None:
         """Adiciona valor alternativo."""
         self.alternatives.append(
             {
@@ -427,7 +425,7 @@ class ExtractedField:
 
         return self.raw_value
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "id": self.id,
@@ -437,9 +435,7 @@ class ExtractedField:
             "field_type": self.field_type.value,
             "field_group": self.field_group,
             "raw_value": self.raw_value,
-            "normalized_value": (
-                str(self.normalized_value) if self.normalized_value else None
-            ),
+            "normalized_value": (str(self.normalized_value) if self.normalized_value else None),
             "display_value": self.display_value,
             "confidence": self.confidence,
             "confidence_level": self.confidence_level.value,

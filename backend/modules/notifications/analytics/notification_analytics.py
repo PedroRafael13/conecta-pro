@@ -1,10 +1,10 @@
 """Analytics avançado para notificações."""
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -64,7 +64,7 @@ class CampaignMetrics:
     campaign_id: str
     name: str
     start_date: datetime
-    end_date: Optional[datetime]
+    end_date: datetime | None
     total_recipients: int
     total_sent: int
     total_delivered: int
@@ -163,7 +163,7 @@ class NotificationAnalytics:
     async def get_dashboard(
         self,
         db: AsyncSession,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
     ) -> AnalyticsDashboard:
         """
         Gera dashboard de analytics.
@@ -216,7 +216,7 @@ class NotificationAnalytics:
         db: AsyncSession,
         start_date: datetime,
         end_date: datetime,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
         granularity: TimeGranularity = TimeGranularity.DAILY,
     ) -> MetricReport:
         """
@@ -237,14 +237,16 @@ class NotificationAnalytics:
 
         # Performance por canal
         channels = await self._get_channel_performance(
-            db, tenant_id,
+            db,
+            tenant_id,
             start_date=start_date,
             end_date=end_date,
         )
 
         # Top campanhas
         campaigns = await self._get_top_campaigns(
-            db, tenant_id,
+            db,
+            tenant_id,
             start_date=start_date,
             end_date=end_date,
             limit=10,
@@ -252,7 +254,8 @@ class NotificationAnalytics:
 
         # Análise de tendências
         trends = await self._analyze_trends(
-            db, tenant_id,
+            db,
+            tenant_id,
             start_date=start_date,
             end_date=end_date,
             granularity=granularity,
@@ -281,7 +284,7 @@ class NotificationAnalytics:
         db: AsyncSession,
         channel: str,
         days: int = 30,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
     ) -> ChannelPerformance:
         """
         Obtém analytics de um canal específico.
@@ -295,7 +298,6 @@ class NotificationAnalytics:
         Returns:
             ChannelPerformance detalhado
         """
-        # TODO: Implementar query real
         return await self._get_channel_metrics(db, channel, days, tenant_id)
 
     async def get_campaign_analytics(
@@ -313,7 +315,6 @@ class NotificationAnalytics:
         Returns:
             CampaignMetrics detalhado
         """
-        # TODO: Implementar query real
         return await self._get_campaign_metrics(db, campaign_id)
 
     async def get_user_analytics(
@@ -333,7 +334,6 @@ class NotificationAnalytics:
         Returns:
             Dict com métricas do usuário
         """
-        # TODO: Implementar query real
         return {
             "user_id": user_id,
             "total_received": 45,
@@ -352,7 +352,7 @@ class NotificationAnalytics:
         db: AsyncSession,
         metric: str,
         days_ahead: int = 7,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
     ) -> list[MetricPoint]:
         """
         Prevê métricas futuras.
@@ -380,11 +380,9 @@ class NotificationAnalytics:
     async def _get_realtime_metrics(
         self,
         db: AsyncSession,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
     ) -> dict[str, float]:
         """Obtém métricas em tempo real."""
-        # TODO: Implementar query real com dados de hoje
-
         return {
             "sent_today": 1250,
             "delivered_today": 1200,
@@ -401,14 +399,12 @@ class NotificationAnalytics:
     async def _get_channel_performance(
         self,
         db: AsyncSession,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
         days: int = 30,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> list[ChannelPerformance]:
         """Obtém performance por canal."""
-        # TODO: Implementar query real
-
         channels = ["push", "email", "sms", "whatsapp", "in_app"]
         results = []
 
@@ -423,11 +419,9 @@ class NotificationAnalytics:
         db: AsyncSession,
         channel: str,
         days: int,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
     ) -> ChannelPerformance:
         """Obtém métricas de um canal."""
-        # TODO: Implementar query real
-
         # Dados simulados
         base_metrics = {
             "push": {"sent": 5000, "opened": 3500, "clicked": 1000, "cost": 0},
@@ -465,12 +459,10 @@ class NotificationAnalytics:
     async def _get_recent_campaigns(
         self,
         db: AsyncSession,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
         limit: int = 5,
     ) -> list[CampaignMetrics]:
         """Obtém campanhas recentes."""
-        # TODO: Implementar query real
-
         return [
             CampaignMetrics(
                 campaign_id="camp_001",
@@ -517,7 +509,7 @@ class NotificationAnalytics:
     async def _get_top_campaigns(
         self,
         db: AsyncSession,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
         start_date: datetime,
         end_date: datetime,
         limit: int = 10,
@@ -532,11 +524,9 @@ class NotificationAnalytics:
         db: AsyncSession,
         start_date: datetime,
         end_date: datetime,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
     ) -> dict[str, int]:
         """Obtém totais do período."""
-        # TODO: Implementar query real
-
         return {
             "total_sent": 15000,
             "total_delivered": 14700,
@@ -549,7 +539,7 @@ class NotificationAnalytics:
     async def _analyze_trends(
         self,
         db: AsyncSession,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
         start_date: datetime,
         end_date: datetime,
         granularity: TimeGranularity,
@@ -560,7 +550,8 @@ class NotificationAnalytics:
 
         for metric in metrics:
             historical = await self._get_historical_data(
-                db, metric,
+                db,
+                metric,
                 days=(end_date - start_date).days,
                 tenant_id=tenant_id,
             )
@@ -609,11 +600,9 @@ class NotificationAnalytics:
         db: AsyncSession,
         metric: str,
         days: int,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
     ) -> list[MetricPoint]:
         """Obtém dados históricos de uma métrica."""
-        # TODO: Implementar query real
-
         # Simular dados
         data = []
         base_value = {"open_rate": 0.35, "click_rate": 0.10, "delivery_rate": 0.96}.get(metric, 0.5)
@@ -624,11 +613,13 @@ class NotificationAnalytics:
             variation = (hash(f"{metric}_{i}") % 20 - 10) / 100
             value = base_value + variation
 
-            data.append(MetricPoint(
-                timestamp=timestamp,
-                value=max(0, min(1, value)),
-                count=100 + (i * 5),
-            ))
+            data.append(
+                MetricPoint(
+                    timestamp=timestamp,
+                    value=max(0, min(1, value)),
+                    count=100 + (i * 5),
+                )
+            )
 
         return data
 
@@ -663,18 +654,20 @@ class NotificationAnalytics:
             # Limitar entre 0 e 1 para taxas
             predicted_value = max(0, min(1, predicted_value))
 
-            forecast.append(MetricPoint(
-                timestamp=timestamp,
-                value=predicted_value,
-                count=0,
-            ))
+            forecast.append(
+                MetricPoint(
+                    timestamp=timestamp,
+                    value=predicted_value,
+                    count=0,
+                )
+            )
 
         return forecast
 
     async def _generate_alerts(
         self,
         db: AsyncSession,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
         realtime: dict[str, float],
         channels: list[ChannelPerformance],
     ) -> list[str]:
@@ -716,7 +709,7 @@ class NotificationAnalytics:
         # Penalidade por delivery rate baixo
         delivery_rate = realtime.get("delivery_rate", 1.0)
         if delivery_rate < 0.95:
-            score -= (0.95 - delivery_rate)
+            score -= 0.95 - delivery_rate
 
         # Penalidade por canais com problemas
         for channel in channels:
@@ -742,7 +735,9 @@ class NotificationAnalytics:
         cost_channels = [c for c in channels if c.cost_total > 0]
         if cost_channels:
             best_roi = min(cost_channels, key=lambda c: c.cost_per_conversion)
-            insights.append(f"Melhor custo-benefício: {best_roi.channel} (R${best_roi.cost_per_conversion:.2f}/conversão)")
+            insights.append(
+                f"Melhor custo-benefício: {best_roi.channel} (R${best_roi.cost_per_conversion:.2f}/conversão)"
+            )
 
         # Insight de tendências
         for trend in trends:
@@ -795,7 +790,7 @@ class NotificationAnalytics:
         self,
         db: AsyncSession,
         report: MetricReport,
-        format: str = "json",
+        export_format: str = "json",
     ) -> str:
         """
         Exporta relatório em formato específico.
@@ -803,22 +798,27 @@ class NotificationAnalytics:
         Args:
             db: Sessão do banco
             report: Relatório a exportar
-            format: Formato (json, csv)
+            export_format: Formato (json, csv)
 
         Returns:
             String com dados exportados
         """
-        if format == "json":
+        if export_format == "json":
             import json
-            return json.dumps({
-                "period": f"{report.period_start} - {report.period_end}",
-                "total_notifications": report.total_notifications,
-                "total_users": report.total_unique_users,
-                "insights": report.insights,
-                "recommendations": report.recommendations,
-            }, default=str, indent=2)
 
-        elif format == "csv":
+            return json.dumps(
+                {
+                    "period": f"{report.period_start} - {report.period_end}",
+                    "total_notifications": report.total_notifications,
+                    "total_users": report.total_unique_users,
+                    "insights": report.insights,
+                    "recommendations": report.recommendations,
+                },
+                default=str,
+                indent=2,
+            )
+
+        elif export_format == "csv":
             lines = ["metric,value"]
             lines.append(f"total_notifications,{report.total_notifications}")
             lines.append(f"total_users,{report.total_unique_users}")

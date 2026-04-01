@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,16 @@ const CATEGORIES = [
   { value: 'other', label: 'Outros' },
 ];
 
+// Initial form state factory
+const createInitialForm = (payable?: any) => ({
+  description: payable?.description || '',
+  supplier_name: payable?.supplier_name || '',
+  amount: payable?.amount ? String(payable.amount) : '',
+  due_date: payable?.due_date ? payable.due_date.split('T')[0] : '',
+  category: payable?.category || '',
+  observacoes: payable?.observacoes || '',
+});
+
 export function PayableFormModal({
   isOpen,
   onClose,
@@ -41,36 +51,19 @@ export function PayableFormModal({
 }: PayableFormModalProps) {
   const isEditing = !!payable?.id;
 
-  const [form, setForm] = useState({
-    description: '',
-    supplier_name: '',
-    amount: '',
-    due_date: '',
-    category: '',
-    observacoes: '',
-  });
+  const formKey = useMemo(() => {
+    return payable?.id || 'new';
+  }, [payable]);
+
+  const [form, setForm] = useState(createInitialForm(payable));
 
   useEffect(() => {
-    if (payable) {
-      setForm({
-        description: payable.description || '',
-        supplier_name: payable.supplier_name || '',
-        amount: payable.amount ? String(payable.amount) : '',
-        due_date: payable.due_date ? payable.due_date.split('T')[0] : '',
-        category: payable.category || '',
-        observacoes: payable.observacoes || '',
-      });
-    } else {
-      setForm({
-        description: '',
-        supplier_name: '',
-        amount: '',
-        due_date: '',
-        category: '',
-        observacoes: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(payable));
     }
-  }, [payable, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

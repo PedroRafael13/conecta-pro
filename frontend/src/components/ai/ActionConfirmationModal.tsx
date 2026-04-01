@@ -55,18 +55,15 @@ export function ActionConfirmationModal({
 }: ActionConfirmationModalProps) {
   const [showDetails, setShowDetails] = useState(false);
 
-  console.log('[ACTION MODAL] Componente montado! preview:', preview);
-  console.log('[ACTION MODAL] isExecuting:', isExecuting);
-
   return (
     <Dialog open onOpenChange={onCancel}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-white text-gray-900 border-gray-200 shadow-2xl [&>button]:text-gray-500">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-blue-500" />
-            <DialogTitle>{preview.title}</DialogTitle>
+            <CheckCircle2 className="h-5 w-5 text-blue-600" />
+            <DialogTitle className="text-gray-900">{preview.title}</DialogTitle>
           </div>
-          <DialogDescription>{preview.description}</DialogDescription>
+          <DialogDescription className="text-gray-600">{preview.description}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -79,7 +76,7 @@ export function ActionConfirmationModal({
               </h4>
               <ul className="space-y-1">
                 {preview.changes_summary.map((change, index) => (
-                  <li key={index} className="text-sm text-muted-foreground pl-6">
+                  <li key={index} className="text-sm text-gray-600 pl-6">
                     • {change}
                   </li>
                 ))}
@@ -89,7 +86,7 @@ export function ActionConfirmationModal({
 
           {/* Avisos */}
           {preview.warnings.length > 0 && (
-            <Alert variant="default" className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950">
+            <Alert variant="default" className="border-yellow-300 bg-yellow-50">
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <AlertDescription>
                 <div className="space-y-1">
@@ -119,7 +116,7 @@ export function ActionConfirmationModal({
           )}
 
           {/* Informação sobre reversão */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
             {preview.can_be_undone ? (
               <Badge variant="outline" className="text-green-600 border-green-600">
                 ✓ Pode ser desfeita
@@ -133,9 +130,9 @@ export function ActionConfirmationModal({
 
           {/* Detalhes técnicos (colapsável) */}
           {showDetails && (
-            <div className="border rounded-lg p-3 bg-muted/50">
-              <h4 className="text-xs font-semibold mb-2">Detalhes Técnicos</h4>
-              <div className="space-y-2 text-xs text-muted-foreground">
+            <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+              <h4 className="text-xs font-semibold mb-2 text-gray-700">Detalhes Tecnicos</h4>
+              <div className="space-y-2 text-xs text-gray-500">
                 <div>
                   <span className="font-medium">Action ID:</span>{' '}
                   <code className="text-xs">{preview.action_id}</code>

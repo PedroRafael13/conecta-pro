@@ -7,15 +7,16 @@ Implementa:
 - Atualização de status
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
-from xml.etree import ElementTree as ET
+from datetime import datetime, timedelta
+from uuid import UUID
+from xml.etree.ElementTree import Element  # noqa: S405
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from defusedxml import ElementTree as ET  # noqa: N817
+
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,57 @@ NS_ESOCIAL_RET = "http://www.esocial.gov.br/schema/lote/eventos/envio/retornoPro
 NS_SOAP = "http://www.w3.org/2003/05/soap-envelope"
 
 # Tipos de eventos eSocial
-EVENTOS_TABELAS = ["S-1000", "S-1005", "S-1010", "S-1020", "S-1030", "S-1035", "S-1040", "S-1050", "S-1060", "S-1070", "S-1080"]
-EVENTOS_NAO_PERIODICOS = ["S-2190", "S-2200", "S-2205", "S-2206", "S-2210", "S-2220", "S-2230", "S-2240", "S-2250", "S-2260", "S-2298", "S-2299", "S-2300", "S-2306", "S-2399", "S-2400", "S-3000", "S-5001", "S-5002", "S-5003", "S-5011", "S-5012", "S-5013", "S-8299"]
-EVENTOS_PERIODICOS = ["S-1200", "S-1202", "S-1207", "S-1210", "S-1260", "S-1270", "S-1280", "S-1298", "S-1299", "S-1300"]
+EVENTOS_TABELAS = [
+    "S-1000",
+    "S-1005",
+    "S-1010",
+    "S-1020",
+    "S-1030",
+    "S-1035",
+    "S-1040",
+    "S-1050",
+    "S-1060",
+    "S-1070",
+    "S-1080",
+]
+EVENTOS_NAO_PERIODICOS = [
+    "S-2190",
+    "S-2200",
+    "S-2205",
+    "S-2206",
+    "S-2210",
+    "S-2220",
+    "S-2230",
+    "S-2240",
+    "S-2250",
+    "S-2260",
+    "S-2298",
+    "S-2299",
+    "S-2300",
+    "S-2306",
+    "S-2399",
+    "S-2400",
+    "S-3000",
+    "S-5001",
+    "S-5002",
+    "S-5003",
+    "S-5011",
+    "S-5012",
+    "S-5013",
+    "S-8299",
+]
+EVENTOS_PERIODICOS = [
+    "S-1200",
+    "S-1202",
+    "S-1207",
+    "S-1210",
+    "S-1260",
+    "S-1270",
+    "S-1280",
+    "S-1298",
+    "S-1299",
+    "S-1300",
+]
 
 
 class ExtratoreSocial(ExtratorBase):
@@ -65,10 +114,10 @@ class ExtratoreSocial(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -96,16 +145,11 @@ class ExtratoreSocial(ExtratorBase):
         if data_inicio is None:
             data_inicio = data_fim - timedelta(days=30)
 
-        logger.info(
-            f"Iniciando extração eSocial: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
-        )
+        logger.info(f"Iniciando extração eSocial: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}")
 
         try:
             # Obter credenciais
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -119,9 +163,7 @@ class ExtratoreSocial(ExtratorBase):
                 logger.info(f"Extraindo eSocial para CNPJ: {cnpj}")
 
                 # Consultar eventos por período
-                docs = await self._consultar_eventos(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs = await self._consultar_eventos(tenant_id, cnpj, data_inicio, data_fim)
 
                 for doc in docs:
                     resultado.documentos.append(doc)
@@ -153,16 +195,14 @@ class ExtratoreSocial(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta eventos do eSocial para um CNPJ."""
         documentos = []
 
         try:
             # Consultar por tipo de evento
             for tipo_evento in EVENTOS_PERIODICOS + EVENTOS_NAO_PERIODICOS:
-                docs = await self._consultar_tipo_evento(
-                    tenant_id, cnpj, tipo_evento, data_inicio, data_fim
-                )
+                docs = await self._consultar_tipo_evento(tenant_id, cnpj, tipo_evento, data_inicio, data_fim)
                 documentos.extend(docs)
 
                 # Rate limiting
@@ -180,15 +220,13 @@ class ExtratoreSocial(ExtratorBase):
         tipo_evento: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta eventos de um tipo específico."""
         documentos = []
 
         try:
             # Montar envelope de consulta
-            envelope = self._montar_envelope_consulta(
-                cnpj, tipo_evento, data_inicio, data_fim
-            )
+            envelope = self._montar_envelope_consulta(cnpj, tipo_evento, data_inicio, data_fim)
 
             # Fazer requisição
             url = self.URLS["producao"]["consulta"]
@@ -237,11 +275,7 @@ class ExtratoreSocial(ExtratorBase):
     </soap:Body>
 </soap:Envelope>"""
 
-    def _processar_resposta_consulta(
-        self,
-        xml_resposta: str,
-        tipo_evento: str
-    ) -> List[DocumentoExtraido]:
+    def _processar_resposta_consulta(self, xml_resposta: str, tipo_evento: str) -> list[DocumentoExtraido]:
         """Processa resposta da consulta de eventos."""
         documentos = []
 
@@ -249,7 +283,9 @@ class ExtratoreSocial(ExtratorBase):
             root = ET.fromstring(xml_resposta.encode())
 
             # Buscar retorno de eventos
-            eventos = root.findall(".//{http://www.esocial.gov.br/schema/lote/eventos/envio/retornoProcessamento/v1_3_0}evento")
+            eventos = root.findall(
+                ".//{http://www.esocial.gov.br/schema/lote/eventos/envio/retornoProcessamento/v1_3_0}evento"
+            )
 
             for evento in eventos:
                 doc = self._extrair_evento(evento, tipo_evento)
@@ -261,11 +297,7 @@ class ExtratoreSocial(ExtratorBase):
 
         return documentos
 
-    def _extrair_evento(
-        self,
-        elemento: ET.Element,
-        tipo_evento: str
-    ) -> Optional[DocumentoExtraido]:
+    def _extrair_evento(self, elemento: Element, tipo_evento: str) -> DocumentoExtraido | None:
         """Extrai dados de um evento eSocial."""
         try:
             # Buscar ID do evento
@@ -301,12 +333,7 @@ class ExtratoreSocial(ExtratorBase):
             logger.error(f"Erro ao extrair evento: {e}")
             return None
 
-    def _extrair_dados_especificos(
-        self,
-        elemento: ET.Element,
-        tipo_evento: str,
-        dados: Dict
-    ):
+    def _extrair_dados_especificos(self, elemento: Element, tipo_evento: str, dados: dict):
         """Extrai dados específicos por tipo de evento."""
         if tipo_evento == "S-1200":
             # Remuneração
@@ -342,12 +369,7 @@ class ExtratoreSocial(ExtratorBase):
         }
         return mapeamento.get(codigo, "desconhecido")
 
-    async def consultar_recibo(
-        self,
-        tenant_id: UUID,
-        cnpj: str,
-        numero_recibo: str
-    ) -> Optional[DocumentoExtraido]:
+    async def consultar_recibo(self, tenant_id: UUID, cnpj: str, numero_recibo: str) -> DocumentoExtraido | None:
         """
         Consulta um recibo específico.
 
@@ -384,11 +406,7 @@ class ExtratoreSocial(ExtratorBase):
 
         return None
 
-    def _processar_download(
-        self,
-        xml_resposta: str,
-        numero_recibo: str
-    ) -> Optional[DocumentoExtraido]:
+    def _processar_download(self, xml_resposta: str, numero_recibo: str) -> DocumentoExtraido | None:
         """Processa resposta do download de evento."""
         try:
             root = ET.fromstring(xml_resposta.encode())
@@ -417,7 +435,7 @@ class ExtratoreSocial(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Lista eventos pendentes de processamento."""
         # Esta é uma consulta simplificada
         # Em produção, manter cache de eventos enviados

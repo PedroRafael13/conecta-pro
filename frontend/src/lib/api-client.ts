@@ -11,31 +11,31 @@ import type { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 const DEFAULT_CONDOMINIO_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 export const customInstance = async <T>(
-  config: AxiosRequestConfig,
+  configOrUrl: AxiosRequestConfig | string,
+  options?: RequestInit | AxiosRequestConfig,
 ): Promise<T> => {
+  // Support both (config) and (url, options) calling conventions from orval
+  let config: AxiosRequestConfig;
+  if (typeof configOrUrl === 'string') {
+    config = { url: configOrUrl, ...(options as AxiosRequestConfig) };
+  } else {
+    config = configOrUrl;
+  }
+
   try {
     if (config.url) {
-      // Remove barra final das URLs para evitar redirect 307
-      if (config.url.endsWith('/') && !config.url.endsWith('://')) {
-        config.url = config.url.slice(0, -1);
-        console.log('[API Client] Removed trailing slash from URL');
-      }
-
       // Remove duplicações de path (ex: /suppliers/suppliers -> /suppliers)
       // Padrão: /resource/resource/ ou /resource/resource
       config.url = config.url.replace(/\/([^\/]+)\/\1(?:\/|$)/, '/$1');
 
       // Adiciona condominio_id automaticamente para endpoints do módulo Financial
       if (config.url.includes('/financial/')) {
-        console.log('[API Client] Financial endpoint:', config.url);
-
         // Adiciona condominio_id como query parameter se não existir
         if (!config.params) {
           config.params = {};
         }
         if (!config.params.condominio_id) {
           config.params.condominio_id = DEFAULT_CONDOMINIO_ID;
-          console.log('[API Client] Added condominio_id:', DEFAULT_CONDOMINIO_ID);
         }
       }
     }

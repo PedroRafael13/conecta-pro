@@ -8,16 +8,16 @@ Este modulo contem os models SQLAlchemy para:
 """
 
 from .profile_models import (
-    # Models
-    OperationalProfile,
-    ProfileQuestion,
-    PostMatch,
-    # Enums
-    ProfileDimension,
-    PostTypeProfile,
+    PERFIL_IDEAL_POR_TIPO,
     # Constants
     QUESTIONARIO_PERFIL,
-    PERFIL_IDEAL_POR_TIPO,
+    # Models
+    OperationalProfile,
+    PostMatch,
+    PostTypeProfile,
+    # Enums
+    ProfileDimension,
+    ProfileQuestion,
 )
 
 __all__ = [

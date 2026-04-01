@@ -2,8 +2,6 @@
 Schemas de mascaramento do modulo de seguranca LGPD.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
@@ -61,5 +59,5 @@ class MaskingLevel(BaseModel):
 class MaskingFormatResponse(BaseModel):
     """Response com formatos de mascaramento disponiveis."""
 
-    categories: List[MaskingCategory] = Field(..., description="Categorias disponiveis")
-    levels: List[MaskingLevel] = Field(..., description="Niveis disponiveis")
+    categories: list[MaskingCategory] = Field(..., description="Categorias disponiveis")
+    levels: list[MaskingLevel] = Field(..., description="Niveis disponiveis")

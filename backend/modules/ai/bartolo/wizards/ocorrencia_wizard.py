@@ -6,10 +6,8 @@ coletando tipo, severidade, categoria, descricao e envolvidos.
 """
 
 from datetime import datetime
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
 
 class OcorrenciaWizard(BaseWizard):
@@ -57,7 +55,6 @@ class OcorrenciaWizard(BaseWizard):
                 ],
                 help_text="Selecione o tipo de infracao encontrada durante a fiscalizacao.",
             ),
-
             # 2. Severidade
             WizardStep(
                 id="severidade",
@@ -80,7 +77,6 @@ class OcorrenciaWizard(BaseWizard):
                     "- Gravissima: Demissao por justa causa (art. 482 CLT)"
                 ),
             ),
-
             # 3. Categoria
             WizardStep(
                 id="categoria",
@@ -99,7 +95,6 @@ class OcorrenciaWizard(BaseWizard):
                 ],
                 help_text="Classifique a area/natureza da infracao.",
             ),
-
             # 4. Titulo
             WizardStep(
                 id="titulo",
@@ -111,7 +106,6 @@ class OcorrenciaWizard(BaseWizard):
                 validation_rules={"min_length": 5, "max_length": 255},
                 help_text="Ex: 'Abandono de posto - Portaria B', 'Uso de celular durante turno noturno'",
             ),
-
             # 5. Descricao
             WizardStep(
                 id="descricao",
@@ -126,7 +120,6 @@ class OcorrenciaWizard(BaseWizard):
                     "evidencias observadas. Quanto mais detalhado, melhor."
                 ),
             ),
-
             # 6. Funcionario
             WizardStep(
                 id="funcionario",
@@ -138,7 +131,6 @@ class OcorrenciaWizard(BaseWizard):
                 validation_rules={"min_length": 2, "max_length": 200},
                 help_text="Informe o nome completo ou o ID do funcionario no sistema.",
             ),
-
             # 7. Posto
             WizardStep(
                 id="posto",
@@ -150,7 +142,6 @@ class OcorrenciaWizard(BaseWizard):
                 validation_rules={"min_length": 2, "max_length": 200},
                 help_text="Ex: 'POST-001', 'Portaria Principal', 'Guarita Norte'",
             ),
-
             # 8. Testemunhas (opcional)
             WizardStep(
                 id="testemunhas",
@@ -161,7 +152,6 @@ class OcorrenciaWizard(BaseWizard):
                 required=False,
                 help_text="Liste os nomes das pessoas que presenciaram o fato. Opcional.",
             ),
-
             # 9. Confirmacao
             WizardStep(
                 id="confirmacao",
@@ -255,28 +245,34 @@ class OcorrenciaWizard(BaseWizard):
         ]
 
         if severidade in ("leve", "moderada"):
-            steps.extend([
-                "Agendar conversa com funcionario",
-                "Documentar advertencia",
-                "Atualizar prontuario disciplinar",
-            ])
+            steps.extend(
+                [
+                    "Agendar conversa com funcionario",
+                    "Documentar advertencia",
+                    "Atualizar prontuario disciplinar",
+                ]
+            )
         elif severidade == "grave":
-            steps.extend([
-                "Emitir notificacao formal de suspensao",
-                "Notificar RH para providencias",
-                "Agendar substituto para periodo de suspensao",
-                "Documentar no prontuario disciplinar",
-                "Avaliar historico de reincidencia",
-            ])
+            steps.extend(
+                [
+                    "Emitir notificacao formal de suspensao",
+                    "Notificar RH para providencias",
+                    "Agendar substituto para periodo de suspensao",
+                    "Documentar no prontuario disciplinar",
+                    "Avaliar historico de reincidencia",
+                ]
+            )
         elif severidade == "gravissima":
-            steps.extend([
-                "Notificar RH e Juridico IMEDIATAMENTE",
-                "Documentar todas as evidencias",
-                "Coletar depoimento de testemunhas",
-                "Avaliar enquadramento no art. 482 CLT",
-                "Preparar documentacao para desligamento",
-                "Agendar substituto imediato",
-            ])
+            steps.extend(
+                [
+                    "Notificar RH e Juridico IMEDIATAMENTE",
+                    "Documentar todas as evidencias",
+                    "Coletar depoimento de testemunhas",
+                    "Avaliar enquadramento no art. 482 CLT",
+                    "Preparar documentacao para desligamento",
+                    "Agendar substituto imediato",
+                ]
+            )
 
         return steps
 
@@ -285,33 +281,39 @@ class OcorrenciaWizard(BaseWizard):
         alerts = []
 
         if severidade == "gravissima":
-            alerts.append({
-                "tipo": "error",
-                "mensagem": (
-                    "GRAVISSIMA - Requer acao IMEDIATA. "
-                    "Acionar RH e Juridico para avaliar demissao por justa causa."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "error",
+                    "mensagem": (
+                        "GRAVISSIMA - Requer acao IMEDIATA. "
+                        "Acionar RH e Juridico para avaliar demissao por justa causa."
+                    ),
+                }
+            )
 
         if severidade == "grave":
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    "GRAVE - Requer suspensao disciplinar. "
-                    "Verificar historico do funcionario antes de definir dias de suspensao."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        "GRAVE - Requer suspensao disciplinar. "
+                        "Verificar historico do funcionario antes de definir dias de suspensao."
+                    ),
+                }
+            )
 
         if not data.get("testemunhas") or (
             data.get("testemunhas", "").lower() in ("nao", "n", "nenhuma", "sem", "-", "")
         ):
-            alerts.append({
-                "tipo": "info",
-                "mensagem": (
-                    "Sem testemunhas registradas. "
-                    "Recomenda-se buscar evidencias adicionais (cameras, registros de acesso)."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": (
+                        "Sem testemunhas registradas. "
+                        "Recomenda-se buscar evidencias adicionais (cameras, registros de acesso)."
+                    ),
+                }
+            )
 
         # Verificar tipos que exigem atencao especial
         tipos_criticos = {
@@ -322,9 +324,11 @@ class OcorrenciaWizard(BaseWizard):
 
         tipo_ocorrencia = data.get("tipo_ocorrencia", "")
         if tipo_ocorrencia in tipos_criticos:
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": tipos_criticos[tipo_ocorrencia],
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": tipos_criticos[tipo_ocorrencia],
+                }
+            )
 
         return alerts

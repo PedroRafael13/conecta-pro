@@ -15,7 +15,7 @@ Tables:
 - fin_trial_balance_items: Itens dos Balancetes
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -24,9 +24,9 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "sprint27_accounting"
-down_revision: Union[str, None] = "sprint26_inventory"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "sprint26_inventory"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -482,13 +482,9 @@ def upgrade() -> None:
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("description", sa.Text, nullable=True),
         # Type and Status
-        sa.Column(
-            "center_type", cost_center_type_enum, server_default="OPERATIONAL", nullable=False
-        ),
+        sa.Column("center_type", cost_center_type_enum, server_default="OPERATIONAL", nullable=False),
         sa.Column("status", cost_center_status_enum, server_default="ACTIVE", nullable=False),
-        sa.Column(
-            "allocation_method", allocation_method_enum, server_default="DIRECT", nullable=False
-        ),
+        sa.Column("allocation_method", allocation_method_enum, server_default="DIRECT", nullable=False),
         # Hierarchy Info
         sa.Column("level", sa.Integer, server_default="1", nullable=False),
         sa.Column("full_path", sa.String(500), nullable=True),

@@ -2,23 +2,22 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
-    MobileDevice,
     DeviceStatus,
+    MobileDevice,
 )
 from modules.hr.mobile_time_clock.repositories import MobileDeviceRepository
 from modules.hr.mobile_time_clock.schemas import (
-    MobileDeviceRegister,
-    MobileDeviceUpdate,
+    DeviceHeartbeat,
     MobileDeviceApprove,
     MobileDeviceBlock,
     MobileDeviceFilter,
-    DeviceHeartbeat,
+    MobileDeviceRegister,
+    MobileDeviceUpdate,
 )
 from modules.hr.mobile_time_clock.services.push_notification_service import (
     PushNotificationService,
@@ -46,7 +45,7 @@ class DeviceService:
         data: MobileDeviceRegister,
         employee_id: UUID,
         condominio_id: UUID,
-    ) -> Tuple[MobileDevice, bool]:
+    ) -> tuple[MobileDevice, bool]:
         """Registra novo dispositivo.
 
         Retorna:
@@ -78,9 +77,7 @@ class DeviceService:
         )
 
         if len(employee_devices) >= self.MAX_DEVICES_PER_EMPLOYEE:
-            logger.warning(
-                f"Funcionário {employee_id} atingiu limite de dispositivos"
-            )
+            logger.warning(f"Funcionário {employee_id} atingiu limite de dispositivos")
             # Poderia desativar o mais antigo ou retornar erro
             oldest = min(employee_devices, key=lambda d: d.last_seen_at)
             await self.repository.soft_delete(oldest.id)
@@ -97,7 +94,7 @@ class DeviceService:
         device_id: UUID,
         data: MobileDeviceApprove,
         approved_by: UUID,
-    ) -> Optional[MobileDevice]:
+    ) -> MobileDevice | None:
         """Aprova dispositivo para uso."""
         device = await self.repository.approve(
             device_id=device_id,
@@ -120,7 +117,7 @@ class DeviceService:
         device_id: UUID,
         data: MobileDeviceBlock,
         blocked_by: UUID,
-    ) -> Optional[MobileDevice]:
+    ) -> MobileDevice | None:
         """Bloqueia dispositivo."""
         device = await self.repository.block(
             device_id=device_id,
@@ -135,7 +132,7 @@ class DeviceService:
 
         return device
 
-    async def unblock_device(self, device_id: UUID) -> Optional[MobileDevice]:
+    async def unblock_device(self, device_id: UUID) -> MobileDevice | None:
         """Desbloqueia dispositivo."""
         device = await self.repository.unblock(device_id)
         if device:
@@ -178,7 +175,7 @@ class DeviceService:
     async def get_pending_approval(
         self,
         condominio_id: UUID,
-    ) -> List[MobileDevice]:
+    ) -> list[MobileDevice]:
         """Lista dispositivos pendentes de aprovação."""
         return await self.repository.get_pending_approval(condominio_id)
 
@@ -186,7 +183,7 @@ class DeviceService:
         self,
         employee_id: UUID,
         include_inactive: bool = False,
-    ) -> List[MobileDevice]:
+    ) -> list[MobileDevice]:
         """Lista dispositivos do funcionário."""
         return await self.repository.get_by_employee(
             employee_id=employee_id,
@@ -196,7 +193,7 @@ class DeviceService:
     async def validate_device_for_checkin(  # pylint: disable=too-many-return-statements
         self,
         device_uuid: str,
-    ) -> Tuple[bool, Optional[MobileDevice], Optional[str]]:
+    ) -> tuple[bool, MobileDevice | None, str | None]:
         """Valida se dispositivo pode fazer check-in.
 
         Retorna:
@@ -229,7 +226,7 @@ class DeviceService:
     async def get_offline_devices(
         self,
         condominio_id: UUID = None,
-    ) -> List[MobileDevice]:
+    ) -> list[MobileDevice]:
         """Lista dispositivos que estão offline."""
         threshold = datetime.utcnow() - timedelta(minutes=self.OFFLINE_THRESHOLD_MINUTES)
 

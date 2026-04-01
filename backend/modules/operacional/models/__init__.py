@@ -1,15 +1,16 @@
 """Modelos do módulo Operations - Postos e Escalas."""
 
 # Post deve ser importado primeiro (dependência de Allocation e Scale)
+# Importar Occurrence para registrar no SQLAlchemy (necessário para relacionamentos)
+from modules.operacional.occurrences.models import Occurrence  # noqa: F401
+
+from .allocation import Allocation, AllocationStatus
 from .post import Post, PostStatus, PostType, ShiftType
 from .scale import Scale, ScaleStatus, ScaleType
 from .scale_template import ScaleTemplate
 from .shift import Shift, ShiftStatus
-from .allocation import Allocation, AllocationStatus
 from .substitution import Substitution, SubstitutionReason, SubstitutionStatus
 from .time_bank import TimeBank, TimeBankEntryType, TimeBankStatus
-# Importar Occurrence para registrar no SQLAlchemy (necessário para relacionamentos)
-from modules.operacional.occurrences.models import Occurrence
 
 __all__ = [
     # Post

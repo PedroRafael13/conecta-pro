@@ -5,7 +5,7 @@ Service de Consentimento LGPD.
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class ConsentService:
     """
 
     # Armazenamento em memoria (em producao, usar banco de dados)
-    _consents: Dict[str, Dict[str, Any]] = {}
+    _consents: dict[str, dict[str, Any]] = {}
 
     def __init__(self):
         """Inicializa o service."""
@@ -32,7 +32,7 @@ class ConsentService:
         legal_basis: str,
         description: str,
         expiration_days: int = 365,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Registra consentimento de titular.
 
         Args:
@@ -81,7 +81,7 @@ class ConsentService:
             "expires_at": expiration.isoformat(),
         }
 
-    def get_consents_by_titular(self, titular_id: str) -> Dict[str, Any]:
+    def get_consents_by_titular(self, titular_id: str) -> dict[str, Any]:
         """Consulta consentimentos de um titular.
 
         Args:
@@ -90,10 +90,7 @@ class ConsentService:
         Returns:
             Dict com lista de consentimentos.
         """
-        consents = [
-            c for c in self._consents.values()
-            if c["titular_id"] == titular_id
-        ]
+        consents = [c for c in self._consents.values() if c["titular_id"] == titular_id]
 
         return {
             "titular_id": titular_id,
@@ -101,7 +98,7 @@ class ConsentService:
             "total": len(consents),
         }
 
-    def revoke_consent(self, consent_id: str, reason: str) -> Dict[str, Any]:
+    def revoke_consent(self, consent_id: str, reason: str) -> dict[str, Any]:
         """Revoga um consentimento.
 
         Args:
@@ -131,7 +128,7 @@ class ConsentService:
             "revoked_at": consent["revoked_at"],
         }
 
-    def list_purposes(self) -> List[Dict[str, str]]:
+    def list_purposes(self) -> list[dict[str, str]]:
         """Lista finalidades de consentimento disponiveis.
 
         Returns:
@@ -148,7 +145,7 @@ class ConsentService:
             {"id": "legitimate_interest", "description": "Interesse legitimo"},
         ]
 
-    def list_legal_bases(self) -> List[Dict[str, str]]:
+    def list_legal_bases(self) -> list[dict[str, str]]:
         """Lista bases legais LGPD disponiveis.
 
         Returns:

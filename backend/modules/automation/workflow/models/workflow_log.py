@@ -3,8 +3,8 @@
 Sprint 33 - Workflow Engine (Unificado).
 """
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
     Column,
@@ -21,7 +21,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class LogLevel(str, enum.Enum):
+class LogLevel(StrEnum):
     """Nivel do log."""
 
     DEBUG = "DEBUG"
@@ -31,7 +31,7 @@ class LogLevel(str, enum.Enum):
     CRITICAL = "CRITICAL"
 
 
-class LogType(str, enum.Enum):
+class LogType(StrEnum):
     """Tipo de log."""
 
     # Execucao

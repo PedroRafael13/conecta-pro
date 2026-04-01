@@ -13,8 +13,8 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from fastapi.openapi.utils import get_openapi
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter, FastAPI  # noqa: E402
+from fastapi.openapi.utils import get_openapi  # noqa: E402
 
 
 def extract_clients_openapi():
@@ -22,13 +22,11 @@ def extract_clients_openapi():
 
     # Criar app FastAPI temporária
     app = FastAPI(
-        title="Conecta PRO - Módulo CLIENTS",
-        description="API de Gestão de Clientes e Condomínios",
-        version="1.0.0"
+        title="Conecta PRO - Módulo CLIENTS", description="API de Gestão de Clientes e Condomínios", version="1.0.0"
     )
 
     # Importar apenas o router de clients diretamente
-    from modules.clients.controllers import router as client_router
+    from modules.clients.controllers import router as client_router  # noqa: E402
 
     # Criar router v1
     v1_router = APIRouter(prefix="/api/v1")
@@ -71,7 +69,7 @@ def main():
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(schema, f, indent=2, ensure_ascii=False)
 
-        print(f"✓ Arquivo salvo com sucesso")
+        print("✓ Arquivo salvo com sucesso")
         print()
 
         # Resumo
@@ -91,6 +89,7 @@ def main():
     except Exception as e:
         print(f"✗ ERRO: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

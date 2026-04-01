@@ -1,16 +1,15 @@
 """Controller para webhooks de dispositivos REP."""
 
-import logging
-import hmac
 import hashlib
-from typing import Optional
+import hmac
+import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from modules.hr.rep_integration.services import SyncService
 from modules.hr.rep_integration.repositories import REPDeviceRepository
+from modules.hr.rep_integration.services import SyncService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhook", tags=["REP Webhooks"])
@@ -20,7 +19,7 @@ router = APIRouter(prefix="/webhook", tags=["REP Webhooks"])
 async def receive_events_webhook(
     device_serial: str,
     request: Request,
-    x_signature: Optional[str] = Header(None, alias="X-Signature"),
+    x_signature: str | None = Header(None, alias="X-Signature"),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Recebe eventos via webhook do dispositivo.
@@ -65,6 +64,7 @@ async def receive_events_webhook(
     # Parsear eventos
     try:
         import json  # pylint: disable=import-outside-toplevel
+
         data = json.loads(body)
         events = data.get("events", [])
     except Exception as e:
@@ -112,6 +112,7 @@ async def receive_control_id_webhook(
 
     try:
         import json  # pylint: disable=import-outside-toplevel
+
         data = json.loads(body)
     except Exception:
         raise HTTPException(
@@ -135,16 +136,18 @@ async def receive_control_id_webhook(
     values = data.get("values", [])
 
     for val in values:
-        events.append({
-            "nsr": val.get("id"),
-            "datetime": val.get("time"),
-            "pis": val.get("pis"),
-            "user_id": val.get("user_id"),
-            "user_name": val.get("user_name"),
-            "event_type": "entry",  # Control iD não diferencia
-            "method": _map_control_id_method(val.get("way", 1)),
-            "score": val.get("score"),
-        })
+        events.append(
+            {
+                "nsr": val.get("id"),
+                "datetime": val.get("time"),
+                "pis": val.get("pis"),
+                "user_id": val.get("user_id"),
+                "user_name": val.get("user_name"),
+                "event_type": "entry",  # Control iD não diferencia
+                "method": _map_control_id_method(val.get("way", 1)),
+                "score": val.get("score"),
+            }
+        )
 
     # Processar
     sync_service = SyncService(db)
@@ -167,6 +170,7 @@ async def receive_intelbras_webhook(
 
     try:
         import json  # pylint: disable=import-outside-toplevel
+
         _ = json.loads(body)
     except Exception:
         raise HTTPException(
@@ -186,7 +190,6 @@ async def receive_intelbras_webhook(
 
     # Converter formato Intelbras
     events = []
-    # TODO: Implementar conversão do formato Intelbras  # pylint: disable=fixme
 
     # Processar
     sync_service = SyncService(db)

@@ -3,10 +3,9 @@
 Sprint 35 - Task Scheduler.
 """
 
-import enum
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -14,7 +13,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models.base import Base
 
 
-class LockStatus(str, enum.Enum):
+class LockStatus(StrEnum):
     """Status do lock."""
 
     ACQUIRED = "acquired"  # Lock adquirido
@@ -93,7 +92,7 @@ class TaskLock(Base):
         return datetime.utcnow() > self.expires_at
 
     @property
-    def remaining_seconds(self) -> Optional[int]:
+    def remaining_seconds(self) -> int | None:
         """Segundos restantes do lock."""
         if not self.is_valid:
             return None
@@ -108,7 +107,7 @@ class TaskLock(Base):
             return False
         return True
 
-    def renew(self, ttl_seconds: Optional[int] = None) -> bool:
+    def renew(self, ttl_seconds: int | None = None) -> bool:
         """Renova o lock."""
         if not self.can_renew:
             return False

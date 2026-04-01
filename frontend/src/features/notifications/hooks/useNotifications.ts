@@ -30,6 +30,17 @@ interface UseNotificationsReturn {
   subscribeToPush: (deviceToken: string, platform: string) => Promise<void>;
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  return headers;
+}
+
 export function useNotifications(): UseNotificationsReturn {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -48,15 +59,13 @@ export function useNotifications(): UseNotificationsReturn {
       setError(null);
 
       const response = await fetch('/api/v1/notifications/push', {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
       });
 
       if (!response.ok) {
-        // Se endpoint não existe (404), apenas skip silenciosamente
-        if (response.status === 404) {
+        // Se endpoint não existe (404) ou sem auth (401/403), skip silenciosamente
+        if (response.status === 404 || response.status === 401 || response.status === 403) {
           setLoading(false);
           return;
         }
@@ -80,9 +89,7 @@ export function useNotifications(): UseNotificationsReturn {
     try {
       const response = await fetch(`/api/v1/notifications/push/${notificationId}/read`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
       });
 
@@ -106,9 +113,7 @@ export function useNotifications(): UseNotificationsReturn {
     try {
       const response = await fetch('/api/v1/notifications/push/read-all', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
       });
 
@@ -130,9 +135,7 @@ export function useNotifications(): UseNotificationsReturn {
     try {
       const response = await fetch('/api/v1/notifications/push/subscribe', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify({
           device_token: deviceToken,
@@ -150,8 +153,6 @@ export function useNotifications(): UseNotificationsReturn {
       if (!response.ok) {
         throw new Error('Erro ao registrar dispositivo');
       }
-
-      console.log('Dispositivo registrado com sucesso');
     } catch (err) {
       console.error('Erro ao registrar dispositivo:', err);
     }

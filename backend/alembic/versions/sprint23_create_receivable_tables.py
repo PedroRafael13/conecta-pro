@@ -13,9 +13,10 @@ Tabelas criadas:
 - billing_rules: Regras de cobranca automatica
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers
 revision = "sprint23_receivable"

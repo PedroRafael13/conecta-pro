@@ -1,21 +1,21 @@
 """Contract Analysis Models."""
 
+from modules.ai.contract_analysis.models.contract_alert import (
+    AlertPriority,
+    AlertStatus,
+    AlertType,
+    ContractAlert,
+)
 from modules.ai.contract_analysis.models.contract_analysis import (
-    ContractAnalysis,
     AnalysisStatus,
+    ContractAnalysis,
     ContractType,
     RiskLevel,
 )
 from modules.ai.contract_analysis.models.extracted_clause import (
-    ExtractedClause,
-    ClauseType,
     ClauseImportance,
-)
-from modules.ai.contract_analysis.models.contract_alert import (
-    ContractAlert,
-    AlertType,
-    AlertStatus,
-    AlertPriority,
+    ClauseType,
+    ExtractedClause,
 )
 
 __all__ = [

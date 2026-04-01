@@ -265,4 +265,117 @@ describe('useLocalStorage', () => {
       expect(result.current[0]).toBe('value2');
     });
   });
+
+  describe('Remove Function', () => {
+    it('deve remover valor usando função remove', () => {
+      localStorage.setItem('remove-key', JSON.stringify('existing-value'));
+
+      const { result } = renderHook(() => useLocalStorage('remove-key', 'default'));
+
+      expect(result.current[0]).toBe('existing-value');
+
+      act(() => {
+        result.current[2](); // remove function
+      });
+
+      expect(result.current[0]).toBe('default');
+      expect(localStorage.getItem('remove-key')).toBeNull();
+    });
+  });
+
+  describe('SSR Handling', () => {
+    it('deve retornar valor inicial quando localStorage não está disponível', () => {
+      const originalLocalStorage = window.localStorage;
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      Object.defineProperty(window, 'localStorage', {
+        value: undefined,
+        writable: true,
+      });
+
+      const { result } = renderHook(() => useLocalStorage('ssr-test', 'fallback'));
+
+      expect(result.current[0]).toBe('fallback');
+
+      Object.defineProperty(window, 'localStorage', {
+        value: originalLocalStorage,
+        writable: true,
+      });
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Remove Function - Additional Tests', () => {
+    it('deve disparar storage event ao remover', () => {
+      const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
+      localStorage.setItem('remove-event-test', JSON.stringify('value'));
+
+      const { result } = renderHook(() => useLocalStorage('remove-event-test', 'default'));
+
+      act(() => {
+        result.current[2](); // removeValue
+      });
+
+      expect(dispatchEventSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'storage',
+          key: 'remove-event-test',
+          newValue: null,
+        })
+      );
+
+      dispatchEventSpy.mockRestore();
+    });
+  });
+
+  describe('Remove Function - Error Handling', () => {
+    it('deve lidar com erro ao remover do localStorage', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      localStorage.setItem('remove-error-key', JSON.stringify('value'));
+
+      const { result } = renderHook(() => useLocalStorage('remove-error-key', 'default'));
+
+      expect(result.current[0]).toBe('value');
+
+      // Mock removeItem to throw via prototype spy
+      const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+        throw new Error('Remove failed');
+      });
+
+      act(() => {
+        result.current[2](); // removeValue
+      });
+
+      // O catch da linha 68 deve ser atingido
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Error removing localStorage key'),
+        expect.any(Error)
+      );
+
+      removeItemSpy.mockRestore();
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Storage Event - Edge Cases', () => {
+    it('deve lidar com erro ao parsear storage event', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const { result } = renderHook(() => useLocalStorage('parse-error-key', 'default'));
+
+      act(() => {
+        const storageEvent = new StorageEvent('storage', {
+          key: 'parse-error-key',
+          newValue: 'invalid-json-{{{',
+        });
+        window.dispatchEvent(storageEvent);
+      });
+
+      // Deve manter o valor atual quando parsing falha
+      expect(result.current[0]).toBe('default');
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+    });
+  });
 });

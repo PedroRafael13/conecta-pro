@@ -27,8 +27,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 0 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 0 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 0 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 0, certidoes_pendentes: 0 },
@@ -51,8 +51,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 5 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 3 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 3 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 12, certidoes_pendentes: 2 },
@@ -73,8 +73,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 0 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 0 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 0 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 0, certidoes_pendentes: 0 },
@@ -96,8 +96,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 15 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 0 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 0 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 0, certidoes_pendentes: 0 },
@@ -116,8 +116,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 0 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 7 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 7 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 0, certidoes_pendentes: 0 },
@@ -136,8 +136,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 0 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 0 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 0 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 20, certidoes_pendentes: 0 },
@@ -156,8 +156,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 0 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 0 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 0 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 0, certidoes_pendentes: 4 },
@@ -176,7 +176,7 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: undefined,
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
         data: undefined,
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
@@ -197,8 +197,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 5 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 3 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 3 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 12, certidoes_pendentes: 2 },
@@ -277,8 +277,8 @@ describe('Dashboard de Licitações', () => {
       vi.spyOn(tendersHooks, 'useTendersDashboard').mockReturnValue({
         data: { total_abertos: 5 },
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
-        data: { em_andamento: 3 },
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
+        data: { total: 3 },
       } as never);
       vi.spyOn(contractsHooks, 'useContractsDashboard').mockReturnValue({
         data: { vigentes: 12, certidoes_pendentes: 2 },
@@ -303,7 +303,7 @@ describe('Dashboard de Licitações', () => {
         data: undefined,
         isLoading: true,
       } as never);
-      vi.spyOn(proposalsHooks, 'useProposalsDashboard').mockReturnValue({
+      vi.spyOn(proposalsHooks, 'useEstatisticasPropostas').mockReturnValue({
         data: undefined,
         isLoading: true,
       } as never);

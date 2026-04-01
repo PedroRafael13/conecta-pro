@@ -10,6 +10,42 @@ from .access_log import (
     AccessLogResponse,
     AccessLogStats,
 )
+
+# =============================================================================
+# CAMPO - Checklists
+# =============================================================================
+from .checklist import (
+    AlertaConfig,
+    # Response
+    ChecklistComItens,
+    ChecklistConcluirRequest,
+    # Actions
+    ChecklistIniciarRequest,
+    # Item
+    ChecklistItemCreate,
+    ChecklistItemRead,
+    ChecklistItemUpdate,
+    ChecklistPreenchidoCompleto,
+    # Preenchido
+    ChecklistPreenchidoCreate,
+    ChecklistPreenchidoRead,
+    ChecklistResponderRequest,
+    # Resposta
+    ChecklistRespostaCreate,
+    ChecklistRespostaRead,
+    ChecklistRespostaUpdate,
+    # Template
+    ChecklistTemplateCreate,
+    ChecklistTemplateListItem,
+    ChecklistTemplateRead,
+    ChecklistTemplateUpdate,
+    # Auxiliares
+    OpcaoItem,
+    ReordenarItensRequest,
+    TemplateFiltro,
+    TemplatePaginatedResponse,
+    ValidacaoResult,
+)
 from .equipment_status import (
     EquipmentStatusCreate,
     EquipmentStatusFilter,
@@ -18,149 +54,79 @@ from .equipment_status import (
     EquipmentStatusStats,
     EquipmentStatusUpdate,
 )
-from .guardian_occurrence import (
-    GuardianOccurrenceAcknowledge,
-    GuardianOccurrenceCreate,
-    GuardianOccurrenceEscalate,
-    GuardianOccurrenceFilter,
-    GuardianOccurrenceListResponse,
-    GuardianOccurrenceResolve,
-    GuardianOccurrenceResponse,
-    GuardianOccurrenceStats,
-)
-from .guardian_sync import (
-    GuardianSyncCreate,
-    GuardianSyncFilter,
-    GuardianSyncListResponse,
-    GuardianSyncResponse,
-    GuardianSyncRetry,
-    GuardianSyncStats,
-)
 
 # =============================================================================
 # CAMPO - Ordens de Servico
 # =============================================================================
 from .ordem_servico import (
+    DocumentoItem,
+    FotoItem,
+    # Auxiliares
+    MaterialItem,
     # Create/Update
     OrdemServicoCreate,
-    OrdemServicoUpdate,
+    OrdemServicoListItem,
     # Read
     OrdemServicoRead,
-    OrdemServicoListItem,
+    OrdemServicoUpdate,
     # Actions
     OSAgendarRequest,
+    OSAssinaturaRequest,
+    OSAvaliacaoRequest,
+    OSCancelarRequest,
     OSCheckinRequest,
     OSCheckoutRequest,
     OSConcluirRequest,
-    OSCancelarRequest,
-    OSReagendarRequest,
-    OSAvaliacaoRequest,
-    OSAssinaturaRequest,
-    OSFotoRequest,
+    OSDashboardStats,
     # Filters/Response
     OSFiltro,
+    OSFotoRequest,
     OSPaginatedResponse,
-    OSDashboardStats,
-    # Auxiliares
-    MaterialItem,
-    FotoItem,
-    DocumentoItem,
+    OSReagendarRequest,
 )
 
 # =============================================================================
 # CAMPO - Visitas
 # =============================================================================
 from .visita import (
-    # Create/Update
-    VisitaCreate,
-    VisitaUpdate,
-    # Read
-    VisitaRead,
-    VisitaListItem,
-    # Actions
-    VisitaConfirmarRequest,
-    VisitaCheckinRequest,
-    VisitaCheckoutRequest,
-    VisitaResultadoRequest,
-    VisitaCancelarRequest,
-    VisitaReagendarRequest,
-    VisitaInteresseRequest,
-    VisitaPropostaRequest,
-    VisitaLevantamentoRequest,
-    VisitaNecessidadeRequest,
-    VisitaFollowupRequest,
-    VisitaFotoRequest,
-    # Filters/Response
-    VisitaFiltro,
-    VisitaPaginatedResponse,
-    VisitaDashboardStats,
+    FotoVisita,
     # Auxiliares
     InteresseServico,
-    NecessidadeItem,
     LevantamentoTecnico,
-    FotoVisita,
-)
-
-# =============================================================================
-# CAMPO - Checklists
-# =============================================================================
-from .checklist import (
-    # Template
-    ChecklistTemplateCreate,
-    ChecklistTemplateUpdate,
-    ChecklistTemplateRead,
-    ChecklistTemplateListItem,
-    # Item
-    ChecklistItemCreate,
-    ChecklistItemUpdate,
-    ChecklistItemRead,
-    # Resposta
-    ChecklistRespostaCreate,
-    ChecklistRespostaUpdate,
-    ChecklistRespostaRead,
-    # Preenchido
-    ChecklistPreenchidoCreate,
-    ChecklistPreenchidoRead,
+    NecessidadeItem,
+    VisitaCancelarRequest,
+    VisitaCheckinRequest,
+    VisitaCheckoutRequest,
     # Actions
-    ChecklistIniciarRequest,
-    ChecklistResponderRequest,
-    ChecklistConcluirRequest,
-    ReordenarItensRequest,
-    # Response
-    ChecklistComItens,
-    ChecklistPreenchidoCompleto,
-    ValidacaoResult,
-    TemplatePaginatedResponse,
-    TemplateFiltro,
-    # Auxiliares
-    OpcaoItem,
-    AlertaConfig,
+    VisitaConfirmarRequest,
+    # Create/Update
+    VisitaCreate,
+    VisitaDashboardStats,
+    # Filters/Response
+    VisitaFiltro,
+    VisitaFollowupRequest,
+    VisitaFotoRequest,
+    VisitaInteresseRequest,
+    VisitaLevantamentoRequest,
+    VisitaListItem,
+    VisitaNecessidadeRequest,
+    VisitaPaginatedResponse,
+    VisitaPropostaRequest,
+    # Read
+    VisitaRead,
+    VisitaReagendarRequest,
+    VisitaResultadoRequest,
+    VisitaUpdate,
 )
 
 __all__ = [
     # === Legacy (Portaria Remota) ===
-    # GuardianSync
-    "GuardianSyncCreate",
-    "GuardianSyncResponse",
-    "GuardianSyncFilter",
-    "GuardianSyncListResponse",
-    "GuardianSyncRetry",
-    "GuardianSyncStats",
     # AccessLog
     "AccessLogCreate",
     "AccessLogResponse",
     "AccessLogFilter",
     "AccessLogListResponse",
     "AccessLogStats",
-    # GuardianOccurrence
-    "GuardianOccurrenceCreate",
-    "GuardianOccurrenceResponse",
-    "GuardianOccurrenceFilter",
-    "GuardianOccurrenceListResponse",
-    "GuardianOccurrenceAcknowledge",
-    "GuardianOccurrenceResolve",
-    "GuardianOccurrenceEscalate",
-    "GuardianOccurrenceStats",
     # EquipmentStatus
     "EquipmentStatusCreate",
     "EquipmentStatusUpdate",

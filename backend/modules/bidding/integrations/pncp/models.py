@@ -3,100 +3,105 @@ DTOs para integracao com PNCP
 =============================
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List
+
 from pydantic import BaseModel, Field
 
 
 class PNCPOrgao(BaseModel):
     """Orgao/Entidade do PNCP."""
+
     cnpj: str
     razao_social: str
-    nome_unidade: Optional[str] = None
+    nome_unidade: str | None = None
     uf: str = "AM"
-    municipio: Optional[str] = None
-    codigo_ibge: Optional[str] = None
-    esfera: Optional[str] = None  # federal, estadual, municipal
+    municipio: str | None = None
+    codigo_ibge: str | None = None
+    esfera: str | None = None  # federal, estadual, municipal
 
 
 class PNCPItem(BaseModel):
     """Item de compra do PNCP."""
+
     numero_item: int
     descricao: str
     quantidade: Decimal
     unidade_medida: str
-    valor_unitario_estimado: Optional[Decimal] = None
-    valor_total_estimado: Optional[Decimal] = None
-    situacao: Optional[str] = None
-    codigo_material_servico: Optional[str] = None
-    tipo_beneficio: Optional[str] = None  # ME/EPP, ampla, etc
+    valor_unitario_estimado: Decimal | None = None
+    valor_total_estimado: Decimal | None = None
+    situacao: str | None = None
+    codigo_material_servico: str | None = None
+    tipo_beneficio: str | None = None  # ME/EPP, ampla, etc
 
 
 class PNCPDocumento(BaseModel):
     """Documento/Anexo do PNCP."""
+
     titulo: str
     tipo: str  # edital, anexo, ata, etc
     url: str
-    data_publicacao: Optional[datetime] = None
-    tamanho_bytes: Optional[int] = None
-    hash_arquivo: Optional[str] = None
+    data_publicacao: datetime | None = None
+    tamanho_bytes: int | None = None
+    hash_arquivo: str | None = None
 
 
 class PNCPCompra(BaseModel):
     """Compra do PNCP."""
+
     # Identificacao
     numero_compra: str
     ano_compra: int
     sequencial_compra: int
-    numero_controle_pncp: Optional[str] = None
+    numero_controle_pncp: str | None = None
 
     # Orgao
     orgao: PNCPOrgao
 
     # Modalidade e tipo
-    modalidade_id: Optional[int] = None
-    modalidade_nome: Optional[str] = None
-    modo_disputa_id: Optional[int] = None
-    modo_disputa_nome: Optional[str] = None
-    tipo_contratacao: Optional[str] = None
-    tipo_instrumento_convocatorio: Optional[str] = None
+    modalidade_id: int | None = None
+    modalidade_nome: str | None = None
+    modo_disputa_id: int | None = None
+    modo_disputa_nome: str | None = None
+    tipo_contratacao: str | None = None
+    tipo_instrumento_convocatorio: str | None = None
 
     # Objeto
     objeto: str
-    objeto_resumido: Optional[str] = None
-    informacao_complementar: Optional[str] = None
+    objeto_resumido: str | None = None
+    informacao_complementar: str | None = None
 
     # Valores
-    valor_estimado_total: Optional[Decimal] = None
-    valor_homologado_total: Optional[Decimal] = None
+    valor_estimado_total: Decimal | None = None
+    valor_homologado_total: Decimal | None = None
 
     # Datas
-    data_publicacao_pncp: Optional[datetime] = None
-    data_abertura_proposta: Optional[datetime] = None
-    data_encerramento_proposta: Optional[datetime] = None
-    data_resultado: Optional[datetime] = None
+    data_publicacao_pncp: datetime | None = None
+    data_abertura_proposta: datetime | None = None
+    data_encerramento_proposta: datetime | None = None
+    data_resultado: datetime | None = None
 
     # Status
-    situacao_compra_id: Optional[int] = None
-    situacao_compra_nome: Optional[str] = None
+    situacao_compra_id: int | None = None
+    situacao_compra_nome: str | None = None
 
     # Links
-    link_sistema_origem: Optional[str] = None
-    link_pncp: Optional[str] = None
+    link_sistema_origem: str | None = None
+    link_pncp: str | None = None
 
     # Itens e documentos
-    itens: List[PNCPItem] = Field(default_factory=list)
-    documentos: List[PNCPDocumento] = Field(default_factory=list)
+    itens: list[PNCPItem] = Field(default_factory=list)
+    documentos: list[PNCPDocumento] = Field(default_factory=list)
 
     # Informacoes adicionais
     srp: bool = False  # Sistema de Registro de Precos
-    processo_administrativo: Optional[str] = None
-    justificativa: Optional[str] = None
+    processo_administrativo: str | None = None
+    justificativa: str | None = None
 
 
 class PNCPContrato(BaseModel):
     """Contrato do PNCP."""
+
     numero_contrato: str
     ano_contrato: int
     sequencial_contrato: int
@@ -111,41 +116,43 @@ class PNCPContrato(BaseModel):
 
     # Valores
     valor_inicial: Decimal
-    valor_global: Optional[Decimal] = None
+    valor_global: Decimal | None = None
 
     # Vigencia
-    data_assinatura: Optional[date] = None
-    data_publicacao: Optional[date] = None
-    data_vigencia_inicio: Optional[date] = None
-    data_vigencia_fim: Optional[date] = None
+    data_assinatura: date | None = None
+    data_publicacao: date | None = None
+    data_vigencia_inicio: date | None = None
+    data_vigencia_fim: date | None = None
 
     # Objeto
     objeto: str
 
     # Links
-    link_pncp: Optional[str] = None
+    link_pncp: str | None = None
 
 
 class PNCPResponse(BaseModel):
     """Resposta padrao da API PNCP."""
+
     sucesso: bool = True
     total_registros: int = 0
     pagina_atual: int = 1
     total_paginas: int = 1
-    compras: List[PNCPCompra] = Field(default_factory=list)
-    erro: Optional[str] = None
+    compras: list[PNCPCompra] = Field(default_factory=list)
+    erro: str | None = None
 
 
 class PNCPSearchParams(BaseModel):
     """Parametros de busca no PNCP."""
+
     uf: str = "AM"
-    data_inicial: Optional[date] = None
-    data_final: Optional[date] = None
-    modalidade: Optional[str] = None
-    situacao: Optional[str] = None
-    cnpj_orgao: Optional[str] = None
-    objeto: Optional[str] = None
-    valor_minimo: Optional[Decimal] = None
-    valor_maximo: Optional[Decimal] = None
+    data_inicial: date | None = None
+    data_final: date | None = None
+    modalidade: str | None = None
+    situacao: str | None = None
+    cnpj_orgao: str | None = None
+    objeto: str | None = None
+    valor_minimo: Decimal | None = None
+    valor_maximo: Decimal | None = None
     pagina: int = 1
     tamanho_pagina: int = 20

@@ -12,8 +12,8 @@ import logging
 from datetime import datetime
 from uuid import uuid4
 
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionStatus
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus, ActionType
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 # Import condicional do servico de notificacao
 try:
     from modules.notifications.services.notification_service import NotificationService
+
     _HAS_NOTIFICATION_SERVICE = True
 except ImportError:
     _HAS_NOTIFICATION_SERVICE = False
@@ -28,6 +29,7 @@ except ImportError:
 # Import condicional do servico de push
 try:
     from modules.notifications.services.push_service import PushService
+
     _HAS_PUSH_SERVICE = True
 except ImportError:
     _HAS_PUSH_SERVICE = False
@@ -137,7 +139,8 @@ class NotificationActionExecutor(BaseActionExecutor):
 
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.NOTIFICATIONS_SEND)
             except Exception:
                 user_has_perm = True
@@ -247,7 +250,9 @@ class NotificationActionExecutor(BaseActionExecutor):
             action_type=request.action_type,
             status=ActionStatus.COMPLETED if success else ActionStatus.FAILED,
             success=success,
-            message=f"Notificacao enviada: {sent_count}/{total} destinatarios" if total > 0 else "Notificacao registrada com sucesso",
+            message=f"Notificacao enviada: {sent_count}/{total} destinatarios"
+            if total > 0
+            else "Notificacao registrada com sucesso",
             details={
                 "notification_ids": notification_ids,
                 "title": title,
@@ -257,9 +262,7 @@ class NotificationActionExecutor(BaseActionExecutor):
                 "failed_count": failed_count,
                 "priority": priority,
             },
-            affected_entities=[
-                {"type": "notification", "id": nid} for nid in notification_ids[:10]
-            ],
+            affected_entities=[{"type": "notification", "id": nid} for nid in notification_ids[:10]],
             started_at=started_at,
             completed_at=datetime.utcnow(),
             duration_seconds=(datetime.utcnow() - started_at).total_seconds(),

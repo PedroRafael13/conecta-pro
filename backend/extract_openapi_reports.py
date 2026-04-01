@@ -9,7 +9,6 @@ Extrai todos os endpoints de relatórios:
 """
 
 import json
-import sys
 import os
 
 # Evita problemas com imports duplicados
@@ -17,10 +16,13 @@ os.environ["SKIP_DATABASE_INIT"] = "1"
 
 from fastapi.openapi.utils import get_openapi
 
+
 # Import tardio para evitar problemas
 def get_app():
     from main import app
+
     return app
+
 
 def extract_reports_openapi():
     """Extrai OpenAPI spec filtrado para módulo REPORTS."""
@@ -40,9 +42,9 @@ def extract_reports_openapi():
 
     # Prefixos que queremos incluir
     prefixes_to_include = [
-        "/api/v1/reports",           # Módulo reports principal
-        "/api/v1/ai/reports",         # AI Report Generator
-        "/api/v1/operacional/reports" # Operational Reports
+        "/api/v1/reports",  # Módulo reports principal
+        "/api/v1/ai/reports",  # AI Report Generator
+        "/api/v1/operacional/reports",  # Operational Reports
     ]
 
     for path, path_item in openapi_schema.get("paths", {}).items():
@@ -76,11 +78,7 @@ def extract_reports_openapi():
     extract_schema_refs(reports_paths)
 
     # Filtra apenas schemas usados
-    filtered_schemas = {
-        name: schema
-        for name, schema in all_schemas.items()
-        if name in used_schemas
-    }
+    filtered_schemas = {name: schema for name, schema in all_schemas.items() if name in used_schemas}
 
     # Monta OpenAPI filtrado
     reports_openapi = {
@@ -88,23 +86,17 @@ def extract_reports_openapi():
         "info": {
             "title": "Conecta PRO - Reports API",
             "version": "2.0.0",
-            "description": "API completa do módulo de Relatórios incluindo Reports, Intelligent Reports, AI Reports e Operational Reports"
+            "description": "API completa do módulo de Relatórios incluindo Reports, Intelligent Reports, AI Reports e Operational Reports",
         },
         "servers": [
-            {
-                "url": "http://localhost:8000",
-                "description": "Servidor de desenvolvimento"
-            },
-            {
-                "url": "https://api.conectapro.com.br",
-                "description": "Servidor de produção"
-            }
+            {"url": "http://localhost:8000", "description": "Servidor de desenvolvimento"},
+            {"url": "https://api.conectapro.com.br", "description": "Servidor de produção"},
         ],
         "paths": reports_paths,
         "components": {
             "schemas": filtered_schemas,
-            "securitySchemes": openapi_schema.get("components", {}).get("securitySchemes", {})
-        }
+            "securitySchemes": openapi_schema.get("components", {}).get("securitySchemes", {}),
+        },
     }
 
     # Salva arquivo
@@ -116,7 +108,7 @@ def extract_reports_openapi():
     num_paths = len(reports_paths)
     num_schemas = len(filtered_schemas)
 
-    print(f"✅ OpenAPI spec REPORTS extraído com sucesso!")
+    print("✅ OpenAPI spec REPORTS extraído com sucesso!")
     print(f"📁 Arquivo: {output_file}")
     print(f"🔗 Endpoints: {num_paths}")
     print(f"📦 Schemas: {num_schemas}")
@@ -129,6 +121,7 @@ def extract_reports_openapi():
         print(f"  - {prefix}: {count} endpoints")
 
     return output_file, num_paths, num_schemas
+
 
 if __name__ == "__main__":
     extract_reports_openapi()

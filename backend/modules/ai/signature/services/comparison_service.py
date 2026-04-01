@@ -4,7 +4,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -19,7 +19,7 @@ class FeatureScore:
     score: float  # 0-1
     weight: float
     weighted_score: float
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -40,12 +40,12 @@ class ComparisonResult:
     similarity_score: float = 0.0  # 0-1
     confidence: float = 0.0  # 0-1
     threshold_used: float = 0.75
-    feature_scores: List[FeatureScore] = field(default_factory=list)
+    feature_scores: list[FeatureScore] = field(default_factory=list)
     method_used: str = "hybrid"
-    anomalies: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    anomalies: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     processing_time_ms: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -72,7 +72,7 @@ class BiometricComparisonResult:
     timing_match: float = 0.0
     overall_biometric_score: float = 0.0
     is_consistent: bool = False
-    anomalies: List[str] = field(default_factory=list)
+    anomalies: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -130,10 +130,10 @@ class SignatureComparisonService:
 
     def compare(
         self,
-        signature1: Dict[str, Any],
-        signature2: Dict[str, Any],
+        signature1: dict[str, Any],
+        signature2: dict[str, Any],
         mode: str = "normal",
-        custom_threshold: Optional[float] = None,
+        custom_threshold: float | None = None,
     ) -> ComparisonResult:
         """Compare two signatures.
 
@@ -167,53 +167,63 @@ class SignatureComparisonService:
 
             # 1. Geometric comparison
             geo_score = self._compare_geometric(signature1, signature2)
-            feature_scores.append(FeatureScore(
-                feature_name="geometric",
-                score=geo_score["score"],
-                weight=self.FEATURE_WEIGHTS["geometric"],
-                weighted_score=geo_score["score"] * self.FEATURE_WEIGHTS["geometric"],
-                details=geo_score,
-            ))
+            feature_scores.append(
+                FeatureScore(
+                    feature_name="geometric",
+                    score=geo_score["score"],
+                    weight=self.FEATURE_WEIGHTS["geometric"],
+                    weighted_score=geo_score["score"] * self.FEATURE_WEIGHTS["geometric"],
+                    details=geo_score,
+                )
+            )
 
             # 2. Contour comparison
             contour_score = self._compare_contours(signature1, signature2)
-            feature_scores.append(FeatureScore(
-                feature_name="contour",
-                score=contour_score["score"],
-                weight=self.FEATURE_WEIGHTS["contour"],
-                weighted_score=contour_score["score"] * self.FEATURE_WEIGHTS["contour"],
-                details=contour_score,
-            ))
+            feature_scores.append(
+                FeatureScore(
+                    feature_name="contour",
+                    score=contour_score["score"],
+                    weight=self.FEATURE_WEIGHTS["contour"],
+                    weighted_score=contour_score["score"] * self.FEATURE_WEIGHTS["contour"],
+                    details=contour_score,
+                )
+            )
 
             # 3. Feature vector comparison
             feature_score = self._compare_feature_vectors(signature1, signature2)
-            feature_scores.append(FeatureScore(
-                feature_name="feature_vector",
-                score=feature_score["score"],
-                weight=self.FEATURE_WEIGHTS["feature_vector"],
-                weighted_score=feature_score["score"] * self.FEATURE_WEIGHTS["feature_vector"],
-                details=feature_score,
-            ))
+            feature_scores.append(
+                FeatureScore(
+                    feature_name="feature_vector",
+                    score=feature_score["score"],
+                    weight=self.FEATURE_WEIGHTS["feature_vector"],
+                    weighted_score=feature_score["score"] * self.FEATURE_WEIGHTS["feature_vector"],
+                    details=feature_score,
+                )
+            )
 
             # 4. Stroke comparison
             stroke_score = self._compare_strokes(signature1, signature2)
-            feature_scores.append(FeatureScore(
-                feature_name="stroke",
-                score=stroke_score["score"],
-                weight=self.FEATURE_WEIGHTS["stroke"],
-                weighted_score=stroke_score["score"] * self.FEATURE_WEIGHTS["stroke"],
-                details=stroke_score,
-            ))
+            feature_scores.append(
+                FeatureScore(
+                    feature_name="stroke",
+                    score=stroke_score["score"],
+                    weight=self.FEATURE_WEIGHTS["stroke"],
+                    weighted_score=stroke_score["score"] * self.FEATURE_WEIGHTS["stroke"],
+                    details=stroke_score,
+                )
+            )
 
             # 5. Quality comparison
             quality_score = self._compare_quality(signature1, signature2)
-            feature_scores.append(FeatureScore(
-                feature_name="quality",
-                score=quality_score["score"],
-                weight=self.FEATURE_WEIGHTS["quality"],
-                weighted_score=quality_score["score"] * self.FEATURE_WEIGHTS["quality"],
-                details=quality_score,
-            ))
+            feature_scores.append(
+                FeatureScore(
+                    feature_name="quality",
+                    score=quality_score["score"],
+                    weight=self.FEATURE_WEIGHTS["quality"],
+                    weighted_score=quality_score["score"] * self.FEATURE_WEIGHTS["quality"],
+                    details=quality_score,
+                )
+            )
 
             # Calculate overall similarity
             total_weighted_score = sum(f.weighted_score for f in feature_scores)
@@ -262,8 +272,8 @@ class SignatureComparisonService:
 
     def compare_with_template(
         self,
-        signature: Dict[str, Any],
-        template: Dict[str, Any],
+        signature: dict[str, Any],
+        template: dict[str, Any],
         mode: str = "normal",
     ) -> ComparisonResult:
         """Compare signature against a template.
@@ -289,11 +299,11 @@ class SignatureComparisonService:
 
     def compare_batch(
         self,
-        signature: Dict[str, Any],
-        candidates: List[Dict[str, Any]],
+        signature: dict[str, Any],
+        candidates: list[dict[str, Any]],
         mode: str = "normal",
         top_n: int = 5,
-    ) -> List[Tuple[int, ComparisonResult]]:
+    ) -> list[tuple[int, ComparisonResult]]:
         """Compare signature against multiple candidates.
 
         Args:
@@ -318,9 +328,9 @@ class SignatureComparisonService:
 
     def _compare_geometric(
         self,
-        sig1: Dict[str, Any],
-        sig2: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        sig1: dict[str, Any],
+        sig2: dict[str, Any],
+    ) -> dict[str, Any]:
         """Compare geometric properties."""
         # Get dimensions
         w1, h1 = sig1.get("width", 100), sig1.get("height", 50)
@@ -350,9 +360,9 @@ class SignatureComparisonService:
 
     def _compare_contours(
         self,
-        sig1: Dict[str, Any],
-        sig2: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        sig1: dict[str, Any],
+        sig2: dict[str, Any],
+    ) -> dict[str, Any]:
         """Compare contour data."""
         contour1 = sig1.get("contour_data", [])
         contour2 = sig2.get("contour_data", [])
@@ -382,9 +392,9 @@ class SignatureComparisonService:
 
     def _compare_feature_vectors(
         self,
-        sig1: Dict[str, Any],
-        sig2: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        sig1: dict[str, Any],
+        sig2: dict[str, Any],
+    ) -> dict[str, Any]:
         """Compare feature vectors using cosine similarity."""
         vec1 = sig1.get("feature_vector", [])
         vec2 = sig2.get("feature_vector", [])
@@ -416,9 +426,9 @@ class SignatureComparisonService:
 
     def _compare_strokes(
         self,
-        sig1: Dict[str, Any],
-        sig2: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        sig1: dict[str, Any],
+        sig2: dict[str, Any],
+    ) -> dict[str, Any]:
         """Compare stroke characteristics."""
         strokes1 = sig1.get("stroke_count", 0)
         strokes2 = sig2.get("stroke_count", 0)
@@ -453,9 +463,9 @@ class SignatureComparisonService:
 
     def _compare_quality(
         self,
-        sig1: Dict[str, Any],
-        sig2: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        sig1: dict[str, Any],
+        sig2: dict[str, Any],
+    ) -> dict[str, Any]:
         """Compare quality metrics."""
         q1 = sig1.get("quality_score", 0.5)
         q2 = sig2.get("quality_score", 0.5)
@@ -475,8 +485,8 @@ class SignatureComparisonService:
 
     def _compare_biometric(
         self,
-        sig1: Dict[str, Any],
-        sig2: Dict[str, Any],
+        sig1: dict[str, Any],
+        sig2: dict[str, Any],
     ) -> BiometricComparisonResult:
         """Compare biometric data (pressure, velocity, timing)."""
         result = BiometricComparisonResult()
@@ -506,19 +516,17 @@ class SignatureComparisonService:
             scores.append(result.timing_match * self.BIOMETRIC_WEIGHTS["timing"])
 
         if scores:
-            result.overall_biometric_score = sum(scores) / sum(
-                self.BIOMETRIC_WEIGHTS.values()
-            )
+            result.overall_biometric_score = sum(scores) / sum(self.BIOMETRIC_WEIGHTS.values())
             result.is_consistent = result.overall_biometric_score >= 0.7
 
         return result
 
     def _detect_anomalies(
         self,
-        sig1: Dict[str, Any],
-        sig2: Dict[str, Any],
-        feature_scores: List[FeatureScore],
-    ) -> List[str]:
+        sig1: dict[str, Any],
+        sig2: dict[str, Any],
+        feature_scores: list[FeatureScore],
+    ) -> list[str]:
         """Detect potential forgery indicators."""
         anomalies = []
 
@@ -544,8 +552,8 @@ class SignatureComparisonService:
 
     def _calculate_confidence(
         self,
-        feature_scores: List[FeatureScore],
-        anomalies: List[str],
+        feature_scores: list[FeatureScore],
+        anomalies: list[str],
     ) -> float:
         """Calculate confidence in the comparison result."""
         # Base confidence from feature consistency
@@ -565,7 +573,7 @@ class SignatureComparisonService:
         confidence = mean_score * consistency_factor - anomaly_penalty
         return max(0, min(1, confidence))
 
-    def _calculate_centroid(self, points: List[List[int]]) -> Tuple[float, float]:
+    def _calculate_centroid(self, points: list[list[int]]) -> tuple[float, float]:
         """Calculate centroid of points."""
         if not points:
             return (0, 0)
@@ -576,9 +584,9 @@ class SignatureComparisonService:
 
     def _normalize_contour(
         self,
-        points: List[List[int]],
-        centroid: Tuple[float, float],
-    ) -> List[List[float]]:
+        points: list[list[int]],
+        centroid: tuple[float, float],
+    ) -> list[list[float]]:
         """Normalize contour points relative to centroid."""
         if not points:
             return []
@@ -587,16 +595,14 @@ class SignatureComparisonService:
         translated = [[p[0] - centroid[0], p[1] - centroid[1]] for p in points]
 
         # Scale to unit size
-        max_dist = max(
-            math.sqrt(p[0]**2 + p[1]**2) for p in translated
-        ) or 1
+        max_dist = max(math.sqrt(p[0] ** 2 + p[1] ** 2) for p in translated) or 1
 
         return [[p[0] / max_dist, p[1] / max_dist] for p in translated]
 
     def _contour_distance(
         self,
-        contour1: List[List[float]],
-        contour2: List[List[float]],
+        contour1: list[list[float]],
+        contour2: list[list[float]],
     ) -> float:
         """Calculate distance between contours."""
         if not contour1 or not contour2:
@@ -613,21 +619,18 @@ class SignatureComparisonService:
         # Calculate average minimum distance
         total_dist = 0
         for p1 in sampled1:
-            min_dist = min(
-                math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
-                for p2 in sampled2
-            )
+            min_dist = min(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) for p2 in sampled2)
             total_dist += min_dist
 
         return total_dist / len(sampled1) * 100
 
     def _cosine_similarity(
         self,
-        vec1: List[float],
-        vec2: List[float],
+        vec1: list[float],
+        vec2: list[float],
     ) -> float:
         """Calculate cosine similarity between vectors."""
-        dot_product = sum(a * b for a, b in zip(vec1, vec2))
+        dot_product = sum(a * b for a, b in zip(vec1, vec2, strict=False))
         norm1 = math.sqrt(sum(a**2 for a in vec1))
         norm2 = math.sqrt(sum(b**2 for b in vec2))
 
@@ -640,16 +643,16 @@ class SignatureComparisonService:
 
     def _euclidean_distance(
         self,
-        vec1: List[float],
-        vec2: List[float],
+        vec1: list[float],
+        vec2: list[float],
     ) -> float:
         """Calculate Euclidean distance between vectors."""
-        return math.sqrt(sum((a - b)**2 for a, b in zip(vec1, vec2)))
+        return math.sqrt(sum((a - b) ** 2 for a, b in zip(vec1, vec2, strict=False)))
 
     def _compare_time_series(
         self,
-        series1: List[float],
-        series2: List[float],
+        series1: list[float],
+        series2: list[float],
     ) -> float:
         """Compare two time series using DTW-like approach."""
         if not series1 or not series2:

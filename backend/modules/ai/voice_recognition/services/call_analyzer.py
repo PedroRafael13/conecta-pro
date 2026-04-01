@@ -6,9 +6,7 @@ Service for analyzing phone calls and voice interactions.
 
 import re
 import time
-from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
-from uuid import UUID
+from typing import Any
 
 
 class CallAnalyzer:
@@ -16,16 +14,47 @@ class CallAnalyzer:
 
     # Sentiment keywords (Portuguese)
     POSITIVE_KEYWORDS = {
-        "obrigado", "obrigada", "agradeço", "excelente", "ótimo", "perfeito",
-        "bom", "boa", "satisfeito", "satisfeita", "resolvido", "ajudou",
-        "maravilhoso", "fantástico", "parabéns", "adorei", "gostei",
+        "obrigado",
+        "obrigada",
+        "agradeço",
+        "excelente",
+        "ótimo",
+        "perfeito",
+        "bom",
+        "boa",
+        "satisfeito",
+        "satisfeita",
+        "resolvido",
+        "ajudou",
+        "maravilhoso",
+        "fantástico",
+        "parabéns",
+        "adorei",
+        "gostei",
     }
 
     NEGATIVE_KEYWORDS = {
-        "problema", "reclamação", "insatisfeito", "insatisfeita", "péssimo",
-        "horrível", "terrível", "demora", "atraso", "não funciona", "quebrado",
-        "irritado", "irritada", "raiva", "absurdo", "vergonha", "inaceitável",
-        "cancelar", "desistir", "nunca mais", "pior",
+        "problema",
+        "reclamação",
+        "insatisfeito",
+        "insatisfeita",
+        "péssimo",
+        "horrível",
+        "terrível",
+        "demora",
+        "atraso",
+        "não funciona",
+        "quebrado",
+        "irritado",
+        "irritada",
+        "raiva",
+        "absurdo",
+        "vergonha",
+        "inaceitável",
+        "cancelar",
+        "desistir",
+        "nunca mais",
+        "pior",
     }
 
     # Call type patterns
@@ -64,10 +93,10 @@ class CallAnalyzer:
     def analyze_call(
         self,
         transcription_text: str,
-        segments: Optional[List[Dict]] = None,
-        duration_seconds: Optional[float] = None,
-        metadata: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+        segments: list[dict] | None = None,
+        duration_seconds: float | None = None,
+        metadata: dict | None = None,
+    ) -> dict[str, Any]:
         """
         Analyze a phone call transcription.
 
@@ -116,9 +145,7 @@ class CallAnalyzer:
         compliance_result = self._check_compliance(transcription_text)
 
         # Generate alerts
-        alerts = self._generate_alerts(
-            sentiment_result, quality_result, issues, compliance_result
-        )
+        alerts = self._generate_alerts(sentiment_result, quality_result, issues, compliance_result)
 
         processing_time_ms = int((time.time() - start_time) * 1000)
 
@@ -163,7 +190,7 @@ class CallAnalyzer:
             "processing_time_ms": processing_time_ms,
         }
 
-    def _classify_call_type(self, text: str) -> Tuple[str, float]:
+    def _classify_call_type(self, text: str) -> tuple[str, float]:
         """Classify the type of call."""
         text_lower = text.lower()
         scores = {}
@@ -184,8 +211,8 @@ class CallAnalyzer:
     def _analyze_sentiment(
         self,
         text: str,
-        segments: List[Dict],
-    ) -> Dict[str, Any]:
+        segments: list[dict],
+    ) -> dict[str, Any]:
         """Analyze sentiment of the call."""
         text_lower = text.lower()
 
@@ -214,7 +241,7 @@ class CallAnalyzer:
             "timeline": [],  # Would be populated with segment-level analysis
         }
 
-    def _detect_emotions(self, text: str) -> Dict[str, Any]:
+    def _detect_emotions(self, text: str) -> dict[str, Any]:
         """Detect emotions in the call."""
         text_lower = text.lower()
         emotions = {}
@@ -232,7 +259,7 @@ class CallAnalyzer:
             "timeline": [],
         }
 
-    def _extract_topics(self, text: str) -> List[str]:
+    def _extract_topics(self, text: str) -> list[str]:
         """Extract main topics from the call."""
         text_lower = text.lower()
         topics = []
@@ -252,9 +279,9 @@ class CallAnalyzer:
 
         return topics[:5]
 
-    def _extract_keywords(self, text: str, max_keywords: int = 10) -> List[str]:
+    def _extract_keywords(self, text: str, max_keywords: int = 10) -> list[str]:
         """Extract keywords from text."""
-        words = re.findall(r'\b\w{4,}\b', text.lower())
+        words = re.findall(r"\b\w{4,}\b", text.lower())
         stopwords = {"para", "como", "quando", "onde", "porque", "isso", "esse", "esta"}
         word_freq = {}
 
@@ -265,7 +292,7 @@ class CallAnalyzer:
         sorted_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
         return [w[0] for w in sorted_words[:max_keywords]]
 
-    def _identify_issues(self, text: str) -> List[Dict]:
+    def _identify_issues(self, text: str) -> list[dict]:
         """Identify issues mentioned in the call."""
         issues = []
         text_lower = text.lower()
@@ -290,19 +317,21 @@ class CallAnalyzer:
         for severity, patterns in issue_patterns.items():
             for pattern, description in patterns:
                 if pattern in text_lower:
-                    issues.append({
-                        "issue": description,
-                        "severity": severity,
-                        "resolved": "resolvido" in text_lower or "solucionado" in text_lower,
-                    })
+                    issues.append(
+                        {
+                            "issue": description,
+                            "severity": severity,
+                            "resolved": "resolvido" in text_lower or "solucionado" in text_lower,
+                        }
+                    )
 
         return issues
 
     def _calculate_quality(
         self,
         text: str,
-        segments: List[Dict],
-    ) -> Dict[str, Any]:
+        segments: list[dict],
+    ) -> dict[str, Any]:
         """Calculate call quality metrics."""
         text_lower = text.lower()
 
@@ -333,10 +362,7 @@ class CallAnalyzer:
         breakdown["closing"] = 80 if any(p in text_lower for p in closing_patterns) else 40
 
         # Calculate weighted overall score
-        overall = sum(
-            breakdown[metric] * weight
-            for metric, weight in self.QUALITY_WEIGHTS.items()
-        )
+        overall = sum(breakdown[metric] * weight for metric, weight in self.QUALITY_WEIGHTS.items())
 
         return {
             "overall": round(overall, 1),
@@ -347,10 +373,10 @@ class CallAnalyzer:
 
     def _predict_satisfaction(
         self,
-        sentiment: Dict,
-        quality: Dict,
-        issues: List[Dict],
-    ) -> Tuple[float, float]:
+        sentiment: dict,
+        quality: dict,
+        issues: list[dict],
+    ) -> tuple[float, float]:
         """Predict CSAT and NPS scores."""
         base_score = 3.0  # Neutral CSAT
 
@@ -374,7 +400,7 @@ class CallAnalyzer:
 
         return round(csat, 1), round(nps, 0)
 
-    def _check_compliance(self, text: str) -> Dict[str, Any]:
+    def _check_compliance(self, text: str) -> dict[str, Any]:
         """Check call compliance."""
         text_lower = text.lower()
         issues = []
@@ -388,11 +414,13 @@ class CallAnalyzer:
 
         for disclosure, phrases in required_phrases.items():
             if not any(p in text_lower for p in phrases):
-                issues.append({
-                    "type": "missing_disclosure",
-                    "disclosure": disclosure,
-                    "severity": "medium",
-                })
+                issues.append(
+                    {
+                        "type": "missing_disclosure",
+                        "disclosure": disclosure,
+                        "severity": "medium",
+                    }
+                )
                 score -= 10
 
         return {
@@ -402,50 +430,58 @@ class CallAnalyzer:
 
     def _generate_alerts(
         self,
-        sentiment: Dict,
-        quality: Dict,
-        issues: List[Dict],
-        compliance: Dict,
-    ) -> List[Dict]:
+        sentiment: dict,
+        quality: dict,
+        issues: list[dict],
+        compliance: dict,
+    ) -> list[dict]:
         """Generate alerts based on analysis."""
         alerts = []
 
         # Sentiment alerts
         if sentiment.get("score", 0) < -0.5:
-            alerts.append({
-                "type": "negative_sentiment",
-                "severity": "high",
-                "message": "Cliente muito insatisfeito detectado",
-            })
+            alerts.append(
+                {
+                    "type": "negative_sentiment",
+                    "severity": "high",
+                    "message": "Cliente muito insatisfeito detectado",
+                }
+            )
 
         # Quality alerts
         if quality.get("overall", 0) < 60:
-            alerts.append({
-                "type": "low_quality",
-                "severity": "medium",
-                "message": "Pontuação de qualidade abaixo do esperado",
-            })
+            alerts.append(
+                {
+                    "type": "low_quality",
+                    "severity": "medium",
+                    "message": "Pontuação de qualidade abaixo do esperado",
+                }
+            )
 
         # Issue alerts
         high_severity = [i for i in issues if i.get("severity") == "high"]
         if high_severity:
-            alerts.append({
-                "type": "critical_issue",
-                "severity": "high",
-                "message": f"{len(high_severity)} problema(s) crítico(s) identificado(s)",
-            })
+            alerts.append(
+                {
+                    "type": "critical_issue",
+                    "severity": "high",
+                    "message": f"{len(high_severity)} problema(s) crítico(s) identificado(s)",
+                }
+            )
 
         # Compliance alerts
         if compliance.get("score", 100) < 80:
-            alerts.append({
-                "type": "compliance_issue",
-                "severity": "medium",
-                "message": "Problemas de conformidade detectados",
-            })
+            alerts.append(
+                {
+                    "type": "compliance_issue",
+                    "severity": "medium",
+                    "message": "Problemas de conformidade detectados",
+                }
+            )
 
         return alerts
 
-    def _needs_escalation(self, sentiment: Dict, issues: List[Dict]) -> bool:
+    def _needs_escalation(self, sentiment: dict, issues: list[dict]) -> bool:
         """Check if call needs escalation."""
         if sentiment.get("score", 0) < -0.6:
             return True
@@ -453,7 +489,7 @@ class CallAnalyzer:
             return True
         return False
 
-    def _get_escalation_reason(self, sentiment: Dict, issues: List[Dict]) -> Optional[str]:
+    def _get_escalation_reason(self, sentiment: dict, issues: list[dict]) -> str | None:
         """Get reason for escalation."""
         reasons = []
         if sentiment.get("score", 0) < -0.6:
@@ -472,7 +508,7 @@ class CallAnalyzer:
             return "pending"
         return "unresolved"
 
-    def _get_resolution_summary(self, text: str) -> Optional[str]:
+    def _get_resolution_summary(self, text: str) -> str | None:
         """Get resolution summary."""
         status = self._determine_resolution(text)
         summaries = {
@@ -482,7 +518,7 @@ class CallAnalyzer:
         }
         return summaries.get(status)
 
-    def _extract_action_items(self, text: str) -> List[Dict]:
+    def _extract_action_items(self, text: str) -> list[dict]:
         """Extract action items from call."""
         action_items = []
         text_lower = text.lower()
@@ -496,14 +532,16 @@ class CallAnalyzer:
 
         for pattern, action in patterns:
             if re.search(pattern, text_lower):
-                action_items.append({
-                    "action": action,
-                    "status": "pending",
-                })
+                action_items.append(
+                    {
+                        "action": action,
+                        "status": "pending",
+                    }
+                )
 
         return action_items
 
-    def _generate_summary(self, text: str, call_type: str, sentiment: Dict) -> str:
+    def _generate_summary(self, text: str, call_type: str, sentiment: dict) -> str:
         """Generate call summary."""
         sentiment_text = {
             "very_positive": "muito satisfeito",
@@ -515,7 +553,7 @@ class CallAnalyzer:
 
         return f"Ligação de {call_type}. Cliente {sentiment_text}."
 
-    def _extract_key_points(self, text: str) -> List[str]:
+    def _extract_key_points(self, text: str) -> list[str]:
         """Extract key points from call."""
         # Simplified extraction
         sentences = text.split(".")
@@ -523,9 +561,9 @@ class CallAnalyzer:
 
     def _generate_recommendations(
         self,
-        quality: Dict,
-        issues: List[Dict],
-    ) -> List[str]:
+        quality: dict,
+        issues: list[dict],
+    ) -> list[str]:
         """Generate recommendations based on analysis."""
         recommendations = []
 
@@ -547,7 +585,7 @@ class CallAnalyzer:
     def _calculate_effort_score(
         self,
         text: str,
-        duration: Optional[float],
+        duration: float | None,
     ) -> float:
         """Calculate customer effort score."""
         base_score = 3.0  # Neutral
@@ -565,7 +603,7 @@ class CallAnalyzer:
 
         return min(5.0, round(base_score, 1))
 
-    def _get_categories(self, text: str) -> List[str]:
+    def _get_categories(self, text: str) -> list[str]:
         """Get call categories."""
         categories = []
         text_lower = text.lower()

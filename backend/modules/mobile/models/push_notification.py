@@ -1,7 +1,7 @@
 """Model de Push Notification."""
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
@@ -11,7 +11,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class NotificationStatus(str, Enum):
+class NotificationStatus(StrEnum):
     """Status da notificação."""
 
     PENDING = "pending"
@@ -22,7 +22,7 @@ class NotificationStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class NotificationType(str, Enum):
+class NotificationType(StrEnum):
     """Tipo de notificação."""
 
     SYSTEM = "system"
@@ -35,7 +35,7 @@ class NotificationType(str, Enum):
     ACTION_REQUIRED = "action_required"
 
 
-class NotificationPriority(str, Enum):
+class NotificationPriority(StrEnum):
     """Prioridade da notificação."""
 
     LOW = "low"
@@ -44,15 +44,18 @@ class NotificationPriority(str, Enum):
     CRITICAL = "critical"
 
 
-class MobilePushNotification(Base):
+class MobileNotificationLog(Base):
     """
     Log de notificações push enviadas (módulo mobile).
 
     Armazena histórico de todas as notificações enviadas,
     incluindo status de entrega e leitura.
+
+    Renomeado de MobilePushNotification para evitar conflito com
+    modules.notifications.push.models.push_notification.PushNotification
     """
 
-    __tablename__ = "push_notifications"
+    __tablename__ = "mobile_notification_logs"
     __table_args__ = {"extend_existing": True}
 
     id = Column(
@@ -119,6 +122,11 @@ class MobilePushNotification(Base):
         String(100),
         nullable=True,
         comment="Chave para colapsar notificações similares",
+    )
+    ttl_seconds = Column(
+        Integer,
+        nullable=True,
+        comment="Tempo de vida da notificação em segundos",
     )
     status = Column(
         String(20),

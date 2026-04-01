@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -29,7 +29,7 @@ class PersonalizeRequest(BaseModel):
     notification_type: str
     template_title: str
     template_body: str
-    context: Optional[dict[str, Any]] = None
+    context: dict[str, Any] | None = None
     tone: str = "friendly"
 
 
@@ -38,7 +38,7 @@ class PersonalizeResponse(BaseModel):
 
     title: str
     body: str
-    summary: Optional[str]
+    summary: str | None
     channel_recommendation: str
     optimal_send_time: datetime
     personalization_score: float
@@ -50,8 +50,8 @@ class TimingRequest(BaseModel):
 
     user_id: int
     notification_type: str
-    earliest_time: Optional[datetime] = None
-    deadline: Optional[datetime] = None
+    earliest_time: datetime | None = None
+    deadline: datetime | None = None
 
 
 class TimingResponse(BaseModel):
@@ -69,7 +69,7 @@ class ChannelRequest(BaseModel):
 
     user_id: int
     notification_type: str
-    content: Optional[dict[str, Any]] = None
+    content: dict[str, Any] | None = None
 
 
 class ChannelResponse(BaseModel):
@@ -119,7 +119,7 @@ class ExperimentResultResponse(BaseModel):
     """Response de resultado de experimento."""
 
     experiment_id: str
-    winning_variant: Optional[str]
+    winning_variant: str | None
     is_significant: bool
     confidence_level: float
     lift_percentage: float
@@ -141,7 +141,7 @@ class ConsentResponse(BaseModel):
     id: str
     consent_type: str
     status: str
-    granted_at: Optional[datetime]
+    granted_at: datetime | None
 
 
 class DataRequestCreate(BaseModel):
@@ -191,9 +191,9 @@ async def personalize_notification(
     - Personalização de conteúdo
     """
     from modules.notifications.engine import (
+        ChannelSelector,
         PersonalizationEngine,
         TimingOptimizer,
-        ChannelSelector,
     )
 
     engine = PersonalizationEngine()
@@ -373,7 +373,7 @@ async def predict_engagement(
 # ============================================================================
 
 
-@router.post("/experiments", response_model=ExperimentResponse)
+@router.post("/experiments", response_model=ExperimentResponse, status_code=201)
 async def create_experiment(
     request: ExperimentCreateRequest,
     current_user: CurrentActiveUser,
@@ -600,7 +600,7 @@ async def record_consent(
     db: AsyncSession = Depends(get_db),
 ) -> ConsentResponse:
     """Registra consentimento do usuário."""
-    from modules.notifications.compliance import LGPDComplianceManager, ConsentType
+    from modules.notifications.compliance import ConsentType, LGPDComplianceManager
 
     manager = LGPDComplianceManager()
 
@@ -628,7 +628,7 @@ async def withdraw_consent(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
     """Retira consentimento."""
-    from modules.notifications.compliance import LGPDComplianceManager, ConsentType
+    from modules.notifications.compliance import ConsentType, LGPDComplianceManager
 
     manager = LGPDComplianceManager()
 
@@ -664,14 +664,14 @@ async def get_user_consents(
     ]
 
 
-@router.post("/data-request", response_model=DataRequestResponse)
+@router.post("/data-request", response_model=DataRequestResponse, status_code=201)
 async def create_data_request(
     request: DataRequestCreate,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> DataRequestResponse:
     """Cria solicitação de dados (LGPD)."""
-    from modules.notifications.compliance import LGPDComplianceManager, DataRequestType
+    from modules.notifications.compliance import DataRequestType, LGPDComplianceManager
 
     manager = LGPDComplianceManager()
 
@@ -709,7 +709,7 @@ async def verify_data_request(
 
 @router.get("/compliance/audit-logs")
 async def get_audit_logs(
-    user_id: Optional[int] = None,
+    user_id: int | None = None,
     limit: int = Query(default=100, ge=1, le=1000),
     current_user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
@@ -761,9 +761,7 @@ async def can_send_notification(
 
     # Verificar compliance
     compliance_manager = LGPDComplianceManager()
-    can_send, reason = await compliance_manager.can_send_notification(
-        db, user_id, notification_type
-    )
+    can_send, reason = await compliance_manager.can_send_notification(db, user_id, notification_type)
 
     if not can_send:
         return {
@@ -773,9 +771,7 @@ async def can_send_notification(
 
     # Verificar comportamento
     analyzer = BehavioralAnalyzer()
-    should_send, behavior_reason = await analyzer.should_send_notification(
-        db, user_id, notification_type
-    )
+    should_send, behavior_reason = await analyzer.should_send_notification(db, user_id, notification_type)
 
     return {
         "can_send": should_send,

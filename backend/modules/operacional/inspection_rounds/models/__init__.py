@@ -5,15 +5,15 @@ Author: Conecta PRO Team
 Date: 2026-01-23
 """
 
+from .inspection_checkpoint import (
+    CheckpointStatus,
+    CheckpointType,
+    InspectionCheckpoint,
+)
 from .inspection_round import (
     InspectionRound,
     InspectionRoundStatus,
     InspectorRole,
-)
-from .inspection_checkpoint import (
-    InspectionCheckpoint,
-    CheckpointType,
-    CheckpointStatus,
 )
 
 __all__ = [

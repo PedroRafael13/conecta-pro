@@ -4,24 +4,32 @@ Sprint 31: Gestão de Serviços
 """
 
 import logging
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.services.models import (
-    ServiceCatalog, ServiceOrder, ServiceExecution,
-    ServiceReport, SLAConfig, OrderStatus
+    OrderStatus,
+    ServiceCatalog,
+    ServiceExecution,
+    ServiceOrder,
+    ServiceReport,
+    SLAConfig,
 )
 from modules.services.repositories import ServiceRepository
 from modules.services.schemas import (
-    ServiceCatalogCreate, ServiceCatalogUpdate,
-    ServiceOrderCreate, ServiceOrderUpdate,
+    ServiceCatalogCreate,
+    ServiceCatalogUpdate,
     ServiceExecutionCreate,
-    ServiceReportCreate, ServiceReportUpdate,
-    SLAConfigCreate, SLAConfigUpdate
+    ServiceOrderCreate,
+    ServiceOrderUpdate,
+    ServiceReportCreate,
+    ServiceReportUpdate,
+    SLAConfigCreate,
+    SLAConfigUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,11 +55,7 @@ class ServiceManagementService:
     # SERVICE CATALOG MANAGEMENT
     # ============================================================
 
-    def create_service(
-        self,
-        data: ServiceCatalogCreate,
-        user_id: Optional[UUID] = None
-    ) -> ServiceCatalog:
+    def create_service(self, data: ServiceCatalogCreate, user_id: UUID | None = None) -> ServiceCatalog:
         """
         Cria um novo serviço no catálogo.
 
@@ -76,11 +80,8 @@ class ServiceManagementService:
         return service
 
     def update_service(
-        self,
-        service_id: UUID,
-        data: ServiceCatalogUpdate,
-        user_id: Optional[UUID] = None
-    ) -> Optional[ServiceCatalog]:
+        self, service_id: UUID, data: ServiceCatalogUpdate, user_id: UUID | None = None
+    ) -> ServiceCatalog | None:
         """
         Atualiza um serviço.
 
@@ -107,7 +108,7 @@ class ServiceManagementService:
         logger.info(f"Serviço atualizado: {service_id}")
         return updated
 
-    def activate_service(self, service_id: UUID) -> Optional[ServiceCatalog]:
+    def activate_service(self, service_id: UUID) -> ServiceCatalog | None:
         """Ativa um serviço."""
         service = self.repository.get_service_catalog_by_id(service_id)
         if service:
@@ -117,7 +118,7 @@ class ServiceManagementService:
             logger.info(f"Serviço ativado: {service_id}")
         return service
 
-    def deactivate_service(self, service_id: UUID) -> Optional[ServiceCatalog]:
+    def deactivate_service(self, service_id: UUID) -> ServiceCatalog | None:
         """Desativa um serviço."""
         service = self.repository.get_service_catalog_by_id(service_id)
         if service:
@@ -127,7 +128,7 @@ class ServiceManagementService:
             logger.info(f"Serviço desativado: {service_id}")
         return service
 
-    def discontinue_service(self, service_id: UUID) -> Optional[ServiceCatalog]:
+    def discontinue_service(self, service_id: UUID) -> ServiceCatalog | None:
         """Descontinua um serviço."""
         service = self.repository.get_service_catalog_by_id(service_id)
         if service:
@@ -138,11 +139,8 @@ class ServiceManagementService:
         return service
 
     def calculate_service_price(
-        self,
-        service_id: UUID,
-        quantity: float = 1.0,
-        is_emergency: bool = False
-    ) -> Optional[Decimal]:
+        self, service_id: UUID, quantity: float = 1.0, is_emergency: bool = False
+    ) -> Decimal | None:
         """
         Calcula o preço de um serviço.
 
@@ -163,11 +161,7 @@ class ServiceManagementService:
     # SERVICE ORDER MANAGEMENT
     # ============================================================
 
-    def create_order(
-        self,
-        data: ServiceOrderCreate,
-        user_id: Optional[UUID] = None
-    ) -> ServiceOrder:
+    def create_order(self, data: ServiceOrderCreate, user_id: UUID | None = None) -> ServiceOrder:
         """
         Cria uma nova ordem de serviço.
 
@@ -207,11 +201,8 @@ class ServiceManagementService:
         return order
 
     def update_order(
-        self,
-        order_id: UUID,
-        data: ServiceOrderUpdate,
-        user_id: Optional[UUID] = None
-    ) -> Optional[ServiceOrder]:
+        self, order_id: UUID, data: ServiceOrderUpdate, user_id: UUID | None = None
+    ) -> ServiceOrder | None:
         """
         Atualiza uma ordem de serviço.
 
@@ -241,7 +232,7 @@ class ServiceManagementService:
         logger.info(f"Ordem atualizada: {order_id}")
         return updated
 
-    def submit_order(self, order_id: UUID) -> Optional[ServiceOrder]:
+    def submit_order(self, order_id: UUID) -> ServiceOrder | None:
         """Submete uma ordem para aprovação."""
         order = self.repository.get_service_order_by_id(order_id)
         if order:
@@ -251,11 +242,7 @@ class ServiceManagementService:
             logger.info(f"Ordem submetida: {order_id}")
         return order
 
-    def approve_order(
-        self,
-        order_id: UUID,
-        approver_id: Optional[UUID] = None
-    ) -> Optional[ServiceOrder]:
+    def approve_order(self, order_id: UUID, approver_id: UUID | None = None) -> ServiceOrder | None:
         """Aprova uma ordem de serviço."""
         order = self.repository.get_service_order_by_id(order_id)
         if order:
@@ -267,12 +254,7 @@ class ServiceManagementService:
             logger.info(f"Ordem aprovada: {order_id}")
         return order
 
-    def reject_order(
-        self,
-        order_id: UUID,
-        reason: str,
-        rejector_id: Optional[UUID] = None
-    ) -> Optional[ServiceOrder]:
+    def reject_order(self, order_id: UUID, reason: str, rejector_id: UUID | None = None) -> ServiceOrder | None:
         """Rejeita uma ordem de serviço."""
         order = self.repository.get_service_order_by_id(order_id)
         if order:
@@ -288,11 +270,11 @@ class ServiceManagementService:
         self,
         order_id: UUID,
         scheduled_date: date,
-        time_start: Optional[str] = None,
-        time_end: Optional[str] = None,
-        technician_id: Optional[UUID] = None,
-        technician_name: Optional[str] = None
-    ) -> Optional[ServiceOrder]:
+        time_start: str | None = None,
+        time_end: str | None = None,
+        technician_id: UUID | None = None,
+        technician_name: str | None = None,
+    ) -> ServiceOrder | None:
         """
         Agenda uma ordem de serviço.
 
@@ -321,7 +303,7 @@ class ServiceManagementService:
         logger.info(f"Ordem agendada: {order_id} para {scheduled_date}")
         return order
 
-    def start_order(self, order_id: UUID) -> Optional[ServiceOrder]:
+    def start_order(self, order_id: UUID) -> ServiceOrder | None:
         """Inicia uma ordem de serviço."""
         order = self.repository.get_service_order_by_id(order_id)
         if order:
@@ -331,7 +313,7 @@ class ServiceManagementService:
             logger.info(f"Ordem iniciada: {order_id}")
         return order
 
-    def pause_order(self, order_id: UUID, reason: str) -> Optional[ServiceOrder]:
+    def pause_order(self, order_id: UUID, reason: str) -> ServiceOrder | None:
         """Pausa uma ordem de serviço."""
         order = self.repository.get_service_order_by_id(order_id)
         if order:
@@ -341,7 +323,7 @@ class ServiceManagementService:
             logger.info(f"Ordem pausada: {order_id}")
         return order
 
-    def resume_order(self, order_id: UUID) -> Optional[ServiceOrder]:
+    def resume_order(self, order_id: UUID) -> ServiceOrder | None:
         """Retoma uma ordem pausada."""
         order = self.repository.get_service_order_by_id(order_id)
         if order:
@@ -352,11 +334,8 @@ class ServiceManagementService:
         return order
 
     def complete_order(
-        self,
-        order_id: UUID,
-        final_value: Optional[Decimal] = None,
-        completion_notes: Optional[str] = None
-    ) -> Optional[ServiceOrder]:
+        self, order_id: UUID, final_value: Decimal | None = None, completion_notes: str | None = None
+    ) -> ServiceOrder | None:
         """
         Conclui uma ordem de serviço.
 
@@ -397,11 +376,7 @@ class ServiceManagementService:
         logger.info(f"Ordem concluída: {order_id}")
         return order
 
-    def cancel_order(
-        self,
-        order_id: UUID,
-        reason: str
-    ) -> Optional[ServiceOrder]:
+    def cancel_order(self, order_id: UUID, reason: str) -> ServiceOrder | None:
         """Cancela uma ordem de serviço."""
         order = self.repository.get_service_order_by_id(order_id)
         if order:
@@ -411,12 +386,7 @@ class ServiceManagementService:
             logger.info(f"Ordem cancelada: {order_id}")
         return order
 
-    def rate_order(
-        self,
-        order_id: UUID,
-        rating: int,
-        feedback: Optional[str] = None
-    ) -> Optional[ServiceOrder]:
+    def rate_order(self, order_id: UUID, rating: int, feedback: str | None = None) -> ServiceOrder | None:
         """
         Avalia uma ordem de serviço.
 
@@ -443,22 +413,16 @@ class ServiceManagementService:
         logger.info(f"Ordem avaliada: {order_id} - Nota: {rating}")
         return order
 
-    def get_overdue_orders(self) -> List[ServiceOrder]:
+    def get_overdue_orders(self) -> list[ServiceOrder]:
         """Retorna ordens em atraso."""
-        orders = self.repository.list_service_orders(
-            ativo=True,
-            limit=1000
-        )
+        orders = self.repository.list_service_orders(ativo=True, limit=1000)
         overdue = []
         for order in orders:
             if order.is_overdue:
                 overdue.append(order)
         return overdue
 
-    def get_orders_at_risk(
-        self,
-        threshold_hours: int = 4
-    ) -> List[Tuple[ServiceOrder, int]]:
+    def get_orders_at_risk(self, threshold_hours: int = 4) -> list[tuple[ServiceOrder, int]]:
         """
         Retorna ordens em risco de atraso.
 
@@ -469,11 +433,7 @@ class ServiceManagementService:
             Lista de tuplas (ordem, minutos restantes)
         """
         at_risk = []
-        orders = self.repository.list_service_orders(
-            status=OrderStatus.EM_ANDAMENTO,
-            ativo=True,
-            limit=1000
-        )
+        orders = self.repository.list_service_orders(status=OrderStatus.EM_ANDAMENTO, ativo=True, limit=1000)
 
         now = datetime.utcnow()
         threshold = timedelta(hours=threshold_hours)
@@ -492,11 +452,7 @@ class ServiceManagementService:
     # SERVICE EXECUTION MANAGEMENT
     # ============================================================
 
-    def create_execution(
-        self,
-        data: ServiceExecutionCreate,
-        user_id: Optional[UUID] = None
-    ) -> ServiceExecution:
+    def create_execution(self, data: ServiceExecutionCreate, user_id: UUID | None = None) -> ServiceExecution:
         """
         Cria uma execução de serviço.
 
@@ -513,10 +469,7 @@ class ServiceManagementService:
         if not order:
             raise ValueError(f"Ordem não encontrada: {data.order_id}")
 
-        existing = self.repository.list_service_executions(
-            order_id=data.order_id,
-            limit=100
-        )
+        existing = self.repository.list_service_executions(order_id=data.order_id, limit=100)
         sequence = len(existing) + 1
 
         execution = self.repository.create_service_execution(data)
@@ -531,7 +484,7 @@ class ServiceManagementService:
         logger.info(f"Execução criada: {execution.id}")
         return execution
 
-    def start_travel(self, execution_id: UUID) -> Optional[ServiceExecution]:
+    def start_travel(self, execution_id: UUID) -> ServiceExecution | None:
         """Inicia deslocamento."""
         execution = self.repository.get_service_execution_by_id(execution_id)
         if execution:
@@ -541,10 +494,7 @@ class ServiceManagementService:
             logger.info(f"Deslocamento iniciado: {execution_id}")
         return execution
 
-    def arrive_at_location(
-        self,
-        execution_id: UUID
-    ) -> Optional[ServiceExecution]:
+    def arrive_at_location(self, execution_id: UUID) -> ServiceExecution | None:
         """Registra chegada no local."""
         execution = self.repository.get_service_execution_by_id(execution_id)
         if execution:
@@ -554,10 +504,7 @@ class ServiceManagementService:
             logger.info(f"Chegada registrada: {execution_id}")
         return execution
 
-    def start_execution(
-        self,
-        execution_id: UUID
-    ) -> Optional[ServiceExecution]:
+    def start_execution(self, execution_id: UUID) -> ServiceExecution | None:
         """Inicia execução do serviço."""
         execution = self.repository.get_service_execution_by_id(execution_id)
         if execution:
@@ -572,11 +519,7 @@ class ServiceManagementService:
             logger.info(f"Execução iniciada: {execution_id}")
         return execution
 
-    def pause_execution(
-        self,
-        execution_id: UUID,
-        reason: str
-    ) -> Optional[ServiceExecution]:
+    def pause_execution(self, execution_id: UUID, reason: str) -> ServiceExecution | None:
         """Pausa a execução."""
         execution = self.repository.get_service_execution_by_id(execution_id)
         if execution:
@@ -586,10 +529,7 @@ class ServiceManagementService:
             logger.info(f"Execução pausada: {execution_id}")
         return execution
 
-    def resume_execution(
-        self,
-        execution_id: UUID
-    ) -> Optional[ServiceExecution]:
+    def resume_execution(self, execution_id: UUID) -> ServiceExecution | None:
         """Retoma a execução."""
         execution = self.repository.get_service_execution_by_id(execution_id)
         if execution:
@@ -602,10 +542,10 @@ class ServiceManagementService:
     def finish_execution(
         self,
         execution_id: UUID,
-        work_description: Optional[str] = None,
-        findings: Optional[str] = None,
-        recommendations: Optional[str] = None
-    ) -> Optional[ServiceExecution]:
+        work_description: str | None = None,
+        findings: str | None = None,
+        recommendations: str | None = None,
+    ) -> ServiceExecution | None:
         """
         Finaliza a execução.
 
@@ -637,12 +577,8 @@ class ServiceManagementService:
         return execution
 
     def add_material_to_execution(
-        self,
-        execution_id: UUID,
-        material_name: str,
-        quantity: float,
-        unit_price: Decimal
-    ) -> Optional[ServiceExecution]:
+        self, execution_id: UUID, material_name: str, quantity: float, unit_price: Decimal
+    ) -> ServiceExecution | None:
         """Adiciona material à execução."""
         execution = self.repository.get_service_execution_by_id(execution_id)
         if execution:
@@ -653,12 +589,8 @@ class ServiceManagementService:
         return execution
 
     def update_checklist_item(
-        self,
-        execution_id: UUID,
-        item_index: int,
-        completed: bool,
-        notes: Optional[str] = None
-    ) -> Optional[ServiceExecution]:
+        self, execution_id: UUID, item_index: int, completed: bool, notes: str | None = None
+    ) -> ServiceExecution | None:
         """Atualiza item do checklist."""
         execution = self.repository.get_service_execution_by_id(execution_id)
         if execution:
@@ -669,12 +601,8 @@ class ServiceManagementService:
         return execution
 
     def add_signature(
-        self,
-        execution_id: UUID,
-        signer_name: str,
-        signature_data: str,
-        signer_role: str
-    ) -> Optional[ServiceExecution]:
+        self, execution_id: UUID, signer_name: str, signature_data: str, signer_role: str
+    ) -> ServiceExecution | None:
         """Adiciona assinatura à execução."""
         execution = self.repository.get_service_execution_by_id(execution_id)
         if execution:
@@ -688,11 +616,7 @@ class ServiceManagementService:
     # SERVICE REPORT MANAGEMENT
     # ============================================================
 
-    def create_report(
-        self,
-        data: ServiceReportCreate,
-        user_id: Optional[UUID] = None
-    ) -> ServiceReport:
+    def create_report(self, data: ServiceReportCreate, user_id: UUID | None = None) -> ServiceReport:
         """
         Cria um relatório de serviço.
 
@@ -722,11 +646,8 @@ class ServiceManagementService:
         return report
 
     def update_report(
-        self,
-        report_id: UUID,
-        data: ServiceReportUpdate,
-        user_id: Optional[UUID] = None
-    ) -> Optional[ServiceReport]:
+        self, report_id: UUID, data: ServiceReportUpdate, user_id: UUID | None = None
+    ) -> ServiceReport | None:
         """Atualiza um relatório."""
         report = self.repository.get_service_report_by_id(report_id)
         if not report:
@@ -745,7 +666,7 @@ class ServiceManagementService:
         logger.info(f"Relatório atualizado: {report_id}")
         return updated
 
-    def finalize_report(self, report_id: UUID) -> Optional[ServiceReport]:
+    def finalize_report(self, report_id: UUID) -> ServiceReport | None:
         """Finaliza um relatório."""
         report = self.repository.get_service_report_by_id(report_id)
         if report:
@@ -756,12 +677,8 @@ class ServiceManagementService:
         return report
 
     def review_report(
-        self,
-        report_id: UUID,
-        reviewer_id: UUID,
-        reviewer_name: str,
-        review_notes: Optional[str] = None
-    ) -> Optional[ServiceReport]:
+        self, report_id: UUID, reviewer_id: UUID, reviewer_name: str, review_notes: str | None = None
+    ) -> ServiceReport | None:
         """Revisa um relatório."""
         report = self.repository.get_service_report_by_id(report_id)
         if report:
@@ -771,12 +688,7 @@ class ServiceManagementService:
             logger.info(f"Relatório revisado: {report_id}")
         return report
 
-    def approve_report(
-        self,
-        report_id: UUID,
-        approver_id: UUID,
-        approver_name: str
-    ) -> Optional[ServiceReport]:
+    def approve_report(self, report_id: UUID, approver_id: UUID, approver_name: str) -> ServiceReport | None:
         """Aprova um relatório."""
         report = self.repository.get_service_report_by_id(report_id)
         if report:
@@ -786,11 +698,7 @@ class ServiceManagementService:
             logger.info(f"Relatório aprovado: {report_id}")
         return report
 
-    def send_report(
-        self,
-        report_id: UUID,
-        recipient: str
-    ) -> Optional[ServiceReport]:
+    def send_report(self, report_id: UUID, recipient: str) -> ServiceReport | None:
         """Marca relatório como enviado."""
         report = self.repository.get_service_report_by_id(report_id)
         if report:
@@ -800,13 +708,7 @@ class ServiceManagementService:
             logger.info(f"Relatório enviado para: {recipient}")
         return report
 
-    def add_report_section(
-        self,
-        report_id: UUID,
-        title: str,
-        content: str,
-        order: int
-    ) -> Optional[ServiceReport]:
+    def add_report_section(self, report_id: UUID, title: str, content: str, order: int) -> ServiceReport | None:
         """Adiciona seção ao relatório."""
         report = self.repository.get_service_report_by_id(report_id)
         if report:
@@ -816,12 +718,7 @@ class ServiceManagementService:
             logger.info(f"Seção adicionada: {title}")
         return report
 
-    def add_report_photo(
-        self,
-        report_id: UUID,
-        photo_url: str,
-        caption: Optional[str] = None
-    ) -> Optional[ServiceReport]:
+    def add_report_photo(self, report_id: UUID, photo_url: str, caption: str | None = None) -> ServiceReport | None:
         """Adiciona foto ao relatório."""
         report = self.repository.get_service_report_by_id(report_id)
         if report:
@@ -831,12 +728,7 @@ class ServiceManagementService:
             logger.info(f"Foto adicionada ao relatório: {report_id}")
         return report
 
-    def add_non_conformity(
-        self,
-        report_id: UUID,
-        description: str,
-        severity: str
-    ) -> Optional[ServiceReport]:
+    def add_non_conformity(self, report_id: UUID, description: str, severity: str) -> ServiceReport | None:
         """Adiciona não conformidade ao relatório."""
         report = self.repository.get_service_report_by_id(report_id)
         if report:
@@ -850,11 +742,7 @@ class ServiceManagementService:
     # SLA MANAGEMENT
     # ============================================================
 
-    def create_sla_config(
-        self,
-        data: SLAConfigCreate,
-        user_id: Optional[UUID] = None
-    ) -> SLAConfig:
+    def create_sla_config(self, data: SLAConfigCreate, user_id: UUID | None = None) -> SLAConfig:
         """Cria configuração de SLA."""
         logger.info(f"Criando SLA: {data.name}")
 
@@ -869,12 +757,7 @@ class ServiceManagementService:
         logger.info(f"SLA criado: {sla.id}")
         return sla
 
-    def update_sla_config(
-        self,
-        sla_id: UUID,
-        data: SLAConfigUpdate,
-        user_id: Optional[UUID] = None
-    ) -> Optional[SLAConfig]:
+    def update_sla_config(self, sla_id: UUID, data: SLAConfigUpdate, user_id: UUID | None = None) -> SLAConfig | None:
         """Atualiza configuração de SLA."""
         sla = self.repository.get_sla_config_by_id(sla_id)
         if not sla:
@@ -890,7 +773,7 @@ class ServiceManagementService:
         logger.info(f"SLA atualizado: {sla_id}")
         return updated
 
-    def activate_sla(self, sla_id: UUID) -> Optional[SLAConfig]:
+    def activate_sla(self, sla_id: UUID) -> SLAConfig | None:
         """Ativa um SLA."""
         sla = self.repository.get_sla_config_by_id(sla_id)
         if sla:
@@ -900,7 +783,7 @@ class ServiceManagementService:
             logger.info(f"SLA ativado: {sla_id}")
         return sla
 
-    def deactivate_sla(self, sla_id: UUID) -> Optional[SLAConfig]:
+    def deactivate_sla(self, sla_id: UUID) -> SLAConfig | None:
         """Desativa um SLA."""
         sla = self.repository.get_sla_config_by_id(sla_id)
         if sla:
@@ -910,18 +793,10 @@ class ServiceManagementService:
             logger.info(f"SLA desativado: {sla_id}")
         return sla
 
-    def set_default_sla(
-        self,
-        sla_id: UUID,
-        service_id: Optional[UUID] = None
-    ) -> Optional[SLAConfig]:
+    def set_default_sla(self, sla_id: UUID, service_id: UUID | None = None) -> SLAConfig | None:
         """Define SLA como padrão."""
         if service_id:
-            current_defaults = self.repository.list_sla_configs(
-                service_id=service_id,
-                is_default=True,
-                is_active=True
-            )
+            current_defaults = self.repository.list_sla_configs(service_id=service_id, is_default=True, is_active=True)
             for current_sla in current_defaults:
                 current_sla.is_default = False
 
@@ -934,11 +809,8 @@ class ServiceManagementService:
         return sla
 
     def get_sla_compliance_report(
-        self,
-        sla_id: UUID,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
-    ) -> Dict[str, Any]:
+        self, sla_id: UUID, start_date: date | None = None, end_date: date | None = None
+    ) -> dict[str, Any]:
         """
         Gera relatório de compliance do SLA.
 
@@ -957,73 +829,46 @@ class ServiceManagementService:
         return {
             "sla_id": str(sla.id),
             "sla_name": sla.name,
-            "period": {
-                "start": str(start_date) if start_date else None,
-                "end": str(end_date) if end_date else None
-            },
+            "period": {"start": str(start_date) if start_date else None, "end": str(end_date) if end_date else None},
             "metrics": {
                 "total_orders": sla.total_orders,
                 "orders_within_sla": sla.orders_within_sla,
                 "orders_breached": sla.orders_breached,
-                "compliance_percent": float(
-                    sla.current_compliance_percent or 0
-                ),
+                "compliance_percent": float(sla.current_compliance_percent or 0),
                 "breach_rate": sla.breach_rate,
-                "status": sla.compliance_status
+                "status": sla.compliance_status,
             },
             "targets": {
                 "response_time_minutes": sla.response_time_minutes,
                 "resolution_time_minutes": sla.resolution_time_minutes,
-                "availability_percent": float(
-                    sla.target_availability_percent or 0
-                )
-            }
+                "availability_percent": float(sla.target_availability_percent or 0),
+            },
         }
 
     # ============================================================
     # HELPER METHODS
     # ============================================================
 
-    def _get_applicable_sla(
-        self,
-        order: ServiceOrder
-    ) -> Optional[SLAConfig]:
+    def _get_applicable_sla(self, order: ServiceOrder) -> SLAConfig | None:
         """Retorna SLA aplicável à ordem."""
         if order.contract_id:
-            slas = self.repository.list_sla_configs(
-                contract_id=order.contract_id,
-                is_active=True
-            )
+            slas = self.repository.list_sla_configs(contract_id=order.contract_id, is_active=True)
             if slas:
                 return slas[0]
 
         if order.client_id:
-            slas = self.repository.list_sla_configs(
-                client_id=order.client_id,
-                is_active=True
-            )
+            slas = self.repository.list_sla_configs(client_id=order.client_id, is_active=True)
             if slas:
                 return slas[0]
 
-        slas = self.repository.list_sla_configs(
-            service_id=order.service_id,
-            is_default=True,
-            is_active=True
-        )
+        slas = self.repository.list_sla_configs(service_id=order.service_id, is_default=True, is_active=True)
         if slas:
             return slas[0]
 
-        slas = self.repository.list_sla_configs(
-            is_default=True,
-            is_active=True
-        )
+        slas = self.repository.list_sla_configs(is_default=True, is_active=True)
         return slas[0] if slas else None
 
-    def _check_sla_compliance(
-        self,
-        order: ServiceOrder,
-        sla: SLAConfig
-    ) -> bool:
+    def _check_sla_compliance(self, order: ServiceOrder, sla: SLAConfig) -> bool:
         """Verifica compliance do SLA."""
         if not order.started_at or not order.completed_at:
             return True
@@ -1036,9 +881,7 @@ class ServiceManagementService:
 
         priority_multiplier = 1.0
         if sla.priority_multipliers and order.priority:
-            priority_multiplier = sla.priority_multipliers.get(
-                order.priority.value, 1.0
-            )
+            priority_multiplier = sla.priority_multipliers.get(order.priority.value, 1.0)
 
         adjusted_limit = sla.resolution_time_minutes * priority_multiplier
 

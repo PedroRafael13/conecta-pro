@@ -8,30 +8,31 @@ Migrado de 01_security_lgpd/encryption/crypto_manager.py
 Compliance: LGPD Art. 46 - Medidas de Segurança
 """
 
-from typing import Dict, List, Optional, Union, Any, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
-from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
 import base64
 import hashlib
 import hmac
-import secrets
-import logging
 import json
+import logging
+import secrets
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
 
 from cryptography.fernet import Fernet, InvalidToken
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
-from pydantic import BaseModel, Field, validator
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
 
-class EncryptionAlgorithm(str, Enum):
+class EncryptionAlgorithm(StrEnum):
     """Algoritmos de criptografia suportados."""
+
     AES_256_GCM = "aes-256-gcm"
     AES_256_CBC = "aes-256-cbc"
     RSA_OAEP = "rsa-oaep"
@@ -39,8 +40,9 @@ class EncryptionAlgorithm(str, Enum):
     CHACHA20_POLY1305 = "chacha20-poly1305"
 
 
-class KeyType(str, Enum):
+class KeyType(StrEnum):
     """Tipos de chaves criptográficas."""
+
     SYMMETRIC = "symmetric"
     ASYMMETRIC_PUBLIC = "asymmetric_public"
     ASYMMETRIC_PRIVATE = "asymmetric_private"
@@ -50,7 +52,7 @@ class KeyType(str, Enum):
 class CryptoError(Exception):
     """Exceção base para erros de criptografia."""
 
-    def __init__(self, message: str, algorithm: Optional[str] = None):
+    def __init__(self, message: str, algorithm: str | None = None):
         self.message = message
         self.algorithm = algorithm
         super().__init__(self.message)
@@ -58,30 +60,34 @@ class CryptoError(Exception):
 
 class EncryptionError(CryptoError):
     """Erro durante criptografia."""
+
     pass
 
 
 class DecryptionError(CryptoError):
     """Erro durante descriptografia."""
+
     pass
 
 
 class KeyGenerationError(CryptoError):
     """Erro relacionado a chaves."""
+
     pass
 
 
 @dataclass
 class EncryptionResult:
     """Resultado de uma operação de criptografia."""
+
     ciphertext: bytes
     algorithm: EncryptionAlgorithm
-    iv: Optional[bytes] = None
-    tag: Optional[bytes] = None
-    key_id: Optional[str] = None
+    iv: bytes | None = None
+    tag: bytes | None = None
+    key_id: str | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário serializável."""
         return {
             "ciphertext": base64.b64encode(self.ciphertext).decode(),
@@ -93,7 +99,7 @@ class EncryptionResult:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EncryptionResult":
+    def from_dict(cls, data: dict[str, Any]) -> "EncryptionResult":
         """Reconstrói a partir de dicionário."""
         return cls(
             ciphertext=base64.b64decode(data["ciphertext"]),
@@ -107,6 +113,7 @@ class EncryptionResult:
 
 class CryptoConfig(BaseModel):
     """Configuração do gerenciador de criptografia."""
+
     default_algorithm: EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM
     key_derivation_iterations: int = Field(default=100000, ge=10000)
     rsa_key_size: int = Field(default=4096, ge=2048)
@@ -114,7 +121,8 @@ class CryptoConfig(BaseModel):
     key_rotation_days: int = Field(default=90, ge=30)
     enable_audit_logging: bool = True
 
-    @validator("rsa_key_size")
+    @field_validator("rsa_key_size")
+    @classmethod
     def validate_rsa_key_size(cls, v):
         if v not in [2048, 3072, 4096]:
             raise ValueError("RSA key size deve ser 2048, 3072 ou 4096")
@@ -154,7 +162,7 @@ class CryptoService(CryptoManagerInterface):
         >>> plaintext = service.decrypt(result, key)
     """
 
-    def __init__(self, config: Optional[CryptoConfig] = None):
+    def __init__(self, config: CryptoConfig | None = None):
         """
         Inicializa o gerenciador de criptografia.
 
@@ -163,11 +171,10 @@ class CryptoService(CryptoManagerInterface):
         """
         self.config = config or CryptoConfig()
         self._backend = default_backend()
-        self._rsa_key_cache: Dict[str, Tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey]] = {}
-        logger.info("CryptoService inicializado com algoritmo padrão: %s",
-                   self.config.default_algorithm.value)
+        self._rsa_key_cache: dict[str, tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey]] = {}
+        logger.info("CryptoService inicializado com algoritmo padrão: %s", self.config.default_algorithm.value)
 
-    def generate_key(self, algorithm: Optional[EncryptionAlgorithm] = None) -> bytes:
+    def generate_key(self, algorithm: EncryptionAlgorithm | None = None) -> bytes:
         """
         Gera uma nova chave criptográfica segura.
 
@@ -191,14 +198,12 @@ class CryptoService(CryptoManagerInterface):
                 key = secrets.token_bytes(32)  # 256 bits
             elif algo == EncryptionAlgorithm.RSA_OAEP:
                 private_key = rsa.generate_private_key(
-                    public_exponent=65537,
-                    key_size=self.config.rsa_key_size,
-                    backend=self._backend
+                    public_exponent=65537, key_size=self.config.rsa_key_size, backend=self._backend
                 )
                 key = private_key.private_bytes(
                     encoding=serialization.Encoding.PEM,
                     format=serialization.PrivateFormat.PKCS8,
-                    encryption_algorithm=serialization.NoEncryption()
+                    encryption_algorithm=serialization.NoEncryption(),
                 )
             else:
                 raise KeyGenerationError(f"Algoritmo não suportado: {algo}", algo.value)
@@ -214,10 +219,10 @@ class CryptoService(CryptoManagerInterface):
 
     def encrypt(
         self,
-        plaintext: Union[bytes, str],
+        plaintext: bytes | str,
         key: bytes,
-        algorithm: Optional[EncryptionAlgorithm] = None,
-        associated_data: Optional[bytes] = None
+        algorithm: EncryptionAlgorithm | None = None,
+        associated_data: bytes | None = None,
     ) -> EncryptionResult:
         """
         Criptografa dados usando o algoritmo especificado.
@@ -260,10 +265,7 @@ class CryptoService(CryptoManagerInterface):
             raise EncryptionError(f"Falha na criptografia: {str(e)}", algo.value)
 
     def decrypt(
-        self,
-        encrypted: Union[EncryptionResult, Dict[str, Any]],
-        key: bytes,
-        associated_data: Optional[bytes] = None
+        self, encrypted: EncryptionResult | dict[str, Any], key: bytes, associated_data: bytes | None = None
     ) -> bytes:
         """
         Descriptografa dados.
@@ -306,12 +308,7 @@ class CryptoService(CryptoManagerInterface):
             logger.error("Erro de descriptografia com %s: %s", algo.value, str(e))
             raise DecryptionError(f"Falha na descriptografia: {str(e)}", algo.value)
 
-    def _encrypt_aes_gcm(
-        self,
-        plaintext: bytes,
-        key: bytes,
-        associated_data: Optional[bytes] = None
-    ) -> EncryptionResult:
+    def _encrypt_aes_gcm(self, plaintext: bytes, key: bytes, associated_data: bytes | None = None) -> EncryptionResult:
         """Criptografa usando AES-256-GCM (authenticated encryption)."""
         iv = secrets.token_bytes(12)
         cipher = Cipher(algorithms.AES(key), modes.GCM(iv), backend=self._backend)
@@ -323,24 +320,12 @@ class CryptoService(CryptoManagerInterface):
         ciphertext = encryptor.update(plaintext) + encryptor.finalize()
 
         return EncryptionResult(
-            ciphertext=ciphertext,
-            algorithm=EncryptionAlgorithm.AES_256_GCM,
-            iv=iv,
-            tag=encryptor.tag
+            ciphertext=ciphertext, algorithm=EncryptionAlgorithm.AES_256_GCM, iv=iv, tag=encryptor.tag
         )
 
-    def _decrypt_aes_gcm(
-        self,
-        encrypted: EncryptionResult,
-        key: bytes,
-        associated_data: Optional[bytes] = None
-    ) -> bytes:
+    def _decrypt_aes_gcm(self, encrypted: EncryptionResult, key: bytes, associated_data: bytes | None = None) -> bytes:
         """Descriptografa usando AES-256-GCM."""
-        cipher = Cipher(
-            algorithms.AES(key),
-            modes.GCM(encrypted.iv, encrypted.tag),
-            backend=self._backend
-        )
+        cipher = Cipher(algorithms.AES(key), modes.GCM(encrypted.iv, encrypted.tag), backend=self._backend)
         decryptor = cipher.decryptor()
 
         if associated_data:
@@ -360,19 +345,11 @@ class CryptoService(CryptoManagerInterface):
         encryptor = cipher.encryptor()
         ciphertext = encryptor.update(padded_plaintext) + encryptor.finalize()
 
-        return EncryptionResult(
-            ciphertext=ciphertext,
-            algorithm=EncryptionAlgorithm.AES_256_CBC,
-            iv=iv
-        )
+        return EncryptionResult(ciphertext=ciphertext, algorithm=EncryptionAlgorithm.AES_256_CBC, iv=iv)
 
     def _decrypt_aes_cbc(self, encrypted: EncryptionResult, key: bytes) -> bytes:
         """Descriptografa usando AES-256-CBC."""
-        cipher = Cipher(
-            algorithms.AES(key),
-            modes.CBC(encrypted.iv),
-            backend=self._backend
-        )
+        cipher = Cipher(algorithms.AES(key), modes.CBC(encrypted.iv), backend=self._backend)
         decryptor = cipher.decryptor()
         padded_plaintext = decryptor.update(encrypted.ciphertext) + decryptor.finalize()
 
@@ -384,22 +361,14 @@ class CryptoService(CryptoManagerInterface):
         f = Fernet(key)
         ciphertext = f.encrypt(plaintext)
 
-        return EncryptionResult(
-            ciphertext=ciphertext,
-            algorithm=EncryptionAlgorithm.FERNET
-        )
+        return EncryptionResult(ciphertext=ciphertext, algorithm=EncryptionAlgorithm.FERNET)
 
     def _decrypt_fernet(self, encrypted: EncryptionResult, key: bytes) -> bytes:
         """Descriptografa usando Fernet."""
         f = Fernet(key)
         return f.decrypt(encrypted.ciphertext)
 
-    def _encrypt_chacha20(
-        self,
-        plaintext: bytes,
-        key: bytes,
-        associated_data: Optional[bytes] = None
-    ) -> EncryptionResult:
+    def _encrypt_chacha20(self, plaintext: bytes, key: bytes, associated_data: bytes | None = None) -> EncryptionResult:
         """Criptografa usando ChaCha20-Poly1305."""
         from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
@@ -407,18 +376,9 @@ class CryptoService(CryptoManagerInterface):
         chacha = ChaCha20Poly1305(key)
         ciphertext = chacha.encrypt(nonce, plaintext, associated_data)
 
-        return EncryptionResult(
-            ciphertext=ciphertext,
-            algorithm=EncryptionAlgorithm.CHACHA20_POLY1305,
-            iv=nonce
-        )
+        return EncryptionResult(ciphertext=ciphertext, algorithm=EncryptionAlgorithm.CHACHA20_POLY1305, iv=nonce)
 
-    def _decrypt_chacha20(
-        self,
-        encrypted: EncryptionResult,
-        key: bytes,
-        associated_data: Optional[bytes] = None
-    ) -> bytes:
+    def _decrypt_chacha20(self, encrypted: EncryptionResult, key: bytes, associated_data: bytes | None = None) -> bytes:
         """Descriptografa usando ChaCha20-Poly1305."""
         from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
@@ -427,9 +387,7 @@ class CryptoService(CryptoManagerInterface):
 
     def _encrypt_rsa(self, plaintext: bytes, key: bytes) -> EncryptionResult:
         """Criptografa usando RSA-OAEP (para dados pequenos)."""
-        private_key = serialization.load_pem_private_key(
-            key, password=None, backend=self._backend
-        )
+        private_key = serialization.load_pem_private_key(key, password=None, backend=self._backend)
         public_key = private_key.public_key()
 
         max_size = (self.config.rsa_key_size // 8) - 66
@@ -437,44 +395,25 @@ class CryptoService(CryptoManagerInterface):
             raise EncryptionError(
                 f"Dados muito grandes para RSA ({len(plaintext)} > {max_size}). "
                 "Use criptografia híbrida para dados maiores.",
-                EncryptionAlgorithm.RSA_OAEP.value
+                EncryptionAlgorithm.RSA_OAEP.value,
             )
 
         ciphertext = public_key.encrypt(
-            plaintext,
-            padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None
-            )
+            plaintext, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None)
         )
 
-        return EncryptionResult(
-            ciphertext=ciphertext,
-            algorithm=EncryptionAlgorithm.RSA_OAEP
-        )
+        return EncryptionResult(ciphertext=ciphertext, algorithm=EncryptionAlgorithm.RSA_OAEP)
 
     def _decrypt_rsa(self, encrypted: EncryptionResult, key: bytes) -> bytes:
         """Descriptografa usando RSA-OAEP."""
-        private_key = serialization.load_pem_private_key(
-            key, password=None, backend=self._backend
-        )
+        private_key = serialization.load_pem_private_key(key, password=None, backend=self._backend)
 
         return private_key.decrypt(
             encrypted.ciphertext,
-            padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None
-            )
+            padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
         )
 
-    def derive_key(
-        self,
-        password: Union[str, bytes],
-        salt: Optional[bytes] = None,
-        key_length: int = 32
-    ) -> Tuple[bytes, bytes]:
+    def derive_key(self, password: str | bytes, salt: bytes | None = None, key_length: int = 32) -> tuple[bytes, bytes]:
         """
         Deriva uma chave a partir de uma senha usando PBKDF2.
 
@@ -499,7 +438,7 @@ class CryptoService(CryptoManagerInterface):
             length=key_length,
             salt=salt,
             iterations=self.config.key_derivation_iterations,
-            backend=self._backend
+            backend=self._backend,
         )
 
         key = kdf.derive(password)
@@ -533,7 +472,7 @@ class CryptoService(CryptoManagerInterface):
         computed = self.generate_hmac(data, key)
         return hmac.compare_digest(computed, expected_hmac)
 
-    def hash_data(self, data: Union[bytes, str], algorithm: str = "sha256") -> str:
+    def hash_data(self, data: bytes | str, algorithm: str = "sha256") -> str:
         """
         Gera hash de dados.
 
@@ -556,12 +495,7 @@ class CryptoService(CryptoManagerInterface):
         else:
             raise ValueError(f"Algoritmo de hash não suportado: {algorithm}")
 
-    def encrypt_for_storage(
-        self,
-        data: Any,
-        key: bytes,
-        algorithm: Optional[EncryptionAlgorithm] = None
-    ) -> str:
+    def encrypt_for_storage(self, data: Any, key: bytes, algorithm: EncryptionAlgorithm | None = None) -> str:
         """
         Criptografa dados para armazenamento seguro (retorna string base64).
 
@@ -594,10 +528,10 @@ class CryptoService(CryptoManagerInterface):
 
 
 # Instância singleton para uso global
-_default_service: Optional[CryptoService] = None
+_default_service: CryptoService | None = None
 
 
-def get_crypto_service(config: Optional[CryptoConfig] = None) -> CryptoService:
+def get_crypto_service(config: CryptoConfig | None = None) -> CryptoService:
     """
     Retorna instância singleton do CryptoService.
 

@@ -1,9 +1,9 @@
 """Repository para Fluxo de Caixa."""
 
+import builtins
 import logging
 from datetime import date
 from decimal import Decimal
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -12,11 +12,10 @@ from sqlalchemy.orm import selectinload
 
 from modules.financial.models.bank_account import BankAccount, BankAccountStatus
 from modules.financial.models.bank_reconciliation import BankReconciliation, ReconciliationStatus
-from modules.financial.models.bank_transaction import BankTransaction
+from modules.financial.models.bank_transaction import BankTransaction, TransactionStatus
 from modules.financial.models.bank_transaction import (
     ReconciliationStatus as TransactionReconciliationStatus,
 )
-from modules.financial.models.bank_transaction import TransactionStatus
 from modules.financial.models.cashflow_entry import (
     CashFlowEntry,
     CashFlowEntryStatus,
@@ -50,7 +49,7 @@ class BankAccountRepository:
         self,
         account_id: UUID,
         with_relations: bool = False,
-    ) -> Optional[BankAccount]:
+    ) -> BankAccount | None:
         """Busca conta por ID."""
         query = select(BankAccount).where(
             and_(
@@ -68,10 +67,10 @@ class BankAccountRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[BankAccountFilter] = None,
+        filters: BankAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[BankAccount]:
+    ) -> list[BankAccount]:
         """Lista contas bancarias."""
         query = select(BankAccount).where(
             and_(
@@ -87,8 +86,9 @@ class BankAccountRepository:
                 query = query.where(BankAccount.account_type == filters.account_type)
             if filters.bank_code:
                 query = query.where(BankAccount.bank_code == filters.bank_code)
-            if filters.is_main_account is not None:
-                query = query.where(BankAccount.is_main_account == filters.is_main_account)
+            is_main_val = filters.is_main_account if filters.is_main_account is not None else filters.is_main
+            if is_main_val is not None:
+                query = query.where(BankAccount.is_main_account == is_main_val)
             if filters.pix_enabled is not None:
                 query = query.where(BankAccount.pix_enabled == filters.pix_enabled)
             if filters.boleto_enabled is not None:
@@ -103,7 +103,7 @@ class BankAccountRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[BankAccountFilter] = None,
+        filters: BankAccountFilter | None = None,
     ) -> int:
         """Conta registros."""
         query = select(func.count(BankAccount.id)).where(
@@ -128,6 +128,20 @@ class BankAccountRepository:
         await self.session.refresh(account)
         return account
 
+    async def list_with_filters(
+        self,
+        filters: BankAccountFilter,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> builtins.list[BankAccount]:
+        """Lista contas usando objeto de filtro (inclui condominio_id)."""
+        return await self.list(
+            condominio_id=filters.condominio_id,
+            filters=filters,
+            skip=skip,
+            limit=limit,
+        )
+
     async def delete(self, account_id: UUID) -> bool:
         """Deleta conta (soft delete)."""
         account = await self.get_by_id(account_id)
@@ -138,7 +152,7 @@ class BankAccountRepository:
             return True
         return False
 
-    async def get_main_account(self, condominio_id: UUID) -> Optional[BankAccount]:
+    async def get_main_account(self, condominio_id: UUID) -> BankAccount | None:
         """Busca conta principal do condominio."""
         query = select(BankAccount).where(
             and_(
@@ -177,7 +191,7 @@ class BankTransactionRepository:
         await self.session.refresh(transaction)
         return transaction
 
-    async def get_by_id(self, transaction_id: UUID) -> Optional[BankTransaction]:
+    async def get_by_id(self, transaction_id: UUID) -> BankTransaction | None:
         """Busca movimentacao por ID."""
         query = select(BankTransaction).where(
             and_(
@@ -191,10 +205,10 @@ class BankTransactionRepository:
     async def list(
         self,
         bank_account_id: UUID,
-        filters: Optional[BankTransactionFilter] = None,
+        filters: BankTransactionFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[BankTransaction]:
+    ) -> list[BankTransaction]:
         """Lista movimentacoes."""
         query = select(BankTransaction).where(
             and_(
@@ -211,9 +225,7 @@ class BankTransactionRepository:
             if filters.status:
                 query = query.where(BankTransaction.status == filters.status)
             if filters.reconciliation_status:
-                query = query.where(
-                    BankTransaction.reconciliation_status == filters.reconciliation_status
-                )
+                query = query.where(BankTransaction.reconciliation_status == filters.reconciliation_status)
             if filters.origin:
                 query = query.where(BankTransaction.origin == filters.origin)
             if filters.start_date:
@@ -225,9 +237,7 @@ class BankTransactionRepository:
             if filters.max_amount:
                 query = query.where(BankTransaction.amount <= filters.max_amount)
             if filters.counterparty_name:
-                query = query.where(
-                    BankTransaction.counterparty_name.ilike(f"%{filters.counterparty_name}%")
-                )
+                query = query.where(BankTransaction.counterparty_name.ilike(f"%{filters.counterparty_name}%"))
 
         query = query.order_by(BankTransaction.transaction_date.desc())
         query = query.offset(skip).limit(limit)
@@ -238,7 +248,7 @@ class BankTransactionRepository:
     async def count(
         self,
         bank_account_id: UUID,
-        filters: Optional[BankTransactionFilter] = None,
+        filters: BankTransactionFilter | None = None,
     ) -> int:
         """Conta movimentacoes."""
         query = select(func.count(BankTransaction.id)).where(
@@ -267,13 +277,12 @@ class BankTransactionRepository:
         bank_account_id: UUID,
         start_date: date,
         end_date: date,
-    ) -> List[BankTransaction]:
+    ) -> builtins.list[BankTransaction]:
         """Busca movimentacoes pendentes de conciliacao."""
         query = select(BankTransaction).where(
             and_(
                 BankTransaction.bank_account_id == bank_account_id,
-                BankTransaction.reconciliation_status
-                == TransactionReconciliationStatus.PENDENTE.value,
+                BankTransaction.reconciliation_status == TransactionReconciliationStatus.PENDENTE.value,
                 BankTransaction.transaction_date >= start_date,
                 BankTransaction.transaction_date <= end_date,
                 BankTransaction.ativo.is_(True),  # noqa: E712
@@ -287,7 +296,7 @@ class BankTransactionRepository:
         bank_account_id: UUID,
         start_date: date,
         end_date: date,
-    ) -> List[BankTransaction]:
+    ) -> builtins.list[BankTransaction]:
         """Busca movimentacoes por periodo."""
         query = (
             select(BankTransaction)
@@ -306,6 +315,63 @@ class BankTransactionRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
+    async def list_with_filters(
+        self,
+        filters: dict | None = None,
+        page: int = 1,
+        per_page: int = 20,
+    ) -> dict:
+        """Lista transacoes com filtros dinamicos e paginacao."""
+        filters = filters or {}
+        query = select(BankTransaction).where(BankTransaction.ativo.is_(True))  # noqa: E712
+
+        # Filtros dinamicos baseados nos campos reais do model
+        if filters.get("bank_account_id"):
+            query = query.where(BankTransaction.bank_account_id == filters["bank_account_id"])
+        if filters.get("transaction_type"):
+            query = query.where(BankTransaction.transaction_type == filters["transaction_type"])
+        if filters.get("category"):
+            query = query.where(BankTransaction.category == filters["category"])
+        if filters.get("status"):
+            query = query.where(BankTransaction.status == filters["status"])
+        if filters.get("reconciliation_status"):
+            query = query.where(BankTransaction.reconciliation_status == filters["reconciliation_status"])
+        if filters.get("origin"):
+            query = query.where(BankTransaction.origin == filters["origin"])
+        if filters.get("source_type"):
+            query = query.where(BankTransaction.source_type == filters["source_type"])
+        if filters.get("start_date"):
+            query = query.where(BankTransaction.transaction_date >= filters["start_date"])
+        if filters.get("end_date"):
+            query = query.where(BankTransaction.transaction_date <= filters["end_date"])
+        if filters.get("min_amount"):
+            query = query.where(BankTransaction.amount >= filters["min_amount"])
+        if filters.get("max_amount"):
+            query = query.where(BankTransaction.amount <= filters["max_amount"])
+        if filters.get("counterparty_name"):
+            query = query.where(BankTransaction.counterparty_name.ilike(f"%{filters['counterparty_name']}%"))
+        if filters.get("is_transfer") is not None:
+            query = query.where(BankTransaction.is_transfer == filters["is_transfer"])
+
+        # Total (subquery para evitar re-execucao com ordenacao)
+        count_q = select(func.count()).select_from(query.subquery())
+        total = await self.session.scalar(count_q) or 0
+
+        # Paginacao
+        query = query.order_by(BankTransaction.transaction_date.desc())
+        offset = (page - 1) * per_page
+        query = query.offset(offset).limit(per_page)
+        result = await self.session.execute(query)
+        items = list(result.scalars().all())
+
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+
 
 class BankReconciliationRepository:
     """Repository para conciliacoes bancarias."""
@@ -321,7 +387,7 @@ class BankReconciliationRepository:
         await self.session.refresh(reconciliation)
         return reconciliation
 
-    async def get_by_id(self, reconciliation_id: UUID) -> Optional[BankReconciliation]:
+    async def get_by_id(self, reconciliation_id: UUID) -> BankReconciliation | None:
         """Busca conciliacao por ID."""
         query = select(BankReconciliation).where(
             and_(
@@ -337,7 +403,7 @@ class BankReconciliationRepository:
         bank_account_id: UUID,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[BankReconciliation]:
+    ) -> list[BankReconciliation]:
         """Lista conciliacoes."""
         query = (
             select(BankReconciliation)
@@ -361,7 +427,7 @@ class BankReconciliationRepository:
         await self.session.refresh(reconciliation)
         return reconciliation
 
-    async def get_in_progress(self, bank_account_id: UUID) -> Optional[BankReconciliation]:
+    async def get_in_progress(self, bank_account_id: UUID) -> BankReconciliation | None:
         """Busca conciliacao em andamento."""
         query = select(BankReconciliation).where(
             and_(
@@ -388,7 +454,7 @@ class CashFlowEntryRepository:
         await self.session.refresh(entry)
         return entry
 
-    async def get_by_id(self, entry_id: UUID) -> Optional[CashFlowEntry]:
+    async def get_by_id(self, entry_id: UUID) -> CashFlowEntry | None:
         """Busca lancamento por ID."""
         query = select(CashFlowEntry).where(
             and_(
@@ -402,10 +468,10 @@ class CashFlowEntryRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[CashFlowEntryFilter] = None,
+        filters: CashFlowEntryFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[CashFlowEntry]:
+    ) -> list[CashFlowEntry]:
         """Lista lancamentos."""
         query = select(CashFlowEntry).where(
             and_(
@@ -456,7 +522,7 @@ class CashFlowEntryRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[CashFlowEntryFilter] = None,
+        filters: CashFlowEntryFilter | None = None,
     ) -> int:
         """Conta lancamentos."""
         query = select(func.count(CashFlowEntry.id)).where(
@@ -481,6 +547,20 @@ class CashFlowEntryRepository:
         await self.session.refresh(entry)
         return entry
 
+    async def list_with_filters(
+        self,
+        filters: CashFlowEntryFilter,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> builtins.list[CashFlowEntry]:
+        """Lista lancamentos usando objeto de filtro (inclui condominio_id)."""
+        return await self.list(
+            condominio_id=filters.condominio_id,
+            filters=filters,
+            skip=skip,
+            limit=limit,
+        )
+
     async def delete(self, entry_id: UUID) -> bool:
         """Deleta lancamento (soft delete)."""
         entry = await self.get_by_id(entry_id)
@@ -495,8 +575,8 @@ class CashFlowEntryRepository:
         condominio_id: UUID,
         start_date: date,
         end_date: date,
-        entry_type: Optional[str] = None,
-    ) -> List[CashFlowEntry]:
+        entry_type: str | None = None,
+    ) -> builtins.list[CashFlowEntry]:
         """Busca lancamentos por periodo."""
         query = select(CashFlowEntry).where(
             and_(
@@ -517,8 +597,8 @@ class CashFlowEntryRepository:
     async def get_pending(
         self,
         condominio_id: UUID,
-        entry_type: Optional[str] = None,
-    ) -> List[CashFlowEntry]:
+        entry_type: str | None = None,
+    ) -> builtins.list[CashFlowEntry]:
         """Busca lancamentos pendentes."""
         query = select(CashFlowEntry).where(
             and_(
@@ -545,7 +625,7 @@ class CashFlowEntryRepository:
         condominio_id: UUID,
         start_date: date,
         end_date: date,
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Retorna totais por tipo de lancamento."""
         query = (
             select(
@@ -581,7 +661,7 @@ class CashFlowForecastRepository:
         await self.session.refresh(forecast)
         return forecast
 
-    async def get_by_id(self, forecast_id: UUID) -> Optional[CashFlowForecast]:
+    async def get_by_id(self, forecast_id: UUID) -> CashFlowForecast | None:
         """Busca previsao por ID."""
         query = select(CashFlowForecast).where(
             and_(
@@ -595,10 +675,10 @@ class CashFlowForecastRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[CashFlowForecastFilter] = None,
+        filters: CashFlowForecastFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[CashFlowForecast]:
+    ) -> list[CashFlowForecast]:
         """Lista previsoes."""
         query = select(CashFlowForecast).where(
             and_(
@@ -636,7 +716,7 @@ class CashFlowForecastRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[CashFlowForecastFilter] = None,
+        filters: CashFlowForecastFilter | None = None,
     ) -> int:
         """Conta previsoes."""
         query = select(func.count(CashFlowForecast.id)).where(
@@ -658,6 +738,20 @@ class CashFlowForecastRepository:
         await self.session.refresh(forecast)
         return forecast
 
+    async def list_with_filters(
+        self,
+        filters: CashFlowForecastFilter,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> builtins.list[CashFlowForecast]:
+        """Lista previsoes usando objeto de filtro (inclui condominio_id)."""
+        return await self.list(
+            condominio_id=filters.condominio_id,
+            filters=filters,
+            skip=skip,
+            limit=limit,
+        )
+
     async def delete(self, forecast_id: UUID) -> bool:
         """Deleta previsao (soft delete)."""
         forecast = await self.get_by_id(forecast_id)
@@ -667,7 +761,7 @@ class CashFlowForecastRepository:
             return True
         return False
 
-    async def get_active(self, condominio_id: UUID) -> Optional[CashFlowForecast]:
+    async def get_active(self, condominio_id: UUID) -> CashFlowForecast | None:
         """Busca previsao ativa atual."""
         today = date.today()
         query = select(CashFlowForecast).where(
@@ -687,7 +781,7 @@ class CashFlowForecastRepository:
         condominio_id: UUID,
         period_start: date,
         period_end: date,
-    ) -> Optional[CashFlowForecast]:
+    ) -> CashFlowForecast | None:
         """Busca previsao por periodo."""
         query = select(CashFlowForecast).where(
             and_(

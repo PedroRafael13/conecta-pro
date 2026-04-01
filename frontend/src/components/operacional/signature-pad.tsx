@@ -31,6 +31,7 @@ export function SignaturePad({
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationRequested, setLocationRequested] = useState(false);
 
   // Inicializa o canvas
   useEffect(() => {
@@ -96,10 +97,12 @@ export function SignaturePad({
   }, [showLocationRequest]);
 
   useEffect(() => {
-    if (showLocationRequest) {
+    if (showLocationRequest && !locationRequested) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      setLocationRequested(true);
       getLocation();
     }
-  }, [showLocationRequest, getLocation]);
+  }, [showLocationRequest, locationRequested, getLocation]);
 
   // Funções de desenho
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {

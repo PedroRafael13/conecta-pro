@@ -12,19 +12,13 @@ Autor: Conecta PRO Team + Claude AI
 Data: 2026-01-10
 """
 
-from .dashboard.unified_dashboard import UnifiedDashboard
 from .daily_checklist.checklist_manager import ChecklistManager
-from .escalation.escalation_engine import EscalationEngine
+from .dashboard.unified_dashboard import UnifiedDashboard
 from .department_reports.report_generator import DepartmentReportGenerator
+from .escalation.escalation_engine import EscalationEngine
 from .integration.module_integrator import ModuleIntegrator
 
-__all__ = [
-    "UnifiedDashboard",
-    "ChecklistManager", 
-    "EscalationEngine",
-    "DepartmentReportGenerator",
-    "ModuleIntegrator"
-]
+__all__ = ["UnifiedDashboard", "ChecklistManager", "EscalationEngine", "DepartmentReportGenerator", "ModuleIntegrator"]
 
 __version__ = "6.1.0"
 __author__ = "Conecta PRO Team"

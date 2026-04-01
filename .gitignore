@@ -61,3 +61,35 @@ frontend/.next/
 frontend/e2e/.auth/
 frontend/test-results/
 frontend/playwright-report/
+
+# Backups e arquivos temporários
+backups/
+*.backup*
+*.pre-patch
+coverage.json
+htmlcov/
+backend/coverage.json
+backend/htmlcov/
+backend/.env.*
+backend/fix_strenum_imports.py
+
+# Credentials and secrets (P0 security)
+credentials/
+*.pem
+*.key
+*.pfx
+*.p12
+.env.secrets
+.env.credentials
+.env.mcp
+*.crt.key
+.env
+.env.*
+backend/.env
+*.env
+frontend/public/models/
+frontend/public/models/face_recognition_model-shard*
+monitoring/textfile_collector/*.prom
+agents/system_context.json
+agents/dashboard_data.json
+.next/

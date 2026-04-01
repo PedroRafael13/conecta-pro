@@ -1,9 +1,9 @@
 """Tests para API de Chat."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
 from fastapi import status
 from httpx import AsyncClient
 
@@ -51,9 +51,7 @@ class TestChatSessionEndpoints:
     """Testes dos endpoints de sessao."""
 
     @pytest.mark.asyncio
-    async def test_create_session_success(
-        self, mock_current_user, sample_session
-    ):
+    async def test_create_session_success(self, mock_current_user, sample_session):
         """Testa criacao de sessao com sucesso."""
         # Este teste verifica a estrutura do request
         request_data = {
@@ -131,8 +129,9 @@ class TestChatMessageEndpoints:
     @pytest.mark.asyncio
     async def test_send_message_min_length(self):
         """Testa comprimento minimo da mensagem."""
-        from modules.ai.conversation.schemas.chat_schemas import SendMessageRequest
         from pydantic import ValidationError
+
+        from modules.ai.conversation.schemas.chat_schemas import SendMessageRequest
 
         with pytest.raises(ValidationError):
             SendMessageRequest(message="")
@@ -140,8 +139,9 @@ class TestChatMessageEndpoints:
     @pytest.mark.asyncio
     async def test_feedback_rating_range(self):
         """Testa range do rating de feedback."""
-        from modules.ai.conversation.schemas.chat_schemas import MessageFeedback
         from pydantic import ValidationError
+
+        from modules.ai.conversation.schemas.chat_schemas import MessageFeedback
 
         # Rating valido
         feedback = MessageFeedback(
@@ -174,9 +174,9 @@ class TestSendMessageResponse:
     def test_response_structure(self):
         """Testa estrutura da resposta."""
         from modules.ai.conversation.schemas.chat_schemas import (
+            ActionItem,
             SendMessageResponse,
             SuggestionItem,
-            ActionItem,
         )
 
         response = SendMessageResponse(
@@ -278,7 +278,7 @@ class TestChatMessageModel:
         from modules.ai.conversation.models.chat_message import MessageType
 
         assert MessageType.USER.value == "user"
-        assert MessageType.ASSISTANT.value == "assistant"
+        assert MessageType.AI.value == "ai"
         assert MessageType.SYSTEM.value == "system"
 
     def test_message_status(self):

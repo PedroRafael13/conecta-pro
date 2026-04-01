@@ -62,3 +62,6 @@ export * from './useKPITrends';
 
 // Reports
 export * from './useReports';
+
+// WebSocket Operacional
+export * from './useOperacionalWebSocket';

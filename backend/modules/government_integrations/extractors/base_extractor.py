@@ -4,20 +4,21 @@ Extrator Base para Serviços Governamentais.
 Classe base com funcionalidades comuns a todos os extratores.
 """
 
-from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List, AsyncIterator
-from dataclasses import dataclass, field
-from uuid import UUID
 import asyncio
 import logging
-import aiohttp
 import ssl
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
+from uuid import UUID
 
-from ..core.credentials import ProvedorCredenciais, TipoCredencial
-from ..core.etl import NormalizadorDados, ValidadorXSD, DeduplicadorDocumentos
-from ..core.errors import ClassificadorErros, RetryConfig
+import aiohttp
+
 from ..core.contingency import ComutadorEndpoints
+from ..core.credentials import ProvedorCredenciais, TipoCredencial
+from ..core.errors import ClassificadorErros
+from ..core.etl import NormalizadorDados, ValidadorXSD
 
 logger = logging.getLogger(__name__)
 
@@ -25,29 +26,31 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DocumentoExtraido:
     """Documento extraído de serviço governamental."""
+
     id: str  # Identificador único (chave_acesso, id_evento, etc.)
     tipo: str  # nfe, cte, evento_esocial, etc.
-    dados: Dict[str, Any]
-    xml_original: Optional[str] = None
-    data_documento: Optional[datetime] = None
+    dados: dict[str, Any]
+    xml_original: str | None = None
+    data_documento: datetime | None = None
     processado: bool = False
-    erro: Optional[str] = None
+    erro: str | None = None
 
 
 @dataclass
 class ResultadoExtracao:
     """Resultado de extração de um serviço."""
+
     servico: str
     status: str = "em_andamento"
     inicio: datetime = field(default_factory=datetime.utcnow)
-    fim: Optional[datetime] = None
+    fim: datetime | None = None
     documentos_processados: int = 0
     documentos_novos: int = 0
     documentos_atualizados: int = 0
     documentos_erro: int = 0
-    erros: List[str] = field(default_factory=list)
-    detalhes: Dict[str, Any] = field(default_factory=dict)
-    documentos: List[DocumentoExtraido] = field(default_factory=list)
+    erros: list[str] = field(default_factory=list)
+    detalhes: dict[str, Any] = field(default_factory=dict)
+    documentos: list[DocumentoExtraido] = field(default_factory=list)
 
 
 class ExtratorBase(ABC):
@@ -70,15 +73,15 @@ class ExtratorBase(ABC):
     def __init__(
         self,
         credentials: ProvedorCredenciais,
-        comutador: Optional[ComutadorEndpoints] = None,
+        comutador: ComutadorEndpoints | None = None,
     ):
         self.credentials = credentials
         self.comutador = comutador or ComutadorEndpoints()
         self.normalizador = NormalizadorDados()
         self.validador = ValidadorXSD()
         self.classificador = ClassificadorErros()
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._ssl_context: Optional[ssl.SSLContext] = None
+        self._session: aiohttp.ClientSession | None = None
+        self._ssl_context: ssl.SSLContext | None = None
 
     @property
     @abstractmethod
@@ -96,10 +99,10 @@ class ExtratorBase(ABC):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -118,11 +121,7 @@ class ExtratorBase(ABC):
         """
         pass
 
-    async def _get_session(
-        self,
-        tenant_id: UUID,
-        with_cert: bool = True
-    ) -> aiohttp.ClientSession:
+    async def _get_session(self, tenant_id: UUID, with_cert: bool = True) -> aiohttp.ClientSession:
         """
         Obtém sessão HTTP configurada.
 
@@ -189,9 +188,9 @@ class ExtratorBase(ABC):
         tenant_id: UUID,
         url: str,
         method: str = "POST",
-        data: Optional[str] = None,
-        headers: Optional[Dict] = None,
-    ) -> Optional[str]:
+        data: str | None = None,
+        headers: dict | None = None,
+    ) -> str | None:
         """
         Faz requisição HTTP com retry.
 
@@ -232,15 +231,11 @@ class ExtratorBase(ABC):
                         logger.debug(f"Resposta 200 OK de {url}")
                         return await response.text()
 
-                    logger.warning(
-                        f"Resposta não-200: {response.status} - {url}"
-                    )
+                    logger.warning(f"Resposta não-200: {response.status} - {url}")
 
                     # Classificar erro
                     erro = await response.text()
-                    classificacao = self.classificador.classificar_erro_http(
-                        response.status, erro
-                    )
+                    classificacao = self.classificador.classificar_erro_http(response.status, erro)
 
                     if not classificacao.get("retry", False):
                         raise Exception(f"Erro não recuperável: {erro[:200]}")
@@ -252,7 +247,7 @@ class ExtratorBase(ABC):
                 )
 
                 if tentativa < self.MAX_RETRIES - 1:
-                    await asyncio.sleep(2 ** tentativa)  # Backoff exponencial
+                    await asyncio.sleep(2**tentativa)  # Backoff exponencial
                 else:
                     raise
 
@@ -295,11 +290,7 @@ class ExtratorBase(ABC):
 
         return doc
 
-    def _normalizar_dados(
-        self,
-        dados: Dict[str, Any],
-        tipo: str
-    ) -> Dict[str, Any]:
+    def _normalizar_dados(self, dados: dict[str, Any], tipo: str) -> dict[str, Any]:
         """Normaliza dados do documento."""
         # CPF/CNPJ
         for campo in ["cpf", "cnpj", "emit_cnpj", "dest_cnpj"]:

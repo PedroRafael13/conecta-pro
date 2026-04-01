@@ -8,8 +8,8 @@ Este modulo define as tabelas para:
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -28,7 +28,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.models.base import Base
 
 
-class SurveyFrequency(str, Enum):
+class SurveyFrequency(StrEnum):
     """Frequencia de aplicacao da pesquisa."""
 
     SEMANAL = "semanal"
@@ -36,7 +36,7 @@ class SurveyFrequency(str, Enum):
     MENSAL = "mensal"
 
 
-class QuestionType(str, Enum):
+class QuestionType(StrEnum):
     """Tipo de pergunta da pesquisa."""
 
     ESCALA = "escala"  # 1-4
@@ -44,7 +44,7 @@ class QuestionType(str, Enum):
     MULTIPLA_ESCOLHA = "multipla_escolha"
 
 
-class ClimateDimension(str, Enum):
+class ClimateDimension(StrEnum):
     """Dimensoes avaliadas na pesquisa de clima."""
 
     SATISFACAO = "satisfacao"
@@ -57,7 +57,7 @@ class ClimateDimension(str, Enum):
     RECONHECIMENTO = "reconhecimento"
 
 
-class EntityType(str, Enum):
+class EntityType(StrEnum):
     """Tipo de entidade para agregacao de scores."""
 
     FUNCIONARIO = "funcionario"
@@ -67,7 +67,7 @@ class EntityType(str, Enum):
     CLIENTE = "cliente"
 
 
-class AlertSeverity(str, Enum):
+class AlertSeverity(StrEnum):
     """Severidade de alertas de clima."""
 
     BAIXA = "baixa"
@@ -107,11 +107,11 @@ class ClimateSurvey(Base):
         nullable=False,
         index=True,
     )
-    descricao: Mapped[Optional[str]] = mapped_column(
+    descricao: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    perguntas: Mapped[List[Dict[str, Any]]] = mapped_column(
+    perguntas: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
@@ -133,11 +133,11 @@ class ClimateSurvey(Base):
         server_default=func.now(),
         nullable=False,
     )
-    data_fim: Mapped[Optional[datetime]] = mapped_column(
+    data_fim: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    empresa_id: Mapped[Optional[str]] = mapped_column(
+    empresa_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -165,13 +165,13 @@ class ClimateSurvey(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Relationships
-    responses: Mapped[List["ClimateResponse"]] = relationship(
+    responses: Mapped[list["ClimateResponse"]] = relationship(
         "ClimateResponse",
         back_populates="survey",
         lazy="selectin",
@@ -237,22 +237,22 @@ class ClimateResponse(Base):
         index=True,
         comment="SHA-256 hash do funcionario_id para anonimato",
     )
-    posto_id: Mapped[Optional[str]] = mapped_column(
+    posto_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    equipe_id: Mapped[Optional[str]] = mapped_column(
+    equipe_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    empresa_id: Mapped[Optional[str]] = mapped_column(
+    empresa_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    cliente_id: Mapped[Optional[str]] = mapped_column(
+    cliente_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -269,13 +269,13 @@ class ClimateResponse(Base):
         nullable=False,
         index=True,
     )
-    respostas: Mapped[Dict[str, Any]] = mapped_column(
+    respostas: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
         comment="Respostas: {pergunta_id: valor (1-4)}",
     )
-    comentarios: Mapped[Optional[Dict[str, str]]] = mapped_column(
+    comentarios: Mapped[dict[str, str] | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Comentarios opcionais: {pergunta_id: texto}",
@@ -286,7 +286,7 @@ class ClimateResponse(Base):
         nullable=False,
         index=True,
     )
-    scores_por_dimensao: Mapped[Dict[str, float]] = mapped_column(
+    scores_por_dimensao: Mapped[dict[str, float]] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
@@ -309,12 +309,12 @@ class ClimateResponse(Base):
         server_default=func.now(),
         nullable=False,
     )
-    ip_hash: Mapped[Optional[str]] = mapped_column(
+    ip_hash: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
         comment="Hash do IP para deteccao de fraude",
     )
-    user_agent_hash: Mapped[Optional[str]] = mapped_column(
+    user_agent_hash: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
     )
@@ -378,11 +378,11 @@ class ClimateScore(Base):
         nullable=False,
         index=True,
     )
-    entidade_nome: Mapped[Optional[str]] = mapped_column(
+    entidade_nome: Mapped[str | None] = mapped_column(
         String(200),
         nullable=True,
     )
-    empresa_id: Mapped[Optional[str]] = mapped_column(
+    empresa_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -399,7 +399,7 @@ class ClimateScore(Base):
         nullable=False,
         index=True,
     )
-    scores_dimensao: Mapped[Dict[str, float]] = mapped_column(
+    scores_dimensao: Mapped[dict[str, float]] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
@@ -422,12 +422,12 @@ class ClimateScore(Base):
         nullable=False,
         comment="Percentual de funcionarios que responderam",
     )
-    fatores_positivos: Mapped[List[str]] = mapped_column(
+    fatores_positivos: Mapped[list[str]] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
     )
-    fatores_negativos: Mapped[List[str]] = mapped_column(
+    fatores_negativos: Mapped[list[str]] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
@@ -453,7 +453,7 @@ class ClimateScore(Base):
         default=0,
         nullable=False,
     )
-    alertas: Mapped[List[Dict[str, Any]]] = mapped_column(
+    alertas: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
@@ -527,7 +527,7 @@ class ClimateAlert(Base):
         primary_key=True,
         default=lambda: str(uuid4()),
     )
-    empresa_id: Mapped[Optional[str]] = mapped_column(
+    empresa_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -542,7 +542,7 @@ class ClimateAlert(Base):
         nullable=False,
         index=True,
     )
-    entidade_nome: Mapped[Optional[str]] = mapped_column(
+    entidade_nome: Mapped[str | None] = mapped_column(
         String(200),
         nullable=True,
     )
@@ -556,7 +556,7 @@ class ClimateAlert(Base):
         nullable=False,
         index=True,
     )
-    dimensao: Mapped[Optional[str]] = mapped_column(
+    dimensao: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
@@ -575,7 +575,7 @@ class ClimateAlert(Base):
         default=0.0,
         nullable=False,
     )
-    score_anterior: Mapped[Optional[float]] = mapped_column(
+    score_anterior: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
@@ -590,15 +590,15 @@ class ClimateAlert(Base):
         nullable=False,
         index=True,
     )
-    resolvido_em: Mapped[Optional[datetime]] = mapped_column(
+    resolvido_em: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    resolvido_por: Mapped[Optional[str]] = mapped_column(
+    resolvido_por: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    notas_resolucao: Mapped[Optional[str]] = mapped_column(
+    notas_resolucao: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )

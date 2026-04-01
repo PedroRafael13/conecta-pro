@@ -11,7 +11,6 @@ import logging
 import ssl
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 import httpx
 
@@ -59,7 +58,7 @@ class CoraAdapter(BaseBankingAdapter):
     def __init__(self, credentials: BankCredentials) -> None:
         """Inicializa adapter Cora."""
         super().__init__(credentials)
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Retorna cliente HTTP com certificado mTLS."""
@@ -205,15 +204,17 @@ class CoraAdapter(BaseBankingAdapter):
 
             counterparty = transaction.get("counterParty", {})
 
-            transactions.append(BankTransaction(
-                transaction_id=item.get("id", ""),
-                date=datetime.fromisoformat(item.get("createdAt", "").replace("+00", "+00:00")),
-                amount=amount,
-                transaction_type=tx_type,
-                description=transaction.get("description", ""),
-                counterpart_name=counterparty.get("name"),
-                counterpart_document=counterparty.get("identity"),
-            ))
+            transactions.append(
+                BankTransaction(
+                    transaction_id=item.get("id", ""),
+                    date=datetime.fromisoformat(item.get("createdAt", "").replace("+00", "+00:00")),
+                    amount=amount,
+                    transaction_type=tx_type,
+                    description=transaction.get("description", ""),
+                    counterpart_name=counterparty.get("name"),
+                    counterpart_document=counterparty.get("identity"),
+                )
+            )
 
         # Saldos inicial e final em centavos
         opening = self._parse_amount(data.get("start", {}).get("balance", 0) / 100)
@@ -301,7 +302,7 @@ class CoraAdapter(BaseBankingAdapter):
     async def validate_pix_key(
         self,
         key: str,
-    ) -> Optional[PixKey]:
+    ) -> PixKey | None:
         """Valida chave PIX."""
         try:
             data = await self._request(
@@ -326,7 +327,7 @@ class CoraAdapter(BaseBankingAdapter):
         self,
         pix_key: str,
         amount: Decimal,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> PaymentResponse:
         """Inicia transferência PIX."""
         # Valor em centavos
@@ -387,11 +388,42 @@ class CoraAdapter(BaseBankingAdapter):
             "pix_copy_paste": data.get("pix", {}).get("copy_and_paste", ""),
         }
 
+    async def generate_pix_charge(
+        self,
+        amount: Decimal,
+        description: str,
+        payer_name: str | None = None,
+        payer_document: str | None = None,
+        expiracao_segundos: int = 86400,
+    ) -> dict:
+        """Gera cobrança PIX avulsa (QR Code dinâmico) via Cora."""
+        amount_cents = int(amount * 100)
+
+        body: dict = {
+            "amount": amount_cents,
+            "description": description,
+            "payment_options": ["PIX"],
+            "expiration_seconds": expiracao_segundos,
+        }
+        if payer_name:
+            body["customer"] = {"name": payer_name}
+            if payer_document:
+                body["customer"]["document"] = self._format_document(payer_document)
+
+        data = await self._request("POST", "/v1/invoices", json=body)
+
+        return {
+            "charge_id": data.get("id", ""),
+            "pix_qrcode": data.get("pix", {}).get("qr_code", ""),
+            "pix_copy_paste": data.get("pix", {}).get("copy_and_paste", ""),
+            "amount": float(amount),
+        }
+
     async def list_invoices(
         self,
-        status: Optional[str] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        status: str | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> list[dict]:
         """Lista boletos/invoices emitidos."""
         params = {}

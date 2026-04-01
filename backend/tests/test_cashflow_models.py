@@ -35,7 +35,7 @@ class TestBankAccountModel:
     """Testes para o model BankAccount."""
 
     def test_create_bank_account(self):
-        """Testa criação de conta bancária."""
+        """Testa criacao de conta bancaria."""
         account = BankAccount(
             id=uuid4(),
             condominio_id=uuid4(),
@@ -45,16 +45,18 @@ class TestBankAccountModel:
             bank_name="Banco do Brasil",
             agency="1234",
             account_number="12345",
-            initial_balance=Decimal("10000.00"),
+            account_digit="0",
+            opening_balance=Decimal("10000.00"),
+            status=BankAccountStatus.ATIVA,
         )
 
         assert account.name == "Conta Principal"
         assert account.account_type == BankAccountType.CORRENTE
         assert account.status == BankAccountStatus.ATIVA
-        assert account.initial_balance == Decimal("10000.00")
+        assert account.opening_balance == Decimal("10000.00")
 
     def test_update_balance_credit(self):
-        """Testa atualização de saldo com crédito."""
+        """Testa atualizacao de saldo com credito."""
         account = BankAccount(
             id=uuid4(),
             condominio_id=uuid4(),
@@ -67,7 +69,7 @@ class TestBankAccountModel:
         assert account.current_balance == Decimal("1500.00")
 
     def test_update_balance_debit(self):
-        """Testa atualização de saldo com débito."""
+        """Testa atualizacao de saldo com debito."""
         account = BankAccount(
             id=uuid4(),
             condominio_id=uuid4(),
@@ -76,7 +78,7 @@ class TestBankAccountModel:
             current_balance=Decimal("1000.00"),
         )
 
-        account.update_balance(Decimal("-300.00"))
+        account.update_balance(Decimal("300.00"), is_credit=False)
         assert account.current_balance == Decimal("700.00")
 
     def test_block_balance(self):
@@ -87,6 +89,7 @@ class TestBankAccountModel:
             name="Conta Teste",
             account_type=BankAccountType.CORRENTE,
             current_balance=Decimal("1000.00"),
+            available_balance=Decimal("1000.00"),
             blocked_balance=Decimal("0.00"),
         )
 
@@ -118,6 +121,7 @@ class TestBankAccountModel:
             name="Conta Teste",
             account_type=BankAccountType.CORRENTE,
             current_balance=Decimal("1000.00"),
+            available_balance=Decimal("800.00"),
             blocked_balance=Decimal("200.00"),
         )
 
@@ -126,7 +130,7 @@ class TestBankAccountModel:
         assert account.available_balance == Decimal("950.00")
 
     def test_bank_account_types(self):
-        """Testa todos os tipos de conta bancária."""
+        """Testa todos os tipos de conta bancaria."""
         types = [
             BankAccountType.CORRENTE,
             BankAccountType.POUPANCA,
@@ -153,31 +157,32 @@ class TestBankTransactionModel:
     """Testes para o model BankTransaction."""
 
     def test_create_credit_transaction(self):
-        """Testa criação de transação de crédito."""
+        """Testa criacao de transacao de credito."""
         tx = BankTransaction(
             id=uuid4(),
             bank_account_id=uuid4(),
             transaction_type=TransactionType.CREDITO,
-            category=TransactionCategory.TAXA_CONDOMINIO,
+            category=TransactionCategory.TAXA_CONDOMINIAL,
             amount=Decimal("500.00"),
-            description="Recebimento taxa condomínio",
+            description="Recebimento taxa condominio",
             transaction_date=date.today(),
+            status=TransactionStatus.PENDENTE,
         )
 
         assert tx.transaction_type == TransactionType.CREDITO
-        assert tx.category == TransactionCategory.TAXA_CONDOMINIO
+        assert tx.category == TransactionCategory.TAXA_CONDOMINIAL
         assert tx.amount == Decimal("500.00")
         assert tx.status == TransactionStatus.PENDENTE
 
     def test_create_debit_transaction(self):
-        """Testa criação de transação de débito."""
+        """Testa criacao de transacao de debito."""
         tx = BankTransaction(
             id=uuid4(),
             bank_account_id=uuid4(),
             transaction_type=TransactionType.DEBITO,
             category=TransactionCategory.MANUTENCAO,
             amount=Decimal("200.00"),
-            description="Pagamento manutenção",
+            description="Pagamento manutencao",
             transaction_date=date.today(),
         )
 
@@ -185,104 +190,117 @@ class TestBankTransactionModel:
         assert tx.category == TransactionCategory.MANUTENCAO
 
     def test_transaction_categories(self):
-        """Testa todas as categorias de transação."""
+        """Testa todas as categorias de transacao."""
         categories = [
-            TransactionCategory.TAXA_CONDOMINIO,
+            TransactionCategory.TAXA_CONDOMINIAL,
             TransactionCategory.TAXA_EXTRA,
-            TransactionCategory.MULTA,
-            TransactionCategory.JUROS,
             TransactionCategory.ALUGUEL,
             TransactionCategory.RESERVA,
-            TransactionCategory.OUTROS_RECEBIMENTOS,
+            TransactionCategory.MULTA,
+            TransactionCategory.JUROS_RECEBIDOS,
+            TransactionCategory.RENDIMENTO,
+            TransactionCategory.OUTRAS_RECEITAS,
+            TransactionCategory.FORNECEDOR,
+            TransactionCategory.FUNCIONARIO,
+            TransactionCategory.TRIBUTO,
+            TransactionCategory.SERVICO,
             TransactionCategory.MANUTENCAO,
-            TransactionCategory.LIMPEZA,
-            TransactionCategory.SEGURANCA,
-            TransactionCategory.ENERGIA,
-            TransactionCategory.AGUA,
-            TransactionCategory.GAS,
-            TransactionCategory.INTERNET,
-            TransactionCategory.TELEFONE,
-            TransactionCategory.SALARIOS,
-            TransactionCategory.ENCARGOS,
-            TransactionCategory.SEGUROS,
-            TransactionCategory.IMPOSTOS,
-            TransactionCategory.ADMINISTRATIVO,
-            TransactionCategory.JURIDICO,
-            TransactionCategory.OUTROS_PAGAMENTOS,
-            TransactionCategory.TRANSFERENCIA,
+            TransactionCategory.TARIFA_BANCARIA,
+            TransactionCategory.IOF,
+            TransactionCategory.JUROS_PAGOS,
+            TransactionCategory.OUTRAS_DESPESAS,
+            TransactionCategory.TRANSFERENCIA_ENTRE_CONTAS,
+            TransactionCategory.APLICACAO,
+            TransactionCategory.RESGATE,
             TransactionCategory.AJUSTE,
-            TransactionCategory.OUTROS,
+            TransactionCategory.SALDO_INICIAL,
+            TransactionCategory.NAO_IDENTIFICADO,
         ]
-        assert len(categories) == 25
+        assert len(categories) == 23
 
     def test_transaction_origins(self):
-        """Testa todas as origens de transação."""
+        """Testa todas as origens de transacao."""
         origins = [
             TransactionOrigin.MANUAL,
-            TransactionOrigin.SISTEMA,
+            TransactionOrigin.PAGAMENTO_CONTA,
+            TransactionOrigin.RECEBIMENTO,
             TransactionOrigin.IMPORTACAO,
             TransactionOrigin.API,
-            TransactionOrigin.BOLETO,
             TransactionOrigin.PIX,
-            TransactionOrigin.DEBITO_AUTOMATICO,
+            TransactionOrigin.BOLETO,
+            TransactionOrigin.TED,
+            TransactionOrigin.DOC,
+            TransactionOrigin.TRANSFERENCIA,
         ]
-        assert len(origins) == 7
+        assert len(origins) == 10
 
 
 class TestBankReconciliationModel:
     """Testes para o model BankReconciliation."""
 
     def test_create_reconciliation(self):
-        """Testa criação de conciliação."""
+        """Testa criacao de conciliacao."""
         recon = BankReconciliation(
             id=uuid4(),
             bank_account_id=uuid4(),
+            condominio_id=uuid4(),
             period_type=ReconciliationPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
-            opening_balance=Decimal("10000.00"),
+            system_opening_balance=Decimal("10000.00"),
+            status=ReconciliationStatus.RASCUNHO,
         )
 
         assert recon.period_type == ReconciliationPeriodType.MENSAL
-        assert recon.status == ReconciliationStatus.PENDENTE
+        assert recon.status == ReconciliationStatus.RASCUNHO
 
-    def test_update_progress(self):
-        """Testa atualização de progresso."""
+    def test_calculate_progress(self):
+        """Testa calculo de progresso."""
         recon = BankReconciliation(
             id=uuid4(),
             bank_account_id=uuid4(),
+            condominio_id=uuid4(),
             period_type=ReconciliationPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
-            opening_balance=Decimal("10000.00"),
-            total_system_items=100,
-            items_reconciled=50,
+            system_opening_balance=Decimal("10000.00"),
+            total_system_transactions=50,
+            total_bank_transactions=50,
+            reconciled_count=50,
         )
 
-        recon.update_progress()
-        assert recon.progress_percentage == Decimal("50.00")
-        assert recon.items_pending == 50
+        recon.calculate_progress()
+        assert recon.reconciliation_progress == Decimal("100")
 
     def test_complete_reconciliation(self):
-        """Testa finalização de conciliação."""
+        """Testa finalizacao de conciliacao."""
+        user_id = uuid4()
         recon = BankReconciliation(
             id=uuid4(),
             bank_account_id=uuid4(),
+            condominio_id=uuid4(),
             period_type=ReconciliationPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
-            opening_balance=Decimal("10000.00"),
-            closing_balance=Decimal("12000.00"),
-            statement_balance=Decimal("12000.00"),
+            system_opening_balance=Decimal("10000.00"),
+            system_closing_balance=Decimal("12000.00"),
+            bank_closing_balance=Decimal("12000.00"),
+            closing_difference=Decimal("0"),
+            divergent_count=0,
+            pending_system_count=0,
+            pending_bank_count=0,
+            total_system_transactions=0,
+            total_bank_transactions=0,
+            reconciled_count=0,
         )
 
-        recon.complete()
+        recon.complete(user_id)
         assert recon.status == ReconciliationStatus.CONCLUIDA
         assert recon.completed_at is not None
-        assert recon.difference == Decimal("0.00")
+        assert recon.completed_by == user_id
 
     def test_reconciliation_period_types(self):
-        """Testa tipos de período de conciliação."""
+        """Testa tipos de periodo de conciliacao."""
         types = [
             ReconciliationPeriodType.DIARIO,
             ReconciliationPeriodType.SEMANAL,
@@ -296,15 +314,16 @@ class TestCashFlowEntryModel:
     """Testes para o model CashFlowEntry."""
 
     def test_create_entry_income(self):
-        """Testa criação de entrada de receita."""
+        """Testa criacao de entrada de receita."""
         entry = CashFlowEntry(
             id=uuid4(),
             condominio_id=uuid4(),
             entry_type=CashFlowEntryType.ENTRADA,
             source_type=CashFlowSourceType.CONTA_RECEBER,
             description="Receita prevista",
-            expected_date=date.today() + timedelta(days=30),
+            entry_date=date.today() + timedelta(days=30),
             expected_amount=Decimal("5000.00"),
+            status=CashFlowEntryStatus.PREVISTO,
         )
 
         assert entry.entry_type == CashFlowEntryType.ENTRADA
@@ -312,15 +331,16 @@ class TestCashFlowEntryModel:
         assert entry.status == CashFlowEntryStatus.PREVISTO
 
     def test_create_entry_expense(self):
-        """Testa criação de entrada de despesa."""
+        """Testa criacao de entrada de despesa."""
         entry = CashFlowEntry(
             id=uuid4(),
             condominio_id=uuid4(),
             entry_type=CashFlowEntryType.SAIDA,
             source_type=CashFlowSourceType.CONTA_PAGAR,
             description="Despesa prevista",
-            expected_date=date.today() + timedelta(days=15),
+            entry_date=date.today() + timedelta(days=15),
             expected_amount=Decimal("2000.00"),
+            status=CashFlowEntryStatus.PREVISTO,
         )
 
         assert entry.entry_type == CashFlowEntryType.SAIDA
@@ -334,18 +354,18 @@ class TestCashFlowEntryModel:
             entry_type=CashFlowEntryType.SAIDA,
             source_type=CashFlowSourceType.RECORRENTE,
             description="Conta de luz mensal",
-            expected_date=date.today(),
+            entry_date=date.today(),
             expected_amount=Decimal("800.00"),
             is_recurring=True,
             recurrence_frequency=RecurrenceFrequency.MENSAL,
-            recurrence_end_date=date.today() + timedelta(days=365),
+            recurrence_end=date.today() + timedelta(days=365),
         )
 
         assert entry.is_recurring is True
         assert entry.recurrence_frequency == RecurrenceFrequency.MENSAL
 
     def test_recurrence_frequencies(self):
-        """Testa todas as frequências de recorrência."""
+        """Testa todas as frequencias de recorrencia."""
         frequencies = [
             RecurrenceFrequency.DIARIA,
             RecurrenceFrequency.SEMANAL,
@@ -373,108 +393,114 @@ class TestCashFlowForecastModel:
     """Testes para o model CashFlowForecast."""
 
     def test_create_forecast(self):
-        """Testa criação de previsão."""
+        """Testa criacao de previsao."""
         forecast = CashFlowForecast(
             id=uuid4(),
             condominio_id=uuid4(),
-            name="Previsão Janeiro 2024",
+            name="Previsao Janeiro 2024",
             period_type=ForecastPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
+            forecast_date=date(2024, 1, 1),
             expected_inflows=Decimal("50000.00"),
             expected_outflows=Decimal("35000.00"),
-            expected_balance=Decimal("15000.00"),
+            expected_closing_balance=Decimal("15000.00"),
+            status=ForecastStatus.RASCUNHO,
+            confidence_category=ForecastConfidence.MEDIA,
         )
 
-        assert forecast.name == "Previsão Janeiro 2024"
+        assert forecast.name == "Previsao Janeiro 2024"
         assert forecast.period_type == ForecastPeriodType.MENSAL
         assert forecast.status == ForecastStatus.RASCUNHO
-        assert forecast.confidence == ForecastConfidence.MEDIA
+        assert forecast.confidence_category == ForecastConfidence.MEDIA
 
     def test_update_actuals(self):
-        """Testa atualização de valores realizados."""
+        """Testa atualizacao de valores realizados."""
         forecast = CashFlowForecast(
             id=uuid4(),
             condominio_id=uuid4(),
-            name="Previsão Teste",
+            name="Previsao Teste",
             period_type=ForecastPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
+            forecast_date=date(2024, 1, 1),
             expected_inflows=Decimal("50000.00"),
             expected_outflows=Decimal("35000.00"),
-            expected_balance=Decimal("15000.00"),
+            expected_closing_balance=Decimal("15000.00"),
         )
 
-        forecast.update_actuals(
-            inflows=Decimal("48000.00"),
-            outflows=Decimal("34000.00"),
-            balance=Decimal("14000.00"),
-        )
+        # Set actuals and calculate variances
+        forecast.actual_inflows = Decimal("48000.00")
+        forecast.actual_outflows = Decimal("34000.00")
+        forecast.actual_closing_balance = Decimal("14000.00")
+        forecast.calculate_variances()
 
         assert forecast.actual_inflows == Decimal("48000.00")
         assert forecast.actual_outflows == Decimal("34000.00")
-        assert forecast.actual_balance == Decimal("14000.00")
-        assert forecast.variance_inflows == Decimal("-2000.00")
-        assert forecast.variance_outflows == Decimal("-1000.00")
-        assert forecast.variance_balance == Decimal("-1000.00")
+        assert forecast.actual_closing_balance == Decimal("14000.00")
+        assert forecast.inflows_variance == Decimal("-2000.00")
+        assert forecast.outflows_variance == Decimal("-1000.00")
+        assert forecast.balance_variance == Decimal("-1000.00")
 
     def test_ai_generated_forecast(self):
-        """Testa previsão gerada por IA."""
+        """Testa previsao gerada por IA."""
         forecast = CashFlowForecast(
             id=uuid4(),
             condominio_id=uuid4(),
-            name="Previsão IA",
+            name="Previsao IA",
             period_type=ForecastPeriodType.TRIMESTRAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 3, 31),
+            forecast_date=date(2024, 1, 1),
             expected_inflows=Decimal("150000.00"),
             expected_outflows=Decimal("100000.00"),
-            expected_balance=Decimal("50000.00"),
-            is_ai_generated=True,
+            expected_closing_balance=Decimal("50000.00"),
+            ai_generated=True,
             ai_model_version="1.0.0",
-            ai_accuracy_score=Decimal("0.85"),
-            confidence=ForecastConfidence.ALTA,
+            confidence_category=ForecastConfidence.ALTA,
         )
 
-        assert forecast.is_ai_generated is True
+        assert forecast.ai_generated is True
         assert forecast.ai_model_version == "1.0.0"
-        assert forecast.ai_accuracy_score == Decimal("0.85")
-        assert forecast.confidence == ForecastConfidence.ALTA
+        assert forecast.confidence_category == ForecastConfidence.ALTA
 
     def test_forecast_with_scenarios(self):
-        """Testa previsão com cenários."""
+        """Testa previsao com cenarios."""
+        scenarios = {
+            "pessimista": {"inflows": 45000, "outflows": 55000, "balance": -10000},
+            "realista": {"inflows": 50000, "outflows": 50000, "balance": 0},
+            "otimista": {"inflows": 55000, "outflows": 45000, "balance": 10000},
+        }
+
         forecast = CashFlowForecast(
             id=uuid4(),
             condominio_id=uuid4(),
-            name="Previsão Cenários",
+            name="Previsao Cenarios",
             period_type=ForecastPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
+            forecast_date=date(2024, 1, 1),
             expected_inflows=Decimal("50000.00"),
             expected_outflows=Decimal("35000.00"),
-            expected_balance=Decimal("15000.00"),
-            pessimistic_balance=Decimal("10000.00"),
-            optimistic_balance=Decimal("20000.00"),
+            expected_closing_balance=Decimal("15000.00"),
+            scenarios=scenarios,
         )
 
-        assert forecast.pessimistic_balance == Decimal("10000.00")
-        assert forecast.optimistic_balance == Decimal("20000.00")
+        assert forecast.scenarios["pessimista"]["balance"] == -10000
+        assert forecast.scenarios["otimista"]["balance"] == 10000
 
     def test_forecast_period_types(self):
-        """Testa tipos de período de previsão."""
+        """Testa tipos de periodo de previsao."""
         types = [
             ForecastPeriodType.DIARIO,
             ForecastPeriodType.SEMANAL,
-            ForecastPeriodType.QUINZENAL,
             ForecastPeriodType.MENSAL,
             ForecastPeriodType.TRIMESTRAL,
-            ForecastPeriodType.SEMESTRAL,
-            ForecastPeriodType.ANUAL,
         ]
-        assert len(types) == 7
+        assert len(types) == 4
 
     def test_forecast_confidence_levels(self):
-        """Testa níveis de confiança."""
+        """Testa niveis de confianca."""
         levels = [
             ForecastConfidence.MUITO_BAIXA,
             ForecastConfidence.BAIXA,
@@ -485,80 +511,86 @@ class TestCashFlowForecastModel:
         assert len(levels) == 5
 
     def test_forecast_statuses(self):
-        """Testa status de previsão."""
+        """Testa status de previsao."""
         statuses = [
             ForecastStatus.RASCUNHO,
-            ForecastStatus.ATIVO,
-            ForecastStatus.REVISADO,
-            ForecastStatus.ENCERRADO,
-            ForecastStatus.ARQUIVADO,
+            ForecastStatus.ATIVA,
+            ForecastStatus.REVISADA,
+            ForecastStatus.CONCLUIDA,
+            ForecastStatus.ARQUIVADA,
         ]
         assert len(statuses) == 5
 
     def test_add_risk(self):
-        """Testa adição de risco."""
+        """Testa adicao de risco."""
         forecast = CashFlowForecast(
             id=uuid4(),
             condominio_id=uuid4(),
-            name="Previsão Teste",
+            name="Previsao Teste",
             period_type=ForecastPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
-            expected_balance=Decimal("15000.00"),
+            forecast_date=date(2024, 1, 1),
+            expected_closing_balance=Decimal("15000.00"),
+            risks=[],
         )
 
         forecast.add_risk(
             risk_type="inadimplencia",
-            description="Alta inadimplência prevista",
+            probability=0.3,
             impact=Decimal("5000.00"),
-            probability=Decimal("0.3"),
-            mitigation="Intensificar cobrança",
+            mitigation="Intensificar cobranca",
         )
 
         assert len(forecast.risks) == 1
-        assert forecast.risks[0]["risk_type"] == "inadimplencia"
+        assert forecast.risks[0]["type"] == "inadimplencia"
 
     def test_add_opportunity(self):
-        """Testa adição de oportunidade."""
+        """Testa adicao de oportunidade."""
         forecast = CashFlowForecast(
             id=uuid4(),
             condominio_id=uuid4(),
-            name="Previsão Teste",
+            name="Previsao Teste",
             period_type=ForecastPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
-            expected_balance=Decimal("15000.00"),
+            forecast_date=date(2024, 1, 1),
+            expected_closing_balance=Decimal("15000.00"),
+            opportunities=[],
         )
 
         forecast.add_opportunity(
             opportunity_type="renegociacao",
-            description="Renegociar contrato de limpeza",
-            potential_savings=Decimal("2000.00"),
+            probability=0.6,
+            value=Decimal("2000.00"),
             action="Solicitar propostas de outros fornecedores",
         )
 
         assert len(forecast.opportunities) == 1
-        assert forecast.opportunities[0]["opportunity_type"] == "renegociacao"
+        assert forecast.opportunities[0]["type"] == "renegociacao"
 
     def test_add_alert(self):
-        """Testa adição de alerta."""
+        """Testa adicao de alerta."""
         forecast = CashFlowForecast(
             id=uuid4(),
             condominio_id=uuid4(),
-            name="Previsão Teste",
+            name="Previsao Teste",
             period_type=ForecastPeriodType.MENSAL,
             period_start=date(2024, 1, 1),
             period_end=date(2024, 1, 31),
-            expected_balance=Decimal("15000.00"),
+            forecast_date=date(2024, 1, 1),
+            expected_closing_balance=Decimal("15000.00"),
+            alerts=[],
         )
 
         forecast.add_alert(
             alert_type="saldo_baixo",
             severity="high",
-            message="Saldo projetado abaixo do mínimo recomendado",
-            date=date(2024, 1, 15),
+            message="Saldo projetado abaixo do minimo recomendado",
+            alert_date=date(2024, 1, 15),
+            amount=Decimal("5000.00"),
         )
 
         assert len(forecast.alerts) == 1
-        assert forecast.alerts[0]["alert_type"] == "saldo_baixo"
+        assert forecast.alerts[0]["type"] == "saldo_baixo"
         assert forecast.alerts[0]["severity"] == "high"

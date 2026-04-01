@@ -2,11 +2,11 @@
 
 from fastapi import APIRouter
 
-from .device_controller import router as device_router
-from .sync_controller import router as sync_router
-from .event_controller import router as event_router
-from .webhook_controller import router as webhook_router
 from .afd_controller import router as afd_router
+from .device_controller import router as device_router
+from .event_controller import router as event_router
+from .sync_controller import router as sync_router
+from .webhook_controller import router as webhook_router
 
 # Router principal do módulo
 router = APIRouter(prefix="/rep", tags=["REP Integration"])

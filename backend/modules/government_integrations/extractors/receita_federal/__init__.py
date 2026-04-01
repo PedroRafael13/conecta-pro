@@ -9,10 +9,10 @@ Inclui:
 - Simples Nacional: PGDAS-D, DEFIS, DAS
 """
 
-from .rfb_extractor import ExtratorRFB
 from .dctfweb_extractor import ExtratorDCTFWeb
-from .efd_reinf_extractor import ExtratorEFDReinf
 from .ecac_extractor import ExtratorECAC
+from .efd_reinf_extractor import ExtratorEFDReinf
+from .rfb_extractor import ExtratorRFB
 from .simples_nacional_extractor import ExtratorSimplesNacional
 
 __all__ = [

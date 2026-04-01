@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,38 +41,32 @@ class ComodatoService:
             raise ValueError(f"Equipamento não encontrado: {data.equipment_id}")
 
         if equipment.status != EquipmentStatus.ESTOQUE:
-            raise ValueError(
-                f"Equipamento {equipment.equipment_code} não está disponível para comodato"
-            )
+            raise ValueError(f"Equipamento {equipment.equipment_code} não está disponível para comodato")
 
         # Verificar se já não existe comodato ativo para este equipamento
         existing = await self.repository.get_by_equipment(data.equipment_id)
         if existing:
-            raise ValueError(
-                f"Já existe comodato ativo para equipamento: {data.equipment_code}"
-            )
+            raise ValueError(f"Já existe comodato ativo para equipamento: {data.equipment_code}")
 
         comodato = await self.repository.create(data)
         await self.session.commit()
         return ComodatoResponse.model_validate(comodato)
 
-    async def get_by_id(self, comodato_id: str | UUID) -> Optional[ComodatoResponse]:
+    async def get_by_id(self, comodato_id: str | UUID) -> ComodatoResponse | None:
         """Busca comodato por ID."""
         comodato = await self.repository.get_by_id(comodato_id)
         if not comodato:
             return None
         return ComodatoResponse.model_validate(comodato)
 
-    async def get_by_code(self, code: str) -> Optional[ComodatoResponse]:
+    async def get_by_code(self, code: str) -> ComodatoResponse | None:
         """Busca comodato por código."""
         comodato = await self.repository.get_by_code(code)
         if not comodato:
             return None
         return ComodatoResponse.model_validate(comodato)
 
-    async def update(
-        self, comodato_id: str | UUID, data: ComodatoUpdate
-    ) -> Optional[ComodatoResponse]:
+    async def update(self, comodato_id: str | UUID, data: ComodatoUpdate) -> ComodatoResponse | None:
         """Atualiza um comodato."""
         comodato = await self.repository.update(comodato_id, data)
         if not comodato:
@@ -90,14 +83,12 @@ class ComodatoService:
 
     async def list_with_filters(
         self,
-        filters: Optional[ComodatoFilter] = None,
+        filters: ComodatoFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> ComodatoListResponse:
         """Lista comodatos com filtros."""
-        items, total = await self.repository.list_with_filters(
-            filters=filters, page=page, page_size=page_size
-        )
+        items, total = await self.repository.list_with_filters(filters=filters, page=page, page_size=page_size)
 
         total_pages = (total + page_size - 1) // page_size
 
@@ -114,9 +105,7 @@ class ComodatoService:
         items = await self.repository.get_by_client(client_id)
         return [ComodatoResponse.model_validate(item) for item in items]
 
-    async def get_active(
-        self, client_id: Optional[str] = None
-    ) -> list[ComodatoResponse]:
+    async def get_active(self, client_id: str | None = None) -> list[ComodatoResponse]:
         """Lista comodatos ativos."""
         items = await self.repository.get_active(client_id)
         return [ComodatoResponse.model_validate(item) for item in items]
@@ -151,11 +140,9 @@ class ComodatoService:
         comodato_id: str | UUID,
         signed_by_client: str,
         signed_by_company: str,
-    ) -> Optional[ComodatoResponse]:
+    ) -> ComodatoResponse | None:
         """Registra assinatura do contrato."""
-        comodato = await self.repository.sign(
-            comodato_id, signed_by_client, signed_by_company
-        )
+        comodato = await self.repository.sign(comodato_id, signed_by_client, signed_by_company)
         if not comodato:
             return None
 
@@ -172,21 +159,17 @@ class ComodatoService:
         comodato_id: str | UUID,
         delivered_by: str,
         received_by: str,
-        notes: Optional[str] = None,
-        photos: Optional[list] = None,
-    ) -> Optional[ComodatoResponse]:
+        notes: str | None = None,
+        photos: list | None = None,
+    ) -> ComodatoResponse | None:
         """Registra entrega do equipamento."""
-        comodato = await self.repository.deliver(
-            comodato_id, delivered_by, received_by, notes, photos
-        )
+        comodato = await self.repository.deliver(comodato_id, delivered_by, received_by, notes, photos)
         if not comodato:
             return None
         await self.session.commit()
         return ComodatoResponse.model_validate(comodato)
 
-    async def request_return(
-        self, comodato_id: str | UUID
-    ) -> Optional[ComodatoResponse]:
+    async def request_return(self, comodato_id: str | UUID) -> ComodatoResponse | None:
         """Solicita devolução."""
         comodato = await self.repository.request_return(comodato_id)
         if not comodato:
@@ -194,9 +177,7 @@ class ComodatoService:
         await self.session.commit()
         return ComodatoResponse.model_validate(comodato)
 
-    async def schedule_return(
-        self, comodato_id: str | UUID, scheduled_date: datetime
-    ) -> Optional[ComodatoResponse]:
+    async def schedule_return(self, comodato_id: str | UUID, scheduled_date: datetime) -> ComodatoResponse | None:
         """Agenda devolução."""
         comodato = await self.repository.schedule_return(comodato_id, scheduled_date)
         if not comodato:
@@ -209,18 +190,16 @@ class ComodatoService:
         comodato_id: str | UUID,
         returned_by: str,
         condition: str,
-        notes: Optional[str] = None,
-        photos: Optional[list] = None,
-    ) -> Optional[ComodatoResponse]:
+        notes: str | None = None,
+        photos: list | None = None,
+    ) -> ComodatoResponse | None:
         """Registra devolução e retorna equipamento ao estoque."""
         comodato = await self.repository.get_by_id(comodato_id)
         if not comodato:
             return None
 
         # Registrar devolução
-        comodato = await self.repository.register_return(
-            comodato_id, returned_by, condition, notes, photos
-        )
+        comodato = await self.repository.register_return(comodato_id, returned_by, condition, notes, photos)
 
         # Retornar equipamento ao estoque
         equipment = await self.equipment_repository.get_by_id(comodato.equipment_id)
@@ -238,19 +217,15 @@ class ComodatoService:
         comodato_id: str | UUID,
         description: str,
         cost: float,
-    ) -> Optional[ComodatoResponse]:
+    ) -> ComodatoResponse | None:
         """Registra dano no equipamento."""
-        comodato = await self.repository.register_damage(
-            comodato_id, description, cost
-        )
+        comodato = await self.repository.register_damage(comodato_id, description, cost)
         if not comodato:
             return None
         await self.session.commit()
         return ComodatoResponse.model_validate(comodato)
 
-    async def mark_as_lost(
-        self, comodato_id: str | UUID
-    ) -> Optional[ComodatoResponse]:
+    async def mark_as_lost(self, comodato_id: str | UUID) -> ComodatoResponse | None:
         """Marca equipamento como perdido e aplica penalidade."""
         comodato = await self.repository.get_by_id(comodato_id)
         if not comodato:
@@ -266,9 +241,7 @@ class ComodatoService:
         await self.session.commit()
         return ComodatoResponse.model_validate(comodato)
 
-    async def terminate(
-        self, comodato_id: str | UUID, reason: str
-    ) -> Optional[ComodatoResponse]:
+    async def terminate(self, comodato_id: str | UUID, reason: str) -> ComodatoResponse | None:
         """Encerra contrato de comodato."""
         comodato = await self.repository.terminate(comodato_id, reason)
         if not comodato:
@@ -282,7 +255,7 @@ class ComodatoService:
         new_client_id: str,
         new_client_name: str,
         reason: str,
-    ) -> Optional[ComodatoResponse]:
+    ) -> ComodatoResponse | None:
         """Transfere comodato para outro cliente."""
         comodato = await self.repository.transfer(comodato_id, new_client_id, reason)
         if not comodato:
@@ -297,13 +270,11 @@ class ComodatoService:
         await self.session.commit()
         return ComodatoResponse.model_validate(comodato)
 
-    async def get_stats(self, client_id: Optional[str] = None) -> dict:
+    async def get_stats(self, client_id: str | None = None) -> dict:
         """Obtém estatísticas de comodatos."""
         return await self.repository.get_stats(client_id)
 
-    async def generate_contract_pdf(
-        self, comodato_id: str | UUID
-    ) -> Optional[str]:
+    async def generate_contract_pdf(self, comodato_id: str | UUID) -> str | None:
         """Gera PDF do contrato de comodato."""
         comodato = await self.repository.get_by_id(comodato_id)
         if not comodato:
@@ -319,9 +290,7 @@ class ComodatoService:
 
         return pdf_url
 
-    async def generate_delivery_term(
-        self, comodato_id: str | UUID
-    ) -> Optional[str]:
+    async def generate_delivery_term(self, comodato_id: str | UUID) -> str | None:
         """Gera termo de entrega."""
         comodato = await self.repository.get_by_id(comodato_id)
         if not comodato:
@@ -335,9 +304,7 @@ class ComodatoService:
 
         return pdf_url
 
-    async def generate_return_term(
-        self, comodato_id: str | UUID
-    ) -> Optional[str]:
+    async def generate_return_term(self, comodato_id: str | UUID) -> str | None:
         """Gera termo de devolução."""
         comodato = await self.repository.get_by_id(comodato_id)
         if not comodato:

@@ -4,30 +4,31 @@ Testes para DCTFWeb.
 Testes unitários e de integração para DCTFWeb.
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
 from unittest.mock import Mock, patch
 
+import pytest
+
+from modules.government_integrations.core.dctfweb import (
+    DARF,
+    CreditoVinculavel,
+    DCTFWebDeclaracao,
+    DCTFWebManager,
+    DebitoContribuicao,
+    SituacaoDeclaracao,
+    TipoCredito,
+    TipoDeclaracao,
+)
 from modules.government_integrations.schemas.dctfweb import (
     CriarDeclaracaoRequest,
-    ImportarESocialRequest,
     DadosESocialRequest,
     GerarDarfsRequest,
+    ImportarESocialRequest,
     TipoDeclaracaoEnum,
 )
 from modules.government_integrations.services.dctfweb_service import (
     DCTFWebService,
-)
-from modules.government_integrations.core.dctfweb import (
-    DCTFWebManager,
-    DCTFWebDeclaracao,
-    DebitoContribuicao,
-    CreditoVinculavel,
-    DARF,
-    TipoDeclaracao,
-    SituacaoDeclaracao,
-    TipoCredito,
 )
 
 
@@ -36,10 +37,7 @@ class TestSchemas:
 
     def test_criar_declaracao_request_valid(self):
         """Testa criação de request válido."""
-        request = CriarDeclaracaoRequest(
-            periodo_apuracao="2026-01",
-            tipo=TipoDeclaracaoEnum.MENSAL
-        )
+        request = CriarDeclaracaoRequest(periodo_apuracao="2026-01", tipo=TipoDeclaracaoEnum.MENSAL)
         assert request.periodo_apuracao == "2026-01"
         assert request.tipo == TipoDeclaracaoEnum.MENSAL
 
@@ -61,7 +59,7 @@ class TestSchemas:
             terceiros={
                 "1184": Decimal("1500.00"),
                 "1190": Decimal("500.00"),
-            }
+            },
         )
         assert "1184" in dados.terceiros
         assert dados.terceiros["1184"] == Decimal("1500.00")
@@ -69,10 +67,7 @@ class TestSchemas:
     def test_importar_esocial_request_valid(self):
         """Testa request de importação eSocial."""
         request = ImportarESocialRequest(
-            periodo_apuracao="2026-01",
-            dados_esocial=DadosESocialRequest(
-                contribuicao_patronal=Decimal("25000.00")
-            )
+            periodo_apuracao="2026-01", dados_esocial=DadosESocialRequest(contribuicao_patronal=Decimal("25000.00"))
         )
         assert request.periodo_apuracao == "2026-01"
 
@@ -80,10 +75,8 @@ class TestSchemas:
         """Testa request de geração de DARFs."""
         request = GerarDarfsRequest(
             periodo_apuracao="2026-01",
-            dados_esocial=DadosESocialRequest(
-                contribuicao_patronal=Decimal("25000.00")
-            ),
-            data_vencimento="2026-02-20"
+            dados_esocial=DadosESocialRequest(contribuicao_patronal=Decimal("25000.00")),
+            data_vencimento="2026-02-20",
         )
         assert request.data_vencimento == "2026-02-20"
 
@@ -141,7 +134,7 @@ class TestDCTFWebManager:
             "terceiros": {
                 "1184": "500.00",
                 "1190": "300.00",
-            }
+            },
         }
 
         declaracao = manager.importar_esocial(declaracao, dados)
@@ -167,18 +160,22 @@ class TestDCTFWebManager:
     def test_gerar_darfs(self, manager):
         """Testa geração de DARFs."""
         declaracao = manager.criar_declaracao("2026-01")
-        declaracao.debitos.append(DebitoContribuicao(
-            codigo_receita="1138",
-            descricao="CP Patronal",
-            valor_principal=Decimal("25000.00"),
-            periodo_apuracao="2026-01",
-        ))
-        declaracao.debitos.append(DebitoContribuicao(
-            codigo_receita="1162",
-            descricao="CP Segurado",
-            valor_principal=Decimal("8500.00"),
-            periodo_apuracao="2026-01",
-        ))
+        declaracao.debitos.append(
+            DebitoContribuicao(
+                codigo_receita="1138",
+                descricao="CP Patronal",
+                valor_principal=Decimal("25000.00"),
+                periodo_apuracao="2026-01",
+            )
+        )
+        declaracao.debitos.append(
+            DebitoContribuicao(
+                codigo_receita="1162",
+                descricao="CP Segurado",
+                valor_principal=Decimal("8500.00"),
+                periodo_apuracao="2026-01",
+            )
+        )
 
         darfs = manager.gerar_darfs(declaracao)
 
@@ -189,18 +186,22 @@ class TestDCTFWebManager:
     def test_gerar_darfs_com_creditos(self, manager):
         """Testa geração de DARFs com créditos aplicados."""
         declaracao = manager.criar_declaracao("2026-01")
-        declaracao.debitos.append(DebitoContribuicao(
-            codigo_receita="1138",
-            descricao="CP Patronal",
-            valor_principal=Decimal("10000.00"),
-            periodo_apuracao="2026-01",
-        ))
-        declaracao.creditos.append(CreditoVinculavel(
-            tipo=TipoCredito.SALARIO_FAMILIA,
-            descricao="Salário Família",
-            valor=Decimal("500.00"),
-            periodo_apuracao="2026-01",
-        ))
+        declaracao.debitos.append(
+            DebitoContribuicao(
+                codigo_receita="1138",
+                descricao="CP Patronal",
+                valor_principal=Decimal("10000.00"),
+                periodo_apuracao="2026-01",
+            )
+        )
+        declaracao.creditos.append(
+            CreditoVinculavel(
+                tipo=TipoCredito.SALARIO_FAMILIA,
+                descricao="Salário Família",
+                valor=Decimal("500.00"),
+                periodo_apuracao="2026-01",
+            )
+        )
 
         darfs = manager.gerar_darfs(declaracao)
 
@@ -210,12 +211,14 @@ class TestDCTFWebManager:
     def test_gerar_darfs_data_vencimento(self, manager):
         """Testa data de vencimento dos DARFs."""
         declaracao = manager.criar_declaracao("2026-01")
-        declaracao.debitos.append(DebitoContribuicao(
-            codigo_receita="1138",
-            descricao="CP",
-            valor_principal=Decimal("1000.00"),
-            periodo_apuracao="2026-01",
-        ))
+        declaracao.debitos.append(
+            DebitoContribuicao(
+                codigo_receita="1138",
+                descricao="CP",
+                valor_principal=Decimal("1000.00"),
+                periodo_apuracao="2026-01",
+            )
+        )
 
         darfs = manager.gerar_darfs(declaracao)
 
@@ -225,12 +228,14 @@ class TestDCTFWebManager:
     def test_transmitir(self, manager):
         """Testa transmissão de declaração."""
         declaracao = manager.criar_declaracao("2026-01")
-        declaracao.debitos.append(DebitoContribuicao(
-            codigo_receita="1138",
-            descricao="CP",
-            valor_principal=Decimal("1000.00"),
-            periodo_apuracao="2026-01",
-        ))
+        declaracao.debitos.append(
+            DebitoContribuicao(
+                codigo_receita="1138",
+                descricao="CP",
+                valor_principal=Decimal("1000.00"),
+                periodo_apuracao="2026-01",
+            )
+        )
 
         resultado = manager.transmitir(declaracao)
 
@@ -248,18 +253,22 @@ class TestDCTFWebManager:
     def test_declaracao_saldo_a_pagar(self, manager):
         """Testa cálculo de saldo a pagar."""
         declaracao = manager.criar_declaracao("2026-01")
-        declaracao.debitos.append(DebitoContribuicao(
-            codigo_receita="1138",
-            descricao="CP",
-            valor_principal=Decimal("10000.00"),
-            periodo_apuracao="2026-01",
-        ))
-        declaracao.creditos.append(CreditoVinculavel(
-            tipo=TipoCredito.SALARIO_FAMILIA,
-            descricao="SF",
-            valor=Decimal("500.00"),
-            periodo_apuracao="2026-01",
-        ))
+        declaracao.debitos.append(
+            DebitoContribuicao(
+                codigo_receita="1138",
+                descricao="CP",
+                valor_principal=Decimal("10000.00"),
+                periodo_apuracao="2026-01",
+            )
+        )
+        declaracao.creditos.append(
+            CreditoVinculavel(
+                tipo=TipoCredito.SALARIO_FAMILIA,
+                descricao="SF",
+                valor=Decimal("500.00"),
+                periodo_apuracao="2026-01",
+            )
+        )
 
         assert declaracao.total_debitos == Decimal("10000.00")
         assert declaracao.total_creditos == Decimal("500.00")
@@ -272,11 +281,14 @@ class TestDCTFWebService:
     @pytest.fixture
     def service(self):
         """Cria instância do service."""
-        with patch.dict('os.environ', {
-            'DCTFWEB_CNPJ': '35710481000103',
-            'EMPRESA_RAZAO_SOCIAL': 'Empresa Teste',
-            'DCTFWEB_ENVIRONMENT': 'producao',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "DCTFWEB_CNPJ": "35710481000103",
+                "EMPRESA_RAZAO_SOCIAL": "Empresa Teste",
+                "DCTFWEB_ENVIRONMENT": "producao",
+            },
+        ):
             return DCTFWebService()
 
     def test_service_init(self, service):
@@ -310,15 +322,9 @@ class TestDCTFWebService:
             "contribuicao_patronal": "25000.00",
             "salario_familia": "150.00",
         }
-        dados_reinf = {
-            "retencoes_tomados": [
-                {"cnpj_prestador": "12345678000199", "valor_retencao": "1100.00"}
-            ]
-        }
+        dados_reinf = {"retencoes_tomados": [{"cnpj_prestador": "12345678000199", "valor_retencao": "1100.00"}]}
 
-        resultado = service.consolidar_declaracao(
-            "2026-01", dados_esocial, dados_reinf
-        )
+        resultado = service.consolidar_declaracao("2026-01", dados_esocial, dados_reinf)
 
         assert len(resultado["debitos"]) == 1
         assert len(resultado["creditos"]) == 2
@@ -380,12 +386,13 @@ class TestDCTFWebEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
         from modules.government_integrations.controllers.dctfweb_controller import router
+
         app.include_router(router, prefix="/api/v1/government")
 
         return TestClient(app)
@@ -418,15 +425,9 @@ class TestDCTFWebEndpoints:
 
     def test_criar_declaracao_endpoint(self, client):
         """Testa endpoint de criação de declaração."""
-        payload = {
-            "periodo_apuracao": "2026-01",
-            "tipo": "1"
-        }
+        payload = {"periodo_apuracao": "2026-01", "tipo": "1"}
 
-        response = client.post(
-            "/api/v1/government/dctfweb/criar",
-            json=payload
-        )
+        response = client.post("/api/v1/government/dctfweb/criar", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -436,16 +437,10 @@ class TestDCTFWebEndpoints:
         """Testa endpoint de importação eSocial."""
         payload = {
             "periodo_apuracao": "2026-01",
-            "dados_esocial": {
-                "contribuicao_patronal": "25000.00",
-                "contribuicao_segurado": "8500.00"
-            }
+            "dados_esocial": {"contribuicao_patronal": "25000.00", "contribuicao_segurado": "8500.00"},
         }
 
-        response = client.post(
-            "/api/v1/government/dctfweb/importar-esocial",
-            json=payload
-        )
+        response = client.post("/api/v1/government/dctfweb/importar-esocial", json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -453,17 +448,9 @@ class TestDCTFWebEndpoints:
 
     def test_gerar_darfs_endpoint(self, client):
         """Testa endpoint de geração de DARFs."""
-        payload = {
-            "periodo_apuracao": "2026-01",
-            "dados_esocial": {
-                "contribuicao_patronal": "25000.00"
-            }
-        }
+        payload = {"periodo_apuracao": "2026-01", "dados_esocial": {"contribuicao_patronal": "25000.00"}}
 
-        response = client.post(
-            "/api/v1/government/dctfweb/gerar-darfs",
-            json=payload
-        )
+        response = client.post("/api/v1/government/dctfweb/gerar-darfs", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -472,17 +459,9 @@ class TestDCTFWebEndpoints:
 
     def test_transmitir_endpoint(self, client):
         """Testa endpoint de transmissão."""
-        payload = {
-            "periodo_apuracao": "2026-01",
-            "dados_esocial": {
-                "contribuicao_patronal": "10000.00"
-            }
-        }
+        payload = {"periodo_apuracao": "2026-01", "dados_esocial": {"contribuicao_patronal": "10000.00"}}
 
-        response = client.post(
-            "/api/v1/government/dctfweb/transmitir",
-            json=payload
-        )
+        response = client.post("/api/v1/government/dctfweb/transmitir", json=payload)
 
         assert response.status_code == 200
         data = response.json()

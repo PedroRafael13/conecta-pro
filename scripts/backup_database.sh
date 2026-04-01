@@ -1,17 +1,48 @@
-#!/bin/bash
-# Script de backup automatizado - ERP Conecta Mais
-# Implementa regra 3-2-1: 3 copias, 2 midias, 1 offsite
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+# backup_database.sh — Backup automatizado do Conecta PRO
+# Implementa regra 3-2-1: 3 cópias, 2 mídias, 1 offsite
+# Uso: ./scripts/backup_database.sh
 
-# Configuracoes
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/opt/erp-conecta-mais/backups/postgresql"
-BACKUP_FILE="$BACKUP_DIR/erp_backup_$DATE.sql.gz"
-DB_NAME="erp_conecta_mais"
-DB_USER="conecta_user"
-DB_HOST="localhost"
+
+# Alerta em caso de falha (set -e faz o script sair no erro, trap captura)
+on_backup_failure() {
+  local exit_code=$?
+  local error_msg="[$(date)] BACKUP FALHOU (exit code: $exit_code)"
+  echo "$error_msg" >> "$PROJECT_DIR/logs/backup.log"
+
+  # Webhook de alerta (configurar BACKUP_ALERT_WEBHOOK no .env)
+  if [ -n "${BACKUP_ALERT_WEBHOOK:-}" ]; then
+    curl -sf -X POST "$BACKUP_ALERT_WEBHOOK" \
+      -H "Content-Type: application/json" \
+      -d "{\"text\":\"🚨 $error_msg — Conecta PRO\"}" 2>/dev/null || true
+  fi
+}
+trap on_backup_failure ERR
+BACKUP_DIR="$PROJECT_DIR/backups/postgresql"
+BACKUP_FILE="$BACKUP_DIR/backup_$DATE.sql.gz"
+LOG_DIR="$PROJECT_DIR/logs"
 RETENTION_DAYS=30
+
+# Carregar variáveis do .env (set +e para tolerar linhas com espaços)
+if [ -f "$PROJECT_DIR/.env" ]; then
+  set +e
+  # Exportar apenas variáveis necessárias, ignorando linhas problemáticas
+  eval "$(grep -E '^(POSTGRES_USER|POSTGRES_DB|POSTGRES_PASSWORD|S3_BACKUP_BUCKET|BACKUP_ALERT_WEBHOOK)=' "$PROJECT_DIR/.env")"
+  set -e
+else
+  echo "ERRO: .env não encontrado em $PROJECT_DIR"
+  exit 1
+fi
+
+# Variáveis do banco (lidas do .env)
+DB_USER="${POSTGRES_USER:?POSTGRES_USER não definido no .env}"
+DB_NAME="${POSTGRES_DB:?POSTGRES_DB não definido no .env}"
+CONTAINER_NAME="conecta-pro-postgres"
 
 # Cores para output
 RED='\033[0;31m'
@@ -20,65 +51,80 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  BACKUP ERP CONECTA MAIS${NC}"
+echo -e "${GREEN}  BACKUP CONECTA PRO${NC}"
 echo -e "${GREEN}  Data: $(date)${NC}"
 echo -e "${GREEN}========================================${NC}"
 
-# Criar diretorio se nao existir
-mkdir -p $BACKUP_DIR
+# Criar diretórios
+mkdir -p "$BACKUP_DIR"
+mkdir -p "$LOG_DIR"
 
-# 1. Criar backup comprimido
+# Verificar container PostgreSQL
+if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+  echo -e "${RED}ERRO: Container $CONTAINER_NAME não está rodando${NC}"
+  exit 1
+fi
+
+# 1. Criar backup comprimido via docker exec
 echo -e "\n${YELLOW}[1/5] Criando backup do banco...${NC}"
-PGPASSWORD=conecta_secret_2024 pg_dump -U $DB_USER -h $DB_HOST $DB_NAME | gzip > $BACKUP_FILE
+docker exec "$CONTAINER_NAME" pg_dump -U "$DB_USER" "$DB_NAME" | gzip > "$BACKUP_FILE"
 
-if [ -f "$BACKUP_FILE" ]; then
-    SIZE=$(du -h $BACKUP_FILE | cut -f1)
-    echo -e "${GREEN}   Backup criado: $BACKUP_FILE ($SIZE)${NC}"
+if [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ]; then
+  SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+  echo -e "${GREEN}   Backup criado: $BACKUP_FILE ($SIZE)${NC}"
 else
-    echo -e "${RED}   ERRO: Falha ao criar backup!${NC}"
-    exit 1
+  echo -e "${RED}   ERRO: Falha ao criar backup (arquivo vazio ou inexistente)${NC}"
+  rm -f "$BACKUP_FILE"
+  exit 1
 fi
 
 # 2. Verificar integridade do backup
 echo -e "\n${YELLOW}[2/5] Verificando integridade...${NC}"
-if gunzip -t $BACKUP_FILE 2>/dev/null; then
-    echo -e "${GREEN}   Integridade OK${NC}"
+if gunzip -t "$BACKUP_FILE" 2>/dev/null; then
+  echo -e "${GREEN}   Integridade OK${NC}"
 else
-    echo -e "${RED}   ERRO: Backup corrompido!${NC}"
-    exit 1
+  echo -e "${RED}   ERRO: Backup corrompido!${NC}"
+  exit 1
 fi
 
-# 3. Upload para storage offsite (se configurado)
+# 3. Upload para storage offsite (via rclone)
 echo -e "\n${YELLOW}[3/5] Verificando backup offsite...${NC}"
-if command -v aws &> /dev/null; then
-    # S3 configurado
-    if aws s3 cp $BACKUP_FILE s3://conecta-mais-backups/postgresql/ 2>/dev/null; then
-        echo -e "${GREEN}   Upload S3 OK${NC}"
-    else
-        echo -e "${YELLOW}   AVISO: S3 nao configurado ou falhou${NC}"
-    fi
+if command -v rclone &> /dev/null && rclone listremotes 2>/dev/null | grep -q "^offsite:"; then
+  if rclone copy "$BACKUP_FILE" "offsite:conecta-pro-backups/postgresql/" --log-level ERROR 2>&1; then
+    echo -e "${GREEN}   Upload offsite OK (rclone → offsite:conecta-pro-backups/postgresql/)${NC}"
+  else
+    echo -e "${YELLOW}   AVISO: Upload offsite falhou${NC}"
+  fi
+elif command -v aws &> /dev/null && [ -n "${S3_BACKUP_BUCKET:-}" ]; then
+  if aws s3 cp "$BACKUP_FILE" "s3://$S3_BACKUP_BUCKET/postgresql/" 2>/dev/null; then
+    echo -e "${GREEN}   Upload S3 OK${NC}"
+  else
+    echo -e "${YELLOW}   AVISO: Upload S3 falhou${NC}"
+  fi
 else
-    echo -e "${YELLOW}   AVISO: AWS CLI nao instalado (backup offsite desabilitado)${NC}"
+  echo -e "${YELLOW}   AVISO: Backup offsite desabilitado${NC}"
+  echo -e "${YELLOW}   Para ativar, configure: rclone config (crie remote 'offsite')${NC}"
+  echo -e "${YELLOW}   Providers suportados: S3, GCS, Backblaze B2, SFTP, etc.${NC}"
 fi
 
-# 4. Limpar backups antigos (manter ultimos 30 dias)
+# 4. Limpar backups antigos (manter últimos 30 dias)
 echo -e "\n${YELLOW}[4/5] Limpando backups antigos (>${RETENTION_DAYS} dias)...${NC}"
-DELETED=$(find $BACKUP_DIR -name "erp_backup_*.sql.gz" -mtime +$RETENTION_DAYS -delete -print | wc -l)
+DELETED=$(find "$BACKUP_DIR" -name "backup_*.sql.gz" -mtime +$RETENTION_DAYS -delete -print 2>/dev/null | wc -l)
 echo -e "${GREEN}   $DELETED backups antigos removidos${NC}"
 
 # 5. Resumo
 echo -e "\n${YELLOW}[5/5] Resumo...${NC}"
-TOTAL_BACKUPS=$(ls -1 $BACKUP_DIR/erp_backup_*.sql.gz 2>/dev/null | wc -l)
-TOTAL_SIZE=$(du -sh $BACKUP_DIR 2>/dev/null | cut -f1)
+TOTAL_BACKUPS=$(find "$BACKUP_DIR" -name "backup_*.sql.gz" 2>/dev/null | wc -l)
+TOTAL_SIZE=$(du -sh "$BACKUP_DIR" 2>/dev/null | cut -f1)
 
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  BACKUP CONCLUIDO COM SUCESSO${NC}"
+echo -e "${GREEN}  BACKUP CONCLUÍDO COM SUCESSO${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo -e "  Arquivo: $BACKUP_FILE"
 echo -e "  Tamanho: $SIZE"
 echo -e "  Total backups: $TOTAL_BACKUPS"
-echo -e "  Espaco usado: $TOTAL_SIZE"
+echo -e "  Espaço usado: $TOTAL_SIZE"
 echo -e "${GREEN}========================================${NC}"
 
 # Log para monitoramento
-echo "[$(date)] Backup OK: $BACKUP_FILE ($SIZE)" >> /opt/erp-conecta-mais/logs/backup.log
+echo "[$(date)] Backup OK: $BACKUP_FILE ($SIZE)" >> "$LOG_DIR/backup.log"

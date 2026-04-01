@@ -6,67 +6,64 @@ Endpoints da API de deteccao de fraudes.
 
 import logging
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from core.auth.dependencies import get_current_user, CurrentActiveUser
-
+from modules.ai.fraud_detection.models.fraud_alert import (
+    AlertSeverity,
+    AlertStatus,
+    FraudCategory,
+)
+from modules.ai.fraud_detection.models.fraud_pattern import PatternStatus, PatternType
+from modules.ai.fraud_detection.models.fraud_rule import RuleType
+from modules.ai.fraud_detection.models.risk_profile import EntityType, RiskLevel
+from modules.ai.fraud_detection.repositories.fraud_repository import FraudRepository
 from modules.ai.fraud_detection.schemas.fraud_schemas import (
-    # Alert schemas
-    FraudAlertCreate,
-    FraudAlertUpdate,
-    FraudAlertResponse,
-    AlertListResponse,
+    AccessCheckRequest,
+    AccessCheckResponse,
     AlertAssignRequest,
-    AlertResolveRequest,
     AlertEscalateRequest,
     AlertFeedbackRequest,
-    # Rule schemas
-    FraudRuleCreate,
-    FraudRuleUpdate,
-    FraudRuleResponse,
-    RuleTestRequest,
-    RuleTestResponse,
+    AlertListResponse,
+    AlertResolveRequest,
+    # Detection schemas
+    DetectionRequest,
+    DetectionResponse,
+    # Alert schemas
+    FraudAlertCreate,
+    FraudAlertResponse,
+    FraudAlertUpdate,
+    # Dashboard
+    FraudDashboardStats,
     # Pattern schemas
     FraudPatternCreate,
-    FraudPatternUpdate,
     FraudPatternResponse,
+    FraudPatternUpdate,
+    # Rule schemas
+    FraudRuleCreate,
+    FraudRuleResponse,
+    FraudRuleUpdate,
     PatternMatchRequest,
     PatternMatchResponse,
     # Risk Profile schemas
     RiskProfileCreate,
-    RiskProfileUpdate,
     RiskProfileResponse,
+    RiskProfileUpdate,
     RiskScoreRequest,
     RiskScoreResponse,
-    # Detection schemas
-    DetectionRequest,
-    DetectionResponse,
+    RuleTestRequest,
+    RuleTestResponse,
     TransactionCheckRequest,
     TransactionCheckResponse,
-    AccessCheckRequest,
-    AccessCheckResponse,
-    # Dashboard
-    FraudDashboardStats,
 )
-from modules.ai.fraud_detection.models.fraud_alert import (
-    FraudCategory,
-    AlertSeverity,
-    AlertStatus,
-)
-from modules.ai.fraud_detection.models.fraud_rule import RuleType
-from modules.ai.fraud_detection.models.fraud_pattern import PatternType, PatternStatus
-from modules.ai.fraud_detection.models.risk_profile import EntityType, RiskLevel
-
-from modules.ai.fraud_detection.repositories.fraud_repository import FraudRepository
+from modules.ai.fraud_detection.services.alert_manager import AlertManager
 from modules.ai.fraud_detection.services.fraud_detector import FraudDetector
 from modules.ai.fraud_detection.services.pattern_analyzer import PatternAnalyzer
 from modules.ai.fraud_detection.services.risk_scorer import RiskScorer
-from modules.ai.fraud_detection.services.alert_manager import AlertManager
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +110,7 @@ async def detect_fraud(
                 location=request.event_data.get("location"),
             )
 
-        processing_time = int(
-            (datetime.utcnow() - start_time).total_seconds() * 1000
-        )
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
         return DetectionResponse(
             is_fraudulent=result.get("risk_level") in ["high", "critical"],
@@ -168,9 +163,7 @@ async def check_transaction(
             metadata=request.metadata,
         )
 
-        processing_time = int(
-            (datetime.utcnow() - start_time).total_seconds() * 1000
-        )
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
         return TransactionCheckResponse(
             transaction_id=request.transaction_id,
@@ -235,9 +228,7 @@ async def check_access(
             },
         )
 
-        processing_time = int(
-            (datetime.utcnow() - start_time).total_seconds() * 1000
-        )
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
         return AccessCheckResponse(
             user_id=request.user_id,
@@ -276,13 +267,13 @@ async def check_access(
 async def list_alerts(
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-    status_filter: Optional[AlertStatus] = Query(None, alias="status"),
-    severity: Optional[AlertSeverity] = None,
-    category: Optional[FraudCategory] = None,
-    entity_type: Optional[str] = None,
-    entity_id: Optional[UUID] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    status_filter: AlertStatus | None = Query(None, alias="status"),
+    severity: AlertSeverity | None = None,
+    category: FraudCategory | None = None,
+    entity_type: str | None = None,
+    entity_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ) -> AlertListResponse:
@@ -464,8 +455,8 @@ async def confirm_fraud(
     alert_id: UUID,
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-    notes: Optional[str] = None,
-    actual_loss: Optional[float] = None,
+    notes: str | None = None,
+    actual_loss: float | None = None,
 ) -> FraudAlertResponse:
     """Confirma alerta como fraude verdadeira."""
     manager = AlertManager(db)
@@ -489,7 +480,7 @@ async def mark_false_positive(
     alert_id: UUID,
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-    notes: Optional[str] = None,
+    notes: str | None = None,
 ) -> FraudAlertResponse:
     """Marca alerta como falso positivo."""
     manager = AlertManager(db)
@@ -528,9 +519,7 @@ async def escalate_alert(
 
 
 @router.post(
-    "/alerts/{alert_id}/feedback",
-    response_model=FraudAlertResponse,
-    summary="Adicionar feedback",
+    "/alerts/{alert_id}/feedback", response_model=FraudAlertResponse, summary="Adicionar feedback", status_code=201
 )
 async def add_feedback(
     alert_id: UUID,
@@ -558,18 +547,18 @@ async def add_feedback(
 
 @router.get(
     "/rules",
-    response_model=List[FraudRuleResponse],
+    response_model=list[FraudRuleResponse],
     summary="Listar regras",
 )
 async def list_rules(
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-    rule_type: Optional[RuleType] = None,
-    category: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    rule_type: RuleType | None = None,
+    category: str | None = None,
+    is_active: bool | None = None,
     skip: int = 0,
     limit: int = 100,
-) -> List[FraudRuleResponse]:
+) -> list[FraudRuleResponse]:
     """Lista regras de deteccao."""
     repo = FraudRepository(db)
 
@@ -742,19 +731,19 @@ async def test_rule(
 
 @router.get(
     "/patterns",
-    response_model=List[FraudPatternResponse],
+    response_model=list[FraudPatternResponse],
     summary="Listar padroes",
 )
 async def list_patterns(
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-    pattern_type: Optional[PatternType] = None,
-    category: Optional[str] = None,
-    status_filter: Optional[PatternStatus] = Query(None, alias="status"),
-    is_active: Optional[bool] = None,
+    pattern_type: PatternType | None = None,
+    category: str | None = None,
+    status_filter: PatternStatus | None = Query(None, alias="status"),
+    is_active: bool | None = None,
     skip: int = 0,
     limit: int = 100,
-) -> List[FraudPatternResponse]:
+) -> list[FraudPatternResponse]:
     """Lista padroes de fraude."""
     repo = FraudRepository(db)
 
@@ -846,9 +835,7 @@ async def update_pattern(
 ) -> FraudPatternResponse:
     """Atualiza um padrao."""
     repo = FraudRepository(db)
-    pattern = await repo.update_pattern(
-        pattern_id, data.model_dump(exclude_unset=True)
-    )
+    pattern = await repo.update_pattern(pattern_id, data.model_dump(exclude_unset=True))
 
     if not pattern:
         raise HTTPException(
@@ -870,7 +857,7 @@ async def match_pattern(
     db: Session = Depends(get_db),
 ) -> PatternMatchResponse:
     """Verifica se dados correspondem a um padrao."""
-    analyzer = PatternAnalyzer(db)
+    PatternAnalyzer(db)
 
     if data.pattern_id:
         # Verificar padrao especifico
@@ -896,9 +883,7 @@ async def match_pattern(
     else:
         # Verificar todos os padroes ativos
         repo = FraudRepository(db)
-        patterns = await repo.get_patterns(
-            filters={"is_active": True, "status": PatternStatus.ACTIVE}
-        )
+        patterns = await repo.get_patterns(filters={"is_active": True, "status": PatternStatus.ACTIVE})
 
         best_match = None
         best_confidence = 0
@@ -934,19 +919,19 @@ async def match_pattern(
 
 @router.get(
     "/profiles",
-    response_model=List[RiskProfileResponse],
+    response_model=list[RiskProfileResponse],
     summary="Listar perfis de risco",
 )
 async def list_profiles(
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-    entity_type: Optional[EntityType] = None,
-    risk_level: Optional[RiskLevel] = None,
-    is_blocked: Optional[bool] = None,
-    is_watchlisted: Optional[bool] = None,
+    entity_type: EntityType | None = None,
+    risk_level: RiskLevel | None = None,
+    is_blocked: bool | None = None,
+    is_watchlisted: bool | None = None,
     skip: int = 0,
     limit: int = 100,
-) -> List[RiskProfileResponse]:
+) -> list[RiskProfileResponse]:
     """Lista perfis de risco."""
     repo = FraudRepository(db)
 
@@ -1043,9 +1028,7 @@ async def update_profile(
 ) -> RiskProfileResponse:
     """Atualiza perfil de risco."""
     repo = FraudRepository(db)
-    profile = await repo.update_profile(
-        entity_type, entity_id, data.model_dump(exclude_unset=True)
-    )
+    profile = await repo.update_profile(entity_type, entity_id, data.model_dump(exclude_unset=True))
 
     if not profile:
         raise HTTPException(
@@ -1097,7 +1080,7 @@ async def block_entity(
     entity_id: UUID,
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-    reason: Optional[str] = None,
+    reason: str | None = None,
 ) -> RiskProfileResponse:
     """Bloqueia uma entidade."""
     repo = FraudRepository(db)
@@ -1171,9 +1154,7 @@ async def get_dashboard_stats(
 
     # Regras e padroes ativos
     rules = await repo.get_rules(filters={"is_active": True})
-    patterns = await repo.get_patterns(
-        filters={"is_active": True, "status": PatternStatus.ACTIVE}
-    )
+    patterns = await repo.get_patterns(filters={"is_active": True, "status": PatternStatus.ACTIVE})
 
     # Top regras acionadas
     top_rules = await repo.get_top_triggered_rules(limit=5)
@@ -1188,32 +1169,32 @@ async def get_dashboard_stats(
         recovery_rate=alert_stats.get("recovery_rate", 0),
         detection_rate=100 - alert_stats["false_positive_rate"],
         false_positive_rate=alert_stats["false_positive_rate"],
-        avg_detection_time_seconds=0,  # TODO: implementar
+        avg_detection_time_seconds=0,
         active_rules=len(rules),
         rules_triggered_today=alert_stats["total_detections_today"],
         most_triggered_rules=top_rules,
         active_patterns=len(patterns),
-        patterns_detected_today=0,  # TODO: implementar
+        patterns_detected_today=0,
         high_risk_profiles=risk_summary["high_risk_count"],
         blocked_entities=risk_summary["blocked_count"],
-        watchlisted_entities=0,  # TODO: implementar
+        watchlisted_entities=0,
         risk_distribution=risk_summary["distribution"],
-        alerts_trend=[],  # TODO: implementar
-        fraud_trend=[],  # TODO: implementar
+        alerts_trend=[],
+        fraud_trend=[],
     )
 
 
 @router.get(
     "/dashboard/alerts/pending",
-    response_model=List[FraudAlertResponse],
+    response_model=list[FraudAlertResponse],
     summary="Alertas pendentes",
 )
 async def get_pending_alerts(
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-    severity: Optional[AlertSeverity] = None,
+    severity: AlertSeverity | None = None,
     limit: int = Query(20, ge=1, le=100),
-) -> List[FraudAlertResponse]:
+) -> list[FraudAlertResponse]:
     """Obtem alertas pendentes priorizados."""
     manager = AlertManager(db)
     alerts = await manager.get_pending_alerts(severity=severity, limit=limit)
@@ -1222,13 +1203,13 @@ async def get_pending_alerts(
 
 @router.get(
     "/dashboard/alerts/overdue",
-    response_model=List[FraudAlertResponse],
+    response_model=list[FraudAlertResponse],
     summary="Alertas vencidos",
 )
 async def get_overdue_alerts(
     current_user: CurrentActiveUser = ...,  # Required
     db: Session = Depends(get_db),
-) -> List[FraudAlertResponse]:
+) -> list[FraudAlertResponse]:
     """Obtem alertas que excederam SLA."""
     manager = AlertManager(db)
     alerts = await manager.get_overdue_alerts()

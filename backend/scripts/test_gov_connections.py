@@ -14,27 +14,23 @@ Testa conectividade com:
 """
 
 import asyncio
-import os
-import sys
-import ssl
 import logging
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any, Optional
-import httpx
+import os
+import ssl
+import sys
 from dataclasses import dataclass, field
-from enum import Enum
-import xml.etree.ElementTree as ET
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
+
+import defusedxml.ElementTree as ET  # noqa: N817
+import httpx
 
 # Adicionar path do projeto
-sys.path.insert(0, '/opt/conecta-pro/backend')
+sys.path.insert(0, "/opt/conecta-pro/backend")
 
 # Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)8s] %(message)s',
-    datefmt='%H:%M:%S'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)8s] %(message)s", datefmt="%H:%M:%S")
 logger = logging.getLogger(__name__)
 
 
@@ -42,12 +38,14 @@ logger = logging.getLogger(__name__)
 # CONFIGURAÇÃO
 # =============================================================================
 
+
 @dataclass
 class CredenciaisGov:
     """Credenciais para serviços governamentais."""
+
     cnpj: str = "35710481000103"
     cert_path: str = "/opt/conecta-pro/credentials/certificates/certificado.pfx"
-    cert_password: str = "Conecta123"
+    cert_password: str = "Conecta123"  # noqa: S105
     cert_pem: str = "/opt/conecta-pro/credentials/certificates/a1_cert.pem"
     key_pem: str = "/opt/conecta-pro/credentials/certificates/a1_key.pem"
     nfse_usuario: str = "35710481000103"
@@ -56,7 +54,7 @@ class CredenciaisGov:
     ambiente: str = "producao"  # producao ou homologacao
 
 
-class StatusConexao(str, Enum):
+class StatusConexao(StrEnum):
     OK = "✅ OK"
     ERRO = "❌ ERRO"
     TIMEOUT = "⏱️ TIMEOUT"
@@ -67,11 +65,12 @@ class StatusConexao(str, Enum):
 @dataclass
 class ResultadoTeste:
     """Resultado de um teste de conexão."""
+
     servico: str
     status: StatusConexao
     tempo_ms: float = 0
     mensagem: str = ""
-    detalhes: Dict[str, Any] = field(default_factory=dict)
+    detalhes: dict[str, Any] = field(default_factory=dict)
 
 
 # =============================================================================
@@ -82,11 +81,9 @@ URLS_GOV = {
     # Receita Federal
     "receita_cnpj": "https://www.receitaws.com.br/v1/cnpj/{cnpj}",
     "receita_consulta": "https://servicos.receita.fazenda.gov.br/servicos/ConsultaCnpj/consulta.asp",
-
     # eSocial
     "esocial_producao": "https://webservices.producaorestrita.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc",
     "esocial_homologacao": "https://webservices.producaorestrita.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc",
-
     # SEFAZ - NF-e (AM - Amazonas)
     "nfe_autorizacao_am_prod": "https://nfe.sefaz.am.gov.br/services2/services/NfeAutorizacao4",
     "nfe_autorizacao_am_hom": "https://homnfe.sefaz.am.gov.br/services2/services/NfeAutorizacao4",
@@ -94,39 +91,30 @@ URLS_GOV = {
     "nfe_consulta_am_hom": "https://homnfe.sefaz.am.gov.br/services2/services/NfeConsultaProtocolo4",
     "nfe_status_am_prod": "https://nfe.sefaz.am.gov.br/services2/services/NfeStatusServico4",
     "nfe_status_am_hom": "https://homnfe.sefaz.am.gov.br/services2/services/NfeStatusServico4",
-
     # SEFAZ - SVRS (Sefaz Virtual Rio Grande do Sul - backup)
     "nfe_status_svrs_prod": "https://nfe.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
     "nfe_status_svrs_hom": "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
-
     # CT-e
     "cte_status_svrs_prod": "https://cte.svrs.rs.gov.br/ws/ctestatus/CteStatusServico.asmx",
     "cte_status_svrs_hom": "https://cte-homologacao.svrs.rs.gov.br/ws/ctestatus/CteStatusServico.asmx",
-
     # MDF-e
     "mdfe_status_prod": "https://mdfe.svrs.rs.gov.br/ws/MDFeStatusServico/MDFeStatusServico.asmx",
     "mdfe_status_hom": "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeStatusServico/MDFeStatusServico.asmx",
-
     # FGTS Digital (Portal oficial)
     "fgts_digital": "https://www.fgts.gov.br/",
     "conectividade_social": "https://conectividadesocial.caixa.gov.br/",
-
     # DCTFWeb / e-CAC
     "dctfweb": "https://www.gov.br/receitafederal/pt-br",
     "ecac": "https://cav.receita.fazenda.gov.br/autenticacao/login",
-
     # EFD-Reinf
     "reinf_producao": "https://www.gov.br/esocial/pt-br",
     "reinf_consulta": "https://consulta-reinf.rfb.gov.br/",
-
     # NFS-e Manaus
     "nfse_manaus_portal": "https://nfse.manaus.am.gov.br/",
     "nfse_manaus_prod": "https://nfse-prd.manaus.am.gov.br/nfse/servlet",
     "nfse_manaus_hom": "https://nfse-hml.manaus.am.gov.br/nfse/servlet",
-
     # NFS-e Nacional
     "nfse_nacional": "https://www.gov.br/nfse/",
-
     # SPED
     "sped_consulta": "https://sped.rfb.gov.br/",
 }
@@ -135,6 +123,7 @@ URLS_GOV = {
 # =============================================================================
 # FUNÇÕES DE TESTE
 # =============================================================================
+
 
 async def verificar_certificado(creds: CredenciaisGov) -> ResultadoTeste:
     """Verifica se o certificado digital está válido."""
@@ -146,7 +135,7 @@ async def verificar_certificado(creds: CredenciaisGov) -> ResultadoTeste:
 
         # Tentar ler o certificado PEM
         if os.path.exists(creds.cert_pem):
-            with open(creds.cert_pem, 'rb') as f:
+            with open(creds.cert_pem, "rb") as f:
                 cert_data = f.read()
 
             cert = x509.load_pem_x509_certificate(cert_data, default_backend())
@@ -165,7 +154,7 @@ async def verificar_certificado(creds: CredenciaisGov) -> ResultadoTeste:
                     detalhes={
                         "valido_a_partir": str(not_before),
                         "subject": str(cert.subject),
-                    }
+                    },
                 )
 
             if now > not_after:
@@ -177,7 +166,7 @@ async def verificar_certificado(creds: CredenciaisGov) -> ResultadoTeste:
                     detalhes={
                         "expirou_em": str(not_after),
                         "subject": str(cert.subject),
-                    }
+                    },
                 )
 
             dias_restantes = (not_after - now).days
@@ -193,7 +182,7 @@ async def verificar_certificado(creds: CredenciaisGov) -> ResultadoTeste:
                     "valido_ate": str(not_after),
                     "dias_restantes": dias_restantes,
                     "serial": str(cert.serial_number),
-                }
+                },
             )
         else:
             return ResultadoTeste(
@@ -241,7 +230,7 @@ async def testar_url_simples(
                         "status_code": response.status_code,
                         "url_final": str(response.url),
                         "content_type": response.headers.get("content-type", "N/A"),
-                    }
+                    },
                 )
             else:
                 return ResultadoTeste(
@@ -249,7 +238,7 @@ async def testar_url_simples(
                     status=StatusConexao.PARCIAL,
                     tempo_ms=tempo_ms,
                     mensagem=f"HTTP {response.status_code}",
-                    detalhes={"status_code": response.status_code}
+                    detalhes={"status_code": response.status_code},
                 )
 
     except httpx.TimeoutException:
@@ -296,7 +285,7 @@ async def testar_webservice_soap(
             )
 
         # Envelope SOAP mínimo para teste
-        envelope = f'''<?xml version="1.0" encoding="UTF-8"?>
+        envelope = """<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
     <soap:Header/>
     <soap:Body>
@@ -308,7 +297,7 @@ async def testar_webservice_soap(
             </consStatServ>
         </nfeDadosMsg>
     </soap:Body>
-</soap:Envelope>'''
+</soap:Envelope>"""
 
         headers = {
             "Content-Type": "application/soap+xml; charset=utf-8",
@@ -333,7 +322,7 @@ async def testar_webservice_soap(
                 try:
                     root = ET.fromstring(response.content)
                     # Procurar status na resposta
-                    status_elem = root.find('.//{http://www.portalfiscal.inf.br/nfe}cStat')
+                    status_elem = root.find(".//{http://www.portalfiscal.inf.br/nfe}cStat")
                     if status_elem is not None:
                         return ResultadoTeste(
                             servico=nome,
@@ -343,17 +332,17 @@ async def testar_webservice_soap(
                             detalhes={
                                 "cStat": status_elem.text,
                                 "response_size": len(response.content),
-                            }
+                            },
                         )
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Erro ao extrair status: {e}")
 
                 return ResultadoTeste(
                     servico=nome,
                     status=StatusConexao.OK,
                     tempo_ms=tempo_ms,
                     mensagem="WebService respondendo",
-                    detalhes={"response_size": len(response.content)}
+                    detalhes={"response_size": len(response.content)},
                 )
             else:
                 return ResultadoTeste(
@@ -361,7 +350,7 @@ async def testar_webservice_soap(
                     status=StatusConexao.PARCIAL,
                     tempo_ms=tempo_ms,
                     mensagem=f"HTTP {response.status_code}",
-                    detalhes={"status_code": response.status_code}
+                    detalhes={"status_code": response.status_code},
                 )
 
     except ssl.SSLError as e:
@@ -397,7 +386,7 @@ async def testar_nfse_manaus(creds: CredenciaisGov) -> ResultadoTeste:
     url_ws = URLS_GOV["nfse_manaus_prod"]
 
     try:
-        async with httpx.AsyncClient(timeout=15.0, verify=False) as client:
+        async with httpx.AsyncClient(timeout=15.0, verify=False) as client:  # noqa: S501  # nosec B501
             # Testar portal
             response_portal = await client.get(url_portal, follow_redirects=True)
             portal_ok = response_portal.status_code in [200, 302]
@@ -413,13 +402,13 @@ async def testar_nfse_manaus(creds: CredenciaisGov) -> ResultadoTeste:
                     servico=nome,
                     status=StatusConexao.OK,
                     tempo_ms=tempo_ms,
-                    mensagem=f"Portal OK, WebService respondendo",
+                    mensagem="Portal OK, WebService respondendo",
                     detalhes={
                         "url_portal": url_portal,
                         "url_webservice": url_ws,
                         "portal_status": response_portal.status_code,
                         "ws_status": response_ws.status_code,
-                    }
+                    },
                 )
             elif portal_ok:
                 return ResultadoTeste(
@@ -427,7 +416,7 @@ async def testar_nfse_manaus(creds: CredenciaisGov) -> ResultadoTeste:
                     status=StatusConexao.PARCIAL,
                     tempo_ms=tempo_ms,
                     mensagem=f"Portal OK, WebService HTTP {response_ws.status_code}",
-                    detalhes={"portal_status": response_portal.status_code, "ws_status": response_ws.status_code}
+                    detalhes={"portal_status": response_portal.status_code, "ws_status": response_ws.status_code},
                 )
             else:
                 return ResultadoTeste(
@@ -435,7 +424,7 @@ async def testar_nfse_manaus(creds: CredenciaisGov) -> ResultadoTeste:
                     status=StatusConexao.ERRO,
                     tempo_ms=tempo_ms,
                     mensagem=f"Portal HTTP {response_portal.status_code}",
-                    detalhes={"portal_status": response_portal.status_code}
+                    detalhes={"portal_status": response_portal.status_code},
                 )
 
     except Exception as e:
@@ -474,7 +463,7 @@ async def testar_receita_federal(creds: CredenciaisGov) -> ResultadoTeste:
                         "uf": dados.get("uf"),
                         "municipio": dados.get("municipio"),
                         "cnae_principal": dados.get("atividade_principal", [{}])[0].get("text", "N/A")[:50],
-                    }
+                    },
                 )
             elif response.status_code == 429:
                 return ResultadoTeste(
@@ -503,6 +492,7 @@ async def testar_receita_federal(creds: CredenciaisGov) -> ResultadoTeste:
 # =============================================================================
 # EXECUÇÃO PRINCIPAL
 # =============================================================================
+
 
 async def executar_todos_testes():
     """Executa todos os testes de conexão."""
@@ -552,11 +542,15 @@ async def executar_todos_testes():
     # 5. SEFAZ NF-e (Amazonas) - usar verify=False para certificados ICP-Brasil
     print("📄 Testando SEFAZ NF-e (AM)...")
     # Produção
-    resultado = await testar_url_simples("SEFAZ NF-e AM (Produção)", URLS_GOV["nfe_status_am_prod"], verificar_ssl=False)
+    resultado = await testar_url_simples(
+        "SEFAZ NF-e AM (Produção)", URLS_GOV["nfe_status_am_prod"], verificar_ssl=False
+    )
     resultados.append(resultado)
     print(f"   Produção: {resultado.status.value} - {resultado.mensagem} ({resultado.tempo_ms:.0f}ms)")
     # Homologação
-    resultado_hom = await testar_url_simples("SEFAZ NF-e AM (Homologação)", URLS_GOV["nfe_status_am_hom"], verificar_ssl=False)
+    resultado_hom = await testar_url_simples(
+        "SEFAZ NF-e AM (Homologação)", URLS_GOV["nfe_status_am_hom"], verificar_ssl=False
+    )
     resultados.append(resultado_hom)
     print(f"   Homologação: {resultado_hom.status.value} - {resultado_hom.mensagem} ({resultado_hom.tempo_ms:.0f}ms)")
     print()

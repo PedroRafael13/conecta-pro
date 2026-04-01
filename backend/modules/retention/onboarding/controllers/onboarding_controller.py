@@ -9,44 +9,40 @@ Routers:
 """
 
 import logging
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-
-from modules.retention.onboarding.models import StepType, ProgressStatus
+from core.database import get_db
 from modules.retention.onboarding.schemas import (
     # Checklist
     ChecklistCreate,
-    ChecklistUpdate,
-    ChecklistResponse,
     ChecklistDetailResponse,
     ChecklistListResponse,
-    # Step
-    StepCreate,
-    StepUpdate,
-    StepResponse,
-    # Progress
-    ProgressComplete,
-    ProgressResponse,
-    ProgressDetailResponse,
-    ProgressListResponse,
+    ChecklistResponse,
+    ChecklistUpdate,
     # Funcionário
     FuncionarioOnboardingCreate,
     FuncionarioOnboardingResponse,
+    MessageResponse,
+    OnboardingAlert,
     # Dashboard
     OnboardingDashboard,
-    OnboardingAlert,
     OnboardingFilter,
-    MessageResponse,
+    # Progress
+    ProgressComplete,
+    ProgressListResponse,
+    ProgressResponse,
+    # Step
+    StepCreate,
+    StepResponse,
+    StepUpdate,
 )
 from modules.retention.onboarding.services import (
+    OnboardingError,
     OnboardingService,
-    OnboardingException,
 )
 
 logger = logging.getLogger(__name__)
@@ -93,7 +89,7 @@ async def create_checklist(
     try:
         checklist = await service.create_checklist(data)
         return ChecklistDetailResponse.model_validate(checklist)
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -116,8 +112,8 @@ async def list_checklists(
     condominium_id: UUID = Query(..., description="ID do condomínio"),
     skip: int = Query(0, ge=0, description="Registros para pular"),
     limit: int = Query(20, ge=1, le=100, description="Limite por página"),
-    departamento: Optional[str] = Query(None, description="Filtrar por departamento"),
-    search: Optional[str] = Query(None, max_length=100, description="Termo de busca"),
+    departamento: str | None = Query(None, description="Filtrar por departamento"),
+    search: str | None = Query(None, max_length=100, description="Termo de busca"),
     service: OnboardingService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
 ) -> ChecklistListResponse:
@@ -192,7 +188,7 @@ async def update_checklist(
             )
 
         return ChecklistResponse.model_validate(checklist)
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -219,7 +215,7 @@ async def delete_checklist(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Checklist não encontrado",
             )
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -243,7 +239,7 @@ async def duplicate_checklist(
     try:
         checklist = await service.duplicate_checklist(checklist_id, novo_nome)
         return ChecklistDetailResponse.model_validate(checklist)
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -275,7 +271,7 @@ async def create_step(
     try:
         step = await service.create_step(data)
         return StepResponse.model_validate(step)
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -349,7 +345,7 @@ async def delete_step(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Etapa não encontrada",
             )
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -358,13 +354,13 @@ async def delete_step(
 
 @router.post(
     "/checklists/{checklist_id}/steps/reorder",
-    response_model=List[StepResponse],
+    response_model=list[StepResponse],
     summary="Reordenar etapas",
     description="Reordena as etapas de um checklist.",
 )
 async def reorder_steps(
     checklist_id: UUID = Path(..., description="ID do checklist"),
-    step_orders: List[dict] = Body(
+    step_orders: list[dict] = Body(
         ...,
         description="Lista com {step_id: UUID, ordem: int}",
         example=[
@@ -374,7 +370,7 @@ async def reorder_steps(
     ),
     service: OnboardingService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
-) -> List[StepResponse]:
+) -> list[StepResponse]:
     """Reordena etapas."""
     steps = await service.reorder_steps(checklist_id, step_orders)
     return [StepResponse.model_validate(s) for s in steps]
@@ -410,7 +406,7 @@ async def iniciar_onboarding(
     try:
         result = await service.iniciar_onboarding(data)
         return result
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -455,7 +451,7 @@ async def iniciar_etapa(
     try:
         progress = await service.iniciar_etapa(progress_id)
         return ProgressResponse.model_validate(progress)
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -483,7 +479,7 @@ async def completar_etapa(
     try:
         progress = await service.completar_etapa(progress_id, data)
         return ProgressResponse.model_validate(progress)
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -506,7 +502,7 @@ async def cancelar_etapa(
     try:
         progress = await service.cancelar_etapa(progress_id, motivo)
         return ProgressResponse.model_validate(progress)
-    except OnboardingException as e:
+    except OnboardingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "code": e.code, "details": e.details},
@@ -535,7 +531,7 @@ async def get_dashboard(
 
 @router.get(
     "/alerts",
-    response_model=List[OnboardingAlert],
+    response_model=list[OnboardingAlert],
     summary="Alertas de onboarding",
     description="Lista alertas de etapas atrasadas e próximas a vencer.",
 )
@@ -544,7 +540,7 @@ async def get_alerts(
     limit: int = Query(50, ge=1, le=200, description="Limite de alertas"),
     service: OnboardingService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
-) -> List[OnboardingAlert]:
+) -> list[OnboardingAlert]:
     """Lista alertas de onboarding."""
     return await service.get_alertas(condominium_id, limit)
 

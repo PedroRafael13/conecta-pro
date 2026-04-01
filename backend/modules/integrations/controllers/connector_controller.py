@@ -6,25 +6,24 @@ Gerencia contas de integração e execução de syncs com sistemas externos.
 """
 
 import logging
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
 from modules.integrations.schemas.connector_schemas import (
     ConnectorInfo,
     ConnectorListResponse,
-    IntegrationAccountCreate,
-    IntegrationAccountUpdate,
-    IntegrationAccountResponse,
-    IntegrationAccountList,
-    SyncRunCreate,
-    SyncRunResponse,
-    SyncRunList,
     HealthCheckResponse,
+    IntegrationAccountCreate,
+    IntegrationAccountList,
+    IntegrationAccountResponse,
+    IntegrationAccountUpdate,
+    SyncRunCreate,
+    SyncRunList,
+    SyncRunResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,14 +33,9 @@ router = APIRouter(prefix="/integrations/connectors", tags=["Conectores Externos
 
 # ==================== Endpoints - Conectores ====================
 
-@router.get(
-    "",
-    response_model=ConnectorListResponse,
-    summary="Lista conectores disponíveis"
-)
-async def list_connectors(
-    current_user: dict = Depends(get_current_user)
-) -> ConnectorListResponse:
+
+@router.get("", response_model=ConnectorListResponse, summary="Lista conectores disponíveis")
+async def list_connectors(current_user: dict = Depends(get_current_user)) -> ConnectorListResponse:
     """Retorna lista de conectores disponíveis no sistema."""
     from modules.integrations.sync.engine import ConnectorRegistry
 
@@ -55,47 +49,36 @@ async def list_connectors(
 
             caps = temp_instance.capabilities
 
-            connectors.append(ConnectorInfo(
-                name=connector_class.NAME,
-                version=connector_class.VERSION,
-                display_name=_get_display_name(connector_class.NAME),
-                description=_get_description(connector_class.NAME),
-                supported_entities=caps.supported_entities,
-                auth_type=_get_auth_type(connector_class.NAME),
-                supports_incremental_sync=caps.supports_incremental_sync,
-                supports_webhooks=caps.supports_webhooks,
-                supports_write=caps.supports_write,
-                rate_limit_per_second=caps.rate_limit_per_second,
-                rate_limit_per_minute=caps.rate_limit_per_minute,
-            ))
+            connectors.append(
+                ConnectorInfo(
+                    name=connector_class.NAME,
+                    version=connector_class.VERSION,
+                    display_name=_get_display_name(connector_class.NAME),
+                    description=_get_description(connector_class.NAME),
+                    supported_entities=caps.supported_entities,
+                    auth_type=_get_auth_type(connector_class.NAME),
+                    supports_incremental_sync=caps.supports_incremental_sync,
+                    supports_webhooks=caps.supports_webhooks,
+                    supports_write=caps.supports_write,
+                    rate_limit_per_second=caps.rate_limit_per_second,
+                    rate_limit_per_minute=caps.rate_limit_per_minute,
+                )
+            )
         except Exception as e:
             logger.warning(f"Erro ao obter info do conector {name}: {e}")
             continue
 
-    return ConnectorListResponse(
-        connectors=connectors,
-        total=len(connectors)
-    )
+    return ConnectorListResponse(connectors=connectors, total=len(connectors))
 
 
-@router.get(
-    "/{connector_name}",
-    response_model=ConnectorInfo,
-    summary="Detalhes de um conector"
-)
-async def get_connector(
-    connector_name: str,
-    current_user: dict = Depends(get_current_user)
-) -> ConnectorInfo:
+@router.get("/{connector_name}", response_model=ConnectorInfo, summary="Detalhes de um conector")
+async def get_connector(connector_name: str, current_user: dict = Depends(get_current_user)) -> ConnectorInfo:
     """Retorna detalhes de um conector específico."""
     from modules.integrations.sync.engine import ConnectorRegistry
 
     connector_class = ConnectorRegistry.get(connector_name)
     if not connector_class:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Conector '{connector_name}' não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Conector '{connector_name}' não encontrado")
 
     try:
         temp_instance = connector_class.__new__(connector_class)
@@ -118,42 +101,36 @@ async def get_connector(
         )
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter informações do conector: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao obter informações do conector: {str(e)}"
         ) from e
 
 
 # ==================== Endpoints - Contas ====================
 
+
 @router.post(
     "/accounts",
     response_model=IntegrationAccountResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Cria conta de integração"
+    summary="Cria conta de integração",
 )
 async def create_account(
-    data: IntegrationAccountCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    data: IntegrationAccountCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)
 ) -> IntegrationAccountResponse:
     """Cria uma nova conta de integração com um sistema externo."""
-    from modules.integrations.sync.engine import ConnectorRegistry
     from modules.integrations.models.integration_account import IntegrationAccount
+    from modules.integrations.sync.engine import ConnectorRegistry
 
     # Verificar se conector existe
     connector_class = ConnectorRegistry.get(data.connector_type)
     if not connector_class:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Conector '{data.connector_type}' não disponível"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Conector '{data.connector_type}' não disponível"
         )
 
     tenant_id = current_user.get("tenant_id") or current_user.get("condominio_id")
     if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tenant ID não encontrado no usuário"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tenant ID não encontrado no usuário")
 
     # Criar conta
     account = IntegrationAccount(
@@ -181,30 +158,24 @@ async def create_account(
     return _account_to_response(account)
 
 
-@router.get(
-    "/accounts",
-    response_model=IntegrationAccountList,
-    summary="Lista contas de integração"
-)
+@router.get("/accounts", response_model=IntegrationAccountList, summary="Lista contas de integração")
 async def list_accounts(
-    connector_type: Optional[str] = None,
-    account_status: Optional[str] = Query(None, alias="status"),
+    connector_type: str | None = None,
+    account_status: str | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ) -> IntegrationAccountList:
     """Lista contas de integração do tenant."""
-    from sqlalchemy import select, func
+    from sqlalchemy import func, select
+
     from modules.integrations.models.integration_account import IntegrationAccount
 
     tenant_id = current_user.get("tenant_id") or current_user.get("condominio_id")
 
     # Query base
-    query = select(IntegrationAccount).where(
-        IntegrationAccount.tenant_id == tenant_id,
-        IntegrationAccount.ativo == True
-    )
+    query = select(IntegrationAccount).where(IntegrationAccount.tenant_id == tenant_id, IntegrationAccount.ativo)
 
     # Filtros
     if connector_type:
@@ -227,77 +198,55 @@ async def list_accounts(
     pages = (total + page_size - 1) // page_size
 
     return IntegrationAccountList(
-        items=[_account_to_response(a) for a in accounts],
-        total=total,
-        page=page,
-        page_size=page_size,
-        pages=pages
+        items=[_account_to_response(a) for a in accounts], total=total, page=page, page_size=page_size, pages=pages
     )
 
 
-@router.get(
-    "/accounts/{account_id}",
-    response_model=IntegrationAccountResponse,
-    summary="Busca conta por ID"
-)
+@router.get("/accounts/{account_id}", response_model=IntegrationAccountResponse, summary="Busca conta por ID")
 async def get_account(
-    account_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    account_id: UUID, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)
 ) -> IntegrationAccountResponse:
     """Retorna detalhes de uma conta de integração."""
     from sqlalchemy import select
+
     from modules.integrations.models.integration_account import IntegrationAccount
 
     tenant_id = current_user.get("tenant_id") or current_user.get("condominio_id")
 
     query = select(IntegrationAccount).where(
-        IntegrationAccount.id == account_id,
-        IntegrationAccount.tenant_id == tenant_id,
-        IntegrationAccount.ativo == True
+        IntegrationAccount.id == account_id, IntegrationAccount.tenant_id == tenant_id, IntegrationAccount.ativo
     )
     result = await db.execute(query)
     account = result.scalar_one_or_none()
 
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conta não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
 
     return _account_to_response(account)
 
 
-@router.patch(
-    "/accounts/{account_id}",
-    response_model=IntegrationAccountResponse,
-    summary="Atualiza conta"
-)
+@router.patch("/accounts/{account_id}", response_model=IntegrationAccountResponse, summary="Atualiza conta")
 async def update_account(
     account_id: UUID,
     data: IntegrationAccountUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ) -> IntegrationAccountResponse:
     """Atualiza uma conta de integração."""
     from sqlalchemy import select
+
     from modules.integrations.models.integration_account import IntegrationAccount
 
     tenant_id = current_user.get("tenant_id") or current_user.get("condominio_id")
 
     query = select(IntegrationAccount).where(
-        IntegrationAccount.id == account_id,
-        IntegrationAccount.tenant_id == tenant_id,
-        IntegrationAccount.ativo == True
+        IntegrationAccount.id == account_id, IntegrationAccount.tenant_id == tenant_id, IntegrationAccount.ativo
     )
     result = await db.execute(query)
     account = result.scalar_one_or_none()
 
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conta não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
 
     # Atualizar campos
     update_data = data.model_dump(exclude_unset=True)
@@ -319,35 +268,25 @@ async def update_account(
     return _account_to_response(account)
 
 
-@router.delete(
-    "/accounts/{account_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Remove conta"
-)
+@router.delete("/accounts/{account_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Remove conta")
 async def delete_account(
-    account_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    account_id: UUID, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)
 ) -> None:
     """Remove (soft delete) uma conta de integração."""
     from sqlalchemy import select
+
     from modules.integrations.models.integration_account import IntegrationAccount
 
     tenant_id = current_user.get("tenant_id") or current_user.get("condominio_id")
 
     query = select(IntegrationAccount).where(
-        IntegrationAccount.id == account_id,
-        IntegrationAccount.tenant_id == tenant_id,
-        IntegrationAccount.ativo == True
+        IntegrationAccount.id == account_id, IntegrationAccount.tenant_id == tenant_id, IntegrationAccount.ativo
     )
     result = await db.execute(query)
     account = result.scalar_one_or_none()
 
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conta não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
 
     account.ativo = False
     account.updated_by = current_user.get("id")
@@ -357,19 +296,16 @@ async def delete_account(
 
 # ==================== Endpoints - Health Check ====================
 
-@router.get(
-    "/accounts/{account_id}/health",
-    response_model=HealthCheckResponse,
-    summary="Health check da conta"
-)
+
+@router.get("/accounts/{account_id}/health", response_model=HealthCheckResponse, summary="Health check da conta")
 async def health_check_account(
-    account_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    account_id: UUID, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)
 ) -> HealthCheckResponse:
     """Verifica saúde da conexão com o sistema externo."""
-    from sqlalchemy import select
     from datetime import datetime
+
+    from sqlalchemy import select
+
     from modules.integrations.models.integration_account import IntegrationAccount
     from modules.integrations.sync.engine import ConnectorRegistry
 
@@ -377,25 +313,19 @@ async def health_check_account(
 
     # Buscar conta
     query = select(IntegrationAccount).where(
-        IntegrationAccount.id == account_id,
-        IntegrationAccount.tenant_id == tenant_id,
-        IntegrationAccount.ativo == True
+        IntegrationAccount.id == account_id, IntegrationAccount.tenant_id == tenant_id, IntegrationAccount.ativo
     )
     result = await db.execute(query)
     account = result.scalar_one_or_none()
 
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conta não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
 
     # Obter conector
     connector_class = ConnectorRegistry.get(account.connector_type)
     if not connector_class:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Conector '{account.connector_type}' não disponível"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Conector '{account.connector_type}' não disponível"
         )
 
     # Executar health check
@@ -404,10 +334,7 @@ async def health_check_account(
         config = account.extra_config or {}
         config["base_url"] = account.base_url
 
-        connector = connector_class(
-            credentials=credentials,
-            config=config
-        )
+        connector = connector_class(credentials=credentials, config=config)
 
         health_result = await connector.health_check()
 
@@ -431,7 +358,7 @@ async def health_check_account(
             healthy=health_result.healthy,
             latency_ms=health_result.latency_ms,
             message=health_result.message,
-            details=health_result.details
+            details=health_result.details,
         )
 
     except Exception as e:
@@ -450,27 +377,26 @@ async def health_check_account(
             healthy=False,
             latency_ms=0,
             message=str(e),
-            details={"error_type": type(e).__name__}
+            details={"error_type": type(e).__name__},
         )
 
 
 # ==================== Endpoints - Sync ====================
 
+
 @router.post(
-    "/sync/run",
-    response_model=SyncRunResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Inicia sync manual"
+    "/sync/run", response_model=SyncRunResponse, status_code=status.HTTP_201_CREATED, summary="Inicia sync manual"
 )
 async def start_sync(
     data: SyncRunCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ) -> SyncRunResponse:
     """Inicia uma sincronização manual."""
+
     from sqlalchemy import select
-    from datetime import datetime
+
     from modules.integrations.models.integration_account import IntegrationAccount
     from modules.integrations.models.sync_run import SyncRun
 
@@ -478,23 +404,17 @@ async def start_sync(
 
     # Buscar conta
     query = select(IntegrationAccount).where(
-        IntegrationAccount.id == data.account_id,
-        IntegrationAccount.tenant_id == tenant_id,
-        IntegrationAccount.ativo == True
+        IntegrationAccount.id == data.account_id, IntegrationAccount.tenant_id == tenant_id, IntegrationAccount.ativo
     )
     result = await db.execute(query)
     account = result.scalar_one_or_none()
 
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conta não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conta não encontrada")
 
     if account.status not in ["active", "pending_auth"]:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Conta em status '{account.status}' não pode executar sync"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Conta em status '{account.status}' não pode executar sync"
         )
 
     # Criar registro de sync run
@@ -514,42 +434,30 @@ async def start_sync(
     await db.refresh(sync_run)
 
     # Agendar execução em background
-    background_tasks.add_task(
-        _execute_sync,
-        str(sync_run.id),
-        str(account.id),
-        data.mode,
-        data.entities
-    )
+    background_tasks.add_task(_execute_sync, str(sync_run.id), str(account.id), data.mode, data.entities)
 
     return _sync_run_to_response(sync_run)
 
 
-@router.get(
-    "/sync/runs",
-    response_model=SyncRunList,
-    summary="Lista execuções de sync"
-)
+@router.get("/sync/runs", response_model=SyncRunList, summary="Lista execuções de sync")
 async def list_sync_runs(
-    account_id: Optional[UUID] = None,
-    connector_type: Optional[str] = None,
-    run_status: Optional[str] = Query(None, alias="status"),
+    account_id: UUID | None = None,
+    connector_type: str | None = None,
+    run_status: str | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ) -> SyncRunList:
     """Lista execuções de sincronização."""
-    from sqlalchemy import select, func
+    from sqlalchemy import func, select
+
     from modules.integrations.models.sync_run import SyncRun
 
     tenant_id = current_user.get("tenant_id") or current_user.get("condominio_id")
 
     # Query base
-    query = select(SyncRun).where(
-        SyncRun.tenant_id == tenant_id,
-        SyncRun.ativo == True
-    )
+    query = select(SyncRun).where(SyncRun.tenant_id == tenant_id, SyncRun.ativo)
 
     # Filtros
     if account_id:
@@ -574,79 +482,53 @@ async def list_sync_runs(
     pages = (total + page_size - 1) // page_size
 
     return SyncRunList(
-        items=[_sync_run_to_response(r) for r in runs],
-        total=total,
-        page=page,
-        page_size=page_size,
-        pages=pages
+        items=[_sync_run_to_response(r) for r in runs], total=total, page=page, page_size=page_size, pages=pages
     )
 
 
-@router.get(
-    "/sync/runs/{run_id}",
-    response_model=SyncRunResponse,
-    summary="Busca execução por ID"
-)
+@router.get("/sync/runs/{run_id}", response_model=SyncRunResponse, summary="Busca execução por ID")
 async def get_sync_run(
-    run_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    run_id: UUID, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)
 ) -> SyncRunResponse:
     """Retorna detalhes de uma execução de sync."""
     from sqlalchemy import select
+
     from modules.integrations.models.sync_run import SyncRun
 
     tenant_id = current_user.get("tenant_id") or current_user.get("condominio_id")
 
-    query = select(SyncRun).where(
-        SyncRun.id == run_id,
-        SyncRun.tenant_id == tenant_id
-    )
+    query = select(SyncRun).where(SyncRun.id == run_id, SyncRun.tenant_id == tenant_id)
     result = await db.execute(query)
     sync_run = result.scalar_one_or_none()
 
     if not sync_run:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Execução não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada")
 
     return _sync_run_to_response(sync_run)
 
 
-@router.post(
-    "/sync/runs/{run_id}/cancel",
-    response_model=SyncRunResponse,
-    summary="Cancela execução"
-)
+@router.post("/sync/runs/{run_id}/cancel", response_model=SyncRunResponse, summary="Cancela execução")
 async def cancel_sync_run(
-    run_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    run_id: UUID, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)
 ) -> SyncRunResponse:
     """Cancela uma execução de sync em andamento."""
     from sqlalchemy import select
+
     from modules.integrations.models.sync_run import SyncRun
 
     tenant_id = current_user.get("tenant_id") or current_user.get("condominio_id")
 
-    query = select(SyncRun).where(
-        SyncRun.id == run_id,
-        SyncRun.tenant_id == tenant_id
-    )
+    query = select(SyncRun).where(SyncRun.id == run_id, SyncRun.tenant_id == tenant_id)
     result = await db.execute(query)
     sync_run = result.scalar_one_or_none()
 
     if not sync_run:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Execução não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada")
 
     if sync_run.status not in ["pending", "running"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Execução em status '{sync_run.status}' não pode ser cancelada"
+            detail=f"Execução em status '{sync_run.status}' não pode ser cancelada",
         )
 
     sync_run.status = "cancelled"
@@ -659,6 +541,7 @@ async def cancel_sync_run(
 
 
 # ==================== Helpers ====================
+
 
 def _get_display_name(connector_name: str) -> str:
     """Retorna nome de exibição do conector."""
@@ -745,21 +628,18 @@ def _sync_run_to_response(sync_run) -> SyncRunResponse:
     )
 
 
-async def _execute_sync(
-    sync_run_id: str,
-    account_id: str,
-    mode: str,
-    entities: Optional[List[str]]
-) -> None:
+async def _execute_sync(sync_run_id: str, account_id: str, mode: str, entities: list[str] | None) -> None:
     """
     Executa sync em background.
 
     Esta função é chamada como BackgroundTask e precisa criar
     sua própria sessão de banco de dados.
     """
-    from uuid import UUID
     from datetime import datetime
+    from uuid import UUID
+
     from sqlalchemy import select
+
     from core.database import AsyncSessionLocal
     from modules.integrations.models.integration_account import IntegrationAccount
     from modules.integrations.models.sync_run import SyncRun
@@ -770,9 +650,7 @@ async def _execute_sync(
     async with AsyncSessionLocal() as db:
         try:
             # Buscar sync_run
-            result = await db.execute(
-                select(SyncRun).where(SyncRun.id == UUID(sync_run_id))
-            )
+            result = await db.execute(select(SyncRun).where(SyncRun.id == UUID(sync_run_id)))
             sync_run = result.scalar_one_or_none()
 
             if not sync_run:
@@ -781,10 +659,7 @@ async def _execute_sync(
 
             # Buscar account
             result = await db.execute(
-                select(IntegrationAccount).where(
-                    IntegrationAccount.id == UUID(account_id),
-                    IntegrationAccount.ativo == True
-                )
+                select(IntegrationAccount).where(IntegrationAccount.id == UUID(account_id), IntegrationAccount.ativo)
             )
             account = result.scalar_one_or_none()
 
@@ -824,10 +699,7 @@ async def _execute_sync(
             if account.base_url:
                 config["base_url"] = account.base_url
 
-            connector = connector_class(
-                credentials=credentials,
-                config=config
-            )
+            connector = connector_class(credentials=credentials, config=config)
 
             # Determinar entidades para sincronizar
             sync_entities = entities or account.sync_entities or connector.capabilities.supported_entities
@@ -858,23 +730,22 @@ async def _execute_sync(
                     while has_more:
                         try:
                             result = await connector.fetch_entities(
-                                entity_type=entity_type,
-                                cursor=cursor,
-                                updated_since=updated_since,
-                                page_size=50
+                                entity_type=entity_type, cursor=cursor, updated_since=updated_since, page_size=50
                             )
 
                             if not result.success:
-                                errors.append({
-                                    "entity": entity_type,
-                                    "error": "Falha ao buscar entidades",
-                                    "details": result.errors
-                                })
+                                errors.append(
+                                    {
+                                        "entity": entity_type,
+                                        "error": "Falha ao buscar entidades",
+                                        "details": result.errors,
+                                    }
+                                )
                                 items_failed += 1
                                 break
 
                             # Processar itens recebidos
-                            for item in result.data:
+                            for _item in result.data:
                                 items_total += 1
                                 entity_count += 1
                                 # Aqui seria feito o mapeamento e persistência
@@ -886,28 +757,16 @@ async def _execute_sync(
                             has_more = result.has_more
 
                         except Exception as page_error:
-                            logger.error(
-                                f"[sync:{sync_run_id[:8]}] Erro na página: {page_error}"
-                            )
-                            errors.append({
-                                "entity": entity_type,
-                                "error": str(page_error)
-                            })
+                            logger.error(f"[sync:{sync_run_id[:8]}] Erro na página: {page_error}")
+                            errors.append({"entity": entity_type, "error": str(page_error)})
                             items_failed += 1
                             break
 
-                    logger.info(
-                        f"[sync:{sync_run_id[:8]}] {entity_type}: {entity_count} itens"
-                    )
+                    logger.info(f"[sync:{sync_run_id[:8]}] {entity_type}: {entity_count} itens")
 
                 except Exception as entity_error:
-                    logger.error(
-                        f"[sync:{sync_run_id[:8]}] Erro em {entity_type}: {entity_error}"
-                    )
-                    errors.append({
-                        "entity": entity_type,
-                        "error": str(entity_error)
-                    })
+                    logger.error(f"[sync:{sync_run_id[:8]}] Erro em {entity_type}: {entity_error}")
+                    errors.append({"entity": entity_type, "error": str(entity_error)})
                     items_failed += 1
 
             # Atualizar sync_run com resultados
@@ -945,14 +804,12 @@ async def _execute_sync(
 
             # Tentar atualizar status como falha
             try:
-                result = await db.execute(
-                    select(SyncRun).where(SyncRun.id == UUID(sync_run_id))
-                )
+                result = await db.execute(select(SyncRun).where(SyncRun.id == UUID(sync_run_id)))
                 sync_run = result.scalar_one_or_none()
                 if sync_run:
                     sync_run.status = "failed"
                     sync_run.error_message = str(e)
                     sync_run.completed_at = datetime.utcnow()
                     await db.commit()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Erro ao atualizar status de falha: {e}")

@@ -5,9 +5,10 @@ Ponto de entrada para os workers Celery de integrações governamentais.
 """
 
 import os
-import sys
+
 from celery import Celery
-from kombu import Queue, Exchange
+from celery.schedules import crontab
+from kombu import Exchange, Queue
 
 # Broker e Backend (Redis)
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -26,7 +27,11 @@ app = Celery(
         "modules.government_integrations.jobs.monitoring_tasks",
         "modules.integrations.connectors.solides.tasks",
         "modules.operacional.tasks",
-    ]
+        "modules.bidding.tasks",
+        "modules.people_management.sst.tasks",
+        "modules.people_management.ged.tasks",
+        "modules.health_occupational.tasks",
+    ],
 )
 
 # Exchanges
@@ -38,38 +43,22 @@ operacional_exchange = Exchange("operacional", type="direct")
 # Filas
 app.conf.task_queues = [
     # Alta prioridade
-    Queue("gov.esocial", government_priority_exchange, routing_key="esocial",
-          queue_arguments={"x-max-priority": 10}),
-    Queue("gov.fgts", government_priority_exchange, routing_key="fgts",
-          queue_arguments={"x-max-priority": 10}),
-
+    Queue("gov.esocial", government_priority_exchange, routing_key="esocial", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.fgts", government_priority_exchange, routing_key="fgts", queue_arguments={"x-max-priority": 10}),
     # Serviços SEFAZ
-    Queue("gov.sefaz.nfe", government_exchange, routing_key="sefaz.nfe",
-          queue_arguments={"x-max-priority": 10}),
-    Queue("gov.sefaz.cte", government_exchange, routing_key="sefaz.cte",
-          queue_arguments={"x-max-priority": 10}),
-    Queue("gov.sefaz.mdfe", government_exchange, routing_key="sefaz.mdfe",
-          queue_arguments={"x-max-priority": 10}),
-
+    Queue("gov.sefaz.nfe", government_exchange, routing_key="sefaz.nfe", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.sefaz.cte", government_exchange, routing_key="sefaz.cte", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.sefaz.mdfe", government_exchange, routing_key="sefaz.mdfe", queue_arguments={"x-max-priority": 10}),
     # NFS-e
-    Queue("gov.nfse", government_exchange, routing_key="nfse",
-          queue_arguments={"x-max-priority": 10}),
-
+    Queue("gov.nfse", government_exchange, routing_key="nfse", queue_arguments={"x-max-priority": 10}),
     # Batch/Sync/Monitoramento
-    Queue("gov.batch", government_exchange, routing_key="batch",
-          queue_arguments={"x-max-priority": 5}),
-
+    Queue("gov.batch", government_exchange, routing_key="batch", queue_arguments={"x-max-priority": 5}),
     # Integrações - Sólides
-    Queue("integrations", integrations_exchange, routing_key="integrations",
-          queue_arguments={"x-max-priority": 5}),
-    Queue("webhooks", integrations_exchange, routing_key="webhooks",
-          queue_arguments={"x-max-priority": 8}),
-    Queue("maintenance", integrations_exchange, routing_key="maintenance",
-          queue_arguments={"x-max-priority": 3}),
-
+    Queue("integrations", integrations_exchange, routing_key="integrations", queue_arguments={"x-max-priority": 5}),
+    Queue("webhooks", integrations_exchange, routing_key="webhooks", queue_arguments={"x-max-priority": 8}),
+    Queue("maintenance", integrations_exchange, routing_key="maintenance", queue_arguments={"x-max-priority": 3}),
     # Operacional - Notificações Push
-    Queue("operacional", operacional_exchange, routing_key="operacional",
-          queue_arguments={"x-max-priority": 7}),
+    Queue("operacional", operacional_exchange, routing_key="operacional", queue_arguments={"x-max-priority": 7}),
 ]
 
 # Roteamento de tasks
@@ -80,12 +69,10 @@ app.conf.task_routes = {
     "government_integrations.tasks.sync.sincronizar_esocial": {"queue": "gov.esocial"},
     "government_integrations.tasks.sync.sincronizar_fgts": {"queue": "gov.fgts"},
     "government_integrations.tasks.sync.sincronizar_nfse": {"queue": "gov.nfse"},
-
     # Monitoring tasks
     "government_integrations.tasks.monitoring.*": {"queue": "gov.batch"},
     "government_integrations.tasks.reprocess.*": {"queue": "gov.batch"},
     "government_integrations.tasks.maintenance.*": {"queue": "gov.batch"},
-
     # Sólides Integration tasks
     "solides.full_sync": {"queue": "integrations"},
     "solides.incremental_sync": {"queue": "integrations"},
@@ -97,10 +84,30 @@ app.conf.task_routes = {
     "solides.retry_failed_webhooks": {"queue": "integrations"},
     "solides.cleanup_old_logs": {"queue": "maintenance"},
     "solides.cleanup_old_webhooks": {"queue": "maintenance"},
-
+    # Bidding - Sync PNCP
+    "bidding.sync_pncp_oportunidades": {"queue": "gov.batch"},
+    "bidding.sync_pncp_precos": {"queue": "gov.batch"},
+    "bidding.verificar_certidoes_vencimento": {"queue": "gov.batch"},
+    "bidding.processar_pipeline_edital": {"queue": "gov.batch"},
     # Operacional - Notificações Push
     "operacional.check_late_employees": {"queue": "operacional"},
     "operacional.check_pending_approvals": {"queue": "operacional"},
+    # Operacional - Banco de Horas / Relatórios
+    "operacional.expire_time_bank_entries": {"queue": "operacional"},
+    "operacional.send_shift_reminders": {"queue": "operacional"},
+    "operacional.daily_coverage_report": {"queue": "operacional"},
+    # SST - Afastamentos
+    "sst.verificar_afastamentos_vencidos": {"queue": "operacional"},
+    "sst.verificar_inss_pendente": {"queue": "operacional"},
+    # SST - Saúde Ocupacional (health_occupational)
+    "sst.verificar_asos_vencendo": {"queue": "operacional"},
+    "sst.verificar_epis_vencendo": {"queue": "operacional"},
+    "sst.verificar_exames_pendentes": {"queue": "operacional"},
+    # GED - Kits e CNDs (roteadas para worker operacional)
+    "ged.auto_collect_documents": {"queue": "operacional"},
+    "ged.sync_cnds": {"queue": "operacional"},
+    # People Management - Escalas Sólides
+    "integrations.sync_work_schedules_from_solides": {"queue": "integrations"},
 }
 
 # Configurações gerais
@@ -108,28 +115,22 @@ app.conf.update(
     # Timezone
     timezone="America/Sao_Paulo",
     enable_utc=True,
-
     # Serialização
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
-
     # Comportamento
     task_acks_late=True,
     task_reject_on_worker_lost=True,
     task_track_started=True,
-
     # Limites
     worker_prefetch_multiplier=1,
     task_soft_time_limit=300,  # 5 min
-    task_time_limit=600,       # 10 min
-
+    task_time_limit=600,  # 10 min
     # Retry
     task_default_retry_delay=60,
-
     # Resultados
     result_expires=86400,  # 24h
-
     # Default queue
     task_default_queue="gov.batch",
 )
@@ -166,7 +167,6 @@ app.conf.beat_schedule = {
         "schedule": 86400.0,  # 24 horas
         "options": {"queue": "gov.batch"},
     },
-
     # =========================================================================
     # SÓLIDES - INTEGRAÇÃO RH/DP
     # =========================================================================
@@ -208,7 +208,6 @@ app.conf.beat_schedule = {
         "args": (7,),  # manter 7 dias
         "options": {"queue": "maintenance"},
     },
-
     # =========================================================================
     # OPERACIONAL - NOTIFICAÇÕES PUSH
     # =========================================================================
@@ -223,6 +222,103 @@ app.conf.beat_schedule = {
         "task": "operacional.check_pending_approvals",
         "schedule": 3600.0,  # 1 hora
         "options": {"queue": "operacional"},
+    },
+    # Expira banco de horas vencidos todo dia às 00:30h
+    "operacional-expire-time-bank-daily": {
+        "task": "operacional.expire_time_bank_entries",
+        "schedule": 86400.0,  # 24 horas (00:30 via crontab no deploy)
+        "options": {"queue": "operacional"},
+    },
+    # Lembretes de turno a cada 30 minutos
+    "operacional-shift-reminders-30min": {
+        "task": "operacional.send_shift_reminders",
+        "schedule": 1800.0,  # 30 minutos
+        "options": {"queue": "operacional"},
+    },
+    # Relatório de cobertura diário às 23:55h
+    "operacional-daily-coverage-report": {
+        "task": "operacional.daily_coverage_report",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "operacional"},
+    },
+    # =========================================================================
+    # BIDDING - SYNC PNCP / CERTIDÕES
+    # =========================================================================
+    # Sync oportunidades PNCP a cada 2 horas
+    "bidding-sync-pncp-2h": {
+        "task": "bidding.sync_pncp_oportunidades",
+        "schedule": 7200.0,  # 2 horas
+        "options": {"queue": "gov.batch"},
+    },
+    # Verificação de certidões a cada 6 horas
+    "bidding-check-certidoes-6h": {
+        "task": "bidding.verificar_certidoes_vencimento",
+        "schedule": 21600.0,  # 6 horas
+        "options": {"queue": "gov.batch"},
+    },
+    # Sync preços de referência diário
+    "bidding-sync-precos-daily": {
+        "task": "bidding.sync_pncp_precos",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "gov.batch"},
+    },
+    # =========================================================================
+    # SST - SAÚDE E SEGURANÇA DO TRABALHO
+    # =========================================================================
+    # Encerra afastamentos vencidos (diário)
+    "sst-check-expired-leaves-daily": {
+        "task": "sst.verificar_afastamentos_vencidos",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "operacional"},
+    },
+    # Alerta afastamentos > 15 dias sem INSS (diário)
+    "sst-check-inss-pending-daily": {
+        "task": "sst.verificar_inss_pendente",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "operacional"},
+    },
+    # =========================================================================
+    # SST - SAÚDE OCUPACIONAL (health_occupational) — Alertas automáticos
+    # =========================================================================
+    # Verifica ASOs vencendo diariamente às 07:00
+    "sst-verificar-asos-vencendo-daily": {
+        "task": "sst.verificar_asos_vencendo",
+        "schedule": crontab(hour="7", minute="0"),
+        "options": {"queue": "operacional"},
+    },
+    # Verifica EPIs vencendo diariamente às 07:30
+    "sst-verificar-epis-vencendo-daily": {
+        "task": "sst.verificar_epis_vencendo",
+        "schedule": crontab(hour="7", minute="30"),
+        "options": {"queue": "operacional"},
+    },
+    # Verifica exames periódicos pendentes diariamente às 08:00
+    "sst-verificar-exames-pendentes-daily": {
+        "task": "sst.verificar_exames_pendentes",
+        "schedule": crontab(hour="8", minute="0"),
+        "options": {"queue": "operacional"},
+    },
+    # =========================================================================
+    # GED - KITS DOCUMENTAIS E CERTIDÕES
+    # =========================================================================
+    # Sincronização diária de CNDs renovadas (06:00)
+    "ged-sync-cnds-daily": {
+        "task": "ged.sync_cnds",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "operacional"},
+    },
+    # Geração mensal de kits — dia 1 às 02:00 (substitui APScheduler)
+    "ged-auto-collect-monthly": {
+        "task": "ged.auto_collect_documents",
+        "schedule": crontab(day_of_month="1", hour="2", minute="0"),
+        "args": [None],  # reference_month=None → usa mês atual
+        "options": {"queue": "operacional"},
+    },
+    # Sincronização de escalas de trabalho do Sólides a cada 6 horas
+    "sync-work-schedules-solides": {
+        "task": "integrations.sync_work_schedules_from_solides",
+        "schedule": crontab(hour="*/6"),
+        "options": {"queue": "integrations"},
     },
 }
 

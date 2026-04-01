@@ -3,9 +3,8 @@
 Sprint 34 - AI Predictions.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -13,7 +12,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from core.models import Base
 
 
-class AnomalyType(str, enum.Enum):
+class AnomalyType(StrEnum):
     """Tipo de anomalia."""
 
     OUTLIER = "OUTLIER"  # Valor fora do padrao
@@ -29,7 +28,7 @@ class AnomalyType(str, enum.Enum):
     OTHER = "OTHER"  # Outro tipo
 
 
-class AnomalySeverity(str, enum.Enum):
+class AnomalySeverity(StrEnum):
     """Severidade da anomalia."""
 
     LOW = "LOW"
@@ -38,7 +37,7 @@ class AnomalySeverity(str, enum.Enum):
     CRITICAL = "CRITICAL"
 
 
-class AnomalyStatus(str, enum.Enum):
+class AnomalyStatus(StrEnum):
     """Status da anomalia."""
 
     DETECTED = "DETECTED"  # Detectada
@@ -187,7 +186,7 @@ class AnomalyLog(Base):
         return self.severity == AnomalySeverity.CRITICAL
 
     @property
-    def deviation_percent(self) -> Optional[float]:
+    def deviation_percent(self) -> float | None:
         """Calcula desvio percentual."""
         if self.observed_value is None or self.expected_value is None:
             return None
@@ -199,7 +198,7 @@ class AnomalyLog(Base):
         """Marca como em investigacao."""
         self.status = AnomalyStatus.INVESTIGATING
 
-    def confirm(self, root_cause: Optional[str] = None) -> None:
+    def confirm(self, root_cause: str | None = None) -> None:
         """Confirma a anomalia.
 
         Args:
@@ -209,7 +208,7 @@ class AnomalyLog(Base):
         if root_cause:
             self.root_cause = root_cause
 
-    def mark_false_positive(self, resolution: Optional[str] = None) -> None:
+    def mark_false_positive(self, resolution: str | None = None) -> None:
         """Marca como falso positivo.
 
         Args:
@@ -223,7 +222,7 @@ class AnomalyLog(Base):
     def resolve(
         self,
         resolution: str,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> None:
         """Resolve a anomalia.
 
@@ -237,7 +236,7 @@ class AnomalyLog(Base):
         if user_id:
             self.resolved_by = user_id
 
-    def ignore(self, reason: Optional[str] = None) -> None:
+    def ignore(self, reason: str | None = None) -> None:
         """Ignora a anomalia.
 
         Args:

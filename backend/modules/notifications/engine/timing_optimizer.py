@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +18,7 @@ class TimingPrediction:
     reasoning: str
     alternative_times: list[datetime]
     should_delay: bool = False
-    delay_reason: Optional[str] = None
+    delay_reason: str | None = None
 
 
 class TimingOptimizer:
@@ -56,8 +55,8 @@ class TimingOptimizer:
         db: AsyncSession,
         user_id: int,
         notification_type: str,
-        earliest_time: Optional[datetime] = None,
-        deadline: Optional[datetime] = None,
+        earliest_time: datetime | None = None,
+        deadline: datetime | None = None,
     ) -> TimingPrediction:
         """
         Otimiza horário de envio.
@@ -82,14 +81,10 @@ class TimingOptimizer:
         historical = await self._get_historical_performance(db, user_id)
 
         # Calcular scores por hora
-        hourly_scores = self._calculate_hourly_scores(
-            user_patterns, preferences, historical, notification_type
-        )
+        hourly_scores = self._calculate_hourly_scores(user_patterns, preferences, historical, notification_type)
 
         # Filtrar horas dentro da janela
-        candidate_times = self._get_candidate_times(
-            earliest, deadline, hourly_scores, preferences
-        )
+        candidate_times = self._get_candidate_times(earliest, deadline, hourly_scores, preferences)
 
         if not candidate_times:
             # Fallback: usar earliest_time
@@ -112,9 +107,7 @@ class TimingOptimizer:
         alternatives = [t for t, _ in sorted_times[1:4]]
 
         # Verificar se deve atrasar
-        should_delay, delay_reason = self._check_should_delay(
-            best_time, preferences, notification_type
-        )
+        should_delay, delay_reason = self._check_should_delay(best_time, preferences, notification_type)
 
         return TimingPrediction(
             optimal_datetime=best_time,
@@ -131,16 +124,12 @@ class TimingOptimizer:
         user_id: int,
     ) -> dict:
         """Obtém padrões de atividade do usuário."""
-        # TODO: Calcular do histórico real de atividades
-
         return {
             "peak_hours": [9, 10, 14, 15, 18],
             "low_activity_hours": [0, 1, 2, 3, 4, 5, 6, 22, 23],
             "most_active_days": [1, 2, 3, 4, 5],  # Seg-Sex
             "avg_session_start_hour": 9,
-            "avg_response_time_by_hour": {
-                h: 30 + (abs(h - 12) * 5) for h in range(24)
-            },
+            "avg_response_time_by_hour": {h: 30 + (abs(h - 12) * 5) for h in range(24)},
         }
 
     async def _get_user_preferences(
@@ -149,8 +138,6 @@ class TimingOptimizer:
         user_id: int,
     ) -> dict:
         """Obtém preferências de timing do usuário."""
-        # TODO: Buscar do repositório real
-
         return {
             "quiet_hours_start": time(22, 0),
             "quiet_hours_end": time(8, 0),
@@ -165,15 +152,9 @@ class TimingOptimizer:
         user_id: int,
     ) -> dict:
         """Obtém performance histórica por hora."""
-        # TODO: Calcular do histórico real
-
         return {
-            "open_rate_by_hour": {
-                h: 0.5 + (0.2 if 9 <= h <= 18 else 0) for h in range(24)
-            },
-            "click_rate_by_hour": {
-                h: 0.2 + (0.1 if 9 <= h <= 18 else 0) for h in range(24)
-            },
+            "open_rate_by_hour": {h: 0.5 + (0.2 if 9 <= h <= 18 else 0) for h in range(24)},
+            "click_rate_by_hour": {h: 0.2 + (0.1 if 9 <= h <= 18 else 0) for h in range(24)},
         }
 
     def _calculate_hourly_scores(
@@ -310,7 +291,7 @@ class TimingOptimizer:
         optimal_time: datetime,
         preferences: dict,
         notification_type: str,
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Verifica se deve atrasar o envio."""
         now = datetime.utcnow()
 

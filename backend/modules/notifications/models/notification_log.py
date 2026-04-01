@@ -3,19 +3,18 @@
 Sprint 36 - Notification Hub.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models.base import Base
 
 
-class LogEventType(str, enum.Enum):
+class LogEventType(StrEnum):
     """Tipos de evento de log."""
 
     # Ciclo de vida
@@ -49,7 +48,7 @@ class LogEventType(str, enum.Enum):
     PREFERENCE_BLOCKED = "preference_blocked"
 
 
-class LogLevel(str, enum.Enum):
+class LogLevel(StrEnum):
     """Nível do log."""
 
     DEBUG = "debug"

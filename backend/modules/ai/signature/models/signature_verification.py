@@ -1,9 +1,8 @@
 """Signature Verification model for storing verification results."""
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +21,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class VerificationStatus(str, enum.Enum):
+class VerificationStatus(StrEnum):
     """Status of verification."""
 
     PENDING = "pending"
@@ -35,7 +34,7 @@ class VerificationStatus(str, enum.Enum):
     EXPIRED = "expired"
 
 
-class VerificationMethod(str, enum.Enum):
+class VerificationMethod(StrEnum):
     """Method used for verification."""
 
     VISUAL = "visual"  # Visual comparison
@@ -47,7 +46,7 @@ class VerificationMethod(str, enum.Enum):
     MANUAL = "manual"  # Human verification
 
 
-class VerificationResult(str, enum.Enum):
+class VerificationResult(StrEnum):
     """Result of verification."""
 
     AUTHENTIC = "authentic"
@@ -58,7 +57,7 @@ class VerificationResult(str, enum.Enum):
     QUALITY_ISSUE = "quality_issue"
 
 
-class RiskLevel(str, enum.Enum):
+class RiskLevel(StrEnum):
     """Risk level of verification."""
 
     LOW = "low"

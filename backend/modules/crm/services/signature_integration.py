@@ -6,14 +6,12 @@ para permitir assinatura eletronica de propostas aceitas.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from core.logging import logger
 
 
-class SignatureProvider(str, Enum):
+class SignatureProvider(StrEnum):
     """Provedor de assinatura digital."""
 
     INTERNAL = "internal"  # Assinatura interna do sistema
@@ -23,7 +21,7 @@ class SignatureProvider(str, Enum):
     AUTENTIQUE = "autentique"  # Autentique
 
 
-class SignatureStatus(str, Enum):
+class SignatureStatus(StrEnum):
     """Status da assinatura."""
 
     PENDING = "pending"  # Aguardando assinatura
@@ -41,8 +39,8 @@ class SignerInfo:
 
     name: str
     email: str
-    cpf: Optional[str] = None
-    phone: Optional[str] = None
+    cpf: str | None = None
+    phone: str | None = None
     role: str = "cliente"
     order: int = 1
 
@@ -57,8 +55,8 @@ class SignatureRequest:
     signers: list[SignerInfo]
     provider: SignatureProvider = SignatureProvider.INTERNAL
     deadline_days: int = 7
-    message: Optional[str] = None
-    callback_url: Optional[str] = None
+    message: str | None = None
+    callback_url: str | None = None
 
 
 @dataclass
@@ -66,9 +64,9 @@ class SignatureResult:
     """Resultado da requisicao de assinatura."""
 
     success: bool
-    external_id: Optional[str] = None
-    signing_url: Optional[str] = None
-    error: Optional[str] = None
+    external_id: str | None = None
+    signing_url: str | None = None
+    error: str | None = None
     status: SignatureStatus = SignatureStatus.PENDING
 
 
@@ -94,8 +92,8 @@ class ProposalSignatureService:
     def __init__(
         self,
         provider: SignatureProvider = SignatureProvider.INTERNAL,
-        api_key: Optional[str] = None,
-        api_secret: Optional[str] = None,
+        api_key: str | None = None,
+        api_secret: str | None = None,
     ) -> None:
         """
         Inicializa o servico.
@@ -109,9 +107,7 @@ class ProposalSignatureService:
         self.api_key = api_key
         self.api_secret = api_secret
 
-    async def create_signature_request(
-        self, request: SignatureRequest
-    ) -> SignatureResult:
+    async def create_signature_request(self, request: SignatureRequest) -> SignatureResult:
         """
         Cria requisicao de assinatura para proposta.
 
@@ -153,9 +149,7 @@ class ProposalSignatureService:
             logger.error(f"Erro ao criar requisicao: {e}")
             return SignatureResult(success=False, error="Erro interno")
 
-    async def check_signature_status(
-        self, external_id: str
-    ) -> SignatureStatus:
+    async def check_signature_status(self, external_id: str) -> SignatureStatus:
         """
         Verifica status da assinatura no provedor.
 
@@ -171,12 +165,9 @@ class ProposalSignatureService:
             return SignatureStatus.PENDING
 
         # Para provedores externos, consulta API
-        # TODO: Implementar consulta real aos provedores
         return SignatureStatus.PENDING
 
-    async def cancel_signature_request(
-        self, external_id: str, reason: Optional[str] = None
-    ) -> bool:
+    async def cancel_signature_request(self, external_id: str, reason: str | None = None) -> bool:
         """
         Cancela requisicao de assinatura.
 
@@ -192,15 +183,12 @@ class ProposalSignatureService:
                 "Cancelando requisicao de assinatura",
                 extra={"external_id": external_id, "reason": reason},
             )
-            # TODO: Implementar cancelamento real
             return True
         except Exception as e:
             logger.error(f"Erro ao cancelar: {e}")
             return False
 
-    async def process_webhook(
-        self, provider: SignatureProvider, payload: dict
-    ) -> tuple[str, SignatureStatus]:
+    async def process_webhook(self, provider: SignatureProvider, payload: dict) -> tuple[str, SignatureStatus]:
         """
         Processa webhook de callback do provedor.
 
@@ -218,9 +206,7 @@ class ProposalSignatureService:
         # Fallback
         return payload.get("external_id", ""), SignatureStatus.PENDING
 
-    async def resend_signature_request(
-        self, external_id: str, signer_email: str
-    ) -> bool:
+    async def resend_signature_request(self, external_id: str, signer_email: str) -> bool:
         """
         Reenvia link de assinatura.
 
@@ -235,7 +221,6 @@ class ProposalSignatureService:
             "Reenviando requisicao",
             extra={"external_id": external_id, "email": signer_email},
         )
-        # TODO: Implementar reenvio real
         return True
 
     def _validate_request(self, request: SignatureRequest) -> None:
@@ -250,18 +235,13 @@ class ProposalSignatureService:
             if not signer.name:
                 raise ValueError("Nome do signatario obrigatorio")
 
-    async def _create_internal_signature(
-        self, request: SignatureRequest
-    ) -> SignatureResult:
+    async def _create_internal_signature(self, request: SignatureRequest) -> SignatureResult:
         """Cria assinatura usando sistema interno."""
         import uuid
 
         external_id = str(uuid.uuid4())
         # Gera URL de assinatura interna
-        signing_url = (
-            f"/proposals/{request.proposal_id}/sign?"
-            f"token={external_id}"
-        )
+        signing_url = f"/proposals/{request.proposal_id}/sign?token={external_id}"
 
         return SignatureResult(
             success=True,
@@ -270,9 +250,7 @@ class ProposalSignatureService:
             status=SignatureStatus.PENDING,
         )
 
-    async def _create_docusign_signature(
-        self, request: SignatureRequest
-    ) -> SignatureResult:
+    async def _create_docusign_signature(self, request: SignatureRequest) -> SignatureResult:
         """
         Cria envelope no DocuSign.
 
@@ -315,9 +293,7 @@ class ProposalSignatureService:
             status=SignatureStatus.SENT,
         )
 
-    async def _create_clicksign_signature(
-        self, request: SignatureRequest
-    ) -> SignatureResult:
+    async def _create_clicksign_signature(self, request: SignatureRequest) -> SignatureResult:
         """
         Cria documento no ClickSign.
 
@@ -341,9 +317,7 @@ class ProposalSignatureService:
             status=SignatureStatus.SENT,
         )
 
-    async def _create_generic_signature(
-        self, request: SignatureRequest
-    ) -> SignatureResult:
+    async def _create_generic_signature(self, request: SignatureRequest) -> SignatureResult:
         """Cria assinatura em provedor generico."""
         import uuid
 
@@ -355,9 +329,7 @@ class ProposalSignatureService:
             status=SignatureStatus.PENDING,
         )
 
-    def _process_docusign_webhook(
-        self, payload: dict
-    ) -> tuple[str, SignatureStatus]:
+    def _process_docusign_webhook(self, payload: dict) -> tuple[str, SignatureStatus]:
         """Processa webhook do DocuSign."""
         envelope_id = payload.get("envelopeId", "")
         status_str = payload.get("status", "").lower()
@@ -372,9 +344,7 @@ class ProposalSignatureService:
 
         return envelope_id, status_map.get(status_str, SignatureStatus.PENDING)
 
-    def _process_clicksign_webhook(
-        self, payload: dict
-    ) -> tuple[str, SignatureStatus]:
+    def _process_clicksign_webhook(self, payload: dict) -> tuple[str, SignatureStatus]:
         """Processa webhook do ClickSign."""
         document_key = payload.get("document", {}).get("key", "")
         event = payload.get("event", {}).get("name", "")

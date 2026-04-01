@@ -9,11 +9,12 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date
-from typing import Optional, Dict, Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai dados do SPED Contabil.
 
@@ -71,7 +72,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta escrituracoes SPED Contabil transmitidas."""
         try:
             if not self.sped_service:
@@ -93,9 +94,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
                     "data_inicial": self._parse_data(esc.get("data_inicial")),
                     "data_final": self._parse_data(esc.get("data_final")),
                     "tipo_livro": esc.get("tipo_livro"),
-                    "descricao_livro": self.TIPOS_LIVRO.get(
-                        esc.get("tipo_livro"), "Livro Diario"
-                    ),
+                    "descricao_livro": self.TIPOS_LIVRO.get(esc.get("tipo_livro"), "Livro Diario"),
                     "data_transmissao": self._parse_data(esc.get("data_transmissao")),
                     "situacao": esc.get("situacao"),
                     "hash_arquivo": esc.get("hash"),
@@ -111,7 +110,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta plano de contas do SPED."""
         try:
             if not self.sped_service:
@@ -143,7 +142,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta saldos contabeis."""
         try:
             if not self.sped_service:
@@ -174,7 +173,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -191,7 +190,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
 
     async def _salvar_escrituracao(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva escrituracao SPED Contabil."""
@@ -199,9 +198,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
 
         recibo = registro.get("numero_recibo")
 
-        existente = self.db.query(EscrituracaoSPED).filter(
-            EscrituracaoSPED.numero_recibo == recibo
-        ).first()
+        existente = self.db.query(EscrituracaoSPED).filter(EscrituracaoSPED.numero_recibo == recibo).first()
 
         if existente:
             existente.situacao = registro.get("situacao")
@@ -229,7 +226,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
 
     async def _salvar_conta(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva conta do plano de contas."""
@@ -238,11 +235,15 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
         codigo = registro.get("codigo_conta")
         ano = registro.get("ano_referencia")
 
-        existente = self.db.query(ContaContabil).filter(
-            ContaContabil.cnpj_empresa == config.cnpj_empresa,
-            ContaContabil.codigo_conta == codigo,
-            ContaContabil.ano_referencia == ano,
-        ).first()
+        existente = (
+            self.db.query(ContaContabil)
+            .filter(
+                ContaContabil.cnpj_empresa == config.cnpj_empresa,
+                ContaContabil.codigo_conta == codigo,
+                ContaContabil.ano_referencia == ano,
+            )
+            .first()
+        )
 
         if existente:
             existente.descricao = registro.get("descricao")
@@ -266,7 +267,7 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
 
     async def _salvar_saldo(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva saldo contabil."""
@@ -275,11 +276,15 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
         codigo = registro.get("codigo_conta")
         periodo = registro.get("periodo")
 
-        existente = self.db.query(SaldoContabil).filter(
-            SaldoContabil.cnpj_empresa == config.cnpj_empresa,
-            SaldoContabil.codigo_conta == codigo,
-            SaldoContabil.periodo == periodo,
-        ).first()
+        existente = (
+            self.db.query(SaldoContabil)
+            .filter(
+                SaldoContabil.cnpj_empresa == config.cnpj_empresa,
+                SaldoContabil.codigo_conta == codigo,
+                SaldoContabil.periodo == periodo,
+            )
+            .first()
+        )
 
         if existente:
             existente.saldo_final_debito = Decimal(str(registro.get("saldo_final_debito") or 0))
@@ -302,26 +307,36 @@ class SPEDContabilSynchronizer(BaseSynchronizer):
         self.db.add(novo)
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao do SPED Contabil."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo dos dados SPED Contabil."""
         from ..models.sync_models import EscrituracaoSPED
 
-        escrituracoes = self.db.query(EscrituracaoSPED).filter(
-            EscrituracaoSPED.cnpj_empresa == cnpj,
-            EscrituracaoSPED.tipo_sped == "ECD",
-        ).order_by(EscrituracaoSPED.ano_calendario.desc()).all()
+        escrituracoes = (
+            self.db.query(EscrituracaoSPED)
+            .filter(
+                EscrituracaoSPED.cnpj_empresa == cnpj,
+                EscrituracaoSPED.tipo_sped == "ECD",
+            )
+            .order_by(EscrituracaoSPED.ano_calendario.desc())
+            .all()
+        )
 
         return {
             "total_escrituracoes": len(escrituracoes),

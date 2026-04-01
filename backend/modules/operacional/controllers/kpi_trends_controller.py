@@ -4,14 +4,16 @@ Controller para KPI Trends - Tendências de indicadores
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Literal
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.operacional.models.allocation import Allocation, AllocationStatus
 from modules.operacional.models.employee import Employee
 from modules.operacional.models.post import Post
 from modules.operacional.models.scale import Scale
@@ -24,24 +26,27 @@ router = APIRouter(prefix="/kpi-trends", tags=["Operacional - KPI Trends"])
 
 class KPITrendsData(BaseModel):
     """Dados de tendências dos KPIs."""
-    postos_ativos: List[int] = Field(default_factory=list)
-    colaboradores_ativos: List[int] = Field(default_factory=list)
-    escalas_em_andamento: List[int] = Field(default_factory=list)
-    ocorrencias_mes: List[int] = Field(default_factory=list)
-    cobertura_percentual: List[float] = Field(default_factory=list)
+
+    postos_ativos: list[int] = Field(default_factory=list)
+    colaboradores_ativos: list[int] = Field(default_factory=list)
+    escalas_em_andamento: list[int] = Field(default_factory=list)
+    ocorrencias_mes: list[int] = Field(default_factory=list)
+    cobertura_percentual: list[float] = Field(default_factory=list)
 
 
 class KPITrendsResponse(BaseModel):
     """Resposta do endpoint de tendências."""
+
     period: str
     days: int
     data: KPITrendsData
 
 
-@router.get("/", response_model=KPITrendsResponse)
-async def get_kpi_trends(
+@router.get("", response_model=KPITrendsResponse)
+async def get_kpi_trends(  # pylint: disable=too-many-locals
+    _user: CurrentActiveUser,
     period: Literal["7d", "30d", "90d"] = Query("7d", description="Período de análise"),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> KPITrendsResponse:
     """
     Retorna tendências de KPIs ao longo do tempo.
@@ -51,8 +56,7 @@ async def get_kpi_trends(
     - 30d: últimos 30 dias
     - 90d: últimos 90 dias
     """
-    # Mapear período para dias
-    period_days = {
+    period_days: dict[str, int] = {
         "7d": 7,
         "30d": 30,
         "90d": 90,
@@ -61,64 +65,71 @@ async def get_kpi_trends(
     days = period_days.get(period, 7)
 
     try:
-        # Calcular data inicial
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
 
-        # Inicializar listas de dados
-        postos_ativos = []
-        colaboradores_ativos = []
-        escalas_em_andamento = []
-        ocorrencias_mes = []
-        cobertura_percentual = []
+        postos_ativos: list[int] = []
+        colaboradores_ativos: list[int] = []
+        escalas_em_andamento: list[int] = []
+        ocorrencias_mes: list[int] = []
+        cobertura_percentual: list[float] = []
 
-        # Gerar dados por dia
         for i in range(days):
             current_date = start_date + timedelta(days=i)
 
             # Postos ativos
-            postos_count = (
-                db.query(func.count(Post.id))
-                .filter(Post.status == "active")
-                .filter(Post.created_at <= current_date)
-                .scalar()
-            ) or 0
-            postos_ativos.append(postos_count)
+            result = await db.execute(
+                select(func.count(Post.id)).where(Post.status == "active").where(Post.created_at <= current_date)
+            )
+            postos_count = result.scalar() or 0
+            postos_ativos.append(int(postos_count))
 
             # Colaboradores ativos
-            colab_count = (
-                db.query(func.count(Employee.id))
-                .filter(Employee.is_active == True)
-                .filter(Employee.created_at <= current_date)
-                .scalar()
-            ) or 0
-            colaboradores_ativos.append(colab_count)
+            result = await db.execute(
+                select(func.count(Employee.id))
+                .where(Employee.is_active.is_(True))
+                .where(Employee.created_at <= current_date)
+            )
+            colab_count = result.scalar() or 0
+            colaboradores_ativos.append(int(colab_count))
 
             # Escalas em andamento
-            escalas_count = (
-                db.query(func.count(Scale.id))
-                .filter(Scale.status == "active")
-                .filter(Scale.created_at <= current_date)
-                .scalar()
-            ) or 0
-            escalas_em_andamento.append(escalas_count)
+            result = await db.execute(
+                select(func.count(Scale.id)).where(Scale.status == "active").where(Scale.created_at <= current_date)
+            )
+            escalas_count = result.scalar() or 0
+            escalas_em_andamento.append(int(escalas_count))
 
             # Ocorrências no dia
-            occ_count = (
-                db.query(func.count(Occurrence.id))
-                .filter(func.date(Occurrence.created_at) == current_date.date())
-                .scalar()
-            ) or 0
-            ocorrencias_mes.append(occ_count)
+            result = await db.execute(
+                select(func.count(Occurrence.id)).where(func.date(Occurrence.created_at) == current_date.date())
+            )
+            occ_count = result.scalar() or 0
+            ocorrencias_mes.append(int(occ_count))
 
-            # Cobertura percentual (simples: colaboradores / postos * 100)
-            if postos_count > 0:
-                cobertura = (colab_count / postos_count) * 100
-                cobertura_percentual.append(round(cobertura, 2))
+            # Cobertura percentual: alocações ativas / headcount necessário
+            required_result = await db.execute(
+                select(func.coalesce(func.sum(Post.required_headcount), 0))
+                .where(Post.status == "active")
+                .where(Post.created_at <= current_date)
+            )
+            required_headcount = required_result.scalar() or 0
+
+            active_alloc_result = await db.execute(
+                select(func.count(Allocation.id))
+                .where(Allocation.status == AllocationStatus.ACTIVE.value)
+                .where(Allocation.is_active.is_(True))
+                .where(Allocation.start_date <= current_date.date())
+            )
+            active_allocations = active_alloc_result.scalar() or 0
+
+            if required_headcount > 0:
+                cobertura = (active_allocations / required_headcount) * 100
+                cobertura_percentual.append(round(float(cobertura), 2))
             else:
                 cobertura_percentual.append(0.0)
 
-        logger.info(f"KPI trends calculados para período {period}")
+        logger.info("KPI trends calculados para período %s", period)
 
         return KPITrendsResponse(
             period=period,
@@ -132,11 +143,121 @@ async def get_kpi_trends(
             ),
         )
 
-    except Exception as e:
-        logger.error(f"Erro ao calcular KPI trends: {e}")
-        # Retornar dados vazios em caso de erro
+    except (RuntimeError, ValueError, OSError) as e:
+        logger.error("Erro ao calcular KPI trends: %s", e)
         return KPITrendsResponse(
             period=period,
             days=days,
             data=KPITrendsData(),
         )
+
+
+@router.get("/performance-scores", tags=["Operacional - KPI Trends"])
+async def get_performance_scores(
+    _user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Returns performance scores for all active employees.
+
+    Calculates a composite score (0-100) based on:
+    - Time bank balance (positive = reliable)
+    - Occurrence count (fewer = better)
+    - Allocation status (active = reliable)
+
+    Returns:
+        Performance data for top 10 and bottom 5 employees
+    """
+    from sqlalchemy import text  # pylint: disable=import-outside-toplevel
+
+    try:
+        # Get employee performance metrics from DB
+        result = await db.execute(
+            text("""
+                WITH employee_scores AS (
+                    SELECT
+                        e.id,
+                        e.nome AS name,
+                        e.cargo AS role,
+                        COALESCE(
+                            (SELECT SUM(t.hours)
+                             FROM time_bank t
+                             WHERE t.employee_id = e.id
+                               AND t.status = 'approved'
+                               AND t.is_active = true),
+                            0
+                        ) AS time_bank_balance,
+                        COALESCE(
+                            (SELECT COUNT(o.id)
+                             FROM occurrences o
+                             WHERE o.employee_id = e.id
+                               AND o.created_at >= NOW() - INTERVAL '90 days'),
+                            0
+                        ) AS recent_occurrences
+                    FROM employees e
+                    WHERE e.is_active = true
+                )
+                SELECT
+                    id,
+                    name,
+                    role,
+                    time_bank_balance,
+                    recent_occurrences,
+                    -- Score formula: base 70 + time_bank bonus - occurrence penalty
+                    GREATEST(0, LEAST(100,
+                        70
+                        + LEAST(20, GREATEST(-20, time_bank_balance * 1.5))
+                        - LEAST(30, recent_occurrences * 5)
+                    )) AS score
+                FROM employee_scores
+                ORDER BY score DESC
+            """)
+        )
+
+        rows = result.fetchall()
+
+        if not rows:
+            return {
+                "top_performers": [],
+                "needs_attention": [],
+                "average_score": 0.0,
+                "total_evaluated": 0,
+            }
+
+        employees = [
+            {
+                "id": str(row.id),
+                "name": row.name,
+                "role": row.role or "Vigilante",
+                "score": float(row.score),
+                "time_bank_balance": float(row.time_bank_balance),
+                "recent_occurrences": int(row.recent_occurrences),
+                "trend": "estavel",
+            }
+            for row in rows
+        ]
+
+        avg_score = sum(e["score"] for e in employees) / len(employees) if employees else 0
+
+        return {
+            "top_performers": employees[:10],
+            "needs_attention": [e for e in reversed(employees) if e["score"] < 60][:5],
+            "average_score": round(avg_score, 1),
+            "total_evaluated": len(employees),
+            "distribution": {
+                "excelente": len([e for e in employees if e["score"] >= 85]),
+                "bom": len([e for e in employees if 70 <= e["score"] < 85]),
+                "regular": len([e for e in employees if 50 <= e["score"] < 70]),
+                "critico": len([e for e in employees if e["score"] < 50]),
+            },
+        }
+
+    except (RuntimeError, ValueError, OSError) as e:
+        logger.error("Erro ao calcular scores de performance: %s", e)
+        return {
+            "top_performers": [],
+            "needs_attention": [],
+            "average_score": 0.0,
+            "total_evaluated": 0,
+            "error": str(e),
+        }

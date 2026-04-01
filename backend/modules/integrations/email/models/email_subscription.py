@@ -3,11 +3,10 @@
 Sprint 32 - Automacoes Email.
 """
 
-import enum
 import hashlib
 import secrets
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +21,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from core.models import Base
 
 
-class SubscriptionStatus(str, enum.Enum):
+class SubscriptionStatus(StrEnum):
     """Status da inscricao."""
 
     PENDING = "PENDING"  # Pendente confirmacao
@@ -33,7 +32,7 @@ class SubscriptionStatus(str, enum.Enum):
     CLEANED = "CLEANED"  # Removido por limpeza
 
 
-class SubscriptionSource(str, enum.Enum):
+class SubscriptionSource(StrEnum):
     """Origem da inscricao."""
 
     SIGNUP = "SIGNUP"  # Cadastro no site
@@ -207,7 +206,7 @@ class EmailSubscription(Base):
         self.status = SubscriptionStatus.ACTIVE
         self.confirmation_token = None
 
-    def unsubscribe(self, reason: Optional[str] = None) -> None:
+    def unsubscribe(self, reason: str | None = None) -> None:
         """Descadastra o email.
 
         Args:
@@ -249,9 +248,7 @@ class EmailSubscription(Base):
 
         # Remove da lista de descadastrados
         if self.unsubscribed_lists and list_name in self.unsubscribed_lists:
-            self.unsubscribed_lists = [
-                item for item in self.unsubscribed_lists if item != list_name
-            ]
+            self.unsubscribed_lists = [item for item in self.unsubscribed_lists if item != list_name]
 
     def unsubscribe_from_list(self, list_name: str) -> None:
         """Descadastra de uma lista.
@@ -266,9 +263,7 @@ class EmailSubscription(Base):
 
         # Remove da lista de inscritos
         if self.subscribed_lists and list_name in self.subscribed_lists:
-            self.subscribed_lists = [
-                item for item in self.subscribed_lists if item != list_name
-            ]
+            self.subscribed_lists = [item for item in self.subscribed_lists if item != list_name]
 
     def is_subscribed_to(self, list_name: str) -> bool:
         """Verifica se esta inscrito em uma lista.

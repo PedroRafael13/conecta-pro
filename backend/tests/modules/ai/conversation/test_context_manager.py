@@ -1,8 +1,9 @@
 """Tests para ContextManager."""
 
-import pytest
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, UTC
+
+import pytest
 
 from modules.ai.conversation.services.context_manager import (
     ContextManager,
@@ -126,9 +127,7 @@ class TestContextManager:
         context_manager.max_context_messages = 5
 
         for i in range(10):
-            await context_manager.add_message(
-                1, "session", "user", f"Mensagem {i}"
-            )
+            await context_manager.add_message(1, "session", "user", f"Mensagem {i}")
 
         context = await context_manager.get_context(1, "session")
 

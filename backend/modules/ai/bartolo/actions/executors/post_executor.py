@@ -1,17 +1,18 @@
 """
 Executor de acoes relacionadas a postos de trabalho.
 """
+
 import logging
 from datetime import datetime
 from uuid import uuid4
-from typing import Optional
 
+from modules.operacional.models.post import PostStatus, PostType, ShiftType
+from modules.operacional.permissions import Permission, has_permission
 from modules.operacional.repositories.post_repository import PostRepository
 from modules.operacional.schemas.post import PostCreate, PostUpdate
-from modules.operacional.models.post import PostType, PostStatus, ShiftType
-from modules.operacional.permissions import has_permission, Permission
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionCategory, ActionStatus
+
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -36,8 +37,9 @@ class PostActionExecutor(BaseActionExecutor):
 
     async def create_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para acao de posto."""
-        action_type_value = request.action_type.value if hasattr(request.action_type, 'value') else str(request.action_type)
-        params = request.parameters
+        action_type_value = (
+            request.action_type.value if hasattr(request.action_type, "value") else str(request.action_type)
+        )
 
         if action_type_value == POST_ACTION_CREATE:
             return await self._create_post_preview(request)
@@ -52,7 +54,9 @@ class PostActionExecutor(BaseActionExecutor):
 
     async def execute(self, request: ActionRequest, action_id: str) -> ActionResult:
         """Executa acao de posto."""
-        action_type_value = request.action_type.value if hasattr(request.action_type, 'value') else str(request.action_type)
+        action_type_value = (
+            request.action_type.value if hasattr(request.action_type, "value") else str(request.action_type)
+        )
         started_at = datetime.utcnow()
 
         try:
@@ -91,10 +95,10 @@ class PostActionExecutor(BaseActionExecutor):
         """Cria preview para criacao de posto."""
         params = request.parameters
 
-        name = params.get('name', '')
-        post_type = params.get('post_type', PostType.VIGILANTE.value)
-        shift_type = params.get('shift_type', ShiftType.DIURNO.value)
-        required_headcount = params.get('required_headcount', 1)
+        name = params.get("name", "")
+        post_type = params.get("post_type", PostType.VIGILANTE.value)
+        shift_type = params.get("shift_type", ShiftType.DIURNO.value)
+        required_headcount = params.get("required_headcount", 1)
 
         changes_summary = []
         warnings = []
@@ -109,13 +113,13 @@ class PostActionExecutor(BaseActionExecutor):
         changes_summary.append(f"Turno: {shift_type}")
         changes_summary.append(f"Efetivo requerido: {required_headcount}")
 
-        if params.get('requires_armed'):
+        if params.get("requires_armed"):
             changes_summary.append("Requer armamento: SIM")
-        if params.get('requires_vehicle'):
+        if params.get("requires_vehicle"):
             changes_summary.append("Requer veiculo: SIM")
-        if params.get('address'):
+        if params.get("address"):
             changes_summary.append(f"Endereco: {params['address']}")
-        if params.get('monthly_cost'):
+        if params.get("monthly_cost"):
             changes_summary.append(f"Custo mensal: R$ {params['monthly_cost']:,.2f}")
 
         # Verificar se ja existe posto com mesmo nome
@@ -134,7 +138,7 @@ class PostActionExecutor(BaseActionExecutor):
 
         # Verificar permissao
         required_perm = self.ACTION_PERMISSION_MAP.get(POST_ACTION_CREATE, Permission.POSTS_CREATE)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissao {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -156,8 +160,8 @@ class PostActionExecutor(BaseActionExecutor):
     async def _update_post_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para atualizacao de posto."""
         params = request.parameters
-        post_code = params.get('post_code')
-        post_id = params.get('post_id')
+        post_code = params.get("post_code")
+        post_id = params.get("post_id")
 
         warnings = []
         affected_entities = []
@@ -177,20 +181,22 @@ class PostActionExecutor(BaseActionExecutor):
             title = "Atualizar Posto"
             description = "Posto nao encontrado"
         else:
-            affected_entities.append({
-                "type": "post",
-                "id": post.id,
-                "name": post.name,
-                "code": post.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "post",
+                    "id": post.id,
+                    "name": post.name,
+                    "code": post.code,
+                }
+            )
 
             changes_summary.append(f"Posto: {post.code} - {post.name}")
 
             # Listar campos que serao alterados
-            update_fields = params.get('updates', {})
+            update_fields = params.get("updates", {})
             if isinstance(update_fields, dict):
                 for field, value in update_fields.items():
-                    old_value = getattr(post, field, 'N/A')
+                    old_value = getattr(post, field, "N/A")
                     changes_summary.append(f"{field}: {old_value} -> {value}")
             elif isinstance(update_fields, list):
                 for item in update_fields:
@@ -201,7 +207,7 @@ class PostActionExecutor(BaseActionExecutor):
 
         # Verificar permissao
         required_perm = self.ACTION_PERMISSION_MAP.get(POST_ACTION_UPDATE, Permission.POSTS_EDIT)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissao {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -223,8 +229,8 @@ class PostActionExecutor(BaseActionExecutor):
     async def _delete_post_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para desativacao (soft delete) de posto."""
         params = request.parameters
-        post_code = params.get('post_code')
-        post_id = params.get('post_id')
+        post_code = params.get("post_code")
+        post_id = params.get("post_id")
 
         warnings = []
         affected_entities = []
@@ -244,12 +250,14 @@ class PostActionExecutor(BaseActionExecutor):
             title = "Desativar Posto"
             description = "Posto nao encontrado"
         else:
-            affected_entities.append({
-                "type": "post",
-                "id": post.id,
-                "name": post.name,
-                "code": post.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "post",
+                    "id": post.id,
+                    "name": post.name,
+                    "code": post.code,
+                }
+            )
 
             changes_summary.append(f"Posto: {post.code} - {post.name}")
             changes_summary.append(f"Status atual: {post.status}")
@@ -269,7 +277,7 @@ class PostActionExecutor(BaseActionExecutor):
 
         # Verificar permissao
         required_perm = self.ACTION_PERMISSION_MAP.get(POST_ACTION_DELETE, Permission.POSTS_DELETE)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissao {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -291,14 +299,14 @@ class PostActionExecutor(BaseActionExecutor):
     async def _stats_post_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para consulta de estatisticas."""
         params = request.parameters
-        post_code = params.get('post_code')
+        post_code = params.get("post_code")
 
         title = f"Estatisticas do Posto - {post_code}" if post_code else "Estatisticas Gerais de Postos"
         description = "Consultar estatisticas e indicadores dos postos"
 
         # Verificar permissao
         required_perm = self.ACTION_PERMISSION_MAP.get(POST_ACTION_STATS, Permission.POSTS_VIEW)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
 
         return ActionPreview(
@@ -329,13 +337,13 @@ class PostActionExecutor(BaseActionExecutor):
         """Executa criacao de posto."""
         params = request.parameters
 
-        name = params.get('name')
+        name = params.get("name")
         if not name:
             raise ValueError("Nome do posto e obrigatorio")
 
         # Resolver enums
-        post_type_str = params.get('post_type', PostType.VIGILANTE.value)
-        shift_type_str = params.get('shift_type', ShiftType.DIURNO.value)
+        post_type_str = params.get("post_type", PostType.VIGILANTE.value)
+        shift_type_str = params.get("shift_type", ShiftType.DIURNO.value)
 
         try:
             post_type_enum = PostType(post_type_str)
@@ -352,39 +360,39 @@ class PostActionExecutor(BaseActionExecutor):
         # Criar schema
         post_data = PostCreate(
             name=name,
-            description=params.get('description'),
+            description=params.get("description"),
             post_type=post_type_enum,
             shift_type=shift_type_enum,
-            contract_id=params.get('contract_id'),
-            client_id=params.get('client_id'),
-            address=params.get('address'),
-            city=params.get('city'),
-            state=params.get('state'),
-            zip_code=params.get('zip_code'),
-            latitude=params.get('latitude'),
-            longitude=params.get('longitude'),
-            shift_start_time=params.get('shift_start_time'),
-            shift_end_time=params.get('shift_end_time'),
-            break_duration_minutes=params.get('break_duration_minutes', 60),
-            night_shift_bonus_percent=params.get('night_shift_bonus_percent', 20.0),
-            hazard_pay_percent=params.get('hazard_pay_percent', 0.0),
-            required_headcount=params.get('required_headcount', 1),
-            requires_experience_months=params.get('requires_experience_months', 0),
-            hourly_rate=params.get('hourly_rate', 0.0),
-            monthly_cost=params.get('monthly_cost', 0.0),
-            requires_armed=params.get('requires_armed', False),
-            requires_vehicle=params.get('requires_vehicle', False),
-            required_certifications=params.get('required_certifications'),
-            supervisor_name=params.get('supervisor_name'),
-            supervisor_phone=params.get('supervisor_phone'),
-            emergency_contact=params.get('emergency_contact'),
-            emergency_phone=params.get('emergency_phone'),
-            notes=params.get('notes'),
+            contract_id=params.get("contract_id"),
+            client_id=params.get("client_id"),
+            address=params.get("address"),
+            city=params.get("city"),
+            state=params.get("state"),
+            zip_code=params.get("zip_code"),
+            latitude=params.get("latitude"),
+            longitude=params.get("longitude"),
+            shift_start_time=params.get("shift_start_time"),
+            shift_end_time=params.get("shift_end_time"),
+            break_duration_minutes=params.get("break_duration_minutes", 60),
+            night_shift_bonus_percent=params.get("night_shift_bonus_percent", 20.0),
+            hazard_pay_percent=params.get("hazard_pay_percent", 0.0),
+            required_headcount=params.get("required_headcount", 1),
+            requires_experience_months=params.get("requires_experience_months", 0),
+            hourly_rate=params.get("hourly_rate", 0.0),
+            monthly_cost=params.get("monthly_cost", 0.0),
+            requires_armed=params.get("requires_armed", False),
+            requires_vehicle=params.get("requires_vehicle", False),
+            required_certifications=params.get("required_certifications"),
+            supervisor_name=params.get("supervisor_name"),
+            supervisor_phone=params.get("supervisor_phone"),
+            emergency_contact=params.get("emergency_contact"),
+            emergency_phone=params.get("emergency_phone"),
+            notes=params.get("notes"),
         )
 
         # Criar via repository
         post_repo = PostRepository(self.db)
-        user_uuid = getattr(self, 'user_uuid', None)
+        user_uuid = getattr(self, "user_uuid", None)
         post = await post_repo.create(post_data, created_by=user_uuid)
 
         logger.info(f"Posto criado via Bartolo: {post.id} ({post.code})")
@@ -420,8 +428,8 @@ class PostActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa atualizacao de posto."""
         params = request.parameters
-        post_code = params.get('post_code')
-        post_id = params.get('post_id')
+        post_code = params.get("post_code")
+        post_id = params.get("post_id")
 
         # Buscar posto
         post_repo = PostRepository(self.db)
@@ -436,26 +444,26 @@ class PostActionExecutor(BaseActionExecutor):
             raise ValueError(f"Posto '{post_code or post_id}' nao encontrado")
 
         # Construir update
-        update_fields = params.get('updates', {})
+        update_fields = params.get("updates", {})
         if not isinstance(update_fields, dict):
             raise ValueError("Campos de atualizacao devem ser um dicionario")
 
         # Resolver enums se necessario
-        if 'post_type' in update_fields:
+        if "post_type" in update_fields:
             try:
-                update_fields['post_type'] = PostType(update_fields['post_type'])
+                update_fields["post_type"] = PostType(update_fields["post_type"])
             except ValueError:
                 raise ValueError(f"Tipo de posto invalido: {update_fields['post_type']}")
 
-        if 'status' in update_fields:
+        if "status" in update_fields:
             try:
-                update_fields['status'] = PostStatus(update_fields['status'])
+                update_fields["status"] = PostStatus(update_fields["status"])
             except ValueError:
                 raise ValueError(f"Status invalido: {update_fields['status']}")
 
-        if 'shift_type' in update_fields:
+        if "shift_type" in update_fields:
             try:
-                update_fields['shift_type'] = ShiftType(update_fields['shift_type'])
+                update_fields["shift_type"] = ShiftType(update_fields["shift_type"])
             except ValueError:
                 raise ValueError(f"Tipo de turno invalido: {update_fields['shift_type']}")
 
@@ -495,8 +503,8 @@ class PostActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa desativacao (soft delete) de posto."""
         params = request.parameters
-        post_code = params.get('post_code')
-        post_id = params.get('post_id')
+        post_code = params.get("post_code")
+        post_id = params.get("post_id")
 
         # Buscar posto
         post_repo = PostRepository(self.db)
@@ -512,10 +520,7 @@ class PostActionExecutor(BaseActionExecutor):
 
         # Verificar se tem funcionarios alocados
         if post.current_headcount > 0:
-            logger.warning(
-                f"Desativando posto {post.code} com {post.current_headcount} "
-                f"funcionario(s) alocado(s)"
-            )
+            logger.warning(f"Desativando posto {post.code} com {post.current_headcount} funcionario(s) alocado(s)")
 
         # Guardar dados antes de desativar
         post_code_saved = post.code
@@ -559,7 +564,7 @@ class PostActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa consulta de estatisticas dos postos."""
         params = request.parameters
-        post_code = params.get('post_code')
+        post_code = params.get("post_code")
 
         post_repo = PostRepository(self.db)
 
@@ -569,9 +574,9 @@ class PostActionExecutor(BaseActionExecutor):
             if not post:
                 raise ValueError(f"Posto '{post_code}' nao encontrado")
 
-            cobertura_pct = round(
-                (post.current_headcount / post.required_headcount) * 100, 1
-            ) if post.required_headcount > 0 else 0
+            cobertura_pct = (
+                round((post.current_headcount / post.required_headcount) * 100, 1) if post.required_headcount > 0 else 0
+            )
 
             details = {
                 "post_id": post.id,
@@ -598,9 +603,9 @@ class PostActionExecutor(BaseActionExecutor):
         else:
             # Stats gerais
             stats = await post_repo.get_stats()
-            cobertura_geral = round(
-                (stats.total_allocated / stats.total_headcount) * 100, 1
-            ) if stats.total_headcount > 0 else 0
+            cobertura_geral = (
+                round((stats.total_allocated / stats.total_headcount) * 100, 1) if stats.total_headcount > 0 else 0
+            )
 
             details = {
                 "total": stats.total,
@@ -621,7 +626,7 @@ class PostActionExecutor(BaseActionExecutor):
                 f"Custo total R$ {stats.total_monthly_cost:,.2f}"
             )
 
-        logger.info(f"Estatisticas de postos consultadas via Bartolo")
+        logger.info("Estatisticas de postos consultadas via Bartolo")
 
         return ActionResult(
             action_id=action_id,

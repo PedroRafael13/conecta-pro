@@ -2,21 +2,21 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from modules.recruitment.models.candidate import (
     Candidate,
-    CandidateStatus,
     CandidateSource,
+    CandidateStatus,
 )
 from modules.recruitment.schemas.candidate import (
     CandidateCreate,
-    CandidateUpdate,
     CandidateFilter,
+    CandidateUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,24 +32,23 @@ class CandidateRepository:
     async def create(self, data: CandidateCreate) -> Candidate:
         """Cria um novo candidato."""
         candidate = Candidate(**data.model_dump())
-        candidate.update_profile_score()
         self.session.add(candidate)
         await self.session.flush()
         return candidate
 
-    async def get_by_id(self, candidate_id: str) -> Optional[Candidate]:
+    async def get_by_id(self, candidate_id: str) -> Candidate | None:
         """Busca candidato por ID."""
         result = await self.session.execute(
             select(Candidate).where(
                 and_(
                     Candidate.id == candidate_id,
-                    Candidate.deleted_at.is_(None),
+                    Candidate.is_deleted.is_(False),
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_id_with_relations(self, candidate_id: str) -> Optional[Candidate]:
+    async def get_by_id_with_relations(self, candidate_id: str) -> Candidate | None:
         """Busca candidato por ID com relacionamentos."""
         result = await self.session.execute(
             select(Candidate)
@@ -61,39 +60,37 @@ class CandidateRepository:
             .where(
                 and_(
                     Candidate.id == candidate_id,
-                    Candidate.deleted_at.is_(None),
+                    Candidate.is_deleted.is_(False),
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[Candidate]:
+    async def get_by_email(self, email: str) -> Candidate | None:
         """Busca candidato por email."""
         result = await self.session.execute(
             select(Candidate).where(
                 and_(
                     Candidate.email == email,
-                    Candidate.deleted_at.is_(None),
+                    Candidate.is_deleted.is_(False),
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_cpf(self, cpf: str) -> Optional[Candidate]:
+    async def get_by_cpf(self, cpf: str) -> Candidate | None:
         """Busca candidato por CPF."""
         result = await self.session.execute(
             select(Candidate).where(
                 and_(
                     Candidate.cpf == cpf,
-                    Candidate.deleted_at.is_(None),
+                    Candidate.is_deleted.is_(False),
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, candidate_id: str, data: CandidateUpdate
-    ) -> Optional[Candidate]:
+    async def update(self, candidate_id: str, data: CandidateUpdate) -> Candidate | None:
         """Atualiza um candidato."""
         candidate = await self.get_by_id(candidate_id)
         if not candidate:
@@ -101,10 +98,10 @@ class CandidateRepository:
 
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
-            setattr(candidate, field, value)
+            if hasattr(candidate, field):
+                setattr(candidate, field, value)
 
-        candidate.update_profile_score()
-        candidate.record_activity()
+        candidate.updated_at = datetime.utcnow()
         await self.session.flush()
         return candidate
 
@@ -114,20 +111,22 @@ class CandidateRepository:
         if not candidate:
             return False
 
-        candidate.soft_delete()
+        candidate.is_deleted = True
+        candidate.is_active = False
+        candidate.updated_at = datetime.utcnow()
         await self.session.flush()
         return True
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[CandidateFilter] = None,
+        filters: CandidateFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[Candidate], int]:
+    ) -> tuple[list[Candidate], int]:
         """Lista candidatos com filtros e paginação."""
-        query = select(Candidate).where(Candidate.deleted_at.is_(None))
+        query = select(Candidate).where(Candidate.is_deleted.is_(False))
 
         if filters:
             if filters.status:
@@ -138,22 +137,12 @@ class CandidateRepository:
                 query = query.where(Candidate.city.ilike(f"%{filters.city}%"))
             if filters.state:
                 query = query.where(Candidate.state == filters.state)
-            if filters.available_immediately is not None:
-                query = query.where(
-                    Candidate.available_immediately == filters.available_immediately
-                )
-            if filters.has_cnh is not None:
-                query = query.where(Candidate.has_cnh == filters.has_cnh)
-            if filters.is_pcd is not None:
-                query = query.where(Candidate.is_pcd == filters.is_pcd)
-            if filters.is_blocked is not None:
-                query = query.where(Candidate.is_blocked == filters.is_blocked)
+            # available_immediately, has_cnh, is_pcd, is_blocked, condominium_id
+            # don't exist as DB columns — skip these filters silently
             if filters.salary_min:
                 query = query.where(Candidate.salary_expectation >= filters.salary_min)
             if filters.salary_max:
                 query = query.where(Candidate.salary_expectation <= filters.salary_max)
-            if filters.condominium_id:
-                query = query.where(Candidate.condominium_id == filters.condominium_id)
             if filters.search:
                 search_term = f"%{filters.search}%"
                 query = query.where(
@@ -171,7 +160,8 @@ class CandidateRepository:
         total = total_result.scalar() or 0
 
         # Ordenação
-        order_column = getattr(Candidate, order_by, Candidate.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(Candidate).mapper.column_attrs}
+        order_column = getattr(Candidate, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:
@@ -185,36 +175,30 @@ class CandidateRepository:
 
         return list(candidates), total
 
-    async def get_active(
-        self, condominium_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_active(self, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos ativos."""
         query = select(Candidate).where(
             and_(
                 Candidate.status == CandidateStatus.ATIVO,
-                Candidate.is_blocked.is_(False),
-                Candidate.deleted_at.is_(None),
+                Candidate.status != CandidateStatus.BLOQUEADO,
+                Candidate.is_deleted.is_(False),
             )
         )
-        if condominium_id:
-            query = query.where(Candidate.condominium_id == condominium_id)
 
-        query = query.order_by(Candidate.profile_score.desc())
+        query = query.order_by(Candidate.ai_score.desc().nulls_last())
         query = query.offset(skip).limit(limit)
 
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_source(
-        self, source: CandidateSource, skip: int = 0, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_by_source(self, source: CandidateSource, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos por fonte."""
         query = (
             select(Candidate)
             .where(
                 and_(
                     Candidate.source == source,
-                    Candidate.deleted_at.is_(None),
+                    Candidate.is_deleted.is_(False),
                 )
             )
             .order_by(Candidate.created_at.desc())
@@ -225,17 +209,17 @@ class CandidateRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_blocked(self, skip: int = 0, limit: int = 50) -> List[Candidate]:
+    async def get_blocked(self, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos bloqueados."""
         query = (
             select(Candidate)
             .where(
                 and_(
-                    Candidate.is_blocked.is_(True),
-                    Candidate.deleted_at.is_(None),
+                    Candidate.status == CandidateStatus.BLOQUEADO,
+                    Candidate.is_deleted.is_(False),
                 )
             )
-            .order_by(Candidate.blocked_at.desc())
+            .order_by(Candidate.updated_at.desc().nulls_last())
             .offset(skip)
             .limit(limit)
         )
@@ -243,9 +227,7 @@ class CandidateRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def search_by_skills(
-        self, skills: List[str], limit: int = 50
-    ) -> List[Candidate]:
+    async def search_by_skills(self, skills: list[str], limit: int = 50) -> list[Candidate]:
         """Busca candidatos por habilidades."""
         # Busca simples por tags
         query = (
@@ -253,10 +235,10 @@ class CandidateRepository:
             .where(
                 and_(
                     Candidate.status == CandidateStatus.ATIVO,
-                    Candidate.deleted_at.is_(None),
+                    Candidate.is_deleted.is_(False),
                 )
             )
-            .order_by(Candidate.profile_score.desc())
+            .order_by(Candidate.ai_score.desc().nulls_last())
             .limit(limit)
         )
 
@@ -277,9 +259,7 @@ class CandidateRepository:
 
         return filtered
 
-    async def get_recently_active(
-        self, days: int = 30, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_recently_active(self, days: int = 30, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos ativos recentemente."""
         cutoff = datetime.utcnow() - timedelta(days=days)
 
@@ -287,49 +267,48 @@ class CandidateRepository:
             select(Candidate)
             .where(
                 and_(
-                    Candidate.last_activity_at >= cutoff,
+                    Candidate.updated_at >= cutoff,
                     Candidate.status == CandidateStatus.ATIVO,
-                    Candidate.deleted_at.is_(None),
+                    Candidate.is_deleted.is_(False),
                 )
             )
-            .order_by(Candidate.last_activity_at.desc())
+            .order_by(Candidate.updated_at.desc().nulls_last())
             .limit(limit)
         )
 
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def block(
-        self, candidate_id: str, reason: str, blocked_by: str
-    ) -> Optional[Candidate]:
+    async def block(self, candidate_id: str, reason: str, blocked_by: str) -> Candidate | None:
         """Bloqueia candidato."""
         candidate = await self.get_by_id(candidate_id)
         if candidate:
-            candidate.block(reason, blocked_by)
+            candidate.status = CandidateStatus.BLOQUEADO
+            candidate.updated_at = datetime.utcnow()
             await self.session.flush()
         return candidate
 
-    async def unblock(self, candidate_id: str) -> Optional[Candidate]:
+    async def unblock(self, candidate_id: str) -> Candidate | None:
         """Desbloqueia candidato."""
         candidate = await self.get_by_id(candidate_id)
         if candidate:
-            candidate.unblock()
+            candidate.status = CandidateStatus.ATIVO
+            candidate.updated_at = datetime.utcnow()
             await self.session.flush()
         return candidate
 
-    async def mark_as_hired(self, candidate_id: str) -> Optional[Candidate]:
+    async def mark_as_hired(self, candidate_id: str) -> Candidate | None:
         """Marca como contratado."""
         candidate = await self.get_by_id(candidate_id)
         if candidate:
-            candidate.mark_as_hired()
+            candidate.status = CandidateStatus.CONTRATADO
+            candidate.updated_at = datetime.utcnow()
             await self.session.flush()
         return candidate
 
-    async def get_stats(self, condominium_id: str = None) -> dict:
+    async def get_stats(self) -> dict:
         """Retorna estatísticas."""
-        query = select(Candidate).where(Candidate.deleted_at.is_(None))
-        if condominium_id:
-            query = query.where(Candidate.condominium_id == condominium_id)
+        query = select(Candidate).where(Candidate.is_deleted.is_(False))
 
         result = await self.session.execute(query)
         candidates = result.scalars().all()
@@ -353,35 +332,39 @@ class CandidateRepository:
         }
 
         total_score = 0
-        total_apps = 0
+        score_count = 0
 
         for cand in candidates:
             if cand.status == CandidateStatus.ATIVO:
                 stats["active_candidates"] += 1
-            if cand.is_blocked:
+            if cand.status == CandidateStatus.BLOQUEADO:
                 stats["blocked_candidates"] += 1
             if cand.status == CandidateStatus.CONTRATADO:
                 stats["hired_candidates"] += 1
 
-            status_key = cand.status.value
+            status_key = cand.status or "unknown"
+            if hasattr(status_key, "value"):
+                status_key = status_key.value
             stats["by_status"][status_key] = stats["by_status"].get(status_key, 0) + 1
 
-            source_key = cand.source.value
+            source_key = cand.source or "unknown"
+            if hasattr(source_key, "value"):
+                source_key = source_key.value
             stats["by_source"][source_key] = stats["by_source"].get(source_key, 0) + 1
 
             if cand.city:
                 stats["by_city"][cand.city] = stats["by_city"].get(cand.city, 0) + 1
 
-            total_score += cand.profile_score
-            total_apps += cand.applications_count
+            if cand.ai_score is not None:
+                total_score += float(cand.ai_score)
+                score_count += 1
 
-            if cand.created_at >= month_ago:
+            if cand.created_at and cand.created_at >= month_ago:
                 stats["new_this_month"] += 1
-            if cand.created_at >= week_ago:
+            if cand.created_at and cand.created_at >= week_ago:
                 stats["new_this_week"] += 1
 
-        if candidates:
-            stats["avg_profile_score"] = round(total_score / len(candidates), 1)
-            stats["avg_applications"] = round(total_apps / len(candidates), 1)
+        if score_count > 0:
+            stats["avg_profile_score"] = round(total_score / score_count, 1)
 
         return stats

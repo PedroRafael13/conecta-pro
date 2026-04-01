@@ -12,42 +12,41 @@ Módulo responsável por extrair dados de:
 - Gov.br
 """
 
-from .orchestrator import (
-    OrquestradorExtracao,
-    ResultadoExtracao,
-    ConfiguracaoExtracao,
-    TipoServico,
-    StatusExtracao,
-    get_orchestrator,
-)
-
-# SEFAZ
-from .sefaz import ExtratorNFe, ExtratorCTe, ExtratorMDFe
-
-# SEFAZ-AM
-from .sefaz_am import ExtratorSEFAZAM
-
 # eSocial e FGTS
 from .esocial import ExtratoreSocial
 from .fgts import ExtratorFGTS
 
+# Gov.br
+from .govbr import ExtratorGovBR
+
 # NFS-e
 from .nfse import ExtratorNFSeManaus, ExtratorNFSeNacional
+from .orchestrator import (
+    ConfiguracaoExtracao,
+    OrquestradorExtracao,
+    ResultadoExtracao,
+    StatusExtracao,
+    TipoServico,
+    get_orchestrator,
+)
 
 # Receita Federal
 from .receita_federal import (
-    ExtratorRFB,
     ExtratorDCTFWeb,
-    ExtratorEFDReinf,
     ExtratorECAC,
+    ExtratorEFDReinf,
+    ExtratorRFB,
     ExtratorSimplesNacional,
 )
 
-# SPED
-from .sped import ExtratorSPEDFiscal, ExtratorSPEDContabil
+# SEFAZ
+from .sefaz import ExtratorCTe, ExtratorMDFe, ExtratorNFe
 
-# Gov.br
-from .govbr import ExtratorGovBR
+# SEFAZ-AM
+from .sefaz_am import ExtratorSEFAZAM
+
+# SPED
+from .sped import ExtratorSPEDContabil, ExtratorSPEDFiscal
 
 __all__ = [
     # Orchestrator
@@ -57,34 +56,27 @@ __all__ = [
     "TipoServico",
     "StatusExtracao",
     "get_orchestrator",
-
     # SEFAZ
     "ExtratorNFe",
     "ExtratorCTe",
     "ExtratorMDFe",
-
     # SEFAZ-AM
     "ExtratorSEFAZAM",
-
     # eSocial e FGTS
     "ExtratoreSocial",
     "ExtratorFGTS",
-
     # NFS-e
     "ExtratorNFSeManaus",
     "ExtratorNFSeNacional",
-
     # Receita Federal
     "ExtratorRFB",
     "ExtratorDCTFWeb",
     "ExtratorEFDReinf",
     "ExtratorECAC",
     "ExtratorSimplesNacional",
-
     # SPED
     "ExtratorSPEDFiscal",
     "ExtratorSPEDContabil",
-
     # Gov.br
     "ExtratorGovBR",
 ]

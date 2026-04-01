@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Numeric, String, Text
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from modules.financial.models.product_category import ProductCategory
 
 
-class ProductType(str, Enum):
+class ProductType(StrEnum):
     """Tipo de produto."""
 
     PRODUTO = "produto"
@@ -26,7 +26,7 @@ class ProductType(str, Enum):
     EQUIPAMENTO = "equipamento"
 
 
-class ProductStatus(str, Enum):
+class ProductStatus(StrEnum):
     """Status do produto."""
 
     ATIVO = "ativo"
@@ -36,7 +36,7 @@ class ProductStatus(str, Enum):
     BLOQUEADO = "bloqueado"
 
 
-class UnitOfMeasure(str, Enum):
+class UnitOfMeasure(StrEnum):
     """Unidade de medida."""
 
     UNIDADE = "un"
@@ -112,9 +112,7 @@ class Product(Base):
     cfop_default = Column(String(10), nullable=True)  # CFOP padrão
 
     # Fornecedor preferencial
-    preferred_supplier_id = Column(
-        UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=True
-    )
+    preferred_supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=True)
 
     # Imagens e documentos
     image_url = Column(String(500), nullable=True)
@@ -149,9 +147,7 @@ class Product(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    category: Optional["ProductCategory"] = relationship(
-        "ProductCategory", back_populates="products"
-    )
+    category: Optional["ProductCategory"] = relationship("ProductCategory", back_populates="products")
 
     __table_args__ = (
         Index("ix_products_code", "code"),
@@ -183,7 +179,7 @@ class Product(Base):
         return self.name
 
     @property
-    def price_variation(self) -> Optional[Decimal]:
+    def price_variation(self) -> Decimal | None:
         """Variação entre menor e maior preço."""
         if self.min_price and self.max_price and self.min_price > 0:
             return ((self.max_price - self.min_price) / self.min_price) * 100
@@ -234,9 +230,7 @@ class Product(Base):
             "status": self.status,
             "unit_of_measure": self.unit_of_measure,
             "reference_price": float(self.reference_price) if self.reference_price else None,
-            "last_purchase_price": (
-                float(self.last_purchase_price) if self.last_purchase_price else None
-            ),
+            "last_purchase_price": (float(self.last_purchase_price) if self.last_purchase_price else None),
             "average_price": float(self.average_price) if self.average_price else None,
             "category_id": str(self.category_id) if self.category_id else None,
             "is_active": self.is_active,

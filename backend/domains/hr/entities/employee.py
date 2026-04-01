@@ -4,25 +4,19 @@ domains/hr/entities/employee.py - EMPLOYEE ENTITY
 Enterprise employee entity with Brazilian labor law compliance
 """
 
-from typing import Dict, List, Optional, Any, NewType
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any, NewType
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .enums import (
-    EmploymentType,
-    EmployeeStatus,
-    WorkScheduleType,
-    LeaveType,
-    TerminationType
-)
+from .enums import EmployeeStatus, EmploymentType, LeaveType, TerminationType, WorkScheduleType
 
 # Strong typing for domain identifiers
-EmployeeId = NewType('EmployeeId', UUID)
-DepartmentId = NewType('DepartmentId', UUID)
-PositionId = NewType('PositionId', UUID)
+EmployeeId = NewType("EmployeeId", UUID)
+DepartmentId = NewType("DepartmentId", UUID)
+PositionId = NewType("PositionId", UUID)
 
 
 class Address(BaseModel):
@@ -32,7 +26,7 @@ class Address(BaseModel):
 
     street: str = Field(..., min_length=3, max_length=200)
     number: str = Field(..., max_length=20)
-    complement: Optional[str] = Field(None, max_length=100)
+    complement: str | None = Field(None, max_length=100)
     neighborhood: str = Field(..., min_length=2, max_length=100)
     city: str = Field(..., min_length=2, max_length=100)
     state: str = Field(..., pattern=r"^[A-Z]{2}$")
@@ -50,7 +44,7 @@ class BankAccount(BaseModel):
     agency: str = Field(..., pattern=r"^\d{4}-?\d?$")
     account_number: str = Field(..., pattern=r"^\d{5,12}-?\d?$")
     account_type: str = Field(..., pattern=r"^(corrente|poupanca)$")
-    pix_key: Optional[str] = None
+    pix_key: str | None = None
 
 
 class EmergencyContact(BaseModel):
@@ -61,7 +55,7 @@ class EmergencyContact(BaseModel):
     name: str = Field(..., min_length=3, max_length=100)
     relationship: str = Field(..., min_length=2, max_length=50)
     phone: str = Field(..., pattern=r"^\(\d{2}\)\s?\d{4,5}-?\d{4}$")
-    secondary_phone: Optional[str] = None
+    secondary_phone: str | None = None
 
 
 class Dependent(BaseModel):
@@ -75,14 +69,16 @@ class Dependent(BaseModel):
     cpf: str = Field(..., pattern=r"^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$")
     birth_date: date
     is_ir_dependent: bool = Field(default=False)  # Dependente para IR
-    is_health_plan: bool = Field(default=False)   # Incluso no plano de saude
+    is_health_plan: bool = Field(default=False)  # Incluso no plano de saude
 
     @property
     def age(self) -> int:
         """Calcula idade do dependente."""
         today = date.today()
-        return today.year - self.birth_date.year - (
-            (today.month, today.day) < (self.birth_date.month, self.birth_date.day)
+        return (
+            today.year
+            - self.birth_date.year
+            - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
         )
 
 
@@ -95,9 +91,9 @@ class LeaveRecord(BaseModel):
     end_date: date
     days: int = Field(..., ge=1)
     reason: str = Field(..., min_length=5, max_length=500)
-    medical_certificate: Optional[str] = None  # CID
-    approved_by: Optional[str] = None
-    approved_at: Optional[datetime] = None
+    medical_certificate: str | None = None  # CID
+    approved_by: str | None = None
+    approved_at: datetime | None = None
     status: str = Field(default="pending")  # pending, approved, rejected
 
 
@@ -109,21 +105,18 @@ class EmployeeEntity(BaseModel):
     gestao completa do ciclo de vida do funcionario.
     """
 
-    model_config = ConfigDict(
-        use_enum_values=True,
-        validate_assignment=True
-    )
+    model_config = ConfigDict(use_enum_values=True, validate_assignment=True)
 
     # Identity
     employee_id: UUID = Field(default_factory=uuid4)
     employee_code: str = Field(..., pattern=r"^EMP-\d{6}$")
-    registration_number: Optional[str] = None  # Matricula eSocial
+    registration_number: str | None = None  # Matricula eSocial
 
     # Personal Data
     full_name: str = Field(..., min_length=5, max_length=150)
-    social_name: Optional[str] = Field(None, max_length=150)  # Nome social
+    social_name: str | None = Field(None, max_length=150)  # Nome social
     cpf: str = Field(..., pattern=r"^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$")
-    rg: Optional[str] = Field(None, max_length=20)
+    rg: str | None = Field(None, max_length=20)
     birth_date: date
     gender: str = Field(..., pattern=r"^(M|F|O|NI)$")  # M, F, Outro, Nao Informado
     marital_status: str = Field(..., pattern=r"^(single|married|divorced|widowed|stable_union)$")
@@ -131,7 +124,7 @@ class EmployeeEntity(BaseModel):
 
     # Contact
     email: str = Field(..., pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
-    personal_email: Optional[str] = None
+    personal_email: str | None = None
     phone: str = Field(..., pattern=r"^\(\d{2}\)\s?\d{4,5}-?\d{4}$")
     address: Address
 
@@ -139,15 +132,15 @@ class EmployeeEntity(BaseModel):
     employment_type: EmploymentType
     status: EmployeeStatus = Field(default=EmployeeStatus.ACTIVE)
     hire_date: date
-    termination_date: Optional[date] = None
-    termination_type: Optional[TerminationType] = None
+    termination_date: date | None = None
+    termination_type: TerminationType | None = None
 
     # Position
     department_id: UUID
     department_name: str
     position_id: UUID
     position_name: str
-    manager_id: Optional[UUID] = None
+    manager_id: UUID | None = None
     work_schedule: WorkScheduleType
 
     # Compensation
@@ -168,37 +161,37 @@ class EmployeeEntity(BaseModel):
     bank_account: BankAccount
 
     # Dependents
-    dependents: List[Dependent] = Field(default_factory=list)
-    emergency_contacts: List[EmergencyContact] = Field(default_factory=list)
+    dependents: list[Dependent] = Field(default_factory=list)
+    emergency_contacts: list[EmergencyContact] = Field(default_factory=list)
 
     # Leave History
-    leave_records: List[LeaveRecord] = Field(default_factory=list)
+    leave_records: list[LeaveRecord] = Field(default_factory=list)
     vacation_balance_days: int = Field(default=0, ge=0)
-    last_vacation_period: Optional[str] = None  # Ex: "2023/2024"
+    last_vacation_period: str | None = None  # Ex: "2023/2024"
 
     # Documents
-    ctps_number: Optional[str] = None  # Carteira de trabalho
-    ctps_series: Optional[str] = None
-    pis_number: Optional[str] = Field(None, pattern=r"^\d{3}\.?\d{5}\.?\d{2}-?\d$")
-    voter_id: Optional[str] = None
-    military_certificate: Optional[str] = None
+    ctps_number: str | None = None  # Carteira de trabalho
+    ctps_series: str | None = None
+    pis_number: str | None = Field(None, pattern=r"^\d{3}\.?\d{5}\.?\d{2}-?\d$")
+    voter_id: str | None = None
+    military_certificate: str | None = None
 
     # Multi-tenant
     tenant_id: UUID
-    condominium_id: Optional[UUID] = None
+    condominium_id: UUID | None = None
 
     # Audit
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: str
-    updated_by: Optional[str] = None
+    updated_by: str | None = None
 
-    @field_validator('cpf')
+    @field_validator("cpf")
     @classmethod
     def validate_cpf(cls, v: str) -> str:
         """Valida CPF."""
         # Remove formatacao
-        cpf = ''.join(filter(str.isdigit, v))
+        cpf = "".join(filter(str.isdigit, v))
         if len(cpf) != 11:
             raise ValueError("CPF deve ter 11 digitos")
         # Valida digitos repetidos
@@ -206,8 +199,8 @@ class EmployeeEntity(BaseModel):
             raise ValueError("CPF invalido")
         return v
 
-    @model_validator(mode='after')
-    def validate_employee(self) -> 'EmployeeEntity':
+    @model_validator(mode="after")
+    def validate_employee(self) -> "EmployeeEntity":
         """Valida regras de negocio do colaborador."""
         # Valida idade minima (16 anos para aprendiz, 18 para CLT)
         age = self._calculate_age()
@@ -234,8 +227,10 @@ class EmployeeEntity(BaseModel):
     def _calculate_age(self) -> int:
         """Calcula idade do colaborador."""
         today = date.today()
-        return today.year - self.birth_date.year - (
-            (today.month, today.day) < (self.birth_date.month, self.birth_date.day)
+        return (
+            today.year
+            - self.birth_date.year
+            - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
         )
 
     # ==========================================================================
@@ -303,11 +298,7 @@ class EmployeeEntity(BaseModel):
 
         return (self.base_salary * Decimal(months_worked) / Decimal("12")).quantize(Decimal("0.01"))
 
-    def calculate_overtime(
-        self,
-        hours: Decimal,
-        is_holiday: bool = False
-    ) -> Decimal:
+    def calculate_overtime(self, hours: Decimal, is_holiday: bool = False) -> Decimal:
         """Calcula valor de hora extra."""
         hourly_rate = self.base_salary / Decimal("220")  # 220 horas mensais
 
@@ -323,13 +314,7 @@ class EmployeeEntity(BaseModel):
         hourly_rate = self.base_salary / Decimal("220")
         return (hourly_rate * hours * Decimal("0.2")).quantize(Decimal("0.01"))
 
-    def request_leave(
-        self,
-        leave_type: LeaveType,
-        start_date: date,
-        end_date: date,
-        reason: str
-    ) -> LeaveRecord:
+    def request_leave(self, leave_type: LeaveType, start_date: date, end_date: date, reason: str) -> LeaveRecord:
         """Solicita afastamento."""
         if not self.is_active:
             raise ValueError("Colaborador inativo nao pode solicitar afastamento")
@@ -338,29 +323,16 @@ class EmployeeEntity(BaseModel):
         max_days = leave_type.max_days()
 
         if max_days > 0 and days > max_days:
-            raise ValueError(
-                f"Afastamento de {leave_type.value} nao pode exceder {max_days} dias"
-            )
+            raise ValueError(f"Afastamento de {leave_type.value} nao pode exceder {max_days} dias")
 
-        leave = LeaveRecord(
-            leave_type=leave_type,
-            start_date=start_date,
-            end_date=end_date,
-            days=days,
-            reason=reason
-        )
+        leave = LeaveRecord(leave_type=leave_type, start_date=start_date, end_date=end_date, days=days, reason=reason)
 
         self.leave_records.append(leave)
         self.updated_at = datetime.utcnow()
 
         return leave
 
-    def terminate(
-        self,
-        termination_date: date,
-        termination_type: TerminationType,
-        user_id: str
-    ) -> Dict[str, Any]:
+    def terminate(self, termination_date: date, termination_type: TerminationType, user_id: str) -> dict[str, Any]:
         """Processa desligamento do colaborador."""
         if self.status == EmployeeStatus.TERMINATED:
             raise ValueError("Colaborador ja esta desligado")
@@ -376,7 +348,7 @@ class EmployeeEntity(BaseModel):
 
         return severance
 
-    def _calculate_severance(self, term_type: TerminationType) -> Dict[str, Any]:
+    def _calculate_severance(self, term_type: TerminationType) -> dict[str, Any]:
         """Calcula verbas rescisorias."""
         severance = {
             "salary_balance": Decimal("0"),
@@ -385,7 +357,7 @@ class EmployeeEntity(BaseModel):
             "13th_proportional": Decimal("0"),
             "notice_period": Decimal("0"),
             "fgts_penalty": Decimal("0"),
-            "total": Decimal("0")
+            "total": Decimal("0"),
         }
 
         # Saldo de salario (dias trabalhados no mes)
@@ -421,12 +393,7 @@ class EmployeeEntity(BaseModel):
         return severance
 
     def promote(
-        self,
-        new_position_id: UUID,
-        new_position_name: str,
-        new_salary: Decimal,
-        effective_date: date,
-        user_id: str
+        self, new_position_id: UUID, new_position_name: str, new_salary: Decimal, effective_date: date, user_id: str
     ) -> None:
         """Promove o colaborador."""
         if new_salary <= self.base_salary:
@@ -438,12 +405,7 @@ class EmployeeEntity(BaseModel):
         self.updated_at = datetime.utcnow()
         self.updated_by = user_id
 
-    def transfer(
-        self,
-        new_department_id: UUID,
-        new_department_name: str,
-        user_id: str
-    ) -> None:
+    def transfer(self, new_department_id: UUID, new_department_name: str, user_id: str) -> None:
         """Transfere o colaborador de departamento."""
         self.department_id = new_department_id
         self.department_name = new_department_name
@@ -475,7 +437,7 @@ class EmployeeEntity(BaseModel):
         """Gera codigo do colaborador."""
         return f"EMP-{sequence:06d}"
 
-    def to_summary(self) -> Dict[str, Any]:
+    def to_summary(self) -> dict[str, Any]:
         """Retorna resumo do colaborador."""
         return {
             "employee_id": str(self.employee_id),
@@ -486,5 +448,5 @@ class EmployeeEntity(BaseModel):
             "status": self.status,
             "hire_date": self.hire_date.isoformat(),
             "tenure_years": round(self.tenure_years, 1),
-            "employment_type": self.employment_type
+            "employment_type": self.employment_type,
         }

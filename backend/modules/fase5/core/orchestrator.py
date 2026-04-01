@@ -6,17 +6,17 @@ Orquestrador unificado que conecta todas as fases do Conecta PRO.
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Any, Protocol, runtime_checkable
 from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime, timezone
-from uuid import UUID, uuid4
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any, Protocol, runtime_checkable
 
 logger = logging.getLogger(__name__)
 
 
-class PhaseType(str, Enum):
+class PhaseType(StrEnum):
     """Enum para identificar as fases do sistema."""
+
     FASE1_CORE_BUSINESS = "fase1_core"
     FASE2_GESTAO_EMPRESARIAL = "fase2_gestao"
     FASE3_SEGURANCA_SAUDE_GOV = "fase3_security"
@@ -24,8 +24,9 @@ class PhaseType(str, Enum):
     FASE5_EMAIL_CCT_FINALE = "fase5_finale"
 
 
-class SystemComponent(str, Enum):
+class SystemComponent(StrEnum):
     """Componentes principais de cada fase."""
+
     # Fase 1
     CONDOMINIOS = "condominios"
     PROPOSTAS_COMERCIAIS = "propostas_comerciais"
@@ -51,37 +52,36 @@ class SystemComponent(str, Enum):
 @dataclass
 class SystemHealth:
     """Status de saude do sistema."""
+
     component: SystemComponent
     phase: PhaseType
     status: str  # healthy, degraded, unhealthy
     response_time_ms: float
     error_rate: float
-    last_check: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    details: Dict[str, Any] = field(default_factory=dict)
+    last_check: datetime = field(default_factory=lambda: datetime.now(UTC))
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class CrossPhaseEvent:
     """Evento que percorre multiplas fases."""
+
     event_id: str
     event_type: str
     source_phase: PhaseType
     source_component: SystemComponent
-    target_phases: List[PhaseType]
-    data: Dict[str, Any]
+    target_phases: list[PhaseType]
+    data: dict[str, Any]
     correlation_id: str
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    processed_by: List[PhaseType] = field(default_factory=list)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    processed_by: list[PhaseType] = field(default_factory=list)
 
 
 class IntegrationError(Exception):
     """Excecao para erros de integracao."""
+
     def __init__(
-        self,
-        message: str,
-        phase: PhaseType,
-        component: SystemComponent,
-        details: Optional[Dict[str, Any]] = None
+        self, message: str, phase: PhaseType, component: SystemComponent, details: dict[str, Any] | None = None
     ):
         self.message = message
         self.phase = phase
@@ -94,7 +94,7 @@ class IntegrationError(Exception):
 class PhaseInterface(Protocol):
     """Interface que cada fase deve implementar."""
 
-    async def initialize(self, config: Dict[str, Any]) -> bool:
+    async def initialize(self, config: dict[str, Any]) -> bool:
         """Inicializa a fase."""
         ...
 
@@ -102,15 +102,11 @@ class PhaseInterface(Protocol):
         """Verifica saude dos componentes."""
         ...
 
-    async def process_event(self, event: CrossPhaseEvent) -> Dict[str, Any]:
+    async def process_event(self, event: CrossPhaseEvent) -> dict[str, Any]:
         """Processa evento cross-phase."""
         ...
 
-    async def get_data_for_integration(
-        self,
-        component: SystemComponent,
-        query: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def get_data_for_integration(self, component: SystemComponent, query: dict[str, Any]) -> dict[str, Any]:
         """Retorna dados para integracao."""
         ...
 
@@ -127,31 +123,23 @@ class ConectaProOrchestrator:
     5. Garantir consistencia de dados
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         self.config = config
-        self.phases: Dict[PhaseType, PhaseInterface] = {}
-        self.health_status: Dict[PhaseType, List[SystemHealth]] = {}
+        self.phases: dict[PhaseType, PhaseInterface] = {}
+        self.health_status: dict[PhaseType, list[SystemHealth]] = {}
         self.event_queue: asyncio.Queue = asyncio.Queue()
         self.running = False
-        self.correlation_tracker: Dict[str, List[CrossPhaseEvent]] = {}
+        self.correlation_tracker: dict[str, list[CrossPhaseEvent]] = {}
 
-    async def register_phase(
-        self,
-        phase_type: PhaseType,
-        phase_implementation: PhaseInterface
-    ) -> None:
+    async def register_phase(self, phase_type: PhaseType, phase_implementation: PhaseInterface) -> None:
         """Registra uma fase no orquestrador."""
         try:
             logger.info(f"Registering phase: {phase_type}")
 
-            initialized = await phase_implementation.initialize(
-                self.config.get(phase_type.value, {})
-            )
+            initialized = await phase_implementation.initialize(self.config.get(phase_type.value, {}))
             if not initialized:
                 raise IntegrationError(
-                    f"Failed to initialize phase {phase_type}",
-                    phase_type,
-                    SystemComponent.CONDOMINIOS
+                    f"Failed to initialize phase {phase_type}", phase_type, SystemComponent.CONDOMINIOS
                 )
 
             self.phases[phase_type] = phase_implementation
@@ -159,11 +147,7 @@ class ConectaProOrchestrator:
 
         except Exception as e:
             logger.error(f"Error registering phase {phase_type}: {e}")
-            raise IntegrationError(
-                f"Registration failed for {phase_type}",
-                phase_type,
-                SystemComponent.CONDOMINIOS
-            )
+            raise IntegrationError(f"Registration failed for {phase_type}", phase_type, SystemComponent.CONDOMINIOS)
 
     async def start_orchestrator(self) -> None:
         """Inicia o orquestrador."""
@@ -173,7 +157,7 @@ class ConectaProOrchestrator:
         tasks = [
             asyncio.create_task(self._health_monitor()),
             asyncio.create_task(self._event_processor()),
-            asyncio.create_task(self._correlation_cleanup())
+            asyncio.create_task(self._correlation_cleanup()),
         ]
 
         try:
@@ -204,9 +188,7 @@ class ConectaProOrchestrator:
                         self.health_status[phase_type] = self.health_status[phase_type][-10:]
 
                     if health.status != "healthy":
-                        logger.warning(
-                            f"Health issue in {phase_type}: {health.status}"
-                        )
+                        logger.warning(f"Health issue in {phase_type}: {health.status}")
 
                 await asyncio.sleep(30)
 
@@ -218,13 +200,10 @@ class ConectaProOrchestrator:
         """Processador de eventos cross-phase."""
         while self.running:
             try:
-                event = await asyncio.wait_for(
-                    self.event_queue.get(),
-                    timeout=1.0
-                )
+                event = await asyncio.wait_for(self.event_queue.get(), timeout=1.0)
                 await self._process_cross_phase_event(event)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except Exception as e:
                 logger.error(f"Event processor error: {e}")
@@ -233,7 +212,7 @@ class ConectaProOrchestrator:
         """Limpa correlacoes antigas."""
         while self.running:
             try:
-                current_time = datetime.now(timezone.utc)
+                current_time = datetime.now(UTC)
                 expired = []
 
                 for corr_id, events in self.correlation_tracker.items():
@@ -263,14 +242,12 @@ class ConectaProOrchestrator:
                 if target_phase in self.phases and target_phase not in event.processed_by:
                     try:
                         phase = self.phases[target_phase]
-                        result = await phase.process_event(event)
+                        await phase.process_event(event)
                         event.processed_by.append(target_phase)
                         logger.info(f"Event {event.event_id} processed by {target_phase}")
 
                     except Exception as e:
-                        logger.error(
-                            f"Error processing event {event.event_id} in {target_phase}: {e}"
-                        )
+                        logger.error(f"Error processing event {event.event_id} in {target_phase}: {e}")
 
         except Exception as e:
             logger.error(f"Cross-phase event processing error: {e}")
@@ -279,14 +256,14 @@ class ConectaProOrchestrator:
         """Publica evento cross-phase."""
         await self.event_queue.put(event)
 
-    async def get_system_overview(self) -> Dict[str, Any]:
+    async def get_system_overview(self) -> dict[str, Any]:
         """Retorna overview completo do sistema."""
         overview = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "phases": {},
             "overall_health": "healthy",
             "active_correlations": len(self.correlation_tracker),
-            "event_queue_size": self.event_queue.qsize()
+            "event_queue_size": self.event_queue.qsize(),
         }
 
         for phase_type, health_list in self.health_status.items():
@@ -297,7 +274,7 @@ class ConectaProOrchestrator:
                     "component": latest.component.value,
                     "response_time_ms": latest.response_time_ms,
                     "error_rate": latest.error_rate,
-                    "last_check": latest.last_check.isoformat()
+                    "last_check": latest.last_check.isoformat(),
                 }
 
                 if latest.status != "healthy":
@@ -318,12 +295,9 @@ class WorkflowOrchestrator:
 
     def __init__(self, orchestrator: ConectaProOrchestrator):
         self.orchestrator = orchestrator
-        self.workflows: Dict[str, Dict[str, Any]] = {}
+        self.workflows: dict[str, dict[str, Any]] = {}
 
-    async def execute_proposta_comercial_workflow(
-        self,
-        dados_cliente: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def execute_proposta_comercial_workflow(self, dados_cliente: dict[str, Any]) -> dict[str, Any]:
         """
         Workflow completo para proposta comercial:
         1. Fase 1: Dados do condominio e proposta base
@@ -345,7 +319,7 @@ class WorkflowOrchestrator:
                 source_component=SystemComponent.EMAIL_INTELLIGENCE,
                 target_phases=[PhaseType.FASE1_CORE_BUSINESS],
                 data=dados_cliente,
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
             await self.orchestrator.publish_event(fase1_event)
 
@@ -357,7 +331,7 @@ class WorkflowOrchestrator:
                 source_component=SystemComponent.PROPOSTAS_COMERCIAIS,
                 target_phases=[PhaseType.FASE2_GESTAO_EMPRESARIAL],
                 data={**dados_cliente, "fonte": "proposta_comercial"},
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
             await self.orchestrator.publish_event(fase2_event)
 
@@ -369,7 +343,7 @@ class WorkflowOrchestrator:
                 source_component=SystemComponent.CONTABILIDADE,
                 target_phases=[PhaseType.FASE3_SEGURANCA_SAUDE_GOV],
                 data={**dados_cliente, "check_lgpd": True},
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
             await self.orchestrator.publish_event(fase3_event)
 
@@ -383,9 +357,9 @@ class WorkflowOrchestrator:
                 data={
                     **dados_cliente,
                     "cargos_solicitados": dados_cliente.get("cargos", []),
-                    "regime_trabalho": dados_cliente.get("regime", "clt")
+                    "regime_trabalho": dados_cliente.get("regime", "clt"),
                 },
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
             await self.orchestrator.publish_event(fase5_event)
 
@@ -393,21 +367,16 @@ class WorkflowOrchestrator:
                 "workflow_id": workflow_id,
                 "correlation_id": correlation_id,
                 "status": "initiated",
-                "phases_involved": ["fase1", "fase2", "fase3", "fase5"]
+                "phases_involved": ["fase1", "fase2", "fase3", "fase5"],
             }
 
         except Exception as e:
             logger.error(f"Proposta comercial workflow error: {e}")
             raise IntegrationError(
-                f"Workflow failed: {e}",
-                PhaseType.FASE5_EMAIL_CCT_FINALE,
-                SystemComponent.EMAIL_INTELLIGENCE
+                f"Workflow failed: {e}", PhaseType.FASE5_EMAIL_CCT_FINALE, SystemComponent.EMAIL_INTELLIGENCE
             )
 
-    async def execute_admissao_funcionario_workflow(
-        self,
-        dados_funcionario: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def execute_admissao_funcionario_workflow(self, dados_funcionario: dict[str, Any]) -> dict[str, Any]:
         """
         Workflow de admissao de funcionario:
         1. Fase 2: Cadastro RH e calculos trabalhistas
@@ -428,7 +397,7 @@ class WorkflowOrchestrator:
                 source_component=SystemComponent.EMAIL_INTELLIGENCE,
                 target_phases=[PhaseType.FASE2_GESTAO_EMPRESARIAL],
                 data=dados_funcionario,
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
             await self.orchestrator.publish_event(fase2_event)
 
@@ -439,12 +408,8 @@ class WorkflowOrchestrator:
                 source_phase=PhaseType.FASE2_GESTAO_EMPRESARIAL,
                 source_component=SystemComponent.RECURSOS_HUMANOS,
                 target_phases=[PhaseType.FASE3_SEGURANCA_SAUDE_GOV],
-                data={
-                    **dados_funcionario,
-                    "cargo": dados_funcionario.get("cargo"),
-                    "tipo_exame": "admissional"
-                },
-                correlation_id=correlation_id
+                data={**dados_funcionario, "cargo": dados_funcionario.get("cargo"), "tipo_exame": "admissional"},
+                correlation_id=correlation_id,
             )
             await self.orchestrator.publish_event(fase3_event)
 
@@ -459,9 +424,9 @@ class WorkflowOrchestrator:
                     "funcionario": dados_funcionario,
                     "cargo_cct": dados_funcionario.get("cargo"),
                     "validar_salario": True,
-                    "validar_beneficios": True
+                    "validar_beneficios": True,
                 },
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
             await self.orchestrator.publish_event(fase5_event)
 
@@ -470,13 +435,11 @@ class WorkflowOrchestrator:
                 "correlation_id": correlation_id,
                 "status": "initiated",
                 "phases_involved": ["fase2", "fase3", "fase5"],
-                "next_steps": ["exames_medicos", "documentacao", "cct_validation"]
+                "next_steps": ["exames_medicos", "documentacao", "cct_validation"],
             }
 
         except Exception as e:
             logger.error(f"Admissao workflow error: {e}")
             raise IntegrationError(
-                f"Admissao workflow failed: {e}",
-                PhaseType.FASE5_EMAIL_CCT_FINALE,
-                SystemComponent.CCT_COMPLIANCE
+                f"Admissao workflow failed: {e}", PhaseType.FASE5_EMAIL_CCT_FINALE, SystemComponent.CCT_COMPLIANCE
             )

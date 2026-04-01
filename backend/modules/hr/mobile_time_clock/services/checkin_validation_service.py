@@ -2,27 +2,26 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
-    MobileCheckIn,
-    MobileDevice,
     CheckInStatus,
     CheckInType,
-    ValidationMethod,
     DeviceStatus,
+    MobileCheckIn,
+    MobileDevice,
+    ValidationMethod,
 )
 from modules.hr.mobile_time_clock.repositories import (
+    GeofenceZoneRepository,
     MobileCheckInRepository,
     MobileDeviceRepository,
-    GeofenceZoneRepository,
 )
 from modules.hr.mobile_time_clock.schemas import (
-    MobileCheckInCreate,
     CheckInValidationResult,
+    MobileCheckInCreate,
 )
 from modules.hr.mobile_time_clock.services.geofence_service import GeofenceService
 
@@ -84,9 +83,7 @@ class CheckInValidationService:
         # 2. Validar drift de tempo
         time_drift = abs((datetime.utcnow() - data.device_timestamp).total_seconds())
         if time_drift > self.MAX_TIME_DRIFT:
-            warnings.append(
-                f"Diferença de horário detectada: {time_drift:.0f}s"
-            )
+            warnings.append(f"Diferença de horário detectada: {time_drift:.0f}s")
 
         # 3. Verificar duplicata
         is_duplicate = await self.checkin_repo.check_duplicate(
@@ -144,9 +141,7 @@ class CheckInValidationService:
                 validation_methods.append(ValidationMethod.BIOMETRIC.value)
                 score += self.VALIDATION_WEIGHTS[ValidationMethod.BIOMETRIC.value]
             else:
-                warnings.append(
-                    f"Score biométrico baixo: {data.biometric.score:.2f}"
-                )
+                warnings.append(f"Score biométrico baixo: {data.biometric.score:.2f}")
 
         # 6. Validar foto/selfie
         if data.photo and data.photo.captured:
@@ -154,9 +149,7 @@ class CheckInValidationService:
                 validation_methods.append(ValidationMethod.PHOTO.value)
                 score += self.VALIDATION_WEIGHTS[ValidationMethod.PHOTO.value]
             elif data.photo.match_score:
-                warnings.append(
-                    f"Match de foto baixo: {data.photo.match_score:.2f}"
-                )
+                warnings.append(f"Match de foto baixo: {data.photo.match_score:.2f}")
             else:
                 # Foto capturada mas sem match score (revisão manual)
                 validation_methods.append(ValidationMethod.PHOTO.value)
@@ -199,7 +192,7 @@ class CheckInValidationService:
             requires_review=status == CheckInStatus.FLAGGED.value,
         )
 
-    def _validate_device(self, device: MobileDevice) -> Tuple[bool, Optional[str]]:
+    def _validate_device(self, device: MobileDevice) -> tuple[bool, str | None]:
         """Valida se dispositivo pode fazer check-in."""
         if not device.is_active:
             return False, "Dispositivo inativo"
@@ -236,7 +229,7 @@ class CheckInValidationService:
         self,
         checkin: MobileCheckIn,
         employee_id: UUID,
-    ) -> Tuple[bool, Optional[str], Optional[dict]]:
+    ) -> tuple[bool, str | None, dict | None]:
         """Detecta anomalias no check-in."""
         anomaly_type = None
         anomaly_details = {}
@@ -247,13 +240,12 @@ class CheckInValidationService:
         if last_checkin:
             # 1. Verificar velocidade impossível
             if checkin.latitude and last_checkin.latitude:
-                time_diff = (
-                    checkin.checkin_datetime - last_checkin.checkin_datetime
-                ).total_seconds()
+                time_diff = (checkin.checkin_datetime - last_checkin.checkin_datetime).total_seconds()
                 if time_diff > 0:
                     # Calcular distância aproximada
                     # pylint: disable=import-outside-toplevel
                     from modules.hr.mobile_time_clock.models import GeofenceZone
+
                     temp_zone = GeofenceZone(
                         center_latitude=last_checkin.latitude,
                         center_longitude=last_checkin.longitude,
@@ -311,7 +303,7 @@ class CheckInValidationService:
         device: MobileDevice,
         employee_id: UUID,
         condominio_id: UUID,
-    ) -> Tuple[MobileCheckIn, CheckInValidationResult]:
+    ) -> tuple[MobileCheckIn, CheckInValidationResult]:
         """Processa check-in completo com validação."""
         # Validar
         validation = await self.validate_checkin(data, device, employee_id, condominio_id)
@@ -328,10 +320,14 @@ class CheckInValidationService:
         if validation.geofence_zone_id:
             zone = await self.geofence_repo.get_by_id(validation.geofence_zone_id)
             if zone:
-                distance = zone.calculate_distance(
-                    data.location.latitude,
-                    data.location.longitude,
-                ) if data.location else None
+                distance = (
+                    zone.calculate_distance(
+                        data.location.latitude,
+                        data.location.longitude,
+                    )
+                    if data.location
+                    else None
+                )
 
                 await self.checkin_repo.update_geofence(
                     checkin_id=checkin.id,
@@ -372,9 +368,6 @@ class CheckInValidationService:
         # Recarregar check-in
         checkin = await self.checkin_repo.get_by_id(checkin.id)
 
-        logger.info(
-            f"Check-in processado: {checkin.id} - "
-            f"Score: {validation.score} - Valid: {validation.is_valid}"
-        )
+        logger.info(f"Check-in processado: {checkin.id} - Score: {validation.score} - Valid: {validation.is_valid}")
 
         return checkin, validation

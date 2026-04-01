@@ -1,8 +1,8 @@
 """Cost Analysis model - Relatórios e Análises de Custo."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class AnalysisType(str, enum.Enum):
+class AnalysisType(StrEnum):
     """Tipo de análise."""
 
     ABC_COSTING = "ABC_COSTING"  # Custeio ABC
@@ -35,7 +35,7 @@ class AnalysisType(str, enum.Enum):
     CUSTOM = "CUSTOM"  # Personalizada
 
 
-class AnalysisStatus(str, enum.Enum):
+class AnalysisStatus(StrEnum):
     """Status da análise."""
 
     DRAFT = "DRAFT"
@@ -45,7 +45,7 @@ class AnalysisStatus(str, enum.Enum):
     ARCHIVED = "ARCHIVED"
 
 
-class AnalysisScope(str, enum.Enum):
+class AnalysisScope(StrEnum):
     """Escopo da análise."""
 
     GLOBAL = "GLOBAL"  # Toda empresa
@@ -59,7 +59,7 @@ class AnalysisScope(str, enum.Enum):
     CUSTOM = "CUSTOM"  # Personalizado
 
 
-class ReportFormat(str, enum.Enum):
+class ReportFormat(StrEnum):
     """Formato do relatório."""
 
     PDF = "PDF"
@@ -73,9 +73,7 @@ class CostAnalysis(Base):
     """Análise de Custo - geração de relatórios e insights."""
 
     __tablename__ = "fin_cost_analyses"
-    __table_args__ = (
-        UniqueConstraint("condominio_id", "code", name="uq_cost_analysis_code"),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "code", name="uq_cost_analysis_code"),)
 
     # Primary Key
     id = Column(
@@ -306,9 +304,7 @@ class CostAnalysis(Base):
             }
         )
 
-    def add_recommendation(
-        self, action: str, impact: float, priority: str = "medium", details: str = None
-    ) -> None:
+    def add_recommendation(self, action: str, impact: float, priority: str = "medium", details: str = None) -> None:
         """Adiciona recomendação."""
         if self.recommendations is None:
             self.recommendations = []
@@ -335,9 +331,7 @@ class CostAnalysis(Base):
             }
         )
 
-    def calculate_break_even(
-        self, fixed_cost: Decimal, unit_price: Decimal, unit_variable_cost: Decimal
-    ) -> None:
+    def calculate_break_even(self, fixed_cost: Decimal, unit_price: Decimal, unit_variable_cost: Decimal) -> None:
         """Calcula ponto de equilíbrio."""
         contribution_margin = unit_price - unit_variable_cost
         if contribution_margin > 0:

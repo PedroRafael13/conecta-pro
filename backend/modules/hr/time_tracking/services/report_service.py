@@ -1,24 +1,24 @@
 """Serviço de geração de relatórios de ponto."""
 
+import logging
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Dict, Any
-import logging
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import (
-    TimeSheet,
-    TimeEntry,
-    TimeSheetStatus,
     OvertimeStatus,
+    TimeEntry,
+    TimeSheet,
+    TimeSheetStatus,
 )
 from modules.hr.time_tracking.repositories import (
-    TimeSheetRepository,
-    TimeEntryRepository,
-    WorkScheduleRepository,
     OvertimeRepository,
+    TimeEntryRepository,
     TimeJustificationRepository,
+    TimeSheetRepository,
+    WorkScheduleRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class ReportService:
         employee_id: str,
         reference_month: int,
         reference_year: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Gera relatório mensal do funcionário.
 
         Args:
@@ -53,22 +53,16 @@ class ReportService:
             Dict com relatório completo
         """
         # Busca folha de ponto
-        sheet = await self.sheet_repo.get_by_employee_month(
-            employee_id, reference_month, reference_year
-        )
+        sheet = await self.sheet_repo.get_by_employee_month(employee_id, reference_month, reference_year)
 
         if not sheet:
             return {"error": "Folha de ponto não encontrada"}
 
         # Busca registros
-        entries = await self.entry_repo.get_by_employee_period(
-            employee_id, sheet.period_start, sheet.period_end
-        )
+        entries = await self.entry_repo.get_by_employee_period(employee_id, sheet.period_start, sheet.period_end)
 
         # Busca horas extras
-        overtimes = await self.overtime_repo.get_by_employee_period(
-            employee_id, sheet.period_start, sheet.period_end
-        )
+        overtimes = await self.overtime_repo.get_by_employee_period(employee_id, sheet.period_start, sheet.period_end)
 
         # Busca justificativas
         justifications = await self.justification_repo.get_by_employee_period(
@@ -155,29 +149,19 @@ class ReportService:
             "approvals": {
                 "employee_approved": sheet.approved_by_employee,
                 "employee_approved_at": (
-                    sheet.employee_approved_at.isoformat()
-                    if sheet.employee_approved_at else None
+                    sheet.employee_approved_at.isoformat() if sheet.employee_approved_at else None
                 ),
                 "manager_approved": sheet.approved_by_manager,
                 "manager_name": sheet.manager_name,
-                "manager_approved_at": (
-                    sheet.manager_approved_at.isoformat()
-                    if sheet.manager_approved_at else None
-                ),
+                "manager_approved_at": (sheet.manager_approved_at.isoformat() if sheet.manager_approved_at else None),
                 "hr_approved": sheet.approved_by_hr,
                 "hr_name": sheet.hr_approver_name,
-                "hr_approved_at": (
-                    sheet.hr_approved_at.isoformat()
-                    if sheet.hr_approved_at else None
-                ),
+                "hr_approved_at": (sheet.hr_approved_at.isoformat() if sheet.hr_approved_at else None),
             },
             "status": {
                 "status": sheet.status.value,
                 "closed_at": sheet.closed_at.isoformat() if sheet.closed_at else None,
-                "sent_to_payroll_at": (
-                    sheet.sent_to_payroll_at.isoformat()
-                    if sheet.sent_to_payroll_at else None
-                ),
+                "sent_to_payroll_at": (sheet.sent_to_payroll_at.isoformat() if sheet.sent_to_payroll_at else None),
                 "has_pending_issues": sheet.has_pending_issues,
                 "pending_issues": sheet.pending_issues or [],
             },
@@ -191,7 +175,7 @@ class ReportService:
         reference_month: int,
         reference_year: int,
         condominium_id: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Gera relatório consolidado do departamento."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.time_tracking.schemas import TimeSheetFilter
@@ -212,26 +196,26 @@ class ReportService:
         total_hours_worked = sum(s.hours_worked_minutes for s in sheets)
         total_hours_expected = sum(s.hours_expected_minutes for s in sheets)
         total_overtime = sum(s.overtime_total_minutes for s in sheets)
-        total_overtime_value = sum(
-            s.overtime_50_value + s.overtime_100_value for s in sheets
-        )
+        total_overtime_value = sum(s.overtime_50_value + s.overtime_100_value for s in sheets)
         total_night_value = sum(s.night_additional_value for s in sheets)
         total_late_count = sum(s.late_count for s in sheets)
         total_absences = sum(s.absent_days for s in sheets)
 
         employees_summary = []
         for sheet in sheets:
-            employees_summary.append({
-                "employee_id": sheet.employee_id,
-                "employee_name": sheet.employee_name,
-                "hours_worked": sheet.hours_worked,
-                "hours_balance": sheet.hours_balance,
-                "overtime_hours": sheet.overtime_total_hours,
-                "late_count": sheet.late_count,
-                "absent_days": sheet.absent_days,
-                "status": sheet.status.value,
-                "approved": sheet.is_fully_approved,
-            })
+            employees_summary.append(
+                {
+                    "employee_id": sheet.employee_id,
+                    "employee_name": sheet.employee_name,
+                    "hours_worked": sheet.hours_worked,
+                    "hours_balance": sheet.hours_balance,
+                    "overtime_hours": sheet.overtime_total_hours,
+                    "late_count": sheet.late_count,
+                    "absent_days": sheet.absent_days,
+                    "status": sheet.status.value,
+                    "approved": sheet.is_fully_approved,
+                }
+            )
 
         report = {
             "header": {
@@ -255,9 +239,7 @@ class ReportService:
                 "avg_overtime": round(total_overtime / len(sheets) / 60, 2),
                 "sheets_pending": len([s for s in sheets if s.status == TimeSheetStatus.ABERTO]),
                 "sheets_closed": len([s for s in sheets if s.status == TimeSheetStatus.FECHADO]),
-                "sheets_sent": len(
-                    [s for s in sheets if s.status == TimeSheetStatus.ENVIADO_FOLHA]
-                ),
+                "sheets_sent": len([s for s in sheets if s.status == TimeSheetStatus.ENVIADO_FOLHA]),
             },
         }
 
@@ -268,7 +250,7 @@ class ReportService:
         condominium_id: str = None,
         date_from: date = None,
         date_to: date = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Gera relatório de anomalias."""
         entries = await self.entry_repo.get_with_anomalies(
             condominium_id=condominium_id,
@@ -278,8 +260,8 @@ class ReportService:
         )
 
         # Agrupa por tipo de anomalia
-        by_type: Dict[str, List] = {}
-        by_employee: Dict[str, int] = {}
+        by_type: dict[str, list] = {}
+        by_employee: dict[str, int] = {}
 
         for entry in entries:
             anomaly_type = entry.anomaly_type.value if entry.anomaly_type else "unknown"
@@ -287,27 +269,25 @@ class ReportService:
             if anomaly_type not in by_type:
                 by_type[anomaly_type] = []
 
-            by_type[anomaly_type].append({
-                "employee_id": entry.employee_id,
-                "employee_name": entry.employee_name,
-                "date": entry.entry_date.isoformat(),
-                "time": entry.entry_time.isoformat(),
-                "entry_type": entry.entry_type.value,
-                "description": entry.anomaly_description,
-            })
+            by_type[anomaly_type].append(
+                {
+                    "employee_id": entry.employee_id,
+                    "employee_name": entry.employee_name,
+                    "date": entry.entry_date.isoformat(),
+                    "time": entry.entry_time.isoformat(),
+                    "entry_type": entry.entry_type.value,
+                    "description": entry.anomaly_description,
+                }
+            )
 
             emp_key = entry.employee_id
             by_employee[emp_key] = by_employee.get(emp_key, 0) + 1
 
         # Top funcionários com anomalias
-        top_employees = sorted(
-            by_employee.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:10]
+        top_employees = sorted(by_employee.items(), key=lambda x: x[1], reverse=True)[:10]
 
-        date_from_str = date_from.isoformat() if date_from else 'N/A'
-        date_to_str = date_to.isoformat() if date_to else 'N/A'
+        date_from_str = date_from.isoformat() if date_from else "N/A"
+        date_to_str = date_to.isoformat() if date_to else "N/A"
         report = {
             "header": {
                 "period": f"{date_from_str} a {date_to_str}",
@@ -322,8 +302,7 @@ class ReportService:
                 for anomaly_type, items in by_type.items()
             },
             "top_employees_with_anomalies": [
-                {"employee_id": emp_id, "count": count}
-                for emp_id, count in top_employees
+                {"employee_id": emp_id, "count": count} for emp_id, count in top_employees
             ],
             "summary": {
                 "total_unresolved": len(entries),
@@ -339,7 +318,7 @@ class ReportService:
         condominium_id: str = None,
         date_from: date = None,
         date_to: date = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Gera relatório de horas extras."""
         stats = await self.overtime_repo.get_stats(
             condominium_id=condominium_id,
@@ -360,7 +339,7 @@ class ReportService:
         overtimes, _total = await self.overtime_repo.list(filters, limit=500)
 
         # Agrupa por funcionário
-        by_employee: Dict[str, Dict] = {}
+        by_employee: dict[str, dict] = {}
         for ot in overtimes:
             emp_id = ot.employee_id
             if emp_id not in by_employee:
@@ -379,8 +358,8 @@ class ReportService:
             elif ot.status in [OvertimeStatus.PENDENTE, OvertimeStatus.PRE_APROVADO]:
                 by_employee[emp_id]["pending_minutes"] += ot.total_minutes
 
-        date_from_str = date_from.isoformat() if date_from else 'N/A'
-        date_to_str = date_to.isoformat() if date_to else 'N/A'
+        date_from_str = date_from.isoformat() if date_from else "N/A"
+        date_to_str = date_to.isoformat() if date_to else "N/A"
         report = {
             "header": {
                 "period": f"{date_from_str} a {date_to_str}",
@@ -404,11 +383,7 @@ class ReportService:
                     "pending_hours": round(data["pending_minutes"] / 60, 2),
                     "total_value": float(data["total_value"]),
                 }
-                for emp_id, data in sorted(
-                    by_employee.items(),
-                    key=lambda x: x[1]["total_minutes"],
-                    reverse=True
-                )
+                for emp_id, data in sorted(by_employee.items(), key=lambda x: x[1]["total_minutes"], reverse=True)
             ],
         }
 
@@ -430,12 +405,10 @@ class ReportService:
         lines.append(self._afdt_header(date_from, date_to))
 
         # Busca todas as entradas do período
-        entries = await self._get_entries_for_export(
-            condominium_id, date_from, date_to
-        )
+        entries = await self._get_entries_for_export(condominium_id, date_from, date_to)
 
         # Agrupa por funcionário
-        by_employee: Dict[str, List] = {}
+        by_employee: dict[str, list] = {}
         for entry in entries:
             emp_id = entry.employee_id
             if emp_id not in by_employee:
@@ -444,7 +417,7 @@ class ReportService:
 
         # Gera linhas de detalhe (tipo 2)
         seq = 1
-        for emp_id, emp_entries in by_employee.items():
+        for _emp_id, emp_entries in by_employee.items():
             for entry in sorted(emp_entries, key=lambda e: (e.entry_date, e.entry_time)):
                 line = self._afdt_detail_line(entry, seq)
                 lines.append(line)
@@ -468,9 +441,7 @@ class ReportService:
         lines = []
 
         # Busca folhas do período
-        sheets = await self.sheet_repo.get_by_period(
-            reference_month, reference_year, condominium_id
-        )
+        sheets = await self.sheet_repo.get_by_period(reference_month, reference_year, condominium_id)
 
         # Cabeçalho
         lines.append(self._acjef_header(reference_month, reference_year))
@@ -526,7 +497,7 @@ class ReportService:
     def _acjef_detail_line(
         self,
         sheet: TimeSheet,
-        day: Dict,
+        day: dict,
         seq: int,
     ) -> str:
         """Gera linha de detalhe ACJEF."""
@@ -550,7 +521,7 @@ class ReportService:
         condominium_id: str,
         date_from: date,
         date_to: date,
-    ) -> List[TimeEntry]:
+    ) -> list[TimeEntry]:
         """Busca entradas para exportação."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.time_tracking.schemas import TimeEntryFilter

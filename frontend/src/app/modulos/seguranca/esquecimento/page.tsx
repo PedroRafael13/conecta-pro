@@ -80,7 +80,7 @@ export default function EsquecimentoPage() {
   const [selectedItem, setSelectedItem] = useState<ErasureItem | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
-  // Buscar lista de solicitacoes (usa ID vazio com enabled=false para lista)
+  // Buscar lista de solicitações (usa ID vazio com enabled=false para lista)
   const { data: erasureData, isLoading, refetch } = useErasureStatus('', false);
   const requestFull = useRequestFullErasure();
   const requestPersonal = useRequestPersonalDataErasure();
@@ -144,7 +144,7 @@ export default function EsquecimentoPage() {
             Direito ao Esquecimento
           </h1>
           <p className="text-muted-foreground">
-            Gestao de solicitacoes de exclusao de dados (Art. 18 LGPD)
+            Gestão de solicitações de exclusão de dados (Art. 18 LGPD)
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export default function EsquecimentoPage() {
             <DropdownMenuTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Nova Solicitacao
+                Nova Solicitação
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </DropdownMenuTrigger>
@@ -234,7 +234,7 @@ export default function EsquecimentoPage() {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={setStatusFilter} aria-label="Status Filter">
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -258,8 +258,8 @@ export default function EsquecimentoPage() {
           ) : filteredItems.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Trash2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="font-medium">Nenhuma solicitacao encontrada</p>
-              <p className="text-sm mt-1">Crie uma nova solicitacao de exclusao</p>
+              <p className="font-medium">Nenhuma solicitação encontrada</p>
+              <p className="text-sm mt-1">Crie uma nova solicitação de exclusão</p>
             </div>
           ) : (
             <Table>
@@ -345,7 +345,7 @@ export default function EsquecimentoPage() {
             setConfirmModalOpen(false);
             setSelectedItem(null);
           }}
-          title={`Solicitacao: ${selectedItem.holder_name}`}
+          title={`Solicitação: ${selectedItem.holder_name}`}
           message={`Tipo: ${typeLabels[selectedItem.erasure_type] || selectedItem.erasure_type}\nStatus: ${statusLabels[selectedItem.status] || selectedItem.status}\nSolicitado em: ${selectedItem.requested_at ? new Date(selectedItem.requested_at).toLocaleDateString('pt-BR') : '-'}\nConcluido em: ${selectedItem.completed_at ? new Date(selectedItem.completed_at).toLocaleDateString('pt-BR') : '-'}`}
           confirmText="Fechar"
           variant="info"

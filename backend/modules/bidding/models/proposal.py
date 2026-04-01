@@ -7,31 +7,28 @@ Gestao de propostas para editais de licitacao.
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, List
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Numeric, Integer, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models import Base
 
 
-class ProposalStatus(str, Enum):
+class ProposalStatus(StrEnum):
     """Status da proposta."""
-    DRAFT = "draft"                  # Rascunho
-    READY = "ready"                  # Pronta para envio
-    SUBMITTED = "submitted"          # Enviada
+
+    DRAFT = "draft"  # Rascunho
+    READY = "ready"  # Pronta para envio
+    SUBMITTED = "submitted"  # Enviada
     UNDER_ANALYSIS = "under_analysis"  # Em analise
-    CLASSIFIED = "classified"        # Classificada
-    DISQUALIFIED = "disqualified"    # Desclassificada
-    WINNER = "winner"                # Vencedora
-    SECOND_PLACE = "second_place"    # Segundo lugar
-    NEGOTIATING = "negotiating"      # Em negociacao
-    CANCELED = "canceled"            # Cancelada
+    CLASSIFIED = "classified"  # Classificada
+    DISQUALIFIED = "disqualified"  # Desclassificada
+    WINNER = "winner"  # Vencedora
+    SECOND_PLACE = "second_place"  # Segundo lugar
+    NEGOTIATING = "negotiating"  # Em negociacao
+    CANCELED = "canceled"  # Cancelada
 
 
 class BiddingProposal(Base):
@@ -41,6 +38,7 @@ class BiddingProposal(Base):
     Representa uma proposta comercial para um edital especifico,
     com controle de itens, valores, BDI e versionamento.
     """
+
     __tablename__ = "bidding_proposals"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -100,8 +98,8 @@ class BiddingProposal(Base):
 
     # Indices
     __table_args__ = (
-        Index('idx_proposal_tender_status', 'tender_id', 'status'),
-        Index('idx_proposal_versao', 'tender_id', 'versao'),
+        Index("idx_proposal_tender_status", "tender_id", "status"),
+        Index("idx_proposal_versao", "tender_id", "versao"),
     )
 
     def __repr__(self) -> str:
@@ -120,7 +118,7 @@ class BiddingProposal(Base):
         lance = {
             "valor": str(valor),
             "data": (data or datetime.utcnow()).isoformat(),
-            "posicao": len(self.historico_lances) + 1
+            "posicao": len(self.historico_lances) + 1,
         }
         if not self.historico_lances:
             self.historico_lances = []
@@ -134,6 +132,7 @@ class BiddingProposalItem(Base):
 
     Detalha cada item/servico da proposta com valores unitarios e totais.
     """
+
     __tablename__ = "bidding_proposal_items"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

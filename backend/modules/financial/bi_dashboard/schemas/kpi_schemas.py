@@ -2,17 +2,16 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.financial.bi_dashboard.models.kpi_definition import (
+    AlertLevel,
     KPICategory,
     KPIFrequency,
     KPIStatus,
     KPITrend,
-    AlertLevel,
 )
 
 
@@ -20,21 +19,21 @@ class KPIBase(BaseModel):
     """Schema base de KPI."""
 
     nome: str = Field(..., min_length=1, max_length=200)
-    nome_curto: Optional[str] = Field(None, max_length=50)
-    descricao: Optional[str] = Field(None, max_length=2000)
+    nome_curto: str | None = Field(None, max_length=50)
+    descricao: str | None = Field(None, max_length=2000)
     categoria: KPICategory = Field(default=KPICategory.CUSTOM)
     frequencia: KPIFrequency = Field(default=KPIFrequency.DAILY)
     formula: str = Field(..., min_length=1)
-    formula_descricao: Optional[str] = None
+    formula_descricao: str | None = None
 
 
 class KPIThresholds(BaseModel):
     """Thresholds do KPI."""
 
-    warning_min: Optional[Decimal] = None
-    warning_max: Optional[Decimal] = None
-    critical_min: Optional[Decimal] = None
-    critical_max: Optional[Decimal] = None
+    warning_min: Decimal | None = None
+    warning_max: Decimal | None = None
+    critical_min: Decimal | None = None
+    critical_max: Decimal | None = None
 
 
 class KPIFormatting(BaseModel):
@@ -50,9 +49,9 @@ class KPIFormatting(BaseModel):
 class KPITarget(BaseModel):
     """Meta do KPI."""
 
-    valor: Optional[Decimal] = None
-    minimo: Optional[Decimal] = None
-    maximo: Optional[Decimal] = None
+    valor: Decimal | None = None
+    minimo: Decimal | None = None
+    maximo: Decimal | None = None
 
 
 class KPICreate(KPIBase):
@@ -65,12 +64,12 @@ class KPICreate(KPIBase):
     thresholds: KPIThresholds = Field(default_factory=KPIThresholds)
     formatting: KPIFormatting = Field(default_factory=KPIFormatting)
     alert_enabled: bool = Field(default=True)
-    icon: Optional[str] = Field(None, max_length=100)
+    icon: str | None = Field(None, max_length=100)
     color: str = Field(default="#1976d2", max_length=20)
     show_in_summary: bool = Field(default=True)
     order: int = Field(default=0, ge=0)
-    benchmark_valor: Optional[Decimal] = None
-    benchmark_fonte: Optional[str] = Field(None, max_length=200)
+    benchmark_valor: Decimal | None = None
+    benchmark_fonte: str | None = Field(None, max_length=200)
     historico_dias: int = Field(default=365, ge=30, le=1825)
     tags: list = Field(default_factory=list)
 
@@ -78,28 +77,28 @@ class KPICreate(KPIBase):
 class KPIUpdate(BaseModel):
     """Schema para atualizar KPI."""
 
-    nome: Optional[str] = Field(None, min_length=1, max_length=200)
-    nome_curto: Optional[str] = Field(None, max_length=50)
-    descricao: Optional[str] = Field(None, max_length=2000)
-    categoria: Optional[KPICategory] = None
-    status: Optional[KPIStatus] = None
-    frequencia: Optional[KPIFrequency] = None
-    formula: Optional[str] = None
-    formula_descricao: Optional[str] = None
-    variaveis: Optional[dict] = None
-    data_sources: Optional[list] = None
-    meta: Optional[KPITarget] = None
-    thresholds: Optional[KPIThresholds] = None
-    formatting: Optional[KPIFormatting] = None
-    alert_enabled: Optional[bool] = None
-    icon: Optional[str] = Field(None, max_length=100)
-    color: Optional[str] = Field(None, max_length=20)
-    show_in_summary: Optional[bool] = None
-    order: Optional[int] = Field(None, ge=0)
-    benchmark_valor: Optional[Decimal] = None
-    benchmark_fonte: Optional[str] = Field(None, max_length=200)
-    historico_dias: Optional[int] = Field(None, ge=30, le=1825)
-    tags: Optional[list] = None
+    nome: str | None = Field(None, min_length=1, max_length=200)
+    nome_curto: str | None = Field(None, max_length=50)
+    descricao: str | None = Field(None, max_length=2000)
+    categoria: KPICategory | None = None
+    status: KPIStatus | None = None
+    frequencia: KPIFrequency | None = None
+    formula: str | None = None
+    formula_descricao: str | None = None
+    variaveis: dict | None = None
+    data_sources: list | None = None
+    meta: KPITarget | None = None
+    thresholds: KPIThresholds | None = None
+    formatting: KPIFormatting | None = None
+    alert_enabled: bool | None = None
+    icon: str | None = Field(None, max_length=100)
+    color: str | None = Field(None, max_length=20)
+    show_in_summary: bool | None = None
+    order: int | None = Field(None, ge=0)
+    benchmark_valor: Decimal | None = None
+    benchmark_fonte: str | None = Field(None, max_length=200)
+    historico_dias: int | None = Field(None, ge=30, le=1825)
+    tags: list | None = None
 
 
 class KPIResponse(KPIBase):
@@ -111,34 +110,34 @@ class KPIResponse(KPIBase):
     status: KPIStatus
     variaveis: dict = Field(default_factory=dict)
     data_sources: list = Field(default_factory=list)
-    valor_atual: Optional[Decimal] = None
-    valor_anterior: Optional[Decimal] = None
-    variacao_percentual: Optional[Decimal] = None
-    trend: Optional[KPITrend] = None
-    ultimo_calculo_at: Optional[datetime] = None
-    meta_valor: Optional[Decimal] = None
-    meta_minimo: Optional[Decimal] = None
-    meta_maximo: Optional[Decimal] = None
+    valor_atual: Decimal | None = None
+    valor_anterior: Decimal | None = None
+    variacao_percentual: Decimal | None = None
+    trend: KPITrend | None = None
+    ultimo_calculo_at: datetime | None = None
+    meta_valor: Decimal | None = None
+    meta_minimo: Decimal | None = None
+    meta_maximo: Decimal | None = None
     meta_atingida: bool = False
-    meta_percentual: Optional[Decimal] = None
-    threshold_warning_min: Optional[Decimal] = None
-    threshold_warning_max: Optional[Decimal] = None
-    threshold_critical_min: Optional[Decimal] = None
-    threshold_critical_max: Optional[Decimal] = None
+    meta_percentual: Decimal | None = None
+    threshold_warning_min: Decimal | None = None
+    threshold_warning_max: Decimal | None = None
+    threshold_critical_min: Decimal | None = None
+    threshold_critical_max: Decimal | None = None
     alert_level: AlertLevel = AlertLevel.NORMAL
-    alert_message: Optional[str] = None
+    alert_message: str | None = None
     alert_enabled: bool = True
     unidade: str = "R$"
     formato: str = "currency"
     casas_decimais: int = 2
     is_percentage: bool = False
     is_inverted: bool = False
-    icon: Optional[str] = None
+    icon: str | None = None
     color: str = "#1976d2"
     show_in_summary: bool = True
     order: int = 0
-    benchmark_valor: Optional[Decimal] = None
-    benchmark_fonte: Optional[str] = None
+    benchmark_valor: Decimal | None = None
+    benchmark_fonte: str | None = None
     historico_dias: int = 365
     tags: list = Field(default_factory=list)
     is_active: bool = True
@@ -146,7 +145,7 @@ class KPIResponse(KPIBase):
     progress_to_target: Decimal = Decimal("0")
     is_improving: bool = False
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -158,10 +157,10 @@ class KPIValue(BaseModel):
     codigo: str
     nome: str
     valor: Decimal
-    valor_anterior: Optional[Decimal] = None
-    variacao: Optional[Decimal] = None
-    trend: Optional[str] = None
-    meta: Optional[Decimal] = None
+    valor_anterior: Decimal | None = None
+    variacao: Decimal | None = None
+    trend: str | None = None
+    meta: Decimal | None = None
     meta_atingida: bool = False
     alert_level: str = "NORMAL"
     formatted_value: str
@@ -183,23 +182,23 @@ class KPIHistory(BaseModel):
     codigo: str
     nome: str
     entries: list[KPIHistoryEntry]
-    min_value: Optional[Decimal] = None
-    max_value: Optional[Decimal] = None
-    avg_value: Optional[Decimal] = None
-    trend: Optional[str] = None
+    min_value: Decimal | None = None
+    max_value: Decimal | None = None
+    avg_value: Decimal | None = None
+    trend: str | None = None
     period_days: int
 
 
 class KPIFilters(BaseModel):
     """Filtros para busca de KPIs."""
 
-    categoria: Optional[KPICategory] = None
-    status: Optional[KPIStatus] = None
-    frequencia: Optional[KPIFrequency] = None
-    alert_level: Optional[AlertLevel] = None
-    show_in_summary: Optional[bool] = None
-    search: Optional[str] = Field(None, max_length=200)
-    tags: Optional[list[str]] = None
+    categoria: KPICategory | None = None
+    status: KPIStatus | None = None
+    frequencia: KPIFrequency | None = None
+    alert_level: AlertLevel | None = None
+    show_in_summary: bool | None = None
+    search: str | None = Field(None, max_length=200)
+    tags: list[str] | None = None
 
 
 class KPISummary(BaseModel):
@@ -220,7 +219,7 @@ class KPISummary(BaseModel):
 class KPICalculate(BaseModel):
     """Solicitar calculo de KPI."""
 
-    kpi_ids: Optional[list[UUID]] = None
+    kpi_ids: list[UUID] | None = None
     force_refresh: bool = Field(default=False)
     save_history: bool = Field(default=True)
 
@@ -234,4 +233,4 @@ class KPIBenchmark(BaseModel):
     diferenca: Decimal
     diferenca_percentual: Decimal
     status: str
-    fonte: Optional[str] = None
+    fonte: str | None = None

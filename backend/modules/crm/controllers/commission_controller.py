@@ -3,7 +3,6 @@ Controller (endpoints) para Commission.
 """
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +12,6 @@ from core.database import get_db
 from core.logging import logger
 from modules.crm.models.commission import CommissionStatus, CommissionTrigger
 from modules.crm.repositories.commission_repository import CommissionRepository
-from modules.crm.services.commission_service import CommissionService
 from modules.crm.schemas.commission import (
     CommissionApprove,
     CommissionCalculateRequest,
@@ -38,6 +36,7 @@ from modules.crm.schemas.commission import (
     SellerCommissionRuleResponse,
     SellerCommissionStats,
 )
+from modules.crm.services.commission_service import CommissionService
 
 router = APIRouter(prefix="/commissions", tags=["CRM - Commissions"])
 
@@ -164,10 +163,7 @@ async def assign_rule_to_seller(
     """Associa regra de comissão a um vendedor específico."""
     repo = CommissionRepository(db)
     seller_rule = await repo.assign_rule_to_seller(data)
-    logger.info(
-        f"Regra {data.rule_id} atribuída ao vendedor {data.seller_id} "
-        f"por {current_user.email}"
-    )
+    logger.info(f"Regra {data.rule_id} atribuída ao vendedor {data.seller_id} por {current_user.email}")
     return SellerCommissionRuleResponse.model_validate(seller_rule)
 
 
@@ -196,7 +192,7 @@ async def create_commission(
     return CommissionResponse.model_validate(commission)
 
 
-@router.post("/calculate", response_model=CommissionResponse)
+@router.post("/calculate", response_model=CommissionResponse, status_code=201)
 async def calculate_commission(
     data: CommissionCalculateRequest,
     current_user: CurrentActiveUser,
@@ -248,23 +244,23 @@ async def calculate_commission(
     return CommissionResponse.model_validate(commission)
 
 
-@router.get("/", response_model=CommissionListResponse)
+@router.get("", response_model=CommissionListResponse)
 async def list_commissions(  # pylint: disable=too-many-locals
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    seller_id: Optional[str] = None,
-    proposal_id: Optional[str] = None,
-    status_filter: Optional[CommissionStatus] = Query(None, alias="status"),
-    trigger: Optional[CommissionTrigger] = None,
-    is_overdue: Optional[bool] = None,
-    min_value: Optional[float] = Query(None, ge=0),
-    max_value: Optional[float] = Query(None, ge=0),
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    due_date_from: Optional[date] = None,
-    due_date_to: Optional[date] = None,
+    seller_id: str | None = None,
+    proposal_id: str | None = None,
+    status_filter: CommissionStatus | None = Query(None, alias="status"),
+    trigger: CommissionTrigger | None = None,
+    is_overdue: bool | None = None,
+    min_value: float | None = Query(None, ge=0),
+    max_value: float | None = Query(None, ge=0),
+    date_from: date | None = None,
+    date_to: date | None = None,
+    due_date_from: date | None = None,
+    due_date_to: date | None = None,
 ) -> CommissionListResponse:
     """Lista comissões com filtros."""
     repo = CommissionRepository(db)
@@ -299,8 +295,8 @@ async def list_commissions(  # pylint: disable=too-many-locals
 async def get_commission_stats(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
 ) -> CommissionStats:
     """Retorna estatísticas de comissões."""
     repo = CommissionRepository(db)
@@ -317,7 +313,7 @@ async def get_seller_commission_stats(
     seller_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    target: Optional[float] = None,
+    target: float | None = None,
 ) -> SellerCommissionStats:
     """Retorna estatísticas de comissões de um vendedor."""
     repo = CommissionRepository(db)
@@ -333,6 +329,74 @@ async def get_seller_commission_stats(
     )
 
     return stats
+
+
+# ============== Summary Endpoints (devem vir antes de /{commission_id}) ==============
+
+
+@router.get("/summaries", response_model=list[CommissionSummaryResponse])
+async def list_commission_summaries(
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),
+    seller_id: str | None = None,
+    year: int | None = None,
+    month: int | None = None,
+    is_closed: bool | None = None,
+) -> list[CommissionSummaryResponse]:
+    """Lista resumos mensais de comissões."""
+    repo = CommissionRepository(db)
+
+    filters = CommissionSummaryFilter(
+        seller_id=seller_id,
+        year=year,
+        month=month,
+        is_closed=is_closed,
+    )
+
+    summaries = await repo.list_summaries(filters)
+    return [CommissionSummaryResponse.model_validate(s) for s in summaries]
+
+
+@router.get(
+    "/summaries/{seller_id}/{year}/{month}",
+    response_model=CommissionSummaryResponse,
+)
+async def get_commission_summary(
+    seller_id: str,
+    year: int,
+    month: int,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),
+) -> CommissionSummaryResponse:
+    """Busca ou cria resumo mensal de um vendedor."""
+    repo = CommissionRepository(db)
+    summary = await repo.update_summary(seller_id, year, month)
+    return CommissionSummaryResponse.model_validate(summary)
+
+
+@router.post("/summaries/{seller_id}/{year}/{month}/close", response_model=CommissionSummaryResponse, status_code=201)
+async def close_commission_summary(
+    seller_id: str,
+    year: int,
+    month: int,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> CommissionSummaryResponse:
+    """Fecha resumo mensal (impede alterações)."""
+    repo = CommissionRepository(db)
+    summary = await repo.close_summary(seller_id, year, month)
+
+    if not summary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resumo não encontrado",
+        )
+
+    logger.info(f"Summary {seller_id}/{year}/{month} fechado por {current_user.email}")
+    return CommissionSummaryResponse.model_validate(summary)
+
+
+# ============== Commission by ID (deve vir DEPOIS de rotas estáticas) ==============
 
 
 @router.get("/{commission_id}", response_model=CommissionDetailResponse)
@@ -397,14 +461,11 @@ async def update_commission_status(
             detail="Comissão não encontrada",
         )
 
-    logger.info(
-        f"Commission {commission_id} status alterado para {data.status.value} "
-        f"por {current_user.email}"
-    )
+    logger.info(f"Commission {commission_id} status alterado para {data.status.value} por {current_user.email}")
     return CommissionResponse.model_validate(commission)
 
 
-@router.post("/{commission_id}/approve", response_model=CommissionResponse)
+@router.post("/{commission_id}/approve", response_model=CommissionResponse, status_code=201)
 async def approve_commission(
     commission_id: str,
     data: CommissionApprove,
@@ -484,10 +545,7 @@ async def create_commission_payment(
     return CommissionPaymentResponse.model_validate(payment)
 
 
-@router.post(
-    "/payments/{payment_id}/confirm",
-    response_model=CommissionPaymentResponse,
-)
+@router.post("/payments/{payment_id}/confirm", response_model=CommissionPaymentResponse, status_code=201)
 async def confirm_commission_payment(
     payment_id: str,
     data: CommissionPaymentConfirm,
@@ -512,69 +570,4 @@ async def confirm_commission_payment(
     return CommissionPaymentResponse.model_validate(payment)
 
 
-# ============== Summary Endpoints ==============
-
-
-@router.get("/summaries", response_model=list[CommissionSummaryResponse])
-async def list_commission_summaries(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    db: AsyncSession = Depends(get_db),
-    seller_id: Optional[str] = None,
-    year: Optional[int] = None,
-    month: Optional[int] = None,
-    is_closed: Optional[bool] = None,
-) -> list[CommissionSummaryResponse]:
-    """Lista resumos mensais de comissões."""
-    repo = CommissionRepository(db)
-
-    filters = CommissionSummaryFilter(
-        seller_id=seller_id,
-        year=year,
-        month=month,
-        is_closed=is_closed,
-    )
-
-    summaries = await repo.list_summaries(filters)
-    return [CommissionSummaryResponse.model_validate(s) for s in summaries]
-
-
-@router.get(
-    "/summaries/{seller_id}/{year}/{month}",
-    response_model=CommissionSummaryResponse,
-)
-async def get_commission_summary(
-    seller_id: str,
-    year: int,
-    month: int,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    db: AsyncSession = Depends(get_db),
-) -> CommissionSummaryResponse:
-    """Busca ou cria resumo mensal de um vendedor."""
-    repo = CommissionRepository(db)
-    summary = await repo.update_summary(seller_id, year, month)
-    return CommissionSummaryResponse.model_validate(summary)
-
-
-@router.post(
-    "/summaries/{seller_id}/{year}/{month}/close",
-    response_model=CommissionSummaryResponse,
-)
-async def close_commission_summary(
-    seller_id: str,
-    year: int,
-    month: int,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> CommissionSummaryResponse:
-    """Fecha resumo mensal (impede alterações)."""
-    repo = CommissionRepository(db)
-    summary = await repo.close_summary(seller_id, year, month)
-
-    if not summary:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resumo não encontrado",
-        )
-
-    logger.info(f"Summary {seller_id}/{year}/{month} fechado por {current_user.email}")
-    return CommissionSummaryResponse.model_validate(summary)
+# (Summary endpoints movidos para antes de /{commission_id} — ver acima)

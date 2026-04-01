@@ -3,16 +3,13 @@ APIEndpoint Model - Endpoints de API disponíveis
 Sprint 32: API Gateway / Integrações
 """
 
-import enum
 from datetime import datetime
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -21,8 +18,9 @@ if TYPE_CHECKING:
     from modules.integrations.models.integration_log import IntegrationLog
 
 
-class HTTPMethod(str, enum.Enum):
+class HTTPMethod(StrEnum):
     """Métodos HTTP suportados."""
+
     GET = "GET"
     POST = "POST"
     PUT = "PUT"
@@ -32,8 +30,9 @@ class HTTPMethod(str, enum.Enum):
     OPTIONS = "OPTIONS"
 
 
-class EndpointCategory(str, enum.Enum):
+class EndpointCategory(StrEnum):
     """Categoria do endpoint."""
+
     AUTHENTICATION = "authentication"
     CLIENTS = "clients"
     SERVICES = "services"
@@ -46,8 +45,9 @@ class EndpointCategory(str, enum.Enum):
     ADMIN = "admin"
 
 
-class EndpointStatus(str, enum.Enum):
+class EndpointStatus(StrEnum):
     """Status do endpoint."""
+
     ACTIVE = "active"
     DEPRECATED = "deprecated"
     BETA = "beta"
@@ -55,8 +55,9 @@ class EndpointStatus(str, enum.Enum):
     DISABLED = "disabled"
 
 
-class RateLimitType(str, enum.Enum):
+class RateLimitType(StrEnum):
     """Tipo de rate limit."""
+
     PER_SECOND = "per_second"
     PER_MINUTE = "per_minute"
     PER_HOUR = "per_hour"
@@ -68,6 +69,7 @@ class APIEndpoint(Base):
     Model para endpoints de API disponíveis.
     Gerencia a documentação e controle de endpoints.
     """
+
     __tablename__ = "api_endpoints"
 
     # Primary key
@@ -81,18 +83,10 @@ class APIEndpoint(Base):
     # Endpoint
     path = Column(String(500), nullable=False)
     method = Column(Enum(HTTPMethod), nullable=False)
-    category = Column(
-        Enum(EndpointCategory),
-        nullable=False,
-        default=EndpointCategory.SERVICES
-    )
+    category = Column(Enum(EndpointCategory), nullable=False, default=EndpointCategory.SERVICES)
 
     # Status
-    status = Column(
-        Enum(EndpointStatus),
-        nullable=False,
-        default=EndpointStatus.ACTIVE
-    )
+    status = Column(Enum(EndpointStatus), nullable=False, default=EndpointStatus.ACTIVE)
     deprecated_at = Column(DateTime, nullable=True)
     sunset_date = Column(DateTime, nullable=True)
     replacement_endpoint_id = Column(UUID(as_uuid=True), nullable=True)
@@ -105,11 +99,7 @@ class APIEndpoint(Base):
 
     # Rate Limiting
     rate_limit_enabled = Column(Boolean, nullable=False, default=True)
-    rate_limit_type = Column(
-        Enum(RateLimitType),
-        nullable=True,
-        default=RateLimitType.PER_MINUTE
-    )
+    rate_limit_type = Column(Enum(RateLimitType), nullable=True, default=RateLimitType.PER_MINUTE)
     rate_limit_value = Column(Integer, nullable=True, default=60)
     rate_limit_by_key = Column(Boolean, nullable=False, default=True)
 
@@ -154,17 +144,13 @@ class APIEndpoint(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    logs: List["IntegrationLog"] = relationship(
-        "IntegrationLog",
-        back_populates="endpoint",
-        foreign_keys="IntegrationLog.endpoint_id"
+    logs: list["IntegrationLog"] = relationship(
+        "IntegrationLog", back_populates="endpoint", foreign_keys="IntegrationLog.endpoint_id"
     )
 
     # Índices
@@ -189,16 +175,14 @@ class APIEndpoint(Base):
 
         # Média móvel do tempo de resposta
         if self.avg_response_time_ms:
-            self.avg_response_time_ms = int(
-                (self.avg_response_time_ms + response_time_ms) / 2
-            )
+            self.avg_response_time_ms = int((self.avg_response_time_ms + response_time_ms) / 2)
         else:
             self.avg_response_time_ms = response_time_ms
 
         self.last_called_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
-    def deprecate(self, replacement_id: Optional[str] = None) -> None:
+    def deprecate(self, replacement_id: str | None = None) -> None:
         """Deprecia o endpoint."""
         self.status = EndpointStatus.DEPRECATED
         self.deprecated_at = datetime.utcnow()

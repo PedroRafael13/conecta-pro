@@ -6,19 +6,19 @@ Demonstra o fluxo completo de extração sem chamar APIs reais.
 """
 
 import sys
-from datetime import datetime, timedelta
-from uuid import uuid4
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any
+from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any, Optional
+from uuid import uuid4
 
 # Cores
-GREEN = '\033[92m'
-BLUE = '\033[94m'
-YELLOW = '\033[93m'
-CYAN = '\033[96m'
-RESET = '\033[0m'
-BOLD = '\033[1m'
+GREEN = "\033[92m"
+BLUE = "\033[94m"
+YELLOW = "\033[93m"
+CYAN = "\033[96m"
+RESET = "\033[0m"
+BOLD = "\033[1m"
 
 
 class TipoServico(Enum):
@@ -34,22 +34,22 @@ class TipoServico(Enum):
 class DocumentoSimulado:
     id: str
     tipo: str
-    dados: Dict[str, Any]
+    dados: dict[str, Any]
     processado: bool = True
-    erro: Optional[str] = None
+    erro: str | None = None
 
 
 @dataclass
 class ResultadoSimulado:
     servico: str
     inicio: datetime
-    fim: Optional[datetime] = None
+    fim: datetime | None = None
     status: str = "pendente"
-    documentos: List[DocumentoSimulado] = field(default_factory=list)
+    documentos: list[DocumentoSimulado] = field(default_factory=list)
     documentos_processados: int = 0
     documentos_novos: int = 0
     documentos_erro: int = 0
-    erros: List[str] = field(default_factory=list)
+    erros: list[str] = field(default_factory=list)
 
 
 class SimuladorExtracao:
@@ -58,7 +58,7 @@ class SimuladorExtracao:
     def __init__(self):
         self.resultados = {}
 
-    def simular_nfe(self, cnpjs: List[str], dias: int = 30) -> ResultadoSimulado:
+    def simular_nfe(self, cnpjs: list[str], dias: int = 30) -> ResultadoSimulado:
         """Simula extração de NF-e."""
         print(f"\n{CYAN}[SEFAZ NF-e]{RESET} Consultando NFeDistribuicaoDFe...")
 
@@ -77,11 +77,11 @@ class SimuladorExtracao:
                     id=f"nfe_{cnpj}_{i}",
                     tipo="nfe",
                     dados={
-                        "chave": f"35{datetime.now().strftime('%y%m')}0{cnpj}55001{'%09d' % i}1",
+                        "chave": f"35{datetime.now().strftime('%y%m')}0{cnpj}55001{i:09d}1",
                         "valor_total": 1500.00 + (i * 100),
                         "emitente": cnpj,
                         "data_emissao": (datetime.utcnow() - timedelta(days=i)).isoformat(),
-                    }
+                    },
                 )
                 resultado.documentos.append(doc)
                 resultado.documentos_processados += 1
@@ -93,7 +93,7 @@ class SimuladorExtracao:
         resultado.status = "concluida"
         return resultado
 
-    def simular_esocial(self, cnpjs: List[str]) -> ResultadoSimulado:
+    def simular_esocial(self, cnpjs: list[str]) -> ResultadoSimulado:
         """Simula extração do eSocial."""
         print(f"\n{CYAN}[eSocial]{RESET} Consultando eventos...")
 
@@ -115,7 +115,7 @@ class SimuladorExtracao:
                         "cnpj": cnpj,
                         "competencia": datetime.utcnow().strftime("%Y-%m"),
                         "status": "processado",
-                    }
+                    },
                 )
                 resultado.documentos.append(doc)
                 resultado.documentos_processados += 1
@@ -127,7 +127,7 @@ class SimuladorExtracao:
         resultado.status = "concluida"
         return resultado
 
-    def simular_fgts(self, cnpjs: List[str]) -> ResultadoSimulado:
+    def simular_fgts(self, cnpjs: list[str]) -> ResultadoSimulado:
         """Simula extração do FGTS Digital."""
         print(f"\n{CYAN}[FGTS Digital]{RESET} Consultando guias...")
 
@@ -141,7 +141,7 @@ class SimuladorExtracao:
 
             # Simular 3 competências
             for m in range(3):
-                competencia = (datetime.utcnow() - timedelta(days=30*m)).strftime("%Y%m")
+                competencia = (datetime.utcnow() - timedelta(days=30 * m)).strftime("%Y%m")
                 doc = DocumentoSimulado(
                     id=f"fgts_{cnpj}_{competencia}",
                     tipo="guia_fgts",
@@ -150,7 +150,7 @@ class SimuladorExtracao:
                         "competencia": competencia,
                         "valor": 2500.00 + (m * 100),
                         "status": "gerada",
-                    }
+                    },
                 )
                 resultado.documentos.append(doc)
                 resultado.documentos_processados += 1
@@ -162,7 +162,7 @@ class SimuladorExtracao:
         resultado.status = "concluida"
         return resultado
 
-    def simular_nfse(self, cnpjs: List[str]) -> ResultadoSimulado:
+    def simular_nfse(self, cnpjs: list[str]) -> ResultadoSimulado:
         """Simula extração de NFS-e Manaus."""
         print(f"\n{CYAN}[NFS-e Manaus]{RESET} Consultando notas...")
 
@@ -182,8 +182,8 @@ class SimuladorExtracao:
                         "numero": f"2024{i:06d}",
                         "cnpj_prestador": cnpj,
                         "valor_servico": 3000.00 + (i * 500),
-                        "data_emissao": (datetime.utcnow() - timedelta(days=i*7)).isoformat(),
-                    }
+                        "data_emissao": (datetime.utcnow() - timedelta(days=i * 7)).isoformat(),
+                    },
                 )
                 resultado.documentos.append(doc)
                 resultado.documentos_processados += 1
@@ -195,7 +195,7 @@ class SimuladorExtracao:
         resultado.status = "concluida"
         return resultado
 
-    def simular_rfb(self, cnpjs: List[str]) -> ResultadoSimulado:
+    def simular_rfb(self, cnpjs: list[str]) -> ResultadoSimulado:
         """Simula consulta à Receita Federal."""
         print(f"\n{CYAN}[Receita Federal]{RESET} Consultando CNPJs...")
 
@@ -216,7 +216,7 @@ class SimuladorExtracao:
                     "situacao": "ATIVA",
                     "data_situacao": "2020-01-15",
                     "natureza_juridica": "206-2 - Sociedade Empresária Limitada",
-                }
+                },
             )
             resultado.documentos.append(doc)
             resultado.documentos_processados += 1
@@ -241,7 +241,7 @@ def executar_simulacao():
     print(f"\n{BOLD}Configuração:{RESET}")
     print(f"  Tenant ID: {tenant_id}")
     print(f"  CNPJs: {len(cnpjs)}")
-    print(f"  Período: Últimos 30 dias")
+    print("  Período: Últimos 30 dias")
     print(f"  Início: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}")
 
     simulador = SimuladorExtracao()
@@ -305,4 +305,5 @@ if __name__ == "__main__":
 
     print(f"{BOLD}Resultado JSON:{RESET}")
     import json
+
     print(json.dumps(resultado, indent=2))

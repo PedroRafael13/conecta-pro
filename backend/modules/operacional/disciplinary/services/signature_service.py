@@ -7,15 +7,14 @@ Quality Score Target: 99+/100
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
 from modules.operacional.disciplinary.models import (
+    DigitalSignature,
     DisciplinaryAction,
     DisciplinaryActionStatus,
-    DigitalSignature,
     SignerType,
 )
 from modules.operacional.disciplinary.repositories import (
@@ -23,12 +22,11 @@ from modules.operacional.disciplinary.repositories import (
     SignatureRepository,
 )
 from modules.operacional.disciplinary.schemas import (
-    SignatureCreate,
-    SignatureResponse,
-    SignRequest,
     RefuseSignRequest,
+    SignatureCreate,
     SignatureVerifyRequest,
     SignatureVerifyResponse,
+    SignRequest,
 )
 
 
@@ -75,7 +73,7 @@ class SignatureService:
         tenant_id: str,
         signer_id: str,
         signer_name: str,
-        signer_cpf: Optional[str],
+        signer_cpf: str | None,
         request: SignRequest,
     ) -> DigitalSignature:
         """
@@ -101,14 +99,10 @@ class SignatureService:
             raise SignatureValidationError(f"Medida {action_id} nao encontrada")
 
         if not action.can_be_signed:
-            raise SignatureValidationError(
-                f"Medida {action.code} nao pode ser assinada no status {action.status}"
-            )
+            raise SignatureValidationError(f"Medida {action.code} nao pode ser assinada no status {action.status}")
 
         if not action.document_text:
-            raise SignatureValidationError(
-                f"Medida {action.code} nao possui documento gerado"
-            )
+            raise SignatureValidationError(f"Medida {action.code} nao possui documento gerado")
 
         # Calcular hash do documento atual
         document_hash = DigitalSignature.create_hash(action.document_text)
@@ -291,9 +285,7 @@ class SignatureService:
         """
         signature = await self.repo.get_by_id(request.signature_id, tenant_id)
         if not signature:
-            raise SignatureNotFoundError(
-                f"Assinatura {request.signature_id} nao encontrada"
-            )
+            raise SignatureNotFoundError(f"Assinatura {request.signature_id} nao encontrada")
 
         # Verificar hash
         hash_matches = signature.verify_hash(request.document_content)
@@ -318,9 +310,7 @@ class SignatureService:
             message=message,
         )
 
-    async def get_by_id(
-        self, signature_id: str, tenant_id: str
-    ) -> DigitalSignature:
+    async def get_by_id(self, signature_id: str, tenant_id: str) -> DigitalSignature:
         """
         Busca assinatura por ID.
 
@@ -343,7 +333,7 @@ class SignatureService:
         self,
         document_id: str,
         tenant_id: str,
-    ) -> List[DigitalSignature]:
+    ) -> list[DigitalSignature]:
         """
         Lista assinaturas de um documento.
 
@@ -354,9 +344,7 @@ class SignatureService:
         Returns:
             Lista de assinaturas
         """
-        return await self.repo.get_by_document(
-            "disciplinary_action", document_id, tenant_id
-        )
+        return await self.repo.get_by_document("disciplinary_action", document_id, tenant_id)
 
     async def invalidate(
         self,

@@ -9,7 +9,7 @@ Este serviço implementa algoritmos inteligentes para:
 """
 
 from datetime import date, time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from core.logging import logger
 from modules.operacional.schemas.substitution import SubstituteSuggestion
@@ -42,9 +42,9 @@ class SubstitutionService:
         shift_start: time,
         shift_end: time,
         available_employees: list[dict[str, Any]],
-        post_location: Optional[Tuple[float, float]] = None,
+        post_location: tuple[float, float] | None = None,
         max_suggestions: int = 5,
-        config: Optional[dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> list[SubstituteSuggestion]:
         """
         Sugere substitutos para um turno.
@@ -62,7 +62,7 @@ class SubstitutionService:
         Returns:
             Lista de sugestões ordenadas por score
         """
-        logger.info(f"Buscando substitutos para turno {shift_date} " f"no posto {post_id}")
+        logger.info(f"Buscando substitutos para turno {shift_date} no posto {post_id}")
 
         if not available_employees:
             logger.warning("Nenhum funcionário disponível")
@@ -131,9 +131,9 @@ class SubstitutionService:
         post_id: str,  # pylint: disable=unused-argument
         shift_date: date,  # pylint: disable=unused-argument
         is_night_shift: bool,
-        post_location: Optional[Tuple[float, float]],
-        config: Optional[dict[str, Any]],  # pylint: disable=unused-argument
-    ) -> Tuple[float, list[str]]:
+        post_location: tuple[float, float] | None,
+        config: dict[str, Any] | None,  # pylint: disable=unused-argument
+    ) -> tuple[float, list[str]]:
         """
         Calcula score de adequação do funcionário.
 
@@ -221,7 +221,9 @@ class SubstitutionService:
         return round(normalized_score, 1), reasons
 
     def _evaluate_availability(
-        self, employee: dict[str, Any], shift_date: date  # pylint: disable=unused-argument
+        self,
+        employee: dict[str, Any],
+        shift_date: date,  # pylint: disable=unused-argument
     ) -> float:
         """Avalia disponibilidade do funcionário."""
         # Verificar se já tem turno no dia
@@ -245,9 +247,9 @@ class SubstitutionService:
 
     def _calculate_distance(
         self,
-        location1: Tuple[float, float],
-        location2: Tuple[float, float],
-    ) -> Optional[float]:
+        location1: tuple[float, float],
+        location2: tuple[float, float],
+    ) -> float | None:
         """
         Calcula distância entre dois pontos em km (fórmula de Haversine).
         """
@@ -264,9 +266,7 @@ class SubstitutionService:
 
             a = (
                 math.sin(dlat / 2) ** 2
-                + math.cos(math.radians(lat1))
-                * math.cos(math.radians(lat2))
-                * math.sin(dlon / 2) ** 2
+                + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
             )
             c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
@@ -285,7 +285,9 @@ class SubstitutionService:
         return (end_minutes - start_minutes) / 60
 
     def _check_overtime(
-        self, employee: dict[str, Any], shift_date: date  # pylint: disable=unused-argument
+        self,
+        employee: dict[str, Any],
+        shift_date: date,  # pylint: disable=unused-argument
     ) -> bool:
         """Verifica se será hora extra."""
         weekly_hours = employee.get("weekly_hours_worked", 0)
@@ -293,7 +295,7 @@ class SubstitutionService:
 
     def _estimate_cost(
         self,
-        employee: Dict[str, Any],
+        employee: dict[str, Any],
         shift_hours: float,
         is_overtime: bool,
     ) -> float:
@@ -306,7 +308,9 @@ class SubstitutionService:
         return shift_hours * hourly_rate
 
     def _get_availability_status(
-        self, employee: dict[str, Any], shift_date: date  # pylint: disable=unused-argument
+        self,
+        employee: dict[str, Any],
+        shift_date: date,  # pylint: disable=unused-argument
     ) -> str:
         """Retorna status de disponibilidade."""
         shifts_on_date = employee.get("shifts_on_date", 0)
@@ -325,7 +329,7 @@ class SubstitutionService:
         is_overtime: bool = False,
         is_holiday: bool = False,
         is_sunday: bool = False,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calcula custo adicional da substituição.
 

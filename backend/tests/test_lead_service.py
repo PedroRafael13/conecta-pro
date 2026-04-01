@@ -35,6 +35,7 @@ class TestLeadScoringEngine:
     def test_calculate_score_minimal_lead(self):
         """Testa scoring de lead com dados mínimos."""
         from datetime import datetime
+
         from modules.crm.models.lead import Lead
 
         # Criar lead diretamente com dados mínimos

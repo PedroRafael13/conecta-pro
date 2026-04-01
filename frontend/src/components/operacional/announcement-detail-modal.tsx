@@ -2,9 +2,15 @@
 
 import { X, Megaphone, Edit2, Send, Clock, CheckCircle, Users, Calendar, FileText, Eye, BarChart3 } from 'lucide-react';
 import { useEffect } from 'react';
-;
 import { Button } from '@/components/ui/button';
 import { useAnnouncementReadStats } from '@/hooks/useAnnouncements';
+import type { Announcement } from '@/lib/services/announcements';
+import {
+  ANNOUNCEMENT_CATEGORY_LABELS,
+  ANNOUNCEMENT_STATUS_LABELS,
+  ANNOUNCEMENT_PRIORITY_LABELS,
+  ANNOUNCEMENT_TARGET_TYPE_LABELS,
+} from '@/lib/services/announcements';
 
 interface AnnouncementDetailModalProps {
   isOpen: boolean;
@@ -43,6 +49,7 @@ export function AnnouncementDetailModal({
     if (isOpen && announcement?.id) {
       refreshStats();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, [isOpen, announcement?.id]);
 
   if (!isOpen || !announcement) return null;

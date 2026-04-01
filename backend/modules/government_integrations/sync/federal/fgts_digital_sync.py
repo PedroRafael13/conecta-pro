@@ -9,11 +9,12 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai dados do FGTS Digital.
 
@@ -59,8 +60,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
         cnpj = self._normalizar_cnpj(config.cnpj_empresa)
 
         logger.info(
-            f"[FGTS Digital] Extraindo dados - CNPJ: {cnpj}, "
-            f"Periodo: {config.data_inicial} a {config.data_final}"
+            f"[FGTS Digital] Extraindo dados - CNPJ: {cnpj}, Periodo: {config.data_inicial} a {config.data_final}"
         )
 
         # 1. Guias de recolhimento
@@ -83,7 +83,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta guias FGTS geradas."""
         try:
             if not self.fgts_service:
@@ -127,7 +127,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta extratos de contas vinculadas."""
         try:
             if not self.fgts_service:
@@ -176,7 +176,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
     async def _consultar_debitos(
         self,
         cnpj: str,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta debitos pendentes de FGTS."""
         try:
             if not self.fgts_service:
@@ -209,7 +209,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta movimentacoes de funcionarios no FGTS."""
         try:
             if not self.fgts_service:
@@ -230,9 +230,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
                     "nome_funcionario": mov.get("nome"),
                     "tipo_movimentacao": mov.get("tipo"),
                     "codigo_movimentacao": mov.get("codigo"),
-                    "descricao": self.CODIGOS_MOVIMENTACAO.get(
-                        mov.get("codigo"), mov.get("descricao")
-                    ),
+                    "descricao": self.CODIGOS_MOVIMENTACAO.get(mov.get("codigo"), mov.get("descricao")),
                     "data_movimentacao": self._parse_data(mov.get("data")),
                     "valor_base": self._parse_decimal(mov.get("valor_base")),
                     "valor_deposito": self._parse_decimal(mov.get("valor_deposito")),
@@ -244,7 +242,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -263,21 +261,25 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
 
     async def _salvar_guia(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva guia FGTS no banco."""
-        from ..models.sync_models import GuiaRecolhimento, TipoGuia, StatusGuia
+        from ..models.sync_models import GuiaRecolhimento, StatusGuia, TipoGuia
 
         numero = registro.get("numero_guia")
         cnpj = registro.get("cnpj")
 
         if numero:
-            existente = self.db.query(GuiaRecolhimento).filter(
-                GuiaRecolhimento.numero_guia == numero,
-                GuiaRecolhimento.cnpj_empresa == cnpj,
-                GuiaRecolhimento.tipo_guia == TipoGuia.FGTS,
-            ).first()
+            existente = (
+                self.db.query(GuiaRecolhimento)
+                .filter(
+                    GuiaRecolhimento.numero_guia == numero,
+                    GuiaRecolhimento.cnpj_empresa == cnpj,
+                    GuiaRecolhimento.tipo_guia == TipoGuia.FGTS,
+                )
+                .first()
+            )
 
             if existente:
                 if registro.get("status") == "paga" and existente.status != StatusGuia.PAGA:
@@ -313,7 +315,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
 
     async def _salvar_extrato(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva extrato FGTS."""
@@ -323,10 +325,15 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
         cnpj = registro.get("cnpj")
 
         # Verificar se existe extrato recente
-        existente = self.db.query(ExtratoFGTS).filter(
-            ExtratoFGTS.cnpj_empresa == cnpj,
-            ExtratoFGTS.cpf_funcionario == cpf,
-        ).order_by(ExtratoFGTS.created_at.desc()).first()
+        existente = (
+            self.db.query(ExtratoFGTS)
+            .filter(
+                ExtratoFGTS.cnpj_empresa == cnpj,
+                ExtratoFGTS.cpf_funcionario == cpf,
+            )
+            .order_by(ExtratoFGTS.created_at.desc())
+            .first()
+        )
 
         if existente and existente.saldo_atual == registro.get("saldo_atual"):
             return False
@@ -351,7 +358,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
 
     async def _salvar_debito(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva debito FGTS."""
@@ -360,10 +367,14 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
         numero = registro.get("numero_debito")
         cnpj = registro.get("cnpj")
 
-        existente = self.db.query(DebitoFGTS).filter(
-            DebitoFGTS.numero_debito == numero,
-            DebitoFGTS.cnpj_empresa == cnpj,
-        ).first()
+        existente = (
+            self.db.query(DebitoFGTS)
+            .filter(
+                DebitoFGTS.numero_debito == numero,
+                DebitoFGTS.cnpj_empresa == cnpj,
+            )
+            .first()
+        )
 
         if existente:
             existente.valor_atualizado = Decimal(str(registro.get("valor_atualizado") or 0))
@@ -389,7 +400,7 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
 
     async def _salvar_movimentacao(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva movimentacao FGTS."""
@@ -400,12 +411,16 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
         data = registro.get("data_movimentacao")
         tipo = registro.get("tipo_movimentacao")
 
-        existente = self.db.query(MovimentacaoFGTS).filter(
-            MovimentacaoFGTS.cnpj_empresa == cnpj,
-            MovimentacaoFGTS.cpf_funcionario == cpf,
-            MovimentacaoFGTS.data_movimentacao == data,
-            MovimentacaoFGTS.tipo_movimentacao == tipo,
-        ).first()
+        existente = (
+            self.db.query(MovimentacaoFGTS)
+            .filter(
+                MovimentacaoFGTS.cnpj_empresa == cnpj,
+                MovimentacaoFGTS.cpf_funcionario == cpf,
+                MovimentacaoFGTS.data_movimentacao == data,
+                MovimentacaoFGTS.tipo_movimentacao == tipo,
+            )
+            .first()
+        )
 
         if existente:
             return False
@@ -426,37 +441,49 @@ class FGTSDigitalSynchronizer(BaseSynchronizer):
         self.db.add(novo)
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao do FGTS Digital."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo dos dados FGTS."""
-        from ..models.sync_models import GuiaRecolhimento, TipoGuia, StatusGuia
         from sqlalchemy import func
 
-        guias_pendentes = self.db.query(GuiaRecolhimento).filter(
-            GuiaRecolhimento.cnpj_empresa == cnpj,
-            GuiaRecolhimento.tipo_guia == TipoGuia.FGTS,
-            GuiaRecolhimento.status == StatusGuia.GERADA,
-            GuiaRecolhimento.data_vencimento >= date.today(),
-        ).count()
+        from ..models.sync_models import GuiaRecolhimento, StatusGuia, TipoGuia
 
-        valor_pendente = self.db.query(
-            func.sum(GuiaRecolhimento.valor_total)
-        ).filter(
-            GuiaRecolhimento.cnpj_empresa == cnpj,
-            GuiaRecolhimento.tipo_guia == TipoGuia.FGTS,
-            GuiaRecolhimento.status == StatusGuia.GERADA,
-        ).scalar()
+        guias_pendentes = (
+            self.db.query(GuiaRecolhimento)
+            .filter(
+                GuiaRecolhimento.cnpj_empresa == cnpj,
+                GuiaRecolhimento.tipo_guia == TipoGuia.FGTS,
+                GuiaRecolhimento.status == StatusGuia.GERADA,
+                GuiaRecolhimento.data_vencimento >= date.today(),
+            )
+            .count()
+        )
+
+        valor_pendente = (
+            self.db.query(func.sum(GuiaRecolhimento.valor_total))
+            .filter(
+                GuiaRecolhimento.cnpj_empresa == cnpj,
+                GuiaRecolhimento.tipo_guia == TipoGuia.FGTS,
+                GuiaRecolhimento.status == StatusGuia.GERADA,
+            )
+            .scalar()
+        )
 
         return {
             "guias_pendentes": guias_pendentes,

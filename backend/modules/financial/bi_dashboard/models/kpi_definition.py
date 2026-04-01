@@ -2,26 +2,29 @@
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     Numeric,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 from core.models.base import Base
 
 
-class KPICategory(str, Enum):
+class KPICategory(StrEnum):
     """Categoria do KPI."""
 
     LIQUIDITY = "LIQUIDITY"
@@ -36,7 +39,7 @@ class KPICategory(str, Enum):
     CUSTOM = "CUSTOM"
 
 
-class KPIFrequency(str, Enum):
+class KPIFrequency(StrEnum):
     """Frequencia de calculo do KPI."""
 
     REAL_TIME = "REAL_TIME"
@@ -48,7 +51,7 @@ class KPIFrequency(str, Enum):
     YEARLY = "YEARLY"
 
 
-class KPIStatus(str, Enum):
+class KPIStatus(StrEnum):
     """Status do KPI."""
 
     ACTIVE = "ACTIVE"
@@ -57,7 +60,7 @@ class KPIStatus(str, Enum):
     DEPRECATED = "DEPRECATED"
 
 
-class KPITrend(str, Enum):
+class KPITrend(StrEnum):
     """Tendencia do KPI."""
 
     UP = "UP"
@@ -66,7 +69,7 @@ class KPITrend(str, Enum):
     VOLATILE = "VOLATILE"
 
 
-class AlertLevel(str, Enum):
+class AlertLevel(StrEnum):
     """Nivel de alerta do KPI."""
 
     NORMAL = "NORMAL"
@@ -285,7 +288,7 @@ class FinancialKPI(Base):
 
         # Limita tamanho do historico
         if len(self.historico_valores) > self.historico_dias:
-            self.historico_valores = self.historico_valores[-self.historico_dias:]
+            self.historico_valores = self.historico_valores[-self.historico_dias :]
 
     def format_value(self, value: Decimal = None) -> str:
         """Formata valor para exibicao."""

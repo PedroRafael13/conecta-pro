@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,19 @@ interface SystemConfigFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (config?: SystemConfigResponse | null) => ({
+  chave: config?.chave || '',
+  valor: config?.valor ?? '' as unknown,
+  descricao: config?.descricao || '',
+  value_type: config?.value_type || 'string',
+  category: config?.category || 'system',
+  scope: config?.scope || 'global',
+  admin_only: config?.admin_only ?? false,
+  cacheable: config?.cacheable ?? true,
+  requires_restart: config?.requires_restart ?? false,
+});
+
 export function SystemConfigFormModal({
   isOpen,
   onClose,
@@ -33,45 +46,20 @@ export function SystemConfigFormModal({
   isLoading,
 }: SystemConfigFormModalProps) {
   const isEditing = !!config;
-  const [form, setForm] = useState({
-    chave: '',
-    valor: '' as unknown,
-    descricao: '',
-    value_type: 'string',
-    category: 'system',
-    scope: 'global',
-    admin_only: false,
-    cacheable: true,
-    requires_restart: false,
-  });
+
+  const formKey = useMemo(() => {
+    return config?.id || config?.chave || 'new';
+  }, [config]);
+
+  const [form, setForm] = useState(createInitialForm(config));
 
   useEffect(() => {
-    if (config) {
-      setForm({
-        chave: config.chave || '',
-        valor: config.valor ?? '',
-        descricao: config.descricao || '',
-        value_type: config.value_type || 'string',
-        category: config.category || 'system',
-        scope: config.scope || 'global',
-        admin_only: config.admin_only ?? false,
-        cacheable: config.cacheable ?? true,
-        requires_restart: config.requires_restart ?? false,
-      });
-    } else {
-      setForm({
-        chave: '',
-        valor: '',
-        descricao: '',
-        value_type: 'string',
-        category: 'system',
-        scope: 'global',
-        admin_only: false,
-        cacheable: true,
-        requires_restart: false,
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(config));
     }
-  }, [config, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

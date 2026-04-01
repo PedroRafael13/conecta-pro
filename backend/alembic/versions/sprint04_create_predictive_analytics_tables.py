@@ -5,11 +5,11 @@ Revises: sprint03_notifications
 Create Date: 2025-01-06
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import inspect
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
+
+from alembic import op
 
 # revision identifiers
 revision = "sprint04_analytics"

@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-;
 import {
   useInventoryItems,
   useWarehouses,
@@ -18,6 +17,10 @@ import {
   useInventoryDashboard,
   useCreateStockMovement,
 } from '@/hooks/financial/useFinancial';
+import type { StockItemListResponse } from '@/types/generated/financial/models/stockItemListResponse';
+import type { WarehouseListResponse } from '@/types/generated/financial/models/warehouseListResponse';
+import type { StockMovementCreate } from '@/types/generated/financial/models/stockMovementCreate';
+import type { StockMovementListResponse } from '@/types/generated/financial/models/stockMovementListResponse';
 import { InventoryFormModal } from '@/components/financeiro/inventory-form-modal';
 
 type TabType = 'items' | 'warehouses' | 'movements';
@@ -40,7 +43,9 @@ export default function EstoquePage() {
   const { data: items = [], isLoading: loadingItems, refetch: refetchItems } = useInventoryItems();
   const { data: warehouses = [], isLoading: loadingWarehouses, refetch: refetchWarehouses } = useWarehouses();
   const { data: stockBalance = [], isLoading: loadingBalance, refetch: refetchBalance } = useStockBalance();
-  const { data: dashboard, isLoading: loadingDashboard } = useInventoryDashboard();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: dashboardRaw, isLoading: loadingDashboard } = useInventoryDashboard();
+  const dashboard = dashboardRaw as any;
   const createMovement = useCreateStockMovement();
 
   const isLoading =
@@ -54,13 +59,13 @@ export default function EstoquePage() {
     else refetchBalance();
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: StockMovementCreate) => {
     try {
       await createMovement.mutateAsync({ data });
       setShowFormModal(false);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
-      console.error('Erro ao registrar movimentacao:', error);
+      void error;
     }
   };
 
@@ -165,7 +170,7 @@ export default function EstoquePage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-500">
-                  {(dashboard as any)?.below_minimum ?? dashboard?.warehouses_near_capacity ?? 0}
+                  {dashboard?.below_minimum ?? dashboard?.warehouses_near_capacity ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Abaixo do Minimo</p>
               </div>
@@ -396,8 +401,9 @@ export default function EstoquePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {filteredMovements.map((mov: any, index: number) => (
-                  <TableRow key={mov.id || index}>
+                  <TableRow key={(mov.id as string) || index}>
                     <TableCell>{formatDate(mov.created_at || mov.date)}</TableCell>
                     <TableCell className="font-medium">{mov.item_name || '-'}</TableCell>
                     <TableCell>

@@ -20,9 +20,9 @@ class UserFactory:
 
     @staticmethod
     def build(
-        email: Optional[str] = None,
-        name: Optional[str] = None,
-        password: str = "Test@123456",
+        email: str | None = None,
+        name: str | None = None,
+        password: str = "Test@123456",  # noqa: S107
         role: UserRole = UserRole.OPERATOR,
         is_active: bool = True,
         **kwargs,
@@ -81,8 +81,8 @@ class TokenFactory:
 
     @staticmethod
     def build_valid_payload(
-        user_id: Optional[str] = None,
-        email: Optional[str] = None,
+        user_id: str | None = None,
+        email: str | None = None,
         role: str = "operator",
     ) -> dict:
         """Cria payload de token valido."""
@@ -126,20 +126,20 @@ class LeadFactory:
 
     @staticmethod
     def build(
-        name: Optional[str] = _UNSET,
-        email: Optional[str] = _UNSET,
-        phone: Optional[str] = _UNSET,
-        company: Optional[str] = _UNSET,
-        position: Optional[str] = _UNSET,
-        company_size: Optional[str] = _UNSET,
-        industry: Optional[str] = _UNSET,
+        name: str | None = _UNSET,
+        email: str | None = _UNSET,
+        phone: str | None = _UNSET,
+        company: str | None = _UNSET,
+        position: str | None = _UNSET,
+        company_size: str | None = _UNSET,
+        industry: str | None = _UNSET,
         source: str = "website",
         status: str = "new",
         score: int = 50,
         probability: float = 25.0,
         expected_value: float = 10000.0,
-        notes: Optional[str] = None,
-        assigned_to_id: Optional[str] = None,
+        notes: str | None = None,
+        assigned_to_id: str | None = None,
         **kwargs,
     ):
         """
@@ -222,25 +222,25 @@ class OpportunityFactory:
 
     @staticmethod
     def build(
-        title: Optional[str] = _UNSET,
-        contact_name: Optional[str] = _UNSET,
-        contact_email: Optional[str] = _UNSET,
-        contact_phone: Optional[str] = _UNSET,
-        company_name: Optional[str] = _UNSET,
-        description: Optional[str] = None,
-        lead_id: Optional[str] = None,
+        title: str | None = _UNSET,
+        contact_name: str | None = _UNSET,
+        contact_email: str | None = _UNSET,
+        contact_phone: str | None = _UNSET,
+        company_name: str | None = _UNSET,
+        description: str | None = None,
+        lead_id: str | None = None,
         stage: str = "qualification",
         priority: str = "medium",
         value: float = 10000.0,
         probability: int = 25,
         expected_close_date=None,
         actual_close_date=None,
-        owner_id: Optional[str] = None,
-        loss_reason: Optional[str] = None,
-        competitor: Optional[str] = None,
-        win_notes: Optional[str] = None,
-        loss_notes: Optional[str] = None,
-        notes: Optional[str] = None,
+        owner_id: str | None = None,
+        loss_reason: str | None = None,
+        competitor: str | None = None,
+        win_notes: str | None = None,
+        loss_notes: str | None = None,
+        notes: str | None = None,
         **kwargs,
     ):
         """
@@ -281,6 +281,7 @@ class OpportunityFactory:
     def build_won(**kwargs):
         """Cria opportunity ganha."""
         from datetime import date
+
         defaults = {
             "stage": "closed_won",
             "probability": 100,
@@ -294,6 +295,7 @@ class OpportunityFactory:
     def build_lost(**kwargs):
         """Cria opportunity perdida."""
         from datetime import date
+
         defaults = {
             "stage": "closed_lost",
             "probability": 0,
@@ -346,29 +348,29 @@ class ProposalFactory:
 
     @staticmethod
     def build(
-        title: Optional[str] = _UNSET,
-        description: Optional[str] = None,
-        client_name: Optional[str] = _UNSET,
-        client_email: Optional[str] = _UNSET,
-        client_phone: Optional[str] = _UNSET,
-        client_company: Optional[str] = _UNSET,
-        client_document: Optional[str] = None,
-        client_address: Optional[str] = None,
+        title: str | None = _UNSET,
+        description: str | None = None,
+        client_name: str | None = _UNSET,
+        client_email: str | None = _UNSET,
+        client_phone: str | None = _UNSET,
+        client_company: str | None = _UNSET,
+        client_document: str | None = None,
+        client_address: str | None = None,
         proposal_type: str = "service",
         status: str = "draft",
         subtotal: float = 10000.0,
-        discount_type: Optional[str] = None,
+        discount_type: str | None = None,
         discount_value: float = 0.0,
         taxes: float = 0.0,
         total: float = 10000.0,
-        terms_conditions: Optional[str] = None,
-        payment_terms: Optional[str] = None,
-        payment_conditions: Optional[str] = None,
+        terms_conditions: str | None = None,
+        payment_terms: str | None = None,
+        payment_conditions: str | None = None,
         installments: int = 1,
         valid_until=_UNSET,
-        opportunity_id: Optional[str] = None,
-        template_id: Optional[str] = None,
-        created_by_id: Optional[str] = None,
+        opportunity_id: str | None = None,
+        template_id: str | None = None,
+        created_by_id: str | None = None,
         **kwargs,
     ):
         """
@@ -378,6 +380,7 @@ class ProposalFactory:
             Objeto Proposal
         """
         from datetime import date
+
         from modules.crm.models.proposal import Proposal
 
         return Proposal(
@@ -467,6 +470,7 @@ class ProposalFactory:
     def build_expired(**kwargs):
         """Cria proposal expirada."""
         from datetime import date
+
         defaults = {
             "status": "expired",
             "valid_until": date.today() - timedelta(days=5),
@@ -495,10 +499,10 @@ class ProposalItemFactory:
 
     @staticmethod
     def build(
-        proposal_id: Optional[str] = None,
-        code: Optional[str] = None,
-        name: Optional[str] = _UNSET,
-        description: Optional[str] = None,
+        proposal_id: str | None = None,
+        code: str | None = None,
+        name: str | None = _UNSET,
+        description: str | None = None,
         unit: str = "un",
         quantity: float = 1.0,
         unit_price: float = 1000.0,
@@ -534,12 +538,9 @@ class ProposalItemFactory:
         )
 
     @staticmethod
-    def build_batch(count: int, proposal_id: Optional[str] = None, **kwargs) -> list:
+    def build_batch(count: int, proposal_id: str | None = None, **kwargs) -> list:
         """Cria multiplos items."""
-        return [
-            ProposalItemFactory.build(proposal_id=proposal_id, sort_order=i, **kwargs)
-            for i in range(count)
-        ]
+        return [ProposalItemFactory.build(proposal_id=proposal_id, sort_order=i, **kwargs) for i in range(count)]
 
 
 class ProposalTemplateFactory:
@@ -547,17 +548,17 @@ class ProposalTemplateFactory:
 
     @staticmethod
     def build(
-        name: Optional[str] = _UNSET,
-        description: Optional[str] = None,
-        default_title: Optional[str] = None,
-        default_description: Optional[str] = None,
-        terms_conditions: Optional[str] = None,
-        payment_terms: Optional[str] = None,
+        name: str | None = _UNSET,
+        description: str | None = None,
+        default_title: str | None = None,
+        default_description: str | None = None,
+        terms_conditions: str | None = None,
+        payment_terms: str | None = None,
         validity_days: int = 30,
         proposal_type: str = "service",
-        header_html: Optional[str] = None,
-        footer_html: Optional[str] = None,
-        css_styles: Optional[str] = None,
+        header_html: str | None = None,
+        footer_html: str | None = None,
+        css_styles: str | None = None,
         is_default: bool = False,
         **kwargs,
     ):

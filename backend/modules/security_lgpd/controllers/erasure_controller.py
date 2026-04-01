@@ -6,6 +6,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Path, status
 
+from core.auth.dependencies import CurrentActiveUser
 from modules.security_lgpd.schemas.common import StandardResponse
 from modules.security_lgpd.schemas.erasure import ErasureRequestSchema
 from modules.security_lgpd.services.erasure_service import ErasureService
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/erasure", tags=["LGPD - Direito ao Esquecimento"])
     summary="Solicita exclusao de dados (Art. 18 LGPD)",
     description="Inicia processo de exclusao de dados do titular.",
 )
-async def request_erasure(request: ErasureRequestSchema) -> StandardResponse:
+async def request_erasure(current_user: CurrentActiveUser, request: ErasureRequestSchema) -> StandardResponse:
     """
     Solicita exclusao de dados (direito ao esquecimento).
 
@@ -69,6 +70,7 @@ async def request_erasure(request: ErasureRequestSchema) -> StandardResponse:
     description="Verifica status de uma solicitacao de exclusao.",
 )
 async def get_erasure_status(
+    current_user: CurrentActiveUser,
     request_id: str = Path(..., description="ID da solicitacao"),
 ) -> StandardResponse:
     """

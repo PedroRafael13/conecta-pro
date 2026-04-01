@@ -7,21 +7,21 @@ Serviço principal para orquestrar a geração de relatórios com IA.
 import logging
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
-from uuid import UUID, uuid4
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.ai.report_generator.models import (
-    Report,
     AIReportTemplate,
+    Report,
     ReportExecution,
     ReportSection,
 )
 from modules.ai.report_generator.models.report import (
+    ReportPriorityEnum,
     ReportStatusEnum,
     ReportTypeEnum,
-    ReportPriorityEnum,
 )
 from modules.ai.report_generator.models.report_execution import (
     ExecutionStatusEnum,
@@ -82,23 +82,23 @@ class ReportGeneratorService:
 
     async def generate_report(
         self,
-        template_id: Optional[UUID] = None,
-        template_code: Optional[str] = None,
-        name: Optional[str] = None,
-        report_type: Optional[ReportTypeEnum] = None,
-        period_start: Optional[datetime] = None,
-        period_end: Optional[datetime] = None,
-        period_type: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        filters: Optional[Dict[str, Any]] = None,
-        output_formats: Optional[List[str]] = None,
+        template_id: UUID | None = None,
+        template_code: str | None = None,
+        name: str | None = None,
+        report_type: ReportTypeEnum | None = None,
+        period_start: datetime | None = None,
+        period_end: datetime | None = None,
+        period_type: str | None = None,
+        parameters: dict[str, Any] | None = None,
+        filters: dict[str, Any] | None = None,
+        output_formats: list[str] | None = None,
         include_insights: bool = True,
         include_recommendations: bool = True,
         include_anomalies: bool = True,
         priority: ReportPriorityEnum = ReportPriorityEnum.NORMAL,
         trigger: ExecutionTriggerEnum = ExecutionTriggerEnum.MANUAL,
-        triggered_by: Optional[UUID] = None,
-        organization_id: Optional[UUID] = None,
+        triggered_by: UUID | None = None,
+        organization_id: UUID | None = None,
     ) -> tuple[Report, ReportExecution]:
         """
         Gera um relatório completo.
@@ -157,9 +157,8 @@ class ReportGeneratorService:
             report = Report(
                 name=name or self._generate_report_name(template, period_start, period_end),
                 description=template.description if template else None,
-                report_type=report_type or (
-                    ReportTypeEnum(template.category.value) if template else ReportTypeEnum.SUMMARY
-                ),
+                report_type=report_type
+                or (ReportTypeEnum(template.category.value) if template else ReportTypeEnum.SUMMARY),
                 category=template.category.value if template else None,
                 priority=priority,
                 template_id=template.id if template else None,
@@ -206,10 +205,7 @@ class ReportGeneratorService:
 
             # Gera insights com IA
             if include_insights and (not template or template.ai_insights_enabled):
-                execution.update_status(
-                    ExecutionStatusEnum.GENERATING_INSIGHTS,
-                    "Gerando insights com IA"
-                )
+                execution.update_status(ExecutionStatusEnum.GENERATING_INSIGHTS, "Gerando insights com IA")
                 self.repository.update_execution(execution)
                 insight_start = time.time()
 
@@ -218,9 +214,7 @@ class ReportGeneratorService:
                 execution.insights_generated = len(insights)
 
                 if include_recommendations:
-                    recommendations = await self._generate_recommendations(
-                        data, summary, metrics, insights
-                    )
+                    recommendations = await self._generate_recommendations(data, summary, metrics, insights)
                     report.recommendations = recommendations
                     execution.recommendations_generated = len(recommendations)
 
@@ -245,12 +239,8 @@ class ReportGeneratorService:
                 for section in sections:
                     section.report_id = report.id
                     self.repository.create_section(section)
-                execution.charts_generated = sum(
-                    1 for s in sections if s.section_type.value == "chart"
-                )
-                execution.tables_generated = sum(
-                    1 for s in sections if s.section_type.value == "table"
-                )
+                execution.charts_generated = sum(1 for s in sections if s.section_type.value == "chart")
+                execution.tables_generated = sum(1 for s in sections if s.section_type.value == "table")
 
             execution.rendering_time_ms = int((time.time() - render_start) * 1000)
 
@@ -275,9 +265,7 @@ class ReportGeneratorService:
                 template.update_average_time(report.generation_time_ms)
                 self.repository.update_template(template)
 
-            logger.info(
-                f"Relatório gerado: {report.code} em {report.generation_time_ms}ms"
-            )
+            logger.info(f"Relatório gerado: {report.code} em {report.generation_time_ms}ms")
             return report, execution
 
         except Exception as e:
@@ -293,21 +281,19 @@ class ReportGeneratorService:
 
     async def _collect_data(
         self,
-        template: Optional[AIReportTemplate],
-        filters: Optional[Dict[str, Any]],
-        parameters: Optional[Dict[str, Any]],
-        period_start: Optional[datetime],
-        period_end: Optional[datetime],
-    ) -> Dict[str, Any]:
+        template: AIReportTemplate | None,
+        filters: dict[str, Any] | None,
+        parameters: dict[str, Any] | None,
+        period_start: datetime | None,
+        period_end: datetime | None,
+    ) -> dict[str, Any]:
         """Coleta dados das fontes configuradas."""
         data = {}
 
         # Se tem template, usa as fontes configuradas
         if template and template.data_sources:
             for source in template.data_sources:
-                source_data = await self._fetch_data_source(
-                    source, filters, parameters, period_start, period_end
-                )
+                source_data = await self._fetch_data_source(source, filters, parameters, period_start, period_end)
                 data[source] = source_data
         else:
             # Dados padrão simulados para demonstração
@@ -318,13 +304,13 @@ class ReportGeneratorService:
     async def _fetch_data_source(
         self,
         source: str,
-        filters: Optional[Dict[str, Any]],
-        parameters: Optional[Dict[str, Any]],
-        period_start: Optional[datetime],
-        period_end: Optional[datetime],
-    ) -> Dict[str, Any]:
+        filters: dict[str, Any] | None,
+        parameters: dict[str, Any] | None,
+        period_start: datetime | None,
+        period_end: datetime | None,
+    ) -> dict[str, Any]:
         """Busca dados de uma fonte específica."""
-        config = DATA_SOURCE_CONFIG.get(source, {})
+        DATA_SOURCE_CONFIG.get(source, {})
 
         # Aqui seria a integração real com os outros módulos
         # Por enquanto, retorna dados simulados
@@ -332,11 +318,11 @@ class ReportGeneratorService:
 
     def _generate_sample_data(
         self,
-        period_start: Optional[datetime],
-        period_end: Optional[datetime],
-    ) -> Dict[str, Any]:
+        period_start: datetime | None,
+        period_end: datetime | None,
+    ) -> dict[str, Any]:
         """Gera dados de exemplo para demonstração."""
-        import random
+        import random  # noqa: S311
 
         days = 30
         if period_start and period_end:
@@ -344,47 +330,47 @@ class ReportGeneratorService:
 
         return {
             "sales": {
-                "total": random.randint(100000, 500000),
-                "count": random.randint(50, 200),
-                "avg_ticket": random.randint(500, 5000),
-                "growth": round(random.uniform(-10, 30), 2),
+                "total": random.randint(100000, 500000),  # noqa: S311
+                "count": random.randint(50, 200),  # noqa: S311
+                "avg_ticket": random.randint(500, 5000),  # noqa: S311
+                "growth": round(random.uniform(-10, 30), 2),  # noqa: S311
                 "by_day": [
                     {
                         "date": (datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d"),
-                        "value": random.randint(3000, 15000),
-                        "count": random.randint(2, 10),
+                        "value": random.randint(3000, 15000),  # noqa: S311
+                        "count": random.randint(2, 10),  # noqa: S311
                     }
                     for i in range(min(days, 30))
                 ],
             },
             "customers": {
-                "total": random.randint(500, 2000),
-                "new": random.randint(20, 100),
-                "churn": random.randint(5, 30),
-                "retention_rate": round(random.uniform(85, 98), 2),
+                "total": random.randint(500, 2000),  # noqa: S311
+                "new": random.randint(20, 100),  # noqa: S311
+                "churn": random.randint(5, 30),  # noqa: S311
+                "retention_rate": round(random.uniform(85, 98), 2),  # noqa: S311
             },
             "products": {
-                "total_sku": random.randint(100, 500),
-                "in_stock": random.randint(80, 450),
-                "low_stock": random.randint(10, 50),
-                "out_of_stock": random.randint(5, 20),
+                "total_sku": random.randint(100, 500),  # noqa: S311
+                "in_stock": random.randint(80, 450),  # noqa: S311
+                "low_stock": random.randint(10, 50),  # noqa: S311
+                "out_of_stock": random.randint(5, 20),  # noqa: S311
             },
             "financial": {
-                "revenue": random.randint(200000, 1000000),
-                "expenses": random.randint(100000, 500000),
-                "profit": random.randint(50000, 300000),
-                "margin": round(random.uniform(15, 40), 2),
+                "revenue": random.randint(200000, 1000000),  # noqa: S311
+                "expenses": random.randint(100000, 500000),  # noqa: S311
+                "profit": random.randint(50000, 300000),  # noqa: S311
+                "margin": round(random.uniform(15, 40), 2),  # noqa: S311
             },
         }
 
     def _generate_source_sample_data(
         self,
         source: str,
-        period_start: Optional[datetime],
-        period_end: Optional[datetime],
-    ) -> Dict[str, Any]:
+        period_start: datetime | None,
+        period_end: datetime | None,
+    ) -> dict[str, Any]:
         """Gera dados de exemplo para uma fonte específica."""
-        import random
+        import random  # noqa: S311
 
         base_data = {
             "records": [],
@@ -394,34 +380,34 @@ class ReportGeneratorService:
 
         if source == "leads":
             base_data["summary"] = {
-                "total": random.randint(100, 500),
-                "qualified": random.randint(30, 150),
-                "converted": random.randint(10, 50),
-                "avg_score": round(random.uniform(40, 80), 2),
+                "total": random.randint(100, 500),  # noqa: S311
+                "qualified": random.randint(30, 150),  # noqa: S311
+                "converted": random.randint(10, 50),  # noqa: S311
+                "avg_score": round(random.uniform(40, 80), 2),  # noqa: S311
             }
         elif source == "opportunities":
             base_data["summary"] = {
-                "total": random.randint(50, 200),
-                "total_value": random.randint(500000, 2000000),
-                "won": random.randint(10, 50),
-                "lost": random.randint(5, 30),
-                "win_rate": round(random.uniform(20, 50), 2),
+                "total": random.randint(50, 200),  # noqa: S311
+                "total_value": random.randint(500000, 2000000),  # noqa: S311
+                "won": random.randint(10, 50),  # noqa: S311
+                "lost": random.randint(5, 30),  # noqa: S311
+                "win_rate": round(random.uniform(20, 50), 2),  # noqa: S311
             }
         elif source == "invoices":
             base_data["summary"] = {
-                "total": random.randint(100, 500),
-                "total_value": random.randint(200000, 1000000),
-                "paid": random.randint(80, 400),
-                "overdue": random.randint(5, 50),
+                "total": random.randint(100, 500),  # noqa: S311
+                "total_value": random.randint(200000, 1000000),  # noqa: S311
+                "paid": random.randint(80, 400),  # noqa: S311
+                "overdue": random.randint(5, 50),  # noqa: S311
             }
 
         return base_data
 
     async def _process_data(
         self,
-        data: Dict[str, Any],
-        template: Optional[AIReportTemplate],
-    ) -> tuple[Dict[str, Any], Dict[str, Any]]:
+        data: dict[str, Any],
+        template: AIReportTemplate | None,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         """Processa dados e calcula métricas."""
         summary = {}
         metrics = {}
@@ -432,10 +418,7 @@ class ReportGeneratorService:
                 if "summary" in source_data:
                     summary[source] = source_data["summary"]
                 elif "total" in source_data:
-                    summary[source] = {
-                        k: v for k, v in source_data.items()
-                        if not isinstance(v, (list, dict))
-                    }
+                    summary[source] = {k: v for k, v in source_data.items() if not isinstance(v, (list, dict))}
 
         # Calcula métricas
         if "sales" in data:
@@ -463,10 +446,10 @@ class ReportGeneratorService:
 
     async def _generate_insights(
         self,
-        data: Dict[str, Any],
-        summary: Dict[str, Any],
-        metrics: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        data: dict[str, Any],
+        summary: dict[str, Any],
+        metrics: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """Gera insights com IA baseado nos dados."""
         insights = []
 
@@ -474,109 +457,125 @@ class ReportGeneratorService:
         if "sales_growth" in metrics:
             growth = metrics["sales_growth"]
             if growth > 20:
-                insights.append({
-                    "type": "positive",
-                    "category": "sales",
-                    "title": "Crescimento Excepcional",
-                    "description": f"Vendas cresceram {growth}% no período, acima da média do mercado.",
-                    "impact": "high",
-                    "confidence": 0.85,
-                })
+                insights.append(
+                    {
+                        "type": "positive",
+                        "category": "sales",
+                        "title": "Crescimento Excepcional",
+                        "description": f"Vendas cresceram {growth}% no período, acima da média do mercado.",
+                        "impact": "high",
+                        "confidence": 0.85,
+                    }
+                )
             elif growth < 0:
-                insights.append({
-                    "type": "negative",
-                    "category": "sales",
-                    "title": "Queda nas Vendas",
-                    "description": f"Vendas caíram {abs(growth)}% no período. Atenção necessária.",
-                    "impact": "high",
-                    "confidence": 0.90,
-                })
+                insights.append(
+                    {
+                        "type": "negative",
+                        "category": "sales",
+                        "title": "Queda nas Vendas",
+                        "description": f"Vendas caíram {abs(growth)}% no período. Atenção necessária.",
+                        "impact": "high",
+                        "confidence": 0.90,
+                    }
+                )
 
         # Insight de retenção
         if "retention_rate" in metrics:
             retention = metrics["retention_rate"]
             if retention < 90:
-                insights.append({
-                    "type": "warning",
-                    "category": "customers",
-                    "title": "Taxa de Retenção Abaixo do Ideal",
-                    "description": f"Retenção de {retention}% está abaixo da meta de 90%.",
-                    "impact": "medium",
-                    "confidence": 0.88,
-                })
+                insights.append(
+                    {
+                        "type": "warning",
+                        "category": "customers",
+                        "title": "Taxa de Retenção Abaixo do Ideal",
+                        "description": f"Retenção de {retention}% está abaixo da meta de 90%.",
+                        "impact": "medium",
+                        "confidence": 0.88,
+                    }
+                )
 
         # Insight de margem
         if "profit_margin" in metrics:
             margin = metrics["profit_margin"]
             if margin > 30:
-                insights.append({
-                    "type": "positive",
-                    "category": "financial",
-                    "title": "Margem de Lucro Saudável",
-                    "description": f"Margem de {margin}% indica boa saúde financeira.",
-                    "impact": "high",
-                    "confidence": 0.92,
-                })
+                insights.append(
+                    {
+                        "type": "positive",
+                        "category": "financial",
+                        "title": "Margem de Lucro Saudável",
+                        "description": f"Margem de {margin}% indica boa saúde financeira.",
+                        "impact": "high",
+                        "confidence": 0.92,
+                    }
+                )
             elif margin < 15:
-                insights.append({
-                    "type": "warning",
-                    "category": "financial",
-                    "title": "Margem de Lucro Comprimida",
-                    "description": f"Margem de {margin}% está abaixo do ideal. Revisar custos.",
-                    "impact": "high",
-                    "confidence": 0.90,
-                })
+                insights.append(
+                    {
+                        "type": "warning",
+                        "category": "financial",
+                        "title": "Margem de Lucro Comprimida",
+                        "description": f"Margem de {margin}% está abaixo do ideal. Revisar custos.",
+                        "impact": "high",
+                        "confidence": 0.90,
+                    }
+                )
 
         return insights
 
     async def _generate_recommendations(
         self,
-        data: Dict[str, Any],
-        summary: Dict[str, Any],
-        metrics: Dict[str, Any],
-        insights: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        data: dict[str, Any],
+        summary: dict[str, Any],
+        metrics: dict[str, Any],
+        insights: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Gera recomendações baseadas nos insights."""
         recommendations = []
 
         for insight in insights:
             if insight["type"] == "negative" and insight["category"] == "sales":
-                recommendations.append({
-                    "title": "Revisar Estratégia de Vendas",
-                    "description": "Analise os canais de venda com menor performance e considere campanhas de reativação.",
-                    "priority": "high",
-                    "category": "sales",
-                    "effort": "medium",
-                    "impact": "high",
-                })
+                recommendations.append(
+                    {
+                        "title": "Revisar Estratégia de Vendas",
+                        "description": "Analise os canais de venda com menor performance e considere campanhas de reativação.",
+                        "priority": "high",
+                        "category": "sales",
+                        "effort": "medium",
+                        "impact": "high",
+                    }
+                )
 
             if insight["type"] == "warning" and insight["category"] == "customers":
-                recommendations.append({
-                    "title": "Implementar Programa de Fidelidade",
-                    "description": "Clientes com alto risco de churn devem receber atenção especial. Considere descontos ou benefícios.",
-                    "priority": "high",
-                    "category": "retention",
-                    "effort": "medium",
-                    "impact": "high",
-                })
+                recommendations.append(
+                    {
+                        "title": "Implementar Programa de Fidelidade",
+                        "description": "Clientes com alto risco de churn devem receber atenção especial. Considere descontos ou benefícios.",
+                        "priority": "high",
+                        "category": "retention",
+                        "effort": "medium",
+                        "impact": "high",
+                    }
+                )
 
             if insight["type"] == "warning" and insight["category"] == "financial":
-                recommendations.append({
-                    "title": "Otimizar Estrutura de Custos",
-                    "description": "Revisar contratos de fornecedores e identificar oportunidades de redução de custos operacionais.",
-                    "priority": "medium",
-                    "category": "finance",
-                    "effort": "high",
-                    "impact": "high",
-                })
+                recommendations.append(
+                    {
+                        "title": "Otimizar Estrutura de Custos",
+                        "description": "Revisar contratos de fornecedores e identificar oportunidades de redução de custos operacionais.",
+                        "priority": "medium",
+                        "category": "finance",
+                        "effort": "high",
+                        "impact": "high",
+                    }
+                )
 
         return recommendations
 
     async def _detect_anomalies(
         self,
-        data: Dict[str, Any],
-        metrics: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        data: dict[str, Any],
+        metrics: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """Detecta anomalias nos dados."""
         anomalies = []
 
@@ -591,24 +590,26 @@ class ReportGeneratorService:
                 for day_data in daily_sales:
                     if abs(day_data["value"] - avg) > 2 * std:
                         anomaly_type = "spike" if day_data["value"] > avg else "drop"
-                        anomalies.append({
-                            "type": anomaly_type,
-                            "category": "sales",
-                            "date": day_data["date"],
-                            "value": day_data["value"],
-                            "expected": round(avg, 2),
-                            "deviation": round((day_data["value"] - avg) / std, 2),
-                            "severity": "high" if abs(day_data["value"] - avg) > 3 * std else "medium",
-                        })
+                        anomalies.append(
+                            {
+                                "type": anomaly_type,
+                                "category": "sales",
+                                "date": day_data["date"],
+                                "value": day_data["value"],
+                                "expected": round(avg, 2),
+                                "deviation": round((day_data["value"] - avg) / std, 2),
+                                "severity": "high" if abs(day_data["value"] - avg) > 3 * std else "medium",
+                            }
+                        )
 
         return anomalies
 
     async def _analyze_trends(
         self,
-        data: Dict[str, Any],
-        period_start: Optional[datetime],
-        period_end: Optional[datetime],
-    ) -> List[Dict[str, Any]]:
+        data: dict[str, Any],
+        period_start: datetime | None,
+        period_end: datetime | None,
+    ) -> list[dict[str, Any]]:
         """Analisa tendências nos dados."""
         trends = []
 
@@ -616,8 +617,8 @@ class ReportGeneratorService:
             daily_sales = data["sales"]["by_day"]
             if len(daily_sales) > 7:
                 # Calcula tendência simples
-                first_half = daily_sales[:len(daily_sales)//2]
-                second_half = daily_sales[len(daily_sales)//2:]
+                first_half = daily_sales[: len(daily_sales) // 2]
+                second_half = daily_sales[len(daily_sales) // 2 :]
 
                 first_avg = sum(d["value"] for d in first_half) / len(first_half)
                 second_avg = sum(d["value"] for d in second_half) / len(second_half)
@@ -631,14 +632,16 @@ class ReportGeneratorService:
 
                 change = ((second_avg - first_avg) / first_avg) * 100 if first_avg > 0 else 0
 
-                trends.append({
-                    "metric": "sales",
-                    "direction": direction,
-                    "change_percent": round(change, 2),
-                    "first_period_avg": round(first_avg, 2),
-                    "second_period_avg": round(second_avg, 2),
-                    "confidence": 0.75,
-                })
+                trends.append(
+                    {
+                        "metric": "sales",
+                        "direction": direction,
+                        "change_percent": round(change, 2),
+                        "first_period_avg": round(first_avg, 2),
+                        "second_period_avg": round(second_avg, 2),
+                        "confidence": 0.75,
+                    }
+                )
 
         return trends
 
@@ -646,8 +649,8 @@ class ReportGeneratorService:
         self,
         template: AIReportTemplate,
         report: Report,
-        data: Dict[str, Any],
-    ) -> List[ReportSection]:
+        data: dict[str, Any],
+    ) -> list[ReportSection]:
         """Renderiza seções do relatório baseado no template."""
         sections = []
 
@@ -688,9 +691,9 @@ class ReportGeneratorService:
 
     def _generate_report_name(
         self,
-        template: Optional[AIReportTemplate],
-        period_start: Optional[datetime],
-        period_end: Optional[datetime],
+        template: AIReportTemplate | None,
+        period_start: datetime | None,
+        period_end: datetime | None,
     ) -> str:
         """Gera nome do relatório."""
         base_name = template.name if template else "Relatório"
@@ -702,7 +705,7 @@ class ReportGeneratorService:
 
         return f"{base_name} - {date_str}"
 
-    def _count_records(self, data: Dict[str, Any]) -> int:
+    def _count_records(self, data: dict[str, Any]) -> int:
         """Conta registros processados."""
         count = 0
         for source_data in data.values():
@@ -717,7 +720,7 @@ class ReportGeneratorService:
                 count += len(source_data)
         return count
 
-    def _calculate_data_quality(self, data: Dict[str, Any]) -> float:
+    def _calculate_data_quality(self, data: dict[str, Any]) -> float:
         """Calcula score de qualidade dos dados."""
         if not data:
             return 0.0
@@ -728,7 +731,7 @@ class ReportGeneratorService:
 
         for source_data in data.values():
             if isinstance(source_data, dict):
-                for key, value in source_data.items():
+                for _key, value in source_data.items():
                     total_fields += 1
                     if value is not None and value != "" and value != []:
                         filled_fields += 1
@@ -741,7 +744,7 @@ class ReportGeneratorService:
     def _calculate_completeness(
         self,
         report: Report,
-        template: Optional[AIReportTemplate],
+        template: AIReportTemplate | None,
     ) -> float:
         """Calcula score de completude do relatório."""
         score = 0.0
@@ -780,8 +783,8 @@ class ReportGeneratorService:
 
     def _calculate_accuracy(
         self,
-        data: Dict[str, Any],
-        metrics: Dict[str, Any],
+        data: dict[str, Any],
+        metrics: dict[str, Any],
     ) -> float:
         """Calcula score de acurácia (consistência dos dados)."""
         # Verificação simplificada de consistência

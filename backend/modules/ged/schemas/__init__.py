@@ -1,83 +1,77 @@
 """Schemas do módulo GED (Gestão Eletrônica de Documentos)."""
 
-from modules.ged.schemas.folder import (
-    FolderBase,
-    FolderCreate,
-    FolderUpdate,
-    FolderResponse,
-    FolderListResponse,
-    FolderFilter,
-    FolderTreeNode,
-    FolderPermissionRequest,
-    FolderStats,
-)
-
 from modules.ged.schemas.document import (
+    DocumentApprovalRequest,
     DocumentBase,
     DocumentCreate,
-    DocumentUpdate,
-    DocumentResponse,
-    DocumentListResponse,
     DocumentFilter,
+    DocumentListResponse,
     DocumentMoveRequest,
-    DocumentApprovalRequest,
+    DocumentOCRResult,
+    DocumentResponse,
     DocumentSearchRequest,
     DocumentStats,
+    DocumentUpdate,
     DocumentUploadRequest,
-    DocumentOCRResult,
 )
-
-from modules.ged.schemas.document_version import (
-    DocumentVersionBase,
-    DocumentVersionCreate,
-    DocumentVersionResponse,
-    DocumentVersionListResponse,
-    DocumentVersionCompare,
-    DocumentVersionRestoreRequest,
-)
-
 from modules.ged.schemas.document_share import (
+    DocumentShareAccessRequest,
     DocumentShareBase,
     DocumentShareCreate,
-    DocumentShareUpdate,
-    DocumentShareResponse,
-    DocumentShareListResponse,
     DocumentShareFilter,
     DocumentShareLinkRequest,
     DocumentShareLinkResponse,
-    DocumentShareAccessRequest,
+    DocumentShareListResponse,
+    DocumentShareResponse,
     DocumentShareStats,
+    DocumentShareUpdate,
 )
-
-from modules.ged.schemas.document_tag import (
-    DocumentTagBase,
-    DocumentTagCreate,
-    DocumentTagUpdate,
-    DocumentTagResponse,
-    DocumentTagListResponse,
-    DocumentTagFilter,
-    DocumentTagTreeNode,
-    DocumentTagAssignment,
-    DocumentTagBulkCreate,
-    DocumentTagStats,
-)
-
 from modules.ged.schemas.document_signature import (
     DocumentSignatureBase,
     DocumentSignatureCreate,
-    DocumentSignatureUpdate,
-    DocumentSignatureResponse,
-    DocumentSignatureListResponse,
     DocumentSignatureFilter,
-    SignatureRequest,
-    SignatureRefusalRequest,
-    SignatureVerifyRequest,
+    DocumentSignatureListResponse,
+    DocumentSignatureResponse,
+    DocumentSignatureUpdate,
     SignatureBulkCreate,
-    SignatureReminderRequest,
-    SignatureStats,
     SignaturePositionRequest,
+    SignatureRefusalRequest,
+    SignatureReminderRequest,
+    SignatureRequest,
+    SignatureStats,
+    SignatureVerifyRequest,
 )
-
+from modules.ged.schemas.document_tag import (
+    DocumentTagAssignment,
+    DocumentTagBase,
+    DocumentTagBulkCreate,
+    DocumentTagCreate,
+    DocumentTagFilter,
+    DocumentTagListResponse,
+    DocumentTagResponse,
+    DocumentTagStats,
+    DocumentTagTreeNode,
+    DocumentTagUpdate,
+)
+from modules.ged.schemas.document_version import (
+    DocumentVersionBase,
+    DocumentVersionCompare,
+    DocumentVersionCreate,
+    DocumentVersionListResponse,
+    DocumentVersionResponse,
+    DocumentVersionRestoreRequest,
+)
+from modules.ged.schemas.folder import (
+    FolderBase,
+    FolderCreate,
+    FolderFilter,
+    FolderListResponse,
+    FolderPermissionRequest,
+    FolderResponse,
+    FolderStats,
+    FolderTreeNode,
+    FolderUpdate,
+)
 
 __all__ = [
     # Folder

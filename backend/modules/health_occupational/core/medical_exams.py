@@ -8,18 +8,17 @@ Quality Score Target: 99+/100
 Compliance: NR-7 (Portaria MTb 3.214/78) - PCMSO
 """
 
-from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from abc import ABC, abstractmethod
-from datetime import datetime, date, timedelta
-from uuid import UUID, uuid4
 import logging
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
+from enum import StrEnum
+from typing import Any
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, validator, EmailStr
-from sqlalchemy import Column, String, Boolean, DateTime, Date, Text, Integer, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB, ARRAY
-from sqlalchemy.orm import relationship
+from pydantic import BaseModel, Field
+from sqlalchemy import Boolean, Column, Date, DateTime, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
 
 logger = logging.getLogger(__name__)
@@ -27,35 +26,39 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
-class ExamType(str, Enum):
+class ExamType(StrEnum):
     """Tipos de exames ocupacionais conforme NR-7."""
-    ADMISSIONAL = "admissional"           # Antes da contratacao
-    PERIODICO = "periodico"               # Durante o vinculo
-    RETORNO_TRABALHO = "retorno_trabalho" # Apos afastamento >30 dias
-    MUDANCA_FUNCAO = "mudanca_funcao"     # Alteracao de cargo/setor
-    DEMISSIONAL = "demissional"           # Desligamento
+
+    ADMISSIONAL = "admissional"  # Antes da contratacao
+    PERIODICO = "periodico"  # Durante o vinculo
+    RETORNO_TRABALHO = "retorno_trabalho"  # Apos afastamento >30 dias
+    MUDANCA_FUNCAO = "mudanca_funcao"  # Alteracao de cargo/setor
+    DEMISSIONAL = "demissional"  # Desligamento
 
 
-class ExamStatus(str, Enum):
+class ExamStatus(StrEnum):
     """Status de um exame medico."""
-    SCHEDULED = "scheduled"       # Agendado
-    PENDING = "pending"           # Aguardando resultado
-    COMPLETED = "completed"       # Concluido
-    CANCELLED = "cancelled"       # Cancelado
-    NO_SHOW = "no_show"          # Falta
+
+    SCHEDULED = "scheduled"  # Agendado
+    PENDING = "pending"  # Aguardando resultado
+    COMPLETED = "completed"  # Concluido
+    CANCELLED = "cancelled"  # Cancelado
+    NO_SHOW = "no_show"  # Falta
     RESCHEDULED = "rescheduled"  # Reagendado
 
 
-class FitnessResult(str, Enum):
+class FitnessResult(StrEnum):
     """Resultado de aptidao do ASO."""
-    APTO = "apto"                              # Apto para funcao
-    APTO_RESTRICOES = "apto_com_restricoes"   # Apto com restricoes
-    INAPTO_TEMPORARIO = "inapto_temporario"   # Inapto temporariamente
-    INAPTO = "inapto"                         # Inapto para funcao
+
+    APTO = "apto"  # Apto para funcao
+    APTO_RESTRICOES = "apto_com_restricoes"  # Apto com restricoes
+    INAPTO_TEMPORARIO = "inapto_temporario"  # Inapto temporariamente
+    INAPTO = "inapto"  # Inapto para funcao
 
 
-class ComplementaryExam(str, Enum):
+class ComplementaryExam(StrEnum):
     """Exames complementares comuns."""
+
     HEMOGRAMA = "hemograma"
     GLICEMIA = "glicemia"
     AUDIOMETRIA = "audiometria"
@@ -74,7 +77,7 @@ class ComplementaryExam(str, Enum):
 class MedicalExamError(Exception):
     """Erro em operacao de exame medico."""
 
-    def __init__(self, message: str, exam_id: Optional[str] = None):
+    def __init__(self, message: str, exam_id: str | None = None):
         self.message = message
         self.exam_id = exam_id
         super().__init__(self.message)
@@ -83,29 +86,32 @@ class MedicalExamError(Exception):
 @dataclass
 class ExamRequirement:
     """Requisito de exame para uma funcao/risco."""
+
     exam_type: ComplementaryExam
-    periodicity_months: int          # Periodicidade em meses
+    periodicity_months: int  # Periodicidade em meses
     mandatory: bool = True
-    risk_factors: List[str] = field(default_factory=list)
-    age_min: Optional[int] = None    # Idade minima para exigir
-    age_max: Optional[int] = None    # Idade maxima para exigir
-    gender: Optional[str] = None     # M, F ou None para ambos
+    risk_factors: list[str] = field(default_factory=list)
+    age_min: int | None = None  # Idade minima para exigir
+    age_max: int | None = None  # Idade maxima para exigir
+    gender: str | None = None  # M, F ou None para ambos
 
 
 @dataclass
 class OccupationalFunction:
     """Funcao ocupacional com requisitos de exames."""
+
     id: UUID
     name: str
-    cbo_code: str                    # Codigo CBO
+    cbo_code: str  # Codigo CBO
     department: str
-    risk_factors: List[str]          # Riscos ocupacionais
-    exam_requirements: List[ExamRequirement] = field(default_factory=list)
+    risk_factors: list[str]  # Riscos ocupacionais
+    exam_requirements: list[ExamRequirement] = field(default_factory=list)
 
 
 @dataclass
 class ClinicPartner:
     """Clinica parceira para realizacao de exames."""
+
     id: UUID
     name: str
     cnpj: str
@@ -113,36 +119,37 @@ class ClinicPartner:
     phone: str
     email: str
     api_integration: bool = False
-    api_endpoint: Optional[str] = None
-    available_exams: List[ComplementaryExam] = field(default_factory=list)
-    working_hours: Dict[str, str] = field(default_factory=dict)
+    api_endpoint: str | None = None
+    available_exams: list[ComplementaryExam] = field(default_factory=list)
+    working_hours: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
 class MedicalExam:
     """Exame medico ocupacional."""
+
     id: UUID
     employee_id: str
     employee_name: str
     employee_cpf: str
     exam_type: ExamType
     status: ExamStatus
-    scheduled_date: Optional[date] = None
-    scheduled_time: Optional[str] = None
-    clinic_id: Optional[UUID] = None
-    clinic_name: Optional[str] = None
-    completed_date: Optional[date] = None
-    fitness_result: Optional[FitnessResult] = None
-    restrictions: Optional[str] = None
-    valid_until: Optional[date] = None
-    complementary_exams: List[ComplementaryExam] = field(default_factory=list)
-    doctor_name: Optional[str] = None
-    doctor_crm: Optional[str] = None
-    aso_number: Optional[str] = None
-    observations: Optional[str] = None
+    scheduled_date: date | None = None
+    scheduled_time: str | None = None
+    clinic_id: UUID | None = None
+    clinic_name: str | None = None
+    completed_date: date | None = None
+    fitness_result: FitnessResult | None = None
+    restrictions: str | None = None
+    valid_until: date | None = None
+    complementary_exams: list[ComplementaryExam] = field(default_factory=list)
+    doctor_name: str | None = None
+    doctor_crm: str | None = None
+    aso_number: str | None = None
+    observations: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
-    created_by: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_by: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_valid(self) -> bool:
         """Verifica se o exame esta valido."""
@@ -152,14 +159,14 @@ class MedicalExam:
             return False
         return date.today() <= self.valid_until
 
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> int | None:
         """Dias ate vencimento."""
         if not self.valid_until:
             return None
         delta = self.valid_until - date.today()
         return delta.days
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "employee_id": self.employee_id,
@@ -184,6 +191,7 @@ class MedicalExam:
 # SQLAlchemy Models
 class MedicalExamModel(Base):
     """Modelo de banco para exames medicos."""
+
     __tablename__ = "health_medical_exams"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -213,6 +221,7 @@ class MedicalExamModel(Base):
 
 class ClinicPartnerModel(Base):
     """Modelo de banco para clinicas parceiras."""
+
     __tablename__ = "health_clinic_partners"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -232,6 +241,7 @@ class ClinicPartnerModel(Base):
 
 class PCMSOConfig(BaseModel):
     """Configuracao do sistema PCMSO."""
+
     default_validity_months: int = Field(default=12, ge=6, le=24)
     alert_days_before_expiry: int = Field(default=30, ge=7)
     auto_schedule_enabled: bool = True
@@ -254,7 +264,7 @@ class MedicalExamManager:
         ... )
     """
 
-    def __init__(self, config: Optional[PCMSOConfig] = None):
+    def __init__(self, config: PCMSOConfig | None = None):
         """
         Inicializa o gerenciador PCMSO.
 
@@ -262,9 +272,9 @@ class MedicalExamManager:
             config: Configuracao do sistema.
         """
         self.config = config or PCMSOConfig()
-        self._exams: Dict[UUID, MedicalExam] = {}
-        self._clinics: Dict[UUID, ClinicPartner] = {}
-        self._functions: Dict[UUID, OccupationalFunction] = {}
+        self._exams: dict[UUID, MedicalExam] = {}
+        self._clinics: dict[UUID, ClinicPartner] = {}
+        self._functions: dict[UUID, OccupationalFunction] = {}
         logger.info("MedicalExamManager inicializado")
 
     async def schedule_exam(
@@ -275,9 +285,9 @@ class MedicalExamManager:
         exam_type: ExamType,
         scheduled_date: date,
         scheduled_time: str = "08:00",
-        clinic_id: Optional[UUID] = None,
-        complementary_exams: Optional[List[ComplementaryExam]] = None,
-        created_by: Optional[str] = None
+        clinic_id: UUID | None = None,
+        complementary_exams: list[ComplementaryExam] | None = None,
+        created_by: str | None = None,
     ) -> MedicalExam:
         """
         Agenda exame medico ocupacional.
@@ -317,7 +327,10 @@ class MedicalExamManager:
 
         logger.info(
             "Exame agendado: id=%s, employee=%s, type=%s, date=%s",
-            exam.id, employee_id, exam_type.value, scheduled_date
+            exam.id,
+            employee_id,
+            exam_type.value,
+            scheduled_date,
         )
 
         return exam
@@ -329,9 +342,9 @@ class MedicalExamManager:
         doctor_name: str,
         doctor_crm: str,
         valid_until: date,
-        aso_number: Optional[str] = None,
-        restrictions: Optional[str] = None,
-        observations: Optional[str] = None
+        aso_number: str | None = None,
+        restrictions: str | None = None,
+        observations: str | None = None,
     ) -> MedicalExam:
         """
         Registra conclusao de exame.
@@ -363,19 +376,12 @@ class MedicalExamManager:
         exam.restrictions = restrictions
         exam.observations = observations
 
-        logger.info(
-            "Exame concluido: id=%s, result=%s, valid_until=%s",
-            exam_id, fitness_result.value, valid_until
-        )
+        logger.info("Exame concluido: id=%s, result=%s, valid_until=%s", exam_id, fitness_result.value, valid_until)
 
         return exam
 
     async def reschedule_exam(
-        self,
-        exam_id: UUID,
-        new_date: date,
-        new_time: str = "08:00",
-        reason: Optional[str] = None
+        self, exam_id: UUID, new_date: date, new_time: str = "08:00", reason: str | None = None
     ) -> MedicalExam:
         """
         Reagenda exame medico.
@@ -398,21 +404,20 @@ class MedicalExamManager:
         exam.scheduled_time = new_time
         exam.status = ExamStatus.RESCHEDULED
         exam.metadata["reschedule_history"] = exam.metadata.get("reschedule_history", [])
-        exam.metadata["reschedule_history"].append({
-            "old_date": old_date.isoformat() if old_date else None,
-            "new_date": new_date.isoformat(),
-            "reason": reason,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        exam.metadata["reschedule_history"].append(
+            {
+                "old_date": old_date.isoformat() if old_date else None,
+                "new_date": new_date.isoformat(),
+                "reason": reason,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
         logger.info("Exame reagendado: id=%s, new_date=%s", exam_id, new_date)
         return exam
 
     async def cancel_exam(
-        self,
-        exam_id: UUID,
-        reason: Optional[str] = None,
-        cancelled_by: Optional[str] = None
+        self, exam_id: UUID, reason: str | None = None, cancelled_by: str | None = None
     ) -> MedicalExam:
         """
         Cancela exame medico.
@@ -439,15 +444,11 @@ class MedicalExamManager:
         logger.info("Exame cancelado: id=%s, reason=%s", exam_id, reason)
         return exam
 
-    async def get_exam(self, exam_id: UUID) -> Optional[MedicalExam]:
+    async def get_exam(self, exam_id: UUID) -> MedicalExam | None:
         """Recupera exame por ID."""
         return self._exams.get(exam_id)
 
-    async def get_employee_exams(
-        self,
-        employee_id: str,
-        include_expired: bool = False
-    ) -> List[MedicalExam]:
+    async def get_employee_exams(self, employee_id: str, include_expired: bool = False) -> list[MedicalExam]:
         """
         Recupera exames de um funcionario.
 
@@ -465,10 +466,7 @@ class MedicalExamManager:
 
         return sorted(exams, key=lambda x: x.created_at, reverse=True)
 
-    async def get_expiring_exams(
-        self,
-        days: Optional[int] = None
-    ) -> List[MedicalExam]:
+    async def get_expiring_exams(self, days: int | None = None) -> list[MedicalExam]:
         """
         Lista exames proximos de vencer.
 
@@ -489,26 +487,20 @@ class MedicalExamManager:
 
         return sorted(expiring, key=lambda x: x.valid_until)
 
-    async def get_expired_exams(self) -> List[MedicalExam]:
+    async def get_expired_exams(self) -> list[MedicalExam]:
         """Lista exames vencidos."""
         today = date.today()
         return [
-            e for e in self._exams.values()
+            e
+            for e in self._exams.values()
             if e.status == ExamStatus.COMPLETED and e.valid_until and e.valid_until < today
         ]
 
-    async def get_pending_exams(self) -> List[MedicalExam]:
+    async def get_pending_exams(self) -> list[MedicalExam]:
         """Lista exames pendentes (agendados)."""
-        return [
-            e for e in self._exams.values()
-            if e.status in [ExamStatus.SCHEDULED, ExamStatus.RESCHEDULED]
-        ]
+        return [e for e in self._exams.values() if e.status in [ExamStatus.SCHEDULED, ExamStatus.RESCHEDULED]]
 
-    async def check_employee_compliance(
-        self,
-        employee_id: str,
-        function_id: Optional[UUID] = None
-    ) -> Dict[str, Any]:
+    async def check_employee_compliance(self, employee_id: str, function_id: UUID | None = None) -> dict[str, Any]:
         """
         Verifica compliance de exames de um funcionario.
 
@@ -543,17 +535,19 @@ class MedicalExamManager:
         for exam in valid_exams:
             days_left = exam.days_until_expiry()
             if days_left and days_left <= self.config.alert_days_before_expiry:
-                compliance["expiring_soon"].append({
-                    "exam_type": exam.exam_type.value,
-                    "valid_until": exam.valid_until.isoformat(),
-                    "days_remaining": days_left,
-                })
+                compliance["expiring_soon"].append(
+                    {
+                        "exam_type": exam.exam_type.value,
+                        "valid_until": exam.valid_until.isoformat(),
+                        "days_remaining": days_left,
+                    }
+                )
 
         # Verifica requisitos da funcao
         if function_id:
             function = self._functions.get(function_id)
             if function:
-                completed_types = {e.exam_type for e in valid_exams}
+                {e.exam_type for e in valid_exams}
                 # Verificar exames complementares obrigatorios
                 # (simplificado - em producao seria mais completo)
 
@@ -561,7 +555,7 @@ class MedicalExamManager:
 
         return compliance
 
-    async def generate_aso_report(self, exam_id: UUID) -> Dict[str, Any]:
+    async def generate_aso_report(self, exam_id: UUID) -> dict[str, Any]:
         """
         Gera relatorio ASO (Atestado de Saude Ocupacional).
 
@@ -608,7 +602,7 @@ class MedicalExamManager:
         logger.info("Clinica registrada: %s", clinic.name)
         return clinic
 
-    async def list_clinics(self, only_active: bool = True) -> List[ClinicPartner]:
+    async def list_clinics(self, only_active: bool = True) -> list[ClinicPartner]:
         """Lista clinicas parceiras."""
         clinics = list(self._clinics.values())
         # Aqui seria filtrado por active se fosse do banco
@@ -620,7 +614,7 @@ class MedicalExamManager:
         logger.info("Funcao registrada: %s (CBO: %s)", function.name, function.cbo_code)
         return function
 
-    async def get_compliance_summary(self) -> Dict[str, Any]:
+    async def get_compliance_summary(self) -> dict[str, Any]:
         """
         Gera resumo de compliance PCMSO.
 
@@ -644,7 +638,7 @@ class MedicalExamManager:
             "by_result": self._count_by_result(valid_exams),
         }
 
-    def _count_by_type(self, exams: List[MedicalExam]) -> Dict[str, int]:
+    def _count_by_type(self, exams: list[MedicalExam]) -> dict[str, int]:
         """Conta exames por tipo."""
         counts = {}
         for exam in exams:
@@ -652,7 +646,7 @@ class MedicalExamManager:
             counts[t] = counts.get(t, 0) + 1
         return counts
 
-    def _count_by_result(self, exams: List[MedicalExam]) -> Dict[str, int]:
+    def _count_by_result(self, exams: list[MedicalExam]) -> dict[str, int]:
         """Conta exames por resultado."""
         counts = {}
         for exam in exams:
@@ -663,7 +657,7 @@ class MedicalExamManager:
 
 
 # Singleton
-_exam_manager: Optional[MedicalExamManager] = None
+_exam_manager: MedicalExamManager | None = None
 
 
 def get_exam_manager() -> MedicalExamManager:
@@ -674,7 +668,7 @@ def get_exam_manager() -> MedicalExamManager:
     return _exam_manager
 
 
-def init_exam_manager(config: Optional[PCMSOConfig] = None) -> MedicalExamManager:
+def init_exam_manager(config: PCMSOConfig | None = None) -> MedicalExamManager:
     """Inicializa o MedicalExamManager singleton."""
     global _exam_manager
     _exam_manager = MedicalExamManager(config)

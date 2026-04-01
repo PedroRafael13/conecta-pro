@@ -1,20 +1,19 @@
 """Repository para REPEvent."""
 
-from datetime import datetime, date
-from typing import Optional, List, Tuple
+from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import select, func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.rep_integration.models import (
-    REPEvent,
     EventStatus,
+    REPEvent,
 )
 from modules.hr.rep_integration.schemas import (
     REPEventCreate,
-    REPEventUpdate,
     REPEventFilter,
+    REPEventUpdate,
 )
 
 
@@ -64,8 +63,8 @@ class REPEventRepository:
 
     async def create_bulk(
         self,
-        events: List[REPEventCreate],
-    ) -> Tuple[int, int, int]:
+        events: list[REPEventCreate],
+    ) -> tuple[int, int, int]:
         """Cria eventos em lote.
 
         Returns:
@@ -93,18 +92,16 @@ class REPEventRepository:
 
         return created, duplicates, errors
 
-    async def get_by_id(self, event_id: UUID) -> Optional[REPEvent]:
+    async def get_by_id(self, event_id: UUID) -> REPEvent | None:
         """Busca evento por ID."""
-        result = await self.db.execute(
-            select(REPEvent).where(REPEvent.id == event_id)
-        )
+        result = await self.db.execute(select(REPEvent).where(REPEvent.id == event_id))
         return result.scalar_one_or_none()
 
     async def get_by_device_nsr(
         self,
         device_id: UUID,
         nsr: int,
-    ) -> Optional[REPEvent]:
+    ) -> REPEvent | None:
         """Busca evento por dispositivo e NSR."""
         result = await self.db.execute(
             select(REPEvent).where(
@@ -118,7 +115,7 @@ class REPEventRepository:
         self,
         event_id: UUID,
         data: REPEventUpdate,
-    ) -> Optional[REPEvent]:
+    ) -> REPEvent | None:
         """Atualiza evento."""
         event = await self.get_by_id(event_id)
         if not event:
@@ -137,7 +134,7 @@ class REPEventRepository:
         filters: REPEventFilter,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[REPEvent], int]:
+    ) -> tuple[list[REPEvent], int]:
         """Lista eventos com filtros e paginação."""
         query = select(REPEvent)
 
@@ -155,9 +152,7 @@ class REPEventRepository:
         if filters.status:
             query = query.where(REPEvent.status == filters.status)
         if filters.identification_method:
-            query = query.where(
-                REPEvent.identification_method == filters.identification_method
-            )
+            query = query.where(REPEvent.identification_method == filters.identification_method)
         if filters.date_from:
             query = query.where(REPEvent.event_date >= filters.date_from)
         if filters.date_to:
@@ -193,13 +188,15 @@ class REPEventRepository:
         self,
         device_id: UUID = None,
         limit: int = 100,
-    ) -> List[REPEvent]:
+    ) -> list[REPEvent]:
         """Retorna eventos pendentes de processamento."""
         query = select(REPEvent).where(
-            REPEvent.status.in_([
-                EventStatus.RECEIVED.value,
-                EventStatus.VALIDATED.value,
-            ])
+            REPEvent.status.in_(
+                [
+                    EventStatus.RECEIVED.value,
+                    EventStatus.VALIDATED.value,
+                ]
+            )
         )
 
         if device_id:
@@ -216,7 +213,7 @@ class REPEventRepository:
         date_from: date = None,
         date_to: date = None,
         limit: int = 100,
-    ) -> List[REPEvent]:
+    ) -> list[REPEvent]:
         """Retorna eventos sem funcionário identificado."""
         query = select(REPEvent).where(
             REPEvent.employee_id.is_(None),
@@ -270,19 +267,13 @@ class REPEventRepository:
     async def mark_as_duplicate(self, event_id: UUID) -> None:
         """Marca evento como duplicado."""
         await self.db.execute(
-            update(REPEvent)
-            .where(REPEvent.id == event_id)
-            .values(status=EventStatus.DUPLICATE.value)
+            update(REPEvent).where(REPEvent.id == event_id).values(status=EventStatus.DUPLICATE.value)
         )
         await self.db.commit()
 
-    async def get_last_nsr(self, device_id: UUID) -> Optional[int]:
+    async def get_last_nsr(self, device_id: UUID) -> int | None:
         """Retorna último NSR do dispositivo."""
-        result = await self.db.execute(
-            select(func.max(REPEvent.nsr)).where(
-                REPEvent.device_id == device_id
-            )
-        )
+        result = await self.db.execute(select(func.max(REPEvent.nsr)).where(REPEvent.device_id == device_id))
         return result.scalar()
 
     async def get_events_by_date_range(
@@ -290,14 +281,16 @@ class REPEventRepository:
         device_id: UUID,
         start_date: date,
         end_date: date,
-    ) -> List[REPEvent]:
+    ) -> list[REPEvent]:
         """Retorna eventos de um período."""
         result = await self.db.execute(
-            select(REPEvent).where(
+            select(REPEvent)
+            .where(
                 REPEvent.device_id == device_id,
                 REPEvent.event_date >= start_date,
                 REPEvent.event_date <= end_date,
-            ).order_by(REPEvent.nsr)
+            )
+            .order_by(REPEvent.nsr)
         )
         return list(result.scalars().all())
 
@@ -320,39 +313,24 @@ class REPEventRepository:
             base_where.append(REPEvent.event_date <= date_to)
 
         # Total
-        total_result = await self.db.execute(
-            select(func.count()).where(*base_where)
-        )
+        total_result = await self.db.execute(select(func.count()).where(*base_where))
         total = total_result.scalar() or 0
 
         # Por tipo
         type_result = await self.db.execute(
-            select(
-                REPEvent.event_type,
-                func.count(REPEvent.id)
-            )
-            .where(*base_where)
-            .group_by(REPEvent.event_type)
+            select(REPEvent.event_type, func.count(REPEvent.id)).where(*base_where).group_by(REPEvent.event_type)
         )
         by_type = {row[0]: row[1] for row in type_result.all()}
 
         # Por status
         status_result = await self.db.execute(
-            select(
-                REPEvent.status,
-                func.count(REPEvent.id)
-            )
-            .where(*base_where)
-            .group_by(REPEvent.status)
+            select(REPEvent.status, func.count(REPEvent.id)).where(*base_where).group_by(REPEvent.status)
         )
         by_status = {row[0]: row[1] for row in status_result.all()}
 
         # Por método
         method_result = await self.db.execute(
-            select(
-                REPEvent.identification_method,
-                func.count(REPEvent.id)
-            )
+            select(REPEvent.identification_method, func.count(REPEvent.id))
             .where(*base_where)
             .group_by(REPEvent.identification_method)
         )

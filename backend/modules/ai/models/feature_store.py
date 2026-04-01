@@ -3,9 +3,8 @@
 Sprint 34 - AI Predictions.
 """
 
-import enum
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -14,7 +13,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class FeatureStatus(str, enum.Enum):
+class FeatureStatus(StrEnum):
     """Status da feature."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -23,7 +22,7 @@ class FeatureStatus(str, enum.Enum):
     ARCHIVED = "ARCHIVED"  # Arquivada
 
 
-class FeatureDataType(str, enum.Enum):
+class FeatureDataType(StrEnum):
     """Tipo de dado da feature."""
 
     NUMERIC = "NUMERIC"  # Numerico continuo

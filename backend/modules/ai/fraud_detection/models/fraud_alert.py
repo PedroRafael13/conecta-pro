@@ -4,30 +4,28 @@ Fraud Alert Model - AI Fraud Detection
 Modelo para alertas de fraude detectados.
 """
 
-import enum
 import uuid
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
+    Boolean,
     Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
     String,
     Text,
-    Boolean,
-    Integer,
-    Float,
-    DateTime,
-    Date,
-    Enum,
-    ForeignKey,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class FraudCategory(str, enum.Enum):
+class FraudCategory(StrEnum):
     """Categoria de fraude."""
 
     FINANCIAL = "financial"
@@ -45,7 +43,7 @@ class FraudCategory(str, enum.Enum):
     OTHER = "other"
 
 
-class AlertSeverity(str, enum.Enum):
+class AlertSeverity(StrEnum):
     """Severidade do alerta."""
 
     LOW = "low"
@@ -54,7 +52,7 @@ class AlertSeverity(str, enum.Enum):
     CRITICAL = "critical"
 
 
-class AlertStatus(str, enum.Enum):
+class AlertStatus(StrEnum):
     """Status do alerta."""
 
     NEW = "new"
@@ -252,7 +250,7 @@ class FraudAlert(Base):
             self.status = AlertStatus.INVESTIGATING
         self.updated_at = datetime.utcnow()
 
-    def confirm(self, user_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def confirm(self, user_id: uuid.UUID, notes: str | None = None) -> None:
         """Confirma fraude."""
         self.status = AlertStatus.CONFIRMED
         self.resolved_by = user_id
@@ -262,9 +260,7 @@ class FraudAlert(Base):
             self.resolution_notes = notes
         self.updated_at = datetime.utcnow()
 
-    def mark_false_positive(
-        self, user_id: uuid.UUID, notes: Optional[str] = None
-    ) -> None:
+    def mark_false_positive(self, user_id: uuid.UUID, notes: str | None = None) -> None:
         """Marca como falso positivo."""
         self.status = AlertStatus.FALSE_POSITIVE
         self.feedback_correct = False
@@ -281,7 +277,7 @@ class FraudAlert(Base):
     def escalate(
         self,
         escalated_to: uuid.UUID,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> None:
         """Escala alerta."""
         self.status = AlertStatus.ESCALATED
@@ -296,8 +292,8 @@ class FraudAlert(Base):
         self,
         user_id: uuid.UUID,
         resolution_type: str,
-        notes: Optional[str] = None,
-        actions: Optional[List[Dict]] = None,
+        notes: str | None = None,
+        actions: list[dict] | None = None,
     ) -> None:
         """Resolve alerta."""
         self.status = AlertStatus.RESOLVED

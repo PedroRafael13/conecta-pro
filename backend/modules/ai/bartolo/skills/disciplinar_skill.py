@@ -14,7 +14,7 @@ Date: 2026-01-29
 """
 
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -52,7 +52,7 @@ class DisciplinarSkill(BaseSkill):
         super().__init__(data_connector=data_connector)
         self.db = db
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando de medida disciplinar."""
         if not command or command == "help":
             return {"response": self.get_help(), "suggestions": self.commands[:4]}
@@ -81,12 +81,13 @@ class DisciplinarSkill(BaseSkill):
             "suggestions": self.commands[:4],
         }
 
-    async def _resumo(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _resumo(self, args: list[str], context: dict) -> dict[str, Any]:
         """Resumo geral das medidas disciplinares."""
         # Tentar dados reais
         if self.db:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -150,11 +151,12 @@ Use `/disciplina pendentes` para ver apenas as pendentes.""",
             "suggestions": ["/disciplina pendentes", "/disciplina stats"],
         }
 
-    async def _pendentes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pendentes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Lista medidas pendentes de aprovacao."""
         if self.db:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -217,7 +219,7 @@ Para aprovar: informe o codigo da medida.""",
             "suggestions": ["Aprovar ADV-2026-00002", "Aprovar SUS-2026-00001", "/disciplina help"],
         }
 
-    async def _historico(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _historico(self, args: list[str], context: dict) -> dict[str, Any]:
         """Historico disciplinar de um funcionario."""
         if not args:
             return {
@@ -231,6 +233,7 @@ Para aprovar: informe o codigo da medida.""",
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
                 from modules.operacional.disciplinary.schemas import DisciplinaryFilter
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -252,7 +255,11 @@ Para aprovar: informe o codigo da medida.""",
                                 "demissao_justa_causa": "Justa Causa",
                             }
                             tipo = tipo_map.get(a.action_type, a.action_type)
-                            motivo = a.reason_description[:40] + "..." if len(a.reason_description) > 40 else a.reason_description
+                            motivo = (
+                                a.reason_description[:40] + "..."
+                                if len(a.reason_description) > 40
+                                else a.reason_description
+                            )
                             lines.append(
                                 f"| {a.code} | {tipo} | {a.status_display_name} | "
                                 f"{a.incident_date.strftime('%d/%m/%Y')} | {motivo} |"
@@ -262,13 +269,12 @@ Para aprovar: informe o codigo da medida.""",
 
                         # Contadores
                         adv_aplicadas = sum(
-                            1 for a in actions
-                            if a.action_type in ["advertencia_verbal", "advertencia_escrita"]
-                            and a.status == "aplicada"
+                            1
+                            for a in actions
+                            if a.action_type in ["advertencia_verbal", "advertencia_escrita"] and a.status == "aplicada"
                         )
                         sus_aplicadas = sum(
-                            1 for a in actions
-                            if a.action_type == "suspensao" and a.status == "aplicada"
+                            1 for a in actions if a.action_type == "suspensao" and a.status == "aplicada"
                         )
 
                         response = f"""**Historico Disciplinar - {employee_name}**
@@ -315,11 +321,12 @@ Para aprovar: informe o codigo da medida.""",
             "suggestions": ["Criar suspensao", "Validar CLT"],
         }
 
-    async def _stats(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _stats(self, args: list[str], context: dict) -> dict[str, Any]:
         """Estatisticas de medidas disciplinares."""
         if self.db:
             try:
                 from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+
                 repo = DisciplinaryRepository(self.db)
                 tenant_id = context.get("tenant_id", "")
 
@@ -339,7 +346,9 @@ Para aprovar: informe o codigo da medida.""",
                     tipo_tabela = "\n".join(tipo_lines) if tipo_lines else "| - | 0 |"
 
                     motivo_lines = []
-                    for motivo_key, count in sorted(stats.by_reason_category.items(), key=lambda x: x[1], reverse=True)[:5]:
+                    for motivo_key, count in sorted(stats.by_reason_category.items(), key=lambda x: x[1], reverse=True)[
+                        :5
+                    ]:
                         motivo_lines.append(f"| {motivo_key.replace('_', ' ').title()} | {count} |")
                     motivo_tabela = "\n".join(motivo_lines) if motivo_lines else "| - | 0 |"
 
@@ -412,7 +421,7 @@ Para aprovar: informe o codigo da medida.""",
             "suggestions": ["/disciplina pendentes", "/disciplina resumo"],
         }
 
-    async def _tipos(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _tipos(self, args: list[str], context: dict) -> dict[str, Any]:
         """Lista tipos de medidas disciplinares disponiveis."""
         return {
             "response": """**Tipos de Medidas Disciplinares**

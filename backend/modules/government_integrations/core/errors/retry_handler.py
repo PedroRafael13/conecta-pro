@@ -5,32 +5,34 @@ Implementa estratégias de retry configuráveis por serviço.
 """
 
 import asyncio
-from typing import TypeVar, Callable, Awaitable, Dict, Any, Optional
-from functools import wraps
-from dataclasses import dataclass
-import random
 import logging
+import random  # noqa: S311
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from functools import wraps
+from typing import TypeVar
 
-from .error_classifier import ClassificadorErros, ErroIntegracao, CategoriaErro
+from .error_classifier import ClassificadorErros, ErroIntegracao
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass
 class RetryConfig:
     """Configuração de retry por serviço."""
+
     max_tentativas: int
     base_delay: float  # segundos
-    max_delay: float   # segundos
+    max_delay: float  # segundos
     jitter: float = 0.1  # percentual de variação aleatória
 
 
 class RetryConfigs:
     """Configurações de retry por serviço."""
 
-    _configs: Dict[str, RetryConfig] = {
+    _configs: dict[str, RetryConfig] = {
         # SEFAZ - NF-e, NFC-e
         "sefaz": RetryConfig(
             max_tentativas=3,
@@ -42,35 +44,30 @@ class RetryConfigs:
             base_delay=2.0,
             max_delay=60.0,
         ),
-
         # eSocial - Rate limit mais restritivo
         "esocial": RetryConfig(
             max_tentativas=5,
             base_delay=5.0,
             max_delay=120.0,
         ),
-
         # EFD-Reinf
         "efd_reinf": RetryConfig(
             max_tentativas=3,
             base_delay=3.0,
             max_delay=60.0,
         ),
-
         # FGTS Digital
         "fgts_digital": RetryConfig(
             max_tentativas=3,
             base_delay=3.0,
             max_delay=30.0,
         ),
-
         # DCTFWeb
         "dctfweb": RetryConfig(
             max_tentativas=3,
             base_delay=5.0,
             max_delay=60.0,
         ),
-
         # NFS-e Municipal
         "nfse": RetryConfig(
             max_tentativas=3,
@@ -82,7 +79,6 @@ class RetryConfigs:
             base_delay=2.0,
             max_delay=30.0,
         ),
-
         # CT-e e MDF-e
         "cte": RetryConfig(
             max_tentativas=3,
@@ -94,35 +90,30 @@ class RetryConfigs:
             base_delay=2.0,
             max_delay=60.0,
         ),
-
         # Gov.br OAuth
         "govbr": RetryConfig(
             max_tentativas=3,
             base_delay=1.0,
             max_delay=10.0,
         ),
-
         # Simples Nacional
         "simples_nacional": RetryConfig(
             max_tentativas=3,
             base_delay=3.0,
             max_delay=30.0,
         ),
-
         # SPED
         "sped": RetryConfig(
             max_tentativas=2,
             base_delay=5.0,
             max_delay=30.0,
         ),
-
         # e-CAC
         "ecac": RetryConfig(
             max_tentativas=3,
             base_delay=5.0,
             max_delay=60.0,
         ),
-
         # Padrão
         "default": RetryConfig(
             max_tentativas=3,
@@ -142,13 +133,13 @@ class RetryConfigs:
         cls._configs[servico] = config
 
 
-async def retry_com_backoff(
+async def retry_com_backoff[T](
     func: Callable[..., Awaitable[T]],
     *args,
     servico: str = "default",
-    correlation_id: Optional[str] = None,
-    on_retry: Optional[Callable[[ErroIntegracao, int], Awaitable[None]]] = None,
-    **kwargs
+    correlation_id: str | None = None,
+    on_retry: Callable[[ErroIntegracao, int], Awaitable[None]] | None = None,
+    **kwargs,
 ) -> T:
     """
     Executa função com retry e backoff exponencial.
@@ -174,8 +165,8 @@ async def retry_com_backoff(
     max_delay = config.max_delay
     jitter_pct = config.jitter
 
-    ultimo_erro: Optional[Exception] = None
-    erro_info: Optional[ErroIntegracao] = None
+    ultimo_erro: Exception | None = None
+    erro_info: ErroIntegracao | None = None
 
     for tentativa in range(max_tentativas):
         try:
@@ -183,9 +174,7 @@ async def retry_com_backoff(
 
         except Exception as e:
             ultimo_erro = e
-            erro_info = ClassificadorErros.classificar(
-                e, servico, tentativa, correlation_id
-            )
+            erro_info = ClassificadorErros.classificar(e, servico, tentativa, correlation_id)
 
             # Se não pode retentar, falha imediatamente
             if not erro_info.pode_retentar:
@@ -195,7 +184,7 @@ async def retry_com_backoff(
                         "servico": servico,
                         "categoria": erro_info.categoria.value,
                         "correlation_id": correlation_id,
-                    }
+                    },
                 )
                 raise
 
@@ -204,8 +193,8 @@ async def retry_com_backoff(
                 break
 
             # Calcular delay com jitter
-            delay = min(base_delay * (2 ** tentativa), max_delay)
-            jitter = random.uniform(0, delay * jitter_pct)
+            delay = min(base_delay * (2**tentativa), max_delay)
+            jitter = random.uniform(0, delay * jitter_pct)  # noqa: S311
             delay_total = delay + jitter
 
             logger.warning(
@@ -219,7 +208,7 @@ async def retry_com_backoff(
                     "delay": delay_total,
                     "categoria": erro_info.categoria.value,
                     "correlation_id": correlation_id,
-                }
+                },
             )
 
             # Callback de retry
@@ -230,22 +219,18 @@ async def retry_com_backoff(
 
     # Todas tentativas falharam
     logger.error(
-        f"[{servico}] Todas as {max_tentativas} tentativas falharam. "
-        f"Último erro: {ultimo_erro}",
+        f"[{servico}] Todas as {max_tentativas} tentativas falharam. Último erro: {ultimo_erro}",
         extra={
             "servico": servico,
             "max_tentativas": max_tentativas,
             "categoria": erro_info.categoria.value if erro_info else "desconhecido",
             "correlation_id": correlation_id,
-        }
+        },
     )
     raise ultimo_erro
 
 
-def com_retry(
-    servico: str = "default",
-    on_retry: Optional[Callable[[ErroIntegracao, int], Awaitable[None]]] = None
-):
+def com_retry(servico: str = "default", on_retry: Callable[[ErroIntegracao, int], Awaitable[None]] | None = None):
     """
     Decorator para adicionar retry automático.
 
@@ -258,21 +243,19 @@ def com_retry(
         async def consultar_nfe(chave: str):
             ...
     """
+
     def decorator(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
         @wraps(func)
         async def wrapper(*args, **kwargs) -> T:
             # Extrair correlation_id se passado
-            correlation_id = kwargs.pop('correlation_id', None)
+            correlation_id = kwargs.pop("correlation_id", None)
 
             return await retry_com_backoff(
-                func,
-                *args,
-                servico=servico,
-                correlation_id=correlation_id,
-                on_retry=on_retry,
-                **kwargs
+                func, *args, servico=servico, correlation_id=correlation_id, on_retry=on_retry, **kwargs
             )
+
         return wrapper
+
     return decorator
 
 
@@ -290,12 +273,7 @@ class RetryContext:
                     await ctx.registrar_erro(e)
     """
 
-    def __init__(
-        self,
-        servico: str,
-        max_tentativas: Optional[int] = None,
-        correlation_id: Optional[str] = None
-    ):
+    def __init__(self, servico: str, max_tentativas: int | None = None, correlation_id: str | None = None):
         config = RetryConfigs.get(servico)
         self.servico = servico
         self.max_tentativas = max_tentativas or config.max_tentativas
@@ -305,7 +283,7 @@ class RetryContext:
         self.correlation_id = correlation_id
 
         self._tentativa_atual = 0
-        self._ultimo_erro: Optional[ErroIntegracao] = None
+        self._ultimo_erro: ErroIntegracao | None = None
         self._sucesso = False
 
     async def __aenter__(self):
@@ -335,11 +313,8 @@ class RetryContext:
             raise erro
 
         # Calcular e aguardar delay
-        delay = min(
-            self.base_delay * (2 ** (self._tentativa_atual - 1)),
-            self.max_delay
-        )
-        jitter = random.uniform(0, delay * self.jitter)
+        delay = min(self.base_delay * (2 ** (self._tentativa_atual - 1)), self.max_delay)
+        jitter = random.uniform(0, delay * self.jitter)  # noqa: S311
 
         logger.warning(
             f"[{self.servico}] Tentativa {self._tentativa_atual}/{self.max_tentativas} "
@@ -358,6 +333,6 @@ class RetryContext:
         return self._tentativa_atual
 
     @property
-    def ultimo_erro(self) -> Optional[ErroIntegracao]:
+    def ultimo_erro(self) -> ErroIntegracao | None:
         """Retorna último erro registrado."""
         return self._ultimo_erro

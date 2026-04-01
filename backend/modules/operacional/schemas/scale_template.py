@@ -3,7 +3,7 @@ Schemas Pydantic para ScaleTemplate.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
@@ -13,7 +13,7 @@ class TemplateShiftPattern(BaseModel):
 
     employee_id: str = Field(..., description="ID do funcionário (pode ser placeholder)")
     post_id: str = Field(..., description="ID do posto")
-    days_of_week: List[int] = Field(
+    days_of_week: list[int] = Field(
         ...,
         description="Dias da semana (0=segunda, 6=domingo)",
         min_length=1,
@@ -38,13 +38,13 @@ class TemplateData(BaseModel):
     """Estrutura completa dos dados do template."""
 
     scale_type: str = Field(..., description="Tipo de escala")
-    posts: List[str] = Field(..., description="IDs dos postos", min_length=1)
-    shifts_pattern: List[TemplateShiftPattern] = Field(
+    posts: list[str] = Field(..., description="IDs dos postos", min_length=1)
+    shifts_pattern: list[TemplateShiftPattern] = Field(
         ...,
         description="Padrões de turnos",
         min_length=1,
     )
-    config: Optional[Dict[str, Any]] = Field(None, description="Configurações da escala")
+    config: dict[str, Any] | None = Field(None, description="Configurações da escala")
     metadata: TemplateMetadata = Field(
         default_factory=TemplateMetadata,
         description="Metadados do template",
@@ -55,7 +55,7 @@ class ScaleTemplateBase(BaseModel):
     """Schema base para ScaleTemplate."""
 
     name: str = Field(..., min_length=3, max_length=100, description="Nome do template")
-    description: Optional[str] = Field(None, description="Descrição do template")
+    description: str | None = Field(None, description="Descrição do template")
 
 
 class ScaleTemplateCreate(ScaleTemplateBase):
@@ -69,7 +69,7 @@ class ScaleTemplateCreateFromScale(BaseModel):
 
     scale_id: str = Field(..., description="ID da escala base")
     name: str = Field(..., min_length=3, max_length=100, description="Nome do template")
-    description: Optional[str] = Field(None, description="Descrição do template")
+    description: str | None = Field(None, description="Descrição do template")
     include_employee_mapping: bool = Field(
         default=False,
         description="Se deve incluir mapeamento específico de funcionários",
@@ -79,10 +79,10 @@ class ScaleTemplateCreateFromScale(BaseModel):
 class ScaleTemplateUpdate(BaseModel):
     """Schema para atualização de template."""
 
-    name: Optional[str] = Field(None, min_length=3, max_length=100)
-    description: Optional[str] = None
-    template_data: Optional[TemplateData] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=3, max_length=100)
+    description: str | None = None
+    template_data: TemplateData | None = None
+    is_active: bool | None = None
 
 
 class ScaleTemplateResponse(BaseModel):
@@ -93,10 +93,10 @@ class ScaleTemplateResponse(BaseModel):
     id: str
     tenant_id: str
     name: str
-    description: Optional[str] = None
-    template_data: Dict[str, Any]
+    description: str | None = None
+    template_data: dict[str, Any]
     times_used: int = 0
-    last_used: Optional[datetime] = None
+    last_used: datetime | None = None
     created_by: str
     created_at: datetime
     updated_at: datetime
@@ -126,7 +126,7 @@ class ScaleTemplateResponse(BaseModel):
 class ScaleTemplateListResponse(BaseModel):
     """Schema para listagem paginada de templates."""
 
-    items: List[ScaleTemplateResponse]
+    items: list[ScaleTemplateResponse]
     total: int
     page: int
     page_size: int
@@ -138,8 +138,8 @@ class ScaleTemplateApplyRequest(BaseModel):
 
     month: int = Field(..., ge=1, le=12, description="Mês da nova escala")
     year: int = Field(..., ge=2020, le=2100, description="Ano da nova escala")
-    post_id: Optional[str] = Field(None, description="Posto (se diferente do template)")
-    employee_mapping: Optional[Dict[str, str]] = Field(
+    post_id: str | None = Field(None, description="Posto (se diferente do template)")
+    employee_mapping: dict[str, str] | None = Field(
         None,
         description="Mapeamento de funcionários antigos -> novos",
         json_schema_extra={
@@ -149,7 +149,7 @@ class ScaleTemplateApplyRequest(BaseModel):
             }
         },
     )
-    config_overrides: Optional[Dict[str, Any]] = Field(
+    config_overrides: dict[str, Any] | None = Field(
         None,
         description="Sobrescrever configurações do template",
     )
@@ -161,6 +161,6 @@ class ScaleTemplateStats(BaseModel):
     total: int
     active: int
     inactive: int
-    most_used: List[ScaleTemplateResponse] = Field(default_factory=list)
-    recently_created: List[ScaleTemplateResponse] = Field(default_factory=list)
+    most_used: list[ScaleTemplateResponse] = Field(default_factory=list)
+    recently_created: list[ScaleTemplateResponse] = Field(default_factory=list)
     avg_usage: float = 0.0

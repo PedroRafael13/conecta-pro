@@ -2,16 +2,17 @@
 EscalaAgent - Agente especialista em escalas de trabalho
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, date
-from enum import Enum
 import logging
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class EscalaIntent(str, Enum):
+class EscalaIntent(StrEnum):
     """Intents relacionados a escalas"""
+
     GERAR_ESCALA = "gerar_escala"
     OTIMIZAR_ESCALA = "otimizar_escala"
     VALIDAR_ESCALA = "validar_escala"
@@ -48,8 +49,10 @@ class EscalaAgent:
         # ==================================================================
         # LISTAR_CONFLITOS com mês - ANTES de ESCALA_MES (mais específico)
         # ==================================================================
-        (r"(?:tem|ha|há)\s+conflitos?\s+(?:na\s+)?escala\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)", EscalaIntent.LISTAR_CONFLITOS),
-
+        (
+            r"(?:tem|ha|há)\s+conflitos?\s+(?:na\s+)?escala\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)",
+            EscalaIntent.LISTAR_CONFLITOS,
+        ),
         # ==================================================================
         # AUTO_GERAR - Geração automática de escalas para todos os postos
         # ==================================================================
@@ -59,34 +62,45 @@ class EscalaAgent:
         (r"escalas?\s+automaticas?\s+(?:para|do)\s+(?:o\s+)?mes", EscalaIntent.AUTO_GERAR),
         (r"(?:quero|preciso)\s+gerar\s+escalas?\s+automatica(?:mente)?", EscalaIntent.AUTO_GERAR),
         (r"gerar\s+escalas?\s+(?:para\s+)?todos\s+(?:os\s+)?postos?", EscalaIntent.AUTO_GERAR),
-
         # ==================================================================
         # OTIMIZAR_INTELIGENTE - Otimização com IA avançada
         # ==================================================================
         (r"(?:otimizar|otimize)\s+(?:com\s+)?(?:ia|inteligencia|inteligente)", EscalaIntent.OTIMIZAR_INTELIGENTE),
         (r"(?:otimiza(?:cao|ção))\s+inteligente", EscalaIntent.OTIMIZAR_INTELIGENTE),
         (r"(?:otimizar|otimize)\s+(?:a\s+)?escala\s+(?:do\s+)?posto", EscalaIntent.OTIMIZAR_INTELIGENTE),
-        (r"(?:reduzir|reduza|diminuir)\s+custos?\s+(?:da\s+)?escala\s+(?:do\s+)?posto", EscalaIntent.OTIMIZAR_INTELIGENTE),
-        (r"(?:otimizar|otimize)\s+escala\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)", EscalaIntent.OTIMIZAR_INTELIGENTE),
-        (r"(?:otimizar|otimize)\s+(?:a\s+)?escala\s+(?:do|de)\s+\w+\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)", EscalaIntent.OTIMIZAR_INTELIGENTE),
-
+        (
+            r"(?:reduzir|reduza|diminuir)\s+custos?\s+(?:da\s+)?escala\s+(?:do\s+)?posto",
+            EscalaIntent.OTIMIZAR_INTELIGENTE,
+        ),
+        (
+            r"(?:otimizar|otimize)\s+escala\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)",
+            EscalaIntent.OTIMIZAR_INTELIGENTE,
+        ),
+        (
+            r"(?:otimizar|otimize)\s+(?:a\s+)?escala\s+(?:do|de)\s+\w+\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)",
+            EscalaIntent.OTIMIZAR_INTELIGENTE,
+        ),
         # ==================================================================
         # CRIAR_TEMPLATE - Salvar escala como template
         # ==================================================================
-        (r"(?:salvar|salve|criar|crie)\s+(?:esta|essa|a)?\s*escala\s+(?:como\s+)?template", EscalaIntent.CRIAR_TEMPLATE),
+        (
+            r"(?:salvar|salve|criar|crie)\s+(?:esta|essa|a)?\s*escala\s+(?:como\s+)?template",
+            EscalaIntent.CRIAR_TEMPLATE,
+        ),
         (r"(?:criar|crie|salvar|salve)\s+template\s+(?:de|da|com)\s+escala", EscalaIntent.CRIAR_TEMPLATE),
         (r"(?:transformar|converter)\s+(?:a\s+)?escala\s+(?:em|para)\s+template", EscalaIntent.CRIAR_TEMPLATE),
         (r"(?:salvar|salve)\s+(?:como\s+)?template", EscalaIntent.CRIAR_TEMPLATE),
         (r"novo\s+template\s+(?:de\s+)?escala", EscalaIntent.CRIAR_TEMPLATE),
-
         # ==================================================================
         # APLICAR_TEMPLATE - Aplicar template em posto/mês
         # ==================================================================
         (r"(?:aplicar|aplique|usar|use)\s+template", EscalaIntent.APLICAR_TEMPLATE),
         (r"(?:aplicar|aplique)\s+(?:o\s+)?template\s+\w+\s+(?:no|em|para)", EscalaIntent.APLICAR_TEMPLATE),
         (r"(?:usar|use)\s+(?:o\s+)?template\s+\w+", EscalaIntent.APLICAR_TEMPLATE),
-        (r"(?:gerar|gere|criar|crie)\s+escala\s+(?:com|usando|baseado)\s+(?:no\s+)?template", EscalaIntent.APLICAR_TEMPLATE),
-
+        (
+            r"(?:gerar|gere|criar|crie)\s+escala\s+(?:com|usando|baseado)\s+(?:no\s+)?template",
+            EscalaIntent.APLICAR_TEMPLATE,
+        ),
         # ==================================================================
         # LISTAR_TEMPLATES - Listar templates disponíveis
         # ==================================================================
@@ -94,25 +108,31 @@ class EscalaAgent:
         (r"(?:quais|que)\s+templates?\s+(?:tenho|existem|disponiv)", EscalaIntent.LISTAR_TEMPLATES),
         (r"templates?\s+(?:de\s+)?escalas?\s+(?:disponiveis?|existentes?)", EscalaIntent.LISTAR_TEMPLATES),
         (r"templates?\s+(?:disponiveis?|existentes?|salvos?)", EscalaIntent.LISTAR_TEMPLATES),
-
         # ==================================================================
         # ESCALA_MES
         # ==================================================================
         (r"(?:ver|veja|mostrar|mostre|exibir|exiba)\s+(?:a\s+)?escala\s+do\s+mes", EscalaIntent.ESCALA_MES),
         (r"escala\s+(?:do\s+|deste\s+)?mes", EscalaIntent.ESCALA_MES),
-        (r"escalas?\s+(?:de\s+|do\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)", EscalaIntent.ESCALA_MES),
-        (r"montar\s+(?:a\s+)?escala\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)", EscalaIntent.ESCALA_MES),
+        (
+            r"escalas?\s+(?:de\s+|do\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)",
+            EscalaIntent.ESCALA_MES,
+        ),
+        (
+            r"montar\s+(?:a\s+)?escala\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)",
+            EscalaIntent.ESCALA_MES,
+        ),
         (r"(?:proximos?\s+)?(?:30|trinta)\s+dias", EscalaIntent.ESCALA_MES),
-
         # ==================================================================
         # OTIMIZAR_ESCALA - Antes de CALCULAR_CUSTO (para "reduzir custo")
         # ==================================================================
         (r"(?:reduzir|diminuir)\s+(?:o\s+)?custo\s+(?:da\s+)?escala", EscalaIntent.OTIMIZAR_ESCALA),
         (r"(?:reduzir|diminuir)\s+(?:as?\s+)?horas?\s+extras?\s+(?:da\s+)?escala", EscalaIntent.OTIMIZAR_ESCALA),
-        (r"(?:otimizar|otimize|melhorar|melhore|ajustar|ajuste|refinar|refine)\s+(?:a\s+)?escala", EscalaIntent.OTIMIZAR_ESCALA),
+        (
+            r"(?:otimizar|otimize|melhorar|melhore|ajustar|ajuste|refinar|refine)\s+(?:a\s+)?escala",
+            EscalaIntent.OTIMIZAR_ESCALA,
+        ),
         (r"escala\s+(?:mais\s+)?(?:eficiente|barata|otimizada)", EscalaIntent.OTIMIZAR_ESCALA),
         (r"(?:deixar|tornar)\s+(?:a\s+)?escala\s+(?:mais\s+)?(?:eficiente|barata)", EscalaIntent.OTIMIZAR_ESCALA),
-
         # ==================================================================
         # VALIDAR_ESCALA - Checagem de escala (com "algum" = pergunta existência)
         # ==================================================================
@@ -123,7 +143,6 @@ class EscalaAgent:
         (r"(?:ha|há)\s+conflito\s+na\s+escala$", EscalaIntent.VALIDAR_ESCALA),
         (r"(?:analisar|analise)\s+(?:a\s+)?escala", EscalaIntent.VALIDAR_ESCALA),
         (r"escala\s+(?:esta\s+)?(?:dentro\s+)?(?:da\s+)?(?:CLT|clt|lei)", EscalaIntent.VALIDAR_ESCALA),
-
         # ==================================================================
         # LISTAR_CONFLITOS - Listar conflitos (direto, sem "algum")
         # ==================================================================
@@ -132,18 +151,22 @@ class EscalaAgent:
         (r"(?:problemas?|erros?)\s+(?:na\s+)?escala", EscalaIntent.LISTAR_CONFLITOS),
         (r"(?:sobreposicao|choque)\s+(?:de\s+)?(?:horario|turno)", EscalaIntent.LISTAR_CONFLITOS),
         (r"(?:funcionario|colaborador)\s+(?:em\s+)?(?:dois|2)\s+(?:postos?|lugares?)", EscalaIntent.LISTAR_CONFLITOS),
-
         # ==================================================================
         # ESCALA_SEMANA - Consultas de escala
         # ==================================================================
         (r"escala\s+(?:da\s+|desta\s+|dessa\s+)?semana", EscalaIntent.ESCALA_SEMANA),
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba|me\s+mostra)\s+(?:a\s+)?escala\s+(?:da\s+|desta\s+|dessa\s+)?semana", EscalaIntent.ESCALA_SEMANA),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba|me\s+mostra)\s+(?:a\s+)?escala\s+(?:da\s+|desta\s+|dessa\s+)?semana",
+            EscalaIntent.ESCALA_SEMANA,
+        ),
         (r"(?:proximos?\s+)?(?:7|sete)\s+dias", EscalaIntent.ESCALA_SEMANA),
-        (r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:as\s+)?escalas?(?:\s+(?:atuais?|existentes?|ativas?))?", EscalaIntent.ESCALA_SEMANA),
+        (
+            r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:as\s+)?escalas?(?:\s+(?:atuais?|existentes?|ativas?))?",
+            EscalaIntent.ESCALA_SEMANA,
+        ),
         (r"verificar\s+(?:as\s+)?escalas(?:\s+(?:atuais?|existentes?|ativas?))?", EscalaIntent.ESCALA_SEMANA),
         (r"escalas?\s+(?:atuais?|existentes?|ativas?)", EscalaIntent.ESCALA_SEMANA),
         (r"quais?\s+(?:as\s+)?escalas?", EscalaIntent.ESCALA_SEMANA),
-
         # ==================================================================
         # CALCULAR_CUSTO
         # ==================================================================
@@ -153,22 +176,29 @@ class EscalaAgent:
         (r"(?:calcular|calcule|estimar|estime)\s+(?:o\s+)?custo", EscalaIntent.CALCULAR_CUSTO),
         (r"(?:simular|simule)\s+(?:custo|valor)", EscalaIntent.CALCULAR_CUSTO),
         (r"(?:previsao|estimativa)\s+(?:de\s+)?custo", EscalaIntent.CALCULAR_CUSTO),
-
         # ==================================================================
         # PUBLICAR_ESCALA
         # ==================================================================
-        (r"(?:publicar|publique|aprovar|aprove|liberar|libere|ativar|ative)\s+(?:a\s+)?escala", EscalaIntent.PUBLICAR_ESCALA),
+        (
+            r"(?:publicar|publique|aprovar|aprove|liberar|libere|ativar|ative)\s+(?:a\s+)?escala",
+            EscalaIntent.PUBLICAR_ESCALA,
+        ),
         (r"(?:colocar|por)\s+escala\s+(?:em\s+)?(?:vigor|producao)", EscalaIntent.PUBLICAR_ESCALA),
         (r"(?:disponibilizar|divulgar)\s+(?:a\s+)?escala", EscalaIntent.PUBLICAR_ESCALA),
-
         # ==================================================================
         # GERAR_ESCALA - Por último (mais genérico)
         # ==================================================================
         # Imperativo
-        (r"(?:gerar|gere|criar|crie|cria|monte|montar|fazer|faca|faz|elaborar|elabore)\s+(?:a\s+|uma\s+)?escala", EscalaIntent.GERAR_ESCALA),
+        (
+            r"(?:gerar|gere|criar|crie|cria|monte|montar|fazer|faca|faz|elaborar|elabore)\s+(?:a\s+|uma\s+)?escala",
+            EscalaIntent.GERAR_ESCALA,
+        ),
         # Com contexto - CUIDADO: "escala para X" é genérico
         (r"nova\s+escala", EscalaIntent.GERAR_ESCALA),
-        (r"escala\s+para\s+(?!semana|mes|janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\w+", EscalaIntent.GERAR_ESCALA),
+        (
+            r"escala\s+para\s+(?!semana|mes|janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\w+",
+            EscalaIntent.GERAR_ESCALA,
+        ),
         (r"preciso\s+(?:de\s+)?(?:uma\s+)?escala", EscalaIntent.GERAR_ESCALA),
         (r"quero\s+(?:uma\s+)?escala", EscalaIntent.GERAR_ESCALA),
         (r"(?:montar|criar|gerar)\s+(?:a\s+)?(?:grade|programacao)", EscalaIntent.GERAR_ESCALA),
@@ -197,19 +227,19 @@ class EscalaAgent:
         if db and not data_connector:
             try:
                 from modules.ai.bartolo.services.data_connector import DataConnector
+
                 self.data_connector = DataConnector(db)
             except Exception as e:
                 logger.warning(f"Não foi possível criar DataConnector: {e}")
                 self.data_connector = None
 
-    async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def process(self, message: str, context: dict[str, Any] = None) -> dict[str, Any]:
         """
         Processa uma mensagem relacionada a escalas.
 
         Returns:
             Dict com response, intent, data, suggestions, actions
         """
-        import re
 
         intent = self._detect_intent(message)
         context = context or {}
@@ -241,9 +271,10 @@ class EscalaAgent:
         else:
             return await self._handle_default(message, context)
 
-    def _detect_intent(self, message: str) -> Optional[EscalaIntent]:
+    def _detect_intent(self, message: str) -> EscalaIntent | None:
         """Detecta o intent da mensagem"""
         import re
+
         message_lower = message.lower()
 
         for pattern, intent in self.INTENT_PATTERNS:
@@ -251,23 +282,43 @@ class EscalaAgent:
                 return intent
         return None
 
-    async def _handle_gerar_escala(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_gerar_escala(self, message: str, context: dict) -> dict[str, Any]:
         """Gera nova escala - extrai informações detalhadas da mensagem"""
         import re
         from unicodedata import normalize
 
-        msg = normalize('NFD', message.lower())
-        msg = ''.join(c for c in msg if not c in '\u0300\u0301\u0302\u0303\u0304\u0327')
+        msg = normalize("NFD", message.lower())
+        msg = "".join(c for c in msg if c not in "\u0300\u0301\u0302\u0303\u0304\u0327")
 
         # Extrai informações da mensagem
         dados_extraidos = {}
 
         # Mês
         meses = {
-            "janeiro": 1, "jan": 1, "fevereiro": 2, "fev": 2, "marco": 3, "mar": 3,
-            "abril": 4, "abr": 4, "maio": 5, "mai": 5, "junho": 6, "jun": 6,
-            "julho": 7, "jul": 7, "agosto": 8, "ago": 8, "setembro": 9, "set": 9,
-            "outubro": 10, "out": 10, "novembro": 11, "nov": 11, "dezembro": 12, "dez": 12
+            "janeiro": 1,
+            "jan": 1,
+            "fevereiro": 2,
+            "fev": 2,
+            "marco": 3,
+            "mar": 3,
+            "abril": 4,
+            "abr": 4,
+            "maio": 5,
+            "mai": 5,
+            "junho": 6,
+            "jun": 6,
+            "julho": 7,
+            "jul": 7,
+            "agosto": 8,
+            "ago": 8,
+            "setembro": 9,
+            "set": 9,
+            "outubro": 10,
+            "out": 10,
+            "novembro": 11,
+            "nov": 11,
+            "dezembro": 12,
+            "dez": 12,
         }
         for mes_nome, mes_num in meses.items():
             if mes_nome in msg:
@@ -338,7 +389,7 @@ class EscalaAgent:
             info_lines.append(f"⚙️ **Características:** {', '.join(caracteristicas)}")
 
         if info_lines:
-            response = f"📋 **Gerando Escala**\n\n" + "\n".join(info_lines)
+            response = "📋 **Gerando Escala**\n\n" + "\n".join(info_lines)
             response += "\n\n**Próximos passos:**\n"
             response += "1. Definir tipo de escala (12x36, 5x2, 6x1)\n"
             response += "2. Verificar funcionários disponíveis\n"
@@ -349,11 +400,26 @@ class EscalaAgent:
                 "response": response,
                 "intent": EscalaIntent.GERAR_ESCALA.value,
                 "data": dados_extraidos,
-                "suggestions": ["12x36 (vigilância 24h)", "5x2 (comercial)", "6x1 (máximo CLT)", "Sugerir melhor opção"],
+                "suggestions": [
+                    "12x36 (vigilância 24h)",
+                    "5x2 (comercial)",
+                    "6x1 (máximo CLT)",
+                    "Sugerir melhor opção",
+                ],
                 "actions": [
-                    {"type": "create", "label": "Gerar 12x36", "target": "scale", "data": {**dados_extraidos, "type": "12x36"}},
-                    {"type": "create", "label": "Gerar 5x2", "target": "scale", "data": {**dados_extraidos, "type": "5x2"}},
-                ]
+                    {
+                        "type": "create",
+                        "label": "Gerar 12x36",
+                        "target": "scale",
+                        "data": {**dados_extraidos, "type": "12x36"},
+                    },
+                    {
+                        "type": "create",
+                        "label": "Gerar 5x2",
+                        "target": "scale",
+                        "data": {**dados_extraidos, "type": "5x2"},
+                    },
+                ],
             }
         else:
             return {
@@ -363,7 +429,7 @@ class EscalaAgent:
                 "suggestions": ["Listar clientes", "Ver modelo de escala", "Cancelar"],
             }
 
-    async def _handle_otimizar_escala(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_otimizar_escala(self, message: str, context: dict) -> dict[str, Any]:
         """Otimiza escala existente usando dados reais do DataConnector"""
         # Tentar buscar dados reais para contextualizar a otimização
         if self.data_connector:
@@ -374,7 +440,7 @@ class EscalaAgent:
 
                 context_lines = []
                 if he_result.success and he_result.data:
-                    total_he = sum(f.get('horas_extras', 0) for f in he_result.data)
+                    total_he = sum(f.get("horas_extras", 0) for f in he_result.data)
                     context_lines.append(f"- Total de horas extras acumuladas: **{total_he:.1f}h**")
                     context_lines.append(f"- Funcionários com HE: **{he_result.total_count}**")
 
@@ -410,7 +476,7 @@ Selecione uma escala ativa para iniciar a otimização."""
             "suggestions": ["Ver escalas ativas", "Otimizar escala atual", "Cancelar"],
         }
 
-    async def _handle_validar_escala(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_validar_escala(self, message: str, context: dict) -> dict[str, Any]:
         """Valida escala usando dados reais do DataConnector"""
         # Tentar buscar dados reais para validação
         if self.data_connector:
@@ -423,7 +489,7 @@ Selecione uma escala ativa para iniciar a otimização."""
                     problemas.append(f"- ⚠️ **{len(cobertura_result.data)} postos** com cobertura abaixo de 80%")
 
                 if he_result.success and he_result.data:
-                    sobrecarregados = [f for f in he_result.data if f.get('horas_extras', 0) > 40]
+                    sobrecarregados = [f for f in he_result.data if f.get("horas_extras", 0) > 40]
                     if sobrecarregados:
                         problemas.append(f"- ⚠️ **{len(sobrecarregados)} funcionários** com mais de 40h extras")
 
@@ -470,7 +536,7 @@ Informe o ID da escala para validação detalhada."""
             "suggestions": ["Ver escalas recentes", "Validar escala atual"],
         }
 
-    async def _handle_calcular_custo(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_calcular_custo(self, message: str, context: dict) -> dict[str, Any]:
         """Calcula custo da escala usando dados reais do DataConnector"""
         # Tentar buscar dados reais de KPIs (contém custo mensal)
         if self.data_connector:
@@ -478,9 +544,9 @@ Informe o ID da escala para validação detalhada."""
                 result = await self.data_connector._get_main_kpis()
                 if result.success and result.data:
                     kpis = result.data
-                    custo = kpis.get('custo_mensal_total', 0)
-                    efetivo = kpis.get('efetivo_alocado', 0)
-                    requerido = kpis.get('efetivo_requerido', 0)
+                    custo = kpis.get("custo_mensal_total", 0)
+                    efetivo = kpis.get("efetivo_alocado", 0)
+                    requerido = kpis.get("efetivo_requerido", 0)
 
                     response = f"""**Cálculo de Custo - Dados Atuais**
 
@@ -507,7 +573,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
             "suggestions": ["Custo mês atual", "Comparar custos", "Ver detalhamento"],
         }
 
-    async def _handle_listar_conflitos(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_listar_conflitos(self, message: str, context: dict) -> dict[str, Any]:
         """Lista conflitos na escala usando dados reais do DataConnector"""
         # Tentar buscar cobertura crítica (indica problemas na escala)
         if self.data_connector:
@@ -516,7 +582,10 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
                 if result.success:
                     postos_criticos = result.data or []
                     if postos_criticos:
-                        lines = [f"- **{p['nome']}** ({p['codigo']}): {p['alocados']}/{p['requeridos']} - Deficit: {p['deficit']}" for p in postos_criticos[:10]]
+                        lines = [
+                            f"- **{p['nome']}** ({p['codigo']}): {p['alocados']}/{p['requeridos']} - Deficit: {p['deficit']}"
+                            for p in postos_criticos[:10]
+                        ]
 
                         response = f"""**Análise de Conflitos e Cobertura**
 
@@ -555,7 +624,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
             "suggestions": ["Ver escala completa", "Validar outra escala"],
         }
 
-    async def _handle_escala_semana(self, context: Dict) -> Dict[str, Any]:
+    async def _handle_escala_semana(self, context: dict) -> dict[str, Any]:
         """Mostra escala da semana usando dados reais do DataConnector"""
         # Tentar buscar dados reais via DataConnector
         if self.data_connector:
@@ -578,7 +647,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
             "suggestions": ["Próxima semana", "Ver por posto", "Exportar"],
         }
 
-    async def _handle_escala_mes(self, context: Dict) -> Dict[str, Any]:
+    async def _handle_escala_mes(self, context: dict) -> dict[str, Any]:
         """Mostra escala do mês usando dados reais do DataConnector"""
         # Tentar buscar dados reais via DataConnector
         if self.data_connector:
@@ -609,6 +678,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
         """Tenta obter instância do AutoScaleService. Retorna None se indisponível."""
         try:
             from modules.operacional.services.auto_scale_service import AutoScaleService
+
             if self.db:
                 return AutoScaleService(self.db)
         except ImportError:
@@ -623,6 +693,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
             from modules.operacional.services.intelligent_operations_service import (
                 IntelligentOperationsService,
             )
+
             if self.db and tenant_id:
                 return IntelligentOperationsService(self.db, tenant_id)
         except ImportError:
@@ -635,6 +706,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
         """Tenta obter instância do ScaleTemplateRepository. Retorna None se indisponível."""
         try:
             from modules.operacional.repositories.scale_template_repository import ScaleTemplateRepository
+
             if self.db:
                 return ScaleTemplateRepository(self.db)
         except ImportError:
@@ -647,6 +719,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
         """Tenta obter instância do ScaleTemplateService. Retorna None se indisponível."""
         try:
             from modules.operacional.services.scale_template_service import ScaleTemplateService
+
             if self.db:
                 return ScaleTemplateService(self.db)
         except ImportError:
@@ -655,20 +728,40 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
             logger.warning(f"Erro ao instanciar ScaleTemplateService: {e}")
         return None
 
-    def _extract_month_year(self, message: str) -> Dict[str, Any]:
+    def _extract_month_year(self, message: str) -> dict[str, Any]:
         """Extrai mês e ano de uma mensagem."""
         import re
         from unicodedata import normalize
 
-        msg = normalize('NFD', message.lower())
-        msg = ''.join(c for c in msg if c not in '\u0300\u0301\u0302\u0303\u0304\u0327')
+        msg = normalize("NFD", message.lower())
+        msg = "".join(c for c in msg if c not in "\u0300\u0301\u0302\u0303\u0304\u0327")
 
         result = {}
         meses = {
-            "janeiro": 1, "jan": 1, "fevereiro": 2, "fev": 2, "marco": 3, "mar": 3,
-            "abril": 4, "abr": 4, "maio": 5, "mai": 5, "junho": 6, "jun": 6,
-            "julho": 7, "jul": 7, "agosto": 8, "ago": 8, "setembro": 9, "set": 9,
-            "outubro": 10, "out": 10, "novembro": 11, "nov": 11, "dezembro": 12, "dez": 12,
+            "janeiro": 1,
+            "jan": 1,
+            "fevereiro": 2,
+            "fev": 2,
+            "marco": 3,
+            "mar": 3,
+            "abril": 4,
+            "abr": 4,
+            "maio": 5,
+            "mai": 5,
+            "junho": 6,
+            "jun": 6,
+            "julho": 7,
+            "jul": 7,
+            "agosto": 8,
+            "ago": 8,
+            "setembro": 9,
+            "set": 9,
+            "outubro": 10,
+            "out": 10,
+            "novembro": 11,
+            "nov": 11,
+            "dezembro": 12,
+            "dez": 12,
         }
         for mes_nome, mes_num in meses.items():
             if mes_nome in msg:
@@ -682,7 +775,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
 
         return result
 
-    async def _handle_auto_gerar(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_auto_gerar(self, message: str, context: dict) -> dict[str, Any]:
         """Gera escalas automaticamente para todos os postos de um mês."""
         dados = self._extract_month_year(message)
         mes_num = dados.get("mes_num")
@@ -698,9 +791,7 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
                         month=mes_num, year=ano, created_by=context.get("user_id")
                     )
                 else:
-                    result = await auto_service.generate_scales_for_current_month(
-                        created_by=context.get("user_id")
-                    )
+                    result = await auto_service.generate_scales_for_current_month(created_by=context.get("user_id"))
 
                 erros_text = ""
                 if result.get("errors"):
@@ -712,10 +803,10 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
                 response = f"""**Geração Automática de Escalas**
 
 **Período:** {periodo}
-**Escalas criadas:** {result.get('scales_created', 0)}
-**Turnos gerados:** {result.get('shifts_created', 0)}
+**Escalas criadas:** {result.get("scales_created", 0)}
+**Turnos gerados:** {result.get("shifts_created", 0)}
 
-{result.get('message', '')}{erros_text}"""
+{result.get("message", "")}{erros_text}"""
 
                 return {
                     "response": response,
@@ -723,8 +814,12 @@ Para detalhamento por posto ou escala específica, informe o ID ou nome."""
                     "data": result,
                     "suggestions": ["Ver escalas pendentes", "Validar escalas", "Publicar escalas"],
                     "actions": [
-                        {"type": "auto_generate_scale", "label": "Gerar escalas automáticas", "target": "scale",
-                         "data": {"month": mes_num, "year": ano}},
+                        {
+                            "type": "auto_generate_scale",
+                            "label": "Gerar escalas automáticas",
+                            "target": "scale",
+                            "data": {"month": mes_num, "year": ano},
+                        },
                     ],
                 }
             except Exception as e:
@@ -747,12 +842,16 @@ Para gerar escalas automáticas para **{periodo_info}**, o sistema irá:
             "data": {"mes_num": mes_num, "ano": ano},
             "suggestions": ["Confirmar geração", "Alterar mês", "Cancelar"],
             "actions": [
-                {"type": "auto_generate_scale", "label": f"Gerar escalas {periodo_info}", "target": "scale",
-                 "data": {"month": mes_num, "year": ano}},
+                {
+                    "type": "auto_generate_scale",
+                    "label": f"Gerar escalas {periodo_info}",
+                    "target": "scale",
+                    "data": {"month": mes_num, "year": ano},
+                },
             ],
         }
 
-    async def _handle_otimizar_inteligente(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_otimizar_inteligente(self, message: str, context: dict) -> dict[str, Any]:
         """Otimiza escala usando IntelligentOperationsService com IA avançada."""
         import re
 
@@ -761,10 +860,7 @@ Para gerar escalas automáticas para **{periodo_info}**, o sistema irá:
         ano = dados.get("ano", datetime.now().year)
 
         # Extrair posto da mensagem
-        posto_match = re.search(
-            r"(?:posto|post)\s+([A-Za-z0-9\-]+)",
-            message, re.IGNORECASE
-        )
+        posto_match = re.search(r"(?:posto|post)\s+([A-Za-z0-9\-]+)", message, re.IGNORECASE)
         posto_id = posto_match.group(1) if posto_match else None
 
         # Tentar usar IntelligentOperationsService
@@ -773,7 +869,6 @@ Para gerar escalas automáticas para **{periodo_info}**, o sistema irá:
 
         if ops_service:
             try:
-                from datetime import timedelta
                 import calendar
 
                 _, last_day = calendar.monthrange(ano, mes_num)
@@ -805,15 +900,15 @@ Para gerar escalas automáticas para **{periodo_info}**, o sistema irá:
 **Métricas de Otimização:**
 - Eficiência: **{schedule.efficiency_score:.1%}**
 - Cobertura: **{schedule.coverage_score:.1%}**
-- Utilização de funcionários: **{metrics_info.get('employee_utilization', 0):.1%}**
-- Utilização de postos: **{metrics_info.get('workstation_utilization', 0):.1%}**
-- Total de alocações: **{metrics_info.get('total_assignments', 0)}**
+- Utilização de funcionários: **{metrics_info.get("employee_utilization", 0):.1%}**
+- Utilização de postos: **{metrics_info.get("workstation_utilization", 0):.1%}**
+- Total de alocações: **{metrics_info.get("total_assignments", 0)}**
 
 **Análise de Custos:**
-- Custo total: **R$ {cost_info.get('total_cost', 0):,.2f}**
-- Horas normais: R$ {cost_info.get('regular_hours_cost', 0):,.2f}
-- Horas extras: R$ {cost_info.get('overtime_cost', 0):,.2f}
-- Custo médio/hora: R$ {cost_info.get('avg_cost_per_hour', 0):,.2f}{insights_text}"""
+- Custo total: **R$ {cost_info.get("total_cost", 0):,.2f}**
+- Horas normais: R$ {cost_info.get("regular_hours_cost", 0):,.2f}
+- Horas extras: R$ {cost_info.get("overtime_cost", 0):,.2f}
+- Custo médio/hora: R$ {cost_info.get("avg_cost_per_hour", 0):,.2f}{insights_text}"""
 
                 return {
                     "response": response,
@@ -832,8 +927,12 @@ Para gerar escalas automáticas para **{periodo_info}**, o sistema irá:
                         "Exportar relatório",
                     ],
                     "actions": [
-                        {"type": "optimize_scale", "label": "Aplicar escala otimizada", "target": "scale",
-                         "data": {"schedule_id": schedule.id, "month": mes_num, "year": ano}},
+                        {
+                            "type": "optimize_scale",
+                            "label": "Aplicar escala otimizada",
+                            "target": "scale",
+                            "data": {"schedule_id": schedule.id, "month": mes_num, "year": ano},
+                        },
                     ],
                 }
             except Exception as e:
@@ -857,7 +956,7 @@ Para otimizar a escala{posto_info} de **{mes_num:02d}/{ano}**, o sistema utiliza
 - Balancear turnos (equalizar carga)
 - Eficiência geral (peso balanceado)
 
-{'Informe o ID do tenant para iniciar.' if not tenant_id else 'Deseja iniciar a otimização?'}""",
+{"Informe o ID do tenant para iniciar." if not tenant_id else "Deseja iniciar a otimização?"}""",
             "intent": EscalaIntent.OTIMIZAR_INTELIGENTE.value,
             "data": {"posto_id": posto_id, "mes_num": mes_num, "ano": ano},
             "suggestions": [
@@ -868,22 +967,18 @@ Para otimizar a escala{posto_info} de **{mes_num:02d}/{ano}**, o sistema utiliza
             ],
         }
 
-    async def _handle_criar_template(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_criar_template(self, message: str, context: dict) -> dict[str, Any]:
         """Salva uma escala existente como template reutilizável."""
         import re
 
         # Extrair nome do template
         nome_match = re.search(
-            r"(?:template|modelo)\s+(?:chamado|nome|com\s+nome)\s+[\"']?([^\"']+)[\"']?",
-            message, re.IGNORECASE
+            r"(?:template|modelo)\s+(?:chamado|nome|com\s+nome)\s+[\"']?([^\"']+)[\"']?", message, re.IGNORECASE
         )
         nome_template = nome_match.group(1).strip() if nome_match else None
 
         # Extrair ID da escala
-        scale_match = re.search(
-            r"(?:escala|scale)\s+([A-Za-z0-9\-]+)",
-            message, re.IGNORECASE
-        )
+        scale_match = re.search(r"(?:escala|scale)\s+([A-Za-z0-9\-]+)", message, re.IGNORECASE)
         scale_id = scale_match.group(1) if scale_match else None
 
         template_service = self._get_scale_template_service()
@@ -902,6 +997,7 @@ Para otimizar a escala{posto_info} de **{mes_num:02d}/{ano}**, o sistema utiliza
 
                 if nome_template:
                     from modules.operacional.schemas.scale_template import ScaleTemplateCreate
+
                     create_data = ScaleTemplateCreate(
                         name=nome_template,
                         description=f"Template criado via Bartolo a partir da escala {scale_id}",
@@ -936,8 +1032,12 @@ Template salvo e disponível para reutilização.""",
                             "Ver escalas",
                         ],
                         "actions": [
-                            {"type": "create_scale_template", "label": "Template criado", "target": "scale_template",
-                             "data": {"template_id": template.id, "scale_id": scale_id}},
+                            {
+                                "type": "create_scale_template",
+                                "label": "Template criado",
+                                "target": "scale_template",
+                                "data": {"template_id": template.id, "scale_id": scale_id},
+                            },
                         ],
                     }
                 else:
@@ -991,22 +1091,16 @@ em outros postos e períodos rapidamente.""",
             "suggestions": ["Ver escalas ativas", "Listar templates", "Ajuda"],
         }
 
-    async def _handle_aplicar_template(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_aplicar_template(self, message: str, context: dict) -> dict[str, Any]:
         """Aplica um template existente em um posto/mês."""
         import re
 
         # Extrair template ID/nome
-        template_match = re.search(
-            r"template\s+([A-Za-z0-9\-]+)",
-            message, re.IGNORECASE
-        )
+        template_match = re.search(r"template\s+([A-Za-z0-9\-]+)", message, re.IGNORECASE)
         template_id = template_match.group(1) if template_match else None
 
         # Extrair posto
-        posto_match = re.search(
-            r"(?:posto|post|no|em)\s+([A-Za-z0-9\-]+)",
-            message, re.IGNORECASE
-        )
+        posto_match = re.search(r"(?:posto|post|no|em)\s+([A-Za-z0-9\-]+)", message, re.IGNORECASE)
         posto_id = posto_match.group(1) if posto_match else None
 
         dados = self._extract_month_year(message)
@@ -1023,6 +1117,7 @@ em outros postos e períodos rapidamente.""",
 
                 if template and mes_num and posto_id:
                     from modules.operacional.schemas.scale_template import ScaleTemplateApplyRequest
+
                     apply_request = ScaleTemplateApplyRequest(
                         month=mes_num,
                         year=ano,
@@ -1060,8 +1155,12 @@ A escala foi criada em status rascunho. Revise e publique quando estiver pronta.
                             "Ver escalas pendentes",
                         ],
                         "actions": [
-                            {"type": "apply_scale_template", "label": "Template aplicado", "target": "scale",
-                             "data": {"template_id": template.id, "scale_id": scale.id}},
+                            {
+                                "type": "apply_scale_template",
+                                "label": "Template aplicado",
+                                "target": "scale",
+                                "data": {"template_id": template.id, "scale_id": scale.id},
+                            },
                         ],
                     }
                 elif template:
@@ -1070,9 +1169,9 @@ A escala foi criada em status rascunho. Revise e publique quando estiver pronta.
                     return {
                         "response": f"""**Template: {template.name}**
 
-- **Tipo:** {template.template_data.get('scale_type', 'N/A')}
-- **Funcionários:** {meta.get('total_employees', 0)}
-- **Cobertura:** {meta.get('coverage_percentage', 0):.1f}%
+- **Tipo:** {template.template_data.get("scale_type", "N/A")}
+- **Funcionários:** {meta.get("total_employees", 0)}
+- **Cobertura:** {meta.get("coverage_percentage", 0):.1f}%
 - **Usado:** {template.times_used}x
 
 Para aplicar, informe o **posto** e o **mês/ano**:
@@ -1115,7 +1214,7 @@ Use "Listar templates" para ver os disponíveis.""",
             "suggestions": ["Listar templates", "Ver postos", "Ajuda"],
         }
 
-    async def _handle_listar_templates(self, context: Dict) -> Dict[str, Any]:
+    async def _handle_listar_templates(self, context: dict) -> dict[str, Any]:
         """Lista templates de escala disponíveis."""
         template_repo = self._get_scale_template_repo()
 
@@ -1158,10 +1257,7 @@ Para criar um template, salve uma escala existente:
                         "response": response,
                         "intent": EscalaIntent.LISTAR_TEMPLATES.value,
                         "data": {
-                            "templates": [
-                                {"id": t.id, "name": t.name, "times_used": t.times_used}
-                                for t in templates
-                            ],
+                            "templates": [{"id": t.id, "name": t.name, "times_used": t.times_used} for t in templates],
                             "total": total,
                         },
                         "suggestions": ["Criar template", "Aplicar template", "Ver escalas"],
@@ -1187,7 +1283,7 @@ como template e aplique em outros postos e períodos.
             "suggestions": ["Criar template", "Ver escalas", "Ajuda"],
         }
 
-    async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
+    async def _handle_default(self, message: str, context: dict) -> dict[str, Any] | None:
         """Handler padrão - retorna None para permitir que DataConnector processe"""
         # Se chegou aqui, não detectamos intent específico de escala
         # Retorna None para permitir que o fluxo continue (DataConnector, LLM, etc)
@@ -1211,10 +1307,10 @@ como template e aplique em outros postos e períodos.
     async def process_followup(
         self,
         message: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         previous_intent: str,
-        previous_data: Optional[Dict] = None,
-    ) -> Optional[Dict[str, Any]]:
+        previous_data: dict | None = None,
+    ) -> dict[str, Any] | None:
         """
         Processa follow-up de uma conversa anterior com o EscalaAgent.
 
@@ -1256,9 +1352,13 @@ como template e aplique em outros postos e períodos.
                     # Monta resposta de confirmação
                     info_lines = [f"**Tipo de Escala:** {scale_type}"]
                     if scale_info.get("hours_on"):
-                        info_lines.append(f"**Jornada:** {scale_info['hours_on']}h trabalho, {scale_info['hours_off']}h folga")
+                        info_lines.append(
+                            f"**Jornada:** {scale_info['hours_on']}h trabalho, {scale_info['hours_off']}h folga"
+                        )
                     if scale_info.get("days_on"):
-                        info_lines.append(f"**Jornada:** {scale_info['days_on']} dias trabalho, {scale_info['days_off']} dias folga")
+                        info_lines.append(
+                            f"**Jornada:** {scale_info['days_on']} dias trabalho, {scale_info['days_off']} dias folga"
+                        )
                     if merged_data.get("turno"):
                         info_lines.append(f"**Turno:** {merged_data['turno']}")
                     if merged_data.get("cliente"):
@@ -1283,8 +1383,8 @@ como template e aplique em outros postos e períodos.
                 if re.match(pattern, message_clean):
                     return {
                         "response": "Escala confirmada! Iniciando geração...\n\n"
-                                    "A escala será gerada com base nos parâmetros definidos. "
-                                    "Você será notificado quando estiver pronta para revisão.",
+                        "A escala será gerada com base nos parâmetros definidos. "
+                        "Você será notificado quando estiver pronta para revisão.",
                         "intent": EscalaIntent.GERAR_ESCALA.value,
                         "data": {**previous_data, "confirmed": True},
                         "suggestions": ["Ver escalas", "Gerar outra escala"],
@@ -1302,7 +1402,7 @@ como template e aplique em outros postos e períodos.
 
         return None
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Retorna lista de capabilities do agente"""
         return [
             "Gerar escalas automáticas (12x36, 5x2, 6x1)",

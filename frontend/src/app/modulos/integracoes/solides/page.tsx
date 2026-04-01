@@ -1,7 +1,8 @@
 'use client';
 
-import { Zap, RefreshCw, Settings, Users, AlertTriangle, CheckCircle2, XCircle, Search, Play, Eye, AlertCircle, Clock, ArrowRight } from 'lucide-react';
+import { Zap, RefreshCw, Settings, Users, AlertTriangle, CheckCircle2, XCircle, Search, Play, Eye, AlertCircle, Clock, ArrowRight, Loader2, Calendar } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +48,36 @@ export default function SolidesPage() {
 
   const triggerSyncMutation = useTriggerSolidesSync();
   const disableMutation = useDisableSolides();
+
+  const [syncingFerias, setSyncingFerias] = useState(false);
+  const [syncingEscalas, setSyncingEscalas] = useState(false);
+
+  function getAuthHeaders() {
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  }
+
+  const handleSyncFerias = async () => {
+    setSyncingFerias(true);
+    try {
+      const res = await fetch('/api/v1/people-management/hr/vacations/sync-solides', { method: 'POST', headers: getAuthHeaders() });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) toast.success(`Férias Sólides: ${data.total_importadas ?? 0} importadas`, { duration: 5000 });
+      else toast.error(data?.detail || 'Erro ao sincronizar férias', { duration: 5000 });
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); }
+    finally { setSyncingFerias(false); }
+  };
+
+  const handleSyncEscalas = async () => {
+    setSyncingEscalas(true);
+    try {
+      const res = await fetch('/api/v1/people-management/ponto/sync-escalas', { method: 'POST', headers: getAuthHeaders() });
+      const data = await res.json().catch(() => null);
+      if (res.ok) toast.success(`Escalas Sólides: ${data?.total_atualizados ?? data?.updated ?? 0} atualizados`, { duration: 5000 });
+      else toast.error(data?.detail || 'Erro ao sincronizar escalas', { duration: 5000 });
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); }
+    finally { setSyncingEscalas(false); }
+  };
 
   const status = statusData as any;
   const config = configData as any;
@@ -101,12 +132,20 @@ export default function SolidesPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${statusLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
+          <Button variant="outline" onClick={handleSyncFerias} disabled={syncingFerias || !isConnected}>
+            {syncingFerias ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Calendar className="h-4 w-4 mr-2" />}
+            Sync Férias
+          </Button>
+          <Button variant="outline" onClick={handleSyncEscalas} disabled={syncingEscalas || !isConnected}>
+            {syncingEscalas ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
+            Sync Escalas
+          </Button>
           <Button
             onClick={() => triggerSyncMutation.mutate({ sync_type: 'full' } as any)}
             disabled={triggerSyncMutation.isPending || !isConnected}
           >
             <Play className="h-4 w-4 mr-2" />
-            Sincronizar
+            Sincronizar Tudo
           </Button>
         </div>
       </div>
@@ -355,7 +394,7 @@ export default function SolidesPage() {
               <div className="text-center py-12 text-muted-foreground">
                 <CheckCircle2 className="h-16 w-16 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium">Nenhum conflito</h3>
-                <p className="mt-2">Todos os dados estao sincronizados corretamente</p>
+                <p className="mt-2">Todos os dados estão sincronizados corretamente</p>
               </div>
             ) : (
               <Table>

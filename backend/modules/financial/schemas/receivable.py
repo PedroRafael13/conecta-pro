@@ -2,10 +2,9 @@
 
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from modules.financial.models.billing_rule import (
     BillingFrequency,
@@ -22,7 +21,6 @@ from modules.financial.models.receivable_category import CategoryType
 from modules.financial.models.receivable_installment import InstallmentStatus
 from modules.financial.models.receivable_payment import PaymentOrigin, PaymentStatus
 
-
 # ============= Customer =============
 
 
@@ -31,35 +29,35 @@ class CustomerBase(BaseModel):
 
     cpf_cnpj: str = Field(..., min_length=11, max_length=20)
     name: str = Field(..., min_length=2, max_length=200)
-    trade_name: Optional[str] = Field(None, max_length=200)
+    trade_name: str | None = Field(None, max_length=200)
     customer_type: CustomerType = CustomerType.MORADOR
 
     # Vinculacao
-    morador_id: Optional[UUID] = None
-    unidade_id: Optional[UUID] = None
+    morador_id: UUID | None = None
+    unidade_id: UUID | None = None
 
     # Contato
-    email: Optional[str] = Field(None, max_length=200)
-    email_secondary: Optional[str] = Field(None, max_length=200)
-    phone: Optional[str] = Field(None, max_length=20)
-    phone_secondary: Optional[str] = Field(None, max_length=20)
-    whatsapp: Optional[str] = Field(None, max_length=20)
+    email: str | None = Field(None, max_length=200)
+    email_secondary: str | None = Field(None, max_length=200)
+    phone: str | None = Field(None, max_length=20)
+    phone_secondary: str | None = Field(None, max_length=20)
+    whatsapp: str | None = Field(None, max_length=20)
 
     # Endereco
-    address_street: Optional[str] = Field(None, max_length=200)
-    address_number: Optional[str] = Field(None, max_length=20)
-    address_complement: Optional[str] = Field(None, max_length=100)
-    address_neighborhood: Optional[str] = Field(None, max_length=100)
-    address_city: Optional[str] = Field(None, max_length=100)
-    address_state: Optional[str] = Field(None, max_length=2)
-    address_zipcode: Optional[str] = Field(None, max_length=10)
+    address_street: str | None = Field(None, max_length=200)
+    address_number: str | None = Field(None, max_length=20)
+    address_complement: str | None = Field(None, max_length=100)
+    address_neighborhood: str | None = Field(None, max_length=100)
+    address_city: str | None = Field(None, max_length=100)
+    address_state: str | None = Field(None, max_length=2)
+    address_zipcode: str | None = Field(None, max_length=10)
 
     # Financeiro
     credit_limit: Decimal = Field(default=Decimal("0"), ge=0)
 
     # Cobranca
-    billing_email: Optional[str] = Field(None, max_length=200)
-    billing_day: Optional[str] = Field(None, max_length=2)
+    billing_email: str | None = Field(None, max_length=200)
+    billing_day: str | None = Field(None, max_length=2)
     auto_billing: bool = True
 
     # Notificacoes
@@ -68,7 +66,7 @@ class CustomerBase(BaseModel):
     notify_whatsapp: bool = True
     notify_push: bool = True
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class CustomerCreate(CustomerBase):
@@ -80,38 +78,38 @@ class CustomerCreate(CustomerBase):
 class CustomerUpdate(BaseModel):
     """Schema para atualizacao de cliente."""
 
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    trade_name: Optional[str] = Field(None, max_length=200)
-    customer_type: Optional[CustomerType] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    trade_name: str | None = Field(None, max_length=200)
+    customer_type: CustomerType | None = None
 
-    morador_id: Optional[UUID] = None
-    unidade_id: Optional[UUID] = None
+    morador_id: UUID | None = None
+    unidade_id: UUID | None = None
 
-    email: Optional[str] = Field(None, max_length=200)
-    email_secondary: Optional[str] = Field(None, max_length=200)
-    phone: Optional[str] = Field(None, max_length=20)
-    phone_secondary: Optional[str] = Field(None, max_length=20)
-    whatsapp: Optional[str] = Field(None, max_length=20)
+    email: str | None = Field(None, max_length=200)
+    email_secondary: str | None = Field(None, max_length=200)
+    phone: str | None = Field(None, max_length=20)
+    phone_secondary: str | None = Field(None, max_length=20)
+    whatsapp: str | None = Field(None, max_length=20)
 
-    address_street: Optional[str] = Field(None, max_length=200)
-    address_number: Optional[str] = Field(None, max_length=20)
-    address_complement: Optional[str] = Field(None, max_length=100)
-    address_neighborhood: Optional[str] = Field(None, max_length=100)
-    address_city: Optional[str] = Field(None, max_length=100)
-    address_state: Optional[str] = Field(None, max_length=2)
-    address_zipcode: Optional[str] = Field(None, max_length=10)
+    address_street: str | None = Field(None, max_length=200)
+    address_number: str | None = Field(None, max_length=20)
+    address_complement: str | None = Field(None, max_length=100)
+    address_neighborhood: str | None = Field(None, max_length=100)
+    address_city: str | None = Field(None, max_length=100)
+    address_state: str | None = Field(None, max_length=2)
+    address_zipcode: str | None = Field(None, max_length=10)
 
-    credit_limit: Optional[Decimal] = Field(None, ge=0)
-    billing_email: Optional[str] = Field(None, max_length=200)
-    billing_day: Optional[str] = Field(None, max_length=2)
-    auto_billing: Optional[bool] = None
+    credit_limit: Decimal | None = Field(None, ge=0)
+    billing_email: str | None = Field(None, max_length=200)
+    billing_day: str | None = Field(None, max_length=2)
+    auto_billing: bool | None = None
 
-    notify_email: Optional[bool] = None
-    notify_sms: Optional[bool] = None
-    notify_whatsapp: Optional[bool] = None
-    notify_push: Optional[bool] = None
+    notify_email: bool | None = None
+    notify_sms: bool | None = None
+    notify_whatsapp: bool | None = None
+    notify_push: bool | None = None
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class CustomerResponse(CustomerBase):
@@ -127,14 +125,14 @@ class CustomerResponse(CustomerBase):
     is_inadimplente: bool
 
     is_blocked: bool
-    blocked_reason: Optional[str] = None
-    blocked_at: Optional[datetime] = None
+    blocked_reason: str | None = None
+    blocked_at: datetime | None = None
 
     display_name: str
     formatted_cpf_cnpj: str
 
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
@@ -145,12 +143,12 @@ class CustomerResponse(CustomerBase):
 class CustomerFilter(BaseModel):
     """Filtros para busca de clientes."""
 
-    search: Optional[str] = None
-    customer_type: Optional[CustomerType] = None
-    status: Optional[CustomerStatus] = None
-    is_inadimplente: Optional[bool] = None
-    is_blocked: Optional[bool] = None
-    unidade_id: Optional[UUID] = None
+    search: str | None = None
+    customer_type: CustomerType | None = None
+    status: CustomerStatus | None = None
+    is_inadimplente: bool | None = None
+    is_blocked: bool | None = None
+    unidade_id: UUID | None = None
 
 
 # ============= ReceivableCategory =============
@@ -160,14 +158,14 @@ class ReceivableCategoryCreate(BaseModel):
     """Schema para criacao de categoria."""
 
     condominio_id: UUID
-    code: Optional[str] = Field(None, max_length=20)
+    code: str | None = Field(None, max_length=20)
     name: str = Field(..., min_length=2, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     category_type: CategoryType = CategoryType.OUTROS
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
 
-    accounting_code: Optional[str] = Field(None, max_length=30)
-    cost_center: Optional[str] = Field(None, max_length=30)
+    accounting_code: str | None = Field(None, max_length=30)
+    cost_center: str | None = Field(None, max_length=30)
 
     apply_interest: bool = True
     interest_rate: str = "1.00"
@@ -181,22 +179,22 @@ class ReceivableCategoryCreate(BaseModel):
 class ReceivableCategoryUpdate(BaseModel):
     """Schema para atualizacao de categoria."""
 
-    code: Optional[str] = Field(None, max_length=20)
-    name: Optional[str] = Field(None, min_length=2, max_length=100)
-    description: Optional[str] = None
-    category_type: Optional[CategoryType] = None
-    parent_id: Optional[UUID] = None
+    code: str | None = Field(None, max_length=20)
+    name: str | None = Field(None, min_length=2, max_length=100)
+    description: str | None = None
+    category_type: CategoryType | None = None
+    parent_id: UUID | None = None
 
-    accounting_code: Optional[str] = Field(None, max_length=30)
-    cost_center: Optional[str] = Field(None, max_length=30)
+    accounting_code: str | None = Field(None, max_length=30)
+    cost_center: str | None = Field(None, max_length=30)
 
-    apply_interest: Optional[bool] = None
-    interest_rate: Optional[str] = None
-    apply_penalty: Optional[bool] = None
-    penalty_rate: Optional[str] = None
-    grace_days: Optional[int] = Field(None, ge=0)
+    apply_interest: bool | None = None
+    interest_rate: str | None = None
+    apply_penalty: bool | None = None
+    penalty_rate: str | None = None
+    grace_days: int | None = Field(None, ge=0)
 
-    display_order: Optional[int] = None
+    display_order: int | None = None
 
 
 class ReceivableCategoryResponse(BaseModel):
@@ -204,15 +202,15 @@ class ReceivableCategoryResponse(BaseModel):
 
     id: UUID
     condominio_id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     category_type: str
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
     full_name: str
 
-    accounting_code: Optional[str] = None
-    cost_center: Optional[str] = None
+    accounting_code: str | None = None
+    cost_center: str | None = None
 
     apply_interest: bool
     interest_rate: str
@@ -239,14 +237,14 @@ class ReceivableAccountBase(BaseModel):
     """Base para conta a receber."""
 
     description: str = Field(..., min_length=3, max_length=500)
-    document_number: Optional[str] = Field(None, max_length=50)
+    document_number: str | None = Field(None, max_length=50)
     receivable_type: ReceivableType = ReceivableType.AVULSA
     priority: ReceivablePriority = ReceivablePriority.MEDIA
 
-    customer_id: Optional[UUID] = None
-    unidade_id: Optional[UUID] = None
-    morador_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
+    customer_id: UUID | None = None
+    unidade_id: UUID | None = None
+    morador_id: UUID | None = None
+    category_id: UUID | None = None
 
     gross_value: Decimal = Field(..., gt=0)
     discount_value: Decimal = Field(default=Decimal("0"), ge=0)
@@ -258,24 +256,24 @@ class ReceivableAccountBase(BaseModel):
     grace_days: int = Field(default=0, ge=0)
 
     # Datas
-    issue_date: Optional[date] = None
+    issue_date: date | None = None
     due_date: date
-    competence_date: Optional[date] = None
+    competence_date: date | None = None
 
     # Parcelamento
     total_installments: int = Field(default=1, ge=1, le=360)
 
     # Recorrencia
     is_recurring: bool = False
-    recurrence_type: Optional[str] = None
-    recurrence_end_date: Optional[date] = None
+    recurrence_type: str | None = None
+    recurrence_end_date: date | None = None
 
     # Centro de custo
-    cost_center: Optional[str] = Field(None, max_length=50)
+    cost_center: str | None = Field(None, max_length=50)
 
     # Tags e notas
-    tags: List[str] = Field(default_factory=list)
-    notes: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    notes: str | None = None
 
 
 class ReceivableAccountCreate(ReceivableAccountBase):
@@ -291,27 +289,27 @@ class ReceivableAccountCreate(ReceivableAccountBase):
 class ReceivableAccountUpdate(BaseModel):
     """Schema para atualizacao de conta a receber."""
 
-    description: Optional[str] = Field(None, min_length=3, max_length=500)
-    document_number: Optional[str] = Field(None, max_length=50)
-    priority: Optional[ReceivablePriority] = None
+    description: str | None = Field(None, min_length=3, max_length=500)
+    document_number: str | None = Field(None, max_length=50)
+    priority: ReceivablePriority | None = None
 
-    customer_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
+    customer_id: UUID | None = None
+    category_id: UUID | None = None
 
-    gross_value: Optional[Decimal] = Field(None, gt=0)
-    discount_value: Optional[Decimal] = Field(None, ge=0)
-    addition_value: Optional[Decimal] = Field(None, ge=0)
+    gross_value: Decimal | None = Field(None, gt=0)
+    discount_value: Decimal | None = Field(None, ge=0)
+    addition_value: Decimal | None = Field(None, ge=0)
 
-    interest_rate: Optional[Decimal] = Field(None, ge=0)
-    penalty_rate: Optional[Decimal] = Field(None, ge=0)
-    grace_days: Optional[int] = Field(None, ge=0)
+    interest_rate: Decimal | None = Field(None, ge=0)
+    penalty_rate: Decimal | None = Field(None, ge=0)
+    grace_days: int | None = Field(None, ge=0)
 
-    due_date: Optional[date] = None
-    competence_date: Optional[date] = None
+    due_date: date | None = None
+    competence_date: date | None = None
 
-    cost_center: Optional[str] = Field(None, max_length=50)
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    cost_center: str | None = Field(None, max_length=50)
+    tags: list[str] | None = None
+    notes: str | None = None
 
 
 class ReceivableAccountResponse(ReceivableAccountBase):
@@ -319,28 +317,28 @@ class ReceivableAccountResponse(ReceivableAccountBase):
 
     id: UUID
     condominio_id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     status: ReceivableStatus
     net_value: Decimal
     paid_value: Decimal
-    remaining_value: Optional[Decimal] = None
+    remaining_value: Decimal | None = None
     interest_value: Decimal
     penalty_value: Decimal
 
     entry_date: date
-    payment_date: Optional[date] = None
+    payment_date: date | None = None
 
     current_installment: int
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
 
     boleto_generated: bool
-    boleto_number: Optional[str] = None
-    boleto_url: Optional[str] = None
+    boleto_number: str | None = None
+    boleto_url: str | None = None
     pix_generated: bool
-    pix_copy_paste: Optional[str] = None
+    pix_copy_paste: str | None = None
 
     collection_attempts: int
-    last_collection_date: Optional[datetime] = None
+    last_collection_date: datetime | None = None
 
     is_protested: bool
     is_in_agreement: bool
@@ -353,10 +351,10 @@ class ReceivableAccountResponse(ReceivableAccountBase):
     balance: Decimal
     current_total_value: Decimal
 
-    attachments: List[dict] = Field(default_factory=list)
+    attachments: list[dict] = Field(default_factory=list)
 
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
@@ -368,20 +366,20 @@ class ReceivableAccountListResponse(BaseModel):
     """Schema de lista de contas a receber."""
 
     id: UUID
-    code: Optional[str] = None
-    document_number: Optional[str] = None
+    code: str | None = None
+    document_number: str | None = None
     description: str
     receivable_type: str
     status: str
     priority: str
-    customer_name: Optional[str] = None
-    unidade_codigo: Optional[str] = None
-    category_name: Optional[str] = None
+    customer_name: str | None = None
+    unidade_codigo: str | None = None
+    category_name: str | None = None
     net_value: Decimal
     paid_value: Decimal
     balance: Decimal
     due_date: date
-    payment_date: Optional[date] = None
+    payment_date: date | None = None
     is_overdue: bool
     days_overdue: int
     total_installments: int
@@ -397,24 +395,24 @@ class ReceivableAccountListResponse(BaseModel):
 class ReceivableAccountFilter(BaseModel):
     """Filtros para busca de contas a receber."""
 
-    search: Optional[str] = None
-    customer_id: Optional[UUID] = None
-    unidade_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
-    status: Optional[ReceivableStatus] = None
-    receivable_type: Optional[ReceivableType] = None
-    priority: Optional[ReceivablePriority] = None
-    due_date_start: Optional[date] = None
-    due_date_end: Optional[date] = None
-    payment_date_start: Optional[date] = None
-    payment_date_end: Optional[date] = None
-    is_overdue: Optional[bool] = None
-    has_boleto: Optional[bool] = None
-    has_pix: Optional[bool] = None
-    cost_center: Optional[str] = None
-    min_value: Optional[Decimal] = None
-    max_value: Optional[Decimal] = None
-    tags: Optional[List[str]] = None
+    search: str | None = None
+    customer_id: UUID | None = None
+    unidade_id: UUID | None = None
+    category_id: UUID | None = None
+    status: ReceivableStatus | None = None
+    receivable_type: ReceivableType | None = None
+    priority: ReceivablePriority | None = None
+    due_date_start: date | None = None
+    due_date_end: date | None = None
+    payment_date_start: date | None = None
+    payment_date_end: date | None = None
+    is_overdue: bool | None = None
+    has_boleto: bool | None = None
+    has_pix: bool | None = None
+    cost_center: str | None = None
+    min_value: Decimal | None = None
+    max_value: Decimal | None = None
+    tags: list[str] | None = None
 
 
 class ReceivableAccountStats(BaseModel):
@@ -449,20 +447,20 @@ class ReceivableInstallmentCreate(BaseModel):
     penalty_rate: Decimal = Field(default=Decimal("2"), ge=0)
     grace_days: int = Field(default=0, ge=0)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ReceivableInstallmentUpdate(BaseModel):
     """Schema para atualizacao de parcela."""
 
-    due_date: Optional[date] = None
-    discount_value: Optional[Decimal] = Field(None, ge=0)
-    addition_value: Optional[Decimal] = Field(None, ge=0)
-    interest_rate: Optional[Decimal] = Field(None, ge=0)
-    penalty_rate: Optional[Decimal] = Field(None, ge=0)
-    grace_days: Optional[int] = Field(None, ge=0)
+    due_date: date | None = None
+    discount_value: Decimal | None = Field(None, ge=0)
+    addition_value: Decimal | None = Field(None, ge=0)
+    interest_rate: Decimal | None = Field(None, ge=0)
+    penalty_rate: Decimal | None = Field(None, ge=0)
+    grace_days: int | None = Field(None, ge=0)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ReceivableInstallmentResponse(BaseModel):
@@ -486,27 +484,27 @@ class ReceivableInstallmentResponse(BaseModel):
     balance: Decimal
 
     due_date: date
-    original_due_date: Optional[date] = None
-    payment_date: Optional[date] = None
+    original_due_date: date | None = None
+    payment_date: date | None = None
 
     interest_rate: Decimal
     penalty_rate: Decimal
     grace_days: int
 
     boleto_generated: bool
-    boleto_number: Optional[str] = None
-    boleto_barcode: Optional[str] = None
-    boleto_digitable_line: Optional[str] = None
-    boleto_url: Optional[str] = None
-    boleto_expires_at: Optional[date] = None
+    boleto_number: str | None = None
+    boleto_barcode: str | None = None
+    boleto_digitable_line: str | None = None
+    boleto_url: str | None = None
+    boleto_expires_at: date | None = None
 
     pix_generated: bool
-    pix_qrcode: Optional[str] = None
-    pix_copy_paste: Optional[str] = None
-    pix_expires_at: Optional[datetime] = None
+    pix_qrcode: str | None = None
+    pix_copy_paste: str | None = None
+    pix_expires_at: datetime | None = None
 
     collection_attempts: int
-    last_collection_date: Optional[datetime] = None
+    last_collection_date: datetime | None = None
 
     is_overdue: bool
     days_overdue: int
@@ -516,7 +514,7 @@ class ReceivableInstallmentResponse(BaseModel):
     is_renegotiated: bool
     can_generate_boleto: bool
 
-    notes: Optional[str] = None
+    notes: str | None = None
     created_at: datetime
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -529,7 +527,7 @@ class ReceivableInstallmentRenegotiateRequest(BaseModel):
     """Request para renegociar parcela."""
 
     new_due_date: date
-    new_value: Optional[Decimal] = Field(None, gt=0)
+    new_value: Decimal | None = Field(None, gt=0)
     reason: str = Field(..., min_length=5, max_length=500)
 
 
@@ -561,30 +559,30 @@ class ReceivablePaymentCreate(BaseModel):
     penalty_value: Decimal = Field(default=Decimal("0"), ge=0)
     fee_value: Decimal = Field(default=Decimal("0"), ge=0)
 
-    payment_method_id: Optional[UUID] = None
-    bank_account_id: Optional[UUID] = None
+    payment_method_id: UUID | None = None
+    bank_account_id: UUID | None = None
 
-    receipt_number: Optional[str] = Field(None, max_length=50)
-    receipt_url: Optional[str] = Field(None, max_length=500)
-    authentication_code: Optional[str] = Field(None, max_length=100)
+    receipt_number: str | None = Field(None, max_length=50)
+    receipt_url: str | None = Field(None, max_length=500)
+    authentication_code: str | None = Field(None, max_length=100)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ReceivablePaymentUpdate(BaseModel):
     """Schema para atualizacao de recebimento."""
 
-    payment_date: Optional[date] = None
-    discount_value: Optional[Decimal] = Field(None, ge=0)
-    interest_value: Optional[Decimal] = Field(None, ge=0)
-    penalty_value: Optional[Decimal] = Field(None, ge=0)
-    fee_value: Optional[Decimal] = Field(None, ge=0)
+    payment_date: date | None = None
+    discount_value: Decimal | None = Field(None, ge=0)
+    interest_value: Decimal | None = Field(None, ge=0)
+    penalty_value: Decimal | None = Field(None, ge=0)
+    fee_value: Decimal | None = Field(None, ge=0)
 
-    receipt_number: Optional[str] = Field(None, max_length=50)
-    receipt_url: Optional[str] = Field(None, max_length=500)
-    authentication_code: Optional[str] = Field(None, max_length=100)
+    receipt_number: str | None = Field(None, max_length=50)
+    receipt_url: str | None = Field(None, max_length=500)
+    authentication_code: str | None = Field(None, max_length=100)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ReceivablePaymentResponse(BaseModel):
@@ -593,7 +591,7 @@ class ReceivablePaymentResponse(BaseModel):
     id: UUID
     installment_id: UUID
     condominio_id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     status: PaymentStatus
     origin: PaymentOrigin
 
@@ -607,33 +605,33 @@ class ReceivablePaymentResponse(BaseModel):
     total_deductions: Decimal
 
     payment_date: date
-    processing_date: Optional[date] = None
-    confirmation_date: Optional[date] = None
-    credit_date: Optional[date] = None
+    processing_date: date | None = None
+    confirmation_date: date | None = None
+    credit_date: date | None = None
 
-    payment_method_name: Optional[str] = None
-    bank_account_name: Optional[str] = None
+    payment_method_name: str | None = None
+    bank_account_name: str | None = None
 
-    receipt_number: Optional[str] = None
-    receipt_url: Optional[str] = None
-    authentication_code: Optional[str] = None
+    receipt_number: str | None = None
+    receipt_url: str | None = None
+    authentication_code: str | None = None
 
-    bank_transaction_id: Optional[str] = None
-    bank_return_code: Optional[str] = None
-    bank_return_message: Optional[str] = None
+    bank_transaction_id: str | None = None
+    bank_return_code: str | None = None
+    bank_return_message: str | None = None
 
-    boleto_nosso_numero: Optional[str] = None
-    pix_txid: Optional[str] = None
-    pix_end_to_end_id: Optional[str] = None
+    boleto_nosso_numero: str | None = None
+    pix_txid: str | None = None
+    pix_end_to_end_id: str | None = None
 
     is_confirmed: bool
     is_reversed: bool
     is_reconciled: bool
 
-    reversed_at: Optional[datetime] = None
-    reversal_reason: Optional[str] = None
+    reversed_at: datetime | None = None
+    reversal_reason: str | None = None
 
-    notes: Optional[str] = None
+    notes: str | None = None
     created_at: datetime
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -646,13 +644,13 @@ class ReceivablePaymentReverseRequest(BaseModel):
     """Request para estornar recebimento."""
 
     reason: str = Field(..., min_length=5, max_length=500)
-    receipt: Optional[str] = Field(None, max_length=500)
+    receipt: str | None = Field(None, max_length=500)
 
 
 class ReceivablePaymentReconcileRequest(BaseModel):
     """Request para conciliar recebimento."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 # ============= BillingRule =============
@@ -662,20 +660,20 @@ class BillingRuleBase(BaseModel):
     """Base para regra de cobranca."""
 
     name: str = Field(..., min_length=3, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     billing_type: BillingType = BillingType.TAXA_CONDOMINIAL
-    category_id: Optional[UUID] = None
+    category_id: UUID | None = None
 
     base_value: Decimal = Field(..., gt=0)
     value_type: str = Field(default="fixo")  # fixo, percentual, por_m2
-    reference_field: Optional[str] = Field(None, max_length=50)
+    reference_field: str | None = Field(None, max_length=50)
 
     frequency: BillingFrequency = BillingFrequency.MENSAL
     due_day: int = Field(default=10, ge=1, le=28)
     generation_day: int = Field(default=1, ge=1, le=28)
 
     start_date: date
-    end_date: Optional[date] = None
+    end_date: date | None = None
 
     apply_interest: bool = True
     interest_rate: Decimal = Field(default=Decimal("1"), ge=0)
@@ -695,15 +693,15 @@ class BillingRuleBase(BaseModel):
     pix_expiration_hours: int = Field(default=24, ge=1, le=168)
 
     notifications_enabled: bool = True
-    notification_channels: List[str] = Field(default_factory=lambda: ["email", "push"])
-    notify_before_days: List[int] = Field(default_factory=lambda: [7, 3, 1])
-    notify_after_days: List[int] = Field(default_factory=lambda: [1, 3, 7, 15, 30])
+    notification_channels: list[str] = Field(default_factory=lambda: ["email", "push"])
+    notify_before_days: list[int] = Field(default_factory=lambda: [7, 3, 1])
+    notify_after_days: list[int] = Field(default_factory=lambda: [1, 3, 7, 15, 30])
     notification_time: time = Field(default=time(9, 0))
 
     apply_to_all: bool = True
     unit_filter: dict = Field(default_factory=dict)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class BillingRuleCreate(BillingRuleBase):
@@ -721,82 +719,84 @@ class BillingRuleCreate(BillingRuleBase):
 class BillingRuleUpdate(BaseModel):
     """Schema para atualizacao de regra."""
 
-    name: Optional[str] = Field(None, min_length=3, max_length=100)
-    description: Optional[str] = None
-    category_id: Optional[UUID] = None
+    name: str | None = Field(None, min_length=3, max_length=100)
+    description: str | None = None
+    category_id: UUID | None = None
 
-    base_value: Optional[Decimal] = Field(None, gt=0)
-    value_type: Optional[str] = None
-    reference_field: Optional[str] = Field(None, max_length=50)
+    base_value: Decimal | None = Field(None, gt=0)
+    value_type: str | None = None
+    reference_field: str | None = Field(None, max_length=50)
 
-    due_day: Optional[int] = Field(None, ge=1, le=28)
-    generation_day: Optional[int] = Field(None, ge=1, le=28)
+    due_day: int | None = Field(None, ge=1, le=28)
+    generation_day: int | None = Field(None, ge=1, le=28)
 
-    end_date: Optional[date] = None
+    end_date: date | None = None
 
-    apply_interest: Optional[bool] = None
-    interest_rate: Optional[Decimal] = Field(None, ge=0)
-    apply_penalty: Optional[bool] = None
-    penalty_rate: Optional[Decimal] = Field(None, ge=0)
-    grace_days: Optional[int] = Field(None, ge=0)
+    apply_interest: bool | None = None
+    interest_rate: Decimal | None = Field(None, ge=0)
+    apply_penalty: bool | None = None
+    penalty_rate: Decimal | None = Field(None, ge=0)
+    grace_days: int | None = Field(None, ge=0)
 
-    apply_discount: Optional[bool] = None
-    discount_rate: Optional[Decimal] = Field(None, ge=0)
-    discount_days: Optional[int] = Field(None, ge=0)
+    apply_discount: bool | None = None
+    discount_rate: Decimal | None = Field(None, ge=0)
+    discount_days: int | None = Field(None, ge=0)
 
-    auto_generate_boleto: Optional[bool] = None
-    boleto_days_before: Optional[int] = Field(None, ge=1, le=30)
-    boleto_expiration_days: Optional[int] = Field(None, ge=1, le=365)
+    auto_generate_boleto: bool | None = None
+    boleto_days_before: int | None = Field(None, ge=1, le=30)
+    boleto_expiration_days: int | None = Field(None, ge=1, le=365)
 
-    auto_generate_pix: Optional[bool] = None
-    pix_expiration_hours: Optional[int] = Field(None, ge=1, le=168)
+    auto_generate_pix: bool | None = None
+    pix_expiration_hours: int | None = Field(None, ge=1, le=168)
 
-    notifications_enabled: Optional[bool] = None
-    notification_channels: Optional[List[str]] = None
-    notify_before_days: Optional[List[int]] = None
-    notify_after_days: Optional[List[int]] = None
-    notification_time: Optional[time] = None
+    notifications_enabled: bool | None = None
+    notification_channels: list[str] | None = None
+    notify_before_days: list[int] | None = None
+    notify_after_days: list[int] | None = None
+    notification_time: time | None = None
 
-    apply_to_all: Optional[bool] = None
-    unit_filter: Optional[dict] = None
+    apply_to_all: bool | None = None
+    unit_filter: dict | None = None
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
-class BillingRuleResponse(BillingRuleBase):
-    """Schema de resposta para regra."""
+class BillingRuleResponse(BaseModel):
+    """Schema de resposta para regra de cobranca."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     condominio_id: UUID
-    status: BillingRuleStatus
-    is_active: bool
-    should_run_today: bool
-
-    total_generated: int
-    total_collected: Decimal
-    collection_rate: Decimal
-
-    last_run_at: Optional[datetime] = None
-    last_run_result: dict = Field(default_factory=dict)
-    next_run_at: Optional[datetime] = None
-
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:  # pylint: disable=too-few-public-methods
-        """Configuracao do schema."""
-
-        from_attributes = True
+    name: str = ""
+    description: str | None = None
+    billing_type: str | None = None
+    base_value: Decimal = Decimal("0")
+    frequency: str = "mensal"
+    due_day: int = 10
+    start_date: date | None = None
+    end_date: date | None = None
+    status: str = "ativa"
+    is_active: bool = True
+    should_run_today: bool = False
+    total_generated: int = 0
+    total_collected: Decimal = Decimal("0")
+    collection_rate: Decimal = Decimal("0")
+    last_run_at: datetime | None = None
+    last_run_result: dict | None = None
+    next_run_at: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class BillingRuleFilter(BaseModel):
     """Filtros para busca de regras."""
 
-    search: Optional[str] = None
-    billing_type: Optional[BillingType] = None
-    status: Optional[BillingRuleStatus] = None
-    frequency: Optional[BillingFrequency] = None
-    is_active: Optional[bool] = None
+    search: str | None = None
+    billing_type: BillingType | None = None
+    status: BillingRuleStatus | None = None
+    frequency: BillingFrequency | None = None
+    is_active: bool | None = None
 
 
 # ============= Bulk Operations =============
@@ -805,24 +805,24 @@ class BillingRuleFilter(BaseModel):
 class ReceivableBulkPaymentRequest(BaseModel):
     """Request para recebimento em lote."""
 
-    installment_ids: List[UUID] = Field(..., min_length=1)
+    installment_ids: list[UUID] = Field(..., min_length=1)
     payment_date: date
-    payment_method_id: Optional[UUID] = None
-    bank_account_id: Optional[UUID] = None
+    payment_method_id: UUID | None = None
+    bank_account_id: UUID | None = None
 
 
 class ReceivableBulkBoletoRequest(BaseModel):
     """Request para geracao de boletos em lote."""
 
-    installment_ids: List[UUID] = Field(..., min_length=1)
+    installment_ids: list[UUID] = Field(..., min_length=1)
     expiration_days: int = Field(default=30, ge=1, le=365)
 
 
 class ReceivableBulkNotifyRequest(BaseModel):
     """Request para envio de notificacoes em lote."""
 
-    installment_ids: List[UUID] = Field(..., min_length=1)
-    channels: List[str] = Field(default_factory=lambda: ["email"])
+    installment_ids: list[UUID] = Field(..., min_length=1)
+    channels: list[str] = Field(default_factory=lambda: ["email"])
     template: str = Field(default="cobranca")
 
 
@@ -843,5 +843,5 @@ class ReceivableAgreementRequest(BaseModel):
 
     agreement_id: UUID
     new_due_date: date
-    new_value: Optional[Decimal] = Field(None, gt=0)
+    new_value: Decimal | None = Field(None, gt=0)
     installments: int = Field(default=1, ge=1, le=60)

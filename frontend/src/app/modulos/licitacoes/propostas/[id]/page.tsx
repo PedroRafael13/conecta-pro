@@ -26,26 +26,12 @@ import { Alert } from '@/components/ui/alert';
 import { ProposalStatusBadge } from '@/components/licitacoes/ProposalStatusBadge';
 import { ProposalFormModal } from '@/components/licitacoes/ProposalFormModal';
 import { SubmitProposalDialog } from '@/components/licitacoes/SubmitProposalDialog';
-import { ProposalItemsManager } from '@/components/licitacoes/ProposalItemsManager';
 import {
   useBuscarProposta,
   useAtualizarProposta,
-  useSubmeterProposta,
-  useAlterarStatusProposta,
-  useListarItens,
-  useAdicionarItem,
-  useAtualizarItem,
-  useRemoverItem,
+  useEnviarProposta,
 } from '@/hooks/bidding/useProposals';
 import type { ProposalFormData } from '@/components/licitacoes/ProposalFormModal';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { statusOptions, type ProposalStatus } from '@/components/licitacoes/ProposalStatusBadge';
 
 export default function PropostaDetalhePage() {
   const router = useRouter();
@@ -64,59 +50,26 @@ export default function PropostaDetalhePage() {
     error,
     refetch,
   } = useBuscarProposta(proposalId);
-  const { data: items, isLoading: isLoadingItems } = useListarItens(proposalId);
   const atualizarProposta = useAtualizarProposta();
-  const submeterProposta = useSubmeterProposta();
-  const alterarStatus = useAlterarStatusProposta();
-  const adicionarItem = useAdicionarItem();
-  const atualizarItem = useAtualizarItem();
-  const removerItem = useRemoverItem();
+  const submeterProposta = useEnviarProposta();
 
   // Handlers
   const handleSubmitForm = async (data: ProposalFormData) => {
     await atualizarProposta.mutateAsync({
       id: proposalId,
-      data,
+      data: data as unknown as import('@/services/bidding/proposals.service').BiddingProposalUpdate,
     });
     setIsFormOpen(false);
   };
 
   const handleConfirmSubmit = async (observacoes?: string) => {
     await submeterProposta.mutateAsync({
-      proposal_id: proposalId,
+      proposalId,
       observacoes,
     });
     setIsSubmitDialogOpen(false);
   };
 
-  const handleStatusChange = async (newStatus: ProposalStatus) => {
-    await alterarStatus.mutateAsync({
-      proposal_id: proposalId,
-      novo_status: newStatus,
-    });
-  };
-
-  const handleAddItem = async (itemData: any) => {
-    await adicionarItem.mutateAsync({
-      proposalId,
-      data: itemData,
-    });
-  };
-
-  const handleUpdateItem = async (itemId: string, itemData: any) => {
-    await atualizarItem.mutateAsync({
-      proposalId,
-      itemId,
-      data: itemData,
-    });
-  };
-
-  const handleRemoveItem = async (itemId: string) => {
-    await removerItem.mutateAsync({
-      proposalId,
-      itemId,
-    });
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -173,7 +126,7 @@ export default function PropostaDetalhePage() {
                 Proposta {(proposal as any).numero_proposta || proposal.id.substring(0, 8)}
               </h1>
               <p className="text-muted-foreground">
-                {proposal.razao_social}
+                {String(proposal.razao_social || '')}
               </p>
             </div>
           </div>
@@ -215,7 +168,7 @@ export default function PropostaDetalhePage() {
             <div>
               <p className="text-sm text-muted-foreground">Valor Global</p>
               <p className="text-xl font-bold">
-                {formatCurrency(proposal.valor_global)}
+                {formatCurrency(Number(proposal.valor_global) || 0)}
               </p>
             </div>
           </div>
@@ -268,11 +221,6 @@ export default function PropostaDetalhePage() {
           <TabsTrigger value="dados-gerais">Dados Gerais</TabsTrigger>
           <TabsTrigger value="itens">
             Itens da Proposta
-            {items && items.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {items.length}
-              </Badge>
-            )}
           </TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
@@ -301,11 +249,11 @@ export default function PropostaDetalhePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">CNPJ</p>
-                <p className="font-medium">{proposal.cnpj}</p>
+                <p className="font-medium">{String(proposal.cnpj || '')}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Razão Social</p>
-                <p className="font-medium">{proposal.razao_social}</p>
+                <p className="font-medium">{String(proposal.razao_social || '')}</p>
               </div>
             </div>
           </Card>
@@ -313,24 +261,7 @@ export default function PropostaDetalhePage() {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-lg">Status da Proposta</h3>
-              <div className="w-64">
-                <Select
-                  value={proposal.status}
-                  onValueChange={(value) => handleStatusChange(value as ProposalStatus)}
-                  disabled={alterarStatus.isPending}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <ProposalStatusBadge status={proposal.status as any} />
             </div>
           </Card>
 
@@ -359,27 +290,104 @@ export default function PropostaDetalhePage() {
 
         {/* Tab: Itens da Proposta */}
         <TabsContent value="itens">
-          <ProposalItemsManager
-            items={items || []}
-            isLoading={isLoadingItems}
-            onAddItem={handleAddItem}
-            onUpdateItem={handleUpdateItem}
-            onRemoveItem={handleRemoveItem}
-          />
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Itens da Proposta</h3>
+            </div>
+            {(proposal as any).itens && (proposal as any).itens.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">#</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Descricao</th>
+                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Qtd</th>
+                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Valor Unit.</th>
+                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(proposal as any).itens.map((item: any, idx: number) => (
+                      <tr key={idx} className="border-b last:border-0">
+                        <td className="py-2 px-3">{item.numero || idx + 1}</td>
+                        <td className="py-2 px-3">{item.descricao}</td>
+                        <td className="py-2 px-3 text-right">{item.quantidade} {item.unidade || ''}</td>
+                        <td className="py-2 px-3 text-right">{formatCurrency(item.valor_unitario || 0)}</td>
+                        <td className="py-2 px-3 text-right font-medium">
+                          {formatCurrency((item.quantidade || 1) * (item.valor_unitario || 0))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2">
+                      <td colSpan={4} className="py-2 px-3 text-right font-semibold">Total:</td>
+                      <td className="py-2 px-3 text-right font-bold text-lg">
+                        {formatCurrency(
+                          (proposal as any).itens.reduce((sum: number, item: any) =>
+                            sum + ((item.quantidade || 1) * (item.valor_unitario || 0)), 0
+                          )
+                        )}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-30" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum item cadastrado</h3>
+                <p className="text-muted-foreground text-sm">
+                  Adicione itens para detalhar a proposta.
+                </p>
+              </div>
+            )}
+          </Card>
         </TabsContent>
 
         {/* Tab: Documentos */}
         <TabsContent value="documentos">
           <Card className="p-6">
-            <div className="text-center py-12">
-              <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-30" />
-              <h3 className="text-lg font-semibold mb-2">
-                Gestão de Documentos
-              </h3>
-              <p className="text-muted-foreground">
-                Funcionalidade em desenvolvimento. Integração com módulo de
-                documentos.
-              </p>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Documentos da Proposta</h3>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Gerar PDF
+              </Button>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="text-sm font-medium">Carta Proposta</p>
+                    <p className="text-xs text-muted-foreground">Documento principal da proposta</p>
+                  </div>
+                </div>
+                <Badge variant={proposal.status !== 'rascunho' ? 'default' : 'secondary'}>
+                  {proposal.status !== 'rascunho' ? 'Gerado' : 'Pendente'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium">Planilha de Custos</p>
+                    <p className="text-xs text-muted-foreground">Detalhamento de custos e BDI</p>
+                  </div>
+                </div>
+                <Badge variant="secondary">Pendente</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-orange-500" />
+                  <div>
+                    <p className="text-sm font-medium">Declaracoes</p>
+                    <p className="text-xs text-muted-foreground">ME/EPP, Nao emprega menor, etc.</p>
+                  </div>
+                </div>
+                <Badge variant="secondary">Pendente</Badge>
+              </div>
             </div>
           </Card>
         </TabsContent>

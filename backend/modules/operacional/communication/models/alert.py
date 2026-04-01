@@ -9,8 +9,7 @@ Quality Score Target: 99+/100
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
@@ -20,7 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class AlertType(str, Enum):
+class AlertType(StrEnum):
     """Tipo de alerta."""
 
     OCORRENCIA_CRITICA = "ocorrencia_critica"  # Ocorrencia critica registrada
@@ -36,7 +35,7 @@ class AlertType(str, Enum):
     SISTEMA = "sistema"  # Alerta do sistema
 
 
-class AlertSeverity(str, Enum):
+class AlertSeverity(StrEnum):
     """Severidade do alerta."""
 
     INFO = "info"  # Informativo
@@ -120,13 +119,13 @@ class Alert(Base):
     )
 
     # Referencia (entidade relacionada)
-    reference_type: Mapped[Optional[str]] = mapped_column(
+    reference_type: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         index=True,
         comment="Tipo da entidade referenciada (occurrence, post, etc)",
     )
-    reference_id: Mapped[Optional[str]] = mapped_column(
+    reference_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -134,13 +133,13 @@ class Alert(Base):
     )
 
     # Destinatarios
-    target_users: Mapped[Optional[list]] = mapped_column(
+    target_users: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
         comment="Lista de UUIDs de usuarios destinatarios",
     )
-    target_roles: Mapped[Optional[list]] = mapped_column(
+    target_roles: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
@@ -148,7 +147,7 @@ class Alert(Base):
     )
 
     # Confirmacao
-    acknowledged_by: Mapped[Optional[list]] = mapped_column(
+    acknowledged_by: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
@@ -156,7 +155,7 @@ class Alert(Base):
     )
 
     # Expiracao
-    expires_at: Mapped[Optional[datetime]] = mapped_column(
+    expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         index=True,
@@ -178,9 +177,7 @@ class Alert(Base):
 
     def __repr__(self) -> str:
         """Representacao string do alerta."""
-        return (
-            f"<Alert {self.id[:8]}... [{self.severity}] - {self.title[:30]}>"
-        )
+        return f"<Alert {self.id[:8]}... [{self.severity}] - {self.title[:30]}>"
 
     @property
     def is_critical(self) -> bool:
@@ -211,9 +208,7 @@ class Alert(Base):
         """
         if not self.target_users:
             return self.acknowledgment_count > 0
-        return set(self.target_users or []).issubset(
-            set(self.acknowledged_by or [])
-        )
+        return set(self.target_users or []).issubset(set(self.acknowledged_by or []))
 
     def acknowledge(self, user_id: str) -> bool:
         """
@@ -306,12 +301,12 @@ class Alert(Base):
         title: str,
         message: str,
         alert_type: AlertType = AlertType.SISTEMA,
-        reference_type: Optional[str] = None,
-        reference_id: Optional[str] = None,
-        target_roles: Optional[list[str]] = None,
-        target_users: Optional[list[str]] = None,
+        reference_type: str | None = None,
+        reference_id: str | None = None,
+        target_roles: list[str] | None = None,
+        target_users: list[str] | None = None,
         expires_in_minutes: int = 60,
-    ) -> "Alert":
+    ) -> Alert:
         """
         Factory method para criar alerta critico.
 
@@ -351,11 +346,11 @@ class Alert(Base):
         title: str,
         message: str,
         alert_type: AlertType = AlertType.SISTEMA,
-        reference_type: Optional[str] = None,
-        reference_id: Optional[str] = None,
-        target_roles: Optional[list[str]] = None,
+        reference_type: str | None = None,
+        reference_id: str | None = None,
+        target_roles: list[str] | None = None,
         expires_in_minutes: int = 120,
-    ) -> "Alert":
+    ) -> Alert:
         """
         Factory method para criar alerta de aviso.
 

@@ -2,34 +2,34 @@
 Controller para Checklist.
 """
 
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from modules.campo.services.checklist_service import ChecklistService
+from modules.campo.models.checklist import TipoServico
 from modules.campo.schemas.checklist import (
-    ChecklistTemplateCreate,
-    ChecklistTemplateUpdate,
-    ChecklistTemplateRead,
-    ChecklistTemplateListItem,
-    ChecklistItemCreate,
-    ChecklistItemUpdate,
-    ChecklistItemRead,
-    ChecklistPreenchidoRead,
-    ChecklistIniciarRequest,
-    ChecklistResponderRequest,
-    ChecklistConcluirRequest,
-    ReordenarItensRequest,
     ChecklistComItens,
+    ChecklistConcluirRequest,
+    ChecklistIniciarRequest,
+    ChecklistItemCreate,
+    ChecklistItemRead,
+    ChecklistItemUpdate,
     ChecklistPreenchidoCompleto,
-    ValidacaoResult,
+    ChecklistPreenchidoRead,
+    ChecklistResponderRequest,
+    ChecklistTemplateCreate,
+    ChecklistTemplateListItem,
+    ChecklistTemplateRead,
+    ChecklistTemplateUpdate,
+    ReordenarItensRequest,
     TemplateFiltro,
     TemplatePaginatedResponse,
+    ValidacaoResult,
 )
-from modules.campo.models.checklist import TipoServico
+from modules.campo.services.checklist_service import ChecklistService
 
 router = APIRouter()
 
@@ -43,9 +43,11 @@ def get_service(db: AsyncSession = Depends(get_db)) -> ChecklistService:
 # TEMPLATE
 # =============================================================================
 
+
 @router.post("/templates", response_model=ChecklistTemplateRead, status_code=status.HTTP_201_CREATED)
 async def criar_template(
     data: ChecklistTemplateCreate,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Cria um novo template de checklist."""
@@ -55,11 +57,12 @@ async def criar_template(
 
 @router.get("/templates", response_model=TemplatePaginatedResponse)
 async def listar_templates(
-    tipo_servico: Optional[TipoServico] = None,
-    categoria_equipamento: Optional[str] = None,
-    is_obrigatorio: Optional[bool] = None,
-    is_ativo: Optional[bool] = True,
-    busca: Optional[str] = None,
+    current_user: CurrentActiveUser,
+    tipo_servico: TipoServico | None = None,
+    categoria_equipamento: str | None = None,
+    is_obrigatorio: bool | None = None,
+    is_ativo: bool | None = True,
+    busca: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     service: ChecklistService = Depends(get_service),
@@ -78,6 +81,7 @@ async def listar_templates(
 @router.get("/templates/tipo/{tipo_servico}", response_model=list[ChecklistTemplateListItem])
 async def listar_templates_por_tipo(
     tipo_servico: TipoServico,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Lista templates ativos para um tipo de servico."""
@@ -88,6 +92,7 @@ async def listar_templates_por_tipo(
 @router.get("/templates/{template_id}", response_model=ChecklistComItens)
 async def obter_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Obtem template com seus itens."""
@@ -101,6 +106,7 @@ async def obter_template(
 async def atualizar_template(
     template_id: UUID,
     data: ChecklistTemplateUpdate,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Atualiza um template."""
@@ -113,6 +119,7 @@ async def atualizar_template(
 @router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def excluir_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Exclui um template (soft delete)."""
@@ -124,6 +131,7 @@ async def excluir_template(
 @router.post("/templates/{template_id}/clonar", response_model=ChecklistTemplateRead)
 async def clonar_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     novo_nome: str = Query(..., min_length=3),
     service: ChecklistService = Depends(get_service),
 ):
@@ -138,9 +146,11 @@ async def clonar_template(
 # ITENS
 # =============================================================================
 
+
 @router.post("/itens", response_model=ChecklistItemRead, status_code=status.HTTP_201_CREATED)
 async def adicionar_item(
     data: ChecklistItemCreate,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Adiciona item a um template."""
@@ -151,6 +161,7 @@ async def adicionar_item(
 @router.get("/itens/{item_id}", response_model=ChecklistItemRead)
 async def obter_item(
     item_id: UUID,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Obtem item por ID."""
@@ -164,6 +175,7 @@ async def obter_item(
 async def atualizar_item(
     item_id: UUID,
     data: ChecklistItemUpdate,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Atualiza um item."""
@@ -176,6 +188,7 @@ async def atualizar_item(
 @router.delete("/itens/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def excluir_item(
     item_id: UUID,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Exclui um item (soft delete)."""
@@ -187,6 +200,7 @@ async def excluir_item(
 @router.get("/templates/{template_id}/itens", response_model=list[ChecklistItemRead])
 async def listar_itens_template(
     template_id: UUID,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Lista itens de um template."""
@@ -198,6 +212,7 @@ async def listar_itens_template(
 async def reordenar_itens(
     template_id: UUID,
     data: ReordenarItensRequest,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Reordena itens de um template."""
@@ -211,10 +226,14 @@ async def reordenar_itens(
 # PREENCHIMENTO
 # =============================================================================
 
-@router.post("/os/{ordem_servico_id}/iniciar", response_model=ChecklistPreenchidoRead, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/os/{ordem_servico_id}/iniciar", response_model=ChecklistPreenchidoRead, status_code=status.HTTP_201_CREATED
+)
 async def iniciar_checklist(
     ordem_servico_id: UUID,
     data: ChecklistIniciarRequest,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Inicia preenchimento de checklist para uma OS."""
@@ -232,6 +251,7 @@ async def iniciar_checklist(
 async def responder_item(
     ordem_servico_id: UUID,
     data: ChecklistResponderRequest,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Responde um item do checklist."""
@@ -256,6 +276,7 @@ async def responder_item(
 async def concluir_checklist(
     ordem_servico_id: UUID,
     data: ChecklistConcluirRequest,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Conclui preenchimento do checklist."""
@@ -272,6 +293,7 @@ async def concluir_checklist(
 @router.get("/os/{ordem_servico_id}", response_model=ChecklistPreenchidoCompleto)
 async def obter_checklist_os(
     ordem_servico_id: UUID,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Obtem checklist completo de uma OS."""
@@ -284,6 +306,7 @@ async def obter_checklist_os(
 @router.get("/os/{ordem_servico_id}/progresso", response_model=ChecklistPreenchidoRead)
 async def obter_progresso_checklist(
     ordem_servico_id: UUID,
+    current_user: CurrentActiveUser,
     service: ChecklistService = Depends(get_service),
 ):
     """Obtem progresso do checklist de uma OS."""
