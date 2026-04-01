@@ -32,19 +32,53 @@ class CoverageAgent:
         except Exception:
             return {}
 
-    def ler_openapi(self) -> dict:
-        """Lê todos os endpoints do backend via OpenAPI."""
+    def ler_endpoints_backend(self) -> dict:
+        """
+        Lê endpoints do backend.
+        Tenta OpenAPI primeiro; em produção (openapi desabilitado),
+        varre os controllers diretamente.
+        """
+        # Tentar OpenAPI
         spec = self._get("/openapi.json")
+        if spec.get("paths"):
+            endpoints = {}
+            for path, methods in spec["paths"].items():
+                for method, details in methods.items():
+                    if method in ["get", "post", "put", "delete", "patch"]:
+                        endpoints[f"{method.upper()} {path}"] = {
+                            "path": path, "method": method.upper(),
+                        }
+            return endpoints
+
+        # Fallback: varrer controllers do backend
+        return self._ler_endpoints_controllers()
+
+    def _ler_endpoints_controllers(self) -> dict:
+        """Extrai endpoints lendo os arquivos de controller."""
         endpoints = {}
-        for path, methods in spec.get("paths", {}).items():
-            for method, details in methods.items():
-                if method in ["get", "post", "put", "delete", "patch"]:
-                    key = f"{method.upper()} {path}"
-                    endpoints[key] = {
-                        "path": path,
-                        "method": method.upper(),
-                        "summary": details.get("summary", ""),
-                    }
+        backend_dir = Path("/opt/conecta-pro/backend/modules")
+        route_pattern = re.compile(
+            r'@router\.(get|post|put|delete|patch)\s*\(\s*["\']([^"\']+)["\']',
+            re.IGNORECASE,
+        )
+        prefix_pattern = re.compile(
+            r'APIRouter\([^)]*prefix\s*=\s*["\']([^"\']+)["\']',
+        )
+        for fpath in backend_dir.rglob("*controller*.py"):
+            if "__pycache__" in str(fpath):
+                continue
+            try:
+                content = fpath.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+            prefix_match = prefix_pattern.search(content)
+            prefix = prefix_match.group(1) if prefix_match else ""
+            for m in route_pattern.finditer(content):
+                method = m.group(1).upper()
+                path = prefix + m.group(2)
+                endpoints[f"{method} {path}"] = {
+                    "path": path, "method": method,
+                }
         return endpoints
 
     def ler_chamadas_frontend(self) -> dict:
@@ -87,7 +121,7 @@ class CoverageAgent:
         """Executa auditoria completa de cobertura."""
         print("🔍 CoverageAgent: auditando cobertura API...")
 
-        endpoints_backend = self.ler_openapi()
+        endpoints_backend = self.ler_endpoints_backend()
         chamadas_frontend = self.ler_chamadas_frontend()
 
         paths_backend = {
