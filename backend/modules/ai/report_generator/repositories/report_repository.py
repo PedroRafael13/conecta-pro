@@ -10,6 +10,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import asc, desc, func, or_
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import Session
 
 from modules.ai.report_generator.models import (
@@ -127,7 +128,8 @@ class ReportRepository:
         total = query.count()
 
         # Ordenação
-        order_column = getattr(Report, order_by, Report.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(Report).mapper.column_attrs}
+        order_column = getattr(Report, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_dir == "desc":
             query = query.order_by(desc(order_column))
         else:

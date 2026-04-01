@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, asc, desc, func, or_, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -217,7 +218,8 @@ class ProfileRepository:
         total = total_result.scalar() or 0
 
         # Ordenacao
-        order_column = getattr(OperationalProfile, order_by, OperationalProfile.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(OperationalProfile).mapper.column_attrs}
+        order_column = getattr(OperationalProfile, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(desc(order_column))
         else:
@@ -632,7 +634,8 @@ class ProfileRepository:
         total = total_result.scalar() or 0
 
         # Ordenacao
-        order_column = getattr(PostMatch, order_by, PostMatch.score_match)
+        _valid_order_column_cols = {c.key for c in sa_inspect(PostMatch).mapper.column_attrs}
+        order_column = getattr(PostMatch, order_by if order_by in _valid_order_column_cols else "score_match")
         if order_desc:
             query = query.order_by(desc(order_column))
         else:

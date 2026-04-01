@@ -6,6 +6,7 @@ import secrets
 from datetime import datetime
 
 from sqlalchemy import and_, func, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_share import DocumentShare, ShareStatus, ShareType
@@ -105,7 +106,8 @@ class DocumentShareRepository:
         total = total_result.scalar() or 0
 
         # Ordenação
-        order_column = getattr(DocumentShare, order_by, DocumentShare.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(DocumentShare).mapper.column_attrs}
+        order_column = getattr(DocumentShare, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:

@@ -10,6 +10,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import desc, func, or_
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import Session
 
 from modules.services.models.service_catalog import ServiceCatalog, ServiceStatus
@@ -229,7 +230,8 @@ class ServiceRepository:
 
         total = query.count()
 
-        order_column = getattr(ServiceOrder, order_by, ServiceOrder.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(ServiceOrder).mapper.column_attrs}
+        order_column = getattr(ServiceOrder, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(desc(order_column))
         else:

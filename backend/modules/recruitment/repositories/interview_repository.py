@@ -4,6 +4,7 @@ import logging
 from datetime import date, datetime, timedelta
 
 from sqlalchemy import and_, func, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -174,7 +175,8 @@ class InterviewRepository:
         # Ordenação — map legacy order_by values
         if order_by == "scheduled_date":
             order_by = "scheduled_at"
-        order_column = getattr(Interview, order_by, Interview.scheduled_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(Interview).mapper.column_attrs}
+        order_column = getattr(Interview, order_by if order_by in _valid_order_column_cols else "scheduled_at")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:

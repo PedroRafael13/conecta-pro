@@ -10,6 +10,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, asc, delete, desc, func, or_, select, update
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai.sentiment_analysis.models import (
@@ -146,7 +147,8 @@ class SentimentRepository:
         total = await self.session.scalar(count_query) or 0
 
         # Order
-        order_column = getattr(SentimentAnalysis, order_by, SentimentAnalysis.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(SentimentAnalysis).mapper.column_attrs}
+        order_column = getattr(SentimentAnalysis, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(desc(order_column))
         else:
@@ -596,7 +598,8 @@ class SentimentRepository:
         total = await self.session.scalar(count_query) or 0
 
         # Order
-        order_column = getattr(FeedbackInsight, order_by, FeedbackInsight.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(FeedbackInsight).mapper.column_attrs}
+        order_column = getattr(FeedbackInsight, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(desc(order_column))
         else:
@@ -767,7 +770,8 @@ class SentimentRepository:
         )
 
         if group_by:
-            group_column = getattr(SentimentAnalysis, group_by, None)
+            _valid_group_column_cols = {c.key for c in sa_inspect(SentimentAnalysis).mapper.column_attrs}
+            group_column = getattr(SentimentAnalysis, group_by) if group_by in _valid_group_column_cols else None
             if group_column:
                 query = query.add_columns(group_column.label("group_value"))
                 query = query.group_by(group_column)

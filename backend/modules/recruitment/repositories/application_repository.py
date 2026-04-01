@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 
 from sqlalchemy import and_, func, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -139,7 +140,8 @@ class ApplicationRepository:
         total = total_result.scalar() or 0
 
         # Ordenação
-        order_column = getattr(Application, order_by, Application.applied_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(Application).mapper.column_attrs}
+        order_column = getattr(Application, order_by if order_by in _valid_order_column_cols else "applied_at")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:

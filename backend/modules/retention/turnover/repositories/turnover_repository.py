@@ -12,6 +12,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -187,7 +188,8 @@ class TurnoverRepository:
         total = total_result.scalar() or 0
 
         # Ordenacao
-        order_column = getattr(TurnoverPrediction, order_by, TurnoverPrediction.score_risco)
+        _valid_order_column_cols = {c.key for c in sa_inspect(TurnoverPrediction).mapper.column_attrs}
+        order_column = getattr(TurnoverPrediction, order_by if order_by in _valid_order_column_cols else "score_risco")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:

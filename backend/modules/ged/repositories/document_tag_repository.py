@@ -3,6 +3,7 @@
 import logging
 
 from sqlalchemy import and_, delete, func, insert, or_, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_tag import DocumentTag, TagType, document_tag_association
@@ -143,7 +144,8 @@ class DocumentTagRepository:
         total = total_result.scalar() or 0
 
         # Ordenação
-        order_column = getattr(DocumentTag, order_by, DocumentTag.name)
+        _valid_order_column_cols = {c.key for c in sa_inspect(DocumentTag).mapper.column_attrs}
+        order_column = getattr(DocumentTag, order_by if order_by in _valid_order_column_cols else "name")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:

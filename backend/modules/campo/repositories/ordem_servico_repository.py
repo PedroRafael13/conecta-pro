@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.campo.models.ordem_servico import OrdemServico, StatusOS
@@ -199,7 +200,8 @@ class OrdemServicoRepository:
         total = total_result.scalar()
 
         # Ordenacao
-        order_column = getattr(OrdemServico, order_by, OrdemServico.created_at)
+        _valid_order_column_cols = {c.key for c in sa_inspect(OrdemServico).mapper.column_attrs}
+        order_column = getattr(OrdemServico, order_by if order_by in _valid_order_column_cols else "created_at")
         if order_desc:
             query = query.order_by(order_column.desc())
         else:
