@@ -166,6 +166,9 @@ def cmd_ajuda(chat_id: int):
         "   Tipos: RedisDown, SwapHigh, CeleryUnhealthy,\n"
         "          BackendUnhealthy, DiskSpaceLow, PM2ExcessiveRestarts\n"
         "`/escaladas` — Ver escaladas ativas\n\n"
+        "🌙 *Sprint 8 — Turno + Semanal:*\n"
+        "`/turno` — Turno atual (dia/noite/fim de semana)\n"
+        "`/semanal` — Relatório semanal sob demanda\n\n"
         "*Linguagem natural:*\n"
         "Apenas descreva o problema:\n"
         "_Redis caiu_, _Postgres lento_, _Celery parou_\n\n"
@@ -747,9 +750,36 @@ def processar_update(update: dict):
             )
     elif tl.startswith("/escaladas"):
         cmd_escaladas(chat_id)
+    elif tl.startswith("/turno"):
+        cmd_turno(chat_id)
+    elif tl.startswith("/semanal"):
+        cmd_semanal(chat_id)
     else:
         # Linguagem natural
         handle_natural_language(text, chat_id)
+
+
+# ─── Comandos Sprint 8 ───────────────────────────────────────────────────────
+
+def cmd_turno(chat_id: int):
+    """Status do turno atual."""
+    try:
+        from turno import Turno
+        t = Turno()
+        send(f"⏰ *Turno atual*\n\n{t.resumo()}", chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
+def cmd_semanal(chat_id: int):
+    """Envia relatório semanal agora."""
+    send("📊 Gerando relatório semanal...", chat_id=chat_id)
+    try:
+        from relatorio_semanal import gerar_relatorio_semanal
+        rel = gerar_relatorio_semanal()
+        send(rel, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
 
 
 # ─── Comandos Sprint 5 ───────────────────────────────────────────────────────

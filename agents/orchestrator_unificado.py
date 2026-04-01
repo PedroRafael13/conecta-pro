@@ -101,6 +101,20 @@ except Exception as e:
     _TEAM_BRIDGE = None
     TEAM_BRIDGE_OK = False
 
+# ── Turno (Sprint 8 — comportamento dia/noite) ────────────────────────────────
+try:
+    _cto_dir = str(Path(__file__).parent / "cto")
+    if _cto_dir not in sys.path:
+        sys.path.insert(0, _cto_dir)
+    from turno import Turno
+    _TURNO = Turno()
+    _TURNO.verificar_troca_turno()
+    TURNO_OK = True
+except Exception as e:
+    print(f"[turno] indisponível: {e}")
+    _TURNO = None
+    TURNO_OK = False
+
 # ── Carrega base classes do .pyc se .py ausente (orchestrator_geral legacy) ───
 def _load_pyc(name: str, pyc_path: Path):
     loader = importlib.machinery.SourcelessFileLoader(name, str(pyc_path))
@@ -450,6 +464,57 @@ def carregar_orquestrador(modulo_file: str):
     return mod.OrchestratorClass
 
 
+# ── Sprint 6 — Mapeamento container → tipo de runbook ────────────────────────
+
+_CONTAINER_RUNBOOK_MAP = {
+    "conecta-pro-redis": "RedisDown",
+    "conecta-pro-celery-integrations": "CeleryUnhealthy",
+    "conecta-pro-backend": "BackendUnhealthy",
+    "conecta-pro-frontend": "PM2ExcessiveRestarts",
+}
+
+
+def _executar_runbooks_containers(containers_fail: list, estado: dict):
+    """Sprint 6 — Para cada container crítico em falha, executa runbook adequado."""
+    for container in containers_fail:
+        tipo = _CONTAINER_RUNBOOK_MAP.get(container)
+        if not tipo:
+            continue
+        try:
+            ticket = _CTO_BRAIN.criar_ticket(
+                titulo=f"{container} indisponível",
+                descricao=f"Container {container} não está running. Runbook {tipo} iniciado.",
+                severidade="critica",
+                categoria="infraestrutura",
+                causa_raiz=f"Container {container} parou",
+                solucao_proposta=f"Runbook automático: {tipo}",
+            )
+            ticket_num = ticket.get("numero", "CTO-????")
+            resultado = _CTO_BRAIN.tentar_resolver(
+                ticket_num=ticket_num,
+                tipo=tipo,
+                severidade="critica",
+                descricao=f"Container {container} indisponível",
+            )
+            if resultado["resolvido"]:
+                estado["correcoes_totais"] = estado.get("correcoes_totais", 0) + 1
+                logger.info(f"[Sprint6] {container} recuperado via runbook {tipo}")
+                telegram(
+                    f"✅ <b>Runbook resolveu!</b>\n"
+                    f"Container: <code>{container}</code>\n"
+                    f"Runbook: {tipo}\n"
+                    f"Ticket: {ticket_num} fechado automaticamente."
+                )
+            elif resultado["escalada_aberta"]:
+                logger.warning(
+                    f"[Sprint6] {container} não resolvido — escalada {ticket_num} aberta"
+                )
+            else:
+                logger.warning(f"[Sprint6] {container}: runbook {tipo} indisponível")
+        except Exception as e:
+            logger.error(f"[Sprint6] Erro ao executar runbook para {container}: {e}")
+
+
 # ── Ciclo rápido (5min) ───────────────────────────────────────────────────────
 
 def ciclo_rapido(token: str, estado: dict) -> tuple[float, dict]:
@@ -541,6 +606,10 @@ def ciclo_rapido(token: str, estado: dict) -> tuple[float, dict]:
                             f"(conf={conf:.0f}/100, {resultado['tempo_s']}s)"
                         )
 
+        # Sprint 6 — Tentar resolver containers críticos com runbook
+        if CTO_BRAIN_OK and containers["fail"]:
+            _executar_runbooks_containers(containers["fail"], estado)
+
         persistentes = estado.get("bugs_persistentes", {})
         chave = "|".join(sorted(erros[:5]))
         persistentes[chave] = persistentes.get(chave, 0) + 1
@@ -553,6 +622,15 @@ def ciclo_rapido(token: str, estado: dict) -> tuple[float, dict]:
         estado["bugs_persistentes"] = persistentes
     else:
         estado["bugs_persistentes"] = {}
+
+    # Sprint 6 — Verificar escaladas temporais a cada ciclo rápido
+    if CTO_BRAIN_OK:
+        try:
+            acoes_esc = _CTO_BRAIN.verificar_escaladas()
+            if acoes_esc:
+                logger.info(f"[Escalada] {len(acoes_esc)} ação(ões) de escalada disparada(s)")
+        except Exception as e:
+            logger.warning(f"[Escalada] Erro ao verificar escaladas: {e}")
 
     estado["score_anterior"] = score
     estado["melhor_score"] = max(estado.get("melhor_score", 0.0), score)
@@ -827,8 +905,18 @@ def main():
         estado = ciclo_completo(token, estado)
     elif modo == "heartbeat":
         estado = ciclo_heartbeat(token, estado)
+    elif modo == "escaladas":
+        # Sprint 6 — verificar escaladas temporais (chamado a cada 5min via cron)
+        if CTO_BRAIN_OK:
+            try:
+                acoes = _CTO_BRAIN.verificar_escaladas()
+                logger.info(f"[Escaladas] {len(acoes)} ação(ões) executada(s)")
+            except Exception as e:
+                logger.error(f"[Escaladas] Erro: {e}")
+        else:
+            logger.error("[Escaladas] CTOBrain indisponível")
     else:
-        logger.error(f"Modo desconhecido: {modo}. Use: rapido | completo | heartbeat")
+        logger.error(f"Modo desconhecido: {modo}. Use: rapido | completo | heartbeat | escaladas")
         sys.exit(1)
 
     logger.info(f"✅ Concluído ({modo}) em {datetime.now().strftime('%H:%M:%S')}")
