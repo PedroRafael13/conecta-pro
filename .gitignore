@@ -103,3 +103,5 @@ agents/cto/memory/*.json
 agents/cto/knowledge/*.json
 agents/cto/brain/
 agents/cto/*.log
+agents/cto/knowledge/
+!agents/cto/knowledge/.ultimo_commit

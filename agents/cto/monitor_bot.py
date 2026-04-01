@@ -761,6 +761,20 @@ def processar_update(update: dict):
         cmd_turno(chat_id)
     elif tl.startswith("/semanal"):
         cmd_semanal(chat_id)
+    elif tl.startswith("/conhecimento"):
+        cmd_conhecimento(chat_id)
+    elif tl.startswith("/buscar "):
+        termo = text.split(" ", 1)[1].strip()
+        cmd_buscar(chat_id, termo)
+    elif tl.startswith("/tabela "):
+        nome = text.split(" ", 1)[1].strip()
+        cmd_tabela(chat_id, nome)
+    elif tl.startswith("/endpoint "):
+        path = text.split(" ", 1)[1].strip()
+        cmd_endpoint(chat_id, path)
+    elif tl.startswith("/integracao "):
+        nome = text.split(" ", 1)[1].strip()
+        cmd_integracao(chat_id, nome)
     else:
         # Linguagem natural
         handle_natural_language(text, chat_id)
@@ -1007,6 +1021,143 @@ def cmd_escaladas(chat_id: int):
         send(msg, chat_id=chat_id)
     except Exception as e:
         send(f"⚠️ Erro ao listar escaladas: {e}", chat_id=chat_id)
+
+
+# ─── Comandos Sprint 0 — Conhecimento Total ──────────────────────────────────
+
+def cmd_conhecimento(chat_id: int):
+    """Resumo do que o CTO conhece sobre o sistema."""
+    brain = get_brain()
+    if not brain:
+        send("❌ Brain não disponível", chat_id=chat_id)
+        return
+    resumo = brain.resumo_conhecimento()
+    send(resumo, chat_id=chat_id)
+
+
+def cmd_buscar(chat_id: int, termo: str):
+    """Busca qualquer coisa no sistema."""
+    send(f"🔍 Buscando `{termo}`...", chat_id=chat_id)
+    brain = get_brain()
+    if not brain:
+        send("❌ Brain não disponível", chat_id=chat_id)
+        return
+    try:
+        resultado = brain.buscar_no_sistema(termo)
+        msg = f"🔍 *Resultados para '{termo}':*\n\n"
+
+        codigo = resultado.get("codigo", [])
+        if codigo:
+            msg += f"*Código ({len(codigo)} arquivos):*\n"
+            for r in codigo[:3]:
+                msg += f"  📁 `{r['arquivo']}`\n"
+                for f in r.get("funcoes", [])[:2]:
+                    msg += f"    • `{f['nome']}` linha {f['linha']}\n"
+
+        endpoints = resultado.get("endpoints", [])
+        if endpoints:
+            msg += f"\n*Endpoints:*\n"
+            for e in endpoints[:3]:
+                msg += f"  `{e['method']} {e['path']}`\n"
+
+        grep = resultado.get("grep", [])
+        if grep:
+            msg += f"\n*Arquivos (grep):*\n"
+            for g in grep[:3]:
+                short = g.replace("/opt/conecta-pro/backend/", "")
+                msg += f"  `{short}`\n"
+
+        if not codigo and not endpoints and not grep:
+            msg += "_Nenhum resultado encontrado_"
+
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
+def cmd_tabela(chat_id: int, nome: str):
+    """Info de uma tabela do banco."""
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent))
+        from conhecimento_total import ConhecimentoTotal
+        ct = ConhecimentoTotal()
+        info = ct.buscar_tabela(nome)
+
+        if isinstance(info, dict) and "colunas" in info:
+            colunas = info["colunas"]
+            registros = info.get("total_registros", 0)
+            msg = (f"🗄️ *Tabela: {nome}*\n\n"
+                   f"Registros: `{registros:,}`\n"
+                   f"Colunas: `{len(colunas)}`\n\n"
+                   f"*Colunas:*\n")
+            for col in colunas[:12]:
+                null = "?" if col.get("is_nullable") == "YES" else ""
+                msg += f"  `{col['column_name']}`: {col['data_type']}{null}\n"
+            send(msg, chat_id=chat_id)
+        elif isinstance(info, dict) and info:
+            msg = f"🗄️ *Tabelas com '{nome}':*\n\n"
+            for k, v in list(info.items())[:5]:
+                msg += f"  `{k}`: {v.get('total_registros', 0):,} registros\n"
+            send(msg, chat_id=chat_id)
+        else:
+            send(f"❌ Tabela '{nome}' não encontrada", chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
+def cmd_endpoint(chat_id: int, path: str):
+    """Onde um endpoint está implementado."""
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent))
+        from conhecimento_total import ConhecimentoTotal
+        ct = ConhecimentoTotal()
+        endpoints = ct.buscar_endpoint(path)
+
+        if not endpoints:
+            send(f"❌ Nenhum endpoint com '{path}'", chat_id=chat_id)
+            return
+        msg = f"🔗 *Endpoints com '{path}':*\n\n"
+        for e in endpoints[:5]:
+            msg += f"`{e['method']} {e['path']}`\n"
+            arq = e.get("arquivo", "?").replace("modules/", "")
+            msg += f"  📁 `{arq}`\n\n"
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
+def cmd_integracao(chat_id: int, nome: str):
+    """Info sobre uma integração externa."""
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent))
+        from conhecimento_total import ConhecimentoTotal
+        ct = ConhecimentoTotal()
+        info = ct.info_integracao(nome)
+
+        if isinstance(info, dict) and "descricao" in info:
+            msg = (f"🔌 *Integração: {nome}*\n\n"
+                   f"_{info['descricao']}_\n\n"
+                   f"Tipo: `{info.get('tipo', '?')}`\n"
+                   f"Arquivos: `{len(info.get('arquivos', []))}`\n"
+                   f"Funções: `{len(info.get('funcoes', []))}`\n\n")
+            creds = info.get("credenciais_necessarias", [])
+            if creds:
+                msg += "*Credenciais:*\n"
+                for c in creds:
+                    msg += f"  • `{c}`\n"
+            urls = info.get("endpoints_externos", [])
+            if urls:
+                msg += "*Endpoints externos:*\n"
+                for u in urls[:3]:
+                    msg += f"  • `{u[:60]}`\n"
+            send(msg, chat_id=chat_id)
+        else:
+            send(f"❌ Integração '{nome}' não encontrada\n\nDisponíveis: cora, inter, solides, nfse, esocial, reinf, sefaz, redis, celery, telegram, govbr", chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
 
 
 def run():

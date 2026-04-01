@@ -748,3 +748,89 @@ class CTOBrain:
         if not ae:
             return "❌ AutoEvolução não disponível"
         return ae.relatorio_evolucao()
+
+    # ─── SPRINT 0 — CONHECIMENTO TOTAL ────────────────────────────────────────
+
+    _conhecimento_total_instance = None
+
+    @classmethod
+    def _get_conhecimento_total(cls):
+        if cls._conhecimento_total_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from conhecimento_total import ConhecimentoTotal
+                cls._conhecimento_total_instance = ConhecimentoTotal()
+            except Exception as e:
+                print(f"[CTOBrain] ConhecimentoTotal erro: {e}")
+        return cls._conhecimento_total_instance
+
+    def diagnosticar_com_conhecimento_total(self, problema: str) -> dict:
+        """
+        Diagnóstico usando TODO o conhecimento do sistema.
+        Sabe onde está o código, qual tabela, qual integração.
+        """
+        diag = self.diagnosticar_avancado(
+            problema.split()[0].lower() if problema.split() else "geral",
+            {"descricao": problema}
+        )
+        ct = self._get_conhecimento_total()
+        if ct:
+            ctx = ct.diagnosticar_com_contexto(problema)
+            diag["codigo_relacionado"]  = ctx.get("codigo_relacionado", [])
+            diag["tabelas_relacionadas"] = ctx.get("tabelas_relacionadas", [])
+            diag["integracao_relacionada"] = ctx.get("integracao_relacionada")
+            diag["onde_corrigir"]       = ctx.get("onde_corrigir", [])
+            if ctx.get("causa_provavel"):
+                diag["causa_raiz"] = ctx["causa_provavel"]
+        return diag
+
+    def buscar_no_sistema(self, termo: str) -> dict:
+        """
+        Busca qualquer coisa no sistema.
+        Retorna código, tabelas, endpoints, integrações.
+        """
+        ct = self._get_conhecimento_total()
+        if not ct:
+            return {"erro": "Conhecimento não disponível — execute Sprint 0"}
+        return {
+            "codigo":    ct.buscar_codigo(termo),
+            "endpoints": ct.buscar_endpoint(termo),
+            "tabela":    ct.buscar_tabela(termo),
+            "grep":      ct.buscar_no_codigo_real(termo),
+        }
+
+    def resumo_conhecimento(self) -> str:
+        """Resumo do que o CTO conhece sobre o sistema."""
+        ct = self._get_conhecimento_total()
+        if not ct:
+            return "❌ Conhecimento não indexado — execute Sprint 0"
+        r = ct.resumo_conhecimento()
+        return (
+            f"🧠 *Conhecimento do CTO:*\n\n"
+            f"*Backend:*\n"
+            f"  📁 {r['backend']['arquivos']:,} arquivos\n"
+            f"  📝 {r['backend']['linhas']:,} linhas\n"
+            f"  🔗 {r['backend']['endpoints']:,} endpoints\n"
+            f"  ⚙️ {r['backend']['funcoes']:,} funções\n\n"
+            f"*Banco:*\n"
+            f"  🗄️ {r['banco']['tabelas']} tabelas\n"
+            f"  🔑 {r['banco']['fks']} FKs | "
+            f"{r['banco']['indices']} índices | "
+            f"{r['banco']['enums']} enums\n\n"
+            f"*Frontend:*\n"
+            f"  📄 {r['frontend']['paginas']} páginas / {r['frontend']['rotas']} rotas\n"
+            f"  🧩 {r['frontend']['componentes']} componentes | "
+            f"{r['frontend']['hooks']} hooks\n\n"
+            f"*Integrações:* {r['integracoes']} "
+            f"(Cora, Inter, Sólides, eSocial, NFS-e...)\n\n"
+            f"*Infraestrutura:*\n"
+            f"  🐳 {r['infra']['containers']} containers | "
+            f"⏰ {r['infra']['crons']} crons | "
+            f"🔧 {r['infra']['vars_env']} vars env\n\n"
+            f"*Agents:*\n"
+            f"  🤖 {r['agents']['modulos']} módulos | "
+            f"🧠 {r['agents']['cto_arquivos']} CTO | "
+            f"📜 {r['agents']['migrations']} migrations\n\n"
+            f"_O CTO conhece cada linha do Conecta PRO_"
+        )
