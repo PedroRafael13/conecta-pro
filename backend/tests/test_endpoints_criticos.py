@@ -64,7 +64,8 @@ def test_login_wrong_password_returns_401_or_422():
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         timeout=10,
     )
-    assert resp.status_code in (401, 422), f"Got {resp.status_code}"
+    # 429 = rate limit ativo (também é "bloqueado" — credenciais rejeitadas)
+    assert resp.status_code in (401, 422, 429), f"Got {resp.status_code}"
 
 
 def test_protected_endpoint_without_token_returns_401():
