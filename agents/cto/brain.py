@@ -834,3 +834,125 @@ class CTOBrain:
             f"📜 {r['agents']['migrations']} migrations\n\n"
             f"_O CTO conhece cada linha do Conecta PRO_"
         )
+
+    # ─── SPRINT 11 — PREDIÇÃO DE PROBLEMAS ───────────────────────────────────
+
+    _preditor_instance = None
+
+    @classmethod
+    def _get_preditor(cls):
+        if cls._preditor_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(
+                    0, "/opt/conecta-pro/agents/cto/predicao"
+                )
+                from preditor_principal import PreditorPrincipal
+                cls._preditor_instance = PreditorPrincipal()
+            except Exception:
+                pass
+        return cls._preditor_instance
+
+    def predicoes_atuais(self) -> str:
+        """Preview das tendências e predições (Sprint 11)."""
+        pp = self._get_preditor()
+        if not pp:
+            return "❌ Preditor não disponível"
+        return pp.preview_predicoes()
+
+    def executar_predicao(self) -> dict:
+        """Executa ciclo de predição agora (Sprint 11)."""
+        pp = self._get_preditor()
+        if not pp:
+            return {"erro": "Preditor não disponível"}
+        return pp.executar()
+
+    def resumo_predicao(self) -> dict:
+        """Resumo do sistema de predição (Sprint 11)."""
+        pp = self._get_preditor()
+        if not pp:
+            return {}
+        return pp.resumo()
+
+    # ─── SPRINT 10 — CORRETOR DE CÓDIGO AUTÔNOMO ──────────────────────────────
+
+    _corretor_instance = None
+
+    @classmethod
+    def _get_corretor(cls):
+        if cls._corretor_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR / "corretor"))
+                _sys.path.insert(0, str(CTO_DIR))
+                from corretor_principal import CorretorPrincipal
+                cls._corretor_instance = CorretorPrincipal()
+            except Exception as e:
+                print(f"[CTOBrain] Corretor erro: {e}")
+        return cls._corretor_instance
+
+    def propor_correcao(
+        self,
+        descricao: str,
+        arquivo: str = None,
+        codigo_errado: str = None,
+        codigo_correto: str = None,
+    ) -> dict:
+        """Sprint 10 — Propõe correção de bug para aprovação de Jordan."""
+        corretor = self._get_corretor()
+        if not corretor:
+            return {"erro": "Corretor não disponível"}
+        return corretor.propor_correcao(
+            descricao=descricao,
+            arquivo=arquivo,
+            codigo_errado=codigo_errado,
+            codigo_correto=codigo_correto,
+            origem="CTOBrain",
+        )
+
+    def aprovar_correcao(self, analise_id: str) -> dict:
+        """Sprint 10 — Aplica correção aprovada por Jordan."""
+        corretor = self._get_corretor()
+        if not corretor:
+            return {"erro": "Corretor não disponível"}
+        return corretor.processar_aprovacao(analise_id, aprovado=True)
+
+    def rejeitar_correcao(self, analise_id: str) -> dict:
+        """Sprint 10 — Cancela correção rejeitada por Jordan."""
+        corretor = self._get_corretor()
+        if not corretor:
+            return {"erro": "Corretor não disponível"}
+        return corretor.processar_aprovacao(analise_id, aprovado=False)
+
+    def correcoes_pendentes(self) -> list:
+        """Sprint 10 — Lista correções aguardando aprovação."""
+        corretor = self._get_corretor()
+        if not corretor:
+            return []
+        return corretor.listar_aguardando()
+
+    def resumo_corretor(self) -> str:
+        """Sprint 10 — Resumo do corretor de código."""
+        corretor = self._get_corretor()
+        if not corretor:
+            return "❌ Corretor não disponível"
+        r = corretor.resumo()
+        pendentes = self.correcoes_pendentes()
+        linhas = [
+            "🔧 *Corretor de Código — Sprint 10*\n",
+            f"Total correções: `{r['total_correcoes']}`",
+            f"✅ Sucesso: `{r['sucesso']}`",
+            f"❌ Falhas: `{r['falhas']}`",
+            f"📊 Taxa: `{r['taxa_sucesso']}%`",
+            f"⏳ Aguardando aprovação: `{r['aguardando_aprovacao']}`",
+        ]
+        if pendentes:
+            linhas.append("\n*Pendentes:*")
+            for p in pendentes[:3]:
+                risco = p.get("risco", {})
+                emoji = risco.get("emoji", "⚠️")
+                linhas.append(
+                    f"  {emoji} `{p['analise_id']}` — "
+                    f"{p['descricao'][:50]}"
+                )
+        return "\n".join(linhas)

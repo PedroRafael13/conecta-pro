@@ -172,6 +172,12 @@ def cmd_ajuda(chat_id: int):
         "🌙 *Sprint 8 — Turno + Semanal:*\n"
         "`/turno` — Turno atual (dia/noite/fim de semana)\n"
         "`/semanal` — Relatório semanal sob demanda\n\n"
+        "🔧 *Sprint 10 — Corretor de Código:*\n"
+        "`/correcoes` — Correções aguardando aprovação\n"
+        "`/corrigir [desc]` — Propor correção de bug\n"
+        "`/corretor` — Status e estatísticas do corretor\n"
+        "`aprovar CORR-XXXX` — Aplicar correção aprovada\n"
+        "`rejeitar CORR-XXXX` — Cancelar correção\n\n"
         "*Linguagem natural:*\n"
         "Apenas descreva o problema:\n"
         "_Redis caiu_, _Postgres lento_, _Celery parou_\n\n"
@@ -775,6 +781,25 @@ def processar_update(update: dict):
     elif tl.startswith("/integracao "):
         nome = text.split(" ", 1)[1].strip()
         cmd_integracao(chat_id, nome)
+    elif tl.startswith("/predicoes") or tl.startswith("/tendencias"):
+        cmd_predicoes(chat_id)
+    # Sprint 10 — Corretor de Código
+    elif tl.startswith("/correcoes"):
+        cmd_correcoes(chat_id)
+    elif tl.startswith("/corrigir"):
+        parts = text.split(maxsplit=1)
+        if len(parts) > 1:
+            cmd_corrigir(chat_id, parts[1].strip())
+        else:
+            send("Uso: `/corrigir [descrição do bug]`", chat_id=chat_id)
+    elif tl.startswith("/corretor"):
+        cmd_corretor(chat_id)
+    elif tl.lower().startswith("aprovar corr-"):
+        analise_id = text.split(maxsplit=1)[1].strip().upper()
+        cmd_aprovar_correcao(chat_id, analise_id)
+    elif tl.lower().startswith("rejeitar corr-"):
+        analise_id = text.split(maxsplit=1)[1].strip().upper()
+        cmd_rejeitar_correcao(chat_id, analise_id)
     else:
         # Linguagem natural
         handle_natural_language(text, chat_id)
@@ -1160,6 +1185,120 @@ def cmd_integracao(chat_id: int, nome: str):
         send(f"⚠️ {e}", chat_id=chat_id)
 
 
+# ─── Comandos Sprint 10 — Corretor de Código ────────────────────────────────
+
+def cmd_correcoes(chat_id: int):
+    """Lista correções aguardando aprovação de Jordan."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        pendentes = brain.correcoes_pendentes()
+        if not pendentes:
+            send("✅ Nenhuma correção aguardando aprovação.", chat_id=chat_id)
+            return
+        linhas = [f"🔧 *{len(pendentes)} correção(ões) aguardando:*\n"]
+        for p in pendentes[:5]:
+            risco = p.get("risco", {})
+            emoji = risco.get("emoji", "⚠️")
+            nivel = risco.get("nivel", "?")
+            linhas.append(
+                f"{emoji} `{p['analise_id']}`\n"
+                f"  _{p['descricao'][:60]}_\n"
+                f"  Risco: {nivel}\n"
+            )
+        linhas.append("_Responda_ `aprovar CORR-XXXX` _ou_ `rejeitar CORR-XXXX`")
+        send("\n".join(linhas), chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+def cmd_corrigir(chat_id: int, descricao: str):
+    """Propõe correção de bug sob demanda de Jordan."""
+    send(
+        f"🔍 Analisando bug...\n_{descricao[:80]}_\n\nAguarde.",
+        chat_id=chat_id,
+    )
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        analise = brain.propor_correcao(descricao=descricao)
+        if analise.get("erro"):
+            send(
+                f"⚠️ Análise falhou:\n_{analise['erro']}_\n\n"
+                f"Dica: forneça o arquivo e o trecho exato:\n"
+                f"`/corrigir [desc] | arquivo.py | errado → correto`",
+                chat_id=chat_id,
+            )
+    except Exception as e:
+        send(f"⚠️ Erro na análise: {e}", chat_id=chat_id)
+
+
+def cmd_corretor(chat_id: int):
+    """Status e estatísticas do corretor de código."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        msg = brain.resumo_corretor()
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+def cmd_aprovar_correcao(chat_id: int, analise_id: str):
+    """Aplica correção aprovada por Jordan."""
+    send(
+        f"✅ Aprovado! Aplicando `{analise_id}`...\n"
+        f"Backup → Sintaxe → Testes → Deploy → Health\n"
+        f"Acompanhe aqui.",
+        chat_id=chat_id,
+    )
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        resultado = brain.aprovar_correcao(analise_id)
+        if resultado.get("sucesso"):
+            send(
+                f"✅ *{analise_id} aplicado com sucesso!*\n"
+                f"Todos os testes passaram. Backend saudável.",
+                chat_id=chat_id,
+            )
+        elif resultado.get("revertido"):
+            send(
+                f"⚠️ *{analise_id} foi revertido*\n"
+                f"Algo falhou — arquivo restaurado automaticamente.",
+                chat_id=chat_id,
+            )
+        elif resultado.get("ok") is False:
+            send(f"❌ {resultado.get('msg', 'Erro desconhecido')}", chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro ao aplicar: {e}", chat_id=chat_id)
+
+
+def cmd_rejeitar_correcao(chat_id: int, analise_id: str):
+    """Cancela correção rejeitada por Jordan."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        brain.rejeitar_correcao(analise_id)
+        send(
+            f"↩️ *Correção `{analise_id}` cancelada.*\n"
+            f"Nenhuma alteração foi feita.",
+            chat_id=chat_id,
+        )
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
 def run():
     global _last_update_id
     logger.info("CTO Monitor Bot iniciando...")
@@ -1199,3 +1338,27 @@ def run():
 
 if __name__ == "__main__":
     run()
+
+
+# ─── Comandos Sprint 11 ───────────────────────────────────────────────────────
+
+def cmd_predicoes(chat_id: int):
+    """Preview de tendências e predições."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        preview = brain.predicoes_atuais()
+        resumo = brain.resumo_predicao()
+        msg = preview
+        if resumo:
+            msg += (
+                f"\n\n📈 *Preditor:*\n"
+                f"  Coletas: `{resumo.get('total_coletas', 0)}`\n"
+                f"  Alertas gerados: `{resumo.get('total_alertas', 0)}`\n"
+                f"  Histórico: `{resumo.get('cobertura_horas', 0)}h`"
+            )
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
