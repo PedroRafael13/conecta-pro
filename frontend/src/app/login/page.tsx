@@ -29,12 +29,14 @@ function LoginContent() {
   const [error, setError] = useState('');
 
   // Redirecionar para dashboard se já autenticado
+  // Usa window.location.href (hard redirect) para garantir que o cookie
+  // auth_token chegue ao middleware — router.push() pode não enviar o cookie
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       const redirect = searchParams.get('redirect') || '/dashboard';
-      router.push(redirect);
+      window.location.href = redirect;
     }
-  }, [isLoading, isAuthenticated, router, searchParams]);
+  }, [isLoading, isAuthenticated, searchParams]);
 
   const oauthError = useMemo(() => {
     const code = searchParams.get('error');

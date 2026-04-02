@@ -106,6 +106,9 @@ export function useAuth() {
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const userData: User = await res.json();
+        // Renovar cookie para garantir que o middleware veja o token válido
+        const isSecure = window.location.protocol === 'https:';
+        document.cookie = `auth_token=${token}; path=/; max-age=${30 * 60}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
         setState({
           user: userData,
           isLoading: false,
