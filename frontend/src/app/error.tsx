@@ -20,15 +20,22 @@ export default function GlobalError({
     if (process.env.NODE_ENV === 'production') {
       console.error('[ErrorBoundary]', error);
     }
-    // ChunkLoadError: chunk do build anterior — forçar reload limpa o cache
+    // ChunkLoadError: chunk do build anterior — recarregar UMA VEZ para buscar novo HTML
+    // Proteção anti-loop: só recarrega se ainda não tentou nos últimos 10s
     if (isChunkError(error)) {
-      window.location.reload();
+      const RELOAD_KEY = 'chunk_error_reload_ts';
+      const last = parseInt(sessionStorage.getItem(RELOAD_KEY) || '0', 10);
+      if (Date.now() - last > 10000) {
+        sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+        window.location.reload();
+      }
+      // Se já recarregou recentemente, deixa mostrar a mensagem de erro
     }
   }, [error]);
 
   const handleRetry = () => {
-    // ChunkLoadError não é recuperável via reset() — precisa de reload completo
     if (isChunkError(error)) {
+      sessionStorage.removeItem('chunk_error_reload_ts');
       window.location.reload();
     } else {
       reset();
