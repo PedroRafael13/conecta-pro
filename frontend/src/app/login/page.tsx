@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle } from 'lucide-react';
-import { Suspense, useState, useMemo } from 'react';
+import { Suspense, useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,10 +23,18 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  // Redirecionar para dashboard se já autenticado
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      router.push(redirect);
+    }
+  }, [isLoading, isAuthenticated, router, searchParams]);
 
   const oauthError = useMemo(() => {
     const code = searchParams.get('error');

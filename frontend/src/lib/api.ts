@@ -58,6 +58,11 @@ api.interceptors.response.use(
     if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      // Não redirecionar se já está na página de login ou se não há token (usuário não logado)
+      if (typeof window !== 'undefined' && window.location.pathname === '/login') {
+        return Promise.reject(error);
+      }
+
       try {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
@@ -71,6 +76,11 @@ api.interceptors.response.use(
           if (newRefreshToken) {
             localStorage.setItem('refresh_token', newRefreshToken);
           }
+          // Atualizar cookie com o novo token
+          if (typeof window !== 'undefined') {
+            const isSecure = window.location.protocol === 'https:';
+            document.cookie = `auth_token=${access_token}; path=/; max-age=${30 * 60}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
+          }
 
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${access_token}`;
@@ -78,20 +88,22 @@ api.interceptors.response.use(
 
           return api(originalRequest);
         } else {
-          // Sem refresh token - redirecionar para login
+          // Sem refresh token e com acesso autenticado — limpar e redirecionar
+          const hasSession = typeof window !== 'undefined' && localStorage.getItem('access_token');
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && hasSession) {
             document.cookie = 'auth_token=; path=/; max-age=0';
             window.location.href = '/login';
           }
         }
       } catch (refreshError) {
         // Refresh falhou - limpar tokens e redirecionar
+        const hasSession = typeof window !== 'undefined' && localStorage.getItem('access_token');
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
 
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && hasSession) {
           document.cookie = 'auth_token=; path=/; max-age=0';
           window.location.href = '/login';
         }

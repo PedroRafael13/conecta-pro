@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { getErrorMessage } from '@/lib/api';
 
@@ -41,23 +41,69 @@ export function useAuth() {
     isLoading: true,
     isAuthenticated: false,
   });
+  // Singleton guard — evita múltiplas chamadas simultâneas de checkAuth
+  const isCheckingRef = useRef(false);
 
   // Verificar autenticação ao montar
   useEffect(() => {
     const checkAuth = async () => {
+      if (isCheckingRef.current) return;
+      isCheckingRef.current = true;
+
       const token = localStorage.getItem('access_token');
 
       if (!token) {
         setState({ user: null, isLoading: false, isAuthenticated: false });
+        isCheckingRef.current = false;
         return;
       }
 
       try {
-        // BUG-01 fix: usar proxy local em vez de URL externa para evitar
-        // falhas de CORS/rede que causavam logout ao navegar entre abas
         const res = await fetch('/api/v1/auth/me', {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
+
+        if (res.status === 401 || res.status === 403) {
+          // Tentar refresh antes de deslogar
+          const refreshToken = localStorage.getItem('refresh_token');
+          if (refreshToken) {
+            try {
+              const refreshRes = await fetch('/api/v1/auth/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh_token: refreshToken }),
+              });
+              if (refreshRes.ok) {
+                const { access_token, refresh_token: newRefresh } = await refreshRes.json();
+                localStorage.setItem('access_token', access_token);
+                if (newRefresh) localStorage.setItem('refresh_token', newRefresh);
+                // Atualizar cookie com o novo token
+                const isSecure = window.location.protocol === 'https:';
+                document.cookie = `auth_token=${access_token}; path=/; max-age=${30 * 60}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
+                // Buscar dados do usuário com o novo token
+                const meRes = await fetch('/api/v1/auth/me', {
+                  headers: { Authorization: `Bearer ${access_token}`, 'Content-Type': 'application/json' },
+                });
+                if (meRes.ok) {
+                  const userData: User = await meRes.json();
+                  setState({ user: userData, isLoading: false, isAuthenticated: true });
+                  isCheckingRef.current = false;
+                  return;
+                }
+              }
+            } catch {
+              // Refresh falhou — continua para logout
+            }
+          }
+          // Sem refresh ou refresh falhou
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          document.cookie = 'auth_token=; path=/; max-age=0';
+          setState({ user: null, isLoading: false, isAuthenticated: false });
+          isCheckingRef.current = false;
+          return;
+        }
+
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const userData: User = await res.json();
         setState({
@@ -69,6 +115,8 @@ export function useAuth() {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         setState({ user: null, isLoading: false, isAuthenticated: false });
+      } finally {
+        isCheckingRef.current = false;
       }
     };
 
@@ -96,7 +144,9 @@ export function useAuth() {
       localStorage.setItem('refresh_token', refresh_token);
 
       // Sincronizar cookie para o middleware de rota
-      document.cookie = `auth_token=${access_token}; path=/; max-age=${30 * 60}; SameSite=Lax; Secure`;
+      // Secure flag só em HTTPS — em HTTP seria silenciosamente descartado pelo browser
+      const isSecure = window.location.protocol === 'https:';
+      document.cookie = `auth_token=${access_token}; path=/; max-age=${30 * 60}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
 
       // Buscar dados do usuário após login (via proxy local — consistente com checkAuth)
       const meRes = await fetch('/api/v1/auth/me', {

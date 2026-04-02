@@ -43,6 +43,10 @@ export function CondominioProvider({ children }: CondominioProviderProps) {
   // Busca lista de condomínios disponíveis
   useEffect(() => {
     const fetchCondominios = async () => {
+      // Não fazer chamadas autenticadas sem token — evita loop de redirect no interceptor
+      if (typeof window !== 'undefined' && !localStorage.getItem('access_token')) {
+        return;
+      }
       try {
         // Busca clientes primeiro
         const clients = await customInstance<{ items?: Array<{ id: string }>; } | Array<{ id: string }>>({
