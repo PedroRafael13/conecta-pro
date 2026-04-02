@@ -243,8 +243,8 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Build ID fixo para evitar race condition de hash mid-build
-  generateBuildId: async () => 'conecta-pro-build',
+  // Build ID baseado em timestamp — invalida caches RSC do browser a cada deploy
+  generateBuildId: async () => `conecta-pro-${Date.now()}`,
 
   // DistDir customizado
   distDir: '.next',

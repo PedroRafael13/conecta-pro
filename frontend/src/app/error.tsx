@@ -3,6 +3,12 @@
 import { useEffect } from 'react';
 import { AlertCircle, RotateCcw, Home } from 'lucide-react';
 
+const isChunkError = (err: Error) =>
+  err.name === 'ChunkLoadError' ||
+  err.message?.includes('Loading chunk') ||
+  err.message?.includes('Failed to load chunk') ||
+  err.message?.includes('ChunkLoadError');
+
 export default function GlobalError({
   error,
   reset,
@@ -11,12 +17,23 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log to external service in production
     if (process.env.NODE_ENV === 'production') {
-      // Sentry or similar would capture this
       console.error('[ErrorBoundary]', error);
     }
+    // ChunkLoadError: chunk do build anterior — forçar reload limpa o cache
+    if (isChunkError(error)) {
+      window.location.reload();
+    }
   }, [error]);
+
+  const handleRetry = () => {
+    // ChunkLoadError não é recuperável via reset() — precisa de reload completo
+    if (isChunkError(error)) {
+      window.location.reload();
+    } else {
+      reset();
+    }
+  };
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-6">
@@ -30,7 +47,9 @@ export default function GlobalError({
             Algo deu errado
           </h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Ocorreu um erro inesperado. Tente novamente ou volte para o inicio.
+            {isChunkError(error)
+              ? 'Nova versao detectada. Recarregando...'
+              : 'Ocorreu um erro inesperado. Tente novamente ou volte para o inicio.'}
           </p>
           {error.digest && (
             <p className="text-xs text-[hsl(var(--muted-foreground))] font-mono">
@@ -41,7 +60,7 @@ export default function GlobalError({
 
         <div className="flex items-center justify-center gap-3">
           <button
-            onClick={reset}
+            onClick={handleRetry}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:opacity-90 transition-opacity"
           >
             <RotateCcw className="w-4 h-4" />
