@@ -26,7 +26,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/benefits", tags=["DP - Benefícios"])
 
 
-@router.get("", summary="Listar Benefícios")
+@router.get(
+    "",
+    summary="Listar Benefícios",
+    description="Retorna lista paginada de benefícios com filtro por status.",
+)
 async def list_all_benefits(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -79,7 +83,12 @@ async def list_all_benefits(
     }
 
 
-@router.get("/employee/{employee_id}", summary="Benefícios por Funcionário", response_model=list[BenefitResponse])
+@router.get(
+    "/employee/{employee_id}",
+    summary="Benefícios por Funcionário",
+    response_model=list[BenefitResponse],
+    description="Retorna lista paginada de benefícios com filtro por status.",
+)
 async def list_employee_benefits(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -91,7 +100,13 @@ async def list_employee_benefits(
     return await service.list_by_employee(employee_id, status=status)
 
 
-@router.post("", summary="Criar Benefício", response_model=BenefitResponse, status_code=201)
+@router.post(
+    "",
+    summary="Criar Benefício",
+    response_model=BenefitResponse,
+    status_code=201,
+    description="Retorna lista paginada de benefícios com filtro por status.",
+)
 async def create_benefit(
     data: BenefitCreate,
     current_user: CurrentActiveUser,
@@ -104,7 +119,12 @@ async def create_benefit(
     return benefit
 
 
-@router.get("/{benefit_id}", summary="Buscar Benefício", response_model=BenefitResponse)
+@router.get(
+    "/{benefit_id}",
+    summary="Buscar Benefício",
+    response_model=BenefitResponse,
+    description="Retorna lista paginada de benefícios com filtro por status.",
+)
 async def get_benefit(
     benefit_id: str,
     current_user: CurrentActiveUser,
@@ -118,7 +138,12 @@ async def get_benefit(
     return benefit
 
 
-@router.patch("/{benefit_id}", summary="Atualizar Benefício", response_model=BenefitResponse)
+@router.patch(
+    "/{benefit_id}",
+    summary="Atualizar Benefício",
+    response_model=BenefitResponse,
+    description="Retorna lista paginada de benefícios com filtro por status.",
+)
 async def update_benefit(
     benefit_id: str,
     data: BenefitUpdate,
@@ -134,7 +159,12 @@ async def update_benefit(
     return benefit
 
 
-@router.delete("/{benefit_id}", summary="Cancelar Benefício", response_model=BenefitResponse)
+@router.delete(
+    "/{benefit_id}",
+    summary="Cancelar Benefício",
+    response_model=BenefitResponse,
+    description="Retorna lista paginada de benefícios com filtro por status.",
+)
 async def cancel_benefit(
     benefit_id: str,
     current_user: CurrentActiveUser,
@@ -149,7 +179,11 @@ async def cancel_benefit(
     return benefit
 
 
-@router.get("/employee/{employee_id}/total", summary="Custo Total de Benefícios")
+@router.get(
+    "/employee/{employee_id}/total",
+    summary="Custo Total de Benefícios",
+    description="Retorna lista paginada de benefícios com filtro por status.",
+)
 async def get_total_benefits(
     employee_id: str,
     current_user: CurrentActiveUser,

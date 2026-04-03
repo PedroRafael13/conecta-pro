@@ -31,19 +31,99 @@ except ImportError:
     logger.info("Router de payroll não disponível para re-export")
 
 
-@router.get("/summary", summary="Resumo da Folha")
+@router.get(
+    "/summary",
+    summary="Resumo da folha salarial",
+    description=(
+        "Retorna totais consolidados da folha para a competência: "
+        "proventos, descontos, INSS, IRRF e FGTS. "
+        "Usa hr_payslips quando disponível, com fallback em employees.salario_base."
+    ),
+)
 async def get_payroll_summary(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    month: int = Query(..., ge=1, le=12, description="Mês de referência"),
-    year: int = Query(..., ge=2020, le=2030, description="Ano de referência"),
+    mes: int = Query(None, ge=1, le=12, description="Mês (1-12). Padrão: mês atual"),
+    ano: int = Query(None, ge=2020, le=2030, description="Ano. Padrão: ano atual"),
 ) -> Any:
-    """Retorna resumo consolidado da folha de pagamento de uma competência."""
-    service = PayrollService(db)
-    return await service.close_payroll(month, year)
+    """Resumo consolidado da folha de pagamento."""
+    from datetime import datetime
+
+    from sqlalchemy import text as _text
+
+    mes = mes or datetime.now().month
+    ano = ano or datetime.now().year
+
+    # Tentar hr_payslips primeiro
+    try:
+        result = await db.execute(
+            _text(
+                "SELECT "
+                "COUNT(DISTINCT employee_id) as funcionarios, "
+                "COALESCE(SUM(total_proventos), 0) as total_proventos, "
+                "COALESCE(SUM(total_descontos), 0) as total_descontos, "
+                "COALESCE(SUM(salario_liquido), 0) as total_liquido, "
+                "COALESCE(SUM(inss), 0) as total_inss, "
+                "COALESCE(SUM(irrf), 0) as total_irrf, "
+                "COALESCE(SUM(fgts), 0) as total_fgts "
+                "FROM hr_payslips "
+                "WHERE EXTRACT(MONTH FROM competencia) = :mes "
+                "AND EXTRACT(YEAR FROM competencia) = :ano"
+            ),
+            {"mes": mes, "ano": ano},
+        )
+        row = result.mappings().first()
+        if row and float(row.get("total_proventos") or 0) > 0:
+            return {
+                "competencia": f"{mes:02d}/{ano}",
+                "funcionarios": int(row.get("funcionarios") or 0),
+                "total_proventos": float(row.get("total_proventos") or 0),
+                "total_bruto": float(row.get("total_proventos") or 0),
+                "total_descontos": float(row.get("total_descontos") or 0),
+                "total_liquido": float(row.get("total_liquido") or 0),
+                "total_inss": float(row.get("total_inss") or 0),
+                "total_irrf": float(row.get("total_irrf") or 0),
+                "total_fgts": float(row.get("total_fgts") or 0),
+                "fonte": "hr_payslips",
+            }
+    except Exception:
+        await db.rollback()
+
+    # Fallback: calcular direto dos funcionários ativos
+    result2 = await db.execute(
+        _text(
+            "SELECT "
+            "COUNT(*) as funcionarios, "
+            "COALESCE(SUM(salario_base), 0) as total_proventos, "
+            "0 as total_descontos, "
+            "COALESCE(SUM(salario_base), 0) as total_liquido, "
+            "0 as total_inss, "
+            "0 as total_irrf, "
+            "COALESCE(SUM(salario_base * 0.08), 0) as total_fgts "
+            "FROM employees "
+            "WHERE status = 'ativo'"
+        )
+    )
+    row2 = result2.mappings().first() or {}
+    return {
+        "competencia": f"{mes:02d}/{ano}",
+        "funcionarios": int(row2.get("funcionarios") or 0),
+        "total_proventos": float(row2.get("total_proventos") or 0),
+        "total_bruto": float(row2.get("total_proventos") or 0),
+        "total_descontos": float(row2.get("total_descontos") or 0),
+        "total_liquido": float(row2.get("total_liquido") or 0),
+        "total_inss": float(row2.get("total_inss") or 0),
+        "total_irrf": float(row2.get("total_irrf") or 0),
+        "total_fgts": float(row2.get("total_fgts") or 0),
+        "fonte": "estimado_salario_base",
+    }
 
 
-@router.get("/employee/{employee_id}/calculate", summary="Calcular Folha Individual")
+@router.get(
+    "/employee/{employee_id}/calculate",
+    summary="Calcular Folha Individual",
+    description="Calcula proventos e descontos da folha de pagamento individual para a competência informada.",
+)
 async def calculate_employee_payroll(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -59,7 +139,11 @@ async def calculate_employee_payroll(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/employee/{employee_id}/payslip-pdf", summary="Gerar Contracheque PDF")
+@router.get(
+    "/employee/{employee_id}/payslip-pdf",
+    summary="Gerar Contracheque PDF",
+    description="Gera e retorna contracheque em formato PDF para download.",
+)
 async def generate_payslip_pdf(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -233,7 +317,11 @@ def _build_payslip_pdf(calc: dict, month: int, year: int) -> bytes:
 # =============================================================================
 
 
-@router.get("/benefits", summary="Listar Benefícios/Rubricas")
+@router.get(
+    "/benefits",
+    summary="Listar Benefícios/Rubricas",
+    description="Lista rubricas e benefícios vinculados a funcionários com filtro por status.",
+)
 async def list_all_benefits(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -275,7 +363,12 @@ async def list_all_benefits(
     }
 
 
-@router.post("/benefits", summary="Cadastrar Benefício", status_code=201)
+@router.post(
+    "/benefits",
+    summary="Cadastrar Benefício",
+    status_code=201,
+    description="Lista rubricas e benefícios vinculados a funcionários com filtro por status.",
+)
 async def create_benefit(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -312,7 +405,11 @@ async def create_benefit(
     return {"id": str(new_id), "message": f"Rubrica '{type}' cadastrada para funcionário {employee_id}"}
 
 
-@router.delete("/benefits/{benefit_id}", summary="Desativar Benefício")
+@router.delete(
+    "/benefits/{benefit_id}",
+    summary="Desativar Benefício",
+    description="Lista rubricas e benefícios vinculados a funcionários com filtro por status.",
+)
 async def delete_benefit(
     benefit_id: str,
     current_user: CurrentActiveUser,
@@ -329,7 +426,11 @@ async def delete_benefit(
     return {"message": "Rubrica desativada"}
 
 
-@router.get("/rubricas", summary="Listar Rubricas de Referência")
+@router.get(
+    "/rubricas",
+    summary="Listar Rubricas de Referência",
+    description="Lista rubricas disponíveis na tabela de referência para cálculo de folha.",
+)
 async def list_rubricas(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -358,7 +459,12 @@ async def list_rubricas(
     }
 
 
-@router.post("/close", summary="Fechar Folha Mensal", status_code=201)
+@router.post(
+    "/close",
+    summary="Fechar Folha Mensal",
+    status_code=201,
+    description="Fecha e processa a folha de pagamento mensal para todos os funcionários ativos.",
+)
 async def close_payroll(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

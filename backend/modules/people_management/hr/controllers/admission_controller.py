@@ -25,7 +25,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admissions", tags=["DP - Admissões"])
 
 
-@router.get("", summary="Listar Admissões")
+@router.get(
+    "",
+    summary="Listar Admissões",
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def list_admissions(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -38,7 +42,13 @@ async def list_admissions(
     return await service.list_admissions(status=status, page=page, page_size=page_size)
 
 
-@router.post("", summary="Iniciar Processo de Admissão", response_model=AdmissionProcessResponse, status_code=201)
+@router.post(
+    "",
+    summary="Iniciar Processo de Admissão",
+    response_model=AdmissionProcessResponse,
+    status_code=201,
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def create_admission(
     data: AdmissionProcessCreate,
     current_user: CurrentActiveUser,
@@ -51,7 +61,11 @@ async def create_admission(
     return admission
 
 
-@router.get("/checklist", summary="Checklist de Documentos")
+@router.get(
+    "/checklist",
+    summary="Checklist de Documentos",
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def get_document_checklist(
     include_security: bool = Query(True, description="Incluir documentos de vigilância"),
 ) -> Any:
@@ -60,7 +74,11 @@ async def get_document_checklist(
     return service.generate_document_checklist(include_security=include_security)
 
 
-@router.get("/stats", summary="Estatísticas de Admissão")
+@router.get(
+    "/stats",
+    summary="Estatísticas de Admissão",
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def get_admission_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -81,7 +99,12 @@ async def get_admission_stats(
     }
 
 
-@router.get("/{admission_id}", summary="Buscar Admissão", response_model=AdmissionProcessResponse)
+@router.get(
+    "/{admission_id}",
+    summary="Buscar Admissão",
+    response_model=AdmissionProcessResponse,
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def get_admission(
     admission_id: str,
     current_user: CurrentActiveUser,
@@ -95,7 +118,12 @@ async def get_admission(
     return admission
 
 
-@router.patch("/{admission_id}", summary="Atualizar Admissão", response_model=AdmissionProcessResponse)
+@router.patch(
+    "/{admission_id}",
+    summary="Atualizar Admissão",
+    response_model=AdmissionProcessResponse,
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def update_admission(
     admission_id: str,
     data: AdmissionProcessUpdate,
@@ -124,7 +152,12 @@ async def update_admission(
     return admission
 
 
-@router.post("/{admission_id}/complete", summary="Concluir Admissão", status_code=201)
+@router.post(
+    "/{admission_id}/complete",
+    summary="Concluir Admissão",
+    status_code=201,
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def complete_admission(
     admission_id: str,
     employee_data: dict,
@@ -145,7 +178,12 @@ async def complete_admission(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{admission_id}/documents", summary="Upload de Documento", status_code=201)
+@router.post(
+    "/{admission_id}/documents",
+    summary="Upload de Documento",
+    status_code=201,
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def upload_document(
     admission_id: str,
     file: UploadFile = File(...),
@@ -205,7 +243,11 @@ async def upload_document(
     }
 
 
-@router.get("/{admission_id}/documents", summary="Listar Documentos da Admissão")
+@router.get(
+    "/{admission_id}/documents",
+    summary="Listar Documentos da Admissão",
+    description="Retorna lista paginada de processos de admissão com filtro por status.",
+)
 async def list_documents(
     admission_id: str,
     current_user: CurrentActiveUser = None,

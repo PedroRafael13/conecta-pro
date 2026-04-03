@@ -31,7 +31,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/terminations", tags=["DP - Rescisões"])
 
 
-@router.get("", summary="Listar Rescisões")
+@router.get(
+    "",
+    summary="Listar Rescisões",
+    description="Retorna lista paginada de processos de rescisão com filtro por status.",
+)
 async def list_terminations(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -44,7 +48,13 @@ async def list_terminations(
     return await service.list_terminations(status=status, page=page, page_size=page_size)
 
 
-@router.post("", summary="Iniciar Processo de Rescisão", response_model=TerminationResponse, status_code=201)
+@router.post(
+    "",
+    summary="Iniciar Processo de Rescisão",
+    response_model=TerminationResponse,
+    status_code=201,
+    description="Retorna lista paginada de processos de rescisão com filtro por status.",
+)
 async def create_termination(
     data: TerminationCreate,
     current_user: CurrentActiveUser,
@@ -57,7 +67,12 @@ async def create_termination(
     return termination
 
 
-@router.get("/{termination_id}", summary="Buscar Rescisão", response_model=TerminationResponse)
+@router.get(
+    "/{termination_id}",
+    summary="Buscar Rescisão",
+    response_model=TerminationResponse,
+    description="Retorna lista paginada de processos de rescisão com filtro por status.",
+)
 async def get_termination(
     termination_id: str,
     current_user: CurrentActiveUser,
@@ -71,7 +86,12 @@ async def get_termination(
     return termination
 
 
-@router.patch("/{termination_id}", summary="Atualizar Rescisão", response_model=TerminationResponse)
+@router.patch(
+    "/{termination_id}",
+    summary="Atualizar Rescisão",
+    response_model=TerminationResponse,
+    description="Retorna lista paginada de processos de rescisão com filtro por status.",
+)
 async def update_termination(
     termination_id: str,
     data: TerminationUpdate,
@@ -100,6 +120,7 @@ async def update_termination(
     summary="Calcular Verbas Rescisórias",
     response_model=TerminationCalculation,
     status_code=201,
+    description="Retorna lista paginada de processos de rescisão com filtro por status.",
 )
 async def calculate_severance(
     termination_id: str,
@@ -130,7 +151,11 @@ async def calculate_severance(
 
 
 @router.post(
-    "/{termination_id}/complete", summary="Concluir Rescisão", response_model=TerminationResponse, status_code=201
+    "/{termination_id}/complete",
+    summary="Concluir Rescisão",
+    response_model=TerminationResponse,
+    status_code=201,
+    description="Retorna lista paginada de processos de rescisão com filtro por status.",
 )
 async def complete_termination(
     termination_id: str,

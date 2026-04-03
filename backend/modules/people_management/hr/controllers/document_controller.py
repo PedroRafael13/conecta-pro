@@ -19,7 +19,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["DP - Documentos"])
 
 
-@router.get("", summary="Listar Documentos de Funcionários")
+@router.get(
+    "",
+    summary="Listar Documentos de Funcionários",
+    description="Retorna lista paginada de documentos de funcionários armazenados no GED.",
+)
 async def list_documents(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

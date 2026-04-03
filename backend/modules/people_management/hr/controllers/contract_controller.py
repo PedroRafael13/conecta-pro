@@ -24,7 +24,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/contracts", tags=["DP - Contratos"])
 
 
-@router.get("", summary="Listar Contratos")
+@router.get(
+    "",
+    summary="Listar Contratos",
+    description="Retorna lista paginada de todos os contratos de trabalho com paginação.",
+)
 async def list_contracts(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -42,7 +46,12 @@ async def list_contracts(
     return result
 
 
-@router.get("/employee/{employee_id}", summary="Contratos por Funcionário", response_model=list[ContractResponse])
+@router.get(
+    "/employee/{employee_id}",
+    summary="Contratos por Funcionário",
+    response_model=list[ContractResponse],
+    description="Retorna lista paginada de todos os contratos de trabalho com paginação.",
+)
 async def list_employee_contracts(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -53,7 +62,12 @@ async def list_employee_contracts(
     return await service.list_by_employee(employee_id)
 
 
-@router.get("/employee/{employee_id}/current", summary="Contrato Vigente", response_model=ContractResponse)
+@router.get(
+    "/employee/{employee_id}/current",
+    summary="Contrato Vigente",
+    response_model=ContractResponse,
+    description="Retorna lista paginada de todos os contratos de trabalho com paginação.",
+)
 async def get_current_contract(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -67,7 +81,13 @@ async def get_current_contract(
     return contract
 
 
-@router.post("", summary="Criar Contrato", response_model=ContractResponse, status_code=201)
+@router.post(
+    "",
+    summary="Criar Contrato",
+    response_model=ContractResponse,
+    status_code=201,
+    description="Retorna lista paginada de todos os contratos de trabalho com paginação.",
+)
 async def create_contract(
     data: ContractCreate,
     current_user: CurrentActiveUser,
@@ -83,7 +103,12 @@ async def create_contract(
     return contract
 
 
-@router.get("/{contract_id}", summary="Buscar Contrato", response_model=ContractResponse)
+@router.get(
+    "/{contract_id}",
+    summary="Buscar Contrato",
+    response_model=ContractResponse,
+    description="Retorna lista paginada de todos os contratos de trabalho com paginação.",
+)
 async def get_contract(
     contract_id: str,
     current_user: CurrentActiveUser,
@@ -97,7 +122,12 @@ async def get_contract(
     return contract
 
 
-@router.patch("/{contract_id}", summary="Atualizar Contrato", response_model=ContractResponse)
+@router.patch(
+    "/{contract_id}",
+    summary="Atualizar Contrato",
+    response_model=ContractResponse,
+    description="Retorna lista paginada de todos os contratos de trabalho com paginação.",
+)
 async def update_contract(
     contract_id: str,
     data: ContractUpdate,
@@ -113,7 +143,12 @@ async def update_contract(
     return contract
 
 
-@router.post("/{contract_id}/document", summary="Gerar Documento de Contrato", status_code=201)
+@router.post(
+    "/{contract_id}/document",
+    summary="Gerar Documento de Contrato",
+    status_code=201,
+    description="Retorna lista paginada de todos os contratos de trabalho com paginação.",
+)
 async def generate_contract_document(
     contract_id: str,
     current_user: CurrentActiveUser,

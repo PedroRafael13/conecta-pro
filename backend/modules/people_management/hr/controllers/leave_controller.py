@@ -18,7 +18,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/leaves", tags=["DP - Afastamentos"])
 
 
-@router.get("", summary="Listar Afastamentos")
+@router.get(
+    "",
+    summary="Listar Afastamentos",
+    description="Retorna lista paginada de afastamentos e licenças médicas dos funcionários.",
+)
 async def list_leaves(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

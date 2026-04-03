@@ -49,7 +49,12 @@ class DesligamentoESocialRequest(BaseModel):
     verbas_rescisorias: list[dict[str, Any]] | None = None
 
 
-@router.post("/s2200/gerar", summary="Gerar XML S-2200 (Admissão)", status_code=201)
+@router.post(
+    "/s2200/gerar",
+    summary="Gerar XML S-2200 Admissao",
+    description="Gera XML do evento eSocial S-2200 (Cadastramento Inicial / Admissão) para transmissão.",
+    status_code=201,
+)
 async def gerar_s2200(
     request: AdmissaoESocialRequest,
     current_user: CurrentActiveUser,
@@ -95,7 +100,12 @@ async def gerar_s2200(
     )
 
 
-@router.post("/s2299/gerar", summary="Gerar XML S-2299 (Desligamento)", status_code=201)
+@router.post(
+    "/s2299/gerar",
+    summary="Gerar XML S-2299 Desligamento",
+    description="Gera XML do evento eSocial S-2299 (Desligamento) com verbas rescisórias.",
+    status_code=201,
+)
 async def gerar_s2299(
     request: DesligamentoESocialRequest,
     current_user: CurrentActiveUser,
@@ -124,7 +134,12 @@ async def gerar_s2299(
     )
 
 
-@router.post("/validar", summary="Validar XML eSocial", status_code=201)
+@router.post(
+    "/validar",
+    summary="Validar XML eSocial",
+    status_code=201,
+    description="Valida a estrutura de um XML eSocial antes da transmissão.",
+)
 async def validar_xml_esocial(
     xml_content: str,
     current_user: CurrentActiveUser,
@@ -133,7 +148,11 @@ async def validar_xml_esocial(
     return ESocialEventService.validar_xml(xml_content)
 
 
-@router.get("/events", summary="Listar Eventos eSocial")
+@router.get(
+    "/events",
+    summary="Listar Eventos eSocial",
+    description="Lista eventos eSocial gerados com status de transmissão (histórico).",
+)
 async def listar_eventos_esocial(
     current_user: CurrentActiveUser,
     limit: int = Query(50, ge=1, le=200),
