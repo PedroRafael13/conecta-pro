@@ -382,8 +382,22 @@ async def get_relatorio_mensal(
 ) -> dict[str, Any]:
     """Relatório mensal completo do módulo GED."""
     hoje = date.today()
-    mes_ref = mes or hoje.month
-    ano_ref = ano or hoje.year
+
+    # Quando não há parâmetros, usar o mês mais recente que possui kits
+    # (evita retornar zerado quando o mês corrente ainda não tem kits)
+    if mes is None and ano is None:
+        latest_result = await db.execute(text("SELECT MAX(reference_month) FROM ged_document_kits"))
+        latest_month = latest_result.scalar()
+        if latest_month:
+            mes_ref = latest_month.month
+            ano_ref = latest_month.year
+        else:
+            mes_ref = hoje.month
+            ano_ref = hoje.year
+    else:
+        mes_ref = mes or hoje.month
+        ano_ref = ano or hoje.year
+
     mes_date = date(ano_ref, mes_ref, 1)
 
     # Kits do mês
