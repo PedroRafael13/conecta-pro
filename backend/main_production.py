@@ -491,6 +491,13 @@ try:
         api_router.include_router(ged_integration_router, prefix="/ged", tags=["GED - Integracao"])
     except ImportError:
         logger.warning("Modulo GED Integration: falha ao importar (ImportError)")
+    try:
+        from modules.ged.controllers.ged_certidoes_controller import router as ged_certidoes_router
+
+        api_router.include_router(ged_certidoes_router, prefix="/ged", tags=["GED - Certidões"])
+        logger.info("Modulo GED Certidoes: OK")
+    except Exception as e:
+        logger.warning(f"Modulo GED Certidoes: {e}")
     logger.info("Modulo Pessoas: OK (Recruitment + Retention + Reimbursement + GED + Integracao)")
 except Exception as e:
     logger.warning(f"Modulo Pessoas: {e}")
