@@ -87,9 +87,19 @@ async def list_kits(
         params["year"] = year
 
     where = " AND ".join(conditions) if conditions else "1=1"
-    # Gap 2: sem f-string — where contém apenas cláusulas hardcoded com placeholders nomeados
+    # Subqueries contam documentos reais de ged_kit_documents (fonte de verdade)
+    # Fallback para coluna stored quando ged_kit_documents estiver vazio mas stored > 0
     query = text(
-        "SELECT gk.*, gc.name as client_name FROM ged_document_kits gk "
+        "SELECT gk.*, gc.name as client_name, "
+        "  GREATEST("
+        "    (SELECT COUNT(*) FROM ged_kit_documents gkd WHERE gkd.kit_id = gk.id),"
+        "    COALESCE(gk.total_documents, 0)"
+        "  ) as real_total_documents, "
+        "  GREATEST("
+        "    (SELECT COUNT(*) FROM ged_kit_documents gkd WHERE gkd.kit_id = gk.id AND gkd.is_signed = true),"
+        "    COALESCE(gk.documents_signed, 0)"
+        "  ) as real_documents_signed "
+        "FROM ged_document_kits gk "
         "LEFT JOIN ged_clients gc ON gk.client_id = gc.id "
         "WHERE " + where + " ORDER BY gk.reference_month DESC, gk.created_at DESC LIMIT 50"
     )
@@ -105,9 +115,15 @@ async def list_kits(
                 "reference_month": r["reference_month"].isoformat() if r["reference_month"] else None,
                 "status": r["status"],
                 "total_employees": r["total_employees"],
-                "total_documents": r["total_documents"],
-                "documents_signed": r["documents_signed"],
-                "completion_percentage": float(r["completion_percentage"]) if r["completion_percentage"] else 0,
+                "total_documents": int(r["real_total_documents"] or 0),
+                "documents_signed": int(r["real_documents_signed"] or 0),
+                "completion_percentage": (
+                    round(int(r["real_documents_signed"] or 0) / int(r["real_total_documents"]) * 100)
+                    if int(r["real_total_documents"] or 0) > 0
+                    else float(r["completion_percentage"])
+                    if r["completion_percentage"]
+                    else 0
+                ),
                 "sent_at": r["sent_at"].isoformat() if r["sent_at"] else None,
                 "sent_method": r["sent_method"],
                 "created_at": r["created_at"].isoformat() if r["created_at"] else None,
