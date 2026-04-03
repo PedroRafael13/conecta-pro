@@ -101,7 +101,7 @@ export default function FuncionariosPage() {
   const handleCreateDeduction = async () => {
     if (!editingId) return;
     if (!deductionForm.descricao || !deductionForm.data_inicio) {
-      toast.error('Descricao e data de inicio sao obrigatorios', { duration: 5000 });
+      toast.error('Descrição e data de inicio sao obrigatorios', { duration: 5000 });
       return;
     }
     setDeductionSaving(true);
@@ -499,7 +499,7 @@ export default function FuncionariosPage() {
                           </select>
                         </div>
                         <div>
-                          <label className="text-sm font-medium mb-1 block">Descricao *</label>
+                          <label className="text-sm font-medium mb-1 block">Descrição *</label>
                           <input type="text" value={deductionForm.descricao} onChange={e => setDeductionForm(p => ({ ...p, descricao: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: Emprestimo BMG" />
                         </div>
                         <div>
@@ -543,14 +543,14 @@ export default function FuncionariosPage() {
                   {deductionsLoading ? (
                     <div className="flex items-center justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
                   ) : deductions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma deducao cadastrada para este funcionario.</p>
+                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma dedução cadastrada para este funcionario.</p>
                   ) : (
                     <div className="border rounded-md overflow-hidden">
                       <table className="w-full text-sm">
                         <thead className="bg-muted/50">
                           <tr>
                             <th className="text-left px-3 py-2 font-medium">Tipo</th>
-                            <th className="text-left px-3 py-2 font-medium">Descricao</th>
+                            <th className="text-left px-3 py-2 font-medium">Descrição</th>
                             <th className="text-right px-3 py-2 font-medium">Valor</th>
                             <th className="text-right px-3 py-2 font-medium">Percentual</th>
                             <th className="text-center px-3 py-2 font-medium">Parcelas</th>

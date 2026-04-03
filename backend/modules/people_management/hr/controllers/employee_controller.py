@@ -39,6 +39,22 @@ async def list_employees(
     return await service.get_active_employees(page=page, page_size=page_size, search=search)
 
 
+@router.get("/stats")
+async def get_employees_stats(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Retorna contadores de funcionários por status."""
+    result = await db.execute(
+        text("SELECT status, is_active, COUNT(*) as qtd FROM employees GROUP BY status, is_active")
+    )
+    rows = result.mappings().all()
+    ativos = sum(r["qtd"] for r in rows if r.get("status") == "ativo" or r.get("is_active"))
+    inativos = sum(r["qtd"] for r in rows if r.get("status") != "ativo" and not r.get("is_active"))
+    total = sum(r["qtd"] for r in rows)
+    return {"total": total, "ativos": ativos, "inativos": inativos, "por_status": [dict(r) for r in rows]}
+
+
 @router.get("/{employee_id}", response_model=DPEmployeeRead)
 async def get_employee(
     employee_id: str,
