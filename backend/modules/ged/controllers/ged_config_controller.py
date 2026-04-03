@@ -342,31 +342,27 @@ async def get_document_types(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    """Retorna tipos de documentos configurados para kits."""
+    """Retorna tipos de documentos configurados para kits GED."""
     result = await db.execute(
         text("""
-        SELECT DISTINCT tipo, nome, is_obrigatorio
-        FROM document_kits
-        WHERE is_template = true
-        ORDER BY nome
+        SELECT id, name, category, description, required_for_kit, is_active
+        FROM ged_document_types
+        WHERE is_active = true
+        ORDER BY category, name
         """)
     )
     rows = result.mappings().all()
-    if rows:
-        tipos = [{"tipo": r["tipo"], "nome": r["nome"], "obrigatorio": r["is_obrigatorio"]} for r in rows]
-    else:
-        tipos = [
-            {"tipo": "FOLHA", "nome": "Folha de Pagamento", "obrigatorio": True},
-            {"tipo": "HOLERITE", "nome": "Holerite/Contracheque", "obrigatorio": True},
-            {"tipo": "PONTO", "nome": "Espelho de Ponto", "obrigatorio": True},
-            {"tipo": "FGTS", "nome": "Guia FGTS", "obrigatorio": True},
-            {"tipo": "GPS", "nome": "Guia GPS/INSS", "obrigatorio": True},
-            {"tipo": "IRRF", "nome": "Guia IRRF", "obrigatorio": True},
-            {"tipo": "RAIS", "nome": "RAIS/CAGED", "obrigatorio": False},
-            {"tipo": "ASO", "nome": "ASO - Atestado Saúde", "obrigatorio": True},
-            {"tipo": "EPI", "nome": "Ficha EPI", "obrigatorio": True},
-            {"tipo": "CERTIDAO", "nome": "Certidões Negativas", "obrigatorio": True},
-        ]
+    tipos = [
+        {
+            "id": str(r["id"]),
+            "name": r["name"],
+            "category": r["category"],
+            "description": r["description"],
+            "required_for_kit": r["required_for_kit"],
+            "is_active": r["is_active"],
+        }
+        for r in rows
+    ]
     return {"tipos": tipos, "total": len(tipos)}
 
 
