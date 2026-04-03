@@ -26,7 +26,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/employees", tags=["DP - Funcionários"])
 
 
-@router.get("", summary="Listar Funcionários", response_model=DPEmployeeList)
+@router.get(
+    "",
+    summary="Listar Funcionários",
+    response_model=DPEmployeeList,
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def list_employees(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -39,7 +44,11 @@ async def list_employees(
     return await service.get_active_employees(page=page, page_size=page_size, search=search)
 
 
-@router.get("/stats", summary="Estatísticas de Funcionários")
+@router.get(
+    "/stats",
+    summary="Estatísticas de Funcionários",
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def get_employees_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -55,7 +64,11 @@ async def get_employees_stats(
     return {"total": total, "ativos": ativos, "inativos": inativos, "por_status": [dict(r) for r in rows]}
 
 
-@router.get("/discipline", summary="Visão Geral Disciplinar")
+@router.get(
+    "/discipline",
+    summary="Visão Geral Disciplinar",
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def list_discipline_overview(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -89,7 +102,35 @@ async def list_discipline_overview(
         return {"items": [], "total": 0, "page": page, "page_size": page_size, "total_pages": 1}
 
 
-@router.get("/{employee_id}", summary="Buscar Funcionário por ID", response_model=DPEmployeeRead)
+@router.get(
+    "/search",
+    summary="Buscar Funcionários",
+    response_model=DPEmployeeList,
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
+async def search_employees(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    q: str = Query("", description="Busca por nome, CPF ou matrícula"),
+    status: str | None = Query(None, description="Filtrar por status (ativo/inativo)"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> Any:
+    """Busca funcionários por nome, CPF ou matrícula."""
+    service = EmployeeService(db)
+    return await service.get_active_employees(
+        page=page,
+        page_size=page_size,
+        search=q or None,
+    )
+
+
+@router.get(
+    "/{employee_id}",
+    summary="Buscar Funcionário por ID",
+    response_model=DPEmployeeRead,
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def get_employee(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -103,7 +144,11 @@ async def get_employee(
     return employee
 
 
-@router.get("/{employee_id}/profile", summary="Perfil Completo do Funcionário")
+@router.get(
+    "/{employee_id}/profile",
+    summary="Perfil Completo do Funcionário",
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def get_employee_full_profile(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -117,7 +162,12 @@ async def get_employee_full_profile(
     return profile
 
 
-@router.get("/cpf/{cpf}", summary="Buscar Funcionário por CPF", response_model=DPEmployeeRead)
+@router.get(
+    "/cpf/{cpf}",
+    summary="Buscar Funcionário por CPF",
+    response_model=DPEmployeeRead,
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def get_employee_by_cpf(
     cpf: str,
     current_user: CurrentActiveUser,
@@ -131,7 +181,12 @@ async def get_employee_by_cpf(
     return employee
 
 
-@router.patch("/{employee_id}", summary="Atualizar Funcionário", response_model=DPEmployeeRead)
+@router.patch(
+    "/{employee_id}",
+    summary="Atualizar Funcionário",
+    response_model=DPEmployeeRead,
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def update_employee(
     employee_id: str,
     data: DPEmployeeUpdate,
@@ -165,7 +220,11 @@ class DeductionCreate(BaseModel):
     data_fim: str | None = None
 
 
-@router.get("/{employee_id}/deductions", summary="Listar Deduções do Funcionário")
+@router.get(
+    "/{employee_id}/deductions",
+    summary="Listar Deduções do Funcionário",
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def list_deductions(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -186,7 +245,12 @@ async def list_deductions(
     return {"employee_id": employee_id, "total": len(rows), "items": [dict(r) for r in rows]}
 
 
-@router.post("/{employee_id}/deductions", summary="Criar Dedução", status_code=201)
+@router.post(
+    "/{employee_id}/deductions",
+    summary="Criar Dedução",
+    status_code=201,
+    description="Retorna lista paginada de funcionários ativos com suporte a busca por nome, CPF e matrícula.",
+)
 async def create_deduction(
     employee_id: str,
     data: DeductionCreate,

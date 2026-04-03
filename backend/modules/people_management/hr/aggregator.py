@@ -164,4 +164,14 @@ try:
 except ImportError as e:
     logger.warning("DP: falha ao incluir document_router: %s", e)
 
+try:
+    from modules.people_management.hr.controllers.reports_controller import (
+        router as reports_router,
+    )
+
+    router.include_router(reports_router)
+    logger.debug("DP: reports_router incluído")
+except ImportError as e:
+    logger.warning("DP: falha ao incluir reports_router: %s", e)
+
 logger.info("Módulo Departamento Pessoal (DP) carregado — aggregator montado em /hr")
