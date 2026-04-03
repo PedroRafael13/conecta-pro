@@ -7,7 +7,7 @@ Endpoint de listagem de afastamentos/licenças médicas.
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/leaves", tags=["DP - Afastamentos"])
 
 
-@router.get("")
+@router.get("", summary="Listar Afastamentos")
 async def list_leaves(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    page: int = 1,
-    page_size: int = 20,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
 ) -> Any:
     """Lista afastamentos e licenças."""
     # Tenta buscar do módulo de justificativas (medical leaves)

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["DP - Documentos"])
 
 
-@router.get("")
+@router.get("", summary="Listar Documentos de Funcionários")
 async def list_documents(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

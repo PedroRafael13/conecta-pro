@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/time-records", tags=["DP - Ponto Eletrônico"])
 
 
-@router.get("", response_model=TimeRecordListResponse)
+@router.get("", summary="Listar Registros de Ponto", response_model=TimeRecordListResponse)
 async def list_time_records(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -59,7 +59,7 @@ async def list_time_records(
     )
 
 
-@router.get("/daily/{record_date}", response_model=DailyRecordsResponse)
+@router.get("/daily/{record_date}", summary="Registros do Dia", response_model=DailyRecordsResponse)
 async def get_daily_records(
     record_date: date,
     current_user: CurrentActiveUser,
@@ -70,7 +70,7 @@ async def get_daily_records(
     return await service.get_daily(record_date)
 
 
-@router.get("/employee/{employee_id}/summary", response_model=MonthlySummaryResponse)
+@router.get("/employee/{employee_id}/summary", summary="Resumo Mensal de Ponto", response_model=MonthlySummaryResponse)
 async def get_employee_summary(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -83,7 +83,7 @@ async def get_employee_summary(
     return await service.get_summary(employee_id, month, year)
 
 
-@router.post("/clock-in", response_model=TimeRecordResponse, status_code=201)
+@router.post("/clock-in", summary="Batida de Entrada", response_model=TimeRecordResponse, status_code=201)
 async def clock_in(
     data: ClockInRequest,
     current_user: CurrentActiveUser,
@@ -104,7 +104,7 @@ async def clock_in(
     return result
 
 
-@router.post("/clock-out/{record_id}", response_model=TimeRecordResponse, status_code=201)
+@router.post("/clock-out/{record_id}", summary="Batida de Saída", response_model=TimeRecordResponse, status_code=201)
 async def clock_out(
     record_id: str,
     current_user: CurrentActiveUser,
@@ -127,7 +127,7 @@ async def clock_out(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("", response_model=TimeRecordResponse, status_code=201)
+@router.post("", summary="Lançamento Manual de Ponto", response_model=TimeRecordResponse, status_code=201)
 async def create_manual_record(
     data: TimeRecordCreate,
     current_user: CurrentActiveUser,
@@ -143,7 +143,7 @@ async def create_manual_record(
     return result
 
 
-@router.get("/{record_id}", response_model=TimeRecordResponse)
+@router.get("/{record_id}", summary="Buscar Registro de Ponto", response_model=TimeRecordResponse)
 async def get_time_record(
     record_id: str,
     current_user: CurrentActiveUser,
@@ -157,7 +157,7 @@ async def get_time_record(
     return record
 
 
-@router.patch("/{record_id}", response_model=TimeRecordResponse)
+@router.patch("/{record_id}", summary="Atualizar/Justificar Registro", response_model=TimeRecordResponse)
 async def update_time_record(
     record_id: str,
     data: TimeRecordUpdate,

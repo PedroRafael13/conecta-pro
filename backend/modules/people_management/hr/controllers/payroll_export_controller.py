@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/payroll-export", tags=["DP - Exportação Folha"])
 
 
-@router.get("/dominio/{competencia}")
+@router.get("/dominio/{competencia}", summary="Exportar Folha para Domínio")
 async def exportar_dominio(
     competencia: str,
     current_user: CurrentActiveUser,
@@ -69,7 +69,7 @@ async def exportar_dominio(
     )
 
 
-@router.get("/contracheque/{employee_id}/{competencia}")
+@router.get("/contracheque/{employee_id}/{competencia}", summary="Gerar Contracheque PDF")
 async def gerar_contracheque_pdf(
     employee_id: str,
     competencia: str,
@@ -115,7 +115,7 @@ async def gerar_contracheque_pdf(
     )
 
 
-@router.post("/contracheques-batch/{competencia}", status_code=201)
+@router.post("/contracheques-batch/{competencia}", summary="Gerar Contracheques em Lote", status_code=201)
 async def gerar_contracheques_batch(
     competencia: str,
     current_user: CurrentActiveUser,

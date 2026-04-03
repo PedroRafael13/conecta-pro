@@ -31,7 +31,19 @@ except ImportError:
     logger.info("Router de payroll não disponível para re-export")
 
 
-@router.get("/employee/{employee_id}/calculate")
+@router.get("/summary", summary="Resumo da Folha")
+async def get_payroll_summary(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    month: int = Query(..., ge=1, le=12, description="Mês de referência"),
+    year: int = Query(..., ge=2020, le=2030, description="Ano de referência"),
+) -> Any:
+    """Retorna resumo consolidado da folha de pagamento de uma competência."""
+    service = PayrollService(db)
+    return await service.close_payroll(month, year)
+
+
+@router.get("/employee/{employee_id}/calculate", summary="Calcular Folha Individual")
 async def calculate_employee_payroll(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -47,7 +59,7 @@ async def calculate_employee_payroll(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/employee/{employee_id}/payslip-pdf")
+@router.get("/employee/{employee_id}/payslip-pdf", summary="Gerar Contracheque PDF")
 async def generate_payslip_pdf(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -221,7 +233,7 @@ def _build_payslip_pdf(calc: dict, month: int, year: int) -> bytes:
 # =============================================================================
 
 
-@router.get("/benefits")
+@router.get("/benefits", summary="Listar Benefícios/Rubricas")
 async def list_all_benefits(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -263,7 +275,7 @@ async def list_all_benefits(
     }
 
 
-@router.post("/benefits", status_code=201)
+@router.post("/benefits", summary="Cadastrar Benefício", status_code=201)
 async def create_benefit(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -300,7 +312,7 @@ async def create_benefit(
     return {"id": str(new_id), "message": f"Rubrica '{type}' cadastrada para funcionário {employee_id}"}
 
 
-@router.delete("/benefits/{benefit_id}")
+@router.delete("/benefits/{benefit_id}", summary="Desativar Benefício")
 async def delete_benefit(
     benefit_id: str,
     current_user: CurrentActiveUser,
@@ -317,7 +329,7 @@ async def delete_benefit(
     return {"message": "Rubrica desativada"}
 
 
-@router.get("/rubricas")
+@router.get("/rubricas", summary="Listar Rubricas de Referência")
 async def list_rubricas(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -346,7 +358,7 @@ async def list_rubricas(
     }
 
 
-@router.post("/close", status_code=201)
+@router.post("/close", summary="Fechar Folha Mensal", status_code=201)
 async def close_payroll(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

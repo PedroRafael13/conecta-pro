@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/cct", tags=["CCT 2026 SINDECOMPRESTS"])
 
 
-@router.get("/cargos")
+@router.get("/cargos", summary="Cargos da CCT 2026")
 async def listar_cargos_cct(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Lista todos os cargos da CCT 2026 SINDECOMPRESTS."""
     result = await db.execute(
@@ -52,7 +52,7 @@ async def listar_cargos_cct(current_user: CurrentActiveUser, db: AsyncSession = 
     }
 
 
-@router.get("/funcionarios")
+@router.get("/funcionarios", summary="Funcionários Vinculados à CCT")
 async def listar_funcionarios_cct(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Lista funcionários com vínculo CCT."""
     result = await db.execute(
@@ -88,7 +88,7 @@ async def listar_funcionarios_cct(current_user: CurrentActiveUser, db: AsyncSess
     }
 
 
-@router.get("/conformidade")
+@router.get("/conformidade", summary="Verificar Conformidade Salarial")
 async def verificar_conformidade(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Verifica conformidade salarial com o piso CCT."""
     result = await db.execute(
@@ -126,7 +126,7 @@ async def verificar_conformidade(current_user: CurrentActiveUser, db: AsyncSessi
     }
 
 
-@router.get("/resumo")
+@router.get("/resumo", summary="Resumo CCT 2026")
 async def resumo_cct(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_async_session)):
     """Resumo geral da conformidade CCT 2026."""
     result = await db.execute(

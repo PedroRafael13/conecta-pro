@@ -31,7 +31,7 @@ except ImportError:
     logger.info("Router de férias operacional não disponível para re-export")
 
 
-@router.get("")
+@router.get("", summary="Listar Solicitações de Férias")
 async def list_vacations(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -66,7 +66,7 @@ async def list_vacations(
         return {"items": [], "total": 0, "page": 1, "page_size": 20, "total_pages": 1}
 
 
-@router.get("/employee/{employee_id}", response_model=None)
+@router.get("/employee/{employee_id}", summary="Férias por Funcionário", response_model=None)
 async def list_vacations_by_employee(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -111,7 +111,7 @@ async def list_vacations_by_employee(
     }
 
 
-@router.get("/employee/{employee_id}/balance")
+@router.get("/employee/{employee_id}/balance", summary="Saldo de Férias")
 async def get_vacation_balance(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -125,7 +125,7 @@ async def get_vacation_balance(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{vacation_id}", response_model=VacationRequestResponse)
+@router.get("/{vacation_id}", summary="Buscar Solicitação de Férias", response_model=VacationRequestResponse)
 async def get_vacation(
     vacation_id: str,
     current_user: CurrentActiveUser,
@@ -139,7 +139,7 @@ async def get_vacation(
     return vacation
 
 
-@router.post("/sync-solides", status_code=201)
+@router.post("/sync-solides", summary="Sincronizar Férias do Sólides", status_code=201)
 async def sync_ferias_solides(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -160,7 +160,7 @@ async def sync_ferias_solides(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/{vacation_id}/approve", status_code=201)
+@router.post("/{vacation_id}/approve", summary="Aprovar Férias", status_code=201)
 async def approve_vacation(
     vacation_id: str,
     current_user: CurrentActiveUser,

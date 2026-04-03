@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/employees", tags=["DP - Funcionários"])
 
 
-@router.get("", response_model=DPEmployeeList)
+@router.get("", summary="Listar Funcionários", response_model=DPEmployeeList)
 async def list_employees(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -39,7 +39,7 @@ async def list_employees(
     return await service.get_active_employees(page=page, page_size=page_size, search=search)
 
 
-@router.get("/stats")
+@router.get("/stats", summary="Estatísticas de Funcionários")
 async def get_employees_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -55,7 +55,41 @@ async def get_employees_stats(
     return {"total": total, "ativos": ativos, "inativos": inativos, "por_status": [dict(r) for r in rows]}
 
 
-@router.get("/{employee_id}", response_model=DPEmployeeRead)
+@router.get("/discipline", summary="Visão Geral Disciplinar")
+async def list_discipline_overview(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> Any:
+    """Lista medidas disciplinares ativas de todos os funcionários."""
+    try:
+        result = await db.execute(
+            text(
+                "SELECT da.id::text, da.employee_id::text, e.nome as employee_name, "
+                "da.action_type, da.description, da.status, da.created_at::text "
+                "FROM disciplinary_actions da "
+                "JOIN employees e ON da.employee_id = e.id "
+                "ORDER BY da.created_at DESC "
+                "LIMIT :limit OFFSET :offset"
+            ),
+            {"limit": page_size, "offset": (page - 1) * page_size},
+        )
+        rows = result.mappings().all()
+        count_result = await db.execute(text("SELECT COUNT(*) FROM disciplinary_actions"))
+        total = count_result.scalar() or 0
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": max(1, (total + page_size - 1) // page_size),
+        }
+    except Exception:
+        return {"items": [], "total": 0, "page": page, "page_size": page_size, "total_pages": 1}
+
+
+@router.get("/{employee_id}", summary="Buscar Funcionário por ID", response_model=DPEmployeeRead)
 async def get_employee(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -69,7 +103,7 @@ async def get_employee(
     return employee
 
 
-@router.get("/{employee_id}/profile")
+@router.get("/{employee_id}/profile", summary="Perfil Completo do Funcionário")
 async def get_employee_full_profile(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -83,7 +117,7 @@ async def get_employee_full_profile(
     return profile
 
 
-@router.get("/cpf/{cpf}", response_model=DPEmployeeRead)
+@router.get("/cpf/{cpf}", summary="Buscar Funcionário por CPF", response_model=DPEmployeeRead)
 async def get_employee_by_cpf(
     cpf: str,
     current_user: CurrentActiveUser,
@@ -97,7 +131,7 @@ async def get_employee_by_cpf(
     return employee
 
 
-@router.patch("/{employee_id}", response_model=DPEmployeeRead)
+@router.patch("/{employee_id}", summary="Atualizar Funcionário", response_model=DPEmployeeRead)
 async def update_employee(
     employee_id: str,
     data: DPEmployeeUpdate,
@@ -131,7 +165,7 @@ class DeductionCreate(BaseModel):
     data_fim: str | None = None
 
 
-@router.get("/{employee_id}/deductions")
+@router.get("/{employee_id}/deductions", summary="Listar Deduções do Funcionário")
 async def list_deductions(
     employee_id: str,
     current_user: CurrentActiveUser,
@@ -152,7 +186,7 @@ async def list_deductions(
     return {"employee_id": employee_id, "total": len(rows), "items": [dict(r) for r in rows]}
 
 
-@router.post("/{employee_id}/deductions", status_code=201)
+@router.post("/{employee_id}/deductions", summary="Criar Dedução", status_code=201)
 async def create_deduction(
     employee_id: str,
     data: DeductionCreate,
