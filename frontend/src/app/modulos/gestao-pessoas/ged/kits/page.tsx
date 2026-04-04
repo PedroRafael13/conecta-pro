@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Loader2, Eye, Send, CheckCircle, Filter, FolderOpen,
@@ -350,7 +351,7 @@ export default function KitsListPage() {
       )}
 
       {/* Modal Novo Kit */}
-      {showNewKit && (
+      {showNewKit && createPortal(
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
             <button onClick={() => setShowNewKit(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
@@ -378,9 +379,10 @@ export default function KitsListPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-      {showMontarConfirm && (
+      {showMontarConfirm && createPortal(
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full">
             <h3 className="text-lg font-bold text-[#1E3A5F] mb-2">Confirmar Montagem de Kits</h3>
@@ -406,7 +408,8 @@ export default function KitsListPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

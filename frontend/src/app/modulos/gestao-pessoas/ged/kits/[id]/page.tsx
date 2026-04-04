@@ -258,6 +258,13 @@ export default function KitDetailPage() {
   const employeeDocs = (kit.documents || []).filter((d) => d.category === 'employee');
   const companyDocs = (kit.documents || []).filter((d) => d.category === 'company');
   const activeDocs = activeTab === 'employee' ? employeeDocs : companyDocs;
+  const isUsingChecklist = (kit.documents || []).length === 0 && checklist;
+  const companyLabel = isUsingChecklist
+    ? `${checklist!.checklist.filter((i) => i.categoria === 'empresa').length} esperados`
+    : String(companyDocs.length);
+  const employeeLabel = isUsingChecklist
+    ? `${checklist!.checklist.filter((i) => i.categoria !== 'empresa').length} esperados`
+    : String(employeeDocs.length);
 
   return (
     <div className="p-6 space-y-6">
@@ -311,10 +318,10 @@ export default function KitDetailPage() {
       {/* Tabs */}
       <div className="flex border-b border-gray-200">
         <button onClick={() => setActiveTab('company')} className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'company' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-          <Building2 className="h-4 w-4" />Empresa ({companyDocs.length})
+          <Building2 className="h-4 w-4" />Empresa ({companyLabel})
         </button>
         <button onClick={() => setActiveTab('employee')} className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'employee' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-          <User className="h-4 w-4" />Funcionário ({employeeDocs.length})
+          <User className="h-4 w-4" />Funcionário ({employeeLabel})
         </button>
       </div>
 

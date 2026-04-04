@@ -69,15 +69,22 @@ interface TypeOption {
   label: string;
 }
 
+interface ClientOption {
+  id: string;
+  name: string;
+}
+
 export default function DocumentosSearchPage() {
   const [query, setQuery] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterOrigin, setFilterOrigin] = useState('');
   const [filterSigned, setFilterSigned] = useState('');
+  const [filterClient, setFilterClient] = useState('');
   const [results, setResults] = useState<DocumentResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [typeOptions, setTypeOptions] = useState<TypeOption[]>([{ value: '', label: 'Todos os Tipos' }]);
+  const [clientOptions, setClientOptions] = useState<ClientOption[]>([]);
 
   useEffect(() => {
     fetch(`${API_BASE}/config/document-types`, { headers: getAuthHeaders() })
@@ -92,6 +99,16 @@ export default function DocumentosSearchPage() {
         setTypeOptions([{ value: '', label: 'Todos os Tipos' }, ...lista]);
       })
       .catch(() => {});
+
+    fetch(`${API_BASE}/clients/`, { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((d) => {
+        const lista: ClientOption[] = (Array.isArray(d) ? d : d.items || d.clientes || []).map(
+          (c: { id: string; name: string }) => ({ id: c.id, name: c.name }),
+        );
+        setClientOptions(lista);
+      })
+      .catch(() => {});
   }, []);
 
   async function handleSearch() {
@@ -103,6 +120,7 @@ export default function DocumentosSearchPage() {
       if (filterType) params.append('type', filterType);
       if (filterOrigin) params.append('origin', filterOrigin);
       if (filterSigned) params.append('signed', filterSigned);
+      if (filterClient) params.append('client_id', filterClient);
       const res = await fetch(`${API_BASE}/documents/search?${params.toString()}`, {
         headers: getAuthHeaders(),
       });
@@ -159,6 +177,16 @@ export default function DocumentosSearchPage() {
 
           <div className="flex flex-wrap items-center gap-4">
             <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={filterClient}
+              onChange={(e) => setFilterClient(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            >
+              <option value="">Todos os Clientes</option>
+              {clientOptions.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
