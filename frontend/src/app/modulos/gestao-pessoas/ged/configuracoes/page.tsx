@@ -45,7 +45,8 @@ interface DriveConfig {
 interface EmailTemplate {
   id: string;
   name: string;
-  subject: string;
+  assunto?: string;
+  subject?: string;
 }
 
 interface DocumentType {
@@ -314,7 +315,7 @@ export default function ConfiguracoesPage() {
                 >
                   <div>
                     <p className="text-sm font-medium text-gray-900">{template.name}</p>
-                    <p className="text-xs text-gray-500">Assunto: {template.subject}</p>
+                    <p className="text-xs text-gray-500">Assunto: {template.assunto || template.subject || '—'}</p>
                   </div>
                   <button
                     className="p-1.5 rounded hover:bg-gray-200 transition-colors"

@@ -81,6 +81,7 @@ export default function GEDDashboardPage() {
     taxa_conclusao: 0,
   });
   const [recentKits, setRecentKits] = useState<Kit[]>([]);
+  const [totalKitsGeral, setTotalKitsGeral] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showMontarConfirm, setShowMontarConfirm] = useState(false);
 
@@ -107,6 +108,7 @@ export default function GEDDashboardPage() {
       if (kitsRes.ok) {
         const data = await kitsRes.json();
         setRecentKits(Array.isArray(data) ? data : data.items || []);
+        setTotalKitsGeral(Array.isArray(data) ? data.length : data.total ?? 0);
       }
     } catch (err) {
       console.error('fetchData:', err);
@@ -137,7 +139,7 @@ export default function GEDDashboardPage() {
   }
 
   const statCards = [
-    { label: 'Total Kits', value: summary.total_kits, icon: FolderOpen, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Total Kits', value: totalKitsGeral || summary.total_kits, icon: FolderOpen, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Kits Pendentes', value: summary.kits_pendentes, icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50' },
     { label: 'Kits Enviados', value: summary.kits_enviados, icon: Send, color: 'text-green-600', bg: 'bg-green-50' },
     { label: 'Taxa Conclusao', value: `${summary.taxa_conclusao}%`, icon: BarChart3, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -287,7 +289,7 @@ export default function GEDDashboardPage() {
         </CardContent>
       </Card>
       {showMontarConfirm && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full">
             <h3 className="text-lg font-bold text-[#1E3A5F] mb-2">Confirmar Montagem de Kits</h3>
             <p className="text-gray-600 mb-4 text-sm">
