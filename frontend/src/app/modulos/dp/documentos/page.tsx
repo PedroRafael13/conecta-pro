@@ -294,7 +294,7 @@ export default function DocumentosPage() {
                     const err = await res.json().catch(() => null);
                     toast.error(err?.detail || 'Erro ao enviar documento', { duration: 5000 });
                   }
-                } catch { toast.error('Erro de conexao', { duration: 5000 }); } finally { setSaving(false); }
+                } catch { toast.error('Erro de conexão', { duration: 5000 }); } finally { setSaving(false); }
               }}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
                 {saving ? 'Salvando...' : 'Registrar Documento'}
