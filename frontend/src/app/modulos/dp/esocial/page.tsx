@@ -136,7 +136,7 @@ export default function ESocialPage() {
           }
           setEventos(evts);
           if (evts.length > 0) {
-            toast.info(`${evts.length} evento${evts.length !== 1 ? 's' : ''} reconstruido${evts.length !== 1 ? 's' : ''} a partir de admissoes/desligamentos`, { duration: 3000 });
+            toast.info(`${evts.length} evento${evts.length !== 1 ? 's' : ''} reconstruído${evts.length !== 1 ? 's' : ''} a partir de admissões/desligamentos`, { duration: 3000 });
           }
         }
       } catch {
@@ -398,7 +398,7 @@ export default function ESocialPage() {
                   <p className="text-sm text-muted-foreground mt-1">
                     {searchTerm || filtroStatus !== 'todos' || filtroTipo !== 'todos'
                       ? 'Tente outra busca ou limpe os filtros.'
-                      : 'Os eventos serao gerados a partir de admissoes, desligamentos e outras obrigacoes.'}
+                      : 'Os eventos serão gerados a partir de admissões, desligamentos e outras obrigações.'}
                   </p>
                 </div>
               ) : (

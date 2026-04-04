@@ -126,7 +126,7 @@ export default function FolhaPage() {
         toast.error(err?.detail || 'Erro ao calcular folha', { duration: 5000 });
       }
     } catch {
-      toast.error('Erro de conexao ao calcular folha', { duration: 5000 });
+      toast.error('Erro de conexão ao calcular folha', { duration: 5000 });
     } finally {
       setCalculating(false);
     }
@@ -181,9 +181,9 @@ export default function FolhaPage() {
   const totalIrrf = resumo?.total_irrf || dashboard?.total_irrf || 0;
 
   const summaryCards = [
-    { title: 'Total Bruto', value: fmt(totalBruto), color: 'text-blue-600' },
+    { title: 'Total Bruto (Proventos)', value: fmt(totalBruto), color: 'text-blue-600' },
     { title: 'Total Descontos', value: fmt(totalDescontos), color: 'text-red-600' },
-    { title: 'Total Liquido', value: fmt(totalLiquido), color: 'text-green-600' },
+    { title: 'Total Líquido (A Pagar)', value: fmt(totalLiquido), color: 'text-green-600' },
     { title: 'Total INSS', value: fmt(totalInss), color: 'text-purple-600' },
     { title: 'Total FGTS 8%', value: fmt(totalFgts), color: 'text-cyan-600' },
     { title: 'Total IRRF', value: fmt(totalIrrf), color: 'text-orange-600' },
@@ -296,7 +296,7 @@ export default function FolhaPage() {
                       <TableRow>
                         <TableHead className="cursor-pointer select-none" onClick={() => handleSort('nome')}>Colaborador{sortIcon('nome')}</TableHead>
                         <TableHead className="cursor-pointer select-none" onClick={() => handleSort('cargo')}>Cargo{sortIcon('cargo')}</TableHead>
-                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('salario_base')}>Salario Base{sortIcon('salario_base')}</TableHead>
+                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('salario_base')}>Salário Base{sortIcon('salario_base')}</TableHead>
                         <TableHead>INSS</TableHead>
                         <TableHead>FGTS 8%</TableHead>
                         <TableHead className="cursor-pointer select-none" onClick={() => handleSort('total_descontos')}>Descontos{sortIcon('total_descontos')}</TableHead>

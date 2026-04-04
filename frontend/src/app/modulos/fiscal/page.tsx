@@ -124,7 +124,7 @@ export default function FiscalDashboardPage() {
             Fiscal
           </h1>
           <p className="text-muted-foreground">
-            Gestao fiscal, tributaria e obrigacoes acessorias
+            Gestão fiscal, tributária e obrigações acessórias
           </p>
         </div>
         <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>

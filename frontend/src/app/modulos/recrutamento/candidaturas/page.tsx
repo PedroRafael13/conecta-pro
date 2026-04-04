@@ -550,7 +550,7 @@ export default function CandidaturasPage() {
             </div>
             <div className="space-y-2">
               <Label>Benefícios (separados por vírgula)</Label>
-              <Input value={proposalData.benefits} onChange={(e) => setProposalData({ ...proposalData, benefits: e.target.value })} placeholder="VT, VR, Plano de Saude" />
+              <Input value={proposalData.benefits} onChange={(e) => setProposalData({ ...proposalData, benefits: e.target.value })} placeholder="VT, VR, Plano de Saúde" />
             </div>
             <div className="space-y-2">
               <Label>Observações</Label>

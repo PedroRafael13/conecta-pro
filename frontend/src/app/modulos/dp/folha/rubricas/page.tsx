@@ -19,11 +19,11 @@ function getAuthHeaders() {
 }
 
 const RUBRICA_TYPES = [
-  { value: 'Emprestimo Consignado', label: 'Emprestimo Consignado', desconto: true },
-  { value: 'Pensao Alimenticia', label: 'Pensao Alimenticia', desconto: true },
-  { value: 'Vale Refeicao', label: 'Vale Refeicao', desconto: false },
-  { value: 'Plano Saude', label: 'Plano de Saude', desconto: true },
-  { value: 'Plano Odontologico', label: 'Plano Odontologico', desconto: true },
+  { value: 'Emprestimo Consignado', label: 'Empréstimo Consignado', desconto: true },
+  { value: 'Pensao Alimenticia', label: 'Pensão Alimentícia', desconto: true },
+  { value: 'Vale Refeicao', label: 'Vale Refeição', desconto: false },
+  { value: 'Plano Saude', label: 'Plano de Saúde', desconto: true },
+  { value: 'Plano Odontologico', label: 'Plano Odontológico', desconto: true },
   { value: 'Seguro Vida', label: 'Seguro de Vida', desconto: true },
   { value: 'VT', label: 'Vale Transporte', desconto: false },
   { value: 'Outros', label: 'Outros Descontos', desconto: true },
@@ -170,9 +170,9 @@ export default function RubricasPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <DollarSign className="h-6 w-6" />
-              Rubricas por Funcionario
+              Rubricas por Funcionário
             </h1>
-            <p className="text-muted-foreground">Cadastrar descontos e beneficios individuais</p>
+            <p className="text-muted-foreground">Cadastrar descontos e benefícios individuais</p>
           </div>
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function RubricasPage() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Funcionarios com Rubricas</div>
+            <div className="text-sm text-muted-foreground">Funcionários com Rubricas</div>
             <div className="text-2xl font-bold">{Object.keys(grouped).length}</div>
           </CardContent>
         </Card>
@@ -204,13 +204,13 @@ export default function RubricasPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Plus className="h-5 w-5" />
-            Nova Rubrica
+            Nova Rubrica de Desconto
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label htmlFor="field-employee" className="block text-sm text-muted-foreground mb-1">Funcionario *</label>
+              <label htmlFor="field-employee" className="block text-sm text-muted-foreground mb-1">Funcionário *</label>
               <select
                 id="field-employee"
                 value={selectedEmployee}
@@ -280,7 +280,7 @@ export default function RubricasPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5" />
-            Rubricas Cadastradas ({benefits.length})
+            Rubricas Cadastradas — {benefits.length}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -294,7 +294,7 @@ export default function RubricasPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Funcionario</TableHead>
+                  <TableHead>Funcionário</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Fornecedor</TableHead>
                   <TableHead className="text-right">Desconto</TableHead>

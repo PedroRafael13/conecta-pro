@@ -140,7 +140,7 @@ export default function FiscalPage() {
                     Fiscal
                   </h1>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    Notas fiscais e obrigacoes
+                    Notas fiscais e obrigações
                   </p>
                 </div>
               </div>

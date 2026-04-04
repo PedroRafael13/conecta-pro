@@ -66,7 +66,7 @@ export default function DPDashboardPage() {
     { title: 'Colaboradores Ativos', value: loading ? '...' : stats.employees, subtitle: 'Total no sistema', icon: Users, color: 'text-blue-600', bgColor: 'bg-blue-50' },
     { title: 'Admissões Pendentes', value: loading ? '...' : stats.admissions, subtitle: 'Processos em aberto', icon: UserPlus, color: 'text-green-600', bgColor: 'bg-green-50' },
     { title: 'Férias em Andamento', value: loading ? '...' : stats.vacations, subtitle: 'Colaboradores em férias', icon: Sun, color: 'text-orange-600', bgColor: 'bg-orange-50' },
-    { title: 'Folha Atual (R$)', value: loading ? '...' : stats.payroll, subtitle: 'Competência atual', icon: DollarSign, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+    { title: 'Folha Bruta Est. (R$)', value: loading ? '...' : stats.payroll, subtitle: 'Soma salários base — estimado', icon: DollarSign, color: 'text-purple-600', bgColor: 'bg-purple-50' },
   ];
 
   const navCards = [

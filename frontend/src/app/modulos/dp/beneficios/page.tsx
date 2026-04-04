@@ -27,10 +27,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 
 const typeLabels: Record<string, string> = {
   vale_transporte: 'Vale Transporte',
-  vale_refeicao: 'Vale Refeicao',
-  vale_alimentacao: 'Vale Alimentacao',
-  plano_saude: 'Plano de Saude',
-  plano_odontologico: 'Plano Odontologico',
+  vale_refeicao: 'Vale Refeição',
+  vale_alimentacao: 'Vale Alimentação',
+  plano_saude: 'Plano de Saúde',
+  plano_odontologico: 'Plano Odontológico',
   seguro_vida: 'Seguro de Vida',
   auxilio_creche: 'Auxilio Creche',
   gym_pass: 'Gym Pass',
@@ -39,10 +39,10 @@ const typeLabels: Record<string, string> = {
 
 const typeOptions = [
   { value: 'vale_transporte', label: 'Vale Transporte' },
-  { value: 'vale_refeicao', label: 'Vale Refeicao' },
-  { value: 'vale_alimentacao', label: 'Vale Alimentacao' },
-  { value: 'plano_saude', label: 'Plano de Saude' },
-  { value: 'plano_odontologico', label: 'Plano Odontologico' },
+  { value: 'vale_refeicao', label: 'Vale Refeição' },
+  { value: 'vale_alimentacao', label: 'Vale Alimentação' },
+  { value: 'plano_saude', label: 'Plano de Saúde' },
+  { value: 'plano_odontologico', label: 'Plano Odontológico' },
   { value: 'seguro_vida', label: 'Seguro de Vida' },
   { value: 'auxilio_creche', label: 'Auxilio Creche' },
   { value: 'gym_pass', label: 'Gym Pass' },
