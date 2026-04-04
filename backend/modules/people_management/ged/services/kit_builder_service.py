@@ -6,9 +6,10 @@ Orquestra a coleta automatica de documentos de diferentes modulos
 """
 
 import logging
+import unicodedata
 from datetime import date
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.people_management.ged.models.client import GedClient
@@ -506,13 +507,11 @@ class KitBuilderService:
         return results
 
     async def get_employees_for_client(self, client_id: str) -> list[str]:
-        """Busca IDs dos funcionarios alocados nos postos de um cliente.
+        """Busca IDs dos funcionarios alocados nos postos de um cliente GED.
 
-        Consulta a tabela de alocacoes (allocations) via postos (posts)
-        para encontrar funcionarios ativos vinculados ao cliente GED.
-
-        Primeiro tenta buscar postos com client_id correspondente.
-        Se nao encontrar, retorna lista vazia.
+        Como posts.client_id e posts.contract_id sao NULL no banco atual,
+        usa matching por nome normalizado: normaliza o nome do cliente GED
+        e compara com nomes dos postos ativos, extraindo palavras significativas.
 
         Args:
             client_id: UUID do cliente GED.
@@ -520,49 +519,88 @@ class KitBuilderService:
         Returns:
             Lista de employee_ids (UUIDs como string).
         """
+        # Palavras comuns que nao diferenciam clientes
+        STOP_WORDS = {
+            "CONDOMINIO",
+            "CONDOMINIUM",
+            "RESIDENCIAL",
+            "EDIFICIO",
+            "PREDIAL",
+            "DO",
+            "DA",
+            "DE",
+            "DOS",
+            "DAS",
+            "E",
+            "O",
+            "A",
+            "EM",
+        }
+
+        def normalize(s: str) -> str:
+            """Uppercase + remove acentos."""
+            nfkd = unicodedata.normalize("NFKD", (s or "").upper())
+            return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+        def sig_words(s: str) -> set[str]:
+            """Palavras significativas (sem stop words, min 3 chars)."""
+            return {w for w in normalize(s).split() if w not in STOP_WORDS and len(w) >= 3}
+
         try:
-            from modules.operacional.models.allocation import Allocation, AllocationStatus
-            from modules.operacional.models.post import Post
-
-            # Buscar postos vinculados ao cliente
-            posts_result = await self.db.execute(
-                select(Post.id).where(
-                    Post.client_id == str(client_id),
-                    Post.status == "active",
-                )
-            )
-            post_ids = [str(row[0]) for row in posts_result.all()]
-
-            if not post_ids:
-                logger.debug("Nenhum posto encontrado para cliente %s", client_id)
+            # Buscar nome do cliente GED
+            client_result = await self.db.execute(select(GedClient.name).where(GedClient.id == client_id))
+            client_row = client_result.first()
+            if not client_row:
                 return []
 
-            # Buscar funcionarios alocados ativos nesses postos
-            alloc_result = await self.db.execute(
-                select(Allocation.employee_id)
-                .where(
-                    Allocation.post_id.in_(post_ids),
-                    Allocation.status == AllocationStatus.ACTIVE.value,
-                    Allocation.is_active.is_(True),
-                )
-                .distinct()
+            ged_sig = sig_words(client_row[0])
+            if not ged_sig:
+                return []
+
+            # Buscar todos os postos ativos
+            posts_result = await self.db.execute(
+                text("SELECT id::text, name FROM posts WHERE status = 'active' AND is_active = true")
             )
-            employee_ids = [str(row[0]) for row in alloc_result.all()]
+            posts = posts_result.all()
+
+            # Matching por palavras significativas em comum
+            matching_post_ids: list[str] = []
+            for post_id, post_name in posts:
+                post_sig = sig_words(post_name or "")
+                # Aceita se todas as palavras do posto existem no cliente
+                # OU se todas as palavras do cliente existem no posto
+                if post_sig and (post_sig <= ged_sig or ged_sig <= post_sig):
+                    matching_post_ids.append(post_id)
+
+            if not matching_post_ids:
+                logger.debug(
+                    "Nenhum posto encontrado por nome para cliente %s (sig_words=%s)",
+                    client_id,
+                    ged_sig,
+                )
+                return []
+
+            # Buscar funcionarios alocados nesses postos
+            alloc_result = await self.db.execute(
+                text("""
+                    SELECT DISTINCT employee_id::text
+                    FROM allocations
+                    WHERE post_id = ANY(:post_ids)
+                      AND status = 'active'
+                      AND is_active = true
+                """),
+                {"post_ids": matching_post_ids},
+            )
+            employee_ids = [row[0] for row in alloc_result.all()]
 
             logger.debug(
-                "Cliente %s: %d postos, %d funcionarios alocados",
+                "Cliente %s: %d postos por nome, %d funcionarios",
                 client_id,
-                len(post_ids),
+                len(matching_post_ids),
                 len(employee_ids),
             )
             return employee_ids
 
-        except ImportError:
-            logger.warning(
-                "Modulos operacional nao disponiveis para buscar funcionarios do cliente %s",
-                client_id,
-            )
-            return []
         except Exception as e:
             logger.error("Erro ao buscar funcionarios do cliente %s: %s", client_id, e)
             return []
