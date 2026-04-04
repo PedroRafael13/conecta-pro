@@ -31,10 +31,10 @@ const getInitialPermission = (): NotificationPermission => {
 };
 
 export function usePushNotifications(): UsePushNotificationsReturn {
-  // Use lazy initialization to avoid setState in effect
-  const [isSupported] = useState<boolean>(checkSupport);
+  // Start with server-safe defaults — browser values resolved in useEffect to avoid hydration mismatch
+  const [isSupported, setIsSupported] = useState<boolean>(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>(getInitialPermission);
+  const [permission, setPermission] = useState<NotificationPermission>('default');
   const { subscribeToPush } = useNotifications();
 
   // Declarar checkSubscription antes do useEffect usando useCallback
@@ -45,6 +45,15 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       setIsSubscribed(!!subscription);
     } catch (error) {
       console.error('Erro ao verificar subscrição:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Resolve browser support and permission only client-side (post-hydration)
+    const supported = checkSupport();
+    setIsSupported(supported);
+    if (supported) {
+      setPermission(Notification.permission);
     }
   }, []);
 
