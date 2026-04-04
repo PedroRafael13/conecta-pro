@@ -11,10 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const API_BASE = '/api/v1/people-management/hr';
 
 function getAuthHeaders() {
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('access_token') || localStorage.getItem('token')
-      : null;
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      token = localStorage.getItem('access_token') || localStorage.getItem('token');
+    } catch {
+      token = null;
+    }
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

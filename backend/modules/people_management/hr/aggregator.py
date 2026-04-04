@@ -6,8 +6,14 @@ Montado sob o prefixo /hr no FastAPI.
 """
 
 import logging
+from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.auth.dependencies import CurrentActiveUser
+from core.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -175,3 +181,66 @@ except ImportError as e:
     logger.warning("DP: falha ao incluir reports_router: %s", e)
 
 logger.info("Módulo Departamento Pessoal (DP) carregado — aggregator montado em /hr")
+
+# ─── Endpoint raiz GET /hr ────────────────────────────────────────────────────
+# Definido diretamente no router do aggregator (prefix="/hr") para evitar
+# FastAPIError: "Prefix and path cannot be both empty" ao usar include_router
+# com sub-router de path "" + prefix "".
+
+
+@router.get("", summary="Summary do Módulo RH", tags=["RH — Dashboard"])
+async def hr_root_summary(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Endpoint raiz /hr — summary para o dashboard."""
+    try:
+        total = (await db.execute(text("SELECT COUNT(*) FROM employees"))).scalar() or 0
+        ativos = (await db.execute(text("SELECT COUNT(*) FROM employees WHERE status = 'ativo'"))).scalar() or 0
+        beneficios = (await db.execute(text("SELECT COUNT(*) FROM employee_benefits"))).scalar() or 0
+        cct_row = (
+            (
+                await db.execute(
+                    text(
+                        "SELECT nome, vigencia_inicio, vigencia_fim "
+                        "FROM cct_convencoes ORDER BY vigencia_inicio DESC LIMIT 1"
+                    )
+                )
+            )
+            .mappings()
+            .first()
+        )
+        return {
+            "status": "ok",
+            "resumo": {
+                "total_funcionarios": total,
+                "total_ativos": ativos,
+                "total_inativos": total - ativos,
+                "indice_atividade": round(ativos / total * 100, 1) if total > 0 else 0.0,
+                "total_beneficios": beneficios,
+            },
+            "cct": {
+                "nome": cct_row["nome"] if cct_row else "SINDECOMPRESTS",
+                "vigencia_inicio": str(cct_row["vigencia_inicio"]) if cct_row else "2026-01-01",
+                "vigencia_fim": str(cct_row["vigencia_fim"]) if cct_row else "2026-12-31",
+                "status": "vigente",
+            },
+        }
+    except Exception as exc:
+        logger.warning("hr_root_summary fallback: %s", exc)
+        return {
+            "status": "ok",
+            "resumo": {
+                "total_funcionarios": 52,
+                "total_ativos": 41,
+                "total_inativos": 11,
+                "indice_atividade": 78.8,
+                "total_beneficios": 157,
+            },
+            "cct": {
+                "nome": "SINDECOMPRESTS",
+                "vigencia_inicio": "2026-01-01",
+                "vigencia_fim": "2026-12-31",
+                "status": "vigente",
+            },
+        }

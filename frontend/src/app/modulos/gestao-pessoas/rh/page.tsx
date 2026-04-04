@@ -12,10 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const API_BASE = '/api/v1/people-management/hr';
 
 function getAuthHeaders() {
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('access_token') || localStorage.getItem('token')
-      : null;
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      token = localStorage.getItem('access_token') || localStorage.getItem('token');
+    } catch {
+      token = null;
+    }
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -125,7 +129,7 @@ export default function DashboardRH() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB] p-6">
+    <div className="min-h-screen bg-[#F8F9FB] p-6 overflow-x-hidden">
       {/* Cabeçalho */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-[#1E3A5F]">Recursos Humanos</h1>
@@ -302,7 +306,7 @@ export default function DashboardRH() {
               <Link
                 key={s.href}
                 href={`/modulos/gestao-pessoas/${s.href}`}
-                className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col items-center gap-2 hover:border-[#F97316] hover:shadow-md transition-all text-center group"
+                className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col items-center gap-2 hover:border-[#F97316] hover:shadow-md transition-all text-center group min-h-0"
               >
                 <div className="w-10 h-10 bg-gray-50 group-hover:bg-orange-50 rounded-lg flex items-center justify-center transition-colors">
                   <Icon className="w-5 h-5 text-gray-500 group-hover:text-[#F97316] transition-colors" />
