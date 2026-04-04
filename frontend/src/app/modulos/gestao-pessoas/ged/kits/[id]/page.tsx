@@ -4,22 +4,22 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   Loader2, ArrowLeft, Send, CheckCircle, XCircle,
-  Download, FileText, Building2, User, Eye, Calendar,
+  Download, FileText, Building2, User, Eye, Calendar, AlertCircle,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 const API_BASE = '/api/v1/ged';
 
 function getAuthHeaders() {
-  if (typeof window === 'undefined') return { 'Content-Type': 'application/json' } as HeadersInit;
-  const token = localStorage.getItem('access_token') || localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/login';
-    return { 'Content-Type': 'application/json' } as HeadersInit;
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  } catch {
+    token = null;
   }
   return {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   } as HeadersInit;
 }
 
@@ -53,6 +53,21 @@ interface KitDetail {
   documents_signed: number;
   documents: KitDocument[];
   created_at: string;
+}
+
+interface ChecklistItem {
+  tipo: string;
+  categoria: string;
+  status: 'pronto' | 'pendente';
+  nome?: string;
+}
+
+interface Checklist {
+  total: number;
+  prontos: number;
+  pendentes: number;
+  percentual: number;
+  checklist: ChecklistItem[];
 }
 
 const statusColors: Record<string, string> = {
@@ -122,6 +137,7 @@ export default function KitDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'employee' | 'company'>('company');
   const [exporting, setExporting] = useState(false);
+  const [checklist, setChecklist] = useState<Checklist | null>(null);
 
   useEffect(() => { if (kitId) fetchKit(); }, [kitId]);
 
@@ -130,7 +146,11 @@ export default function KitDetailPage() {
     try {
       const res = await fetch(`${API_BASE}/kits/${kitId}`, { headers: getAuthHeaders() });
       if (res.ok) {
-        setKit(await res.json());
+        const data = await res.json();
+        setKit(data);
+        if (!data.documents || data.documents.length === 0) {
+          fetchChecklist();
+        }
       } else {
         showToast('Erro ao carregar kit', 'error');
       }
@@ -138,6 +158,15 @@ export default function KitDetailPage() {
       showToast('Erro de conexão', 'error');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchChecklist() {
+    try {
+      const res = await fetch(`/api/v1/ged/kit-real/${kitId}/checklist`, { headers: getAuthHeaders() });
+      if (res.ok) setChecklist(await res.json());
+    } catch {
+      // checklist é opcional — falha silenciosa
     }
   }
 
@@ -289,53 +318,85 @@ export default function KitDetailPage() {
         </button>
       </div>
 
-      {/* Tabela de documentos */}
-      <Card className="border border-gray-200">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Nome</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Tipo</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Assinado</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Origem</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Data</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeDocs.length === 0 ? (
-                  <tr><td colSpan={6} className="py-8 text-center text-gray-400">Nenhum documento nesta categoria</td></tr>
-                ) : (
-                  activeDocs.map((doc) => (
-                    <tr key={doc.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900 max-w-[250px] truncate" title={doc.name}>{doc.name}</td>
-                      <td className="py-3 px-4 text-gray-600 text-xs">
-                        <span className="inline-flex px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                          {typeLabels[doc.document_type] || doc.document_type?.replace(/_/g, ' ') || '—'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {doc.signed ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-gray-300" />}
-                      </td>
-                      <td className="py-3 px-4 text-gray-600 text-xs">{originLabels[doc.origin] || doc.origin}</td>
-                      <td className="py-3 px-4 text-gray-500 text-xs">
-                        {doc.created_at ? new Date(doc.created_at).toLocaleDateString('pt-BR') : '—'}
-                      </td>
-                      <td className="py-3 px-4">
-                        <button onClick={() => handleDownloadDoc(doc)} className="p-1 rounded hover:bg-gray-100" title="Baixar">
-                          <Download className="h-4 w-4 text-gray-500" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabela de documentos ou checklist de montagem */}
+      {(kit.documents || []).length === 0 && checklist ? (
+        <Card className="border border-gray-200">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-4 text-amber-700 bg-amber-50 rounded-lg px-4 py-3">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span className="text-sm font-medium">
+                Kit em montagem — {checklist.prontos}/{checklist.total} documentos coletados ({checklist.percentual}%)
+              </span>
+            </div>
+            <div className="space-y-2">
+              {checklist.checklist.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                  <div className="flex items-center gap-3">
+                    {item.status === 'pronto' ? (
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                    )}
+                    <span className="text-sm text-gray-700">
+                      {typeLabels[item.tipo] || item.nome || item.tipo?.replace(/_/g, ' ') || '—'}
+                    </span>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.status === 'pronto' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {item.status === 'pronto' ? 'Pronto' : 'Pendente'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border border-gray-200">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Nome</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Tipo</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Assinado</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Origem</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Data</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeDocs.length === 0 ? (
+                    <tr><td colSpan={6} className="py-8 text-center text-gray-400">Nenhum documento nesta categoria</td></tr>
+                  ) : (
+                    activeDocs.map((doc) => (
+                      <tr key={doc.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium text-gray-900 max-w-[250px] truncate" title={doc.name}>{doc.name}</td>
+                        <td className="py-3 px-4 text-gray-600 text-xs">
+                          <span className="inline-flex px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                            {typeLabels[doc.document_type] || doc.document_type?.replace(/_/g, ' ') || '—'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {doc.signed ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-gray-300" />}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 text-xs">{originLabels[doc.origin] || doc.origin}</td>
+                        <td className="py-3 px-4 text-gray-500 text-xs">
+                          {doc.created_at ? new Date(doc.created_at).toLocaleDateString('pt-BR') : '—'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <button onClick={() => handleDownloadDoc(doc)} className="p-1 rounded hover:bg-gray-100" title="Baixar">
+                            <Download className="h-4 w-4 text-gray-500" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

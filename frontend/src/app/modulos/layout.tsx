@@ -158,7 +158,7 @@ export default function ModulosLayout({
 
   return (
     <WebSocketProvider token={wsToken} apiUrl={apiUrl}>
-      <div className="min-h-screen flex bg-[hsl(var(--background))]">
+      <div className="h-screen flex bg-[hsl(var(--background))] overflow-hidden">
         {/* Sidebar - Desktop */}
         <aside
           className={cn(
@@ -448,7 +448,7 @@ export default function ModulosLayout({
         {/* Main content */}
         <div
           className={cn(
-            'flex-1 flex flex-col min-h-screen transition-all duration-300',
+            'flex-1 flex flex-col transition-all duration-300',
             sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'
           )}
         >
@@ -493,7 +493,7 @@ export default function ModulosLayout({
           </header>
 
           {/* Page content */}
-          <main className="flex-1 p-4 lg:p-6">
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             {children}
           </main>
         </div>

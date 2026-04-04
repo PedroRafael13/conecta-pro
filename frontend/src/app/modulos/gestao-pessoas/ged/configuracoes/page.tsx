@@ -100,11 +100,11 @@ export default function ConfiguracoesPage() {
       if (driveRes.ok) setDriveConfig(await driveRes.json());
       if (templatesRes.ok) {
         const data = await templatesRes.json();
-        setEmailTemplates(Array.isArray(data) ? data : data.items || []);
+        setEmailTemplates(Array.isArray(data) ? data : data.templates || data.items || []);
       }
       if (typesRes.ok) {
         const data = await typesRes.json();
-        setDocumentTypes(Array.isArray(data) ? data : data.items || []);
+        setDocumentTypes(Array.isArray(data) ? data : data.tipos || data.types || data.items || []);
       }
       if (scheduleRes.ok) setSchedule(await scheduleRes.json());
     } catch (error) {
