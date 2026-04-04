@@ -260,7 +260,7 @@ export default function BeneficiosPage() {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao salvar beneficio', { duration: 5000 });
       }
-    } catch { toast.error('Erro de conexao', { duration: 5000 }); } finally { setSaving(false); }
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); } finally { setSaving(false); }
   };
 
   const handleCancel = async (id: string) => {
@@ -274,12 +274,12 @@ export default function BeneficiosPage() {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao cancelar beneficio', { duration: 5000 });
       }
-    } catch { toast.error('Erro de conexao', { duration: 5000 }); }
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); }
   };
 
   return (
     <div className="space-y-6 pb-28">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/modulos/dp')}>
             <ArrowLeft className="h-4 w-4" />
@@ -292,7 +292,6 @@ export default function BeneficiosPage() {
             <p className="text-muted-foreground">Benefícios oferecidos aos colaboradores</p>
           </div>
         </div>
-        {/* BUG-08: flex-shrink-0 + whitespace-nowrap evitam corte do botão */}
         <div className="flex gap-2 flex-shrink-0">
           <Button type="button" variant="outline" size="sm" onClick={() => { setFiltroStatus('todos'); setFiltroType('todos'); }}>
             <Filter className="h-4 w-4 mr-1" /> Todos
@@ -441,7 +440,7 @@ export default function BeneficiosPage() {
                     <div><span className="text-muted-foreground">Custo total:</span><br /><span className="font-bold text-green-700">{fmt(employeeTotal.grand_total ?? employeeTotal.total ?? ((employeeTotal.total_company || 0) + (employeeTotal.total_employee || 0)))}</span></div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground mt-2">Nao foi possivel calcular o total</p>
+                  <p className="text-sm text-muted-foreground mt-2">Não foi possível calcular o total</p>
                 )}
               </CardContent>
             </Card>

@@ -492,7 +492,7 @@ export default function FuncionariosPage() {
               {activeTab === 'deducoes' && (
                 <div className="col-span-full space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Deduções do funcionário (consignados, pensoes, emprestimos)</p>
+                    <p className="text-sm font-medium">Deduções do funcionário (consignados, pensões, empréstimos)</p>
                     <Button size="sm" variant="outline" onClick={() => setShowDeductionForm(true)}>
                       <Plus className="h-4 w-4 mr-1" /> Nova Dedução
                     </Button>
@@ -517,8 +517,8 @@ export default function FuncionariosPage() {
                           <label className="text-sm font-medium mb-1 block">Base Cálculo</label>
                           <select value={deductionForm.base_calculo} onChange={e => setDeductionForm(p => ({ ...p, base_calculo: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
                             <option value="fixo">Valor Fixo</option>
-                            <option value="bruto">% Salario Bruto</option>
-                            <option value="liquido">% Salario Liquido</option>
+                            <option value="bruto">% Salário Bruto</option>
+                            <option value="liquido">% Salário Líquido</option>
                           </select>
                         </div>
                         <div>
@@ -593,7 +593,7 @@ export default function FuncionariosPage() {
                         {profileData.benefits_count != null && <div><span className="text-muted-foreground">Benefícios ativos:</span><br /><span className="font-bold">{profileData.benefits_count}</span></div>}
                         {profileData.contract_type && <div><span className="text-muted-foreground">Tipo contrato:</span><br /><span className="font-bold">{profileData.contract_type}</span></div>}
                         {profileData.contract_start_date && <div><span className="text-muted-foreground">Inicio contrato:</span><br /><span className="font-bold">{profileData.contract_start_date}</span></div>}
-                        {profileData.base_salary != null && <div><span className="text-muted-foreground">Salario base:</span><br /><span className="font-bold">R$ {Number(profileData.base_salary).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>}
+                        {profileData.base_salary != null && <div><span className="text-muted-foreground">Salário base:</span><br /><span className="font-bold">R$ {Number(profileData.base_salary).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>}
                       </div>
                     </div>
                   )}

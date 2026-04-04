@@ -109,13 +109,11 @@ export function ThemeProvider({
   const setTheme = (newTheme: Theme) => {
     try {
       localStorage.setItem(storageKey, newTheme);
-      setThemeState(newTheme);
-      applyTheme(newTheme);
-
-      // TODO: Sincronizar com backend (preferências do usuário)
-      // userPreferencesService.update({ theme: newTheme });
-    } catch (error) {
+    } catch {
+      // storage unavailable (private mode, iOS WebView) — continue anyway
     }
+    setThemeState(newTheme);
+    applyTheme(newTheme);
   };
 
   return (

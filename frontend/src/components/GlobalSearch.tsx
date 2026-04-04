@@ -46,8 +46,9 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const results = useMemo(() => data?.results || [], [data?.results]);
   const tookMs = data?.took_ms || 0;
 
-  // Navegação com teclado
+  // Navegação com teclado — usa ordem visual dos grupos
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // orderedResults é calculado no render; usa results.length como proxy seguro
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -61,9 +62,10 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         break;
       case 'Enter':
         e.preventDefault();
-        if (results[selectedIndex]) {
-          router.push(results[selectedIndex].url);
-          onClose();
+        // Abrir via onResultClick para usar ordem visual
+        if (selectedIndex >= 0) {
+          const el = document.querySelector<HTMLButtonElement>('[data-search-index="' + selectedIndex + '"]');
+          el?.click();
         }
         break;
       case 'Escape':
@@ -71,7 +73,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         onClose();
         break;
     }
-  }, [results, selectedIndex, router, onClose]);
+  }, [results.length, selectedIndex, onClose]);
 
   // Reset quando abrir/fechar - usando queueMicrotask
   useEffect(() => {
@@ -92,6 +94,9 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
       [result.type]: [...(acc[result.type] || []), result],
     };
   }, {} as Record<string, SearchResult[]>);
+
+  // Lista ordenada visualmente (mesma ordem do render agrupado)
+  const orderedResults = Object.values(groupedResults).flat();
 
   return (
     <div
@@ -148,17 +153,18 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                 <span className="text-xs opacity-60">({items.length})</span>
               </div>
               {items.map((result) => {
-                const globalIndex = results.indexOf(result);
-                const isSelected = globalIndex === selectedIndex;
+                const visualIndex = orderedResults.indexOf(result);
+                const isSelected = visualIndex === selectedIndex;
 
                 return (
                   <button
                     key={result.id}
+                    data-search-index={visualIndex}
                     onClick={() => {
                       router.push(result.url);
                       onClose();
                     }}
-                    onMouseEnter={() => setSelectedIndex(globalIndex)}
+                    onMouseEnter={() => setSelectedIndex(visualIndex)}
                     className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
                       isSelected
                         ? 'bg-accent text-accent-foreground'

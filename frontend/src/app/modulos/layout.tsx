@@ -158,7 +158,7 @@ export default function ModulosLayout({
 
   return (
     <WebSocketProvider token={wsToken} apiUrl={apiUrl}>
-      <div className="h-screen flex bg-[hsl(var(--background))] overflow-hidden">
+      <div className="min-h-screen flex bg-[hsl(var(--background))]">
         {/* Sidebar - Desktop */}
         <aside
           className={cn(

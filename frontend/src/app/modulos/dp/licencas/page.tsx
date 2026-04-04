@@ -41,8 +41,8 @@ const typeConfig: Record<string, string> = {
   bereavement: 'Nojo (Obito)',
   casamento: 'Gala (Casamento)',
   marriage: 'Gala (Casamento)',
-  jury_duty: 'Servico do Juri',
-  military: 'Servico Militar',
+  jury_duty: 'Serviço do Júri',
+  military: 'Serviço Militar',
   other: 'Outro',
 };
 
@@ -53,8 +53,8 @@ const leaveTypeOptions = [
   { value: 'acidente', label: 'Acidente de Trabalho' },
   { value: 'obito', label: 'Nojo (Obito)' },
   { value: 'casamento', label: 'Gala (Casamento)' },
-  { value: 'jury_duty', label: 'Servico do Juri' },
-  { value: 'military', label: 'Servico Militar' },
+  { value: 'jury_duty', label: 'Serviço do Júri' },
+  { value: 'military', label: 'Serviço Militar' },
   { value: 'other', label: 'Outro' },
 ];
 
@@ -177,7 +177,7 @@ export default function LicencasPage() {
 
   const handleCreate = async () => {
     const errors: Record<string, string> = {};
-    if (!formData.employee_id) errors.employee_id = 'Colaborador e obrigatorio';
+    if (!formData.employee_id) errors.employee_id = 'Colaborador é obrigatório';
     if (!formData.start_date) errors.start_date = 'Data inicio e obrigatoria';
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -203,9 +203,9 @@ export default function LicencasPage() {
         toast.success('Licença registrada com sucesso!', { duration: 4000 });
       } else {
         const err = await res.json().catch(() => null);
-        toast.error(err?.detail || 'Erro ao registrar licenca', { duration: 5000 });
+        toast.error(err?.detail || 'Erro ao registrar licença', { duration: 5000 });
       }
-    } catch { toast.error('Erro de conexao', { duration: 5000 }); } finally { setSaving(false); }
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); } finally { setSaving(false); }
   };
 
   return (
@@ -220,7 +220,7 @@ export default function LicencasPage() {
               <CalendarDays className="h-6 w-6" />
               Licenças e Afastamentos
             </h1>
-            <p className="text-muted-foreground">Controle de licencas e afastamentos</p>
+            <p className="text-muted-foreground">Controle de licenças e afastamentos</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -327,9 +327,9 @@ export default function LicencasPage() {
           ) : filteredData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Inbox className="h-12 w-12 mb-3" />
-              <p className="font-medium">Nenhuma licenca encontrada</p>
+              <p className="font-medium">Nenhuma licença encontrada</p>
               <p className="text-sm text-muted-foreground mt-1">
-                {searchTerm ? 'Tente outra busca.' : 'As licencas aparecerao aqui quando registradas.'}
+                {searchTerm ? 'Tente outra busca.' : 'As licenças aparecerão aqui quando registradas.'}
               </p>
             </div>
           ) : (

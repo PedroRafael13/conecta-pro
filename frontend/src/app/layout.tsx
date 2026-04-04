@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from '@/contexts/providers';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
 import { BartoloClientWrapper } from '@/components/BartoloClientWrapper';
 import '@/styles/globals.css';
 
@@ -31,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -50,6 +51,7 @@ export default function RootLayout({
             {children}
           </main>
           <Toaster />
+          <SonnerToaster richColors position="top-right" />
           <BartoloClientWrapper />
         </Providers>
       </body>

@@ -174,7 +174,7 @@ export default function ESocialPage() {
         toast.error(err?.detail || 'Erro ao enviar eventos', { duration: 5000 });
       }
     } catch {
-      toast.error('Erro de conexao ao enviar eventos', { duration: 5000 });
+      toast.error('Erro de conexão ao enviar eventos', { duration: 5000 });
     } finally {
       setSending(false);
     }

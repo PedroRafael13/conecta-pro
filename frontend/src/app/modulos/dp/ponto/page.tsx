@@ -153,7 +153,7 @@ export default function PontoPage() {
       }
     } catch (err) {
       console.error('handleClockIn:', err);
-      toast.error('Erro de conexao', { duration: 5000 });
+      toast.error('Erro de conexão', { duration: 5000 });
     }
   };
 
@@ -172,7 +172,7 @@ export default function PontoPage() {
       }
     } catch (err) {
       console.error('handleClockOut:', err);
-      toast.error('Erro de conexao', { duration: 5000 });
+      toast.error('Erro de conexão', { duration: 5000 });
     }
   };
 
@@ -210,7 +210,7 @@ export default function PontoPage() {
       }
     } catch (err) {
       console.error('handleManualEntry:', err);
-      toast.error('Erro de conexao', { duration: 5000 });
+      toast.error('Erro de conexão', { duration: 5000 });
     } finally {
       setSaving(false);
     }
@@ -293,7 +293,7 @@ export default function PontoPage() {
               className="rounded-r-none"
               onClick={() => setViewMode('daily')}
             >
-              Diario
+              Diário
             </Button>
             <Button
               type="button"
@@ -468,7 +468,7 @@ export default function PontoPage() {
                   <Inbox className="h-12 w-12 mb-3" />
                   <p className="font-medium">Nenhum registro de ponto encontrado</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {searchTerm ? 'Tente outra busca.' : 'Os registros aparecerao conforme os colaboradores registram ponto.'}
+                    {searchTerm ? 'Tente outra busca.' : 'Os registros aparecerão conforme os colaboradores registram ponto.'}
                   </p>
                 </div>
               ) : (
