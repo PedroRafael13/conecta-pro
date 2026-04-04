@@ -27,6 +27,7 @@ interface Cargo {
   salario_base?: number;
   adicional_insalubridade_percentual?: number;
   adicional_periculosidade_percentual?: number;
+  adicional_noturno_percentual?: number;
   jornada_semanal_horas?: number;
   horas_extras_percentual?: number;
 }
@@ -153,11 +154,11 @@ export default function PageCargos() {
                     </p>
                   </div>
                 )}
-                {c.horas_extras_percentual != null && (
+                {(c.adicional_noturno_percentual ?? c.horas_extras_percentual) != null && (
                   <div className="bg-blue-50 rounded px-2 py-1.5">
-                    <p className="text-xs text-gray-500">H. Extra</p>
+                    <p className="text-xs text-gray-500">Noturno</p>
                     <p className="text-sm font-semibold text-blue-700">
-                      {c.horas_extras_percentual}%
+                      {c.adicional_noturno_percentual ?? c.horas_extras_percentual}%
                     </p>
                   </div>
                 )}

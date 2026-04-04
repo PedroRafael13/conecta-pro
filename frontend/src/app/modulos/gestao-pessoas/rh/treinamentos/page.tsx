@@ -26,6 +26,8 @@ interface Treinamento {
   description?: string;
   descricao?: string;
   status?: string;
+  is_active?: boolean;
+  is_mandatory?: boolean;
   carga_horaria?: number;
   duration_hours?: number;
   total_inscritos?: number;
@@ -33,7 +35,9 @@ interface Treinamento {
   completed_count?: number;
   total_concluintes?: number;
   instructor?: string;
+  instructor_name?: string;
   instrutor?: string;
+  provider?: string;
   start_date?: string;
   end_date?: string;
   category?: string;
@@ -72,8 +76,13 @@ export default function PageTreinamentos() {
   const normHoras = (t: Treinamento) => t.carga_horaria ?? t.duration_hours;
   const normInscritos = (t: Treinamento) => t.total_inscritos ?? t.enrolled_count ?? 0;
   const normConcluintes = (t: Treinamento) => t.total_concluintes ?? t.completed_count ?? 0;
-  const normStatus = (t: Treinamento) => t.status ?? 'ativo';
-  const normInstrutor = (t: Treinamento) => t.instructor ?? t.instrutor;
+  const normStatus = (t: Treinamento) => {
+    if (t.status) return t.status;
+    if (t.is_active !== undefined) return t.is_active ? 'ativo' : 'inativo';
+    return 'ativo';
+  };
+  const normInstrutor = (t: Treinamento) =>
+    t.instructor_name ?? t.instructor ?? t.instrutor ?? t.provider;
 
   const ativos = treinamentos.filter(
     (t) => normStatus(t) === 'active' || normStatus(t) === 'ativo'

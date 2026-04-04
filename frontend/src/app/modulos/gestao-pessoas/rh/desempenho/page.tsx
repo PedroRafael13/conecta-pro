@@ -24,16 +24,21 @@ interface Avaliacao {
   employee_name?: string;
   funcionario_nome?: string;
   review_date?: string;
+  review_period_start?: string;
+  review_period_end?: string;
+  completed_at?: string;
   data_avaliacao?: string;
+  reviewer_id?: string;
   reviewer_name?: string;
   avaliador_nome?: string;
   score?: number;
+  overall_score?: number;
   nota?: number;
+  type?: string;
   status?: string;
   period?: string;
   periodo?: string;
-  comments?: string;
-  observacoes?: string;
+  scores_breakdown?: Record<string, number>;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -80,9 +85,19 @@ export default function PageDesempenho() {
       .finally(() => setLoading(false));
   }, []);
 
-  const normNome = (a: Avaliacao) => a.employee_name ?? a.funcionario_nome ?? '—';
-  const normData = (a: Avaliacao) => {
-    const d = a.review_date ?? a.data_avaliacao;
+  const normNome = (a: Avaliacao) =>
+    a.employee_name ?? a.funcionario_nome ?? (a.employee_id ? `ID: ${a.employee_id.slice(0, 8)}` : '—');
+  const normPeriodo = (a: Avaliacao) => {
+    if (a.review_period_start && a.review_period_end) {
+      try {
+        const ini = new Date(a.review_period_start).toLocaleDateString('pt-BR');
+        const fim = new Date(a.review_period_end).toLocaleDateString('pt-BR');
+        return `${ini} – ${fim}`;
+      } catch {
+        return `${a.review_period_start} – ${a.review_period_end}`;
+      }
+    }
+    const d = a.completed_at ?? a.review_date ?? a.data_avaliacao;
     if (!d) return '—';
     try {
       return new Date(d).toLocaleDateString('pt-BR');
@@ -90,8 +105,9 @@ export default function PageDesempenho() {
       return d;
     }
   };
-  const normAvaliador = (a: Avaliacao) => a.reviewer_name ?? a.avaliador_nome ?? '—';
-  const normScore = (a: Avaliacao) => a.score ?? a.nota ?? 0;
+  const normAvaliador = (a: Avaliacao) =>
+    a.reviewer_name ?? a.avaliador_nome ?? (a.reviewer_id ? `ID: ${a.reviewer_id.slice(0, 8)}` : '—');
+  const normScore = (a: Avaliacao) => a.overall_score ?? a.score ?? a.nota ?? 0;
   const normStatus = (a: Avaliacao) => a.status ?? 'pendente';
 
   const filtradas = filtroStatus
@@ -214,7 +230,7 @@ export default function PageDesempenho() {
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="text-left py-3 px-4 text-gray-500 font-medium">Funcionário</th>
-                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Data</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Período</th>
                   <th className="text-left py-3 px-4 text-gray-500 font-medium">Avaliador</th>
                   <th className="text-left py-3 px-4 text-gray-500 font-medium">Nota</th>
                   <th className="text-center py-3 px-4 text-gray-500 font-medium">Status</th>
@@ -232,7 +248,7 @@ export default function PageDesempenho() {
                       <td className="py-3 px-4 font-medium text-gray-900">
                         {normNome(a)}
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{normData(a)}</td>
+                      <td className="py-3 px-4 text-gray-600 text-xs">{normPeriodo(a)}</td>
                       <td className="py-3 px-4 text-gray-600">{normAvaliador(a)}</td>
                       <td className="py-3 px-4">
                         {score > 0 ? (

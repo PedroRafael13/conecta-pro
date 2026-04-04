@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Users, UserCheck, UserX, FileText, TrendingUp,
@@ -49,7 +48,6 @@ interface CCTResumo {
 }
 
 export default function DashboardRH() {
-  const router = useRouter();
   const [resumo, setResumo] = useState<HeadcountResumo | null>(null);
   const [cargos, setCargos] = useState<CargoItem[]>([]);
   const [cct, setCCT] = useState<CCTResumo | null>(null);
