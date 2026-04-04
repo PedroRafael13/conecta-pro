@@ -39,10 +39,12 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 }
 
 function getAuthHeaders(json = true) {
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('access_token') || localStorage.getItem('token')
-      : null;
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  } catch {
+    token = null;
+  }
   const headers: Record<string, string> = {};
   if (json) headers['Content-Type'] = 'application/json';
   if (token) headers['Authorization'] = `Bearer ${token}`;

@@ -287,7 +287,7 @@ export default function GEDDashboardPage() {
         </CardContent>
       </Card>
       {showMontarConfirm && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full">
             <h3 className="text-lg font-bold text-[#1E3A5F] mb-2">Confirmar Montagem de Kits</h3>
             <p className="text-gray-600 mb-4 text-sm">

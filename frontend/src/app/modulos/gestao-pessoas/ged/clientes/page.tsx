@@ -26,7 +26,12 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 }
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  } catch {
+    token = null;
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -309,7 +314,7 @@ export default function GedClientesPage() {
       </Card>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold">
