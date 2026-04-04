@@ -64,7 +64,7 @@ export default function AdmissaoDetalhePage() {
         tipo_contrato: '1',
       };
       if (!payload.cpf || !payload.nome || !payload.data_admissao || !payload.salario) {
-        toast.error('Dados insuficientes para gerar S-2200 (CPF, nome, data admissao e salario sao obrigatorios)', { duration: 5000 });
+        toast.error('Dados insuficientes para gerar S-2200 (CPF, nome, data de admissão e salário são obrigatórios)', { duration: 5000 });
         setGeneratingEsocial(false);
         return;
       }
@@ -89,7 +89,7 @@ export default function AdmissaoDetalhePage() {
         toast.error(err?.detail || 'Erro ao gerar S-2200', { duration: 5000 });
       }
     } catch {
-      toast.error('Erro de conexao ao gerar S-2200', { duration: 5000 });
+      toast.error('Erro de conexão ao gerar S-2200', { duration: 5000 });
     } finally {
       setGeneratingEsocial(false);
     }

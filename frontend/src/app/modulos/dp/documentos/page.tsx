@@ -266,7 +266,7 @@ export default function DocumentosPage() {
             <div className="flex gap-2 mt-4">
               <Button type="button" size="sm" disabled={saving} onClick={async () => {
                 const errors: Record<string, string> = {};
-                if (!formData.employee_id) errors.employee_id = 'Colaborador e obrigatorio';
+                if (!formData.employee_id) errors.employee_id = 'Colaborador é obrigatório';
                 if (!arquivo) errors.arquivo = 'Selecione um arquivo';
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados', { duration: 5000 }); return; }
                 setSaving(true);
