@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Users, ArrowLeft, Search, Loader2, AlertTriangle, CheckCircle2, Edit, Save, X,
   ChevronLeft, ChevronRight, User, FileText, MapPin, Building2, CreditCard, Shield, RefreshCw,
@@ -65,6 +65,7 @@ type Tab = 'pessoal' | 'documentos' | 'endereco' | 'profissional' | 'bancario' |
 
 export default function FuncionariosPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -101,7 +102,7 @@ export default function FuncionariosPage() {
   const handleCreateDeduction = async () => {
     if (!editingId) return;
     if (!deductionForm.descricao || !deductionForm.data_inicio) {
-      toast.error('Descrição e data de inicio sao obrigatorios', { duration: 5000 });
+      toast.error('Descrição e data de início são obrigatórios', { duration: 5000 });
       return;
     }
     setDeductionSaving(true);
@@ -126,9 +127,9 @@ export default function FuncionariosPage() {
         await loadDeductions(editingId);
       } else {
         const err = await res.json().catch(() => null);
-        toast.error(err?.detail || 'Erro ao criar deducao', { duration: 5000 });
+        toast.error(err?.detail || 'Erro ao criar dedução', { duration: 5000 });
       }
-    } catch { toast.error('Erro de conexao', { duration: 5000 }); }
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); }
     finally { setDeductionSaving(false); }
   };
 
@@ -176,6 +177,16 @@ export default function FuncionariosPage() {
   }, []);
 
   useEffect(() => { loadEmployees(); }, [loadEmployees]);
+
+  // Abrir funcionário via query param ?funcionario=id (vindo de /funcionarios/[id])
+  useEffect(() => {
+    const funcionarioId = searchParams?.get('funcionario');
+    if (funcionarioId && employees.length > 0 && !editingId) {
+      const emp = employees.find(e => e.id === funcionarioId);
+      if (emp) startEditing(emp);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, employees]);
 
   const enriched = useMemo(() =>
     employees.map(e => ({ ...e, ...calcCompleteness(e) })),
@@ -493,7 +504,7 @@ export default function FuncionariosPage() {
                           <label className="text-sm font-medium mb-1 block">Tipo *</label>
                           <select value={deductionForm.tipo} onChange={e => setDeductionForm(p => ({ ...p, tipo: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
                             <option value="consignado">Consignado</option>
-                            <option value="pensao_alimenticia">Pensao Alimenticia</option>
+                            <option value="pensao_alimenticia">Pensão Alimentícia</option>
                             <option value="emprestimo">Emprestimo</option>
                             <option value="outros">Outros</option>
                           </select>
@@ -543,7 +554,7 @@ export default function FuncionariosPage() {
                   {deductionsLoading ? (
                     <div className="flex items-center justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
                   ) : deductions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma dedução cadastrada para este funcionario.</p>
+                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma dedução cadastrada para este funcionário.</p>
                   ) : (
                     <div className="border rounded-md overflow-hidden">
                       <table className="w-full text-sm">

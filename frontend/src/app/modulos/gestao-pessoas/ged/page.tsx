@@ -29,9 +29,12 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 }
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined'
-    ? localStorage.getItem('access_token') || localStorage.getItem('token')
-    : null;
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  } catch {
+    token = null;
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -79,6 +82,7 @@ export default function GEDDashboardPage() {
   });
   const [recentKits, setRecentKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showMontarConfirm, setShowMontarConfirm] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -178,7 +182,7 @@ export default function GEDDashboardPage() {
             Upload com IA
           </button>
           <button
-            onClick={handleAutoAssemble}
+            onClick={() => setShowMontarConfirm(true)}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             <Wand2 className="h-4 w-4" />
@@ -282,6 +286,34 @@ export default function GEDDashboardPage() {
           </div>
         </CardContent>
       </Card>
+      {showMontarConfirm && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-[#1E3A5F] mb-2">Confirmar Montagem de Kits</h3>
+            <p className="text-gray-600 mb-4 text-sm">
+              Esta ação irá criar kits documentais para o mês de referência de todos os clientes
+              ativos. Deseja continuar?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowMontarConfirm(false)}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setShowMontarConfirm(false);
+                  handleAutoAssemble();
+                }}
+                className="px-4 py-2 bg-[#F97316] text-white rounded-lg text-sm font-medium hover:bg-orange-600"
+              >
+                Sim, Montar Kits
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -12,7 +12,12 @@ const API_BASE = '/api/v1/ged';
 
 function getAuthHeaders() {
   if (typeof window === 'undefined') return { 'Content-Type': 'application/json' } as HeadersInit;
-  const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  } catch {
+    token = null;
+  }
   if (!token) {
     window.location.href = '/login';
     return { 'Content-Type': 'application/json' } as HeadersInit;
@@ -83,6 +88,7 @@ export default function KitsListPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterClient, setFilterClient] = useState('');
   const [showNewKit, setShowNewKit] = useState(false);
+  const [showMontarConfirm, setShowMontarConfirm] = useState(false);
   const [newKitClient, setNewKitClient] = useState('');
   const [newKitMonth, setNewKitMonth] = useState('');
   const [creatingKit, setCreatingKit] = useState(false);
@@ -230,7 +236,7 @@ export default function KitsListPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={handleMontarKits}
+            onClick={() => setShowMontarConfirm(true)}
             disabled={montando}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
           >
@@ -369,6 +375,34 @@ export default function KitsListPage() {
               <button onClick={handleCreateKit} disabled={creatingKit} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                 {creatingKit ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                 Criar Kit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showMontarConfirm && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-[#1E3A5F] mb-2">Confirmar Montagem de Kits</h3>
+            <p className="text-gray-600 mb-4 text-sm">
+              Esta ação irá criar kits documentais para o mês de referência de todos os clientes
+              ativos. Deseja continuar?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowMontarConfirm(false)}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setShowMontarConfirm(false);
+                  handleMontarKits();
+                }}
+                className="px-4 py-2 bg-[#F97316] text-white rounded-lg text-sm font-medium hover:bg-orange-600"
+              >
+                Sim, Montar Kits
               </button>
             </div>
           </div>

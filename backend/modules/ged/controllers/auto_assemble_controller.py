@@ -141,6 +141,15 @@ async def kits_summary(
     """Resumo dos kits do mês atual."""
     from sqlalchemy import text
 
+    latest_result = await db.execute(text("SELECT MAX(reference_month) FROM ged_document_kits"))
+    latest_month = latest_result.scalar()
+    if not latest_month:
+        return {
+            "total_kits": 0,
+            "kits_pending_send": 0,
+            "kits_pending_approval": 0,
+            "average_completion": 0,
+        }
     result = await db.execute(
         text("""
         SELECT
@@ -149,9 +158,9 @@ async def kits_summary(
             COUNT(*) FILTER (WHERE status IN ('enviado','aprovado')) as kits_pending_approval,
             COALESCE(AVG(completion_percentage), 0) as average_completion
         FROM ged_document_kits
-        WHERE EXTRACT(MONTH FROM reference_month) = EXTRACT(MONTH FROM CURRENT_DATE)
-          AND EXTRACT(YEAR FROM reference_month) = EXTRACT(YEAR FROM CURRENT_DATE)
-        """)
+        WHERE DATE_TRUNC('month', reference_month) = DATE_TRUNC('month', CAST(:latest_month AS date))
+        """),
+        {"latest_month": latest_month},
     )
     r = result.mappings().first()
     return {

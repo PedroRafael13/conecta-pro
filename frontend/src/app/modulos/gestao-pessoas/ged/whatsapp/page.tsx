@@ -37,10 +37,12 @@ import {
 } from '@/components/ui/select';
 
 function getAuthHeaders() {
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('access_token') || localStorage.getItem('token')
-      : null;
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  } catch {
+    token = null;
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -137,14 +139,16 @@ export default function WhatsAppPage() {
 
   useEffect(() => {
     loadData();
-    const saved = localStorage.getItem('wa_send_logs');
-    if (saved) try { setSendLogs(JSON.parse(saved)); } catch (err) { console.error('parseSendLogs:', err); }
+    try {
+      const saved = localStorage.getItem('wa_send_logs');
+      if (saved) try { setSendLogs(JSON.parse(saved)); } catch (err) { console.error('parseSendLogs:', err); }
+    } catch { /* localStorage indisponível */ }
   }, [loadData]);
 
   const addLog = (log: SendLog) => {
     const updated = [log, ...sendLogs].slice(0, 50);
     setSendLogs(updated);
-    localStorage.setItem('wa_send_logs', JSON.stringify(updated));
+    try { localStorage.setItem('wa_send_logs', JSON.stringify(updated)); } catch { /* ignorar */ }
   };
 
   const handleSendKit = async () => {

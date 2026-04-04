@@ -37,10 +37,12 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 }
 
 function getAuthHeaders() {
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('access_token') || localStorage.getItem('token')
-      : null;
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  } catch {
+    token = null;
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

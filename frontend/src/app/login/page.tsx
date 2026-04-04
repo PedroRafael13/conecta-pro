@@ -61,7 +61,7 @@ function LoginContent() {
     <div className="min-h-screen flex">
       {/* ── PAINEL ESQUERDO ── */}
       <div
-        className="hidden lg:flex flex-col justify-between relative overflow-hidden"
+        className="hidden lg:flex flex-col justify-between relative overflow-hidden min-h-0"
         style={{ flex: '1.25', background: '#1E3A5F', padding: '44px 52px' }}
       >
         {/* Circles */}

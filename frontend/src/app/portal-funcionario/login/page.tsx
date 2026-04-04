@@ -63,7 +63,7 @@ export default function PortalLoginPage() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Lado esquerdo — branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0A2540] to-[#1E3A5F] text-white flex-col justify-center px-16 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0A2540] to-[#1E3A5F] text-white flex-col justify-center px-16 relative overflow-hidden min-h-0">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-300 rounded-full blur-3xl" />

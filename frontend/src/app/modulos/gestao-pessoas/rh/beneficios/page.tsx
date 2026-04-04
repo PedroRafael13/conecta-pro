@@ -39,10 +39,8 @@ const BADGE_TIPO: Record<string, string> = {
   VR: 'bg-purple-100 text-purple-700 border-purple-200',
   'Plano Saude': 'bg-pink-100 text-pink-700 border-pink-200',
   'Plano Saúde': 'bg-pink-100 text-pink-700 border-pink-200',
-  'Plano Odontologico': 'bg-teal-100 text-teal-700 border-teal-200',
   'Plano Odontológico': 'bg-teal-100 text-teal-700 border-teal-200',
   'Seguro Vida': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-  'Emprestimo Consignado': 'bg-yellow-100 text-yellow-700 border-yellow-200',
   'Empréstimo Consignado': 'bg-yellow-100 text-yellow-700 border-yellow-200',
 };
 
