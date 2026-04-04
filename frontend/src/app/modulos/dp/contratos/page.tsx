@@ -123,8 +123,8 @@ export default function ContratosPage() {
       setLoading(true);
       try {
         const [contractsRes, empRes] = await Promise.all([
-          fetch(`${API_BASE}/contracts?page=1&page_size=200`, { headers: getAuthHeaders() }),
-          fetch(`${API_BASE}/employees?page_size=200`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE}/contracts?page=1&page_size=100`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() }),
         ]);
 
         if (contractsRes.ok) {

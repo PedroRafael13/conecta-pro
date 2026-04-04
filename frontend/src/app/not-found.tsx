@@ -19,11 +19,11 @@ export default function NotFound() {
         <div className="space-y-3">
           <h1 className="text-7xl font-bold text-[hsl(var(--foreground))]">404</h1>
           <h2 className="text-xl font-semibold text-[hsl(var(--foreground))]">
-            Pagina nao encontrada
+            Página não encontrada
           </h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">
-            A pagina que voce esta procurando nao existe, foi movida ou voce nao tem permissao
-            para acessa-la.
+            A página que você está procurando não existe, foi movida ou você não tem permissão
+            para acessá-la.
           </p>
         </div>
 
@@ -45,7 +45,7 @@ export default function NotFound() {
 
         {/* Footer */}
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Sistema ERP para Gestao de Vigilancia e Seguranca Patrimonial
+          Sistema ERP para Gestão de Vigilância e Segurança Patrimonial
         </p>
       </div>
     </div>
