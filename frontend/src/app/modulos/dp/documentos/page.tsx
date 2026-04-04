@@ -165,7 +165,7 @@ export default function DocumentosPage() {
               <FolderOpen className="h-6 w-6" />
               Documentos de Colaboradores
             </h1>
-            <p className="text-muted-foreground">Gestao de documentos dos colaboradores</p>
+            <p className="text-muted-foreground">Gestão de documentos dos colaboradores</p>
           </div>
         </div>
         <div className="flex gap-2">

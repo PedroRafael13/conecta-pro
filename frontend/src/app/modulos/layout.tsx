@@ -138,6 +138,13 @@ export default function ModulosLayout({
     }
   }, [isLoading, isAuthenticated, router]);
 
+  // Redirecionar /modulos → /modulos/dp (fallback client-side caso nginx intercepte o server redirect)
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && pathname === '/modulos') {
+      router.replace('/modulos/dp');
+    }
+  }, [isLoading, isAuthenticated, pathname, router]);
+
   // Sync WS token from localStorage whenever auth state changes
   useEffect(() => {
     setWsToken(localStorage.getItem('access_token'));
@@ -146,12 +153,22 @@ export default function ModulosLayout({
   // Icone dinamico do modulo atual
   const ModuleIcon = currentModule ? (iconMap[currentModule.icon] || Shield) : Shield;
 
-  if (isLoading || !currentModule) {
+  // /modulos sem submodulo: aguardar redirect do useEffect acima
+  if (isLoading || (!currentModule && pathname !== '/modulos')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse-slow text-[hsl(var(--primary))]">
           <Shield className="w-12 h-12" />
         </div>
+      </div>
+    );
+  }
+
+  // Se pathname === '/modulos' e ainda não foi redirecionado, mostrar spinner enquanto aguarda
+  if (!currentModule) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -454,7 +471,7 @@ export default function ModulosLayout({
           style={{ overflow: 'hidden' }}
         >
           {/* Header - Desktop e Mobile */}
-          <header className="sticky top-0 z-30 h-14 flex items-center gap-3 px-4 bg-[hsl(var(--background))]/80 backdrop-blur-2xl shadow-sm">
+          <header className="flex-shrink-0 z-30 h-14 flex items-center gap-3 px-4 bg-[hsl(var(--background))]/80 backdrop-blur-sm shadow-sm">
             {/* Mobile menu toggle */}
             <Button
               variant="ghost"
