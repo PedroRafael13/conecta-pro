@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   Loader2,
@@ -46,19 +46,7 @@ interface DocumentResult {
   origin: string;
 }
 
-const typeOptions = [
-  { value: '', label: 'Todos os Tipos' },
-  { value: 'contracheque', label: 'Contracheque' },
-  { value: 'folha_ponto', label: 'Folha de Ponto' },
-  { value: 'holerite', label: 'Holerite' },
-  { value: 'ferias', label: 'Férias' },
-  { value: 'rescisao', label: 'Rescisão' },
-  { value: 'admissao', label: 'Admissão' },
-  { value: 'atestado', label: 'Atestado' },
-  { value: 'certidao', label: 'Certidao' },
-  { value: 'guia_recolhimento', label: 'Guia de Recolhimento' },
-  { value: 'relatorio', label: 'Relatorio' },
-];
+// typeOptions carregados dinamicamente de /ged/config/document-types
 
 const originOptions = [
   { value: '', label: 'Todas as Origens' },
@@ -76,6 +64,11 @@ const signedOptions = [
   { value: 'false', label: 'Nao Assinados' },
 ];
 
+interface TypeOption {
+  value: string;
+  label: string;
+}
+
 export default function DocumentosSearchPage() {
   const [query, setQuery] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -84,6 +77,22 @@ export default function DocumentosSearchPage() {
   const [results, setResults] = useState<DocumentResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [typeOptions, setTypeOptions] = useState<TypeOption[]>([{ value: '', label: 'Todos os Tipos' }]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/config/document-types`, { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((d) => {
+        const lista: TypeOption[] = (d.tipos || d.data || (Array.isArray(d) ? d : [])).map(
+          (t: { name?: string; category?: string }) => ({
+            value: (t.name || '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+            label: t.name || '',
+          }),
+        );
+        setTypeOptions([{ value: '', label: 'Todos os Tipos' }, ...lista]);
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSearch() {
     setLoading(true);
