@@ -36,8 +36,8 @@ const subModules: SubModule[] = [
   },
   {
     title: 'Recursos Humanos',
-    description: 'Clima organizacional, treinamento, avaliacao de desempenho',
-    href: '/modulos/rh',
+    description: 'CCT, cargos, beneficios, headcount e relatorios de RH',
+    href: '/modulos/gestao-pessoas/rh',
     icon: Heart,
     color: 'text-pink-600',
     bgColor: 'bg-pink-50',
