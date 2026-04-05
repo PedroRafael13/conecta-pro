@@ -9,7 +9,14 @@ import { toast } from 'sonner';
 const API_BASE = '/api/v1/people-management/human-resources';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      token = localStorage.getItem('access_token') || localStorage.getItem('token');
+    } catch {
+      token = null;
+    }
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -46,7 +53,7 @@ export default function TreinamentosPage() {
     try {
       const [tRes, cRes] = await Promise.all([
         fetch(`${API_BASE}/training/?limit=100`, { headers: getAuthHeaders() }),
-        fetch(`${API_BASE}/training/courses/?limit=100`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/training/courses?limit=100`, { headers: getAuthHeaders() }),
       ]);
       if (tRes.ok) {
         const data = await tRes.json();

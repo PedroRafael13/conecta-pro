@@ -9,7 +9,14 @@ import { toast } from 'sonner';
 const API_BASE = '/api/v1/people-management/human-resources';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      token = localStorage.getItem('access_token') || localStorage.getItem('token');
+    } catch {
+      token = null;
+    }
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -50,7 +57,7 @@ export default function AvaliacoesPage() {
     try {
       const headers = getAuthHeaders();
       const [reviewsRes, ciclosRes] = await Promise.all([
-        fetch(`${API_BASE}/performance/reviews/?limit=100`, { headers }),
+        fetch(`${API_BASE}/performance/reviews?limit=100`, { headers }),
         fetch(`${API_BASE}/evaluation-360/ciclos`, { headers }).catch(() => null),
       ]);
       if (reviewsRes.ok) {

@@ -13,7 +13,14 @@ const API_HR = '/api/v1/people-management/hr';
 const API_RH = '/api/v1/people-management/human-resources';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      token = localStorage.getItem('access_token') || localStorage.getItem('token');
+    } catch {
+      token = null;
+    }
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -38,7 +45,7 @@ export default function DashboardRHPage() {
       try {
         const headers = getAuthHeaders();
         const [empRes, turnoverRes, climaRes] = await Promise.all([
-          fetch(`${API_HR}/employees/?limit=200`, { headers }),
+          fetch(`${API_HR}/employees?limit=200`, { headers }),
           fetch(`${API_RH}/turnover/dashboard`, { headers }).catch(() => null),
           fetch(`${API_RH}/climate/dashboard`, { headers }).catch(() => null),
         ]);

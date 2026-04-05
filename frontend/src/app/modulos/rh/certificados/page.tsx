@@ -8,7 +8,14 @@ import { toast } from 'sonner';
 const API_BASE = '/api/v1/people-management/human-resources';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      token = localStorage.getItem('access_token') || localStorage.getItem('token');
+    } catch {
+      token = null;
+    }
+  }
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -51,7 +58,7 @@ export default function CertificadosPage() {
     setLoading(true);
     try {
       const [enrRes, expRes] = await Promise.all([
-        fetch(`${API_BASE}/training/enrollments/?limit=200`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/training/enrollments?limit=200`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/training/certificates/expiring`, { headers: getAuthHeaders() }),
       ]);
       if (enrRes.ok) {
