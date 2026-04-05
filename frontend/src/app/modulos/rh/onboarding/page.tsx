@@ -67,7 +67,7 @@ export default function OnboardingPage() {
 
       if (pendRes?.ok) {
         const data = await pendRes.json();
-        setPendencias(data.items || data || []);
+        setPendencias(data.vencidos || data.items || []);
       }
     } catch {
       toast.error('Erro de conexao ao carregar onboarding', { duration: 5000 });
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
                 </div>
                 <ul className="space-y-1 text-sm text-muted-foreground">
                   {pendencias.slice(0, 5).map((p: any, i: number) => (
-                    <li key={i}>{p.employee_name || p.colaborador} - {p.task || p.pendencia || p.description}</li>
+                    <li key={i}>{p.employee_name || p.colaborador || p.nome} - {p.task || p.pendencia || p.description || p.titulo}</li>
                   ))}
                 </ul>
               </CardContent>

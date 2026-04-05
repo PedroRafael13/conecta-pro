@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import bindparam, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.people_management.human_resources.models.career import (
@@ -140,7 +140,23 @@ class CareerService:
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
-        return {"items": items, "total": total, "page": page, "page_size": page_size}
+        # Batch-fetch employee names to populate employee_name
+        all_ids = list({str(p.employee_id) for p in items})
+        names: dict[str, str] = {}
+        if all_ids:
+            stmt = text("SELECT id::text, nome FROM employees WHERE id::text IN :ids").bindparams(
+                bindparam("ids", expanding=True)
+            )
+            rows = await self.session.execute(stmt, {"ids": all_ids})
+            names = {row[0]: row[1] for row in rows}
+
+        enriched = []
+        for p in items:
+            d = {c.key: getattr(p, c.key) for c in p.__table__.columns}
+            d["employee_name"] = names.get(str(p.employee_id))
+            enriched.append(d)
+
+        return {"items": enriched, "total": total, "page": page, "page_size": page_size}
 
     async def update_plan(self, plan_id: uuid.UUID, data: CareerPlanUpdate) -> CareerPlan | None:
         """Atualiza um plano de carreira.

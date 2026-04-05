@@ -97,8 +97,10 @@ export default function DashboardRHPage() {
         let avgHireTime = '-';
         if (turnoverRes?.ok) {
           const td = await turnoverRes.json();
-          if (td.turnover_rate !== undefined) turnoverRate = `${td.turnover_rate}%`;
+          if (td.taxa_turnover_trimestral !== undefined) turnoverRate = `${td.taxa_turnover_trimestral}%`;
           if (td.avg_hire_time !== undefined) avgHireTime = `${td.avg_hire_time} dias`;
+          if (td.total_colaboradores !== undefined) headcount = td.total_colaboradores;
+          else if (td.ativos !== undefined) headcount = td.ativos;
         }
 
         let satisfaction = '-%';

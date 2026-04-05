@@ -77,6 +77,8 @@ class PerformanceReviewResponse(BaseModel):
     id: UUID
     employee_id: UUID
     reviewer_id: UUID
+    employee_name: str | None = None
+    reviewer_name: str | None = None
     review_period_start: date
     review_period_end: date
     type: ReviewType

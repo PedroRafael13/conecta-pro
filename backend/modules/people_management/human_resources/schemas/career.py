@@ -81,6 +81,7 @@ class CareerPlanResponse(BaseModel):
 
     id: UUID
     employee_id: UUID
+    employee_name: str | None = None
     current_position: str
     target_position: str
     current_level: CareerLevel

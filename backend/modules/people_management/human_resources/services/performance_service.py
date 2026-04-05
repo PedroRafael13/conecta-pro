@@ -14,7 +14,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import bindparam, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.people_management.human_resources.models.performance import (
@@ -143,7 +143,24 @@ class PerformanceService:
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
-        return {"items": items, "total": total, "page": page, "page_size": page_size}
+        # Batch-fetch employee names to avoid N+1 and populate employee_name/reviewer_name
+        all_ids = list({str(r.employee_id) for r in items} | {str(r.reviewer_id) for r in items if r.reviewer_id})
+        names: dict[str, str] = {}
+        if all_ids:
+            stmt = text("SELECT id::text, nome FROM employees WHERE id::text IN :ids").bindparams(
+                bindparam("ids", expanding=True)
+            )
+            rows = await self.session.execute(stmt, {"ids": all_ids})
+            names = {row[0]: row[1] for row in rows}
+
+        enriched = []
+        for r in items:
+            d = {c.key: getattr(r, c.key) for c in r.__table__.columns}
+            d["employee_name"] = names.get(str(r.employee_id))
+            d["reviewer_name"] = names.get(str(r.reviewer_id)) if r.reviewer_id else None
+            enriched.append(d)
+
+        return {"items": enriched, "total": total, "page": page, "page_size": page_size}
 
     async def update_review(self, review_id: uuid.UUID, data: PerformanceReviewUpdate) -> PerformanceReview | None:
         """Atualiza uma avaliacao de desempenho.
