@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import and_, bindparam, func, or_, select, text, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.people_management.human_resources.models.training import (
@@ -93,29 +93,7 @@ class TrainingService:
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
-        # Batch-count participants per course (via trainings → enrollments)
-        course_ids = [str(c.id) for c in items]
-        participants: dict[str, int] = {}
-        if course_ids:
-            rows = await self.session.execute(
-                text(
-                    "SELECT tc.id::text, COUNT(te.id) "
-                    "FROM training_courses tc "
-                    "LEFT JOIN trainings t ON t.course_id = tc.id "
-                    "LEFT JOIN training_enrollments te ON te.training_id = t.id "
-                    "WHERE tc.id::text IN :ids GROUP BY tc.id"
-                ).bindparams(bindparam("ids", expanding=True)),
-                {"ids": course_ids},
-            )
-            participants = {row[0]: row[1] for row in rows}
-
-        enriched = []
-        for c in items:
-            d = {col.key: getattr(c, col.key) for col in c.__table__.columns}
-            d["participants_count"] = participants.get(str(c.id), 0)
-            enriched.append(d)
-
-        return {"items": enriched, "total": total, "page": page, "page_size": page_size}
+        return {"items": items, "total": total, "page": page, "page_size": page_size}
 
     async def update_course(self, course_id: uuid.UUID, data: TrainingCourseUpdate) -> TrainingCourse | None:
         """Atualiza um curso de treinamento."""
@@ -397,63 +375,6 @@ class TrainingService:
         await self.session.refresh(certificate)
         logger.info(f"Certificado emitido: {cert_number} para funcionario {enrollment.employee_id}")
         return certificate
-
-    async def list_certificates(
-        self,
-        employee_id: uuid.UUID | None = None,
-        status: str | None = None,
-        page: int = 1,
-        page_size: int = 50,
-    ) -> dict[str, Any]:
-        """Lista certificados emitidos com nomes de colaborador e curso."""
-        query = select(TrainingCertificate)
-        count_query = select(func.count(TrainingCertificate.id))
-
-        if employee_id:
-            query = query.where(TrainingCertificate.employee_id == employee_id)
-            count_query = count_query.where(TrainingCertificate.employee_id == employee_id)
-        if status:
-            query = query.where(TrainingCertificate.status == status)
-            count_query = count_query.where(TrainingCertificate.status == status)
-
-        total = (await self.session.execute(count_query)).scalar() or 0
-        offset = (page - 1) * page_size
-        query = query.order_by(TrainingCertificate.issued_at.desc()).offset(offset).limit(page_size)
-        result = await self.session.execute(query)
-        items = list(result.scalars().all())
-
-        # Batch-fetch employee names
-        emp_ids = list({str(c.employee_id) for c in items if c.employee_id})
-        emp_names: dict[str, str] = {}
-        if emp_ids:
-            rows = await self.session.execute(
-                text("SELECT id::text, nome FROM employees WHERE id::text IN :ids").bindparams(
-                    bindparam("ids", expanding=True)
-                ),
-                {"ids": emp_ids},
-            )
-            emp_names = {row[0]: row[1] for row in rows}
-
-        # Batch-fetch course names via training_courses
-        course_ids = list({str(c.course_id) for c in items if c.course_id})
-        course_names: dict[str, str] = {}
-        if course_ids:
-            rows = await self.session.execute(
-                text("SELECT id::text, name FROM training_courses WHERE id::text IN :ids").bindparams(
-                    bindparam("ids", expanding=True)
-                ),
-                {"ids": course_ids},
-            )
-            course_names = {row[0]: row[1] for row in rows}
-
-        enriched = []
-        for c in items:
-            d = {col.key: getattr(c, col.key) for col in c.__table__.columns}
-            d["employee_name"] = emp_names.get(str(c.employee_id))
-            d["course_name"] = course_names.get(str(c.course_id))
-            enriched.append(d)
-
-        return {"items": enriched, "total": total, "page": page, "page_size": page_size}
 
     async def get_expiring_certificates(self, days_ahead: int = 30) -> list[TrainingCertificate]:
         """Busca certificados proximos do vencimento."""

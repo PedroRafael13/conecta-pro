@@ -68,7 +68,9 @@ export default function PageBeneficios() {
   }, []);
 
   const fmt = (v?: number) =>
-    (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    v != null
+      ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      : '—';
 
   const normTipo = (b: Beneficio) => b.type ?? b.tipo ?? 'outro';
 
