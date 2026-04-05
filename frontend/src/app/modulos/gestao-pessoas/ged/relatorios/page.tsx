@@ -48,8 +48,8 @@ interface ReportCard {
 const reports: ReportCard[] = [
   {
     id: 'mensal',
-    title: 'Relatorio Mensal',
-    description: 'Resumo completo dos kits documentais do periodo selecionado, incluindo status de envio e aprovação.',
+    title: 'Relatório Mensal',
+    description: 'Resumo completo dos kits documentais do período selecionado, incluindo status de envio e aprovação.',
     icon: FileText,
     color: 'text-blue-600',
     bgColor: 'bg-blue-50',
@@ -57,8 +57,8 @@ const reports: ReportCard[] = [
   },
   {
     id: 'cliente',
-    title: 'Relatorio por Cliente',
-    description: 'Detalhamento por cliente com historico de kits, documentos pendentes e taxa de conclusao.',
+    title: 'Relatório por Cliente',
+    description: 'Detalhamento por cliente com histórico de kits, documentos pendentes e taxa de conclusão.',
     icon: Users,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
@@ -66,8 +66,8 @@ const reports: ReportCard[] = [
   },
   {
     id: 'compliance',
-    title: 'Analise de Compliance',
-    description: 'Verificacao de conformidade documental, certidoes vencidas e documentos obrigatorios faltantes.',
+    title: 'Análise de Compliance',
+    description: 'Verificação de conformidade documental, certidões vencidas e documentos obrigatórios faltantes.',
     icon: Shield,
     color: 'text-purple-600',
     bgColor: 'bg-purple-50',
@@ -75,8 +75,8 @@ const reports: ReportCard[] = [
   },
   {
     id: 'assinaturas',
-    title: 'Historico de Assinaturas',
-    description: 'Rastreamento de todas as assinaturas digitais realizadas no periodo, com informacoes de certificado.',
+    title: 'Histórico de Assinaturas',
+    description: 'Rastreamento de todas as assinaturas digitais realizadas no período, com informações de certificado.',
     icon: PenTool,
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
@@ -166,8 +166,8 @@ export default function RelatoriosPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Relatorios GED</h1>
-        <p className="text-gray-500 mt-1">Gere e exporte relatorios do modulo de documentos</p>
+        <h1 className="text-2xl font-bold text-gray-900">Relatórios GED</h1>
+        <p className="text-gray-500 mt-1">Gere e exporte relatórios do módulo de documentos</p>
       </div>
 
       <Card className="border border-gray-200">
@@ -193,7 +193,7 @@ export default function RelatoriosPage() {
               />
             </div>
             {(!startDate || !endDate) && (
-              <p className="text-xs text-amber-600 mb-1">Selecione o periodo para gerar os relatorios</p>
+              <p className="text-xs text-amber-600 mb-1">Selecione o período para gerar os relatórios</p>
             )}
           </div>
         </CardContent>

@@ -70,10 +70,10 @@ const emptyForm: ClientForm = {
 
 const typeLabels: Record<string, string> = {
   empresa: 'Empresa',
-  condominio: 'Condominio',
+  condominio: 'Condomínio',
   administradora: 'Administradora',
-  orgao_publico: 'Orgao Publico',
-  pessoa_fisica: 'Pessoa Fisica',
+  orgao_publico: 'Órgão Público',
+  pessoa_fisica: 'Pessoa Física',
 };
 
 const typeBadgeColors: Record<string, string> = {
@@ -92,6 +92,7 @@ export default function GedClientesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ClientForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ name?: string }>({});
 
   useEffect(() => {
     fetchClients();
@@ -135,15 +136,10 @@ export default function GedClientesPage() {
   }
 
   async function handleSave() {
-    // B4: Validação campos obrigatórios
-    if (!form.name || form.name.trim() === '') {
-      showToast('Nome é obrigatório', 'error');
-      return;
-    }
-    if (!form.type || form.type.trim() === '') {
-      showToast('Tipo é obrigatório', 'error');
-      return;
-    }
+    const errs: { name?: string } = {};
+    if (!form.name || !form.name.trim()) errs.name = 'Nome é obrigatório';
+    if (Object.keys(errs).length) { setFormErrors(errs); return; }
+    setFormErrors({});
 
     setSaving(true);
     try {
@@ -331,10 +327,11 @@ export default function GedClientesPage() {
                 <input
                   type="text"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  onChange={(e) => { setForm({ ...form, name: e.target.value }); setFormErrors({}); }}
+                  className={`w-full px-3 py-2 border rounded-lg text-sm outline-none ${formErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}`}
                   placeholder="Nome do cliente"
                 />
+                {formErrors.name && <p className="mt-1 text-xs text-red-600">{formErrors.name}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

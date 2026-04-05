@@ -193,13 +193,16 @@ async def get_kit_detail(
     if not r:
         raise HTTPException(status_code=404, detail="Kit nao encontrado")
 
-    # Buscar documentos do kit
+    # Buscar documentos do kit com nome do funcionario
     docs_result = await db.execute(
         text("""
-        SELECT id, document_type, document_name, file_path, is_signed, source_module, created_at
-        FROM ged_kit_documents
-        WHERE kit_id = :kit_id
-        ORDER BY document_type, created_at
+        SELECT gkd.id, gkd.employee_id, gkd.document_type, gkd.document_name,
+               gkd.file_path, gkd.is_signed, gkd.source_module, gkd.created_at,
+               e.nome as employee_name
+        FROM ged_kit_documents gkd
+        LEFT JOIN employees e ON e.id = gkd.employee_id
+        WHERE gkd.kit_id = :kit_id
+        ORDER BY e.nome NULLS LAST, gkd.document_type, gkd.created_at
         """),
         {"kit_id": kit_id},
     )
@@ -225,7 +228,8 @@ async def get_kit_detail(
                 "file_path": d["file_path"],
                 "signed": d["is_signed"],
                 "origin": d["source_module"],
-                "category": "employee" if d["source_module"] in ("dp", "rh", "operacional") else "company",
+                "category": "employee" if d["employee_id"] is not None else "company",
+                "employee_name": d["employee_name"],
                 "created_at": d["created_at"].isoformat() if d["created_at"] else None,
             }
             for d in docs
