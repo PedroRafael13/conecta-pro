@@ -92,7 +92,9 @@ async def create_reimbursement(
             )
 
     request = await service.create_request(condominio_id, user.id, data)
-    return request
+    # Re-fetch após commit para garantir que todos os relacionamentos estão carregados
+    fresh = await service.get_request(request.id)
+    return fresh
 
 
 @router.get("/", response_model=PaginatedReimbursementResponse)

@@ -363,6 +363,7 @@ class ReimbursementRepository:
         item = ReimbursementItem(
             request_id=request_id,
             category_id=data.category_id,
+            category=data.category_type,
             category_type=data.category_type,
             description=data.description,
             merchant=data.merchant,

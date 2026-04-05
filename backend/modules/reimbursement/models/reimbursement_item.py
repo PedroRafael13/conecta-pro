@@ -93,7 +93,8 @@ class ReimbursementItem(Base):
         nullable=True,
     )
 
-    # Tipo de despesa
+    # Tipo de despesa (legacy: "category" col no banco, mapeado aqui para compatibilidade)
+    category = Column(String(50), nullable=False, default=ExpenseCategory.OUTROS.value)
     category_type = Column(String(30), nullable=False, default=ExpenseCategory.OUTROS.value)
 
     # Descrição

@@ -36,41 +36,27 @@ class CondominioRepository:
 
         Returns:
             UUID do condomínio ou None se não encontrar nenhum
-
-        Example:
-            ```python
-            repo = CondominioRepository(db)
-            cond_id = await repo.get_first_active_condominio()
-            if cond_id:
-                print(f"Usando condomínio: {cond_id}")
-            ```
         """
-        # Tenta tabela condominios primeiro
-        try:
-            # Importar modelo dinamicamente para evitar dependência circular
-            from core.database import Base
+        from sqlalchemy import text
 
-            # Verificar se tabela existe
-            result = await self.db.execute(
-                select(Base.metadata.tables.get("condominios").c.id)
-                .where(Base.metadata.tables.get("condominios").c.ativo == True)  # noqa: E712
-                .limit(1)
-            )
+        # Tenta tabela condominios primeiro com raw SQL (evita problema de metadata)
+        try:
+            result = await self.db.execute(text("SELECT id FROM condominios WHERE ativo = true ORDER BY id LIMIT 1"))
             row = result.first()
             if row:
                 logger.info("Condomínio ativo encontrado na tabela condominios")
                 return UUID(str(row[0]))
-        except (KeyError, AttributeError, Exception) as e:
+        except Exception as e:
             logger.debug(f"Tabela condominios não disponível ou erro: {e}")
 
         # Se não encontrou, tenta tabela tenants
         try:
-            result = await self.db.execute(select(Base.metadata.tables.get("tenants").c.id).limit(1))
+            result = await self.db.execute(text("SELECT id FROM tenants LIMIT 1"))
             row = result.first()
             if row:
                 logger.info("Condomínio encontrado na tabela tenants")
                 return UUID(str(row[0]))
-        except (KeyError, AttributeError, Exception) as e:
+        except Exception as e:
             logger.debug(f"Tabela tenants não disponível ou erro: {e}")
 
         logger.warning("Nenhum condomínio ativo encontrado no sistema")

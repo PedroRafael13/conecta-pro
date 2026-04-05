@@ -54,6 +54,7 @@ class ReimbursementService:
 
         request = await self.repo.create_request(condominio_id, requester_id, data)
         await self.session.commit()
+        await self.session.refresh(request, ["items", "attachments"])
 
         logger.info(f"Solicitação criada: {request.code}")
         return request
