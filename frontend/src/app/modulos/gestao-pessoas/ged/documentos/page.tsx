@@ -120,7 +120,7 @@ export default function DocumentosSearchPage() {
     try {
       const params = new URLSearchParams();
       if (query) params.append('q', query);
-      if (filterType) params.append('type', filterType);
+      if (filterType) params.append('document_type', filterType);
       if (filterOrigin) params.append('origin', filterOrigin);
       if (filterSigned) params.append('signed', filterSigned);
       if (filterClient) params.append('client_id', filterClient);
