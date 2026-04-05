@@ -196,11 +196,10 @@ async def get_kit_detail(
     # Buscar documentos do kit
     docs_result = await db.execute(
         text("""
-        SELECT id, employee_id, document_type, document_name, file_path,
-               is_signed, source_module, created_at
+        SELECT id, document_type, document_name, file_path, is_signed, source_module, created_at
         FROM ged_kit_documents
         WHERE kit_id = :kit_id
-        ORDER BY employee_id NULLS LAST, document_type, created_at
+        ORDER BY document_type, created_at
         """),
         {"kit_id": kit_id},
     )
@@ -226,7 +225,7 @@ async def get_kit_detail(
                 "file_path": d["file_path"],
                 "signed": d["is_signed"],
                 "origin": d["source_module"],
-                "category": "employee" if d["employee_id"] is not None else "company",
+                "category": "employee" if d["source_module"] in ("dp", "rh", "operacional") else "company",
                 "created_at": d["created_at"].isoformat() if d["created_at"] else None,
             }
             for d in docs
