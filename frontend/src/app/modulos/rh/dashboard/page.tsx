@@ -217,9 +217,9 @@ export default function DashboardRHPage() {
           <CardContent>
             {turnoData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
-                    <Pie data={turnoData.slice(0, 6)} cx="50%" cy="50%" outerRadius={75} dataKey="value" labelLine={false}>
+                    <Pie data={turnoData.slice(0, 6)} cx="50%" cy="50%" outerRadius={90} dataKey="value" labelLine={false}>
                       {turnoData.slice(0, 6).map((_, idx) => (
                         <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
                       ))}
