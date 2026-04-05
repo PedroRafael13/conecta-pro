@@ -74,6 +74,7 @@ class TrainingCourseResponse(TrainingCourseBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    participants_count: int | None = None
 
 
 class TrainingCourseListResponse(BaseModel):
@@ -218,3 +219,14 @@ class TrainingCertificateResponse(BaseModel):
     revocation_reason: str | None = None
     document_path: str | None = None
     created_at: datetime
+    employee_name: str | None = None
+    course_name: str | None = None
+
+
+class TrainingCertificateListResponse(BaseModel):
+    """Schema de listagem de certificados."""
+
+    items: list[TrainingCertificateResponse]
+    total: int
+    page: int = 1
+    page_size: int = 20

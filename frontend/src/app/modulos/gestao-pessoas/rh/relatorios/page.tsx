@@ -120,7 +120,24 @@ export default function PageRelatorios() {
         </Link>
         <span className="text-gray-300">|</span>
         <h1 className="text-2xl font-bold text-[#1E3A5F]">Relatórios RH</h1>
-        <button className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#1E3A5F] text-white text-sm font-medium rounded-lg hover:bg-[#16305a] transition-colors">
+        <button
+          className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#1E3A5F] text-white text-sm font-medium rounded-lg hover:bg-[#16305a] transition-colors"
+          onClick={() => {
+            if (!data) return;
+            const rows = [
+              ['Cargo', 'Total', 'Ativos'],
+              ...(data.por_cargo || []).map((c) => [c.cargo, c.total, c.ativos]),
+            ];
+            const csv = rows.map((r) => r.join(';')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `headcount_rh_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        >
           <Download className="w-4 h-4" /> Exportar
         </button>
       </div>

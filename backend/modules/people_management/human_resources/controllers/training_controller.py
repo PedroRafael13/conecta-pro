@@ -20,6 +20,7 @@ from modules.people_management.human_resources.models.training import (
     TrainingStatus,
 )
 from modules.people_management.human_resources.schemas.training import (
+    TrainingCertificateListResponse,
     TrainingCertificateResponse,
     TrainingCourseCreate,
     TrainingCourseListResponse,
@@ -271,6 +272,35 @@ async def list_enrollments(
     )
     return TrainingEnrollmentListResponse(
         items=[TrainingEnrollmentResponse.model_validate(e) for e in result["items"]],
+        total=result["total"],
+        page=result["page"],
+        page_size=result["page_size"],
+    )
+
+
+@router.get(
+    "/certificates",
+    response_model=TrainingCertificateListResponse,
+    summary="Listar certificados emitidos",
+)
+async def list_certificates(
+    employee_id: UUID | None = None,
+    cert_status: str | None = Query(None, alias="status"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> TrainingCertificateListResponse:
+    """Lista certificados emitidos com nomes de colaborador e curso."""
+    service = TrainingService(db)
+    result = await service.list_certificates(
+        employee_id=employee_id,
+        status=cert_status,
+        page=page,
+        page_size=page_size,
+    )
+    return TrainingCertificateListResponse(
+        items=[TrainingCertificateResponse.model_validate(c) for c in result["items"]],
         total=result["total"],
         page=result["page"],
         page_size=result["page_size"],
