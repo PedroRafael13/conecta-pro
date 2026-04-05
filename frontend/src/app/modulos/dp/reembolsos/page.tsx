@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const API_HR = '/api/v1/people-management/hr';
-const API_REIMB = '/api/v1/reimbursements';
+const API_REIMB = '/api/v1/reimbursements/';
 
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
