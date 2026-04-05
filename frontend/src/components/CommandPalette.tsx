@@ -44,7 +44,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: <Users className="w-4 h-4" />,
       category: 'navigation',
       action: () => {
-        router.push('/modulos/operacional/colaboradores?novo=1');
+        router.push('/modulos/dp/funcionarios?novo=1');
         onClose();
       },
     },
@@ -77,7 +77,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: <Search className="w-4 h-4" />,
       category: 'search',
       action: () => {
-        router.push('/modulos/operacional/colaboradores?search=true');
+        router.push('/modulos/dp/funcionarios?search=true');
         onClose();
       },
     },
