@@ -130,6 +130,30 @@ export const modules: Module[] = [
   },
 
   // =================================================================
+  // 3b. RH — GESTÃO DE PESSOAS (novo módulo em /gestao-pessoas/rh)
+  // =================================================================
+  {
+    id: 'rh-gp',
+    title: 'Recursos Humanos',
+    description: 'CCT, cargos, beneficios, treinamentos e relatorios',
+    icon: 'Users',
+    href: '/modulos/gestao-pessoas/rh',
+    color: 'blue',
+    permissions: ['operacional:read'],
+    enabled: true,
+    subModules: [
+      { id: 'rh-gp-dashboard', title: 'Dashboard RH', href: '/modulos/gestao-pessoas/rh', icon: 'LayoutDashboard', permissions: ['operacional:read'] },
+      { id: 'rh-gp-cct', title: 'CCT', href: '/modulos/gestao-pessoas/rh/cct', icon: 'FileText', permissions: ['operacional:read'] },
+      { id: 'rh-gp-cargos', title: 'Cargos', href: '/modulos/gestao-pessoas/rh/cargos', icon: 'Briefcase', permissions: ['operacional:read'] },
+      { id: 'rh-gp-beneficios', title: 'Beneficios', href: '/modulos/gestao-pessoas/rh/beneficios', icon: 'Package', permissions: ['operacional:read'] },
+      { id: 'rh-gp-treinamentos', title: 'Treinamentos', href: '/modulos/gestao-pessoas/rh/treinamentos', icon: 'GraduationCap', permissions: ['operacional:read'] },
+      { id: 'rh-gp-desempenho', title: 'Desempenho', href: '/modulos/gestao-pessoas/rh/desempenho', icon: 'ClipboardCheck', permissions: ['operacional:read'] },
+      { id: 'rh-gp-clima', title: 'Clima', href: '/modulos/gestao-pessoas/rh/clima', icon: 'Activity', permissions: ['operacional:read'] },
+      { id: 'rh-gp-relatorios', title: 'Relatorios', href: '/modulos/gestao-pessoas/rh/relatorios', icon: 'BarChart3', permissions: ['operacional:read'] },
+    ],
+  },
+
+  // =================================================================
   // 4. GED - KITS DOCUMENTAIS — Card separado dentro de Gestao de Pessoas
   // =================================================================
   {

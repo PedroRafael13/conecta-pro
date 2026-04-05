@@ -39,6 +39,11 @@ const statusLabels: Record<string, string> = {
   valid: 'Valido', expiring: 'Vencendo', expired: 'Vencido',
 };
 
+const fmtDate = (v?: string | null) => {
+  if (!v) return '—';
+  try { return new Date(v).toLocaleDateString('pt-BR'); } catch { return v; }
+};
+
 const StatusIcon = ({ status }: { status: string }) => {
   if (status === 'valid' || status === 'Valido') return <CheckCircle className="h-4 w-4 text-green-400" />;
   if (status === 'expiring' || status === 'Vencendo') return <AlertTriangle className="h-4 w-4 text-yellow-400" />;
@@ -114,7 +119,7 @@ export default function CertificadosPage() {
                   <span className="font-medium">{expiring.length} certificado(s) vencendo nos proximos 30 dias</span>
                 </div>
                 <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {expiring.slice(0, 5).map((c: any, i: number) => <li key={i}>{c.employee_name || c.colaborador} - {c.course_name || c.curso} (validade: {c.expires_at || c.validade})</li>)}
+                  {expiring.slice(0, 5).map((c: any, i: number) => <li key={i}>{c.employee_name || c.colaborador} - {c.course_name || c.curso} (validade: {fmtDate(c.expires_at || c.validade)})</li>)}
                 </ul>
               </CardContent>
             </Card>
@@ -164,8 +169,8 @@ export default function CertificadosPage() {
                           <td className="p-4 font-medium">{c.employee_name || c.colaborador}</td>
                           <td className="p-4 text-muted-foreground">{c.course_name || c.curso}</td>
                           <td className="p-4 text-muted-foreground font-mono text-xs">{c.certificate_number || c.numero}</td>
-                          <td className="p-4 text-muted-foreground">{c.issued_at || c.emissao}</td>
-                          <td className="p-4 text-muted-foreground">{c.expires_at || c.validade}</td>
+                          <td className="p-4 text-muted-foreground">{fmtDate(c.issued_at || c.emissao)}</td>
+                          <td className="p-4 text-muted-foreground">{fmtDate(c.expires_at || c.validade)}</td>
                           <td className="p-4 text-center"><div className="flex items-center justify-center gap-1"><StatusIcon status={c.status} /><span className={statusCores[c.status] || 'text-gray-400'}>{label}</span></div></td>
                         </tr>
                       );

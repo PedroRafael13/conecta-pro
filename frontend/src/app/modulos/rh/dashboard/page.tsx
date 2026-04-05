@@ -45,7 +45,7 @@ export default function DashboardRHPage() {
       try {
         const headers = getAuthHeaders();
         const [empRes, turnoverRes, climaRes] = await Promise.all([
-          fetch(`${API_HR}/employees?limit=200`, { headers }),
+          fetch(`${API_HR}/employees?limit=500`, { headers }),
           fetch(`${API_RH}/turnover/dashboard`, { headers }).catch(() => null),
           fetch(`${API_RH}/climate/dashboard`, { headers }).catch(() => null),
         ]);
@@ -216,16 +216,29 @@ export default function DashboardRHPage() {
           </CardHeader>
           <CardContent>
             {turnoData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={turnoData} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={(props: any) => `${props.name} ${((props.percent ?? 0) * 100).toFixed(0)}%`}>
-                    {turnoData.map((_, idx) => (
-                      <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={turnoData.slice(0, 6)} cx="50%" cy="50%" outerRadius={75} dataKey="value" labelLine={false}>
+                      {turnoData.slice(0, 6).map((_, idx) => (
+                        <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                      formatter={(value: unknown) => [`${value ?? 0} func.`]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {turnoData.slice(0, 6).map((d, idx) => (
+                    <span key={d.name} className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                      {d.name.length > 10 ? d.name.slice(0, 10) + '…' : d.name} ({d.value})
+                    </span>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="h-48 flex items-center justify-center text-muted-foreground">
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sem dados'}

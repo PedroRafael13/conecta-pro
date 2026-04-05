@@ -61,9 +61,33 @@ async def climate_dashboard(
 async def climate_surveys(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
+    page: int = 1,
+    page_size: int = 20,
 ) -> Any:
     """Lista pesquisas de clima organizacional."""
-    return {"items": [], "total": 0, "message": "Nenhuma pesquisa cadastrada ainda."}
+    try:
+        offset = (page - 1) * page_size
+        rows = (
+            (
+                await db.execute(
+                    text(
+                        "SELECT id::text, nome, descricao, frequencia, ativo, "
+                        "data_inicio, data_fim, total_respostas, score_medio, created_at "
+                        "FROM climate_surveys ORDER BY created_at DESC "
+                        "LIMIT :limit OFFSET :offset"
+                    ),
+                    {"limit": page_size, "offset": offset},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        total = (await db.execute(text("SELECT COUNT(*) FROM climate_surveys"))).scalar() or 0
+        items = [dict(r) for r in rows]
+        return {"items": items, "total": total, "page": page, "page_size": page_size}
+    except Exception as exc:
+        logger.warning("Erro ao listar pesquisas de clima: %s", exc)
+        return {"items": [], "total": 0, "message": "Nenhuma pesquisa cadastrada ainda."}
 
 
 @router.get("/alerts")
