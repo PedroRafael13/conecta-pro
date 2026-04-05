@@ -81,6 +81,7 @@ const statusLabels: Record<string, string> = {
 
 export default function GEDDashboardPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [summary, setSummary] = useState<Summary>({
     total_kits: 0,
     kits_pendentes: 0,
@@ -93,6 +94,7 @@ export default function GEDDashboardPage() {
   const [showMontarConfirm, setShowMontarConfirm] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchData();
   }, []);
 
@@ -299,7 +301,7 @@ export default function GEDDashboardPage() {
           </div>
         </CardContent>
       </Card>
-      {showMontarConfirm && createPortal(
+      {mounted && showMontarConfirm && createPortal(
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full">
             <h3 className="text-lg font-bold text-[#1E3A5F] mb-2">Confirmar Montagem de Kits</h3>

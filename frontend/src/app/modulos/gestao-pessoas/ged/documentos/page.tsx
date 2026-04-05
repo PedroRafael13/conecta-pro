@@ -236,7 +236,7 @@ export default function DocumentosSearchPage() {
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Nome</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Tipo</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Kit</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Funcionario</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Funcionário</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Assinado</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Data</th>
                   </tr>
