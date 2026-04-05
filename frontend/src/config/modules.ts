@@ -84,7 +84,7 @@ export const modules: Module[] = [
     permissions: ['operacional:read'],
     enabled: true,
     subModules: [
-      { id: 'dp-colaboradores', title: 'Colaboradores', href: '/modulos/operacional/colaboradores', icon: 'UserCheck', permissions: ['operacional:colaboradores'] },
+      { id: 'dp-colaboradores', title: 'Colaboradores', href: '/modulos/dp/funcionarios', icon: 'UserCheck', permissions: ['operacional:read'] },
       { id: 'dp-admissao', title: 'Admissão', href: '/modulos/dp/admissao', icon: 'UserPlus', permissions: ['operacional:read'] },
       { id: 'dp-rescisao', title: 'Rescisão', href: '/modulos/dp/rescisao', icon: 'UserMinus', permissions: ['operacional:read'] },
       { id: 'dp-contratos', title: 'Contratos', href: '/modulos/dp/contratos', icon: 'FileSignature', permissions: ['operacional:read'] },
@@ -93,7 +93,7 @@ export const modules: Module[] = [
       { id: 'dp-ferias', title: 'Férias', href: '/modulos/dp/ferias', icon: 'Plane', permissions: ['operacional:read'] },
       { id: 'dp-beneficios', title: 'Benefícios', href: '/modulos/dp/beneficios', icon: 'Gift', permissions: ['operacional:read'] },
       { id: 'dp-licencas', title: 'Licenças', href: '/modulos/dp/licencas', icon: 'FileText', permissions: ['operacional:read'] },
-      { id: 'dp-reembolsos', title: 'Reembolsos', href: '/modulos/reembolso', icon: 'Receipt', permissions: ['operacional:read'] },
+      { id: 'dp-reembolsos', title: 'Reembolsos', href: '/modulos/dp/reembolsos', icon: 'Receipt', permissions: ['operacional:read'] },
       { id: 'dp-esocial', title: 'eSocial', href: '/modulos/dp/esocial', icon: 'Database', permissions: ['operacional:read'] },
       { id: 'dp-documentos', title: 'Documentos DP', href: '/modulos/dp/documentos', icon: 'FolderOpen', permissions: ['operacional:read'] },
     ],
