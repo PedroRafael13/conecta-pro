@@ -58,13 +58,12 @@ export default function CertificadosPage() {
     setLoading(true);
     try {
       const [enrRes, expRes] = await Promise.all([
-        fetch(`${API_BASE}/training/enrollments?limit=200`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/training/certificates?page_size=200`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/training/certificates/expiring`, { headers: getAuthHeaders() }),
       ]);
       if (enrRes.ok) {
         const data = await enrRes.json();
-        const items = (data.items || data || []).filter((e: any) => e.certificate_number || e.certificate_id);
-        setCertificados(items);
+        setCertificados(data.items || data || []);
       } else {
         toast.error('Erro ao carregar certificados', { duration: 5000 });
       }

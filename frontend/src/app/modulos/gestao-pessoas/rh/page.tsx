@@ -186,7 +186,7 @@ export default function DashboardRH() {
                   <p className="font-medium text-gray-800">
                     {cct?.vigencia_inicio
                       ? new Date(cct.vigencia_inicio).toLocaleDateString('pt-BR')
-                      : '01/01/2026'}
+                      : cct?.vigencia ? `01/01/${cct.vigencia}` : '01/01/2026'}
                   </p>
                 </div>
                 <div>
@@ -194,7 +194,7 @@ export default function DashboardRH() {
                   <p className="font-medium text-gray-800">
                     {cct?.vigencia_fim
                       ? new Date(cct.vigencia_fim).toLocaleDateString('pt-BR')
-                      : '31/12/2026'}
+                      : cct?.vigencia ? `31/12/${cct.vigencia}` : '31/12/2026'}
                   </p>
                 </div>
               </div>
@@ -288,7 +288,8 @@ export default function DashboardRH() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
           <CheckCircle className="w-5 h-5 text-blue-500 shrink-0" />
           <p className="text-blue-800 text-sm">
-            CCT SINDECOMPRESTS 2026 vigente até 31/12/2026 — conformidade{' '}
+            CCT {cct?.sindicato || 'SINDECOMPRESTS'} {cct?.vigencia || '2026'} vigente até{' '}
+            {cct?.vigencia ? `31/12/${cct.vigencia}` : '31/12/2026'} — conformidade{' '}
             {cct?.conformidade_pct ?? 100}%
           </p>
         </div>
