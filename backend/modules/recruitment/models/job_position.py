@@ -176,6 +176,14 @@ class JobPosition(Base):
     def __repr__(self) -> str:
         return f"<JobPosition {self.code}: {self.title}>"
 
+    @classmethod
+    def generate_code(cls, sequence: int) -> str:
+        """Gera código único para a vaga no formato VAG-YYYY-NNNN."""
+        from datetime import date as _date
+
+        year = _date.today().year
+        return f"VAG-{year}-{sequence:04d}"
+
     @property
     def is_open(self) -> bool:
         """Verifica se vaga esta aberta."""
