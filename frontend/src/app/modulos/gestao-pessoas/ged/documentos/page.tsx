@@ -36,17 +36,14 @@ function getAuthHeaders() {
 
 interface DocumentResult {
   id: string;
-  name?: string;
-  title?: string;
+  name: string;
   document_type: string;
-  kit_name?: string;
-  kit_id?: string;
-  employee_name?: string;
-  signed?: boolean;
-  status?: string;
+  kit_name: string;
+  kit_id: string;
+  employee_name: string;
+  signed: boolean;
   created_at: string;
-  origin?: string;
-  category?: string;
+  origin: string;
 }
 
 // typeOptions carregados dinamicamente de /ged/config/document-types
@@ -259,16 +256,16 @@ export default function DocumentosSearchPage() {
                   ) : (
                     results.map((doc) => (
                       <tr key={doc.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium">{doc.title || doc.name || '—'}</td>
+                        <td className="py-3 px-4 font-medium">{doc.name}</td>
                         <td className="py-3 px-4">
                           <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                            {doc.document_type || '—'}
+                            {doc.document_type}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-gray-600">{doc.kit_name || doc.category || '—'}</td>
-                        <td className="py-3 px-4 text-gray-600">{doc.employee_name || '—'}</td>
+                        <td className="py-3 px-4 text-gray-600">{doc.kit_name}</td>
+                        <td className="py-3 px-4 text-gray-600">{doc.employee_name || '-'}</td>
                         <td className="py-3 px-4">
-                          {doc.signed || doc.status === 'assinado' ? (
+                          {doc.signed ? (
                             <CheckCircle className="h-5 w-5 text-green-500" />
                           ) : (
                             <XCircle className="h-5 w-5 text-red-400" />

@@ -31,12 +31,6 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
   setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
 }
 
-function formatRefMonth(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
-  return new Intl.DateTimeFormat('pt-BR', { month: '2-digit', year: 'numeric' }).format(d);
-}
-
 interface KitDocument {
   id: string;
   name: string;
@@ -44,7 +38,6 @@ interface KitDocument {
   signed: boolean;
   origin: string;
   category: 'employee' | 'company';
-  employee_name?: string | null;
   file_path?: string;
   created_at?: string;
 }
@@ -288,7 +281,7 @@ export default function KitDetailPage() {
             </span>
           </div>
           <p className="text-gray-500 mt-1">
-            Referência: {formatRefMonth(kit.reference_month)} | {kit.documents?.length || kit.total_documents} documentos | {kit.documents_signed} assinados
+            Referência: {kit.reference_month} | {kit.documents?.length || kit.total_documents} documentos | {kit.documents_signed} assinados
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -370,26 +363,21 @@ export default function KitDetailPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    {activeTab === 'employee' && (
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Funcionário</th>
-                    )}
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Documento</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Nome</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Tipo</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Assinado</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Origem</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Data</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {activeDocs.length === 0 ? (
-                    <tr><td colSpan={activeTab === 'employee' ? 6 : 5} className="py-8 text-center text-gray-400">Nenhum documento nesta categoria</td></tr>
+                    <tr><td colSpan={6} className="py-8 text-center text-gray-400">Nenhum documento nesta categoria</td></tr>
                   ) : (
                     activeDocs.map((doc) => (
                       <tr key={doc.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        {activeTab === 'employee' && (
-                          <td className="py-3 px-4 text-xs text-gray-600 whitespace-nowrap">{doc.employee_name || '—'}</td>
-                        )}
-                        <td className="py-3 px-4 font-medium text-gray-900 max-w-[220px] truncate" title={doc.name}>{doc.name || '—'}</td>
+                        <td className="py-3 px-4 font-medium text-gray-900 max-w-[250px] truncate" title={doc.name}>{doc.name}</td>
                         <td className="py-3 px-4 text-gray-600 text-xs">
                           <span className="inline-flex px-2 py-0.5 rounded bg-gray-100 text-gray-700">
                             {typeLabels[doc.document_type] || doc.document_type?.replace(/_/g, ' ') || '—'}
@@ -398,9 +386,12 @@ export default function KitDetailPage() {
                         <td className="py-3 px-4">
                           {doc.signed ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-gray-300" />}
                         </td>
-                        <td className="py-3 px-4 text-gray-600 text-xs">{originLabels[doc.origin] || doc.origin || '—'}</td>
+                        <td className="py-3 px-4 text-gray-600 text-xs">{originLabels[doc.origin] || doc.origin}</td>
+                        <td className="py-3 px-4 text-gray-500 text-xs">
+                          {doc.created_at ? new Date(doc.created_at).toLocaleDateString('pt-BR') : '—'}
+                        </td>
                         <td className="py-3 px-4">
-                          <button onClick={() => handleDownloadDoc(doc)} className="p-1 rounded hover:bg-gray-100" title="Baixar documento">
+                          <button onClick={() => handleDownloadDoc(doc)} className="p-1 rounded hover:bg-gray-100" title="Baixar">
                             <Download className="h-4 w-4 text-gray-500" />
                           </button>
                         </td>
