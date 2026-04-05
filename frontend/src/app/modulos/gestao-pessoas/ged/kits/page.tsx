@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+function formatRefMonth(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
+  return new Intl.DateTimeFormat('pt-BR', { month: '2-digit', year: 'numeric' }).format(d);
+}
 import {
   Loader2, Eye, Send, CheckCircle, Filter, FolderOpen,
   Plus, X, Wand2,
@@ -92,15 +98,20 @@ export default function KitsListPage() {
   const [showMontarConfirm, setShowMontarConfirm] = useState(false);
   const [newKitClient, setNewKitClient] = useState('');
   const [newKitMonth, setNewKitMonth] = useState('');
+  const [newKitErrors, setNewKitErrors] = useState<{ client?: string; month?: string }>({});
   const [creatingKit, setCreatingKit] = useState(false);
   const [montando, setMontando] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalKits, setTotalKits] = useState(0);
+  const PAGE_SIZE = 15;
 
   useEffect(() => {
     if (searchParams?.get('new') === 'true') setShowNewKit(true);
   }, [searchParams]);
 
   useEffect(() => { fetchClients(); }, []);
-  useEffect(() => { fetchKits(); }, [filterMonth, filterStatus, filterClient]);
+  useEffect(() => { setPage(1); }, [filterMonth, filterStatus, filterClient]);
+  useEffect(() => { fetchKits(); }, [filterMonth, filterStatus, filterClient, page]);
 
   async function fetchClients() {
     try {
@@ -121,11 +132,13 @@ export default function KitsListPage() {
       if (filterMonth) params.append('reference_month', filterMonth);
       if (filterStatus) params.append('status', filterStatus);
       if (filterClient) params.append('client_id', filterClient);
-      const qs = params.toString();
-      const res = await fetch(`${API_BASE}/kits${qs ? '?' + qs : ''}`, { headers: getAuthHeaders() });
+      params.append('page', String(page));
+      params.append('page_size', String(PAGE_SIZE));
+      const res = await fetch(`${API_BASE}/kits?${params.toString()}`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setKits(Array.isArray(data) ? data : data.items || []);
+        setTotalKits(Array.isArray(data) ? data.length : data.total ?? 0);
       }
     } catch (err) {
       console.error('fetchKits:', err);
@@ -135,8 +148,11 @@ export default function KitsListPage() {
   }
 
   async function handleCreateKit() {
-    if (!newKitClient) { showToast('Selecione um cliente', 'error'); return; }
-    if (!newKitMonth) { showToast('Selecione o mês', 'error'); return; }
+    const errs: { client?: string; month?: string } = {};
+    if (!newKitClient) errs.client = 'Selecione um cliente';
+    if (!newKitMonth) errs.month = 'Selecione o mês de referência';
+    if (Object.keys(errs).length) { setNewKitErrors(errs); return; }
+    setNewKitErrors({});
     setCreatingKit(true);
     try {
       const res = await fetch(`${API_BASE}/kits`, {
@@ -258,7 +274,7 @@ export default function KitsListPage() {
           <div className="flex flex-wrap items-center gap-4">
             <Filter className="h-4 w-4 text-gray-400" />
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Mes Referencia</label>
+              <label className="block text-xs text-gray-500 mb-1">Mês de Referência</label>
               <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none" />
             </div>
             <div>
@@ -291,11 +307,11 @@ export default function KitsListPage() {
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Cliente</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Mes</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Mês</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Docs</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Assinados</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Conclusao</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Conclusão</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
                   </tr>
                 </thead>
@@ -311,7 +327,7 @@ export default function KitsListPage() {
                     kits.map((kit) => (
                       <tr key={kit.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4 font-medium text-gray-900">{kit.client_name || '—'}</td>
-                        <td className="py-3 px-4 text-gray-600">{kit.reference_month}</td>
+                        <td className="py-3 px-4 text-gray-600">{formatRefMonth(kit.reference_month)}</td>
                         <td className="py-3 px-4">
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[kit.status] || 'bg-gray-100 text-gray-800'}`}>
                             {statusLabels[kit.status] || kit.status}
@@ -350,6 +366,29 @@ export default function KitsListPage() {
         </Card>
       )}
 
+      {/* Paginacao */}
+      {totalKits > PAGE_SIZE && (
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <span>Exibindo {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalKits)} de {totalKits} kits</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40"
+            >
+              ← Anterior
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page * PAGE_SIZE >= totalKits}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40"
+            >
+              Próximo →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modal Novo Kit */}
       {showNewKit && createPortal(
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
@@ -361,14 +400,25 @@ export default function KitsListPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                <select value={newKitClient} onChange={e => setNewKitClient(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <select
+                  value={newKitClient}
+                  onChange={e => { setNewKitClient(e.target.value); setNewKitErrors(p => ({ ...p, client: undefined })); }}
+                  className={`w-full px-3 py-2 border rounded-lg text-sm ${newKitErrors.client ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
+                >
                   <option value="">Selecione o cliente</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
+                {newKitErrors.client && <p className="mt-1 text-xs text-red-600">{newKitErrors.client}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mês Referência *</label>
-                <input type="month" value={newKitMonth} onChange={e => setNewKitMonth(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mês de Referência *</label>
+                <input
+                  type="month"
+                  value={newKitMonth}
+                  onChange={e => { setNewKitMonth(e.target.value); setNewKitErrors(p => ({ ...p, month: undefined })); }}
+                  className={`w-full px-3 py-2 border rounded-lg text-sm ${newKitErrors.month ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
+                />
+                {newKitErrors.month && <p className="mt-1 text-xs text-red-600">{newKitErrors.month}</p>}
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
