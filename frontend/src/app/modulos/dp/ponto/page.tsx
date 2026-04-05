@@ -89,7 +89,7 @@ export default function PontoPage() {
             allRecords = Array.isArray(data) ? data : data.items || data.records || data.registros || [];
           } else {
             // Fallback: fetch all time-records with date filter
-            const allRes = await fetch(`${API_BASE}/hr/time-records?date=${selectedDate}&page_size=200`, { headers: getAuthHeaders() }).catch(() => null);
+            const allRes = await fetch(`${API_BASE}/hr/time-records?date=${selectedDate}&page_size=100`, { headers: getAuthHeaders() }).catch(() => null);
             if (allRes?.ok) {
               const data = await allRes.json();
               allRecords = Array.isArray(data) ? data : data.items || data.records || [];

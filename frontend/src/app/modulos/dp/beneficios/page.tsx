@@ -116,7 +116,7 @@ export default function BeneficiosPage() {
   useEffect(() => {
     async function loadEmployees() {
       try {
-        const res = await fetch(`${API_BASE}/employees?page_size=200`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setEmployees(data.items || data || []);

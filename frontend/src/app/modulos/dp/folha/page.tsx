@@ -92,7 +92,7 @@ export default function FolhaPage() {
 
         // If no employees yet, try employees endpoint as fallback
         if (employees.length === 0) {
-          const empRes = await fetch(`${API_BASE}/hr/employees?page_size=200`, { headers: getAuthHeaders() }).catch(() => null);
+          const empRes = await fetch(`${API_BASE}/hr/employees?page_size=100`, { headers: getAuthHeaders() }).catch(() => null);
           if (empRes?.ok) {
             const empData = await empRes.json();
             const emps = empData.items || empData || [];
