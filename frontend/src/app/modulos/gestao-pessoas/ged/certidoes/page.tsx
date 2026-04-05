@@ -90,9 +90,9 @@ const typeLabels: Record<string, string> = {
   crf_fgts: 'CRF/FGTS (CEF)',
   cnd_municipal: 'CND Municipal (ISS)',
   cnd_estadual: 'CND Estadual (SEFAZ)',
-  cnd_previdenciaria: 'CND Previdenciaria',
-  ALVARA: 'Alvara de Funcionamento',
-  AUTORIZACAO_PF: 'Autorizacao Policia Federal',
+  cnd_previdenciaria: 'CND Previdenciária',
+  ALVARA: 'Alvará de Funcionamento',
+  AUTORIZACAO_PF: 'Autorização Polícia Federal',
 };
 
 function getStatusConfig(cert: Certificate) {
@@ -100,12 +100,12 @@ function getStatusConfig(cert: Certificate) {
     return { label: 'Vencida', color: 'bg-red-100 text-red-800', icon: XCircle, priority: 0 };
   }
   if (cert.dias_para_vencer <= 7) {
-    return { label: 'Critico', color: 'bg-red-100 text-red-800', icon: AlertTriangle, priority: 1 };
+    return { label: 'Crítico', color: 'bg-red-100 text-red-800', icon: AlertTriangle, priority: 1 };
   }
   if (cert.dias_para_vencer <= 30) {
     return { label: 'Vencendo', color: 'bg-yellow-100 text-yellow-800', icon: AlertTriangle, priority: 2 };
   }
-  return { label: 'Valida', color: 'bg-green-100 text-green-800', icon: CheckCircle, priority: 3 };
+  return { label: 'Válida', color: 'bg-green-100 text-green-800', icon: CheckCircle, priority: 3 };
 }
 
 function getDaysColor(days: number) {
@@ -145,8 +145,8 @@ export default function CertidoesPage() {
         setCertTypes(data.tipos || []);
       }
     } catch (err) {
-      console.error('Erro ao carregar certidoes:', err);
-      showToast('Erro ao carregar certidoes.', 'error');
+      console.error('Erro ao carregar certidões:', err);
+      showToast('Erro ao carregar certidões.', 'error');
     } finally {
       setLoading(false);
     }
@@ -166,12 +166,12 @@ export default function CertidoesPage() {
       });
       if (!res.ok) {
         console.error('Erro ao atualizar status:', res.status);
-        showToast('Erro ao sincronizar certidoes. Endpoint pode estar indisponivel.', 'error');
+        showToast('Erro ao sincronizar certidões. Endpoint pode estar indisponível.', 'error');
       }
       await loadData();
     } catch (err) {
-      console.error('Erro ao sincronizar certidoes:', err);
-      showToast('Erro de conexao ao sincronizar certidoes.', 'error');
+      console.error('Erro ao sincronizar certidões:', err);
+      showToast('Erro de conexão ao sincronizar certidões.', 'error');
     } finally {
       setSyncing(false);
     }
@@ -227,10 +227,10 @@ export default function CertidoesPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <ShieldCheck className="h-6 w-6" />
-            Certidoes Negativas (CND)
+            Certidões Negativas (CND)
           </h1>
           <p className="text-muted-foreground">
-            Controle de validade e renovacao de certidoes
+            Controle de validade e renovação de certidões
           </p>
         </div>
         <Button onClick={handleSync} disabled={syncing}>
@@ -244,9 +244,9 @@ export default function CertidoesPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-red-800">Atencao! Ha certidoes que precisam de acao imediata</p>
+            <p className="font-medium text-red-800">Atenção! Há certidões que precisam de ação imediata</p>
             <p className="text-sm text-red-600 mt-1">
-              {expiredCount > 0 && `${expiredCount} certidao(oes) vencida(s). `}
+              {expiredCount > 0 && `${expiredCount} certidão(ões) vencida(s). `}
               {urgentCount > 0 && `${urgentCount} vence(m) em menos de 7 dias.`}
             </p>
           </div>
@@ -257,7 +257,7 @@ export default function CertidoesPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Validas</CardTitle>
+            <CardTitle className="text-sm font-medium">Válidas</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -334,7 +334,7 @@ export default function CertidoesPage() {
                     </p>
                   )}
                   {g.type.obrigatoria && (
-                    <Badge variant="secondary" className="text-xs mt-1">Obrigatoria</Badge>
+                    <Badge variant="secondary" className="text-xs mt-1">Obrigatória</Badge>
                   )}
                 </CardContent>
               </Card>
@@ -352,7 +352,7 @@ export default function CertidoesPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome, tipo, empresa ou orgao..."
+                placeholder="Buscar por nome, tipo, empresa ou órgão..."
                 className="pl-10"
               />
             </div>
@@ -373,7 +373,7 @@ export default function CertidoesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="valida">Validas</SelectItem>
+                <SelectItem value="valida">Válidas</SelectItem>
                 <SelectItem value="vencendo">Vencendo</SelectItem>
                 <SelectItem value="vencida">Vencidas</SelectItem>
               </SelectContent>
@@ -393,17 +393,17 @@ export default function CertidoesPage() {
           {filtered.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <ShieldCheck className="h-12 w-12 mx-auto mb-3 opacity-40" />
-              <p className="font-medium">Nenhuma certidao encontrada</p>
-              <p className="text-sm mt-1">Ajuste os filtros ou sincronize as certidoes</p>
+              <p className="font-medium">Nenhuma certidão encontrada</p>
+              <p className="text-sm mt-1">Ajuste os filtros ou sincronize as certidões</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-3 font-medium text-muted-foreground">Certidao</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Certidão</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Empresa</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Emissao</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Emissão</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Validade</th>
                     <th className="text-center p-3 font-medium text-muted-foreground">Dias</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
