@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Receipt, ArrowLeft, Inbox, Plus, X, Save, Search, Filter, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const API_BASE = '/api/v1/people-management/hr';
+
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   pending: { label: 'Pendente', className: 'bg-yellow-500 text-white' },
@@ -39,17 +49,31 @@ interface Reembolso {
 export default function ReembolsosPage() {
   const router = useRouter();
   const [reembolsos] = useState<Reembolso[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    employee_name: '',
+    employee_id: '',
     category: 'transporte',
     description: '',
     amount: '',
     date: new Date().toISOString().split('T')[0] ?? '',
   });
+
+  useEffect(() => {
+    async function loadEmployees() {
+      try {
+        const res = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          setEmployees(data.items || data || []);
+        }
+      } catch { /* skip */ }
+    }
+    loadEmployees();
+  }, []);
 
   const filteredData = useMemo(() => {
     let items = [...reembolsos];
@@ -68,7 +92,7 @@ export default function ReembolsosPage() {
   }, [reembolsos, filtroStatus, searchTerm]);
 
   const handleCreate = async () => {
-    if (!formData.employee_name || !formData.amount || !formData.date) {
+    if (!formData.employee_id || !formData.amount || !formData.date) {
       toast.error('Preencha todos os campos obrigatórios', { duration: 4000 });
       return;
     }
@@ -77,6 +101,7 @@ export default function ReembolsosPage() {
     setTimeout(() => {
       setSaving(false);
       setShowForm(false);
+      setFormData({ employee_id: '', category: 'transporte', description: '', amount: '', date: new Date().toISOString().split('T')[0] ?? '' });
       toast.info('Funcionalidade em implementação. O endpoint de reembolsos será integrado em breve.', { duration: 5000 });
     }, 800);
   };
@@ -135,13 +160,16 @@ export default function ReembolsosPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">Colaborador *</label>
-                <input
-                  type="text"
-                  value={formData.employee_name}
-                  onChange={e => setFormData(p => ({ ...p, employee_name: e.target.value }))}
+                <select
+                  value={formData.employee_id}
+                  onChange={e => setFormData(p => ({ ...p, employee_id: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md text-sm"
-                  placeholder="Nome do colaborador"
-                />
+                >
+                  <option value="">Selecione o colaborador</option>
+                  {employees.map((emp: any) => (
+                    <option key={emp.id} value={emp.id}>{emp.nome || emp.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Categoria</label>
