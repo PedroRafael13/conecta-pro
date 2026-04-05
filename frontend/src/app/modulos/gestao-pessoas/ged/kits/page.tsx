@@ -329,13 +329,13 @@ export default function KitsListPage() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-1">
-                            <button onClick={() => router.push(`/modulos/gestao-pessoas/ged/kits/${kit.id}`)} className="p-1.5 rounded hover:bg-gray-100" title="Visualizar">
+                            <button onClick={() => router.push(`/modulos/gestao-pessoas/ged/kits/${kit.id}`)} className="p-1.5 rounded hover:bg-gray-100" title="Visualizar kit" aria-label="Visualizar kit">
                               <Eye className="h-4 w-4 text-gray-600" />
                             </button>
-                            <button onClick={() => handleSend(kit.id)} className="p-1.5 rounded hover:bg-blue-50" title="Enviar" disabled={kit.status === 'enviado' || kit.status === 'aprovado'}>
+                            <button onClick={() => handleSend(kit.id)} className="p-1.5 rounded hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed" title="Enviar kit" aria-label="Enviar kit" disabled={kit.status === 'enviado' || kit.status === 'aprovado'}>
                               <Send className="h-4 w-4 text-blue-500" />
                             </button>
-                            <button onClick={() => handleApprove(kit.id)} className="p-1.5 rounded hover:bg-green-50" title="Aprovar" disabled={kit.status === 'aprovado'}>
+                            <button onClick={() => handleApprove(kit.id)} className="p-1.5 rounded hover:bg-green-50 disabled:opacity-40 disabled:cursor-not-allowed" title="Aprovar kit" aria-label="Aprovar kit" disabled={kit.status === 'aprovado'}>
                               <CheckCircle className="h-4 w-4 text-green-500" />
                             </button>
                           </div>

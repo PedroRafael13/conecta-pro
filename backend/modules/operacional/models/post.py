@@ -132,6 +132,13 @@ class Post(Base):
         nullable=True,
         index=True,
     )
+    # Vínculo explícito com cliente GED (evita fuzzy match por nome)
+    ged_client_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False),
+        nullable=True,
+        index=True,
+        comment="FK para ged_clients.id — vincula posto ao cliente GED diretamente",
+    )
 
     # Localização
     address: Mapped[str | None] = mapped_column(String(500), nullable=True)

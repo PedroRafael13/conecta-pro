@@ -6,9 +6,10 @@ Orquestra a coleta automatica de documentos de diferentes modulos
 """
 
 import logging
+import unicodedata
 from datetime import date
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.people_management.ged.models.client import GedClient
@@ -506,13 +507,14 @@ class KitBuilderService:
         return results
 
     async def get_employees_for_client(self, client_id: str) -> list[str]:
-        """Busca IDs dos funcionarios alocados nos postos de um cliente.
+        """Busca IDs dos funcionarios alocados nos postos de um cliente GED.
 
-        Consulta a tabela de alocacoes (allocations) via postos (posts)
-        para encontrar funcionarios ativos vinculados ao cliente GED.
+        Estratégia em dois passos:
+        1. Busca direta por posts.ged_client_id == client_id (FK explícita)
+        2. Fallback: fuzzy match por palavras significativas do nome do cliente
+           vs nome dos postos (normalização Unicode, ignora stop words)
 
-        Primeiro tenta buscar postos com client_id correspondente.
-        Se nao encontrar, retorna lista vazia.
+        Emite WARNING quando usa o fallback para incentivar preenchimento do FK.
 
         Args:
             client_id: UUID do cliente GED.
@@ -520,34 +522,95 @@ class KitBuilderService:
         Returns:
             Lista de employee_ids (UUIDs como string).
         """
-        try:
-            from modules.operacional.models.allocation import Allocation, AllocationStatus
-            from modules.operacional.models.post import Post
+        # Stop words que não diferenciam clientes
+        STOP_WORDS = {
+            "CONDOMINIO",
+            "CONDOMINIUM",
+            "RESIDENCIAL",
+            "EDIFICIO",
+            "PREDIAL",
+            "DO",
+            "DA",
+            "DE",
+            "DOS",
+            "DAS",
+            "E",
+            "O",
+            "A",
+            "EM",
+        }
 
-            # Buscar postos vinculados ao cliente
-            posts_result = await self.db.execute(
-                select(Post.id).where(
-                    Post.client_id == str(client_id),
-                    Post.status == "active",
-                )
+        def normalize(s: str) -> str:
+            nfkd = unicodedata.normalize("NFKD", (s or "").upper())
+            return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+        def sig_words(s: str) -> set[str]:
+            return {w for w in normalize(s).split() if w not in STOP_WORDS and len(w) >= 3}
+
+        try:
+            # ── Passo 1: FK explícita ────────────────────────────────────────
+            explicit_result = await self.db.execute(
+                text(
+                    "SELECT id::text FROM posts WHERE ged_client_id = :cid AND status = 'active' AND is_active = true"
+                ),
+                {"cid": str(client_id)},
             )
-            post_ids = [str(row[0]) for row in posts_result.all()]
+            post_ids = [row[0] for row in explicit_result.all()]
+
+            if post_ids:
+                logger.debug(
+                    "Cliente %s: %d postos via FK explícita ged_client_id",
+                    client_id,
+                    len(post_ids),
+                )
+            else:
+                # ── Passo 2: Fuzzy match por nome ────────────────────────────
+                client_result = await self.db.execute(select(GedClient.name).where(GedClient.id == client_id))
+                client_row = client_result.first()
+                if not client_row:
+                    return []
+
+                ged_sig = sig_words(client_row[0])
+                if not ged_sig:
+                    return []
+
+                logger.warning(
+                    "WARN: usando fuzzy match para cliente %s ('%s') — "
+                    "considere vincular ged_client_id nos postos operacionais",
+                    client_id,
+                    client_row[0],
+                )
+
+                posts_result = await self.db.execute(
+                    text("SELECT id::text, name FROM posts WHERE status = 'active' AND is_active = true")
+                )
+                for post_id, post_name in posts_result.all():
+                    post_sig = sig_words(post_name or "")
+                    if post_sig and (post_sig <= ged_sig or ged_sig <= post_sig):
+                        post_ids.append(post_id)
+
+                logger.debug(
+                    "Cliente %s: %d postos via fuzzy match (sig=%s)",
+                    client_id,
+                    len(post_ids),
+                    ged_sig,
+                )
 
             if not post_ids:
-                logger.debug("Nenhum posto encontrado para cliente %s", client_id)
                 return []
 
-            # Buscar funcionarios alocados ativos nesses postos
+            # ── Buscar funcionários alocados ─────────────────────────────────
             alloc_result = await self.db.execute(
-                select(Allocation.employee_id)
-                .where(
-                    Allocation.post_id.in_(post_ids),
-                    Allocation.status == AllocationStatus.ACTIVE.value,
-                    Allocation.is_active.is_(True),
-                )
-                .distinct()
+                text("""
+                    SELECT DISTINCT employee_id::text
+                    FROM allocations
+                    WHERE post_id = ANY(:post_ids)
+                      AND status = 'active'
+                      AND is_active = true
+                """),
+                {"post_ids": post_ids},
             )
-            employee_ids = [str(row[0]) for row in alloc_result.all()]
+            employee_ids = [row[0] for row in alloc_result.all()]
 
             logger.debug(
                 "Cliente %s: %d postos, %d funcionarios alocados",
@@ -557,12 +620,6 @@ class KitBuilderService:
             )
             return employee_ids
 
-        except ImportError:
-            logger.warning(
-                "Modulos operacional nao disponiveis para buscar funcionarios do cliente %s",
-                client_id,
-            )
-            return []
         except Exception as e:
             logger.error("Erro ao buscar funcionarios do cliente %s: %s", client_id, e)
             return []

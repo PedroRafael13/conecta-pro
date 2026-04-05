@@ -361,6 +361,10 @@ export default function ModulosLayout({
             'transform transition-transform duration-200 ease-out',
             mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
           )}
+          aria-hidden={!mobileMenuOpen}
+          role={mobileMenuOpen ? 'dialog' : undefined}
+          aria-modal={mobileMenuOpen ? true : undefined}
+          aria-label="Menu de navegação"
         >
           {/* Subtle gradient overlay at top */}
           <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none opacity-[0.05] gradient-brand rounded-none" />

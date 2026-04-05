@@ -221,7 +221,7 @@ export default function RelatoriosPage() {
                   <button
                     onClick={() => handleGenerate(report)}
                     disabled={isGenerating || !startDate || !endDate}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isGenerating ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -233,7 +233,7 @@ export default function RelatoriosPage() {
                   <button
                     onClick={() => handleDownload(report)}
                     disabled={isGenerating || !startDate || !endDate}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Download className="h-4 w-4" />
                     Download PDF
