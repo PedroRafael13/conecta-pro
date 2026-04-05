@@ -14,10 +14,7 @@ const themeOptions: Array<{ value: string; label: string; icon: LucideIcon }> = 
 export function ThemeToggle() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setMounted(true); }, []);
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -32,11 +29,6 @@ export function ThemeToggle() {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen]);
-
-  // Antes do mount, renderizar placeholder neutro para evitar hydration mismatch
-  if (!mounted) {
-    return <div className="w-10 h-10 rounded-lg bg-[hsl(var(--secondary))] border border-[hsl(var(--border))]" />;
-  }
 
   // Determinar qual ícone renderizar baseado no tema resolvido
   const CurrentIcon = resolvedTheme === 'dark' ? Moon : Sun;
@@ -111,12 +103,6 @@ export function ThemeToggle() {
 // Versão compacta (apenas ícone alternando)
 export function ThemeToggleCompact() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
-  if (!mounted) {
-    return <div className="w-10 h-10 rounded-lg bg-[hsl(var(--secondary))] border border-[hsl(var(--border))]" />;
-  }
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');

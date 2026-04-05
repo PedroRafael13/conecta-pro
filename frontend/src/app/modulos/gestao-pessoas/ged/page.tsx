@@ -3,12 +3,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-
-function formatRefMonth(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
-  return new Intl.DateTimeFormat('pt-BR', { month: '2-digit', year: 'numeric' }).format(d);
-}
 import {
   FolderOpen,
   Clock,
@@ -146,10 +140,10 @@ export default function GEDDashboardPage() {
   }
 
   const statCards = [
-    { label: 'Total Kits', value: totalKitsGeral || summary.total_kits, icon: FolderOpen, color: 'text-blue-600', bg: 'bg-blue-50', href: '/modulos/gestao-pessoas/ged/kits' },
-    { label: 'Kits Pendentes', value: summary.kits_pendentes, icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50', href: '/modulos/gestao-pessoas/ged/kits?status=em_montagem' },
-    { label: 'Kits Enviados', value: summary.kits_enviados, icon: Send, color: 'text-green-600', bg: 'bg-green-50', href: '/modulos/gestao-pessoas/ged/kits?status=enviado' },
-    { label: 'Taxa de Conclusão', value: `${summary.taxa_conclusao}%`, icon: BarChart3, color: 'text-purple-600', bg: 'bg-purple-50', href: '/modulos/gestao-pessoas/ged/kits' },
+    { label: 'Total Kits', value: totalKitsGeral || summary.total_kits, icon: FolderOpen, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Kits Pendentes', value: summary.kits_pendentes, icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { label: 'Kits Enviados', value: summary.kits_enviados, icon: Send, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Taxa Conclusao', value: `${summary.taxa_conclusao}%`, icon: BarChart3, color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
 
   if (loading) {
@@ -165,8 +159,8 @@ export default function GEDDashboardPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">GED — Gestão Eletrônica de Documentos</h1>
-          <p className="text-gray-500 mt-1">Kits documentais, certidões e envios</p>
+          <h1 className="text-2xl font-bold text-gray-900">GED - Gestao Eletronica de Documentos</h1>
+          <p className="text-gray-500 mt-1">Kits documentais, certidoes e envios</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -211,11 +205,7 @@ export default function GEDDashboardPage() {
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card
-              key={stat.label}
-              className="border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => router.push(stat.href)}
-            >
+            <Card key={stat.label} className="border border-gray-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -248,9 +238,9 @@ export default function GEDDashboardPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Cliente</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Mês Ref.</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Mes Ref</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Conclusão</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Conclusao</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
                 </tr>
               </thead>
@@ -265,7 +255,7 @@ export default function GEDDashboardPage() {
                   recentKits.map((kit) => (
                     <tr key={kit.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4 font-medium">{kit.client_name}</td>
-                      <td className="py-3 px-4 text-gray-600">{formatRefMonth(kit.reference_month)}</td>
+                      <td className="py-3 px-4 text-gray-600">{kit.reference_month}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[kit.status] || 'bg-gray-100 text-gray-800'}`}>
                           {statusLabels[kit.status] || kit.status}
