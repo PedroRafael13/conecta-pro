@@ -44,3 +44,13 @@ repos:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
         exclude: (backend/venv|frontend/node_modules|\.test\.|\.spec\.|tsconfig\.tsbuildinfo)
+
+  # Governança de sessões autônomas (anti-revert, anti-multi-módulo)
+  - repo: local
+    hooks:
+      - id: governance-check
+        name: Governance — Multi-module commit guard
+        language: script
+        entry: scripts/governance-check.sh
+        pass_filenames: false
+        always_run: true

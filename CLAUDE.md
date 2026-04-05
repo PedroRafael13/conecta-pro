@@ -114,3 +114,73 @@ python3 agents/orchestrator_geral.py
 - Commit após cada correção com mensagem descritiva
 - Rate limit de auth: 5 req/min — usar token compartilhado nos agentes
 - Pré-commit hooks ativos: ruff, detect-secrets, bandit
+
+---
+
+## Regras de Governança para Sessões Autônomas
+
+> **Contexto:** Em 2026-04-05 ocorreram 3 reverts automáticos (65c3ce14, f87e9c5b,
+> f866cc6a) causados por sessões tmux paralelas revertendo commits de outros módulos.
+> Estas regras são obrigatórias para todas as sessões Claude Code.
+
+### Escopo de módulo obrigatório
+Cada sessão Claude DEVE declarar no início qual módulo está editando.
+Uma sessão que trabalha em `ged/` NÃO deve tocar em arquivos de `rh/`,
+`operacional/`, `financeiro/` ou qualquer outro módulo não declarado.
+
+### Proibição absoluta de git revert
+Nenhuma sessão Claude pode executar `git revert` sem confirmação
+explícita de Jordan Jesus no chat.
+Antes de reverter qualquer coisa, a sessão DEVE escrever:
+```
+AGUARDANDO APROVAÇÃO: pretendo executar git revert <hash> porque <motivo>.
+Confirma? (sim/não)
+```
+E aguardar resposta antes de prosseguir.
+
+### Proibição de git push para main/develop
+Sessões autônomas não podem fazer push direto para main ou develop.
+Todo commit deve ficar na branch de trabalho declarada no início da sessão.
+
+### Verificação de conflito antes de commit
+Antes de qualquer `git commit`, executar:
+```bash
+git diff --name-only HEAD
+```
+e verificar se algum arquivo modificado pertence a módulo diferente do declarado.
+Se sim, remover esse arquivo do stage e registrar no relatório final.
+
+### Identificação da sessão
+Todo commit de sessão autônoma DEVE incluir no final da mensagem:
+```
+[session: tmux-<id>] [module: <nome>]
+```
+Exemplo: `fix(ged): correção E2E [session: tmux-t1] [module: ged]`
+
+### Como desfazer um commit com segurança (quando autorizado por Jordan)
+
+**NUNCA usar:**
+```bash
+git revert <hash-de-outro-módulo>
+git reset --hard
+```
+
+**Usar apenas (quando Jordan autorizar explicitamente):**
+```bash
+# Desfazer o último commit mantendo as mudanças em stage:
+git reset --soft HEAD~1
+
+# Ou, se Jordan autorizou reverter um commit específico:
+git revert <hash> --no-edit
+# Seguido de push para a branch de trabalho — NUNCA para main/develop
+```
+
+### Resolução de conflito entre sessões
+Se uma sessão detectar que seu commit foi revertido por outra sessão:
+1. **NÃO re-aplicar automaticamente**
+2. Notificar Jordan com:
+   ```
+   ATENÇÃO: commit <hash> foi revertido por <hash-revert>.
+   Aguardo sua instrução para re-aplicar ou descartar.
+   ```
+3. Aguardar confirmação antes de qualquer ação
