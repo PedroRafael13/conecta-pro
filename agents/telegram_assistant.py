@@ -71,7 +71,7 @@ CLIENTES ATIVOS (mao de obra — recebem kit mensal):
 - Villa Dei Fiori: R$ 25.592/mes | sem retencao
 - Michelangelo: R$ 8.346/mes | sem retencao
 - Gelain: R$ 6.000/mes | portaria remota
-SEM KIT: Parise Village, Green Hills (CFTV)
+SEM KIT: Parise Village, Green Hills (CFTV), Life Centro (ex)
 
 BANCO: Inter (principal, PIX) | Cora (secundario)
 Laranjeiras e Gelain pagam via BOLETO (nao PIX)
