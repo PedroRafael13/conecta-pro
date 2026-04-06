@@ -16,7 +16,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import Boolean, Column, Date, DateTime, String, Text
+from sqlalchemy import Boolean, Column, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -188,35 +188,7 @@ class MedicalExam:
         }
 
 
-# SQLAlchemy Models
-class MedicalExamModel(Base):
-    """Modelo de banco para exames medicos."""
-
-    __tablename__ = "health_medical_exams"
-
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    employee_id = Column(String(100), nullable=False, index=True)
-    employee_name = Column(String(255), nullable=False)
-    employee_cpf = Column(String(14), nullable=False)
-    exam_type = Column(String(30), nullable=False, index=True)
-    status = Column(String(20), nullable=False, default="scheduled", index=True)
-    scheduled_date = Column(Date, nullable=True, index=True)
-    scheduled_time = Column(String(5), nullable=True)
-    clinic_id = Column(PGUUID(as_uuid=True), nullable=True)
-    clinic_name = Column(String(255), nullable=True)
-    completed_date = Column(Date, nullable=True)
-    fitness_result = Column(String(30), nullable=True)
-    restrictions = Column(Text, nullable=True)
-    valid_until = Column(Date, nullable=True, index=True)
-    complementary_exams = Column(JSONB, default=[])
-    doctor_name = Column(String(255), nullable=True)
-    doctor_crm = Column(String(20), nullable=True)
-    aso_number = Column(String(50), nullable=True)
-    observations = Column(Text, nullable=True)
-    extra_metadata = Column(JSONB, default={})
-    created_at = Column(DateTime, default=datetime.utcnow)
-    created_by = Column(String(100), nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+# Modelo canônico: modules.health_occupational.models.pcmso.MedicalExam (health_medical_exams)
 
 
 class ClinicPartnerModel(Base):

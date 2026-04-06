@@ -236,50 +236,9 @@ class EPIModelDBModel(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-class EPIInventoryDBModel(Base):
-    """Modelo de banco para inventario de EPI."""
-
-    __tablename__ = "health_epi_inventory"
-
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    epi_model_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
-    epi_model_name = Column(String(255), nullable=False)
-    batch_number = Column(String(100), nullable=True)
-    serial_number = Column(String(100), nullable=True, unique=True)
-    purchase_date = Column(Date, nullable=True)
-    manufacture_date = Column(Date, nullable=True)
-    expiry_date = Column(Date, nullable=True, index=True)
-    status = Column(String(20), nullable=False, default="disponivel", index=True)
-    location = Column(String(100), nullable=True)
-    current_holder_id = Column(String(100), nullable=True, index=True)
-    notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-
-class EPIDeliveryDBModel(Base):
-    """Modelo de banco para entregas de EPI."""
-
-    __tablename__ = "health_epi_deliveries"
-
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    employee_id = Column(String(100), nullable=False, index=True)
-    employee_name = Column(String(255), nullable=False)
-    employee_cpf = Column(String(14), nullable=False)
-    inventory_item_id = Column(PGUUID(as_uuid=True), nullable=False)
-    epi_model_name = Column(String(255), nullable=False)
-    epi_category = Column(String(50), nullable=False)
-    delivery_date = Column(DateTime, nullable=False, index=True)
-    delivered_by = Column(String(100), nullable=False)
-    status = Column(String(20), nullable=False, default="entregue", index=True)
-    return_date = Column(DateTime, nullable=True)
-    return_reason = Column(Text, nullable=True)
-    replacement_id = Column(PGUUID(as_uuid=True), nullable=True)
-    training_provided = Column(Boolean, default=False)
-    signature_collected = Column(Boolean, default=False)
-    observations = Column(Text, nullable=True)
-    extra_metadata = Column(JSONB, default={})
-    created_at = Column(DateTime, default=datetime.utcnow)
+# Modelos canônicos em modules.health_occupational.models.epi:
+#   EPIInventory  → health_epi_inventory
+#   EPIDelivery   → health_epi_deliveries
 
 
 class EPIConfig(BaseModel):

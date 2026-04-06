@@ -16,7 +16,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import Boolean, Column, Date, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -252,37 +252,7 @@ class WorkLocation:
         }
 
 
-# SQLAlchemy Models
-class OccupationalRiskModel(Base):
-    """Modelo de banco para riscos ocupacionais."""
-
-    __tablename__ = "health_occupational_risks"
-
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    agent_id = Column(PGUUID(as_uuid=True), nullable=False)
-    agent_name = Column(String(255), nullable=False)
-    category = Column(String(30), nullable=False, index=True)
-    location_id = Column(String(100), nullable=False, index=True)
-    location_name = Column(String(255), nullable=False)
-    department = Column(String(100), nullable=False, index=True)
-    activity = Column(Text, nullable=False)
-    exposure_frequency = Column(String(20), nullable=False)
-    exposed_workers = Column(Integer, default=0)
-    probability = Column(Integer, nullable=False)
-    severity = Column(Integer, nullable=False)
-    risk_level = Column(String(20), nullable=False, index=True)
-    measurements = Column(JSONB, default=[])
-    control_measures = Column(JSONB, default=[])
-    requires_epi = Column(Boolean, default=False)
-    required_epi = Column(JSONB, default=[])
-    requires_training = Column(Boolean, default=False)
-    identified_at = Column(DateTime, default=datetime.utcnow)
-    identified_by = Column(String(100), nullable=True)
-    last_review = Column(DateTime, nullable=True)
-    next_review = Column(Date, nullable=True, index=True)
-    extra_metadata = Column(JSONB, default={})
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+# Modelo canônico: modules.health_occupational.models.ppra.OccupationalRisk (health_occupational_risks)
 
 
 class RiskAgentModel(Base):
