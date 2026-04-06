@@ -62,8 +62,6 @@ SAFE_IMPORT_PATTERNS = [
 
 SKIP_MODULES = {
     # Modules that have side effects on import or require running services
-    "modules.ai.bartolo.services.data_connector",  # 2930 lines, heavy imports
-    "modules.ai.bartolo.models.bartolo_models",  # circular import
     "modules.equipment_management.services.rfid_lifecycle_service",  # missing dep
     "modules.operacional.occurrences.schemas.occurrence_schemas",  # broken schema
     "modules.operacional.occurrences.services.occurrence_ai_analyzer",  # depends on above

@@ -117,8 +117,7 @@ test.describe('Dashboard Principal', () => {
     await expect(page.getByText('Colaboradores')).toBeVisible();
     await expect(page.getByText('Postos Ativos')).toBeVisible();
 
-    // Verifica que o Bartolo FAB está visível em mobile
-    await expect(page.locator('button[aria-label="Abrir chat com Bartolo"]')).toBeVisible();
+    // Bartolo removido — FAB não existe mais
 
     // Verifica que o campo de busca mobile está presente na DOM
     const searchInputs = page.locator('input[placeholder*="Buscar" i]');

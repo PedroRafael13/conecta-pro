@@ -87,7 +87,6 @@ def setup_structured_logging():
         "sqlalchemy",
         "modules.field_service",
         "modules.ai",
-        "modules.ai.bartolo",
         "api",
         "core",
     ]

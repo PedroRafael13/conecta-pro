@@ -263,7 +263,6 @@ class TestInteligenciaAggregator:
     """Tests for modules.inteligencia aggregator."""
 
     EXPECTED_ALL = [
-        "bartolo_router",
         "executive_dashboard_router",
         "analytics_router",
         "report_router",

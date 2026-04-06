@@ -230,13 +230,11 @@ router.include_router(bidding_certificate_router, prefix="/bidding", tags=["Cert
 # =============================================================================
 from modules.inteligencia import (  # noqa: E402
     analytics_router,
-    bartolo_router,
     executive_dashboard_router,
     monitoring_router,
     report_router,
 )
 
-router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
 router.include_router(executive_dashboard_router, prefix="/analytics", tags=["Analytics - Executive Dashboard"])
 router.include_router(analytics_router, tags=["Analytics - Predictive"])
 router.include_router(report_router, prefix="/reports", tags=["Reports - Relatórios Gerenciais"])

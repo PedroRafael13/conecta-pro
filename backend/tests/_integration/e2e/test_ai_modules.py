@@ -13,10 +13,10 @@ from httpx import AsyncClient
 class TestAIChatbot:
     """Testes do módulo AI Chatbot."""
 
-    async def test_chatbot_endpoint_exists(self, client: AsyncClient):
-        """Verifica que o endpoint do chatbot existe."""
+    async def test_chatbot_endpoint_removed(self, client: AsyncClient):
+        """Verifica que o endpoint do chatbot Bartolo foi removido."""
         response = await client.get("/api/v1/ai/bartolo/modules")
-        assert response.status_code in [200, 401, 403, 422]
+        assert response.status_code == 404
 
 
 @pytest.mark.asyncio

@@ -13,12 +13,10 @@ import { test, expect } from '@playwright/test';
  *  4. GET  /api/v1/operacional/ai/absence-risks
  *  5. GET  /api/v1/operacional/ai/field-monitor
  *  6. POST /api/v1/operacional/ai/incident/classify
- *  7. GET  /api/v1/operacional/ai/bartolo/insights
- *  8. POST /api/v1/operacional/ai/bartolo/chat
- *  9. GET  /api/v1/operacional/ai/cost/forecast
- * 10. POST /api/v1/operacional/ai/maintenance/expire-time-bank
- * 11. POST /api/v1/operacional/ai/scale/optimize
- * 12. POST /api/v1/operacional/ai/substitute/find
+ *  7. GET  /api/v1/operacional/ai/cost/forecast
+ *  8. POST /api/v1/operacional/ai/maintenance/expire-time-bank
+ *  9. POST /api/v1/operacional/ai/scale/optimize
+ * 10. POST /api/v1/operacional/ai/substitute/find
  */
 
 const API = 'http://localhost:8080';
@@ -186,74 +184,6 @@ test.describe('6. IncidentClassifierAgent', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// 7. Bartolo3Agent — Insights
-// ─────────────────────────────────────────────────────────────
-
-test.describe('7. Bartolo3Agent — Insights', () => {
-  test('GET /bartolo/insights deve retornar insights proativos', async ({ request }) => {
-    const res = await request.get(`${API}/api/v1/operacional/ai/bartolo/insights`, {
-      headers: headers(),
-    });
-    expect(res.ok()).toBeTruthy();
-    const data = await res.json();
-    expect(typeof data).toBe('object');
-  });
-});
-
-// ─────────────────────────────────────────────────────────────
-// 8. Bartolo3Agent — Chat
-// ─────────────────────────────────────────────────────────────
-
-test.describe('8. Bartolo3Agent — Chat', () => {
-  test('POST /bartolo/chat deve responder mensagem', async ({ request }) => {
-    const res = await request.post(`${API}/api/v1/operacional/ai/bartolo/chat`, {
-      headers: headers(),
-      data: {
-        message: 'Quantos postos estão ativos hoje?',
-        user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-        history: [],
-      },
-    });
-    expect(res.ok()).toBeTruthy();
-    const data = await res.json();
-    expect(data).toHaveProperty('message');
-    expect(data).toHaveProperty('intent');
-    expect(data).toHaveProperty('confidence');
-  });
-
-  test('POST /bartolo/chat com saudação', async ({ request }) => {
-    const res = await request.post(`${API}/api/v1/operacional/ai/bartolo/chat`, {
-      headers: headers(),
-      data: {
-        message: 'Bom dia, Bartolo!',
-        user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-        history: [],
-      },
-    });
-    expect(res.ok()).toBeTruthy();
-    const data = await res.json();
-    expect(data.message).toBeTruthy();
-  });
-
-  test('POST /bartolo/chat com histórico', async ({ request }) => {
-    const res = await request.post(`${API}/api/v1/operacional/ai/bartolo/chat`, {
-      headers: headers(),
-      data: {
-        message: 'E sobre a escala de amanhã?',
-        user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-        history: [
-          { role: 'user', content: 'Como está a cobertura?' },
-          { role: 'assistant', content: 'A cobertura está em 85% hoje.' },
-        ],
-      },
-    });
-    expect(res.ok()).toBeTruthy();
-    const data = await res.json();
-    expect(data.message).toBeTruthy();
-  });
-});
-
-// ─────────────────────────────────────────────────────────────
 // 9. CostPredictorAgent
 // ─────────────────────────────────────────────────────────────
 
@@ -392,7 +322,6 @@ test.describe('Acessibilidade — Todos os GET endpoints respondem', () => {
     '/api/v1/operacional/ai/performance-overview',
     '/api/v1/operacional/ai/absence-risks',
     '/api/v1/operacional/ai/field-monitor',
-    '/api/v1/operacional/ai/bartolo/insights',
     '/api/v1/operacional/ai/cost/forecast',
   ];
 

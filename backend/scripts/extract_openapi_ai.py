@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 def extract_ai_spec(input_file: str, output_file: str):
-    """Extrai apenas os endpoints do módulo AI/Bartolo."""
+    """Extrai apenas os endpoints do módulo AI."""
 
     print(f"Carregando OpenAPI spec de: {input_file}")
     with open(input_file, encoding="utf-8") as f:
@@ -61,8 +61,8 @@ def extract_ai_spec(input_file: str, output_file: str):
     ai_spec = {
         "openapi": full_spec["openapi"],
         "info": {
-            "title": "Conecta PRO - AI/Bartolo API",
-            "description": "API de Inteligência Artificial: OCR, Análise de Contratos, Detecção de Fraude, Assistente Bartolo e mais",
+            "title": "Conecta PRO - AI API",
+            "description": "API de Inteligência Artificial: OCR, Análise de Contratos, Detecção de Fraude e mais",
             "version": full_spec["info"]["version"],
         },
         "paths": ai_paths,

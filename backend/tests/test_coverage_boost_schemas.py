@@ -106,51 +106,15 @@ class TestFinancialSchemasInstantiation:
 class TestAIModuleImports:
     """Importar todos os sub-modulos de AI carrega milhares de linhas."""
 
-    def test_bartolo_engine(self):
-        from modules.ai.bartolo.services import bartolo_engine
-
-        assert bartolo_engine is not None
-
-    def test_bartolo_config(self):
-        from modules.ai.bartolo.config import identity, modules, user_profiles
-
-        assert identity is not None
-        assert modules is not None
-
-    def test_bartolo_prompts(self):
-        from modules.ai.bartolo.config import system_prompt
-
-        assert system_prompt is not None
-
-    def test_bartolo_data_connector(self):
-        from modules.ai.bartolo.services import data_connector
-
-        assert data_connector is not None
-
-    def test_bartolo_learning(self):
-        from modules.ai.bartolo.services import learning_service
-
-        assert learning_service is not None
-
-    def test_bartolo_context(self):
+    def test_ai_conversation_context(self):
         from modules.ai.conversation.services import context_manager
 
         assert context_manager is not None
 
-    def test_bartolo_llm(self):
+    def test_ai_conversation_llm(self):
         from modules.ai.conversation.services import llm_provider
 
         assert llm_provider is not None
-
-    def test_bartolo_actions(self):
-        from modules.ai.bartolo.actions import action_detector, action_types
-
-        assert action_types is not None
-
-    def test_bartolo_skills(self):
-        from modules.ai.bartolo.skills import escala_skill
-
-        assert escala_skill is not None
 
     def test_contract_analysis(self):
         from modules.ai.contract_analysis.services import compliance_checker
