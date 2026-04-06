@@ -131,34 +131,6 @@ export default function AICommandCenterOperacionalPage() {
     autoConnect: true,
   });
 
-  // Bartolo 3.0 Chat
-  const [bartoloChatHistory, setBartoloChatHistory] = useState<Array<{role: 'user'|'assistant', content: string}>>([]);
-  const [bartoloInput, setBartoloInput] = useState('');
-  const [bartoloLoading, setBartoloLoading] = useState(false);
-  const [bartoloSuggestions, setBartoloSuggestions] = useState<string[]>(['Como está a operação?', 'Ver alertas', 'Status de cobertura']);
-
-  const handleBartolSend = useCallback(async (message: string) => {
-    if (!message.trim()) return;
-    const userMsg = message.trim();
-    setBartoloInput('');
-    setBartoloChatHistory(prev => [...prev, { role: 'user', content: userMsg }]);
-    setBartoloLoading(true);
-    try {
-      const res = await api.post('/api/v1/operacional/ai/bartolo/chat', {
-        message: userMsg,
-        user_id: 'admin',
-        history: bartoloChatHistory.slice(-6),
-      });
-      const data = (res as any).data;
-      setBartoloChatHistory(prev => [...prev, { role: 'assistant', content: data.message }]);
-      if (data.suggestions?.length) setBartoloSuggestions(data.suggestions.slice(0, 3));
-    } catch {
-      setBartoloChatHistory(prev => [...prev, { role: 'assistant', content: 'Desculpe, tive um problema técnico. Tente novamente.' }]);
-    } finally {
-      setBartoloLoading(false);
-    }
-  }, [bartoloChatHistory]);
-
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white">
       {/* Header */}
@@ -507,73 +479,6 @@ export default function AICommandCenterOperacionalPage() {
           </div>
         )}
 
-        {/* Bartolo 3.0 Chat */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-sm">🤖</div>
-            <div>
-              <h2 className="font-semibold">Bartolo 3.0</h2>
-              <p className="text-xs text-white/40">Assistente Operacional Inteligente</p>
-            </div>
-            <div className="ml-auto flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-              <span className="text-xs text-green-400">Online</span>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="h-48 overflow-y-auto space-y-3 mb-4 p-3 bg-black/20 rounded-lg">
-            {bartoloChatHistory.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] text-sm px-3 py-2 rounded-lg ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white/10 text-white/80'}`}>
-                  {msg.content}
-                </div>
-              </div>
-            ))}
-            {bartoloLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white/10 text-white/60 text-sm px-3 py-2 rounded-lg">
-                  <span className="animate-pulse">Bartolo está pensando...</span>
-                </div>
-              </div>
-            )}
-            {bartoloChatHistory.length === 0 && (
-              <div className="flex items-center justify-center h-full text-white/30 text-sm">
-                Olá! Pergunte qualquer coisa sobre a operação.
-              </div>
-            )}
-          </div>
-
-          {/* Suggestions */}
-          {bartoloSuggestions.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {bartoloSuggestions.map((s, idx) => (
-                <button type="button" key={idx} onClick={() => handleBartolSend(s)} className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white/60 transition-all">
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={bartoloInput}
-              onChange={(e) => setBartoloInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleBartolSend(bartoloInput)}
-              placeholder="Pergunte ao Bartolo..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500"
-            />
-            <button
-              onClick={() => handleBartolSend(bartoloInput)}
-              disabled={!bartoloInput.trim() || bartoloLoading}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg text-sm text-white transition-all"
-            >
-              Enviar
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -652,32 +652,23 @@ except Exception as e:
 
 
 # =============================================================================
-# 7. INTELIGÊNCIA (ai/bartolo + analytics + reports + monitoring + search)
+# 7. INTELIGÊNCIA (analytics + reports + monitoring + search)
 # =============================================================================
 try:
     from modules.inteligencia import (
         analytics_router,
-        bartolo_router,
         executive_dashboard_router,
         monitoring_router,
         report_router,
     )
 
-    api_router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
     api_router.include_router(executive_dashboard_router, prefix="/analytics", tags=["Analytics - Executive Dashboard"])
     api_router.include_router(analytics_router, tags=["Analytics - Predictive"])
     api_router.include_router(report_router, tags=["Reports - Relatorios"])
     api_router.include_router(monitoring_router, tags=["Monitoring"])
-    # Briefing Executivo
-    try:
-        from modules.ai.bartolo.controllers.briefing_controller import router as briefing_router
-
-        api_router.include_router(briefing_router, prefix="/ai", tags=["AI - Briefing Executivo"])
-    except Exception as exc:
-        logger.warning("Briefing controller: %s", exc)
     # Intelligence Hub — desabilitado (bloqueia startup com workers pesados)
     # Para reativar: resolver inicializacao sincrona em intelligence_hub/__init__.py
-    logger.info("Modulo Inteligencia: OK (AI + Briefing)")
+    logger.info("Modulo Inteligencia: OK (Analytics + Reports + Monitoring)")
 except Exception as e:
     logger.warning(f"Modulo Inteligencia: {e}")
 

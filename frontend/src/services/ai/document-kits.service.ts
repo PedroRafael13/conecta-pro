@@ -4,7 +4,8 @@
  */
 
 import { customInstance } from '@/lib/axios-instance';
-import { EntityType } from '@/types/generated/ai/conectaPROAIBartoloAPI.schemas';
+
+type EntityType = 'employee' | 'condominium' | 'client' | string;
 
 const BASE = '/api/v1/document-kits/ai';
 

@@ -4,26 +4,11 @@
  */
 
 // ========== SERVICES ==========
-export { BartoloService } from './bartolo.service';
 export { DocumentsAIService } from './documents.service';
 export { FinancialAIService } from './financial.service';
 export { ClientsAIService } from './clients.service';
 export { OperationalAIService } from './operational.service';
 export { DocumentKitsAIService } from './document-kits.service';
-
-// ========== HOOKS - BARTOLO ==========
-export {
-  useSendMessage,
-  useBartoloGreeting,
-  useSubmitFeedback,
-  useStartWizard,
-  useSendWizardInput,
-  useWizardStatus,
-  useCancelWizard,
-  useLearnedPatterns,
-  useLearningStats,
-  useBartoloHealth,
-} from './hooks/useBartolo';
 
 // ========== HOOKS - DOCUMENTS AI ==========
 export {
@@ -91,12 +76,3 @@ export {
   useSuggestDocuments,
   useDocumentUsageAnalysis,
 } from './hooks/useDocumentKitsAI';
-
-// ========== TYPES - RE-EXPORTS ==========
-export type {
-  SendMessageRequest,
-  SendMessageResponse,
-  FeedbackRequest,
-  WizardStartRequest,
-  WizardInputRequest,
-} from '@/types/generated/ai/conectaPROAIBartoloAPI.schemas';

@@ -1,14 +1,11 @@
 """
 Módulo INTELIGÊNCIA — Agregador
-Unifica: ai/bartolo + analytics + reports + monitoring
+Unifica: analytics + reports + monitoring
 
 Routers re-exportados dos módulos de implementação.
 API URLs inalteradas.
 Data migração: 2026-03-11
 """
-
-# --- AI Bartolo ---
-from modules.ai.bartolo.controllers import bartolo_router
 
 # --- Analytics ---
 from modules.analytics.controllers import analytics_router, executive_dashboard_router
@@ -20,7 +17,6 @@ from modules.monitoring import router as monitoring_router
 from modules.reports.controllers import router as report_router
 
 __all__ = [
-    "bartolo_router",
     "executive_dashboard_router",
     "analytics_router",
     "report_router",

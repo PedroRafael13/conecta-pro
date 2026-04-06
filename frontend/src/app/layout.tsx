@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import { Providers } from '@/contexts/providers';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
-import { BartoloClientWrapper } from '@/components/BartoloClientWrapper';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -52,7 +51,6 @@ export default function RootLayout({
           </main>
           <Toaster />
           <SonnerToaster richColors position="top-right" />
-          <BartoloClientWrapper />
         </Providers>
       </body>
     </html>

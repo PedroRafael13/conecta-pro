@@ -513,7 +513,7 @@ export default function OperacionalPage() {
               <Brain className="w-4 h-4 text-blue-400" />
             </div>
             <h3 className="text-white font-semibold text-sm">Centro de Comando IA</h3>
-            <span className="ml-auto text-xs text-blue-400/70">Powered by Bartolo</span>
+            <span className="ml-auto text-xs text-blue-400/70">Centro de Inteligência</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

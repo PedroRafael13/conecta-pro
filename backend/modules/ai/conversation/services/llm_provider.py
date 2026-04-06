@@ -274,7 +274,7 @@ class LocalFallbackProvider(BaseLLMProvider):
 
     FALLBACK_RESPONSES = {
         # Saudacoes
-        "greeting": "Ola! Sou o Bartolo, seu assistente inteligente do Conecta PRO. Como posso ajudar?",
+        "greeting": "Ola! Sou seu assistente inteligente do Conecta PRO. Como posso ajudar?",
         "help": "Posso ajudar com navegacao, consultas de dados, criacao de registros e muito mais. O que voce precisa?",
         "error": "Desculpe, nao consegui processar sua solicitacao no momento. Tente novamente em alguns instantes.",
         "default": "Entendi sua mensagem. Para uma resposta mais precisa, poderia detalhar sua solicitacao?",

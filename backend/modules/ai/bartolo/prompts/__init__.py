@@ -1,1 +1,0 @@
-"""Prompts do Bartolo."""
