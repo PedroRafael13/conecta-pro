@@ -14,7 +14,12 @@ from core.database import Base
 
 
 class VacationRequest(Base):
-    """Modelo para solicitações de férias e afastamentos."""
+    """Modelo para solicitações de férias e afastamentos.
+
+    DEPRECATED: Use modules.gestao_pessoas.ferias.models.HRVacationRequest como fonte única.
+    Esta tabela (vacation_requests) é mantida apenas para compatibilidade com o módulo operacional.
+    Os registros históricos foram migrados para hr_vacation_requests em 2026-04-06.
+    """
 
     __tablename__ = "vacation_requests"
 
