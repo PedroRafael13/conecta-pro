@@ -1,9 +1,24 @@
 """
-GP Event Bus - Sistema de eventos para Gestao de Pessoas.
-Implementa comunicacao em tempo real entre os 7 modulos.
+GP Event Bus — agora aponta para o ConectaEventBus unificado.
+Retrocompatibilidade total: GPEventBus, Event, get_event_bus mantidos.
 """
 
-from .event_bus import Event, EventActor, EventContext, EventPriority, GPEventBus, get_event_bus
+# Importar do barramento unificado
+from infrastructure.event_bus import (
+    ConectaEvent as Event,  # alias retrocompat
+)
+from infrastructure.event_bus import (
+    ConectaEventBus as GPEventBus,  # alias retrocompat
+)
+from infrastructure.event_bus import (
+    EventActor,
+    EventContext,
+    EventPriority,
+    EventTypes,
+    event_bus,
+    get_event_bus,
+)
+
 from .event_types import GPEventTypes
 from .handlers import EventHandler
 
@@ -13,7 +28,9 @@ __all__ = [
     "EventPriority",
     "EventActor",
     "EventContext",
+    "EventTypes",
     "GPEventTypes",
     "EventHandler",
+    "event_bus",
     "get_event_bus",
 ]

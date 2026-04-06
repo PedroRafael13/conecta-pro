@@ -87,9 +87,32 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         logger.warning(f"Redis: falha na conexao ({e})")
 
+    # Inicializar ConectaEventBus unificado
+    try:
+        import asyncio as _asyncio
+
+        from infrastructure.event_bus import event_bus as _event_bus
+
+        await _event_bus.connect()
+        _asyncio.create_task(
+            _event_bus.start_consuming(
+                group_name="conecta-pro",
+                consumer_name="main-worker",
+            )
+        )
+        logger.info("ConectaEventBus: iniciado")
+    except Exception as e:
+        logger.warning(f"ConectaEventBus: falha na inicializacao ({e})")
+
     yield
 
     logger.info("Encerrando aplicacao...")
+    try:
+        from infrastructure.event_bus import event_bus as _event_bus
+
+        await _event_bus.disconnect()
+    except Exception:
+        pass
     await close_redis()
     await close_db()
     logger.info("Conexoes fechadas")
