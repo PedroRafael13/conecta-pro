@@ -182,7 +182,7 @@ export const modules: Module[] = [
   {
     id: 'ged',
     title: 'GED - Kits Documentais',
-    description: 'Gestão eletrônica de documentos e kits para clientes',
+    description: 'Gestao eletronica de documentos e kits para clientes',
     icon: 'FolderOpen',
     href: '/modulos/gestao-pessoas/ged',
     color: 'green',
@@ -190,13 +190,13 @@ export const modules: Module[] = [
     enabled: true,
     subModules: [
       { id: 'ged-dashboard', title: 'Dashboard GED', href: '/modulos/gestao-pessoas/ged', icon: 'LayoutDashboard', permissions: ['ged:read'] },
-      { id: 'ged-clientes', title: 'Clientes / Condomínios', href: '/modulos/gestao-pessoas/ged/clientes', icon: 'Building2', permissions: ['ged:read'] },
+      { id: 'ged-clientes', title: 'Clientes / Condominios', href: '/modulos/gestao-pessoas/ged/clientes', icon: 'Building2', permissions: ['ged:read'] },
       { id: 'ged-kits', title: 'Kits Documentais', href: '/modulos/gestao-pessoas/ged/kits', icon: 'Package', permissions: ['ged:kits'] },
       { id: 'ged-documentos', title: 'Documentos', href: '/modulos/gestao-pessoas/ged/documentos', icon: 'FileText', permissions: ['ged:read'] },
-      { id: 'ged-certidoes', title: 'Certidões da Empresa', href: '/modulos/gestao-pessoas/ged/certidoes', icon: 'Award', permissions: ['ged:read'] },
+      { id: 'ged-certidoes', title: 'Certidoes da Empresa', href: '/modulos/gestao-pessoas/ged/certidoes', icon: 'Award', permissions: ['ged:read'] },
       { id: 'ged-envios', title: 'Envios', href: '/modulos/gestao-pessoas/ged/envios', icon: 'Send', permissions: ['ged:read'] },
-      { id: 'ged-relatorios', title: 'Relatórios', href: '/modulos/gestao-pessoas/ged/relatorios', icon: 'BarChart3', permissions: ['ged:read'] },
-      { id: 'ged-configuracoes', title: 'Configurações GED', href: '/modulos/gestao-pessoas/ged/configuracoes', icon: 'Settings', permissions: ['ged:admin'] },
+      { id: 'ged-relatorios', title: 'Relatorios', href: '/modulos/gestao-pessoas/ged/relatorios', icon: 'BarChart3', permissions: ['ged:read'] },
+      { id: 'ged-configuracoes', title: 'Configuracoes GED', href: '/modulos/gestao-pessoas/ged/configuracoes', icon: 'Settings', permissions: ['ged:admin'] },
     ],
   },
 
