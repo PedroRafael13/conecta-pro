@@ -1,5 +1,6 @@
 """Controller de Ponto Eletronico — rotas FastAPI com persistencia no banco."""
 
+import asyncio
 from datetime import date
 from typing import Any
 
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 from core.auth.dependencies import CurrentActiveUser, get_current_user
 from core.database.session import get_db, get_sync_db_dependency
 
+from ..publishers import publish_batida_registrada, publish_espelho_fechado
 from ..schemas.dashboard_schemas import (
     AjusteRequest,
     BancoHorasResponse,
@@ -48,6 +50,17 @@ async def registrar_batida(
     """Registra uma batida de ponto (entrada, saida, almoco)."""
     service = PunchService(db)
     result = await service.registrar_batida(data)
+    asyncio.create_task(
+        publish_batida_registrada(
+            punch_id=str(result["punch_id"]),
+            employee_id=str(result["employee_id"]),
+            funcionario_nome="",
+            punch_type=result.get("punch_type") or "entrada",
+            punch_timestamp=str(result.get("punch_timestamp") or ""),
+            latitude=getattr(data, "latitude", None),
+            longitude=getattr(data, "longitude", None),
+        )
+    )
     return PunchResponse(
         punch_id=result["punch_id"],
         employee_id=result["employee_id"],
@@ -254,6 +267,16 @@ async def fechar_mes(
     """Fecha o ponto mensal de um funcionario."""
     service = PunchService(db)
     result = await service.fechar_mes(employee_id, month, year, fechado_por)
+    asyncio.create_task(
+        publish_espelho_fechado(
+            employee_id=str(employee_id),
+            funcionario_nome="",
+            competencia=f"{year}-{month:02d}",
+            total_horas=result.get("total_horas", 0),
+            horas_extras=result.get("horas_extras", 0),
+            faltas=result.get("faltas", 0),
+        )
+    )
     return MonthlyClosingResponse(**result)
 
 
