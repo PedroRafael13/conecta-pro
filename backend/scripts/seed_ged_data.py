@@ -196,8 +196,6 @@ async def main() -> None:
 
         # GED Clients
         clients = [
-            ("River Park Residencial Clube", "CONDOMINIO", None, "Manaus, AM", "Sindico", None, "(92) 99999-0001"),
-            ("Condominio Residencial Bellavile", "CONDOMINIO", None, "Manaus, AM", "Sindico", None, "(92) 99999-0002"),
             (
                 "Conecta Mais - Seguranca e Tecnologia",
                 "EMPRESA",
