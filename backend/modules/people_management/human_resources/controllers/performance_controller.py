@@ -7,6 +7,7 @@ ciclos de avaliacao e calibracao.
 Prefixo: /human-resources/performance
 """
 
+import asyncio
 import logging
 from datetime import date
 from uuid import UUID
@@ -19,6 +20,10 @@ from core.database import get_db
 from modules.people_management.human_resources.models.performance import (
     ReviewStatus,
     ReviewType,
+)
+from modules.people_management.human_resources.publishers import (
+    publish_avaliacao_concluida,
+    publish_avaliacao_criada,
 )
 from modules.people_management.human_resources.schemas.performance import (
     PerformanceReviewCreate,
@@ -50,6 +55,12 @@ async def create_review(
     service = PerformanceService(db)
     try:
         review = await service.create_review(data)
+        asyncio.create_task(
+            publish_avaliacao_criada(
+                employee_id=str(getattr(data, "employee_id", "") or ""),
+                review_id=str(getattr(review, "id", "")),
+            )
+        )
         return PerformanceReviewResponse.model_validate(review)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -183,6 +194,12 @@ async def complete_review(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Avaliacao nao encontrada.",
             )
+        asyncio.create_task(
+            publish_avaliacao_concluida(
+                employee_id=str(getattr(review, "employee_id", "") or ""),
+                review_id=str(getattr(review, "id", "")),
+            )
+        )
         return PerformanceReviewResponse.model_validate(review)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

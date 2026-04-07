@@ -2,6 +2,7 @@
 Controller (endpoints) para Shift.
 """
 
+import asyncio
 from datetime import date
 from typing import Any
 
@@ -14,6 +15,7 @@ from core.logging import logger
 from core.rate_limit import BULK_LIMIT, limiter
 from modules.operacional.models.shift import ShiftStatus
 from modules.operacional.permissions import Permission, require_operacional_permission
+from modules.operacional.publishers import publish_turno_encerrado, publish_turno_iniciado
 from modules.operacional.repositories.shift_repository import ShiftRepository
 from modules.operacional.schemas.shift import (
     ShiftBulkOperationResult,
@@ -255,6 +257,13 @@ async def check_in(
         user_id=str(current_user.id),
         user_email=current_user.email,
     )
+    asyncio.create_task(
+        publish_turno_iniciado(
+            shift_id=str(shift.id),
+            employee_id=str(getattr(shift, "employee_id", "")),
+            post_id=str(getattr(shift, "post_id", "")),
+        )
+    )
     return ShiftResponse.model_validate(shift)
 
 
@@ -292,6 +301,13 @@ async def check_out(
         shift_id=str(shift.id),
         user_id=str(current_user.id),
         user_email=current_user.email,
+    )
+    asyncio.create_task(
+        publish_turno_encerrado(
+            shift_id=str(shift.id),
+            employee_id=str(getattr(shift, "employee_id", "")),
+            post_id=str(getattr(shift, "post_id", "")),
+        )
     )
     return ShiftResponse.model_validate(shift)
 

@@ -181,6 +181,146 @@ async def publish_ronda_concluida(
         logger.warning("Falha publish ronda_concluida: %s", e)
 
 
+async def publish_alocacao_criada(
+    allocation_id: str,
+    employee_id: str,
+    post_id: str,
+    cliente_id: str = "",
+) -> None:
+    """Publica evento quando uma alocação funcionário-posto é criada."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_ALOCACAO_CRIADA,
+                payload={"allocation_id": allocation_id, "employee_id": employee_id, "post_id": post_id},
+                source_module="operacional",
+                funcionario_id=employee_id,
+                cliente_id=cliente_id or None,
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish alocacao_criada: %s", e)
+
+
+async def publish_turno_iniciado(shift_id: str, employee_id: str = "", post_id: str = "") -> None:
+    """Publica evento quando check-in de turno é registrado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_TURNO_INICIADO,
+                payload={"shift_id": shift_id, "employee_id": employee_id, "post_id": post_id},
+                source_module="operacional",
+                funcionario_id=employee_id or None,
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish turno_iniciado: %s", e)
+
+
+async def publish_turno_encerrado(shift_id: str, employee_id: str = "", post_id: str = "") -> None:
+    """Publica evento quando check-out de turno é registrado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_TURNO_ENCERRADO,
+                payload={"shift_id": shift_id, "employee_id": employee_id, "post_id": post_id},
+                source_module="operacional",
+                funcionario_id=employee_id or None,
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish turno_encerrado: %s", e)
+
+
+async def publish_ferias_aprovadas_op(
+    request_id: str,
+    employee_id: str,
+    employee_name: str = "",
+) -> None:
+    """Publica evento quando solicitação de férias operacional é aprovada."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_FERIAS_APROVADAS_OP,
+                payload={"request_id": request_id, "employee_id": employee_id, "employee_name": employee_name},
+                source_module="operacional",
+                funcionario_id=employee_id,
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish ferias_aprovadas_op: %s", e)
+
+
+async def publish_diarista_criada(diarist_id: str, nome: str = "") -> None:
+    """Publica evento quando uma diarista é cadastrada."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_DIARISTA_CRIADA,
+                payload={"diarist_id": diarist_id, "nome": nome},
+                source_module="operacional",
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish diarista_criada: %s", e)
+
+
+async def publish_diarista_checkin(schedule_id: str, diarist_id: str = "") -> None:
+    """Publica evento quando check-in de diarista é registrado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_DIARISTA_CHECKIN,
+                payload={"schedule_id": schedule_id, "diarist_id": diarist_id},
+                source_module="operacional",
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish diarista_checkin: %s", e)
+
+
+async def publish_diarista_checkout(schedule_id: str, diarist_id: str = "") -> None:
+    """Publica evento quando check-out de diarista é registrado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_DIARISTA_CHECKOUT,
+                payload={"schedule_id": schedule_id, "diarist_id": diarist_id},
+                source_module="operacional",
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish diarista_checkout: %s", e)
+
+
+async def publish_diarista_pagamento(payment_id: str, diarist_id: str = "", valor: float = 0.0) -> None:
+    """Publica evento quando pagamento de diarista é processado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_DIARISTA_PAGAMENTO,
+                payload={"payment_id": payment_id, "diarist_id": diarist_id, "valor": valor},
+                source_module="operacional",
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish diarista_pagamento: %s", e)
+
+
+async def publish_comunicado_publicado(announcement_id: str, titulo: str = "", tenant_id: str = "") -> None:
+    """Publica evento quando um comunicado é publicado/enviado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.OPS_COMUNICADO_PUBLICADO,
+                payload={"announcement_id": announcement_id, "titulo": titulo, "tenant_id": tenant_id},
+                source_module="operacional",
+            )
+        )
+    except Exception as e:
+        logger.warning("Falha publish comunicado_publicado: %s", e)
+
+
 async def publish_substituicao_realizada(
     employee_original_id: str,
     substituto_id: str,

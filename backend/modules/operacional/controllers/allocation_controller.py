@@ -2,6 +2,7 @@
 Controller (endpoints) para Allocation (Alocação Funcionário-Posto).
 """
 
+import asyncio
 from datetime import date
 from typing import Any
 
@@ -14,6 +15,7 @@ from core.logging import logger
 from core.rate_limit import BULK_LIMIT, limiter
 from modules.operacional.models.allocation import AllocationStatus
 from modules.operacional.permissions import Permission, require_operacional_permission
+from modules.operacional.publishers import publish_alocacao_criada
 from modules.operacional.repositories.allocation_repository import AllocationRepository
 from modules.operacional.schemas.allocation import (
     AllocationBulkDelete,
@@ -57,6 +59,13 @@ async def create_allocation(
         post_id=str(data.post_id),
         user_id=str(current_user.id),
         user_email=current_user.email,
+    )
+    asyncio.create_task(
+        publish_alocacao_criada(
+            allocation_id=str(allocation.id),
+            employee_id=str(data.employee_id),
+            post_id=str(data.post_id),
+        )
     )
     return AllocationResponse.model_validate(allocation)
 

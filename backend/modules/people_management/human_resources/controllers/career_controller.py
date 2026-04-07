@@ -6,6 +6,7 @@ Define endpoints REST para gestao de planos de carreira e milestones.
 Prefixo: /human-resources/career
 """
 
+import asyncio
 import logging
 from uuid import UUID
 
@@ -15,6 +16,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import get_current_user
 from core.database import get_db
 from modules.people_management.human_resources.models.career import CareerPlanStatus
+from modules.people_management.human_resources.publishers import (
+    publish_milestone_concluido,
+    publish_plano_carreira_criado,
+)
 from modules.people_management.human_resources.schemas.career import (
     CareerPlanCreate,
     CareerPlanListResponse,
@@ -44,6 +49,12 @@ async def create_plan(
     service = CareerService(db)
     try:
         plan = await service.create_plan(data)
+        asyncio.create_task(
+            publish_plano_carreira_criado(
+                employee_id=str(getattr(data, "employee_id", "") or ""),
+                plan_id=str(getattr(plan, "id", "")),
+            )
+        )
         return CareerPlanResponse.model_validate(plan)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -192,6 +203,13 @@ async def complete_milestone(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de carreira nao encontrado.",
             )
+        asyncio.create_task(
+            publish_milestone_concluido(
+                plan_id=str(plan_id),
+                milestone_index=milestone_index,
+                employee_id=str(getattr(plan, "employee_id", "") or ""),
+            )
+        )
         return CareerPlanResponse.model_validate(plan)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

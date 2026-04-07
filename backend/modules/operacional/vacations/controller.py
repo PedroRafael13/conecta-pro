@@ -2,6 +2,7 @@
 Controller de Férias e Afastamentos.
 """
 
+import asyncio
 import logging
 from datetime import datetime
 
@@ -12,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import CurrentActiveUser, get_current_active_user
 from core.database import get_db
 from modules.operacional.models.employee import Employee
+from modules.operacional.publishers import publish_ferias_aprovadas_op
 
 from .models import VacationRequest
 from .schemas import (
@@ -162,6 +164,13 @@ async def approve_vacation_request(
     req.updated_at = datetime.utcnow()
     await db.commit()
     await db.refresh(req)
+    asyncio.create_task(
+        publish_ferias_aprovadas_op(
+            request_id=str(req.id),
+            employee_id=str(req.employee_id),
+            employee_name=str(req.employee_name or ""),
+        )
+    )
     return VacationRequestResponse.model_validate(req)
 
 

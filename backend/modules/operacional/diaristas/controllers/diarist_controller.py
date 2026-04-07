@@ -1,5 +1,6 @@
 """Controller para endpoints de Diaristas."""
 
+import asyncio
 import logging
 from datetime import date
 from decimal import Decimal
@@ -44,6 +45,12 @@ from modules.operacional.diaristas.schemas.diarist_schemas import (
 )
 from modules.operacional.diaristas.services.diarist_ai_service import DiaristAIService
 from modules.operacional.diaristas.services.diarist_service import DiaristService
+from modules.operacional.publishers import (
+    publish_diarista_checkin,
+    publish_diarista_checkout,
+    publish_diarista_criada,
+    publish_diarista_pagamento,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -155,6 +162,12 @@ async def create_diarist(
     """Cria uma nova diarista."""
     try:
         diarist = await service.create_diarist(data)
+        asyncio.create_task(
+            publish_diarista_criada(
+                diarist_id=str(diarist.id),
+                nome=str(getattr(diarist, "nome", "") or getattr(diarist, "name", "")),
+            )
+        )
         return DiaristResponse.model_validate(diarist)
     except ValueError as e:
         raise HTTPException(
@@ -453,6 +466,12 @@ async def register_checkin(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Check-in não pode ser registrado",
         )
+    asyncio.create_task(
+        publish_diarista_checkin(
+            schedule_id=str(schedule.id),
+            diarist_id=str(getattr(schedule, "diarist_id", "") or ""),
+        )
+    )
     return DiaristScheduleResponse.model_validate(schedule)
 
 
@@ -472,6 +491,12 @@ async def register_checkout(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Check-out não pode ser registrado",
         )
+    asyncio.create_task(
+        publish_diarista_checkout(
+            schedule_id=str(schedule.id),
+            diarist_id=str(getattr(schedule, "diarist_id", "") or ""),
+        )
+    )
     return DiaristScheduleResponse.model_validate(schedule)
 
 
@@ -624,6 +649,13 @@ async def process_payment(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Pagamento não pode ser processado",
         )
+    asyncio.create_task(
+        publish_diarista_pagamento(
+            payment_id=str(payment.id),
+            diarist_id=str(getattr(payment, "diarist_id", "") or ""),
+            valor=float(getattr(payment, "valor", 0) or 0),
+        )
+    )
     return DiaristPaymentResponse.model_validate(payment)
 
 

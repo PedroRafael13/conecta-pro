@@ -4,6 +4,7 @@ Controller eSocial — Geração de eventos XML (S-2200, S-2299).
 Endpoints para gerar XMLs de eventos eSocial para transmissão ao governo.
 """
 
+import asyncio
 import logging
 from datetime import date
 from typing import Any
@@ -12,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from core.auth.dependencies import CurrentActiveUser
+from modules.people_management.hr.publishers import publish_esocial_gerado
 from modules.people_management.hr.services.esocial_service import ESocialEventService
 
 logger = logging.getLogger(__name__)
@@ -93,6 +95,7 @@ async def gerar_s2200(
     if not validacao["valid"]:
         raise HTTPException(400, f"XML inválido: {validacao['errors']}")
 
+    asyncio.create_task(publish_esocial_gerado(cpf=request.cpf, matricula=request.matricula, evento_tipo="S2200"))
     return Response(
         content=xml,
         media_type="application/xml",
@@ -127,6 +130,7 @@ async def gerar_s2299(
     if not validacao["valid"]:
         raise HTTPException(400, f"XML inválido: {validacao['errors']}")
 
+    asyncio.create_task(publish_esocial_gerado(cpf=request.cpf, matricula=request.matricula, evento_tipo="S2299"))
     return Response(
         content=xml,
         media_type="application/xml",

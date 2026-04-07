@@ -229,6 +229,55 @@ async def publish_funcionario_atualizado(
         logger.warning("publish_funcionario_atualizado falhou: %s", exc)
 
 
+async def publish_ponto_registrado(
+    employee_id: str,
+    tipo: str = "clock_in",
+    record_id: str = "",
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando uma batida de ponto é registrada."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.DP_PONTO_REGISTRADO,
+                payload={
+                    "employee_id": employee_id,
+                    "tipo": tipo,
+                    "record_id": record_id,
+                    **(extra or {}),
+                },
+                source_module="dp",
+                funcionario_id=employee_id,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_ponto_registrado falhou: %s", exc)
+
+
+async def publish_esocial_gerado(
+    cpf: str,
+    matricula: str,
+    evento_tipo: str,
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando um XML eSocial é gerado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.DP_ESOCIAL_GERADO,
+                payload={
+                    "cpf": cpf,
+                    "matricula": matricula,
+                    "evento_tipo": evento_tipo,
+                    **(extra or {}),
+                },
+                source_module="dp",
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_esocial_gerado falhou: %s", exc)
+
+
 async def publish_atestado_registrado(
     funcionario_id: str,
     funcionario_nome: str = "",

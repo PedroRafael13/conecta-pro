@@ -224,6 +224,28 @@ class EventTypes:
     OPS_SUBSTITUICAO_REALIZADA = "operacional.substituicao.realizada"
     OPS_BANCO_HORAS_CRIADO = "operacional.banco_horas.criado"
     OPS_MEDIDA_DISCIPLINAR_CRIADA = "operacional.medida_disciplinar.criada"
+    OPS_ALOCACAO_CRIADA = "operacional.alocacao.criada"
+    OPS_TURNO_INICIADO = "operacional.turno.iniciado"
+    OPS_TURNO_ENCERRADO = "operacional.turno.encerrado"
+    OPS_FERIAS_APROVADAS_OP = "operacional.ferias.aprovadas"
+    OPS_DIARISTA_CRIADA = "operacional.diarista.criada"
+    OPS_DIARISTA_CHECKIN = "operacional.diarista.checkin"
+    OPS_DIARISTA_CHECKOUT = "operacional.diarista.checkout"
+    OPS_DIARISTA_PAGAMENTO = "operacional.diarista.pagamento_processado"
+    OPS_COMUNICADO_PUBLICADO = "operacional.comunicado.publicado"
+
+    # ── DP (complemento) ──────────────────────────────────────────────────
+    DP_PONTO_REGISTRADO = "dp.ponto.registrado"
+    DP_ESOCIAL_GERADO = "dp.esocial.gerado"
+
+    # ── RH ────────────────────────────────────────────────────────────────
+    RH_PLANO_CARREIRA_CRIADO = "rh.plano_carreira.criado"
+    RH_MILESTONE_CONCLUIDO = "rh.milestone.concluido"
+    RH_AVALIACAO_CRIADA = "rh.avaliacao_desempenho.criada"
+    RH_AVALIACAO_CONCLUIDA = "rh.avaliacao_desempenho.concluida"
+    RH_ONBOARDING_ITEM_CONCLUIDO = "rh.onboarding.item_concluido"
+    RH_AVALIACAO_360_CRIADA = "rh.avaliacao_360.criada"
+    RH_AVALIACAO_360_INICIADA = "rh.avaliacao_360.iniciada"
 
     # ── PONTO ─────────────────────────────────────────────────────────────
     PONTO_BATIDA_REGISTRADA = "ponto.batida.registrada"

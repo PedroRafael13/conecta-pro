@@ -5,6 +5,7 @@ Endpoints para gestao completa de ciclos de avaliacao 360:
 criar ciclo, coletar respostas, calcular resultado, gerar relatorio.
 """
 
+import asyncio
 import logging
 from datetime import date
 from typing import Any
@@ -17,6 +18,10 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.human_resources.models.evaluation_360 import (
     EvaluatorType,
+)
+from modules.people_management.human_resources.publishers import (
+    publish_avaliacao_360_criada,
+    publish_avaliacao_360_iniciada,
 )
 from modules.people_management.human_resources.services.evaluation_360_service import (
     EVALUATION_DIMENSIONS,
@@ -74,6 +79,7 @@ async def criar_ciclo(
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
 
+    asyncio.create_task(publish_avaliacao_360_criada(ciclo_id=str(cycle.id), employee_id=str(request.employee_id)))
     return {
         "id": str(cycle.id),
         "employee_name": cycle.employee_name,
@@ -96,6 +102,7 @@ async def iniciar_coleta(
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
 
+    asyncio.create_task(publish_avaliacao_360_iniciada(ciclo_id=str(cycle.id)))
     return {"id": str(cycle.id), "status": cycle.status.value}
 
 

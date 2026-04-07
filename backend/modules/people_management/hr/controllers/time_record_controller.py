@@ -10,6 +10,7 @@ Endpoints completos para gestao de registros de ponto:
 - Registros diarios
 """
 
+import asyncio
 import logging
 from datetime import date
 from typing import Any
@@ -19,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.people_management.hr.publishers import publish_ponto_registrado
 from modules.people_management.hr.schemas.time_record import (
     ClockInRequest,
     ClockOutRequest,
@@ -122,6 +124,13 @@ async def clock_in(
         created_by=str(current_user.id),
     )
     await db.commit()
+    asyncio.create_task(
+        publish_ponto_registrado(
+            employee_id=str(data.employee_id),
+            tipo="clock_in",
+            record_id=str(getattr(result, "id", "")),
+        )
+    )
     return result
 
 
@@ -149,6 +158,13 @@ async def clock_out(
             created_by=str(current_user.id),
         )
         await db.commit()
+        asyncio.create_task(
+            publish_ponto_registrado(
+                employee_id=str(getattr(result, "employee_id", "")),
+                tipo="clock_out",
+                record_id=str(getattr(result, "id", record_id)),
+            )
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -173,6 +189,13 @@ async def create_manual_record(
         created_by=str(current_user.id),
     )
     await db.commit()
+    asyncio.create_task(
+        publish_ponto_registrado(
+            employee_id=str(getattr(data, "employee_id", "")),
+            tipo="manual",
+            record_id=str(getattr(result, "id", "")),
+        )
+    )
     return result
 
 

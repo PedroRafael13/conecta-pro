@@ -6,6 +6,7 @@ Date: 2026-01-18
 Quality Score Target: 99+/100
 """
 
+import asyncio
 import logging
 from datetime import datetime
 
@@ -35,6 +36,7 @@ from modules.operacional.communication.services.announcement_service import (
     AnnouncementPublishError,
     AnnouncementService,
 )
+from modules.operacional.publishers import publish_comunicado_publicado
 
 logger = logging.getLogger(__name__)
 
@@ -385,7 +387,13 @@ async def publish_announcement(
 
         action = "agendado" if request_data.schedule_at else "publicado"
         logger.info(f"Comunicado {action} por {current_user.email}: {announcement_id}")
-
+        asyncio.create_task(
+            publish_comunicado_publicado(
+                announcement_id=str(announcement.id),
+                titulo=str(getattr(announcement, "title", "") or getattr(announcement, "titulo", "")),
+                tenant_id=str(getattr(announcement, "tenant_id", "") or ""),
+            )
+        )
         return AnnouncementResponse.model_validate(announcement)
 
     except AnnouncementNotFoundError:

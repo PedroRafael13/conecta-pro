@@ -5,6 +5,7 @@ Fornece dashboard com colaboradores em periodo de experiencia
 e vencimentos proximos, baseados na tabela employees.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.people_management.human_resources.publishers import publish_onboarding_item_concluido
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +125,7 @@ async def concluir_item(
             {"iid": item_id, "eid": employee_id},
         )
         await db.commit()
+        asyncio.create_task(publish_onboarding_item_concluido(employee_id=employee_id, item_id=item_id))
         return {"status": "ok", "item_id": item_id, "concluido": True}
     except Exception as exc:
         logger.warning("Erro ao concluir item: %s", exc)

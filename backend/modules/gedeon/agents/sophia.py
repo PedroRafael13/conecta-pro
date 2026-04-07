@@ -153,7 +153,7 @@ class SophiaIndex:
 
         self._vectorizer = TfidfVectorizer(
             lowercase=True,
-            strip_accents=None,
+            strip_accents="unicode",
             stop_words=list(_STOPWORDS),
             min_df=1,
             sublinear_tf=True,
@@ -196,7 +196,7 @@ class SophiaIndex:
         corpus = [self._doc_store[d].get("texto", "") for d in self._doc_ids_ordered]
         self._vectorizer = TfidfVectorizer(
             lowercase=True,
-            strip_accents=None,
+            strip_accents="unicode",
             stop_words=list(_STOPWORDS),
             min_df=1,
             sublinear_tf=True,

@@ -5,6 +5,7 @@ Re-exporta endpoints disciplinares do operacional e adiciona endpoints DP:
 histórico por funcionário e criação a partir de ocorrência.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.operacional.publishers import publish_medida_disciplinar_criada
 from modules.people_management.hr.services.discipline_service import DisciplineService
 
 logger = logging.getLogger(__name__)
@@ -69,6 +71,13 @@ async def create_from_occurrence(
             created_by_id=current_user.id,
         )
         await db.commit()
+        asyncio.create_task(
+            publish_medida_disciplinar_criada(
+                action_id=str(getattr(result, "id", occurrence_id)),
+                employee_id=str(getattr(result, "employee_id", "") or ""),
+                action_type=action_type,
+            )
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

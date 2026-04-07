@@ -5,6 +5,7 @@ Re-exporta endpoints de ponto do módulo HR e adiciona endpoint
 para registro via operações.
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from typing import Any
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.people_management.hr.publishers import publish_ponto_registrado
 from modules.people_management.hr.services.time_tracking_service import (
     TimeTrackingService,
 )
@@ -65,6 +67,13 @@ async def register_from_operations(
         notes=data.notes,
     )
     await db.commit()
+    asyncio.create_task(
+        publish_ponto_registrado(
+            employee_id=str(data.employee_id),
+            tipo="from_operations",
+            record_id=str(getattr(result, "id", "")),
+        )
+    )
     return result
 
 
