@@ -10,6 +10,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import GedeonChecklist from '@/components/gedeon/GedeonChecklist';
 import GedeonChecklistTipo2 from '@/components/gedeon/GedeonChecklistTipo2';
+import BotaoEnviarDrive from '@/components/gdrive/BotaoEnviarDrive';
 
 const API_BASE = '/api/v1/ged';
 
@@ -293,6 +294,13 @@ export default function KitsListPage() {
                 : 'Montar Tipo 1 — Mao de Obra'
               : 'Montar Kits'}
           </button>
+          {filterClient && competenciaAtual && (
+            <BotaoEnviarDrive
+              clienteId={filterClient}
+              clienteNome={clients.find((c) => c.id === filterClient)?.name ?? ''}
+              competencia={competenciaAtual}
+            />
+          )}
           <button
             onClick={() => setShowNewKit(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"

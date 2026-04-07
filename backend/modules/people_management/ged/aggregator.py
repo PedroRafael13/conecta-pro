@@ -37,4 +37,12 @@ try:
 except ImportError as e:
     logger.warning("GED: falha ao importar document_controller: %s", e)
 
+try:
+    from modules.people_management.ged.controllers.config_controller import router as config_router
+
+    router.include_router(config_router)
+    logger.info("GED: config_controller registrado")
+except ImportError as e:
+    logger.warning("GED: falha ao importar config_controller: %s", e)
+
 __all__ = ["router"]
