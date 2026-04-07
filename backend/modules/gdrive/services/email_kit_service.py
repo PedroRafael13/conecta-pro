@@ -65,12 +65,14 @@ class EmailKitService:
         """Obter configurações SMTP do .env."""
         from_name = os.getenv("SMTP_FROM_NAME", "Conecta PRO")
         from_email = os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USERNAME", "noreply@conectamais.pro"))
+        port = int(os.getenv("SMTP_PORT", "465"))
         return {
             "host": os.getenv("SMTP_HOST", "smtp.hostinger.com"),
-            "port": int(os.getenv("SMTP_PORT", "465")),
+            "port": port,
             "user": os.getenv("SMTP_USERNAME", os.getenv("SMTP_USER", "")),
             "pass": os.getenv("SMTP_PASSWORD", ""),
             "from": f"{from_name} <{from_email}>",
+            "ssl": port == 465,
         }
 
     def _buscar_email_cliente(self, client_id: str) -> str | None:
@@ -258,7 +260,7 @@ class EmailKitService:
         # Enviar — porta 465 = SSL direto (SMTP_SSL); porta 587 = STARTTLS
         try:
             _ctx = ssl.create_default_context()
-            if cfg["port"] == 465:
+            if cfg.get("ssl", cfg["port"] == 465):
                 _conn: smtplib.SMTP = smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=_ctx)
             else:
                 _conn = smtplib.SMTP(cfg["host"], cfg["port"])

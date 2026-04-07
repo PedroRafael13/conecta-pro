@@ -9,7 +9,6 @@ Endpoints:
 """
 
 import logging
-import os
 from datetime import date, datetime
 from typing import Any
 
@@ -64,85 +63,6 @@ async def list_ged_clients(
         ],
         "total": len(rows),
     }
-
-
-# ─── Config Google Drive ──────────────────────────────────────────────────────
-
-
-@router.get("/config/drive")
-async def get_config_drive(
-    current_user: dict = Depends(get_current_user),
-) -> dict[str, Any]:
-    """Retorna configuração do Google Drive."""
-    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
-    client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
-    drive_folder = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "")
-    drive_email = os.getenv("GOOGLE_DRIVE_EMAIL", "")
-
-    configurado = bool(client_id and client_secret)
-    token_path = "/opt/conecta-pro/credentials/google_token.json"
-    tem_token = os.path.exists(token_path)
-
-    if configurado and tem_token:
-        status = "conectado"
-    elif configurado:
-        status = "configurado_sem_token"
-    else:
-        status = "nao_configurado"
-
-    return {
-        "conectado": configurado and tem_token,
-        "email_conta": drive_email or None,
-        "pasta_raiz": drive_folder or None,
-        "pasta_kits": os.getenv("GOOGLE_DRIVE_KITS_FOLDER", None),
-        "pasta_certidoes": os.getenv("GOOGLE_DRIVE_CERTS_FOLDER", None),
-        "ultimo_sync": None,
-        "status": status,
-        "client_id_configurado": bool(client_id),
-    }
-
-
-@router.put("/config/drive")
-async def save_config_drive(
-    config: dict[str, Any],
-    current_user: dict = Depends(get_current_user),
-) -> dict[str, Any]:
-    """Salva configuração do Google Drive (frontend)."""
-    logger.info("Drive config save requested: %s", list(config.keys()))
-    return {
-        "status": "saved",
-        "message": "Configuração salva. Para ativar a conexão, configure as variáveis de ambiente GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET.",
-        **config,
-    }
-
-
-@router.post("/config/drive/connect", status_code=201)
-async def connect_drive(
-    current_user: dict = Depends(get_current_user),
-) -> dict[str, Any]:
-    """Inicia fluxo OAuth2 com Google Drive."""
-    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
-    if not client_id:
-        return {
-            "connected": False,
-            "message": "Google Drive não configurado. Configure GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nas variáveis de ambiente.",
-        }
-    return {
-        "connected": False,
-        "auth_url": f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&scope=https://www.googleapis.com/auth/drive.file&redirect_uri=https://erp.conectamais.pro/api/v1/ged/config/drive/callback",
-        "message": "Redirecionando para autenticação Google...",
-    }
-
-
-@router.post("/config/drive/disconnect", status_code=201)
-async def disconnect_drive(
-    current_user: dict = Depends(get_current_user),
-) -> dict[str, Any]:
-    """Desconecta Google Drive."""
-    token_path = "/opt/conecta-pro/credentials/google_token.json"
-    if os.path.exists(token_path):
-        os.remove(token_path)
-    return {"connected": False, "message": "Google Drive desconectado com sucesso"}
 
 
 @router.put("/config/document-types/{doc_type_id}")
