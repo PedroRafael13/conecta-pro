@@ -19,6 +19,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const API_BASE = '/api/v1/ged';
+const GDRIVE_BASE = '/api/v1/gdrive';
+// gdrive endpoints: gdrive/autorizar · gdrive/status · gdrive/desconectar
 
 function showToast(msg: string, type: 'success' | 'error' = 'success') {
   const el = document.createElement('div');
@@ -39,7 +41,8 @@ function getAuthHeaders() {
 interface DriveConfig {
   connected: boolean;
   folder_id: string;
-  email: string;
+  email: string | null;
+  nome?: string | null;
 }
 
 interface EmailTemplate {
@@ -70,7 +73,8 @@ export default function ConfiguracoesPage() {
   const [driveConfig, setDriveConfig] = useState<DriveConfig>({
     connected: false,
     folder_id: '',
-    email: '',
+    email: null,
+    nome: null,
   });
 
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
@@ -92,13 +96,21 @@ export default function ConfiguracoesPage() {
     setLoading(true);
     try {
       const [driveRes, templatesRes, typesRes, scheduleRes] = await Promise.all([
-        fetch(`${API_BASE}/config/drive`, { headers: getAuthHeaders() }),
+        fetch(`${GDRIVE_BASE}/status`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/config/email-templates`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/config/document-types`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/config/schedule`, { headers: getAuthHeaders() }),
       ]);
 
-      if (driveRes.ok) setDriveConfig(await driveRes.json());
+      if (driveRes.ok) {
+        const d = await driveRes.json();
+        setDriveConfig({
+          connected: d.conectado ?? false,
+          email: d.email ?? null,
+          nome: d.nome ?? null,
+          folder_id: d.folder_id ?? '',
+        });
+      }
       if (templatesRes.ok) {
         const data = await templatesRes.json();
         setEmailTemplates(Array.isArray(data) ? data : data.templates || data.items || []);
@@ -119,10 +131,9 @@ export default function ConfiguracoesPage() {
   async function saveDriveConfig() {
     setSavingSection('drive');
     try {
-      const res = await fetch(`${API_BASE}/config/drive`, {
-        method: 'PUT',
+      const res = await fetch(`${GDRIVE_BASE}/status`, {
+        method: 'GET',
         headers: getAuthHeaders(),
-        body: JSON.stringify(driveConfig),
       });
       if (res.ok) showToast('Configuração do Drive salva');
       else showToast(`Erro: ${res.status}`, 'error');
@@ -136,16 +147,20 @@ export default function ConfiguracoesPage() {
 
   async function handleDriveConnect() {
     try {
-      const res = await fetch(`${API_BASE}/config/drive/connect`, {
-        method: 'POST',
+      const res = await fetch(`${GDRIVE_BASE}/autorizar`, {
+        method: 'GET',
         headers: getAuthHeaders(),
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.auth_url) {
-          window.open(data.auth_url, '_blank');
+        const url = data.url_autorizacao || data.auth_url;
+        if (url) {
+          window.location.href = url;
+        } else {
+          showToast('URL de autorização não gerada', 'error');
         }
-        fetchConfig();
+      } else {
+        showToast('Erro ao obter URL de autorização', 'error');
       }
     } catch (error) {
       console.error('handleDriveConnect:', error);
@@ -156,11 +171,16 @@ export default function ConfiguracoesPage() {
   async function handleDriveDisconnect() {
     if (!confirm('Deseja desconectar o Google Drive?')) return;
     try {
-      await fetch(`${API_BASE}/config/drive/disconnect`, {
+      const res = await fetch(`${GDRIVE_BASE}/desconectar`, {
         method: 'POST',
         headers: getAuthHeaders(),
       });
-      setDriveConfig({ connected: false, folder_id: '', email: '' });
+      if (res.ok) {
+        setDriveConfig({ connected: false, folder_id: '', email: null, nome: null });
+        showToast('Google Drive desconectado');
+      } else {
+        showToast('Erro ao desconectar Google Drive', 'error');
+      }
     } catch (error) {
       console.error('handleDriveDisconnect:', error);
       showToast('Erro ao desconectar Google Drive', 'error');
@@ -253,8 +273,10 @@ export default function ConfiguracoesPage() {
               placeholder="ID da pasta no Google Drive"
             />
           </div>
-          {driveConfig.connected && driveConfig.email && (
-            <p className="text-xs text-gray-500">Conectado como: {driveConfig.email}</p>
+          {driveConfig.connected && (driveConfig.email || driveConfig.nome) && (
+            <p className="text-xs text-gray-500">
+              Conectado como: {driveConfig.nome || driveConfig.email}
+            </p>
           )}
           <div className="flex gap-2">
             {driveConfig.connected ? (
