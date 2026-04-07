@@ -208,10 +208,95 @@ class SophiaIndex:
         nomes = [f"{r['tipo']} ({r.get('funcionario') or r.get('cliente', '')})" for r in resultados[:3]]
         return f"Encontrei {len(resultados)} documentos. Os mais relevantes: {', '.join(nomes)}"
 
+    async def _persistir_no_banco(self, db: Any) -> int:
+        """
+        UPSERT de todos os documentos do índice in-memory em gedeon_document_index.
+        Garante persistência entre restarts do container.
+        """
+        import json
+
+        from sqlalchemy import text as sa_text
+
+        persistidos = 0
+        for doc_id, doc in self._doc_store.items():
+            try:
+                await db.execute(
+                    sa_text(
+                        "INSERT INTO gedeon_document_index "
+                        "(doc_id, texto_preview, metadados, tokens, hash) "
+                        "VALUES (:doc_id, :texto, :metadados, :tokens, :hash) "
+                        "ON CONFLICT (doc_id) DO UPDATE SET "
+                        "texto_preview = EXCLUDED.texto_preview, "
+                        "metadados = EXCLUDED.metadados, "
+                        "tokens = EXCLUDED.tokens, "
+                        "hash = EXCLUDED.hash, "
+                        "updated_at = NOW()"
+                    ),
+                    {
+                        "doc_id": doc_id,
+                        "texto": doc.get("texto", "")[:500],
+                        "metadados": json.dumps(doc.get("metadados", {})),
+                        "tokens": json.dumps(sorted(doc.get("tokens", set()))),
+                        "hash": doc.get("hash", ""),
+                    },
+                )
+                persistidos += 1
+            except Exception as e:
+                logger.warning("SOPHIA: erro ao persistir doc %s: %s", doc_id, e)
+        await db.commit()
+        return persistidos
+
+    async def carregar_do_banco(self) -> int:
+        """
+        Carrega o índice in-memory a partir de gedeon_document_index.
+        Chamado no startup para restaurar o índice após restart do container.
+        """
+        import json
+
+        from sqlalchemy import text as sa_text
+
+        from core.database import async_session_factory
+
+        carregados = 0
+        try:
+            async with async_session_factory() as db:
+                rows = await db.execute(
+                    sa_text(
+                        "SELECT doc_id, texto_preview, metadados, tokens, hash "
+                        "FROM gedeon_document_index ORDER BY created_at DESC"
+                    )
+                )
+                for row in rows.mappings().all():
+                    doc_id = row["doc_id"]
+                    meta = row["metadados"] or {}
+                    tokens_raw = row["tokens"] or []
+                    if isinstance(tokens_raw, str):
+                        tokens_raw = json.loads(tokens_raw)
+                    tokens_list = list(tokens_raw)
+                    tokens_set = set(tokens_list)
+                    tf = self._tf(tokens_list) if tokens_list else {}
+                    self._doc_store[doc_id] = {
+                        "texto": row["texto_preview"] or "",
+                        "metadados": meta,
+                        "tokens": tokens_set,
+                        "tf": tf,
+                        "hash": row["hash"] or "",
+                    }
+                    for token in tokens_set:
+                        if token not in self._idf:
+                            self._idf[token] = 0
+                        self._idf[token] += 1
+                    carregados += 1
+        except Exception as exc:
+            logger.warning("SOPHIA: erro ao carregar do banco: %s", exc)
+
+        logger.info("SOPHIA: %d documentos carregados do banco", carregados)
+        return carregados
+
     async def indexar_acervo_completo(self) -> int:
         """
         Indexar todos os documentos do GED via SQLAlchemy.
-        Popula o índice in-memory para buscas subsequentes.
+        Popula o índice in-memory E persiste em gedeon_document_index.
         """
         logger.info("SOPHIA: iniciando indexação do acervo")
         indexados = 0
@@ -264,6 +349,10 @@ class SophiaIndex:
                     }
                     if self.indexar_documento(f"cert_{row['id']}", texto, meta):
                         indexados += 1
+
+                # Persistir índice em gedeon_document_index
+                persistidos = await self._persistir_no_banco(db)
+                logger.info("SOPHIA: %d documentos persistidos no banco", persistidos)
 
         except Exception as exc:
             logger.warning("SOPHIA: erro na indexação: %s", exc)
