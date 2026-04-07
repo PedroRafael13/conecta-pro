@@ -38,6 +38,7 @@ EMBEDDING_DIM = 1536
 ANTHROPIC_MODEL = "claude-3-haiku-20240307"
 EMBEDDING_MODEL_NAME_ANTHROPIC = "anthropic_haiku_1536"
 EMBEDDING_MODEL_NAME_FALLBACK = "sophia_dense_1536"
+SIMILARITY_THRESH = 0.60
 
 POSTGRES_CONTAINER = "conecta-pro-postgres"
 POSTGRES_DB = "conecta_pro"
@@ -219,6 +220,98 @@ TERMOS_MODULOS: dict[str, list[str]] = {
         "banco",
         "transferência",
         "nf_servico",
+    ],
+}
+
+TIPOS_POR_MODULO: dict[str, list[str]] = {
+    "dp": [
+        "holerite",
+        "contrato_trabalho",
+        "contrato_experiencia",
+        "rescisao",
+        "trct",
+        "aviso_previo",
+        "ferias",
+        "decimo_terceiro",
+        "admissao",
+        "demissao",
+        "atestado",
+        "aso",
+        "epi",
+        "ficha_epi",
+        "ppp",
+        "beneficios",
+        "vale_transporte",
+    ],
+    "rh": [
+        "avaliacao_desempenho",
+        "treinamento",
+        "certificado_nr",
+        "onboarding",
+        "plano_carreira",
+        "feedback_360",
+        "advertencia",
+        "suspensao",
+    ],
+    "ged": [
+        "kit_documental",
+        "cnd_federal",
+        "cnd_estadual",
+        "cnd_municipal",
+        "crf_fgts",
+        "certidao_trabalhista",
+        "alvara",
+        "licenca",
+        "comprovante",
+    ],
+    "operacional": [
+        "ocorrencia",
+        "relatorio_ronda",
+        "escala",
+        "substituicao",
+        "comunicado_posto",
+        "cat",
+        "registro_visita",
+    ],
+    "fiscal": [
+        "nfse",
+        "nota_fiscal",
+        "guia_inss",
+        "guia_fgts",
+        "darf",
+        "gps",
+        "declaracao_ir",
+        "esocial",
+        "sped",
+    ],
+    "contratos": [
+        "contrato_prestacao_servico",
+        "aditivo_contrato",
+        "contrato_experiencia_vencendo",
+        "rescisao_contrato_cliente",
+        "medicao_servico",
+    ],
+    "licitacoes": [
+        "edital",
+        "proposta_tecnica",
+        "proposta_comercial",
+        "habilitacao",
+        "impugnacao",
+        "recurso",
+        "ata_pregao",
+        "contrato_licitacao",
+        "certidao_habilitacao",
+    ],
+    "financeiro": [
+        "fatura",
+        "boleto",
+        "comprovante_pagamento_salario",
+        "comprovante_pagamento_fgts",
+        "extrato_bancario",
+        "dre",
+        "fluxo_caixa",
+        "inadimplencia",
+        "nota_debito",
     ],
 }
 

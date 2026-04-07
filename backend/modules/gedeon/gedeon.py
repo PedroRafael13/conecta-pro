@@ -87,7 +87,16 @@ class Gedeon:
         event_bus.subscribe("crm.cliente.ativo", self._on_cliente_ativo)
         event_bus.subscribe("crm.contrato.assinado", self._on_contrato_assinado)
 
-        logger.info("GEDEON: 22 subscribers registrados — operando em modo invisível")
+        # ── SOPHIA v2.0 — indexação automática cross-módulo ───────────────────
+        try:
+            from modules.gedeon.subscribers.sophia_subscriber import registrar_subscriber
+
+            registrar_subscriber(event_bus)
+            logger.info("SOPHIA v2.0: subscriber registrado no Event Bus")
+        except Exception as _sophia_err:
+            logger.warning("SOPHIA v2.0: subscriber não registrado: %s", _sophia_err)
+
+        logger.info("GEDEON: subscribers registrados — operando em modo invisível")
 
     # ── HANDLERS DP ───────────────────────────────────
 
