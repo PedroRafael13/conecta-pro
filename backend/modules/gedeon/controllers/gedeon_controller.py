@@ -3,7 +3,6 @@ API do GEDEON — endpoints para o frontend consultar
 o contexto acumulado antes de montar um kit.
 """
 
-import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
@@ -16,8 +15,6 @@ from modules.gedeon.agents.argos import argos
 from modules.gedeon.agents.hermes import hermes
 from modules.gedeon.agents.kronos import kronos
 from modules.gedeon.context.gedeon_context import gedeon_context
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/gedeon", tags=["GEDEON"])
 
