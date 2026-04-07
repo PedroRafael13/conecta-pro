@@ -25,7 +25,7 @@ function getToken(): string {
   try {
     return (
       localStorage.getItem('access_token') ||
-      localStorage.getItem('token') ||
+      sessionStorage.getItem('access_token') ||
       ''
     )
   } catch {

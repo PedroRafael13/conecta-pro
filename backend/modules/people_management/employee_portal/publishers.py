@@ -5,6 +5,8 @@ Publica eventos quando funcionários fazem solicitações ou ações no portal.
 
 import logging
 
+from infrastructure.event_bus import ConectaEvent, event_bus
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,8 +18,6 @@ async def publish_ferias_solicitadas(
     dias: int,
 ) -> None:
     try:
-        from infrastructure.event_bus import ConectaEvent, event_bus
-
         await event_bus.publish(
             ConectaEvent(
                 event_type="portal.ferias.solicitadas",
@@ -42,8 +42,6 @@ async def publish_documento_solicitado(
     tipo_documento: str,
 ) -> None:
     try:
-        from infrastructure.event_bus import ConectaEvent, event_bus
-
         await event_bus.publish(
             ConectaEvent(
                 event_type="portal.documento.solicitado",
@@ -71,8 +69,6 @@ async def publish_documento_assinado(
     document_type: str,
 ) -> None:
     try:
-        from infrastructure.event_bus import ConectaEvent, event_bus
-
         await event_bus.publish(
             ConectaEvent(
                 event_type="portal.documento.assinado",
