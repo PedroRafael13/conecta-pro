@@ -137,6 +137,22 @@ app.conf.update(
 
 # Beat Schedule (tarefas agendadas)
 app.conf.beat_schedule = {
+    # ── GEDEON — Kronos/Themis ────────────────────────────────────────────────
+    "gedeon-kronos-verificacao-diaria": {
+        "task": "gedeon.kronos.verificacao_diaria",
+        "schedule": crontab(hour=6, minute=0),
+        "options": {"queue": "batch"},
+    },
+    "gedeon-themis-verificacao-assinaturas": {
+        "task": "gedeon.themis.verificacao_assinaturas",
+        "schedule": crontab(minute=0, hour="*/4"),
+        "options": {"queue": "batch"},
+    },
+    "gedeon-fiscal-verificar-certidoes": {
+        "task": "gedeon.fiscal.verificar_certidoes",
+        "schedule": crontab(hour=7, minute=0),
+        "options": {"queue": "batch"},
+    },
     # Verificação de disponibilidade a cada 5 minutos
     "check-endpoints-5min": {
         "task": "government_integrations.tasks.monitoring.verificar_disponibilidade",

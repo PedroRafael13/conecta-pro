@@ -11,6 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import get_current_user
 from core.database import get_session
 from modules.financial.models.receivable_account import ReceivableStatus
+from modules.financial.publishers import (
+    publish_inadimplencia_detectada,
+    publish_pagamento_recebido,
+)
 from modules.financial.schemas.receivable import (
     ReceivableAccountCreate,
     ReceivableAccountFilter,
@@ -296,6 +300,21 @@ async def suspend_account(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conta nao encontrada",
             )
+        # Publisher GEDEON Event Bus — inadimplência detectada
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                publish_inadimplencia_detectada(
+                    account_id=str(account_id),
+                    tipo="suspensao",
+                    motivo=reason,
+                    cliente_id=str(getattr(account, "cliente_id", "") or ""),
+                    valor=float(getattr(account, "amount", 0) or 0),
+                )
+            )
+        except Exception:
+            pass
         return ReceivableAccountResponse.model_validate(account)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -321,6 +340,21 @@ async def protest_account(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conta nao encontrada",
             )
+        # Publisher GEDEON Event Bus — inadimplência: protesto
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                publish_inadimplencia_detectada(
+                    account_id=str(account_id),
+                    tipo="protesto",
+                    motivo=f"Protesto #{data.protest_number}",
+                    cliente_id=str(getattr(account, "cliente_id", "") or ""),
+                    valor=float(getattr(account, "amount", 0) or 0),
+                )
+            )
+        except Exception:
+            pass
         return ReceivableAccountResponse.model_validate(account)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -345,6 +379,21 @@ async def write_off_account(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conta nao encontrada",
             )
+        # Publisher GEDEON Event Bus — inadimplência: baixa como perda
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                publish_inadimplencia_detectada(
+                    account_id=str(account_id),
+                    tipo="baixa_perda",
+                    motivo=data.reason,
+                    cliente_id=str(getattr(account, "cliente_id", "") or ""),
+                    valor=float(getattr(account, "amount", 0) or 0),
+                )
+            )
+        except Exception:
+            pass
         return ReceivableAccountResponse.model_validate(account)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -545,6 +594,21 @@ async def register_payment(
     """Registra recebimento de uma parcela."""
     try:
         payment = await service.register_payment(installment_id, data, UUID(current_user["id"]))
+        # Publisher GEDEON Event Bus — pagamento recebido
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                publish_pagamento_recebido(
+                    payment_id=str(payment.id),
+                    installment_id=str(installment_id),
+                    valor=float(getattr(payment, "amount_paid", 0) or 0),
+                    cliente_id=str(getattr(payment, "cliente_id", "") or ""),
+                    condominio_id=str(getattr(payment, "condominio_id", "") or ""),
+                )
+            )
+        except Exception:
+            pass
         return ReceivablePaymentResponse.model_validate(payment)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

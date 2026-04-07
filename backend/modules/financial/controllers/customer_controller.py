@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import get_current_user
 from core.database import get_session
 from modules.financial.models.customer import CustomerStatus, CustomerType
+from modules.financial.publishers import publish_inadimplencia_detectada
 from modules.financial.repositories.receivable_repository import CustomerRepository
 from modules.financial.schemas.receivable import (
     CustomerCreate,
@@ -247,6 +248,21 @@ async def block_customer(
 
     customer.block(reason)
     await repo.session.commit()
+    # Publisher GEDEON Event Bus — inadimplência: cliente bloqueado
+    try:
+        import asyncio
+
+        asyncio.create_task(
+            publish_inadimplencia_detectada(
+                account_id=str(customer_id),
+                tipo="cliente_bloqueado",
+                motivo=reason,
+                cliente_id=str(getattr(customer, "client_id", "") or str(customer_id)),
+                valor=float(getattr(customer, "total_debt", 0) or 0),
+            )
+        )
+    except Exception:
+        pass
     return CustomerResponse.model_validate(customer)
 
 

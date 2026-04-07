@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import get_current_user
 from core.database import get_session
 from modules.financial.models.payable_account import PayableStatus
+from modules.financial.publishers import publish_pagamento_realizado
 from modules.financial.schemas.payable import (
     PayableAccountCreate,
     PayableAccountFilter,
@@ -442,6 +443,21 @@ async def register_payment(
     """Registra pagamento de uma parcela."""
     try:
         payment = await service.register_payment(installment_id, data, UUID(current_user["id"]))
+        # Publisher GEDEON Event Bus — pagamento realizado
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                publish_pagamento_realizado(
+                    payment_id=str(payment.id),
+                    installment_id=str(installment_id),
+                    valor=float(getattr(payment, "amount_paid", 0) or 0),
+                    fornecedor=str(getattr(payment, "fornecedor_nome", "") or ""),
+                    cliente_id=str(getattr(payment, "cliente_id", "") or ""),
+                )
+            )
+        except Exception:
+            pass
         return PayablePaymentResponse.model_validate(payment)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

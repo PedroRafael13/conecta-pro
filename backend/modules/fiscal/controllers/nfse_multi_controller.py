@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from core.auth.dependencies import get_current_user
+from modules.fiscal.publishers import publish_nfs_emitida
 from modules.fiscal.services.nfse_multi_empresa_service import (
     EMPRESAS_CONFIG,
     DadosNFSeMultiEmpresa,
@@ -79,6 +80,29 @@ async def preparar_nfse_multi(
         forcar_liminares=dados.forcar_liminares,
     )
     resultado = _service.preparar_dados_nfse(dados_nfse)
+
+    # Publisher GEDEON Event Bus — NFS-e preparada
+    if resultado.sucesso:
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                publish_nfs_emitida(
+                    nfs_id=getattr(resultado, "numero_nfse", "") or dados.tomador_cnpj_cpf or "",
+                    numero=str(getattr(resultado, "numero_nfse", "") or ""),
+                    valor=float(resultado.valor_servico or 0),
+                    tomador=dados.tomador_razao_social or "",
+                    competencia=f"{dados.competencia_ano}-{dados.competencia_mes:02d}",
+                    cliente_id=dados.tomador_cnpj_cpf or None,
+                    extra={
+                        "empresa_emissora": resultado.empresa_emissora or "",
+                        "tipo_servico": dados.tipo_servico or "",
+                        "liminares": resultado.liminares_aplicadas,
+                    },
+                )
+            )
+        except Exception:
+            pass
 
     return {
         "sucesso": resultado.sucesso,

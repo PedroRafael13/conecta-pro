@@ -260,6 +260,9 @@ class EventTypes:
     FIN_CONTRATO_INADIMPLENTE = "financeiro.contrato.inadimplente"
     FIN_NOTA_EMITIDA = "financeiro.nota.emitida"
     FIN_CONTRATO_RENOVADO = "financeiro.contrato.renovado"
+    FIN_PAGAMENTO_RECEBIDO = "financeiro.pagamento.recebido"
+    FIN_PAGAMENTO_REALIZADO = "financeiro.pagamento.realizado"
+    FIN_INADIMPLENCIA_DETECTADA = "financeiro.inadimplencia.detectada"
 
     # ── GOV ───────────────────────────────────────────────────────────────
     GOV_ESOCIAL_TRANSMITIDO = "gov.esocial.transmitido"

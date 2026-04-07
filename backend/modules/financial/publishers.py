@@ -97,3 +97,91 @@ async def publish_contrato_renovado(
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("publish_contrato_renovado falhou: %s", exc)
+
+
+async def publish_pagamento_recebido(
+    payment_id: str | UUID,
+    installment_id: str | UUID,
+    valor: float,
+    cliente_id: str | UUID | None = None,
+    condominio_id: str | UUID | None = None,
+    competencia: str | None = None,
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando um recebimento (conta a receber) é registrado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.FIN_PAGAMENTO_RECEBIDO,
+                payload={
+                    "payment_id": str(payment_id),
+                    "installment_id": str(installment_id),
+                    "valor": valor,
+                    "condominio_id": str(condominio_id) if condominio_id else None,
+                    **(extra or {}),
+                },
+                source_module="financial",
+                cliente_id=str(cliente_id) if cliente_id else None,
+                competencia=competencia,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_pagamento_recebido falhou: %s", exc)
+
+
+async def publish_pagamento_realizado(
+    payment_id: str | UUID,
+    installment_id: str | UUID,
+    valor: float,
+    fornecedor: str | None = None,
+    cliente_id: str | UUID | None = None,
+    competencia: str | None = None,
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando um pagamento (conta a pagar) é registrado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.FIN_PAGAMENTO_REALIZADO,
+                payload={
+                    "payment_id": str(payment_id),
+                    "installment_id": str(installment_id),
+                    "valor": valor,
+                    "fornecedor": fornecedor,
+                    **(extra or {}),
+                },
+                source_module="financial",
+                cliente_id=str(cliente_id) if cliente_id else None,
+                competencia=competencia,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_pagamento_realizado falhou: %s", exc)
+
+
+async def publish_inadimplencia_detectada(
+    account_id: str | UUID,
+    tipo: str,
+    motivo: str,
+    cliente_id: str | UUID | None = None,
+    valor: float = 0.0,
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando inadimplência é detectada (suspend/protest/write-off/block)."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.FIN_INADIMPLENCIA_DETECTADA,
+                payload={
+                    "account_id": str(account_id),
+                    "tipo": tipo,
+                    "motivo": motivo,
+                    "valor": valor,
+                    **(extra or {}),
+                },
+                source_module="financial",
+                cliente_id=str(cliente_id) if cliente_id else None,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_inadimplencia_detectada falhou: %s", exc)
