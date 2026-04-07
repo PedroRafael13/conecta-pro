@@ -31,6 +31,7 @@ app = Celery(
         "modules.people_management.sst.tasks",
         "modules.people_management.ged.tasks",
         "modules.health_occupational.tasks",
+        "modules.gedeon.tasks.kronos_tasks",
     ],
 )
 
