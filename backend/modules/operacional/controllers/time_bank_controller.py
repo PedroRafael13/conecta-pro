@@ -2,6 +2,7 @@
 Controller (endpoints) para TimeBank (Banco de Horas).
 """
 
+import asyncio
 from datetime import date, timedelta
 from typing import Any
 
@@ -14,6 +15,7 @@ from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.time_bank import TimeBankEntryType, TimeBankStatus
 from modules.operacional.permissions import Permission, require_operacional_permission
+from modules.operacional.publishers import publish_banco_horas_criado
 from modules.operacional.repositories.time_bank_repository import TimeBankRepository
 from modules.operacional.schemas.time_bank import (
     TimeBankApprove,
@@ -59,6 +61,14 @@ async def create_entry(
     logger.info(
         f"Entrada no banco de horas criada por {current_user.email}: "
         f"funcionário {data.employee_id}, {data.hours}h ({data.entry_type.value})"
+    )
+    asyncio.create_task(
+        publish_banco_horas_criado(
+            entry_id=str(entry.id),
+            employee_id=str(data.employee_id),
+            hours=float(data.hours),
+            entry_type=data.entry_type.value,
+        )
     )
     return TimeBankResponse.model_validate(entry)
 

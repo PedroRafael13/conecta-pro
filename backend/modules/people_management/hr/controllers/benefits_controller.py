@@ -4,6 +4,7 @@ Controller de Benefícios — Departamento Pessoal.
 Endpoints CRUD para gestão de benefícios dos colaboradores.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.hr.models.benefits import BenefitStatus
+from modules.people_management.hr.publishers import publish_beneficio_adicionado
 from modules.people_management.hr.schemas.benefits import (
     BenefitCreate,
     BenefitResponse,
@@ -116,6 +118,13 @@ async def create_benefit(
     service = BenefitsService(db)
     benefit = await service.create_benefit(data.model_dump())
     await db.commit()
+    asyncio.create_task(
+        publish_beneficio_adicionado(
+            funcionario_id=str(getattr(data, "employee_id", "") or ""),
+            tipo_beneficio=str(getattr(data, "type", "") or getattr(data, "benefit_type", "")),
+            benefit_id=str(getattr(benefit, "id", "")),
+        )
+    )
     return benefit
 
 

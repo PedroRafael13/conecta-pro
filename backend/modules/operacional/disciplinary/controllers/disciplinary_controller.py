@@ -13,6 +13,7 @@ Date: 2026-01-18
 Quality Score Target: 99+/100
 """
 
+import asyncio
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -81,6 +82,7 @@ from modules.operacional.disciplinary.services.signature_service import (
 from modules.operacional.disciplinary.services.template_service import (
     TemplateNotFoundError,
 )
+from modules.operacional.publishers import publish_medida_disciplinar_criada
 
 router = APIRouter(tags=["Operacional - Medidas Administrativas"])
 
@@ -117,6 +119,15 @@ async def create_disciplinary_action(
             action_code=action.code,
             user_id=str(current_user.id),
             tenant_id=get_tenant_id(current_user),
+        )
+
+        asyncio.create_task(
+            publish_medida_disciplinar_criada(
+                action_id=str(action.id),
+                employee_id=str(getattr(data, "employee_id", "") or ""),
+                action_type=str(getattr(data, "action_type", "") or ""),
+                cliente_id=str(getattr(data, "client_id", "") or ""),
+            )
         )
 
         return DisciplinaryActionResponse.model_validate(action)

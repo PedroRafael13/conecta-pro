@@ -4,6 +4,7 @@ Controller de Contratos — Departamento Pessoal.
 Endpoints CRUD para gestão de contratos de trabalho.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -12,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.people_management.hr.publishers import publish_contrato_criado
 from modules.people_management.hr.schemas.contract import (
     ContractCreate,
     ContractResponse,
@@ -100,6 +102,13 @@ async def create_contract(
     service = ContractService(db)
     contract = await service.create_contract(data.model_dump())
     await db.commit()
+    asyncio.create_task(
+        publish_contrato_criado(
+            funcionario_id=str(getattr(data, "employee_id", "") or ""),
+            contract_id=str(getattr(contract, "id", "")),
+            tipo_contrato=str(getattr(data, "contract_type", "") or getattr(data, "tipo_contrato", "")),
+        )
+    )
     return contract
 
 

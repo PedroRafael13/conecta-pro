@@ -5,6 +5,7 @@ Endpoints para exportar folha no formato Domínio (TOTVS) e gerar
 contracheques em PDF.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.people_management.hr.publishers import publish_holerite_gerado
 from modules.people_management.hr.services.payroll_export_service import PayrollExportService
 from modules.people_management.hr.services.payroll_service import PayrollService
 
@@ -179,6 +181,16 @@ async def gerar_contracheques_batch(
                 pdf,
             )
             arquivados += 1
+
+    # Publicar evento por funcionário com holerite gerado
+    for emp_data in folha_data:
+        asyncio.create_task(
+            publish_holerite_gerado(
+                funcionario_id=str(emp_data.get("employee_id", "")),
+                funcionario_nome=str(emp_data.get("employee_name", "")),
+                competencia=competencia,
+            )
+        )
 
     return {
         "competencia": competencia,

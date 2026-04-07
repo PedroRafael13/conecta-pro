@@ -4,6 +4,7 @@ Controller de Funcionários — Departamento Pessoal.
 Endpoints CRUD para gestão de funcionários na visão DP.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.people_management.hr.publishers import publish_funcionario_atualizado
 from modules.people_management.hr.schemas.employee import (
     DPEmployeeList,
     DPEmployeeRead,
@@ -195,10 +197,18 @@ async def update_employee(
 ) -> Any:
     """Atualiza dados DP de um funcionário."""
     service = EmployeeService(db)
-    employee = await service.update_employee(employee_id, data.model_dump(exclude_unset=True))
+    update_data = data.model_dump(exclude_unset=True)
+    employee = await service.update_employee(employee_id, update_data)
     if not employee:
         raise HTTPException(status_code=404, detail="Funcionário não encontrado")
     await db.commit()
+    asyncio.create_task(
+        publish_funcionario_atualizado(
+            funcionario_id=employee_id,
+            funcionario_nome=str(getattr(employee, "nome", "") or ""),
+            campos_alterados=list(update_data.keys()),
+        )
+    )
     return employee
 
 

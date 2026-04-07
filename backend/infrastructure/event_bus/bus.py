@@ -213,6 +213,8 @@ class EventTypes:
     DP_FOLHA_FECHADA = "dp.folha.fechada"
     DP_HOLERITE_GERADO = "dp.holerite.gerado"
     DP_AFASTAMENTO_INSS = "dp.afastamento.inss"
+    DP_BENEFICIO_ADICIONADO = "dp.beneficio.adicionado"
+    DP_CONTRATO_CRIADO = "dp.contrato.criado"
 
     # ── OPERACIONAL ───────────────────────────────────────────────────────
     OPS_OCORRENCIA_REGISTRADA = "operacional.ocorrencia.registrada"
@@ -220,6 +222,8 @@ class EventTypes:
     OPS_ESCALA_PUBLICADA = "operacional.escala.publicada"
     OPS_TURNO_DESCOBERTO = "operacional.turno.descoberto"
     OPS_SUBSTITUICAO_REALIZADA = "operacional.substituicao.realizada"
+    OPS_BANCO_HORAS_CRIADO = "operacional.banco_horas.criado"
+    OPS_MEDIDA_DISCIPLINAR_CRIADA = "operacional.medida_disciplinar.criada"
 
     # ── PONTO ─────────────────────────────────────────────────────────────
     PONTO_BATIDA_REGISTRADA = "ponto.batida.registrada"

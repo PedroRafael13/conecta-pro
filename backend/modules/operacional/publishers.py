@@ -102,6 +102,56 @@ async def publish_cat_registrada(
         logger.warning("Falha publish cat_registrada: %s", e)
 
 
+async def publish_banco_horas_criado(
+    entry_id: str,
+    employee_id: str,
+    hours: float,
+    entry_type: str,
+    cliente_id: str = "",
+) -> None:
+    """Publica evento quando uma entrada no banco de horas é criada."""
+    try:
+        evento = ConectaEvent(
+            event_type=EventTypes.OPS_BANCO_HORAS_CRIADO,
+            payload={
+                "entry_id": entry_id,
+                "employee_id": employee_id,
+                "hours": hours,
+                "entry_type": entry_type,
+            },
+            source_module="operacional",
+            funcionario_id=employee_id,
+            cliente_id=cliente_id or None,
+        )
+        await event_bus.publish(evento)
+    except Exception as e:
+        logger.warning("Falha publish banco_horas_criado: %s", e)
+
+
+async def publish_medida_disciplinar_criada(
+    action_id: str,
+    employee_id: str,
+    action_type: str,
+    cliente_id: str = "",
+) -> None:
+    """Publica evento quando uma medida disciplinar é criada."""
+    try:
+        evento = ConectaEvent(
+            event_type=EventTypes.OPS_MEDIDA_DISCIPLINAR_CRIADA,
+            payload={
+                "action_id": action_id,
+                "employee_id": employee_id,
+                "action_type": action_type,
+            },
+            source_module="operacional",
+            funcionario_id=employee_id,
+            cliente_id=cliente_id or None,
+        )
+        await event_bus.publish(evento)
+    except Exception as e:
+        logger.warning("Falha publish medida_disciplinar_criada: %s", e)
+
+
 async def publish_ronda_concluida(
     ronda_id: str,
     inspector_id: str,

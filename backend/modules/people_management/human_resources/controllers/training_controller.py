@@ -7,6 +7,7 @@ matriculas e certificados.
 Prefixo: /human-resources/training
 """
 
+import asyncio
 import logging
 from uuid import UUID
 
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
 from core.database import get_db
+from modules.health_occupational.publishers import publish_treinamento_concluido
 from modules.people_management.human_resources.models.training import (
     TrainingCategoryCourse,
     TrainingStatus,
@@ -336,6 +338,16 @@ async def complete_training(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Treinamento nao encontrado.",
         )
+    asyncio.create_task(
+        publish_treinamento_concluido(
+            treinamento_id=str(training_id),
+            funcionario_id=str(getattr(training, "employee_id", "")),
+            funcionario_nome=str(getattr(training, "employee_name", "")),
+            titulo=str(getattr(training, "title", "") or getattr(training, "name", "")),
+            carga_horaria=float(getattr(training, "workload", 0) or 0),
+            data_conclusao=str(getattr(training, "end_date", "") or ""),
+        )
+    )
     return TrainingResponse.model_validate(training)
 
 

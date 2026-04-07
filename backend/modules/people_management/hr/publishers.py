@@ -128,6 +128,107 @@ async def publish_folha_fechada(
         logger.warning("publish_folha_fechada falhou: %s", exc)
 
 
+async def publish_beneficio_adicionado(
+    funcionario_id: str,
+    tipo_beneficio: str,
+    benefit_id: str = "",
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando um benefício é adicionado a um funcionário."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.DP_BENEFICIO_ADICIONADO,
+                payload={
+                    "funcionario_id": funcionario_id,
+                    "tipo_beneficio": tipo_beneficio,
+                    "benefit_id": benefit_id,
+                    **(extra or {}),
+                },
+                source_module="dp",
+                funcionario_id=funcionario_id,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_beneficio_adicionado falhou: %s", exc)
+
+
+async def publish_contrato_criado(
+    funcionario_id: str,
+    contract_id: str = "",
+    tipo_contrato: str = "",
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando um contrato de trabalho é criado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.DP_CONTRATO_CRIADO,
+                payload={
+                    "funcionario_id": funcionario_id,
+                    "contract_id": contract_id,
+                    "tipo_contrato": tipo_contrato,
+                    **(extra or {}),
+                },
+                source_module="dp",
+                funcionario_id=funcionario_id,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_contrato_criado falhou: %s", exc)
+
+
+async def publish_holerite_gerado(
+    funcionario_id: str,
+    funcionario_nome: str = "",
+    competencia: str = "",
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando um holerite (contracheque) é gerado."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.DP_HOLERITE_GERADO,
+                payload={
+                    "funcionario_id": funcionario_id,
+                    "funcionario_nome": funcionario_nome,
+                    "competencia": competencia,
+                    **(extra or {}),
+                },
+                source_module="dp",
+                funcionario_id=funcionario_id,
+                competencia=competencia,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_holerite_gerado falhou: %s", exc)
+
+
+async def publish_funcionario_atualizado(
+    funcionario_id: str,
+    funcionario_nome: str = "",
+    campos_alterados: list[str] | None = None,
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Publica evento quando dados de um funcionário são atualizados."""
+    try:
+        await event_bus.publish(
+            ConectaEvent(
+                event_type=EventTypes.DP_FUNCIONARIO_TRANSFERIDO,
+                payload={
+                    "funcionario_id": funcionario_id,
+                    "funcionario_nome": funcionario_nome,
+                    "campos_alterados": campos_alterados or [],
+                    **(extra or {}),
+                },
+                source_module="dp",
+                funcionario_id=funcionario_id,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("publish_funcionario_atualizado falhou: %s", exc)
+
+
 async def publish_atestado_registrado(
     funcionario_id: str,
     funcionario_nome: str = "",
