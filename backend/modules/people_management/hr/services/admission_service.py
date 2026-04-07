@@ -262,30 +262,30 @@ class AdmissionService:
             employee.id,
         )
 
-        # Publicar evento de funcionário admitido no message bus
+        # Publicar evento de funcionário admitido no ConectaEventBus
         try:
             import asyncio
 
-            from infrastructure.message_bus.events import Event, EventType, publish_event
+            from infrastructure.event_bus import ConectaEvent, EventTypes, event_bus
 
-            event = Event(
-                type=EventType.FUNCIONARIO_ADMITIDO,
-                source="people_management.admission_service",
-                data={
-                    "funcionario_id": str(employee.id),
-                    "nome": employee.nome,
-                    "cargo": employee.cargo or "",
-                    "departamento": employee.departamento or "",
-                    "data_admissao": str(employee.data_admissao) if employee.data_admissao else None,
-                    "admission_id": str(admission_id),
-                },
+            asyncio.create_task(
+                event_bus.publish(
+                    ConectaEvent(
+                        event_type=EventTypes.DP_FUNCIONARIO_ADMITIDO,
+                        payload={
+                            "employee_id": str(employee.id),
+                            "nome": employee.nome,
+                            "cargo": employee.cargo or "",
+                            "departamento": employee.departamento or "",
+                            "data_admissao": str(employee.data_admissao) if employee.data_admissao else None,
+                            "admission_id": str(admission_id),
+                        },
+                        source_module="dp",
+                        funcionario_id=str(employee.id),
+                    )
+                )
             )
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(publish_event(event))
-            else:
-                asyncio.run(publish_event(event))
         except Exception as _pub_err:
-            logger.warning("Falha ao publicar FUNCIONARIO_ADMITIDO: %s", _pub_err)
+            logger.warning("Falha ao publicar DP_FUNCIONARIO_ADMITIDO: %s", _pub_err)
 
         return {"admission": admission, "employee": employee}
