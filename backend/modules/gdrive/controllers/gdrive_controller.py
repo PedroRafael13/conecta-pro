@@ -424,7 +424,7 @@ async def gdrive_oauth_callback(
         logger.info("GDrive: OAuth2 concluído — tokens salvos")
         return _Redirect(url=f"{base}?gdrive=conectado")
     except Exception as exc:
-        logger.error("GDrive callback erro: %s", exc)
+        logger.error("GDrive callback erro: %s", exc, exc_info=True)
         return _Redirect(url=f"{base}?gdrive=erro")
 
 

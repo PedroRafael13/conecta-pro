@@ -120,15 +120,28 @@ class GDriveService:
         Trocar código de autorização pelos tokens OAuth2.
         Chamado automaticamente no callback.
         """
+        import os as _os
+
         from google_auth_oauthlib.flow import Flow
+
+        # Necessário para evitar MismatchingStateError/ScopeChanged quando
+        # Google retorna scopes extras via include_granted_scopes=true
+        _os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
+        _os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
         flow = Flow.from_client_config(
             OAUTH2_CLIENT_CONFIG,
             scopes=OAUTH2_SCOPES,
-            redirect_uri=os.environ.get("GDRIVE_REDIRECT_URI", ""),
+            redirect_uri=_os.environ.get("GDRIVE_REDIRECT_URI", ""),
         )
         flow.fetch_token(code=code)
         creds = flow.credentials
+        logger.info(
+            "GDrive trocar_codigo: token=%s refresh=%s expiry=%s",
+            "OK" if creds.token else "VAZIO",
+            "OK" if creds.refresh_token else "VAZIO",
+            creds.expiry,
+        )
         return {
             "access_token": creds.token,
             "refresh_token": creds.refresh_token,
