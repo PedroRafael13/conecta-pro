@@ -25,17 +25,16 @@ router = APIRouter(prefix="/gedeon", tags=["GEDEON"])
 @router.on_event("startup")
 async def sophia_startup() -> None:
     """
-    SOPHIA: auto-startup — restaura índice do banco ao iniciar o app.
-    Se banco vazio, indexa o acervo completo.
+    SOPHIA v2.0: auto-startup — verifica status do índice ao iniciar o app.
     """
     from modules.gedeon.agents.sophia import sophia
 
-    carregados = await sophia.carregar_do_banco()
-    if carregados == 0:
-        logger.info("SOPHIA startup: banco sem registros — indexando acervo completo")
-        await sophia.indexar_acervo_completo()
-    else:
-        logger.info("SOPHIA startup: %d documentos restaurados do banco", carregados)
+    s = sophia.status()
+    logger.info(
+        "SOPHIA v2.0 startup: %d documentos indexados, motor=%s",
+        s.get("total_documentos", 0),
+        s.get("motor_ativo", "unknown"),
+    )
 
 
 @router.get("/context/{cliente_id}/{competencia}")
@@ -270,16 +269,29 @@ async def atlas_anomalia(
     }
 
 
+@router.get("/sophia/status")
+async def sophia_status(
+    current_user=Depends(get_current_user),
+):
+    """SOPHIA v2.0: status do índice semântico cross-módulo."""
+    from modules.gedeon.agents.sophia import sophia
+
+    return sophia.status()
+
+
 @router.get("/sophia/buscar")
 async def sophia_buscar(
     q: str,
     cliente_id: str | None = None,
     tipo: str | None = None,
     competencia: str | None = None,
-    limite: int = 10,
+    modulo: str | None = None,
+    impacto_folha: bool | None = None,
+    top_k: int = 10,
+    threshold: float = 0.25,
     current_user=Depends(get_current_user),
 ):
-    """SOPHIA: busca semantica em linguagem natural."""
+    """SOPHIA v2.0: busca semântica em linguagem natural."""
     from modules.gedeon.agents.sophia import sophia
 
     filtros: dict = {}
@@ -289,51 +301,102 @@ async def sophia_buscar(
         filtros["tipo"] = tipo
     if competencia:
         filtros["competencia"] = competencia
-    resultados = sophia.buscar(q, limite=limite, filtros=filtros or None)
-    return {"query": q, "total": len(resultados), "resultados": resultados}
+    if modulo:
+        filtros["modulo"] = modulo
+    if impacto_folha is not None:
+        filtros["impacto_folha"] = impacto_folha
+    resultados = sophia.buscar(q, top_k=top_k, filtros=filtros or None, threshold=threshold)
+    return {
+        "query": q,
+        "total": len(resultados),
+        "modulo_detectado": sophia._detectar_modulo(q),
+        "resultados": resultados,
+    }
 
 
-@router.get("/sophia/perguntar")
+@router.post("/sophia/perguntar")
 async def sophia_perguntar(
-    q: str,
+    q: str | None = None,
+    pergunta: str | None = None,
+    cliente_id: str | None = None,
+    funcionario_id: str | None = None,
+    modulo: str | None = None,
+    competencia: str | None = None,
     current_user=Depends(get_current_user),
 ):
-    """SOPHIA: pergunta em linguagem natural."""
+    """SOPHIA v2.0: pergunta em linguagem natural sobre o acervo."""
     from modules.gedeon.agents.sophia import sophia
 
-    return {"pergunta": q, "resposta": sophia.responder_pergunta(q)}
+    query_text = pergunta or q or ""
+    if not query_text:
+        return {"erro": "Parâmetro 'pergunta' ou 'q' obrigatório"}
+    return sophia.perguntar(
+        pergunta=query_text,
+        cliente_id=cliente_id,
+        funcionario_id=funcionario_id,
+        modulo=modulo,
+        competencia=competencia,
+    )
+
+
+@router.post("/sophia/reindexar")
+async def sophia_reindexar(
+    batch_size: int = 50,
+    modulo: str | None = None,
+    current_user=Depends(get_current_user),
+):
+    """SOPHIA v2.0: re-indexa acervo com embedding v2."""
+    from modules.gedeon.agents.sophia import sophia
+
+    resultado = sophia.reindexar_acervo(batch_size=batch_size, modulo_filter=modulo)
+    return {"status": "ok", **resultado}
+
+
+@router.get("/sophia/alertas")
+async def sophia_alertas(
+    dias: int = 30,
+    modulos: str | None = None,
+    current_user=Depends(get_current_user),
+):
+    """SOPHIA v2.0: alertas de documentos vencendo nos próximos N dias."""
+    from modules.gedeon.agents.sophia import sophia
+
+    modulos_list = [m.strip() for m in modulos.split(",")] if modulos else None
+    alertas = sophia.alertas_vencimento(dias=dias, modulos=modulos_list)
+    return {
+        "dias": dias,
+        "total": len(alertas),
+        "criticos": sum(1 for a in alertas if a.get("nivel") == "critico"),
+        "urgentes": sum(1 for a in alertas if a.get("nivel") == "urgente"),
+        "alertas": alertas,
+    }
+
+
+@router.get("/sophia/impacto-folha")
+async def sophia_impacto_folha(
+    competencia: str | None = None,
+    current_user=Depends(get_current_user),
+):
+    """SOPHIA v2.0: documentos que impactam a folha de pagamento."""
+    from modules.gedeon.agents.sophia import sophia
+
+    docs = sophia.buscar_impacto_folha(competencia=competencia)
+    return {
+        "competencia": competencia,
+        "total": len(docs),
+        "documentos": docs,
+    }
 
 
 @router.post("/sophia/indexar")
 async def sophia_indexar(
     current_user=Depends(get_current_user),
 ):
-    """SOPHIA: indexar acervo completo e persistir em gedeon_document_index."""
+    """SOPHIA v2.0: indexar/re-indexar acervo completo."""
     from modules.gedeon.agents.sophia import sophia
 
-    total = await sophia.indexar_acervo_completo()
-    return {"status": "ok", "indexados": total, "persistidos_no_banco": total}
-
-
-@router.post("/sophia/carregar")
-async def sophia_carregar(
-    current_user=Depends(get_current_user),
-):
-    """SOPHIA: restaurar índice in-memory a partir de gedeon_document_index (após restart)."""
-    from modules.gedeon.agents.sophia import sophia
-
-    total = await sophia.carregar_do_banco()
-    return {"status": "ok", "carregados_do_banco": total}
-
-
-@router.get("/sophia/status")
-async def sophia_status(
-    current_user=Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """SOPHIA: status do índice — quantidade de docs persistidos no banco."""
-    total = (await db.execute(sa_text("SELECT COUNT(*) FROM gedeon_document_index"))).scalar() or 0
-    return {"status": "ok", "indexados": total, "carregado": total > 0}
+    resultado = sophia.indexar_acervo_completo()
+    return {"status": "ok", **resultado}
 
 
 def _gerar_checklist(ctx: dict) -> dict:

@@ -1,21 +1,24 @@
 """
-SOPHIA — Agente de Busca Semântica do GEDEON
+SOPHIA v2.0 — Busca Semântica Cross-Módulo do GEDEON
 "Qualquer documento encontrado em linguagem natural"
 
-Responsabilidades:
-- Indexação semântica de todos os documentos
-- Busca por linguagem natural
-- Responde perguntas sobre o acervo documental
-- Detecta documentos similares
-- Gera resumos automáticos
+Versão: 2.0
+Escopo: DP · RH · GED · Operacional · Fiscal · Contratos · Licitações · Financeiro
 
-Estratégia de embedding:
-1. Se ANTHROPIC_API_KEY disponível → sklearn TF-IDF vetorial + cosine similarity
-   (Anthropic não fornece endpoint de embeddings; sklearn é o caminho premium)
-2. Fallback → TF-IDF manual com similaridade por token
+Motor: Anthropic API (claude-3-haiku) + fallback dense 1536 dims
+Capacidades:
+- busca_semantica com filtros cross-módulo
+- perguntar_linguagem_natural
+- alertas_vencimento
+- buscar_impacto_folha
+- detectar_modulo_implicito
+- reindexar_acervo
 
-Armazenamento: PostgreSQL tabela gedeon_document_index
+Armazenamento: PostgreSQL gedeon_document_index
+(colunas v2: modulo, vencimento, impacto_folha, embedding_anthropic, embedding_model)
 """
+
+from __future__ import annotations
 
 import hashlib
 import json
@@ -23,24 +26,203 @@ import logging
 import math
 import os
 import re
-from collections import defaultdict
+import subprocess
+from datetime import date, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
-HAS_ANTHROPIC = bool(os.getenv("ANTHROPIC_API_KEY"))
+# ── Constantes ────────────────────────────────────────────────────────────────
 
-# Sklearn: caminho premium de busca vetorial
-try:
-    import numpy as np
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity as cosine_sim
+EMBEDDING_DIM = 1536
+ANTHROPIC_MODEL = "claude-3-haiku-20240307"
+EMBEDDING_MODEL_NAME_ANTHROPIC = "anthropic_haiku_1536"
+EMBEDDING_MODEL_NAME_FALLBACK = "sophia_dense_1536"
 
-    HAS_SKLEARN = True
-except ImportError:
-    HAS_SKLEARN = False
+POSTGRES_CONTAINER = "conecta-pro-postgres"
+POSTGRES_DB = "conecta_pro"
+POSTGRES_USER = "postgres"
 
-# Stopwords PT-BR — nível de módulo (compartilhado por TF-IDF e sklearn)
+# ── Módulos e termos de domínio ───────────────────────────────────────────────
+
+MODULOS_ESCOPO = {
+    "dp": "Departamento Pessoal",
+    "rh": "Recursos Humanos",
+    "ged": "Gestão Eletrônica de Documentos",
+    "operacional": "Operacional",
+    "fiscal": "Fiscal e Contábil",
+    "contratos": "Contratos",
+    "licitacoes": "Licitações",
+    "financeiro": "Financeiro",
+}
+
+TERMOS_MODULOS: dict[str, list[str]] = {
+    "dp": [
+        "holerite",
+        "folha",
+        "salário",
+        "pagamento",
+        "admissão",
+        "demissão",
+        "rescisão",
+        "férias",
+        "13o",
+        "décimo",
+        "inss",
+        "fgts",
+        "irrf",
+        "caged",
+        "esocial",
+        "ctps",
+        "pis",
+        "funcionario",
+        "colaborador",
+        "empregado",
+        "contrato_trabalho",
+        "clt",
+        "cargo",
+        "registro",
+        "competencia",
+        "folha_pagamento",
+        "holerite_mensal",
+    ],
+    "rh": [
+        "treinamento",
+        "capacitação",
+        "nr",
+        "aso",
+        "atestado",
+        "exame",
+        "médico",
+        "admissional",
+        "demissional",
+        "periódico",
+        "certificado",
+        "qualificação",
+        "curso",
+        "formação",
+        "desempenho",
+        "avaliação",
+        "benefício",
+        "plano_saude",
+        "vale_transporte",
+        "vale_refeição",
+        "recrutamento",
+        "seleção",
+        "contratação",
+        "onboarding",
+    ],
+    "ged": [
+        "certidão",
+        "crf",
+        "cndt",
+        "cnd",
+        "regularidade",
+        "certidao",
+        "alvará",
+        "licença",
+        "vencimento",
+        "validade",
+        "documento",
+        "kit",
+        "acervo",
+        "arquivo",
+        "digital",
+        "assinatura",
+        "certificado_digital",
+        "kit_documental",
+        "certidao_negativa",
+    ],
+    "operacional": [
+        "posto",
+        "ocorrência",
+        "ocorrencia",
+        "ronda",
+        "escala",
+        "vigilante",
+        "segurança",
+        "guarda",
+        "turno",
+        "diária",
+        "plantão",
+        "cliente_posto",
+        "supervisor",
+        "coordenador",
+        "incidente",
+        "relatório_operacional",
+        "ronda_eletrônica",
+    ],
+    "fiscal": [
+        "nfse",
+        "nfe",
+        "nota_fiscal",
+        "danfe",
+        "iss",
+        "icms",
+        "pis_cofins",
+        "sped",
+        "reinf",
+        "dctfweb",
+        "efd",
+        "apuração",
+        "tributo",
+        "imposto",
+        "faturamento",
+        "emissão_fiscal",
+        "xml_fiscal",
+        "arquivo_fiscal",
+    ],
+    "contratos": [
+        "contrato",
+        "experiência",
+        "prazo",
+        "vigência",
+        "renovação",
+        "aditivo",
+        "rescisão_contratual",
+        "prestação_serviços",
+        "contrato_experiencia",
+        "contrato_prazo_determinado",
+        "contrato_terceirização",
+    ],
+    "licitacoes": [
+        "edital",
+        "pregão",
+        "licitação",
+        "licitacao",
+        "dispensa",
+        "inexigibilidade",
+        "proposta",
+        "certame",
+        "pe",
+        "tribunal",
+        "órgão_público",
+        "governo",
+        "homologação",
+        "adjudicação",
+        "sessão_pública",
+        "ata_registro_preço",
+    ],
+    "financeiro": [
+        "fatura",
+        "boleto",
+        "cobrança",
+        "recebimento",
+        "pagamento_cliente",
+        "inadimplência",
+        "vencimento_fatura",
+        "conta_receber",
+        "conta_pagar",
+        "fluxo_caixa",
+        "extrato",
+        "conciliação",
+        "banco",
+        "transferência",
+        "nf_servico",
+    ],
+}
+
+# Stopwords PT-BR
 _STOPWORDS = {
     "de",
     "da",
@@ -64,44 +246,269 @@ _STOPWORDS = {
     "por",
     "com",
     "que",
+    "se",
+    "ao",
+    "aos",
+    "às",
 }
 
+# ── Utilitários de texto ──────────────────────────────────────────────────────
 
-class SophiaIndex:
+
+def _tokenizar(texto: str) -> list[str]:
+    """Tokenizar texto em português."""
+    texto = texto.lower()
+    texto = re.sub(r"[^\w\sáéíóúâêîôûãõàèìòùç]", " ", texto)
+    return [t for t in texto.split() if len(t) > 2 and t not in _STOPWORDS]
+
+
+def _normalizar(texto: str) -> str:
+    """Normaliza texto: minúsculas, sem acentos (ASCII simplificado)."""
+    import unicodedata
+
+    nfkd = unicodedata.normalize("NFKD", texto.lower())
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+
+# ── Embedding ─────────────────────────────────────────────────────────────────
+
+
+def _texto_para_vetor(texto: str) -> list[float]:
     """
-    Índice de busca semântica de documentos do GEDEON.
+    Gera vetor denso de EMBEDDING_DIM (1536) dimensões a partir do texto.
+    Estratégia: hash determinístico + termos de domínio + posição de tokens.
+    Garante exatamente 1536 dimensões sem dependência externa.
+    """
+    tokens = _tokenizar(texto)
+    vetor = [0.0] * EMBEDDING_DIM
 
-    Caminho premium (HAS_ANTHROPIC=True + sklearn):
-        TfidfVectorizer + cosine_similarity — busca vetorial completa.
-        Vetores persistidos em gedeon_document_index.embedding (FLOAT8[]).
+    if not tokens:
+        return vetor
 
-    Caminho fallback:
-        TF-IDF manual com token matching — sem dependência externa.
+    # Bloco 1 (0-511): hash por token → posição determinística
+    for i, token in enumerate(tokens[:256]):
+        h = int(hashlib.md5(token.encode(), usedforsecurity=False).hexdigest(), 16)  # noqa: S324
+        pos = h % 512
+        # peso: posição no texto importa (primeiros tokens = mais relevantes)
+        weight = 1.0 / math.sqrt(i + 1)
+        vetor[pos] = min(1.0, vetor[pos] + weight)
+
+    # Bloco 2 (512-1023): TF normalizado por bigrams
+    for i in range(len(tokens) - 1):
+        bigram = tokens[i] + "_" + tokens[i + 1]
+        h = int(hashlib.md5(bigram.encode(), usedforsecurity=False).hexdigest(), 16)  # noqa: S324
+        pos = 512 + (h % 512)
+        vetor[pos] = min(1.0, vetor[pos] + 0.5)
+
+    # Bloco 3 (1024-1279): módulos detectados
+    texto_norm = _normalizar(texto)
+    for m_idx, (_modulo, termos) in enumerate(TERMOS_MODULOS.items()):
+        base = 1024 + m_idx * 32
+        for t_idx, termo in enumerate(termos[:32]):
+            if termo.replace("_", " ") in texto_norm or termo in texto_norm:
+                pos = base + (t_idx % 32)
+                vetor[pos] = min(1.0, vetor[pos] + 1.0)
+
+    # Bloco 4 (1280-1535): frequência TF normalizada
+    n_tokens = len(tokens) or 1
+    freq: dict[str, int] = {}
+    for t in tokens:
+        freq[t] = freq.get(t, 0) + 1
+    for token, cnt in freq.items():
+        h = int(hashlib.sha256(token.encode()).hexdigest(), 16)
+        pos = 1280 + (h % 256)
+        vetor[pos] = min(1.0, vetor[pos] + cnt / n_tokens)
+
+    # Normalização L2
+    norm = math.sqrt(sum(x * x for x in vetor))
+    if norm > 0:
+        vetor = [x / norm for x in vetor]
+
+    return vetor
+
+
+def _gerar_embedding(texto: str, client: Any | None) -> tuple[list[float], str]:
+    """
+    Gera embedding via Anthropic (primário) ou dense fallback.
+    Retorna (vetor, model_name).
+
+    Nota: Anthropic não fornece endpoint de embeddings direto, então usamos
+    o modelo de linguagem para gerar uma representação semântica comprimida
+    que é expandida para 1536 dims via hash determinístico.
+    """
+    if client is not None:
+        try:
+            # Usar Anthropic para extrair termos semânticos chave do texto
+            prompt = (
+                f"Extraia os 20 termos mais importantes e semanticamente ricos do texto abaixo. "
+                f"Retorne apenas os termos separados por espaço, sem pontuação:\n\n{texto[:500]}"
+            )
+            response = client.messages.create(
+                model=ANTHROPIC_MODEL,
+                max_tokens=100,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            termos_semanticos = response.content[0].text.strip()
+            # Combina texto original com termos semânticos extraídos (amplifica sinal semântico)
+            texto_enriquecido = texto + " " + termos_semanticos
+            vetor = _texto_para_vetor(texto_enriquecido)
+            return vetor, EMBEDDING_MODEL_NAME_ANTHROPIC
+        except Exception as e:
+            logger.debug("SOPHIA: Anthropic embedding fallback: %s", e)
+
+    # Fallback: dense 1536
+    vetor = _texto_para_vetor(texto)
+    return vetor, EMBEDDING_MODEL_NAME_FALLBACK
+
+
+def _similaridade_coseno(v1: list[float], v2: list[float]) -> float:
+    """Calcula similaridade de cosseno entre dois vetores."""
+    if len(v1) != len(v2) or not v1:
+        return 0.0
+    dot = sum(a * b for a, b in zip(v1, v2, strict=False))
+    n1 = math.sqrt(sum(a * a for a in v1))
+    n2 = math.sqrt(sum(b * b for b in v2))
+    if n1 == 0 or n2 == 0:
+        return 0.0
+    return max(-1.0, min(1.0, dot / (n1 * n2)))
+
+
+# ── PostgreSQL via subprocess ─────────────────────────────────────────────────
+
+
+def _psql(query: str, params: dict | None = None) -> str:
+    """Executa query no PostgreSQL via docker exec."""
+    if params:
+        # Substituição simples de parâmetros nomeados
+        for key, val in params.items():
+            if val is None:
+                query = query.replace(f":{key}", "NULL")
+            elif isinstance(val, bool):
+                query = query.replace(f":{key}", "TRUE" if val else "FALSE")
+            elif isinstance(val, (int, float)):
+                query = query.replace(f":{key}", str(val))
+            elif isinstance(val, list):
+                arr_str = "ARRAY[" + ",".join(str(x) for x in val) + "]::FLOAT8[]"
+                query = query.replace(f":{key}", arr_str)
+            else:
+                escaped = str(val).replace("'", "''")
+                query = query.replace(f":{key}", f"'{escaped}'")
+
+    cmd = [
+        "docker",
+        "exec",
+        POSTGRES_CONTAINER,
+        "psql",
+        "-U",
+        POSTGRES_USER,
+        "-d",
+        POSTGRES_DB,
+        "-t",
+        "-A",
+        "-c",
+        query,
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)  # noqa: S603
+        return result.stdout.strip()
+    except Exception as e:
+        logger.warning("SOPHIA psql erro: %s", e)
+        return ""
+
+
+def _psql_rows(query: str) -> list[dict]:
+    """Executa query e retorna lista de dicts (CSV parsing simples)."""
+    # Usar -F para separador e incluir headers
+    cmd = [
+        "docker",
+        "exec",
+        POSTGRES_CONTAINER,
+        "psql",
+        "-U",
+        POSTGRES_USER,
+        "-d",
+        POSTGRES_DB,
+        "-t",
+        "-A",
+        "--csv",
+        "-c",
+        query,
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)  # noqa: S603
+        lines = result.stdout.strip().splitlines()
+        if not lines or lines == [""]:
+            return []
+        # Primeira linha = headers
+        if len(lines) < 1:
+            return []
+        # Re-run com header
+        cmd2 = [
+            "docker",
+            "exec",
+            POSTGRES_CONTAINER,
+            "psql",
+            "-U",
+            POSTGRES_USER,
+            "-d",
+            POSTGRES_DB,
+            "-A",
+            "--csv",
+            "-c",
+            query,
+        ]
+        result2 = subprocess.run(cmd2, capture_output=True, text=True, timeout=30)  # noqa: S603
+        lines2 = result2.stdout.strip().splitlines()
+        if not lines2:
+            return []
+        import csv
+        import io
+
+        reader = csv.DictReader(io.StringIO(result2.stdout.strip()))
+        return list(reader)
+    except Exception as e:
+        logger.warning("SOPHIA psql_rows erro: %s", e)
+        return []
+
+
+# ── Classe principal ──────────────────────────────────────────────────────────
+
+
+class Sophia:
+    """
+    SOPHIA v2.0 — Busca Semântica Cross-Módulo.
+
+    Motor: Anthropic claude-3-haiku (primário) + dense 1536 fallback.
+    Escopo: dp, rh, ged, operacional, fiscal, contratos, licitacoes, financeiro.
     """
 
     def __init__(self) -> None:
-        self._doc_store: dict[str, dict] = {}
-        self._idf: dict[str, float] = {}
-        # Sklearn — caminho premium
-        self._vectorizer: Any = None
-        self._matrix: Any = None
-        self._doc_ids_ordered: list[str] = []
+        self._client: Any = None
+        self._usando_anthropic: bool = False
+        self._inicializar()
 
-    # ── Tokenização ───────────────────────────────────────────────────────────
+    def _inicializar(self) -> None:
+        """Inicializa cliente Anthropic se API key disponível."""
+        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            logger.info("SOPHIA v2.0: ANTHROPIC_API_KEY não configurada — usando dense fallback")
+            return
+        try:
+            import anthropic
 
-    def _tokenizar(self, texto: str) -> list[str]:
-        """Tokenizar texto em português."""
-        texto = texto.lower()
-        texto = re.sub(r"[^\w\sáéíóúâêîôûãõàèìòùç]", " ", texto)
-        return [t for t in texto.split() if len(t) > 2 and t not in _STOPWORDS]
-
-    def _tf(self, tokens: list[str]) -> dict[str, float]:
-        """Term Frequency normalizado."""
-        freq: dict[str, float] = defaultdict(float)
-        for t in tokens:
-            freq[t] += 1.0
-        total = len(tokens) or 1
-        return {k: v / total for k, v in freq.items()}
+            self._client = anthropic.Anthropic(api_key=api_key)
+            # Teste rápido
+            self._client.messages.create(
+                model=ANTHROPIC_MODEL,
+                max_tokens=5,
+                messages=[{"role": "user", "content": "ok"}],
+            )
+            self._usando_anthropic = True
+            logger.info("SOPHIA v2.0: Anthropic API conectada — motor premium ativo")
+        except Exception as e:
+            logger.warning("SOPHIA v2.0: Anthropic indisponível (%s) — usando dense fallback", e)
+            self._client = None
+            self._usando_anthropic = False
 
     # ── Indexação ─────────────────────────────────────────────────────────────
 
@@ -109,416 +516,630 @@ class SophiaIndex:
         self,
         doc_id: str,
         texto: str,
-        metadados: dict[str, Any],
+        metadados: dict[str, Any] | None = None,
     ) -> bool:
         """
-        Indexa um documento em memória (TF-IDF manual).
-        Chamado durante indexar_acervo_completo() — persiste em DB ao final.
+        Indexa documento no gedeon_document_index.
+        Gera embedding 1536 dims e persiste via PostgreSQL.
+        ON CONFLICT (doc_id) DO UPDATE.
         """
-        try:
-            tokens = self._tokenizar(texto)
-            if not tokens:
-                return False
-
-            doc_hash = hashlib.sha256(texto.encode()).hexdigest()[:16]
-            self._doc_store[doc_id] = {
-                "texto": texto[:500],
-                "metadados": metadados,
-                "tokens": set(tokens),
-                "tf": self._tf(tokens),
-                "hash": doc_hash,
-                "embedding": None,
-            }
-            for token in set(tokens):
-                self._idf[token] = self._idf.get(token, 0) + 1
-
-            return True
-        except Exception as e:
-            logger.warning("SOPHIA indexar erro: %s", e)
+        if not texto or not texto.strip():
             return False
 
-    # ── Embedding vetorial (caminho premium) ──────────────────────────────────
+        metadados = metadados or {}
+        try:
+            # Gerar embedding
+            vetor, model_name = _gerar_embedding(texto, self._client)
 
-    def _construir_matriz_sklearn(self) -> int:
-        """
-        Constrói a matriz TF-IDF vetorial com sklearn.
-        Ativo quando HAS_ANTHROPIC=True e sklearn disponível.
-        Popula self._vectorizer, self._matrix e embedding em cada doc.
-        """
-        if not (HAS_ANTHROPIC and HAS_SKLEARN) or not self._doc_store:
-            return 0
+            # Extrair campos do metadados
+            modulo = metadados.get("modulo") or self._detectar_modulo(texto)
+            submodulo = metadados.get("submodulo")
+            funcionario_id = metadados.get("funcionario_id")
+            vencimento_raw = metadados.get("vencimento")
+            impacto_folha = bool(metadados.get("impacto_folha", False))
 
-        self._doc_ids_ordered = list(self._doc_store.keys())
-        corpus = [self._doc_store[d].get("texto", "") for d in self._doc_ids_ordered]
+            # Se não definido explicitamente, inferir impacto_folha
+            if not impacto_folha and modulo in ("dp", "rh", "ged", "financeiro"):
+                impacto_folha = True
 
-        self._vectorizer = TfidfVectorizer(
-            lowercase=True,
-            strip_accents="unicode",
-            stop_words=list(_STOPWORDS),
-            min_df=1,
-            sublinear_tf=True,
-        )
-        self._matrix = self._vectorizer.fit_transform(corpus)
+            # Normalizar vencimento
+            vencimento_sql = "NULL"
+            if vencimento_raw:
+                try:
+                    if isinstance(vencimento_raw, str):
+                        # aceita YYYY-MM-DD
+                        parsed = datetime.strptime(vencimento_raw[:10], "%Y-%m-%d").date()
+                        vencimento_sql = f"'{parsed.isoformat()}'"
+                    elif isinstance(vencimento_raw, date):
+                        vencimento_sql = f"'{vencimento_raw.isoformat()}'"
+                except Exception:
+                    pass
 
-        # Salvar vetor individual em cada doc para persistência
-        matrix_dense = self._matrix.toarray()
-        for idx, doc_id in enumerate(self._doc_ids_ordered):
-            if doc_id in self._doc_store:
-                self._doc_store[doc_id]["embedding"] = matrix_dense[idx].tolist()
+            doc_hash = hashlib.sha256(texto.encode()).hexdigest()[:16]
+            texto_preview = texto[:500]
+            tokens = _tokenizar(texto)
+            metadados_json = json.dumps(metadados, ensure_ascii=False, default=str)
+            tokens_json = json.dumps(sorted(set(tokens)), ensure_ascii=False)
 
-        n_features = self._matrix.shape[1]
-        logger.info(
-            "SOPHIA: matriz sklearn — %d docs × %d features",
-            len(self._doc_ids_ordered),
-            n_features,
-        )
-        return len(self._doc_ids_ordered)
+            # Montar array embedding
+            embedding_arr = "ARRAY[" + ",".join(f"{x:.8f}" for x in vetor) + "]::FLOAT8[]"
 
-    def _reconstruir_matriz_de_embeddings(self) -> int:
-        """
-        Reconstrói a matriz sklearn a partir de embeddings carregados do banco.
-        Usado após carregar_do_banco() para restaurar busca vetorial sem re-indexar.
-        """
-        if not (HAS_ANTHROPIC and HAS_SKLEARN) or not self._doc_store:
-            return 0
+            # Campos opcionais
+            modulo_sql = f"'{modulo}'" if modulo else "NULL"
+            submodulo_sql = f"'{submodulo}'" if submodulo else "NULL"
+            funcionario_id_sql = f"'{funcionario_id}'::UUID" if funcionario_id else "NULL"
 
-        docs_com_embedding = [
-            (doc_id, doc["embedding"]) for doc_id, doc in self._doc_store.items() if doc.get("embedding")
-        ]
-        if not docs_com_embedding:
-            # Embeddings não disponíveis — reconstrói do texto
-            return self._construir_matriz_sklearn()
+            metadados_esc = metadados_json.replace("'", "''")
+            tokens_esc = tokens_json.replace("'", "''")
+            texto_esc = texto_preview.replace("'", "''")
+            doc_id_esc = doc_id.replace("'", "''")
 
-        self._doc_ids_ordered = [d[0] for d in docs_com_embedding]
-        matrix = np.array([d[1] for d in docs_com_embedding], dtype=np.float64)
-
-        # Reconstrói vectorizer a partir dos textos para permitir transform em queries
-        corpus = [self._doc_store[d].get("texto", "") for d in self._doc_ids_ordered]
-        self._vectorizer = TfidfVectorizer(
-            lowercase=True,
-            strip_accents="unicode",
-            stop_words=list(_STOPWORDS),
-            min_df=1,
-            sublinear_tf=True,
-        )
-        self._vectorizer.fit(corpus)
-
-        from scipy.sparse import csr_matrix
-
-        self._matrix = csr_matrix(matrix)
-        logger.info("SOPHIA: matriz reconstruída de %d embeddings do banco", len(self._doc_ids_ordered))
-        return len(self._doc_ids_ordered)
+            sql = f"""
+INSERT INTO gedeon_document_index
+    (doc_id, texto_preview, metadados, tokens, embedding,
+     embedding_anthropic, embedding_model, embedding_dim,
+     modulo, submodulo, funcionario_id, vencimento, impacto_folha, hash)
+VALUES
+    ('{doc_id_esc}', '{texto_esc}', '{metadados_esc}'::jsonb, '{tokens_esc}'::jsonb,
+     {embedding_arr}, {embedding_arr}, '{model_name}', {EMBEDDING_DIM},
+     {modulo_sql}, {submodulo_sql}, {funcionario_id_sql}, {vencimento_sql},
+     {"TRUE" if impacto_folha else "FALSE"}, '{doc_hash}')
+ON CONFLICT (doc_id) DO UPDATE SET
+    texto_preview = EXCLUDED.texto_preview,
+    metadados = EXCLUDED.metadados,
+    tokens = EXCLUDED.tokens,
+    embedding = EXCLUDED.embedding,
+    embedding_anthropic = EXCLUDED.embedding_anthropic,
+    embedding_model = EXCLUDED.embedding_model,
+    embedding_dim = EXCLUDED.embedding_dim,
+    modulo = EXCLUDED.modulo,
+    submodulo = EXCLUDED.submodulo,
+    funcionario_id = EXCLUDED.funcionario_id,
+    vencimento = EXCLUDED.vencimento,
+    impacto_folha = EXCLUDED.impacto_folha,
+    hash = EXCLUDED.hash,
+    updated_at = NOW()
+"""
+            _psql(sql)
+            return True
+        except Exception as e:
+            logger.warning("SOPHIA indexar_documento erro [%s]: %s", doc_id, e)
+            return False
 
     # ── Busca ─────────────────────────────────────────────────────────────────
 
     def buscar(
         self,
         query: str,
-        limite: int = 10,
-        filtros: dict | None = None,
+        top_k: int = 10,
+        filtros: dict[str, Any] | None = None,
+        threshold: float = 0.30,
     ) -> list[dict]:
         """
-        Busca documentos por texto livre.
-        Usa cosine similarity (sklearn) se HAS_ANTHROPIC, senão TF-IDF manual.
+        Busca semântica por similaridade de cosseno.
+        Suporta filtros: modulo, cliente_id, funcionario_id, tipo, competencia,
+                         impacto_folha, vencendo_em_dias, modulos (lista).
         """
-        if HAS_ANTHROPIC and HAS_SKLEARN and self._vectorizer is not None and self._matrix is not None:
-            return self._buscar_sklearn(query, limite, filtros)
-        return self._buscar_tfidf(query, limite, filtros)
-
-    def _buscar_sklearn(
-        self,
-        query: str,
-        limite: int,
-        filtros: dict | None,
-    ) -> list[dict]:
-        """Busca vetorial por cosine similarity (caminho premium)."""
-        query_vec = self._vectorizer.transform([query])
-        scores = cosine_sim(query_vec, self._matrix).flatten()
-
-        docs = []
-        for idx, score in enumerate(scores):
-            if score < 0.001:
-                continue
-            doc_id = self._doc_ids_ordered[idx]
-            doc = self._doc_store.get(doc_id)
-            if not doc:
-                continue
-            meta = doc.get("metadados", {})
-
-            if filtros:
-                if filtros.get("cliente_id") and meta.get("cliente_id") != filtros["cliente_id"]:
-                    continue
-                if filtros.get("tipo") and meta.get("tipo") != filtros["tipo"]:
-                    continue
-                if filtros.get("competencia") and meta.get("competencia") != filtros["competencia"]:
-                    continue
-
-            docs.append(
-                {
-                    "doc_id": doc_id,
-                    "preview": doc.get("texto", "")[:200],
-                    "metadados": meta,
-                    "score": round(float(score), 4),
-                    "tipo": meta.get("tipo", ""),
-                    "cliente": meta.get("cliente_nome", ""),
-                    "funcionario": meta.get("funcionario_nome", ""),
-                    "competencia": meta.get("competencia", ""),
-                    "modo_busca": "sklearn_cosine",
-                }
-            )
-
-        return sorted(docs, key=lambda x: x["score"], reverse=True)[:limite]
-
-    def _buscar_tfidf(
-        self,
-        query: str,
-        limite: int,
-        filtros: dict | None,
-    ) -> list[dict]:
-        """Busca TF-IDF manual — fallback sem sklearn."""
-        query_tokens = self._tokenizar(query)
-        if not query_tokens:
+        if not query or not query.strip():
             return []
 
-        docs = []
-        n_docs = max(len(self._doc_store), 1)
-        query_tf = self._tf(query_tokens)
+        filtros = filtros or {}
 
-        for doc_id, doc in self._doc_store.items():
-            meta = doc.get("metadados", {})
+        # Detectar módulo implícito na query
+        # Módulo implícito detectado (usado para logs/debug)
+        _modulo_implicito = self._detectar_modulo(query)
 
-            if filtros:
-                if filtros.get("cliente_id") and meta.get("cliente_id") != filtros["cliente_id"]:
-                    continue
-                if filtros.get("tipo") and meta.get("tipo") != filtros["tipo"]:
-                    continue
-                if filtros.get("competencia") and meta.get("competencia") != filtros["competencia"]:
+        # Gerar vetor da query
+        query_vetor, _ = _gerar_embedding(query, self._client)
+
+        # Construir cláusula WHERE
+        where_clauses = ["1=1"]
+
+        if filtros.get("modulo"):
+            m = filtros["modulo"].replace("'", "''")
+            where_clauses.append(f"modulo = '{m}'")
+        elif filtros.get("modulos"):
+            mods = [f"'{m.replace(chr(39), chr(39) + chr(39))}'" for m in filtros["modulos"]]
+            where_clauses.append(f"modulo IN ({','.join(mods)})")
+
+        if filtros.get("cliente_id"):
+            cid = filtros["cliente_id"].replace("'", "''")
+            where_clauses.append(f"metadados->>'cliente_id' = '{cid}'")
+
+        if filtros.get("funcionario_id"):
+            fid = filtros["funcionario_id"].replace("'", "''")
+            where_clauses.append(f"(funcionario_id = '{fid}'::UUID OR metadados->>'funcionario_id' = '{fid}')")
+
+        if filtros.get("tipo"):
+            t = filtros["tipo"].replace("'", "''")
+            where_clauses.append(f"metadados->>'tipo' = '{t}'")
+
+        if filtros.get("competencia"):
+            comp = filtros["competencia"].replace("'", "''")
+            where_clauses.append(f"metadados->>'competencia' = '{comp}'")
+
+        if filtros.get("impacto_folha"):
+            where_clauses.append("impacto_folha = TRUE")
+
+        if filtros.get("vencendo_em_dias") is not None:
+            dias = int(filtros["vencendo_em_dias"])
+            where_clauses.append(f"vencimento IS NOT NULL AND vencimento <= CURRENT_DATE + INTERVAL '{dias} days'")
+
+        where_sql = " AND ".join(where_clauses)
+
+        # Buscar candidatos do banco (limitamos a 500 para calcular similaridade)
+        sql = f"""
+SELECT doc_id, texto_preview, metadados, embedding_anthropic, embedding,
+       modulo, vencimento::text, impacto_folha
+FROM gedeon_document_index
+WHERE {where_sql}
+  AND (embedding_anthropic IS NOT NULL OR embedding IS NOT NULL)
+ORDER BY updated_at DESC
+LIMIT 500
+"""
+        rows = _psql_rows(sql)
+
+        # Também gerar vetor direto da query (sem Anthropic) para scoring híbrido
+        query_vetor_direto = _texto_para_vetor(query)
+
+        resultados = []
+        for row in rows:
+            try:
+                texto_doc = row.get("texto_preview", "")
+                # Recuperar vetor (preferir embedding_anthropic)
+                emb_raw = row.get("embedding_anthropic") or row.get("embedding") or ""
+                score_cosine = 0.0
+                if emb_raw and emb_raw not in ("", "NULL", None):
+                    try:
+                        # Parse do array PostgreSQL: {0.1,0.2,...}
+                        emb_str = emb_raw.strip("{}")
+                        doc_vetor = [float(x) for x in emb_str.split(",") if x.strip()]
+                        if len(doc_vetor) == EMBEDDING_DIM:
+                            # Similarity com vetor enriquecido E com vetor direto
+                            sim_enriquecido = _similaridade_coseno(query_vetor, doc_vetor)
+                            sim_direto = _similaridade_coseno(query_vetor_direto, doc_vetor)
+                            score_cosine = max(sim_enriquecido, sim_direto)
+                    except Exception:
+                        pass
+
+                # Similaridade textual como complemento
+                score_textual = self._similaridade_textual(query, texto_doc)
+
+                # Score final: máximo entre cosine e textual
+                score = max(score_cosine, score_textual)
+
+                if score < threshold:
                     continue
 
-            doc_tokens = doc.get("tokens", set())
-            if not any(t in doc_tokens for t in query_tokens):
+                meta = {}
+                try:
+                    meta_raw = row.get("metadados", "{}")
+                    if meta_raw:
+                        meta = json.loads(meta_raw) if isinstance(meta_raw, str) else meta_raw
+                except Exception:
+                    pass
+
+                resultados.append(
+                    {
+                        "doc_id": row.get("doc_id", ""),
+                        "preview": (row.get("texto_preview") or "")[:200],
+                        "metadados": meta,
+                        "score": round(score, 4),
+                        "modulo": row.get("modulo") or meta.get("modulo", ""),
+                        "tipo": meta.get("tipo", ""),
+                        "cliente": meta.get("cliente_nome", "") or meta.get("cliente_id", ""),
+                        "funcionario": meta.get("funcionario_nome", "") or meta.get("funcionario_id", ""),
+                        "competencia": meta.get("competencia", ""),
+                        "vencimento": row.get("vencimento") or meta.get("vencimento", ""),
+                        "impacto_folha": row.get("impacto_folha") in ("TRUE", "t", "true", True),
+                        "modo_busca": "sophia_v2_cosine",
+                    }
+                )
+            except Exception as e:
+                logger.debug("SOPHIA buscar row erro: %s", e)
                 continue
 
-            score = 0.0
-            doc_tf = doc.get("tf", {})
-            for token, qtf in query_tf.items():
-                if token in doc_tf:
-                    idf = math.log(n_docs / (self._idf.get(token, 0) + 1) + 1)
-                    score += qtf * doc_tf[token] * idf
+        # Ordenar por score
+        resultados.sort(key=lambda x: x["score"], reverse=True)
+        return resultados[:top_k]
 
-            docs.append(
-                {
-                    "doc_id": doc_id,
-                    "preview": doc.get("texto", "")[:200],
-                    "metadados": meta,
-                    "score": round(score, 4),
-                    "tipo": meta.get("tipo", ""),
-                    "cliente": meta.get("cliente_nome", ""),
-                    "funcionario": meta.get("funcionario_nome", ""),
-                    "competencia": meta.get("competencia", ""),
-                    "modo_busca": "tfidf_manual",
-                }
+    def _similaridade_textual(self, query: str, texto: str) -> float:
+        """Similaridade textual simples como fallback quando não há embedding."""
+        q_tokens = set(_tokenizar(query))
+        d_tokens = set(_tokenizar(texto))
+        if not q_tokens or not d_tokens:
+            return 0.0
+        intersection = q_tokens & d_tokens
+        union = q_tokens | d_tokens
+        return len(intersection) / len(union) if union else 0.0
+
+    # ── Detecção de módulo ────────────────────────────────────────────────────
+
+    def _detectar_modulo(self, query: str) -> str:
+        """
+        Detecta módulo implícito a partir dos termos da query.
+        Retorna o módulo com maior score de correspondência.
+        """
+        query_norm = _normalizar(query)
+        scores: dict[str, float] = dict.fromkeys(MODULOS_ESCOPO, 0.0)
+
+        for modulo, termos in TERMOS_MODULOS.items():
+            for termo in termos:
+                termo_norm = termo.replace("_", " ")
+                if termo_norm in query_norm or termo in query_norm:
+                    scores[modulo] += 1.0
+                elif any(t in query_norm for t in termo_norm.split()):
+                    scores[modulo] += 0.3
+
+        best = max(scores, key=lambda k: scores[k])
+        if scores[best] > 0:
+            return best
+        return "ged"  # default
+
+    # ── Perguntar ─────────────────────────────────────────────────────────────
+
+    def perguntar(
+        self,
+        pergunta: str,
+        cliente_id: str | None = None,
+        funcionario_id: str | None = None,
+        modulo: str | None = None,
+        competencia: str | None = None,
+    ) -> dict:
+        """
+        Responde pergunta em linguagem natural com base no acervo documental.
+        Busca documentos relevantes e sintetiza resposta.
+        """
+        filtros: dict[str, Any] = {}
+        if cliente_id:
+            filtros["cliente_id"] = cliente_id
+        if funcionario_id:
+            filtros["funcionario_id"] = funcionario_id
+        if modulo:
+            filtros["modulo"] = modulo
+        if competencia:
+            filtros["competencia"] = competencia
+
+        # Detectar módulo implícito
+        modulo_detectado = modulo or self._detectar_modulo(pergunta)
+
+        # Buscar documentos relevantes
+        docs = self.buscar(pergunta, top_k=8, filtros=filtros or None, threshold=0.25)
+
+        if not docs:
+            # Segunda tentativa sem filtros de módulo
+            docs = self.buscar(pergunta, top_k=5, threshold=0.20)
+
+        if not docs:
+            return {
+                "pergunta": pergunta,
+                "resposta": f"Nenhum documento encontrado no acervo para '{pergunta}'.",
+                "docs_usados": 0,
+                "documentos": [],
+                "modulo_detectado": modulo_detectado,
+                "confianca": 0.0,
+                "motor": "sophia_v2",
+            }
+
+        # Sintetizar resposta
+        if self._client is not None and self._usando_anthropic:
+            resposta = self._sintetizar_com_anthropic(pergunta, docs)
+        else:
+            resposta = self._sintetizar_local(pergunta, docs)
+
+        confianca = round(sum(d["score"] for d in docs[:3]) / min(3, len(docs)), 3)
+
+        return {
+            "pergunta": pergunta,
+            "resposta": resposta,
+            "docs_usados": len(docs),
+            "documentos": docs[:5],
+            "modulo_detectado": modulo_detectado,
+            "confianca": confianca,
+            "motor": "sophia_v2_anthropic" if self._usando_anthropic else "sophia_v2_dense",
+        }
+
+    def _sintetizar_com_anthropic(self, pergunta: str, docs: list[dict]) -> str:
+        """Usa Anthropic para sintetizar resposta com base nos documentos."""
+        context = "\n".join(
+            f"[{i + 1}] ({d.get('modulo', '?')}) {d.get('preview', '')[:150]}" for i, d in enumerate(docs[:5])
+        )
+        prompt = (
+            f"Com base nos seguintes documentos do sistema ERP:\n\n{context}\n\n"
+            f"Responda de forma direta e objetiva: {pergunta}\n\n"
+            f"Seja conciso (máx 3 frases). Cite o tipo de documento quando relevante."
+        )
+        try:
+            response = self._client.messages.create(
+                model=ANTHROPIC_MODEL,
+                max_tokens=200,
+                messages=[{"role": "user", "content": prompt}],
             )
+            return response.content[0].text.strip()
+        except Exception as e:
+            logger.warning("SOPHIA sintetizar Anthropic erro: %s", e)
+            return self._sintetizar_local(pergunta, docs)
 
-        return sorted(docs, key=lambda x: x["score"], reverse=True)[:limite]
-
-    # ── NLP simples ───────────────────────────────────────────────────────────
-
-    def responder_pergunta(self, pergunta: str) -> str:
-        """Responde pergunta sobre o acervo em linguagem natural."""
+    def _sintetizar_local(self, pergunta: str, docs: list[dict]) -> str:
+        """Síntese local sem Anthropic."""
         p = pergunta.lower()
 
-        if any(x in p for x in ["quantos", "total", "count", "número"]):
-            resultados = self.buscar(pergunta, limite=100)
-            return f"Encontrei {len(resultados)} documentos relacionados a '{pergunta}'"
+        if any(x in p for x in ["quantos", "total", "count", "número", "numero"]):
+            return f"Encontrei {len(docs)} documentos relacionados a '{pergunta}'."
 
-        if any(x in p for x in ["último", "ultimo", "recente", "mais novo"]):
-            resultados = self.buscar(pergunta, limite=1)
-            if resultados:
-                r = resultados[0]
-                nome = r.get("funcionario") or r.get("cliente", "cliente desconhecido")
-                return f"O documento mais recente é '{r['tipo']}' de {nome} — {r['preview'][:100]}..."
-            return "Nenhum documento encontrado."
+        if any(x in p for x in ["impacto", "folha", "afeta"]):
+            impacto_docs = [d for d in docs if d.get("impacto_folha")]
+            if impacto_docs:
+                tipos = list({d.get("tipo", "documento") for d in impacto_docs[:3]})
+                return f"Encontrei {len(impacto_docs)} documentos que impactam a folha: {', '.join(tipos)}."
 
-        resultados = self.buscar(pergunta, limite=5)
-        if not resultados:
-            return f"Nenhum documento encontrado para '{pergunta}'"
+        if any(x in p for x in ["vencendo", "vence", "vencimento", "expirar"]):
+            venc_docs = [d for d in docs if d.get("vencimento")]
+            if venc_docs:
+                primeiro = venc_docs[0]
+                return (
+                    f"Documento '{primeiro.get('tipo', '?')}' vence em {primeiro.get('vencimento', '?')}. "
+                    f"Total: {len(venc_docs)} documentos com vencimento próximo."
+                )
 
-        nomes = [f"{r['tipo']} ({r.get('funcionario') or r.get('cliente', '')})" for r in resultados[:3]]
-        return f"Encontrei {len(resultados)} documentos. Os mais relevantes: {', '.join(nomes)}"
+        # Resposta genérica
+        nomes = [f"{d.get('tipo', 'documento')} ({d.get('modulo', '?')})" for d in docs[:3]]
+        return f"Encontrei {len(docs)} documentos relevantes. Os mais pertinentes: {', '.join(nomes)}."
 
-    # ── Persistência PostgreSQL ────────────────────────────────────────────────
+    # ── Impacto na folha ──────────────────────────────────────────────────────
 
-    async def _persistir_no_banco(self, db: Any) -> int:
-        """
-        UPSERT em gedeon_document_index com embeddings FLOAT8[].
-        Usa bindparam com ARRAY(Float) para que asyncpg encode corretamente
-        a lista Python como array PostgreSQL.
-        """
-        from sqlalchemy import ARRAY, Float, bindparam
-        from sqlalchemy import text as sa_text
+    def buscar_impacto_folha(self, competencia: str | None = None) -> list[dict]:
+        """Retorna documentos que impactam a folha de pagamento."""
+        where = "impacto_folha = TRUE"
+        if competencia:
+            comp_esc = competencia.replace("'", "''")
+            where += f" AND metadados->>'competencia' = '{comp_esc}'"
 
-        sql = sa_text(
-            "INSERT INTO gedeon_document_index "
-            "(doc_id, texto_preview, metadados, tokens, embedding, hash) "
-            "VALUES (:doc_id, :texto, :metadados, :tokens, :embedding, :hash) "
-            "ON CONFLICT (doc_id) DO UPDATE SET "
-            "texto_preview = EXCLUDED.texto_preview, "
-            "metadados = EXCLUDED.metadados, "
-            "tokens = EXCLUDED.tokens, "
-            "embedding = EXCLUDED.embedding, "
-            "hash = EXCLUDED.hash, "
-            "updated_at = NOW()"
-        ).bindparams(bindparam("embedding", type_=ARRAY(Float)))
-
-        persistidos = 0
-        for doc_id, doc in self._doc_store.items():
+        sql = f"""
+SELECT doc_id, texto_preview, metadados, modulo, vencimento::text, impacto_folha
+FROM gedeon_document_index
+WHERE {where}
+ORDER BY modulo, updated_at DESC
+LIMIT 200
+"""
+        rows = _psql_rows(sql)
+        resultados = []
+        for row in rows:
             try:
-                embedding = doc.get("embedding")
-                await db.execute(
-                    sql,
+                meta = {}
+                try:
+                    meta_raw = row.get("metadados", "{}")
+                    meta = json.loads(meta_raw) if isinstance(meta_raw, str) else meta_raw
+                except Exception:
+                    pass
+                resultados.append(
                     {
-                        "doc_id": doc_id,
-                        "texto": doc.get("texto", "")[:500],
-                        "metadados": json.dumps(doc.get("metadados", {})),
-                        "tokens": json.dumps(sorted(doc.get("tokens", set()))),
-                        "embedding": list(embedding) if embedding else None,
-                        "hash": doc.get("hash", ""),
-                    },
-                )
-                persistidos += 1
-            except Exception as e:
-                logger.warning("SOPHIA: erro ao persistir doc %s: %s", doc_id, e)
-        await db.commit()
-        return persistidos
-
-    async def carregar_do_banco(self) -> int:
-        """
-        Restaura o índice in-memory a partir de gedeon_document_index.
-        Chamado automaticamente no startup do app.
-        Se HAS_ANTHROPIC + sklearn: reconstrói a matriz vetorial para busca premium.
-        """
-        from sqlalchemy import text as sa_text
-
-        from core.database import async_session_factory
-
-        carregados = 0
-        try:
-            async with async_session_factory() as db:
-                rows = await db.execute(
-                    sa_text(
-                        "SELECT doc_id, texto_preview, metadados, tokens, embedding, hash "
-                        "FROM gedeon_document_index ORDER BY created_at DESC"
-                    )
-                )
-                for row in rows.mappings().all():
-                    doc_id = row["doc_id"]
-                    meta = row["metadados"] or {}
-                    tokens_raw = row["tokens"] or []
-                    if isinstance(tokens_raw, str):
-                        tokens_raw = json.loads(tokens_raw)
-                    tokens_list = list(tokens_raw)
-                    tokens_set = set(tokens_list)
-
-                    embedding = row["embedding"]  # list[float] ou None
-
-                    self._doc_store[doc_id] = {
-                        "texto": row["texto_preview"] or "",
+                        "doc_id": row.get("doc_id", ""),
+                        "preview": (row.get("texto_preview") or "")[:200],
+                        "modulo": row.get("modulo") or meta.get("modulo", ""),
+                        "tipo": meta.get("tipo", ""),
+                        "competencia": meta.get("competencia", ""),
+                        "vencimento": row.get("vencimento", ""),
+                        "impacto_folha": True,
                         "metadados": meta,
-                        "tokens": tokens_set,
-                        "tf": self._tf(tokens_list) if tokens_list else {},
-                        "hash": row["hash"] or "",
-                        "embedding": list(embedding) if embedding else None,
                     }
-                    for token in tokens_set:
-                        self._idf[token] = self._idf.get(token, 0) + 1
-                    carregados += 1
+                )
+            except Exception as exc:  # noqa: S112
+                logger.debug("SOPHIA row parse erro: %s", exc)
+                continue
+        return resultados
 
-        except Exception as exc:
-            logger.warning("SOPHIA: erro ao carregar do banco: %s", exc)
+    # ── Alertas de vencimento ─────────────────────────────────────────────────
 
-        if carregados > 0 and HAS_ANTHROPIC and HAS_SKLEARN:
-            # Reconstrói a matriz sklearn a partir dos textos do _doc_store.
-            # Os embeddings armazenados no banco confirmam que sklearn foi usado antes,
-            # mas a matriz é sempre reconstruída dos textos para garantir alinhamento.
-            self._construir_matriz_sklearn()
-
-        logger.info("SOPHIA: %d documentos carregados do banco", carregados)
-        return carregados
-
-    async def indexar_acervo_completo(self) -> int:
+    def alertas_vencimento(
+        self,
+        dias: int = 30,
+        modulos: list[str] | None = None,
+    ) -> list[dict]:
         """
-        Indexa todos os documentos do GED via SQLAlchemy.
-        Popula índice in-memory, constrói matriz sklearn (se disponível)
-        e persiste em gedeon_document_index com embeddings.
+        Retorna documentos com vencimento nos próximos N dias.
+        Opcionalmente filtra por lista de módulos.
         """
-        logger.info("SOPHIA: iniciando indexação do acervo")
+        where = f"vencimento IS NOT NULL AND vencimento <= CURRENT_DATE + INTERVAL '{dias} days' AND vencimento >= CURRENT_DATE - INTERVAL '1 day'"
+
+        if modulos:
+            mods = [f"'{m.replace(chr(39), chr(39) + chr(39))}'" for m in modulos]
+            where += f" AND modulo IN ({','.join(mods)})"
+
+        sql = f"""
+SELECT doc_id, texto_preview, metadados, modulo, vencimento::text, impacto_folha,
+       (vencimento - CURRENT_DATE) AS dias_restantes
+FROM gedeon_document_index
+WHERE {where}
+ORDER BY vencimento ASC
+LIMIT 100
+"""
+        rows = _psql_rows(sql)
+        resultados = []
+        for row in rows:
+            try:
+                meta = {}
+                try:
+                    meta_raw = row.get("metadados", "{}")
+                    meta = json.loads(meta_raw) if isinstance(meta_raw, str) else meta_raw
+                except Exception:
+                    pass
+
+                dias_rest = row.get("dias_restantes", "")
+                try:
+                    dias_rest = int(dias_rest)
+                except Exception:
+                    dias_rest = None
+
+                nivel = "info"
+                if dias_rest is not None:
+                    if dias_rest <= 0:
+                        nivel = "critico"
+                    elif dias_rest <= 7:
+                        nivel = "urgente"
+                    elif dias_rest <= 15:
+                        nivel = "alto"
+                    elif dias_rest <= 30:
+                        nivel = "medio"
+
+                resultados.append(
+                    {
+                        "doc_id": row.get("doc_id", ""),
+                        "preview": (row.get("texto_preview") or "")[:200],
+                        "modulo": row.get("modulo") or meta.get("modulo", ""),
+                        "tipo": meta.get("tipo", ""),
+                        "vencimento": row.get("vencimento", ""),
+                        "dias_restantes": dias_rest,
+                        "nivel": nivel,
+                        "impacto_folha": row.get("impacto_folha") in ("TRUE", "t", "true", True),
+                        "metadados": meta,
+                    }
+                )
+            except Exception as exc:  # noqa: S112
+                logger.debug("SOPHIA row parse erro: %s", exc)
+                continue
+        return resultados
+
+    # ── Reindexação ───────────────────────────────────────────────────────────
+
+    def reindexar_acervo(
+        self,
+        batch_size: int = 50,
+        modulo_filter: str | None = None,
+    ) -> dict:
+        """
+        Re-indexa documentos existentes com novo embedding v2.
+        Processa documentos sem embedding_anthropic ou com model antigo.
+        """
+        where = "1=1"
+        if modulo_filter:
+            mf = modulo_filter.replace("'", "''")
+            where = f"modulo = '{mf}'"
+
+        sql = f"""
+SELECT doc_id, texto_preview, metadados, modulo
+FROM gedeon_document_index
+WHERE {where}
+  AND (embedding_anthropic IS NULL OR embedding_model != '{EMBEDDING_MODEL_NAME_ANTHROPIC}')
+ORDER BY created_at ASC
+LIMIT {batch_size}
+"""
+        rows = _psql_rows(sql)
+        total = len(rows)
+        reindexados = 0
+
+        for row in rows:
+            try:
+                meta = {}
+                try:
+                    meta_raw = row.get("metadados", "{}")
+                    meta = json.loads(meta_raw) if isinstance(meta_raw, str) else meta_raw
+                except Exception:
+                    pass
+
+                texto = row.get("texto_preview", "")
+                if not texto:
+                    continue
+
+                # Re-indexar com embedding v2
+                ok = self.indexar_documento(
+                    doc_id=row["doc_id"],
+                    texto=texto,
+                    metadados=meta,
+                )
+                if ok:
+                    reindexados += 1
+            except Exception as e:
+                logger.debug("SOPHIA reindexar erro [%s]: %s", row.get("doc_id"), e)
+                continue
+
+        return {
+            "total_processados": total,
+            "reindexados": reindexados,
+            "modelo": EMBEDDING_MODEL_NAME_ANTHROPIC if self._usando_anthropic else EMBEDDING_MODEL_NAME_FALLBACK,
+            "modulo_filter": modulo_filter,
+            "batch_size": batch_size,
+        }
+
+    def indexar_acervo_completo(self, documentos: list[dict] | None = None) -> dict:
+        """
+        Indexa lista de documentos ou reconstrói do banco.
+        documentos: lista de dicts com keys: doc_id, texto, metadados
+        """
+        if documentos is None:
+            # Reindexar acervo existente sem embedding v2
+            resultado = self.reindexar_acervo(batch_size=200)
+            return {
+                "indexados": resultado["reindexados"],
+                "total": resultado["total_processados"],
+                "modelo": resultado["modelo"],
+            }
+
         indexados = 0
+        for doc in documentos:
+            doc_id = doc.get("doc_id") or doc.get("id", "")
+            texto = doc.get("texto", "")
+            meta = doc.get("metadados", {})
+            if doc_id and texto:
+                if self.indexar_documento(doc_id, texto, meta):
+                    indexados += 1
+
+        return {
+            "indexados": indexados,
+            "total": len(documentos),
+            "modelo": EMBEDDING_MODEL_NAME_ANTHROPIC if self._usando_anthropic else EMBEDDING_MODEL_NAME_FALLBACK,
+        }
+
+    # ── Status ────────────────────────────────────────────────────────────────
+
+    def status(self) -> dict:
+        """Retorna status do índice SOPHIA v2.0."""
         try:
-            from sqlalchemy import text as sa_text
+            total_raw = _psql("SELECT COUNT(*) FROM gedeon_document_index")
+            total = int(total_raw) if total_raw.isdigit() else 0
+        except Exception:
+            total = 0
 
-            from core.database import async_session_factory
+        try:
+            com_embedding_raw = _psql(
+                "SELECT COUNT(*) FROM gedeon_document_index WHERE embedding_anthropic IS NOT NULL"
+            )
+            com_embedding = int(com_embedding_raw) if com_embedding_raw.isdigit() else 0
+        except Exception:
+            com_embedding = 0
 
-            async with async_session_factory() as db:
-                # Indexar ged_kit_documents
-                rows = await db.execute(
-                    sa_text(
-                        "SELECT id::text, document_type, "
-                        "COALESCE(document_name, document_type) AS doc_name, "
-                        "COALESCE(source_module, '') AS modulo, "
-                        "created_at::text "
-                        "FROM ged_kit_documents "
-                        "ORDER BY created_at DESC "
-                        "LIMIT 1000"
-                    )
-                )
-                for row in rows.mappings().all():
-                    texto = f"{row['document_type']} {row['doc_name']} {row['modulo']}"
-                    meta = {
-                        "tipo": row["document_type"],
-                        "arquivo": row["doc_name"],
-                        "modulo": row["modulo"],
-                        "origem": "ged_kit_documents",
-                    }
-                    if self.indexar_documento(row["id"], texto, meta):
-                        indexados += 1
+        try:
+            por_modulo_raw = _psql(
+                "SELECT modulo, COUNT(*) FROM gedeon_document_index WHERE modulo IS NOT NULL GROUP BY modulo ORDER BY modulo"
+            )
+            por_modulo = {}
+            for line in por_modulo_raw.splitlines():
+                parts = line.split("|")
+                if len(parts) == 2:
+                    por_modulo[parts[0]] = int(parts[1])
+        except Exception:
+            por_modulo = {}
 
-                # Indexar certidões
-                certs = await db.execute(
-                    sa_text(
-                        "SELECT id::text, name, document_type, "
-                        "COALESCE(expiry_date::text, '') AS expiry "
-                        "FROM ged_certidoes "
-                        "WHERE name IS NOT NULL "
-                        "LIMIT 500"
-                    )
-                )
-                for row in certs.mappings().all():
-                    texto = f"{row['name']} {row['document_type']} vencimento {row['expiry']}"
-                    meta = {
-                        "tipo": row["document_type"],
-                        "nome": row["name"],
-                        "vencimento": row["expiry"],
-                        "origem": "ged_certidoes",
-                    }
-                    if self.indexar_documento(f"cert_{row['id']}", texto, meta):
-                        indexados += 1
-
-                # Construir matriz sklearn (caminho premium)
-                if HAS_ANTHROPIC and HAS_SKLEARN:
-                    n_vetores = self._construir_matriz_sklearn()
-                    logger.info("SOPHIA: %d vetores sklearn gerados", n_vetores)
-
-                # Persistir tudo no banco (incluindo embeddings)
-                persistidos = await self._persistir_no_banco(db)
-                logger.info("SOPHIA: %d documentos persistidos no banco (com embeddings)", persistidos)
-
-        except Exception as exc:
-            logger.warning("SOPHIA: erro na indexação: %s", exc)
-
-        logger.info("SOPHIA: %d documentos indexados", indexados)
-        return indexados
+        return {
+            "versao": "2.0",
+            "motor_ativo": EMBEDDING_MODEL_NAME_ANTHROPIC if self._usando_anthropic else EMBEDDING_MODEL_NAME_FALLBACK,
+            "using_anthropic": self._usando_anthropic,
+            "dimensao_embedding": EMBEDDING_DIM,
+            "modulos_escopo": list(MODULOS_ESCOPO.keys()),
+            "modulos_descricao": MODULOS_ESCOPO,
+            "total_documentos": total,
+            "documentos_com_embedding_v2": com_embedding,
+            "distribuicao_modulos": por_modulo,
+            "modelo_embedding": EMBEDDING_MODEL_NAME_ANTHROPIC
+            if self._usando_anthropic
+            else EMBEDDING_MODEL_NAME_FALLBACK,
+            "status": "operacional",
+        }
 
 
-# Singleton global
-sophia = SophiaIndex()
+# ── Singleton global ──────────────────────────────────────────────────────────
+
+sophia = Sophia()
+
+# Alias de retrocompatibilidade — código legado importa SophiaIndex
+SophiaIndex = Sophia
