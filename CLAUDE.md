@@ -184,3 +184,57 @@ Se uma sessão detectar que seu commit foi revertido por outra sessão:
    Aguardo sua instrução para re-aplicar ou descartar.
    ```
 3. Aguardar confirmação antes de qualquer ação
+
+---
+
+## Mecanismo Anti-Revert — commit-msg hook
+
+**Instalado em:** 2026-04-07 (Operação Conecta-Drive T7)
+**Arquivo:** `.git/hooks/commit-msg`
+
+O hook bloqueia automaticamente qualquer commit cuja mensagem comece com "revert" (case-insensitive).
+Se uma sessão tentar fazer `git revert` sem autorização, o commit será bloqueado com:
+
+```
+╔══════════════════════════════════════════════╗
+║  CONECTA PRO — REVERT BLOQUEADO              ║
+║  Reverts requerem autorização de Jordan Jesus ║
+║  Confirme no chat antes de executar.         ║
+╚══════════════════════════════════════════════╝
+```
+
+Para restaurar o hook se for deletado acidentalmente:
+
+```bash
+cat > /opt/conecta-pro/.git/hooks/commit-msg << 'HOOK'
+#!/bin/bash
+COMMIT_MSG_FILE="$1"
+if [ -f "$COMMIT_MSG_FILE" ]; then
+    MSG=$(cat "$COMMIT_MSG_FILE" | head -1 | tr '[:upper:]' '[:lower:]')
+    if echo "$MSG" | grep -q "^revert"; then
+        echo ""; echo "╔══════════════════════════════════════════════╗"
+        echo "║  CONECTA PRO — REVERT BLOQUEADO              ║"
+        echo "║  Reverts requerem autorização de Jordan Jesus ║"
+        echo "╚══════════════════════════════════════════════╝"; echo ""
+        exit 1
+    fi
+fi
+exit 0
+HOOK
+chmod +x /opt/conecta-pro/.git/hooks/commit-msg
+```
+
+## PROIBIDO ABSOLUTO
+
+As seguintes operações são PROIBIDAS em todas as sessões autônomas:
+
+| Comando | Motivo |
+|---------|--------|
+| `git revert <hash>` | Reverte commits de outros módulos sem autorização |
+| `git reset --hard` | Destrói trabalho de outras sessões |
+| `git push --force` | Sobrescreve histórico remoto |
+| Editar `alembic/versions/` | Migrations — risco de corrupção do banco |
+| Editar `docker-compose*.yml` | Orquestração — pode derrubar produção |
+| Editar `.env*` | Variáveis de ambiente — nunca commitar |
+| Editar `credentials/` | Chaves e certificados — nunca tocar |
+| Editar `main_production.py` | Entry point de produção — nunca modificar |
