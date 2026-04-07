@@ -5,6 +5,7 @@ Author: Conecta PRO Team
 Date: 2026-01-23
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from uuid import UUID
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser, get_current_active_user
 from core.database import get_db
+from modules.operacional.publishers import publish_ronda_concluida
 
 from ..schemas import (
     ApplyDisciplinaryRequest,
@@ -366,6 +368,16 @@ async def complete_round(
     """Conclui uma ronda."""
     try:
         inspection_round = await service.complete_round(str(round_id), data)
+        asyncio.create_task(
+            publish_ronda_concluida(
+                ronda_id=str(round_id),
+                inspector_id=str(getattr(inspection_round, "inspector_id", "") or getattr(current_user, "id", "")),
+                cliente_id=str(getattr(inspection_round, "tenant_id", "") or ""),
+                total_checkpoints=len(getattr(inspection_round, "checkpoints", []) or []),
+                tem_ocorrencias=bool(getattr(inspection_round, "has_occurrences", False)),
+                data=datetime.utcnow().isoformat(),
+            )
+        )
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(

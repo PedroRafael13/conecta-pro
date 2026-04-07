@@ -4,6 +4,7 @@ Controller de Rescisão — Departamento Pessoal.
 Endpoints para o workflow de desligamento de colaboradores.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -16,6 +17,7 @@ from modules.people_management.hr.models.termination import (
     TerminationStatus,
     TerminationType,
 )
+from modules.people_management.hr.publishers import publish_funcionario_demitido
 from modules.people_management.hr.schemas.termination import (
     TerminationCalculation,
     TerminationCreate,
@@ -168,4 +170,12 @@ async def complete_termination(
     if not termination:
         raise HTTPException(status_code=404, detail="Rescisão não encontrada")
     await db.commit()
+    asyncio.create_task(
+        publish_funcionario_demitido(
+            funcionario_id=str(termination.employee_id),
+            funcionario_nome=str(getattr(termination, "employee_name", "")),
+            motivo=str(termination.type),
+            data_desligamento=str(getattr(termination, "last_working_day", "") or ""),
+        )
+    )
     return termination

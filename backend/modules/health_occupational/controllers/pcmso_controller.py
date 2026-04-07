@@ -5,6 +5,7 @@ Controller PCMSO (NR-7) - Programa de Controle Medico de Saude Ocupacional
 Endpoints REST para exames medicos ocupacionais e ASO.
 """
 
+import asyncio
 import logging
 from uuid import UUID
 
@@ -13,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_sync_db_dependency
+from modules.health_occupational.publishers import publish_aso_emitido
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.pcmso import (
     ASORequest,
@@ -334,6 +336,18 @@ async def emit_aso(
             aso.numero_aso,
             request.exame_id,
             request.resultado,
+        )
+
+        asyncio.create_task(
+            publish_aso_emitido(
+                aso_id=str(aso.id),
+                funcionario_id=str(getattr(aso, "funcionario_id", "")),
+                funcionario_nome=str(getattr(aso, "funcionario_nome", "")),
+                tipo_aso=str(getattr(aso, "tipo_aso", "periodico")),
+                resultado=request.resultado,
+                data_validade=aso.data_vencimento,
+                extra={"exame_id": str(request.exame_id), "numero_aso": aso.numero_aso},
+            )
         )
 
         return StandardResponse(

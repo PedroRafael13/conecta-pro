@@ -5,6 +5,7 @@ Controller PPRA/PGR (NR-9) - Programa de Prevencao de Riscos Ambientais
 Endpoints REST para mapeamento de riscos ocupacionais.
 """
 
+import asyncio
 import logging
 from uuid import UUID
 
@@ -13,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_sync_db_dependency
+from infrastructure.event_bus import ConectaEvent, EventTypes, event_bus
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.ppra import (
     ControlMeasureRequest,
@@ -73,6 +75,21 @@ async def create_risk_mapping(
             "Mapeamento de riscos criado: setor=%s, nivel=%s",
             request.setor,
             mapping.nivel_risco_geral,
+        )
+
+        asyncio.create_task(
+            event_bus.publish(
+                ConectaEvent(
+                    event_type=EventTypes.SAUDE_PPRA_ATUALIZADO,
+                    payload={
+                        "mapping_id": str(mapping.id),
+                        "setor": request.setor,
+                        "nivel_risco": mapping.nivel_risco_geral,
+                        "avaliador": request.avaliador,
+                    },
+                    source_module="health_occupational",
+                )
+            )
         )
 
         return StandardResponse(

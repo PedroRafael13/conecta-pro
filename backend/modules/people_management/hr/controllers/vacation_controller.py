@@ -5,6 +5,7 @@ Re-exporta endpoints de férias do operacional e adiciona endpoints DP:
 cálculo de saldo, detalhes e aprovação.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.operacional.vacations.schemas import VacationRequestResponse
+from modules.people_management.hr.publishers import publish_ferias_aprovadas
 from modules.people_management.hr.services.vacation_service import VacationService
 
 logger = logging.getLogger(__name__)
@@ -199,6 +201,15 @@ async def approve_vacation(
     try:
         result = await service.approve_vacation(vacation_id, approved_by_id=current_user.id)
         await db.commit()
+        asyncio.create_task(
+            publish_ferias_aprovadas(
+                funcionario_id=str(result.get("employee_id", vacation_id)) if isinstance(result, dict) else vacation_id,
+                funcionario_nome=str(result.get("employee_name", "")) if isinstance(result, dict) else "",
+                inicio=str(result.get("start_date", "")) if isinstance(result, dict) else "",
+                fim=str(result.get("end_date", "")) if isinstance(result, dict) else "",
+                aprovado_por=str(current_user.id),
+            )
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

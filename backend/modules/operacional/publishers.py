@@ -102,6 +102,35 @@ async def publish_cat_registrada(
         logger.warning("Falha publish cat_registrada: %s", e)
 
 
+async def publish_ronda_concluida(
+    ronda_id: str,
+    inspector_id: str,
+    cliente_id: str,
+    total_checkpoints: int = 0,
+    tem_ocorrencias: bool = False,
+    data: str | None = None,
+) -> None:
+    """Publica evento quando uma ronda de inspeção é concluída."""
+    try:
+        evento = ConectaEvent(
+            event_type=EventTypes.OPS_OCORRENCIA_REGISTRADA,
+            payload={
+                "ronda_id": ronda_id,
+                "inspector_id": inspector_id,
+                "cliente_id": cliente_id,
+                "total_checkpoints": total_checkpoints,
+                "tem_ocorrencias": tem_ocorrencias,
+                "data": data,
+                "origem": "ronda_inspecao",
+            },
+            source_module="operacional",
+            cliente_id=cliente_id,
+        )
+        await event_bus.publish(evento)
+    except Exception as e:
+        logger.warning("Falha publish ronda_concluida: %s", e)
+
+
 async def publish_substituicao_realizada(
     employee_original_id: str,
     substituto_id: str,

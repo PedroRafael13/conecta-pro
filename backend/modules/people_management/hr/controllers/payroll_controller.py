@@ -5,6 +5,7 @@ Re-exporta endpoints de folha do módulo HR e adiciona endpoints
 para cálculo individual, fechamento mensal e contracheque PDF.
 """
 
+import asyncio
 import logging
 from io import BytesIO
 from typing import Any
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.people_management.hr.publishers import publish_folha_fechada
 from modules.people_management.hr.services.payroll_service import PayrollService
 
 logger = logging.getLogger(__name__)
@@ -475,4 +477,11 @@ async def close_payroll(
     service = PayrollService(db)
     result = await service.close_payroll(month, year)
     await db.commit()
+    asyncio.create_task(
+        publish_folha_fechada(
+            competencia=f"{month:02d}/{year}",
+            total_funcionarios=result.get("total_funcionarios", 0) if isinstance(result, dict) else 0,
+            total_bruto=float(result.get("total_bruto", 0.0)) if isinstance(result, dict) else 0.0,
+        )
+    )
     return result

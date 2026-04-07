@@ -4,6 +4,7 @@ Controller de Admissão — Departamento Pessoal.
 Endpoints para o workflow de admissão de novos colaboradores.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.hr.models.admission import AdmissionStatus
+from modules.people_management.hr.publishers import publish_funcionario_admitido
 from modules.people_management.hr.schemas.admission import (
     AdmissionProcessCreate,
     AdmissionProcessResponse,
@@ -169,6 +171,16 @@ async def complete_admission(
     try:
         result = await service.complete_admission(admission_id, employee_data)
         await db.commit()
+        asyncio.create_task(
+            publish_funcionario_admitido(
+                funcionario_id=str(result["employee"].id),
+                funcionario_nome=str(
+                    getattr(result["employee"], "nome", "") or getattr(result["employee"], "name", "")
+                ),
+                cargo=str(getattr(result["employee"], "cargo", "")),
+                data_admissao=str(getattr(result["employee"], "data_admissao", "") or ""),
+            )
+        )
         return {
             "message": "Admissão concluída com sucesso",
             "admission_id": str(result["admission"].id),

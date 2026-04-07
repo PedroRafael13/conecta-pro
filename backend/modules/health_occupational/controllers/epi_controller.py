@@ -5,6 +5,7 @@ Controller EPI (NR-6) - Equipamentos de Protecao Individual
 Endpoints REST para gestao de EPIs.
 """
 
+import asyncio
 import logging
 from uuid import UUID
 
@@ -13,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_sync_db_dependency
+from modules.health_occupational.publishers import publish_epi_entregue
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.epi import (
     EPICreateRequest,
@@ -323,6 +325,18 @@ async def deliver_epi(
             "Entrega de EPI registrada: funcionario=%s, epi=%s",
             request.funcionario_id,
             request.epi_id,
+        )
+
+        asyncio.create_task(
+            publish_epi_entregue(
+                entrega_id=str(delivery.id),
+                funcionario_id=str(request.funcionario_id),
+                funcionario_nome=str(getattr(delivery, "funcionario_nome", "")),
+                epi_nome=str(getattr(delivery, "epi_nome", str(request.epi_id))),
+                quantidade=request.quantidade,
+                data_entrega=delivery.data_entrega,
+                extra={"motivo": request.motivo, "ca_number": request.ca_number},
+            )
         )
 
         return StandardResponse(
