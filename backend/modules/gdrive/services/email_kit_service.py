@@ -39,12 +39,13 @@ MESES_PT = {
 
 def _get_pg() -> str:
     r = subprocess.run(  # noqa: S602, S607  # nosec
-        "docker ps | grep postgres | awk '{print $NF}' | head -1",  # noqa: S607
+        "docker ps --format '{{.Names}}' | grep -E 'conecta.*postgres$|^postgres$' | head -1",  # noqa: S607
         shell=True,  # nosec
         capture_output=True,
         text=True,
     )
-    return r.stdout.strip()
+    name = r.stdout.strip()
+    return name if name else "conecta-pro-postgres"
 
 
 def _psql(q: str) -> list[str]:
