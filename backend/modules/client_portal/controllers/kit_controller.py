@@ -87,6 +87,47 @@ async def list_kit_documents(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get("/historico-drive", summary="Historico de kits com links do Drive")
+async def historico_drive(
+    current_user: CurrentActiveUser,
+    client_id: str = Depends(get_current_portal_client),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Historico de kits documentais com links do Google Drive.
+
+    Retorna os ultimos 24 meses de kits que possuem link no Drive,
+    ordenados do mais recente ao mais antigo.
+    """
+    from sqlalchemy import select as sa_select
+
+    from modules.people_management.ged.models.document_kit import GedDocumentKit
+
+    result = await db.execute(
+        sa_select(GedDocumentKit)
+        .where(
+            GedDocumentKit.client_id == client_id,
+            GedDocumentKit.google_drive_link.isnot(None),
+        )
+        .order_by(GedDocumentKit.reference_month.desc())
+        .limit(24)
+    )
+    kits = result.scalars().all()
+
+    return {
+        "total": len(kits),
+        "kits": [
+            {
+                "competencia": kit.reference_month.strftime("%Y-%m"),
+                "total_docs": kit.total_documents,
+                "share_link": kit.google_drive_link,
+                "status": kit.status,
+                "criado_em": str(kit.created_at.date()) if kit.created_at else "",
+            }
+            for kit in kits
+        ],
+    }
+
+
 @router.get("/{kit_id}/documents/{document_id}/download")
 async def download_document(
     kit_id: str,

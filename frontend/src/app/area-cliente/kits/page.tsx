@@ -25,6 +25,7 @@ interface PortalKit {
   completion_percentage: number;
   total_documents: number;
   total_employees: number;
+  google_drive_link: string | null;
 }
 
 interface PaginatedResponse {
@@ -264,6 +265,21 @@ export default function KitsPage() {
                     {canApprove ? 'Aprovar' : 'Ver'} <ChevronRight className="h-3.5 w-3.5" />
                   </span>
                 </div>
+                {kit.google_drive_link && (
+                  <a
+                    href={kit.google_drive_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-3 flex items-center justify-center gap-2
+                               w-full bg-orange-500 hover:bg-orange-600
+                               text-white text-xs font-medium
+                               py-1.5 rounded-lg transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Acessar no Drive
+                  </a>
+                )}
               </Link>
             )})}
           </div>
