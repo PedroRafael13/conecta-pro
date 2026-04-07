@@ -3,6 +3,7 @@ API do GEDEON — endpoints para o frontend consultar
 o contexto acumulado antes de montar um kit.
 """
 
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
@@ -16,7 +17,25 @@ from modules.gedeon.agents.hermes import hermes
 from modules.gedeon.agents.kronos import kronos
 from modules.gedeon.context.gedeon_context import gedeon_context
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/gedeon", tags=["GEDEON"])
+
+
+@router.on_event("startup")
+async def sophia_startup() -> None:
+    """
+    SOPHIA: auto-startup — restaura índice do banco ao iniciar o app.
+    Se banco vazio, indexa o acervo completo.
+    """
+    from modules.gedeon.agents.sophia import sophia
+
+    carregados = await sophia.carregar_do_banco()
+    if carregados == 0:
+        logger.info("SOPHIA startup: banco sem registros — indexando acervo completo")
+        await sophia.indexar_acervo_completo()
+    else:
+        logger.info("SOPHIA startup: %d documentos restaurados do banco", carregados)
 
 
 @router.get("/context/{cliente_id}/{competencia}")
