@@ -12,7 +12,6 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from core.auth.dependencies import CurrentActiveUser
-from core.database import get_db
 from core.database.session import get_sync_db_dependency
 from modules.notifications.models import (
     ChannelType,
@@ -75,7 +74,7 @@ def get_tenant_id(current_user) -> UUID:
 async def send_notification(
     request: SendNotificationRequest,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> SendNotificationResponse:
     """Envia notificações para os destinatários especificados."""
     tenant_id = get_tenant_id(current_user)
@@ -101,7 +100,7 @@ async def cancel_notification(
     notification_id: str,
     current_user: CurrentActiveUser,
     reason: str | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Cancela uma notificação pendente ou agendada."""
     tenant_id = get_tenant_id(current_user)
@@ -130,7 +129,7 @@ async def list_channels(
     active: bool = True,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> list[ChannelConfigResponse]:
     """Lista canais de notificação configurados."""
     tenant_id = get_tenant_id(current_user)
@@ -156,7 +155,7 @@ async def list_channels(
 async def create_channel(
     data: ChannelConfigCreate,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> ChannelConfigResponse:
     """Cria um novo canal de notificação."""
     tenant_id = get_tenant_id(current_user)
@@ -193,7 +192,7 @@ async def create_channel(
 async def get_channel(
     channel_id: UUID,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> ChannelConfigResponse:
     """Obtém detalhes de um canal."""
     tenant_id = get_tenant_id(current_user)
@@ -221,7 +220,7 @@ async def update_channel(
     channel_id: UUID,
     data: ChannelConfigUpdate,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> ChannelConfigResponse:
     """Atualiza um canal existente."""
     tenant_id = get_tenant_id(current_user)
@@ -265,7 +264,7 @@ async def list_templates(
     active: bool = True,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> list[TemplateResponse]:
     """Lista templates de notificação."""
     tenant_id = get_tenant_id(current_user)
@@ -293,7 +292,7 @@ async def list_templates(
 async def create_template(
     data: TemplateCreate,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> TemplateResponse:
     """Cria um novo template de notificação."""
     tenant_id = get_tenant_id(current_user)
@@ -333,7 +332,7 @@ async def create_template(
 async def get_template(
     template_id: UUID,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> TemplateResponse:
     """Obtém detalhes de um template."""
     tenant_id = get_tenant_id(current_user)
@@ -361,7 +360,7 @@ async def update_template(
     template_id: UUID,
     data: TemplateUpdate,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> TemplateResponse:
     """Atualiza um template existente."""
     tenant_id = get_tenant_id(current_user)
@@ -405,7 +404,7 @@ async def update_template(
 @router.get("/preferences/me", response_model=PreferenceResponse)
 async def get_my_preferences(
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> PreferenceResponse:
     """Obtém preferências do usuário atual."""
     tenant_id = get_tenant_id(current_user)
@@ -436,7 +435,7 @@ async def get_my_preferences(
 async def update_my_preferences(
     data: PreferenceUpdate,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> PreferenceResponse:
     """Atualiza preferências do usuário atual."""
     tenant_id = get_tenant_id(current_user)
@@ -475,7 +474,7 @@ async def update_my_preferences(
 @router.post("/preferences/unsubscribe")
 async def unsubscribe(
     token: str = Query(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Processa unsubscribe via link."""
     preference = db.query(NotificationPreference).filter(NotificationPreference.verification_token == token).first()
@@ -506,7 +505,7 @@ async def list_queue(
     user_id: UUID | None = None,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> list[QueueItemResponse]:
     """Lista itens da fila de notificações."""
     tenant_id = get_tenant_id(current_user)
@@ -530,7 +529,7 @@ async def list_queue(
 @router.get("/queue/stats", response_model=QueueStatsResponse)
 async def get_queue_stats(
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> QueueStatsResponse:
     """Obtém estatísticas da fila."""
     tenant_id = get_tenant_id(current_user)
@@ -556,7 +555,7 @@ async def process_queue(
     current_user: CurrentActiveUser,
     batch_size: int = Query(default=100, ge=1, le=1000),
     channel_type: str | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Processa itens pendentes da fila."""
     tenant_id = get_tenant_id(current_user)
@@ -593,7 +592,7 @@ async def get_notification_history(
     end_date: datetime | None = None,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> list[QueueItemResponse]:
     """Obtém histórico de notificações enviadas."""
     tenant_id = get_tenant_id(current_user)
@@ -619,7 +618,7 @@ async def get_notification_history(
 async def get_notification_logs(
     notification_id: str,
     current_user: CurrentActiveUser,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> list[LogEntryResponse]:
     """Obtém logs de uma notificação específica."""
     tenant_id = get_tenant_id(current_user)
@@ -645,7 +644,7 @@ async def get_notification_logs(
 @router.post("/webhooks/email")
 async def email_webhook(
     payload: dict,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Webhook para eventos de email."""
     logger.info(f"Email webhook recebido: {payload}")
@@ -655,7 +654,7 @@ async def email_webhook(
 @router.post("/webhooks/sms")
 async def sms_webhook(
     payload: dict,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Webhook para eventos de SMS."""
     logger.info(f"SMS webhook recebido: {payload}")
@@ -665,7 +664,7 @@ async def sms_webhook(
 @router.post("/webhooks/whatsapp")
 async def whatsapp_webhook(
     payload: dict,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Webhook para eventos de WhatsApp."""
     logger.info(f"WhatsApp webhook recebido: {payload}")
@@ -675,7 +674,7 @@ async def whatsapp_webhook(
 @router.get("/track/open/{notification_id}")
 async def track_open(
     notification_id: str,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> dict:
     """Endpoint de tracking de abertura (pixel)."""
     queue_item = db.query(NotificationQueue).filter(NotificationQueue.notification_id == notification_id).first()
@@ -693,7 +692,7 @@ async def track_open(
 async def track_click(
     notification_id: str,
     url: str = Query(...),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
 ) -> RedirectResponse:
     """Endpoint de tracking de clique."""
     queue_item = db.query(NotificationQueue).filter(NotificationQueue.notification_id == notification_id).first()

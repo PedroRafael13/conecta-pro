@@ -232,42 +232,23 @@ def analisar_e_alertar(
             f"<code>{ultimo_commit}</code>\n\n"
         )
 
-        # Tentar reverter automaticamente
-        # APENAS se a regressão for severa (> 1.0)
+        # AUTO-REVERT DESABILITADO — 2026-04-07
+        # Causa raiz de todos os rogue reverts:
+        #   git revert --no-edit bypassa commit-msg hook.
+        # Requer autorização explícita de Jordan Jesus.
+        # Ref: CLAUDE.md "PROIBIDO ABSOLUTO"
         if diff_geral < -1.0 and ultimo_commit:
             commit_hash = ultimo_commit.split(' ')[0]
-            reverteu = tentar_reverter(commit_hash)
-            if reverteu:
-                resultado["reverteu"] = True
-                resultado["commit_revertido"] = \
-                    commit_hash
-                alerta += (
-                    "🔄 <b>Ação automática:</b>\n"
-                    f"Revert aplicado em "
-                    f"<code>{commit_hash}</code>\n"
-                    "Backend será reiniciado.\n\n"
-                )
-                # Reiniciar backend após revert
-                container = subprocess.run(
-                    ['docker', 'ps',
-                     '--filter',
-                     'ancestor=conecta-pro-backend',
-                     '--format', '{{.Names}}'],
-                    capture_output=True, text=True
-                ).stdout.strip().split('\n')[0]
-
-                if container:
-                    subprocess.run(
-                        ['docker', 'restart',
-                         container],
-                        capture_output=True,
-                        timeout=30
-                    )
-            else:
-                alerta += (
-                    "❌ <b>Revert automático falhou</b>\n"
-                    "Verificação manual necessária.\n\n"
-                )
+            alerta += (
+                "⚠️ <b>Regressão severa detectada</b>\n"
+                f"Commit suspeito: <code>{commit_hash}</code>\n"
+                "Auto-revert DESABILITADO por segurança.\n"
+                "Aguardando autorização de Jordan Jesus.\n\n"
+            )
+            logger.warning(
+                f"AUTO-REVERT BLOQUEADO para {commit_hash} "
+                f"— requer autorização manual (Jordan Jesus)"
+            )
 
         alerta += "🔧 Verifique o sistema."
 
