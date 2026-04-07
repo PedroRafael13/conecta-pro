@@ -2,7 +2,6 @@
 Controller (endpoints) para Substitution (Substituição de Funcionário).
 """
 
-import asyncio
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -13,7 +12,6 @@ from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.substitution import SubstitutionReason, SubstitutionStatus
 from modules.operacional.permissions import Permission, require_operacional_permission
-from modules.operacional.publishers import publish_substituicao_realizada
 from modules.operacional.repositories.substitution_repository import SubstitutionRepository
 from modules.operacional.schemas.substitution import (
     SubstituteSuggestion,
@@ -288,18 +286,6 @@ async def confirm_substitution(
     logger.info(
         f"Substituição confirmada por {current_user.email}: "
         f"{substitution.id} -> substituto {data.substitute_employee_id}"
-    )
-    asyncio.create_task(
-        publish_substituicao_realizada(
-            employee_original_id=str(substitution.employee_id) if hasattr(substitution, "employee_id") else None,
-            substituto_id=str(data.substitute_employee_id),
-            substituto_nome="",
-            cliente_id=str(substitution.client_id)
-            if hasattr(substitution, "client_id") and substitution.client_id
-            else None,
-            data=str(substitution.substitution_date) if hasattr(substitution, "substitution_date") else None,
-            turno=str(substitution.shift_id) if hasattr(substitution, "shift_id") and substitution.shift_id else None,
-        )
     )
     return SubstitutionResponse.model_validate(substitution)
 

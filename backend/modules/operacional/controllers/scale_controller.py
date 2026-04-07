@@ -2,7 +2,6 @@
 Controller (endpoints) para Scale.
 """
 
-import asyncio
 from typing import Any
 from uuid import UUID
 
@@ -17,7 +16,6 @@ from core.logging import logger
 from core.rate_limit import CRITICAL_LIMIT, limiter
 from modules.operacional.models.scale import ScaleStatus, ScaleType
 from modules.operacional.permissions import Permission, require_operacional_permission
-from modules.operacional.publishers import publish_escala_publicada
 from modules.operacional.repositories.scale_repository import ScaleRepository
 from modules.operacional.repositories.shift_repository import ShiftRepository
 from modules.operacional.schemas.scale import (
@@ -441,15 +439,6 @@ async def publish_scale(
         scale_id=str(scale.id),
         user_id=str(current_user.id),
         user_email=current_user.email,
-    )
-    asyncio.create_task(
-        publish_escala_publicada(
-            escala_id=str(scale.id),
-            cliente_id=str(scale.client_id) if hasattr(scale, "client_id") and scale.client_id else None,
-            competencia=str(scale.month) if hasattr(scale, "month") else None,
-            total_turnos=getattr(scale, "total_shifts", 0),
-            funcionarios=[],
-        )
     )
     return ScaleResponse.model_validate(scale)
 
