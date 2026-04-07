@@ -122,7 +122,7 @@ export default function KitsListPage() {
     fetch(`/api/v1/gedeon/context/${filterClient}/${comp}`, { headers: getAuthHeaders() })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
-        if (d?.tipo_kit) { setTipoKitCliente(d.tipo_kit); return; }
+        if (d?.tipo_kit && d.tipo_kit !== 'duplo') { setTipoKitCliente(d.tipo_kit); return; }
         return fetch('/api/v1/gedeon/kits/config', { headers: getAuthHeaders() })
           .then((r) => r.ok ? r.json() : null)
           .then((cfg) => {
