@@ -31,7 +31,7 @@ from modules.operacional.occurrences.schemas import (
     OccurrenceUpdate,
 )
 from modules.operacional.permissions import Permission, require_operacional_permission
-from modules.operacional.publishers import publish_ocorrencia_registrada
+from modules.operacional.publishers import publish_cat_registrada, publish_ocorrencia_registrada
 
 router = APIRouter(prefix="/occurrences", tags=["Operations - Occurrences"])
 
@@ -112,6 +112,19 @@ async def create_occurrence(
             data=str(occurrence.created_at.date()) if occurrence.created_at else None,
         )
     )
+    # P4: hook CAT quando categoria é SEGURANCA_TRABALHO
+    if occurrence.category == OccurrenceCategory.SEGURANCA_TRABALHO and data.employee_id:
+        asyncio.create_task(
+            publish_cat_registrada(
+                cat_id=str(occurrence.id),
+                employee_id=str(data.employee_id),
+                funcionario_nome="",
+                cliente_id=str(occurrence.post_id) if occurrence.post_id else "",
+                data=str(occurrence.created_at.date()) if occurrence.created_at else "",
+                numero_cat=str(occurrence.id),
+                afastamento=occurrence.severity.value in ("grave", "gravissima") if occurrence.severity else False,
+            )
+        )
     return OccurrenceResponse.model_validate(occurrence)
 
 

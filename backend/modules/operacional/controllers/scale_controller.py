@@ -446,7 +446,9 @@ async def publish_scale(
         publish_escala_publicada(
             escala_id=str(scale.id),
             cliente_id=str(scale.client_id) if hasattr(scale, "client_id") and scale.client_id else None,
-            competencia=str(scale.month) if hasattr(scale, "month") else None,
+            competencia=f"{scale.year}-{scale.month:02d}"
+            if hasattr(scale, "month") and hasattr(scale, "year")
+            else None,
             total_turnos=getattr(scale, "total_shifts", 0),
             funcionarios=[],
         )

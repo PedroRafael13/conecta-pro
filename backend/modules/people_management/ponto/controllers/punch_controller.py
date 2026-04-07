@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from core.auth.dependencies import CurrentActiveUser, get_current_user
 from core.database.session import get_db, get_sync_db_dependency
 
-from ..publishers import publish_batida_registrada, publish_espelho_fechado
+from ..publishers import publish_batida_registrada, publish_espelho_fechado, publish_falta_confirmada
 from ..schemas.dashboard_schemas import (
     AjusteRequest,
     BancoHorasResponse,
@@ -236,12 +236,24 @@ async def revisar_justificativa(
     """Aprova ou rejeita uma justificativa."""
     service = PunchService(db)
     try:
-        return await service.revisar_justificativa(
+        result = await service.revisar_justificativa(
             justification_id,
             data.action,
             data.reviewer_id,
             data.notes,
         )
+        # P5: hook falta confirmada quando justificativa de falta é aprovada
+        if data.action in ("aprovar", "approve") and result.get("type") in ("falta", "FALTA"):
+            asyncio.create_task(
+                publish_falta_confirmada(
+                    employee_id=str(result.get("employee_id", "")),
+                    funcionario_nome=result.get("funcionario_nome", ""),
+                    data=str(result.get("data", "")),
+                    justificada=True,
+                    cliente_id=result.get("cliente_id"),
+                )
+            )
+        return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 

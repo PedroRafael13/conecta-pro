@@ -74,25 +74,24 @@ async def alertas_vencimentos(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    KRONOS: retorna alertas de vencimento de certidões e ASOs.
+    Retorna todos os alertas de vencimento do KRONOS.
+    Certidões + ASOs de funcionários.
     """
+
     certidoes = await kronos.verificar_certidoes(db=db)
     asos = await kronos.verificar_asos_funcionarios(db=db)
 
-    criticos = [c for c in certidoes if c["nivel"] == "critico"]
-    criticos += [a for a in asos if a["nivel"] == "critico"]
+    todos = certidoes + asos
+    criticos = [c for c in todos if c.get("nivel") == "critico"]
+    altos = [c for c in todos if c.get("nivel") == "alto"]
 
     return {
+        "total_alertas": len(todos),
+        "criticos": len(criticos),
+        "altos": len(altos),
         "certidoes": certidoes,
-        "asos": asos,
-        "resumo": {
-            "total_certidoes": len(certidoes),
-            "total_asos": len(asos),
-            "criticos": len(criticos),
-            "alerta_geral": "critico"
-            if criticos
-            else ("alto" if any(x["nivel"] == "alto" for x in certidoes + asos) else "ok"),
-        },
+        "asos_funcionarios": asos,
+        "itens_criticos": criticos,
     }
 
 
