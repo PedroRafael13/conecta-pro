@@ -115,6 +115,39 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         logger.warning(f"GEDEON: falha na inicialização ({e})")
 
+    # GDrive: carregar tokens e conectar no startup
+    try:
+        from modules.gdrive.services.gdrive_service import gdrive_service as _gdrive_service
+
+        status = _gdrive_service.check_status()
+        if status.get("configurado") or status.get("conectado"):
+            logger.info("GDrive: conectado no startup (%s)", status.get("tipo", ""))
+        else:
+            # Tentar restaurar tokens do banco se disponíveis
+            from sqlalchemy import text as _sa_text
+
+            from core.database import async_session_factory as _asf
+
+            async with _asf() as _db:
+                _row = await _db.execute(
+                    _sa_text(
+                        "SELECT access_token, refresh_token, token_expiry::text "
+                        "FROM gdrive_config WHERE is_connected=TRUE LIMIT 1"
+                    )
+                )
+                _linha = _row.mappings().first()
+                if _linha:
+                    _gdrive_service.conectar_com_tokens(
+                        _linha["access_token"],
+                        _linha["refresh_token"],
+                        _linha.get("token_expiry"),
+                    )
+                    logger.info("GDrive: tokens restaurados do banco no startup")
+                else:
+                    logger.info("GDrive: aguardando autorização OAuth2")
+    except Exception as _e:
+        logger.warning("GDrive startup falhou (não crítico): %s", _e)
+
     yield
 
     logger.info("Encerrando aplicacao...")
@@ -837,6 +870,14 @@ try:
     logger.info("GEDEON: router registrado (/gedeon)")
 except Exception as e:
     logger.warning(f"GEDEON router: {e}")
+
+try:
+    from modules.gdrive.controllers.gdrive_controller import router as gdrive_router
+
+    api_router.include_router(gdrive_router)
+    logger.info("GDrive: router registrado (/gdrive)")
+except Exception as e:
+    logger.warning(f"GDrive router: {e}")
 
 # Incluir router principal
 app.include_router(api_router)

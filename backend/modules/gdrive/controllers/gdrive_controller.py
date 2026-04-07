@@ -7,7 +7,7 @@ import logging
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
@@ -253,6 +253,15 @@ async def montar_e_enviar(
     uploaded = sync.get("uploaded", 0)
     errors = sync.get("errors", 0)
 
+    # Enviar e-mail automaticamente após montar no Drive
+    from modules.gdrive.services.email_kit_service import email_kit_service as _email_svc
+
+    resultado_email = _email_svc.enviar_kit_por_email(
+        client_id=cliente_id,
+        competencia=competencia,
+        share_link=share_link,
+    )
+
     return {
         "drive": {
             "sucesso": sync.get("configured", False),
@@ -261,7 +270,7 @@ async def montar_e_enviar(
             "erros": errors,
         },
         "share_link": share_link,
-        "email": {"sucesso": False, "motivo": "e-mail não configurado nesta operação"},
+        "email": resultado_email,
         "mensagem": (
             f"✅ {uploaded} documentos enviados ao Drive"
             if uploaded > 0
@@ -337,3 +346,174 @@ async def obter_link_kit(
     if not link:
         raise HTTPException(status_code=404, detail="Kit não encontrado no Drive")
     return {"share_link": link, "client_id": client_id, "competencia": competencia}
+
+
+@router.get("/portal/{client_id}/kits")
+async def portal_kits_cliente(
+    client_id: str,
+    token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Kits do cliente para exibir no portal.
+    Autenticacao por token de sessao do portal (client_portal_sessions).
+    Retorna historico dos ultimos 24 meses com share_link do Drive.
+    """
+
+    # Validar token do portal
+    r_token = await db.execute(
+        text(
+            "SELECT client_id FROM client_portal_sessions "
+            "WHERE session_token = :token "
+            "AND expires_at > NOW() "
+            "AND client_id = :client_id "
+            "LIMIT 1"
+        ),
+        {"token": token, "client_id": client_id},
+    )
+    if not r_token.scalar_one_or_none():
+        raise HTTPException(status_code=401, detail="Token invalido ou expirado")
+
+    rows = await db.execute(
+        text(
+            "SELECT competencia, total_docs, share_link, status, created_at::text "
+            "FROM gdrive_kits "
+            "WHERE client_id = :client_id "
+            "AND status = 'concluido' "
+            "ORDER BY competencia DESC "
+            "LIMIT 24"
+        ),
+        {"client_id": client_id},
+    )
+
+    kits = []
+    for row in rows.fetchall():
+        competencia, total_docs, share_link, status, criado_em = row
+        if share_link:
+            kits.append(
+                {
+                    "competencia": competencia,
+                    "total_docs": int(total_docs or 0),
+                    "share_link": share_link,
+                    "status": status or "concluido",
+                    "criado_em": criado_em or "",
+                }
+            )
+
+    return {"total": len(kits), "kits": kits}
+
+
+@router.get("/kits")
+async def gdrive_kits_listagem(
+    client_id: str,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Kits do cliente com link do Drive (autenticacao JWT interna).
+    Usado pelo componente KitsDoCliente quando autenticado pelo sistema.
+    """
+
+    rows = await db.execute(
+        text(
+            "SELECT competencia, total_docs, share_link, status, created_at::text "
+            "FROM gdrive_kits "
+            "WHERE client_id = :client_id "
+            "ORDER BY competencia DESC "
+            "LIMIT 24"
+        ),
+        {"client_id": client_id},
+    )
+
+    kits = []
+    for row in rows.fetchall():
+        competencia, total_docs, share_link, status, criado_em = row
+        if share_link:
+            kits.append(
+                {
+                    "competencia": competencia,
+                    "total_docs": int(total_docs or 0),
+                    "share_link": share_link,
+                    "status": status or "concluido",
+                    "criado_em": criado_em or "",
+                }
+            )
+
+    return {"total": len(kits), "kits": kits}
+
+
+# ── OAUTH2 ─────────────────────────────────────────────────────────────────────
+
+
+import json as _json  # noqa: E402
+
+from fastapi.responses import RedirectResponse as _Redirect  # noqa: E402
+from sqlalchemy import text as _text  # noqa: E402
+
+from core.database import get_session as _get_session  # noqa: E402
+from modules.gdrive.services.gdrive_service import gdrive_service as _gdrive  # noqa: E402
+
+
+@router.get("/oauth/callback")
+async def gdrive_oauth_callback(
+    code: str,
+    db: AsyncSession = Depends(_get_session),
+    state: str | None = None,
+    error: str | None = None,
+) -> _Redirect:
+    """Callback OAuth2 — recebe código, troca por tokens e salva no banco."""
+    base = "https://erp.conectamais.pro/modulos/gestao-pessoas/ged/configuracoes"
+    if error:
+        logger.error("GDrive OAuth erro: %s", error)
+        return _Redirect(url=f"{base}?gdrive=erro")
+    try:
+        tokens = _gdrive.trocar_codigo_por_token(code)
+        at = tokens["access_token"]
+        rt = tokens.get("refresh_token") or ""
+        exp = tokens.get("expiry")
+        await db.execute(
+            _text(
+                "INSERT INTO gdrive_config "
+                "(owner_email, access_token, refresh_token, token_expiry, "
+                "is_connected, scopes, root_folder_id, kits_folder_id) "
+                "VALUES (:email, :at, :rt, :exp, TRUE, :scopes, :root, :kits) "
+                "ON CONFLICT DO NOTHING"
+            ),
+            {
+                "email": "jordansjesus@gmail.com",
+                "at": at,
+                "rt": rt,
+                "exp": exp,
+                "scopes": _json.dumps(tokens.get("scopes", [])),
+                "root": _gdrive._root_folder,
+                "kits": _gdrive._kits_folder,
+            },
+        )
+        await db.commit()
+        _gdrive.conectar_com_tokens(at, rt, exp)
+        logger.info("GDrive: OAuth2 concluído — tokens salvos")
+        return _Redirect(url=f"{base}?gdrive=conectado")
+    except Exception as exc:
+        logger.error("GDrive callback erro: %s", exc)
+        return _Redirect(url=f"{base}?gdrive=erro")
+
+
+@router.post("/desconectar")
+async def gdrive_desconectar(
+    db: AsyncSession = Depends(_get_session),
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """Desconectar o Google Drive e limpar tokens do banco."""
+    try:
+        await db.execute(
+            _text(
+                "UPDATE gdrive_config SET is_connected = FALSE, "
+                "access_token = NULL, refresh_token = NULL, updated_at = NOW()"
+            )
+        )
+        await db.commit()
+        _gdrive._service = None
+        _gdrive._credentials = None
+        return {"status": "desconectado"}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))

@@ -8,6 +8,7 @@ Envia e-mail automático quando kit é montado:
 import logging
 import os
 import smtplib
+import ssl
 import subprocess
 from email import encoders
 from email.mime.base import MIMEBase
@@ -61,12 +62,14 @@ class EmailKitService:
 
     def _config_smtp(self) -> dict:
         """Obter configurações SMTP do .env."""
+        from_name = os.getenv("SMTP_FROM_NAME", "Conecta PRO")
+        from_email = os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USERNAME", "noreply@conectamais.pro"))
         return {
-            "host": os.getenv("SMTP_HOST", "smtp.gmail.com"),
-            "port": int(os.getenv("SMTP_PORT", "587")),
-            "user": os.getenv("SMTP_USER", os.getenv("GDRIVE_OWNER_EMAIL", "jordansjesus@gmail.com")),
+            "host": os.getenv("SMTP_HOST", "smtp.hostinger.com"),
+            "port": int(os.getenv("SMTP_PORT", "465")),
+            "user": os.getenv("SMTP_USERNAME", os.getenv("SMTP_USER", "")),
             "pass": os.getenv("SMTP_PASSWORD", ""),
-            "from": os.getenv("SMTP_FROM", "Conecta PRO <jordansjesus@gmail.com>"),
+            "from": f"{from_name} <{from_email}>",
         }
 
     def _buscar_email_cliente(self, client_id: str) -> str | None:
@@ -251,11 +254,16 @@ class EmailKitService:
                     except Exception as e:
                         logger.warning("Falha ao anexar %s: %s", arq["name"], e)
 
-        # Enviar
+        # Enviar — porta 465 = SSL direto (SMTP_SSL); porta 587 = STARTTLS
         try:
-            with smtplib.SMTP(cfg["host"], cfg["port"]) as server:
-                server.ehlo()
-                server.starttls()
+            _ctx = ssl.create_default_context()
+            if cfg["port"] == 465:
+                _conn: smtplib.SMTP = smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=_ctx)
+            else:
+                _conn = smtplib.SMTP(cfg["host"], cfg["port"])
+                _conn.ehlo()
+                _conn.starttls(context=_ctx)
+            with _conn as server:
                 if cfg["pass"]:
                     server.login(cfg["user"], cfg["pass"])
                 server.sendmail(cfg["user"], email_dest, msg.as_bytes())
