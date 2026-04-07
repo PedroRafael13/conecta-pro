@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import GedeonChecklist from '@/components/gedeon/GedeonChecklist';
+import GedeonChecklistTipo2 from '@/components/gedeon/GedeonChecklistTipo2';
 
 const API_BASE = '/api/v1/ged';
 
@@ -98,6 +99,7 @@ export default function KitsListPage() {
   const [showNewKit, setShowNewKit] = useState(false);
   const [showMontarConfirm, setShowMontarConfirm] = useState(false);
   const [showGedeonChecklist, setShowGedeonChecklist] = useState(false);
+  const [tipoKitCliente, setTipoKitCliente] = useState<string | null>(null);
   const [newKitClient, setNewKitClient] = useState('');
   const [newKitMonth, setNewKitMonth] = useState('');
   const [newKitErrors, setNewKitErrors] = useState<{ client?: string; month?: string }>({});
@@ -114,6 +116,22 @@ export default function KitsListPage() {
   useEffect(() => { fetchClients(); }, []);
   useEffect(() => { setPage(1); }, [filterMonth, filterStatus, filterClient]);
   useEffect(() => { fetchKits(); }, [filterMonth, filterStatus, filterClient, page]);
+  useEffect(() => {
+    if (!filterClient) { setTipoKitCliente(null); return; }
+    const comp = filterMonth || new Date().toISOString().slice(0, 7);
+    fetch(`/api/v1/gedeon/context/${filterClient}/${comp}`, { headers: getAuthHeaders() })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d?.tipo_kit) { setTipoKitCliente(d.tipo_kit); return; }
+        return fetch('/api/v1/gedeon/kits/config', { headers: getAuthHeaders() })
+          .then((r) => r.ok ? r.json() : null)
+          .then((cfg) => {
+            const entry = cfg?.configs?.find((c: { cliente_id: string }) => c.cliente_id === filterClient);
+            setTipoKitCliente(entry?.tipo_kit ?? 'maos_de_obra');
+          });
+      })
+      .catch(() => setTipoKitCliente('maos_de_obra'));
+  }, [filterClient, filterMonth]);
 
   async function fetchClients() {
     try {
@@ -269,7 +287,11 @@ export default function KitsListPage() {
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
           >
             {montando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            {filterClient ? 'Montar com GEDEON' : 'Montar Kits'}
+            {filterClient
+              ? tipoKitCliente === 'seguranca_eletronica'
+                ? 'Montar Tipo 2 — Seg. Eletronica'
+                : 'Montar Tipo 1 — Mao de Obra'
+              : 'Montar Kits'}
           </button>
           <button
             onClick={() => setShowNewKit(true)}
@@ -473,17 +495,30 @@ export default function KitsListPage() {
       )}
 
       {showGedeonChecklist && filterClient && createPortal(
-        <GedeonChecklist
-          clienteId={filterClient}
-          competencia={competenciaAtual}
-          clienteNome={selectedClient?.name ?? filterClient}
-          onConfirmar={(dados) => {
-            setShowGedeonChecklist(false);
-            handleMontarKits();
-            console.log('GEDEON checklist confirmado:', dados);
-          }}
-          onCancelar={() => setShowGedeonChecklist(false)}
-        />,
+        tipoKitCliente === 'seguranca_eletronica' ? (
+          <GedeonChecklistTipo2
+            clienteId={filterClient}
+            competencia={competenciaAtual}
+            clienteNome={selectedClient?.name ?? filterClient}
+            onConfirmar={() => {
+              setShowGedeonChecklist(false);
+              handleMontarKits();
+            }}
+            onCancelar={() => setShowGedeonChecklist(false)}
+          />
+        ) : (
+          <GedeonChecklist
+            clienteId={filterClient}
+            competencia={competenciaAtual}
+            clienteNome={selectedClient?.name ?? filterClient}
+            onConfirmar={(dados) => {
+              setShowGedeonChecklist(false);
+              handleMontarKits();
+              console.log('GEDEON checklist confirmado:', dados);
+            }}
+            onCancelar={() => setShowGedeonChecklist(false)}
+          />
+        ),
         document.body
       )}
     </div>

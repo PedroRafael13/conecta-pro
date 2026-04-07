@@ -162,6 +162,26 @@ async def _gerar_kit_real(db: AsyncSession, kit_id: str) -> dict:
 
     await db.commit()
 
+    # ATLAS: registra kit concluído para aprendizado contínuo (fire-and-forget)
+    try:
+        from modules.gedeon.agents.atlas import atlas as _atlas
+
+        competencia_str = comp.strftime("%Y-%m") if hasattr(comp, "strftime") else str(comp)[:7]
+        _atlas.registrar_kit_concluido(
+            client_id=client_id,
+            competencia=competencia_str,
+            tipo_kit="maos_de_obra",
+            score_final=100,
+            docs_total=gerados,
+            docs_auto=gerados,
+            observacoes="",
+            checklist_respostas={},
+            movimentacoes=[],
+            pendencias=[],
+        )
+    except Exception:
+        pass
+
     return {
         "kit_id": kit_id,
         "cliente": cliente_nome,
