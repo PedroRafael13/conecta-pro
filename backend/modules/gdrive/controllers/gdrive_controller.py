@@ -517,3 +517,17 @@ async def gdrive_desconectar(
         return {"status": "desconectado"}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/autorizar")
+async def gdrive_autorizar_get(
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """GET — gerar URL OAuth2 para autorizar o Google Drive via navegador."""
+    from modules.gdrive.services.gdrive_service import gdrive_service as _gds
+
+    try:
+        url = _gds.gerar_url_autorizacao()
+        return {"url_autorizacao": url, "instrucao": "Acesse a URL para autorizar"}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar URL: {exc}")
