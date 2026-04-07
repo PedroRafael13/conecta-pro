@@ -326,6 +326,16 @@ async def sophia_carregar(
     return {"status": "ok", "carregados_do_banco": total}
 
 
+@router.get("/sophia/status")
+async def sophia_status(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """SOPHIA: status do índice — quantidade de docs persistidos no banco."""
+    total = (await db.execute(sa_text("SELECT COUNT(*) FROM gedeon_document_index"))).scalar() or 0
+    return {"status": "ok", "indexados": total, "carregado": total > 0}
+
+
 def _gerar_checklist(ctx: dict) -> dict:
     return {
         "movimentacao": {
