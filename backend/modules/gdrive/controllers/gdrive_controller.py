@@ -6,7 +6,7 @@ Endpoints para status, autorização OAuth2 e envio de kits ao Google Drive.
 import logging
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -96,52 +96,15 @@ async def gdrive_autorizar(
 
 
 @router.get("/kits")
-async def gdrive_listar_kits(
-    cliente_id: str | None = Query(None),
-    competencia: str | None = Query(None),
+async def listar_kits_drive(
+    client_id: str | None = None,
     current_user=Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ):
-    """Lista kits que já foram enviados ao Google Drive."""
-    from sqlalchemy import text as sa_text
+    """Listar todos os kits montados no Drive."""
+    from modules.gdrive.services.kit_drive_service import kit_drive_service
 
-    filtros = ["gdk.google_drive_link IS NOT NULL"]
-    params: dict = {}
-
-    if cliente_id:
-        filtros.append("gdk.client_id::text = :client_id")
-        params["client_id"] = cliente_id
-    if competencia:
-        # competencia = YYYY-MM
-        try:
-            ano, mes = competencia.split("-")
-            filtros.append(
-                "EXTRACT(YEAR FROM gdk.reference_month) = :ano AND EXTRACT(MONTH FROM gdk.reference_month) = :mes"
-            )
-            params["ano"] = int(ano)
-            params["mes"] = int(mes)
-        except ValueError:
-            pass
-
-    where = " AND ".join(filtros)
-    rows = await db.execute(
-        sa_text(
-            f"SELECT gdk.id::text, gdk.reference_month::text, "
-            f"gdk.google_drive_link, gdk.status, "
-            f"c.name AS cliente_nome "
-            f"FROM ged_document_kits gdk "
-            f"JOIN ged_clients c ON c.id = gdk.client_id "
-            f"WHERE {where} "
-            f"ORDER BY gdk.reference_month DESC "
-            f"LIMIT 50"
-        ),
-        params,
-    )
-    kits = [dict(r) for r in rows.mappings()]
-    return {
-        "total": len(kits),
-        "kits": kits,
-    }
+    kits = kit_drive_service.listar_kits_drive(client_id)
+    return {"total": len(kits), "kits": kits}
 
 
 # ── STATUS DE INGESTÃO ─────────────────────────────────────────────────────────
@@ -380,45 +343,6 @@ async def portal_kits_cliente(
             "FROM gdrive_kits "
             "WHERE client_id = :client_id "
             "AND status = 'concluido' "
-            "ORDER BY competencia DESC "
-            "LIMIT 24"
-        ),
-        {"client_id": client_id},
-    )
-
-    kits = []
-    for row in rows.fetchall():
-        competencia, total_docs, share_link, status, criado_em = row
-        if share_link:
-            kits.append(
-                {
-                    "competencia": competencia,
-                    "total_docs": int(total_docs or 0),
-                    "share_link": share_link,
-                    "status": status or "concluido",
-                    "criado_em": criado_em or "",
-                }
-            )
-
-    return {"total": len(kits), "kits": kits}
-
-
-@router.get("/kits")
-async def gdrive_kits_listagem(
-    client_id: str,
-    current_user=Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Kits do cliente com link do Drive (autenticacao JWT interna).
-    Usado pelo componente KitsDoCliente quando autenticado pelo sistema.
-    """
-
-    rows = await db.execute(
-        text(
-            "SELECT competencia, total_docs, share_link, status, created_at::text "
-            "FROM gdrive_kits "
-            "WHERE client_id = :client_id "
             "ORDER BY competencia DESC "
             "LIMIT 24"
         ),
