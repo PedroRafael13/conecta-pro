@@ -395,22 +395,24 @@ async def gdrive_oauth_callback(
         at = tokens["access_token"]
         rt = tokens.get("refresh_token") or ""
         exp = tokens.get("expiry")
+        import os as _os
+
+        await db.execute(_text("DELETE FROM gdrive_config"))
         await db.execute(
             _text(
                 "INSERT INTO gdrive_config "
                 "(owner_email, access_token, refresh_token, token_expiry, "
                 "is_connected, scopes, root_folder_id, kits_folder_id) "
-                "VALUES (:email, :at, :rt, :exp, TRUE, :scopes, :root, :kits) "
-                "ON CONFLICT DO NOTHING"
+                "VALUES (:email, :at, :rt, :exp, TRUE, :scopes, :root, :kits)"
             ),
             {
-                "email": "jordansjesus@gmail.com",
+                "email": _os.environ.get("GDRIVE_OWNER_EMAIL", "jordansjesus@gmail.com"),
                 "at": at,
                 "rt": rt,
                 "exp": exp,
                 "scopes": _json.dumps(tokens.get("scopes", [])),
-                "root": _gdrive._root_folder,
-                "kits": _gdrive._kits_folder,
+                "root": _os.environ.get("GDRIVE_ROOT_FOLDER_ID", ""),
+                "kits": _os.environ.get("GDRIVE_KITS_FOLDER_ID", ""),
             },
         )
         await db.commit()
@@ -437,7 +439,7 @@ async def gdrive_desconectar(
         )
         await db.commit()
         _gdrive._service = None
-        _gdrive._credentials = None
+        _gdrive._initialized = False
         return {"status": "desconectado"}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
