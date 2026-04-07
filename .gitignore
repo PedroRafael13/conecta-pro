@@ -105,3 +105,4 @@ agents/cto/brain/
 agents/cto/*.log
 agents/cto/knowledge/
 !agents/cto/knowledge/.ultimo_commit
+config/smtp_config.json

@@ -61,15 +61,45 @@ def _psql(q: str) -> list[str]:
 class EmailKitService:
     """Serviço de envio de e-mail para kits documentais."""
 
+    def _config_smtp_from_json(self) -> dict:
+        """Fallback: ler config SMTP do JSON gravado no container."""
+        import json as _json
+        from pathlib import Path as _Path
+
+        config_path = _Path("/app/config/smtp_config.json")
+        if config_path.exists():
+            try:
+                data = _json.loads(config_path.read_text())
+                port = int(data.get("port", 465))
+                return {
+                    "host": data.get("host", "smtp.hostinger.com"),
+                    "port": port,
+                    "user": data.get("username", ""),
+                    "pass": data.get("password", ""),
+                    "from": f"{data.get('from_name', 'Conecta PRO')} <{data.get('from_email', '')}>",
+                    "ssl": bool(data.get("ssl", port == 465)),
+                }
+            except Exception:
+                pass
+        return {}
+
     def _config_smtp(self) -> dict:
-        """Obter configurações SMTP do .env."""
+        """Obter configurações SMTP do .env com fallback para JSON."""
         from_name = os.getenv("SMTP_FROM_NAME", "Conecta PRO")
         from_email = os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USERNAME", "noreply@conectamais.pro"))
         port = int(os.getenv("SMTP_PORT", "465"))
+        user = os.getenv("SMTP_USERNAME", os.getenv("SMTP_USER", ""))
+
+        # Se vars de ambiente não disponíveis, usar JSON persistido no container
+        if not user:
+            json_cfg = self._config_smtp_from_json()
+            if json_cfg.get("user"):
+                return json_cfg
+
         return {
             "host": os.getenv("SMTP_HOST", "smtp.hostinger.com"),
             "port": port,
-            "user": os.getenv("SMTP_USERNAME", os.getenv("SMTP_USER", "")),
+            "user": user,
             "pass": os.getenv("SMTP_PASSWORD", ""),
             "from": f"{from_name} <{from_email}>",
             "ssl": port == 465,

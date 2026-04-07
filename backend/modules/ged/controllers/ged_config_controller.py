@@ -2,10 +2,16 @@
 GED Config & Reports Controller.
 
 Endpoints:
-- GET  /config/drive      → status Google Drive
-- GET  /config/schedule   → agendamento de envios
-- PUT  /config/schedule   → salvar agendamento
-- GET  /reports/monthly   → relatório mensal GED
+- GET  /config/schedule        → agendamento de envios
+- PUT  /config/schedule        → salvar agendamento
+- GET  /config/email-templates → templates de e-mail
+- GET  /config/document-types  → tipos de documentos
+- GET  /reports/monthly        → relatório mensal GED
+- GET  /reports/by-client      → relatório por cliente
+- GET  /reports/compliance     → certidões e prazos
+- GET  /reports/signatures     → assinaturas digitais
+
+Nota: integração Google Drive migrada para módulo /gdrive/
 """
 
 import logging
