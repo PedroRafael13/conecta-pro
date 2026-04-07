@@ -781,3 +781,55 @@ async def get_ai_dashboard(
     """Retorna dashboard com IA."""
     service = DocumentAIService(db)
     return await service.get_dashboard(condominium_id)
+
+
+# ---------------------------------------------------------------------------
+# Ingestao Historica — endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/ingestao/historica", tags=["GED - Ingestao Historica"])
+async def ingestao_historica(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    folder_id: str | None = Query(None, description="ID da pasta GDrive (usa padrao se omitido)"),
+):
+    """
+    Processar todos os ZIPs historicos do Drive.
+    Descompacta, classifica e indexa no SOPHIA + ATLAS.
+    """
+    from modules.people_management.ged.services.ingestao_historica import (
+        KITS_FOLDER,
+        ingestao,
+    )
+
+    pasta = folder_id or KITS_FOLDER
+    resultado = await ingestao.processar_todos_os_zips(folder_id=pasta)
+    return resultado
+
+
+@router.get("/ingestao/status", tags=["GED - Ingestao Historica"])
+async def ingestao_status(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Status da ingestao historica — conta docs no gedeon_document_index."""
+    from sqlalchemy import text as sa_text
+
+    from modules.people_management.ged.services.ingestao_historica import get_status
+
+    # Contar docs historicos persistidos no banco
+    try:
+        result = await db.execute(
+            sa_text("SELECT COUNT(*) FROM gedeon_document_index WHERE metadados->>'origem' = 'historico_drive'")
+        )
+        total = result.scalar() or 0
+    except Exception:
+        total = 0
+
+    mem = get_status()
+    return {
+        "docs_historicos_indexados": int(total),
+        "status": "pronto" if int(total) > 0 else "aguardando_ingestao",
+        **mem,
+    }
