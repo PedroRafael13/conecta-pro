@@ -384,14 +384,14 @@ from modules.gdrive.services.gdrive_service import gdrive_service as _gdrive  # 
 
 @router.get("/oauth/callback")
 async def gdrive_oauth_callback(
-    code: str,
+    code: str | None = None,
     db: AsyncSession = Depends(_get_session),
     state: str | None = None,
     error: str | None = None,
 ) -> _Redirect:
     """Callback OAuth2 — recebe código, troca por tokens e salva no banco."""
     base = "https://erp.conectamais.pro/modulos/gestao-pessoas/ged/configuracoes"
-    if error:
+    if error or not code:
         logger.error("GDrive OAuth erro: %s", error)
         return _Redirect(url=f"{base}?gdrive=erro")
     try:

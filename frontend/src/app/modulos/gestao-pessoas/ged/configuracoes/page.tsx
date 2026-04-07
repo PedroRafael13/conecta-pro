@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Loader2,
   HardDrive,
@@ -69,6 +70,8 @@ interface ScheduleConfig {
 export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [savingSection, setSavingSection] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [driveConfig, setDriveConfig] = useState<DriveConfig>({
     connected: false,
@@ -87,6 +90,23 @@ export default function ConfiguracoesPage() {
     description: 'Todo dia 1 as 06:00',
     last_run: null,
   });
+
+  // Tratar callback OAuth do Google Drive (?gdrive=conectado ou ?gdrive=erro)
+  useEffect(() => {
+    const gdrive = searchParams.get('gdrive');
+    if (!gdrive) return;
+    if (gdrive === 'conectado') {
+      showToast('Google Drive conectado com sucesso!', 'success');
+      fetchConfig();
+    } else if (gdrive === 'erro') {
+      showToast('Erro ao conectar Google Drive. Tente novamente.', 'error');
+    }
+    // Limpar o query param da URL sem recarregar a página
+    const url = new URL(window.location.href);
+    url.searchParams.delete('gdrive');
+    router.replace(url.pathname + (url.search || ''));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     fetchConfig();
