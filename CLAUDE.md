@@ -184,3 +184,33 @@ Se uma sessão detectar que seu commit foi revertido por outra sessão:
    Aguardo sua instrução para re-aplicar ou descartar.
    ```
 3. Aguardar confirmação antes de qualquer ação
+
+## REGRAS DE GOVERNANÇA GIT — IMUTÁVEIS
+
+### PROIBIDO ABSOLUTO (nenhuma sessão pode executar)
+- git revert [qualquer commit]
+- git reset --hard
+- git reset --soft
+- git push --force
+- git push --force-with-lease
+
+### QUANDO ENCONTRAR CONFLITO
+1. PARAR imediatamente
+2. Reportar ao Jordan Jesus no chat
+3. Aguardar instrução explícita
+4. NUNCA resolver conflito com revert automático
+
+### BRANCHES PROTEGIDAS
+- `main` — NUNCA commitar diretamente
+- `develop` — NUNCA commitar diretamente
+- `feature/*` — permitido commitar e push
+
+### ZONAS PROIBIDAS
+- alembic/versions/
+- docker-compose*.yml
+- .env*
+- credentials/
+- main_production.py (só com autorização explícita)
+
+*Regras estabelecidas por Jordan Jesus em 2026-04-07.
+Aplicam-se a TODAS as sessões Claude Code sem exceção.*

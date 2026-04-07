@@ -326,6 +326,36 @@ async def sophia_carregar(
     return {"status": "ok", "carregados_do_banco": total}
 
 
+# SOPHIA: status do índice + carregamento lazy
+_sophia_loaded = False
+
+
+@router.get("/sophia/status")
+async def sophia_status(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Status do índice SOPHIA + carregamento lazy na primeira requisição."""
+    global _sophia_loaded
+    from modules.gedeon.agents.sophia import sophia
+
+    if not _sophia_loaded:
+        try:
+            carregados = await sophia.carregar_do_banco()
+            if carregados == 0:
+                carregados = await sophia.indexar_acervo_completo()
+            _sophia_loaded = True
+        except Exception as e:
+            logger.warning("sophia_status lazy-load erro: %s", e)
+    result = await db.execute(sa_text("SELECT COUNT(*) FROM gedeon_document_index"))
+    total = result.scalar() or 0
+    return {
+        "status": "ok",
+        "indexados": total,
+        "carregado": _sophia_loaded,
+    }
+
+
 def _gerar_checklist(ctx: dict) -> dict:
     return {
         "movimentacao": {
