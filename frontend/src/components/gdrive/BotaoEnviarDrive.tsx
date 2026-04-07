@@ -22,7 +22,7 @@ function getToken(): string {
   }
 }
 
-type Etapa = 'idle' | 'montando' | 'concluido' | 'erro'
+type Etapa = 'idle' | 'montando' | 'enviando_email' | 'concluido' | 'erro'
 
 export default function BotaoEnviarDrive({
   clienteId,
