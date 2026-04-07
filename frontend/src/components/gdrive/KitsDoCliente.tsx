@@ -58,11 +58,11 @@ export default function KitsDoCliente({
       try {
         const authToken = token || getToken()
         const url = token
-          ? `/api/v1/portal/kits/historico-drive?client_id=${clienteId}&token=${token}`
+          ? `/api/v1/gdrive/portal/${clienteId}/kits?token=${token}`
           : `/api/v1/portal/kits/historico-drive`
 
         const res = await fetch(url, {
-          headers: authToken
+          headers: authToken && !token
             ? { Authorization: `Bearer ${authToken}` }
             : {},
         })

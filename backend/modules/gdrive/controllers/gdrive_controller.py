@@ -324,17 +324,21 @@ async def portal_kits_cliente(
     """
 
     # Validar token do portal
-    r_token = await db.execute(
-        text(
-            "SELECT client_id FROM client_portal_sessions "
-            "WHERE session_token = :token "
-            "AND expires_at > NOW() "
-            "AND client_id = :client_id "
-            "LIMIT 1"
-        ),
-        {"token": token, "client_id": client_id},
-    )
-    if not r_token.scalar_one_or_none():
+    try:
+        r_token = await db.execute(
+            text(
+                "SELECT client_id FROM client_portal_sessions "
+                "WHERE token = :token "
+                "AND expires_at > NOW() "
+                "AND client_id::text = :client_id "
+                "LIMIT 1"
+            ),
+            {"token": token, "client_id": client_id},
+        )
+        valid = r_token.scalar_one_or_none()
+    except Exception:
+        valid = None
+    if not valid:
         raise HTTPException(status_code=401, detail="Token invalido ou expirado")
 
     rows = await db.execute(

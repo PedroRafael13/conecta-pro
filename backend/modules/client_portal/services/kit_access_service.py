@@ -10,7 +10,6 @@ import math
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from modules.client_portal.schemas.kit import (
     PortalDocumentResponse,
@@ -68,12 +67,7 @@ class PortalKitAccessService:
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0
 
-        query = (
-            query.options(selectinload(GedDocumentKit.documents))
-            .order_by(GedDocumentKit.reference_month.desc())
-            .offset(skip)
-            .limit(limit)
-        )
+        query = query.order_by(GedDocumentKit.reference_month.desc()).offset(skip).limit(limit)
         result = await self.db.execute(query)
         kits = result.scalars().unique().all()
 
@@ -209,9 +203,7 @@ class PortalKitAccessService:
             ValueError: Se kit nao encontrado ou nao pertence ao cliente.
         """
         result = await self.db.execute(
-            select(GedDocumentKit)
-            .options(selectinload(GedDocumentKit.documents))
-            .where(
+            select(GedDocumentKit).where(
                 GedDocumentKit.id == kit_id,
                 GedDocumentKit.client_id == client_id,
             )
@@ -263,19 +255,6 @@ class PortalKitAccessService:
     def _kit_to_response(kit: GedDocumentKit) -> PortalKitResponse:
         """Converte GedDocumentKit ORM para PortalKitResponse."""
         documents = []
-        if kit.documents:
-            documents = [
-                PortalDocumentResponse(
-                    id=str(doc.id),
-                    document_type=doc.document_type,
-                    document_name=doc.document_name,
-                    file_size_bytes=doc.file_size_bytes,
-                    mime_type=doc.mime_type,
-                    is_signed=doc.is_signed,
-                    created_at=doc.created_at,
-                )
-                for doc in kit.documents
-            ]
 
         return PortalKitResponse(
             id=str(kit.id),

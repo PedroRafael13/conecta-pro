@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import KitsDoCliente from '@/components/gdrive/KitsDoCliente';
 import {
   FolderOpen, Loader2, FileText, AlertTriangle, CheckCircle2,
   Clock, Send, Eye, Download, Users, ChevronRight,
@@ -308,6 +309,13 @@ export default function KitsPage() {
           )}
         </>
       )}
+      {/* Histórico de kits no Google Drive */}
+      <div className="mt-8 border-t pt-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          📁 Histórico no Google Drive
+        </h2>
+        <KitsDoCliente clienteId="" />
+      </div>
     </div>
   );
 }
