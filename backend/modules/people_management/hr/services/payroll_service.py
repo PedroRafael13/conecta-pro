@@ -268,7 +268,7 @@ class PayrollService:
             total_employees,
         )
 
-        return {
+        result = {
             "reference": f"{reference_month:02d}/{reference_year}",
             "total_employees": total_employees,
             "processed": processed,
@@ -279,6 +279,29 @@ class PayrollService:
             "total_fgts": float(total_fgts),
             "status": "closed",
         }
+
+        try:
+            from infrastructure.event_bus import ConectaEvent, EventTypes, event_bus
+
+            await event_bus.publish(
+                ConectaEvent(
+                    event_type=EventTypes.DP_FOLHA_FECHADA,
+                    payload={
+                        "competencia": f"{reference_year}-{reference_month:02d}",
+                        "total_funcionarios": total_employees,
+                        "processados": processed,
+                        "total_bruto": float(total_bruto),
+                        "total_liquido": float(total_liquido),
+                        "total_fgts": float(total_fgts),
+                    },
+                    source_module="dp",
+                    competencia=f"{reference_year}-{reference_month:02d}",
+                )
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.warning("Falha ao publicar evento folha fechada: %s", exc)
+
+        return result
 
     async def mark_payslip_viewed(self, employee_id: str | UUID, month: int, year: int) -> dict:
         """Marca contracheque como visualizado pelo funcionário.

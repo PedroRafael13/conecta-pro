@@ -297,6 +297,32 @@ async def activate_contract(
         )
 
     logger.info(f"Contract ativado por {current_user.email}: {contract.contract_number}")
+
+    import asyncio
+
+    from modules.crm.publishers import publish_cliente_ativo, publish_contrato_assinado
+
+    asyncio.create_task(
+        publish_contrato_assinado(
+            contrato_id=str(contract.id),
+            numero=contract.contract_number,
+            cliente_id=str(getattr(contract, "client_id", "") or ""),
+            nome_cliente=str(getattr(contract, "client_name", "") or ""),
+            tipo_contrato=str(getattr(contract, "contract_type", "") or ""),
+            valor_mensal=float(getattr(contract, "monthly_value", 0) or 0),
+            vigencia_inicio=str(getattr(contract, "start_date", "") or ""),
+            vigencia_fim=str(getattr(contract, "end_date", "") or ""),
+        )
+    )
+    asyncio.create_task(
+        publish_cliente_ativo(
+            cliente_id=str(getattr(contract, "client_id", "") or ""),
+            nome=str(getattr(contract, "client_name", "") or ""),
+            tipo_contrato=str(getattr(contract, "contract_type", "") or ""),
+            valor_contrato=float(getattr(contract, "monthly_value", 0) or 0),
+        )
+    )
+
     return ContractResponse.model_validate(contract)
 
 

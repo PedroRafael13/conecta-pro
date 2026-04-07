@@ -270,6 +270,13 @@ class EventTypes:
     PORTAL_DOCUMENTO_SOLICITADO = "portal.documento.solicitado"
     PORTAL_FERIAS_SOLICITADAS = "portal.ferias.solicitadas"
 
+    # ── CRM ───────────────────────────────────────────────────────────────
+    CRM_LEAD_CONVERTIDO = "crm.lead.convertido"
+    CRM_CONTRATO_ASSINADO = "crm.contrato.assinado"
+    CRM_CLIENTE_ATIVO = "crm.cliente.ativo"
+    CRM_CLIENTE_INATIVADO = "crm.cliente.inativado"
+    CRM_PROPOSTA_APROVADA = "crm.proposta.aprovada"
+
 
 # ---------------------------------------------------------------------------
 # ConectaEventBus — barramento unificado
@@ -461,7 +468,7 @@ class ConectaEventBus:
                 results = await self._redis.xreadgroup(
                     groupname=group_name,
                     consumername=consumer_name,
-                    streams={s: ">" for s in self.STREAMS.values()},
+                    streams=dict.fromkeys(self.STREAMS.values(), ">"),
                     count=50,
                     block=1000,
                 )

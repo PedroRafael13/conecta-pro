@@ -183,6 +183,22 @@ async def update_lead_status(
         )
 
     logger.info(f"Lead {lead.id} status alterado para {data.status.value} por {current_user.email}")
+
+    if data.status == LeadStatus.WON:
+        import asyncio
+
+        from modules.crm.publishers import publish_lead_convertido
+
+        asyncio.create_task(
+            publish_lead_convertido(
+                lead_id=str(lead.id),
+                nome=getattr(lead, "name", "") or getattr(lead, "nome", ""),
+                empresa=getattr(lead, "company", "") or getattr(lead, "empresa", ""),
+                score=getattr(lead, "score", None),
+                cliente_id=str(getattr(lead, "client_id", "") or ""),
+            )
+        )
+
     return LeadResponse.model_validate(lead)
 
 

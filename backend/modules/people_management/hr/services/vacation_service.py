@@ -222,6 +222,26 @@ class VacationService:
         except (ImportError, Exception) as e:
             logger.info("Notificação de férias não enviada: %s", e)
 
+        try:
+            from infrastructure.event_bus import ConectaEvent, EventTypes, event_bus
+
+            await event_bus.publish(
+                ConectaEvent(
+                    event_type=EventTypes.DP_FERIAS_APROVADAS,
+                    payload={
+                        "vacation_id": str(vacation_id),
+                        "employee_id": str(getattr(vacation, "employee_id", "")),
+                        "start_date": str(getattr(vacation, "start_date", "")),
+                        "end_date": str(getattr(vacation, "end_date", "")),
+                        "days_requested": getattr(vacation, "days_requested", None),
+                    },
+                    source_module="dp",
+                    funcionario_id=str(getattr(vacation, "employee_id", "")),
+                )
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.warning("Falha ao publicar evento ferias: %s", exc)
+
         logger.info("Férias %s aprovadas", vacation_id)
         return {
             "vacation_id": str(vacation_id),
