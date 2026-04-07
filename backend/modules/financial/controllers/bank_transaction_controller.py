@@ -17,6 +17,7 @@ from modules.financial.models import (
     TransactionStatus,
     TransactionType,
 )
+from modules.financial.publishers import publish_nota_emitida
 from modules.financial.repositories import BankAccountRepository, BankTransactionRepository
 from modules.financial.schemas import (
     BankTransactionCreate,
@@ -333,6 +334,26 @@ async def confirm_transaction(
 
     await session.commit()
     logger.info(f"Transação confirmada: {transaction_id} por {current_user.get('email')}")
+    # Publisher GEDEON Event Bus — nota emitida (crédito confirmado)
+    if transaction.transaction_type == TransactionType.CREDITO:
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                publish_nota_emitida(
+                    nota_id=str(transaction_id),
+                    numero=str(getattr(transaction, "document_number", "") or str(transaction_id)[:8]),
+                    valor=float(transaction.amount or 0),
+                    cliente_id=str(getattr(transaction, "client_id", "") or ""),
+                    extra={
+                        "tipo": "transacao_bancaria",
+                        "descricao": str(getattr(transaction, "description", "") or ""),
+                        "conta_id": str(getattr(transaction, "bank_account_id", "") or ""),
+                    },
+                )
+            )
+        except Exception:
+            pass
     return BankTransactionResponse.model_validate(updated)
 
 

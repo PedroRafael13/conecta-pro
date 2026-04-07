@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
 from core.database import get_session
+from modules.financial.publishers import publish_nota_emitida
 
 logger = logging.getLogger(__name__)
 
@@ -220,6 +221,25 @@ async def conciliacao_auto(
 
     await db.commit()
     total_valor = sum(c["valor_rec"] for c in conciliados)
+    # Publisher GEDEON Event Bus — notas conciliadas
+    if conciliados:
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                publish_nota_emitida(
+                    nota_id=f"conciliacao_{len(conciliados)}",
+                    numero=str(len(conciliados)),
+                    valor=round(total_valor, 2),
+                    extra={
+                        "tipo": "conciliacao_nfse_entrada",
+                        "total_conciliados": len(conciliados),
+                        "estrategias": list({c["estrategia"].split(":")[0] for c in conciliados}),
+                    },
+                )
+            )
+        except Exception:
+            pass
     return {
         "total_receivables": len(rec_map),
         "conciliados": len(conciliados),
