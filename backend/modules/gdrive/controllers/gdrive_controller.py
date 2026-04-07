@@ -398,8 +398,20 @@ async def gdrive_oauth_callback(
         tokens = _gdrive.trocar_codigo_por_token(code)
         at = tokens["access_token"]
         rt = tokens.get("refresh_token") or ""
-        exp = tokens.get("expiry")
         import os as _os
+        from datetime import datetime as _dt
+
+        # asyncpg exige datetime, não string ISO — converter antes do INSERT
+        _exp_raw = tokens.get("expiry")
+        if isinstance(_exp_raw, str):
+            try:
+                exp: _dt | None = _dt.fromisoformat(_exp_raw)
+            except ValueError:
+                exp = None
+        elif isinstance(_exp_raw, _dt):
+            exp = _exp_raw
+        else:
+            exp = None
 
         await db.execute(_text("DELETE FROM gdrive_config"))
         await db.execute(
