@@ -132,8 +132,8 @@ class Atlas:
                 ) VALUES (
                     :client_id, :competencia, :tipo_kit, :score_final,
                     :docs_total, :docs_auto, :tempo_min,
-                    :observacoes, CAST(:checklist_respostas AS jsonb),
-                    CAST(:movimentacoes AS jsonb), CAST(:pendencias AS jsonb), :criado_por
+                    :observacoes, :checklist_respostas::jsonb,
+                    :movimentacoes::jsonb, :pendencias::jsonb, :criado_por
                 )
                 ON CONFLICT (client_id, competencia) DO UPDATE SET
                     tipo_kit            = EXCLUDED.tipo_kit,
@@ -145,7 +145,8 @@ class Atlas:
                     checklist_respostas = EXCLUDED.checklist_respostas,
                     movimentacoes       = EXCLUDED.movimentacoes,
                     pendencias          = EXCLUDED.pendencias,
-                    criado_por          = EXCLUDED.criado_por
+                    criado_por          = EXCLUDED.criado_por,
+                    updated_at          = NOW()
                 """,
                 {
                     "client_id": client_id,
@@ -258,11 +259,11 @@ class Atlas:
             """
             SELECT
                 gcp.client_id,
-                COALESCE(c.name, gcp.client_id::text) AS nome,
+                COALESCE(c.name, gcp.client_id) AS nome,
                 gcp.score_medio,
                 gcp.total_kits
             FROM gedeon_client_patterns gcp
-            LEFT JOIN clients c ON c.id::text = gcp.client_id::text
+            LEFT JOIN clients c ON c.id::text = gcp.client_id
             WHERE gcp.score_medio < 80
               AND gcp.total_kits >= 2
             ORDER BY gcp.score_medio ASC
