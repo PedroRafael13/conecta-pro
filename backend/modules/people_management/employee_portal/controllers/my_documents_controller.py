@@ -7,6 +7,7 @@ Endpoints:
 - GET /portal/my-documents/{id}/verify-signature
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -17,6 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
+from modules.people_management.employee_portal.publishers import (
+    publish_documento_assinado,
+)
 from modules.people_management.employee_portal.schemas.signature import (
     SignDocumentRequest,
     SignDocumentResponse,
@@ -80,6 +84,15 @@ async def sign_document(
             employee_id=employee_id,
             ip_address=ip_address,
             user_agent=user_agent,
+        )
+        # Publicar evento no Event Bus (fire-and-forget)
+        asyncio.create_task(
+            publish_documento_assinado(
+                employee_id=str(employee_id),
+                funcionario_nome=getattr(current_user, "full_name", ""),
+                document_id=document_id,
+                document_type=document_type,
+            )
         )
         return SignDocumentResponse(**result)
 

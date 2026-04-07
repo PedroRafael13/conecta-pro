@@ -289,11 +289,22 @@ async def sophia_perguntar(
 async def sophia_indexar(
     current_user=Depends(get_current_user),
 ):
-    """SOPHIA: indexar acervo completo."""
+    """SOPHIA: indexar acervo completo e persistir em gedeon_document_index."""
     from modules.gedeon.agents.sophia import sophia
 
     total = await sophia.indexar_acervo_completo()
-    return {"status": "ok", "indexados": total}
+    return {"status": "ok", "indexados": total, "persistidos_no_banco": total}
+
+
+@router.post("/sophia/carregar")
+async def sophia_carregar(
+    current_user=Depends(get_current_user),
+):
+    """SOPHIA: restaurar índice in-memory a partir de gedeon_document_index (após restart)."""
+    from modules.gedeon.agents.sophia import sophia
+
+    total = await sophia.carregar_do_banco()
+    return {"status": "ok", "carregados_do_banco": total}
 
 
 def _gerar_checklist(ctx: dict) -> dict:
