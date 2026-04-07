@@ -22,6 +22,7 @@ from infrastructure.event_bus import (
     event_bus,
 )
 from modules.gedeon.agents.argos import argos  # noqa: F401
+from modules.gedeon.agents.atlas import atlas  # noqa: F401
 from modules.gedeon.agents.hermes import hermes  # noqa: F401
 from modules.gedeon.agents.kronos import kronos  # noqa: F401
 from modules.gedeon.agents.themis import themis  # noqa: F401
