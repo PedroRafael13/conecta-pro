@@ -4,10 +4,8 @@ My Vacations Controller — Consulta de ferias do funcionario.
 Endpoints:
 - GET /portal/my-vacations/balance
 - GET /portal/my-vacations/requests
-- POST /portal/my-vacations/solicitar
 """
 
-import asyncio
 import logging
 from datetime import date
 from decimal import Decimal
@@ -24,16 +22,6 @@ from modules.people_management.employee_portal.auth import CurrentEmployeeId
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Portal - Ferias"])
-
-
-class VacationRequestCreate(BaseModel):
-    """Schema para solicitacao de ferias."""
-
-    data_inicio: str
-    data_fim: str
-    dias: int
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class VacationBalanceResponse(BaseModel):
@@ -198,47 +186,3 @@ async def get_vacation_requests(
         logger.warning(f"Erro ao buscar solicitacoes de ferias do funcionario {employee_id}: {e}")
 
     return []
-
-
-@router.post(
-    "/my-vacations/solicitar",
-    summary="Solicitar férias",
-    description="Registra solicitação de férias do funcionário logado e publica evento.",
-)
-async def solicitar_ferias(
-    body: VacationRequestCreate,
-    employee_id: CurrentEmployeeId,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """Registra solicitacao de ferias e dispara evento via Event Bus."""
-    from modules.people_management.employee_portal.publishers import publish_ferias_solicitadas
-
-    funcionario_nome = getattr(current_user, "full_name", None) or getattr(current_user, "name", str(employee_id))
-
-    asyncio.create_task(
-        publish_ferias_solicitadas(
-            employee_id=str(employee_id),
-            funcionario_nome=funcionario_nome,
-            data_inicio=body.data_inicio,
-            data_fim=body.data_fim,
-            dias=body.dias,
-        )
-    )
-
-    logger.info(
-        "Portal férias solicitadas: funcionario=%s inicio=%s fim=%s dias=%d",
-        employee_id,
-        body.data_inicio,
-        body.data_fim,
-        body.dias,
-    )
-
-    return {
-        "status": "ok",
-        "message": "Solicitação de férias registrada com sucesso.",
-        "employee_id": str(employee_id),
-        "data_inicio": body.data_inicio,
-        "data_fim": body.data_fim,
-        "dias": body.dias,
-    }
