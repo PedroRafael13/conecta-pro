@@ -262,7 +262,7 @@ class Atlas:
                 gcp.score_medio,
                 gcp.total_kits
             FROM gedeon_client_patterns gcp
-            LEFT JOIN clients c ON c.id::text = gcp.client_id::text::text
+            LEFT JOIN clients c ON c.id::text = gcp.client_id::text
             WHERE gcp.score_medio < 80
               AND gcp.total_kits >= 2
             ORDER BY gcp.score_medio ASC
