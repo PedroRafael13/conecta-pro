@@ -3,19 +3,20 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  Loader2, Eye, Send, CheckCircle, Filter, FolderOpen,
+  Plus, X, Wand2,
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import GedeonChecklist from '@/components/gedeon/GedeonChecklist';
+
+const API_BASE = '/api/v1/ged';
 
 function formatRefMonth(iso: string | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
   return new Intl.DateTimeFormat('pt-BR', { month: '2-digit', year: 'numeric' }).format(d);
 }
-import {
-  Loader2, Eye, Send, CheckCircle, Filter, FolderOpen,
-  Plus, X, Wand2,
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-
-const API_BASE = '/api/v1/ged';
 
 function getAuthHeaders() {
   if (typeof window === 'undefined') return { 'Content-Type': 'application/json' } as HeadersInit;
@@ -96,6 +97,7 @@ export default function KitsListPage() {
   const [filterClient, setFilterClient] = useState('');
   const [showNewKit, setShowNewKit] = useState(false);
   const [showMontarConfirm, setShowMontarConfirm] = useState(false);
+  const [showGedeonChecklist, setShowGedeonChecklist] = useState(false);
   const [newKitClient, setNewKitClient] = useState('');
   const [newKitMonth, setNewKitMonth] = useState('');
   const [newKitErrors, setNewKitErrors] = useState<{ client?: string; month?: string }>({});
@@ -244,6 +246,9 @@ export default function KitsListPage() {
     }
   }
 
+  const selectedClient = clients.find((c) => c.id === filterClient);
+  const competenciaAtual = filterMonth || new Date().toISOString().slice(0, 7);
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -253,12 +258,18 @@ export default function KitsListPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setShowMontarConfirm(true)}
+            onClick={() => {
+              if (filterClient) {
+                setShowGedeonChecklist(true);
+              } else {
+                setShowMontarConfirm(true);
+              }
+            }}
             disabled={montando}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
           >
             {montando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            Montar Kits
+            {filterClient ? 'Montar com GEDEON' : 'Montar Kits'}
           </button>
           <button
             onClick={() => setShowNewKit(true)}
@@ -366,7 +377,6 @@ export default function KitsListPage() {
         </Card>
       )}
 
-      {/* Paginacao */}
       {totalKits > PAGE_SIZE && (
         <div className="flex items-center justify-between text-sm text-gray-500">
           <span>Exibindo {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalKits)} de {totalKits} kits</span>
@@ -376,20 +386,19 @@ export default function KitsListPage() {
               disabled={page === 1}
               className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40"
             >
-              ← Anterior
+              Anterior
             </button>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={page * PAGE_SIZE >= totalKits}
               className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40"
             >
-              Próximo →
+              Proximo
             </button>
           </div>
         </div>
       )}
 
-      {/* Modal Novo Kit */}
       {showNewKit && createPortal(
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
@@ -432,12 +441,13 @@ export default function KitsListPage() {
         </div>,
         document.body
       )}
+
       {showMontarConfirm && createPortal(
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full">
             <h3 className="text-lg font-bold text-[#1E3A5F] mb-2">Confirmar Montagem de Kits</h3>
             <p className="text-gray-600 mb-4 text-sm">
-              Esta ação irá criar kits documentais para o mês de referência de todos os clientes
+              Esta acao ira criar kits documentais para o mes de referencia de todos os clientes
               ativos. Deseja continuar?
             </p>
             <div className="flex justify-end gap-3">
@@ -459,6 +469,21 @@ export default function KitsListPage() {
             </div>
           </div>
         </div>,
+        document.body
+      )}
+
+      {showGedeonChecklist && filterClient && createPortal(
+        <GedeonChecklist
+          clienteId={filterClient}
+          competencia={competenciaAtual}
+          clienteNome={selectedClient?.name ?? filterClient}
+          onConfirmar={(dados) => {
+            setShowGedeonChecklist(false);
+            handleMontarKits();
+            console.log('GEDEON checklist confirmado:', dados);
+          }}
+          onCancelar={() => setShowGedeonChecklist(false)}
+        />,
         document.body
       )}
     </div>
