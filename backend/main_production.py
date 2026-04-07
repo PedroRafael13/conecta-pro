@@ -104,6 +104,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         logger.warning(f"ConectaEventBus: falha na inicializacao ({e})")
 
+    # Inicializar GEDEON — orquestrador invisível
+    try:
+        from modules.gedeon.context.gedeon_context import gedeon_context as _gedeon_context
+        from modules.gedeon.gedeon import gedeon
+
+        await _gedeon_context.connect()
+        gedeon.registrar_subscribers()
+        logger.info("GEDEON: orquestrador ativo — modo invisível")
+    except Exception as e:
+        logger.warning(f"GEDEON: falha na inicialização ({e})")
+
     yield
 
     logger.info("Encerrando aplicacao...")
@@ -819,10 +830,18 @@ except Exception as e:
     logger.warning(f"DP Payslips: {e}")
 
 
+try:
+    from modules.gedeon.controllers.gedeon_controller import router as gedeon_router
+
+    api_router.include_router(gedeon_router)
+    logger.info("GEDEON: router registrado (/gedeon)")
+except Exception as e:
+    logger.warning(f"GEDEON router: {e}")
+
 # Incluir router principal
 app.include_router(api_router)
 
-logger.info("=== API CONECTA PRO INICIADA (13 módulos) ===")
+logger.info("=== API CONECTA PRO INICIADA (14 módulos) ===")
 
 
 if __name__ == "__main__":
