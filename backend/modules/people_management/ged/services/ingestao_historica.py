@@ -317,15 +317,19 @@ def _listar_zips_na_pasta(service, folder_id: str) -> list[dict]:
 
 
 def _baixar_arquivo(service, file_id: str) -> bytes:
-    """Baixa conteúdo de um arquivo do Google Drive."""
+    """Baixa conteúdo de um arquivo do Google Drive. Retorna b'' em caso de erro."""
     from googleapiclient.http import MediaIoBaseDownload
 
     buf = io.BytesIO()
-    request = service.files().get_media(fileId=file_id)
-    downloader = MediaIoBaseDownload(buf, request)
-    done = False
-    while not done:
-        _, done = downloader.next_chunk()
+    try:
+        request = service.files().get_media(fileId=file_id)
+        downloader = MediaIoBaseDownload(buf, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+    except Exception as exc:
+        logger.warning("INGESTAO: falha ao baixar arquivo %s: %s", file_id, exc)
+        return b""
     buf.seek(0)
     return buf.read()
 
@@ -371,6 +375,11 @@ class IngestaoHistorica:
             "documentos": [],
             "erros": [],
         }
+
+        if not conteudo_zip:
+            resultado["erros"].append("Arquivo vazio ou falha no download")
+            logger.warning("INGESTAO: ZIP %s vazio — ignorando", nome_zip)
+            return resultado
 
         try:
             with zipfile.ZipFile(io.BytesIO(conteudo_zip)) as zf:
@@ -536,11 +545,11 @@ class IngestaoHistorica:
                 _status["erros"].append(f"{zip_name}: {e}")
                 logger.error("INGESTAO: erro ao processar ZIP %s: %s", zip_name, e)
 
-        # Persistir tudo no banco via SOPHIA
+        # Persistir tudo no banco via SOPHIA (método síncrono — rodar em executor)
         try:
             from modules.gedeon.agents.sophia import sophia
 
-            await sophia.indexar_acervo_completo()
+            await loop.run_in_executor(None, sophia.indexar_acervo_completo)
             logger.info("INGESTAO: SOPHIA reindexado — %d docs historicos persistidos", total_indexados)
         except Exception as e:
             logger.warning("INGESTAO: falha ao persistir no banco SOPHIA: %s", e)
