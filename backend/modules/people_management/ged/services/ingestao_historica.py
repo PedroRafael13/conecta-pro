@@ -7,11 +7,15 @@ e alimenta ATLAS + SOPHIA com o histórico completo.
 
 import io
 import logging
+import os
 import re
+import uuid as _uuid_mod
 import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+GED_STORAGE_BASE = os.environ.get("GED_STORAGE_PATH", "/app/uploads/ged")
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +88,31 @@ def _exec_sync(query: str, params: dict | None = None) -> list[tuple]:
     except Exception as e:
         logger.warning("INGESTAO: erro ao consultar banco: %s", e)
         return []
+
+
+def _exec_write_sync(query: str, params: dict | None = None) -> list[tuple]:
+    """Executa INSERT/UPDATE com commit e retorna linhas (RETURNING)."""
+    try:
+        from sqlalchemy import text as sa_text
+
+        from core.database.session import SyncSessionLocal
+
+        with SyncSessionLocal() as db:
+            result = db.execute(sa_text(query), params or {})
+            db.commit()
+            try:
+                return list(result.fetchall())
+            except Exception:
+                return []
+    except Exception as e:
+        logger.warning("INGESTAO: erro de escrita no banco: %s", e)
+        return []
+
+
+def _mapear_clients_para_ged() -> dict[str, str]:
+    """Retorna {clients.id: ged_clients.id} via correspondência de nome."""
+    rows = _exec_sync("SELECT c.id::text, g.id::text FROM clients c JOIN ged_clients g ON g.name ILIKE c.name")
+    return dict(rows)
 
 
 def _buscar_clientes() -> dict[str, str]:
@@ -484,6 +513,10 @@ class IngestaoHistorica:
         # Carregar contexto do banco
         self._carregar_contexto()
 
+        # Mapeamento clients.id → ged_clients.id (carregado uma vez)
+        mapa_ged = await loop.run_in_executor(None, _mapear_clients_para_ged)
+        logger.info("INGESTAO: mapa GED carregado — %d clientes", len(mapa_ged))
+
         # Listar ZIPs
         zips = await loop.run_in_executor(None, _listar_zips_na_pasta, service, folder_id)
         _status["total_zips"] = len(zips)
@@ -491,6 +524,7 @@ class IngestaoHistorica:
 
         total_docs = 0
         total_indexados = 0
+        total_ged_salvos = 0
         resultados_por_zip: list[dict] = []
 
         for zip_info in zips:
@@ -531,15 +565,27 @@ class IngestaoHistorica:
                         criado_por="ingestao_historica",
                     )
 
+                # Persistir no GED (filesystem + ged_document_kits + ged_kit_documents)
+                ged_result = await loop.run_in_executor(None, self._persistir_docs_no_ged, docs, mapa_ged)
+                total_ged_salvos += ged_result["salvos"]
+                if ged_result["erros"]:
+                    _status["erros"].extend(ged_result["erros"])
+
                 resultados_por_zip.append(
                     {
                         "zip": zip_name,
                         "docs": len(docs),
+                        "ged_salvos": ged_result["salvos"],
                         "clientes_id": list(clientes_no_zip),
                         "competencia": competencia_zip,
                     }
                 )
-                logger.info("INGESTAO: %s — %d PDFs indexados", zip_name, len(docs))
+                logger.info(
+                    "INGESTAO: %s — %d PDFs indexados, %d no GED",
+                    zip_name,
+                    len(docs),
+                    ged_result["salvos"],
+                )
 
             except Exception as e:
                 _status["erros"].append(f"{zip_name}: {e}")
@@ -563,9 +609,108 @@ class IngestaoHistorica:
             "zips_processados": _status["zips_processados"],
             "pdfs_extraidos": total_docs,
             "docs_indexados": total_indexados,
+            "ged_salvos": total_ged_salvos,
             "erros": len(_status["erros"]),
             "resultados_por_zip": resultados_por_zip,
         }
+
+    def _persistir_docs_no_ged(self, docs: list[dict], mapa_ged: dict[str, str]) -> dict:
+        """
+        Salva cada PDF no filesystem e cria registros em
+        ged_document_kits + ged_kit_documents.
+
+        docs: lista retornada por processar_zip (cada item tem 'conteudo' bytes)
+        mapa_ged: {clients.id -> ged_clients.id}
+        """
+        salvos = 0
+        erros_ged: list[str] = []
+
+        # Agrupar por (ged_client_id, competencia)
+        grupos: dict[tuple[str, str], list[dict]] = {}
+        for doc in docs:
+            client_id = doc.get("client_id")
+            if not client_id:
+                continue
+            ged_client_id = mapa_ged.get(str(client_id))
+            if not ged_client_id:
+                continue
+            competencia = doc.get("competencia") or datetime.utcnow().strftime("%Y-%m")
+            grupos.setdefault((ged_client_id, competencia), []).append(doc)
+
+        for (ged_client_id, competencia), group_docs in grupos.items():
+            try:
+                ano, mes = competencia.split("-")
+                ref_month = f"{ano}-{mes}-01"
+
+                # Diretório físico
+                storage_dir = os.path.join(GED_STORAGE_BASE, "historico", ged_client_id, competencia)
+                os.makedirs(storage_dir, exist_ok=True)
+
+                # Criar ou garantir kit (ON CONFLICT não altera nada mas retorna id)
+                rows = _exec_write_sync(
+                    "INSERT INTO ged_document_kits "
+                    "(client_id, reference_month, status, notes) "
+                    "VALUES (CAST(:cid AS uuid), CAST(:refm AS date), 'completo', "
+                    "'Ingestão histórica — Google Drive') "
+                    "ON CONFLICT (client_id, reference_month) DO UPDATE "
+                    "SET updated_at = NOW() "
+                    "RETURNING id::text",
+                    {"cid": ged_client_id, "refm": ref_month},
+                )
+                if not rows:
+                    erros_ged.append(f"Sem kit_id para {ged_client_id}/{competencia}")
+                    continue
+                kit_id = rows[0][0]
+
+                # Salvar cada PDF
+                for doc in group_docs:
+                    try:
+                        nome_pdf = doc["nome"]
+                        pdf_bytes = doc.get("conteudo") or b""
+                        tipo = doc.get("tipo") or "outros"
+
+                        safe_name = f"{str(_uuid_mod.uuid4())[:8]}_{nome_pdf}"
+                        rel_path = os.path.join("historico", ged_client_id, competencia, safe_name)
+                        full_path = os.path.join(GED_STORAGE_BASE, rel_path)
+
+                        with open(full_path, "wb") as fh:
+                            fh.write(pdf_bytes)
+
+                        _exec_write_sync(
+                            "INSERT INTO ged_kit_documents "
+                            "(kit_id, document_type, document_name, file_path, "
+                            "file_size_bytes, mime_type, source_module, auto_generated) "
+                            "VALUES (CAST(:kid AS uuid), :dtype, :dname, :fpath, "
+                            ":fsize, 'application/pdf', 'historico_drive', TRUE)",
+                            {
+                                "kid": kit_id,
+                                "dtype": tipo,
+                                "dname": nome_pdf,
+                                "fpath": rel_path,
+                                "fsize": len(pdf_bytes),
+                            },
+                        )
+                        salvos += 1
+                    except Exception as exc:
+                        erros_ged.append(f"{doc.get('nome', '?')}: {exc}")
+                        logger.warning("GED persist doc error: %s", exc)
+
+                # Atualizar contagem total no kit
+                _exec_write_sync(
+                    "UPDATE ged_document_kits "
+                    "SET total_documents = ("
+                    "  SELECT COUNT(*) FROM ged_kit_documents WHERE kit_id = CAST(:kid AS uuid)"
+                    "), updated_at = NOW() "
+                    "WHERE id = CAST(:kid AS uuid)",
+                    {"kid": kit_id},
+                )
+
+            except Exception as exc:
+                erros_ged.append(f"Kit {ged_client_id}/{competencia}: {exc}")
+                logger.error("GED persist kit error: %s", exc)
+
+        logger.info("GED persist: %d docs salvos, %d erros", salvos, len(erros_ged))
+        return {"salvos": salvos, "erros": erros_ged}
 
 
 # Singleton — compatível com o prompt original (sem db no construtor)
