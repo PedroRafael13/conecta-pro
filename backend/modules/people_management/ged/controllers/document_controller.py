@@ -333,3 +333,42 @@ def _doc_to_response(doc: KitDocument) -> DocumentResponse:
         created_at=doc.created_at,
         updated_at=doc.updated_at,
     )
+
+
+# ---------------------------------------------------------------------------
+# Ingestao Historica — endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/ingestao/historica", tags=["GED - Ingestao Historica"])
+async def ingestao_historica(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    folder_id: str | None = Query(None, description="ID da pasta GDrive (usa padrao se omitido)"),
+):
+    """
+    Processa todos os ZIPs historicos da pasta Google Drive e alimenta SOPHIA.
+
+    - Lista ZIPs na pasta KITS_FOLDER_ID
+    - Extrai texto dos PDFs (PyMuPDF primario, PyPDF2 fallback)
+    - Indexa cada PDF no SOPHIA para busca semantica
+    - Persiste no gedeon_document_index
+    """
+    from modules.people_management.ged.services.ingestao_historica import (
+        KITS_FOLDER,
+        ingestao,
+    )
+
+    pasta = folder_id or KITS_FOLDER
+    resultado = await ingestao.processar_todos_os_zips(folder_id=pasta)
+    return {"pasta_gdrive": pasta, **resultado}
+
+
+@router.get("/ingestao/status", tags=["GED - Ingestao Historica"])
+async def ingestao_status(
+    current_user: CurrentActiveUser,
+):
+    """Retorna o status atual (ou ultimo) processo de ingestao historica."""
+    from modules.people_management.ged.services.ingestao_historica import get_status
+
+    return get_status()

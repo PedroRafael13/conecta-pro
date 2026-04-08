@@ -20,8 +20,7 @@ GOOGLE_CREDENTIALS_PATH = os.environ.get(
 GED_STORAGE_BASE = os.environ.get("GED_STORAGE_PATH", "/opt/conecta-pro/storage/ged")
 
 OAUTH2_SCOPES = [
-    "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/drive.metadata.readonly",
+    "https://www.googleapis.com/auth/drive",
 ]
 OAUTH2_CLIENT_CONFIG = {
     "web": {
