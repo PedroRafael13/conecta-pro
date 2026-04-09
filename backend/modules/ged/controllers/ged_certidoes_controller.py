@@ -202,66 +202,108 @@ async def sincronizar_certidoes(
         from modules.people_management.ged.tasks.cnd_sync_task import buscar_todas_certidoes
 
         resultado = await buscar_todas_certidoes(db)
-        return resultado
+        return {
+            "mensagem": "Sync de certidões iniciado",
+            "resultado": resultado,
+        }
     except Exception as exc:
         logger.error("Erro em POST /certidoes/sync: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
 
 
-@router.post("/certidoes/sync/{cnpj}", status_code=200)
-async def sincronizar_certidoes_cnpj(
-    cnpj: str,
+@router.post("/certidoes/sync/{param}", status_code=200)
+async def sincronizar_certidoes_param(
+    param: str,
     tipo: str | None = None,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """
-    Dispara busca de certidoes para um CNPJ especifico.
+    Endpoint unificado para sync por tipo de certidão OU por CNPJ.
 
-    Args:
-        cnpj: CNPJ da empresa (com ou sem formatacao)
-        tipo: Tipo de certidao (cnd_federal | cndt_trabalhista | crf_fgts).
-              Se omitido, busca todos os tipos.
+    - Se `param` for um tipo válido (ex: certidao_negativa_federal):
+      busca/renova aquele tipo usando o CNPJ configurado da empresa.
+    - Se `param` for um CNPJ (14 dígitos numéricos):
+      busca as certidões daquele CNPJ (parâmetro `tipo` opcional).
     """
     import re
 
-    cnpj_limpo = re.sub(r"\D", "", cnpj)
-    if len(cnpj_limpo) != 14:
-        raise HTTPException(status_code=422, detail=f"CNPJ invalido: {cnpj}")
-
     from modules.people_management.ged.tasks.cnd_sync_task import (
         CERTIDAO_CONFIG,
+        EMPRESA_CNPJ,
         _buscar_e_salvar_certidao,
     )
 
     tipos_validos = list(CERTIDAO_CONFIG.keys())
 
-    if tipo and tipo not in tipos_validos:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Tipo invalido: {tipo}. Validos: {tipos_validos}",
-        )
+    # ── Caso 1: param é um tipo de certidão ──────────────────────────────
+    if param in tipos_validos:
+        cnpj = re.sub(r"\D", "", EMPRESA_CNPJ)
+        if len(cnpj) != 14:
+            return {"tipo": param, "status": "sem_cnpj", "mensagem": "CNPJ da empresa não configurado"}
+        try:
+            resultado = await _buscar_e_salvar_certidao(db, cnpj, param)
+            if resultado.get("status") in ("criada", "atualizada", "pulada"):
+                await db.commit()
+            return {
+                "tipo": param,
+                "cnpj": cnpj,
+                "status": resultado.get("status"),
+                "validade": resultado.get("validade"),
+                "executado_em": datetime.now().isoformat(),
+            }
+        except Exception as exc:
+            logger.error("Erro em POST /certidoes/sync/%s (tipo): %s", param, exc)
+            raise HTTPException(status_code=500, detail=str(exc))
 
-    try:
-        tipos = [tipo] if tipo else tipos_validos
-        resultados = []
-        for t in tipos:
-            r = await _buscar_e_salvar_certidao(db, cnpj_limpo, t)
-            r["tipo"] = t
-            resultados.append(r)
+    # ── Caso 2: param é um CNPJ ──────────────────────────────────────────
+    cnpj_limpo = re.sub(r"\D", "", param)
+    if len(cnpj_limpo) == 14:
+        if tipo and tipo not in tipos_validos:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Tipo invalido: {tipo}. Validos: {tipos_validos}",
+            )
+        try:
+            # Buscar cliente pelo CNPJ na tabela clients
+            r_cliente = await db.execute(
+                text(
+                    "SELECT id::text, name FROM clients "
+                    "WHERE REGEXP_REPLACE(document_number, '[^0-9]', '', 'g') "
+                    "= :cnpj LIMIT 1"
+                ),
+                {"cnpj": cnpj_limpo},
+            )
+            cliente = r_cliente.first()
+            cid = str(cliente[0]) if cliente else ""
+            nome = cliente[1] if cliente else "Desconhecido"
 
-        if any(r.get("status") in ("criada", "atualizada") for r in resultados):
-            await db.commit()
+            tipos = (
+                [tipo] if tipo else [t for t in tipos_validos if t in ("cnd_federal", "cndt_trabalhista", "crf_fgts")]
+            )
+            resultados = []
+            for t in tipos:
+                r = await _buscar_e_salvar_certidao(db, cnpj_limpo, t, cid, nome)
+                r["tipo"] = t
+                resultados.append(r)
 
-        return {
-            "cnpj": cnpj_limpo,
-            "total": len(tipos),
-            "detalhes": resultados,
-            "executado_em": datetime.now().isoformat(),
-        }
-    except Exception as exc:
-        logger.error("Erro em POST /certidoes/sync/%s: %s", cnpj, exc)
-        raise HTTPException(status_code=500, detail=str(exc))
+            if any(r.get("status") in ("criada", "atualizada") for r in resultados):
+                await db.commit()
+
+            return {
+                "cnpj": cnpj_limpo,
+                "cliente": nome,
+                "certidoes": resultados,
+            }
+        except Exception as exc:
+            logger.error("Erro em POST /certidoes/sync/%s (cnpj): %s", param, exc)
+            raise HTTPException(status_code=500, detail=str(exc))
+
+    # ── Caso 3: param inválido ────────────────────────────────────────────
+    raise HTTPException(
+        status_code=422,
+        detail=f"Parâmetro inválido: '{param}'. Deve ser um tipo válido {tipos_validos} ou CNPJ de 14 dígitos.",
+    )
 
 
 @router.delete("/certidoes/{certidao_id}", status_code=200)

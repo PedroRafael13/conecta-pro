@@ -192,6 +192,8 @@ async def _buscar_e_salvar_certidao(
     db: Any,
     cnpj: str,
     tipo: str,
+    client_id: str = "",
+    client_name: str = "",
 ) -> dict[str, Any]:
     """
     Busca certidao no portal governamental e salva/atualiza em ged_certidoes.
@@ -202,6 +204,8 @@ async def _buscar_e_salvar_certidao(
         db: AsyncSession do SQLAlchemy
         cnpj: CNPJ da empresa (somente digitos)
         tipo: "cnd_federal" | "cndt_trabalhista" | "crf_fgts"
+        client_id: ID do cliente (para publicacao de eventos)
+        client_name: Nome do cliente (para logs)
 
     Returns:
         Dict com status ("pulada"|"criada"|"atualizada"|"erro"), cert_id e validade
@@ -359,14 +363,17 @@ async def _buscar_e_salvar_certidao(
             certidao_id=cert_id,
             tipo=tipo,
             nova_validade=data_validade,
+            cliente_id=client_id or None,
+            extra={"cnpj": cnpj, "fonte": "auto_sync"},
         )
     except Exception as exc:
         logger.warning("publish_certidao_renovada falhou (nao critico): %s", exc)
 
     logger.info(
-        "Certidao %s %s — validade %s",
+        "Certidao %s %s para %s — validade %s",
         doc_type,
         status,
+        client_name or cnpj,
         data_validade,
     )
     return {"status": status, "cert_id": cert_id, "validade": str(data_validade)}
@@ -376,56 +383,94 @@ async def buscar_todas_certidoes(db: Any) -> dict[str, Any]:
     """
     Busca certidoes de todos os tipos nos portais governamentais.
 
-    Itera sobre os 5 tipos (cnd_federal, cndt_trabalhista, crf_fgts, cnd_estadual, cnd_municipal),
-    verifica validade no banco e busca renovacao quando necessario.
+    Itera sobre todos os clientes ativos com CNPJ cadastrado na tabela clients.
+    Para cada cliente × tipo, verifica validade no banco e busca renovacao
+    quando necessario. Se nenhum cliente com CNPJ for encontrado, usa EMPRESA_CNPJ.
 
     Args:
         db: AsyncSession do SQLAlchemy
 
     Returns:
-        Dict com total, renovadas, puladas, erros e detalhes por tipo
+        Dict com total, renovadas, puladas, erros, clientes e detalhes
     """
     import re
 
-    cnpj = re.sub(r"\D", "", EMPRESA_CNPJ)
-    if len(cnpj) != 14:
-        return {"erro": f"EMPRESA_CNPJ invalido: {EMPRESA_CNPJ}"}
+    from sqlalchemy import text as _t
 
-    logger.info("buscar_todas_certidoes iniciado — CNPJ %s", cnpj)
+    # Buscar clientes ativos com CNPJ (document_type='cnpj', document_number nao nulo)
+    try:
+        rows = await db.execute(
+            _t(
+                "SELECT id::text, name, document_number AS cnpj "
+                "FROM clients "
+                "WHERE document_type = 'cnpj' "
+                "AND document_number IS NOT NULL "
+                "AND LENGTH(REGEXP_REPLACE(document_number, '[^0-9]', '', 'g')) = 14 "
+                "AND status = 'active' "
+                "ORDER BY name"
+            )
+        )
+        clientes = rows.mappings().all()
+    except Exception as exc:
+        logger.warning("Erro ao buscar clientes com CNPJ: %s — usando EMPRESA_CNPJ", exc)
+        clientes = []
+
+    # Fallback: usar CNPJ da empresa se nenhum cliente encontrado
+    if not clientes:
+        cnpj_empresa = re.sub(r"\D", "", EMPRESA_CNPJ)
+        logger.info(
+            "buscar_todas_certidoes: nenhum cliente com CNPJ — usando EMPRESA_CNPJ %s",
+            cnpj_empresa,
+        )
+        clientes = [{"id": "", "name": "Conecta Mais", "cnpj": cnpj_empresa}]
+
+    logger.info(
+        "buscar_todas_certidoes iniciado — %d cliente(s) com CNPJ",
+        len(clientes),
+    )
+
+    TIPOS = [t for t in CERTIDAO_CONFIG if t in ("cnd_federal", "cndt_trabalhista", "crf_fgts")]
 
     renovadas = 0
     puladas = 0
     erros = 0
     detalhes: list[dict] = []
 
-    for tipo in CERTIDAO_CONFIG:
-        resultado = await _buscar_e_salvar_certidao(db, cnpj, tipo)
-        resultado["tipo"] = tipo
-        detalhes.append(resultado)
+    for cliente in clientes:
+        cid = str(cliente["id"]) if cliente["id"] else ""
+        nome = cliente["name"]
+        cnpj = re.sub(r"\D", "", str(cliente["cnpj"]))
 
-        st = resultado.get("status", "erro")
-        if st in ("criada", "atualizada"):
-            renovadas += 1
-        elif st == "pulada":
-            puladas += 1
-        else:
-            erros += 1
+        for tipo in TIPOS:
+            resultado = await _buscar_e_salvar_certidao(db, cnpj, tipo, cid, nome)
+            resultado["tipo"] = tipo
+            resultado["cliente"] = nome
+            detalhes.append(resultado)
+
+            st = resultado.get("status", "erro")
+            if st in ("criada", "atualizada"):
+                renovadas += 1
+            elif st == "pulada":
+                puladas += 1
+            else:
+                erros += 1
 
     if renovadas > 0:
         await db.commit()
 
     logger.info(
-        "buscar_todas_certidoes concluido — renovadas=%d, puladas=%d, erros=%d",
+        "buscar_todas_certidoes concluido — clientes=%d, renovadas=%d, puladas=%d, erros=%d",
+        len(clientes),
         renovadas,
         puladas,
         erros,
     )
     return {
-        "total": len(CERTIDAO_CONFIG),
+        "total": len(clientes) * len(TIPOS),
         "renovadas": renovadas,
         "puladas": puladas,
         "erros": erros,
-        "cnpj": cnpj,
+        "clientes": len(clientes),
         "detalhes": detalhes,
         "executado_em": datetime.utcnow().isoformat(),
     }

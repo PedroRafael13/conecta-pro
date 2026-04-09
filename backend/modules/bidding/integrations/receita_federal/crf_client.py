@@ -179,6 +179,7 @@ class CRFFGTSClient:
             data_validade = (datetime.utcnow() + timedelta(days=self.VALIDADE_DIAS)).isoformat()
 
         codigo_controle = data.get("codigoControle", data.get("codigo", data.get("code", "")))
+        numero = data.get("numero", data.get("numeroCertidao", str(codigo_controle) if codigo_controle else ""))
 
         return {
             "cnpj": cnpj,
@@ -186,6 +187,9 @@ class CRFFGTSClient:
             "situacao": "regular" if regular else "irregular",
             "regular": regular,
             "data_validade": data_validade,
+            "validade": data_validade,  # alias compativel com spec do prompt
+            "numero": str(numero) if numero else "",
+            "fonte": "api_caixa",
             "codigo_controle": str(codigo_controle) if codigo_controle else None,
             "validade_dias": self.VALIDADE_DIAS,
             "emitida_por": "CEF/FGTS",
@@ -221,12 +225,18 @@ class CRFFGTSClient:
         )
         codigo_controle = codigo_match.group(1).strip() if codigo_match else None
 
+        numero_match = re.search(r"n[uú]mero[:\s]+([A-Z0-9./\-]+)", html)
+        numero = numero_match.group(1).strip() if numero_match else ""
+
         return {
             "cnpj": cnpj,
             "tipo_certidao": self.TIPO_REGULAR if regular else self.TIPO_IRREGULAR,
             "situacao": "regular" if regular else "irregular",
             "regular": regular,
             "data_validade": data_validade,
+            "validade": data_validade,  # alias compativel com spec do prompt
+            "numero": numero,
+            "fonte": "html_caixa",
             "codigo_controle": codigo_controle,
             "validade_dias": self.VALIDADE_DIAS,
             "emitida_por": "CEF/FGTS",
