@@ -49,6 +49,7 @@ class PrefeituraManausClient:
     MAX_RETRIES = 3
     BACKOFF_BASE = 2.0
     VALIDADE_DIAS = 180
+    VALIDADE_PADRAO_DIAS = 180  # alias conforme especificação
 
     TIPO_CND = "CND"
     TIPO_CPDEN = "CPDEN"
@@ -256,3 +257,8 @@ class PrefeituraManausClient:
                 )
             ),
         }
+
+    # Alias conforme especificação do prompt
+    async def consultar_cnd_municipal(self, cnpj: str) -> dict[str, Any]:
+        """Alias de consultar_cnd() conforme especificação."""
+        return await self.consultar_cnd(cnpj)
