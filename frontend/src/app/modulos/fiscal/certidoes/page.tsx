@@ -1,247 +1,417 @@
 'use client';
 
-import { Search, RefreshCw, AlertCircle, Award, Eye, CheckCircle, Clock, XCircle, Filter, Shield } from 'lucide-react';
-import { useState } from 'react';
-;
+import { AlertCircle, Award, CheckCircle, Eye, RefreshCw, Search, Shield, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { CertidaoDetailModal } from '@/components/fiscal/certidao-detail-modal';
-import { useListarCertificados, useListarAlertasCertificados } from '@/hooks/government';
 import { cn } from '@/lib/utils';
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  valida: { label: 'Valida', color: 'bg-green-100 text-green-800' },
-  vencendo: { label: 'Vencendo', color: 'bg-yellow-100 text-yellow-800' },
-  vencida: { label: 'Vencida', color: 'bg-red-100 text-red-800' },
-  pendente: { label: 'Pendente', color: 'bg-blue-100 text-blue-800' },
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
+interface Certidao {
+  id: string;
+  name: string;
+  document_type: string;
+  issuing_body: string | null;
+  issue_date: string | null;
+  expiry_date: string | null;
+  status: string;
+  file_path: string | null;
+  file_url: string | null;
+  notes: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface ResumoApi {
+  validas: number;
+  vencidas: number;
+  a_vencer_30d: number;
+}
+
+interface ApiResponse {
+  certidoes: Certidao[];
+  total: number;
+  resumo: ResumoApi;
+  gerado_em: string;
+}
+
+// ─── Constantes ───────────────────────────────────────────────────────────────
+
+// syncKey = chave aceita pelo endpoint POST /sync/{param}
+// documentType = document_type salvo no banco (usado para relacionar com a lista de certidões)
+const TIPOS_PRINCIPAIS = [
+  { syncKey: 'cnd_federal',      documentType: 'certidao_negativa_federal',      label: 'CND Federal',      orgao: 'RFB / PGFN',       icon: '🏛️' },
+  { syncKey: 'cndt_trabalhista', documentType: 'certidao_negativa_trabalhista',  label: 'CNDT Trabalhista', orgao: 'TST',               icon: '⚖️' },
+  { syncKey: 'crf_fgts',        documentType: 'certidao_negativa_fgts',         label: 'CRF FGTS',         orgao: 'Caixa Econômica',   icon: '🏦' },
+  { syncKey: 'cnd_estadual',    documentType: 'certidao_negativa_estadual',     label: 'CND Estadual',     orgao: 'SEFAZ AM',          icon: '🗺️' },
+  { syncKey: 'cnd_municipal',   documentType: 'certidao_negativa_municipal',    label: 'CND Municipal',    orgao: 'Prefeitura Manaus', icon: '🏙️' },
+];
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  valida:         { label: 'Válida',     color: 'text-green-700',  bg: 'bg-green-100' },
+  a_vencer:       { label: 'Vencendo',   color: 'text-yellow-700', bg: 'bg-yellow-100' },
+  vencida:        { label: 'Vencida',    color: 'text-red-700',    bg: 'bg-red-100' },
+  sem_vencimento: { label: 'Sem Prazo',  color: 'text-blue-700',   bg: 'bg-blue-100' },
+  pendente:       { label: 'Pendente',   color: 'text-gray-700',   bg: 'bg-gray-100' },
 };
 
-function getStatusFromDates(certidao: any): string {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function calcularStatus(certidao: Certidao): string {
   if (certidao.status) return certidao.status;
-  if (!certidao.data_validade) return 'pendente';
-
-  const validade = new Date(certidao.data_validade);
+  if (!certidao.expiry_date) return 'sem_vencimento';
+  const validade = new Date(certidao.expiry_date);
   const hoje = new Date();
-  const diasRestantes = Math.ceil(
-    (validade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (diasRestantes < 0) return 'vencida';
-  if (diasRestantes <= 30) return 'vencendo';
+  const diff = Math.ceil((validade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return 'vencida';
+  if (diff <= 30) return 'a_vencer';
   return 'valida';
 }
 
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+}
+
+function getToken(): string {
+  if (typeof window === 'undefined') return '';
+  return (
+    localStorage.getItem('auth_token') ||
+    localStorage.getItem('access_token') ||
+    localStorage.getItem('token') ||
+    ''
+  );
+}
+
+// ─── Componente StatusBadge ───────────────────────────────────────────────────
+
+const STATUS_FALLBACK = { label: 'Pendente', color: 'text-gray-700', bg: 'bg-gray-100' };
+
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] ?? STATUS_FALLBACK;
+  return (
+    <span className={cn('inline-flex px-2 py-0.5 text-xs font-medium rounded-full', cfg.bg, cfg.color)}>
+      {cfg.label}
+    </span>
+  );
+}
+
+// ─── Componente CardTipo ──────────────────────────────────────────────────────
+
+function CardTipo({
+  tipo,
+  certidoes,
+  onSincronizarTipo,
+  sincronizando,
+}: {
+  tipo: typeof TIPOS_PRINCIPAIS[number];
+  certidoes: Certidao[];
+  onSincronizarTipo: (syncKey: string) => Promise<void>;
+  sincronizando: boolean;
+}) {
+  const cert = certidoes.find((c) => c.document_type === tipo.documentType);
+  const status = cert ? calcularStatus(cert) : 'pendente';
+  const cfg = STATUS_CONFIG[status] ?? STATUS_FALLBACK;
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <span className="text-2xl">{tipo.icon}</span>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-[hsl(var(--foreground))] truncate">{tipo.label}</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] truncate">{tipo.orgao}</p>
+              {cert ? (
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                  Validade: {formatDate(cert.expiry_date)}
+                </p>
+              ) : (
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Não consultada</p>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <StatusBadge status={status} />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onSincronizarTipo(tipo.syncKey)}
+              disabled={sincronizando}
+              className="text-xs h-7 px-2"
+            >
+              {sincronizando ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                'Buscar'
+              )}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Página Principal ─────────────────────────────────────────────────────────
+
 export default function CertidoesPage() {
+  const [certidoes, setCertidoes] = useState<Certidao[]>([]);
+  const [resumo, setResumo] = useState<ResumoApi>({ validas: 0, vencidas: 0, a_vencer_30d: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
-  const [page, setPage] = useState(1);
-  const [selectedCertidao, setSelectedCertidao] = useState<any | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [sincronizandoTodas, setSincronizandoTodas] = useState(false);
+  const [sincronizandoTipo, setSincronizandoTipo] = useState<string>('');
+  const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [detalhe, setDetalhe] = useState<Certidao | null>(null);
 
-  const {
-    data: certificadosData,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useListarCertificados();
+  // ── Toast helper ──
+  const showToast = useCallback((type: 'success' | 'error', msg: string) => {
+    setToastMsg({ type, msg });
+    setTimeout(() => setToastMsg(null), 4000);
+  }, []);
 
-  const { data: alertasData } = useListarAlertasCertificados();
+  // ── Fetch certidões ──
+  const fetchCertidoes = useCallback(async () => {
+    setIsLoading(true);
+    setIsError(false);
+    try {
+      const token = getToken();
+      const res = await fetch('/api/v1/ged/certidoes', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: ApiResponse = await res.json();
+      setCertidoes(data.certidoes ?? []);
+      setResumo(data.resumo ?? { validas: 0, vencidas: 0, a_vencer_30d: 0 });
+    } catch {
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const certidoesList = Array.isArray(certificadosData)
-    ? certificadosData
-    : (certificadosData as any)?.items || [];
+  useEffect(() => { fetchCertidoes(); }, [fetchCertidoes]);
 
-  // Enrich certidoes with computed status
-  const enrichedList = certidoesList.map((c: any) => ({
-    ...c,
-    _status: getStatusFromDates(c),
-  }));
+  // ── Sincronizar todas ──
+  const sincronizarTodas = useCallback(async () => {
+    setSincronizandoTodas(true);
+    try {
+      const token = getToken();
+      const res = await fetch('/api/v1/ged/certidoes/sync', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      showToast('success', 'Sincronização concluída com sucesso!');
+      await fetchCertidoes();
+    } catch (e: unknown) {
+      showToast('error', `Erro ao sincronizar: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setSincronizandoTodas(false);
+    }
+  }, [fetchCertidoes, showToast]);
 
-  // Apply filters
-  const filteredList = enrichedList.filter((c: any) => {
-    const matchSearch = search
-      ? (c.tipo || '').toLowerCase().includes(search.toLowerCase()) ||
-        (c.orgao || '').toLowerCase().includes(search.toLowerCase()) ||
-        (c.numero || '').toLowerCase().includes(search.toLowerCase())
-      : true;
-    const matchStatus = statusFilter ? c._status === statusFilter : true;
+  // ── Sincronizar por tipo ──
+  const sincronizarTipo = useCallback(async (tipoKey: string) => {
+    setSincronizandoTipo(tipoKey);
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/v1/ged/certidoes/sync/${tipoKey}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      showToast('success', `${tipoKey}: ${data.status ?? 'OK'}`);
+      await fetchCertidoes();
+    } catch (e: unknown) {
+      showToast('error', `Erro ao buscar ${tipoKey}: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setSincronizandoTipo('');
+    }
+  }, [fetchCertidoes, showToast]);
+
+  // ── Lista filtrada ──
+  const enriched = certidoes.map((c) => ({ ...c, _status: calcularStatus(c) }));
+
+  const filtrados = enriched.filter((c) => {
+    const q = search.toLowerCase();
+    const matchSearch = !search ||
+      c.name.toLowerCase().includes(q) ||
+      c.document_type.toLowerCase().includes(q) ||
+      (c.issuing_body ?? '').toLowerCase().includes(q);
+    const matchStatus = !statusFilter || c._status === statusFilter;
     return matchSearch && matchStatus;
   });
 
-  const totalCertidoes = enrichedList.length;
-  const validas = enrichedList.filter((c: any) => c._status === 'valida').length;
-  const vencendoOuVencidas = enrichedList.filter(
-    (c: any) => c._status === 'vencendo' || c._status === 'vencida'
-  ).length;
-
-  const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
+  const total = certidoes.length;
 
   return (
     <div className="space-y-6 animate-fade-in">
+
+      {/* Toast */}
+      {toastMsg && (
+        <div className={cn(
+          'fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium',
+          toastMsg.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        )}>
+          {toastMsg.msg}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">Certidoes</h1>
+          <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">Certidões</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Gestao de certidoes e certificados digitais
+            Gestão de certidões negativas e regularidade fiscal
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => refetch()}
+            onClick={fetchCertidoes}
             disabled={isLoading}
+            title="Recarregar lista"
           >
             <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
           </Button>
-        </div>
-      </div>
-
-      {/* Alertas */}
-      {alertasData && Array.isArray(alertasData) && alertasData.length > 0 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="w-5 h-5 text-yellow-500" />
-            <span className="font-medium text-yellow-500">
-              Alertas de Certificados ({alertasData.length})
-            </span>
-          </div>
-          <div className="space-y-1">
-            {alertasData.slice(0, 3).map((alerta: any, i: number) => (
-              <p key={i} className="text-sm text-[hsl(var(--foreground))]">
-                {alerta.mensagem || alerta.message || `Certificado ${alerta.tipo || ''} requer atencao`}
-              </p>
-            ))}
-            {alertasData.length > 3 && (
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                E mais {alertasData.length - 3} alertas...
-              </p>
+          <Button
+            size="sm"
+            onClick={sincronizarTodas}
+            disabled={sincronizandoTodas || isLoading}
+          >
+            {sincronizandoTodas ? (
+              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Sincronizando...</>
+            ) : (
+              <><RefreshCw className="w-4 h-4 mr-2" />Sincronizar Todas</>
             )}
-          </div>
+          </Button>
         </div>
-      )}
+      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">Total</p>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {isLoading ? '...' : totalCertidoes}
-                </p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Total</p>
+                <p className="text-2xl font-bold">{isLoading ? '…' : total}</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Award className="w-5 h-5 text-blue-500" />
-              </div>
+              <Award className="w-8 h-8 text-blue-500 opacity-80" />
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">Validas</p>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {isLoading ? '...' : validas}
-                </p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Válidas</p>
+                <p className="text-2xl font-bold text-green-600">{isLoading ? '…' : resumo.validas}</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              </div>
+              <CheckCircle className="w-8 h-8 text-green-500 opacity-80" />
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">Vencendo / Vencidas</p>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {isLoading ? '...' : vencendoOuVencidas}
-                </p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Vencendo 30d</p>
+                <p className="text-2xl font-bold text-yellow-600">{isLoading ? '…' : resumo.a_vencer_30d}</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                <XCircle className="w-5 h-5 text-red-500" />
+              <AlertCircle className="w-8 h-8 text-yellow-500 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Vencidas</p>
+                <p className="text-2xl font-bold text-red-600">{isLoading ? '…' : resumo.vencidas}</p>
               </div>
+              <XCircle className="w-8 h-8 text-red-500 opacity-80" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
+      {/* Cards por tipo */}
+      <div>
+        <h2 className="text-sm font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide mb-3">
+          Certidões Principais
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+          {TIPOS_PRINCIPAIS.map((tipo) => (
+            <CardTipo
+              key={tipo.syncKey}
+              tipo={tipo}
+              certidoes={certidoes}
+              onSincronizarTipo={sincronizarTipo}
+              sincronizando={sincronizandoTipo === tipo.syncKey}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))]" />
           <Input
             type="search"
-            placeholder="Buscar por tipo, orgao ou numero..."
+            placeholder="Buscar por nome, tipo ou órgão..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            icon={<Search className="w-4 h-4" />}
+            className="pl-9"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button
-            variant={statusFilter === undefined ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setStatusFilter(undefined)}
-          >
-            Todos
-          </Button>
-          <Button
-            variant={statusFilter === 'valida' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setStatusFilter('valida')}
-          >
-            Valida
-          </Button>
-          <Button
-            variant={statusFilter === 'vencendo' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setStatusFilter('vencendo')}
-          >
-            Vencendo
-          </Button>
-          <Button
-            variant={statusFilter === 'vencida' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setStatusFilter('vencida')}
-          >
-            Vencida
-          </Button>
+          {[
+            { value: '', label: 'Todos' },
+            { value: 'valida', label: 'Válidas' },
+            { value: 'a_vencer', label: 'Vencendo' },
+            { value: 'vencida', label: 'Vencidas' },
+            { value: 'sem_vencimento', label: 'Sem Prazo' },
+          ].map(({ value, label }) => (
+            <Button
+              key={value}
+              variant={statusFilter === value ? 'default' : 'secondary'}
+              size="sm"
+              onClick={() => setStatusFilter(value)}
+            >
+              {label}
+            </Button>
+          ))}
         </div>
       </div>
 
-      {/* Error */}
+      {/* Erro */}
       {isError && (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-[hsl(var(--destructive))]/10 border border-[hsl(var(--destructive))]/30">
-          <AlertCircle className="w-5 h-5 text-[hsl(var(--destructive))]" />
-          <div>
-            <p className="font-medium text-[hsl(var(--destructive))]">Erro ao carregar certidoes</p>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              {(error as Error)?.message || 'Tente novamente em alguns instantes'}
-            </p>
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium text-red-700">Erro ao carregar certidões</p>
+            <p className="text-sm text-red-600">Verifique a conexão e tente novamente.</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => refetch()} className="ml-auto">
+          <Button variant="secondary" size="sm" onClick={fetchCertidoes}>
             Tentar novamente
           </Button>
         </div>
       )}
 
-      {/* Table */}
+      {/* Tabela */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -249,133 +419,143 @@ export default function CertidoesPage() {
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="p-4 flex items-center gap-4">
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 w-48 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
-                    <div className="h-3 w-32 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
+                    <div className="h-4 w-48 bg-[hsl(var(--secondary))] rounded animate-pulse" />
+                    <div className="h-3 w-32 bg-[hsl(var(--secondary))] rounded animate-pulse" />
                   </div>
-                  <div className="h-6 w-20 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
+                  <div className="h-6 w-20 bg-[hsl(var(--secondary))] rounded animate-pulse" />
                 </div>
               ))}
+            </div>
+          ) : filtrados.length === 0 ? (
+            <div className="text-center py-16">
+              <Shield className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
+                {search || statusFilter ? 'Nenhuma certidão encontrada' : 'Nenhuma certidão cadastrada'}
+              </h3>
+              <p className="text-[hsl(var(--muted-foreground))] mt-1 text-sm">
+                {search || statusFilter
+                  ? 'Tente ajustar os filtros de busca'
+                  : 'Clique em "Sincronizar Todas" para buscar as certidões nos portais governamentais'}
+              </p>
+              {!search && !statusFilter && (
+                <Button className="mt-4" size="sm" onClick={sincronizarTodas} disabled={sincronizandoTodas}>
+                  {sincronizandoTodas ? 'Sincronizando...' : 'Sincronizar Todas'}
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[hsl(var(--border))]">
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Tipo
+                  <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]/30">
+                    <th className="text-left p-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
+                      Certidão
                     </th>
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))] hidden md:table-cell">
-                      Orgao
+                    <th className="text-left p-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide hidden md:table-cell">
+                      Órgão Emissor
                     </th>
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))] hidden lg:table-cell">
-                      Numero
+                    <th className="text-left p-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide hidden lg:table-cell">
+                      Emissão
                     </th>
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))] hidden md:table-cell">
-                      Emissao
-                    </th>
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
+                    <th className="text-left p-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
                       Validade
                     </th>
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
+                    <th className="text-left p-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
                       Status
                     </th>
-                    <th className="w-16 p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Ações
+                    <th className="w-12 p-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide text-center">
+                      Ver
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[hsl(var(--border))]">
-                  {filteredList.map((certidao: any) => {
-                    const st = statusConfig[certidao._status] || statusConfig.pendente || { label: 'Pendente', color: 'bg-blue-100 text-blue-800' };
-                    return (
-                      <tr
-                        key={certidao.id || certidao.numero}
-                        className="hover:bg-[hsl(var(--secondary))]/50 transition-colors"
-                      >
-                        <td className="p-4">
-                          <p className="font-medium text-[hsl(var(--foreground))]">
-                            {certidao.tipo || '-'}
-                          </p>
-                        </td>
-                        <td className="p-4 hidden md:table-cell">
-                          <span className="text-sm text-[hsl(var(--foreground))]">
-                            {certidao.orgao || '-'}
-                          </span>
-                        </td>
-                        <td className="p-4 hidden lg:table-cell">
-                          <span className="text-sm font-mono text-[hsl(var(--muted-foreground))]">
-                            {certidao.numero || '-'}
-                          </span>
-                        </td>
-                        <td className="p-4 hidden md:table-cell">
-                          <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                            {formatDate(certidao.data_emissao)}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className="text-sm text-[hsl(var(--foreground))]">
-                            {formatDate(certidao.data_validade)}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={cn('inline-flex px-2 py-1 text-xs font-medium rounded-full', st.color)}>
-                            {st.label}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedCertidao(certidao);
-                              setShowDetailModal(true);
-                            }}
-                            title="Ver detalhes"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {filtrados.map((cert) => (
+                    <tr key={cert.id} className="hover:bg-[hsl(var(--secondary))]/40 transition-colors">
+                      <td className="p-3">
+                        <p className="font-medium text-sm text-[hsl(var(--foreground))]">{cert.name}</p>
+                        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">{cert.document_type}</p>
+                      </td>
+                      <td className="p-3 hidden md:table-cell">
+                        <span className="text-sm text-[hsl(var(--foreground))]">{cert.issuing_body ?? '—'}</span>
+                      </td>
+                      <td className="p-3 hidden lg:table-cell">
+                        <span className="text-sm text-[hsl(var(--muted-foreground))]">{formatDate(cert.issue_date)}</span>
+                      </td>
+                      <td className="p-3">
+                        <span className="text-sm text-[hsl(var(--foreground))]">{formatDate(cert.expiry_date)}</span>
+                      </td>
+                      <td className="p-3">
+                        <StatusBadge status={cert._status} />
+                      </td>
+                      <td className="p-3 text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDetalhe(detalhe?.id === cert.id ? null : cert)}
+                          title="Ver detalhes"
+                          className="h-7 w-7 p-0"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
-            </div>
-          )}
-
-          {/* Empty state */}
-          {!isLoading && !isError && filteredList.length === 0 && (
-            <div className="text-center py-12">
-              <Shield className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                Nenhuma certidao encontrada
-              </h3>
-              <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                {search || statusFilter
-                  ? 'Tente ajustar os filtros'
-                  : 'Nenhuma certidao ou certificado registrado'}
-              </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Pagination info */}
-      {!isLoading && filteredList.length > 0 && (
-        <div className="text-sm text-[hsl(var(--muted-foreground))] text-center">
-          Mostrando {filteredList.length} de {totalCertidoes} certidoes
-        </div>
+      {/* Rodapé com contagem */}
+      {!isLoading && filtrados.length > 0 && (
+        <p className="text-xs text-[hsl(var(--muted-foreground))] text-center">
+          Exibindo {filtrados.length} de {total} certidão{total !== 1 ? 'ões' : ''}
+        </p>
       )}
 
-      {/* Detail Modal */}
-      <CertidaoDetailModal
-        isOpen={showDetailModal}
-        onClose={() => {
-          setShowDetailModal(false);
-          setSelectedCertidao(null);
-        }}
-        certidao={selectedCertidao}
-      />
+      {/* Painel de detalhe inline */}
+      {detalhe && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">{detalhe.name}</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setDetalhe(null)}>✕</Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+              {[
+                { label: 'Tipo', value: detalhe.document_type },
+                { label: 'Órgão', value: detalhe.issuing_body ?? '—' },
+                { label: 'Status', value: <StatusBadge status={calcularStatus(detalhe)} /> },
+                { label: 'Emissão', value: formatDate(detalhe.issue_date) },
+                { label: 'Validade', value: formatDate(detalhe.expiry_date) },
+                { label: 'ID', value: <span className="font-mono text-xs">{detalhe.id}</span> },
+                { label: 'Atualizado', value: formatDate(detalhe.updated_at) },
+                ...(detalhe.notes ? [{ label: 'Observações', value: detalhe.notes }] : []),
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <dt className="text-[hsl(var(--muted-foreground))] text-xs font-medium uppercase tracking-wide">{label}</dt>
+                  <dd className="mt-1 text-[hsl(var(--foreground))]">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {detalhe.file_url && (
+              <div className="mt-4">
+                <a
+                  href={detalhe.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Abrir documento PDF
+                </a>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
