@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Award, CheckCircle, Eye, RefreshCw, Search, Shield, XCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Award, CheckCircle, Clock, Eye, RefreshCw, Search, Shield, XCircle, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -50,12 +50,12 @@ const TIPOS_PRINCIPAIS = [
   { syncKey: 'cnd_municipal',   documentType: 'certidao_negativa_municipal',    label: 'CND Municipal',    orgao: 'Prefeitura Manaus', icon: '🏙️' },
 ];
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  valida:         { label: 'Válida',     color: 'text-green-700',  bg: 'bg-green-100' },
-  a_vencer:       { label: 'Vencendo',   color: 'text-yellow-700', bg: 'bg-yellow-100' },
-  vencida:        { label: 'Vencida',    color: 'text-red-700',    bg: 'bg-red-100' },
-  sem_vencimento: { label: 'Sem Prazo',  color: 'text-blue-700',   bg: 'bg-blue-100' },
-  pendente:       { label: 'Pendente',   color: 'text-gray-700',   bg: 'bg-gray-100' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: LucideIcon }> = {
+  valida:         { label: 'Válida',     color: 'text-green-700',  bg: 'bg-green-100',  Icon: CheckCircle },
+  a_vencer:       { label: 'Vencendo',   color: 'text-yellow-700', bg: 'bg-yellow-100', Icon: AlertTriangle },
+  vencida:        { label: 'Vencida',    color: 'text-red-700',    bg: 'bg-red-100',    Icon: XCircle },
+  sem_vencimento: { label: 'Sem Prazo',  color: 'text-blue-700',   bg: 'bg-blue-100',   Icon: Clock },
+  pendente:       { label: 'Pendente',   color: 'text-gray-700',   bg: 'bg-gray-100',   Icon: Clock },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -90,12 +90,14 @@ function getToken(): string {
 
 // ─── Componente StatusBadge ───────────────────────────────────────────────────
 
-const STATUS_FALLBACK = { label: 'Pendente', color: 'text-gray-700', bg: 'bg-gray-100' };
+const STATUS_FALLBACK = { label: 'Pendente', color: 'text-gray-700', bg: 'bg-gray-100', Icon: Clock };
 
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_FALLBACK;
+  const { Icon } = cfg;
   return (
-    <span className={cn('inline-flex px-2 py-0.5 text-xs font-medium rounded-full', cfg.bg, cfg.color)}>
+    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full', cfg.bg, cfg.color)}>
+      <Icon className="w-3 h-3" />
       {cfg.label}
     </span>
   );
