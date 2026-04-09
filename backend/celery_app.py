@@ -324,6 +324,13 @@ app.conf.beat_schedule = {
         "schedule": 86400.0,  # 24 horas
         "options": {"queue": "operacional"},
     },
+    # Busca ativa de certidões nos portais governamentais (06:30)
+    # GAP 3: conecta ged_sync_cnds ao HTTP dos portais (CND, CNDT, CRF)
+    "fiscal.certidoes.sync_diario": {
+        "task": "ged.buscar_certidoes_portais",
+        "schedule": crontab(hour=6, minute=30),
+        "options": {"queue": "ged"},
+    },
     # Geração mensal de kits — dia 1 às 02:00 (substitui APScheduler)
     "ged-auto-collect-monthly": {
         "task": "ged.auto_collect_documents",
