@@ -9,6 +9,7 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -19,7 +20,10 @@ from modules.people_management.hr.schemas.contract import (
     ContractResponse,
     ContractUpdate,
 )
-from modules.people_management.hr.services.contract_service import ContractService
+from modules.people_management.hr.services.contract_service import (
+    ContractService,
+    gerar_pdf_contrato,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -178,3 +182,31 @@ async def generate_contract_document(
 
     document = service.generate_contract_document(contract, employee_name)
     return document
+
+
+@router.get(
+    "/{contract_id}/pdf",
+    summary="Download PDF do Contrato",
+    description=("Gera e retorna o PDF do contrato de trabalho. Usa contract_templates para cláusulas customizadas."),
+)
+async def download_contrato_pdf(
+    contract_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Gera PDF real do contrato usando reportlab + contract_templates."""
+    try:
+        pdf_bytes = await gerar_pdf_contrato(db, contract_id)
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": (f'attachment; filename="contrato_{contract_id[:8]}.pdf"'),
+                "Cache-Control": "no-store",
+            },
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error("Erro ao gerar PDF contrato %s: %s", contract_id, exc)
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {exc}") from exc

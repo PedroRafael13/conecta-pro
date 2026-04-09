@@ -357,18 +357,27 @@ export default function ContratosPage() {
     }
   };
 
-  // --- Generate document ---
+  // --- Download PDF do contrato ---
   const handleGenerateDocument = async (contractId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/contracts/${contractId}/document`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE}/contracts/${contractId}/pdf`, {
+        method: 'GET',
         headers: getAuthHeaders(),
       });
       if (res.ok) {
-        toast.success('Documento de contrato gerado com sucesso!', { duration: 4000 });
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `contrato_${contractId.slice(0, 8)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success('PDF gerado e baixado com sucesso!', { duration: 4000 });
       } else {
         const err = await res.json().catch(() => null);
-        toast.error(err?.detail || 'Erro ao gerar documento', { duration: 5000 });
+        toast.error(err?.detail || 'Erro ao gerar PDF', { duration: 5000 });
       }
     } catch {
       toast.error('Erro de conexão', { duration: 5000 });

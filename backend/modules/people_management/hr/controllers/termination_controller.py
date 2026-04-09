@@ -47,7 +47,38 @@ async def list_terminations(
 ) -> Any:
     """Lista processos de rescisão com filtro e paginação."""
     service = TerminationService(db)
-    return await service.list_terminations(status=status, page=page, page_size=page_size)
+    result = await service.list_terminations(status=status, page=page, page_size=page_size)
+    if isinstance(result, dict) and "items" in result:
+        serialized = []
+        for t in result["items"]:
+            serialized.append(
+                {
+                    "id": str(t.id),
+                    "employee_id": str(t.employee_id),
+                    "type": t.type,
+                    "reason": t.reason,
+                    "notice_period_days": t.notice_period_days,
+                    "notice_start_date": t.notice_start_date.isoformat() if t.notice_start_date else None,
+                    "last_working_day": t.last_working_day.isoformat() if t.last_working_day else None,
+                    "status": t.status,
+                    "severance_amount": float(t.severance_amount) if t.severance_amount else None,
+                    "vacation_balance_amount": float(t.vacation_balance_amount) if t.vacation_balance_amount else None,
+                    "thirteenth_salary_amount": float(t.thirteenth_salary_amount)
+                    if t.thirteenth_salary_amount
+                    else None,
+                    "fgts_amount": float(t.fgts_amount) if t.fgts_amount else None,
+                    "total_amount": float(t.total_amount) if t.total_amount else None,
+                    "exit_interview_done": t.exit_interview_done,
+                    "exit_interview_notes": t.exit_interview_notes,
+                    "esocial_event_sent": t.esocial_event_sent,
+                    "documents_generated": t.documents_generated or {},
+                    "created_by_id": str(t.created_by_id) if t.created_by_id else None,
+                    "created_at": t.created_at.isoformat() if t.created_at else None,
+                    "updated_at": t.updated_at.isoformat() if t.updated_at else None,
+                }
+            )
+        result["items"] = serialized
+    return result
 
 
 @router.post(
