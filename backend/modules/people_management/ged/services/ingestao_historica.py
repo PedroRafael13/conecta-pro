@@ -127,15 +127,23 @@ def _buscar_clientes() -> dict[str, str]:
 
 
 def _buscar_funcionarios() -> dict[str, str]:
-    """Buscar funcionários ativos e cliente associado. Retorna {primeiro_nome: CLIENTE_UPPER}."""
+    """Buscar funcionários (ativos e inativos) e cliente associado via posts.name.
+
+    posts.client_id é NULL na maioria dos casos; o vínculo com o cliente é feito
+    por ILIKE entre posts.name e clients.name (ex: 'Residencial Laranjeiras Village'
+    →  clients.name ILIKE '%Laranjeiras%').
+    Retorna {primeiro_nome_lower: CLIENTE_UPPER}.
+    """
     rows = _exec_sync(
-        "SELECT e.nome, c.name AS cliente "
+        "SELECT DISTINCT ON (LOWER(split_part(e.nome, ' ', 1))) "
+        "  e.nome, c.name AS cliente "
         "FROM employees e "
         "JOIN allocations a ON a.employee_id = e.id "
         "JOIN posts p ON p.id = a.post_id "
-        "JOIN clients c ON c.id = p.client_id "
-        "WHERE a.status IN ('ativo', 'active') "
-        "AND e.nome IS NOT NULL"
+        "JOIN clients c ON c.name ILIKE '%' || split_part(p.name, ' ', 2) || '%' "
+        "WHERE split_part(p.name, ' ', 2) != '' "
+        "AND e.nome IS NOT NULL "
+        "ORDER BY LOWER(split_part(e.nome, ' ', 1)), a.updated_at DESC"
     )
     result: dict[str, str] = {}
     for nome, cliente in rows:
