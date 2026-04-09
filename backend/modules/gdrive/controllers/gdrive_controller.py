@@ -39,6 +39,34 @@ async def gdrive_status(
     db: AsyncSession = Depends(get_db),
 ):
     """Verifica se o Google Drive está conectado e retorna o status da integração."""
+    from sqlalchemy import text as _sa_text
+
+    # Primário: OAuth2 tokens no banco (gdrive_config)
+    try:
+        row = (
+            (
+                await db.execute(
+                    _sa_text("SELECT owner_email, is_connected FROM gdrive_config WHERE is_connected = TRUE LIMIT 1")
+                )
+            )
+            .mappings()
+            .first()
+        )
+        if row:
+            email = row["owner_email"] or ""
+            return {
+                "conectado": True,
+                "email": email,
+                "nome": email,
+                "tipo": "oauth2",
+                "credenciais_configuradas": True,
+                "mensagem": f"Google Drive conectado via OAuth2 ({email})",
+                "acao": None,
+            }
+    except Exception as exc:
+        logger.warning("gdrive_status: erro ao ler gdrive_config: %s", exc)
+
+    # Fallback: service account (arquivo JSON)
     svc = _drive_service(db)
     creds = await svc.check_credentials()
     return {
