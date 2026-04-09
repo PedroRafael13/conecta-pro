@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   Users, UserPlus, UserMinus, FileText, Clock, DollarSign,
-  Gift, Sun, ShieldCheck, FolderOpen, ArrowRight, CalendarDays, Loader2,
+  Gift, Sun, ShieldCheck, FolderOpen, ArrowRight, CalendarDays, Loader2, Bell,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,6 +73,7 @@ export default function DPDashboardPage() {
     { title: 'Funcionários', description: 'Cadastro completo e dados para eSocial', icon: Users, href: '/modulos/dp/funcionarios', color: 'text-blue-600', bgColor: 'bg-blue-50' },
     { title: 'Admissão', description: 'Processos de admissão de colaboradores', icon: UserPlus, href: '/modulos/dp/admissao', color: 'text-green-600', bgColor: 'bg-green-50' },
     { title: 'Rescisão', description: 'Processos de desligamento e rescisão', icon: UserMinus, href: '/modulos/dp/rescisao', color: 'text-red-600', bgColor: 'bg-red-50' },
+    { title: 'Aviso Prévio', description: 'Avisos trabalhados e indenizados — Art. 487 CLT', icon: Bell, href: '/modulos/dp/aviso-previo', color: 'text-amber-600', bgColor: 'bg-amber-50' },
     { title: 'Contratos', description: 'Contratos de trabalho dos colaboradores', icon: FileText, href: '/modulos/dp/contratos', color: 'text-blue-600', bgColor: 'bg-blue-50' },
     { title: 'Ponto Eletrônico', description: 'Registro e controle de ponto', icon: Clock, href: '/modulos/dp/ponto', color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
     { title: 'Folha Salarial', description: 'Folha de pagamento e encargos', icon: DollarSign, href: '/modulos/dp/folha', color: 'text-purple-600', bgColor: 'bg-purple-50' },
