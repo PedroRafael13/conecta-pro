@@ -57,6 +57,10 @@ async def list_terminations(
                     "employee_id": str(t.employee_id),
                     "type": t.type,
                     "reason": t.reason,
+                    # Extrair notice_type do campo reason (formato "notice_type:<valor>")
+                    "notice_type": (
+                        t.reason.split("notice_type:")[1] if t.reason and t.reason.startswith("notice_type:") else None
+                    ),
                     "notice_period_days": t.notice_period_days,
                     "notice_start_date": t.notice_start_date.isoformat() if t.notice_start_date else None,
                     "last_working_day": t.last_working_day.isoformat() if t.last_working_day else None,

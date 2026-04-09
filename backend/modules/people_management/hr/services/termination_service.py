@@ -46,15 +46,20 @@ class TerminationService:
         Returns:
             Instância de TerminationProcess criada.
         """
+        # notice_type (trabalhado/indenizado) é armazenado em reason quando reason não fornecido
+        notice_type = data.get("notice_type")
+        reason = data.get("reason") or (f"notice_type:{notice_type}" if notice_type else None)
+        # Respeitar status fornecido (ex.: notice_period para aviso prévio)
+        status_value = data.get("status") or TerminationStatus.INITIATED
         termination = TerminationProcess(
             id=uuid4(),
             employee_id=data["employee_id"],
             type=data["type"],
-            reason=data.get("reason"),
+            reason=reason,
             notice_period_days=data.get("notice_period_days"),
             notice_start_date=data.get("notice_start_date"),
             last_working_day=data.get("last_working_day"),
-            status=TerminationStatus.INITIATED,
+            status=status_value,
             created_by_id=str(created_by_id) if created_by_id else None,
         )
         self.db.add(termination)

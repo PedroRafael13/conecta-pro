@@ -22,6 +22,10 @@ class TerminationCreate(BaseModel):
     notice_start_date: date | None = None
     last_working_day: date | None = None
     notes: str | None = None
+    # Tipo de aviso prévio: "trabalhado" (funcionário cumpre) ou "indenizado" (empresa paga)
+    # Armazenado no campo reason como "notice_type:<valor>" quando reason não é fornecido
+    notice_type: str | None = None
+    status: TerminationStatus | None = None
 
 
 class TerminationUpdate(BaseModel):
