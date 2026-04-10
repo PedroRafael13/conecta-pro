@@ -1,5 +1,6 @@
 """
 DominioController — Endpoints para exportação Domínio TOTVS
+Inclui status da integração API (chave configurada pelo contador).
 """
 
 from fastapi import APIRouter, HTTPException
@@ -29,6 +30,14 @@ class ExportarNfseRequest(BaseModel):
     empresa_slug: str
     periodo: str
     notas: list[dict] = []
+
+
+@router.get("/status")
+async def dominio_status(current_user: CurrentActiveUser):
+    """Status da integração Domínio Sistemas — conectividade e modo de operação."""
+    from modules.integrations.connectors.dominio import get_status
+
+    return await get_status()
 
 
 @router.get("/plano-contas/{empresa_slug}")

@@ -102,6 +102,12 @@ class Settings(BaseSettings):
     DISCORD_WEBHOOK: str | None = Field(default=None)
     SLACK_WEBHOOK: str | None = Field(default=None)
 
+    # Domínio Sistemas (Contabilidade TOTVS)
+    DOMINIO_API_KEY: str = Field(default="")
+    DOMINIO_API_URL: str = Field(default="https://api.dominiosistemas.com.br")
+    DOMINIO_CNPJ: str = Field(default="35710481000103")
+    DOMINIO_ENABLED: bool = Field(default=False)
+
     @property
     def cors_origins(self) -> list[str]:
         """Retorna lista de CORS origins parseada."""

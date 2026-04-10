@@ -1,12 +1,12 @@
 """
-Conector Domínio Sistemas (Contabilidade)
-Sprint 33: Integration Framework
+Conector Domínio Sistemas (Contabilidade TOTVS)
 
-NOTA: API do Domínio Sistemas não é pública.
-Verificar disponibilidade via contato comercial.
-Ver: docs/integrations/INTEGRATIONS_MASTERPLAN.md
+Chave API configurada. Testa conectividade e usa fallback
+para exportação de arquivos quando a API não está disponível.
+
+Configuração: DOMINIO_API_KEY, DOMINIO_API_URL, DOMINIO_CNPJ, DOMINIO_ENABLED
 """
 
-# Plano B: usar provedor intermediário (Omie, Nibo)
+from .connector import check_connectivity, exportar_lancamentos, get_status
 
-__all__ = []
+__all__ = ["check_connectivity", "exportar_lancamentos", "get_status"]

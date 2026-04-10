@@ -77,6 +77,14 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-https://erp.conectamais.pro/api/v1/auth/google/callback}
+      # Google Drive OAuth2
+      GDRIVE_CLIENT_ID: ${GDRIVE_CLIENT_ID:-}
+      GDRIVE_CLIENT_SECRET: ${GDRIVE_CLIENT_SECRET:-}
+      GDRIVE_REDIRECT_URI: ${GDRIVE_REDIRECT_URI:-}
+      GDRIVE_ROOT_FOLDER_ID: ${GDRIVE_ROOT_FOLDER_ID:-}
+      GDRIVE_KITS_FOLDER_ID: ${GDRIVE_KITS_FOLDER_ID:-}
+      GDRIVE_OWNER_EMAIL: ${GDRIVE_OWNER_EMAIL:-}
+      GDRIVE_ENABLED: ${GDRIVE_ENABLED:-false}
       FRONTEND_URL: ${FRONTEND_URL:-https://erp.conectamais.pro}
       # SMTP / Email
       SMTP_HOST: ${SMTP_HOST:-}
@@ -118,6 +126,11 @@ services:
       # Sólides Integration
       SOLIDES_API_TOKEN: ${SOLIDES_API_TOKEN:-}
       SOLIDES_WEBHOOK_SECRET: ${SOLIDES_WEBHOOK_SECRET:-}
+      # Domínio Sistemas (Contabilidade TOTVS)
+      DOMINIO_API_KEY: ${DOMINIO_API_KEY:-}
+      DOMINIO_API_URL: ${DOMINIO_API_URL:-https://api.dominiosistemas.com.br}
+      DOMINIO_CNPJ: ${DOMINIO_CNPJ:-35710481000103}
+      DOMINIO_ENABLED: ${DOMINIO_ENABLED:-true}
       # Certificado Digital
       CERTIFICATE_PATH: ${CERTIFICATE_PATH:-/opt/conecta-pro/credentials/certificates/certificado.pfx}
       CERTIFICATE_PASSWORD: ${CERTIFICATE_PASSWORD:-}
