@@ -76,13 +76,13 @@ async def listar_payslips(
         if employee_id:
             stmt = stmt.where(PaySlip.employee_id == uuid.UUID(employee_id))
         if mes:
-            stmt = stmt.where(PaySlip.competence_month == mes)
+            stmt = stmt.where(PaySlip.reference_month == mes)
         if ano:
-            stmt = stmt.where(PaySlip.competence_year == ano)
+            stmt = stmt.where(PaySlip.reference_year == ano)
         if payslip_status:
             stmt = stmt.where(PaySlip.status == payslip_status)
 
-        stmt = stmt.order_by(PaySlip.competence_year.desc(), PaySlip.competence_month.desc())
+        stmt = stmt.order_by(PaySlip.reference_year.desc(), PaySlip.reference_month.desc())
         stmt = stmt.offset((page - 1) * page_size).limit(page_size)
 
         result = await db.execute(stmt)
@@ -328,18 +328,42 @@ async def _get_or_404(db: AsyncSession, payslip_id: uuid.UUID):
 
 
 def _serialize_payslip(p: Any) -> dict:
+    # Mapeia campos do model hr_payslips (reference_month/year, total_earnings, earnings JSONB)
+    earnings_raw = p.earnings if p.earnings else []
+    deductions_raw = p.deductions if p.deductions else []
+    items = []
+    if isinstance(earnings_raw, list):
+        items += [
+            {
+                "descricao": e.get("description", e.get("descricao", "")),
+                "valor": float(e.get("value", e.get("valor", 0))),
+                "tipo": "provento",
+            }
+            for e in earnings_raw
+            if isinstance(e, dict)
+        ]
+    if isinstance(deductions_raw, list):
+        items += [
+            {
+                "descricao": d.get("description", d.get("descricao", "")),
+                "valor": float(d.get("value", d.get("valor", 0))),
+                "tipo": "desconto",
+            }
+            for d in deductions_raw
+            if isinstance(d, dict)
+        ]
     return {
         "id": str(p.id),
         "employee_id": str(p.employee_id),
-        "mes": p.competence_month,
-        "ano": p.competence_year,
-        "salario_bruto": float(p.gross_salary or 0),
+        "mes": p.reference_month,
+        "ano": p.reference_year,
+        "salario_bruto": float(p.total_earnings or 0),
         "salario_liquido": float(p.net_salary or 0),
-        "descontos": float(p.deductions or 0),
+        "descontos": float(p.total_deductions or 0),
         "status": str(p.status) if p.status else "draft",
         "tipo": str(p.payslip_type) if p.payslip_type else "monthly",
-        "observacoes": p.notes,
-        "items": p.items or [],
+        "observacoes": getattr(p, "notes", None),
+        "items": items,
         "created_at": p.created_at.isoformat() if p.created_at else None,
-        "published_at": p.published_at.isoformat() if hasattr(p, "published_at") and p.published_at else None,
+        "published_at": p.published_at.isoformat() if p.published_at else None,
     }
