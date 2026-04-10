@@ -180,6 +180,14 @@ try:
 except ImportError as e:
     logger.warning("DP: falha ao incluir reports_router: %s", e)
 
+try:
+    from modules.cct.controllers.benefits_controller import router as cct_benefits_router
+
+    router.include_router(cct_benefits_router)
+    logger.debug("DP: cct_benefits_router incluído (/beneficios)")
+except ImportError as e:
+    logger.warning("DP: falha ao incluir cct_benefits_router: %s", e)
+
 logger.info("Módulo Departamento Pessoal (DP) carregado — aggregator montado em /hr")
 
 # ─── Endpoint raiz GET /hr ────────────────────────────────────────────────────
