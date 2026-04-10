@@ -4,6 +4,7 @@ Endpoints (prefixo /dp/payslips):
   GET    /                  — listar contracheques (filtros: employee_id, mes, ano, status)
   POST   /                  — criar contracheque manualmente
   GET    /{id}              — detalhe
+  GET    /{id}/pdf          — download PDF do holerite (application/pdf)
   PATCH  /{id}/publicar     — publicar (torna visível no portal)
   PATCH  /{id}/rascunho     — reverter para rascunho
   DELETE /{id}              — soft delete
@@ -16,6 +17,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -143,6 +145,58 @@ async def detalhe_payslip(
     """Retorna detalhe de um contracheque."""
     payslip = await _get_or_404(db, payslip_id)
     return _serialize_payslip(payslip)
+
+
+@router.get("/{payslip_id}/pdf", summary="Download PDF do Holerite")
+async def download_pdf_holerite(
+    payslip_id: uuid.UUID,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Gera e retorna o PDF do holerite/contracheque.
+
+    Registra o download no campo download_count do contracheque.
+    """
+    from modules.people_management.employee_portal.services.payslip_pdf_service import (
+        gerar_pdf_holerite,
+    )
+
+    try:
+        pdf_bytes = await gerar_pdf_holerite(db, payslip_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error("Erro ao gerar PDF holerite %s: %s", payslip_id, exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao gerar PDF: {exc}",
+        ) from exc
+
+    # Registra download
+    try:
+        from sqlalchemy import select as sa_select
+
+        from modules.hr.employee_portal.models.payslip import PaySlip
+
+        result = await db.execute(sa_select(PaySlip).where(PaySlip.id == payslip_id))
+        payslip = result.scalar_one_or_none()
+        if payslip:
+            payslip.record_download()
+            payslip.updated_at = datetime.utcnow()
+            await db.commit()
+    except Exception as reg_exc:
+        logger.debug("Falha ao registrar download: %s", reg_exc)
+
+    filename = f"holerite_{payslip_id!s:.8}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(pdf_bytes)),
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.patch("/{payslip_id}/publicar")
