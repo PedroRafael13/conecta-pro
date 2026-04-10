@@ -94,12 +94,15 @@ async def _get_employee_data(db: AsyncSession, employee_id: UUID) -> dict:
 
 def _render_pdf(payslip: object, emp: dict) -> bytes:
     """Renderiza o PDF usando reportlab."""
+    import os
+
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import mm
     from reportlab.platypus import (
         HRFlowable,
+        Image,
         Paragraph,
         SimpleDocTemplate,
         Spacer,
@@ -180,17 +183,27 @@ def _render_pdf(payslip: object, emp: dict) -> bytes:
     ano = payslip.reference_year or datetime.now().year
     periodo = f"{mes_nome}/{ano}"
 
+    # Logo Conecta Mais (best-effort — texto fallback se arquivo não existir)
+    LOGO_PATH = "/app/static/logo.png"
+    logo_cell: object
+    if os.path.exists(LOGO_PATH):
+        logo_cell = Image(LOGO_PATH, width=14 * mm, height=14 * mm)
+    else:
+        logo_cell = Paragraph("", style_title)
+
     header_data = [
         [
+            logo_cell,
             Paragraph(EMPRESA["nome"], style_title),
             Paragraph(f"HOLERITE — {periodo}", style_title),
         ],
         [
+            "",
             Paragraph(f"CNPJ: {EMPRESA['cnpj']} | {EMPRESA['endereco']}", style_subtitle),
             Paragraph("CONTRACHEQUE DE PAGAMENTO", style_subtitle),
         ],
     ]
-    header_table = Table(header_data, colWidths=[110 * mm, 65 * mm])
+    header_table = Table(header_data, colWidths=[18 * mm, 92 * mm, 65 * mm])
     header_table.setStyle(
         TableStyle(
             [
@@ -200,6 +213,7 @@ def _render_pdf(payslip: object, emp: dict) -> bytes:
                 ("TOPPADDING", (0, 0), (-1, -1), 6),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
                 ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("SPAN", (0, 0), (0, 1)),  # logo ocupa as 2 linhas
             ]
         )
     )
