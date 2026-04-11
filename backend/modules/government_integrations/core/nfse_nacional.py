@@ -236,8 +236,7 @@ class NFSeNacionalManager:
         from datetime import datetime as _dt
 
         dps.calcular_valores()
-        # NFS-e Nacional: a URL sefin.nfse.gov.br É produção, tpAmb deve ser 1
-        tp_amb = "1"
+        tp_amb = "1" if getattr(self, "ambiente", None) == AmbienteNacional.PRODUCAO else "2"
         cnpj_clean = _re.sub(r"\D", "", self.cnpj)
         tomador_doc = _re.sub(r"\D", "", dps.tomador.cpf_cnpj) if dps.tomador else ""
         im = dps.prestador.inscricao_municipal if dps.prestador and dps.prestador.inscricao_municipal else "45177801"
@@ -371,14 +370,28 @@ class NFSeNacionalManager:
 
         # 4. POST para API Nacional com mTLS
         url = f"{self.url_base}/nfse"
-        cert_pem = self.certificado_path.replace(".pfx", "").replace("certificado", "a1_cert") + ".pem"
-        key_pem = cert_pem.replace("a1_cert", "a1_key")
 
+        # Exportar certificado .pfx para PEM temporários (mTLS)
+        from .certificate_manager import CertificateManager
+
+        tmp_cert_path = None
+        tmp_key_path = None
         try:
+            cert_mgr = CertificateManager(pfx_path=self.certificado_path, password=self.certificado_senha)
+            cert_mgr.load()
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pem", mode="wb") as tmp_cert:
+                tmp_cert.write(cert_mgr.get_certificate_pem())
+                tmp_cert_path = tmp_cert.name
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pem", mode="wb") as tmp_key:
+                tmp_key.write(cert_mgr.get_private_key_pem())
+                tmp_key_path = tmp_key.name
+
             resp = requests.post(
                 url,
                 json={"dpsXmlGZipB64": xml_b64},
-                cert=(cert_pem, key_pem),
+                cert=(tmp_cert_path, tmp_key_path),
                 timeout=30,
                 verify=True,
             )
@@ -399,6 +412,15 @@ class NFSeNacionalManager:
             logger.error(f"Erro transmitindo DPS: {e}")
             result["status"] = "erro_transmissao"
             result["erro"] = str(e)
+        finally:
+            import os as _os
+
+            for _p in (tmp_cert_path, tmp_key_path):
+                if _p:
+                    try:
+                        _os.unlink(_p)
+                    except Exception:
+                        pass
 
         return result
 

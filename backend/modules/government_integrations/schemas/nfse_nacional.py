@@ -172,6 +172,7 @@ class EmitirDPSRequest(BaseModel):
     tipo_tributacao: TipoTributacaoEnum = Field(
         default=TipoTributacaoEnum.TRIBUTACAO_MUNICIPIO, description="Tipo de tributacao"
     )
+    dry_run: bool = Field(default=False, description="Se True, gera e assina XML sem transmitir ao Portal Nacional")
 
     class Config:
         json_schema_extra = {

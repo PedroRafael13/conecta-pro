@@ -101,6 +101,7 @@ class NFSeNacionalService:
         prestador_data: dict[str, Any] | None = None,
         competencia: str | None = None,
         tipo_tributacao: str = "1",
+        dry_run: bool = False,
     ) -> dict[str, Any]:
         """
         Emite DPS (Declaracao de Prestacao de Servicos).
@@ -197,7 +198,7 @@ class NFSeNacionalService:
         dps.calcular_valores()
 
         # Emitir via manager (retorna payload preparado)
-        resultado = manager.emitir_dps(dps)
+        resultado = manager.emitir_dps(dps, dry_run=dry_run)
 
         # Adicionar informacoes extras
         resultado.update(

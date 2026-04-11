@@ -70,6 +70,7 @@ async def emitir_dps(current_user: CurrentActiveUser, request: EmitirDPSRequest)
             prestador_data=prestador_data,
             competencia=request.competencia,
             tipo_tributacao=request.tipo_tributacao.value,
+            dry_run=getattr(request, "dry_run", False),
         )
 
         # Resultado real do manager (pode conter xml_gerado, http_status, response, etc.)

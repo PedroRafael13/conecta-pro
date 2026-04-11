@@ -56,8 +56,9 @@ class InterAdapter(BaseBankingAdapter):
     # Scopes disponíveis
     SCOPES = {
         "extrato": "extrato.read",
-        "saldo": "saldo.read",
+        "saldo": "extrato.read",
         "pix": "pix.write pix.read",
+        "cob": "cob.write cob.read",
         "boleto": "boleto-cobranca.write boleto-cobranca.read",
         "pagamento": "pagamento-boleto.write pagamento-boleto.read",
     }
@@ -103,6 +104,7 @@ class InterAdapter(BaseBankingAdapter):
                     self.SCOPES["extrato"],
                     self.SCOPES["saldo"],
                     self.SCOPES["pix"],
+                    self.SCOPES.get("cob", "cob.write cob.read"),
                     self.SCOPES["boleto"],
                     self.SCOPES["pagamento"],
                 ]
@@ -408,8 +410,8 @@ class InterAdapter(BaseBankingAdapter):
         import random
         import string
 
-        # txid: alfanumérico, max 35 chars
-        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))  # noqa: S311
+        # txid: alfanumérico, 26-35 chars (BACEN PIX spec)
+        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))  # noqa: S311
         txid = f"CON{datetime.now().strftime('%Y%m%d%H%M%S')}{suffix}"
 
         body: dict = {

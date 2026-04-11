@@ -167,6 +167,7 @@ services:
       - ./uploads:/app/uploads
       # Credenciais (certificados digitais)
       - ./credentials:/opt/conecta-pro/credentials:ro
+      - ./credentials:/app/credentials:ro
       - ./data:/app/data
       - ./reports:/opt/conecta-pro/reports
       - ./frontend:/opt/conecta-pro/frontend:ro
