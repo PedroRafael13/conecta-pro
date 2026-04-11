@@ -1,47 +1,32 @@
-# Frente 1 — Recebimento Fiscal Automático
+# Frente 1 — Recebimento Fiscal
 **Data:** 2026-04-11
-**Commit:** 988865a3
-**Branch:** feature/people-management-reorganization
-**CNPJ Tomador:** 35.710.481/0001-03
-
----
 
 ## Entregues
-
-| Item | Status |
-|---|---|
-| `NFSeEntradaSyncService` criado | ✅ |
-| `POST /api/v1/financial/nfse-entrada/sync` ativo | ✅ HTTP 200 |
-| `GET /api/v1/financial/nfse-entrada/status-sync` ativo | ✅ HTTP 200 |
-| `GET /api/v1/financial/nfse-entrada` (listagem) | ✅ HTTP 200 |
-| Colunas `serie`, `codigo_servico`, `fonte` adicionadas em `nfse_entrada` | ✅ |
-| UNIQUE constraint `uq_nfse_entrada_chave_acesso` adicionada | ✅ |
-| Estrutura `/uploads/` criada | ✅ |
-
----
+- NFSeEntradaSyncService criado
+- Endpoint POST /nfse-entrada/sync ativo
+- Estrutura /uploads/ criada
+- Pastas: nfse/entrada, nfse/saida, nfe/entrada, nfe/saida, folhas/
 
 ## NFS-e recebidas no banco
-
+```json
+{
+  "total": 9,
+  "total_valor_bruto": 14337.0,
+  "nfse_entrada": [
+    {"prestador_nome": "TOTVS SA",            "valor_servico": "1200.00", "competencia": "2026-03-01", "status": "recebida"},
+    {"prestador_nome": "HOSTINGER DO BRASIL", "valor_servico": "689.00",  "competencia": "2026-03-01", "status": "recebida"},
+    {"prestador_nome": "SOLIDES TECNOLOGIA",  "valor_servico": "2890.00", "competencia": "2026-03-01", "status": "recebida"},
+    {"prestador_nome": "TOTVS SA",            "valor_servico": "1200.00", "competencia": "2026-02-01", "status": "recebida"},
+    {"prestador_nome": "HOSTINGER DO BRASIL", "valor_servico": "689.00",  "competencia": "2026-02-01", "status": "recebida"},
+    {"prestador_nome": "SOLIDES TECNOLOGIA",  "valor_servico": "2890.00", "competencia": "2026-02-01", "status": "recebida"},
+    {"prestador_nome": "TOTVS SA",            "valor_servico": "1200.00", "competencia": "2026-01-01", "status": "recebida"},
+    {"prestador_nome": "HOSTINGER DO BRASIL", "valor_servico": "689.00",  "competencia": "2026-01-01", "status": "recebida"},
+    {"prestador_nome": "SOLIDES TECNOLOGIA",  "valor_servico": "2890.00", "competencia": "2026-01-01", "status": "recebida"}
+  ]
+}
 ```
-total=9  valor_bruto=R$ 14.337,00
-```
-
-| Prestador | CNPJ | Valor | Competência |
-|---|---|---|---|
-| TOTVS SA | 00.776.574/0001-07 | R$ 1.200,00 | Mar/2026 |
-| HOSTINGER DO BRASIL | 42.274.696/0001-16 | R$ 689,00 | Mar/2026 |
-| SOLIDES TECNOLOGIA SA | 19.895.208/0001-74 | R$ 2.890,00 | Mar/2026 |
-| TOTVS SA | 00.776.574/0001-07 | R$ 1.200,00 | Fev/2026 |
-| HOSTINGER DO BRASIL | 42.274.696/0001-16 | R$ 689,00 | Fev/2026 |
-| SOLIDES TECNOLOGIA SA | 19.895.208/0001-74 | R$ 2.890,00 | Fev/2026 |
-| TOTVS SA | 00.776.574/0001-07 | R$ 1.200,00 | Jan/2026 |
-| HOSTINGER DO BRASIL | 42.274.696/0001-16 | R$ 689,00 | Jan/2026 |
-| SOLIDES TECNOLOGIA SA | 19.895.208/0001-74 | R$ 2.890,00 | Jan/2026 |
-
----
 
 ## Resultado sync Portal Nacional
-
 ```json
 {
   "status": "ok",
@@ -54,58 +39,24 @@ total=9  valor_bruto=R$ 14.337,00
   }
 }
 ```
+> HTTP 405: Portal Nacional exige mTLS + método correto (DPS spec).
+> Certificado existe em /opt/conecta-pro/credentials/certificates/certificado.pfx
+> Pendente: montar certificado como volume no container para autenticação mTLS funcionar.
 
-> **HTTP 405:** O Portal Nacional da NFS-e (sefin.nfse.gov.br) exige mTLS com
-> certificado A1 montado no container + método correto da especificação DPS.
-> O service está funcional — retorna os dados do portal quando o certificado
-> estiver disponível em `/app/credentials/certificates/certificado.pfx`.
-> Certificado existe no host em `/opt/conecta-pro/credentials/certificates/certificado.pfx`.
-> **Próximo passo:** montar certificado como volume no container.
-
----
-
-## Status GET /nfse-entrada/status-sync
-
-```json
-{
-  "total_notas": 9,
-  "valor_total": 14337.0,
-  "ultimo_sync": "2026-03-23 21:17:05",
-  "cnpj_tomador": "35710481000103",
-  "endpoint_lista": "GET /api/v1/financial/nfse-entrada"
-}
-```
-
----
-
-## Pastas uploads criadas
-
-```
-/opt/conecta-pro/uploads/nfse/entrada
-/opt/conecta-pro/uploads/nfse/saida
-/opt/conecta-pro/uploads/nfe/entrada
-/opt/conecta-pro/uploads/nfe/saida
-/opt/conecta-pro/uploads/folhas/2026-03
-/opt/conecta-pro/uploads/folhas/2026-04
-```
-
----
-
-## Arquivos modificados
-
-| Arquivo | Tipo |
-|---|---|
-| `backend/modules/government_integrations/services/nfse_entrada_sync_service.py` | NOVO |
-| `backend/modules/financial/controllers/nfse_entrada_controller.py` | MODIFICADO (+endpoints sync) |
-| `nfse_entrada` (banco) | +3 colunas + UNIQUE constraint |
-
----
+## NF-e Entrada
+- GET /api/v1/fiscal/nfe-entrada/listar → HTTP 200 ✅
+- POST /api/v1/fiscal/nfe-entrada/sync-sefaz → disponível
+- Registrado em main_production.py linha 726: prefix="/fiscal"
 
 ## Status
+ANTES: sync manual
+DEPOIS: endpoint ativo, busca via mTLS Portal Nacional
 
-```
-ANTES: sync manual, sem endpoint de trigger
-DEPOIS: POST /api/v1/financial/nfse-entrada/sync ativo
-        GET  /api/v1/financial/nfse-entrada/status-sync ativo
-        9 notas recebidas registradas — R$ 14.337,00 documentados
-```
+## Desvios do prompt (honestidade total)
+1. `git add -u` não executado — teria commitado 12 arquivos de outros módulos
+   (agents/state.json, docker-compose.yml, people_management, etc.) violando
+   governança multi-módulo do CLAUDE.md. Apenas os 2 arquivos do módulo fiscal
+   foram staged.
+2. Relatório anterior em formato expandido — corrigido agora para o template exato.
+3. "Recebimento automático": endpoint criado para sync manual disparado via POST.
+   Para sync verdadeiramente automático, adicionar task Celery beat (próximo passo).
