@@ -126,7 +126,8 @@ class GDriveService:
         # Necessário para evitar MismatchingStateError/ScopeChanged quando
         # Google retorna scopes extras via include_granted_scopes=true
         _os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
-        _os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+        # HTTPS em produção — não relaxar verificação de transporte
+        _os.environ.pop("OAUTHLIB_INSECURE_TRANSPORT", None)
 
         flow = Flow.from_client_config(
             OAUTH2_CLIENT_CONFIG,
@@ -311,9 +312,45 @@ class GDriveService:
             return {"conectado": False, "erro": str(exc)}
 
     def check_status(self) -> dict[str, Any]:
-        """Retornar status da configuração do GDrive (compatibilidade)."""
+        """Retornar status da configuração do GDrive.
+        Prioridade: (1) serviço já em memória, (2) OAuth2 tokens no banco, (3) service account.
+        """
         if self._service:
             return self.verificar_conexao()
+
+        # Prioridade 2: OAuth2 tokens salvos no banco (gdrive_config)
+        try:
+            import psycopg2
+
+            raw_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "")
+            if raw_url:
+                conn = psycopg2.connect(raw_url)
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT owner_email, access_token, refresh_token, token_expiry "
+                    "FROM gdrive_config WHERE is_connected = TRUE LIMIT 1"
+                )
+                row = cur.fetchone()
+                conn.close()
+                if row:
+                    email, at, rt, exp = row
+                    expiry_str = exp.isoformat() if exp else None
+                    ok = self.conectar_com_tokens(at or "", rt or "", expiry_str)
+                    if ok:
+                        logger.info("GDrive: conectado via OAuth2 tokens do banco (%s)", email)
+                        return {
+                            "conectado": True,
+                            "email": email,
+                            "nome": email,
+                            "tipo": "oauth2",
+                            "fonte": "banco",
+                            "token_expiry": expiry_str,
+                            "mensagem": f"Google Drive conectado via OAuth2 ({email})",
+                        }
+        except Exception as exc:
+            logger.warning("GDrive check_status: erro ao ler gdrive_config: %s", exc)
+
+        # Prioridade 3: service account (arquivo JSON)
         connected = self._init_service()
         return {
             "configurado": connected,
