@@ -399,41 +399,39 @@ async def upload_folha_pdf(
     """
     import os
 
+    import psycopg2
+
     from modules.people_management.services.folha_pdf_parser import (
         FolhaPDFParser,
-        importar_rubricas_async,
+        importar_rubricas,
     )
 
     if not arquivo.filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Arquivo deve ser PDF (.pdf)",
-        )
+        raise HTTPException(400, "Arquivo deve ser PDF")
 
     pasta = f"/opt/conecta-pro/uploads/folhas/{ano:04d}-{mes:02d}"
     os.makedirs(pasta, exist_ok=True)
     pdf_path = f"{pasta}/extrato_{ano:04d}_{mes:02d}.pdf"
-
-    conteudo = await arquivo.read()
     with open(pdf_path, "wb") as f:
-        f.write(conteudo)
+        f.write(await arquivo.read())
 
     parser = FolhaPDFParser(pdf_path)
     funcs = parser.parse()
-
     if not funcs:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=("Não foi possível extrair dados do PDF. Verifique se é o Extrato Mensal Domínio Sistemas."),
-        )
+        raise HTTPException(422, "Não foi possível extrair dados do PDF")
 
     validacao = parser.validar_totais()
-    resultado = await importar_rubricas_async(parser, mes, ano, db)
+    # DATABASE_URL usa +asyncpg — converter para psycopg2
+    raw_url = os.getenv("DATABASE_URL", "").replace("+asyncpg", "")
+    conn = psycopg2.connect(raw_url)
+    try:
+        resultado = importar_rubricas(parser, mes, ano, conn)
+    finally:
+        conn.close()
 
     return {
-        "arquivo_salvo": pdf_path,
-        "tamanho_bytes": len(conteudo),
-        "funcionarios_extraidos": len(funcs),
+        "arquivo": pdf_path,
+        "funcionarios": len(funcs),
         "validacao": validacao,
-        "importacao": resultado,
+        "rubricas": resultado,
     }

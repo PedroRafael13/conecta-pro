@@ -207,6 +207,96 @@ class FolhaPDFParser:
         }
 
 
+def importar_rubricas(
+    parser: FolhaPDFParser,
+    competencia_mes: int,
+    competencia_ano: int,
+    db_conn,
+) -> dict:
+    """
+    Popula hr_payslip_items com rubricas do PDF
+    NÃO modifica hr_payslips (T2 é responsável)
+    Também preenche inss_value/fgts_value/irrf_base se NULL
+    """
+    salvos = 0
+    erros = []
+    cur = db_conn.cursor()
+
+    for func in parser.funcionarios:
+        # Buscar payslip por CPF + competência
+        cur.execute(
+            """
+            SELECT p.id, p.inss_value, p.fgts_value
+            FROM hr_payslips p
+            JOIN employees e ON e.id = p.employee_id
+            WHERE e.cpf = %s
+              AND p.reference_month = %s
+              AND p.reference_year = %s
+            LIMIT 1
+            """,
+            (func.cpf, competencia_mes, competencia_ano),
+        )
+        row = cur.fetchone()
+        if not row:
+            erros.append(f"Sem payslip: {func.nome}")
+            continue
+
+        payslip_id, inss_atual, fgts_atual = row
+
+        # Deletar rubricas antigas
+        cur.execute("DELETE FROM hr_payslip_items WHERE payslip_id = %s", (payslip_id,))
+
+        # Inserir rubricas do PDF
+        for rub in func.rubricas:
+            try:
+                cur.execute(
+                    """
+                    INSERT INTO hr_payslip_items
+                      (payslip_id, codigo, descricao, tipo, referencia, valor)
+                    VALUES (%s,%s,%s,%s,%s,%s)
+                    """,
+                    (
+                        payslip_id,
+                        rub.codigo,
+                        rub.descricao,
+                        rub.tipo,
+                        rub.referencia,
+                        float(rub.valor),
+                    ),
+                )
+                salvos += 1
+            except Exception as e:
+                erros.append(f"Rub {rub.codigo}/{func.nome}: {e}")
+
+        # Preencher bases fiscais se NULL (não conflita com T2)
+        if inss_atual is None and func.inss_valor > 0:
+            cur.execute(
+                """
+                UPDATE hr_payslips SET
+                    inss_base = %s, inss_value = %s,
+                    fgts_base = %s, fgts_value = %s,
+                    irrf_base = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (
+                    float(func.inss_base),
+                    float(func.inss_valor),
+                    float(func.fgts_base),
+                    float(func.fgts_valor),
+                    float(func.irrf_base),
+                    payslip_id,
+                ),
+            )
+        db_conn.commit()
+
+    return {
+        "rubricas_salvas": salvos,
+        "erros": len(erros),
+        "primeiros_erros": erros[:3],
+    }
+
+
 async def importar_rubricas_async(
     parser: FolhaPDFParser,
     competencia_mes: int,
