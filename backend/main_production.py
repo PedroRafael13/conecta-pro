@@ -717,6 +717,37 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Fiscal/Contabil: {e}")
 
+# NF-e Entrada (compras de fornecedores) — bloco isolado
+try:
+    from modules.fiscal_contabil.notas_fiscais.nfe.entrada_controller import (
+        router as _nfe_entrada_router,
+    )
+
+    api_router.include_router(_nfe_entrada_router, prefix="/fiscal", tags=["NF-e Entrada/Compras"])
+    logger.info("NF-e Entrada: OK (upload-xml + listar + estoque + sync-sefaz)")
+except Exception as _e:
+    logger.warning(f"NF-e Entrada: {_e}")
+
+# NF-e Produto/Saída (emissão via SEFAZ-AM) — bloco isolado
+try:
+    from modules.fiscal_contabil.notas_fiscais.nfe.controller import (
+        router as _nfe_emissao_router,
+    )
+
+    api_router.include_router(_nfe_emissao_router, prefix="/fiscal", tags=["NF-e Produto"])
+    logger.info("NF-e Produto: OK (emitir + listar + status + sefaz-status)")
+except Exception as _e:
+    logger.warning(f"NF-e Produto: {_e}")
+
+# Government Integrations — bloco isolado (evita dependência do bidding/operacional.ai)
+try:
+    from modules.government_integrations import government_integrations_router as _gov_router
+
+    api_router.include_router(_gov_router, tags=["Government"])
+    logger.info("Government Integrations: OK (NFS-e Nacional + Manaus + eSocial + FGTS + SEFAZ)")
+except Exception as e:
+    logger.warning(f"Government Integrations (isolado): {e}")
+
 
 # =============================================================================
 # 7. INTELIGÊNCIA (analytics + reports + monitoring + search)

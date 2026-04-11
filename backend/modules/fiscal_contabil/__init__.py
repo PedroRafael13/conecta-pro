@@ -24,6 +24,28 @@ from modules.fiscal.controllers.nfse_multi_controller import router as nfse_mult
 # --- Government Integrations ---
 from modules.government_integrations import government_integrations_router
 
+# --- NF-e Entrada (compras de fornecedores) ---
+try:
+    from modules.fiscal_contabil.notas_fiscais.nfe.entrada_controller import (
+        router as nfe_entrada_router,
+    )
+except ImportError as _e:
+    import logging as _logging
+
+    _logging.getLogger(__name__).warning("nfe_entrada_router não carregado: %s", _e)
+    nfe_entrada_router = None  # type: ignore[assignment]
+
+# --- NF-e Produto/Saída (emissão via SEFAZ-AM) ---
+try:
+    from modules.fiscal_contabil.notas_fiscais.nfe.controller import (
+        router as nfe_emissao_router,
+    )
+except ImportError as _e2:
+    import logging as _logging2
+
+    _logging2.getLogger(__name__).warning("nfe_emissao_router não carregado: %s", _e2)
+    nfe_emissao_router = None  # type: ignore[assignment]
+
 __all__ = [
     "empresas_router",
     "migrador_router",
@@ -35,4 +57,6 @@ __all__ = [
     "nfse_multi_router",
     "government_integrations_router",
     "bidding_certificate_router",
+    "nfe_entrada_router",
+    "nfe_emissao_router",
 ]
