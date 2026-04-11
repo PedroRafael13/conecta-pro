@@ -71,6 +71,7 @@ defusedxml>=0.7.1
 
 # Fiscal Integration - NF-e/NFS-e
 pynfe>=0.6.0
+signxml>=4.4.0  # Dependência PyNFe para assinatura XML NF-e
 
 # Document Processing & Generation
 PyMuPDF>=1.27.0
