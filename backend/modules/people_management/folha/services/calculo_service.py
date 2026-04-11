@@ -314,6 +314,46 @@ def calcular_folha_batch(db: Session, mes: int, ano: int) -> dict[str, Any]:
     }
 
 
+def calcular_folha_batch_com_guard(db: Session, mes: int, ano: int) -> dict[str, Any]:
+    """Calcula folha batch respeitando Domínio como fonte de verdade.
+
+    Se hr_payslips tem dados importados do Domínio Sistemas para o período,
+    agrega esses dados em vez de recalcular pela engine interna.
+    Engine interna só é usada quando não há dados importados.
+    """
+    funcionarios = _dados_dominio(db, mes, ano)
+    if funcionarios:
+        total_prov = _d(sum(_d(f["total_proventos"]) for f in funcionarios))
+        total_desc = _d(sum(_d(f["total_descontos"]) for f in funcionarios))
+        total_liq = _d(sum(_d(f["salario_liquido"]) for f in funcionarios))
+        total_fgts = _d(sum(_d(f["fgts_value"]) for f in funcionarios))
+        logger.info(
+            "calcular_folha_batch_com_guard: usando Domínio Sistemas para %d/%d — %d funcionários",
+            mes,
+            ano,
+            len(funcionarios),
+        )
+        return {
+            "mes": mes,
+            "ano": ano,
+            "total_colaboradores": len(funcionarios),
+            "total_calculados": len(funcionarios),
+            "total_erros": 0,
+            "total_proventos": float(total_prov),
+            "total_descontos": float(total_desc),
+            "total_liquido": float(total_liq),
+            "total_fgts": float(total_fgts),
+            "erros": [],
+            "holerites": [],
+        }
+    logger.info(
+        "calcular_folha_batch_com_guard: sem dados Domínio para %d/%d — usando engine interna",
+        mes,
+        ano,
+    )
+    return calcular_folha_batch(db, mes, ano)
+
+
 def _dados_dominio(db: Session, mes: int, ano: int) -> list[dict[str, Any]]:
     """Retorna dados reais do Domínio Sistemas via hr_payslips para o mês/ano."""
     rows = db.execute(

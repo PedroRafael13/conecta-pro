@@ -74,8 +74,12 @@ async def calcular_batch(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
 ) -> FolhaBatchResponse:
-    """Calcula folha completa para todos os colaboradores ativos."""
-    result = calculo_service.calcular_folha_batch(db, mes, ano)
+    """Calcula folha completa para todos os colaboradores ativos.
+
+    Prioriza dados importados do Domínio Sistemas (fonte de verdade).
+    Engine interna é usada apenas como fallback quando não há dados importados.
+    """
+    result = calculo_service.calcular_folha_batch_com_guard(db, mes, ano)
     return FolhaBatchResponse(**result)
 
 
@@ -152,8 +156,8 @@ def fechar_folha(
     fechado_por: str = Query(..., description="ID ou nome do responsavel"),
     db: Session = Depends(get_sync_db_dependency),
 ) -> FechamentoResponse:
-    """Fecha a folha do mes — calcula batch e registra fechamento."""
-    batch = calculo_service.calcular_folha_batch(db, mes, ano)
+    """Fecha a folha do mes — usa dados Domínio quando disponíveis."""
+    batch = calculo_service.calcular_folha_batch_com_guard(db, mes, ano)
     return FechamentoResponse(
         mes=mes,
         ano=ano,
