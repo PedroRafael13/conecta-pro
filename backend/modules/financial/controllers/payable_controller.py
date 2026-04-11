@@ -576,3 +576,41 @@ async def process_recurring(
         "created_count": len(accounts),
         "account_ids": [str(a.id) for a in accounts],
     }
+
+
+# ==================== AUTO-CRIAR DE NOTAS FISCAIS ====================
+
+
+@router.post("/auto-criar", summary="Criar contas a pagar automaticamente de NFS-e e NF-e recebidas")
+async def auto_criar_payables(
+    db: AsyncSession = Depends(get_session),
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """
+    Processa todas as notas fiscais recebidas sem conta a pagar vinculada.
+    Cria payable para cada NFS-e e NF-e de entrada.
+    """
+    from modules.financial.services.payable_auto_service import processar_todas_pendentes
+
+    resultado = await processar_todas_pendentes(db)
+    return {"status": "ok", "resultado": resultado}
+
+
+@router.post("/auto-criar/{nota_id}", summary="Criar conta a pagar para nota específica")
+async def auto_criar_payable_nota(
+    nota_id: str,
+    tipo: str = Query(default="nfse", description="Tipo da nota: nfse ou nfe"),
+    db: AsyncSession = Depends(get_session),
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """Cria conta a pagar para uma nota fiscal específica."""
+    from modules.financial.services.payable_auto_service import (
+        criar_payable_de_nfe_entrada,
+        criar_payable_de_nfse_entrada,
+    )
+
+    if tipo == "nfse":
+        resultado = await criar_payable_de_nfse_entrada(db, nota_id)
+    else:
+        resultado = await criar_payable_de_nfe_entrada(db, nota_id)
+    return {"status": "ok", "resultado": resultado}
