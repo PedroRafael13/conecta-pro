@@ -118,6 +118,123 @@ class NFSeEntradaSyncService:
                     except Exception:
                         pass
 
+    def buscar_nfse_emitidas(
+        self,
+        data_inicio: str | None = None,
+        data_fim: str | None = None,
+        pagina: int = 1,
+    ) -> dict:
+        """
+        Busca NFS-e onde Conecta Mais é PRESTADOR (emitente).
+
+        Estratégia:
+        1. Tenta GET /nfse?cnpjPrestador= no Portal Nacional (retorna 405 — sem suporte bulk)
+        2. Tenta GET /v1/nfse?cpfCnpjPrestador= (retorna 404)
+        3. Fallback: retorna notas da tabela local `nfses` (Manaus ABRASF, ainda não migrado)
+
+        Nota técnica: Portal Nacional SEFIN v1.6 suporta apenas:
+          - GET /nfse/{chaveAcesso50}  — consulta individual por chave de 50 dígitos
+          - POST /nfse                 — emissão de DPS
+        Manaus ainda usa ABRASF — migração para Portal Nacional prevista para 2026.
+        """
+        import psycopg2
+        import psycopg2.extras
+
+        if not data_inicio:
+            data_inicio = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        if not data_fim:
+            data_fim = datetime.now().strftime("%Y-%m-%d")
+
+        tmp_cert, tmp_key = None, None
+        portal_status: dict = {}
+        try:
+            tmp_cert, tmp_key = self._get_mtls_certs()
+            cert_arg = (tmp_cert, tmp_key) if tmp_cert else None
+
+            # Tenta endpoints do Portal Nacional como PRESTADOR
+            endpoints_tentados = [
+                f"{PORTAL_URL}/nfse?cnpjPrestador={CNPJ}&dataInicial={data_inicio}&dataFinal={data_fim}&pagina={pagina}",
+                f"{PORTAL_URL}/v1/nfse?cpfCnpjPrestador={CNPJ}&dataInicial={data_inicio}&dataFinal={data_fim}",
+            ]
+            for url in endpoints_tentados:
+                try:
+                    resp = requests.get(
+                        url,
+                        cert=cert_arg,
+                        headers={"Accept": "application/json"},
+                        timeout=15,
+                        verify=True,
+                    )
+                    portal_status[url.split(PORTAL_URL)[1].split("?")[0]] = resp.status_code
+                    if resp.status_code == 200:
+                        return {
+                            "status_http": 200,
+                            "endpoint": url,
+                            "data": resp.json(),
+                            "portal": "nacional_prestador",
+                            "cnpj_prestador": CNPJ,
+                        }
+                except Exception as exc:
+                    portal_status[url.split(PORTAL_URL)[1].split("?")[0]] = str(exc)[:60]
+
+            # Fallback: Portal Nacional não suporta bulk por CNPJ prestador (405/404)
+            # Manaus usa ABRASF — notas estão na tabela local nfses
+            db_url = os.getenv("DATABASE_URL", "").replace("+asyncpg", "")
+            conn = psycopg2.connect(db_url)
+            try:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                    cur.execute(
+                        """
+                        SELECT id::text, numero_nfse, numero_rps, status,
+                               data_emissao::text, data_competencia::text,
+                               tomador_razao_social, tomador_cpf_cnpj,
+                               valor_servicos::float, iss_valor::float,
+                               iss_retido, discriminacao
+                        FROM nfses
+                        WHERE active = true
+                          AND data_emissao BETWEEN %s AND %s
+                        ORDER BY data_emissao DESC
+                        LIMIT 200
+                        """,
+                        (data_inicio, data_fim),
+                    )
+                    notas = [dict(r) for r in cur.fetchall()]
+                    cur.execute(
+                        "SELECT COUNT(*) FROM nfses WHERE active = true AND data_emissao BETWEEN %s AND %s",
+                        (data_inicio, data_fim),
+                    )
+                    total = cur.fetchone()["count"]
+            finally:
+                conn.close()
+
+            return {
+                "status_http": 200,
+                "portal_nacional_tentativas": portal_status,
+                "portal_nacional_nota": (
+                    "Portal Nacional SEFIN v1.6 não suporta consulta bulk por CNPJ prestador. "
+                    "GET /nfse retorna 405. Manaus ainda usa ABRASF (migração prevista 2026). "
+                    "Notas retornadas da tabela local nfses."
+                ),
+                "fonte": "local_db_manaus_abrasf",
+                "cnpj_prestador": CNPJ,
+                "data_inicio": data_inicio,
+                "data_fim": data_fim,
+                "total": total,
+                "notas": notas,
+                "portal": "nacional_prestador",
+            }
+
+        except Exception as exc:
+            logger.error("Erro buscar NFS-e emitidas: %s", exc)
+            return {"erro": str(exc)}
+        finally:
+            for f in [tmp_cert, tmp_key]:
+                if f:
+                    try:
+                        os.unlink(f)
+                    except Exception:
+                        pass
+
     def sync_e_salvar(self, db_conn, data_inicio=None, data_fim=None):
         """Busca e salva no banco nfse_entrada"""
         resultado = self.buscar_nfse_recebidas(data_inicio, data_fim)

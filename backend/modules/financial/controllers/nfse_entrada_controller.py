@@ -11,13 +11,14 @@ import logging
 import re
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
 from core.database import get_session
 from modules.financial.publishers import publish_nota_emitida
+from modules.financial.services.payable_auto_service import auto_criar_payables_nfse
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,20 @@ async def listar_nfse_entrada(
         "total": len(rows),
         "total_valor_bruto": round(total_valor, 2),
         "nfse_entrada": [dict(r._mapping) for r in rows],
+    }
+
+
+@router.post("/nfse-entrada/auto-criar-payables", status_code=200)
+async def auto_criar_payables(
+    db: AsyncSession = Depends(get_session),
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """Cria contas a pagar automaticamente para NFS-e recebidas sem payable vinculado."""
+    resultado = await auto_criar_payables_nfse(db)
+    return {
+        "success": True,
+        "message": f"{resultado['criadas']} conta(s) a pagar criada(s), {resultado['erros']} erro(s).",
+        **resultado,
     }
 
 
@@ -341,4 +356,78 @@ async def custos_resumo(
         "cpv": {"folha": folha, "fgts": fgts, "inss": inss, "total": round(cpv, 2)},
         "despesas_operacionais": {"com_nota": round(desp_nota, 2), "qtd_notas": int(desp.qtd) if desp else 0},
         "total_custos": round(cpv + desp_nota, 2),
+    }
+
+
+# ── Sync Portal Nacional ──────────────────────────────────────────────────────
+
+
+@router.post("/nfse-entrada/sync", summary="Sincronizar NFS-e recebidas do Portal Nacional")
+async def sync_nfse_entrada(
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """Busca NFS-e onde CNPJ 35710481000103 é tomador e retorna resultado."""
+    try:
+        from modules.government_integrations.services.nfse_entrada_sync_service import (
+            NFSeEntradaSyncService,
+        )
+
+        svc = NFSeEntradaSyncService()
+        resultado = svc.buscar_nfse_recebidas(data_inicio, data_fim)
+        return {"status": "ok", "resultado": resultado}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/nfse/sync-prestador", summary="Sincronizar NFS-e emitidas pelo Conecta Mais no Portal Nacional")
+async def sync_nfse_prestador(
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """
+    Busca NFS-e onde CNPJ 35710481000103 é PRESTADOR (emitente).
+
+    Estratégia:
+    - Tenta GET /nfse?cnpjPrestador= no Portal Nacional SEFIN v1.6
+    - Portal Nacional não suporta consulta bulk por CNPJ (retorna 405)
+    - Fallback: retorna notas da tabela local nfses (Manaus ABRASF)
+    - GET /api/v1/financial/nfse lista essas notas com filtros adicionais
+    """
+    try:
+        from modules.government_integrations.services.nfse_entrada_sync_service import (
+            NFSeEntradaSyncService,
+        )
+
+        svc = NFSeEntradaSyncService()
+        resultado = svc.buscar_nfse_emitidas(data_inicio, data_fim)
+        return {"status": "ok", "resultado": resultado}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/nfse-entrada/status-sync", summary="Status das NFS-e recebidas no banco")
+async def status_nfse_entrada(
+    db: AsyncSession = Depends(get_session),
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """Resumo das NFS-e recebidas registradas no banco."""
+    row = (
+        await db.execute(
+            text(
+                "SELECT COUNT(*) as total, "
+                "COALESCE(SUM(valor_servico),0) as valor_total, "
+                "MAX(created_at)::text as ultimo_sync "
+                "FROM nfse_entrada"
+            )
+        )
+    ).fetchone()
+    return {
+        "total_notas": int(row.total) if row else 0,
+        "valor_total": float(row.valor_total) if row else 0,
+        "ultimo_sync": row.ultimo_sync if row else None,
+        "cnpj_tomador": "35710481000103",
+        "endpoint_lista": "GET /api/v1/financial/nfse-entrada",
     }
