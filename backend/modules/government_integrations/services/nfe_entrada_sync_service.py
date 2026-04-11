@@ -103,7 +103,7 @@ class NFEEntradaSyncService:
             private_key, certificate, _ = pkcs12.load_key_and_certificates(pfx_data, CERT_PASS.encode())
 
             cert_pem = certificate.public_bytes(Encoding.PEM)
-            key_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.TraditionalOpenSSL, NoEncryption())
+            key_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
 
             cert_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pem")  # noqa: SIM115
             cert_file.write(cert_pem)
@@ -124,59 +124,68 @@ class NFEEntradaSyncService:
 
     def buscar_nfe_recebidas(self, ultimo_nsu: str = "0") -> dict:
         """
-        Consulta NF-e emitidas CONTRA nosso CNPJ no SEFAZ Nacional.
-        Retorna dict com lista de documentos recebidos.
+        Consulta NF-e distribuição — busca todas as NF-e
+        onde nosso CNPJ é destinatário usando NSU incremental.
         """
         import requests
 
-        envelope = f"""<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                  xmlns:nfe="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe">
-  <soapenv:Body>
-    <nfe:nfeDistDFeInteresse>
-      <nfeDadosMsg>
-        <distDFeInt xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.01">
-          <tpAmb>1</tpAmb>
-          <cUFAutor>91</cUFAutor>
-          <CNPJ>{CNPJ_EMPRESA}</CNPJ>
-          <distNSU>
-            <ultNSU>{ultimo_nsu.zfill(15)}</ultNSU>
-          </distNSU>
-        </distDFeInt>
-      </nfeDadosMsg>
-    </nfe:nfeDistDFeInteresse>
-  </soapenv:Body>
-</soapenv:Envelope>"""
-
-        headers = {
-            "Content-Type": "text/xml; charset=utf-8",
-            "SOAPAction": "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse",
-        }
-
-        cert_file, key_file = self._get_mtls_certs()
-        cert_arg = (cert_file, key_file) if cert_file else None
-
+        tmp_cert, tmp_key = None, None
         try:
+            tmp_cert, tmp_key = self._get_mtls_certs()
+
+            xml_consulta = f"""<?xml version="1.0" encoding="UTF-8"?>
+<soap12:Envelope
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+<soap12:Body>
+  <nfeDistDFeInteresse
+    xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe">
+    <nfeDadosMsg>
+      <distDFeInt xmlns="http://www.portalfiscal.inf.br/nfe"
+        versao="1.01">
+        <tpAmb>1</tpAmb>
+        <cUFAutor>13</cUFAutor>
+        <CNPJ>{CNPJ_EMPRESA}</CNPJ>
+        <distNSU>
+          <ultNSU>{ultimo_nsu.zfill(15)}</ultNSU>
+        </distNSU>
+      </distDFeInt>
+    </nfeDadosMsg>
+  </nfeDistDFeInteresse>
+</soap12:Body>
+</soap12:Envelope>"""
+
+            cert_arg = (tmp_cert, tmp_key) if tmp_cert else None
             resp = requests.post(
                 SEFAZ_DIST,
-                data=envelope.encode("utf-8"),
-                headers=headers,
+                data=xml_consulta.encode("utf-8"),
                 cert=cert_arg,
+                headers={
+                    "Content-Type": "application/soap+xml;charset=UTF-8",
+                    "SOAPAction": "",
+                },
                 timeout=30,
                 verify=True,
             )
-            resp.raise_for_status()
-            return {"sucesso": True, "xml_resposta": resp.text, "status_http": resp.status_code}
+
+            return {
+                "status_http": resp.status_code,
+                "ultimo_nsu": ultimo_nsu,
+                "response_size": len(resp.content),
+                "response_preview": resp.text[:500],
+            }
+
         except Exception as exc:
-            logger.error("SEFAZ DistribuicaoDFe error: %s", exc)
-            return {"sucesso": False, "erro": str(exc)}
+            logger.error("Erro sync NF-e entrada: %s", exc)
+            return {"erro": str(exc)}
         finally:
-            if cert_file:
-                try:
-                    os.unlink(cert_file)
-                    os.unlink(key_file)
-                except Exception:
-                    pass
+            for f in [tmp_cert, tmp_key]:
+                if f:
+                    try:
+                        os.unlink(f)
+                    except Exception:
+                        pass
 
     # ------------------------------------------------------------------ #
     #  XML — parse NF-e e atualiza estoque                                 #
@@ -191,7 +200,7 @@ class NFEEntradaSyncService:
         try:
             root = ET.fromstring(xml_nfe)  # noqa: S314  # nosec B314
         except ET.ParseError as exc:
-            return {"sucesso": False, "erro": f"XML inválido: {exc}"}
+            return {"erro": f"XML inválido: {exc}"}
 
         # Remove namespace para simplificar XPath
         for elem in root.iter():
@@ -200,7 +209,7 @@ class NFEEntradaSyncService:
 
         nfe_node = root.find(".//NFe/infNFe") or root.find(".//infNFe")
         if nfe_node is None:
-            return {"sucesso": False, "erro": "infNFe não encontrado no XML"}
+            return {"erro": "infNFe não encontrado no XML"}
 
         def _t(path: str, default: str = "") -> str:
             node = nfe_node.find(path)
@@ -211,10 +220,7 @@ class NFEEntradaSyncService:
 
         # Só processa se destinatário é nossa empresa
         if destinatario_cnpj and destinatario_cnpj != CNPJ_EMPRESA:
-            return {
-                "sucesso": False,
-                "erro": f"Destinatário {destinatario_cnpj} não é o CNPJ da empresa",
-            }
+            return {"erro": f"Destinatário {destinatario_cnpj} não é o CNPJ da empresa"}
 
         emitente_cnpj = _t("emit/CNPJ")
         emitente_nome = _t("emit/xNome")
@@ -239,8 +245,7 @@ class NFEEntradaSyncService:
                     (chave_acesso, numero, serie, emitente_cnpj, emitente_nome,
                      destinatario_cnpj, data_emissao, valor_total, xml_raw)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (chave_acesso) DO UPDATE
-                    SET processada = FALSE
+                ON CONFLICT (chave_acesso) DO NOTHING
                 RETURNING id
                 """,
                 (
@@ -255,7 +260,10 @@ class NFEEntradaSyncService:
                     xml_nfe,
                 ),
             )
-            nfe_entrada_id = cur.fetchone()[0]
+            nfe_row = cur.fetchone()
+            if not nfe_row:
+                return {"status": "ja_existe", "chave": chave_acesso}
+            nfe_entrada_id = nfe_row[0]
 
             # Processa itens e atualiza estoque
             itens_processados = 0
@@ -340,9 +348,10 @@ class NFEEntradaSyncService:
 
         conn.commit()
         return {
-            "sucesso": True,
-            "chave_acesso": chave_acesso,
+            "status": "processada",
+            "chave": chave_acesso,
+            "numero": numero,
             "emitente": emitente_nome,
             "valor_total": float(valor_total),
-            "itens_processados": itens_processados,
+            "itens": itens_processados,
         }

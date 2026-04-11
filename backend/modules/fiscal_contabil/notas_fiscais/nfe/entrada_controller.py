@@ -66,7 +66,7 @@ async def upload_xml_nfe(arquivo: UploadFile = File(...)):
     finally:
         conn.close()
 
-    if not resultado.get("sucesso"):
+    if "erro" in resultado:
         raise HTTPException(status_code=422, detail=resultado.get("erro", "Erro desconhecido"))
 
     return {"arquivo_salvo": xml_path, "processamento": resultado}
@@ -125,10 +125,7 @@ def listar_nfe_entrada(limit: int = 50, offset: int = 0, processada: bool | None
             )
             rows = cur.fetchall()
 
-            cur.execute(f"SELECT COUNT(*) FROM nfe_entradas {where}", params)
-            total = cur.fetchone()["count"]
-
-        return {"total": total, "limit": limit, "offset": offset, "items": [dict(r) for r in rows]}
+        return {"total": len(rows), "nfes": [dict(r) for r in rows]}
     except Exception as exc:
         logger.error("Erro ao listar NF-e entrada: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -186,10 +183,7 @@ def listar_estoque_compras(limit: int = 100, offset: int = 0, busca: str = ""):
             )
             rows = cur.fetchall()
 
-            cur.execute(f"SELECT COUNT(*) FROM nfe_compras_estoque {where}", params)
-            total = cur.fetchone()["count"]
-
-        return {"total": total, "limit": limit, "offset": offset, "items": [dict(r) for r in rows]}
+        return {"total_itens": len(rows), "estoque": [dict(r) for r in rows]}
     except Exception as exc:
         logger.error("Erro ao listar estoque NF-e: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -202,67 +196,13 @@ def listar_estoque_compras(limit: int = 100, offset: int = 0, busca: str = ""):
 # --------------------------------------------------------------------------- #
 
 
-@router.post("/sync-sefaz")
-def sincronizar_sefaz(ultimo_nsu: str = "0"):
-    """
-    Consulta o SEFAZ Nacional via DistribuicaoDFe, importa NF-e recebidas
-    contra CNPJ {CNPJ_EMPRESA} e atualiza o estoque virtual.
-    """
-    import base64
-    import gzip
-    from xml.etree import ElementTree as ET
-
+@router.post("/sync-sefaz", summary="Sincronizar NF-e entrada via SEFAZ")
+async def sync_sefaz_entrada(ultimo_nsu: str = "0"):
+    """Consulta NF-e distribuição no SEFAZ-AM."""
     from modules.government_integrations.services.nfe_entrada_sync_service import (
         NFEEntradaSyncService,
     )
 
     svc = NFEEntradaSyncService()
-    resultado_sefaz = svc.buscar_nfe_recebidas(ultimo_nsu=ultimo_nsu)
-
-    if not resultado_sefaz.get("sucesso"):
-        raise HTTPException(
-            status_code=502,
-            detail=f"Falha ao consultar SEFAZ: {resultado_sefaz.get('erro')}",
-        )
-
-    xml_resp = resultado_sefaz.get("xml_resposta", "")
-    docs_importados = 0
-    erros = []
-
-    try:
-        # Parse SOAP response
-        root = ET.fromstring(xml_resp)  # noqa: S314  # nosec B314
-        # Remove namespaces
-        for elem in root.iter():
-            if "}" in elem.tag:
-                elem.tag = elem.tag.split("}", 1)[1]
-
-        conn = _get_conn()
-        try:
-            svc._ensure_tables(conn)
-            for doc_zip in root.findall(".//docZip"):
-                schema = doc_zip.get("schema", "")
-                if not schema.startswith("resNFe") and "procNFe" not in schema:
-                    continue
-                try:
-                    # docZip é base64 + gzip
-                    dados_gz = base64.b64decode(doc_zip.text or "")
-                    xml_doc = gzip.decompress(dados_gz).decode("utf-8")
-                    res = svc.processar_xml_nfe(xml_doc, conn)
-                    if res.get("sucesso"):
-                        docs_importados += 1
-                    else:
-                        erros.append(res.get("erro"))
-                except Exception as exc:
-                    erros.append(str(exc))
-        finally:
-            conn.close()
-    except ET.ParseError as exc:
-        raise HTTPException(status_code=502, detail=f"Resposta SEFAZ inválida: {exc}") from exc
-
-    return {
-        "sucesso": True,
-        "docs_importados": docs_importados,
-        "ultimo_nsu": ultimo_nsu,
-        "erros": erros[:10],
-    }
+    resultado = svc.buscar_nfe_recebidas(ultimo_nsu)
+    return resultado
