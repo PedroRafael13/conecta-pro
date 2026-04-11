@@ -67,6 +67,8 @@ class DashboardFolhaResponse(BaseModel):
     por_cargo: dict[str, dict[str, Any]] = Field(default_factory=dict)
     rubricas_count: int = 0
     status: str = "aberta"
+    fonte: str = "engine_interna"
+    funcionarios: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ResumoFolhaResponse(BaseModel):
@@ -82,6 +84,8 @@ class ResumoFolhaResponse(BaseModel):
     total_inss: float
     total_irrf: float
     custo_total_empresa: float
+    fonte: str = "engine_interna"
+    funcionarios: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class AjusteRequest(BaseModel):

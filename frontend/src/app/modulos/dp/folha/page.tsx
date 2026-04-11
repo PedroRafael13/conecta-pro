@@ -60,7 +60,7 @@ export default function FolhaPage() {
       setLoading(true);
       try {
         const [dashRes, rubRes, resumoRes] = await Promise.all([
-          fetch(`${API_BASE}/folha/dashboard`, { headers: getAuthHeaders() }).catch(() => null),
+          fetch(`${API_BASE}/folha/dashboard?mes=${mes}&ano=${ano}`, { headers: getAuthHeaders() }).catch(() => null),
           fetch(`${API_BASE}/folha/rubricas`, { headers: getAuthHeaders() }).catch(() => null),
           fetch(`${API_BASE}/folha/resumo/${mes}/${ano}`, { headers: getAuthHeaders() }).catch(() => null),
         ]);

@@ -314,12 +314,92 @@ def calcular_folha_batch(db: Session, mes: int, ano: int) -> dict[str, Any]:
     }
 
 
+def _dados_dominio(db: Session, mes: int, ano: int) -> list[dict[str, Any]]:
+    """Retorna dados reais do Domínio Sistemas via hr_payslips para o mês/ano."""
+    rows = db.execute(
+        text(
+            "SELECT e.id::text, e.nome, COALESCE(e.cargo,'N/A'), "
+            "COALESCE(e.salario_base,0), "
+            "COALESCE(p.total_earnings,0), COALESCE(p.total_deductions,0), "
+            "COALESCE(p.net_salary,0), "
+            "COALESCE(p.inss_value,0), COALESCE(p.fgts_value,0), "
+            "COALESCE(p.irrf_value,0), p.status "
+            "FROM hr_payslips p "
+            "JOIN employees e ON e.id = p.employee_id "
+            "WHERE p.reference_month = :mes AND p.reference_year = :ano "
+            "ORDER BY e.nome"
+        ),
+        {"mes": mes, "ano": ano},
+    ).fetchall()
+
+    return [
+        {
+            "employee_id": r[0],
+            "nome": r[1],
+            "cargo": r[2],
+            "salario_base": float(_d(r[3])),
+            "total_proventos": float(_d(r[4])),
+            "total_descontos": float(_d(r[5])),
+            "salario_liquido": float(_d(r[6])),
+            "inss_value": float(_d(r[7])),
+            "fgts_value": float(_d(r[8])),
+            "irrf_value": float(_d(r[9])),
+            "status": r[10] or "published",
+            "status_folha": "calculada",
+        }
+        for r in rows
+    ]
+
+
 def get_dashboard_folha(db: Session, mes: int, ano: int) -> dict[str, Any]:
-    """Dashboard gerencial da folha."""
+    """Dashboard gerencial da folha.
+
+    Prioriza dados importados do Domínio Sistemas (hr_payslips).
+    Recalcula pela engine interna apenas quando não há dados importados.
+    """
+    rubricas_count = db.execute(text("SELECT COUNT(*) FROM rubricas_folha WHERE ativo=true")).scalar() or 0
+
+    # ── Sistema A: Domínio Sistemas ──────────────────────────────────────────
+    funcionarios = _dados_dominio(db, mes, ano)
+    if funcionarios:
+        total_prov = _d(sum(_d(f["total_proventos"]) for f in funcionarios))
+        total_desc = _d(sum(_d(f["total_descontos"]) for f in funcionarios))
+        total_liq = _d(sum(_d(f["salario_liquido"]) for f in funcionarios))
+        total_inss = _d(sum(_d(f["inss_value"]) for f in funcionarios))
+        total_fgts = _d(sum(_d(f["fgts_value"]) for f in funcionarios))
+        total_irrf = _d(sum(_d(f["irrf_value"]) for f in funcionarios))
+
+        por_cargo: dict[str, dict[str, Any]] = {}
+        for f in funcionarios:
+            cargo = f["cargo"]
+            if cargo not in por_cargo:
+                por_cargo[cargo] = {"qtd": 0, "total_liquido": 0.0, "total_fgts": 0.0}
+            por_cargo[cargo]["qtd"] += 1
+            por_cargo[cargo]["total_liquido"] = round(por_cargo[cargo]["total_liquido"] + f["salario_liquido"], 2)
+            por_cargo[cargo]["total_fgts"] = round(por_cargo[cargo]["total_fgts"] + f["fgts_value"], 2)
+
+        return {
+            "mes": mes,
+            "ano": ano,
+            "total_colaboradores": len(funcionarios),
+            "total_proventos": float(total_prov),
+            "total_descontos": float(total_desc),
+            "total_liquido": float(total_liq),
+            "total_fgts": float(total_fgts),
+            "total_inss": float(total_inss),
+            "total_irrf": float(total_irrf),
+            "por_cargo": por_cargo,
+            "rubricas_count": rubricas_count,
+            "status": "calculated",
+            "fonte": "dominio_sistemas",
+            "funcionarios": funcionarios,
+        }
+
+    # ── Sistema B: engine interna (fallback) ─────────────────────────────────
+    logger.info("get_dashboard_folha: sem dados Domínio para %d/%d — usando engine interna", mes, ano)
     batch = calcular_folha_batch(db, mes, ano)
 
-    # Agregar por cargo
-    por_cargo: dict[str, dict[str, Any]] = {}
+    por_cargo = {}
     for h in batch["holerites"]:
         cargo = h["cargo"]
         if cargo not in por_cargo:
@@ -328,11 +408,8 @@ def get_dashboard_folha(db: Session, mes: int, ano: int) -> dict[str, Any]:
         por_cargo[cargo]["total_liquido"] += h["liquido"]
         por_cargo[cargo]["total_fgts"] += h["fgts_empresa"]
 
-    # Totalizar INSS e IRRF
     total_inss = sum(d["valor"] for h in batch["holerites"] for d in h["descontos"] if d["codigo"] == "1001")
     total_irrf = sum(d["valor"] for h in batch["holerites"] for d in h["descontos"] if d["codigo"] == "1002")
-
-    rubricas_count = db.execute(text("SELECT COUNT(*) FROM rubricas_folha WHERE ativo=true")).scalar() or 0
 
     return {
         "mes": mes,
@@ -347,6 +424,8 @@ def get_dashboard_folha(db: Session, mes: int, ano: int) -> dict[str, Any]:
         "por_cargo": por_cargo,
         "rubricas_count": rubricas_count,
         "status": "aberta",
+        "fonte": "engine_interna",
+        "funcionarios": batch["holerites"],
     }
 
 
@@ -366,6 +445,8 @@ def get_resumo_folha(db: Session, mes: int, ano: int) -> dict[str, Any]:
         "total_inss": dash["total_inss"],
         "total_irrf": dash["total_irrf"],
         "custo_total_empresa": custo_total,
+        "fonte": dash.get("fonte", "desconhecida"),
+        "funcionarios": dash.get("funcionarios", []),
     }
 
 
