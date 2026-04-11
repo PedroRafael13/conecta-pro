@@ -33,21 +33,28 @@ def _get_conn():
 # --------------------------------------------------------------------------- #
 
 
-@router.post("/upload-xml")
+@router.post("/upload-xml", summary="Upload XML de NF-e de compra — atualiza estoque")
 async def upload_xml_nfe(arquivo: UploadFile = File(...)):
     """
-    Recebe um arquivo XML de NF-e de fornecedor (compra),
-    processa e atualiza o estoque virtual.
+    Recebe XML de NF-e de compra emitida por fornecedor.
+    Salva em disco e atualiza o estoque virtual automaticamente.
     """
     from modules.government_integrations.services.nfe_entrada_sync_service import (
         NFEEntradaSyncService,
     )
 
+    if not (arquivo.filename or "").endswith(".xml"):
+        raise HTTPException(status_code=400, detail="Arquivo deve ser XML")
+
     conteudo = await arquivo.read()
-    try:
-        xml_str = conteudo.decode("utf-8")
-    except UnicodeDecodeError:
-        xml_str = conteudo.decode("latin-1")
+    xml_str = conteudo.decode("utf-8", errors="ignore")
+
+    # Salvar XML em disco
+    pasta = os.getenv("NFE_UPLOADS_DIR", "/tmp/nfe/entrada")  # nosec B108
+    os.makedirs(pasta, exist_ok=True)
+    xml_path = f"{pasta}/{arquivo.filename}"
+    with open(xml_path, "wb") as f:
+        f.write(conteudo)
 
     svc = NFEEntradaSyncService()
     conn = _get_conn()
@@ -62,7 +69,7 @@ async def upload_xml_nfe(arquivo: UploadFile = File(...)):
     if not resultado.get("sucesso"):
         raise HTTPException(status_code=422, detail=resultado.get("erro", "Erro desconhecido"))
 
-    return resultado
+    return {"arquivo_salvo": xml_path, "processamento": resultado}
 
 
 # --------------------------------------------------------------------------- #
