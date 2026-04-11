@@ -692,6 +692,21 @@ try:
 except Exception as _e:
     logger.warning(f"Justificativas Fiscais: {_e}")
 
+# Conciliação Automática Inter × Notas
+try:
+    from modules.financial.controllers.auto_reconciliation_controller import (
+        router as auto_reconciliation_router,
+    )
+
+    api_router.include_router(
+        auto_reconciliation_router,
+        prefix="/financial",
+        tags=["Financial - Conciliação Automática Inter"],
+    )
+    logger.info("Conciliação Automática Inter: OK")
+except Exception as _e:
+    logger.warning(f"Conciliação Automática: {_e}")
+
 
 # =============================================================================
 # 6. FISCAL/CONTÁBIL (empresas + fiscal + government)
@@ -749,6 +764,17 @@ try:
     logger.info("NF-e Produto: OK (emitir + listar + status + sefaz-status)")
 except Exception as _e:
     logger.warning(f"NF-e Produto: {_e}")
+
+# Dashboard Fiscal-Financeiro (DRE + NFS-e + NF-e + Folha + Fluxo + Estoque)
+try:
+    from modules.financial.controllers.fiscal_dashboard_controller import (
+        router as _fiscal_dash_router,
+    )
+
+    api_router.include_router(_fiscal_dash_router, tags=["Dashboard Fiscal"])
+    logger.info("Dashboard Fiscal: OK (DRE + NFS-e + NF-e + Folha + Fluxo + Estoque)")
+except Exception as _e:
+    logger.warning(f"Dashboard Fiscal: {_e}")
 
 # Government Integrations — bloco isolado (evita dependência do bidding/operacional.ai)
 try:
