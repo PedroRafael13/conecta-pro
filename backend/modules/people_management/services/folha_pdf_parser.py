@@ -75,6 +75,8 @@ class FolhaPDFParser:
                     texto += (page.extract_text() or "") + "\n"
             # Extrair competência do cabeçalho
             m = re.search(r"EXTRATO MENSAL\s+(\d{2}/\d{4})", texto)
+            if not m:
+                m = re.search(r"Competência:\s*(\d{2}/\d{4})", texto)
             if m:
                 self.competencia = m.group(1)
             self.funcionarios = self._parse_texto(texto)
@@ -88,7 +90,7 @@ class FolhaPDFParser:
         funcs = []
         # Dividir por bloco de funcionário
         # Padrão Domínio: "Empr.: 85 ADAILSON SERRA ALVES Situação: Trabalhando"
-        blocos = re.split(r"(?=Empr\.:\s*\d+\s+[A-ZÁÉÍÓÚÃÕÇ])", texto)
+        blocos = re.split(r"(?=Empr\.:\s*\d+\s*[A-ZÁÉÍÓÚÃÕÇ])", texto)
         for bloco in blocos:
             if not bloco.strip() or "Empr.:" not in bloco:
                 continue
@@ -100,7 +102,7 @@ class FolhaPDFParser:
     def _parse_bloco(self, bloco: str) -> "FuncionarioFolha | None":
         # Cabeçalho funcionário
         m = re.search(
-            r"Empr\.:\s*(\d+)\s+(.+?)\s+Situação:\s*(.+?)\s+"
+            r"Empr\.:\s*(\d+)\s*(.+?)\s+Situação:\s*(.+?)\s*"
             r"CPF:\s*([\d.\-]+)\s+Adm:\s*(\d{2}/\d{2}/\d{4})",
             bloco,
         )
@@ -139,7 +141,7 @@ class FolhaPDFParser:
             irrf_base = _br2dec(b.group(4))
 
         # INSS valor — rubrica 998
-        inss_m = re.search(r"998\s+I\.N\.S\.S\.\s+[\d.,]+\s+([\d.,]+)\s+D", bloco)
+        inss_m = re.search(r"998\s+I\.N\.S\.S\.\s+[\d.,]+\s+([\d.,]+)\s*D", bloco)
         inss_valor = _br2dec(inss_m.group(1)) if inss_m else Decimal("0")
 
         # Cargo e salário
@@ -151,8 +153,9 @@ class FolhaPDFParser:
         # 224 ADICIONAL DE RONDA   15,00   250,50  P
         rubricas = []
         for rm in re.finditer(
-            r"^(\d{1,4})\s+([A-ZÁÉÍÓÚÃÕÇÀÂÊÎÔÛ0-9][^\n]+?)\s+"
-            r"([\d:.,]+)\s+([\d.,]+)\s+([PD])\s*$",
+            r"(?<!\d)(\d{1,4})\s*"
+            r"([A-ZÁÉÍÓÚÃÕÇÀÂÊÎÔÛ\.][^\n]*?)\s+"
+            r"([\d:.,]+)\s+([\d.,]+)\s*([PD])(?=\s|\n|$)",
             bloco,
             re.MULTILINE,
         ):
@@ -223,13 +226,14 @@ def importar_rubricas(
     cur = db_conn.cursor()
 
     for func in parser.funcionarios:
-        # Buscar payslip por CPF + competência
+        # Buscar payslip por CPF + competência (normalizar: remover pontos e traços)
         cur.execute(
             """
             SELECT p.id, p.inss_value, p.fgts_value
             FROM hr_payslips p
             JOIN employees e ON e.id = p.employee_id
-            WHERE e.cpf = %s
+            WHERE REGEXP_REPLACE(e.cpf, '[^0-9]', '', 'g')
+                = REGEXP_REPLACE(%s, '[^0-9]', '', 'g')
               AND p.reference_month = %s
               AND p.reference_year = %s
             LIMIT 1

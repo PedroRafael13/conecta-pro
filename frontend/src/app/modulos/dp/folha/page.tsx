@@ -309,8 +309,8 @@ export default function FolhaPage() {
                         const nome = item.nome || item.name || item.employee_name || item.candidate_name || '-';
                         const cargo = item.cargo || item.position || '-';
                         const salBase = item.salario_base || item.salary || item.salary_proposed || 0;
-                        const inssVal = item.inss || (item.descontos || []).find?.((d: any) => d.descricao?.includes('INSS'))?.valor || 0;
-                        const fgtsVal = item.fgts_8_pct || item.fgts || 0;
+                        const inssVal = item.inss_value ?? item.inss ?? (item.descontos || []).find?.((d: any) => d.descricao?.includes('INSS'))?.valor ?? 0;
+                        const fgtsVal = item.fgts_value ?? item.fgts_8_pct ?? item.fgts ?? 0;
                         const descVal = item.total_descontos || 0;
                         const liqVal = item.salario_liquido || item.net_salary || (salBase - descVal);
                         const status = item.status_folha || item.payroll_status || (item.salario_liquido ? 'calculada' : 'pendente');

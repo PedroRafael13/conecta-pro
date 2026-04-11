@@ -409,7 +409,7 @@ async def upload_folha_pdf(
     if not arquivo.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Arquivo deve ser PDF")
 
-    pasta = f"/opt/conecta-pro/uploads/folhas/{ano:04d}-{mes:02d}"
+    pasta = f"/app/uploads/folhas/{ano:04d}-{mes:02d}"
     os.makedirs(pasta, exist_ok=True)
     pdf_path = f"{pasta}/extrato_{ano:04d}_{mes:02d}.pdf"
     with open(pdf_path, "wb") as f:
