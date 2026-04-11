@@ -87,6 +87,12 @@ class BoletoGenerateRequest(BaseModel):
     payer_name: str
     payer_document: str  # CPF ou CNPJ
     description: str
+    payer_address: str | None = None
+    payer_number: str | None = None
+    payer_neighborhood: str | None = None
+    payer_city: str | None = None
+    payer_state: str | None = None
+    payer_zip: str | None = None
 
 
 class BoletoResponse(BaseModel):
@@ -471,6 +477,12 @@ async def generate_boleto(
                 payer_name=req.payer_name,
                 payer_document=req.payer_document,
                 description=req.description,
+                payer_address=req.payer_address,
+                payer_number=req.payer_number,
+                payer_neighborhood=req.payer_neighborhood,
+                payer_city=req.payer_city,
+                payer_state=req.payer_state,
+                payer_zip=req.payer_zip,
             )
             return BoletoResponse(
                 success=True,

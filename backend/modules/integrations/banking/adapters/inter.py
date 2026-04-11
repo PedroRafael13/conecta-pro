@@ -56,7 +56,7 @@ class InterAdapter(BaseBankingAdapter):
     # Scopes disponíveis
     SCOPES = {
         "extrato": "extrato.read",
-        "saldo": "cob.read",
+        "saldo": "saldo.read",
         "pix": "pix.write pix.read",
         "boleto": "boleto-cobranca.write boleto-cobranca.read",
         "pagamento": "pagamento-boleto.write pagamento-boleto.read",
@@ -351,19 +351,35 @@ class InterAdapter(BaseBankingAdapter):
         payer_name: str,
         payer_document: str,
         description: str,
+        payer_address: str | None = None,
+        payer_number: str | None = None,
+        payer_neighborhood: str | None = None,
+        payer_city: str | None = None,
+        payer_state: str | None = None,
+        payer_zip: str | None = None,
     ) -> dict:
         """Gera boleto de cobrança."""
+        clean_doc = self._format_document(payer_document)
+        tipo_pessoa = "FISICA" if len(clean_doc) == 11 else "JURIDICA"
+
         data = await self._request(
             "POST",
             "/cobranca/v3/cobrancas",
             json={
-                "seuNumero": f"COB{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "seuNumero": f"C{datetime.now().strftime('%y%m%d%H%M%S')}",
                 "valorNominal": float(amount),
                 "dataVencimento": due_date.strftime("%Y-%m-%d"),
                 "numDiasAgenda": 30,
                 "pagador": {
+                    "tipoPessoa": tipo_pessoa,
                     "nome": payer_name,
-                    "cpfCnpj": self._format_document(payer_document),
+                    "cpfCnpj": clean_doc,
+                    "endereco": payer_address or "Endereço não informado",
+                    "numero": payer_number or "S/N",
+                    "bairro": payer_neighborhood or "Centro",
+                    "cidade": payer_city or "Manaus",
+                    "uf": payer_state or "AM",
+                    "cep": (payer_zip or "69000000").replace("-", ""),
                 },
                 "mensagem": {
                     "linha1": description[:78] if description else "",
