@@ -119,6 +119,7 @@ async def criar_payable_de_nfse_entrada(
                         " :nfse_uuid_text, 'nfse', :nfse_num, :fdk, "
                         " :prest_cnpj, :prest_nome, 'nfse_entrada', 'servico', "
                         " :created_by, NOW(), NOW()) "
+                        "ON CONFLICT (nota_fiscal_id) WHERE nota_fiscal_id IS NOT NULL DO NOTHING "
                         "RETURNING id"
                     ),
                     {
@@ -138,6 +139,13 @@ async def criar_payable_de_nfse_entrada(
                     },
                 )
             ).fetchone()
+            # ON CONFLICT DO NOTHING retorna None quando já existe
+            if row is None:
+                await db.rollback()
+                detalhes.append(
+                    {"nfse_id": str(nfse_id), "prestador": prestador_nome, "status": "ignorado (já existe)"}
+                )
+                continue
             payable_id = row[0]
 
             await db.execute(
@@ -190,19 +198,21 @@ async def criar_payable_de_nfe_entrada(
     Cria conta a pagar para NF-e de compra não processada.
     Se nfe_entrada_id = None, processa todas pendentes.
     """
-    where_extra = "AND id = :nfe_filter_id" if nfe_entrada_id else ""
+    where_extra = "AND n.id = :nfe_filter_id" if nfe_entrada_id else ""
     params: dict = {}
     if nfe_entrada_id:
         params["nfe_filter_id"] = int(nfe_entrada_id)
 
+    # LEFT JOIN para garantir que não existe payable com mesmo nota_fiscal_id
     rows = (
         await db.execute(
             text(
-                "SELECT id, emitente_cnpj, emitente_nome, valor_total, "
-                "data_emissao, numero, chave_acesso "
-                "FROM nfe_entradas "
-                f"WHERE (processada IS NULL OR processada = false) AND valor_total > 0 {where_extra} "
-                "ORDER BY data_emissao"
+                "SELECT n.id, n.emitente_cnpj, n.emitente_nome, n.valor_total, "
+                "n.data_emissao, n.numero, n.chave_acesso "
+                "FROM nfe_entradas n "
+                "LEFT JOIN payable_accounts p ON p.nota_fiscal_id = n.id::text "
+                f"WHERE p.id IS NULL AND n.valor_total > 0 {where_extra} "
+                "ORDER BY n.data_emissao"
             ),
             params,
         )
@@ -247,6 +257,7 @@ async def criar_payable_de_nfe_entrada(
                         " :nfe_id_text, 'nfe', :numero, :fdk, "
                         " :emit_cnpj, :emit_nome, 'nfe_entrada', 'material', "
                         " :created_by, NOW(), NOW()) "
+                        "ON CONFLICT (nota_fiscal_id) WHERE nota_fiscal_id IS NOT NULL DO NOTHING "
                         "RETURNING id"
                     ),
                     {
@@ -265,6 +276,11 @@ async def criar_payable_de_nfe_entrada(
                     },
                 )
             ).fetchone()
+            # ON CONFLICT DO NOTHING retorna None quando já existe
+            if row is None:
+                await db.rollback()
+                detalhes.append({"nfe_id": str(nfe_id), "emitente": emitente_nome, "status": "ignorado (já existe)"})
+                continue
             payable_id = row[0]
 
             await db.execute(
