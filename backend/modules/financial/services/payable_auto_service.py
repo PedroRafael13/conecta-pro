@@ -334,3 +334,7 @@ async def processar_todas_pendentes(db: AsyncSession) -> dict:
         "nfe_entrada": r2,
         "total_criados": r1["criados"] + r2["criados"],
     }
+
+
+# Alias mantido para compatibilidade com nfse_entrada_controller
+auto_criar_payables_nfse = criar_payable_de_nfse_entrada

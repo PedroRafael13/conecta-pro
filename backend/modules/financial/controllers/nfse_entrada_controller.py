@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import get_current_user
 from core.database import get_session
 from modules.financial.publishers import publish_nota_emitida
-from modules.financial.services.payable_auto_service import auto_criar_payables_nfse
+from modules.financial.services.payable_auto_service import auto_criar_payables_nfse, processar_todas_pendentes
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +79,36 @@ async def auto_criar_payables(
         "message": f"{resultado['criadas']} conta(s) a pagar criada(s), {resultado['erros']} erro(s).",
         **resultado,
     }
+
+
+@router.post("/payable/auto-criar", status_code=200)
+async def auto_criar_payables_todas(
+    db: AsyncSession = Depends(get_session),
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """Processa todas as notas fiscais recebidas sem conta a pagar vinculada (NFS-e + NF-e)."""
+    resultado = await processar_todas_pendentes(db)
+    return {"status": "ok", "resultado": resultado}
+
+
+@router.post("/payable/auto-criar/{nota_id}", status_code=200)
+async def auto_criar_payable_nota(
+    nota_id: str,
+    tipo: str = Query(default="nfse", description="Tipo da nota: nfse ou nfe"),
+    db: AsyncSession = Depends(get_session),
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    """Cria conta a pagar para uma nota fiscal específica."""
+    from modules.financial.services.payable_auto_service import (
+        criar_payable_de_nfe_entrada,
+        criar_payable_de_nfse_entrada,
+    )
+
+    if tipo == "nfse":
+        resultado = await criar_payable_de_nfse_entrada(db, nota_id)
+    else:
+        resultado = await criar_payable_de_nfe_entrada(db, nota_id)
+    return {"status": "ok", "resultado": resultado}
 
 
 @router.get("/nfse-entrada/resumo-fiscal")
