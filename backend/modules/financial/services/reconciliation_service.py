@@ -220,17 +220,19 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
                 """,
                 (pay_id, tx_date, tx_id),
             )
-            # Marcar payable como pago
+            # Marcar payable como pago + vincular transação bancária
             cur.execute(
                 """
                 UPDATE payable_accounts SET
                     status = 'pago',
                     payment_date = %s,
                     paid_at = NOW(),
+                    transacao_bancaria_id = %s,
+                    comprovante_id = %s,
                     updated_at = NOW()
                 WHERE id = %s
                 """,
-                (tx_date, str(pay_id)),
+                (tx_date, tx_id, tx_id, str(pay_id)),
             )
             conn.commit()
             return {
@@ -339,15 +341,18 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
                 """,
                 (rec_id, tx_date, tx_id),
             )
+            # Marcar receivable como recebido + vincular transação bancária
             cur.execute(
                 """
                 UPDATE receivable_accounts SET
                     status = 'recebido',
                     payment_date = %s,
+                    data_recebimento = %s,
+                    transacao_bancaria_id = %s,
                     updated_at = NOW()
                 WHERE id = %s
                 """,
-                (tx_date, str(rec_id)),
+                (tx_date, tx_date, tx_id, str(rec_id)),
             )
             conn.commit()
             return {
