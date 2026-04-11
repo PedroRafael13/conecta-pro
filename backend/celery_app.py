@@ -185,6 +185,21 @@ app.conf.beat_schedule = {
         "options": {"queue": "gov.batch"},
     },
     # =========================================================================
+    # FISCAL — NFS-e ENTRADA + NF-e ENTRADA (RECEBIMENTO AUTOMÁTICO)
+    # =========================================================================
+    # NFS-e recebidas (Portal Nacional) — diariamente às 06:30
+    "fiscal-nfse-entrada-diario": {
+        "task": "government_integrations.tasks.sync.sincronizar_nfse_entrada",
+        "schedule": crontab(hour=6, minute=30),
+        "options": {"queue": "gov.nfse"},
+    },
+    # NF-e recebidas (SEFAZ DistribuicaoDFe) — a cada 2 horas
+    "fiscal-nfe-entrada-2h": {
+        "task": "government_integrations.tasks.sync.sincronizar_nfe_entrada",
+        "schedule": crontab(minute=0, hour="*/2"),
+        "options": {"queue": "gov.sefaz.nfe"},
+    },
+    # =========================================================================
     # SÓLIDES - INTEGRAÇÃO RH/DP
     # =========================================================================
     # Sync incremental a cada 15 minutos

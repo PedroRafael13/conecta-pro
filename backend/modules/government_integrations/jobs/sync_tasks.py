@@ -216,6 +216,67 @@ def sincronizar_nfse(
 
 @shared_task(
     bind=True,
+    name="government_integrations.tasks.sync.sincronizar_nfse_entrada",
+    queue="gov.nfse",
+    max_retries=3,
+    default_retry_delay=300,
+)
+def sincronizar_nfse_entrada(
+    self,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+):
+    """
+    Sincroniza NFS-e RECEBIDAS (onde nosso CNPJ é tomador) via Portal Nacional.
+    Agendado automaticamente pelo Celery beat (diariamente às 06:30).
+    """
+    logger.info("Iniciando sincronização NFS-e entrada (Portal Nacional)")
+    try:
+        from modules.government_integrations.services.nfse_entrada_sync_service import (
+            NFSeEntradaSyncService,
+        )
+
+        svc = NFSeEntradaSyncService()
+        resultado = svc.buscar_nfse_recebidas(data_inicio, data_fim)
+        logger.info("NFS-e entrada sync concluído: %s", resultado)
+        return resultado
+    except Exception as exc:
+        logger.error("Erro na sincronização NFS-e entrada: %s", exc)
+        raise self.retry(exc=exc)
+
+
+@shared_task(
+    bind=True,
+    name="government_integrations.tasks.sync.sincronizar_nfe_entrada",
+    queue="gov.sefaz.nfe",
+    max_retries=3,
+    default_retry_delay=300,
+)
+def sincronizar_nfe_entrada(
+    self,
+    ultimo_nsu: str = "0",
+):
+    """
+    Sincroniza NF-e RECEBIDAS (onde nosso CNPJ é destinatário) via SEFAZ DistribuicaoDFe.
+    Agendado automaticamente pelo Celery beat (a cada 2 horas).
+    """
+    logger.info("Iniciando sincronização NF-e entrada (SEFAZ DistribuicaoDFe)")
+    try:
+        from modules.government_integrations.services.nfe_entrada_sync_service import (
+            NFEEntradaSyncService,
+        )
+
+        svc = NFEEntradaSyncService()
+        resultado = svc.buscar_nfe_recebidas(ultimo_nsu=ultimo_nsu)
+        logger.info("NF-e entrada sync concluído: %s", resultado)
+        return resultado
+    except Exception as exc:
+        logger.error("Erro na sincronização NF-e entrada: %s", exc)
+        raise self.retry(exc=exc)
+
+
+@shared_task(
+    bind=True,
     name="government_integrations.tasks.sync.sincronizar_rfb",
     queue="gov.batch",
     max_retries=3,
