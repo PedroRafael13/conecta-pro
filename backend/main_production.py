@@ -681,6 +681,17 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Financeiro: {e}")
 
+# Justificativas Fiscais — Saídas Sem NF (Lucro Real)
+try:
+    from modules.financial.controllers.justificativa_controller import (
+        router as justificativa_router,
+    )
+
+    api_router.include_router(justificativa_router, tags=["Justificativas Fiscais"])
+    logger.info("Justificativas Fiscais: OK")
+except Exception as _e:
+    logger.warning(f"Justificativas Fiscais: {_e}")
+
 
 # =============================================================================
 # 6. FISCAL/CONTÁBIL (empresas + fiscal + government)
