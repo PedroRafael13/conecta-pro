@@ -18,6 +18,7 @@ Colunas reais usadas:
 
 import logging
 import os
+import re
 from datetime import timedelta
 from decimal import Decimal
 
@@ -32,9 +33,71 @@ TOLERANCE_PCT = Decimal("0.02")  # 2% para matching flexível
 DATE_WINDOW = 3  # dias para matching exato
 DATE_WINDOW_FLEX = 7  # dias para matching flexível
 
+# Padrão CNPJ na descrição (14 dígitos contíguos ou formatado)
+_RE_CNPJ = re.compile(r"\b(\d{14})\b|\b(\d{2}[.\-]?\d{3}[.\-]?\d{3}[/\-]?\d{4}[.\-]?\d{2})\b")
+
 
 def _get_conn():
     return psycopg2.connect(DATABASE_URL)
+
+
+def _normalizar_doc(doc: str) -> str:
+    """Remove formatação de CPF/CNPJ — retorna apenas dígitos."""
+    if not doc:
+        return ""
+    return re.sub(r"\D", "", doc)
+
+
+def _extrair_nome_contraparte(descricao: str) -> str:
+    """
+    Extrai nome da empresa/pessoa da descrição do banco Inter.
+    Padrões:
+      - 'PAGAMENTO DE TITULO - NOME EMPRESA LTDA'
+      - 'PIX ENVIADO - Cp :12345678-Nome Pessoa'
+      - 'RECEBIMENTO TITULO - codigo/numero'
+    """
+    if not descricao:
+        return ""
+    # Após " - " pega o restante (nome do contraparte)
+    partes = descricao.split(" - ", 1)
+    if len(partes) < 2:
+        return ""
+    nome = partes[1].strip()
+    # Remove prefixo "Cp :XXXXXXXX-" (código banco Inter)
+    nome = re.sub(r"^Cp\s*:\d+[-–]\s*", "", nome).strip()
+    # Truncar em 100 chars
+    return nome[:100]
+
+
+def _lookup_cnpj_por_nome(nome: str, cur) -> str:
+    """Busca CNPJ no cadastro de fornecedores por similaridade de nome."""
+    if not nome or len(nome) < 5:
+        return ""
+    # Pegar primeiras palavras significativas (>3 chars) para busca
+    palavras = [w for w in nome.split() if len(w) > 3][:3]
+    if not palavras:
+        return ""
+    like_pattern = "%" + palavras[0] + "%"
+    cur.execute(
+        "SELECT cpf_cnpj FROM suppliers WHERE name ILIKE %s LIMIT 1",
+        (like_pattern,),
+    )
+    row = cur.fetchone()
+    return _normalizar_doc(row["cpf_cnpj"] if row else "")
+
+
+def _atualizar_contraparte(tx_id: str, nome: str, cnpj: str, cur) -> None:
+    """Popula contraparte_nome e contraparte_documento na transação."""
+    if nome or cnpj:
+        cur.execute(
+            """
+            UPDATE bank_transactions SET
+                contraparte_nome = COALESCE(contraparte_nome, %s),
+                contraparte_documento = COALESCE(contraparte_documento, %s)
+            WHERE id = %s
+            """,
+            (nome or None, cnpj or None, tx_id),
+        )
 
 
 def conciliar_transacao(tx_id: str, conn) -> dict:
@@ -70,25 +133,61 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
     data_min_flex = tx_date - timedelta(days=DATE_WINDOW_FLEX)
     data_max_flex = tx_date + timedelta(days=DATE_WINDOW_FLEX)
 
+    # Extrair nome e CNPJ da contraparte da descrição
+    nome_contraparte = _extrair_nome_contraparte(descricao)
+    cnpj_contraparte = _lookup_cnpj_por_nome(nome_contraparte, cur) if nome_contraparte else ""
+
+    # Extrair CNPJ diretamente da descrição (se houver padrão numérico)
+    if not cnpj_contraparte:
+        m = _RE_CNPJ.search(descricao)
+        if m:
+            cnpj_contraparte = _normalizar_doc(m.group(0))
+
+    # Salvar contraparte na transação (enriquecimento)
+    _atualizar_contraparte(tx_id, nome_contraparte, cnpj_contraparte, cur)
+
     # ── DÉBITO → buscar em payable_accounts ──────────────────────────────────
     if tx_type == "debit":
-        # Estratégia 1+2: valor exato ±R$0,01, data ±3 dias
-        cur.execute(
-            """
-            SELECT id, description, gross_value, net_value, due_date, status
-            FROM payable_accounts
-            WHERE status = 'pendente'
-              AND ABS(gross_value - %s) <= %s
-              AND due_date BETWEEN %s AND %s
-            ORDER BY ABS(gross_value - %s)
-            LIMIT 1
-            """,
-            (float(valor_abs), float(TOLERANCE), data_min, data_max, float(valor_abs)),
-        )
-        match = cur.fetchone()
-        tipo_match = "valor_exato_data"
+        # Estratégia 1: valor exato ±R$0,01 + CNPJ da contraparte + data ±3 dias
+        match = None
+        tipo_match = ""
+        if cnpj_contraparte:
+            cur.execute(
+                """
+                SELECT pa.id, pa.description, pa.gross_value, pa.net_value,
+                       pa.due_date, pa.status, s.cpf_cnpj as supplier_cnpj
+                FROM payable_accounts pa
+                LEFT JOIN suppliers s ON s.id = pa.supplier_id
+                WHERE pa.status = 'pendente'
+                  AND ABS(pa.gross_value - %s) <= %s
+                  AND pa.due_date BETWEEN %s AND %s
+                  AND REPLACE(REPLACE(REPLACE(REPLACE(s.cpf_cnpj,'.',''),'-',''),'/',''),' ','') = %s
+                ORDER BY ABS(pa.gross_value - %s)
+                LIMIT 1
+                """,
+                (float(valor_abs), float(TOLERANCE), data_min, data_max, cnpj_contraparte, float(valor_abs)),
+            )
+            match = cur.fetchone()
+            tipo_match = "exato_cnpj_valor_data"
 
-        # Estratégia 3: valor ±2%, data ±7 dias
+        # Estratégia 2: valor exato ±R$0,01, data ±3 dias (sem CNPJ)
+        if not match:
+            cur.execute(
+                """
+                SELECT id, description, gross_value, net_value, due_date, status
+                FROM payable_accounts
+                WHERE status = 'pendente'
+                  AND ABS(gross_value - %s) <= %s
+                  AND due_date BETWEEN %s AND %s
+                ORDER BY ABS(gross_value - %s)
+                LIMIT 1
+                """,
+                (float(valor_abs), float(TOLERANCE), data_min, data_max, float(valor_abs)),
+            )
+            match = cur.fetchone()
+            tipo_match = "valor_exato_data"
+
+        # Estratégia 3: valor ±2%, data ±7 dias (flexível)
         if not match:
             margem = float(valor_abs * TOLERANCE_PCT)
             cur.execute(
@@ -108,12 +207,12 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
 
         if match:
             pay_id = match["id"]
-            # Marcar transação como conciliada
+            # Marcar transação como conciliada (payable_payment_id — sem FK externo)
             cur.execute(
                 """
                 UPDATE bank_transactions SET
                     reconciliation_status = 'conciliado',
-                    reconciliation_id = %s,
+                    payable_payment_id = %s,
                     reconciled_at = %s,
                     requires_justification = FALSE,
                     updated_at = NOW()
@@ -165,21 +264,50 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
 
     # ── CRÉDITO → buscar em receivable_accounts ───────────────────────────────
     elif tx_type == "credit":
-        cur.execute(
-            """
-            SELECT id, description, gross_value, net_value, due_date, status
-            FROM receivable_accounts
-            WHERE status = 'pendente'
-              AND ABS(gross_value - %s) <= %s
-              AND due_date BETWEEN %s AND %s
-            ORDER BY ABS(gross_value - %s)
-            LIMIT 1
-            """,
-            (float(valor_abs), float(TOLERANCE), data_min, data_max, float(valor_abs)),
-        )
-        match = cur.fetchone()
-        tipo_match = "valor_exato_data"
+        # Salvar contraparte também para créditos
+        _atualizar_contraparte(tx_id, nome_contraparte, cnpj_contraparte, cur)
 
+        match = None
+        tipo_match = ""
+
+        # Estratégia 1: valor exato ±R$0,01 + CNPJ da contraparte + data ±3 dias
+        if cnpj_contraparte:
+            cur.execute(
+                """
+                SELECT ra.id, ra.description, ra.gross_value, ra.net_value,
+                       ra.due_date, ra.status, c.cpf_cnpj as customer_cnpj
+                FROM receivable_accounts ra
+                LEFT JOIN customers c ON c.id = ra.customer_id
+                WHERE ra.status = 'pendente'
+                  AND ABS(ra.gross_value - %s) <= %s
+                  AND ra.due_date BETWEEN %s AND %s
+                  AND REPLACE(REPLACE(REPLACE(REPLACE(c.cpf_cnpj,'.',''),'-',''),'/',''),' ','') = %s
+                ORDER BY ABS(ra.gross_value - %s)
+                LIMIT 1
+                """,
+                (float(valor_abs), float(TOLERANCE), data_min, data_max, cnpj_contraparte, float(valor_abs)),
+            )
+            match = cur.fetchone()
+            tipo_match = "exato_cnpj_valor_data"
+
+        # Estratégia 2: valor exato ±R$0,01, data ±3 dias (sem CNPJ)
+        if not match:
+            cur.execute(
+                """
+                SELECT id, description, gross_value, net_value, due_date, status
+                FROM receivable_accounts
+                WHERE status = 'pendente'
+                  AND ABS(gross_value - %s) <= %s
+                  AND due_date BETWEEN %s AND %s
+                ORDER BY ABS(gross_value - %s)
+                LIMIT 1
+                """,
+                (float(valor_abs), float(TOLERANCE), data_min, data_max, float(valor_abs)),
+            )
+            match = cur.fetchone()
+            tipo_match = "valor_exato_data"
+
+        # Estratégia 3: valor ±2%, data ±7 dias (flexível)
         if not match:
             margem = float(valor_abs * TOLERANCE_PCT)
             cur.execute(
@@ -203,7 +331,7 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
                 """
                 UPDATE bank_transactions SET
                     reconciliation_status = 'conciliado',
-                    reconciliation_id = %s,
+                    receivable_payment_id = %s,
                     reconciled_at = %s,
                     requires_justification = FALSE,
                     updated_at = NOW()
@@ -230,6 +358,25 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
                 "receivable_desc": match["description"],
                 "valor_tx": float(valor_abs),
                 "valor_receivable": float(match["gross_value"]),
+            }
+        else:
+            # Crédito sem match → marcar para justificativa
+            cur.execute(
+                """
+                UPDATE bank_transactions SET
+                    requires_justification = TRUE,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (tx_id,),
+            )
+            conn.commit()
+            return {
+                "status": "sem_match",
+                "tipo": "credito_sem_receivable",
+                "requires_justification": True,
+                "valor": float(valor_abs),
+                "descricao": descricao,
             }
 
     return {"status": "tipo_nao_processado", "tipo": tx_type}
