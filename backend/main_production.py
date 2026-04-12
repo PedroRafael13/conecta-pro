@@ -692,6 +692,17 @@ try:
 except Exception as _e:
     logger.warning(f"Justificativas Fiscais: {_e}")
 
+# Cobrança PIX Recorrente — MRR Clientes Conecta Mais
+try:
+    from modules.financial.controllers.recurring_billing_controller import (
+        router as recurring_billing_router,
+    )
+
+    api_router.include_router(recurring_billing_router, tags=["Financial - Cobrança Recorrente PIX"])
+    logger.info("Cobrança Recorrente PIX: OK")
+except Exception as _e:
+    logger.warning(f"Cobrança Recorrente PIX: {_e}")
+
 # Conciliação Automática Inter × Notas
 try:
     from modules.financial.controllers.auto_reconciliation_controller import (
@@ -855,6 +866,16 @@ try:
     api_router.include_router(connector_router, tags=["Integrations - Conectores"])
     api_router.include_router(solides_router, prefix="/integrations", tags=["Integrations - Sólides RH/DP"])
     api_router.include_router(banking_router, prefix="/integrations", tags=["Integrations - Banking"])
+    # Banking Payments (DARF + barcode + lote)
+    try:
+        from modules.integrations.banking.controllers.payment_controller import (
+            router as _payment_router,
+        )
+
+        api_router.include_router(_payment_router, tags=["Banking — Pagamentos"])
+        logger.info("Banking Payments: OK (barcode + DARF + lote)")
+    except Exception as _e:
+        logger.warning(f"Banking Payments: {_e}")
     # WhatsApp (Evolution API)
     if whatsapp_router:
         api_router.include_router(whatsapp_router, tags=["WhatsApp - Evolution API"])
@@ -946,6 +967,16 @@ try:
     logger.info("GDrive: router registrado (/gdrive)")
 except Exception as e:
     logger.warning(f"GDrive router: {e}")
+
+try:
+    from modules.integrations.banking.controllers.webhook_controller import (
+        router as _webhook_router,
+    )
+
+    api_router.include_router(_webhook_router, tags=["Webhooks — Inter"])
+    logger.info("Webhooks Inter: OK (pix + boleto + configurar + status)")
+except Exception as _e:
+    logger.warning(f"Webhooks Inter: {_e}")
 
 # Incluir router principal
 app.include_router(api_router)
