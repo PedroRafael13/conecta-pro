@@ -1,5 +1,5 @@
 """
-Controller para operações bancárias (Cora, Inter).
+Controller para operações bancárias (Banco Inter).
 
 Endpoints para consulta de saldos, extratos e status de conexão.
 """
@@ -81,7 +81,7 @@ class BankConnectionStatus(BaseModel):
 
 
 class BoletoGenerateRequest(BaseModel):
-    bank_code: str  # "403" = Cora, "077" = Inter
+    bank_code: str  # "077" = Inter
     amount: float
     due_date: str  # formato ISO: "2026-03-15"
     payer_name: str
@@ -132,7 +132,7 @@ class BoletoListResponse(BaseModel):
 
 
 class PixChargeRequest(BaseModel):
-    bank_code: str = "403"  # "403" = Cora, "077" = Inter
+    bank_code: str = "077"  # "077" = Inter
     amount: float  # Valor em R$
     description: str = "Cobrança Conecta Mais Patrimonial"
     payer_name: str | None = None
@@ -192,24 +192,6 @@ def _get_banking_service():
 
     service = BankingService()
     env = _load_credentials_env()
-
-    # Registrar Cora
-    cora_client_id = env.get("CORA_CLIENT_ID") or os.environ.get("CORA_CLIENT_ID")
-    cora_cert = env.get("CORA_CERT_PATH") or os.environ.get("CORA_CERT_PATH")
-    cora_key = env.get("CORA_KEY_PATH") or os.environ.get("CORA_KEY_PATH")
-    cora_env = env.get("CORA_ENVIRONMENT", "production")
-    if cora_client_id and cora_cert and cora_key:
-        try:
-            cora_creds = BankCredentials(
-                client_id=cora_client_id,
-                client_secret="",  # Cora usa mTLS, sem client_secret
-                certificate_path=cora_cert,
-                private_key_path=cora_key,
-                environment=cora_env,
-            )
-            service.register_account(BankCode.CORA, BankCode.CORA, cora_creds)
-        except Exception as exc:
-            logger.warning("Falha ao registrar Cora: %s", exc)
 
     # Registrar Inter
     inter_client_id = env.get("INTER_CLIENT_ID") or os.environ.get("INTER_CLIENT_ID")
@@ -284,7 +266,6 @@ async def get_bank_balances(
 
     # Bancos configurados no sistema
     banks = [
-        ("403", "Banco Cora", "Conta Digital"),
         ("077", "Banco Inter", inter_account),
     ]
 
@@ -321,7 +302,7 @@ async def get_bank_statement(
     if bank_code:
         banks_to_query.append(bank_code)
     else:
-        banks_to_query = ["403", "077"]
+        banks_to_query = ["077"]
 
     for code in banks_to_query:
         try:
@@ -362,7 +343,6 @@ async def get_bank_status(
     statuses: list[BankConnectionStatus] = []
 
     banks = [
-        ("403", "Banco Cora"),
         ("077", "Banco Inter"),
     ]
 
@@ -396,7 +376,6 @@ async def get_bank_status(
 
 # Mapeamento banco_code -> (nome legível, método de geração)
 _BANK_NAMES = {
-    "403": "Banco Cora",
     "077": "Banco Inter",
 }
 
@@ -406,7 +385,7 @@ async def generate_boleto(
     req: BoletoGenerateRequest,
     current_user=Depends(get_current_user),
 ):
-    """Emite boleto de cobrança via Cora (403) ou Banco Inter (077)."""
+    """Emite boleto de cobrança via Banco Inter (077)."""
     bank_name = _BANK_NAMES.get(req.bank_code, req.bank_code)
     now_iso = datetime.now().isoformat()
 
@@ -444,32 +423,7 @@ async def generate_boleto(
 
         amount_decimal = Decimal(str(req.amount))
 
-        if req.bank_code == "403":
-            # Cora: generate_invoice
-            result = await adapter.generate_invoice(
-                amount=amount_decimal,
-                due_date=due_date_obj,
-                payer_name=req.payer_name,
-                payer_document=req.payer_document,
-                description=req.description,
-            )
-            return BoletoResponse(
-                success=True,
-                bank_code=req.bank_code,
-                bank_name=bank_name,
-                boleto_id=result.get("invoice_id"),
-                barcode=result.get("barcode"),
-                digitable_line=result.get("digitable_line"),
-                pdf_url=result.get("pdf_url"),
-                pix_qrcode=result.get("pix_qrcode"),
-                pix_copy_paste=result.get("pix_copy_paste"),
-                amount=req.amount,
-                due_date=req.due_date,
-                payer_name=req.payer_name,
-                created_at=now_iso,
-            )
-
-        elif req.bank_code == "077":
+        if req.bank_code == "077":
             # Inter: generate_boleto
             result = await adapter.generate_boleto(
                 amount=amount_decimal,
@@ -531,9 +485,8 @@ async def generate_pix_charge(
     current_user=Depends(get_current_user),
 ):
     """
-    Gera cobrança PIX com QR Code dinâmico.
+    Gera cobrança PIX com QR Code dinâmico via Banco Inter.
 
-    - Cora (403): invoice PIX-only → retorna QR Code e copia-e-cola
     - Inter (077): cobrança imediata /pix/v2/cob → retorna copia-e-cola
     - Chave PIX padrão: CNPJ 35710481000103 (Conecta Mais Patrimonial)
     """
@@ -565,15 +518,7 @@ async def generate_pix_charge(
         amount_decimal = Decimal(str(req.amount))
         expiracao_segundos = req.expiracao_horas * 3600
 
-        if req.bank_code == "403":
-            result = await adapter.generate_pix_charge(
-                amount=amount_decimal,
-                description=req.description,
-                payer_name=req.payer_name,
-                payer_document=req.payer_document,
-                expiracao_segundos=expiracao_segundos,
-            )
-        elif req.bank_code == "077":
+        if req.bank_code == "077":
             result = await adapter.generate_pix_charge(
                 amount=amount_decimal,
                 description=req.description,
@@ -618,12 +563,6 @@ async def generate_pix_charge(
                 "Acesse developers.inter.co → sua aplicação → habilite os escopos 'pix.read' e 'pix.write', "
                 "depois solicite um novo certificado mTLS com esses escopos."
             )
-        elif "500" in error_msg and req.bank_code == "403":
-            error_msg = (
-                "Conta Cora não possui PIX configurado. "
-                "Acesse app.cora.com.br → Configurações → Pix → cadastre o CNPJ 35.710.481/0001-03 como chave PIX, "
-                "depois tente novamente."
-            )
         elif "403" in error_msg:
             error_msg = "Sem permissão para operação PIX neste banco. Verifique os escopos da aplicação."
         return PixChargeResponse(
@@ -646,55 +585,21 @@ async def list_boletos(
     days: int = Query(default=30, ge=1, le=365),
     current_user=Depends(get_current_user),
 ):
-    """Lista boletos emitidos. Suporte completo via Cora; Inter retorna lista vazia."""
-    end_date = date.today()
-    start_date = end_date - timedelta(days=days)
-
+    """Lista boletos emitidos via Banco Inter."""
     boletos: list[BoletoListItem] = []
     service = _get_banking_service()
 
-    banks_to_query = [bank_code] if bank_code else ["403", "077"]
+    banks_to_query = [bank_code] if bank_code else ["077"]
 
     for code in banks_to_query:
-        bank_name = _BANK_NAMES.get(code, code)
         adapter = service._adapters.get(code)
 
         if adapter is None:
             logger.debug("Adapter não disponível para banco %s — ignorando", code)
             continue
 
-        if code == "403":
-            # Cora suporta listagem de invoices
-            try:
-                items = await adapter.list_invoices(
-                    status=status,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
-                for item in items:
-                    payer = item.get("customer", {})
-                    bank_slip = item.get("bank_slip", {})
-                    boletos.append(
-                        BoletoListItem(
-                            boleto_id=item.get("id", ""),
-                            bank_code=code,
-                            bank_name=bank_name,
-                            amount=float(item.get("amount", 0)) / 100,  # centavos → reais
-                            due_date=item.get("due_date", ""),
-                            payer_name=payer.get("name", ""),
-                            status=item.get("status", ""),
-                            barcode=bank_slip.get("barcode"),
-                            digitable_line=bank_slip.get("digitable_line"),
-                            pdf_url=bank_slip.get("url"),
-                            created_at=item.get("created_at"),
-                        )
-                    )
-            except Exception as exc:
-                logger.debug("Erro ao listar boletos Cora: %s", exc)
-
-        elif code == "077":
-            # Inter não expõe listagem direta na versão atual do adapter
-            logger.debug("Listagem de boletos não disponível para Banco Inter (077)")
+        # Inter não expõe listagem direta na versão atual do adapter
+        logger.debug("Listagem de boletos não disponível para Banco Inter (077)")
 
     return BoletoListResponse(boletos=boletos, total=len(boletos))
 
@@ -717,7 +622,7 @@ async def get_bank_statement_full(
 
     service = _get_banking_service()
 
-    banks_to_query = [bank_code] if bank_code else ["403", "077"]
+    banks_to_query = [bank_code] if bank_code else ["077"]
 
     for code in banks_to_query:
         bank_name = _BANK_NAMES.get(code, code)

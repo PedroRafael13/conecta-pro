@@ -25,7 +25,6 @@ from .base import (
 )
 from .bb import BBAdapter
 from .bradesco import BradescoAdapter
-from .cora import CoraAdapter
 from .inter import InterAdapter
 from .itau import ItauAdapter
 
@@ -56,5 +55,4 @@ __all__ = [
     "ItauAdapter",
     "BradescoAdapter",
     "InterAdapter",
-    "CoraAdapter",
 ]

@@ -20,7 +20,6 @@ from ..adapters import (
     BaseBankingAdapter,
     BBAdapter,
     BradescoAdapter,
-    CoraAdapter,
     InterAdapter,
     ItauAdapter,
     PaymentRequest,
@@ -42,7 +41,6 @@ class BankingService:
         BankCode.BB: BBAdapter,
         BankCode.ITAU: ItauAdapter,
         BankCode.BRADESCO: BradescoAdapter,
-        BankCode.CORA: CoraAdapter,
         BankCode.INTER: InterAdapter,
     }
 
