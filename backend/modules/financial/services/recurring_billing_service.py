@@ -25,7 +25,6 @@ INTER_CLIENT_SECRET = os.getenv("INTER_CLIENT_SECRET", "")
 INTER_CERT_PATH = os.getenv("INTER_CERT_PATH", "")
 INTER_KEY_PATH = os.getenv("INTER_KEY_PATH", "")
 INTER_ENV = os.getenv("INTER_ENVIRONMENT", "production")
-INTER_PIX_KEY = os.getenv("INTER_PIX_KEY", "35710481000103")
 
 # condominio_id padrão usado por receivable_accounts existentes
 CONDOMINIO_ID_DEFAULT = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
@@ -63,7 +62,6 @@ def _chamar_pix_cobv(txid: str, valor: float, cnpj: str, nome: str, descricao: s
                     nome=nome,
                     descricao=descricao,
                     vencimento=vencimento,
-                    chave_pix=INTER_PIX_KEY,
                 )
                 return resultado
             finally:

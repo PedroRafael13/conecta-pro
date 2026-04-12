@@ -745,9 +745,9 @@ class InterAdapter(BaseBankingAdapter):
         nome: str,
         descricao: str,
         vencimento: str,
-        chave_pix: str = "35710481000103",
         juros_pct: float = 1.0,
         multa_pct: float = 2.0,
+        abatimento: float = 0,
     ) -> dict:
         """
         Cria cobrança PIX com vencimento (cobv).
@@ -771,8 +771,9 @@ class InterAdapter(BaseBankingAdapter):
                 "original": f"{valor:.2f}",
                 "multa": {"modalidade": 2, "valorPerc": f"{multa_pct:.2f}"},
                 "juros": {"modalidade": 2, "valorPerc": f"{juros_pct:.2f}"},
+                "abatimento": {"modalidade": 1, "valorPerc": f"{abatimento:.2f}"},
             },
-            "chave": chave_pix,
+            "chave": self._pix_key,
             "solicitacaoPagador": descricao[:140],
         }
 
