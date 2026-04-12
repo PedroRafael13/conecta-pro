@@ -126,6 +126,34 @@ for tx in txs:
         valor = abs(float(amount)) if amount is not None else 0.0
         desc = (description or memo or notes or f"Transação {tx_id}")[:500]
 
+        # Derivar categoria correta por entry_type — nunca usar bt.category diretamente
+        # (o Inter classifica tudo como 'receita', independente de ser entrada ou saída)
+        desc_lower = desc.lower()
+        if entry_type == "entrada":
+            mapped_category = (
+                "pix_recebido"
+                if "pix recebido" in desc_lower or "pix enviado" not in desc_lower and "pix" in desc_lower
+                else "receita"
+            )
+        elif "pix enviado interno" in desc_lower:
+            mapped_category = "transferencia_interna"
+        elif "saque" in desc_lower:
+            mapped_category = "retirada_caixa"
+        elif "tarifa" in desc_lower or "taxa" in desc_lower or "iof" in desc_lower:
+            mapped_category = "taxa_bancaria"
+        elif any(x in desc_lower for x in ("salario", "folha", "solides")):
+            mapped_category = "folha_pagamento"
+        elif any(x in desc_lower for x in ("darf", "imposto", " das ", "inss", "fgts", "irrf")):
+            mapped_category = "impostos"
+        elif any(x in desc_lower for x in ("saude", "unimed", "convenio", "plano")):
+            mapped_category = "beneficios"
+        elif "cef matriz" in desc_lower or "caixa fed" in desc_lower:
+            mapped_category = "fgts"
+        elif "pix enviado" in desc_lower:
+            mapped_category = "pix_enviado"
+        else:
+            mapped_category = "despesa_operacional"
+
         rows.append(
             {
                 "id": str(uuid.uuid4()),
@@ -134,7 +162,7 @@ for tx in txs:
                 "entry_type": entry_type,
                 "source_type": source_type,
                 "description": desc,
-                "category": category,
+                "category": mapped_category,
                 "entry_date": tx_date,
                 "expected_amount": valor,
                 "realized_date": tx_date,

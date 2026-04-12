@@ -71,3 +71,33 @@ export interface CollectionAction {
   prioridade: 'urgente' | 'alta' | 'media' | 'baixa' | string
   tentativas_anteriores: number
 }
+
+export interface CollectionAnalysis {
+  acoes: CollectionAction[]
+  total_em_atraso: number
+  qtd_inadimplentes: number
+  taxa_recuperacao_estimada: number
+}
+
+export interface BillingRule {
+  id: number
+  client_id: number
+  client_name: string
+  valor: number
+  dia_vencimento: number
+  tipo_servico: string
+  forma_pagamento: 'pix' | 'boleto' | 'ted'
+  ativo: boolean
+  ultimo_cobrado?: string
+  proximo_vencimento?: string
+}
+
+export interface ReceivableAccount {
+  id: string
+  descricao: string
+  valor: number
+  data_vencimento: string
+  status: 'pendente' | 'pago' | 'atrasado' | 'cancelado' | string
+  customer_name?: string
+  dias_atraso?: number
+}

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { CobrancaPreview, CrmClientItem, CrmResumo, AiRecommendation, CollectionAction } from '@/types/billing';
+import type { CobrancaPreview, CrmClientItem, CrmResumo, AiRecommendation, CollectionAction, CollectionAnalysis, BillingRule, ReceivableAccount } from '@/types/billing';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -1223,9 +1223,23 @@ function TabInadimplentes() {
   });
 
   // CollectionNegotiatorAgent — dados reais de inadimplência com ações recomendadas
-  const { data: collectionData } = useQuery<{ acoes: CollectionAction[] }>({
+  const { data: collectionData } = useQuery<CollectionAnalysis>({
     queryKey: ['collection-analyze'],
-    queryFn: () => api.get<{ acoes: CollectionAction[] }>('/api/v1/financial/ai/collection/analyze').then((r) => r.data),
+    queryFn: () => api.get<CollectionAnalysis>('/api/v1/financial/ai/collection/analyze').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Billing rules — regras de cobrança automática
+  const { data: billingRules = [] } = useQuery<BillingRule[]>({
+    queryKey: ['billing-rules'],
+    queryFn: () => api.get<BillingRule[]>('/api/v1/financial/billing-rules').then((r) => Array.isArray(r.data) ? r.data : []),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Receivables — contas a receber
+  const { data: receivablesData } = useQuery<{ data: ReceivableAccount[]; meta: { total: number } }>({
+    queryKey: ['receivables'],
+    queryFn: () => api.get<{ data: ReceivableAccount[]; meta: { total: number } }>('/api/v1/financial/receivables?page=1&page_size=20').then((r) => r.data),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -1246,12 +1260,14 @@ function TabInadimplentes() {
     return { source: 'crm' as const, items: filtered };
   }, [collectionData?.acoes, crmData?.items, filtroValor]);
 
-  // KPIs: dados reais sem fallback em mocks
-  const collectionItems = collectionData?.acoes ?? [];
-  const overdueCount  = (dashboard?.overdue_count as number | undefined) ?? crmResumo?.inadimplentes ?? collectionItems.length;
-  const overdueAmount = (dashboard?.overdue_amount as number | undefined) ?? collectionItems.reduce((s, a) => s + a.valor, 0);
-  const maiorValor    = collectionItems.reduce((mx, a) => a.valor > mx ? a.valor : mx, 0);
-  const totalClientes = crmResumo?.clientes_ativos ?? crmData?.total ?? 0;
+  // KPIs: campos top-level do CollectionNegotiatorAgent (mais precisos que somar acoes[])
+  const overdueCount       = collectionData?.qtd_inadimplentes ?? (dashboard?.overdue_count as number | undefined) ?? crmResumo?.inadimplentes ?? 0;
+  const overdueAmount      = collectionData?.total_em_atraso ?? (dashboard?.overdue_amount as number | undefined) ?? 0;
+  const maiorValor         = (collectionData?.acoes ?? []).reduce((mx, a) => a.valor > mx ? a.valor : mx, 0);
+  const totalClientes      = crmResumo?.clientes_ativos ?? crmData?.total ?? 0;
+  const taxaRecuperacao    = collectionData?.taxa_recuperacao_estimada ?? 0;
+  const regrasAtivas       = billingRules.filter((r) => r.ativo).length;
+  const totalRecebiveis    = receivablesData?.meta?.total ?? 0;
 
   const salvarNota = useCallback(() => {
     if (!contatoModal || !notaTexto.trim()) return;
@@ -1265,16 +1281,19 @@ function TabInadimplentes() {
   }, [contatoModal, notaTexto]);
 
   const KPI_CARDS = [
-    { label: 'Total em atraso',    value: formatCurrency(overdueAmount), icon: <TrendingDown className="h-5 w-5" />, cor: 'text-red-600',    bg: 'bg-red-500/10'    },
-    { label: 'Qtd. inadimplentes', value: String(overdueCount),          icon: <Users className="h-5 w-5" />,        cor: 'text-orange-600', bg: 'bg-orange-500/10' },
-    { label: 'Maior devedor',      value: formatCurrency(maiorValor),    icon: <AlertTriangle className="h-5 w-5" />,cor: 'text-yellow-600', bg: 'bg-yellow-500/10' },
-    { label: 'Clientes ativos',    value: String(totalClientes),         icon: <CheckCircle className="h-5 w-5" />,  cor: 'text-blue-600',   bg: 'bg-blue-500/10'   },
+    { label: 'Total em atraso',       value: formatCurrency(overdueAmount),       icon: <TrendingDown className="h-5 w-5" />,  cor: 'text-red-600',     bg: 'bg-red-500/10'     },
+    { label: 'Qtd. inadimplentes',    value: String(overdueCount),                icon: <Users className="h-5 w-5" />,         cor: 'text-orange-600',  bg: 'bg-orange-500/10'  },
+    { label: 'Taxa recuperação est.', value: `${taxaRecuperacao.toFixed(1)}%`,    icon: <TrendingDown className="h-5 w-5" />,  cor: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+    { label: 'Regras cobrança ativas',value: `${regrasAtivas} / ${billingRules.length}`, icon: <Settings className="h-5 w-5" />, cor: 'text-blue-600', bg: 'bg-blue-500/10'   },
+    { label: 'Maior devedor',         value: formatCurrency(maiorValor),          icon: <AlertTriangle className="h-5 w-5" />, cor: 'text-yellow-600',  bg: 'bg-yellow-500/10'  },
+    { label: 'Clientes ativos',       value: String(totalClientes),               icon: <CheckCircle className="h-5 w-5" />,   cor: 'text-blue-600',    bg: 'bg-blue-500/10'    },
+    { label: 'Contas a receber',      value: String(totalRecebiveis),             icon: <FileText className="h-5 w-5" />,      cor: 'text-violet-600',  bg: 'bg-violet-500/10'  },
   ];
 
   return (
     <div className="space-y-5">
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {KPI_CARDS.map((k) => (
           <Card key={k.label}>
             <CardContent className="pt-4 pb-3">

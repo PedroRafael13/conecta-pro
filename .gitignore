@@ -105,3 +105,5 @@ agents/cto/brain/
 agents/cto/*.log
 agents/cto/knowledge/
 !agents/cto/knowledge/.ultimo_commit
+frontend/src/app/modulos/financeiro/cobrancas/*.bak.*
+config/smtp_config.json
