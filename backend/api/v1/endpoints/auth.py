@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
-from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +27,14 @@ from core.models import User
 from core.rate_limit import limiter
 from core.schemas.auth import ForgotPasswordRequest, ResetPasswordRequest, Token, TokenRefresh
 from core.schemas.user import UserCreate, UserResponse
+
+
+class LoginJSON(BaseModel):
+    """Schema para login via JSON (email + password)."""
+
+    email: str
+    password: str
+
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -81,16 +89,25 @@ async def register(
 async def login(
     request: Request,
     response: Response,
-    form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Autentica usuario e retorna tokens."""
+    """Autentica usuario e retorna tokens. Aceita form-urlencoded ou JSON."""
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        body = await request.json()
+        username = body.get("email") or body.get("username", "")
+        password = body.get("password", "")
+    else:
+        form = await request.form()
+        username = form.get("username", "")
+        password = form.get("password", "")
+
     # Buscar usuario (username = email)
-    result = await db.execute(select(User).where(User.email == form_data.username))
+    result = await db.execute(select(User).where(User.email == username))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(form_data.password, user.password_hash):
-        logger.warning(f"Tentativa de login invalida: {form_data.username}")
+    if not user or not verify_password(password, user.password_hash):
+        logger.warning(f"Tentativa de login invalida: {username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais invalidas",
@@ -98,7 +115,7 @@ async def login(
         )
 
     if not user.is_active:
-        logger.warning(f"Tentativa de login com usuario inativo: {form_data.username}")
+        logger.warning(f"Tentativa de login com usuario inativo: {username}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario inativo",
