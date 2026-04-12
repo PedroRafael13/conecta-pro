@@ -72,7 +72,7 @@ async def create_account(
 ) -> ReceivableAccountResponse:
     """Cria uma nova conta a receber."""
     try:
-        account = await service.create_account(data, UUID(current_user["id"]))
+        account = await service.create_account(data, current_user.id)
         return ReceivableAccountResponse.model_validate(account)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -225,7 +225,7 @@ async def update_account(
 ) -> ReceivableAccountResponse:
     """Atualiza uma conta a receber."""
     try:
-        account = await service.update_account(account_id, data, UUID(current_user["id"]))
+        account = await service.update_account(account_id, data, current_user.id)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -248,7 +248,7 @@ async def delete_account(
 ) -> None:
     """Exclui uma conta a receber (soft delete)."""
     try:
-        deleted = await service.delete_account(account_id, UUID(current_user["id"]))
+        deleted = await service.delete_account(account_id, current_user.id)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -272,7 +272,7 @@ async def cancel_account(
 ) -> ReceivableAccountResponse:
     """Cancela uma conta a receber."""
     try:
-        account = await service.cancel_account(account_id, UUID(current_user["id"]), reason)
+        account = await service.cancel_account(account_id, current_user.id, reason)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -294,7 +294,7 @@ async def suspend_account(
 ) -> ReceivableAccountResponse:
     """Suspende uma conta a receber."""
     try:
-        account = await service.suspend_account(account_id, UUID(current_user["id"]), reason)
+        account = await service.suspend_account(account_id, current_user.id, reason)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -334,7 +334,7 @@ async def protest_account(
 ) -> ReceivableAccountResponse:
     """Envia conta para protesto."""
     try:
-        account = await service.protest_account(account_id, UUID(current_user["id"]), data.protest_number)
+        account = await service.protest_account(account_id, current_user.id, data.protest_number)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -373,7 +373,7 @@ async def write_off_account(
 ) -> ReceivableAccountResponse:
     """Baixa conta como perda."""
     try:
-        account = await service.write_off_account(account_id, UUID(current_user["id"]), data.reason)
+        account = await service.write_off_account(account_id, current_user.id, data.reason)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -500,7 +500,7 @@ async def renegotiate_installment(
 ) -> ReceivableInstallmentResponse:
     """Renegocia uma parcela."""
     try:
-        installment = await service.renegotiate_installment(installment_id, data, UUID(current_user["id"]))
+        installment = await service.renegotiate_installment(installment_id, data, current_user.id)
         if not installment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -593,7 +593,7 @@ async def register_payment(
 ) -> ReceivablePaymentResponse:
     """Registra recebimento de uma parcela."""
     try:
-        payment = await service.register_payment(installment_id, data, UUID(current_user["id"]))
+        payment = await service.register_payment(installment_id, data, current_user.id)
         # Publisher GEDEON Event Bus — pagamento recebido
         try:
             import asyncio
@@ -621,7 +621,7 @@ async def bulk_payment(
     current_user: dict = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Processa recebimento em lote."""
-    success, errors, payment_ids = await service.bulk_payment(data, UUID(current_user["id"]))
+    success, errors, payment_ids = await service.bulk_payment(data, current_user.id)
     return {
         "success_count": success,
         "error_count": errors,
@@ -644,7 +644,7 @@ async def reverse_payment(
 ) -> ReceivablePaymentResponse:
     """Estorna um recebimento."""
     try:
-        payment = await service.reverse_payment(payment_id, data, UUID(current_user["id"]))
+        payment = await service.reverse_payment(payment_id, data, current_user.id)
         if not payment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -669,7 +669,7 @@ async def reconcile_payment(
 ) -> ReceivablePaymentResponse:
     """Reconcilia recebimento com extrato bancario."""
     try:
-        payment = await service.reconcile_payment(payment_id, data, UUID(current_user["id"]))
+        payment = await service.reconcile_payment(payment_id, data, current_user.id)
         if not payment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

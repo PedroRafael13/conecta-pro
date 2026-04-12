@@ -1,10 +1,12 @@
 """Controllers para o modulo de Contabilidade."""
 
 import logging
+import os
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
+import psycopg2
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -1683,3 +1685,213 @@ async def publish_trial_balance(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao publicar balancete",
         ) from e
+
+
+# ═══════════════════════════════════════════════════════════════
+# ACCOUNTING ENTRIES — lançamentos reais da accounting_entries
+# ═══════════════════════════════════════════════════════════════
+
+
+def _get_raw_conn():
+    """Conexão psycopg2 direta à DB."""
+    url = os.getenv("DATABASE_URL", "").replace("+asyncpg", "")
+    return psycopg2.connect(url)
+
+
+@router.get("/entries")
+async def list_accounting_entries(
+    periodo: str | None = Query(None, description="Período YYYY-MM"),
+    tipo: str | None = Query(None, description="Tipo de lançamento"),
+    limit: int = Query(100, le=500),
+    offset: int = Query(0),
+    _current_user: dict = Depends(get_current_user),
+) -> list:
+    """Lista lançamentos da accounting_entries."""
+    try:
+        conn = _get_raw_conn()
+        cur = conn.cursor()
+        filters = []
+        params: list = []
+        if periodo:
+            filters.append("periodo_competencia = %s")
+            params.append(periodo)
+        if tipo:
+            filters.append("tipo_lancamento = %s")
+            params.append(tipo)
+        where = ("WHERE " + " AND ".join(filters)) if filters else ""
+        cur.execute(
+            f"""
+            SELECT id, data_lancamento::text, conta_debito, conta_credito,
+                   valor::float, historico, tipo_lancamento, documento_ref,
+                   periodo_competencia, status, created_at::text
+            FROM accounting_entries
+            {where}
+            ORDER BY data_lancamento DESC
+            LIMIT %s OFFSET %s
+            """,
+            params + [limit, offset],
+        )
+        rows = cur.fetchall()
+        cols = [d[0] for d in cur.description]
+        cur.close()
+        conn.close()
+        return [dict(zip(cols, r, strict=False)) for r in rows]
+    except Exception as e:
+        logger.error(f"Erro ao listar accounting_entries: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/dashboard")
+async def accounting_dashboard(
+    _current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Dashboard resumido dos lançamentos contábeis."""
+    try:
+        conn = _get_raw_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                count(*) as total_lancamentos,
+                coalesce(sum(CASE WHEN tipo_lancamento = 'nfse_emitida' THEN valor END), 0)::float as receita_nfse,
+                coalesce(sum(CASE WHEN tipo_lancamento = 'banco_inter' THEN valor END), 0)::float as movimentacao_inter,
+                coalesce(sum(valor), 0)::float as total_movimentado,
+                count(DISTINCT periodo_competencia) as periodos,
+                min(data_lancamento)::text as primeiro_lancamento,
+                max(data_lancamento)::text as ultimo_lancamento
+            FROM accounting_entries
+            WHERE status = 'confirmado'
+        """)
+        row = cur.fetchone()
+        cols = [d[0] for d in cur.description]
+        summary = dict(zip(cols, row, strict=False))
+
+        cur.execute("""
+            SELECT periodo_competencia, count(*) as lancamentos, sum(valor)::float as total
+            FROM accounting_entries
+            WHERE status = 'confirmado'
+            GROUP BY periodo_competencia
+            ORDER BY periodo_competencia DESC
+            LIMIT 12
+        """)
+        periodos = [dict(zip([d[0] for d in cur.description], r, strict=False)) for r in cur.fetchall()]
+
+        cur.execute("""
+            SELECT tipo_lancamento, count(*) as lancamentos, sum(valor)::float as total
+            FROM accounting_entries
+            GROUP BY tipo_lancamento
+        """)
+        tipos = [dict(zip([d[0] for d in cur.description], r, strict=False)) for r in cur.fetchall()]
+
+        cur.close()
+        conn.close()
+        return {"summary": summary, "by_periodo": periodos, "by_tipo": tipos}
+    except Exception as e:
+        logger.error(f"Erro no accounting dashboard: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/balancete")
+async def accounting_balancete(
+    periodo: str | None = Query(None, description="Período YYYY-MM (default: último período)"),
+    _current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Balancete de verificação a partir dos lançamentos contábeis."""
+    try:
+        conn = _get_raw_conn()
+        cur = conn.cursor()
+
+        if not periodo:
+            cur.execute("SELECT max(periodo_competencia) FROM accounting_entries WHERE status='confirmado'")
+            row = cur.fetchone()
+            periodo = row[0] if row else None
+
+        cur.execute(
+            """
+            SELECT
+                conta_debito as conta,
+                'debito' as natureza,
+                sum(valor)::float as total,
+                count(*) as lancamentos
+            FROM accounting_entries
+            WHERE status = 'confirmado'
+              AND (%s IS NULL OR periodo_competencia = %s)
+            GROUP BY conta_debito
+            UNION ALL
+            SELECT
+                conta_credito as conta,
+                'credito' as natureza,
+                sum(valor)::float as total,
+                count(*) as lancamentos
+            FROM accounting_entries
+            WHERE status = 'confirmado'
+              AND (%s IS NULL OR periodo_competencia = %s)
+            GROUP BY conta_credito
+            ORDER BY conta, natureza
+        """,
+            [periodo, periodo, periodo, periodo],
+        )
+
+        rows = [dict(zip([d[0] for d in cur.description], r, strict=False)) for r in cur.fetchall()]
+        total_debitos = sum(r["total"] for r in rows if r["natureza"] == "debito")
+        total_creditos = sum(r["total"] for r in rows if r["natureza"] == "credito")
+        cur.close()
+        conn.close()
+
+        return {
+            "periodo": periodo,
+            "items": rows,
+            "total_debitos": total_debitos,
+            "total_creditos": total_creditos,
+            "equilibrado": abs(total_debitos - total_creditos) < 0.01,
+        }
+    except Exception as e:
+        logger.error(f"Erro no balancete: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/dre")
+async def accounting_dre(
+    periodo: str | None = Query(None, description="Período YYYY-MM"),
+    _current_user: dict = Depends(get_current_user),
+) -> dict:
+    """DRE simplificada a partir dos lançamentos contábeis."""
+    try:
+        conn = _get_raw_conn()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT
+                sum(CASE WHEN conta_credito LIKE '3.1%' THEN valor ELSE 0 END)::float as receita_bruta,
+                sum(CASE WHEN conta_debito LIKE '3.2%' THEN valor ELSE 0 END)::float as despesas_operacionais,
+                sum(CASE WHEN tipo_lancamento = 'nfse_emitida' THEN valor ELSE 0 END)::float as receita_servicos,
+                count(*) as total_lancamentos
+            FROM accounting_entries
+            WHERE status = 'confirmado'
+              AND (%s IS NULL OR periodo_competencia = %s)
+        """,
+            [periodo, periodo],
+        )
+
+        row = cur.fetchone()
+        cols = [d[0] for d in cur.description]
+        data = dict(zip(cols, row, strict=False))
+
+        receita = data.get("receita_bruta", 0) or 0
+        despesas = data.get("despesas_operacionais", 0) or 0
+        cur.close()
+        conn.close()
+
+        return {
+            "periodo": periodo,
+            "receita_bruta": receita,
+            "deducoes": 0.0,
+            "receita_liquida": receita,
+            "despesas_operacionais": despesas,
+            "resultado_operacional": receita - despesas,
+            "receita_servicos_nfse": data.get("receita_servicos", 0),
+            "total_lancamentos": data.get("total_lancamentos", 0),
+        }
+    except Exception as e:
+        logger.error(f"Erro no DRE: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
