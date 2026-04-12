@@ -863,11 +863,11 @@ class InterAdapter(BaseBankingAdapter):
     async def register_boleto_webhook(self, webhook_url: str) -> dict:
         """
         Registra webhook para notificações de boleto pago.
-        POST /cobranca/v3/cobrancas/webhook
+        PUT /cobranca/v3/cobrancas/webhook  (Inter API retorna 204 No Content)
         """
         try:
             await self._request(
-                "POST",
+                "PUT",
                 "/cobranca/v3/cobrancas/webhook",
                 json={"webhookUrl": webhook_url},
             )
