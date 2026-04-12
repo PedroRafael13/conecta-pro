@@ -761,7 +761,7 @@ export default function DashboardFinanceiroPage() {
           ) : extrato.length > 0 ? (
             <div className="space-y-2">
               {extrato.map((tx, i) => {
-                const isCredit = ['credit', 'CREDITO', 'PIX_RECEBIDO'].includes(
+                const isCredit = ['credit', 'credito', 'CREDITO', 'PIX_RECEBIDO'].includes(
                   String(tx.transaction_type || ''))
                 return (
                   <div key={i}
