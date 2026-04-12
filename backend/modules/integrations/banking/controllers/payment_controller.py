@@ -92,11 +92,13 @@ async def pay_barcode(
                     "UPDATE payable_accounts SET "
                     "status = 'pago', paid_at = NOW(), "
                     "paid_value = :valor, "
+                    "transacao_bancaria_id = :transacao_id, "
                     "updated_at = NOW() "
                     "WHERE id = :payable_id"
                 ),
                 {
                     "valor": request.valor or 0,
+                    "transacao_id": resultado.get("payment_id", ""),
                     "payable_id": request.payable_id,
                 },
             )
