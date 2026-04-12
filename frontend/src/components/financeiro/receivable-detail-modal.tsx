@@ -93,6 +93,7 @@ export function ReceivableDetailModal({ isOpen, onClose, receivable }: Receivabl
             amount: valor,
             due_date: receivable.due_date || new Date().toISOString().split('T')[0],
             description: receivable.description || 'Cobrança Conecta Mais',
+            receivable_id: receivable.id,
             payer_city: 'Manaus',
             payer_state: 'AM',
             payer_zip: '69000000',
@@ -138,6 +139,7 @@ export function ReceivableDetailModal({ isOpen, onClose, receivable }: Receivabl
             description: receivable.description || 'Cobrança PIX',
             payer_name: receivable.customer_name || 'Cliente',
             payer_document: receivable.customer_document || receivable.client_document || '',
+            receivable_id: receivable.id,
           }),
         });
         const d = await r.json();
