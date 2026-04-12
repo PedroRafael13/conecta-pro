@@ -93,14 +93,34 @@ export function ReceivableDetailModal({ isOpen, onClose, receivable }: Receivabl
             amount: valor,
             due_date: receivable.due_date || new Date().toISOString().split('T')[0],
             description: receivable.description || 'Cobrança Conecta Mais',
+            payer_city: 'Manaus',
+            payer_state: 'AM',
+            payer_zip: '69000000',
+            payer_address: 'Endereço não informado',
+            payer_number: 'S/N',
+            payer_neighborhood: 'Centro',
           }),
         });
         const d = await r.json();
         if (d.success || d.boleto_id) {
+          // Buscar detalhes completos do boleto (barcode + linha digitável)
+          let barcode = d.barcode || '';
+          let digitable_line = d.digitable_line || '';
+          if (d.boleto_id && (!barcode || !digitable_line)) {
+            try {
+              const r2 = await fetch(
+                `/api/v1/integrations/banking/boleto/${d.boleto_id}`,
+                { headers: { Authorization: `Bearer ${getToken()}` } }
+              );
+              const d2 = await r2.json();
+              barcode = d2.barcode || barcode;
+              digitable_line = d2.digitable_line || d2.linha_digitavel || digitable_line;
+            } catch { /* usa dados da geração */ }
+          }
           setCobrancaData({
             tipo: 'boleto',
-            barcode: d.barcode || '',
-            digitable_line: d.digitable_line || '',
+            barcode,
+            digitable_line,
             boleto_id: d.boleto_id,
             valor,
           });
