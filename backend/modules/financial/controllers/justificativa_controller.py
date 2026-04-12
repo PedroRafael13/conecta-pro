@@ -89,6 +89,54 @@ async def alertar_pendentes(_user=Depends(get_current_user)):
     return alertar_pendentes()
 
 
+@router.post(
+    "/classificar-auto",
+    summary="Classificar automaticamente saídas por categoria Lucro Real",
+)
+async def classificar_auto(
+    aplicar: bool = False,
+    apenas_sem_categoria: bool = True,
+    responsavel: str = "Sistema — Lucro Real Auto",
+    _user=Depends(get_current_user),
+):
+    """
+    Classifica automaticamente débitos bancários por categoria fiscal.
+
+    - **preview** (aplicar=false): mostra distribuição sem salvar — padrão seguro
+    - **aplicar=true**: persiste categorias no banco (irreversível sem log)
+    - **apenas_sem_categoria=true**: só processa transações sem categoria ou mal-classificadas
+    - **apenas_sem_categoria=false**: reclassifica tudo (use com cuidado)
+
+    Regras: CNPJ de instituições conhecidas (CEF/FGTS, SOLIDES) + regex sobre descrição.
+    """
+    from modules.financial.services.lucro_real_justificativa_service import (
+        classificar_automatico,
+    )
+
+    return classificar_automatico(
+        preview=not aplicar,
+        apenas_sem_categoria=apenas_sem_categoria,
+        responsavel=responsavel,
+    )
+
+
+@router.get(
+    "/compliance",
+    summary="Relatório de compliance Lucro Real — estado das justificativas",
+)
+async def compliance_report(_user=Depends(get_current_user)):
+    """
+    Retorna percentual de compliance das saídas bancárias:
+    - total_debitos, conciliados, justificados, pendentes_criticos
+    - valor_pendente, compliance_pct
+    """
+    from modules.financial.services.lucro_real_justificativa_service import (
+        relatorio_compliance,
+    )
+
+    return relatorio_compliance()
+
+
 @router.get(
     "/categorias",
     summary="Listar categorias válidas de justificativa",
