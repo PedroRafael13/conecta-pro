@@ -39,6 +39,7 @@ async def _salvar_cobranca_no_receivable(
     receivable_id: str,
     tipo: str,
     dados: dict,
+    db=None,
 ) -> None:
     """
     Salva dados de boleto/PIX gerado de volta no receivable_account.
