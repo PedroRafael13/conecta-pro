@@ -725,7 +725,10 @@ class InterAdapter(BaseBankingAdapter):
             params["tipoPagamento"] = tipo
         try:
             data = await self._request("GET", "/banking/v2/pagamento", params=params)
-            pagamentos = data.get("pagamentos", data if isinstance(data, list) else [])
+            if isinstance(data, list):
+                pagamentos = data
+            else:
+                pagamentos = data.get("pagamentos", [])
             return {"success": True, "total": len(pagamentos), "pagamentos": pagamentos}
         except BankingAdapterError as e:
             return {"success": False, "status_code": e.code, "detail": str(e)}
