@@ -149,6 +149,10 @@ for tx in txs:
             mapped_category = "beneficios"
         elif "cef matriz" in desc_lower or "caixa fed" in desc_lower:
             mapped_category = "fgts"
+        elif any(x in desc_lower for x in ("energia", "aluguel", "internet", "telefon")):
+            mapped_category = "operacional"
+        elif any(x in desc_lower for x in ("fornec", "compra")):
+            mapped_category = "fornecedores"
         elif "pix enviado" in desc_lower:
             mapped_category = "pix_enviado"
         else:
