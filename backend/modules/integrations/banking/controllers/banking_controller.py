@@ -4,6 +4,7 @@ Controller para operações bancárias (Banco Inter).
 Endpoints para consulta de saldos, extratos e status de conexão.
 """
 
+import asyncio
 import logging
 import os
 from datetime import date, datetime, timedelta
@@ -32,6 +33,65 @@ def _load_credentials_env() -> dict[str, str]:
 
 
 router = APIRouter(prefix="/banking", tags=["Banking"])
+
+
+async def _salvar_cobranca_no_receivable(
+    receivable_id: str,
+    tipo: str,
+    dados: dict,
+) -> None:
+    """
+    Salva dados de boleto/PIX gerado de volta no receivable_account.
+    Fecha o ciclo: gerar cobrança → salvar → exibir no modal.
+    """
+    import psycopg2
+
+    database_url = os.getenv("DATABASE_URL", "").replace("+asyncpg", "")
+    try:
+        conn = psycopg2.connect(database_url)
+        cur = conn.cursor()
+
+        if tipo == "boleto":
+            cur.execute(
+                """
+                UPDATE receivable_accounts SET
+                    boleto_generated = TRUE,
+                    boleto_id = %s,
+                    boleto_barcode = %s,
+                    boleto_digitable_line = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (
+                    dados.get("boleto_id", ""),
+                    dados.get("barcode", ""),
+                    dados.get("digitable_line", dados.get("linha_digitavel", "")),
+                    receivable_id,
+                ),
+            )
+        elif tipo == "pix":
+            cur.execute(
+                """
+                UPDATE receivable_accounts SET
+                    pix_generated = TRUE,
+                    pix_txid = %s,
+                    pix_copy_paste = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (
+                    dados.get("charge_id", dados.get("txid", "")),
+                    dados.get("pix_copy_paste", ""),
+                    receivable_id,
+                ),
+            )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        logger.info("Cobrança %s salva no receivable %s", tipo, receivable_id)
+    except Exception as exc:
+        logger.warning("Erro ao salvar cobrança no receivable %s: %s", receivable_id, exc)
 
 
 # --- Response Schemas ---
@@ -87,6 +147,7 @@ class BoletoGenerateRequest(BaseModel):
     payer_name: str
     payer_document: str  # CPF ou CNPJ
     description: str
+    receivable_id: str | None = None  # ID do receivable_account para salvar boleto gerado
     payer_address: str | None = None
     payer_number: str | None = None
     payer_neighborhood: str | None = None
@@ -137,6 +198,7 @@ class PixChargeRequest(BaseModel):
     description: str = "Cobrança Conecta Mais Patrimonial"
     payer_name: str | None = None
     payer_document: str | None = None
+    receivable_id: str | None = None  # ID do receivable_account para salvar PIX gerado
     chave_pix: str = "35710481000103"  # CNPJ Conecta Mais como chave PIX padrão
     expiracao_horas: int = 24  # Validade em horas
 
@@ -438,6 +500,10 @@ async def generate_boleto(
                 payer_state=req.payer_state,
                 payer_zip=req.payer_zip,
             )
+            # Salvar no receivable_account se informado
+            if req.receivable_id and result.get("boleto_id"):
+                asyncio.create_task(_salvar_cobranca_no_receivable(req.receivable_id, "boleto", result))
+
             return BoletoResponse(
                 success=True,
                 bank_code=req.bank_code,
@@ -538,6 +604,10 @@ async def generate_pix_charge(
                 created_at=now_iso,
                 error=f"PIX não suportado para banco {req.bank_code}",
             )
+
+        # Salvar no receivable_account se informado
+        if req.receivable_id and (result.get("charge_id") or result.get("pix_copy_paste")):
+            asyncio.create_task(_salvar_cobranca_no_receivable(req.receivable_id, "pix", result))
 
         return PixChargeResponse(
             success=True,
