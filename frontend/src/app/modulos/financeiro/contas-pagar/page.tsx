@@ -417,6 +417,7 @@ export default function ContasPagarPage() {
         isOpen={detailModalOpen}
         onClose={() => { setDetailModalOpen(false); setSelectedPayable(null); }}
         payable={selectedPayable}
+        onSuccess={() => { setDetailModalOpen(false); setSelectedPayable(null); refetch(); }}
       />
 
       <ConfirmModal
