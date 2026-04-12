@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { CobrancaPreview, CrmClientItem, CrmResumo, AiRecommendation } from '@/types/billing';
+import type { CobrancaPreview, CrmClientItem, CrmResumo, AiRecommendation, CollectionAction } from '@/types/billing';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -722,24 +722,19 @@ function TabEmitir() {
 // ─── Tab 2: Cobranças Emitidas ────────────────────────────────────────────────
 
 function TabListagem() {
-  const [boletos, setBoletos] = useState<BoletoListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [filterBanco, setFilterBanco] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterDias, setFilterDias] = useState('30');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const carregar = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await listarBoletos(filterBanco || undefined, filterStatus || undefined, parseInt(filterDias));
-      setBoletos(res.boletos ?? []);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filterBanco, filterStatus, filterDias]);
+  const { data: boletosData, isLoading, refetch } = useQuery<{ boletos: BoletoListItem[] }>({
+    queryKey: ['boletos', filterBanco, filterStatus, filterDias],
+    queryFn: () => listarBoletos(filterBanco || undefined, filterStatus || undefined, parseInt(filterDias)),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => { carregar(); }, [carregar]);
+  const boletos = boletosData?.boletos ?? [];
+  const carregar = useCallback(() => { void refetch(); }, [refetch]);
 
   const copiar = useCallback(async (id: string, text: string) => {
     await navigator.clipboard.writeText(text);
@@ -1227,22 +1222,35 @@ function TabInadimplentes() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Clientes com dívida real
+  // CollectionNegotiatorAgent — dados reais de inadimplência com ações recomendadas
+  const { data: collectionData } = useQuery<{ acoes: CollectionAction[] }>({
+    queryKey: ['collection-analyze'],
+    queryFn: () => api.get<{ acoes: CollectionAction[] }>('/api/v1/financial/ai/collection/analyze').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Inadimplentes: CollectionNegotiatorAgent como fonte primária, CRM como fallback
   const inadimplentes = useMemo(() => {
+    const acoes = collectionData?.acoes ?? [];
+    if (acoes.length > 0) {
+      const filtered = filtroValor
+        ? acoes.filter((a) => a.valor >= parseFloat(filtroValor))
+        : acoes;
+      return { source: 'collection' as const, items: filtered };
+    }
+    // Fallback CRM
     const base = (crmData?.items ?? []).filter(
       (c) => c.is_defaulter === true || (c.total_debt !== null && c.total_debt !== undefined && c.total_debt > 0)
     );
-    if (filtroValor) {
-      const min = parseFloat(filtroValor);
-      return base.filter((c) => (c.total_debt ?? 0) >= min);
-    }
-    return base;
-  }, [crmData?.items, filtroValor]);
+    const filtered = filtroValor ? base.filter((c) => (c.total_debt ?? 0) >= parseFloat(filtroValor)) : base;
+    return { source: 'crm' as const, items: filtered };
+  }, [collectionData?.acoes, crmData?.items, filtroValor]);
 
   // KPIs: dados reais sem fallback em mocks
-  const overdueCount  = (dashboard?.overdue_count as number | undefined) ?? crmResumo?.inadimplentes ?? inadimplentes.length;
-  const overdueAmount = (dashboard?.overdue_amount as number | undefined) ?? inadimplentes.reduce((s, c) => s + (c.total_debt ?? 0), 0);
-  const maiorValor    = inadimplentes.reduce((mx, c) => (c.total_debt ?? 0) > mx ? (c.total_debt ?? 0) : mx, 0);
+  const collectionItems = collectionData?.acoes ?? [];
+  const overdueCount  = (dashboard?.overdue_count as number | undefined) ?? crmResumo?.inadimplentes ?? collectionItems.length;
+  const overdueAmount = (dashboard?.overdue_amount as number | undefined) ?? collectionItems.reduce((s, a) => s + a.valor, 0);
+  const maiorValor    = collectionItems.reduce((mx, a) => a.valor > mx ? a.valor : mx, 0);
   const totalClientes = crmResumo?.clientes_ativos ?? crmData?.total ?? 0;
 
   const salvarNota = useCallback(() => {
@@ -1308,8 +1316,8 @@ function TabInadimplentes() {
         </div>
       </div>
 
-      {/* Lista de inadimplentes — dados reais CRM */}
-      {inadimplentes.length === 0 ? (
+      {/* Lista de inadimplentes — CollectionNegotiatorAgent */}
+      {inadimplentes.items.length === 0 ? (
         <Card>
           <CardContent className="py-16 flex flex-col items-center gap-3 text-center">
             <div className="h-12 w-12 rounded-full bg-green-500/15 flex items-center justify-center">
@@ -1319,11 +1327,10 @@ function TabInadimplentes() {
             <p className="text-xs text-muted-foreground">Nenhum cliente com dívida em aberto.</p>
           </CardContent>
         </Card>
-      ) : (
+      ) : inadimplentes.source === 'collection' ? (
         <div className="space-y-2">
-          {inadimplentes.map((item) => {
-            const debt = item.total_debt ?? 0;
-            const critico = debt > 5000;
+          {(inadimplentes.items as CollectionAction[]).map((item) => {
+            const critico = item.dias_atraso > 30 || item.prioridade === 'urgente';
             const notasItem = notas.filter((n) => n.inadimplente_id === item.id);
 
             return (
@@ -1340,65 +1347,111 @@ function TabInadimplentes() {
                     {/* Info cliente */}
                     <div className="flex-1 min-w-0">
                       <p className={cn('text-sm font-semibold truncate', critico && 'text-red-700 dark:text-red-400')}>
-                        {item.name}
+                        {item.customer_name}
                       </p>
-                      <p className="text-xs text-muted-foreground">{item.cnpj}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.acao} · {item.canal}
+                      </p>
                     </div>
 
-                    {/* Valor em aberto */}
+                    {/* Valor e dias */}
                     <div className="text-right">
                       <p className={cn('text-sm font-bold', critico ? 'text-red-600' : 'text-orange-600')}>
-                        {formatCurrency(debt)}
+                        {formatCurrency(item.valor)}
                       </p>
-                      <p className="text-xs text-muted-foreground">em aberto</p>
+                      <p className="text-xs text-muted-foreground">{item.dias_atraso} dias em atraso</p>
                     </div>
 
-                    {/* Score */}
-                    {item.health_score !== null && item.health_score !== undefined && (
-                      <div className="hidden sm:flex flex-col items-center">
-                        <span className={cn(
-                          'text-lg font-black leading-none',
-                          item.health_score < 40 ? 'text-red-600' : item.health_score < 70 ? 'text-orange-600' : 'text-emerald-600'
-                        )}>
-                          {item.health_score}
-                        </span>
-                        <span className="text-xs text-muted-foreground">score</span>
-                      </div>
-                    )}
+                    {/* Prioridade badge */}
+                    <span className={cn(
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+                      item.prioridade === 'urgente' ? 'bg-red-500/10 text-red-600 border-red-500/30' :
+                      item.prioridade === 'alta' ? 'bg-orange-500/10 text-orange-600 border-orange-500/30' :
+                      'bg-yellow-500/10 text-yellow-600 border-yellow-500/30'
+                    )}>
+                      {item.prioridade}
+                    </span>
 
                     {/* Ações */}
                     <div className="flex flex-wrap gap-1.5">
                       <Button
                         variant="outline" size="sm"
                         className="h-7 text-xs gap-1 border-blue-500/50 text-blue-600 hover:bg-blue-500/10"
-                        onClick={() => setLembreteModal({ id: item.id, nome: item.name, valor: debt, dias: 0 })}
+                        onClick={() => setLembreteModal({ id: item.id, nome: item.customer_name, valor: item.valor, dias: item.dias_atraso })}
                       >
                         <MessageSquare className="h-3 w-3" />Lembrete
                       </Button>
                       <Button
                         variant="outline" size="sm"
                         className="h-7 text-xs gap-1 border-muted-foreground/40 text-muted-foreground hover:bg-muted/50"
-                        onClick={() => setContatoModal({ id: item.id, nome: item.name })}
+                        onClick={() => setContatoModal({ id: item.id, nome: item.customer_name })}
                       >
                         <Clock className="h-3 w-3" />Contato
                       </Button>
                       <Button
                         variant="outline" size="sm"
                         className="h-7 text-xs gap-1 border-green-500/50 text-green-600 hover:bg-green-500/10"
-                        onClick={() => setAcordoModal({ id: item.id, nome: item.name, valor: debt })}
+                        onClick={() => setAcordoModal({ id: item.id, nome: item.customer_name, valor: item.valor })}
                       >
                         <Handshake className="h-3 w-3" />Acordo
                       </Button>
                     </div>
                   </div>
 
+                  {/* Mensagem recomendada pelo agente */}
+                  <div className="mt-2 pt-2 border-t border-dashed">
+                    <p className="text-xs text-muted-foreground italic">{item.mensagem}</p>
+                  </div>
+
                   {/* Notas registradas */}
                   {notasItem.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-dashed space-y-1">
+                    <div className="mt-1 space-y-1">
                       {notasItem.map((n, idx) => (
                         <p key={idx} className="text-xs text-muted-foreground">
                           <span className="font-medium">{n.data}:</span> {n.texto}
                         </p>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {(inadimplentes.items as CrmClientItem[]).map((item) => {
+            const debt = item.total_debt ?? 0;
+            const critico = debt > 5000;
+            const notasItem = notas.filter((n) => n.inadimplente_id === item.id);
+            return (
+              <Card key={item.id} className={cn('overflow-hidden', critico ? 'border-red-500/40' : 'border-orange-500/20')}
+                style={{ borderLeft: `4px solid ${critico ? '#ef4444' : '#f97316'}` }}>
+                <CardContent className="py-3 px-4">
+                  <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+                    <div className="flex-1 min-w-0">
+                      <p className={cn('text-sm font-semibold truncate', critico && 'text-red-700')}>{item.name}</p>
+                      <p className="text-xs text-muted-foreground">{item.cnpj}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={cn('text-sm font-bold', critico ? 'text-red-600' : 'text-orange-600')}>{formatCurrency(debt)}</p>
+                      <p className="text-xs text-muted-foreground">em aberto</p>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1 border-blue-500/50 text-blue-600 hover:bg-blue-500/10"
+                        onClick={() => setLembreteModal({ id: item.id, nome: item.name, valor: debt, dias: 0 })}>
+                        <MessageSquare className="h-3 w-3" />Lembrete
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1 border-green-500/50 text-green-600 hover:bg-green-500/10"
+                        onClick={() => setAcordoModal({ id: item.id, nome: item.name, valor: debt })}>
+                        <Handshake className="h-3 w-3" />Acordo
+                      </Button>
+                    </div>
+                  </div>
+                  {notasItem.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-dashed space-y-1">
+                      {notasItem.map((n, idx) => (
+                        <p key={idx} className="text-xs text-muted-foreground"><span className="font-medium">{n.data}:</span> {n.texto}</p>
                       ))}
                     </div>
                   )}

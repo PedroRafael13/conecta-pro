@@ -58,3 +58,16 @@ export interface AiRecommendation {
   prazo_sugerido: string
   acao: string
 }
+
+export interface CollectionAction {
+  id: string
+  customer_name: string
+  valor: number
+  dias_atraso: number
+  nivel: string
+  acao: string
+  mensagem: string
+  canal: string
+  prioridade: 'urgente' | 'alta' | 'media' | 'baixa' | string
+  tentativas_anteriores: number
+}
