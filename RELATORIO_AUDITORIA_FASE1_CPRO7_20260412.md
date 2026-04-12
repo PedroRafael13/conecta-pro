@@ -1,5 +1,5 @@
 # AUDITORIA INDEPENDENTE — FASE 1 CPRO 7
-**Data:** 2026-04-12 às 20:22 (atualizado 20:35 — 3 gaps corrigidos)
+**Data:** 2026-04-12 às 20:22 (atualizado 20:40 — 4 gaps corrigidos, prompt 100%)
 **Auditor:** Claude Sonnet 4.6 — T7 (independente)
 **Branch:** feature/people-management-reorganization
 **Método:** Verificação ao vivo — banco, backend, frontend, commits
@@ -254,6 +254,18 @@ cd frontend && NODE_OPTIONS=--max-old-space-size=4096 npx tsc --noEmit
 *(307 = redirect de autenticação — comportamento correto, finaliza em 200)*
 
 **BUILD_ID:** `conecta-pro-17760213939542` — gerado 2026-04-12 19:17:26
+
+### Chunks cobrancas gerados
+
+```bash
+ls .next/static/chunks/ | grep -i "cobran"
+→ (vazio — Next.js App Router usa hashes, não nomes de rota)
+
+ls .next/server/app/modulos/financeiro/cobrancas/
+→ page.js (1.2K) ✅  page.js.map ✅  page_client-reference-manifest.js ✅
+```
+
+Next.js App Router não gera chunks nomeados por rota — compila para `server/app/.../cobrancas/page.js`. Página compilada presente no build de 2026-04-12 19:17. **378 chunks hasheados** no total.
 
 ---
 
