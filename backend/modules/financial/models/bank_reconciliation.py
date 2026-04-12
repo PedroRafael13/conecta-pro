@@ -126,9 +126,9 @@ class BankReconciliation(Base):
     completed_at = Column(DateTime, nullable=True)
 
     # Responsaveis
-    started_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
-    completed_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
-    reviewed_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    started_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    completed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    reviewed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
 
     # Ajustes
@@ -147,7 +147,7 @@ class BankReconciliation(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     __table_args__ = (

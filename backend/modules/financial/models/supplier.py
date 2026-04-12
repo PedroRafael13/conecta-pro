@@ -153,7 +153,7 @@ class Supplier(Base):
     rating_count = Column(String(10), default="0")
     is_qualified = Column(Boolean, default=False)  # Fornecedor qualificado
     qualified_at = Column(DateTime, nullable=True)
-    qualified_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    qualified_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Documentos anexos (JSONB)
     documents = Column(JSONB, default=list)
@@ -167,12 +167,12 @@ class Supplier(Base):
     is_blocked = Column(Boolean, default=False)
     blocked_reason = Column(Text, nullable=True)
     blocked_at = Column(DateTime, nullable=True)
-    blocked_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    blocked_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

@@ -98,14 +98,14 @@ class PayablePayment(Base):
     # Estorno
     is_reversed = Column(Boolean, default=False)
     reversed_at = Column(DateTime, nullable=True)
-    reversed_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    reversed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     reversal_reason = Column(Text, nullable=True)
     reversal_receipt = Column(String(500), nullable=True)
 
     # Conciliação
     is_reconciled = Column(Boolean, default=False)
     reconciled_at = Column(DateTime, nullable=True)
-    reconciled_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    reconciled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     reconciliation_notes = Column(Text, nullable=True)
 
     # Dados adicionais
@@ -118,7 +118,7 @@ class PayablePayment(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

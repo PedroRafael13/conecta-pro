@@ -98,7 +98,7 @@ class PayableInstallment(Base):
 
     # Agendamento
     scheduled_payment_date = Column(Date, nullable=True)
-    scheduled_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    scheduled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Renegociação
     is_renegotiated = Column(Boolean, default=False)

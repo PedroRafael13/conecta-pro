@@ -185,7 +185,7 @@ class ReceivableAccount(Base):
     # Baixa
     is_written_off = Column(Boolean, default=False)
     written_off_at = Column(DateTime, nullable=True)
-    written_off_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    written_off_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     written_off_reason = Column(Text, nullable=True)
 
     # Anexos e observacoes
@@ -199,7 +199,7 @@ class ReceivableAccount(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

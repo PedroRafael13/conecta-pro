@@ -123,7 +123,7 @@ class StockItem(Base):
     is_blocked = Column(Boolean, default=False)
     blocked_reason = Column(Text, nullable=True)
     blocked_at = Column(DateTime, nullable=True)
-    blocked_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    blocked_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Observações
     notes = Column(Text, nullable=True)
@@ -134,7 +134,7 @@ class StockItem(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

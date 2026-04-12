@@ -120,7 +120,7 @@ class StockReservation(Base):
     # Solicitante
     requester_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("usuarios.id"),
+        ForeignKey("users.id"),
         nullable=True,
     )
     requester_name = Column(String(100), nullable=True)
@@ -129,16 +129,16 @@ class StockReservation(Base):
 
     # Aprovação
     requires_approval = Column(Boolean, default=False)
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     approval_notes = Column(Text, nullable=True)
 
     # Liberação
-    released_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    released_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     release_notes = Column(Text, nullable=True)
 
     # Cancelamento
-    cancelled_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    cancelled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     cancellation_reason = Column(Text, nullable=True)
 
     # Configurações
@@ -156,7 +156,7 @@ class StockReservation(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

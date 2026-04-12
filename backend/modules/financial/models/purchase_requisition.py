@@ -90,7 +90,7 @@ class PurchaseRequisition(Base):
     justification = Column(Text, nullable=True)  # Justificativa da compra
 
     # Solicitante
-    requester_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=False, index=True)
+    requester_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     department = Column(String(100), nullable=True)  # Departamento solicitante
     cost_center = Column(String(50), nullable=True)  # Centro de custo
 
@@ -98,7 +98,7 @@ class PurchaseRequisition(Base):
     request_date = Column(Date, nullable=False, default=datetime.utcnow().date)
     needed_by_date = Column(Date, nullable=True)  # Data necessária
     approved_at = Column(DateTime, nullable=True)
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Valores estimados
     estimated_total = Column(Numeric(15, 2), default=0)
@@ -127,12 +127,12 @@ class PurchaseRequisition(Base):
     # Rejeição
     rejection_reason = Column(Text, nullable=True)
     rejected_at = Column(DateTime, nullable=True)
-    rejected_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    rejected_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Cancelamento
     cancellation_reason = Column(Text, nullable=True)
     cancelled_at = Column(DateTime, nullable=True)
-    cancelled_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    cancelled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Histórico de aprovações
     approval_history = Column(JSONB, default=list)
@@ -141,7 +141,7 @@ class PurchaseRequisition(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

@@ -79,12 +79,12 @@ class PurchaseApproval(Base):
     document_total = Column(Numeric(15, 2), nullable=True)  # Valor do documento
 
     # Aprovador
-    approver_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=False, index=True)
+    approver_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     approver_role = Column(String(50), nullable=True)  # Cargo do aprovador
 
     # Delegação
-    original_approver_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
-    delegated_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    original_approver_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    delegated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     delegation_reason = Column(Text, nullable=True)
     delegated_at = Column(DateTime, nullable=True)
 
@@ -121,7 +121,7 @@ class PurchaseApproval(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     __table_args__ = (

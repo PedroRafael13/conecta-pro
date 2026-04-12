@@ -142,18 +142,18 @@ class PurchaseOrder(Base):
     billing_contact = Column(String(100), nullable=True)
 
     # Aprovação
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     approval_notes = Column(Text, nullable=True)
 
     # Rejeição
     rejection_reason = Column(Text, nullable=True)
     rejected_at = Column(DateTime, nullable=True)
-    rejected_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    rejected_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Cancelamento
     cancellation_reason = Column(Text, nullable=True)
     cancelled_at = Column(DateTime, nullable=True)
-    cancelled_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    cancelled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Observações
     notes = Column(Text, nullable=True)
@@ -173,7 +173,7 @@ class PurchaseOrder(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

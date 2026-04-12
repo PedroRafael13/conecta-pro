@@ -127,14 +127,14 @@ class StockInventory(Base):
     # Responsáveis
     supervisor_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("usuarios.id"),
+        ForeignKey("users.id"),
         nullable=True,
     )
     team_members = Column(JSONB, default=list)  # IDs dos membros da equipe
 
     # Aprovação
     requires_approval = Column(Boolean, default=True)
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     approval_notes = Column(Text, nullable=True)
 
@@ -157,7 +157,7 @@ class StockInventory(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
@@ -371,21 +371,21 @@ class StockInventoryItem(Base):
 
     # Contagem
     counted_at = Column(DateTime, nullable=True)
-    counted_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    counted_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Segunda contagem
     recounted_at = Column(DateTime, nullable=True)
-    recounted_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    recounted_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Verificação
     verified_at = Column(DateTime, nullable=True)
-    verified_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    verified_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Ajuste
     adjustment_reason = Column(Text, nullable=True)
     adjustment_movement_id = Column(UUID(as_uuid=True), nullable=True)
     adjusted_at = Column(DateTime, nullable=True)
-    adjusted_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    adjusted_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Observações
     notes = Column(Text, nullable=True)

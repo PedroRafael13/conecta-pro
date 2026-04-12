@@ -129,7 +129,7 @@ class GoodsReceipt(Base):
     # Inspeção
     inspection_result = Column(String(30), nullable=True)
     inspection_notes = Column(Text, nullable=True)
-    inspected_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    inspected_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Divergências
     has_divergence = Column(Boolean, default=False)
@@ -138,13 +138,13 @@ class GoodsReceipt(Base):
     divergence_action = Column(String(50), nullable=True)  # aceitar, devolver, negociar
 
     # Aprovação
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     approval_notes = Column(Text, nullable=True)
 
     # Recusa
     rejection_reason = Column(Text, nullable=True)
     rejected_at = Column(DateTime, nullable=True)
-    rejected_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    rejected_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Local de armazenamento
     storage_location = Column(String(100), nullable=True)
@@ -167,7 +167,7 @@ class GoodsReceipt(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

@@ -172,7 +172,7 @@ class BankTransaction(Base):
         default=ReconciliationStatus.PENDENTE.value,
     )
     reconciled_at = Column(DateTime, nullable=True)
-    reconciled_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    reconciled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     reconciliation_note = Column(Text, nullable=True)
 
     # Dados do terceiro (favorecido/pagador)
@@ -206,7 +206,7 @@ class BankTransaction(Base):
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relationships
