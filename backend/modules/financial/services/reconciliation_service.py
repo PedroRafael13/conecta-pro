@@ -37,8 +37,60 @@ DATE_WINDOW_FLEX = 7  # dias para matching flexível
 _RE_CNPJ = re.compile(r"\b(\d{14})\b|\b(\d{2}[.\-]?\d{3}[.\-]?\d{3}[/\-]?\d{4}[.\-]?\d{2})\b")
 
 
+INTER_BANK_ACCOUNT_ID = "20663dc9-805c-4721-bc1f-62a041cee3c1"
+
+
 def _get_conn():
     return psycopg2.connect(DATABASE_URL)
+
+
+def _get_or_create_reconciliation_session(mes: int, ano: int, cur) -> str:
+    """
+    Cria (ou recupera) um registro em bank_reconciliations representando
+    a sessão de conciliação automática do período.
+    Retorna o UUID da sessão para popular bank_transactions.reconciliation_id.
+    """
+    import calendar
+
+    reference = f"AUTO-{ano}-{mes:02d}"
+    cur.execute(
+        "SELECT id FROM bank_reconciliations WHERE reference = %s LIMIT 1",
+        (reference,),
+    )
+    row = cur.fetchone()
+    if row:
+        return str(row[0] if not isinstance(row, dict) else row["id"])
+
+    _, last_day = calendar.monthrange(ano, mes)
+    period_start = f"{ano}-{mes:02d}-01"
+    period_end = f"{ano}-{mes:02d}-{last_day:02d}"
+
+    cur.execute(
+        """
+        INSERT INTO bank_reconciliations (
+            bank_account_id, period_type, period_start, period_end,
+            opening_balance, status, total_credits, total_debits,
+            total_adjustments, total_system_items, total_statement_items,
+            items_reconciled, items_pending, progress_percentage,
+            ativo, description, reference, match_type, created_at
+        ) VALUES (
+            %s, 'mensal', %s, %s,
+            0, 'em_andamento', 0, 0,
+            0, 0, 0, 0, 0, 0,
+            TRUE, %s, %s, 'cascata_3_estrategias', NOW()
+        )
+        RETURNING id
+        """,
+        (
+            INTER_BANK_ACCOUNT_ID,
+            period_start,
+            period_end,
+            f"Conciliação Automática Inter × Notas — {mes:02d}/{ano}",
+            reference,
+        ),
+    )
+    new_row = cur.fetchone()
+    return str(new_row[0] if not isinstance(new_row, dict) else new_row["id"])
 
 
 def _normalizar_doc(doc: str) -> str:
@@ -122,6 +174,10 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
 
     if tx["reconciliation_status"] in ("conciliado", "justificado"):
         return {"status": "ja_conciliado", "reconciliation_id": str(tx["reconciliation_id"] or "")}
+
+    # Obter/criar sessão de conciliação para o período da transação
+    tx_date_obj = tx["transaction_date"]
+    recon_session_id = _get_or_create_reconciliation_session(tx_date_obj.month, tx_date_obj.year, cur)
 
     valor_abs = abs(Decimal(str(tx["amount"])))
     tx_date = tx["transaction_date"]
@@ -207,18 +263,19 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
 
         if match:
             pay_id = match["id"]
-            # Marcar transação como conciliada (payable_payment_id — sem FK externo)
+            # Marcar transação como conciliada + vincular à sessão de conciliação
             cur.execute(
                 """
                 UPDATE bank_transactions SET
                     reconciliation_status = 'conciliado',
+                    reconciliation_id = %s,
                     payable_payment_id = %s,
                     reconciled_at = %s,
                     requires_justification = FALSE,
                     updated_at = NOW()
                 WHERE id = %s
                 """,
-                (pay_id, tx_date, tx_id),
+                (recon_session_id, pay_id, tx_date, tx_id),
             )
             # Marcar payable como pago + vincular transação bancária
             cur.execute(
@@ -333,13 +390,14 @@ def conciliar_transacao(tx_id: str, conn) -> dict:
                 """
                 UPDATE bank_transactions SET
                     reconciliation_status = 'conciliado',
+                    reconciliation_id = %s,
                     receivable_payment_id = %s,
                     reconciled_at = %s,
                     requires_justification = FALSE,
                     updated_at = NOW()
                 WHERE id = %s
                 """,
-                (rec_id, tx_date, tx_id),
+                (recon_session_id, rec_id, tx_date, tx_id),
             )
             # Marcar receivable como recebido + vincular transação bancária
             cur.execute(
