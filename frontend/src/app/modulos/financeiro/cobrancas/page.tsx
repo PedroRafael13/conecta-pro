@@ -1,6 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import type { CobrancaPreview, CrmClientItem, CrmResumo, AiRecommendation } from '@/types/billing';
 import Link from 'next/link';
 import {
   ArrowLeft,

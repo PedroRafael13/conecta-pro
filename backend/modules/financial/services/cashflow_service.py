@@ -8,7 +8,7 @@ from uuid import UUID
 from sqlalchemy import and_, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.financial.models.payable_account import PayableAccount, PayableStatus
+from modules.financial.models.payable_account import PayableAccount
 from modules.financial.models.payable_category import PayableCategory
 from modules.financial.models.payable_installment import InstallmentStatus, PayableInstallment
 from modules.financial.models.supplier import Supplier
@@ -145,96 +145,121 @@ class CashFlowService:
         condominio_id: UUID,
         period_days: int = 30,
     ) -> dict:
-        """Retorna resumo do fluxo de caixa."""
+        """Retorna resumo do fluxo de caixa usando cashflow_entries."""
         today = date.today()
-        end_date = today + timedelta(days=period_days)
+        period_start = today - timedelta(days=period_days)
+        period_end = today
 
-        # Totais de contas a pagar por status
-        status_query = (
-            select(
-                PayableAccount.status,
-                func.sum(PayableAccount.net_value).label("total"),
-                func.count(PayableAccount.id).label("count"),
-            )
-            .where(
-                and_(
-                    PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo.is_(True),
-                    PayableAccount.due_date <= end_date,
-                )
-            )
-            .group_by(PayableAccount.status)
+        # Totais de entrada e saída no período (cashflow_entries)
+        inflow_q = await self.session.execute(
+            text("""
+                SELECT
+                    COALESCE(SUM(expected_amount), 0) as total,
+                    category
+                FROM cashflow_entries
+                WHERE condominio_id = :cid
+                  AND entry_type = 'entrada'
+                  AND entry_date BETWEEN :start AND :end
+                  AND ativo = true
+                GROUP BY category
+            """),
+            {"cid": str(condominio_id), "start": period_start, "end": period_end},
         )
+        inflows_by_cat: dict = {}
+        total_inflows = Decimal("0")
+        for row in inflow_q:
+            val = Decimal(str(row.total))
+            cat = row.category or "outros"
+            inflows_by_cat[cat] = val
+            total_inflows += val
 
-        status_result = await self.session.execute(status_query)
-        status_data = {row.status: {"total": float(row.total or 0), "count": row.count} for row in status_result}
-
-        # Vencidos
-        overdue_query = select(
-            func.sum(PayableAccount.net_value).label("total"),
-            func.count(PayableAccount.id).label("count"),
-        ).where(
-            and_(
-                PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo.is_(True),
-                PayableAccount.status.in_([PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]),
-                PayableAccount.due_date < today,
-            )
+        outflow_q = await self.session.execute(
+            text("""
+                SELECT
+                    COALESCE(SUM(expected_amount), 0) as total,
+                    category
+                FROM cashflow_entries
+                WHERE condominio_id = :cid
+                  AND entry_type = 'saida'
+                  AND entry_date BETWEEN :start AND :end
+                  AND ativo = true
+                GROUP BY category
+            """),
+            {"cid": str(condominio_id), "start": period_start, "end": period_end},
         )
+        outflows_by_cat: dict = {}
+        total_outflows = Decimal("0")
+        for row in outflow_q:
+            val = Decimal(str(row.total))
+            cat = row.category or "outros"
+            outflows_by_cat[cat] = val
+            total_outflows += val
 
-        overdue_result = await self.session.execute(overdue_query)
-        overdue_row = overdue_result.one()
+        net_flow = total_inflows - total_outflows
 
-        # A vencer esta semana
-        week_end = today + timedelta(days=7)
-        week_query = select(
-            func.sum(PayableAccount.net_value).label("total"),
-            func.count(PayableAccount.id).label("count"),
-        ).where(
-            and_(
-                PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo.is_(True),
-                PayableAccount.status.in_([PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]),
-                PayableAccount.due_date >= today,
-                PayableAccount.due_date <= week_end,
-            )
+        # Saldo (soma de realized_amount de todas as entradas - saídas confirmadas)
+        bal_q = await self.session.execute(
+            text("""
+                SELECT
+                    COALESCE(SUM(CASE WHEN entry_type='entrada' THEN realized_amount ELSE 0 END), 0) -
+                    COALESCE(SUM(CASE WHEN entry_type='saida' THEN realized_amount ELSE 0 END), 0) as balance
+                FROM cashflow_entries
+                WHERE condominio_id = :cid AND ativo = true
+                  AND status IN ('realizado', 'confirmado')
+                  AND entry_date < :start
+            """),
+            {"cid": str(condominio_id), "start": period_start},
         )
+        bal_row = bal_q.one()
+        opening_balance = Decimal(str(bal_row.balance or 0))
+        closing_balance = opening_balance + net_flow
 
-        week_result = await self.session.execute(week_query)
-        week_row = week_result.one()
-
-        # A vencer este mês
-        month_query = select(
-            func.sum(PayableAccount.net_value).label("total"),
-            func.count(PayableAccount.id).label("count"),
-        ).where(
-            and_(
-                PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo.is_(True),
-                PayableAccount.status.in_([PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]),
-                PayableAccount.due_date >= today,
-                PayableAccount.due_date <= end_date,
-            )
+        # Contas a receber pendentes
+        rec_q = await self.session.execute(
+            text("""
+                SELECT
+                    COALESCE(SUM(CASE WHEN due_date >= :today THEN net_value ELSE 0 END), 0) as pending,
+                    COALESCE(SUM(CASE WHEN due_date < :today THEN net_value ELSE 0 END), 0) as overdue
+                FROM receivable_accounts
+                WHERE condominio_id = :cid AND ativo = true
+                  AND status IN ('pendente', 'aprovada', 'aberta')
+            """),
+            {"cid": str(condominio_id), "today": today},
         )
+        rec_row = rec_q.one()
+        pending_receivables = Decimal(str(rec_row.pending or 0))
+        overdue_receivables = Decimal(str(rec_row.overdue or 0))
 
-        month_result = await self.session.execute(month_query)
-        month_row = month_result.one()
+        # Contas a pagar pendentes
+        pay_q = await self.session.execute(
+            text("""
+                SELECT
+                    COALESCE(SUM(CASE WHEN due_date >= :today THEN net_value ELSE 0 END), 0) as pending,
+                    COALESCE(SUM(CASE WHEN due_date < :today THEN net_value ELSE 0 END), 0) as overdue
+                FROM payable_accounts
+                WHERE condominio_id = :cid AND ativo = true
+                  AND status IN ('pendente', 'aprovada')
+            """),
+            {"cid": str(condominio_id), "today": today},
+        )
+        pay_row = pay_q.one()
+        pending_payables = Decimal(str(pay_row.pending or 0))
+        overdue_payables = Decimal(str(pay_row.overdue or 0))
 
         return {
-            "period_days": period_days,
-            "by_status": status_data,
-            "overdue": {
-                "total": float(overdue_row.total or 0),
-                "count": overdue_row.count or 0,
-            },
-            "due_this_week": {
-                "total": float(week_row.total or 0),
-                "count": week_row.count or 0,
-            },
-            "due_this_month": {
-                "total": float(month_row.total or 0),
-                "count": month_row.count or 0,
-            },
+            "period_start": period_start,
+            "period_end": period_end,
+            "opening_balance": opening_balance,
+            "closing_balance": closing_balance,
+            "total_inflows": total_inflows,
+            "total_outflows": total_outflows,
+            "net_flow": net_flow,
+            "inflows_by_category": inflows_by_cat,
+            "outflows_by_category": outflows_by_cat,
+            "pending_receivables": pending_receivables,
+            "pending_payables": pending_payables,
+            "overdue_receivables": overdue_receivables,
+            "overdue_payables": overdue_payables,
         }
 
     async def get_category_breakdown(

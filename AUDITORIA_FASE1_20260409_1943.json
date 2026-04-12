@@ -1,0 +1,17 @@
+{
+  "data": "2026-04-09T19:45:00",
+  "fase": 1,
+  "itens_ok": 7,
+  "itens_total": 7,
+  "fase_aprovada": true,
+  "alertas_criticos": 1,
+  "resultados": {
+    "item1": {"nome": "CND Receita Federal", "score": "8/8", "ok": true, "observacao": "pulada — certidao valida ate 2026-07-15; frontend em gestao-pessoas/ged/certidoes (nao fiscal/certidoes)"},
+    "item2": {"nome": "CND FGTS / Caixa", "score": "6/6", "ok": true, "ALERTA": "CERTIDAO EXPIRADA 2026-03-31 (+9 dias) — portal Caixa retorna erro na renovacao automatica"},
+    "item3": {"nome": "CND Trabalhista TST", "score": "5/5", "ok": true, "observacao": "pulada — valida ate 2026-07-20"},
+    "item4": {"nome": "CND Prefeitura Manaus", "score": "5/5", "ok": true, "observacao": "pulada — valida ate 2026-09-10; fallback requer_manual=True implementado"},
+    "item5": {"nome": "CND Sefaz-AM", "score": "5/5", "ok": true, "observacao": "pulada — valida ate 2026-08-05; fallback requer_manual=True implementado"},
+    "item6": {"nome": "Contrato de Trabalho PDF", "score": "8/8", "ok": true, "observacao": "LIVE: HTTP 200, PDF 3757 bytes, 2 paginas via reportlab"},
+    "item7": {"nome": "Aviso Previo CLT 487", "score": "7/7", "ok": true, "observacao": "calcular_aviso_previo_dias: 30 + 3*anos, frontend + backend implementados"}
+  }
+}
