@@ -42,7 +42,7 @@ import { useCondominio } from '@/contexts/CondominioContext';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
-type TabType = 'emit' | 'list' | 'regua' | 'inadimplentes';
+type TabType = 'emit' | 'list' | 'regua' | 'inadimplentes' | 'recorrente';
 type EmitMode = 'boleto' | 'pix';
 
 interface BoletoForm {
@@ -1055,33 +1055,150 @@ function TabRegua() {
 
 // ─── Tab 4: Inadimplentes ─────────────────────────────────────────────────────
 
-type FakeInadimplente = {
-  id: string;
-  nome: string;
-  documento: string;
-  valor: number;
-  vencimento: string;
-  dias_atraso: number;
-  status_cobranca: string;
-};
+// ─── Tab 5: PIX Recorrente ────────────────────────────────────────────────────
 
-// Dados de demonstração quando API não retorna inadimplentes reais
-const DEMO_INADIMPLENTES: FakeInadimplente[] = [
-  { id: '1', nome: 'Condomínio Jardim das Flores',    documento: '12.345.678/0001-90', valor: 4800.00, vencimento: '2026-01-10', dias_atraso: 58, status_cobranca: 'Lembrete enviado' },
-  { id: '2', nome: 'Carlos Eduardo Mendes',           documento: '987.654.321-00',     valor: 1250.00, vencimento: '2026-01-22', dias_atraso: 46, status_cobranca: 'Aguardando' },
-  { id: '3', nome: 'Empresa ABC Segurança Ltda',      documento: '98.765.432/0001-10', valor: 9600.00, vencimento: '2026-02-01', dias_atraso: 36, status_cobranca: 'Em negociação' },
-  { id: '4', nome: 'Maria Aparecida Santos',          documento: '111.222.333-44',     valor:  750.00, vencimento: '2026-02-15', dias_atraso: 22, status_cobranca: 'Aguardando' },
-  { id: '5', nome: 'Residencial Parque Verde',        documento: '55.444.333/0001-22', valor: 3200.00, vencimento: '2026-02-20', dias_atraso: 17, status_cobranca: 'Lembrete enviado' },
-  { id: '6', nome: 'Pedro Henrique Oliveira',         documento: '222.333.444-55',     valor:  480.00, vencimento: '2026-03-01', dias_atraso:  8, status_cobranca: 'Aguardando' },
-];
+function TabRecorrente() {
+  const now = new Date();
+  const mes = now.getMonth() + 1;
+  const ano = now.getFullYear();
+
+  const { data: preview, isLoading, refetch } = useQuery<CobrancaPreview>({
+    queryKey: ['cobrar-recorrente-preview', mes, ano],
+    queryFn: () =>
+      api.get<CobrancaPreview>(`/api/v1/financial/billing/cobrar-recorrente/${mes}/${ano}/preview`)
+        .then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [cobrandoTodos, setCobrandoTodos] = useState(false);
+  const [cobrancaMsg, setCobrancaMsg] = useState<string | null>(null);
+
+  const cobrarTodos = useCallback(async () => {
+    setCobrandoTodos(true);
+    setCobrancaMsg(null);
+    try {
+      await api.post(`/api/v1/financial/billing/cobrar-recorrente/${mes}/${ano}`);
+      setCobrancaMsg('Cobranças enviadas com sucesso!');
+      refetch();
+    } catch {
+      setCobrancaMsg('Erro ao enviar cobranças. Verifique as chaves PIX.');
+    } finally {
+      setCobrandoTodos(false);
+    }
+  }, [mes, ano, refetch]);
+
+  const MESES = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const clientes = preview?.clientes ?? [];
+  const semPix = preview?.sem_pix_key ?? [];
+
+  return (
+    <div className="space-y-5">
+      {/* Header KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">MRR {MESES[mes]}/{ano}</p>
+            <p className="text-xl font-bold text-emerald-600 mt-1">
+              {formatCurrency(preview?.total_mrr ?? 0)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Clientes recorrentes</p>
+            <p className="text-xl font-bold text-blue-600 mt-1">
+              {preview?.total_clientes ?? 0}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Sem chave PIX</p>
+            <p className={cn('text-xl font-bold mt-1', semPix.length > 0 ? 'text-red-600' : 'text-emerald-600')}>
+              {semPix.length}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Ação cobrar todos */}
+      <div className="flex items-center gap-3">
+        <Button
+          onClick={cobrarTodos}
+          disabled={cobrandoTodos || clientes.length === 0}
+          className="gap-2 bg-violet-600 hover:bg-violet-700 text-white"
+        >
+          {cobrandoTodos
+            ? <><RefreshCw className="h-4 w-4 animate-spin" />Enviando PIX...</>
+            : <><QrCode className="h-4 w-4" />Cobrar todos via PIX ({MESES[mes]})</>
+          }
+        </Button>
+        {cobrancaMsg && (
+          <span className={cn('text-sm', cobrancaMsg.includes('sucesso') ? 'text-emerald-600' : 'text-red-600')}>
+            {cobrancaMsg}
+          </span>
+        )}
+      </div>
+
+      {/* Lista de clientes */}
+      {clientes.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 flex flex-col items-center gap-2 text-center">
+            <Users className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Nenhum cliente recorrente encontrado para {MESES[mes]}/{ano}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {clientes.map((c, i) => (
+            <Card key={i}>
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{c.nome}</p>
+                    <p className="text-xs text-muted-foreground">
+                      CNPJ: {c.cnpj} · Venc: {new Date(c.vencimento).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={cn(
+                      'text-xs px-2 py-0.5 rounded-full border',
+                      c.pix_key
+                        ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                        : 'bg-red-500/10 text-red-600 border-red-500/30'
+                    )}>
+                      {c.pix_key ? 'PIX ✓' : 'Sem PIX'}
+                    </span>
+                    <p className="text-sm font-bold text-emerald-600">
+                      {formatCurrency(c.mrr)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function TabInadimplentes() {
   const { condominioId } = useCondominio();
   const { data: dashboardRaw } = useReceivableDashboard({ condominio_id: condominioId });
-  const dashboard = dashboardRaw as any;
+  const dashboard = dashboardRaw as Record<string, unknown> | undefined;
 
   const [filtroValor, setFiltroValor] = useState('');
-  const [filtroDias, setFiltroDias] = useState('0');
 
   // Modais
   const [lembreteModal, setLembreteModal]   = useState<LembreteModal | null>(null);
@@ -1091,19 +1208,42 @@ function TabInadimplentes() {
   const [notaTexto, setNotaTexto]           = useState('');
   const [acordoForm, setAcordoForm]         = useState<AcordoForm>({ valor: '', parcelas: '1', data_primeiro: '' });
 
-  // KPIs do dashboard real (se disponível) ou demo
-  const overdueCount  = dashboard?.overdue_count  ?? DEMO_INADIMPLENTES.length;
-  const overdueAmount = dashboard?.overdue_amount ?? DEMO_INADIMPLENTES.reduce((s, i) => s + i.valor, 0);
-  const maiorValor    = DEMO_INADIMPLENTES.reduce((mx, i) => i.valor > mx ? i.valor : mx, 0);
-  const mediaDias     = DEMO_INADIMPLENTES.length
-    ? Math.round(DEMO_INADIMPLENTES.reduce((s, i) => s + i.dias_atraso, 0) / DEMO_INADIMPLENTES.length)
-    : 0;
-
-  const inadimplentes = DEMO_INADIMPLENTES.filter((i) => {
-    if (filtroValor && i.valor < parseFloat(filtroValor)) return false;
-    if (filtroDias !== '0' && i.dias_atraso < parseInt(filtroDias)) return false;
-    return true;
+  // Dados reais — CRM clients
+  const { data: crmData } = useQuery<{ items: CrmClientItem[]; total: number }>({
+    queryKey: ['crm-clients-all'],
+    queryFn: () => api.get<{ items: CrmClientItem[]; total: number }>('/api/v1/crm/clients?page=1&per_page=50').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
   });
+
+  const { data: crmResumo } = useQuery<CrmResumo>({
+    queryKey: ['crm-resumo'],
+    queryFn: () => api.get<CrmResumo>('/api/v1/crm/clients/resumo').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: aiRecs } = useQuery<AiRecommendation[]>({
+    queryKey: ['ai-recommendations'],
+    queryFn: () => api.get<AiRecommendation[]>('/api/v1/financial/ai/advisor/recommendations').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Clientes com dívida real
+  const inadimplentes = useMemo(() => {
+    const base = (crmData?.items ?? []).filter(
+      (c) => c.is_defaulter === true || (c.total_debt !== null && c.total_debt !== undefined && c.total_debt > 0)
+    );
+    if (filtroValor) {
+      const min = parseFloat(filtroValor);
+      return base.filter((c) => (c.total_debt ?? 0) >= min);
+    }
+    return base;
+  }, [crmData?.items, filtroValor]);
+
+  // KPIs: dados reais sem fallback em mocks
+  const overdueCount  = (dashboard?.overdue_count as number | undefined) ?? crmResumo?.inadimplentes ?? inadimplentes.length;
+  const overdueAmount = (dashboard?.overdue_amount as number | undefined) ?? inadimplentes.reduce((s, c) => s + (c.total_debt ?? 0), 0);
+  const maiorValor    = inadimplentes.reduce((mx, c) => (c.total_debt ?? 0) > mx ? (c.total_debt ?? 0) : mx, 0);
+  const totalClientes = crmResumo?.clientes_ativos ?? crmData?.total ?? 0;
 
   const salvarNota = useCallback(() => {
     if (!contatoModal || !notaTexto.trim()) return;
@@ -1117,10 +1257,10 @@ function TabInadimplentes() {
   }, [contatoModal, notaTexto]);
 
   const KPI_CARDS = [
-    { label: 'Total em atraso', value: formatCurrency(overdueAmount), icon: <TrendingDown className="h-5 w-5" />, cor: 'text-red-600', bg: 'bg-red-500/10' },
-    { label: 'Qtd. inadimplentes', value: String(overdueCount),         icon: <Users className="h-5 w-5" />,       cor: 'text-orange-600', bg: 'bg-orange-500/10' },
-    { label: 'Maior inadimplente', value: formatCurrency(maiorValor),   icon: <AlertTriangle className="h-5 w-5" />, cor: 'text-yellow-600', bg: 'bg-yellow-500/10' },
-    { label: 'Média de dias',      value: `${mediaDias} dias`,          icon: <Clock className="h-5 w-5" />,        cor: 'text-blue-600', bg: 'bg-blue-500/10' },
+    { label: 'Total em atraso',    value: formatCurrency(overdueAmount), icon: <TrendingDown className="h-5 w-5" />, cor: 'text-red-600',    bg: 'bg-red-500/10'    },
+    { label: 'Qtd. inadimplentes', value: String(overdueCount),          icon: <Users className="h-5 w-5" />,        cor: 'text-orange-600', bg: 'bg-orange-500/10' },
+    { label: 'Maior devedor',      value: formatCurrency(maiorValor),    icon: <AlertTriangle className="h-5 w-5" />,cor: 'text-yellow-600', bg: 'bg-yellow-500/10' },
+    { label: 'Clientes ativos',    value: String(totalClientes),         icon: <CheckCircle className="h-5 w-5" />,  cor: 'text-blue-600',   bg: 'bg-blue-500/10'   },
   ];
 
   return (
@@ -1144,6 +1284,17 @@ function TabInadimplentes() {
         ))}
       </div>
 
+      {/* Recomendações IA */}
+      {aiRecs && aiRecs.length > 0 && aiRecs.filter((r) => r.categoria === 'inadimplencia').map((rec, i) => (
+        <div key={i} className="flex gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+          <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-700">{rec.titulo}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{rec.descricao}</p>
+          </div>
+        </div>
+      ))}
+
       {/* Filtros */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-2">
@@ -1155,38 +1306,24 @@ function TabInadimplentes() {
             className="w-32 h-9"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground whitespace-nowrap">Dias em atraso:</label>
-          <select
-            value={filtroDias}
-            onChange={(e) => setFiltroDias(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="0">Todos</option>
-            <option value="5">&gt; 5 dias</option>
-            <option value="15">&gt; 15 dias</option>
-            <option value="30">&gt; 30 dias</option>
-            <option value="60">&gt; 60 dias</option>
-            <option value="90">&gt; 90 dias</option>
-          </select>
-        </div>
       </div>
 
-      {/* Lista de inadimplentes */}
+      {/* Lista de inadimplentes — dados reais CRM */}
       {inadimplentes.length === 0 ? (
         <Card>
           <CardContent className="py-16 flex flex-col items-center gap-3 text-center">
             <div className="h-12 w-12 rounded-full bg-green-500/15 flex items-center justify-center">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <p className="text-sm font-medium">Nenhum inadimplente encontrado.</p>
-            <p className="text-xs text-muted-foreground">Tudo em dia! ou ajuste os filtros.</p>
+            <p className="text-sm font-medium">Carteira limpa!</p>
+            <p className="text-xs text-muted-foreground">Nenhum cliente com dívida em aberto.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
           {inadimplentes.map((item) => {
-            const critico = item.dias_atraso > 30;
+            const debt = item.total_debt ?? 0;
+            const critico = debt > 5000;
             const notasItem = notas.filter((n) => n.inadimplente_id === item.id);
 
             return (
@@ -1203,55 +1340,52 @@ function TabInadimplentes() {
                     {/* Info cliente */}
                     <div className="flex-1 min-w-0">
                       <p className={cn('text-sm font-semibold truncate', critico && 'text-red-700 dark:text-red-400')}>
-                        {item.nome}
+                        {item.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">{item.documento}</p>
+                      <p className="text-xs text-muted-foreground">{item.cnpj}</p>
                     </div>
 
-                    {/* Valor e vencimento */}
+                    {/* Valor em aberto */}
                     <div className="text-right">
                       <p className={cn('text-sm font-bold', critico ? 'text-red-600' : 'text-orange-600')}>
-                        {formatCurrency(item.valor)}
+                        {formatCurrency(debt)}
                       </p>
-                      <p className="text-xs text-muted-foreground">Venceu {formatDate(item.vencimento)}</p>
+                      <p className="text-xs text-muted-foreground">em aberto</p>
                     </div>
 
-                    {/* Dias em atraso */}
-                    <div className="hidden sm:flex flex-col items-center">
-                      <span className={cn(
-                        'text-lg font-black leading-none',
-                        item.dias_atraso > 60 ? 'text-red-600' : item.dias_atraso > 30 ? 'text-orange-600' : 'text-yellow-600'
-                      )}>
-                        {item.dias_atraso}
-                      </span>
-                      <span className="text-xs text-muted-foreground">dias</span>
-                    </div>
-
-                    {/* Status cobrança */}
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-muted/50 text-muted-foreground border-border">
-                      {item.status_cobranca}
-                    </span>
+                    {/* Score */}
+                    {item.health_score !== null && item.health_score !== undefined && (
+                      <div className="hidden sm:flex flex-col items-center">
+                        <span className={cn(
+                          'text-lg font-black leading-none',
+                          item.health_score < 40 ? 'text-red-600' : item.health_score < 70 ? 'text-orange-600' : 'text-emerald-600'
+                        )}>
+                          {item.health_score}
+                        </span>
+                        <span className="text-xs text-muted-foreground">score</span>
+                      </div>
+                    )}
 
                     {/* Ações */}
                     <div className="flex flex-wrap gap-1.5">
                       <Button
                         variant="outline" size="sm"
                         className="h-7 text-xs gap-1 border-blue-500/50 text-blue-600 hover:bg-blue-500/10"
-                        onClick={() => setLembreteModal({ id: item.id, nome: item.nome, valor: item.valor, dias: item.dias_atraso })}
+                        onClick={() => setLembreteModal({ id: item.id, nome: item.name, valor: debt, dias: 0 })}
                       >
                         <MessageSquare className="h-3 w-3" />Lembrete
                       </Button>
                       <Button
                         variant="outline" size="sm"
                         className="h-7 text-xs gap-1 border-muted-foreground/40 text-muted-foreground hover:bg-muted/50"
-                        onClick={() => setContatoModal({ id: item.id, nome: item.nome })}
+                        onClick={() => setContatoModal({ id: item.id, nome: item.name })}
                       >
                         <Clock className="h-3 w-3" />Contato
                       </Button>
                       <Button
                         variant="outline" size="sm"
                         className="h-7 text-xs gap-1 border-green-500/50 text-green-600 hover:bg-green-500/10"
-                        onClick={() => setAcordoModal({ id: item.id, nome: item.nome, valor: item.valor })}
+                        onClick={() => setAcordoModal({ id: item.id, nome: item.name, valor: debt })}
                       >
                         <Handshake className="h-3 w-3" />Acordo
                       </Button>
@@ -1454,6 +1588,7 @@ function TabInadimplentes() {
 const TABS: Array<{ key: TabType; label: string; icon: React.ReactNode }> = [
   { key: 'emit',          label: 'Emitir Cobrança',   icon: <Plus className="h-4 w-4" />          },
   { key: 'list',          label: 'Emitidas',           icon: <FileText className="h-4 w-4" />      },
+  { key: 'recorrente',    label: 'PIX Recorrente',     icon: <QrCode className="h-4 w-4" />        },
   { key: 'regua',         label: 'Régua',              icon: <Bell className="h-4 w-4" />          },
   { key: 'inadimplentes', label: 'Inadimplentes',      icon: <AlertTriangle className="h-4 w-4" /> },
 ];
@@ -1511,6 +1646,7 @@ export default function CobrancasPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {activeTab === 'emit'          && <TabEmitir />}
         {activeTab === 'list'          && <TabListagem />}
+        {activeTab === 'recorrente'    && <TabRecorrente />}
         {activeTab === 'regua'         && <TabRegua />}
         {activeTab === 'inadimplentes' && <TabInadimplentes />}
       </div>
