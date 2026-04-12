@@ -310,8 +310,15 @@ async def list_stock_items(
             items = repo.list_expired(condominio_id)
         else:
             # Lista geral - por armazém principal
+            # fallback para condominio_id do usuário autenticado
+            _raw_cond = (
+                _current_user.get("condominio_id")
+                if isinstance(_current_user, dict)
+                else getattr(_current_user, "condominio_id", None)
+            )
+            _cond = condominio_id or (uuid.UUID(str(_raw_cond)) if _raw_cond else None)
             wh_repo = WarehouseRepository(db)
-            main_wh = wh_repo.get_main_warehouse(condominio_id) if condominio_id else None
+            main_wh = wh_repo.get_main_warehouse(_cond) if _cond else None
             if main_wh:
                 items = repo.list_by_warehouse(main_wh.id, item_status, skip, limit)
             else:
