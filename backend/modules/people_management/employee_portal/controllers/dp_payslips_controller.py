@@ -435,3 +435,106 @@ async def upload_folha_pdf(
         "validacao": validacao,
         "rubricas": resultado,
     }
+
+
+# ─────────────────── FOLHA PIX — PAGAMENTO VIA BANCO INTER ────────────────────
+
+
+@router.get(
+    "/folha/pagar-via-pix/{mes}/{ano}/preview",
+    summary="Preview pagamento folha via PIX — sem pagar",
+)
+async def preview_pagamento_folha(
+    mes: int,
+    ano: int,
+    _user: CurrentActiveUser = None,
+):
+    """
+    Simula pagamento da folha sem executar nenhum PIX.
+    Mostra funcionários, valores e quem não tem chave PIX cadastrada.
+    """
+    from modules.people_management.services.folha_payment_service import (
+        processar_folha_completa,
+    )
+
+    return await processar_folha_completa(mes, ano, apenas_preview=True)
+
+
+@router.post(
+    "/folha/pagar-via-pix/{mes}/{ano}",
+    summary="Pagar folha completa via PIX Inter — 51 funcionários",
+)
+async def pagar_folha_via_pix(
+    mes: int,
+    ano: int,
+    _user: CurrentActiveUser = None,
+):
+    """
+    Processa pagamento de salários via PIX para todos os funcionários
+    com chave PIX cadastrada e holerite publicado no período.
+    ATENÇÃO: envia PIX reais pelo Banco Inter (mTLS OAuth2).
+    """
+    from modules.people_management.services.folha_payment_service import (
+        processar_folha_completa,
+    )
+
+    return await processar_folha_completa(mes, ano, apenas_preview=False)
+
+
+@router.get(
+    "/folha/pagar-via-pix/{mes}/{ano}/status",
+    summary="Status dos pagamentos PIX da folha",
+)
+async def status_pagamento_folha(
+    mes: int,
+    ano: int,
+    _user: CurrentActiveUser = None,
+):
+    """Retorna status detalhado dos pagamentos PIX da folha do período."""
+    from modules.people_management.services.folha_payment_service import (
+        status_pagamentos_folha,
+    )
+
+    return status_pagamentos_folha(mes, ano)
+
+
+@router.put(
+    "/folha/funcionario/{employee_id}/pix-key",
+    summary="Cadastrar/atualizar chave PIX do funcionário",
+)
+async def cadastrar_pix_key(
+    employee_id: str,
+    pix_key: str,
+    pix_key_type: str = "CPF",
+    db: AsyncSession = Depends(get_db),
+    _user: CurrentActiveUser = None,
+):
+    """
+    Cadastra chave PIX do funcionário para pagamento de salário.
+    tipo: CPF | TELEFONE | EMAIL | ALEATORIA
+    """
+    from sqlalchemy import text
+
+    result = await db.execute(
+        text(
+            """
+            UPDATE employees SET
+                pix_key = :pix_key,
+                pix_key_type = :pix_key_type,
+                updated_at = NOW()
+            WHERE id = :emp_id
+            RETURNING id::text, nome, pix_key, pix_key_type
+            """
+        ),
+        {"pix_key": pix_key, "pix_key_type": pix_key_type, "emp_id": employee_id},
+    )
+    row = result.fetchone()
+    await db.commit()
+    if not row:
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+    return {
+        "id": row[0],
+        "nome": row[1],
+        "pix_key": row[2],
+        "pix_key_type": row[3],
+    }
