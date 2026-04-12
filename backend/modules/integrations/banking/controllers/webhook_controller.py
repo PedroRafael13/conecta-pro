@@ -18,6 +18,33 @@ INTER_WEBHOOK_SECRET = os.getenv("INTER_WEBHOOK_SECRET", "")  # pragma: allowlis
 _CREDENTIALS_FILE = "/opt/conecta-pro/credentials/.env.credentials"
 
 
+def _validar_assinatura_inter(body: bytes, signature: str | None) -> bool:
+    """
+    Valida assinatura do webhook Inter usando a CA cert.
+    Inter assina o payload com chave privada; verificamos com a chave pública da CA.
+    Se CA não configurada ou assinatura ausente → aceita (mTLS valida no proxy).
+    """
+    ca_path = os.getenv("INTER_WEBHOOK_CA_PATH", "")
+    if not ca_path or not signature:
+        return True
+    try:
+        import base64
+
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+        from cryptography.x509 import load_pem_x509_certificate
+
+        with open(ca_path, "rb") as f:
+            cert = load_pem_x509_certificate(f.read())
+        pub_key = cert.public_key()
+        sig_bytes = base64.b64decode(signature)
+        pub_key.verify(sig_bytes, body, padding.PKCS1v15(), hashes.SHA256())
+        return True
+    except Exception as exc:
+        logger.warning("Assinatura Inter inválida: %s", exc)
+        return False
+
+
 def _load_inter_credentials() -> dict:
     """Carrega credenciais Inter do arquivo .env.credentials (igual ao banking_controller)."""
     creds: dict = {}
@@ -237,6 +264,9 @@ async def webhook_pix(
     """
     try:
         body = await request.body()
+        if not _validar_assinatura_inter(body, x_inter_webhook_signature):
+            logger.warning("Webhook PIX: assinatura inválida — rejeitado")
+            raise HTTPException(status_code=401, detail="Assinatura inválida")
         payload = json.loads(body)
         logger.info("Webhook PIX Inter: %s", str(payload)[:200])
         _log_webhook(payload, "pix", "/webhooks/inter/pix")
