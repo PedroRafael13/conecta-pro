@@ -57,7 +57,7 @@ class BankReconciliation(Base):
     )
     condominio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )

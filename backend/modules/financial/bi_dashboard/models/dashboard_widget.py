@@ -102,7 +102,7 @@ class FinancialWidget(Base):
     )
     condominio_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )

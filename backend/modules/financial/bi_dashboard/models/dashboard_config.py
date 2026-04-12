@@ -75,7 +75,7 @@ class FinancialDashboard(Base):
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )
