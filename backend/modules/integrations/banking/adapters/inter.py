@@ -64,6 +64,7 @@ class InterAdapter(BaseBankingAdapter):
         "boleto": "boleto-cobranca.write boleto-cobranca.read",
         "pagamento": "pagamento-boleto.write pagamento-boleto.read",
         "ted": "pagamento-ted.write pagamento-ted.read",
+        "darf": "pagamento-darf.write pagamento-boleto.read",
     }
 
     def __init__(self, credentials: BankCredentials) -> None:
@@ -113,6 +114,7 @@ class InterAdapter(BaseBankingAdapter):
                     self.SCOPES["boleto"],
                     self.SCOPES["pagamento"],
                     self.SCOPES.get("ted", "pagamento-ted.write pagamento-ted.read"),
+                    self.SCOPES.get("darf", "pagamento-darf.write"),
                 ]
             )
 
@@ -598,41 +600,77 @@ class InterAdapter(BaseBankingAdapter):
         codigo_receita: str = "6015",
         data_vencimento: str | None = None,
         descricao: str = "Pagamento DARF",
+        nome_empresa: str = "JORDAN SANTOS DE JESUS LTDA",
+        telefone_empresa: str = "92986465328",
     ) -> dict:
         """
         Paga DARF via API Inter.
-        POST /banking/v2/darf
-        codigo_receita: 6015=IRPJ, 2372=CSLL, 0561=COFINS,
-                        8109=PIS, 2100=INSS, 0561=ISS
-        periodo_apuracao: YYYY-MM (ex: 2026-03)
+        POST /banking/v2/pagamento/darf
+        Escopo requerido: pagamento-darf.write
+
+        Campos obrigatórios conforme documentação Inter:
+        - cnpjCpf, codigoReceita, dataVencimento, descricao
+        - nomeEmpresa, periodoApuracao, valorPrincipal, referencia
+
+        Códigos de receita mais usados:
+        - 6015: IRPJ
+        - 2372: CSLL
+        - 0561: COFINS
+        - 8109: PIS/PASEP
+        - 2100: INSS Patronal
+        - 0220: IRRF sobre salários
         """
         if not data_vencimento:
             data_vencimento = datetime.now().strftime("%Y-%m-%d")
+
+        # periodoApuracao deve ser YYYY-MM-DD (primeiro dia do mês)
+        if len(periodo_apuracao) == 7:  # formato YYYY-MM
+            periodo_apuracao = f"{periodo_apuracao}-01"
+
+        # referencia: apenas números, max 30 chars
+        referencia = "".join(c for c in numero_referencia if c.isdigit())[:30]
+        if not referencia:
+            referencia = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        # cnpjCpf: apenas números
+        cnpj_cpf_nums = "".join(c for c in cnpj_cpf if c.isdigit())
+
+        payload = {
+            "cnpjCpf": cnpj_cpf_nums,
+            "codigoReceita": codigo_receita,
+            "dataVencimento": data_vencimento,
+            "descricao": descricao[:1000],
+            "nomeEmpresa": nome_empresa[:100],
+            "telefoneEmpresa": telefone_empresa[:50],
+            "periodoApuracao": periodo_apuracao,
+            "valorPrincipal": round(valor_principal, 2),
+            "referencia": referencia,
+        }
+        if valor_multa > 0:
+            payload["valorMulta"] = round(valor_multa, 2)
+        if valor_juros > 0:
+            payload["valorJuros"] = round(valor_juros, 2)
+
         try:
-            payload = {
-                "cnpjCpf": "".join(c for c in cnpj_cpf if c.isdigit()),
-                "codigoReceita": codigo_receita,
-                "periodoApuracao": periodo_apuracao,
-                "numeroReferencia": numero_referencia,
-                "valorPrincipal": valor_principal,
-                "valorMulta": valor_multa,
-                "valorJuros": valor_juros,
-                "dataVencimento": data_vencimento,
-                "descricao": descricao,
-            }
-            data = await self._request("POST", "/banking/v2/darf", json=payload)
+            result = await self._request(
+                "POST",
+                "/banking/v2/pagamento/darf",
+                json=payload,
+            )
             return {
                 "success": True,
-                "payment_id": data.get("codigoPagamento", ""),
+                "codigo_solicitacao": result.get("codigoSolicitacao", ""),
+                "autenticacao": result.get("autenticacao", ""),
+                "data_pagamento": result.get("dataPagamento", ""),
+                "tipo_retorno": result.get("tipoRetorno", ""),
+                "valor_total": round(valor_principal + valor_multa + valor_juros, 2),
                 "codigo_receita": codigo_receita,
-                "valor_total": valor_principal + valor_multa + valor_juros,
-                "data_vencimento": data_vencimento,
-                "status": data.get("status", "processando"),
+                "periodo": periodo_apuracao,
             }
         except BankingAdapterError as e:
             return {"success": False, "status_code": e.code, "detail": str(e)}
         except Exception as e:
-            return {"error": str(e)}
+            return {"success": False, "error": str(e)}
 
     async def pay_barcode(
         self,

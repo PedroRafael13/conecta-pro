@@ -52,6 +52,8 @@ class DARFRequest(BaseModel):
     codigo_receita: str = "6015"
     data_vencimento: str | None = None
     descricao: str = "Pagamento DARF"
+    nome_empresa: str = "JORDAN SANTOS DE JESUS LTDA"
+    telefone_empresa: str = "92986465328"
 
 
 class BatchPaymentItem(BaseModel):
@@ -135,6 +137,8 @@ async def pay_darf(
         request.codigo_receita,
         request.data_vencimento,
         request.descricao,
+        request.nome_empresa,
+        request.telefone_empresa,
     )
 
 
