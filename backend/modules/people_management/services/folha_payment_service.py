@@ -1,0 +1,324 @@
+"""
+Folha Payment Service — Pagamento de Salários via PIX Inter
+Processa pagamento de salários líquidos para até 51 funcionários
+via PIX usando a API do Banco Inter (mTLS OAuth2).
+
+Colunas reais usadas:
+  employees:         id, nome, cpf, pix_key, pix_key_type, status
+  hr_payslips:       id, employee_id, reference_month, reference_year,
+                     net_salary, status
+  payroll_payments:  tabela de histórico (criada em PASSO 2)
+"""
+
+import logging
+import os
+import uuid
+from datetime import datetime
+from decimal import Decimal
+
+import psycopg2
+import psycopg2.extras
+
+logger = logging.getLogger(__name__)
+
+DATABASE_URL = os.getenv("DATABASE_URL", "").replace("+asyncpg", "")
+
+INTER_CLIENT_ID = os.getenv("INTER_CLIENT_ID", "")
+INTER_CLIENT_SECRET = os.getenv("INTER_CLIENT_SECRET", "")
+INTER_CERT_PATH = os.getenv("INTER_CERT_PATH", "/app/credentials/inter/Inter_API_Certificado.crt")
+INTER_KEY_PATH = os.getenv("INTER_KEY_PATH", "/app/credentials/inter/Inter_API_Chave.key")
+INTER_ENV = os.getenv("INTER_ENVIRONMENT", "production")
+
+
+def _get_conn():
+    return psycopg2.connect(DATABASE_URL)
+
+
+def _build_inter_adapter():
+    """Constrói InterAdapter com credenciais reais do .env."""
+    from modules.integrations.banking.adapters.base import BankCredentials
+    from modules.integrations.banking.adapters.inter import InterAdapter
+
+    creds = BankCredentials(
+        client_id=INTER_CLIENT_ID,
+        client_secret=INTER_CLIENT_SECRET,
+        certificate_path=INTER_CERT_PATH if os.path.exists(INTER_CERT_PATH) else None,
+        private_key_path=INTER_KEY_PATH if os.path.exists(INTER_KEY_PATH) else None,
+        environment=INTER_ENV,
+    )
+    return InterAdapter(creds)
+
+
+def preparar_lote_folha(mes: int, ano: int) -> dict:
+    """
+    Prepara lote de pagamentos para todos os funcionários
+    com holerite publicado no período.
+    Retorna: lista com PIX key, nome e valor líquido.
+    """
+    conn = _get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        cur.execute(
+            """
+            SELECT
+                e.id::text  AS employee_id,
+                e.nome,
+                e.cpf,
+                e.pix_key,
+                e.pix_key_type,
+                p.id::text  AS payslip_id,
+                p.net_salary AS valor_liquido,
+                p.status    AS payslip_status
+            FROM hr_payslips p
+            JOIN employees e ON e.id = p.employee_id
+            WHERE p.reference_month = %s
+              AND p.reference_year  = %s
+              AND e.status = 'ativo'
+            ORDER BY e.nome
+            """,
+            (mes, ano),
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+
+        total = sum(float(f["valor_liquido"] or 0) for f in rows)
+        sem_pix = [f["nome"] for f in rows if not f.get("pix_key")]
+
+        return {
+            "mes": mes,
+            "ano": ano,
+            "total_funcionarios": len(rows),
+            "total_valor": round(total, 2),
+            "sem_chave_pix": sem_pix,
+            "prontos_para_pagar": len(rows) - len(sem_pix),
+            "funcionarios": rows,
+        }
+    finally:
+        cur.close()
+        conn.close()
+
+
+async def pagar_funcionario_pix(
+    employee_id: str,
+    payslip_id: str,
+    pix_key: str,
+    valor: float,
+    mes: int,
+    ano: int,
+    nome: str,
+) -> dict:
+    """
+    Envia PIX para um funcionário via InterAdapter async.
+    Registra resultado em payroll_payments.
+    """
+    conn = _get_conn()
+    cur = conn.cursor()
+
+    # Verificar se já pago neste período
+    cur.execute(
+        "SELECT id, status FROM payroll_payments WHERE employee_id = %s AND mes = %s AND ano = %s",
+        (employee_id, mes, ano),
+    )
+    existing = cur.fetchone()
+    if existing and existing[1] == "pago":
+        conn.close()
+        return {
+            "employee_id": employee_id,
+            "nome": nome,
+            "valor": valor,
+            "status": "ja_pago",
+            "payment_id": str(existing[0]),
+        }
+
+    payment_id = str(uuid.uuid4())
+    try:
+        # Registrar como processando
+        cur.execute(
+            """
+            INSERT INTO payroll_payments (
+                id, employee_id, payslip_id, mes, ano,
+                valor_liquido, metodo, pix_key, status,
+                created_at, updated_at
+            ) VALUES (%s,%s,%s,%s,%s,%s,'PIX',%s,'processando',NOW(),NOW())
+            ON CONFLICT DO NOTHING
+            """,
+            (payment_id, employee_id, payslip_id, mes, ano, valor, pix_key),
+        )
+        conn.commit()
+
+        # Enviar PIX via Inter
+        adapter = _build_inter_adapter()
+        try:
+            resp = await adapter.initiate_pix(
+                pix_key=pix_key,
+                amount=Decimal(str(round(valor, 2))),
+                description=f"Salario {mes:02d}/{ano} - {nome[:30]}",
+            )
+            success = resp.status.value in ("CONCLUIDO", "PROCESSANDO")
+            e2e_id = resp.authentication_code or resp.payment_id or ""
+            erro_msg = None
+        except Exception as exc:
+            success = False
+            e2e_id = ""
+            erro_msg = str(exc)[:500]
+        finally:
+            await adapter.close()
+
+        status = "pago" if success else "erro"
+
+        cur.execute(
+            """
+            UPDATE payroll_payments SET
+                status = %s,
+                pix_e2e_id = %s,
+                data_pagamento = %s,
+                comprovante_id = %s,
+                erro_msg = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (status, e2e_id, datetime.now() if success else None, e2e_id, erro_msg, payment_id),
+        )
+
+        # Atualizar payslip para paid se pagou
+        if success and payslip_id:
+            cur.execute(
+                "UPDATE hr_payslips SET status='paid', updated_at=NOW() WHERE id = %s",
+                (payslip_id,),
+            )
+
+        conn.commit()
+        return {
+            "employee_id": employee_id,
+            "nome": nome,
+            "valor": valor,
+            "pix_key": pix_key,
+            "status": status,
+            "e2e_id": e2e_id,
+            "erro": erro_msg,
+        }
+
+    except Exception as exc:
+        conn.rollback()
+        logger.error("Erro pagar %s: %s", nome, exc)
+        return {
+            "employee_id": employee_id,
+            "nome": nome,
+            "valor": valor,
+            "status": "erro",
+            "erro": str(exc)[:500],
+        }
+    finally:
+        cur.close()
+        conn.close()
+
+
+async def processar_folha_completa(mes: int, ano: int, apenas_preview: bool = False) -> dict:
+    """
+    Processa pagamento de toda a folha do período via PIX Inter.
+    apenas_preview=True: simula sem enviar PIX.
+    """
+    lote = preparar_lote_folha(mes, ano)
+
+    if apenas_preview:
+        return {**lote, "modo": "preview", "aviso": "Nenhum pagamento realizado"}
+
+    if not lote["funcionarios"]:
+        return {"erro": f"Sem holerites publicados para {mes:02d}/{ano}"}
+
+    resultados = []
+    pagos = 0
+    erros = 0
+    total_pago = 0.0
+
+    for func in lote["funcionarios"]:
+        if not func.get("pix_key"):
+            resultados.append(
+                {
+                    "employee_id": func["employee_id"],
+                    "nome": func["nome"],
+                    "status": "sem_pix",
+                    "erro": "Chave PIX não cadastrada",
+                }
+            )
+            erros += 1
+            continue
+
+        resultado = await pagar_funcionario_pix(
+            employee_id=func["employee_id"],
+            payslip_id=func["payslip_id"] or "",
+            pix_key=func["pix_key"],
+            valor=float(func["valor_liquido"] or 0),
+            mes=mes,
+            ano=ano,
+            nome=func["nome"],
+        )
+        resultados.append(resultado)
+        if resultado["status"] in ("pago", "ja_pago"):
+            pagos += 1
+            total_pago += float(func["valor_liquido"] or 0)
+        else:
+            erros += 1
+
+    return {
+        "mes": mes,
+        "ano": ano,
+        "total_funcionarios": len(resultados),
+        "pagos": pagos,
+        "erros": erros,
+        "total_pago": round(total_pago, 2),
+        "taxa_sucesso_pct": round(pagos / max(1, len(resultados)) * 100, 1),
+        "resultados": resultados,
+    }
+
+
+def status_pagamentos_folha(mes: int, ano: int) -> dict:
+    """Retorna status dos pagamentos de folha do período."""
+    conn = _get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        cur.execute(
+            """
+            SELECT
+                pp.status,
+                COUNT(*) AS qtd,
+                SUM(pp.valor_liquido) AS total
+            FROM payroll_payments pp
+            WHERE pp.mes = %s AND pp.ano = %s
+            GROUP BY pp.status
+            """,
+            (mes, ano),
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT
+                pp.*, e.nome
+            FROM payroll_payments pp
+            JOIN employees e ON e.id = pp.employee_id
+            WHERE pp.mes = %s AND pp.ano = %s
+            ORDER BY pp.status, e.nome
+            """,
+            (mes, ano),
+        )
+        detalhes = []
+        for r in cur.fetchall():
+            d = dict(r)
+            # serialize datetime/uuid
+            for k, v in d.items():
+                if hasattr(v, "isoformat"):
+                    d[k] = v.isoformat()
+                elif hasattr(v, "hex"):
+                    d[k] = str(v)
+            detalhes.append(d)
+
+        return {
+            "mes": mes,
+            "ano": ano,
+            "resumo": {r["status"]: {"qtd": r["qtd"], "total": float(r["total"] or 0)} for r in rows},
+            "total_registros": len(detalhes),
+            "detalhes": detalhes,
+        }
+    finally:
+        cur.close()
+        conn.close()
