@@ -369,3 +369,171 @@ async def status_webhooks():
         return {"pix": pix, "configurado": pix.get("success", False)}
     finally:
         await adapter.close()
+
+
+@router.post(
+    "/inter/pagamento-pix",
+    summary="Webhook — PIX enviado confirmado",
+    include_in_schema=False,
+)
+async def webhook_pagamento_pix(request: Request):
+    """
+    Notificação quando PIX enviado é confirmado pelo Inter.
+    Atualiza payable_account para status pago.
+    """
+    try:
+        body = await request.body()
+        payload = json.loads(body)
+        logger.info("Webhook PIX enviado: %s", str(payload)[:200])
+        _log_webhook(payload, "pagamento_pix", "/webhooks/inter/pagamento-pix")
+
+        txid = payload.get("txid", "")
+        valor = float(payload.get("valor", 0))
+        e2e_id = payload.get("endToEndId", "")
+        conciliado = False
+
+        if txid or e2e_id:
+            conn = _get_conn()
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    """
+                    UPDATE payable_accounts SET
+                        status = 'pago',
+                        transacao_bancaria_id = %s,
+                        updated_at = NOW()
+                    WHERE (transacao_bancaria_id = %s OR comprovante_id = %s)
+                      AND status = 'pendente'
+                    RETURNING id
+                    """,
+                    (e2e_id or txid, txid, e2e_id),
+                )
+                row = cur.fetchone()
+                conciliado = row is not None
+                conn.commit()
+            finally:
+                cur.close()
+                conn.close()
+
+        return {"status": "ok", "tipo": "pagamento_pix", "valor": valor, "conciliado": conciliado}
+    except Exception as e:
+        logger.error("Webhook pagamento PIX erro: %s", e)
+        return {"status": "erro", "detalhe": str(e)}
+
+
+@router.post(
+    "/inter/pagamento-boleto",
+    summary="Webhook — Boleto pago por você confirmado",
+    include_in_schema=False,
+)
+async def webhook_pagamento_boleto(request: Request):
+    """
+    Notificação quando boleto que você pagou é confirmado.
+    Atualiza payable_account para status pago.
+    """
+    try:
+        body = await request.body()
+        payload = json.loads(body)
+        logger.info("Webhook boleto pago: %s", str(payload)[:200])
+        _log_webhook(payload, "pagamento_boleto", "/webhooks/inter/pagamento-boleto")
+
+        payment_id = payload.get("codigoPagamento", payload.get("idPagamento", ""))
+        valor = float(payload.get("valor", payload.get("valorPago", 0)))
+        conciliado = False
+
+        if payment_id:
+            conn = _get_conn()
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    """
+                    UPDATE payable_accounts SET
+                        status = 'pago',
+                        transacao_bancaria_id = %s,
+                        updated_at = NOW()
+                    WHERE (transacao_bancaria_id = %s OR comprovante_id = %s)
+                      AND status = 'pendente'
+                    RETURNING id
+                    """,
+                    (payment_id, payment_id, payment_id),
+                )
+                row = cur.fetchone()
+                conciliado = row is not None
+                conn.commit()
+            finally:
+                cur.close()
+                conn.close()
+
+        return {"status": "ok", "tipo": "pagamento_boleto", "valor": valor, "conciliado": conciliado}
+    except Exception as e:
+        logger.error("Webhook pagamento boleto erro: %s", e)
+        return {"status": "erro", "detalhe": str(e)}
+
+
+@router.post(
+    "/inter/recorrencia",
+    summary="Webhook — Recorrência PIX Automático",
+    include_in_schema=False,
+)
+async def webhook_recorrencia(request: Request):
+    """Notificação de eventos de recorrência PIX Automático."""
+    try:
+        body = await request.body()
+        payload = json.loads(body)
+        logger.info("Webhook recorrência: %s", str(payload)[:200])
+        _log_webhook(payload, "recorrencia", "/webhooks/inter/recorrencia")
+        return {"status": "ok", "tipo": "recorrencia", "payload": payload}
+    except Exception as e:
+        logger.error("Webhook recorrência erro: %s", e)
+        return {"status": "erro", "detalhe": str(e)}
+
+
+@router.post(
+    "/inter/cobranca-recorrente",
+    summary="Webhook — Cobrança Recorrente confirmada",
+    include_in_schema=False,
+)
+async def webhook_cobranca_recorrente(request: Request):
+    """
+    Notificação quando cobrança recorrente é paga.
+    Atualiza receivable_account do cliente.
+    """
+    try:
+        body = await request.body()
+        payload = json.loads(body)
+        logger.info("Webhook cobrança recorrente: %s", str(payload)[:200])
+        _log_webhook(payload, "cobranca_recorrente", "/webhooks/inter/cobranca-recorrente")
+
+        txid = payload.get("txid", "")
+        valor = float(payload.get("valor", 0))
+        conciliado = False
+
+        if txid:
+            conn = _get_conn()
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    """
+                    UPDATE receivable_accounts SET
+                        status = 'recebido',
+                        data_recebimento = CURRENT_DATE,
+                        updated_at = NOW()
+                    WHERE pix_txid = %s
+                      AND status = 'pendente'
+                    RETURNING id, client_id
+                    """,
+                    (txid,),
+                )
+                row = cur.fetchone()
+                conciliado = row is not None
+                if row:
+                    logger.info("Cobrança recorrente conciliada: %s", row[0])
+                conn.commit()
+            finally:
+                cur.close()
+                conn.close()
+
+        return {"status": "ok", "tipo": "cobranca_recorrente", "valor": valor, "conciliado": conciliado}
+    except Exception as e:
+        logger.error("Webhook cobrança recorrente erro: %s", e)
+        return {"status": "erro", "detalhe": str(e)}
