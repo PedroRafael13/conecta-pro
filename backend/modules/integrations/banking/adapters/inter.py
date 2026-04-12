@@ -8,6 +8,7 @@ Autenticação: OAuth2 + mTLS (certificado digital)
 """
 
 import logging
+import os
 import ssl
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -68,6 +69,7 @@ class InterAdapter(BaseBankingAdapter):
         """Inicializa adapter Inter."""
         super().__init__(credentials)
         self._client: httpx.AsyncClient | None = None
+        self._pix_key: str = os.getenv("INTER_PIX_KEY", "35710481000103")
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Retorna cliente HTTP com certificado mTLS."""

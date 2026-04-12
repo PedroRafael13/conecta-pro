@@ -698,7 +698,9 @@ try:
         router as recurring_billing_router,
     )
 
-    api_router.include_router(recurring_billing_router, tags=["Financial - Cobrança Recorrente PIX"])
+    api_router.include_router(
+        recurring_billing_router, prefix="/financial", tags=["Financial - Cobrança Recorrente PIX"]
+    )
     logger.info("Cobrança Recorrente PIX: OK")
 except Exception as _e:
     logger.warning(f"Cobrança Recorrente PIX: {_e}")

@@ -15,6 +15,23 @@ router = APIRouter(prefix="/webhooks", tags=["Webhooks — Inter"])
 logger = logging.getLogger(__name__)
 INTER_WEBHOOK_SECRET = os.getenv("INTER_WEBHOOK_SECRET", "")  # pragma: allowlist secret
 
+_CREDENTIALS_FILE = "/opt/conecta-pro/credentials/.env.credentials"
+
+
+def _load_inter_credentials() -> dict:
+    """Carrega credenciais Inter do arquivo .env.credentials (igual ao banking_controller)."""
+    creds: dict = {}
+    try:
+        with open(_CREDENTIALS_FILE) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, _, value = line.partition("=")
+                    creds[key.strip()] = value.strip()
+    except FileNotFoundError:
+        pass
+    return creds
+
 
 def _get_conn():
     import psycopg2
@@ -256,36 +273,45 @@ async def webhook_boleto(request: Request):
         return {"status": "erro", "detalhe": str(e)}
 
 
+def _build_inter_adapter():
+    """
+    Constrói InterAdapter com credenciais do .env.credentials
+    (mesmo padrão do banking_controller._get_banking_service).
+    """
+    from modules.integrations.banking.adapters import BankCredentials
+    from modules.integrations.banking.adapters.inter import InterAdapter
+
+    env = _load_inter_credentials()
+    inter_client_id = env.get("INTER_CLIENT_ID") or os.getenv("INTER_CLIENT_ID")
+    inter_secret = env.get("INTER_CLIENT_SECRET") or os.getenv("INTER_CLIENT_SECRET")
+    inter_cert = env.get("INTER_CERT_PATH") or os.getenv("INTER_CERT_PATH")
+    inter_key = env.get("INTER_KEY_PATH") or os.getenv("INTER_KEY_PATH")
+    inter_env = env.get("INTER_ENVIRONMENT") or os.getenv("INTER_ENVIRONMENT", "production")
+
+    if not all([inter_client_id, inter_secret, inter_cert, inter_key]):
+        return None, "Credenciais Inter não configuradas"
+
+    creds = BankCredentials(
+        client_id=inter_client_id,
+        client_secret=inter_secret,
+        certificate_path=inter_cert,
+        private_key_path=inter_key,
+        environment=inter_env,
+    )
+    return InterAdapter(creds), None
+
+
 @router.post("/inter/configurar", summary="Configurar webhooks no painel Inter")
 async def configurar_webhooks_inter():
     """
     Registra os webhooks no Banco Inter apontando para
     os endpoints do Conecta PRO.
     """
-    from modules.integrations.banking.adapters import BankCredentials
-    from modules.integrations.banking.adapters.inter import InterAdapter
-
-    inter_client_id = os.getenv("INTER_CLIENT_ID")
-    inter_secret = os.getenv("INTER_CLIENT_SECRET")
-    inter_cert = os.getenv("INTER_CERT_PATH")
-    inter_key = os.getenv("INTER_KEY_PATH")
-
-    if not all([inter_client_id, inter_secret, inter_cert, inter_key]):
-        raise HTTPException(
-            status_code=503,
-            detail="Credenciais Inter não configuradas (INTER_CLIENT_ID, INTER_CLIENT_SECRET, INTER_CERT_PATH, INTER_KEY_PATH)",
-        )
+    adapter, erro = _build_inter_adapter()
+    if adapter is None:
+        raise HTTPException(status_code=503, detail=erro)
 
     base_url = os.getenv("APP_BASE_URL", "https://erp.conectamais.pro")
-    creds = BankCredentials(
-        client_id=inter_client_id,
-        client_secret=inter_secret,
-        certificate_path=inter_cert,
-        private_key_path=inter_key,
-        environment=os.getenv("INTER_ENVIRONMENT", "production"),
-    )
-    adapter = InterAdapter(creds)
-
     try:
         pix_result = await adapter.register_pix_webhook(f"{base_url}/api/v1/webhooks/inter/pix")
         boleto_result = await adapter.register_boleto_webhook(f"{base_url}/api/v1/webhooks/inter/boleto")
@@ -304,28 +330,10 @@ async def configurar_webhooks_inter():
 @router.get("/inter/status", summary="Status dos webhooks configurados")
 async def status_webhooks():
     """Consulta webhooks configurados no Inter."""
-    from modules.integrations.banking.adapters import BankCredentials
-    from modules.integrations.banking.adapters.inter import InterAdapter
+    adapter, erro = _build_inter_adapter()
+    if adapter is None:
+        return {"configurado": False, "motivo": erro}
 
-    inter_client_id = os.getenv("INTER_CLIENT_ID")
-    inter_secret = os.getenv("INTER_CLIENT_SECRET")
-    inter_cert = os.getenv("INTER_CERT_PATH")
-    inter_key = os.getenv("INTER_KEY_PATH")
-
-    if not all([inter_client_id, inter_secret, inter_cert, inter_key]):
-        return {
-            "configurado": False,
-            "motivo": "Credenciais Inter não encontradas nas variáveis de ambiente",
-        }
-
-    creds = BankCredentials(
-        client_id=inter_client_id,
-        client_secret=inter_secret,
-        certificate_path=inter_cert,
-        private_key_path=inter_key,
-        environment=os.getenv("INTER_ENVIRONMENT", "production"),
-    )
-    adapter = InterAdapter(creds)
     try:
         pix = await adapter.get_pix_webhook()
         return {"pix": pix, "configurado": pix.get("success", False)}
