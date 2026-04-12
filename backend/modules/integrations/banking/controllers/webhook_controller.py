@@ -13,6 +13,7 @@ from fastapi import APIRouter, Header, HTTPException, Request
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks — Inter"])
 logger = logging.getLogger(__name__)
+INTER_WEBHOOK_SECRET = os.getenv("INTER_WEBHOOK_SECRET", "")  # pragma: allowlist secret
 
 
 def _get_conn():
