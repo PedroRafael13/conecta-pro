@@ -92,7 +92,6 @@ function getPaymentTypeLabel(txType: string) {
 }
 
 function getBankBadge(bankCode: string) {
-  if (bankCode === '403') return { label: 'Cora', color: '#e85d26' };
   if (bankCode === '077') return { label: 'Inter', color: '#00a859' };
   return { label: bankCode || 'Banco', color: '#6b7280' };
 }
@@ -485,7 +484,6 @@ export default function ConciliacaoPage() {
               className="h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm px-3 text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
             >
               <option value="all">Todos os bancos</option>
-              <option value="403">Cora</option>
               <option value="077">Inter</option>
             </select>
 
@@ -959,17 +957,27 @@ export default function ConciliacaoPage() {
                         <div
                           key={tx.id}
                           className={cn(
-                            'p-4 transition-colors',
+                            'p-4 transition-colors cursor-pointer',
                             isPending
-                              ? 'hover:bg-amber-500/5 border-l-2 border-l-amber-500/50'
+                              ? (tx as any).requires_justification
+                                ? 'hover:bg-orange-500/5 border-l-2 border-l-orange-500'
+                                : 'hover:bg-amber-500/5 border-l-2 border-l-amber-500/50'
                               : 'hover:bg-[hsl(var(--secondary))]/40 border-l-2 border-l-green-500/50'
                           )}
+                          onClick={() => handleViewTransaction(tx)}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-[hsl(var(--foreground))] truncate">
-                                {tx.description || '-'}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium text-[hsl(var(--foreground))] truncate">
+                                  {tx.description || '-'}
+                                </p>
+                                {(tx as any).requires_justification && (
+                                  <span className="flex-shrink-0 px-1.5 py-0.5 text-xs bg-orange-100 text-orange-700 rounded font-medium">
+                                    ⚠️ Justificar
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-[hsl(var(--muted-foreground))]">
                                 {tx.transaction_date ? formatDate(tx.transaction_date) : '-'}
                               </p>
@@ -996,15 +1004,29 @@ export default function ConciliacaoPage() {
                           </div>
 
                           {isPending && (
-                            <div className="flex items-center gap-2 mt-3">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-xs h-7 px-3 border-green-500/40 text-green-600 hover:bg-green-500/10"
-                              >
-                                <Check className="w-3 h-3 mr-1" />
-                                Conciliar
-                              </Button>
+                            <div
+                              className="flex items-center gap-2 mt-3"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {(tx as any).requires_justification ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs h-7 px-3 border-orange-500/40 text-orange-600 hover:bg-orange-500/10"
+                                  onClick={() => handleViewTransaction(tx)}
+                                >
+                                  📝 Justificar
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs h-7 px-3 border-green-500/40 text-green-600 hover:bg-green-500/10"
+                                >
+                                  <Check className="w-3 h-3 mr-1" />
+                                  Conciliar
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1158,7 +1180,7 @@ export default function ConciliacaoPage() {
                     <span className="w-5 h-5 rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-semibold">
                       1
                     </span>
-                    Acesse o internet banking do seu banco (Cora, Inter ou outro)
+                    Acesse o internet banking do Banco Inter
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-semibold">
@@ -1200,6 +1222,11 @@ export default function ConciliacaoPage() {
           setSelectedTransaction(null);
         }}
         transaction={selectedTransaction}
+        onSuccess={() => {
+          setShowTransactionDetail(false);
+          setSelectedTransaction(null);
+          refetch();
+        }}
       />
     </div>
   );

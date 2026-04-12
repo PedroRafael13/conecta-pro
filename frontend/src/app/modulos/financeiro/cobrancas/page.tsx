@@ -93,17 +93,15 @@ interface ContatoModal {
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
 const BANK_COLORS: Record<string, string> = {
-  '403': '#e85d26', // Cora
   '077': '#00a859', // Inter
 };
 
 const BANK_NAMES: Record<string, string> = {
-  '403': 'Banco Cora',
   '077': 'Banco Inter',
 };
 
 const INITIAL_BOLETO_FORM: BoletoForm = {
-  bank_code: '403',
+  bank_code: '077',
   payer_name: '',
   payer_document: '',
   amount: '',
@@ -247,7 +245,7 @@ function BankSelector({ value, onChange }: { value: string; onChange: (v: string
     <div className="space-y-1.5">
       <label className="text-sm font-medium">Banco</label>
       <div className="flex gap-3">
-        {[{ code: '403', name: 'Cora' }, { code: '077', name: 'Inter' }].map((b) => (
+        {[{ code: '077', name: 'Inter' }].map((b) => (
           <button
             key={b.code} type="button" onClick={() => onChange(b.code)}
             className={cn(
@@ -278,7 +276,7 @@ function BankSelector({ value, onChange }: { value: string; onChange: (v: string
 function TabEmitir() {
   const [mode, setMode] = useState<EmitMode>('boleto');
   const [form, setForm] = useState<BoletoForm>(INITIAL_BOLETO_FORM);
-  const [pixBankCode, setPixBankCode] = useState('403');
+  const [pixBankCode, setPixBankCode] = useState('077');
   const [isPending, setIsPending] = useState(false);
   const [resultado, setResultado] = useState<BoletoResponse | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -756,7 +754,6 @@ function TabListagem() {
           className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">Todos os bancos</option>
-          <option value="403">Cora (403)</option>
           <option value="077">Inter (077)</option>
         </select>
 

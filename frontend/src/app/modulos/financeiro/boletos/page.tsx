@@ -24,12 +24,10 @@ import type { BoletoResponse, BoletoListItem } from '@/services/banking/bankingS
 
 // ─── Cores dos bancos ────────────────────────────────────────────────────────
 const BANK_COLORS: Record<string, string> = {
-  '403': '#e85d26', // Cora — laranja
   '077': '#00a859', // Inter — verde
 };
 
 const BANK_NAMES: Record<string, string> = {
-  '403': 'Banco Cora',
   '077': 'Banco Inter',
 };
 
@@ -124,7 +122,7 @@ interface FormData {
 }
 
 const INITIAL_FORM: FormData = {
-  bank_code: '403',
+  bank_code: '077',
   payer_name: '',
   payer_document: '',
   amount: '',
@@ -246,7 +244,7 @@ export default function BoletosPage() {
             </div>
             <div>
               <h1 className="text-base font-semibold leading-tight">Boletos Bancários</h1>
-              <p className="text-xs text-muted-foreground">Emissão via Cora e Inter</p>
+              <p className="text-xs text-muted-foreground">Emissão via Banco Inter</p>
             </div>
           </div>
         </div>
@@ -415,7 +413,6 @@ export default function BoletosPage() {
                     <label className="text-sm font-medium">Banco</label>
                     <div className="flex gap-3">
                       {[
-                        { code: '403', name: 'Cora', sub: '403' },
                         { code: '077', name: 'Inter', sub: '077' },
                       ].map((b) => (
                         <button
@@ -542,7 +539,6 @@ export default function BoletosPage() {
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">Todos os bancos</option>
-                <option value="403">Cora (403)</option>
                 <option value="077">Inter (077)</option>
               </select>
 

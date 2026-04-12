@@ -107,9 +107,15 @@ const navigationCards = [
   },
   {
     title: 'Cobranças',
-    description: 'Emita boletos e cobranças via Cora e Inter',
+    description: 'Emita boletos e cobranças via Banco Inter',
     href: '/modulos/financeiro/cobrancas',
     icon: Barcode,
+  },
+  {
+    title: 'Banco Inter',
+    description: 'Saldo, extrato, boletos, PIX e pagamentos bancários',
+    href: '/modulos/financeiro/banking',
+    icon: Building2,
   },
   {
     title: 'Precificação',
@@ -161,7 +167,7 @@ export default function FinanceiroPage() {
   const receivableStats = receivableData as any;
   const cashflowStats = cashflowData as any;
 
-  // Contas bancárias integradas (Cora + Inter)
+  // Conta bancária integrada (Banco Inter)
   const [bankBalances, setBankBalances] = useState<BankBalance[]>([]);
   const [bankStatus, setBankStatus] = useState<BankConnectionStatus[]>([]);
   const [bankLoading, setBankLoading] = useState(true);
@@ -847,14 +853,13 @@ export default function FinanceiroPage() {
             ) : bankBalances.length > 0 ? bankBalances.map((bank) => {
               const status = getBankStatusInfo(bank.bank_code);
               const isConnected = status?.connected ?? false;
-              const isCora = bank.bank_code === '403';
               return (
-                <Card key={bank.bank_code} className="border-l-4" style={{ borderLeftColor: isCora ? '#e85d26' : '#00a859' }}>
+                <Card key={bank.bank_code} className="border-l-4" style={{ borderLeftColor: '#00a859' }}>
                   <CardContent className="pt-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: isCora ? '#e85d2615' : '#00a85915' }}>
-                        <Building2 className="w-5 h-5" style={{ color: isCora ? '#e85d26' : '#00a859' }} />
+                        style={{ backgroundColor: '#00a85915' }}>
+                        <Building2 className="w-5 h-5" style={{ color: '#00a859' }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
@@ -868,7 +873,7 @@ export default function FinanceiroPage() {
                         <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2">
                           Conta: {bank.account}
                         </p>
-                        <p className="text-2xl font-bold" style={{ color: isCora ? '#e85d26' : '#00a859' }}>
+                        <p className="text-2xl font-bold" style={{ color: '#00a859' }}>
                           {formatCurrency(bank.available_balance)}
                         </p>
                         {bank.blocked_balance > 0 && (
@@ -886,7 +891,7 @@ export default function FinanceiroPage() {
                 <WifiOff className="w-5 h-5 text-[hsl(var(--muted-foreground))] shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-[hsl(var(--foreground))]">Contas bancárias não conectadas</p>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Configure as integrações Cora e Inter em Configurações &gt; Integrações</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Configure a integração com o Banco Inter em Configurações &gt; Integrações</p>
                 </div>
               </div>
             )}

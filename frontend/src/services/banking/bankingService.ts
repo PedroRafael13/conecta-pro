@@ -1,7 +1,7 @@
 /**
  * Banking Service
  *
- * Consulta saldos, extratos e status dos bancos integrados (Cora, Inter).
+ * Consulta saldos, extratos e status do Banco Inter integrado.
  * Usa instância axios própria (sem interceptor de redirect) para evitar
  * que falhas de auth nas chamadas bancárias redirecionem para /login.
  */
@@ -97,18 +97,9 @@ export async function fetchBankBalances(): Promise<BankingBalancesResponse> {
     return {
       balances: [
         {
-          bank_code: '403',
-          bank_name: 'Banco Cora',
-          account: '****-7',
-          balance: 0,
-          available_balance: 0,
-          blocked_balance: 0,
-          updated_at: new Date().toISOString(),
-        },
-        {
           bank_code: '077',
           bank_name: 'Banco Inter',
-          account: '****-3',
+          account: '****-2',
           balance: 0,
           available_balance: 0,
           blocked_balance: 0,
@@ -153,7 +144,6 @@ export async function fetchBankStatus(): Promise<BankConnectionStatus[]> {
     return data;
   } catch {
     return [
-      { bank_code: '403', bank_name: 'Banco Cora', connected: false, last_sync: null, error: 'Endpoint não configurado' },
       { bank_code: '077', bank_name: 'Banco Inter', connected: false, last_sync: null, error: 'Endpoint não configurado' },
     ];
   }
@@ -187,7 +177,7 @@ export interface BankStatementFullResponse {
 }
 
 export interface BoletoGenerateRequest {
-  bank_code: string;        // "403" = Cora, "077" = Inter
+  bank_code: string;        // "077" = Inter
   amount: number;
   due_date: string;         // "YYYY-MM-DD"
   payer_name: string;
@@ -251,7 +241,7 @@ export async function fetchBankStatementFull(days: number = 30, bankCode?: strin
         ...simple,
         transactions: simple.transactions.map(t => ({
           ...t,
-          bank_name: t.bank_code === '403' ? 'Banco Cora' : 'Banco Inter',
+          bank_name: 'Banco Inter',
           transaction_type: t.category || 'Outros',
         })),
       };
