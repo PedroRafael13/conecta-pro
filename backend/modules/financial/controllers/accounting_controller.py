@@ -1862,8 +1862,8 @@ async def accounting_dre(
         cur.execute(
             """
             SELECT
-                sum(CASE WHEN conta_credito LIKE '3.1%' THEN valor ELSE 0 END)::float as receita_bruta,
-                sum(CASE WHEN conta_debito LIKE '3.2%' THEN valor ELSE 0 END)::float as despesas_operacionais,
+                sum(CASE WHEN conta_credito LIKE '3.1%%' THEN valor ELSE 0 END)::float as receita_bruta,
+                sum(CASE WHEN conta_debito LIKE '3.2%%' THEN valor ELSE 0 END)::float as despesas_operacionais,
                 sum(CASE WHEN tipo_lancamento = 'nfse_emitida' THEN valor ELSE 0 END)::float as receita_servicos,
                 count(*) as total_lancamentos
             FROM accounting_entries
