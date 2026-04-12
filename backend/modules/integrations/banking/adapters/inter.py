@@ -61,6 +61,7 @@ class InterAdapter(BaseBankingAdapter):
         "cob": "cob.write cob.read",
         "boleto": "boleto-cobranca.write boleto-cobranca.read",
         "pagamento": "pagamento-boleto.write pagamento-boleto.read",
+        "ted": "pagamento-ted.write pagamento-ted.read",
     }
 
     def __init__(self, credentials: BankCredentials) -> None:
@@ -107,6 +108,7 @@ class InterAdapter(BaseBankingAdapter):
                     self.SCOPES.get("cob", "cob.write cob.read"),
                     self.SCOPES["boleto"],
                     self.SCOPES["pagamento"],
+                    self.SCOPES.get("ted", "pagamento-ted.write pagamento-ted.read"),
                 ]
             )
 
@@ -437,6 +439,433 @@ class InterAdapter(BaseBankingAdapter):
             "pix_qrcode": data.get("location", ""),
             "amount": float(amount),
         }
+
+    async def get_boleto(self, boleto_id: str) -> dict:
+        """
+        Consulta boleto individual — retorna barcode e PDF URL.
+        GET /cobranca/v3/cobrancas/{codigoSolicitacao}
+        Resposta Inter: {"cobranca": {...}, "boleto": {"codigoBarras": ...}, "pix": {...}}
+        """
+        try:
+            data = await self._request("GET", f"/cobranca/v3/cobrancas/{boleto_id}")
+            cobranca = data.get("cobranca", data)
+            boleto = data.get("boleto", {})
+            pix = data.get("pix", {})
+            return {
+                "success": True,
+                "boleto_id": boleto_id,
+                "barcode": boleto.get("codigoBarras", ""),
+                "linha_digitavel": boleto.get("linhaDigitavel", ""),
+                "nosso_numero": boleto.get("nossoNumero", ""),
+                "pdf_url": cobranca.get("linkBoleto", ""),
+                "status": cobranca.get("situacao", ""),
+                "valor": cobranca.get("valorNominal", 0),
+                "vencimento": cobranca.get("dataVencimento", ""),
+                "payer": cobranca.get("pagador", {}),
+                "pix_copy_paste": pix.get("pixCopiaECola", ""),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def cancel_boleto(self, boleto_id: str, motivo: str = "ACERTOS") -> dict:
+        """
+        Cancela boleto emitido.
+        DELETE /cobranca/v3/cobrancas/{id}/cancelar
+        motivo: ACERTOS | APEDIDODOCLIENTE | PAGODIRETOAOCLIENTE  # pragma: allowlist secret
+        """
+        try:
+            await self._request(
+                "DELETE",
+                f"/cobranca/v3/cobrancas/{boleto_id}/cancelar",
+                json={"motivoCancelamento": motivo},
+            )
+            return {"success": True, "boleto_id": boleto_id}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def initiate_ted(
+        self,
+        valor: float,
+        banco: str,
+        agencia: str,
+        conta: str,
+        tipo_conta: str,
+        cpf_cnpj: str,
+        nome: str,
+        descricao: str = "",
+    ) -> dict:
+        """
+        Realiza transferência TED.
+        POST /banking/v2/transferencia
+        tipo_conta: CORRENTE | POUPANCA | PAGAMENTO
+        """
+        try:
+            clean_doc = "".join(c for c in cpf_cnpj if c.isdigit())
+            payload = {
+                "valor": valor,
+                "descricao": descricao or f"TED para {nome}",
+                "destinatario": {
+                    "cpfCnpj": clean_doc,
+                    "nome": nome,
+                    "banco": banco,
+                    "agencia": agencia,
+                    "conta": conta,
+                    "tipoConta": tipo_conta,
+                },
+            }
+            data = await self._request("POST", "/banking/v2/transferencia", json=payload)
+            return {
+                "success": True,
+                "transfer_id": data.get("codigoTransferencia", ""),
+                "valor": valor,
+                "destinatario": nome,
+                "status": data.get("status", "processando"),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def get_pix_received(
+        self,
+        data_inicio: str | None = None,
+        data_fim: str | None = None,
+    ) -> dict:
+        """
+        Consulta PIX recebidos.
+        GET /pix/v2/pix?inicio=...&fim=...
+        """
+        from datetime import datetime, timedelta
+
+        if not data_inicio:
+            data_inicio = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%dT00:00:00.000Z")
+        if not data_fim:
+            data_fim = datetime.now().strftime("%Y-%m-%dT23:59:59.999Z")
+
+        try:
+            data = await self._request(
+                "GET",
+                "/pix/v2/pix",
+                params={"inicio": data_inicio, "fim": data_fim},
+            )
+            pix_list = data.get("pix", [])
+            return {
+                "success": True,
+                "total": len(pix_list),
+                "pix": pix_list,
+                "parametros": data.get("parametros", {}),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def request_pix_refund(
+        self,
+        e2e_id: str,
+        refund_id: str,
+        valor: float,
+        motivo: str = "Devolucao solicitada",
+    ) -> dict:
+        """
+        Solicita devolução de PIX recebido.
+        PUT /pix/v2/pix/{e2eId}/devolucao/{id}
+        """
+        try:
+            data = await self._request(
+                "PUT",
+                f"/pix/v2/pix/{e2e_id}/devolucao/{refund_id}",
+                json={"valor": str(valor), "natureza": "ORIGINAL", "descricao": motivo},
+            )
+            return {
+                "success": True,
+                "e2e_id": e2e_id,
+                "refund_id": refund_id,
+                "valor": valor,
+                "status": data.get("status", ""),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def pay_darf(
+        self,
+        cnpj_cpf: str,
+        periodo_apuracao: str,
+        numero_referencia: str,
+        valor_principal: float,
+        valor_multa: float = 0,
+        valor_juros: float = 0,
+        codigo_receita: str = "6015",
+        data_vencimento: str | None = None,
+        descricao: str = "Pagamento DARF",
+    ) -> dict:
+        """
+        Paga DARF via API Inter.
+        POST /banking/v2/darf
+        codigo_receita: 6015=IRPJ, 2372=CSLL, 0561=COFINS,
+                        8109=PIS, 2100=INSS, 0561=ISS
+        periodo_apuracao: YYYY-MM (ex: 2026-03)
+        """
+        if not data_vencimento:
+            data_vencimento = datetime.now().strftime("%Y-%m-%d")
+        try:
+            payload = {
+                "cnpjCpf": "".join(c for c in cnpj_cpf if c.isdigit()),
+                "codigoReceita": codigo_receita,
+                "periodoApuracao": periodo_apuracao,
+                "numeroReferencia": numero_referencia,
+                "valorPrincipal": valor_principal,
+                "valorMulta": valor_multa,
+                "valorJuros": valor_juros,
+                "dataVencimento": data_vencimento,
+                "descricao": descricao,
+            }
+            data = await self._request("POST", "/banking/v2/darf", json=payload)
+            return {
+                "success": True,
+                "payment_id": data.get("codigoPagamento", ""),
+                "codigo_receita": codigo_receita,
+                "valor_total": valor_principal + valor_multa + valor_juros,
+                "data_vencimento": data_vencimento,
+                "status": data.get("status", "processando"),
+            }
+        except BankingAdapterError as e:
+            return {"success": False, "status_code": e.code, "detail": str(e)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def pay_barcode(
+        self,
+        codigo_barras: str,
+        valor: float | None = None,
+        data_pagamento: str | None = None,
+        descricao: str = "",
+    ) -> dict:
+        """
+        Paga boleto, convênio ou tributo por código de barras.
+        POST /banking/v2/pagamento
+        Suporta: boletos bancários, DARF simplificado,
+                 contas de água/luz/telefone
+        """
+        if not data_pagamento:
+            data_pagamento = datetime.now().strftime("%Y-%m-%d")
+        try:
+            payload: dict = {
+                "codigoBarras": "".join(c for c in codigo_barras if c.isdigit()),
+                "dataPagamento": data_pagamento,
+                "descricao": descricao or "Pagamento via Conecta PRO",
+            }
+            if valor:
+                payload["valor"] = valor
+            data = await self._request("POST", "/banking/v2/pagamento", json=payload)
+            return {
+                "success": True,
+                "payment_id": data.get("codigoPagamento", data.get("idPagamento", "")),
+                "valor": valor,
+                "data_pagamento": data_pagamento,
+                "status": data.get("status", "processando"),
+                "autenticacao": data.get("autenticacao", ""),
+            }
+        except BankingAdapterError as e:
+            return {"success": False, "status_code": e.code, "detail": str(e)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def pay_batch(self, pagamentos: list) -> dict:
+        """
+        Realiza múltiplos pagamentos em lote.
+        POST /banking/v2/pagamento/lote
+
+        pagamentos: lista de dicts com:
+          - codigo_barras: str
+          - valor: float
+          - data_pagamento: str (YYYY-MM-DD)
+          - descricao: str
+          - meu_identificador: str (ID interno)
+        """
+        hoje = datetime.now().strftime("%Y-%m-%d")
+        lote = []
+        for i, pag in enumerate(pagamentos):
+            item: dict = {
+                "codigoBarras": "".join(c for c in pag.get("codigo_barras", "") if c.isdigit()),
+                "dataPagamento": pag.get("data_pagamento", hoje),
+                "descricao": pag.get("descricao", f"Pagamento lote #{i + 1}"),
+                "meuIdentificador": pag.get("meu_identificador", f"CONECTA-{i + 1:04d}"),
+            }
+            if pag.get("valor"):
+                item["valor"] = pag["valor"]
+            lote.append(item)
+        try:
+            data = await self._request("POST", "/banking/v2/pagamento/lote", json={"pagamentos": lote})
+            return {
+                "success": True,
+                "lote_id": data.get("idLote", ""),
+                "total_itens": len(lote),
+                "status": data.get("status", "processando"),
+                "detalhes": data.get("pagamentos", []),
+            }
+        except BankingAdapterError as e:
+            return {"success": False, "status_code": e.code, "detail": str(e)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def get_payment_list(
+        self,
+        data_inicio: str | None = None,
+        data_fim: str | None = None,
+        tipo: str | None = None,
+    ) -> dict:
+        """
+        Consulta pagamentos realizados por período.
+        GET /banking/v2/pagamento?dataInicio=...&dataFim=...
+        tipo: BOLETO | PIX | TED | DARF
+        """
+        if not data_inicio:
+            data_inicio = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        if not data_fim:
+            data_fim = datetime.now().strftime("%Y-%m-%d")
+        params: dict = {"dataInicio": data_inicio, "dataFim": data_fim}
+        if tipo:
+            params["tipoPagamento"] = tipo
+        try:
+            data = await self._request("GET", "/banking/v2/pagamento", params=params)
+            pagamentos = data.get("pagamentos", data if isinstance(data, list) else [])
+            return {"success": True, "total": len(pagamentos), "pagamentos": pagamentos}
+        except BankingAdapterError as e:
+            return {"success": False, "status_code": e.code, "detail": str(e)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def create_pix_cobv(
+        self,
+        txid: str,
+        valor: float,
+        cpf_cnpj: str,
+        nome: str,
+        descricao: str,
+        vencimento: str,
+        chave_pix: str = "35710481000103",
+        juros_pct: float = 1.0,
+        multa_pct: float = 2.0,
+    ) -> dict:
+        """
+        Cria cobrança PIX com vencimento (cobv).
+        PUT /pix/v2/cobv/{txid}
+        vencimento: "YYYY-MM-DD"
+        """
+        doc = "".join(c for c in cpf_cnpj if c.isdigit())
+        devedor: dict = {"nome": nome}
+        if len(doc) == 11:
+            devedor["cpf"] = doc
+        else:
+            devedor["cnpj"] = doc
+
+        body = {
+            "calendario": {
+                "dataDeVencimento": vencimento,
+                "validadeAposVencimento": 30,
+            },
+            "devedor": devedor,
+            "valor": {
+                "original": f"{valor:.2f}",
+                "multa": {"modalidade": 2, "valorPerc": f"{multa_pct:.2f}"},
+                "juros": {"modalidade": 2, "valorPerc": f"{juros_pct:.2f}"},
+            },
+            "chave": chave_pix,
+            "solicitacaoPagador": descricao[:140],
+        }
+
+        try:
+            data = await self._request("PUT", f"/pix/v2/cobv/{txid}", json=body)
+            return {
+                "success": True,
+                "txid": data.get("txid", txid),
+                "pix_copy_paste": data.get("pixCopiaECola", ""),
+                "location": data.get("location", ""),
+                "status": data.get("status", "ATIVA"),
+                "valor": valor,
+                "vencimento": vencimento,
+                "devedor": nome,
+            }
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    async def list_cobv(
+        self,
+        inicio: str | None = None,
+        fim: str | None = None,
+        status: str | None = None,
+        pagina: int = 0,
+    ) -> dict:
+        """
+        Lista cobranças PIX com vencimento.
+        GET /pix/v2/cobv
+        status: ATIVA | CONCLUIDA | REMOVIDA_PELO_USUARIO_RECEBEDOR
+        """
+        if not inicio:
+            inicio = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%dT00:00:00Z")
+        if not fim:
+            fim = datetime.now().strftime("%Y-%m-%dT23:59:59Z")
+
+        params: dict = {"inicio": inicio, "fim": fim, "paginaAtual": pagina}
+        if status:
+            params["status"] = status
+
+        try:
+            data = await self._request("GET", "/pix/v2/cobv", params=params)
+            cobs = data.get("cobs", [])
+            return {
+                "success": True,
+                "total": len(cobs),
+                "cobs": cobs,
+                "parametros": data.get("parametros", {}),
+            }
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    async def register_pix_webhook(self, webhook_url: str) -> dict:
+        """
+        Registra webhook para notificações PIX recebidos.
+        PUT /pix/v2/webhook/{chave}
+        """
+        import os as _os
+
+        pix_key = _os.getenv("INTER_PIX_KEY", "35710481000103")
+        try:
+            await self._request(
+                "PUT",
+                f"/pix/v2/webhook/{pix_key}",
+                json={"webhookUrl": webhook_url},
+            )
+            return {
+                "success": True,
+                "chave": pix_key,
+                "webhook_url": webhook_url,
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def get_pix_webhook(self) -> dict:
+        """Consulta webhook PIX configurado."""
+        import os as _os
+
+        pix_key = _os.getenv("INTER_PIX_KEY", "35710481000103")
+        try:
+            data = await self._request("GET", f"/pix/v2/webhook/{pix_key}")
+            return {"success": True, "chave": pix_key, **data}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def register_boleto_webhook(self, webhook_url: str) -> dict:
+        """
+        Registra webhook para notificações de boleto pago.
+        POST /cobranca/v3/cobrancas/webhook
+        """
+        try:
+            await self._request(
+                "POST",
+                "/cobranca/v3/cobrancas/webhook",
+                json={"webhookUrl": webhook_url},
+            )
+            return {"success": True, "webhook_url": webhook_url}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     async def close(self) -> None:
         """Fecha conexão."""

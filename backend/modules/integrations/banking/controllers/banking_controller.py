@@ -770,3 +770,105 @@ async def get_bank_statement_full(
         opening_balance=opening_balance,
         closing_balance=closing_balance,
     )
+
+
+# ─── Novos endpoints: consulta boleto, TED, PIX recebidos, devolução ───
+
+
+@router.get("/boleto/{boleto_id}", summary="Consultar boleto — barcode e PDF")
+async def get_boleto(
+    boleto_id: str,
+    current_user=Depends(get_current_user),
+):
+    """Consulta boleto por ID — retorna código de barras, linha digitável e link para PDF."""
+    service = _get_banking_service()
+    adapter = service._adapters.get("077")
+    if adapter is None:
+        return {"success": False, "error": "Banco Inter não configurado"}
+    return await adapter.get_boleto(boleto_id)
+
+
+@router.delete("/boleto/{boleto_id}", summary="Cancelar boleto emitido")
+async def cancel_boleto(
+    boleto_id: str,
+    motivo: str = "ACERTOS",
+    current_user=Depends(get_current_user),
+):
+    """Cancela boleto. motivo: ACERTOS | APEDIDODOCLIENTE | PAGODIRETOAOCLIENTE"""  # pragma: allowlist secret
+    service = _get_banking_service()
+    adapter = service._adapters.get("077")
+    if adapter is None:
+        return {"success": False, "error": "Banco Inter não configurado"}
+    return await adapter.cancel_boleto(boleto_id, motivo)
+
+
+class TEDRequest(BaseModel):
+    valor: float
+    banco: str
+    agencia: str
+    conta: str
+    tipo_conta: str = "CORRENTE"
+    cpf_cnpj: str
+    nome: str
+    descricao: str = ""
+
+
+@router.post("/ted/transfer", summary="Realizar transferência TED")
+async def initiate_ted(
+    req: TEDRequest,
+    current_user=Depends(get_current_user),
+):
+    """Realiza transferência TED para qualquer banco. tipo_conta: CORRENTE | POUPANCA | PAGAMENTO"""
+    service = _get_banking_service()
+    adapter = service._adapters.get("077")
+    if adapter is None:
+        return {"success": False, "error": "Banco Inter não configurado"}
+    return await adapter.initiate_ted(
+        req.valor,
+        req.banco,
+        req.agencia,
+        req.conta,
+        req.tipo_conta,
+        req.cpf_cnpj,
+        req.nome,
+        req.descricao,
+    )
+
+
+@router.get("/pix/received", summary="Consultar PIX recebidos")
+async def get_pix_received(
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+    current_user=Depends(get_current_user),
+):
+    """Lista PIX recebidos na conta Inter por período."""
+    service = _get_banking_service()
+    adapter = service._adapters.get("077")
+    if adapter is None:
+        return {"success": False, "error": "Banco Inter não configurado"}
+    return await adapter.get_pix_received(data_inicio, data_fim)
+
+
+class PIXRefundRequest(BaseModel):
+    e2e_id: str
+    refund_id: str
+    valor: float
+    motivo: str = "Devolucao solicitada"
+
+
+@router.post("/pix/refund", summary="Solicitar devolução de PIX")
+async def request_pix_refund(
+    req: PIXRefundRequest,
+    current_user=Depends(get_current_user),
+):
+    """Solicita devolução (estorno) de PIX recebido."""
+    service = _get_banking_service()
+    adapter = service._adapters.get("077")
+    if adapter is None:
+        return {"success": False, "error": "Banco Inter não configurado"}
+    return await adapter.request_pix_refund(
+        req.e2e_id,
+        req.refund_id,
+        req.valor,
+        req.motivo,
+    )
