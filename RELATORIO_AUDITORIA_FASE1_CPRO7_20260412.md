@@ -1,5 +1,5 @@
 # AUDITORIA INDEPENDENTE — FASE 1 CPRO 7
-**Data:** 2026-04-12 às 20:22
+**Data:** 2026-04-12 às 20:22 (atualizado 20:35 — 3 gaps corrigidos)
 **Auditor:** Claude Sonnet 4.6 — T7 (independente)
 **Branch:** feature/people-management-reorganization
 **Método:** Verificação ao vivo — banco, backend, frontend, commits
@@ -56,7 +56,7 @@ saida    | operacional           |   2 | R$     566,20
 
 ---
 
-## BLOCO 2 — T3: Payments + FKs
+## BLOCO 2 — T3: Payments + FKs + Sobreposição T6+T3
 
 **Score: ✅ APROVADO**
 
@@ -72,6 +72,22 @@ saida    | operacional           |   2 | R$     566,20
 
 **Nota:** 8 FKs `usuarios.id` remanescentes estão em `modules/hr/` (fora do escopo do T3).
 37 ocorrências de `current_user["id"]` em `inventory_controller.py` e `purchase_controller.py` — gap de refatoração, não bloqueante para Fase 1.
+
+### Sobreposição T6+T3 — VERIFICADA ✅
+
+27 arquivos em comum entre `7aa5ab9b` (T6) e `0944efcd` (T3). **Sem conflito** — commits são sequenciais:
+
+- `7aa5ab9b` (2026-04-12 19:25) — corrigiu `usuarios.id → users.id`
+- `0944efcd` (2026-04-12 19:55) — corrigiu `condominios.id → condominiums.id` + reaplicou `usuarios→users`
+
+**Estado final dos modelos (ao vivo):**
+```
+FKs condominiums.id em /financial: 33 (correto)
+FKs condominios.id em /financial:   0 (zerado)
+FKs usuarios.id em /financial:      0 (zerado)
+FKs users.id em /financial:        33 (correto)
+```
+Nenhuma regressão — T3 posterior a T6 consolidou ambas as correções.
 
 ### DRE ao vivo (abril/2026)
 ```json
@@ -128,6 +144,20 @@ saida    | operacional           |   2 | R$     566,20
 | inventory_items (VIEW) | **2 itens** ✅ |
 | fin_stock_items (base) | **2 itens** ✅ |
 
+### Distribuição categorias DEBITO em bank_transactions (ao vivo)
+
+```
+transaction_type | category | count |    total
+-----------------+----------+-------+-----------
+ debit           | receita  |   616 | 222060.19
+```
+
+**Análise:** `bank_transactions.category='receita'` é o valor default do sync Inter — campo fiscal NOT NULL.
+T4 **não** altera `bank_transactions.category` — criou tabela `justificativas` separada.
+`GET /justificativa/compliance` confirma `compliance_pct=100`, `sem_categoria=0` ✅
+
+---
+
 ### 4 endpoints contábeis ao vivo
 ```
 [200] /financial/accounting/entries   → lista:100
@@ -160,8 +190,18 @@ accounting_entries_nfse_id_fkey               → nfses(id)
 | billing.ts existe | **✅** |
 | billing.ts interfaces | **9** ✅ |
 | Frontend /cobrancas | **HTTP 307→200** ✅ |
+| **TypeScript `--noEmit` erros em cobrancas** | **0** ✅ |
+| **TypeScript total projeto** | **0** ✅ |
 
 **Nota:** `useQuery` = 9 (1 a mais que o esperado 8) — é o `import { useQuery }` na linha 4. As 8 calls reais + 1 import. Correto.
+
+### TypeScript ao vivo (BLOCO 5 item 5e)
+
+```bash
+cd frontend && NODE_OPTIONS=--max-old-space-size=4096 npx tsc --noEmit
+→ Total erros TypeScript projeto: 0
+→ Erros em cobrancas/page.tsx: 0
+```
 
 ---
 
