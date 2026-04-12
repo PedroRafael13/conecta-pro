@@ -76,7 +76,7 @@ Compete com SAP/NetSuite/Salesforce com compliance brasileiro nativo.
 # Token de autenticação
 TOKEN=$(curl -sf -X POST http://127.0.0.1:8080/api/v1/auth/login \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=jjesus@conectamais.pro&password=Jordan0612" \
+  -d "username=jjesus@conectamais.pro&password=JsJ618908@#%" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
 # Container backend
