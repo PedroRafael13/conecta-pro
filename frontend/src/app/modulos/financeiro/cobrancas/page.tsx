@@ -867,7 +867,7 @@ function TabListagem() {
   );
 }
 
-// ─── Tab 3: Régua de Cobrança ─────────────────────────────────────────────────
+// ─── Tab 4: Régua de Cobrança ─────────────────────────────────────────────────
 
 const STORAGE_KEY = 'cobrancas_regua_config';
 
@@ -1048,9 +1048,7 @@ function TabRegua() {
   );
 }
 
-// ─── Tab 4: Inadimplentes ─────────────────────────────────────────────────────
-
-// ─── Tab 5: PIX Recorrente ────────────────────────────────────────────────────
+// ─── Tab 3: PIX Recorrente ────────────────────────────────────────────────────
 
 function TabRecorrente() {
   const now = new Date();
@@ -1188,6 +1186,8 @@ function TabRecorrente() {
   );
 }
 
+// ─── Tab 5: Inadimplentes ─────────────────────────────────────────────────────
+
 function TabInadimplentes() {
   const { condominioId } = useCondominio();
   const { data: dashboardRaw } = useReceivableDashboard({ condominio_id: condominioId });
@@ -1268,6 +1268,8 @@ function TabInadimplentes() {
   const taxaRecuperacao    = collectionData?.taxa_recuperacao_estimada ?? 0;
   const regrasAtivas       = billingRules.filter((r) => r.ativo).length;
   const totalRecebiveis    = receivablesData?.meta?.total ?? 0;
+  // Painel de inadimplência exibido quando taxa > 5%
+  const taxaInadimplencia  = totalClientes > 0 ? (overdueCount / totalClientes) * 100 : 0;
 
   const salvarNota = useCallback(() => {
     if (!contatoModal || !notaTexto.trim()) return;
@@ -1311,8 +1313,8 @@ function TabInadimplentes() {
         ))}
       </div>
 
-      {/* Recomendações IA */}
-      {aiRecs && aiRecs.length > 0 && aiRecs.filter((r) => r.categoria === 'inadimplencia').map((rec, i) => (
+      {/* Recomendações IA — exibido quando taxa de inadimplência > 5% */}
+      {taxaInadimplencia > 5 && aiRecs && aiRecs.length > 0 && aiRecs.filter((r) => r.categoria === 'inadimplencia').map((rec, i) => (
         <div key={i} className="flex gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
           <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
           <div>
