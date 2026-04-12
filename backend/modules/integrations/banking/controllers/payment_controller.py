@@ -44,12 +44,12 @@ class BarcodePaymentRequest(BaseModel):
 
 class DARFRequest(BaseModel):
     cnpj_cpf: str = "35710481000103"
-    periodo_apuracao: str
-    numero_referencia: str
+    periodo_apuracao: str  # YYYY-MM ou YYYY-MM-DD
+    numero_referencia: str  # apenas números, max 30
     valor_principal: float
     valor_multa: float = 0
     valor_juros: float = 0
-    codigo_receita: str = "6015"
+    codigo_receita: str = "6015"  # 6015=IRPJ 2372=CSLL 0561=COFINS 8109=PIS 2100=INSS
     data_vencimento: str | None = None
     descricao: str = "Pagamento DARF"
     nome_empresa: str = "JORDAN SANTOS DE JESUS LTDA"
