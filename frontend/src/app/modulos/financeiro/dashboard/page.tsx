@@ -55,6 +55,19 @@ interface NfseDashboardData {
   por_servico: DashboardServico[];
 }
 
+interface DreDashboardData {
+  dre: {
+    receita_bruta: number;
+    receita_liquida: number;
+    resultado_liquido: number;
+    total_despesas: number;
+    despesa_folha: number;
+  };
+  contas_a_pagar: { total: number; valor: number; vencidas: number };
+  contas_a_receber: { total: number; valor: number; vencidas: number };
+  alertas: Array<{ tipo: string; mensagem: string; nivel: string }>;
+}
+
 interface NfseItem {
   id: string;
   numero_nfse: string;
@@ -135,14 +148,36 @@ export default function DashboardFinanceiroPage() {
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState('todos');
   const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [extrato, setExtrato] = useState<Record<string, unknown>[]>([]);
+  const [extratoLoading, setExtratoLoading] = useState(false);
+  const [dreData, setDreData] = useState<DreDashboardData | null>(null);
+  const [justifData, setJustifData] = useState<{ total: number; valor_total: number } | null>(null);
+  const [mrrPreviewData, setMrrPreviewData] = useState<{ total_mrr: number; total_clientes: number } | null>(null);
+
+  const loadExtrato = useCallback(async () => {
+    setExtratoLoading(true);
+    try {
+      const r = await api.get('/api/v1/integrations/banking/statement/full');
+      setExtrato((r.data.transactions || r.data.items || []).slice(0, 5));
+    } catch { } finally {
+      setExtratoLoading(false);
+    }
+  }, []);
+
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [dashRes, nfseRes, bankRes] = await Promise.all([
+      const now = new Date();
+      const mes = now.getMonth() + 1;
+      const ano = now.getFullYear();
+      const [dashRes, nfseRes, bankRes, dreRes, justifRes, mrrPreviewRes] = await Promise.all([
         api.get('/api/v1/financial/nfse/dashboard'),
         api.get('/api/v1/financial/nfse', { params: { page_size: 50 } }),
         api.get('/api/v1/integrations/banking/balances').catch(() => ({ data: { total_balance: 0, balances: [] } })),
+        api.get('/api/v1/fiscal-dashboard/atual').catch(() => ({ data: {} })),
+        api.get('/api/v1/justificativa/pendentes').catch(() => ({ data: { total: 0, valor_total: 0 } })),
+        api.get(`/api/v1/financial/billing/cobrar-recorrente/${mes}/${ano}/preview`).catch(() => ({ data: {} })),
       ]);
       setData(dashRes.data);
       setNfseList(nfseRes.data.items ?? []);
@@ -151,6 +186,9 @@ export default function DashboardFinanceiroPage() {
         total: bankRes.data?.total_balance ?? 0,
         banks: balances.map((b: Record<string, unknown>) => ({ name: String(b.bank_name ?? ''), balance: Number(b.balance ?? 0) })),
       });
+      if (dreRes.data?.dre) setDreData(dreRes.data);
+      if (justifRes.data?.total !== undefined) setJustifData(justifRes.data);
+      if (mrrPreviewRes.data?.total_mrr !== undefined) setMrrPreviewData(mrrPreviewRes.data);
       setLastUpdate(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
       console.error('Erro ao carregar dashboard financeiro:', err);
@@ -159,7 +197,7 @@ export default function DashboardFinanceiroPage() {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(); loadExtrato(); }, [loadData, loadExtrato]);
 
   if (loading || !data) {
     return (
@@ -346,6 +384,29 @@ export default function DashboardFinanceiroPage() {
         </Card>
       </div>
 
+      {/* ── Alerta Lucro Real — Saídas sem justificativa ── */}
+      {justifData && justifData.total > 0 && (
+        <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
+              ⚠️ Saídas sem justificativa fiscal (Lucro Real)
+            </p>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-0.5">
+              {justifData.total} transações pendentes
+            </p>
+            <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
+              {fmt(justifData.valor_total)} sem documentação obrigatória
+            </p>
+          </div>
+          <a
+            href="/modulos/financeiro/conciliacao"
+            className="text-sm text-orange-700 dark:text-orange-300 font-medium hover:underline whitespace-nowrap ml-4"
+          >
+            Resolver →
+          </a>
+        </div>
+      )}
+
       {/* ── Saldo Bancario ── */}
       {bankBalance.total > 0 && (
         <Card className="bg-gradient-to-r from-blue-500/5 to-cyan-500/5 border-blue-500/20">
@@ -372,6 +433,68 @@ export default function DashboardFinanceiroPage() {
         </Card>
       )}
 
+      {/* ── DRE Real + Contas ── */}
+      {dreData && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="border-l-4 border-l-red-400">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
+                    Contas a Pagar
+                  </p>
+                  <p className="text-2xl font-bold text-red-500 mt-1">{fmt(dreData.contas_a_pagar.valor)}</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                    {dreData.contas_a_pagar.total} contas · {dreData.contas_a_pagar.vencidas} vencidas
+                  </p>
+                </div>
+                <div className="rounded-full bg-red-500/10 p-3">
+                  <ArrowDownRight className="h-6 w-6 text-red-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-emerald-400">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
+                    Contas a Receber
+                  </p>
+                  <p className="text-2xl font-bold text-emerald-500 mt-1">{fmt(dreData.contas_a_receber.valor)}</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                    {dreData.contas_a_receber.total} contas · {dreData.contas_a_receber.vencidas} vencidas
+                  </p>
+                </div>
+                <div className="rounded-full bg-emerald-500/10 p-3">
+                  <ArrowUpRight className="h-6 w-6 text-emerald-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className={`border-l-4 ${dreData.dre.resultado_liquido >= 0 ? 'border-l-blue-400' : 'border-l-red-400'}`}>
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
+                    Resultado DRE (mês)
+                  </p>
+                  <p className={`text-2xl font-bold mt-1 ${dreData.dre.resultado_liquido >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                    {fmt(dreData.dre.resultado_liquido)}
+                  </p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                    Despesas: {fmt(dreData.dre.total_despesas)}
+                  </p>
+                </div>
+                <div className={`rounded-full p-3 ${dreData.dre.resultado_liquido >= 0 ? 'bg-blue-500/10' : 'bg-red-500/10'}`}>
+                  <TrendingUp className={`h-6 w-6 ${dreData.dre.resultado_liquido >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* ── MRR Card ── */}
       <Card className="bg-gradient-to-r from-emerald-500/5 to-blue-500/5 border-emerald-500/20">
         <CardContent className="pt-4 pb-3">
@@ -380,14 +503,20 @@ export default function DashboardFinanceiroPage() {
               <p className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
                 Faturamento Mensal Recorrente (MRR)
               </p>
-              <p className="text-3xl font-bold text-emerald-500 mt-1">{fmt(mrrTotal)}</p>
+              <p className="text-3xl font-bold text-emerald-500 mt-1">
+                {fmt(mrrPreviewData?.total_mrr ?? mrrTotal)}
+              </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                Baseado na média de {por_mes.length} meses com NFS-e emitidas
+                {mrrPreviewData
+                  ? `${mrrPreviewData.total_clientes} clientes ativos com contrato`
+                  : `Baseado na média de ${por_mes.length} meses com NFS-e emitidas`}
               </p>
             </div>
             <div className="text-right">
               <p className="text-sm text-[hsl(var(--muted-foreground))]">Projeção Anual</p>
-              <p className="text-xl font-bold text-[hsl(var(--foreground))]">{fmt(mrrTotal * 12)}</p>
+              <p className="text-xl font-bold text-[hsl(var(--foreground))]">
+                {fmt((mrrPreviewData?.total_mrr ?? mrrTotal) * 12)}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -610,6 +739,67 @@ export default function DashboardFinanceiroPage() {
           </div>
         </CardContent>
       </Card>
+      {/* Últimas transações Inter */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-500" />
+              🏦 Últimas transações — Banco Inter
+            </span>
+            <a
+              href="/modulos/financeiro/banking"
+              className="text-xs text-blue-500 hover:underline font-normal"
+            >
+              Ver extrato completo →
+            </a>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {extratoLoading ? (
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Carregando...</p>
+          ) : extrato.length > 0 ? (
+            <div className="space-y-2">
+              {extrato.map((tx, i) => {
+                const isCredit = ['credit', 'CREDITO', 'PIX_RECEBIDO'].includes(
+                  String(tx.transaction_type || ''))
+                return (
+                  <div key={i}
+                    className="flex items-center justify-between py-1.5 border-b border-[hsl(var(--border))] last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-[hsl(var(--foreground))] truncate">
+                        {String(tx.description || '')}
+                      </p>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                        {new Date(String(tx.transaction_date || '')).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      {tx.reconciliado ? (
+                        <span className="text-xs text-emerald-500">✅</span>
+                      ) : (
+                        <span className="text-xs text-amber-500">⏳</span>
+                      )}
+                      <span className={`text-sm font-medium ${
+                        isCredit ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {isCredit ? '+' : '-'}
+                        {Number(tx.amount || 0).toLocaleString('pt-BR', {
+                          style: 'currency', currency: 'BRL'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              Nenhuma transação recente
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
