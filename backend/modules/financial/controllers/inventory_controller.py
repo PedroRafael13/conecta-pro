@@ -333,6 +333,41 @@ async def list_stock_items(
         ) from e
 
 
+@router.get("/items", response_model=list[StockItemListResponse])
+async def list_inventory_items(
+    condominio_id: uuid.UUID | None = None,
+    warehouse_id: uuid.UUID | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_sync_db_dependency),
+    _current_user: dict = Depends(get_current_user),
+) -> list[StockItemListResponse]:
+    """Lista itens de inventário (alias de /stock-items para compatibilidade)."""
+    try:
+        repo = StockItemRepository(db)
+        _raw_cond = (
+            _current_user.get("condominio_id")
+            if isinstance(_current_user, dict)
+            else getattr(_current_user, "condominio_id", None)
+        )
+        _cond = condominio_id or (uuid.UUID(str(_raw_cond)) if _raw_cond else None)
+
+        if warehouse_id:
+            items = repo.list_by_warehouse(warehouse_id, None, skip, limit)
+        else:
+            wh_repo = WarehouseRepository(db)
+            main_wh = wh_repo.get_main_warehouse(_cond) if _cond else None
+            items = repo.list_by_warehouse(main_wh.id, None, skip, limit) if main_wh else []
+
+        return [StockItemListResponse.model_validate(i) for i in items]
+    except Exception as e:
+        logger.error(f"Erro ao listar inventory items: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao listar inventory items",
+        ) from e
+
+
 @router.get("/stock-items/stats", response_model=StockStats)
 async def get_stock_stats(
     db: Session = Depends(get_sync_db_dependency),
