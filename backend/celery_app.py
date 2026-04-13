@@ -32,6 +32,7 @@ app = Celery(
         "modules.people_management.ged.tasks",
         "modules.health_occupational.tasks",
         "modules.gedeon.tasks.kronos_tasks",
+        "modules.financial.tasks",
     ],
 )
 
@@ -358,6 +359,12 @@ app.conf.beat_schedule = {
         "task": "integrations.sync_work_schedules_from_solides",
         "schedule": crontab(hour="*/6"),
         "options": {"queue": "integrations"},
+    },
+    # ── FINANCIAL — Auto-sync cashflow_entries ────────────────────────────────
+    "financial-sync-cashflow-hourly": {
+        "task": "financial.sync_cashflow_entries",
+        "schedule": crontab(minute=15),  # todo hora no minuto 15
+        "options": {"queue": "gov.batch"},
     },
 }
 

@@ -256,6 +256,28 @@ async def get_dashboard(
 
 
 @router.post(
+    "/sync",
+    summary="Sincronizar bank_transactions → cashflow_entries",
+)
+async def sync_cashflow_entries(
+    current_user=Depends(get_current_user),
+) -> dict:
+    """Dispara sync manual de bank_transactions pendentes → cashflow_entries."""
+    try:
+        from modules.financial.services.auto_sync_service import run_full_sync
+
+        result = run_full_sync(limit=500)
+        logger.info("Sync cashflow manual: %s", result)
+        return {"ok": True, **result}
+    except Exception as e:
+        logger.error("Erro no sync cashflow: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro no sync: {e}",
+        )
+
+
+@router.post(
     "/entries",
     response_model=CashFlowEntryResponse,
     status_code=status.HTTP_201_CREATED,

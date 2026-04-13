@@ -142,6 +142,15 @@ async def _processar_pix_recebido(pix_data: dict) -> dict:
         tx_row = cur.fetchone()
         tx_id = str(tx_row[0]) if tx_row else None
 
+        # Auto-sync para cashflow_entries
+        if tx_id:
+            try:
+                from modules.financial.services.auto_sync_service import sync_single_transaction
+
+                sync_single_transaction(tx_id)
+            except Exception:
+                pass  # sync é best-effort, não bloqueia webhook
+
         # Tentar conciliar por txid
         if txid:
             cur.execute(
