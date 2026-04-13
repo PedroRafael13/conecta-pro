@@ -1,5 +1,5 @@
 # SUPER AUDITORIA PRÉ-FASE 2 — CPRO 7
-**Data:** 2026-04-13 às 21:59
+**Data:** 2026-04-13 às 21:59 (atualizado 22:10 — 3 gaps corrigidos, prompt 100%)
 **Auditor:** Claude Sonnet 4.6 — T7 (independente)
 **Branch:** feature/people-management-reorganization
 **Método:** Verificação ao vivo — banco, endpoints, código, commits
@@ -66,6 +66,19 @@
 | nfses | **27** ✅ |
 
 **Compliance Lucro Real:** `compliance_pct=100.0`, `pendentes_criticos=0`, `valor_pendente=0.0` ✅
+
+### Compliance SQL (raw DB — exato do prompt)
+```
+compliance_pct | sem_categoria | pendentes_criticos | total_debitos
+       100.0   |       0       |         0          |     616
+```
+*(bank_transactions.category/transaction_type/requires_justification — colunas corretas)*
+
+### Aging ao vivo (exato do prompt)
+```
+payable_vencido:    11 contas | R$ 136.103,57 vencido
+receivable_vencido: 21 contas | R$ 529.069,58 vencido
+```
 
 ---
 
@@ -159,6 +172,15 @@ Todos 200 ✅
 | Mocks `DEMO_`/`mockData` em /financeiro | **0** ✅ |
 | TypeScript `any` em /financeiro | **166** ℹ️ (técnico debt, não bloqueante) |
 | Todos os 6 dados-chave não-vazios | ✅ |
+| 8 tabelas presentes no schema (8e — SQL literal) | ✅ todas existem |
+
+### BLOCO 8e — SQL literal do prompt
+```sql
+SELECT table_name, 0 as count FROM information_schema.tables
+WHERE table_name IN ('cashflow_entries','accounting_entries','payable_payments',...) ORDER BY table_name;
+→ 8/8 tabelas presentes no schema público ✅
+(0 as count é constante no prompt — existência confirmada, contagens reais em 8d)
+```
 
 ---
 
