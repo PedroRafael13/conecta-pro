@@ -76,7 +76,7 @@ async def create_dashboard(
     data: DashboardCreate,
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria novo dashboard."""
     repo = DashboardRepository(db)
@@ -86,7 +86,7 @@ async def create_dashboard(
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Dashboard com codigo {data.codigo} ja existe",
         )
-    dashboard = repo.create(condominio_id, data, current_user.get("id"))
+    dashboard = repo.create(condominio_id, data, current_user.id)
     return dashboard
 
 
@@ -101,16 +101,12 @@ async def list_dashboards(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista dashboards com filtros (raw SQL para compatibilidade de schema)."""
     from sqlalchemy import text
 
-    _raw_cond = (
-        current_user.get("condominio_id")
-        if isinstance(current_user, dict)
-        else getattr(current_user, "condominio_id", None)
-    )
+    _raw_cond = getattr(current_user, "condominio_id", None)
     _cond = condominio_id or (_raw_cond if _raw_cond else None)
 
     try:
@@ -221,7 +217,7 @@ async def update_dashboard(
     data: DashboardUpdate,
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza dashboard."""
     repo = DashboardRepository(db)
@@ -231,7 +227,7 @@ async def update_dashboard(
             status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Dashboard nao encontrado",
         )
-    return repo.update(dashboard, data, current_user.get("id"))
+    return repo.update(dashboard, data, current_user.id)
 
 
 @router.delete("/dashboards/{dashboard_id}", status_code=http_status.HTTP_204_NO_CONTENT)
@@ -347,7 +343,7 @@ async def duplicate_dashboard(
     novo_nome: str = Query(...),
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Duplica dashboard."""
     repo = DashboardRepository(db)
@@ -357,7 +353,7 @@ async def duplicate_dashboard(
             status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Dashboard nao encontrado",
         )
-    return repo.duplicate(dashboard, novo_nome, created_by=current_user.get("id"))
+    return repo.duplicate(dashboard, novo_nome, created_by=current_user.id)
 
 
 @router.get("/dashboards/stats", response_model=DashboardStats)
@@ -380,11 +376,11 @@ async def create_widget(
     data: WidgetCreate,
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria novo widget."""
     repo = WidgetRepository(db)
-    widget = repo.create(condominio_id, data, current_user.get("id"))
+    widget = repo.create(condominio_id, data, current_user.id)
     return widget
 
 
@@ -556,7 +552,7 @@ async def clone_widget(
     target_dashboard_id: UUID = Query(...),
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Clona widget para outro dashboard."""
     repo = WidgetRepository(db)
@@ -566,7 +562,7 @@ async def clone_widget(
             status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Widget nao encontrado",
         )
-    return repo.clone(widget, target_dashboard_id, created_by=current_user.get("id"))
+    return repo.clone(widget, target_dashboard_id, created_by=current_user.id)
 
 
 @router.get("/dashboards/{dashboard_id}/widgets", response_model=list[WidgetResponse])
@@ -590,7 +586,7 @@ async def create_kpi(
     data: KPICreate,
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria novo KPI."""
     repo = KPIRepository(db)
@@ -600,7 +596,7 @@ async def create_kpi(
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"KPI com codigo {data.codigo} ja existe",
         )
-    kpi = repo.create(condominio_id, data, current_user.get("id"))
+    kpi = repo.create(condominio_id, data, current_user.id)
     return kpi
 
 
@@ -614,16 +610,12 @@ async def list_kpis(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista KPIs com filtros (raw SQL para compatibilidade com schema atual)."""
     from sqlalchemy import text
 
-    _raw_cond = (
-        current_user.get("condominio_id")
-        if isinstance(current_user, dict)
-        else getattr(current_user, "condominio_id", None)
-    )
+    _raw_cond = getattr(current_user, "condominio_id", None)
     _cond = condominio_id or (_raw_cond if _raw_cond else None)
 
     try:
@@ -724,7 +716,7 @@ async def update_kpi(
     data: KPIUpdate,
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza KPI."""
     repo = KPIRepository(db)
@@ -734,7 +726,7 @@ async def update_kpi(
             status_code=http_status.HTTP_404_NOT_FOUND,
             detail="KPI nao encontrado",
         )
-    return repo.update(kpi, data, current_user.get("id"))
+    return repo.update(kpi, data, current_user.id)
 
 
 @router.delete("/kpis/{kpi_id}", status_code=http_status.HTTP_204_NO_CONTENT)
@@ -888,7 +880,7 @@ async def create_report(
     data: ReportCreate,
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria novo relatorio agendado."""
     repo = ReportRepository(db)
@@ -898,7 +890,7 @@ async def create_report(
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Relatorio com codigo {data.codigo} ja existe",
         )
-    report = repo.create(condominio_id, data, current_user.get("id"))
+    report = repo.create(condominio_id, data, current_user.id)
     return report
 
 
@@ -950,7 +942,7 @@ async def update_report(
     data: ReportUpdate,
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza relatorio."""
     repo = ReportRepository(db)
@@ -960,7 +952,7 @@ async def update_report(
             status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Relatorio nao encontrado",
         )
-    return repo.update(report, data, current_user.get("id"))
+    return repo.update(report, data, current_user.id)
 
 
 @router.delete("/reports/{report_id}", status_code=http_status.HTTP_204_NO_CONTENT)
@@ -1295,7 +1287,7 @@ async def get_bi_kpis_summary(
     condominio_id: UUID = Query(...),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Retorna KPIs resumidos para o BI Dashboard."""
     from sqlalchemy import func
@@ -1347,7 +1339,7 @@ async def get_cashflow_analysis(
     condominio_id: UUID = Query(...),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Analise de fluxo de caixa para o periodo."""
     from sqlalchemy import func
@@ -1396,7 +1388,7 @@ async def get_cashflow_analysis(
 async def get_receivables_aging(
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Aging de contas a receber (vencidas por faixa)."""
     from datetime import timedelta
@@ -1457,7 +1449,7 @@ async def get_receivables_aging(
 async def get_payables_aging(
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Aging de contas a pagar (vencidas por faixa)."""
     from datetime import timedelta
@@ -1520,7 +1512,7 @@ async def get_cost_analysis(
     condominio_id: UUID = Query(...),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Analise de custos por categoria."""
     from datetime import timedelta
@@ -1568,7 +1560,7 @@ async def get_revenue_analysis(
     condominio_id: UUID = Query(...),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Analise de receitas por categoria."""
     from datetime import timedelta
@@ -1614,7 +1606,7 @@ async def get_profitability(
     condominio_id: UUID = Query(...),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Analise de lucratividade do periodo."""
     from datetime import timedelta
@@ -1666,7 +1658,7 @@ async def get_profitability(
 async def get_bi_alerts(
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista alertas financeiros ativos para o condominio."""
     from sqlalchemy import func
@@ -1719,7 +1711,7 @@ async def get_performance_dashboard(
     condominio_id: UUID = Query(...),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Dashboard consolidado de performance financeira."""
     from datetime import timedelta
@@ -1790,7 +1782,7 @@ async def get_financial_trends(
     condominio_id: UUID = Query(...),
     months: int = Query(6, ge=1, le=24),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Tendencias financeiras mensais."""
     from datetime import timedelta
@@ -1849,7 +1841,7 @@ async def get_period_comparison(
     current_period_days: int = Query(30, ge=1, le=365),
     previous_period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Comparacao entre dois periodos financeiros."""
     from datetime import timedelta
