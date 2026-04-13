@@ -124,7 +124,7 @@ class PayrollEvent(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )
@@ -182,7 +182,7 @@ class PayrollEvent(Base):
     # Histórico de ajustes
     original_value = Column(Numeric(15, 2), nullable=True)  # Valor antes de ajuste
     adjustment_reason = Column(Text, nullable=True)
-    adjusted_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    adjusted_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     adjusted_at = Column(DateTime, nullable=True)
 
     # Observações
@@ -191,7 +191,7 @@ class PayrollEvent(Base):
     # Metadados
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos

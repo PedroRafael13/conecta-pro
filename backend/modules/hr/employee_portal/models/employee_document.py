@@ -94,7 +94,7 @@ class EmployeeDocument(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )
@@ -189,7 +189,7 @@ class EmployeeDocument(Base):
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     published_at = Column(DateTime, nullable=True)
     published_by = Column(UUID(as_uuid=True), nullable=True)
     archived_at = Column(DateTime, nullable=True)

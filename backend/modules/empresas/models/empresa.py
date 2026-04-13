@@ -52,7 +52,7 @@ class Empresa(Base):
     __tablename__ = "empresas"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    condominio_id = Column(UUID(as_uuid=True), ForeignKey("condominios.id"), nullable=False, index=True)
+    condominio_id = Column(UUID(as_uuid=True), ForeignKey("condominiums.id"), nullable=False, index=True)
 
     # Identificação
     slug = Column(String(50), nullable=False)

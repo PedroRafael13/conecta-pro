@@ -61,7 +61,7 @@ class PayrollPeriod(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )
@@ -86,7 +86,7 @@ class PayrollPeriod(Base):
 
     # Status e workflow
     status = Column(String(20), nullable=False, default=PeriodStatus.DRAFT.value)
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Totalizadores
     total_employees = Column(Integer, default=0)
@@ -120,7 +120,7 @@ class PayrollPeriod(Base):
     # Metadados
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
