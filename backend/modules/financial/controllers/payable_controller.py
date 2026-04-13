@@ -235,6 +235,19 @@ async def get_payables_aging(
 
 
 @router.get(
+    "/aging",
+    summary="Aging de contas a pagar (alias)",
+)
+async def get_payables_aging_short(
+    condominio_id: UUID | None = Query(None),
+    service: PayableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> dict:
+    """Alias para /payables-aging — relatório de aging por faixas de dias."""
+    return await get_payables_aging(condominio_id, service, current_user)
+
+
+@router.get(
     "/{account_id}",
     response_model=PayableAccountResponse,
     summary="Buscar conta a pagar",

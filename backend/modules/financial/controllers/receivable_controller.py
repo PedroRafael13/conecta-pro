@@ -242,6 +242,19 @@ async def get_receivables_aging(
 
 
 @router.get(
+    "/aging",
+    summary="Aging de contas a receber (alias)",
+)
+async def get_receivables_aging_short(
+    condominio_id: UUID | None = Query(None),
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> dict:
+    """Alias para /receivables-aging — relatório de aging por faixas de dias."""
+    return await get_receivables_aging(condominio_id, service, current_user)
+
+
+@router.get(
     "/{account_id}",
     response_model=ReceivableAccountResponse,
     summary="Buscar conta a receber",
