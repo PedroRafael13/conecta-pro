@@ -41,7 +41,7 @@ async def create_category(
 ) -> ReceivableCategoryResponse:
     """Cria uma nova categoria de conta a receber."""
     try:
-        category = await repo.create(data, UUID(current_user["id"]))
+        category = await repo.create(data, current_user.id)
         return ReceivableCategoryResponse.model_validate(category)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

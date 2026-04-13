@@ -43,7 +43,7 @@ async def create_supplier(
 ) -> SupplierResponse:
     """Cria um novo fornecedor."""
     try:
-        supplier = await service.create(data, UUID(current_user["id"]))
+        supplier = await service.create(data, current_user.id)
         return SupplierResponse.model_validate(supplier)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -194,7 +194,7 @@ async def block_supplier(
 ) -> SupplierResponse:
     """Bloqueia um fornecedor."""
     try:
-        supplier = await service.block(supplier_id, data.reason, UUID(current_user["id"]))
+        supplier = await service.block(supplier_id, data.reason, current_user.id)
         if not supplier:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -237,7 +237,7 @@ async def qualify_supplier(  # pylint: disable=unused-argument
 ) -> SupplierResponse:
     """Qualifica um fornecedor."""
     try:
-        supplier = await service.qualify(supplier_id, UUID(current_user["id"]))
+        supplier = await service.qualify(supplier_id, current_user.id)
         if not supplier:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

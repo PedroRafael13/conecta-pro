@@ -43,7 +43,7 @@ async def create_customer(
 ) -> CustomerResponse:
     """Cria um novo cliente/devedor."""
     try:
-        customer = await repo.create(data, UUID(current_user["id"]))
+        customer = await repo.create(data, current_user.id)
         return CustomerResponse.model_validate(customer)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

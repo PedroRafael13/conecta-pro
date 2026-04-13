@@ -42,7 +42,7 @@ async def create_billing_rule(
 ) -> BillingRuleResponse:
     """Cria uma nova regra de cobranca automatica."""
     try:
-        rule = await repo.create(data, UUID(current_user["id"]))
+        rule = await repo.create(data, current_user.id)
         return BillingRuleResponse.model_validate(rule)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

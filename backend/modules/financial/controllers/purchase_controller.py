@@ -126,7 +126,7 @@ async def create_product_category(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Já existe uma categoria com este código",
             )
-        category = await repo.create(data, UUID(_current_user["id"]))
+        category = await repo.create(data, _current_user.id)
         await session.commit()
         return ProductCategoryResponse.model_validate(category)
     except HTTPException:
@@ -290,7 +290,7 @@ async def create_product(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Já existe um produto com este código",
             )
-        product = await repo.create(data, UUID(_current_user["id"]))
+        product = await repo.create(data, _current_user.id)
         await session.commit()
         return ProductResponse.model_validate(product)
     except HTTPException:
@@ -440,7 +440,7 @@ async def block_product(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Produto não encontrado",
         )
-    product.block(data.reason, UUID(_current_user["id"]))
+    product.block(data.reason, _current_user.id)
     await session.commit()
     await session.refresh(product)
     return ProductResponse.model_validate(product)
@@ -463,7 +463,7 @@ async def create_requisition(
     """Cria uma nova requisição de compra."""
     try:
         repo = PurchaseRequisitionRepository(session)
-        requisition = await repo.create(data, UUID(_current_user["id"]))
+        requisition = await repo.create(data, _current_user.id)
         await session.commit()
         await session.refresh(requisition)
         return PurchaseRequisitionResponse.model_validate(requisition)
@@ -636,7 +636,7 @@ async def approve_requisition(
         )
     try:
         notes = data.notes if data else None
-        requisition.approve(UUID(_current_user["id"]), notes)
+        requisition.approve(_current_user.id, notes)
         await session.commit()
         await session.refresh(requisition)
         return PurchaseRequisitionResponse.model_validate(requisition)
@@ -665,7 +665,7 @@ async def reject_requisition(
             detail="Requisição não encontrada",
         )
     try:
-        requisition.reject(UUID(_current_user["id"]), data.reason)
+        requisition.reject(_current_user.id, data.reason)
         await session.commit()
         await session.refresh(requisition)
         return PurchaseRequisitionResponse.model_validate(requisition)
@@ -739,7 +739,7 @@ async def create_quotation(
     """Cria uma nova cotação."""
     try:
         repo = PurchaseQuotationRepository(session)
-        quotation = await repo.create(data, UUID(_current_user["id"]))
+        quotation = await repo.create(data, _current_user.id)
         await session.commit()
         await session.refresh(quotation)
         return PurchaseQuotationResponse.model_validate(quotation)
@@ -946,7 +946,7 @@ async def select_quotation(
         )
     try:
         notes = data.notes if data else None
-        quotation.select(UUID(_current_user["id"]), notes)
+        quotation.select(_current_user.id, notes)
         await session.commit()
         await session.refresh(quotation)
         return PurchaseQuotationResponse.model_validate(quotation)
@@ -1000,7 +1000,7 @@ async def create_order(
     """Cria uma nova ordem de compra."""
     try:
         repo = PurchaseOrderRepository(session)
-        order = await repo.create(data, UUID(_current_user["id"]))
+        order = await repo.create(data, _current_user.id)
         await session.commit()
         await session.refresh(order)
         return PurchaseOrderResponse.model_validate(order)
@@ -1143,7 +1143,7 @@ async def approve_order(  # pylint: disable=unused-argument
             detail="Ordem de compra não encontrada",
         )
     try:
-        order.approve(UUID(_current_user["id"]))
+        order.approve(_current_user.id)
         await session.commit()
         await session.refresh(order)
         return PurchaseOrderResponse.model_validate(order)
@@ -1277,7 +1277,7 @@ async def create_receipt(
     """Cria um novo recebimento de mercadorias."""
     try:
         repo = GoodsReceiptRepository(session)
-        receipt = await repo.create(data, UUID(_current_user["id"]))
+        receipt = await repo.create(data, _current_user.id)
         await session.commit()
         await session.refresh(receipt)
         return GoodsReceiptResponse.model_validate(receipt)
@@ -1436,7 +1436,7 @@ async def inspect_receipt(
             detail="Recebimento não encontrado",
         )
     try:
-        receipt.complete_inspection(data.result, UUID(_current_user["id"]), data.notes)
+        receipt.complete_inspection(data.result, _current_user.id, data.notes)
         await session.commit()
         await session.refresh(receipt)
         return GoodsReceiptResponse.model_validate(receipt)
@@ -1465,7 +1465,7 @@ async def approve_receipt(
             detail="Recebimento não encontrado",
         )
     try:
-        receipt.approve(UUID(_current_user["id"]))
+        receipt.approve(_current_user.id)
         await session.commit()
         await session.refresh(receipt)
         return GoodsReceiptResponse.model_validate(receipt)
@@ -1572,7 +1572,7 @@ async def get_my_approvals(
 ) -> MyApprovalsResponse:
     """Retorna aprovações pendentes do usuário atual."""
     repo = PurchaseApprovalRepository(session)
-    pending = await repo.get_pending_for_approver(UUID(_current_user["id"]), condominio_id)
+    pending = await repo.get_pending_for_approver(_current_user.id, condominio_id)
 
     # Separar em pendentes normais e atrasadas
     now = datetime.utcnow()
@@ -1581,7 +1581,7 @@ async def get_my_approvals(
 
     # Buscar aprovações recentes (últimas 10 respondidas)
     recent_filter = ApprovalFilter(
-        approver_id=UUID(_current_user["id"]),
+        approver_id=_current_user.id,
         status=[ApprovalStatus.APROVADA, ApprovalStatus.REJEITADA],
     )
     recent = await repo.list(condominio_id, recent_filter, 0, 10)
@@ -1686,7 +1686,7 @@ async def approve_approval(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Aprovação não encontrada",
         )
-    if str(approval.approver_id) != _current_user["id"]:
+    if str(approval.approver_id) != _current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Você não é o aprovador desta solicitação",
@@ -1718,7 +1718,7 @@ async def reject_approval(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Aprovação não encontrada",
         )
-    if str(approval.approver_id) != _current_user["id"]:
+    if str(approval.approver_id) != _current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Você não é o aprovador desta solicitação",
@@ -1752,13 +1752,13 @@ async def delegate_approval(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Aprovação não encontrada",
         )
-    if str(approval.approver_id) != _current_user["id"]:
+    if str(approval.approver_id) != _current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Você não é o aprovador desta solicitação",
         )
     try:
-        approval.delegate(data.new_approver_id, UUID(_current_user["id"]), data.reason)
+        approval.delegate(data.new_approver_id, _current_user.id, data.reason)
         await session.commit()
         await session.refresh(approval)
         return PurchaseApprovalResponse.model_validate(approval)
@@ -1786,7 +1786,7 @@ async def request_info(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Aprovação não encontrada",
         )
-    if str(approval.approver_id) != _current_user["id"]:
+    if str(approval.approver_id) != _current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Você não é o aprovador desta solicitação",

@@ -104,7 +104,7 @@ async def get_warehouse_stats(
     """Retorna estatísticas dos armazéns."""
     try:
         repo = WarehouseRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"])
+        stats = repo.get_stats(_current_user.condominio_id)
         return WarehouseStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatísticas: {e}")
@@ -125,7 +125,7 @@ async def create_warehouse(
         repo = WarehouseRepository(db)
 
         # Verifica código duplicado
-        existing = repo.get_by_code(data.code, _current_user["condominio_id"])
+        existing = repo.get_by_code(data.code, _current_user.condominio_id)
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -133,9 +133,9 @@ async def create_warehouse(
             )
 
         warehouse = Warehouse(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_current_user.condominio_id,
             status=WarehouseStatus.ATIVO.value,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(),
         )
 
@@ -165,7 +165,7 @@ async def get_warehouse(
     repo = WarehouseRepository(db)
     warehouse = repo.get_by_id(warehouse_id)
 
-    if not warehouse or warehouse.condominio_id != _current_user["condominio_id"]:
+    if not warehouse or warehouse.condominio_id != _current_user.condominio_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Armazém não encontrado",
@@ -186,7 +186,7 @@ async def update_warehouse(
         repo = WarehouseRepository(db)
         warehouse = repo.get_by_id(warehouse_id)
 
-        if not warehouse or warehouse.condominio_id != _current_user["condominio_id"]:
+        if not warehouse or warehouse.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Armazém não encontrado",
@@ -223,13 +223,13 @@ async def block_warehouse(
         repo = WarehouseRepository(db)
         warehouse = repo.get_by_id(warehouse_id)
 
-        if not warehouse or warehouse.condominio_id != _current_user["condominio_id"]:
+        if not warehouse or warehouse.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Armazém não encontrado",
             )
 
-        warehouse.block(reason, _current_user["id"])
+        warehouse.block(reason, _current_user.id)
         repo.update(warehouse)
         db.commit()
 
@@ -256,7 +256,7 @@ async def unblock_warehouse(
         repo = WarehouseRepository(db)
         warehouse = repo.get_by_id(warehouse_id)
 
-        if not warehouse or warehouse.condominio_id != _current_user["condominio_id"]:
+        if not warehouse or warehouse.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Armazém não encontrado",
@@ -376,7 +376,7 @@ async def get_stock_stats(
     """Retorna estatísticas de estoque."""
     try:
         repo = StockItemRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"])
+        stats = repo.get_stats(_current_user.condominio_id)
         return StockStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatísticas: {e}")
@@ -394,7 +394,7 @@ async def list_low_stock_items(
     """Lista itens abaixo do estoque mínimo."""
     try:
         repo = StockItemRepository(db)
-        items = repo.list_low_stock(_current_user["condominio_id"])
+        items = repo.list_low_stock(_current_user.condominio_id)
         return [StockItemListResponse.model_validate(i) for i in items]
     except Exception as e:
         logger.error(f"Erro ao listar itens: {e}")
@@ -413,7 +413,7 @@ async def list_expiring_items(
     """Lista itens próximos do vencimento."""
     try:
         repo = StockItemRepository(db)
-        items = repo.list_expiring(_current_user["condominio_id"], days)
+        items = repo.list_expiring(_current_user.condominio_id, days)
         return [StockItemListResponse.model_validate(i) for i in items]
     except Exception as e:
         logger.error(f"Erro ao listar itens: {e}")
@@ -433,7 +433,7 @@ async def get_stock_item(
     repo = StockItemRepository(db)
     item = repo.get_by_id(item_id)
 
-    if not item or item.condominio_id != _current_user["condominio_id"]:
+    if not item or item.condominio_id != _current_user.condominio_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Item não encontrado",
@@ -454,13 +454,13 @@ async def block_stock_item(
         repo = StockItemRepository(db)
         item = repo.get_by_id(item_id)
 
-        if not item or item.condominio_id != _current_user["condominio_id"]:
+        if not item or item.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Item não encontrado",
             )
 
-        item.block(reason, _current_user["id"])
+        item.block(reason, _current_user.id)
         repo.update(item)
         db.commit()
 
@@ -487,7 +487,7 @@ async def unblock_stock_item(
         repo = StockItemRepository(db)
         item = repo.get_by_id(item_id)
 
-        if not item or item.condominio_id != _current_user["condominio_id"]:
+        if not item or item.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Item não encontrado",
@@ -531,7 +531,7 @@ async def list_movements(
     try:
         repo = StockMovementRepository(db)
         movements = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_current_user.condominio_id,
             warehouse_id=warehouse_id,
             product_id=product_id,
             movement_type=movement_type,
@@ -560,7 +560,7 @@ async def get_movement_stats(
     """Retorna estatísticas de movimentações."""
     try:
         repo = StockMovementRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"], date_from, date_to)
+        stats = repo.get_stats(_current_user.condominio_id, date_from, date_to)
         return MovementStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatísticas: {e}")
@@ -578,7 +578,7 @@ async def list_pending_movements(
     """Lista movimentações pendentes."""
     try:
         repo = StockMovementRepository(db)
-        movements = repo.list_pending(_current_user["condominio_id"])
+        movements = repo.list_pending(_current_user.condominio_id)
         return [StockMovementListResponse.model_validate(m) for m in movements]
     except Exception as e:
         logger.error(f"Erro ao listar movimentações: {e}")
@@ -598,13 +598,13 @@ async def create_movement(
     try:
         repo = StockMovementRepository(db)
 
-        number = repo.generate_next_number(_current_user["condominio_id"])
+        number = repo.generate_next_number(_current_user.condominio_id)
 
         movement = StockMovement(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_current_user.condominio_id,
             number=number,
             status=MovementStatus.RASCUNHO.value,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(),
         )
 
@@ -641,7 +641,7 @@ async def get_movement(
     repo = StockMovementRepository(db)
     movement = repo.get_by_id(movement_id)
 
-    if not movement or movement.condominio_id != _current_user["condominio_id"]:
+    if not movement or movement.condominio_id != _current_user.condominio_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Movimentação não encontrada",
@@ -662,7 +662,7 @@ async def confirm_movement(
         item_repo = StockItemRepository(db)
 
         movement = mov_repo.get_by_id(movement_id)
-        if not movement or movement.condominio_id != _current_user["condominio_id"]:
+        if not movement or movement.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Movimentação não encontrada",
@@ -684,12 +684,12 @@ async def confirm_movement(
         if not stock_item:
             # Cria novo item de estoque
             stock_item = StockItem(
-                condominio_id=_current_user["condominio_id"],
+                condominio_id=_current_user.condominio_id,
                 product_id=movement.product_id,
                 warehouse_id=movement.warehouse_id,
                 batch_number=movement.batch_number,
                 expiry_date=movement.expiry_date,
-                created_by=_current_user["id"],
+                created_by=_current_user.id,
             )
             stock_item = item_repo.create(stock_item)
 
@@ -709,7 +709,7 @@ async def confirm_movement(
         balance_after = stock_item.quantity_on_hand
 
         # Confirma movimentação
-        movement.confirm(_current_user["id"], balance_before, balance_after)
+        movement.confirm(_current_user.id, balance_before, balance_after)
 
         item_repo.update(stock_item)
         mov_repo.update(movement)
@@ -738,7 +738,7 @@ async def cancel_movement(
         repo = StockMovementRepository(db)
         movement = repo.get_by_id(movement_id)
 
-        if not movement or movement.condominio_id != _current_user["condominio_id"]:
+        if not movement or movement.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Movimentação não encontrada",
@@ -784,7 +784,7 @@ async def list_inventories(
     try:
         repo = StockInventoryRepository(db)
         inventories = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_current_user.condominio_id,
             warehouse_id=warehouse_id,
             status=inv_status,
             skip=skip,
@@ -807,7 +807,7 @@ async def get_inventory_stats(
     """Retorna estatísticas de inventários."""
     try:
         repo = StockInventoryRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"])
+        stats = repo.get_stats(_current_user.condominio_id)
         return InventoryStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatísticas: {e}")
@@ -827,13 +827,13 @@ async def create_inventory(
     try:
         repo = StockInventoryRepository(db)
 
-        number = repo.generate_next_number(_current_user["condominio_id"])
+        number = repo.generate_next_number(_current_user.condominio_id)
 
         inventory = StockInventory(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_current_user.condominio_id,
             number=number,
             status=InventoryStatus.PLANEJADO.value,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"inventory_type"}),
         )
 
@@ -866,7 +866,7 @@ async def get_inventory(
     repo = StockInventoryRepository(db)
     inventory = repo.get_by_id(inventory_id)
 
-    if not inventory or inventory.condominio_id != _current_user["condominio_id"]:
+    if not inventory or inventory.condominio_id != _current_user.condominio_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Inventário não encontrado",
@@ -886,7 +886,7 @@ async def start_inventory(
         repo = StockInventoryRepository(db)
         inventory = repo.get_by_id(inventory_id)
 
-        if not inventory or inventory.condominio_id != _current_user["condominio_id"]:
+        if not inventory or inventory.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Inventário não encontrado",
@@ -925,7 +925,7 @@ async def finalize_inventory(
         repo = StockInventoryRepository(db)
         inventory = repo.get_by_id(inventory_id)
 
-        if not inventory or inventory.condominio_id != _current_user["condominio_id"]:
+        if not inventory or inventory.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Inventário não encontrado",
@@ -967,7 +967,7 @@ async def list_reservations(
     try:
         repo = StockReservationRepository(db)
         reservations = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_current_user.condominio_id,
             product_id=product_id,
             warehouse_id=warehouse_id,
             status=res_status,
@@ -991,7 +991,7 @@ async def get_reservation_stats(
     """Retorna estatísticas de reservas."""
     try:
         repo = StockReservationRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"])
+        stats = repo.get_stats(_current_user.condominio_id)
         return ReservationStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatísticas: {e}")
@@ -1020,14 +1020,14 @@ async def create_reservation(
                 detail=f"Quantidade indisponível. Disponível: {available}",
             )
 
-        number = res_repo.generate_next_number(_current_user["condominio_id"])
+        number = res_repo.generate_next_number(_current_user.condominio_id)
 
         reservation = StockReservation(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_current_user.condominio_id,
             number=number,
             status=ReservationStatus.ATIVA.value,
-            created_by=_current_user["id"],
-            requester_id=_current_user["id"],
+            created_by=_current_user.id,
+            requester_id=_current_user.id,
             **data.model_dump(exclude={"reservation_type", "priority"}),
         )
 
@@ -1065,7 +1065,7 @@ async def get_reservation(
     repo = StockReservationRepository(db)
     reservation = repo.get_by_id(reservation_id)
 
-    if not reservation or reservation.condominio_id != _current_user["condominio_id"]:
+    if not reservation or reservation.condominio_id != _current_user.condominio_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reserva não encontrada",
@@ -1086,7 +1086,7 @@ async def release_reservation(
         repo = StockReservationRepository(db)
         reservation = repo.get_by_id(reservation_id)
 
-        if not reservation or reservation.condominio_id != _current_user["condominio_id"]:
+        if not reservation or reservation.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Reserva não encontrada",
@@ -1098,7 +1098,7 @@ async def release_reservation(
                 detail="Reserva não está ativa",
             )
 
-        success = reservation.release(data.quantity, _current_user["id"], data.notes)
+        success = reservation.release(data.quantity, _current_user.id, data.notes)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -1132,13 +1132,13 @@ async def cancel_reservation(
         repo = StockReservationRepository(db)
         reservation = repo.get_by_id(reservation_id)
 
-        if not reservation or reservation.condominio_id != _current_user["condominio_id"]:
+        if not reservation or reservation.condominio_id != _current_user.condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Reserva não encontrada",
             )
 
-        reservation.cancel(_current_user["id"], reason)
+        reservation.cancel(_current_user.id, reason)
         repo.update(reservation)
         db.commit()
 
