@@ -13,9 +13,6 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy import (
-    Enum as SQLEnum,
-)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
@@ -86,26 +83,10 @@ class FinancialDashboard(Base):
     descricao = Column(Text)
 
     # Configuracao
-    tipo = Column(
-        SQLEnum(DashboardType, name="dashboard_type_enum"),
-        default=DashboardType.OPERATIONAL,
-        nullable=False,
-    )
-    status = Column(
-        SQLEnum(DashboardStatus, name="dashboard_status_enum"),
-        default=DashboardStatus.DRAFT,
-        nullable=False,
-    )
-    layout = Column(
-        SQLEnum(DashboardLayout, name="dashboard_layout_enum"),
-        default=DashboardLayout.GRID_3X2,
-        nullable=False,
-    )
-    refresh_interval = Column(
-        SQLEnum(RefreshInterval, name="refresh_interval_enum"),
-        default=RefreshInterval.MINUTE_15,
-        nullable=False,
-    )
+    tipo = Column(String(50), default="operational", nullable=False)
+    status = Column(String(50), default="draft", nullable=False)
+    layout = Column(String(50), default="grid", nullable=False)
+    refresh_interval = Column(String(50), default="minute_15", nullable=False)
 
     # Acesso e Permissoes
     is_public = Column(Boolean, default=False, nullable=False)

@@ -35,7 +35,6 @@ from modules.financial.bi_dashboard.schemas import (
     CacheInvalidate,
     CacheStats,
     DashboardCreate,
-    DashboardFilters,
     DashboardListResponse,
     DashboardResponse,
     DashboardStats,
@@ -93,7 +92,7 @@ async def create_dashboard(
 
 @router.get("/dashboards", response_model=DashboardListResponse)
 async def list_dashboards(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     tipo: DashboardType | None = None,
     status: DashboardStatus | None = None,
     is_public: bool | None = None,
@@ -102,24 +101,100 @@ async def list_dashboards(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
-    """Lista dashboards com filtros."""
-    repo = DashboardRepository(db)
-    filters = DashboardFilters(
-        tipo=tipo,
-        status=status,
-        is_public=is_public,
-        is_favorite=is_favorite,
-        search=search,
+    """Lista dashboards com filtros (raw SQL para compatibilidade de schema)."""
+    from sqlalchemy import text
+
+    _raw_cond = (
+        current_user.get("condominio_id")
+        if isinstance(current_user, dict)
+        else getattr(current_user, "condominio_id", None)
     )
-    items, total = repo.list_all(condominio_id, filters, skip, limit)
-    return DashboardListResponse(
-        items=items,
-        total=total,
-        page=skip // limit + 1,
-        page_size=limit,
-        pages=(total + limit - 1) // limit,
-    )
+    _cond = condominio_id or (_raw_cond if _raw_cond else None)
+
+    try:
+        where_clauses = ["deleted_at IS NULL"]
+        params: dict = {}
+        if _cond:
+            where_clauses.append("condominio_id = :condominio_id")
+            params["condominio_id"] = str(_cond)
+        if tipo:
+            where_clauses.append("tipo = :tipo")
+            params["tipo"] = str(tipo).lower()
+        if status:
+            where_clauses.append("status = :status")
+            params["status"] = str(status).lower()
+        if is_public is not None:
+            where_clauses.append("is_public = :is_public")
+            params["is_public"] = is_public
+        if is_favorite is not None:
+            where_clauses.append("is_favorite = :is_favorite")
+            params["is_favorite"] = is_favorite
+        if search:
+            where_clauses.append("(nome ILIKE :search OR descricao ILIKE :search OR codigo ILIKE :search)")
+            params["search"] = f"%{search}%"
+
+        where_sql = " AND ".join(where_clauses)
+
+        total_row = db.execute(
+            text(f"SELECT COUNT(*) FROM financial_dashboards WHERE {where_sql}"),
+            params,
+        ).fetchone()
+        total = total_row[0] if total_row else 0
+
+        rows = db.execute(
+            text(
+                f"""
+                SELECT id, condominio_id, codigo, nome, descricao,
+                       tipo, status, layout, refresh_interval,
+                       is_public, is_default, is_favorite, view_count,
+                       version, created_at, updated_at
+                FROM financial_dashboards
+                WHERE {where_sql}
+                ORDER BY is_favorite DESC, last_viewed_at DESC NULLS LAST
+                OFFSET :skip LIMIT :limit
+                """
+            ),
+            {**params, "skip": skip, "limit": limit},
+        ).fetchall()
+
+        items = []
+        for row in rows:
+            items.append(
+                {
+                    "id": str(row.id),
+                    "condominio_id": str(row.condominio_id),
+                    "codigo": row.codigo,
+                    "nome": row.nome,
+                    "descricao": row.descricao,
+                    "tipo": row.tipo,
+                    "status": row.status,
+                    "layout": row.layout,
+                    "refresh_interval": row.refresh_interval,
+                    "is_public": row.is_public,
+                    "is_default": row.is_default,
+                    "is_favorite": row.is_favorite,
+                    "view_count": row.view_count,
+                    "version": row.version,
+                    "created_at": row.created_at.isoformat() if row.created_at else None,
+                    "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+                }
+            )
+
+        return DashboardListResponse(
+            items=items,
+            total=total,
+            page=skip // limit + 1,
+            page_size=limit,
+            pages=(total + limit - 1) // limit,
+        )
+    except Exception as e:
+        logger.error(f"Erro ao listar dashboards: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao listar dashboards: {str(e)}",
+        )
 
 
 @router.get("/dashboards/{dashboard_id}", response_model=DashboardResponse)
@@ -531,7 +606,7 @@ async def create_kpi(
 
 @router.get("/kpis")
 async def list_kpis(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     categoria: KPICategory | None = None,
     status: KPIStatus | None = None,
     alert_level: AlertLevel | None = None,
@@ -544,9 +619,21 @@ async def list_kpis(
     """Lista KPIs com filtros (raw SQL para compatibilidade com schema atual)."""
     from sqlalchemy import text
 
+    _raw_cond = (
+        current_user.get("condominio_id")
+        if isinstance(current_user, dict)
+        else getattr(current_user, "condominio_id", None)
+    )
+    _cond = condominio_id or (_raw_cond if _raw_cond else None)
+
     try:
-        where_clauses = ["condominio_id = :condominio_id"]
-        params: dict = {"condominio_id": str(condominio_id)}
+        where_clauses = []
+        params: dict = {}
+        if _cond:
+            where_clauses.append("condominio_id = :condominio_id")
+            params["condominio_id"] = str(_cond)
+        if not where_clauses:
+            where_clauses.append("1=1")
 
         if categoria:
             where_clauses.append("categoria = :categoria")

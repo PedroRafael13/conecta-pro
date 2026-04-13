@@ -18,14 +18,14 @@ class DashboardBase(BaseModel):
 
     nome: str = Field(..., min_length=1, max_length=200)
     descricao: str | None = Field(None, max_length=2000)
-    tipo: DashboardType = Field(default=DashboardType.OPERATIONAL)
-    layout: DashboardLayout = Field(default=DashboardLayout.GRID_3X2)
-    refresh_interval: RefreshInterval = Field(default=RefreshInterval.MINUTE_15)
+    tipo: str = Field(default="operational")
+    layout: str = Field(default="grid")
+    refresh_interval: str = Field(default="minute_15")
     is_public: bool = Field(default=False)
     is_default: bool = Field(default=False)
-    theme: str = Field(default="light", max_length=50)
-    primary_color: str = Field(default="#1976d2", max_length=20)
-    background_color: str = Field(default="#ffffff", max_length=20)
+    theme: str | None = Field(default="light", max_length=50)
+    primary_color: str | None = Field(default="#1976d2", max_length=20)
+    background_color: str | None = Field(default="#ffffff", max_length=20)
     default_period_days: int = Field(default=30, ge=1, le=365)
     default_filters: dict = Field(default_factory=dict)
     available_filters: list = Field(default_factory=list)
@@ -82,8 +82,8 @@ class DashboardResponse(DashboardBase):
 
     id: UUID
     condominio_id: UUID
-    codigo: str
-    status: DashboardStatus
+    codigo: str | None = None
+    status: str = "draft"
     is_favorite: bool = False
     owner_id: UUID | None = None
     allowed_roles: list = Field(default_factory=list)
