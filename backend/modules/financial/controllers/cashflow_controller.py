@@ -217,10 +217,10 @@ async def get_dashboard(
         limit=1000,
     )
     total_inflows = sum(
-        (e.expected_amount or Decimal("0")) for e in month_entries if e.entry_type == CashFlowEntryType.INCOME.value
+        (e.expected_amount or Decimal("0")) for e in month_entries if e.entry_type == CashFlowEntryType.ENTRADA.value
     )
     total_outflows = sum(
-        (e.expected_amount or Decimal("0")) for e in month_entries if e.entry_type == CashFlowEntryType.EXPENSE.value
+        (e.expected_amount or Decimal("0")) for e in month_entries if e.entry_type == CashFlowEntryType.SAIDA.value
     )
 
     summary = CashFlowSummary(
