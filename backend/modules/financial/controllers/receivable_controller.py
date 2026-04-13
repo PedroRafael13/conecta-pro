@@ -193,6 +193,55 @@ async def get_due_soon(
 
 
 @router.get(
+    "/receivables-aging",
+    summary="Aging de contas a receber",
+)
+async def get_receivables_aging(
+    condominio_id: UUID | None = Query(None),
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> dict:
+    """Relatório de aging — contas a receber vencidas por faixa de dias."""
+    from sqlalchemy import text
+
+    today = date.today()
+    filters = "AND condominio_id = :cid" if condominio_id else ""
+    params: dict[str, Any] = {"today": today}
+    if condominio_id:
+        params["cid"] = condominio_id
+
+    query = text(f"""
+        SELECT
+            CASE
+                WHEN :today - due_date BETWEEN 1 AND 30  THEN 'ate_30_dias'
+                WHEN :today - due_date BETWEEN 31 AND 60 THEN '31_a_60_dias'
+                WHEN :today - due_date BETWEEN 61 AND 90 THEN '61_a_90_dias'
+                WHEN :today - due_date > 90              THEN 'acima_90_dias'
+                ELSE 'a_vencer'
+            END AS faixa,
+            COUNT(*)                           AS quantidade,
+            COALESCE(SUM(net_value), 0)        AS valor_total
+        FROM receivable_accounts
+        WHERE status NOT IN ('paga', 'cancelada', 'cancelado')
+          {filters}
+        GROUP BY 1
+        ORDER BY 1
+    """)
+
+    result = await service.session.execute(query, params)
+    rows = result.fetchall()
+
+    faixas = [{"faixa": r.faixa, "quantidade": r.quantidade, "valor_total": float(r.valor_total)} for r in rows]
+    return {
+        "aging_date": str(today),
+        "tipo": "contas_receber",
+        "faixas": faixas,
+        "total_em_aberto": sum(f["valor_total"] for f in faixas),
+        "total_vencido": sum(f["valor_total"] for f in faixas if f["faixa"] != "a_vencer"),
+    }
+
+
+@router.get(
     "/{account_id}",
     response_model=ReceivableAccountResponse,
     summary="Buscar conta a receber",
