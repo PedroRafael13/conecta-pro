@@ -30,7 +30,7 @@ async def list_reports(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista relatórios agendados."""
     repo = ReportRepository(db)
@@ -48,14 +48,14 @@ async def list_reports(
 async def create_report(
     data: ScheduledReportCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria novo relatório agendado."""
     repo = ReportRepository(db)
     report = await repo.create_report(
         data=data,
         condominio_id=current_user["condominio_id"],
-        owner_id=current_user["id"],
+        owner_id=current_user.id,
     )
     return report
 
@@ -64,7 +64,7 @@ async def create_report(
 async def list_upcoming_reports(
     hours_ahead: int = Query(24, ge=1, le=168),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista relatórios que serão executados nas próximas horas."""
     repo = ReportRepository(db)
@@ -87,7 +87,7 @@ async def list_upcoming_reports(
 @router.get("/statistics")
 async def get_report_statistics(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém estatísticas de relatórios."""
     repo = ReportRepository(db)
@@ -101,7 +101,7 @@ async def get_report_statistics(
 async def get_report(
     report_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém relatório por ID."""
     repo = ReportRepository(db)
@@ -119,14 +119,14 @@ async def update_report(
     report_id: UUID,
     data: ScheduledReportUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza relatório."""
     repo = ReportRepository(db)
 
     # Verificar propriedade
     existing = await repo.get_report_by_id(report_id)
-    if not existing or existing.owner_id != current_user["id"]:
+    if not existing or existing.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Relatório não encontrado",
@@ -140,13 +140,13 @@ async def update_report(
 async def delete_report(
     report_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Deleta relatório."""
     repo = ReportRepository(db)
 
     existing = await repo.get_report_by_id(report_id)
-    if not existing or existing.owner_id != current_user["id"]:
+    if not existing or existing.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Relatório não encontrado",
@@ -162,7 +162,7 @@ async def run_report(
     period_end: datetime | None = Query(None),
     output_format: ReportFormat | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Executa relatório manualmente."""
     repo = ReportRepository(db)
@@ -189,13 +189,13 @@ async def run_report(
 async def pause_report(
     report_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Pausa agendamento de relatório."""
     repo = ReportRepository(db)
 
     existing = await repo.get_report_by_id(report_id)
-    if not existing or existing.owner_id != current_user["id"]:
+    if not existing or existing.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Relatório não encontrado",
@@ -213,13 +213,13 @@ async def pause_report(
 async def resume_report(
     report_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Retoma agendamento de relatório."""
     repo = ReportRepository(db)
 
     existing = await repo.get_report_by_id(report_id)
-    if not existing or existing.owner_id != current_user["id"]:
+    if not existing or existing.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Relatório não encontrado",
@@ -239,7 +239,7 @@ async def get_report_history(  # pylint: disable=unused-argument
     report_id: UUID,
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém histórico de execuções do relatório."""
     repo = ReportRepository(db)
@@ -270,7 +270,7 @@ async def download_report(
     report_id: UUID,
     run_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Download de arquivo do relatório."""
     repo = ReportRepository(db)
@@ -294,7 +294,7 @@ async def download_report(
 @router.post("/process-due")
 async def process_due_reports(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Processa relatórios pendentes (admin/scheduler)."""
     if current_user.get("role") != "admin":

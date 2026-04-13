@@ -85,7 +85,7 @@ async def health_check():
 @router.get("/config", response_model=MobileConfigResponse)
 async def get_mobile_config(
     request: Request,
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Obtém configuração do app mobile.
@@ -139,7 +139,7 @@ async def get_mobile_config(
 async def get_mobile_dashboard(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Obtém dashboard otimizado para mobile.
@@ -147,7 +147,6 @@ async def get_mobile_dashboard(
     Retorna resumo, atividades recentes e ações rápidas.
     """
     await device_detector.detect(request)
-    current_user["id"]
 
     # Determinar se deve reduzir dados
     lightweight = gateway.should_use_lightweight_response(
@@ -250,14 +249,14 @@ async def sync_data(
     request: Request,
     sync_request: MobileSyncRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Sincroniza dados com o servidor.
 
     Processa operações offline do cliente e retorna mudanças do servidor.
     """
-    user_id = current_user["id"]
+    user_id = current_user.id
 
     # Validar segurança
     await security.validate_request(request, db, "sync")
@@ -278,10 +277,10 @@ async def sync_data(
 async def get_sync_status(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém status de sincronização do dispositivo."""
-    user_id = current_user["id"]
+    user_id = current_user.id
     device_id = request.headers.get("x-device-id", "unknown")
 
     status = await sync_manager.get_sync_status(db, user_id, device_id)
@@ -295,10 +294,10 @@ async def resolve_sync_conflict(
     resolution: str = Query(..., description="use_client, use_server, merge"),
     merged_data: dict | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Resolve conflito de sincronização."""
-    user_id = current_user["id"]
+    user_id = current_user.id
 
     result = await sync_manager.resolve_user_conflict(db, user_id, conflict_id, resolution, merged_data)
 
@@ -315,14 +314,14 @@ async def get_offline_data(
     request: Request,
     modules: str | None = Query(None, description="Módulos a sincronizar (separados por vírgula)"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Obtém dados essenciais para funcionamento offline.
 
     Retorna perfil do usuário e dados essenciais dos módulos solicitados.
     """
-    user_id = current_user["id"]
+    user_id = current_user.id
     await device_detector.detect(request)
 
     # Parsear módulos
@@ -395,15 +394,13 @@ async def execute_batch(
     request: Request,
     batch_request: BatchRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Executa múltiplas operações em batch.
 
     Otimiza chamadas múltiplas combinando em uma única requisição.
     """
-    current_user["id"]
-
     # Validar segurança
     await security.validate_request(request, db, "batch")
 
@@ -457,14 +454,14 @@ async def execute_batch(
 async def register_device(
     device_data: DeviceTokenCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Registra dispositivo para notificações push.
 
     Armazena token FCM/APNs para envio de notificações.
     """
-    user_id = current_user["id"]
+    user_id = current_user.id
 
     token = await push_service.register_device_token(
         db=db,
@@ -502,7 +499,7 @@ async def register_device(
 async def unregister_device(
     device_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Remove registro de dispositivo."""
 
@@ -528,10 +525,10 @@ async def list_notifications(
     page_size: int = Query(20, ge=1, le=100),
     unread_only: bool = Query(False),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista notificações do usuário."""
-    user_id = current_user["id"]
+    user_id = current_user.id
     offset = (page - 1) * page_size
 
     notifications, total, unread_count = await push_service.get_user_notifications(
@@ -576,7 +573,7 @@ async def list_notifications(
 async def mark_notification_read(
     notification_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Marca notificação como lida."""
     success = await push_service.mark_as_read(db, notification_id)
@@ -594,7 +591,7 @@ async def mark_notification_read(
 async def mark_notification_delivered(
     notification_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Marca notificação como entregue (callback do dispositivo)."""
     success = await push_service.mark_as_delivered(db, notification_id)
@@ -610,7 +607,7 @@ async def mark_notification_delivered(
 
 @router.get("/notifications/preferences", response_model=NotificationPreferences)
 async def get_notification_preferences(
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém preferências de notificação do usuário."""
     return NotificationPreferences(
@@ -638,7 +635,7 @@ async def get_notification_preferences(
 @router.put("/notifications/preferences", response_model=NotificationPreferences)
 async def update_notification_preferences(
     preferences: NotificationPreferencesUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza preferências de notificação."""
     return NotificationPreferences(
@@ -664,7 +661,7 @@ async def update_notification_preferences(
 async def send_broadcast_notification(
     request: BroadcastNotificationRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Envia notificação em broadcast.
@@ -686,7 +683,7 @@ async def send_broadcast_notification(
 async def get_notification_stats(
     days: int = Query(30, ge=1, le=365),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Obtém estatísticas de notificações.

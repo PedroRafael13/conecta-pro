@@ -34,7 +34,7 @@ router = APIRouter(prefix="/events", tags=["Payroll Events"])
 async def create_event(
     data: PayrollEventCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollEventResponse:
     """Cria um novo evento de folha."""
     try:
@@ -42,7 +42,7 @@ async def create_event(
         event = await service.create_event(
             data=data,
             condominio_id=current_user["condominio_id"],
-            user_id=current_user["id"],
+            user_id=current_user.id,
         )
         logger.info(
             "Evento criado: %s para funcionário %s por %s",
@@ -70,7 +70,7 @@ async def create_event(
 async def create_bulk_events(
     data: PayrollEventBulkCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> dict:
     """Cria múltiplos eventos de folha em lote."""
     try:
@@ -78,7 +78,7 @@ async def create_bulk_events(
         result = await service.create_bulk(
             data=data,
             condominio_id=current_user["condominio_id"],
-            user_id=current_user["id"],
+            user_id=current_user.id,
         )
         logger.info(
             "Bulk create: %d criados, %d falhas por %s",
@@ -110,7 +110,7 @@ async def list_period_events(
     page: int = Query(1, ge=1, description="Página"),
     page_size: int = Query(100, ge=1, le=1000, description="Itens por página"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayrollEventListResponse:
     """Lista eventos de um período com filtros."""
     try:
@@ -147,7 +147,7 @@ async def get_employee_events(
     employee_id: UUID,
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[PayrollEventResponse]:
     """Retorna todos eventos de um funcionário no período."""
     try:
@@ -175,7 +175,7 @@ async def get_employee_summary(
     employee_id: UUID,
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> EmployeePayrollSummary:
     """Retorna resumo da folha de um funcionário."""
     try:
@@ -202,7 +202,7 @@ async def get_employee_summary(
 async def get_period_totals(
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna totais consolidados do período."""
     try:
@@ -231,7 +231,7 @@ async def get_period_totals(
 async def get_events_by_category(
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna eventos agrupados por categoria."""
     try:
@@ -256,7 +256,7 @@ async def get_events_by_category(
 async def get_event(
     event_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayrollEventResponse:
     """Busca evento por ID."""
     try:
@@ -287,7 +287,7 @@ async def update_event(
     event_id: UUID,
     data: PayrollEventUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollEventResponse:
     """Atualiza evento de folha."""
     try:
@@ -321,7 +321,7 @@ async def adjust_event(
     event_id: UUID,
     data: EventAdjustmentRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollEventResponse:
     """Ajusta valor de um evento com justificativa."""
     try:
@@ -329,7 +329,7 @@ async def adjust_event(
         event = await service.adjust_event(
             event_id=event_id,
             data=data,
-            user_id=current_user["id"],
+            user_id=current_user.id,
         )
         if not event:
             raise HTTPException(
@@ -364,7 +364,7 @@ async def cancel_event(
     event_id: UUID,
     reason: str = Query(..., min_length=10, description="Motivo do cancelamento"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollEventResponse:
     """Cancela evento de folha."""
     try:
@@ -372,7 +372,7 @@ async def cancel_event(
         event = await service.cancel_event(
             event_id=event_id,
             reason=reason,
-            user_id=current_user["id"],
+            user_id=current_user.id,
         )
         if not event:
             raise HTTPException(
@@ -402,7 +402,7 @@ async def recalculate_employee(
     employee_id: UUID,
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> dict:
     """Recalcula folha de um funcionário específico."""
     try:
@@ -411,7 +411,7 @@ async def recalculate_employee(
             employee_id=employee_id,
             period_id=period_id,
             condominio_id=current_user["condominio_id"],
-            user_id=current_user["id"],
+            user_id=current_user.id,
         )
         logger.info(
             "Folha recalculada: funcionário %s, período %s por %s",

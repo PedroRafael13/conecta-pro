@@ -32,7 +32,7 @@ async def list_kpis(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista definições de KPIs."""
     repo = KPIRepository(db)
@@ -50,7 +50,7 @@ async def list_kpis(
 async def create_kpi(
     data: KPIDefinitionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria nova definição de KPI."""
     repo = KPIRepository(db)
@@ -66,7 +66,7 @@ async def create_kpi(
     kpi = await repo.create_kpi(
         data=data,
         condominio_id=current_user["condominio_id"],
-        created_by=current_user["id"],
+        created_by=current_user.id,
     )
     return kpi
 
@@ -74,7 +74,7 @@ async def create_kpi(
 @router.get("/categories")
 async def list_categories(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista categorias de KPI com contagem."""
     repo = KPIRepository(db)
@@ -95,7 +95,7 @@ async def list_categories(
 @router.get("/codes")
 async def list_kpi_codes(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista códigos de KPI disponíveis."""
     repo = KPIRepository(db)
@@ -111,7 +111,7 @@ async def get_kpi_dashboard(
     period_start: datetime | None = Query(None),
     period_end: datetime | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém dashboard de KPIs."""
     service = KPICalculatorService(db)
@@ -138,7 +138,7 @@ async def get_kpi_dashboard(
 async def get_kpi(
     kpi_code: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém definição de KPI por código."""
     repo = KPIRepository(db)
@@ -159,7 +159,7 @@ async def update_kpi(
     kpi_id: UUID,
     data: KPIDefinitionUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Atualiza definição de KPI."""
     repo = KPIRepository(db)
@@ -176,7 +176,7 @@ async def update_kpi(
 async def delete_kpi(
     kpi_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Deleta KPI personalizado."""
     repo = KPIRepository(db)
@@ -195,7 +195,7 @@ async def get_kpi_value(
     period_end: datetime | None = Query(None),
     force_refresh: bool = Query(False),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Calcula e retorna valor atual do KPI."""
     service = KPICalculatorService(db)
@@ -223,7 +223,7 @@ async def get_kpi_history(
     period_end: datetime = Query(...),
     granularity: str = Query("daily", regex="^(hourly|daily|weekly|monthly)$"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém histórico de valores do KPI."""
     service = KPICalculatorService(db)
@@ -272,14 +272,14 @@ async def get_kpi_history(
 async def customize_kpi(
     kpi_code: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria cópia personalizável de um KPI de sistema."""
     repo = KPIRepository(db)
     kpi = await repo.clone_kpi_for_condominio(
         kpi_code=kpi_code.upper(),
         condominio_id=current_user["condominio_id"],
-        created_by=current_user["id"],
+        created_by=current_user.id,
     )
     if not kpi:
         raise HTTPException(
@@ -294,7 +294,7 @@ async def toggle_featured(
     kpi_id: UUID,
     featured: bool = Query(...),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Alterna destaque de um KPI."""
     repo = KPIRepository(db)
@@ -309,7 +309,7 @@ async def toggle_featured(
 @router.post("/seed-defaults")
 async def seed_default_kpis(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria KPIs padrão (admin only)."""
     if current_user.get("role") != "admin":

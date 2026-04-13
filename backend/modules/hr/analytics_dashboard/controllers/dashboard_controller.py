@@ -32,13 +32,13 @@ async def list_dashboards(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista dashboards do usuário."""
     service = DashboardService(db)
     dashboards, _total = await service.list_user_dashboards(
         condominio_id=current_user["condominio_id"],
-        user_id=current_user["id"],
+        user_id=current_user.id,
         user_role=current_user.get("role"),
         dashboard_type=dashboard_type,
         page=page,
@@ -51,14 +51,14 @@ async def list_dashboards(
 async def create_dashboard(
     data: DashboardConfigCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Cria novo dashboard."""
     service = DashboardService(db)
     dashboard = await service.create_dashboard(
         data=data,
         condominio_id=current_user["condominio_id"],
-        owner_id=current_user["id"],
+        owner_id=current_user.id,
     )
     return dashboard
 
@@ -67,13 +67,13 @@ async def create_dashboard(
 async def get_dashboard(
     dashboard_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém dashboard por ID."""
     service = DashboardService(db)
     dashboard = await service.get_dashboard(
         dashboard_id=dashboard_id,
-        user_id=current_user["id"],
+        user_id=current_user.id,
         include_widgets=True,
     )
     if not dashboard:
@@ -89,14 +89,14 @@ async def update_dashboard(
     dashboard_id: UUID,
     data: DashboardConfigUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza dashboard."""
     service = DashboardService(db)
     dashboard = await service.update_dashboard(
         dashboard_id=dashboard_id,
         data=data,
-        user_id=current_user["id"],
+        user_id=current_user.id,
     )
     if not dashboard:
         raise HTTPException(
@@ -110,13 +110,13 @@ async def update_dashboard(
 async def delete_dashboard(
     dashboard_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Deleta dashboard."""
     service = DashboardService(db)
     deleted = await service.delete_dashboard(
         dashboard_id=dashboard_id,
-        user_id=current_user["id"],
+        user_id=current_user.id,
     )
     if not deleted:
         raise HTTPException(
@@ -130,14 +130,14 @@ async def clone_dashboard(
     dashboard_id: UUID,
     data: DashboardCloneRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Clona dashboard."""
     service = DashboardService(db)
     dashboard = await service.clone_dashboard(
         source_id=dashboard_id,
         new_name=data.new_name,
-        user_id=current_user["id"],
+        user_id=current_user.id,
         include_widgets=data.include_widgets,
     )
     if not dashboard:
@@ -152,13 +152,13 @@ async def clone_dashboard(
 async def set_default_dashboard(
     dashboard_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Define dashboard como padrão."""
     service = DashboardService(db)
     success = await service.set_default_dashboard(
         dashboard_id=dashboard_id,
-        user_id=current_user["id"],
+        user_id=current_user.id,
         condominio_id=current_user["condominio_id"],
     )
     if not success:
@@ -172,13 +172,13 @@ async def set_default_dashboard(
 async def refresh_dashboard(
     dashboard_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza dados de todos os widgets."""
     service = DashboardService(db)
     result = await service.refresh_dashboard_data(
         dashboard_id=dashboard_id,
-        user_id=current_user["id"],
+        user_id=current_user.id,
     )
     if "error" in result:
         raise HTTPException(
@@ -195,13 +195,13 @@ async def refresh_dashboard(
 async def list_widgets(
     dashboard_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Lista widgets de um dashboard."""
     service = DashboardService(db)
     dashboard = await service.get_dashboard(
         dashboard_id=dashboard_id,
-        user_id=current_user["id"],
+        user_id=current_user.id,
         record_view=False,
     )
     if not dashboard:
@@ -223,14 +223,14 @@ async def add_widget(
     dashboard_id: UUID,
     data: DashboardWidgetCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Adiciona widget ao dashboard."""
     service = DashboardService(db)
     widget = await service.add_widget(
         dashboard_id=dashboard_id,
         data=data,
-        user_id=current_user["id"],
+        user_id=current_user.id,
     )
     if not widget:
         raise HTTPException(
@@ -245,14 +245,14 @@ async def update_widget(
     widget_id: UUID,
     data: DashboardWidgetUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza widget."""
     service = DashboardService(db)
     widget = await service.update_widget(
         widget_id=widget_id,
         data=data,
-        user_id=current_user["id"],
+        user_id=current_user.id,
     )
     if not widget:
         raise HTTPException(
@@ -266,13 +266,13 @@ async def update_widget(
 async def delete_widget(
     widget_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Remove widget."""
     service = DashboardService(db)
     deleted = await service.remove_widget(
         widget_id=widget_id,
-        user_id=current_user["id"],
+        user_id=current_user.id,
     )
     if not deleted:
         raise HTTPException(
@@ -286,7 +286,7 @@ async def update_widget_positions(
     dashboard_id: UUID,
     data: WidgetBatchPositionUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Atualiza posições de múltiplos widgets."""
     service = DashboardService(db)
@@ -294,7 +294,7 @@ async def update_widget_positions(
     success = await service.update_widget_positions(
         dashboard_id=dashboard_id,
         positions=positions,
-        user_id=current_user["id"],
+        user_id=current_user.id,
     )
     if not success:
         raise HTTPException(
@@ -308,13 +308,13 @@ async def get_widget_data(
     widget_id: UUID,
     force_refresh: bool = Query(False),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """Obtém dados de um widget."""
     service = DashboardService(db)
     data = await service.get_widget_data(
         widget_id=widget_id,
-        user_id=current_user["id"],
+        user_id=current_user.id,
         force_refresh=force_refresh,
     )
     if not data:

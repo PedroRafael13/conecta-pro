@@ -28,7 +28,7 @@ router = APIRouter(prefix="/esocial", tags=["eSocial"])
 )
 async def get_integration(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollIntegrationResponse | None:
     """Retorna configuração de integração eSocial."""
     try:
@@ -52,7 +52,7 @@ async def get_integration(
 )
 async def validate_integration(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> dict:
     """Valida configuração do eSocial."""
     try:
@@ -73,7 +73,7 @@ async def validate_integration(
     summary="Eventos suportados",
 )
 async def get_supported_events(
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna lista de eventos eSocial suportados."""
     # pylint: disable=import-outside-toplevel
@@ -110,7 +110,7 @@ async def generate_event(
         export = await service.generate_event(
             request=request,
             condominio_id=current_user["condominio_id"],
-            user_id=current_user["id"],
+            user_id=current_user.id,
         )
         logger.info(
             "Evento eSocial gerado: %s tipo %s por %s",
@@ -171,7 +171,7 @@ async def transmit_event(
 async def check_receipt(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> dict:
     """Consulta recibo de transmissão no eSocial."""
     try:
@@ -225,7 +225,7 @@ async def generate_batch(
                 export = await service.generate_event(
                     request=request,
                     condominio_id=current_user["condominio_id"],
-                    user_id=current_user["id"],
+                    user_id=current_user.id,
                 )
                 results["generated"].append(
                     {
@@ -324,7 +324,7 @@ async def transmit_batch(
 )
 async def get_rubrica_mapping(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> dict:
     """Retorna mapeamento de rubricas para eSocial."""
     try:
@@ -352,7 +352,7 @@ async def get_rubrica_mapping(
 )
 async def get_esocial_status(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> dict:
     """Retorna status geral da integração eSocial."""
     try:

@@ -33,7 +33,7 @@ router = APIRouter(prefix="/exports", tags=["Payroll Exports"])
 async def create_export(
     data: PayrollExportCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollExportResponse:
     """Cria uma nova exportação de folha."""
     try:
@@ -41,7 +41,7 @@ async def create_export(
         export = await service.create_export(
             data=data,
             condominio_id=current_user["condominio_id"],
-            user_id=current_user["id"],
+            user_id=current_user.id,
         )
         logger.info(
             "Exportação criada: %s por %s",
@@ -75,7 +75,7 @@ async def list_exports(
     page: int = Query(1, ge=1, description="Página"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollExportListResponse:
     """Lista exportações com filtros."""
     try:
@@ -111,7 +111,7 @@ async def list_exports(
 async def get_export(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayrollExportResponse:
     """Busca exportação por ID."""
     try:
@@ -141,7 +141,7 @@ async def get_export(
 async def process_export(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollExportResponse:
     """Processa e gera arquivo de exportação."""
     try:
@@ -174,7 +174,7 @@ async def process_export(
 async def get_export_progress(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ExportProgressResponse:
     """Retorna progresso da exportação."""
     try:
@@ -199,7 +199,7 @@ async def get_export_progress(
 async def get_download_info(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> ExportDownloadResponse:
     """Retorna informações para download do arquivo."""
     try:
@@ -228,7 +228,7 @@ async def get_download_info(
 async def download_file(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> StreamingResponse:
     """Faz download do arquivo de exportação."""
     try:
@@ -271,7 +271,7 @@ async def download_file(
 async def retry_export(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollExportResponse:
     """Retenta exportação que falhou."""
     try:
@@ -301,7 +301,7 @@ async def retry_export(
 async def cancel_export(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> PayrollExportResponse:
     """Cancela exportação em andamento."""
     try:
@@ -360,7 +360,7 @@ async def process_pending_exports(
     summary="Formatos disponíveis",
 )
 async def get_available_formats(
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list:
     """Retorna formatos de exportação disponíveis."""
     return [
