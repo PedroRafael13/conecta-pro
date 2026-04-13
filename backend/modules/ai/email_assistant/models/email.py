@@ -2,7 +2,7 @@
 Email Model - Sprint 54.
 
 Modelo para emails processados pelo assistente de IA.
-"""
+"""  # noqa: A005
 
 import uuid
 from datetime import datetime
@@ -185,7 +185,7 @@ class Email(Base):
     account_id = Column(UUID(as_uuid=True), nullable=True)
     condominio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=True,
     )
     contact_id = Column(UUID(as_uuid=True), nullable=True)
@@ -365,7 +365,7 @@ class EmailRule(Base):
     # Relacionamentos
     condominio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=True,
     )
 
