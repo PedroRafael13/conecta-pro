@@ -1047,3 +1047,55 @@ async def registrar_custo_tipo(
         raise HTTPException(status_code=400, detail=resultado["erro"])
 
     return resultado
+
+
+@router.get("/agents/status", summary="Status dos agentes GEDEON financeiros")
+async def get_agents_status(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Status de todos os agentes com skills carregadas."""
+    from datetime import datetime
+
+    from modules.financial.agents.skill_loader import SkillLoader
+
+    agents_config = [
+        {
+            "name": "FinancialAdvisorAgent",
+            "schedule": "diário 07:30",
+            "skills": ["dre-gerencial", "kpis-financeiros", "analise-fluxo-caixa-real"],
+        },
+        {
+            "name": "CashflowPredictorAgent",
+            "schedule": "diário 07:00",
+            "skills": ["projecao-fluxo-caixa-12-meses", "analise-fluxo-caixa-real"],
+        },
+        {"name": "RiskMonitorAgent", "schedule": "5 minutos", "skills": ["kpis-financeiros", "matriz-riscos-negocio"]},
+        {"name": "CollectionNegotiatorAgent", "schedule": "diário 09:00", "skills": ["gestao-inadimplencia"]},
+        {
+            "name": "PricingOptimizerAgent",
+            "schedule": "mensal dia 1",
+            "skills": ["framework-precificacao-margem", "break-even-ponto-equilibrio"],
+        },
+        {"name": "TaxCalculatorAgent", "schedule": "trimestral dia 20", "skills": ["tributario-lucro-real"]},
+        {"name": "BillingAutomatorAgent", "schedule": "diário 08:00", "skills": []},
+        {"name": "CostingAnalyzerAgent", "schedule": "mensal dia 1", "skills": ["analise-margem-por-servico"]},
+    ]
+
+    skills_available = SkillLoader.list_available()
+
+    return {
+        "total_agents": len(agents_config),
+        "skills_available": len(skills_available),
+        "skills_list": skills_available,
+        "gedeon_layer": "Layer 2 — Financial",
+        "timestamp": datetime.now().isoformat(),
+        "agents": [
+            {
+                **agent,
+                "skills_loaded": [s for s in agent["skills"] if any(s in sk for sk in skills_available)],
+                "skills_missing": [s for s in agent["skills"] if not any(s in sk for sk in skills_available)],
+            }
+            for agent in agents_config
+        ],
+    }

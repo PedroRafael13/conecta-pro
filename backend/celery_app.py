@@ -366,6 +366,27 @@ app.conf.beat_schedule = {
         "schedule": crontab(minute=15),  # todo hora no minuto 15
         "options": {"queue": "gov.batch"},
     },
+    # ── GEDEON LAYER 2 — Agentes financeiros automáticos ─────────────────────
+    "gedeon-risk-monitor-5min": {
+        "task": "gedeon.risk_monitor",
+        "schedule": 300,  # cada 5 minutos
+        "options": {"queue": "gov.batch"},
+    },
+    "gedeon-daily-all-0700": {
+        "task": "gedeon.daily_all",
+        "schedule": crontab(hour=7, minute=0),
+        "options": {"queue": "gov.batch"},
+    },
+    "gedeon-cashflow-0715": {
+        "task": "gedeon.cashflow_predictor",
+        "schedule": crontab(hour=7, minute=15),
+        "options": {"queue": "gov.batch"},
+    },
+    "gedeon-collection-0900": {
+        "task": "gedeon.collection_negotiator",
+        "schedule": crontab(hour=9, minute=0),
+        "options": {"queue": "gov.batch"},
+    },
 }
 
 
