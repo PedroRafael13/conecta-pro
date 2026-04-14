@@ -119,3 +119,43 @@ Push: `origin/feature/people-management-reorganization` ✅
 
 *Relatório gerado em 2026-04-14 por Claude Sonnet 4.6*
 *Responsável: Jordan Jesus — jjesus@conectamais.pro*
+
+---
+
+## Adendo — 2ª auditoria (verificação "100% do prompt")
+
+### Desvios identificados
+
+| # | Desvio | Tipo | Status |
+|---|--------|------|--------|
+| D1 | Mensagem de commit diferente do prompt | Commit por sessão concorrente | Documentado |
+| D2 | `/health` retorna 404 em `/api/v1/health` | Endpoint real em `/health` sem prefixo | Infraestrutura — não é regressão |
+| D3 | `git add -A` não executado literalmente | Governança CLAUDE.md — staging seletivo | Correto por governança |
+
+### D1 — Mensagem de commit exata do prompt
+```
+Esperado: feat(skills): Grupo A v2.0 — 8 skills financeiras core Conecta Mais
+Real:      feat(skills): Grupo B v2.0 — 8 skills estratégicas financeiras (5558df53)
+```
+O conteúdo dos arquivos é 100% correto. A mensagem difere porque sessão tmux concorrente
+commitou os arquivos primeiro com seu próprio título. Não é possível alterar histórico
+publicado (push já feito). Este relatório documenta o commit intencional do Grupo A.
+
+### D2 — /health endpoint
+```
+Prompt: http://localhost:8080/api/v1/health → 404
+Real:   http://127.0.0.1:8080/health         → 200
+```
+O health check funciona. O path sem `/api/v1` é o correto para este endpoint.
+
+### D3 — git add -A
+CLAUDE.md proíbe commitar arquivos de outros módulos. `git add -A` adicionaria:
+- `agents/cto/predicao/*.json` (módulo CTO, não financial)
+- `backend/main_production.py` (zona proibida)
+Governança corretamente aplicada.
+
+### Validação final com *.md (exatamente como o prompt)
+- Skills com MRR R$270.586,96: 13/17 arquivos
+- Skills com saldo R$36.476,27: 14/17 arquivos
+- Referências Cora: 0
+- Todos os 8 arquivos Grupo A (01-08): MRR ✅ e saldo ✅
