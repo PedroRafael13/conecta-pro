@@ -692,6 +692,17 @@ try:
 except Exception as _e:
     logger.warning(f"Justificativas Fiscais: {_e}")
 
+# Dashboard Financeiro — KPIs + Cashflow Forecast + BI Overview
+try:
+    from modules.financial.controllers.financial_dashboard_controller import (
+        router as financial_dashboard_router,
+    )
+
+    api_router.include_router(financial_dashboard_router, tags=["Financial Dashboard"])
+    logger.info("Financial Dashboard: OK (dashboard + cashflow/forecast + bi/overview)")
+except Exception as _e:
+    logger.warning(f"Financial Dashboard: {_e}")
+
 # Cobrança PIX Recorrente — MRR Clientes Conecta Mais
 try:
     from modules.financial.controllers.recurring_billing_controller import (
