@@ -6,6 +6,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
@@ -193,46 +194,83 @@ async def get_supplier_breakdown(
 )
 async def get_dashboard(
     condominio_id: UUID,
-    entry_repo: CashFlowEntryRepository = Depends(get_entry_repository),
+    session: AsyncSession = Depends(get_session),
     account_repo: BankAccountRepository = Depends(get_account_repository),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    current_user=Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CashFlowDashboard:
     """Retorna dados completos para dashboard financeiro."""
     today = date.today()
     period_start = today.replace(day=1)
+    cid = str(condominio_id)
 
-    # Saldo atual das contas bancarias
-    total_balance = await account_repo.get_total_balance(condominio_id)
+    # ── Saldo real das contas bancárias (closing_balance) ──────────────────
+    # Usa SUM direto para incluir TODAS as contas ativas (status='ativa')
+    bal_result = await session.execute(
+        text("""
+            SELECT COALESCE(SUM(current_balance), 0) as total
+            FROM bank_accounts
+            WHERE condominio_id = :cid
+              AND ativo = true
+              AND status = 'ativa'
+        """),
+        {"cid": cid},
+    )
+    closing_balance = Decimal(str(bal_result.scalar_one() or 0))
 
-    # Agrega entradas e saidas do mes atual
-    entries_filter = CashFlowEntryFilter(
-        condominio_id=condominio_id,
-        start_date=period_start,
-        end_date=today,
+    # ── Entradas e saídas do mês atual (realized_amount, TODOS os source_types) ──
+    flows_result = await session.execute(
+        text("""
+            SELECT
+                COALESCE(SUM(CASE WHEN entry_type = 'entrada' THEN realized_amount ELSE 0 END), 0) AS total_in,
+                COALESCE(SUM(CASE WHEN entry_type = 'saida'   THEN realized_amount ELSE 0 END), 0) AS total_out
+            FROM cashflow_entries
+            WHERE condominio_id = :cid
+              AND ativo = true
+              AND entry_date BETWEEN :start AND :end
+        """),
+        {"cid": cid, "start": period_start, "end": today},
     )
-    month_entries = await entry_repo.list(
-        condominio_id=condominio_id,
-        filters=entries_filter,
-        skip=0,
-        limit=1000,
+    flows_row = flows_result.one()
+    total_inflows = Decimal(str(flows_row.total_in or 0))
+    total_outflows = Decimal(str(flows_row.total_out or 0))
+    net_flow = total_inflows - total_outflows
+
+    # opening_balance = saldo real atual - fluxo líquido do período
+    opening_balance = closing_balance - net_flow
+
+    # ── Breakdown por categoria ─────────────────────────────────────────────
+    cat_result = await session.execute(
+        text("""
+            SELECT entry_type, category,
+                   COALESCE(SUM(realized_amount), 0) as total
+            FROM cashflow_entries
+            WHERE condominio_id = :cid
+              AND ativo = true
+              AND entry_date BETWEEN :start AND :end
+            GROUP BY entry_type, category
+        """),
+        {"cid": cid, "start": period_start, "end": today},
     )
-    total_inflows = sum(
-        (e.expected_amount or Decimal("0")) for e in month_entries if e.entry_type == CashFlowEntryType.ENTRADA.value
-    )
-    total_outflows = sum(
-        (e.expected_amount or Decimal("0")) for e in month_entries if e.entry_type == CashFlowEntryType.SAIDA.value
-    )
+    inflows_by_category: dict = {}
+    outflows_by_category: dict = {}
+    for row in cat_result:
+        cat = row.category or "outros"
+        val = Decimal(str(row.total or 0))
+        if row.entry_type == "entrada":
+            inflows_by_category[cat] = str(val)
+        else:
+            outflows_by_category[cat] = str(val)
 
     summary = CashFlowSummary(
         period_start=period_start,
         period_end=today,
-        opening_balance=total_balance - (total_inflows - total_outflows),
-        closing_balance=total_balance,
+        opening_balance=opening_balance,
+        closing_balance=closing_balance,
         total_inflows=total_inflows,
         total_outflows=total_outflows,
-        net_flow=total_inflows - total_outflows,
-        inflows_by_category={},
-        outflows_by_category={},
+        net_flow=net_flow,
+        inflows_by_category=inflows_by_category,
+        outflows_by_category=outflows_by_category,
         pending_receivables=Decimal("0"),
         pending_payables=Decimal("0"),
         overdue_receivables=Decimal("0"),
