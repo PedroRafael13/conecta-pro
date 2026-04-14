@@ -731,6 +731,17 @@ try:
 except Exception as _e:
     logger.warning(f"Conciliação Automática: {_e}")
 
+# MCP Financial Server — 8 ferramentas via HTTP REST
+try:
+    from modules.financial.controllers.mcp_financial_controller import (
+        router as mcp_financial_router,
+    )
+
+    api_router.include_router(mcp_financial_router, tags=["MCP Financial"])
+    logger.info("MCP Financial Server: OK (8 ferramentas)")
+except Exception as _e:
+    logger.warning(f"MCP Financial Server: {_e}")
+
 
 # =============================================================================
 # 6. FISCAL/CONTÁBIL (empresas + fiscal + government)
