@@ -304,6 +304,21 @@ from fastapi import APIRouter
 
 api_router = APIRouter(prefix="/api/v1")
 
+# Health — expõe /api/v1/health para varredura automatizada
+try:
+    from core.controllers.health_controller import router as _health_router
+
+    api_router.include_router(_health_router)
+except Exception:
+    pass
+
+
+@api_router.get("/health", tags=["Health"], include_in_schema=False)
+async def api_v1_health():
+    """Alias /api/v1/health → mesma resposta do /health."""
+    return {"status": "healthy", "version": "2.0.0"}
+
+
 # Auth - importacao direta (fora dos módulos)
 try:
     import importlib.util

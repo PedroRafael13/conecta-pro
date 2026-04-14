@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db_session as get_db
-from modules.auth.dependencies import get_current_user
+from core.auth.dependencies import get_current_user
+from core.database import get_session as get_db
 
 router = APIRouter(prefix="/mcp/financial", tags=["MCP Financial"])
 
