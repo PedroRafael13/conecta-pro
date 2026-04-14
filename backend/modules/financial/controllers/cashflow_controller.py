@@ -345,7 +345,7 @@ async def create_entry(
     summary="Listar entradas",
 )
 async def list_entries(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     entry_type: CashFlowEntryType | None = Query(None),
     source_type: CashFlowSourceType | None = Query(None),
     entry_status: CashFlowEntryStatus | None = Query(None),
