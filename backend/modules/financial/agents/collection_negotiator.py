@@ -5,6 +5,7 @@ from datetime import date
 from sqlalchemy import and_, select
 
 from modules.financial.agents.base_agent import BaseAgent
+from modules.financial.agents.skill_loader import SkillLoader
 from modules.financial.models.customer import Customer
 from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
 
@@ -67,6 +68,40 @@ class CollectionNegotiatorAgent(BaseAgent):
     """Agente de negociacao e cobranca de inadimplentes."""
 
     name = "collection_negotiator"
+
+    def _load_skills(self) -> str:
+        """Carrega skill de gestão de inadimplência."""
+        return SkillLoader.load("gestao-inadimplencia")
+
+    def _get_enriched_system_prompt(self, base_prompt: str = "") -> str:
+        """System prompt com régua de cobrança real Conecta Mais."""
+        skill = self._load_skills()
+        return (
+            "Você é o CollectionNegotiatorAgent da Conecta Mais.\n\n"
+            "CONTEXTO DE COBRANÇA:\n"
+            "- 10 clientes: todos condomínios residenciais em Manaus/AM\n"
+            "- Síndicos eleitos (voluntários) ou profissionais\n"
+            "- Contratos anuais com renovação automática\n"
+            "- Tom: profissional e parceiro (nunca agressivo antes do D+30)\n"
+            "- CHAVE PIX: CNPJ 35.710.481/0001-03 | Inter 077 | Conta 370990072-2\n\n"
+            "CLIENTES COM NFS-e EMITIDAS (março/2026):\n"
+            "Ideal Flores (CNPJ 23.147.782/0001-91) | ticket R$65.842 → líq R$54.198\n"
+            "Laranjeiras Village (CNPJ 24.632.786/0001-28) | ticket R$42.544 → líq R$35.055\n"
+            "Mirante das Flores (CNPJ 52.605.708/0001-70) | ticket R$42.255 → líq R$41.199\n"
+            "Prime Arena (CNPJ 47.405.340/0001-66) | ticket R$40.466 → líq R$35.292\n"
+            "Villa dos Pássaros (CNPJ 13.221.953/0001-21) | ticket R$37.338 → líq R$36.404\n"
+            "Villa Dei Fiori (CNPJ 02.153.384/0001-08) | ticket R$25.592 → líq R$24.952\n"
+            "Michelangelo (CNPJ 04.911.208/0001-13) | ticket R$8.346 → líq R$8.138\n"
+            "Gelain (CNPJ 00.736.037/0001-82) | ticket R$6.000 → líq R$5.940\n"
+            "Parise Village (CNPJ 34.857.941/0001-68) | ticket R$1.700 → líq R$1.572\n"
+            "Green Hills (CNPJ 08.063.476/0001-83) | ticket R$500 → líq R$487\n\n"
+            f"SKILL DE COBRANÇA:\n{skill}\n\n"
+            f"{base_prompt}\n\n"
+            "Para cada cliente inadimplente retorne:\n"
+            "- Valor vencido, dias atraso, prioridade (1-3)\n"
+            "- Canal recomendado, script personalizado\n"
+            "- Proposta de negociação se valor > R$10k"
+        )
 
     async def analisar(self) -> dict:
         """Executa analise completa de inadimplentes."""

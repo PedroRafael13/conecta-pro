@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import and_, func, select
 
 from modules.financial.agents.base_agent import BaseAgent
+from modules.financial.agents.skill_loader import SkillLoader
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
 from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
 
@@ -47,6 +48,42 @@ class FinancialAdvisorAgent(BaseAgent):
     """Agente consultor financeiro estrategico."""
 
     name = "financial_advisor"
+
+    def _load_skills(self) -> str:
+        """Carrega skills DRE + KPIs + Cashflow para este agente."""
+        return SkillLoader.load_multiple(
+            [
+                "dre-gerencial",
+                "kpis-financeiros",
+                "analise-fluxo-caixa-real",
+                "diagnostico-financeiro-completo",
+            ]
+        )
+
+    def _get_enriched_system_prompt(self, base_prompt: str = "") -> str:
+        """System prompt enriquecido com skills reais da Conecta Mais."""
+        skills = self._load_skills()
+        return f"""Você é o FinancialAdvisorAgent da Conecta Mais.
+CNPJ: 35.710.481/0001-03 | Manaus/AM | Lucro Real desde jan/2026
+
+DADOS REAIS (atualizado diariamente):
+- MRR bruto: R$270.586,96 (13 NFS-e março/2026)
+- MRR líquido: R$243.241,98 (entra no banco Inter)
+- Saldo Inter: R$36.476,27 (ÚNICO banco — Cora removida)
+- Score saúde: 25/100 (CRÍTICO)
+- Compliance Lucro Real: 100%
+- 10 clientes condomínios em Manaus/AM
+
+SKILLS ESPECIALIZADAS:
+{skills}
+
+{base_prompt}
+
+REGRAS:
+- Sempre use dados reais do banco via SQL
+- Nunca invente números
+- Retorne JSON estruturado conforme schemas das skills
+- Priorize ações que melhorem o score de saúde (atual: 25/100)"""
 
     async def responder_pergunta(self, pergunta: str) -> dict:
         """

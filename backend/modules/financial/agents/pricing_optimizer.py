@@ -3,6 +3,7 @@
 from sqlalchemy import and_, func, select
 
 from modules.financial.agents.base_agent import BaseAgent
+from modules.financial.agents.skill_loader import SkillLoader
 from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
 
 # Benchmarks de custo por tipo de servico
@@ -86,6 +87,44 @@ class PricingOptimizerAgent(BaseAgent):
     """Agente de otimizacao de precificacao para contratos de seguranca."""
 
     name = "pricing_optimizer"
+
+    def _load_skills(self) -> str:
+        """Carrega skills de precificação e margem."""
+        return SkillLoader.load_multiple(
+            [
+                "framework-precificacao-margem",
+                "break-even-ponto-equilibrio",
+                "analise-margem-por-servico",
+            ]
+        )
+
+    def _get_enriched_system_prompt(self, base_prompt: str = "") -> str:
+        """System prompt com framework CCT 2026 Manaus."""
+        skills = self._load_skills()
+        return (
+            "Você é o PricingOptimizerAgent da Conecta Mais.\n\n"
+            "CCT SINDECOMPRESTS 2026 (vigência 01/01/2026 a 31/12/2026):\n"
+            "- Piso vigilante: R$1.847,93/mês\n"
+            "- Encargos (INSS + FGTS + férias + 13º): ~42%\n"
+            "- Custo CLT total por vigilante: ~R$2.624,06/mês\n"
+            "- VR: R$26,40/dia útil (22 dias = R$580,80/mês)\n"
+            "- VT: ~R$150/mês (média)\n"
+            "- Custo all-in por posto: ~R$3.354,86/mês\n\n"
+            "BENCHMARKS MANAUS 2026:\n"
+            "- Vigilante diurno: R$2.800 – R$3.800/posto/mês\n"
+            "- Vigilante noturno: R$3.200 – R$4.500/posto/mês\n"
+            "- Portaria remota: R$1.200 – R$2.500/mês\n"
+            "- Manutenção CFTV: R$600 – R$1.200/mês\n\n"
+            "MARGEM TARGET: 35% | MARGEM MÍNIMA: 20%\n"
+            "ALERTA: Contratos sem cláusula de reajuste = margem negativa em 12m\n\n"
+            f"SKILLS:\n{skills}\n\n"
+            f"{base_prompt}\n\n"
+            "Para cada análise:\n"
+            "1. Calcular custo real (CCT 2026 + encargos + benefícios)\n"
+            "2. Comparar com ticket atual\n"
+            "3. Identificar margem real vs margem aparente\n"
+            "4. Recomendar preço mínimo, ideal e premium"
+        )
 
     async def calcular_preco(
         self,

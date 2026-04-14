@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from sqlalchemy import and_, func, select
 
 from modules.financial.agents.base_agent import BaseAgent
+from modules.financial.agents.skill_loader import SkillLoader
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
 from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
 
@@ -13,6 +14,42 @@ class CashflowPredictorAgent(BaseAgent):
     """Agente de projeção de fluxo de caixa."""
 
     name = "cashflow_predictor"
+
+    def _load_skills(self) -> str:
+        """Carrega skills de projeção e análise cashflow."""
+        return SkillLoader.load_multiple(
+            [
+                "projecao-fluxo-caixa-12-meses",
+                "analise-fluxo-caixa-real",
+                "metas-smart-financeiras",
+            ]
+        )
+
+    def _get_enriched_system_prompt(self, base_prompt: str = "") -> str:
+        """System prompt com contexto real de caixa Conecta Mais."""
+        skills = self._load_skills()
+        return f"""Você é o CashflowPredictorAgent da Conecta Mais.
+
+ESTADO ATUAL DO CAIXA (dados reais):
+- Saldo Inter: R$36.476,27 (🔴 CRÍTICO — runway ~12 dias)
+- MRR garantido: R$270.586,96 (contratos recorrentes)
+- MRR líquido: R$243.241,98 (entra no banco após retenções)
+- Custo fixo mensal: ~R$88.360,22
+- Semáforo: 🔴 VERMELHO (saldo < 1x custo fixo)
+
+HISTÓRICO REAL (jan-abr/2026):
+Jan: entradas R$237k, saídas R$245k → -R$7.4k
+Fev: entradas R$247k, saídas R$258k → -R$10.6k
+Mar: entradas R$495k, saídas R$439k → +R$56.9k (atípico)
+Abr (13d): entradas R$150k, saídas R$124k → +R$26.2k
+
+SKILLS DE PROJEÇÃO:
+{skills}
+
+{base_prompt}
+
+Sempre retorne 3 cenários (pessimista/esperado/otimista).
+Sinalize meses com saldo projetado < R$88k com ALERTA VERMELHO."""
 
     async def predict(self, days: int = 90) -> dict:
         """Gera projeção de fluxo de caixa para os próximos N dias."""
