@@ -240,7 +240,7 @@ class BankReconciliationResponse(BankReconciliationBase):
 
     id: UUID
     bank_account_id: UUID
-    condominio_id: UUID
+    condominio_id: UUID | None = None
     status: str
     system_opening_balance: Decimal
     system_closing_balance: Decimal | None
@@ -354,7 +354,7 @@ class CashFlowEntryResponse(CashFlowEntryBase):
     difference: Decimal | None
     is_recurring: bool
     counterparty_name: str | None
-    tags: list[str]
+    tags: list[str] | None = None
     is_approved: bool
     created_at: datetime
 
