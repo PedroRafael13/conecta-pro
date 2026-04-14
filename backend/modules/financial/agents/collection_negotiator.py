@@ -1,4 +1,11 @@
-"""CollectionNegotiatorAgent — Analisa inadimplentes e gera estrategias de cobranca."""
+"""CollectionNegotiatorAgent — Analisa inadimplentes e gera estrategias de cobranca.
+
+Skills injetadas (T3 Fase 2):
+- gestao-inadimplencia (Skill 08) via SkillLoader
+- 10 clientes reais Manaus com CNPJ das NFS-e março/2026
+- Régua: D+1 WhatsApp → D+16 Carta → D+31 Negativação → D+61 Jurídico
+- Chave PIX Conecta Mais embutida no system prompt
+"""
 
 from datetime import date
 

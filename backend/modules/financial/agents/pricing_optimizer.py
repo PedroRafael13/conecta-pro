@@ -1,4 +1,12 @@
-"""PricingOptimizerAgent — Calcula precificacao otima para contratos de seguranca."""
+"""PricingOptimizerAgent — Calcula precificacao otima para contratos de seguranca.
+
+Skills injetadas (T3 Fase 2):
+- framework-precificacao-margem (Skill 04)
+- break-even-ponto-equilibrio (Skill 02)
+- analise-margem-por-servico (Skill 03)
+CCT SINDECOMPRESTS 2026: piso R$1.847,93 + encargos 42% + VR + VT = R$3.354,86/posto
+Benchmarks Manaus 2026: vigilante diurno R$2.800-3.800 | noturno R$3.200-4.500/posto/mes
+"""
 
 from sqlalchemy import and_, func, select
 
