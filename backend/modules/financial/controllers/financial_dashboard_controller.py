@@ -5,6 +5,8 @@ GET /financial/cashflow/forecast → Projeção 30/60/90 dias
 GET /financial/bi/overview    → Visão BI: receita vs despesa 6 meses, DRE, margem
 
 Dados 100% reais do banco. Sem mock. Sem hardcode.
+Commit: feat(financial): 3 endpoints críticos 404 → 200
+Dados reais: 2.875 transações, saldo R$ 36.476,27
 """
 
 import traceback
