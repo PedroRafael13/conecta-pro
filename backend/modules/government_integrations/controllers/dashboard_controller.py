@@ -157,7 +157,6 @@ class DashboardService:
     }
 
     ALL_INTEGRATIONS = [
-        {"id": "cora", "name": "Banco Cora", "category": "banking", "description": "Saldo, extrato, PIX, boletos"},
         {"id": "inter", "name": "Banco Inter", "category": "banking", "description": "Saldo, extrato, PIX, cobranças"},
         {"id": "govbr", "name": "Gov.br", "category": "government", "description": "Autenticação SSO governo federal"},
         {"id": "sefaz_nfe", "name": "SEFAZ NF-e", "category": "government", "description": "Notas fiscais eletrônicas"},
@@ -450,7 +449,7 @@ async def obter_status_integracoes(current_user: CurrentActiveUser):
     Status de TODAS as integrações externas do sistema.
 
     Retorna status (online/offline/degraded), tempo de resposta e erros
-    para cada integração: Banking (Cora, Inter), Government (SEFAZ, Gov.br, etc.), HR (Sólides).
+    para cada integração: Banking (Inter), Government (SEFAZ, Gov.br, etc.), HR (Sólides).
     """
     try:
         return await dashboard_service.obter_status_integracoes()
