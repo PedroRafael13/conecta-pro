@@ -45,9 +45,15 @@ atualizado: 2026-04-14
 | RiskMonitorAgent | risk_monitor.py | 07 |
 | CollectionNegotiatorAgent | collection_negotiator.py | 08 |
 
-## Proximas Skills (Grupo B — planejado)
+## Grupo B — Estratégico (8 skills)
 
-- 09: Analise de Risco de Concentracao de Clientes
-- 10: Simulador de Crescimento e Novos Contratos
-- 11: Planejamento Tributario Lucro Real (IRPJ/CSLL/PIS/COFINS)
-- 12: Gestao de Provisoes Trabalhistas (13o + ferias + FGTS)
+| # | Arquivo | Agente | Prioridade | Foco |
+|---|---------|--------|------------|------|
+| 09 | 09-matriz-riscos-negocio.md | RiskMonitorAgent | ALTA | Matriz 5x5 riscos operacionais/financeiros |
+| 10 | 10-diagnostico-financeiro-completo.md | FinancialAdvisorAgent | ALTA | Diagnóstico 360° com score e plano |
+| 11 | 11-plano-acao-90-dias.md | FinancialAdvisorAgent | ALTA | Plano executivo 90 dias por prioridade |
+| 12 | 12-planejamento-estrategico-anual.md | FinancialAdvisorAgent | MÉDIA | OKRs anuais + simulação de cenários |
+| 13 | 13-viabilidade-investimento.md | FinancialAdvisorAgent | MÉDIA | ROI/payback/TIR para investimentos |
+| 14 | 14-metas-smart-financeiras.md | FinancialAdvisorAgent | MÉDIA | Metas SMART com milestones mensais |
+| 15 | 15-benchmark-setorial.md | FinancialAdvisorAgent+RiskMonitorAgent | MÉDIA | Benchmark setor segurança patrimonial |
+| 16 | 16-tributario-lucro-real.md | TaxCalculatorAgent | ALTA | IRPJ/CSLL/PIS/COFINS + LALUR Lucro Real |
