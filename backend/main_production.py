@@ -718,6 +718,17 @@ try:
 except Exception as _e:
     logger.warning(f"Financial Dashboard: {_e}")
 
+# Custeio ABC + Precificação — CCT SINDECOMPRESTS 2026
+try:
+    from modules.financial.controllers.custeio_controller import router as custeio_router
+    from modules.financial.controllers.precificacao_controller import router as precificacao_router
+
+    api_router.include_router(custeio_router, tags=["Financial - Custeio ABC"])
+    api_router.include_router(precificacao_router, tags=["Financial - Precificação"])
+    logger.info("Custeio ABC + Precificação: OK")
+except Exception as _e:
+    logger.warning(f"Custeio ABC + Precificação: {_e}")
+
 # Cobrança PIX Recorrente — MRR Clientes Conecta Mais
 try:
     from modules.financial.controllers.recurring_billing_controller import (

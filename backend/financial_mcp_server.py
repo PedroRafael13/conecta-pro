@@ -134,6 +134,26 @@ async def get_forecast() -> dict:
     return await _get("/financial/cashflow/forecast")
 
 
+async def get_custeio_abc() -> dict:
+    """Custeio ABC por tipo de serviço: margem real, classificação estrela/atenção/abacaxi, CCT SINDECOMPRESTS 2026."""
+    return await _get("/financial/custeio/abc")
+
+
+async def get_precificacao_analise() -> dict:
+    """Contratos subprecificados vs benchmarks Manaus 2026: potencial de reajuste mensal e anual."""
+    return await _get("/financial/precificacao/contratos/analise")
+
+
+async def get_bi_kpis() -> dict:
+    """KPIs financeiros ao vivo: MRR, saldo Inter, compliance Lucro Real, inadimplência, score saúde 0-100."""
+    return await _get("/financial/bi/kpis")
+
+
+async def get_bi_dashboards() -> dict:
+    """Configuração dos dashboards BI com widgets, métricas e alertas do painel executivo."""
+    return await _get("/financial/bi/dashboards")
+
+
 # ── Registro das ferramentas ────────────────────────────────────────────────────
 
 MCP_TOOLS: dict = {
@@ -145,6 +165,10 @@ MCP_TOOLS: dict = {
     "get_lucro_real_compliance": get_lucro_real_compliance,
     "get_aging_report": get_aging_report,
     "get_forecast": get_forecast,
+    "get_custeio_abc": get_custeio_abc,
+    "get_precificacao_analise": get_precificacao_analise,
+    "get_bi_kpis": get_bi_kpis,
+    "get_bi_dashboards": get_bi_dashboards,
 }
 
 MCP_TOOLS_SCHEMA: list = [
@@ -209,6 +233,39 @@ MCP_TOOLS_SCHEMA: list = [
         "description": (
             "Projeção de cashflow 30/60/90 dias nos cenários pessimista, esperado e otimista. "
             "Base: MRR R$270k, histórico banco Inter."
+        ),
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_custeio_abc",
+        "description": (
+            "Custeio ABC por tipo de serviço (kit_mensal, portaria_remota, cftv, taxa_condominial). "
+            "Margem real calculada com CCT SINDECOMPRESTS 2026 (custo all-in R$3.354,74/posto). "
+            "Classifica cada tipo: estrela (≥35%), atenção (20-35%), abacaxi (<20%)."
+        ),
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_precificacao_analise",
+        "description": (
+            "Contratos ativos comparados com benchmarks Manaus 2026 (vigilante diurno R$2.800-3.800/posto). "
+            "Identifica subprecificados, calcula potencial de reajuste mensal e anual por contrato."
+        ),
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_bi_kpis",
+        "description": (
+            "KPIs financeiros ao vivo da tabela financial_kpis: MRR R$272k, saldo Inter, "
+            "compliance Lucro Real, inadimplência em %, score saúde financeira 0-100."
+        ),
+        "inputSchema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_bi_dashboards",
+        "description": (
+            "Configuração dos dashboards BI com widgets, métricas e alertas do painel executivo. "
+            "Use para entender estrutura dos painéis e quais indicadores estão sendo monitorados."
         ),
         "inputSchema": {"type": "object", "properties": {}, "required": []},
     },
