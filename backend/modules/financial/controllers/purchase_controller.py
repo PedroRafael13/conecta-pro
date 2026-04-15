@@ -1019,7 +1019,7 @@ async def create_order(
     summary="Listar ordens de compra",
 )
 async def list_orders(  # pylint: disable=too-many-locals
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     status_filter: list[str] | None = Query(None, alias="status"),
     priority: list[str] | None = Query(None),
     supplier_id: UUID | None = Query(None),

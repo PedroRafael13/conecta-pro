@@ -67,8 +67,8 @@ export default function FornecedoresPage() {
   // Stats
   const totalSuppliers = stats?.total || total;
   const typedSuppliers = suppliers as SupplierListResponse[];
-  const activeSuppliers = stats?.ativos || typedSuppliers.filter((s) => s.status === 'active').length;
-  const blockedSuppliers = stats?.bloqueados || typedSuppliers.filter((s) => s.status === 'blocked').length;
+  const activeSuppliers = stats?.ativos ?? typedSuppliers.filter((s) => s.status === 'ativo' || s.status === 'active').length;
+  const blockedSuppliers = stats?.bloqueados ?? typedSuppliers.filter((s) => s.status === 'blocked' || s.status === 'bloqueado').length;
 
   const handleView = (supplier: any) => {
     setSelectedSupplier(supplier);
@@ -145,10 +145,13 @@ export default function FornecedoresPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
+      case 'ativo':
         return 'bg-green-500/10 text-green-500 border-green-500/30';
       case 'blocked':
+      case 'bloqueado':
         return 'bg-red-500/10 text-red-500 border-red-500/30';
       case 'inactive':
+      case 'inativo':
         return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
@@ -158,10 +161,13 @@ export default function FornecedoresPage() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'active':
+      case 'ativo':
         return 'Ativo';
       case 'blocked':
+      case 'bloqueado':
         return 'Bloqueado';
       case 'inactive':
+      case 'inativo':
         return 'Inativo';
       default:
         return status;
@@ -283,9 +289,9 @@ export default function FornecedoresPage() {
             Todos
           </Button>
           <Button
-            variant={statusFilter === 'active' ? 'primary' : 'secondary'}
+            variant={statusFilter === 'ativo' ? 'primary' : 'secondary'}
             size="sm"
-            onClick={() => setStatusFilter('active')}
+            onClick={() => setStatusFilter('ativo')}
           >
             Ativos
           </Button>

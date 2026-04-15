@@ -70,7 +70,7 @@ async def create_bank_account(
     summary="Listar contas bancárias",
 )
 async def list_bank_accounts(  # pylint: disable=unused-argument
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     account_type: BankAccountType | None = Query(None, description="Tipo de conta"),
     account_status: BankAccountStatus | None = Query(None, description="Status"),
     is_main: bool | None = Query(None, description="Conta principal"),

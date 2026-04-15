@@ -68,18 +68,16 @@ class SupplierRepository:
 
     async def list(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         filters: SupplierFilter | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[Supplier]:
         """Lista fornecedores com filtros."""
-        query = select(Supplier).where(
-            and_(
-                Supplier.condominio_id == condominio_id,
-                Supplier.ativo.is_(True),
-            )
-        )
+        base_conditions = [Supplier.ativo.is_(True)]
+        if condominio_id is not None:
+            base_conditions.append(Supplier.condominio_id == condominio_id)
+        query = select(Supplier).where(and_(*base_conditions))
 
         if filters:
             if filters.search:
@@ -124,16 +122,14 @@ class SupplierRepository:
 
     async def count(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         filters: SupplierFilter | None = None,
     ) -> int:
         """Conta fornecedores com filtros."""
-        query = select(func.count(Supplier.id)).where(
-            and_(
-                Supplier.condominio_id == condominio_id,
-                Supplier.ativo.is_(True),
-            )
-        )
+        base_conditions = [Supplier.ativo.is_(True)]
+        if condominio_id is not None:
+            base_conditions.append(Supplier.condominio_id == condominio_id)
+        query = select(func.count(Supplier.id)).where(and_(*base_conditions))
 
         if filters:
             if filters.search:

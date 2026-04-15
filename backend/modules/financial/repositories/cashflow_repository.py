@@ -66,18 +66,16 @@ class BankAccountRepository:
 
     async def list(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         filters: BankAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[BankAccount]:
         """Lista contas bancarias."""
-        query = select(BankAccount).where(
-            and_(
-                BankAccount.condominio_id == condominio_id,
-                BankAccount.ativo.is_(True),  # noqa: E712
-            )
-        )
+        base_conditions = [BankAccount.ativo.is_(True)]  # noqa: E712
+        if condominio_id is not None:
+            base_conditions.append(BankAccount.condominio_id == condominio_id)
+        query = select(BankAccount).where(and_(*base_conditions))
 
         if filters:
             if filters.status:

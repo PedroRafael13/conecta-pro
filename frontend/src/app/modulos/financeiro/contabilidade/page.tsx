@@ -75,7 +75,7 @@ export default function ContabilidadePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeChartId: string = (Array.isArray(chartsData) && chartsData.length > 0) ? (chartsData as any[])[0]?.id ?? '' : '';
 
-  const { data: accountsRaw, isLoading: loadingAccounts, refetch: refetchAccounts } = useAccountingAccounts({ chart_id: activeChartId }, { enabled: !!activeChartId });
+  const { data: accountsRaw, isLoading: loadingAccounts, refetch: refetchAccounts } = useAccountingAccounts({ chart_id: activeChartId }, { query: { enabled: !!activeChartId } });
   const { data: costCentersRaw, isLoading: loadingCostCenters, refetch: refetchCostCenters } = useCostCenters();
   const { data: entriesRaw, isLoading: loadingEntries, refetch: refetchEntries } = useJournalEntries(undefined);
   const { data: trialBalanceRaw, isLoading: loadingBalance, refetch: refetchBalance } = useTrialBalance('');

@@ -61,7 +61,7 @@ async def create_supplier(
     summary="Listar fornecedores",
 )
 async def list_suppliers(  # pylint: disable=too-many-locals,unused-argument
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     search: str | None = Query(None, description="Busca por nome, razão social ou CNPJ"),
     supplier_type: str | None = Query(None, description="Tipo de fornecedor"),
     category: str | None = Query(None, description="Categoria"),

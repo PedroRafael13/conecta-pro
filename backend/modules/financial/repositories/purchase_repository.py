@@ -906,22 +906,16 @@ class PurchaseOrderRepository:
 
     async def list(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         filters: OrderFilter | None = None,
         skip: int = 0,
         limit: int = 50,
     ) -> list[PurchaseOrder]:
         """Lista ordens com filtros."""
-        query = (
-            select(PurchaseOrder)
-            .options(selectinload(PurchaseOrder.items))
-            .where(
-                and_(
-                    PurchaseOrder.condominio_id == condominio_id,
-                    PurchaseOrder.ativo.is_(True),
-                )
-            )
-        )
+        base_conditions = [PurchaseOrder.ativo.is_(True)]
+        if condominio_id is not None:
+            base_conditions.append(PurchaseOrder.condominio_id == condominio_id)
+        query = select(PurchaseOrder).options(selectinload(PurchaseOrder.items)).where(and_(*base_conditions))
 
         if filters:
             if filters.status:
@@ -948,16 +942,14 @@ class PurchaseOrderRepository:
 
     async def count(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         filters: OrderFilter | None = None,
     ) -> int:
         """Conta ordens com filtros."""
-        query = select(func.count(PurchaseOrder.id)).where(
-            and_(
-                PurchaseOrder.condominio_id == condominio_id,
-                PurchaseOrder.ativo.is_(True),
-            )
-        )
+        base_conditions = [PurchaseOrder.ativo.is_(True)]
+        if condominio_id is not None:
+            base_conditions.append(PurchaseOrder.condominio_id == condominio_id)
+        query = select(func.count(PurchaseOrder.id)).where(and_(*base_conditions))
 
         if filters:
             if filters.status:

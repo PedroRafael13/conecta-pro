@@ -57,7 +57,7 @@ class SupplierService:
 
     async def list(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         filters: SupplierFilter | None = None,
         skip: int = 0,
         limit: int = 100,

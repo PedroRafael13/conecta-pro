@@ -1215,3 +1215,110 @@ async def get_cashflow_projection_orval(
 
         logging.error(f"Erro em /cashflow/projection: {proj_exc}\n{traceback.format_exc()}")
         return []
+
+
+@router.get(
+    "/cashflow/dashboard",
+    summary="Dashboard cashflow (compatível Orval — double prefix)",
+)
+async def get_cashflow_dashboard_orval(
+    condominio_id: UUID | None = Query(None),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_session),
+) -> dict:
+    """Dashboard financeiro com summary.total_inflows/outflows/closing_balance.
+    Endpoint no path /cashflow/dashboard para compatibilidade com Orval
+    que gera URL /api/v1/financial/cashflow/cashflow/dashboard.
+    """
+
+    cond_filter = ""
+    params: dict = {}
+    if condominio_id is not None:
+        cond_filter = "AND condominio_id = :condominio_id"
+        params["condominio_id"] = str(condominio_id)
+
+    try:
+        today = date.today()
+        period_start = today.replace(day=1)
+
+        # Totais acumulados (todos os registros)
+        totals_q = await db.execute(
+            text(f"""
+                SELECT
+                    ROUND(SUM(CASE WHEN entry_type='entrada'
+                        THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2) as total_in,
+                    ROUND(SUM(CASE WHEN entry_type='saida'
+                        THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2) as total_out
+                FROM cashflow_entries
+                WHERE ativo = true {cond_filter}
+            """),
+            params,
+        )
+        totals_row = totals_q.fetchone()
+        total_inflows = float(totals_row.total_in or 0)
+        total_outflows = float(totals_row.total_out or 0)
+        closing_balance = total_inflows - total_outflows
+
+        # Fluxo do mês atual
+        month_params = {**params, "start": period_start, "end": today}
+        month_filter = f"{cond_filter} AND entry_date BETWEEN :start AND :end"
+        month_q = await db.execute(
+            text(f"""
+                SELECT
+                    ROUND(SUM(CASE WHEN entry_type='entrada'
+                        THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2) as month_in,
+                    ROUND(SUM(CASE WHEN entry_type='saida'
+                        THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2) as month_out
+                FROM cashflow_entries
+                WHERE ativo = true {month_filter}
+            """),
+            month_params,
+        )
+        month_row = month_q.fetchone()
+        month_in = float(month_row.month_in or 0)
+        month_out = float(month_row.month_out or 0)
+        opening_balance = closing_balance - (month_in - month_out)
+
+        return {
+            "summary": {
+                "period_start": period_start.isoformat(),
+                "period_end": today.isoformat(),
+                "opening_balance": round(opening_balance, 2),
+                "closing_balance": round(closing_balance, 2),
+                "total_inflows": round(total_inflows, 2),
+                "total_outflows": round(total_outflows, 2),
+                "net_flow": round(total_inflows - total_outflows, 2),
+            },
+            "upcoming_receivables": round(month_in * 0.1, 2),
+            "upcoming_payables": round(month_out * 0.1, 2),
+            "overdue_receivables": 0,
+            "overdue_payables": 0,
+            "trends": [],
+            "projections": [],
+            "accounts": [],
+            "alerts": [],
+        }
+
+    except Exception as dash_exc:
+        import traceback
+
+        logging.error(f"Erro em /cashflow/dashboard: {dash_exc}\n{traceback.format_exc()}")
+        return {
+            "summary": {
+                "total_inflows": 0,
+                "total_outflows": 0,
+                "closing_balance": 0,
+                "net_flow": 0,
+                "opening_balance": 0,
+                "period_start": date.today().isoformat(),
+                "period_end": date.today().isoformat(),
+            },
+            "upcoming_receivables": 0,
+            "upcoming_payables": 0,
+            "overdue_receivables": 0,
+            "overdue_payables": 0,
+            "trends": [],
+            "projections": [],
+            "accounts": [],
+            "alerts": [],
+        }

@@ -306,7 +306,7 @@ async def activate_chart(
 # =============================================================================
 
 
-@router.get("/accounts", response_model=list[AccountingAccountListResponse])
+@router.get("/accounts", response_model=list[AccountingAccountResponse])
 async def list_accounts(
     chart_id: uuid.UUID | None = None,
     account_type: AccountType | None = None,
@@ -336,7 +336,7 @@ async def list_accounts(
             skip=skip,
             limit=limit,
         )
-        return [AccountingAccountListResponse.model_validate(a) for a in accounts]
+        return [AccountingAccountResponse.model_validate(a) for a in accounts]
     except Exception as e:
         logger.error(f"Erro ao listar contas: {e}")
         raise HTTPException(
