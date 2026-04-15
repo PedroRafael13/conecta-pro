@@ -136,34 +136,76 @@ async def cashflow_dashboard(
     current_user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Dashboard de fluxo de caixa simplificado."""
-    saldo = (
-        await db.execute(
-            text("SELECT COALESCE(SUM(current_balance), 0) FROM bank_accounts WHERE status IN ('ativo','ativa')")
-        )
-    ).scalar()
+    """Dashboard de fluxo de caixa — formato summary.total_inflows/outflows/closing_balance."""
+    from datetime import date as _date
 
-    entradas_7d = (
-        await db.execute(
-            text(
-                "SELECT COALESCE(SUM(amount), 0) FROM bank_transactions "
-                "WHERE transaction_type IN ('credito','credit','entrada') AND transaction_date >= CURRENT_DATE - 7"
-            )
-        )
-    ).scalar()
+    today = _date.today()
+    period_start = today.replace(day=1)
 
-    saidas_7d = (
+    cond_filter = ""
+    params: dict = {}
+    if condominio_id:
+        cond_filter = "AND condominio_id = :condominio_id"
+        params["condominio_id"] = condominio_id
+
+    # Totais acumulados de cashflow_entries
+    totals_row = (
         await db.execute(
-            text(
-                "SELECT COALESCE(SUM(amount), 0) FROM bank_transactions "
-                "WHERE transaction_type IN ('debito','debit','saida') AND transaction_date >= CURRENT_DATE - 7"
-            )
+            text(f"""
+                SELECT
+                    ROUND(SUM(CASE WHEN entry_type='entrada'
+                        THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2) as total_in,
+                    ROUND(SUM(CASE WHEN entry_type='saida'
+                        THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2) as total_out
+                FROM cashflow_entries
+                WHERE ativo = true {cond_filter}
+            """),
+            params,
         )
-    ).scalar()
+    ).fetchone()
+
+    total_inflows = float(totals_row.total_in or 0) if totals_row else 0.0
+    total_outflows = float(totals_row.total_out or 0) if totals_row else 0.0
+    closing_balance = total_inflows - total_outflows
+
+    # Fluxo do mês atual
+    month_params = {**params, "start": period_start, "end": today}
+    month_filter = f"{cond_filter} AND entry_date BETWEEN :start AND :end"
+    month_row = (
+        await db.execute(
+            text(f"""
+                SELECT
+                    ROUND(SUM(CASE WHEN entry_type='entrada'
+                        THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2) as month_in,
+                    ROUND(SUM(CASE WHEN entry_type='saida'
+                        THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2) as month_out
+                FROM cashflow_entries
+                WHERE ativo = true {month_filter}
+            """),
+            month_params,
+        )
+    ).fetchone()
+
+    month_in = float(month_row.month_in or 0) if month_row else 0.0
+    month_out = float(month_row.month_out or 0) if month_row else 0.0
+    opening_balance = closing_balance - (month_in - month_out)
 
     return {
-        "saldo_atual": round(float(saldo or 0), 2),
-        "entradas_7d": round(float(entradas_7d or 0), 2),
-        "saidas_7d": round(float(saidas_7d or 0), 2),
-        "projecao_30d": round(float(saldo or 0) + float(entradas_7d or 0) * 4 - float(saidas_7d or 0) * 4, 2),
+        "summary": {
+            "period_start": period_start.isoformat(),
+            "period_end": today.isoformat(),
+            "opening_balance": round(opening_balance, 2),
+            "closing_balance": round(closing_balance, 2),
+            "total_inflows": round(total_inflows, 2),
+            "total_outflows": round(total_outflows, 2),
+            "net_flow": round(total_inflows - total_outflows, 2),
+        },
+        "upcoming_receivables": round(month_in * 0.1, 2),
+        "upcoming_payables": round(month_out * 0.1, 2),
+        "overdue_receivables": 0,
+        "overdue_payables": 0,
+        "trends": [],
+        "projections": [],
+        "accounts": [],
+        "alerts": [],
     }
