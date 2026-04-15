@@ -25,10 +25,11 @@ export const customInstance = async <T>(
   try {
     if (config.url) {
       // Remove duplicações de path simples APENAS para recursos folha (sem sub-paths)
-      // Ex: /suppliers/suppliers -> /suppliers
+      // Ex: /suppliers/suppliers -> /suppliers, /payables/payables?x=1 -> /payables?x=1
       // NÃO remove /cashflow/cashflow/ (sub-router intencional)
+      // Usa lookahead (?=...) para não consumir o separador pós-match
       if (!config.url.includes('/cashflow/cashflow/')) {
-        config.url = config.url.replace(/\/([^\/]+)\/\1(?:\/|$)/, '/$1');
+        config.url = config.url.replace(/\/([^\/]+)\/\1(?=\/|$|\?)/, '/$1');
       }
 
       // Adiciona condominio_id automaticamente para endpoints do módulo Financial
