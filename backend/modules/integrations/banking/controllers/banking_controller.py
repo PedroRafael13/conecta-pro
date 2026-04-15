@@ -224,6 +224,7 @@ class BankTransactionFull(BaseModel):
     date: str
     amount: float
     transaction_type: str
+    type: str  # 'credit' | 'debit' — direção da transação para o frontend
     description: str
     counterpart_name: str | None = None
     counterpart_document: str | None = None
@@ -707,7 +708,9 @@ async def get_bank_statement_full(
             for tx in statement.transactions:
                 amount = float(abs(tx.amount))
                 tx_type_str = str(tx.transaction_type.value) if tx.transaction_type else "unknown"
-                is_credit = tx.amount >= 0
+                # Inter API sempre retorna amount positivo; usa transaction_type para direção
+                # DEBITO = saída; qualquer outro (CREDITO, PIX, BOLETO, TED) = entrada
+                is_credit = tx_type_str not in ("DEBITO",)
 
                 if is_credit:
                     total_credits += amount
@@ -720,6 +723,7 @@ async def get_bank_statement_full(
                         date=tx.date.isoformat() if tx.date else "",
                         amount=amount,
                         transaction_type=tx_type_str,
+                        type="credit" if is_credit else "debit",
                         description=tx.description or "",
                         counterpart_name=tx.counterpart_name,
                         counterpart_document=tx.counterpart_document,

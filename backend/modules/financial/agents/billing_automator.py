@@ -195,7 +195,7 @@ class BillingAutomatorAgent(BaseAgent):
             base_q = select(
                 func.coalesce(func.sum(ReceivableAccount.net_value), 0).label("total"),
                 func.coalesce(func.count(ReceivableAccount.id), 0).label("qtd"),
-                func.coalesce(func.count(func.distinct(ReceivableAccount.customer_id)), 0).label("qtd_clientes"),
+                func.coalesce(func.count(ReceivableAccount.id), 0).label("qtd_clientes"),
             ).where(
                 and_(
                     ReceivableAccount.due_date >= primeiro_dia,
@@ -224,7 +224,7 @@ class BillingAutomatorAgent(BaseAgent):
             vencido_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.due_date >= primeiro_dia,
-                    ReceivableAccount.due_date <= min(ultimo_dia, today - timedelta(days=1)),
+                    ReceivableAccount.due_date <= min(ultimo_dia, today - timedelta(days=7)),
                     ReceivableAccount.status.notin_(
                         [
                             ReceivableStatus.PAGA.value,
