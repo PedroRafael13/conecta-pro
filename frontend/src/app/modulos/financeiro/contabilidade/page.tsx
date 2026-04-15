@@ -17,6 +17,7 @@ import {
   useTrialBalance,
   useCreateJournalEntry,
 } from '@/hooks/financial/useFinancial';
+import { useListChartsApiV1FinancialAccountingAccountingChartsGet as useAccountingCharts } from '@/types/generated/financial/financial-accounting/financial-accounting';
 import type { AccountingAccountListResponse } from '@/types/generated/financial/models/accountingAccountListResponse';
 import type { JournalEntryListResponse } from '@/types/generated/financial/models/journalEntryListResponse';
 import type { JournalEntryCreate } from '@/types/generated/financial/models/journalEntryCreate';
@@ -35,16 +36,17 @@ const formatDate = (date: string | undefined | null) => {
 };
 
 const getAccountTypeColor = (type: string) => {
-  switch (type) {
-    case 'asset':
+  switch ((type || '').toUpperCase()) {
+    case 'ASSET':
       return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-    case 'liability':
+    case 'LIABILITY':
       return 'bg-red-500/10 text-red-500 border-red-500/20';
-    case 'revenue':
+    case 'REVENUE':
       return 'bg-green-500/10 text-green-500 border-green-500/20';
-    case 'expense':
+    case 'EXPENSE':
+    case 'COST':
       return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
-    case 'equity':
+    case 'EQUITY':
       return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
     default:
       return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
@@ -52,11 +54,11 @@ const getAccountTypeColor = (type: string) => {
 };
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  asset: 'Ativo',
-  liability: 'Passivo',
-  revenue: 'Receita',
-  expense: 'Despesa',
-  equity: 'Patrimonio Liquido',
+  asset: 'Ativo', ASSET: 'Ativo',
+  liability: 'Passivo', LIABILITY: 'Passivo',
+  revenue: 'Receita', REVENUE: 'Receita',
+  expense: 'Despesa', EXPENSE: 'Despesa', COST: 'Custo',
+  equity: 'Patrimônio Líquido', EQUITY: 'Patrimônio Líquido',
 };
 
 const NATURE_LABELS: Record<string, string> = {
@@ -69,12 +71,16 @@ export default function ContabilidadePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
 
-  const { data: accountsRaw, isLoading: loadingAccounts, refetch: refetchAccounts } = useAccountingAccounts({ chart_id: '' });
+  const { data: chartsData } = useAccountingCharts({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeChartId: string = (Array.isArray(chartsData) && chartsData.length > 0) ? (chartsData as any[])[0]?.id ?? '' : '';
+
+  const { data: accountsRaw, isLoading: loadingAccounts, refetch: refetchAccounts } = useAccountingAccounts({ chart_id: activeChartId }, { enabled: !!activeChartId });
   const { data: costCentersRaw, isLoading: loadingCostCenters, refetch: refetchCostCenters } = useCostCenters();
   const { data: entriesRaw, isLoading: loadingEntries, refetch: refetchEntries } = useJournalEntries(undefined);
   const { data: trialBalanceRaw, isLoading: loadingBalance, refetch: refetchBalance } = useTrialBalance('');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const accounts: any[] = (accountsRaw as any)?.items ?? [];
+  const accounts: any[] = Array.isArray(accountsRaw) ? (accountsRaw as any[]) : ((accountsRaw as any)?.items ?? []);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const costCenters: any[] = (costCentersRaw as any)?.items ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

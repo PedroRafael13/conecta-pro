@@ -1125,3 +1125,93 @@ async def get_lancamentos(
         import traceback
 
         return {"items": [], "total": 0, "error": str(exc), "detail": traceback.format_exc()[-300:]}
+
+
+@router.get(
+    "/cashflow/projection",
+    summary="Projeção de saldo 30 dias (compatível Orval)",
+)
+async def get_cashflow_projection_orval(
+    condominio_id: UUID | None = Query(None),
+    days: int = Query(30, ge=1, le=90),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_session),
+) -> list[dict]:
+    """Projeção de saldo diário nos próximos N dias.
+    Usa histórico real de cashflow_entries (média diária por tipo).
+    Endpoint no path /cashflow/projection para compatibilidade com Orval
+    que gera URL /api/v1/financial/cashflow/cashflow/projection.
+    """
+    import datetime as dt
+
+    cond_filter = ""
+    params: dict = {}
+    if condominio_id is not None:
+        cond_filter = "AND condominio_id = :condominio_id"
+        params["condominio_id"] = str(condominio_id)
+
+    try:
+        hist = await db.execute(
+            text(f"""
+                SELECT
+                    DATE(entry_date) as dia,
+                    entry_type,
+                    COALESCE(SUM(realized_amount), SUM(expected_amount), 0) as total
+                FROM cashflow_entries
+                WHERE ativo = true
+                  AND entry_date >= CURRENT_DATE - INTERVAL '90 days'
+                  {cond_filter}
+                GROUP BY DATE(entry_date), entry_type
+            """),
+            params,
+        )
+        rows = hist.fetchall()
+
+        saldo_q = await db.execute(
+            text(f"""
+                SELECT
+                    COALESCE(SUM(CASE WHEN entry_type='entrada'
+                        THEN COALESCE(realized_amount, expected_amount, 0)
+                        ELSE -COALESCE(realized_amount, expected_amount, 0) END), 0) as saldo
+                FROM cashflow_entries
+                WHERE ativo = true
+                {cond_filter}
+            """),
+            params,
+        )
+        saldo_row = saldo_q.fetchone()
+        saldo_atual = float(saldo_row.saldo if saldo_row and saldo_row.saldo else 0)
+
+        dias_com_entrada: list[float] = []
+        dias_com_saida: list[float] = []
+        for r in rows:
+            if r.entry_type in ("entrada", "income"):
+                dias_com_entrada.append(float(r.total))
+            else:
+                dias_com_saida.append(float(r.total))
+
+        media_entrada = sum(dias_com_entrada) / max(len(dias_com_entrada), 1)
+        media_saida = sum(dias_com_saida) / max(len(dias_com_saida), 1)
+
+        projection = []
+        saldo_acum = saldo_atual
+        today = dt.date.today()
+        for i in range(1, days + 1):
+            d = today + dt.timedelta(days=i)
+            saldo_acum += media_entrada - media_saida
+            projection.append(
+                {
+                    "date": d.isoformat(),
+                    "balance": round(media_entrada - media_saida, 2),
+                    "cumulative_balance": round(saldo_acum, 2),
+                    "receivables": round(media_entrada, 2),
+                    "payables": round(media_saida, 2),
+                }
+            )
+        return projection
+
+    except Exception as proj_exc:
+        import traceback
+
+        logging.error(f"Erro em /cashflow/projection: {proj_exc}\n{traceback.format_exc()}")
+        return []
