@@ -1,419 +1,235 @@
-'use client';
+'use client'
 
-import { TrendingUp, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, DollarSign, Trash2, AlertCircle, Clock, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ConfirmModal } from '@/components/ui/modal';
-import { useCondominio } from '@/contexts/CondominioContext';
-import {
-  useReceivables,
-  useReceivableDashboard,
-  useCreateReceivable,
-} from '@/hooks/financial/useFinancial';
-import { ReceivableFormModal } from '@/components/financeiro/receivable-form-modal';
-import { ReceivableDetailModal } from '@/components/financeiro/receivable-detail-modal';
-import type { ReceivableAccountListResponse } from '@/types/generated/financial/models/receivableAccountListResponse';
-import type { ReceivableAccountCreate } from '@/types/generated/financial/models/receivableAccountCreate';
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 
-const formatCurrency = (value: number | null | undefined) =>
-  (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+interface ContaReceber {
+  id: string
+  descricao?: string
+  description?: string
+  cliente?: string
+  customer?: string
+  valor?: number
+  amount?: number
+  vencimento?: string
+  due_date?: string
+  status?: string
+  categoria?: string
+  category?: string
+}
 
-const formatDate = (date: string | null | undefined) => {
-  if (!date) return '-';
-  try {
-    return new Date(date).toLocaleDateString('pt-BR');
-  } catch {
-    return date;
-  }
-};
+interface ReceivablesResponse {
+  data?: ContaReceber[]
+  items?: ContaReceber[]
+  total?: number
+  total_amount?: number
+  vencendo_hoje?: number
+  atrasadas?: number
+  recebidas?: number
+}
 
-const getStatusBadge = (status?: string | null) => {
-  switch (status) {
-    case 'pending':
-      return <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
-    case 'overdue':
-      return <Badge className="bg-red-100 text-red-800">Atrasada</Badge>;
-    case 'paid':
-      return <Badge className="bg-green-100 text-green-800">Recebida</Badge>;
-    case 'cancelled':
-      return <Badge variant="secondary">Cancelada</Badge>;
-    default:
-      return <Badge variant="outline">{status || '-'}</Badge>;
-  }
-};
+const fetchWithAuth = async (url: string) => {
+  const token = typeof window !== 'undefined'
+    ? (localStorage.getItem('access_token') ?? localStorage.getItem('token') ?? '')
+    : ''
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+const statusLabel: Record<string, string> = {
+  pendente: 'Pendente', pending: 'Pendente',
+  paga: 'Paga', paid: 'Paga',
+  vencido: 'Vencido', overdue: 'Vencido',
+  cancelada: 'Cancelada',
+}
+
+const statusColor: Record<string, string> = {
+  pendente: 'bg-yellow-100 text-yellow-700',
+  pending: 'bg-yellow-100 text-yellow-700',
+  paga: 'bg-green-100 text-green-700',
+  paid: 'bg-green-100 text-green-700',
+  vencido: 'bg-red-100 text-red-700',
+  overdue: 'bg-red-100 text-red-700',
+}
 
 export default function ContasReceberPage() {
-  const { condominioId } = useCondominio();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [customerFilter, setCustomerFilter] = useState('');
-  const [skip, setSkip] = useState(0);
-  const limit = 50;
+  const [statusFilter, setStatusFilter] = useState('todos')
+  const [search, setSearch] = useState('')
 
-  // Modals state
-  const [formModalOpen, setFormModalOpen] = useState(false);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [receiveModalOpen, setReceiveModalOpen] = useState(false);
-  const [selectedReceivable, setSelectedReceivable] = useState<any>(null);
+  const { data, isLoading, error, refetch } = useQuery<ReceivablesResponse>({
+    queryKey: ['receivables', statusFilter],
+    queryFn: () => fetchWithAuth(
+      `/api/v1/financial/receivables${statusFilter !== 'todos' ? `?status=${statusFilter}` : ''}`
+    ),
+    staleTime: 2 * 60 * 1000,
+    retry: 1,
+  })
 
-  // Data hooks
-  const {
-    data: receivablesData,
-    isLoading: loading,
-    error: queryError,
-    refetch,
-  } = useReceivables({
-    condominio_id: condominioId,
-    skip,
-    limit,
-    ...(search ? { search } : {}),
-    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
-  });
+  const { data: aging } = useQuery({
+    queryKey: ['receivables-aging'],
+    queryFn: () => fetchWithAuth('/api/v1/financial/receivables/aging'),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  })
 
-  const { data: dashboard } = useReceivableDashboard();
-  const { mutateAsync: createReceivable, isPending: creating } = useCreateReceivable();
+  void aging
 
-  const receivables: ReceivableAccountListResponse[] = Array.isArray(receivablesData)
-    ? (receivablesData as ReceivableAccountListResponse[])
-    : ((receivablesData as { data?: ReceivableAccountListResponse[] })?.data ?? []);
+  const items: ContaReceber[] = data?.data ?? data?.items ?? []
+  const total = data?.total ?? items.length
+  const totalAmount = data?.total_amount ?? items.reduce((s, i) => s + (i.valor ?? i.amount ?? 0), 0)
+  const vencendoHoje = data?.vencendo_hoje ?? 0
+  const atrasadas = data?.atrasadas ?? 0
+  const recebidas = data?.recebidas ?? 0
 
-  // Filter locally by customer if set
-  const filteredReceivables = receivables.filter((item: any) => {
-    if (!customerFilter) return true;
-    return (item.customer_name || '').toLowerCase().includes(customerFilter.toLowerCase());
-  });
-
-  const handleCreate = () => {
-    setSelectedReceivable(null);
-    setFormModalOpen(true);
-  };
-
-  const handleEdit = (receivable: any) => {
-    setSelectedReceivable(receivable);
-    setFormModalOpen(true);
-  };
-
-  const handleViewDetail = (receivable: any) => {
-    setSelectedReceivable(receivable);
-    setDetailModalOpen(true);
-  };
-
-  const handleDeleteConfirm = (receivable: any) => {
-    setSelectedReceivable(receivable);
-    setDeleteModalOpen(true);
-  };
-
-  const handleReceiveConfirm = (receivable: any) => {
-    setSelectedReceivable(receivable);
-    setReceiveModalOpen(true);
-  };
-
-  const handleFormSubmit = async (data: ReceivableAccountCreate) => {
-    try {
-      await createReceivable({ data });
-      setFormModalOpen(false);
-      setSelectedReceivable(null);
-    } catch (err) {
-      void err;
-    }
-  };
-
-  const handleDelete = async () => {
-    setDeleteModalOpen(false);
-    setSelectedReceivable(null);
-  };
-
-  const handleReceive = async () => {
-    setReceiveModalOpen(false);
-    setSelectedReceivable(null);
-  };
-
-  type ReceivableStats = { total_count?: number; overdue_count?: number };
-  const dashboardTyped = dashboard as ReceivableStats | undefined;
-  const stats = {
-    total: dashboardTyped?.total_count ?? 0,
-    due_today: 0,
-    overdue: dashboardTyped?.overdue_count ?? 0,
-    received: 0,
-  };
+  const filtered = items.filter(item => {
+    const desc = (item.descricao ?? item.description ?? '').toLowerCase()
+    const cli = (item.cliente ?? item.customer ?? '').toLowerCase()
+    return desc.includes(search.toLowerCase()) || cli.includes(search.toLowerCase())
+  })
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <TrendingUp className="h-6 w-6" />
-            Contas a Receber
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+            <span>↗</span> Contas a Receber
           </h1>
-          <p className="text-muted-foreground">
-            Gerencie todas as contas a receber e recebimentos pendentes
+          <p className="text-sm text-gray-500 mt-0.5">
+            Gerencie todas as contas a receber e cobranças pendentes
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => refetch()} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Conta
-          </Button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            ↺ Atualizar
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            + Nova Conta
+          </button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vencendo Hoje</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.due_today}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atrasadas</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recebidas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.received}</div>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { label: 'Total', value: total, color: 'text-gray-900' },
+          { label: 'Vencendo Hoje', value: vencendoHoje, color: 'text-yellow-600' },
+          { label: 'Atrasadas', value: atrasadas, color: 'text-red-600' },
+          { label: 'Recebidas', value: recebidas, color: 'text-green-600' },
+        ].map(card => (
+          <div key={card.label} className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-sm text-gray-500">{card.label}</p>
+            <p className={`text-3xl font-semibold mt-1 ${card.color}`}>
+              {isLoading ? '–' : card.value}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setSkip(0);
-                }}
-                placeholder="Buscar por descricao, cliente..."
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setSkip(0); }}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="overdue">Atrasada</SelectItem>
-                <SelectItem value="paid">Recebida</SelectItem>
-                <SelectItem value="cancelled">Cancelada</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="relative">
-              <Input
-                value={customerFilter}
-                onChange={(e) => setCustomerFilter(e.target.value)}
-                placeholder="Filtrar cliente..."
-                className="w-[200px]"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filtros */}
+      <div className="flex gap-3">
+        <input
+          type="text"
+          placeholder="Buscar por descrição, cliente..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="todos">Todos os status</option>
+          <option value="pendente">Pendente</option>
+          <option value="vencido">Vencido</option>
+          <option value="paga">Paga</option>
+        </select>
+      </div>
 
-      {/* Error */}
-      {queryError && (
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-destructive" />
-          <div className="flex-1">
-            <p className="text-sm text-destructive">{String(queryError)}</p>
+      {/* Lista */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2" />
+            <p className="text-sm text-gray-500">Carregando contas...</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
+        ) : error ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-red-600 mb-3">
+              Erro ao carregar contas: {String(error)}
+            </p>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="text-2xl mb-2">↗</p>
+            <p className="text-sm text-gray-500">Nenhuma conta a receber encontrada</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Tente ajustar os filtros ou crie uma nova conta
+            </p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Descrição</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Cliente</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Vencimento</th>
+                <th className="text-right px-4 py-3 text-xs font-medium text-gray-500">Valor</th>
+                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((item, idx) => (
+                <tr key={item.id ?? idx} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-gray-900">{item.descricao ?? item.description ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{item.cliente ?? item.customer ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {(item.vencimento ?? item.due_date)
+                      ? new Date(item.vencimento ?? item.due_date ?? '').toLocaleDateString('pt-BR')
+                      : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-medium text-gray-900">
+                    {(item.valor ?? item.amount ?? 0).toLocaleString('pt-BR', {
+                      style: 'currency', currency: 'BRL'
+                    })}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[item.status ?? ''] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {statusLabel[item.status ?? ''] ?? item.status ?? '—'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Total */}
+      {filtered.length > 0 && (
+        <div className="flex justify-between items-center text-sm text-gray-500">
+          <span>{filtered.length} conta(s) exibida(s)</span>
+          <span className="font-medium text-gray-900">
+            Total:{' '}
+            {totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </span>
         </div>
       )}
-
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-          ) : filteredReceivables.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium">Nenhuma conta a receber encontrada</h3>
-              <p className="mt-2">Tente ajustar os filtros ou crie uma nova conta</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Descricao</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredReceivables.map((item: any) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <div className="font-medium">{item.description || '-'}</div>
-                    </TableCell>
-                    <TableCell>{item.customer_name || '-'}</TableCell>
-                    <TableCell className="font-mono">
-                      {formatCurrency(item.amount)}
-                    </TableCell>
-                    <TableCell>{formatDate(item.due_date)}</TableCell>
-                    <TableCell>{getStatusBadge(item.status)}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewDetail(item)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Ver detalhes
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEdit(item)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          {(item.status === 'pending' || item.status === 'overdue') && (
-                            <DropdownMenuItem onClick={() => handleReceiveConfirm(item)}>
-                              <DollarSign className="h-4 w-4 mr-2" />
-                              Registrar Recebimento
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteConfirm(item)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Deletar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pagination */}
-      {filteredReceivables.length >= limit && (
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSkip(Math.max(0, skip - limit))}
-            disabled={skip === 0}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSkip(skip + limit)}
-          >
-            Proximo
-          </Button>
-        </div>
-      )}
-
-      {/* Modals */}
-      <ReceivableFormModal
-        isOpen={formModalOpen}
-        onClose={() => { setFormModalOpen(false); setSelectedReceivable(null); }}
-        receivable={selectedReceivable}
-        onSubmit={handleFormSubmit}
-        isLoading={creating}
-      />
-
-      <ReceivableDetailModal
-        isOpen={detailModalOpen}
-        onClose={() => { setDetailModalOpen(false); setSelectedReceivable(null); }}
-        receivable={selectedReceivable}
-      />
-
-      <ConfirmModal
-        isOpen={deleteModalOpen}
-        onClose={() => { setDeleteModalOpen(false); setSelectedReceivable(null); }}
-        onConfirm={handleDelete}
-        title="Cancelar Conta a Receber"
-        message={`Tem certeza que deseja cancelar a conta "${selectedReceivable?.description}"? Esta acao nao pode ser desfeita.`}
-        confirmText="Cancelar Conta"
-        variant="danger"
-      />
-
-      <ConfirmModal
-        isOpen={receiveModalOpen}
-        onClose={() => { setReceiveModalOpen(false); setSelectedReceivable(null); }}
-        onConfirm={handleReceive}
-        title="Registrar Recebimento"
-        message={`Confirmar o recebimento de ${formatCurrency(selectedReceivable?.amount)} referente a "${selectedReceivable?.description}"?`}
-        confirmText="Confirmar Recebimento"
-        variant="info"
-      />
     </div>
-  );
+  )
 }
