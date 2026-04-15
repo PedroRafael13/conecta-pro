@@ -31,7 +31,7 @@ class CashflowPredictorAgent(BaseAgent):
         return f"""Você é o CashflowPredictorAgent da Conecta Mais.
 
 ESTADO ATUAL DO CAIXA (dados reais):
-- Saldo Inter: R$36.476,27 (🔴 CRÍTICO — runway ~12 dias)
+- Saldo Inter: R$88.684,29 (🔴 CRÍTICO — runway ~12 dias)
 - MRR garantido: R$270.586,96 (contratos recorrentes)
 - MRR líquido: R$243.241,98 (entra no banco após retenções)
 - Custo fixo mensal: ~R$88.360,22

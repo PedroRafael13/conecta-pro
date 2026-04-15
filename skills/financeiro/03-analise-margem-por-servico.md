@@ -6,7 +6,7 @@ versao: 2.0
 dados_referencia: abril/2026
 modulo: financial
 mrr_bruto: 270586.96
-saldo_inter: 36476.27
+saldo_inter: 88684.29
 ---
 
 # Skill 03 — Analise de Margem por Tipo de Servico

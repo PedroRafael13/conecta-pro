@@ -18,7 +18,7 @@ versao: 2.0
 - Compliance Lucro Real 100% (616/616 transações)
 
 **Fraquezas:**
-- Saldo crítico R$36.476 — runway ~2,5 dias
+- Saldo R$88.684,29 — runway ~6 dias
 - Despesas mensais R$439k > MRR R$270k (déficit estrutural)
 - Margem bruta ~18% (abaixo da média setorial 25%)
 - Concentração em 10 clientes (risco dominante)
@@ -38,7 +38,7 @@ versao: 2.0
 | Indicador | Atual (abr/26) | Meta Dez/26 |
 |-----------|----------------|-------------|
 | MRR bruto | R$270.586,96 | R$350.000 (+29%) |
-| Saldo operacional | R$36.476,27 | R$200.000 (+448%) |
+| Saldo operacional | R$88.684,29 | R$200.000 (+448%) |
 | Contratos ativos | 10 | 13 (+3) |
 | Margem bruta | ~18% | 30% |
 | Despesas/mês | R$439.030 | R$280.000 (-36%) |

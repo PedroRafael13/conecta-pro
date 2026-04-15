@@ -146,7 +146,7 @@ async def create_product_category(
     summary="Listar categorias de produto",
 )
 async def list_product_categories(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     parent_id: UUID | None = Query(None, description="ID da categoria pai"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),

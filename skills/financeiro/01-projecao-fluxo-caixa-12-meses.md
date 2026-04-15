@@ -15,7 +15,7 @@ modulo: financial
 | Indicador | Valor | Status |
 |-----------|-------|--------|
 | MRR bruto (billing_rules) | R$270.586,96 | 10 contratos ativos |
-| Saldo Inter (bank_accounts) | R$36.476,27 | unico banco |
+| Saldo Inter (bank_accounts) | R$88.684,29 | unico banco |
 | Folha media mensal (extrato) | R$160.357,03 | jan-mar/2026 |
 | Custo total medio mensal | ~R$250.000,00 | Jan+Fev media |
 | Liquidez atual | 0.15x | CRITICO — < 1x |
@@ -109,7 +109,7 @@ modulo: financial
   "premissas": {
     "mrr_bruto": 270586.96,
     "mrr_liquido_estimado": 232028.32,
-    "saldo_inicial": 36476.27,
+    "saldo_inicial": 88684.29,
     "custo_mensal_estimado": 220047.56,
     "folha_mensal_media": 160357.03
   },

@@ -8,7 +8,7 @@ versao: 2.0
 # Skill 10 — Diagnóstico Financeiro Completo
 
 ### GARGALOS CONHECIDOS (base para diagnóstico)
-1. **Liquidez crítica** — saldo R$36.476,27 vs necessário R$88.360,22 (runway ~12d)
+1. **Liquidez crítica** — saldo R$88.684,29 vs necessário R$88.360,22 (runway ~12d)
 2. **Concentração receita** — 10 contratos, risco de cliente dominante > 20% MRR
 3. **Despesas mes anterior R$439.030,38** — superior ao MRR R$270.586,96 (déficit estrutural)
 4. **Margem Kit Mensal comprimida** — CCT 2026 pressionando custo de mão de obra
@@ -48,7 +48,7 @@ FROM bank_accounts WHERE bank_code='077';
 {
   "retrato_atual": {
     "mrr": 270586.96,
-    "saldo": 36476.27,
+    "saldo": 88684.29,
     "despesas_media_mensal": 439030.38,
     "runway_dias": 0,
     "resultado_mes": 0

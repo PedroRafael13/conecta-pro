@@ -61,7 +61,7 @@ SELECT
     {
       "meta": "liquidez",
       "prazo": "2026-05-31",
-      "valor_atual": 36476.27,
+      "valor_atual": 88684.29,
       "valor_meta": 88360.22,
       "gap": -51883.95,
       "status": "atrasado",

@@ -131,7 +131,7 @@ async def get_projection(
     summary="Resumo de fluxo de caixa",
 )
 async def get_summary(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     period_days: int = Query(30, ge=7, le=365, description="Período em dias"),
     service: CashFlowService = Depends(get_cashflow_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument

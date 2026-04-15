@@ -6,7 +6,7 @@ versao: 2.0
 dados_referencia: abril/2026
 modulo: financial
 mrr_bruto: 270586.96
-saldo_inter: 36476.27
+saldo_inter: 88684.29
 ---
 
 # Skill 06 — Analise de Fluxo de Caixa Real
@@ -16,14 +16,14 @@ saldo_inter: 36476.27
 
 | Indicador | Valor | Status |
 |-----------|-------|--------|
-| Saldo Inter | R$36.476,27 | VERMELHO |
+| Saldo Inter | R$88.684,29 | VERMELHO |
 | Liquidez (saldo/custo_mensal) | 0.15x | CRITICO |
 | Runway (dias) | ~5-7 dias util | EMERGENCIA |
 | MRR pendente de receber | R$270.087,00 | D+4 (vence D+10) |
 | Overdue real >30d | R$46.117,28 | 2 clientes |
 | Payable vencido | R$141.651,43 | 16 contas |
 
-**O caixa atual NAO cobre os pagamentos vencidos (R$141.651,43 > R$36.476,27).**
+**O caixa atual NAO cobre os pagamentos vencidos (R$141.651,43 > R$88.684,29).**
 **Dependencia total do recebimento do MRR de abril (D+10 a D+15).**
 
 ### HISTORICO REAL EXTRATO INTER (jan-abr/2026)
@@ -84,7 +84,7 @@ Overdue real de risco: R$46.117,28 (Laranjeiras parcial + Gelain).
 | Prioridade 2 (financiamentos) | Toyota + C6 |
 | Prioridade 3 (fornecedores) | Cruz Q., Portte |
 
-**SALDO R$36.476,27 < PAYABLE VENCIDO R$141.651,43 — DEFICIT DE CAIXA IMEDIATO.**
+**SALDO R$88.684,29 < PAYABLE VENCIDO R$141.651,43 — DEFICIT DE CAIXA IMEDIATO.**
 
 ### SEMAFORO DE CAIXA — PARAMETROS CONECTA MAIS
 
@@ -114,7 +114,7 @@ Overdue real de risco: R$46.117,28 (Laranjeiras parcial + Gelain).
 ### PROJECAO PROXIMOS 30 DIAS
 
 ```
-Saldo inicial (14/04):       R$  36.476,27
+Saldo inicial (14/04):       R$  88.684,29
 + Recebiveis abr (D+10-15):  R$270.087,00 (assumindo 95% recebimento)
 - Folha abr (D+5 ja pago):   R$        0  (pago parcialmente: R$92.505)
 - Payable vencido critico:   R$(141.651,43) (a pagar após MRR entrar)
@@ -164,7 +164,7 @@ WITH fluxo AS (
 SELECT
     data,
     round(sum(valor)::numeric, 2) as fluxo_dia,
-    round((36476.27 + sum(sum(valor)) OVER (ORDER BY data))::numeric, 2) as saldo_acumulado
+    round((88684.29 + sum(sum(valor)) OVER (ORDER BY data))::numeric, 2) as saldo_acumulado
 FROM fluxo
 GROUP BY data
 ORDER BY data;

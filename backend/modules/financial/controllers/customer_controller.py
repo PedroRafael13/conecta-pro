@@ -61,7 +61,7 @@ async def create_customer(
     summary="Listar clientes",
 )
 async def list_customers(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     search: str | None = Query(None, description="Busca no nome ou documento"),
     customer_type: str | None = Query(None, alias="type", description="Tipo"),
     status_filter: str | None = Query(None, alias="status", description="Status"),

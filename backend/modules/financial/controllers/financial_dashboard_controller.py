@@ -687,3 +687,50 @@ async def get_bi_dashboards(
         }
     except Exception as e:
         return {"error": str(e), "detail": traceback.format_exc()[-800:]}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GET /financial/bi/profitability
+# ──────────────────────────────────────────────────────────────────────────────
+@router.get("/bi/profitability", summary="Análise de lucratividade do período")
+async def get_bi_profitability(
+    condominio_id: uuid.UUID | None = Query(None),
+    period_days: int = Query(30, ge=1, le=365),
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Receita vs Custos vs Margem bruta para o período solicitado."""
+    try:
+        result = await db.execute(
+            text("""
+            SELECT
+                COALESCE(SUM(CASE WHEN entry_type = 'entrada' THEN amount ELSE 0 END), 0) AS revenue,
+                COALESCE(SUM(CASE WHEN entry_type = 'saida' THEN amount ELSE 0 END), 0) AS costs
+            FROM cashflow_entries
+            WHERE entry_date >= (CURRENT_DATE - :days * INTERVAL '1 day')
+            """),
+            {"days": period_days},
+        )
+        row = result.fetchone()
+        revenue = float(row.revenue) if row else 0.0
+        costs = float(row.costs) if row else 0.0
+        gross_profit = revenue - costs
+        margin = (gross_profit / revenue * 100) if revenue > 0 else 0.0
+        return {
+            "period_days": period_days,
+            "revenue": revenue,
+            "costs": costs,
+            "gross_profit": gross_profit,
+            "margin_percent": round(margin, 2),
+            "generated_at": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        return {
+            "period_days": period_days,
+            "revenue": 0.0,
+            "costs": 0.0,
+            "gross_profit": 0.0,
+            "margin_percent": 0.0,
+            "generated_at": datetime.now().isoformat(),
+            "error": str(e),
+        }

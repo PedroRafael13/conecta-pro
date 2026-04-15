@@ -6,7 +6,7 @@ atualizado: 2026-04-14
 
 # Skills Financeiras Conecta PRO — Grupo A
 **Empresa:** Conecta Mais — Seguranca e Tecnologia | CNPJ 35.710.481/0001-03
-**Dados base:** MRR R$270.586,96 | Saldo Inter R$36.476,27 | 10 contratos ativos
+**Dados base:** MRR R$270.586,96 | Saldo Inter R$88.684,29 | 10 contratos ativos
 **Referencia:** 13 NFS-e marco/2026 | CCT SINDECOMPRESTS 2026 | Lucro Real
 
 ## Grupo A — Core Financeiro (8 skills)
@@ -27,7 +27,7 @@ atualizado: 2026-04-14
 | Indicador | Valor | Status |
 |-----------|-------|--------|
 | MRR bruto | R$270.586,96 | 10 contratos |
-| Saldo Inter | R$36.476,27 | VERMELHO |
+| Saldo Inter | R$88.684,29 | VERMELHO |
 | Health Score | 22/100 | CRITICO |
 | Overdue >30d | R$46.117,28 | Laranjeiras + Gelain |
 | Payable vencido | R$141.651,43 | 16 contas |

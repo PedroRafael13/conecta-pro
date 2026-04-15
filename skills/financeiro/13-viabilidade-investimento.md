@@ -8,7 +8,7 @@ versao: 2.0
 # Skill 13 — Análise de Viabilidade de Investimento — Conecta Mais
 
 ### CONTEXTO ATUAL (restrições obrigatórias)
-- Saldo R$36.476,27 — CONDIÇÃO BLOQUEANTE para qualquer investimento
+- Saldo R$88.684,29 — CONDIÇÃO BLOQUEANTE para qualquer investimento
 - Custo de capital Inter (crédito PJ): ~1,8-2,5%/mês
 - Custo de oportunidade: qualquer R$ investido compete com custo fixo
 - Payback máximo aceitável: 12 meses

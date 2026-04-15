@@ -34,7 +34,7 @@ versao: 2.0
   "health_score_risco": 0,
   "riscos_criticos_ativos": [],
   "indicadores_semaforo": {
-    "saldo_atual": 36476.27,
+    "saldo_atual": 88684.29,
     "saldo_minimo": 88360.22,
     "liquidez_ratio": 0.41,
     "alerta_liquidez": true

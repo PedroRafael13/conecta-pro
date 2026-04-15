@@ -30,7 +30,7 @@ Meta: +2 novos contratos (portaria remota — maior margem)
 ### KPIs DE ACOMPANHAMENTO
 | Indicador | Atual | Meta D30 | Meta D60 | Meta D90 |
 |-----------|-------|----------|----------|----------|
-| Saldo Inter | R$36.476 | R$88.360 | R$120.000 | R$176.000 |
+| Saldo Inter | R$88.684 | R$120.000 | R$120.000 | R$176.000 |
 | Despesas/mês | R$439.030 | R$350.000 | R$320.000 | R$300.000 |
 | MRR | R$270.587 | R$270.587 | R$270.587 | R$290.000 |
 | Contratos | 10 | 10 | 10 | 12 |

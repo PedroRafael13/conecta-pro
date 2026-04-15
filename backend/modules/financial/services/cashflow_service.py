@@ -142,7 +142,7 @@ class CashFlowService:
 
     async def get_summary(  # pylint: disable=too-many-locals
         self,
-        condominio_id: UUID,
+        condominio_id,
         period_days: int = 30,
     ) -> dict:
         """Retorna resumo do fluxo de caixa usando cashflow_entries."""
@@ -150,20 +150,29 @@ class CashFlowService:
         period_start = today - timedelta(days=period_days)
         period_end = today
 
+        cid_clause = "AND condominio_id = :cid" if condominio_id else ""
+        base_params_period = {"start": period_start, "end": period_end}
+        base_params_today = {"today": today}
+        base_params_start = {"start": period_start}
+        if condominio_id:
+            base_params_period["cid"] = str(condominio_id)
+            base_params_today["cid"] = str(condominio_id)
+            base_params_start["cid"] = str(condominio_id)
+
         # Totais de entrada e saída no período (cashflow_entries)
         inflow_q = await self.session.execute(
-            text("""
+            text(f"""
                 SELECT
                     COALESCE(SUM(expected_amount), 0) as total,
                     category
                 FROM cashflow_entries
-                WHERE condominio_id = :cid
-                  AND entry_type = 'entrada'
+                WHERE entry_type = 'entrada'
+                  {cid_clause}
                   AND entry_date BETWEEN :start AND :end
                   AND ativo = true
                 GROUP BY category
             """),
-            {"cid": str(condominio_id), "start": period_start, "end": period_end},
+            base_params_period,
         )
         inflows_by_cat: dict = {}
         total_inflows = Decimal("0")
@@ -174,18 +183,18 @@ class CashFlowService:
             total_inflows += val
 
         outflow_q = await self.session.execute(
-            text("""
+            text(f"""
                 SELECT
                     COALESCE(SUM(expected_amount), 0) as total,
                     category
                 FROM cashflow_entries
-                WHERE condominio_id = :cid
-                  AND entry_type = 'saida'
+                WHERE entry_type = 'saida'
+                  {cid_clause}
                   AND entry_date BETWEEN :start AND :end
                   AND ativo = true
                 GROUP BY category
             """),
-            {"cid": str(condominio_id), "start": period_start, "end": period_end},
+            base_params_period,
         )
         outflows_by_cat: dict = {}
         total_outflows = Decimal("0")
@@ -199,16 +208,17 @@ class CashFlowService:
 
         # Saldo (soma de realized_amount de todas as entradas - saídas confirmadas)
         bal_q = await self.session.execute(
-            text("""
+            text(f"""
                 SELECT
                     COALESCE(SUM(CASE WHEN entry_type='entrada' THEN realized_amount ELSE 0 END), 0) -
                     COALESCE(SUM(CASE WHEN entry_type='saida' THEN realized_amount ELSE 0 END), 0) as balance
                 FROM cashflow_entries
-                WHERE condominio_id = :cid AND ativo = true
+                WHERE ativo = true
+                  {cid_clause}
                   AND status IN ('realizado', 'confirmado')
                   AND entry_date < :start
             """),
-            {"cid": str(condominio_id), "start": period_start},
+            base_params_start,
         )
         bal_row = bal_q.one()
         opening_balance = Decimal(str(bal_row.balance or 0))
@@ -216,15 +226,16 @@ class CashFlowService:
 
         # Contas a receber pendentes
         rec_q = await self.session.execute(
-            text("""
+            text(f"""
                 SELECT
                     COALESCE(SUM(CASE WHEN due_date >= :today THEN net_value ELSE 0 END), 0) as pending,
                     COALESCE(SUM(CASE WHEN due_date < :today THEN net_value ELSE 0 END), 0) as overdue
                 FROM receivable_accounts
-                WHERE condominio_id = :cid AND ativo = true
+                WHERE ativo = true
+                  {cid_clause}
                   AND status IN ('pendente', 'aprovada', 'aberta')
             """),
-            {"cid": str(condominio_id), "today": today},
+            base_params_today,
         )
         rec_row = rec_q.one()
         pending_receivables = Decimal(str(rec_row.pending or 0))
@@ -232,15 +243,16 @@ class CashFlowService:
 
         # Contas a pagar pendentes
         pay_q = await self.session.execute(
-            text("""
+            text(f"""
                 SELECT
                     COALESCE(SUM(CASE WHEN due_date >= :today THEN net_value ELSE 0 END), 0) as pending,
                     COALESCE(SUM(CASE WHEN due_date < :today THEN net_value ELSE 0 END), 0) as overdue
                 FROM payable_accounts
-                WHERE condominio_id = :cid AND ativo = true
+                WHERE ativo = true
+                  {cid_clause}
                   AND status IN ('pendente', 'aprovada')
             """),
-            {"cid": str(condominio_id), "today": today},
+            base_params_today,
         )
         pay_row = pay_q.one()
         pending_payables = Decimal(str(pay_row.pending or 0))

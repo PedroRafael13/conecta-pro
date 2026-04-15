@@ -69,7 +69,7 @@ CNPJ: 35.710.481/0001-03 | Manaus/AM | Lucro Real desde jan/2026
 DADOS REAIS (atualizado diariamente):
 - MRR bruto: R$270.586,96 (13 NFS-e março/2026)
 - MRR líquido: R$243.241,98 (entra no banco Inter)
-- Saldo Inter: R$36.476,27 (Banco Inter — único banco ativo)
+- Saldo Inter: R$88.684,29 (Banco Inter — único banco ativo)
 - Score saúde: 25/100 (CRÍTICO)
 - Compliance Lucro Real: 100%
 - 10 clientes condomínios em Manaus/AM

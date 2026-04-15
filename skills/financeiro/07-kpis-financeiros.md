@@ -15,7 +15,7 @@ modulo: financial
 | KPI | Valor Atual | Meta | Alerta | Status |
 |-----|-------------|------|--------|--------|
 | MRR bruto | R$270.586,96 | >R$280k | <R$250k | ATENCAO |
-| Saldo Inter | R$36.476,27 | >R$440k | <R$220k | VERMELHO |
+| Saldo Inter | R$88.684,29 | >R$440k | <R$220k | VERMELHO |
 | Liquidez | 0.15x | >2.0x | <1.0x | VERMELHO |
 | Runway (dias) | ~6 dias | >60 dias | <30 dias | VERMELHO |
 | Overdue total | R$316.704,24 | <R$27k (10%) | >R$54k (20%) | VERMELHO |
@@ -99,7 +99,7 @@ def calcular_health_score(dados: dict) -> dict:
 # Estado atual estimado:
 # liquidez 0.15x → -30
 # overdue_30d R$46.117 / R$270.587 = 17% → -25
-# payable vencido R$141.651 > saldo R$36.476 → -20
+# payable vencido R$141.651 > saldo R$88.684 → -20
 # margem bruta 34,9% → 0
 # Score: 100 - 30 - 25 - 20 = 25/100 (CRITICO)
 ```
@@ -135,7 +135,7 @@ Limiar saudavel de concentracao: max 20% em 1 cliente.
 | Jan/2026 | ~35 | CRITICO | Deficit Jan R$7.446 |
 | Fev/2026 | ~30 | CRITICO | Deficit Fev R$10.566 |
 | Mar/2026 | ~55 | ATENCAO | Superavit Mar R$56.943 (receb. acumulados) |
-| Abr/2026 | ~25 | CRITICO | Saldo R$36.476 + payable R$141.651 vencido |
+| Abr/2026 | ~25 | CRITICO | Saldo R$88.684 + payable R$141.651 vencido |
 
 ### CONSULTAS SQL
 
