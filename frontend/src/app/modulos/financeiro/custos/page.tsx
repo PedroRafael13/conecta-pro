@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   PieChart,
   BarChart2,
@@ -8,6 +9,7 @@ import {
   Leaf,
   Camera,
   Wifi,
+  Wrench,
   Plus,
   RefreshCw,
   TrendingUp,
@@ -28,9 +30,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
-import { bankingApi } from '@/services/banking/bankingService';
 
 // ─────────────────────────────────────────────────────────
 // Types
@@ -41,35 +41,40 @@ interface BreakdownItem {
   value: number;
 }
 
-interface TipoCusto {
+interface CusteioTipo {
   tipo: string;
-  label: string;
-  cor: string;
-  custo_total: number;
-  margem_pct: number;
-  breakdown: Record<string, number>;
-  fonte: 'real' | 'benchmark' | 'sem_dados';
-  unidade?: string;
-  aviso?: string;
-  registros?: Record<string, unknown>[];
+  contratos: number;
+  receita_mensal: number;
+  ticket_medio: number;
+  pct_mrr: number;
+  custeio: {
+    custo_direto: number;
+    overhead_rateado: number;
+    custo_total: number;
+  };
+  margens: {
+    mc_valor: number;
+    mc_pct: number;
+    margem_liquida_valor: number;
+    margem_liquida_pct: number;
+    meta_mc_pct: number;
+    gap_meta: number;
+  };
+  classificacao: string;
+  recomendacao: string;
 }
 
-interface ResumoTipo {
-  tipo: string;
-  label: string;
-  cor: string;
-  custo_total: number;
-  margem_contratual: number;
-  margem_pct: number;
-  fonte: 'real' | 'benchmark' | 'sem_dados';
-}
-
-interface Summary {
-  mes: string;
-  resumo_por_tipo: ResumoTipo[];
-  total_custo: number;
-  total_margem: number;
-  analise_ai?: Record<string, unknown> | null;
+interface CusteioABC {
+  timestamp: string;
+  periodo_referencia: string;
+  mrr_total: number;
+  custo_total_mes: number;
+  resultado_estimado: number;
+  margem_global_pct: number;
+  cct_2026: { piso_vigilante: number; custo_all_in_posto: number; encargos_pct: number };
+  custo_por_categoria: { categoria: string; total: number; qtd: number }[];
+  analise_por_tipo: CusteioTipo[];
+  alertas: string[];
 }
 
 // ─────────────────────────────────────────────────────────
@@ -81,23 +86,23 @@ const formatCurrency = (v: number | null | undefined) => {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
+const fetchWithAuth = (url: string) =>
+  fetch(url, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
+  }).then(r => r.json());
+
 const TIPOS = [
-  { id: 'portaria',            label: 'Portaria',           icon: Shield,   cor: '#3B82F6' },
-  { id: 'limpeza',             label: 'Limpeza',            icon: Leaf,     cor: '#10B981' },
-  { id: 'jardinagem',          label: 'Jardinagem',         icon: Leaf,     cor: '#84CC16' },
-  { id: 'seguranca_eletronica',label: 'Seg. Eletrônica',    icon: Camera,   cor: '#F59E0B' },
-  { id: 'portaria_remota',     label: 'Portaria Remota',    icon: Wifi,     cor: '#8B5CF6' },
+  { id: 'portaria',              label: 'Portaria',           icon: Shield,  cor: '#3B82F6' },
+  { id: 'seguranca_eletronica',  label: 'Seg. Eletrônica',    icon: Camera,  cor: '#F59E0B' },
+  { id: 'limpeza',               label: 'Limpeza',            icon: Leaf,    cor: '#10B981' },
+  { id: 'portaria_remota',       label: 'Portaria Remota',    icon: Wifi,    cor: '#8B5CF6' },
+  { id: 'manutencao_cftv',       label: 'Manutenção CFTV',    icon: Wrench,  cor: '#EF4444' },
 ];
 
-function getMesAtual() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
-}
+const TIPO_MAP = Object.fromEntries(TIPOS.map(t => [t.id, t]));
 
 // ─────────────────────────────────────────────────────────
-// Modal de Registro
+// Modal de Registro (mantido para lançamentos manuais)
 // ─────────────────────────────────────────────────────────
 
 interface ModalRegistroProps {
@@ -120,21 +125,28 @@ function ModalRegistro({ tipoInicial, mes, onClose, onSuccess }: ModalRegistroPr
     setErro('');
     setLoading(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
-      await bankingApi.post(
-        '/api/v1/financial/ai/costing/registrar',
-        {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const res = await fetch('/api/v1/financial/ai/costing/registrar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
           tipo,
           mes: mesForm,
           custo_total: parseFloat(custoTotal),
           margem_contratual: parseFloat(margemContratual || '0'),
           breakdown: {},
-        },
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-      );
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.detail || 'Erro ao registrar custo.');
+      }
       onSuccess();
-    } catch (err: any) {
-      setErro(err?.response?.data?.detail || 'Erro ao registrar custo.');
+    } catch (err: unknown) {
+      setErro(err instanceof Error ? err.message : 'Erro ao registrar custo.');
     } finally {
       setLoading(false);
     }
@@ -236,82 +248,37 @@ function ModalRegistro({ tipoInicial, mes, onClose, onSuccess }: ModalRegistroPr
 // ─────────────────────────────────────────────────────────
 
 export default function CustosPage() {
-  const [mes, setMes] = useState(getMesAtual());
   const [tipoAtivo, setTipoAtivo] = useState('portaria');
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [detalhe, setDetalhe] = useState<TipoCusto | null>(null);
-  const [loadingSummary, setLoadingSummary] = useState(false);
-  const [loadingDetalhe, setLoadingDetalhe] = useState(false);
-  const [erroSummary, setErroSummary] = useState('');
-  const [erroDetalhe, setErroDetalhe] = useState('');
   const [showModal, setShowModal] = useState(false);
 
-  const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  const { data: custeioABC, isLoading, refetch } = useQuery<CusteioABC>({
+    queryKey: ['custos-custeio-abc'],
+    queryFn: () => fetchWithAuth('/api/v1/financial/custeio/abc'),
+    staleTime: 10 * 60 * 1000,
+  });
 
-  const fetchSummary = useCallback(async () => {
-    setLoadingSummary(true);
-    setErroSummary('');
-    try {
-      const res = await bankingApi.get('/api/v1/financial/ai/costing/summary', {
-        params: { mes },
-        headers: getAuthHeaders(),
-      });
-      setSummary(res.data);
-    } catch (err: any) {
-      setErroSummary('Erro ao carregar resumo de custos.');
-      setSummary(null);
-    } finally {
-      setLoadingSummary(false);
-    }
-  }, [mes]);
+  const mes = custeioABC?.periodo_referencia ?? new Date().toISOString().slice(0, 7);
 
-  const fetchDetalhe = useCallback(async () => {
-    setLoadingDetalhe(true);
-    setErroDetalhe('');
-    try {
-      const res = await bankingApi.get('/api/v1/financial/ai/costing/by-type', {
-        params: { tipo: tipoAtivo, mes },
-        headers: getAuthHeaders(),
-      });
-      setDetalhe(res.data);
-    } catch (err: any) {
-      setErroDetalhe('Erro ao carregar detalhe do tipo.');
-      setDetalhe(null);
-    } finally {
-      setLoadingDetalhe(false);
-    }
-  }, [tipoAtivo, mes]);
+  // Tipo ativo do ABC
+  const tipoAtualABC = custeioABC?.analise_por_tipo.find(t => t.tipo === tipoAtivo);
+  const tipoAtualInfo = TIPO_MAP[tipoAtivo] ?? TIPOS[0]!;
 
-  useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
-
-  useEffect(() => {
-    fetchDetalhe();
-  }, [fetchDetalhe]);
-
-  const tipoAtualInfo = TIPOS.find(t => t.id === tipoAtivo)!;
-
-  // Build bar chart data from summary
-  const barData = summary?.resumo_por_tipo.map(r => ({
-    label: r.label.replace('Segurança ', 'Seg. ').replace('Portaria Remota', 'Port. Remota'),
-    margem: r.margem_pct,
-    cor: r.cor,
-  })) ?? [];
-
-  // Build pie data from detalhe breakdown
-  const pieData: BreakdownItem[] = detalhe
-    ? Object.entries(detalhe.breakdown)
-        .filter(([, v]) => v > 0)
-        .map(([k, v]) => ({ name: k, value: v }))
+  // Breakdown do tipo ativo para o pie chart
+  const pieData: BreakdownItem[] = tipoAtualABC
+    ? [
+        { name: 'Custo Direto', value: tipoAtualABC.custeio.custo_direto },
+        { name: 'Overhead Rateado', value: tipoAtualABC.custeio.overhead_rateado },
+      ].filter(d => d.value > 0)
     : [];
 
-  const PIE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316', '#84CC16'];
+  const PIE_COLORS = ['#3B82F6', '#F59E0B', '#10B981', '#8B5CF6', '#EF4444'];
 
-  const resumoAtivo = summary?.resumo_por_tipo.find(r => r.tipo === tipoAtivo);
+  // Bar chart data (margem por tipo)
+  const barData = (custeioABC?.analise_por_tipo ?? []).map(t => ({
+    label: TIPO_MAP[t.tipo]?.label ?? t.tipo,
+    margem: t.margens.mc_pct,
+    cor: TIPO_MAP[t.tipo]?.cor ?? '#6B7280',
+  }));
 
   return (
     <div className="p-6 space-y-6">
@@ -320,18 +287,12 @@ export default function CustosPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Custo por Tipo de Serviço</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Análise detalhada de custos e margens por modalidade de serviço de segurança
+            Custos reais do banco Inter + CCT SINDECOMPRESTS 2026 — {mes.replace('-', '/')}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <input
-            type="month"
-            value={mes}
-            onChange={e => setMes(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
           <button
-            onClick={() => { fetchSummary(); fetchDetalhe(); }}
+            onClick={() => refetch()}
             className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
           >
             <RefreshCw size={16} />
@@ -347,10 +308,40 @@ export default function CustosPage() {
         </div>
       </div>
 
+      {/* KPI global */}
+      {custeioABC && (
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-500">MRR Total</p>
+            <p className="text-xl font-semibold text-gray-900 mt-1">
+              {formatCurrency(custeioABC.mrr_total)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">10 contratos ativos</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-500">Custo Total Mês</p>
+            <p className="text-xl font-semibold text-gray-900 mt-1">
+              {formatCurrency(custeioABC.custo_total_mes)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">banco Inter (mês anterior)</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-500">Margem Global</p>
+            <p className={`text-xl font-semibold mt-1 ${
+              custeioABC.margem_global_pct >= 25 ? 'text-green-600' :
+              custeioABC.margem_global_pct >= 0 ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {custeioABC.margem_global_pct}%
+            </p>
+            <p className="text-xs text-gray-400 mt-1">meta: 35%</p>
+          </div>
+        </div>
+      )}
+
       {/* 5 type cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {TIPOS.map(tipo => {
-          const resumo = summary?.resumo_por_tipo.find(r => r.tipo === tipo.id);
+          const tipoABC = custeioABC?.analise_por_tipo.find(t => t.tipo === tipo.id);
           const isAtivo = tipoAtivo === tipo.id;
           const Icon = tipo.icon;
           return (
@@ -370,18 +361,22 @@ export default function CustosPage() {
                 >
                   <Icon size={16} style={{ color: tipo.cor }} />
                 </div>
-                {resumo?.fonte === 'benchmark' && (
-                  <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">Est.</span>
-                )}
-                {resumo?.fonte === 'sem_dados' && (
-                  <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">—</span>
+                {tipoABC && (
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    tipoABC.classificacao === 'estrela' ? 'bg-green-100 text-green-700' :
+                    tipoABC.classificacao === 'atencao' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-700'
+                  }`}>
+                    {tipoABC.classificacao === 'estrela' ? '⭐' :
+                     tipoABC.classificacao === 'atencao' ? '⚠️' : '❌'}
+                  </span>
                 )}
               </div>
               <p className="text-xs font-semibold text-gray-700 leading-tight">{tipo.label}</p>
               <p className="text-lg font-bold mt-1" style={{ color: tipo.cor }}>
-                {resumo ? `${resumo.margem_pct.toFixed(1)}%` : '—'}
+                {tipoABC ? `${tipoABC.margens.mc_pct.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-xs text-gray-400">margem</p>
+              <p className="text-xs text-gray-400">margem MC</p>
             </button>
           );
         })}
@@ -396,21 +391,19 @@ export default function CustosPage() {
               <h2 className="text-base font-bold text-gray-900">{tipoAtualInfo.label}</h2>
               <p className="text-xs text-gray-500">Composição de custos</p>
             </div>
-            {detalhe && (
+            {tipoAtualABC && (
               <div className="text-right">
-                <p className="text-sm font-bold text-gray-900">{formatCurrency(detalhe.custo_total)}</p>
-                <p className="text-xs text-gray-500">{detalhe.unidade ?? 'por unidade'}</p>
+                <p className="text-sm font-bold text-gray-900">
+                  {formatCurrency(tipoAtualABC.custeio.custo_total)}
+                </p>
+                <p className="text-xs text-gray-500">/ mês</p>
               </div>
             )}
           </div>
 
-          {loadingDetalhe ? (
+          {isLoading ? (
             <div className="flex items-center justify-center h-48 text-gray-400">
               <RefreshCw size={20} className="animate-spin mr-2" /> Carregando...
-            </div>
-          ) : erroDetalhe ? (
-            <div className="flex items-center gap-2 text-amber-600 text-sm p-4 bg-amber-50 rounded-lg">
-              <AlertTriangle size={16} /> {erroDetalhe}
             </div>
           ) : pieData.length > 0 ? (
             <div className="h-56">
@@ -422,7 +415,9 @@ export default function CustosPage() {
                     cy="50%"
                     outerRadius={80}
                     dataKey="value"
-                    label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    label={({ name, percent }: { name?: string; percent?: number }) =>
+                      `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
+                    }
                     labelLine={false}
                   >
                     {pieData.map((_, index) => (
@@ -430,34 +425,21 @@ export default function CustosPage() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: unknown) => [`${formatCurrency(value as number)}`, 'Custo']}
+                    formatter={(value: unknown) => [formatCurrency(value as number), 'Custo']}
                   />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </div>
           ) : (
             <div className="flex items-center gap-2 text-gray-400 text-sm p-4">
-              <Info size={16} /> Nenhum dado disponível para este mês.
+              <Info size={16} /> Nenhum dado disponível para este tipo.
             </div>
           )}
 
-          {/* Benchmark badge */}
-          {detalhe?.fonte === 'sem_dados' && (
-            <div className="mt-4 flex items-start gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg p-3">
-              <Info size={14} className="mt-0.5 flex-shrink-0" />
-              <span>{detalhe.aviso ?? 'Sem custos registrados. Use "Registrar Custo" para lançar dados reais.'}</span>
-            </div>
-          )}
-          {detalhe?.fonte === 'benchmark' && (
-            <div className="mt-4 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-lg p-3">
-              <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-              <span>{detalhe.aviso ?? 'Dados baseados em benchmarks de mercado.'}</span>
-            </div>
-          )}
-          {detalhe?.fonte === 'real' && (
+          {tipoAtualABC && (
             <div className="mt-4 flex items-center gap-2 text-xs text-green-700 bg-green-50 rounded-lg p-3">
               <CheckCircle size={14} />
-              <span>Baseado em dados reais registrados.</span>
+              <span>Baseado em dados reais — banco Inter + CCT 2026.</span>
             </div>
           )}
         </div>
@@ -469,7 +451,7 @@ export default function CustosPage() {
             <h2 className="text-base font-bold text-gray-900">Margem por Tipo de Serviço</h2>
           </div>
 
-          {loadingSummary ? (
+          {isLoading ? (
             <div className="flex items-center justify-center h-48 text-gray-400">
               <RefreshCw size={20} className="animate-spin mr-2" /> Carregando...
             </div>
@@ -478,9 +460,17 @@ export default function CustosPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: unknown) => [`${typeof v === 'number' ? v.toFixed(1) : '0'}%`, 'Margem'] as any} />
+                  <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                  <YAxis
+                    tickFormatter={v => `${v}%`}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip
+                    formatter={(v: unknown) => [
+                      `${typeof v === 'number' ? v.toFixed(1) : '0'}%`,
+                      'Margem MC',
+                    ]}
+                  />
                   <Bar dataKey="margem" radius={[4, 4, 0, 0]}>
                     {barData.map((entry, index) => (
                       <Cell key={index} fill={entry.cor} />
@@ -497,100 +487,108 @@ export default function CustosPage() {
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-base font-bold text-gray-900">Resumo por Tipo de Serviço</h2>
-          <span className="text-xs text-gray-400">
-            {mes.replace('-', '/')}
-          </span>
+          <span className="text-xs text-gray-400">{mes.replace('-', '/')}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50">
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Tipo</th>
+                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Receita/mês</th>
                 <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Custo Total</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Margem</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">% Margem</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Fonte</th>
+                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">MC Valor</th>
+                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">MC %</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
               </tr>
             </thead>
             <tbody>
-              {(summary?.resumo_por_tipo ?? []).map((r, idx) => (
-                <tr
-                  key={r.tipo}
-                  onClick={() => setTipoAtivo(r.tipo)}
-                  className={`border-t border-gray-100 cursor-pointer transition-colors ${
-                    tipoAtivo === r.tipo ? 'bg-blue-50' : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: r.cor }}
-                      />
-                      <span className="font-medium text-gray-900">{r.label}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right text-gray-700">
-                    {r.custo_total > 0 ? formatCurrency(r.custo_total) : '—'}
-                  </td>
-                  <td className="px-6 py-4 text-right text-green-600 font-medium">
-                    {r.margem_contratual > 0 ? formatCurrency(r.margem_contratual) : '—'}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span
-                      className={`inline-flex items-center gap-1 font-semibold ${
-                        r.margem_pct >= 30
-                          ? 'text-green-600'
-                          : r.margem_pct >= 20
-                          ? 'text-blue-600'
-                          : 'text-amber-600'
-                      }`}
-                    >
-                      {r.margem_pct >= 20 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                      {r.margem_pct.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        r.fonte === 'real'
-                          ? 'bg-green-100 text-green-700'
-                          : r.fonte === 'sem_dados'
-                          ? 'bg-gray-100 text-gray-500'
-                          : 'bg-amber-100 text-amber-700'
-                      }`}
-                    >
-                      {r.fonte === 'real' ? 'Real' : r.fonte === 'sem_dados' ? 'Sem dados' : 'Benchmark'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {(custeioABC?.analise_por_tipo ?? []).map(t => {
+                const tipoInfo = TIPO_MAP[t.tipo];
+                return (
+                  <tr
+                    key={t.tipo}
+                    onClick={() => setTipoAtivo(t.tipo)}
+                    className={`border-t border-gray-100 cursor-pointer transition-colors ${
+                      tipoAtivo === t.tipo ? 'bg-blue-50' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: tipoInfo?.cor ?? '#6B7280' }}
+                        />
+                        <span className="font-medium text-gray-900">
+                          {tipoInfo?.label ?? t.tipo}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-gray-700">
+                      {formatCurrency(t.receita_mensal)}
+                    </td>
+                    <td className="px-6 py-4 text-right text-gray-700">
+                      {formatCurrency(t.custeio.custo_total)}
+                    </td>
+                    <td className={`px-6 py-4 text-right font-medium ${
+                      t.margens.mc_valor >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(t.margens.mc_valor)}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className={`inline-flex items-center gap-1 font-semibold ${
+                        t.margens.mc_pct >= 30 ? 'text-green-600' :
+                        t.margens.mc_pct >= 20 ? 'text-blue-600' : 'text-amber-600'
+                      }`}>
+                        {t.margens.mc_pct >= 20
+                          ? <TrendingUp size={12} />
+                          : <TrendingDown size={12} />
+                        }
+                        {t.margens.mc_pct.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                        t.classificacao === 'estrela' ? 'bg-green-100 text-green-700' :
+                        t.classificacao === 'atencao' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {t.classificacao === 'estrela' ? '⭐ Estrela' :
+                         t.classificacao === 'atencao' ? '⚠️ Atenção' : '❌ Abacaxi'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
-            {(!summary || summary.resumo_por_tipo.length === 0) && (
+            {(!custeioABC || custeioABC.analise_por_tipo.length === 0) && (
               <tbody>
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
                     <Info size={24} className="mx-auto mb-2" />
-                    <p className="text-sm font-medium">Nenhum custo registrado</p>
-                    <p className="text-xs mt-1">Use &quot;Registrar Custo&quot; para lançar dados reais por tipo de serviço.</p>
+                    <p className="text-sm font-medium">Carregando dados reais...</p>
                   </td>
                 </tr>
               </tbody>
             )}
-            {summary && (
+            {custeioABC && (
               <tfoot>
                 <tr className="border-t-2 border-gray-200 bg-gray-50">
                   <td className="px-6 py-3 font-bold text-gray-900">Total</td>
                   <td className="px-6 py-3 text-right font-bold text-gray-900">
-                    {summary.total_custo > 0 ? formatCurrency(summary.total_custo) : '—'}
+                    {formatCurrency(custeioABC.mrr_total)}
                   </td>
-                  <td className="px-6 py-3 text-right font-bold text-green-700">
-                    {summary.total_margem > 0 ? formatCurrency(summary.total_margem) : '—'}
+                  <td className="px-6 py-3 text-right font-bold text-gray-900">
+                    {formatCurrency(custeioABC.custo_total_mes)}
                   </td>
-                  <td className="px-6 py-3 text-right font-bold">
-                    {summary.total_custo > 0
-                      ? `${((summary.total_margem / (summary.total_custo + summary.total_margem)) * 100).toFixed(1)}%`
-                      : '—'}
+                  <td className={`px-6 py-3 text-right font-bold ${
+                    custeioABC.resultado_estimado >= 0 ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    {formatCurrency(custeioABC.resultado_estimado)}
+                  </td>
+                  <td className={`px-6 py-3 text-right font-bold ${
+                    custeioABC.margem_global_pct >= 25 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {custeioABC.margem_global_pct}%
                   </td>
                   <td />
                 </tr>
@@ -600,20 +598,16 @@ export default function CustosPage() {
         </div>
       </div>
 
-      {/* AI Analysis block */}
-      {summary?.analise_ai && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <BarChart2 size={16} className="text-white" />
-            </div>
-            <h2 className="font-bold text-gray-900">Análise de Custeio — IA</h2>
+      {/* Alertas */}
+      {custeioABC?.alertas && custeioABC.alertas.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle size={16} className="text-amber-700" />
+            <p className="text-sm font-medium text-amber-900">Alertas de custeio</p>
           </div>
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
-            {typeof summary.analise_ai === 'string'
-              ? summary.analise_ai
-              : JSON.stringify(summary.analise_ai, null, 2)}
-          </pre>
+          {custeioABC.alertas.map((alerta, i) => (
+            <p key={i} className="text-sm text-amber-700">{alerta}</p>
+          ))}
         </div>
       )}
 
@@ -625,8 +619,7 @@ export default function CustosPage() {
           onClose={() => setShowModal(false)}
           onSuccess={() => {
             setShowModal(false);
-            fetchSummary();
-            fetchDetalhe();
+            refetch();
           }}
         />
       )}
