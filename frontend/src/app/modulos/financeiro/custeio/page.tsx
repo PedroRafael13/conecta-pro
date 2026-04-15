@@ -57,15 +57,9 @@ const formatCurrency = (value: number | undefined | null) => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-// ── Margin by Service Type ────────────────────────────────────────────────────
+// ── Margin by Service Type — dados reais de /financial/custeio/abc ────────────
 
-const MARGIN_DEMO = [
-  { tipo: 'portaria', label: 'Portaria', margem: 22, custo_medio: 18500, cor: '#3b82f6' },
-  { tipo: 'limpeza', label: 'Limpeza', margem: 18, custo_medio: 9200, cor: '#10b981' },
-  { tipo: 'jardinagem', label: 'Jardinagem', margem: 25, custo_medio: 6800, cor: '#22c55e' },
-  { tipo: 'seguranca_eletronica', label: 'Seg. Eletrônica', margem: 35, custo_medio: 22000, cor: '#8b5cf6' },
-  { tipo: 'portaria_remota', label: 'Portaria Remota', margem: 40, custo_medio: 14500, cor: '#f97316' },
-];
+const MARGIN_DEMO: MarginItem[] = []; // sem dados simulados — carregado do banco
 
 const COLOR_MAP: Record<string, string> = {
   portaria: '#3b82f6',
@@ -405,19 +399,21 @@ export default function CusteioABCPage() {
   const loadMarginData = useCallback(async () => {
     setMarginLoading(true);
     try {
-      const { data } = await api.get('/api/v1/financial/ai/costing/margin-by-type');
-      const items: any[] = Array.isArray(data) ? data : (data?.items ?? []);
+      const { data } = await api.get('/api/v1/financial/custeio/abc');
+      const items: any[] = Array.isArray(data?.analise_por_tipo)
+        ? data.analise_por_tipo
+        : [];
       if (items.length > 0) {
         setMarginData(items.map((item: any) => ({
-          tipo: item.tipo ?? item.type ?? '',
-          label: item.label ?? item.tipo ?? item.type ?? '',
-          margem: item.margem ?? item.margin ?? 0,
-          custo_medio: item.custo_medio ?? item.avg_cost ?? 0,
-          cor: COLOR_MAP[item.tipo?.toLowerCase()?.replace(/\s/g, '_') ?? ''] ?? '#3b82f6',
+          tipo: item.tipo ?? '',
+          label: item.label ?? item.tipo ?? '',
+          margem: item.margens?.mc_pct ?? item.margens?.margem ?? 0,
+          custo_medio: item.margens?.custo_medio ?? item.custeio?.custo_direto ?? 0,
+          cor: item.margens?.cor ?? COLOR_MAP[item.tipo ?? ''] ?? '#3b82f6',
         })));
       }
     } catch {
-      // keep MARGIN_DEMO
+      // mantém array vazio — sem dados simulados
     } finally {
       setMarginLoading(false);
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tag, Calculator, TrendingUp, ChevronRight, DollarSign, AlertCircle, Building2, Leaf, Camera, Monitor, RefreshCw, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,6 +27,27 @@ function makeApi() {
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+
+interface ContratoAnalise {
+  nome: string;
+  tipo: string;
+  ticket_atual: number;
+  custo_estimado: number;
+  mc_pct: number;
+  benchmark_minimo: number;
+  status_preco: 'subprecificado' | 'adequado' | 'atencao';
+  potencial_reajuste: number;
+  recomendacao: string;
+}
+
+interface AnaliseContratos {
+  total_contratos: number;
+  contratos_subprecificados: number;
+  potencial_reajuste_mensal: number;
+  potencial_reajuste_anual: number;
+  contratos: ContratoAnalise[];
+  alertas: string[];
+}
 
 interface PricingResult {
   tipo_servico: string;
@@ -122,6 +143,24 @@ export default function PrecificacaoPage() {
   const [result, setResult] = useState<PricingResult | null>(null);
   const [error, setError] = useState('');
   const [selectedMargem, setSelectedMargem] = useState<'minima' | 'ideal' | 'premium'>('ideal');
+
+  // ─── Análise contratos ativos (dados reais CCT 2026) ──────────────────────
+  const [analiseContratos, setAnaliseContratos] = useState<AnaliseContratos | null>(null);
+  const [loadingAnalise, setLoadingAnalise] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalise = async () => {
+      try {
+        const { data } = await api.get('/api/v1/financial/precificacao/contratos/analise');
+        setAnaliseContratos(data);
+      } catch {
+        // silencioso — seção não aparece se falhar
+      } finally {
+        setLoadingAnalise(false);
+      }
+    };
+    fetchAnalise();
+  }, [api]);
 
   const tipoInfo = TIPOS_SERVICO.find(t => t.value === tipo);
 
@@ -444,6 +483,64 @@ export default function PrecificacaoPage() {
           )}
         </div>
       </div>
+
+      {/* ── Análise dos contratos ativos (dados reais CCT 2026) ─────────────── */}
+      {!loadingAnalise && analiseContratos && (
+        <div className="space-y-4">
+          {/* Alertas de subprecificação */}
+          {analiseContratos.contratos_subprecificados > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-amber-900">
+                ⚠️ {analiseContratos.contratos_subprecificados} contrato(s) subprecificado(s)
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                Potencial de reajuste:{' '}
+                <strong>+{fmtCurrency(analiseContratos.potencial_reajuste_mensal)}/mês</strong>
+                {' '}|{' '}
+                <strong>+{fmtCurrency(analiseContratos.potencial_reajuste_anual)}/ano</strong>
+              </p>
+            </div>
+          )}
+
+          {/* Tabela de contratos */}
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 mb-3">
+              Análise dos Contratos Ativos — CCT 2026 ({analiseContratos.total_contratos} contratos)
+            </h2>
+            <div className="space-y-2">
+              {analiseContratos.contratos.map((c, i) => (
+                <div key={i}
+                  className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 text-sm truncate">{c.nome}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 capitalize">
+                      {c.tipo.replace(/_/g, ' ')} · custo est. {fmtCurrency(c.custo_estimado)}
+                    </p>
+                    {c.recomendacao !== 'OK — precificação adequada' && (
+                      <p className="text-xs text-amber-700 mt-0.5">{c.recomendacao}</p>
+                    )}
+                  </div>
+                  <div className="text-right ml-4 flex-shrink-0">
+                    <p className="font-semibold text-gray-900">{fmtCurrency(c.ticket_atual)}</p>
+                    <p className={`text-sm font-medium ${
+                      c.status_preco === 'subprecificado' ? 'text-red-600' :
+                      c.status_preco === 'atencao' ? 'text-yellow-600' : 'text-green-600'
+                    }`}>
+                      MC: {c.mc_pct}%
+                      {c.status_preco === 'subprecificado' ? ' ⚠️' : ' ✅'}
+                    </p>
+                    {c.potencial_reajuste > 0 && (
+                      <p className="text-xs text-amber-600">
+                        +{fmtCurrency(c.potencial_reajuste)}/mês possível
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
