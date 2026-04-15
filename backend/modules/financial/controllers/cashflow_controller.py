@@ -907,3 +907,221 @@ async def get_suggestions_legacy(
         "total": len(suggestions),
         "total_potential_savings": sum(s.get("potential_savings", 0) for s in suggestions),
     }
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# ENDPOINTS COMPATÍVEIS COM ORVAL — prefixo /cashflow/cashflow/... gerado auto
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@router.get(
+    "/cashflow/entries",
+    summary="Lançamentos do fluxo de caixa — formato paginado { items, total }",
+    include_in_schema=True,
+)
+async def list_cashflow_entries_paginated(
+    condominio_id: UUID | None = Query(None),
+    entry_type: str | None = Query(None, description="entrada|saida"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=500),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_session),
+) -> dict:
+    """
+    Endpoint compatível com Orval (/cashflow/cashflow/entries).
+    Retorna { items, total, total_entradas, total_saidas } — formato que o frontend espera.
+    Fonte: cashflow_entries (2.875 lançamentos reais jan-abr/2026).
+    """
+    try:
+        tipo_filter = ""
+        if entry_type == "entrada":
+            tipo_filter = "AND ce.entry_type = 'entrada'"
+        elif entry_type == "saida":
+            tipo_filter = "AND ce.entry_type = 'saida'"
+
+        cond_filter = ""
+        params: dict = {"limit": limit, "offset": skip}
+        if condominio_id is not None:
+            cond_filter = "AND ce.condominio_id = :condominio_id"
+            params["condominio_id"] = str(condominio_id)
+
+        result = await db.execute(
+            text(f"""
+            SELECT
+                ce.id,
+                ce.entry_date,
+                ce.description,
+                ce.entry_type,
+                ce.category,
+                ce.expected_amount,
+                ce.realized_amount,
+                ce.status,
+                ce.source_type,
+                ce.bank_account_id,
+                ce.condominio_id,
+                ba.bank_name
+            FROM cashflow_entries ce
+            LEFT JOIN bank_accounts ba ON ba.id = ce.bank_account_id
+            WHERE ce.ativo = true {cond_filter} {tipo_filter}
+            ORDER BY ce.entry_date DESC, ce.created_at DESC
+            LIMIT :limit OFFSET :offset
+        """),
+            params,
+        )
+        rows = result.fetchall()
+
+        count_params: dict = {}
+        if condominio_id is not None:
+            count_params["condominio_id"] = str(condominio_id)
+
+        count_result = await db.execute(
+            text(f"""
+            SELECT
+                COUNT(*) as total,
+                ROUND(SUM(CASE WHEN ce.entry_type = 'entrada'
+                    THEN COALESCE(ce.realized_amount, ce.expected_amount, 0) ELSE 0 END)::numeric, 2)
+                    as total_entradas,
+                ROUND(SUM(CASE WHEN ce.entry_type = 'saida'
+                    THEN COALESCE(ce.realized_amount, ce.expected_amount, 0) ELSE 0 END)::numeric, 2)
+                    as total_saidas
+            FROM cashflow_entries ce
+            WHERE ce.ativo = true {cond_filter} {tipo_filter}
+        """),
+            count_params,
+        )
+        count_row = count_result.fetchone()
+
+        return {
+            "items": [
+                {
+                    "id": str(r.id),
+                    "entry_date": r.entry_date.isoformat() if r.entry_date else None,
+                    "description": r.description or "",
+                    "entry_type": "income" if r.entry_type == "entrada" else "expense",
+                    "category": r.category or "sem_categoria",
+                    "expected_amount": float(r.expected_amount or 0),
+                    "realized_amount": float(r.realized_amount or r.expected_amount or 0),
+                    "amount": float(r.realized_amount or r.expected_amount or 0),
+                    "status": r.status or "realizado",
+                    "source_type": r.source_type or "manual",
+                    "bank_name": r.bank_name or "Inter",
+                    "condominio_id": str(r.condominio_id) if r.condominio_id else None,
+                }
+                for r in rows
+            ],
+            "total": int(count_row.total or 0),
+            "total_entradas": float(count_row.total_entradas or 0),
+            "total_saidas": float(count_row.total_saidas or 0),
+            "saldo_periodo": float((count_row.total_entradas or 0) - (count_row.total_saidas or 0)),
+            "skip": skip,
+            "limit": limit,
+        }
+    except Exception as exc:
+        import traceback
+
+        return {"items": [], "total": 0, "error": str(exc), "detail": traceback.format_exc()[-300:]}
+
+
+@router.get(
+    "/lancamentos",
+    summary="Lançamentos do fluxo de caixa (alias /cashflow/lancamentos)",
+    include_in_schema=True,
+)
+async def get_lancamentos(
+    condominio_id: UUID | None = Query(None),
+    tipo: str | None = Query(None, description="entrada|saida|todos"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_session),
+) -> dict:
+    """
+    Lançamentos reais do fluxo de caixa — 2.875 transações jan-abr/2026.
+    Suporta paginação e filtro por tipo (entrada|saida).
+    """
+    try:
+        tipo_filter = ""
+        if tipo == "entrada":
+            tipo_filter = "AND ce.entry_type = 'entrada'"
+        elif tipo == "saida":
+            tipo_filter = "AND ce.entry_type = 'saida'"
+
+        cond_filter = ""
+        params: dict = {"limit": per_page, "offset": (page - 1) * per_page}
+        if condominio_id is not None:
+            cond_filter = "AND ce.condominio_id = :condominio_id"
+            params["condominio_id"] = str(condominio_id)
+
+        result = await db.execute(
+            text(f"""
+            SELECT
+                ce.id,
+                ce.entry_date,
+                ce.description,
+                ce.entry_type,
+                ce.category,
+                ce.expected_amount,
+                ce.realized_amount,
+                ce.status,
+                ba.bank_name,
+                SUM(COALESCE(ce.realized_amount, ce.expected_amount, 0))
+                    OVER (ORDER BY ce.entry_date, ce.id
+                    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as saldo_acumulado
+            FROM cashflow_entries ce
+            LEFT JOIN bank_accounts ba ON ba.id = ce.bank_account_id
+            WHERE ce.ativo = true {cond_filter} {tipo_filter}
+            ORDER BY ce.entry_date DESC, ce.created_at DESC
+            LIMIT :limit OFFSET :offset
+        """),
+            params,
+        )
+        rows = result.fetchall()
+
+        count_params: dict = {}
+        if condominio_id is not None:
+            count_params["condominio_id"] = str(condominio_id)
+
+        count_result = await db.execute(
+            text(f"""
+            SELECT
+                COUNT(*) as total,
+                ROUND(SUM(CASE WHEN entry_type = 'entrada'
+                    THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2)
+                    as total_entradas,
+                ROUND(SUM(CASE WHEN entry_type = 'saida'
+                    THEN COALESCE(realized_amount, expected_amount, 0) ELSE 0 END)::numeric, 2)
+                    as total_saidas
+            FROM cashflow_entries
+            WHERE ativo = true {cond_filter} {tipo_filter}
+        """),
+            count_params,
+        )
+        count_row = count_result.fetchone()
+
+        return {
+            "items": [
+                {
+                    "id": str(r.id),
+                    "data": r.entry_date.isoformat() if r.entry_date else None,
+                    "descricao": r.description or "",
+                    "valor": float(r.realized_amount or r.expected_amount or 0),
+                    "tipo": r.entry_type or "saida",
+                    "categoria": r.category or "sem_categoria",
+                    "banco": r.bank_name or "Inter",
+                    "status": r.status or "realizado",
+                    "saldo_acumulado": float(r.saldo_acumulado or 0),
+                }
+                for r in rows
+            ],
+            "total": int(count_row.total or 0),
+            "total_entradas": float(count_row.total_entradas or 0),
+            "total_saidas": float(count_row.total_saidas or 0),
+            "saldo_periodo": float((count_row.total_entradas or 0) - (count_row.total_saidas or 0)),
+            "page": page,
+            "per_page": per_page,
+            "pages": max(1, (int(count_row.total or 0) + per_page - 1) // per_page),
+        }
+    except Exception as exc:
+        import traceback
+
+        return {"items": [], "total": 0, "error": str(exc), "detail": traceback.format_exc()[-300:]}
