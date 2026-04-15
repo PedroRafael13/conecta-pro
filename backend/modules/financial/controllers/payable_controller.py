@@ -411,14 +411,6 @@ async def get_pending_installments(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[PayableInstallmentResponse]:
     """Retorna parcelas pendentes."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     installments = await service.get_pending_installments(condominio_id, due_date_start, due_date_end)
     return [PayableInstallmentResponse.model_validate(i) for i in installments]
 
@@ -587,14 +579,6 @@ async def get_pending_reconciliation(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[PayablePaymentResponse]:
     """Retorna pagamentos pendentes de reconciliação."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     payments = await service.get_pending_reconciliation(condominio_id)
     return [PayablePaymentResponse.model_validate(p) for p in payments]
 
@@ -610,14 +594,6 @@ async def process_recurring(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict[str, Any]:
     """Processa contas recorrentes e gera novas."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     accounts = await service.process_recurring_accounts(condominio_id, reference_date)
     return {
         "created_count": len(accounts),

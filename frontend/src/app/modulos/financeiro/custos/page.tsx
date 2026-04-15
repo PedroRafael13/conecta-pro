@@ -1,628 +1,301 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import {
-  PieChart,
-  BarChart2,
-  Shield,
-  Leaf,
-  Camera,
-  Wifi,
-  Wrench,
-  Plus,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  X,
-} from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+import { useQuery } from '@tanstack/react-query'
 
-// ─────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────
-
-interface BreakdownItem {
-  name: string;
-  value: number;
-}
-
-interface CusteioTipo {
-  tipo: string;
-  contratos: number;
-  receita_mensal: number;
-  ticket_medio: number;
-  pct_mrr: number;
+interface TipoCusteio {
+  tipo: string
+  contratos: number
+  receita_mensal: number
+  pct_mrr: number
   custeio: {
-    custo_direto: number;
-    overhead_rateado: number;
-    custo_total: number;
-  };
+    custo_direto: number
+    overhead_rateado: number
+    custo_total: number
+  }
   margens: {
-    mc_valor: number;
-    mc_pct: number;
-    margem_liquida_valor: number;
-    margem_liquida_pct: number;
-    meta_mc_pct: number;
-    gap_meta: number;
-  };
-  classificacao: string;
-  recomendacao: string;
+    mc_valor: number
+    mc_pct: number
+    meta_mc_pct: number
+    gap_meta: number
+  }
+  classificacao: string
+  recomendacao: string
 }
 
 interface CusteioABC {
-  timestamp: string;
-  periodo_referencia: string;
-  mrr_total: number;
-  custo_total_mes: number;
-  resultado_estimado: number;
-  margem_global_pct: number;
-  cct_2026: { piso_vigilante: number; custo_all_in_posto: number; encargos_pct: number };
-  custo_por_categoria: { categoria: string; total: number; qtd: number }[];
-  analise_por_tipo: CusteioTipo[];
-  alertas: string[];
-}
-
-// ─────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────
-
-const formatCurrency = (v: number | null | undefined) => {
-  if (v == null) return 'R$ 0,00';
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
-const fetchWithAuth = (url: string) =>
-  fetch(url, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
-  }).then(r => r.json());
-
-const TIPOS = [
-  { id: 'portaria',              label: 'Portaria',           icon: Shield,  cor: '#3B82F6' },
-  { id: 'seguranca_eletronica',  label: 'Seg. Eletrônica',    icon: Camera,  cor: '#F59E0B' },
-  { id: 'limpeza',               label: 'Limpeza',            icon: Leaf,    cor: '#10B981' },
-  { id: 'portaria_remota',       label: 'Portaria Remota',    icon: Wifi,    cor: '#8B5CF6' },
-  { id: 'manutencao_cftv',       label: 'Manutenção CFTV',    icon: Wrench,  cor: '#EF4444' },
-];
-
-const TIPO_MAP = Object.fromEntries(TIPOS.map(t => [t.id, t]));
-
-// ─────────────────────────────────────────────────────────
-// Modal de Registro (mantido para lançamentos manuais)
-// ─────────────────────────────────────────────────────────
-
-interface ModalRegistroProps {
-  tipoInicial: string;
-  mes: string;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-function ModalRegistro({ tipoInicial, mes, onClose, onSuccess }: ModalRegistroProps) {
-  const [tipo, setTipo] = useState(tipoInicial);
-  const [mesForm, setMesForm] = useState(mes);
-  const [custoTotal, setCustoTotal] = useState('');
-  const [margemContratual, setMargemContratual] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState('');
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setErro('');
-    setLoading(true);
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const res = await fetch('/api/v1/financial/ai/costing/registrar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          tipo,
-          mes: mesForm,
-          custo_total: parseFloat(custoTotal),
-          margem_contratual: parseFloat(margemContratual || '0'),
-          breakdown: {},
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data?.detail || 'Erro ao registrar custo.');
-      }
-      onSuccess();
-    } catch (err: unknown) {
-      setErro(err instanceof Error ? err.message : 'Erro ao registrar custo.');
-    } finally {
-      setLoading(false);
-    }
+  mrr_total: number
+  custo_total_mes: number
+  resultado_estimado: number
+  margem_global_pct: number
+  cct_2026: {
+    piso_vigilante: number
+    custo_all_in_posto: number
+    encargos_pct: number
   }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Registrar Custo Real</h3>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Serviço</label>
-            <select
-              value={tipo}
-              onChange={e => setTipo(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              required
-            >
-              {TIPOS.map(t => (
-                <option key={t.id} value={t.id}>{t.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mês de Referência</label>
-            <input
-              type="month"
-              value={mesForm}
-              onChange={e => setMesForm(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Custo Total (R$)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={custoTotal}
-              onChange={e => setCustoTotal(e.target.value)}
-              placeholder="Ex: 8500.00"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Margem Contratual (R$)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={margemContratual}
-              onChange={e => setMargemContratual(e.target.value)}
-              placeholder="Ex: 1800.00"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
-
-          {erro && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
-              {erro}
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {loading ? 'Salvando...' : 'Salvar'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+  custo_por_categoria: Array<{
+    categoria: string
+    total: number
+    qtd: number
+  }>
+  analise_por_tipo: TipoCusteio[]
+  alertas: string[]
 }
 
-// ─────────────────────────────────────────────────────────
-// Main Page
-// ─────────────────────────────────────────────────────────
+const fetchWithAuth = async (url: string) => {
+  const token = typeof window !== 'undefined'
+    ? (localStorage.getItem('access_token') ?? localStorage.getItem('token') ?? '')
+    : ''
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+const classColor: Record<string, string> = {
+  estrela: 'bg-green-50 text-green-700 border border-green-200',
+  atencao: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
+  abacaxi: 'bg-red-50 text-red-700 border border-red-200',
+}
+
+const mcColor = (pct: number) =>
+  pct >= 35 ? 'text-green-600' : pct >= 20 ? 'text-yellow-600' : 'text-red-600'
 
 export default function CustosPage() {
-  const [tipoAtivo, setTipoAtivo] = useState('portaria');
-  const [showModal, setShowModal] = useState(false);
-
-  const { data: custeioABC, isLoading, refetch } = useQuery<CusteioABC>({
-    queryKey: ['custos-custeio-abc'],
+  const { data, isLoading, error } = useQuery<CusteioABC>({
+    queryKey: ['custeio-abc'],
     queryFn: () => fetchWithAuth('/api/v1/financial/custeio/abc'),
     staleTime: 10 * 60 * 1000,
-  });
+    retry: 2,
+  })
 
-  const mes = custeioABC?.periodo_referencia ?? new Date().toISOString().slice(0, 7);
-
-  // Tipo ativo do ABC
-  const tipoAtualABC = custeioABC?.analise_por_tipo.find(t => t.tipo === tipoAtivo);
-  const tipoAtualInfo = TIPO_MAP[tipoAtivo] ?? TIPOS[0]!;
-
-  // Breakdown do tipo ativo para o pie chart
-  const pieData: BreakdownItem[] = tipoAtualABC
-    ? [
-        { name: 'Custo Direto', value: tipoAtualABC.custeio.custo_direto },
-        { name: 'Overhead Rateado', value: tipoAtualABC.custeio.overhead_rateado },
-      ].filter(d => d.value > 0)
-    : [];
-
-  const PIE_COLORS = ['#3B82F6', '#F59E0B', '#10B981', '#8B5CF6', '#EF4444'];
-
-  // Bar chart data (margem por tipo)
-  const barData = (custeioABC?.analise_por_tipo ?? []).map(t => ({
-    label: TIPO_MAP[t.tipo]?.label ?? t.tipo,
-    margem: t.margens.mc_pct,
-    cor: TIPO_MAP[t.tipo]?.cor ?? '#6B7280',
-  }));
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Custo por Tipo de Serviço</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Custos reais do banco Inter + CCT SINDECOMPRESTS 2026 — {mes.replace('-', '/')}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => refetch()}
-            className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            <RefreshCw size={16} />
-            Atualizar
-          </button>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            <Plus size={16} />
-            Registrar Custo
-          </button>
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-64" />
+          <div className="grid grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-24 bg-gray-200 rounded-xl" />
+            ))}
+          </div>
         </div>
       </div>
+    )
+  }
 
-      {/* KPI global */}
-      {custeioABC && (
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-500">MRR Total</p>
-            <p className="text-xl font-semibold text-gray-900 mt-1">
-              {formatCurrency(custeioABC.mrr_total)}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">10 contratos ativos</p>
+  if (error || !data) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">
+          Custo por Tipo de Serviço
+        </h1>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <p className="text-yellow-800">
+            Erro ao carregar dados de custeio. Verifique se o backend está acessível.
+          </p>
+          {error && (
+            <p className="text-sm text-yellow-600 mt-1">{String(error)}</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const tipos = data.analise_por_tipo ?? []
+  const categorias = data.custo_por_categoria ?? []
+  const alertas = data.alertas ?? []
+  const cct = data.cct_2026
+
+  return (
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Custo por Tipo de Serviço</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Análise detalhada de custos e margens por modalidade de serviço
+          </p>
+        </div>
+        <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+          CCT SINDECOMPRESTS 2026
+        </span>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          {
+            label: 'MRR Total',
+            sub: `${tipos.length} tipos de serviço`,
+            value: `R$ ${(data.mrr_total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            color: 'text-gray-900',
+          },
+          {
+            label: 'Custo Total Mês',
+            sub: 'extrato Inter real',
+            value: `R$ ${(data.custo_total_mes ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            color: 'text-gray-900',
+          },
+          {
+            label: 'Resultado Estimado',
+            sub: 'MRR − custo total',
+            value: `R$ ${(data.resultado_estimado ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            color: (data.resultado_estimado ?? 0) >= 0 ? 'text-green-600' : 'text-red-600',
+          },
+          {
+            label: 'Margem Global',
+            sub: 'meta: 35%',
+            value: `${data.margem_global_pct ?? 0}%`,
+            color: mcColor(data.margem_global_pct ?? 0),
+          },
+        ].map(kpi => (
+          <div key={kpi.label} className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-500">{kpi.label}</p>
+            <p className={`text-xl font-semibold mt-1 ${kpi.color}`}>{kpi.value}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{kpi.sub}</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-500">Custo Total Mês</p>
-            <p className="text-xl font-semibold text-gray-900 mt-1">
-              {formatCurrency(custeioABC.custo_total_mes)}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">banco Inter (mês anterior)</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-500">Margem Global</p>
-            <p className={`text-xl font-semibold mt-1 ${
-              custeioABC.margem_global_pct >= 25 ? 'text-green-600' :
-              custeioABC.margem_global_pct >= 0 ? 'text-yellow-600' : 'text-red-600'
-            }`}>
-              {custeioABC.margem_global_pct}%
-            </p>
-            <p className="text-xs text-gray-400 mt-1">meta: 35%</p>
+        ))}
+      </div>
+
+      {cct && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-sm font-medium text-blue-900 mb-2">CCT SINDECOMPRESTS 2026</p>
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="text-blue-600">Piso vigilante:</span>{' '}
+              <strong>
+                R$ {(cct.piso_vigilante ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </strong>
+            </div>
+            <div>
+              <span className="text-blue-600">Encargos:</span>{' '}
+              <strong>{cct.encargos_pct ?? 42}%</strong>
+            </div>
+            <div>
+              <span className="text-blue-600">Custo all-in/posto:</span>{' '}
+              <strong>
+                R$ {(cct.custo_all_in_posto ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </strong>
+            </div>
           </div>
         </div>
       )}
 
-      {/* 5 type cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {TIPOS.map(tipo => {
-          const tipoABC = custeioABC?.analise_por_tipo.find(t => t.tipo === tipo.id);
-          const isAtivo = tipoAtivo === tipo.id;
-          const Icon = tipo.icon;
-          return (
-            <button
-              key={tipo.id}
-              onClick={() => setTipoAtivo(tipo.id)}
-              className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                isAtivo
-                  ? 'border-blue-500 bg-blue-50 shadow-md'
-                  : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: `${tipo.cor}20` }}
-                >
-                  <Icon size={16} style={{ color: tipo.cor }} />
+      {tipos.length > 0 ? (
+        <div>
+          <h2 className="text-base font-medium text-gray-900 mb-3">Análise por Tipo de Serviço</h2>
+          <div className="space-y-3">
+            {tipos.map((tipo, idx) => (
+              <div key={idx} className="bg-white border border-gray-200 rounded-xl p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-gray-900 capitalize">
+                        {(tipo.tipo ?? '').replace(/_/g, ' ')}
+                      </h3>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${classColor[tipo.classificacao] ?? classColor.atencao}`}
+                      >
+                        {tipo.classificacao === 'estrela'
+                          ? '⭐ Estrela'
+                          : tipo.classificacao === 'abacaxi'
+                          ? '❌ Abacaxi'
+                          : '⚠️ Atenção'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {tipo.contratos ?? 0} contrato(s) · {tipo.pct_mrr ?? 0}% do MRR
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900">
+                      R${' '}
+                      {(tipo.receita_mensal ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-gray-500">receita/mês</p>
+                  </div>
                 </div>
-                {tipoABC && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    tipoABC.classificacao === 'estrela' ? 'bg-green-100 text-green-700' :
-                    tipoABC.classificacao === 'atencao' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {tipoABC.classificacao === 'estrela' ? '⭐' :
-                     tipoABC.classificacao === 'atencao' ? '⚠️' : '❌'}
-                  </span>
+                <div className="grid grid-cols-4 gap-3 text-sm">
+                  {[
+                    {
+                      label: 'Custo direto',
+                      value: `R$ ${(tipo.custeio?.custo_direto ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                    },
+                    {
+                      label: 'MC valor',
+                      value: `R$ ${(tipo.margens?.mc_valor ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                      color: mcColor(tipo.margens?.mc_pct ?? 0),
+                    },
+                    {
+                      label: 'MC %',
+                      value: `${tipo.margens?.mc_pct ?? 0}%`,
+                      color: mcColor(tipo.margens?.mc_pct ?? 0),
+                      big: true,
+                    },
+                    {
+                      label: 'Gap da meta',
+                      value:
+                        (tipo.margens?.gap_meta ?? 0) > 0
+                          ? `-${tipo.margens?.gap_meta}pp`
+                          : `+${Math.abs(tipo.margens?.gap_meta ?? 0)}pp`,
+                      color: (tipo.margens?.gap_meta ?? 0) <= 0 ? 'text-green-600' : 'text-orange-600',
+                    },
+                  ].map(cell => (
+                    <div key={cell.label} className="bg-gray-50 rounded-lg p-2">
+                      <p className="text-xs text-gray-500">{cell.label}</p>
+                      <p
+                        className={`${cell.big ? 'text-lg font-semibold' : 'font-medium'} ${cell.color ?? 'text-gray-900'}`}
+                      >
+                        {cell.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {tipo.recomendacao && tipo.classificacao !== 'estrela' && (
+                  <p className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5">
+                    {tipo.recomendacao}
+                  </p>
                 )}
               </div>
-              <p className="text-xs font-semibold text-gray-700 leading-tight">{tipo.label}</p>
-              <p className="text-lg font-bold mt-1" style={{ color: tipo.cor }}>
-                {tipoABC ? `${tipoABC.margens.mc_pct.toFixed(1)}%` : '—'}
-              </p>
-              <p className="text-xs text-gray-400">margem MC</p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Main grid: detalhe + summary chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Breakdown do tipo ativo */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-base font-bold text-gray-900">{tipoAtualInfo.label}</h2>
-              <p className="text-xs text-gray-500">Composição de custos</p>
-            </div>
-            {tipoAtualABC && (
-              <div className="text-right">
-                <p className="text-sm font-bold text-gray-900">
-                  {formatCurrency(tipoAtualABC.custeio.custo_total)}
-                </p>
-                <p className="text-xs text-gray-500">/ mês</p>
-              </div>
-            )}
+            ))}
           </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center h-48 text-gray-400">
-              <RefreshCw size={20} className="animate-spin mr-2" /> Carregando...
-            </div>
-          ) : pieData.length > 0 ? (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    dataKey="value"
-                    label={({ name, percent }: { name?: string; percent?: number }) =>
-                      `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
-                    }
-                    labelLine={false}
-                  >
-                    {pieData.map((_, index) => (
-                      <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: unknown) => [formatCurrency(value as number), 'Custo']}
-                  />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-gray-400 text-sm p-4">
-              <Info size={16} /> Nenhum dado disponível para este tipo.
-            </div>
-          )}
-
-          {tipoAtualABC && (
-            <div className="mt-4 flex items-center gap-2 text-xs text-green-700 bg-green-50 rounded-lg p-3">
-              <CheckCircle size={14} />
-              <span>Baseado em dados reais — banco Inter + CCT 2026.</span>
-            </div>
-          )}
         </div>
-
-        {/* Margem por tipo — gráfico de barras */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart2 size={18} className="text-blue-600" />
-            <h2 className="text-base font-bold text-gray-900">Margem por Tipo de Serviço</h2>
-          </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center h-48 text-gray-400">
-              <RefreshCw size={20} className="animate-spin mr-2" /> Carregando...
-            </div>
-          ) : (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-                  <YAxis
-                    tickFormatter={v => `${v}%`}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip
-                    formatter={(v: unknown) => [
-                      `${typeof v === 'number' ? v.toFixed(1) : '0'}%`,
-                      'Margem MC',
-                    ]}
-                  />
-                  <Bar dataKey="margem" radius={[4, 4, 0, 0]}>
-                    {barData.map((entry, index) => (
-                      <Cell key={index} fill={entry.cor} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+      ) : (
+        <div className="bg-gray-50 rounded-xl p-8 text-center">
+          <p className="text-gray-500">Nenhum tipo de serviço encontrado.</p>
         </div>
-      </div>
+      )}
 
-      {/* Tabela resumo */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900">Resumo por Tipo de Serviço</h2>
-          <span className="text-xs text-gray-400">{mes.replace('-', '/')}</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Tipo</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Receita/mês</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Custo Total</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">MC Valor</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">MC %</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(custeioABC?.analise_por_tipo ?? []).map(t => {
-                const tipoInfo = TIPO_MAP[t.tipo];
-                return (
-                  <tr
-                    key={t.tipo}
-                    onClick={() => setTipoAtivo(t.tipo)}
-                    className={`border-t border-gray-100 cursor-pointer transition-colors ${
-                      tipoAtivo === t.tipo ? 'bg-blue-50' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: tipoInfo?.cor ?? '#6B7280' }}
-                        />
-                        <span className="font-medium text-gray-900">
-                          {tipoInfo?.label ?? t.tipo}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right text-gray-700">
-                      {formatCurrency(t.receita_mensal)}
-                    </td>
-                    <td className="px-6 py-4 text-right text-gray-700">
-                      {formatCurrency(t.custeio.custo_total)}
-                    </td>
-                    <td className={`px-6 py-4 text-right font-medium ${
-                      t.margens.mc_valor >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {formatCurrency(t.margens.mc_valor)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={`inline-flex items-center gap-1 font-semibold ${
-                        t.margens.mc_pct >= 30 ? 'text-green-600' :
-                        t.margens.mc_pct >= 20 ? 'text-blue-600' : 'text-amber-600'
-                      }`}>
-                        {t.margens.mc_pct >= 20
-                          ? <TrendingUp size={12} />
-                          : <TrendingDown size={12} />
-                        }
-                        {t.margens.mc_pct.toFixed(1)}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        t.classificacao === 'estrela' ? 'bg-green-100 text-green-700' :
-                        t.classificacao === 'atencao' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {t.classificacao === 'estrela' ? '⭐ Estrela' :
-                         t.classificacao === 'atencao' ? '⚠️ Atenção' : '❌ Abacaxi'}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            {(!custeioABC || custeioABC.analise_por_tipo.length === 0) && (
-              <tbody>
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
-                    <Info size={24} className="mx-auto mb-2" />
-                    <p className="text-sm font-medium">Carregando dados reais...</p>
-                  </td>
-                </tr>
-              </tbody>
-            )}
-            {custeioABC && (
-              <tfoot>
-                <tr className="border-t-2 border-gray-200 bg-gray-50">
-                  <td className="px-6 py-3 font-bold text-gray-900">Total</td>
-                  <td className="px-6 py-3 text-right font-bold text-gray-900">
-                    {formatCurrency(custeioABC.mrr_total)}
-                  </td>
-                  <td className="px-6 py-3 text-right font-bold text-gray-900">
-                    {formatCurrency(custeioABC.custo_total_mes)}
-                  </td>
-                  <td className={`px-6 py-3 text-right font-bold ${
-                    custeioABC.resultado_estimado >= 0 ? 'text-green-700' : 'text-red-700'
-                  }`}>
-                    {formatCurrency(custeioABC.resultado_estimado)}
-                  </td>
-                  <td className={`px-6 py-3 text-right font-bold ${
-                    custeioABC.margem_global_pct >= 25 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {custeioABC.margem_global_pct}%
-                  </td>
-                  <td />
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </div>
-
-      {/* Alertas */}
-      {custeioABC?.alertas && custeioABC.alertas.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle size={16} className="text-amber-700" />
-            <p className="text-sm font-medium text-amber-900">Alertas de custeio</p>
-          </div>
-          {custeioABC.alertas.map((alerta, i) => (
-            <p key={i} className="text-sm text-amber-700">{alerta}</p>
+      {alertas.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-sm font-medium text-red-900 mb-2">⚠️ Alertas de custeio</p>
+          {alertas.map((alerta, i) => (
+            <p key={i} className="text-sm text-red-700">
+              {alerta}
+            </p>
           ))}
         </div>
       )}
 
-      {/* Modal */}
-      {showModal && (
-        <ModalRegistro
-          tipoInicial={tipoAtivo}
-          mes={mes}
-          onClose={() => setShowModal(false)}
-          onSuccess={() => {
-            setShowModal(false);
-            refetch();
-          }}
-        />
+      {categorias.length > 0 && (
+        <div>
+          <h2 className="text-base font-medium text-gray-900 mb-3">
+            Custos por Categoria (extrato Inter)
+          </h2>
+          <div className="grid grid-cols-3 gap-3">
+            {categorias.slice(0, 9).map(cat => (
+              <div key={cat.categoria} className="bg-white border border-gray-200 rounded-xl p-3">
+                <p className="text-xs text-gray-500 capitalize">
+                  {(cat.categoria ?? '').replace(/_/g, ' ')}
+                </p>
+                <p className="font-semibold text-gray-900 mt-0.5">
+                  R$ {(cat.total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-gray-400">{cat.qtd ?? 0} lançamentos</p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
-  );
+  )
 }

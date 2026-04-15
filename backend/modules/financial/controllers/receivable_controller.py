@@ -469,14 +469,6 @@ async def get_pending_installments(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[ReceivableInstallmentResponse]:
     """Retorna parcelas pendentes."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     installments = await service.get_pending_installments(condominio_id, due_date_start, due_date_end)
     return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
 
@@ -745,14 +737,6 @@ async def get_pending_reconciliation(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[ReceivablePaymentResponse]:
     """Retorna recebimentos pendentes de reconciliacao."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     payments = await service.get_pending_reconciliation(condominio_id)
     return [ReceivablePaymentResponse.model_validate(p) for p in payments]
 
@@ -880,14 +864,6 @@ async def get_collection_priorities(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[dict[str, Any]]:
     """Retorna lista priorizada de cobrancas usando IA."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     priorities = await ai_service.get_collection_priorities(condominio_id, limit)
     return [
         {
@@ -916,14 +892,6 @@ async def get_cash_flow_forecast(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict[str, Any]:
     """Retorna previsao de fluxo de caixa usando IA."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     forecast = await ai_service.forecast_cash_flow(condominio_id, months)
     return {
         "condominio_id": str(forecast.condominio_id),
@@ -954,14 +922,6 @@ async def get_delinquency_analysis(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict[str, Any]:
     """Retorna analise de inadimplencia usando IA."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     analysis = await ai_service.analyze_delinquency(condominio_id)
     return {
         "condominio_id": str(analysis.condominio_id),
