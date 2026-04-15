@@ -15,9 +15,6 @@ from modules.financial.models import (
     CashFlowEntryStatus,
     CashFlowEntryType,
     CashFlowSourceType,
-    ForecastConfidence,
-    ForecastPeriodType,
-    ForecastStatus,
     TransactionCategory,
     TransactionStatus,
     TransactionType,
@@ -40,7 +37,6 @@ from modules.financial.schemas import (
     CashFlowEntryResponse,
     CashFlowEntryUpdate,
     CashFlowForecastCreate,
-    CashFlowForecastFilter,
     CashFlowForecastResponse,
     CashFlowForecastUpdate,
     CashFlowProjection,
@@ -567,32 +563,93 @@ async def create_forecast(
 
 @router.get(
     "/forecasts",
-    response_model=list[CashFlowForecastResponse],
     summary="Listar previsões",
 )
 async def list_forecasts(
-    condominio_id: UUID,
-    period_type: ForecastPeriodType | None = Query(None),
-    forecast_status: ForecastStatus | None = Query(None),
-    confidence: ForecastConfidence | None = Query(None),
+    condominio_id: UUID | None = Query(None),
+    period_type: str | None = Query(None),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    repo: CashFlowForecastRepository = Depends(get_forecast_repository),
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> list[CashFlowForecastResponse]:
-    """Lista previsões com filtros."""
-    filters = CashFlowForecastFilter(
-        condominio_id=condominio_id,
-        period_type=period_type,
-        status=forecast_status,
-        confidence=confidence,
-        start_date=start_date,
-        end_date=end_date,
-    )
-    forecasts = await repo.list_with_filters(filters, skip=skip, limit=limit)
-    return [CashFlowForecastResponse.model_validate(f) for f in forecasts]
+):
+    """Lista previsões de fluxo de caixa com filtros (raw SQL para compatibilidade com schema real)."""
+    conditions = []
+    params: dict = {"limit": limit, "skip": skip}
+
+    if condominio_id:
+        conditions.append("condominio_id = :condominio_id")
+        params["condominio_id"] = str(condominio_id)
+    if period_type:
+        conditions.append("period_type = :period_type")
+        params["period_type"] = period_type
+    if start_date:
+        conditions.append("period_start >= :start_date")
+        params["start_date"] = start_date
+    if end_date:
+        conditions.append("period_end <= :end_date")
+        params["end_date"] = end_date
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+
+    try:
+        rows = (
+            (
+                await session.execute(
+                    text(f"""
+                    SELECT id, condominio_id, name, period_type, period_start, period_end,
+                           status, confidence,
+                           COALESCE(expected_inflows, 0) AS expected_inflows,
+                           COALESCE(expected_outflows, 0) AS expected_outflows,
+                           COALESCE(expected_balance, 0) AS expected_balance,
+                           COALESCE(actual_inflows, 0) AS actual_inflows,
+                           COALESCE(actual_outflows, 0) AS actual_outflows,
+                           COALESCE(actual_balance, 0) AS actual_balance,
+                           notes, created_at
+                    FROM cashflow_forecasts
+                    {where}
+                    ORDER BY created_at DESC
+                    LIMIT :limit OFFSET :skip
+                """),
+                    params,
+                )
+            )
+            .mappings()
+            .all()
+        )
+
+        return [
+            {
+                "id": str(r["id"]),
+                "condominio_id": str(r["condominio_id"]) if r["condominio_id"] else None,
+                "name": r["name"],
+                "description": None,
+                "period_type": r["period_type"],
+                "period_start": r["period_start"].isoformat() if r["period_start"] else None,
+                "period_end": r["period_end"].isoformat() if r["period_end"] else None,
+                "forecast_date": r["period_start"].isoformat() if r["period_start"] else None,
+                "status": r["status"],
+                "confidence": r["confidence"],
+                "expected_inflows": float(r["expected_inflows"] or 0),
+                "expected_outflows": float(r["expected_outflows"] or 0),
+                "expected_opening_balance": 0,
+                "expected_closing_balance": float(r["expected_balance"] or 0),
+                "expected_net_flow": float((r["expected_inflows"] or 0) - (r["expected_outflows"] or 0)),
+                "actual_inflows": float(r["actual_inflows"] or 0),
+                "actual_outflows": float(r["actual_outflows"] or 0),
+                "notes": r["notes"],
+                "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+            }
+            for r in rows
+        ]
+    except Exception as exc:
+        logger.error(f"Erro ao listar previsões: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao listar previsões",
+        )
 
 
 @router.get(
@@ -601,7 +658,7 @@ async def list_forecasts(
     summary="Previsões ativas",
 )
 async def get_active_forecasts(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     repo: CashFlowForecastRepository = Depends(get_forecast_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[CashFlowForecastResponse]:

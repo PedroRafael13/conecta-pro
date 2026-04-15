@@ -297,6 +297,8 @@ class StockItemListResponse(BaseModel):
     id: UUID
     product_id: UUID
     warehouse_id: UUID
+    name: str | None = None
+    code: str | None = None
     batch_number: str | None = None
     status: str
     quantity_on_hand: float

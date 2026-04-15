@@ -1,465 +1,398 @@
 'use client';
 
-import { Package, Search, RefreshCw, Plus, MoreHorizontal, Eye, AlertCircle, ArrowUpDown, ArrowLeft, Warehouse, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Package, Search, RefreshCw, Plus, AlertCircle, Warehouse, ArrowLeft, TrendingDown } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import {
-  useInventoryItems,
-  useWarehouses,
-  useStockBalance,
-  useInventoryDashboard,
-  useCreateStockMovement,
-} from '@/hooks/financial/useFinancial';
-import type { StockItemListResponse } from '@/types/generated/financial/models/stockItemListResponse';
-import type { WarehouseListResponse } from '@/types/generated/financial/models/warehouseListResponse';
-import type { StockMovementCreate } from '@/types/generated/financial/models/stockMovementCreate';
-import type { StockMovementListResponse } from '@/types/generated/financial/models/stockMovementListResponse';
-import { InventoryFormModal } from '@/components/financeiro/inventory-form-modal';
+import { customInstance } from '@/lib/api-client';
+import { cn } from '@/lib/utils';
 
 type TabType = 'items' | 'warehouses' | 'movements';
 
-const formatCurrency = (value: number | undefined | null) => {
-  if (value == null) return 'R$ 0,00';
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
+interface StockItem {
+  id: string;
+  product_id: string;
+  warehouse_id: string;
+  name?: string | null;
+  code?: string | null;
+  batch_number?: string | null;
+  status?: string;
+  quantity_on_hand?: number;
+  quantity_available?: number;
+  unit_cost?: number;
+  total_cost?: number;
+  expiry_date?: string | null;
+  full_location?: string;
+  is_low_stock?: boolean;
+  is_expired?: boolean;
+}
 
-const formatDate = (date: string | undefined | null) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('pt-BR');
+interface WarehouseItem {
+  id: string;
+  name?: string;
+  code?: string;
+  status?: string;
+  capacity?: number;
+  current_occupancy?: number;
+  address?: string;
+}
+
+interface MovementItem {
+  id: string;
+  movement_type?: string;
+  quantity?: number;
+  created_at?: string;
+  reference_document?: string;
+  notes?: string;
+}
+
+const formatCurrency = (v?: number | null) =>
+  (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+const getItemDisplayName = (item: StockItem) =>
+  item.name ?? item.code ?? `${item.product_id?.slice(0, 8)}...`;
+
+const getStatusBadge = (status?: string, isLow?: boolean, isExpired?: boolean) => {
+  if (isExpired) return <Badge variant="destructive">Vencido</Badge>;
+  if (isLow) return <Badge className="bg-orange-100 text-orange-800">Baixo</Badge>;
+  const s = (status || '').toLowerCase();
+  if (s === 'ativo' || s === 'active') return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
+  if (s === 'inativo' || s === 'inactive') return <Badge variant="secondary">Inativo</Badge>;
+  return <Badge variant="outline">{status || 'N/D'}</Badge>;
 };
 
 export default function EstoquePage() {
   const [activeTab, setActiveTab] = useState<TabType>('items');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFormModal, setShowFormModal] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const { data: items = [], isLoading: loadingItems, refetch: refetchItems } = useInventoryItems();
-  const { data: warehouses = [], isLoading: loadingWarehouses, refetch: refetchWarehouses } = useWarehouses();
-  const { data: stockBalance = [], isLoading: loadingBalance, refetch: refetchBalance } = useStockBalance();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: dashboardRaw, isLoading: loadingDashboard } = useInventoryDashboard();
-  const dashboard = dashboardRaw as any;
-  const createMovement = useCreateStockMovement();
+  const {
+    data: itemsRaw,
+    isLoading: loadingItems,
+    isError: errorItems,
+    refetch: refetchItems,
+  } = useQuery<StockItem[]>({
+    queryKey: ['inventory-items'],
+    queryFn: () =>
+      customInstance<StockItem[]>({
+        url: '/api/v1/financial/inventory/items',
+        params: { limit: 200 },
+      }),
+  });
+
+  const {
+    data: warehousesRaw,
+    isLoading: loadingWarehouses,
+    refetch: refetchWarehouses,
+  } = useQuery<WarehouseItem[]>({
+    queryKey: ['inventory-warehouses'],
+    queryFn: () =>
+      customInstance<WarehouseItem[]>({ url: '/api/v1/financial/inventory/warehouses', params: { limit: 100 } }),
+    retry: 1,
+  });
+
+  const {
+    data: movementsRaw,
+    isLoading: loadingMovements,
+    refetch: refetchMovements,
+  } = useQuery<MovementItem[]>({
+    queryKey: ['inventory-movements'],
+    queryFn: () =>
+      customInstance<MovementItem[]>({
+        url: '/api/v1/financial/inventory/stock-movements',
+        params: { limit: 100 },
+      }),
+    enabled: activeTab === 'movements',
+    retry: 1,
+  });
+
+  const items = Array.isArray(itemsRaw) ? itemsRaw : (itemsRaw as { items?: StockItem[] })?.items ?? [];
+  const warehouses = Array.isArray(warehousesRaw) ? warehousesRaw : [];
+  const movements = Array.isArray(movementsRaw) ? movementsRaw : [];
+
+  const filteredItems = useMemo(() => {
+    if (!search) return items;
+    const q = search.toLowerCase();
+    return items.filter(
+      (i) =>
+        getItemDisplayName(i).toLowerCase().includes(q) ||
+        (i.code ?? '').toLowerCase().includes(q) ||
+        (i.batch_number ?? '').toLowerCase().includes(q),
+    );
+  }, [items, search]);
+
+  const kpis = useMemo(
+    () => ({
+      total: items.length,
+      totalValue: items.reduce((acc, i) => acc + (i.total_cost ?? 0), 0),
+      lowStock: items.filter((i) => i.is_low_stock).length,
+      armazens: warehouses.length,
+    }),
+    [items, warehouses],
+  );
 
   const isLoading =
-    activeTab === 'items' ? loadingItems :
-    activeTab === 'warehouses' ? loadingWarehouses :
-    loadingBalance;
+    activeTab === 'items' ? loadingItems : activeTab === 'warehouses' ? loadingWarehouses : loadingMovements;
 
   const handleRefresh = () => {
     if (activeTab === 'items') refetchItems();
     else if (activeTab === 'warehouses') refetchWarehouses();
-    else refetchBalance();
+    else refetchMovements();
   };
 
-  const handleFormSubmit = async (data: StockMovementCreate) => {
-    try {
-      await createMovement.mutateAsync({ data });
-      setShowFormModal(false);
-      // refetch() removido - mutation já invalida queries automaticamente
-    } catch (error) {
-      void error;
-    }
-  };
-
-  const filteredItems = (Array.isArray(items) ? items : []).filter((item: any) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      item.name?.toLowerCase().includes(term) ||
-      item.code?.toLowerCase().includes(term) ||
-      item.category?.toLowerCase().includes(term)
-    );
-  });
-
-  const filteredWarehouses = (Array.isArray(warehouses) ? warehouses : []).filter((wh: any) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      wh.name?.toLowerCase().includes(term) ||
-      wh.location?.toLowerCase().includes(term)
-    );
-  });
-
-  const filteredMovements = (Array.isArray(stockBalance) ? stockBalance : []).filter((mov: any) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      mov.item_name?.toLowerCase().includes(term) ||
-      mov.warehouse_name?.toLowerCase().includes(term)
-    );
-  });
+  const tabs: { key: TabType; label: string }[] = [
+    { key: 'items', label: 'Itens' },
+    { key: 'warehouses', label: 'Armazéns' },
+    { key: 'movements', label: 'Movimentações' },
+  ];
 
   return (
-    <div className="min-h-screen bg-grid">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[hsl(var(--background))]/80 backdrop-blur-xl border-b border-[hsl(var(--border))]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/modulos/financeiro">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Financeiro
-                </Button>
-              </Link>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-purple-500" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-[hsl(var(--foreground))]">
-                    Estoque
-                  </h1>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    Controle de materiais e movimentacoes
-                  </p>
-                </div>
-              </div>
-            </div>
-            <Button variant="primary" size="sm" onClick={() => setShowFormModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Movimentacao
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/modulos/financeiro">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Package className="h-6 w-6 text-green-600" />
+              Estoque
+            </h1>
+            <p className="text-sm text-muted-foreground">Controle de inventário e movimentações</p>
           </div>
         </div>
-      </header>
+        <Button variant="outline">
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Entrada
+        </Button>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <Package className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {dashboard?.total_items ?? 0}
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Total Itens</p>
-              </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Total de Itens</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{kpis.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Valor Total</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(kpis.totalValue)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">Abaixo do Mínimo</p>
+              {kpis.lowStock > 0 && <TrendingDown className="h-4 w-4 text-orange-500" />}
             </div>
-          </div>
+            <p className={cn('text-2xl font-bold mt-1', kpis.lowStock > 0 ? 'text-orange-600' : 'text-gray-600')}>
+              {kpis.lowStock}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">Armazéns</p>
+              <Warehouse className="h-4 w-4 text-purple-500" />
+            </div>
+            <p className="text-2xl font-bold text-purple-600 mt-1">{kpis.armazens}</p>
+          </CardContent>
+        </Card>
+      </div>
 
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <ArrowUpDown className="w-5 h-5 text-green-500" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-green-500 truncate">
-                  {formatCurrency(dashboard?.total_value)}
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Valor Total</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-red-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-red-500">
-                  {dashboard?.below_minimum ?? dashboard?.warehouses_near_capacity ?? 0}
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Abaixo do Minimo</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Warehouse className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {dashboard?.total_warehouses ?? 0}
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Armazens</p>
-              </div>
-            </div>
-          </div>
+      {/* Tabs + Search */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex gap-2">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={cn(
+                'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+                activeTab === t.key
+                  ? 'bg-green-600 text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80',
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
-
-        {/* Tabs */}
-        <div className="flex items-center gap-1 mb-6 bg-[hsl(var(--muted))] rounded-lg p-1 w-fit">
-          <button
-            onClick={() => setActiveTab('items')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'items'
-                ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm'
-                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-            }`}
-          >
-            Itens
-          </button>
-          <button
-            onClick={() => setActiveTab('warehouses')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'warehouses'
-                ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm'
-                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-            }`}
-          >
-            Armazens
-          </button>
-          <button
-            onClick={() => setActiveTab('movements')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'movements'
-                ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm'
-                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-            }`}
-          >
-            Movimentacoes
-          </button>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex-1">
-            <Input
-              type="search"
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              icon={<Search className="w-4 h-4" />}
-            />
-          </div>
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+        <div className="flex gap-2 w-full sm:w-auto">
+          {activeTab === 'items' && (
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, código..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          )}
+          <Button variant="outline" size="icon" onClick={handleRefresh}>
+            <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
           </Button>
         </div>
+      </div>
 
-        {/* Loading state */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-pulse-slow text-[hsl(var(--primary))]">
-              <Package className="w-8 h-8" />
+      {/* Conteúdo das Tabs */}
+      <Card>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-40 text-muted-foreground">
+              <RefreshCw className="h-5 w-5 animate-spin mr-2" />
+              Carregando...
             </div>
-          </div>
-        )}
-
-        {/* Items Table */}
-        {!isLoading && activeTab === 'items' && (
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Codigo</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Qtd Estoque</TableHead>
-                  <TableHead>Qtd Minima</TableHead>
-                  <TableHead>Unidade</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredItems.map((item: any) => {
-                  const belowMinimum = item.stock_quantity != null && item.min_quantity != null && item.stock_quantity < item.min_quantity;
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.code || item.id?.slice(0, 8)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {item.name || '-'}
-                          {belowMinimum && (
-                            <span title="Abaixo do minimo"><AlertCircle className="w-4 h-4 text-red-500" /></span>
+          ) : errorItems && activeTab === 'items' ? (
+            <div className="flex items-center justify-center h-40 text-destructive gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Erro ao carregar itens de estoque
+            </div>
+          ) : activeTab === 'items' ? (
+            filteredItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                <Package className="h-8 w-8 mb-2 opacity-30" />
+                <p>Nenhum item encontrado</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left px-4 py-3 font-medium">Item</th>
+                      <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Código</th>
+                      <th className="text-left px-4 py-3 font-medium">Qtd. Disponível</th>
+                      <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Custo Unit.</th>
+                      <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Valor Total</th>
+                      <th className="text-left px-4 py-3 font-medium">Status</th>
+                      <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Localização</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredItems.map((item) => (
+                      <tr key={item.id} className="border-b hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3 font-medium">
+                          {getItemDisplayName(item)}
+                          {item.batch_number && (
+                            <div className="text-xs text-muted-foreground">Lote: {item.batch_number}</div>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.category || '-'}</TableCell>
-                      <TableCell>
-                        <span className={belowMinimum ? 'text-red-500 font-medium' : ''}>
-                          {item.stock_quantity ?? 0}
-                        </span>
-                      </TableCell>
-                      <TableCell>{item.min_quantity ?? 0}</TableCell>
-                      <TableCell>{item.unit || '-'}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Visualizar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-
-            {filteredItems.length === 0 && (
-              <div className="text-center py-12">
-                <Package className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                  Nenhum item encontrado
-                </h3>
-                <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                  {searchTerm ? 'Tente ajustar os filtros de busca' : 'Nenhum item cadastrado no estoque'}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Warehouses Table */}
-        {!isLoading && activeTab === 'warehouses' && (
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Localizacao</TableHead>
-                  <TableHead>Capacidade</TableHead>
-                  <TableHead>Utilizacao</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredWarehouses.map((wh: any) => {
-                  const utilization = wh.capacity && wh.used_capacity
-                    ? Math.round((wh.used_capacity / wh.capacity) * 100)
-                    : 0;
-                  return (
-                    <TableRow key={wh.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Warehouse className="w-4 h-4 text-blue-500" />
-                          {wh.name || '-'}
-                        </div>
-                      </TableCell>
-                      <TableCell>{wh.location || '-'}</TableCell>
-                      <TableCell>{wh.capacity ?? '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-[hsl(var(--muted))] rounded-full overflow-hidden max-w-[100px]">
-                            <div
-                              className={`h-full rounded-full ${
-                                utilization > 90 ? 'bg-red-500' :
-                                utilization > 70 ? 'bg-yellow-500' : 'bg-green-500'
-                              }`}
-                              style={{ width: `${Math.min(utilization, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                            {utilization}%
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs hidden md:table-cell">
+                          {item.code ?? '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={cn('font-medium', (item.quantity_available ?? 0) === 0 && 'text-red-600')}>
+                            {item.quantity_available ?? 0}
                           </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-
-            {filteredWarehouses.length === 0 && (
-              <div className="text-center py-12">
-                <Warehouse className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                  Nenhum armazem encontrado
-                </h3>
-                <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                  {searchTerm ? 'Tente ajustar os filtros de busca' : 'Nenhum armazem cadastrado'}
-                </p>
+                          {item.quantity_on_hand !== item.quantity_available && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              / {item.quantity_on_hand ?? 0} total
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">{formatCurrency(item.unit_cost)}</td>
+                        <td className="px-4 py-3 font-medium hidden lg:table-cell">
+                          {formatCurrency(item.total_cost)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {getStatusBadge(item.status, item.is_low_stock, item.is_expired)}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                          {item.full_location || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Movements Table */}
-        {!isLoading && activeTab === 'movements' && (
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Quantidade</TableHead>
-                  <TableHead>Armazem</TableHead>
-                  <TableHead>Responsavel</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {filteredMovements.map((mov: any, index: number) => (
-                  <TableRow key={(mov.id as string) || index}>
-                    <TableCell>{formatDate(mov.created_at || mov.date)}</TableCell>
-                    <TableCell className="font-medium">{mov.item_name || '-'}</TableCell>
-                    <TableCell>
-                      {mov.movement_type === 'entry' || mov.type === 'entry' ? (
-                        <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
-                          <ArrowDownCircle className="w-3 h-3 mr-1" />
-                          Entrada
-                        </Badge>
-                      ) : mov.movement_type === 'exit' || mov.type === 'exit' ? (
-                        <Badge className="bg-red-500/10 text-red-500 border-red-500/20">
-                          <ArrowUpCircle className="w-3 h-3 mr-1" />
-                          Saida
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                          <ArrowUpDown className="w-3 h-3 mr-1" />
-                          Transferencia
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{mov.quantity ?? 0}</TableCell>
-                    <TableCell>{mov.warehouse_name || '-'}</TableCell>
-                    <TableCell>{mov.responsible || mov.user_name || '-'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {filteredMovements.length === 0 && (
-              <div className="text-center py-12">
-                <ArrowUpDown className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                  Nenhuma movimentacao encontrada
-                </h3>
-                <p className="text-[hsl(var(--muted-foreground))] mt-1 mb-4">
-                  {searchTerm ? 'Tente ajustar os filtros de busca' : 'Registre a primeira movimentacao de estoque'}
-                </p>
-                {!searchTerm && (
-                  <Button variant="primary" onClick={() => setShowFormModal(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nova Movimentacao
-                  </Button>
-                )}
+            )
+          ) : activeTab === 'warehouses' ? (
+            warehouses.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                <Warehouse className="h-8 w-8 mb-2 opacity-30" />
+                <p>Nenhum armazém cadastrado</p>
               </div>
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* Modals */}
-      <InventoryFormModal
-        isOpen={showFormModal}
-        onClose={() => setShowFormModal(false)}
-        onSubmit={handleFormSubmit}
-        isLoading={createMovement.isPending}
-      />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left px-4 py-3 font-medium">Armazém</th>
+                      <th className="text-left px-4 py-3 font-medium">Código</th>
+                      <th className="text-left px-4 py-3 font-medium">Status</th>
+                      <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Endereço</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {warehouses.map((wh) => (
+                      <tr key={wh.id} className="border-b hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3 font-medium">{wh.name ?? wh.id.slice(0, 8)}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{wh.code ?? '-'}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={wh.status === 'ativo' ? 'default' : 'secondary'}>
+                            {wh.status ?? 'N/D'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
+                          {wh.address ?? '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          ) : movements.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+              <Package className="h-8 w-8 mb-2 opacity-30" />
+              <p>Nenhuma movimentação registrada</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left px-4 py-3 font-medium">Tipo</th>
+                    <th className="text-left px-4 py-3 font-medium">Quantidade</th>
+                    <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Documento</th>
+                    <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Data</th>
+                    <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Notas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {movements.map((mv) => (
+                    <tr key={mv.id} className="border-b hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3">
+                        <Badge variant="outline">{mv.movement_type ?? 'N/D'}</Badge>
+                      </td>
+                      <td className="px-4 py-3 font-medium">{mv.quantity ?? 0}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">
+                        {mv.reference_document ?? '-'}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
+                        {mv.created_at ? new Date(mv.created_at).toLocaleDateString('pt-BR') : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
+                        {mv.notes ?? '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

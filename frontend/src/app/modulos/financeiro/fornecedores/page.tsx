@@ -1,11 +1,13 @@
 'use client';
 
-import { Users, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Trash2, AlertCircle, Lock, Unlock, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Users, Search, RefreshCw, Plus, Eye, Edit, Trash2, AlertCircle, Lock, Unlock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { ConfirmModal } from '@/components/ui/modal';
 import {
   DropdownMenu,
@@ -13,436 +15,319 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  useSuppliers,
-  useSupplierStats,
-  useCreateSupplier,
-  useUpdateSupplier,
-  useDeleteSupplier,
-  useBlockSupplier,
-  useUnblockSupplier,
-} from '@/hooks/financial/useSuppliers';
 import { SupplierFormModal } from '@/components/financeiro/supplier-form-modal';
 import { SupplierDetailModal } from '@/components/financeiro/supplier-detail-modal';
+import { useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useBlockSupplier, useUnblockSupplier } from '@/hooks/financial/useSuppliers';
 import { cn } from '@/lib/utils';
-import { useCondominio } from '@/contexts/CondominioContext';
-import type { SupplierListResponse } from '@/types/generated/financial/models/supplierListResponse';
+import { customInstance } from '@/lib/api-client';
+
+type TabFilter = 'todos' | 'ativos' | 'bloqueados';
+
+interface Supplier {
+  id: string;
+  name?: string;
+  company_name?: string;
+  trade_name?: string;
+  cnpj?: string;
+  cpf?: string;
+  email?: string;
+  category?: string;
+  supplier_type?: string;
+  status?: string;
+  is_blocked?: boolean;
+  is_qualified?: boolean;
+  rating?: number;
+  phone?: string;
+  city?: string;
+  state?: string;
+}
+
+const formatCnpj = (cnpj?: string) => {
+  if (!cnpj) return '-';
+  const n = cnpj.replace(/\D/g, '');
+  if (n.length === 14) return n.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  if (n.length === 11) return n.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  return cnpj;
+};
+
+const getStatusBadge = (supplier: Supplier) => {
+  if (supplier.is_blocked) return <Badge variant="destructive">Bloqueado</Badge>;
+  const s = (supplier.status || '').toLowerCase();
+  if (s === 'ativo' || s === 'active') return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
+  if (s === 'inativo' || s === 'inactive') return <Badge variant="secondary">Inativo</Badge>;
+  return <Badge variant="outline">{supplier.status || 'N/D'}</Badge>;
+};
+
+const getSupplierDisplayName = (s: Supplier) =>
+  s.trade_name || s.company_name || s.name || '(sem nome)';
 
 export default function FornecedoresPage() {
-  const { condominioId } = useCondominio();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [tab, setTab] = useState<TabFilter>('todos');
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Hooks de dados
+  // Busca principal — sem condominio_id obrigatório
   const {
-    data: suppliersData,
+    data: suppliersRaw = [],
     isLoading,
     isError,
-    error,
     refetch,
-  } = useSuppliers({
-    condominio_id: condominioId,
-    ...(search && { search }),
-    ...(statusFilter && { status: statusFilter }),
+  } = useQuery<Supplier[]>({
+    queryKey: ['suppliers', search, tab],
+    queryFn: () =>
+      customInstance<Supplier[]>({
+        url: '/api/v1/financial/suppliers',
+        params: {
+          ...(search ? { search } : {}),
+          ...(tab === 'ativos' ? { status: 'ativo' } : {}),
+          ...(tab === 'bloqueados' ? { is_blocked: true } : {}),
+          limit: 200,
+        },
+      }),
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: statsRaw, refetch: refetchStats } = useSupplierStats({ condominio_id: condominioId });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stats = statsRaw as any;
+  // Stats — retry: 0 para não travar a página se falhar
+  const { data: statsRaw } = useQuery({
+    queryKey: ['suppliers-stats'],
+    queryFn: () =>
+      customInstance<Record<string, number>>({
+        url: '/api/v1/financial/suppliers/stats',
+      }),
+    retry: 0,
+  });
+
+  const suppliers = Array.isArray(suppliersRaw) ? suppliersRaw : [];
+
+  // Fallback: calcula stats localmente se o endpoint falhar
+  const stats = useMemo(() => {
+    if (statsRaw && typeof statsRaw === 'object' && 'total' in statsRaw) return statsRaw;
+    return {
+      total: suppliers.length,
+      ativos: suppliers.filter((s) => !s.is_blocked && (s.status || '').toLowerCase() !== 'inativo').length,
+      bloqueados: suppliers.filter((s) => s.is_blocked).length,
+      qualificados: suppliers.filter((s) => s.is_qualified).length,
+    };
+  }, [statsRaw, suppliers]);
+
+  const filtered = useMemo(() => {
+    if (!search) return suppliers;
+    const q = search.toLowerCase();
+    return suppliers.filter(
+      (s) =>
+        getSupplierDisplayName(s).toLowerCase().includes(q) ||
+        (s.cnpj || '').includes(q) ||
+        (s.email || '').toLowerCase().includes(q),
+    );
+  }, [suppliers, search]);
+
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSupplierMutation = useDeleteSupplier();
   const blockSupplier = useBlockSupplier();
   const unblockSupplier = useUnblockSupplier();
 
-  const suppliers = Array.isArray(suppliersData) ? suppliersData : [];
-  const total = suppliers.length;
-
-  // Stats
-  const totalSuppliers = stats?.total || total;
-  const typedSuppliers = suppliers as SupplierListResponse[];
-  const activeSuppliers = stats?.ativos ?? typedSuppliers.filter((s) => s.status === 'ativo' || s.status === 'active').length;
-  const blockedSuppliers = stats?.bloqueados ?? typedSuppliers.filter((s) => s.status === 'blocked' || s.status === 'bloqueado').length;
-
-  const handleView = (supplier: any) => {
-    setSelectedSupplier(supplier);
-    setShowDetailModal(true);
-  };
-
-  const handleEdit = (supplier: any) => {
-    setSelectedSupplier(supplier);
-    setShowFormModal(true);
-    setShowDetailModal(false);
-  };
-
-  const handleCreate = () => {
-    setSelectedSupplier(null);
-    setShowFormModal(true);
-  };
-
-  const handleDelete = (supplier: any) => {
-    setSelectedSupplier(supplier);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = async () => {
+  const handleDelete = async () => {
     if (!selectedSupplier) return;
     setIsDeleting(true);
-
     try {
-      await deleteSupplierMutation.mutateAsync({ supplierId: selectedSupplier.id });
+      await deleteSupplierMutation.mutateAsync(selectedSupplier.id);
+      await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       setShowDeleteModal(false);
       setSelectedSupplier(null);
-      // refetch() removido - mutation já invalida queries automaticamente
-    } catch {
-      // silenced
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleBlock = async (supplier: any) => {
-    try {
-      await blockSupplier.mutateAsync({ supplierId: supplier.id, data: { reason: 'Bloqueado pelo usuario' } });
-    } catch {
-      // silenced
-    }
+  const handleBlock = async (supplier: Supplier) => {
+    await blockSupplier.mutateAsync({ supplierId: supplier.id, data: { reason: 'Bloqueado manualmente' } });
+    await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
   };
 
-  const handleUnblock = async (supplier: any) => {
-    try {
-      await unblockSupplier.mutateAsync({ supplierId: supplier.id });
-    } catch {
-      // silenced
-    }
+  const handleUnblock = async (supplier: Supplier) => {
+    await unblockSupplier.mutateAsync(supplier.id);
+    await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleFormSubmit = async (data: any) => {
-    try {
-      if (selectedSupplier) {
-        await updateSupplier.mutateAsync({
-          supplierId: selectedSupplier.id,
-          data,
-        });
-      } else {
-        await createSupplier.mutateAsync({ data });
-      }
-      setShowFormModal(false);
-      setSelectedSupplier(null);
-      // refetch() removido - mutation já invalida queries automaticamente
-    } catch (err) {
-      throw err;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-      case 'ativo':
-        return 'bg-green-500/10 text-green-500 border-green-500/30';
-      case 'blocked':
-      case 'bloqueado':
-        return 'bg-red-500/10 text-red-500 border-red-500/30';
-      case 'inactive':
-      case 'inativo':
-        return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
-      default:
-        return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active':
-      case 'ativo':
-        return 'Ativo';
-      case 'blocked':
-      case 'bloqueado':
-        return 'Bloqueado';
-      case 'inactive':
-      case 'inativo':
-        return 'Inativo';
-      default:
-        return status;
-    }
-  };
-
-  // Filter localmente por search
-  const filteredSuppliers: SupplierListResponse[] = search
-    ? typedSuppliers.filter((s) =>
-        s.name?.toLowerCase().includes(search.toLowerCase()) ||
-        s.cpf_cnpj?.toLowerCase().includes(search.toLowerCase()) ||
-        s.email?.toLowerCase().includes(search.toLowerCase())
-      )
-    : typedSuppliers;
+  const tabs: { key: TabFilter; label: string; count: number }[] = [
+    { key: 'todos', label: 'Todos', count: Number(stats.total ?? 0) },
+    { key: 'ativos', label: 'Ativos', count: Number(stats.ativos ?? 0) },
+    { key: 'bloqueados', label: 'Bloqueados', count: Number(stats.bloqueados ?? 0) },
+  ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <Link href="/modulos/financeiro">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Financeiro
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-orange-500" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-[hsl(var(--foreground))]">
-                Fornecedores
-              </h1>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                {total} fornecedores cadastrados
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { refetch(); refetchStats(); }}
-            disabled={isLoading}
-          >
-            <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
-          </Button>
-          <Button variant="primary" size="sm" onClick={handleCreate}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Fornecedor
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : totalSuppliers}
-              </p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">Total</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : activeSuppliers}
-              </p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">Ativos</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-              <XCircle className="w-5 h-5 text-red-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : blockedSuppliers}
-              </p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">Bloqueados</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <Input
-            type="search"
-            placeholder="Buscar por nome, CNPJ/CPF ou email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            icon={<Search className="w-4 h-4" />}
-          />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant={statusFilter === undefined ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setStatusFilter(undefined)}
-          >
-            Todos
-          </Button>
-          <Button
-            variant={statusFilter === 'ativo' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setStatusFilter('ativo')}
-          >
-            Ativos
-          </Button>
-          <Button
-            variant={statusFilter === 'blocked' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setStatusFilter('blocked')}
-          >
-            Bloqueados
-          </Button>
-        </div>
-      </div>
-
-      {/* Error */}
-      {isError && (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-[hsl(var(--destructive))]/10 border border-[hsl(var(--destructive))]/30">
-          <AlertCircle className="w-5 h-5 text-[hsl(var(--destructive))]" />
           <div>
-            <p className="font-medium text-[hsl(var(--destructive))]">Erro ao carregar fornecedores</p>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              {(error as Error)?.message || 'Tente novamente em alguns instantes'}
-            </p>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Users className="h-6 w-6 text-blue-600" />
+              Fornecedores
+            </h1>
+            <p className="text-sm text-muted-foreground">Gerencie seus fornecedores</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => refetch()} className="ml-auto">
-            Tentar novamente
+        </div>
+        <Button onClick={() => { setSelectedSupplier(null); setShowFormModal(true); }}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Fornecedor
+        </Button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total', value: stats.total ?? 0, color: 'text-blue-600' },
+          { label: 'Ativos', value: stats.ativos ?? 0, color: 'text-green-600' },
+          { label: 'Bloqueados', value: stats.bloqueados ?? 0, color: 'text-red-600' },
+          { label: 'Qualificados', value: stats.qualificados ?? 0, color: 'text-purple-600' },
+        ].map((kpi) => (
+          <Card key={kpi.label}>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground">{kpi.label}</p>
+              <p className={cn('text-2xl font-bold mt-1', kpi.color)}>{kpi.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Filtros e busca */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex gap-2">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+                tab === t.key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80',
+              )}
+            >
+              {t.label} ({t.count})
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, CNPJ ou e-mail..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button variant="outline" size="icon" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
-      )}
+      </div>
 
-      {/* Table */}
+      {/* Tabela */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="divide-y divide-[hsl(var(--border))]">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="p-4 flex items-center gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 w-48 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
-                    <div className="h-3 w-32 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
-                  </div>
-                  <div className="h-6 w-20 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
-                </div>
-              ))}
+            <div className="flex items-center justify-center h-40 text-muted-foreground">
+              <RefreshCw className="h-5 w-5 animate-spin mr-2" />
+              Carregando fornecedores...
+            </div>
+          ) : isError ? (
+            <div className="flex items-center justify-center h-40 text-destructive gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Erro ao carregar fornecedores
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+              <Users className="h-8 w-8 mb-2 opacity-30" />
+              <p>Nenhum fornecedor encontrado</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[hsl(var(--border))]">
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Nome
-                    </th>
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))] hidden md:table-cell">
-                      CNPJ/CPF
-                    </th>
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))] hidden lg:table-cell">
-                      Email
-                    </th>
-                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Status
-                    </th>
-                    <th className="text-center p-4 text-sm font-medium text-[hsl(var(--muted-foreground))] hidden md:table-cell">
-                      Qualificacao
-                    </th>
-                    <th className="w-12 p-4"></th>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left px-4 py-3 font-medium">Nome / Razão Social</th>
+                    <th className="text-left px-4 py-3 font-medium">CNPJ / CPF</th>
+                    <th className="text-left px-4 py-3 font-medium hidden md:table-cell">E-mail</th>
+                    <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Categoria</th>
+                    <th className="text-left px-4 py-3 font-medium">Status</th>
+                    <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Rating</th>
+                    <th className="text-right px-4 py-3 font-medium">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[hsl(var(--border))]">
-                  {filteredSuppliers.map((supplier: any) => (
-                    <tr
-                      key={supplier.id}
-                      className="hover:bg-[hsl(var(--secondary))]/50 transition-colors cursor-pointer"
-                      onClick={() => handleView(supplier)}
-                    >
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                            <Users className="w-5 h-5 text-orange-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-[hsl(var(--foreground))]">
-                              {supplier.name}
-                            </p>
-                            <p className="text-xs text-[hsl(var(--muted-foreground))] md:hidden">
-                              {supplier.document || '-'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 hidden md:table-cell">
-                        <span className="text-sm text-[hsl(var(--muted-foreground))] font-mono">
-                          {supplier.document || '-'}
-                        </span>
-                      </td>
-                      <td className="p-4 hidden lg:table-cell">
-                        <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                          {supplier.email || '-'}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={cn(
-                            'inline-flex px-2 py-1 text-xs font-medium rounded-full border',
-                            getStatusColor(supplier.status)
-                          )}
-                        >
-                          {getStatusLabel(supplier.status)}
-                        </span>
-                      </td>
-                      <td className="p-4 hidden md:table-cell text-center">
-                        {supplier.qualification_score != null ? (
-                          <span className="text-sm font-medium text-[hsl(var(--foreground))]">
-                            {supplier.qualification_score}/10
-                          </span>
-                        ) : (
-                          <span className="text-sm text-[hsl(var(--muted-foreground))]">-</span>
+                <tbody>
+                  {filtered.map((supplier) => (
+                    <tr key={supplier.id} className="border-b hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3 font-medium">
+                        <div>{getSupplierDisplayName(supplier)}</div>
+                        {supplier.trade_name && supplier.company_name && (
+                          <div className="text-xs text-muted-foreground">{supplier.company_name}</div>
                         )}
                       </td>
-                      <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
+                        {formatCnpj(supplier.cnpj || supplier.cpf)}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
+                        {supplier.email || '-'}
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <Badge variant="outline" className="text-xs">
+                          {supplier.category || supplier.supplier_type || 'Geral'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">{getStatusBadge(supplier)}</td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        {supplier.rating ? (
+                          <span className="text-yellow-600 font-medium">
+                            {'★'.repeat(Math.round(supplier.rating))}{'☆'.repeat(5 - Math.round(supplier.rating))}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">N/A</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <span className="sr-only">Ações</span>
+                              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+                              </svg>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleView(supplier)}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Visualizar
+                            <DropdownMenuItem onClick={() => { setSelectedSupplier(supplier); setShowDetailModal(true); }}>
+                              <Eye className="h-4 w-4 mr-2" /> Visualizar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEdit(supplier)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Editar
+                            <DropdownMenuItem onClick={() => { setSelectedSupplier(supplier); setShowFormModal(true); }}>
+                              <Edit className="h-4 w-4 mr-2" /> Editar
                             </DropdownMenuItem>
-                            {supplier.status === 'active' ? (
-                              <DropdownMenuItem onClick={() => handleBlock(supplier)}>
-                                <Lock className="w-4 h-4 mr-2" />
-                                Bloquear
+                            {supplier.is_blocked ? (
+                              <DropdownMenuItem onClick={() => handleUnblock(supplier)}>
+                                <Unlock className="h-4 w-4 mr-2" /> Desbloquear
                               </DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem onClick={() => handleUnblock(supplier)}>
-                                <Unlock className="w-4 h-4 mr-2" />
-                                Desbloquear
+                              <DropdownMenuItem onClick={() => handleBlock(supplier)}>
+                                <Lock className="h-4 w-4 mr-2" /> Bloquear
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
-                              onClick={() => handleDelete(supplier)}
-                              className="text-red-500"
+                              className="text-destructive"
+                              onClick={() => { setSelectedSupplier(supplier); setShowDeleteModal(true); }}
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Excluir
+                              <Trash2 className="h-4 w-4 mr-2" /> Excluir
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -453,70 +338,37 @@ export default function FornecedoresPage() {
               </table>
             </div>
           )}
-
-          {/* Empty state */}
-          {!isLoading && !isError && filteredSuppliers.length === 0 && (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                Nenhum fornecedor encontrado
-              </h3>
-              <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                {search || statusFilter
-                  ? 'Tente ajustar os filtros de busca'
-                  : 'Cadastre seu primeiro fornecedor'}
-              </p>
-              {!search && !statusFilter && (
-                <Button className="mt-4" onClick={handleCreate}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Novo Fornecedor
-                </Button>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Pagination info */}
-      {!isLoading && filteredSuppliers.length > 0 && (
-        <div className="text-sm text-[hsl(var(--muted-foreground))] text-center">
-          Mostrando {filteredSuppliers.length} de {total} fornecedores
-        </div>
+      {/* Modais */}
+      {showFormModal && (
+        <SupplierFormModal
+          open={showFormModal}
+          onClose={() => { setShowFormModal(false); setSelectedSupplier(null); }}
+          supplier={selectedSupplier as Parameters<typeof SupplierFormModal>[0]['supplier']}
+          onSuccess={async () => {
+            await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            setShowFormModal(false);
+            setSelectedSupplier(null);
+          }}
+        />
       )}
 
-      {/* Modals */}
-      <SupplierFormModal
-        isOpen={showFormModal}
-        onClose={() => {
-          setShowFormModal(false);
-          setSelectedSupplier(null);
-        }}
-        supplier={selectedSupplier}
-        onSubmit={handleFormSubmit}
-        isLoading={createSupplier.isPending || updateSupplier.isPending}
-      />
-
-      <SupplierDetailModal
-        isOpen={showDetailModal}
-        onClose={() => {
-          setShowDetailModal(false);
-          setSelectedSupplier(null);
-        }}
-        supplier={selectedSupplier}
-      />
+      {showDetailModal && selectedSupplier && (
+        <SupplierDetailModal
+          open={showDetailModal}
+          onClose={() => { setShowDetailModal(false); setSelectedSupplier(null); }}
+          supplierId={selectedSupplier.id}
+        />
+      )}
 
       <ConfirmModal
-        isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setSelectedSupplier(null);
-        }}
-        onConfirm={confirmDelete}
-        title="Excluir Fornecedor"
-        message={`Tem certeza que deseja excluir o fornecedor "${selectedSupplier?.name}"? Esta acao nao pode ser desfeita.`}
-        confirmText="Excluir"
-        cancelText="Cancelar"
-        variant="danger"
+        open={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setSelectedSupplier(null); }}
+        onConfirm={handleDelete}
+        title="Excluir fornecedor"
+        description={`Tem certeza que deseja excluir "${selectedSupplier ? getSupplierDisplayName(selectedSupplier) : ''}"? Esta ação não pode ser desfeita.`}
         isLoading={isDeleting}
       />
     </div>

@@ -342,24 +342,75 @@ async def list_inventory_items(
     db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[StockItemListResponse]:
-    """Lista itens de inventário (alias de /stock-items para compatibilidade)."""
+    """Lista itens de inventário com nome e código do produto via JOIN."""
+    from datetime import date as _date
+
+    from sqlalchemy import text as _text
+
     try:
-        repo = StockItemRepository(db)
-        _raw_cond = (
-            _current_user.get("condominio_id")
-            if isinstance(_current_user, dict)
-            else getattr(_current_user, "condominio_id", None)
+        sql = _text("""
+            SELECT
+                si.id,
+                si.product_id,
+                si.warehouse_id,
+                COALESCE(fp.nome, fp.descricao, p.name, p.description) AS name,
+                COALESCE(fp.codigo, p.code) AS code,
+                si.batch_number,
+                si.status,
+                COALESCE(si.quantity_on_hand, 0) AS quantity_on_hand,
+                COALESCE(si.quantity_available, 0) AS quantity_available,
+                COALESCE(si.unit_cost, 0) AS unit_cost,
+                COALESCE(si.total_cost, 0) AS total_cost,
+                si.expiry_date,
+                COALESCE(si.location_code, '') AS full_location,
+                si.min_quantity,
+                si.created_at
+            FROM fin_stock_items si
+            LEFT JOIN fin_products fp ON fp.id = si.product_id
+            LEFT JOIN products p ON p.id = si.product_id
+            WHERE (:warehouse_id IS NULL OR si.warehouse_id = :warehouse_id)
+            ORDER BY si.created_at DESC
+            LIMIT :limit OFFSET :skip
+        """)
+        rows = (
+            db.execute(
+                sql,
+                {
+                    "warehouse_id": str(warehouse_id) if warehouse_id else None,
+                    "limit": limit,
+                    "skip": skip,
+                },
+            )
+            .mappings()
+            .all()
         )
-        _cond = condominio_id or (uuid.UUID(str(_raw_cond)) if _raw_cond else None)
 
-        if warehouse_id:
-            items = repo.list_by_warehouse(warehouse_id, None, skip, limit)
-        else:
-            wh_repo = WarehouseRepository(db)
-            main_wh = wh_repo.get_main_warehouse(_cond) if _cond else None
-            items = repo.list_by_warehouse(main_wh.id, None, skip, limit) if main_wh else []
-
-        return [StockItemListResponse.model_validate(i) for i in items]
+        today = _date.today()
+        result = []
+        for row in rows:
+            qty = float(row["quantity_on_hand"] or 0)
+            min_qty = float(row["min_quantity"] or 0)
+            expiry = row["expiry_date"]
+            result.append(
+                StockItemListResponse(
+                    id=row["id"],
+                    product_id=row["product_id"],
+                    warehouse_id=row["warehouse_id"],
+                    name=row["name"],
+                    code=row["code"],
+                    batch_number=row["batch_number"],
+                    status=row["status"] or "disponivel",
+                    quantity_on_hand=qty,
+                    quantity_available=float(row["quantity_available"] or 0),
+                    unit_cost=float(row["unit_cost"] or 0),
+                    total_cost=float(row["total_cost"] or 0),
+                    expiry_date=expiry,
+                    full_location=row["full_location"] or "",
+                    is_low_stock=bool(min_qty > 0 and qty < min_qty),
+                    is_expired=bool(expiry and expiry < today),
+                )
+            )
+        return result
     except Exception as e:
         logger.error(f"Erro ao listar inventory items: {e}")
         raise HTTPException(
