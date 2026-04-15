@@ -1,324 +1,340 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 
-interface CustoCategoria {
+// ─── Tipos exatos do endpoint /financial/custeio/abc ──────────────────────
+interface CustoComposicao {
+  custo_direto: number
+  overhead_rateado: number
+  custo_total: number
+}
+
+interface MargemTipo {
+  mc_valor: number
+  mc_pct: number
+  margem_liquida_valor: number
+  margem_liquida_pct: number
+  meta_mc_pct: number
+  gap_meta: number
+  margem: number
+  custo_medio: number
+  cor: string
+}
+
+interface TipoAnalise {
+  tipo: string
+  contratos: number
+  receita_mensal: number
+  pct_mrr: number
+  custeio: CustoComposicao
+  margens: MargemTipo
+  classificacao: 'estrela' | 'atencao' | 'abacaxi'
+  recomendacao: string
+}
+
+interface CategoriaGasto {
   categoria: string
   total: number
   qtd: number
 }
 
-interface TipoCusteio {
-  tipo: string
-  contratos: number
-  receita_mensal: number
-  ticket_medio: number
-  pct_mrr: number
-  custeio: {
-    custo_direto: number
-    overhead_rateado: number
-    custo_total: number
-  }
-  margens: {
-    mc_valor: number
-    mc_pct: number
-    margem_liquida_valor: number
-    margem_liquida_pct: number
-    meta_mc_pct: number
-    gap_meta: number
-  }
-  classificacao: 'estrela' | 'atencao' | 'abacaxi'
-  recomendacao: string
-}
-
 interface CusteioABC {
   timestamp: string
+  periodo_referencia: string
   mrr_total: number
   custo_total_mes: number
   resultado_estimado: number
   margem_global_pct: number
-  cct_2026: {
-    piso_vigilante: number
-    custo_all_in_posto: number
-    encargos_pct: number
-  }
-  custo_por_categoria: CustoCategoria[]
-  analise_por_tipo: TipoCusteio[]
+  cct_2026: { piso_vigilante: number; custo_all_in_posto: number; encargos_pct: number }
+  custo_por_categoria: CategoriaGasto[]
+  analise_por_tipo: TipoAnalise[]
   alertas: string[]
 }
 
-interface ContratoCusteio {
-  cliente: string
-  tipo: string
-  receita_mensal: number
-  custo_estimado: number
-  mc_valor: number
-  mc_pct: number
-  status: 'ok' | 'atencao' | 'critico'
-}
-
-const fetchWithAuth = (url: string) =>
+// ─── Helpers ──────────────────────────────────────────────────────────────
+const fetchAuth = (url: string) =>
   fetch(url, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` }
-  }).then(r => r.json())
+    headers: {
+      Authorization: `Bearer ${typeof window !== 'undefined'
+        ? (localStorage.getItem('access_token') ?? localStorage.getItem('token') ?? '')
+        : ''}`,
+    },
+  }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
 
-const classColor: Record<string, string> = {
-  estrela: 'bg-green-100 text-green-800 border-green-200',
-  atencao: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  abacaxi: 'bg-red-100 text-red-800 border-red-200',
+const brl = (v: number) =>
+  (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+const pct = (v: number) => `${(v ?? 0).toFixed(1)}%`
+
+const LABEL: Record<string, string> = {
+  portaria: 'Portaria',
+  seguranca_eletronica: 'Seg. Eletrônica',
+  limpeza: 'Limpeza',
+  portaria_remota: 'Portaria Remota',
+  manutencao_cftv: 'Manutenção CFTV',
 }
 
-const statusColor: Record<string, string> = {
-  ok: 'text-green-600',
-  atencao: 'text-yellow-600',
-  critico: 'text-red-600',
+const CLASS_STYLE: Record<string, { bg: string; text: string; border: string; icon: string }> = {
+  estrela: { bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200',  icon: '⭐' },
+  atencao: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', icon: '⚠️' },
+  abacaxi: { bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',    icon: '❌' },
 }
 
+const mcColor = (v: number) =>
+  v >= 35 ? 'text-green-600' : v >= 20 ? 'text-yellow-600' : 'text-red-600'
+
+type AbaId = 'por_tipo' | 'direcionadores' | 'atividades' | 'pools' | 'objetos'
+
+// ─── Componente ───────────────────────────────────────────────────────────
 export default function CusteioPage() {
-  const { data: custeioABC, isLoading: loadingABC } = useQuery<CusteioABC>({
-    queryKey: ['custeio-abc'],
-    queryFn: () => fetchWithAuth('/api/v1/financial/custeio/abc'),
+  const [abaAtiva, setAbaAtiva] = useState<AbaId>('por_tipo')
+
+  const { data, isLoading, error, refetch } = useQuery<CusteioABC>({
+    queryKey: ['custeio-abc-v2'],
+    queryFn: () => fetchAuth('/api/v1/financial/custeio/abc'),
     staleTime: 10 * 60 * 1000,
-    refetchInterval: 15 * 60 * 1000,
+    retry: 2,
   })
 
-  const { data: contratos, isLoading: loadingContratos } = useQuery<{
-    contratos: ContratoCusteio[]
-    total_contratos: number
-  }>({
-    queryKey: ['custeio-contratos'],
-    queryFn: () => fetchWithAuth('/api/v1/financial/custeio/contratos'),
-    staleTime: 10 * 60 * 1000,
+  if (isLoading) return (
+    <div className="p-6 max-w-7xl mx-auto animate-pulse space-y-4">
+      <div className="h-8 bg-gray-100 rounded w-64" />
+      <div className="grid grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-100 rounded-xl" />)}
+      </div>
+      <div className="h-48 bg-gray-100 rounded-xl" />
+    </div>
+  )
+
+  if (error || !data) return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex items-start gap-4">
+        <span className="text-2xl">⚠️</span>
+        <div>
+          <p className="font-medium text-red-900">Erro ao carregar Custeio ABC</p>
+          <p className="text-sm text-red-700 mt-1">{error ? String(error) : 'Dados indisponíveis'}</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 px-4 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const tipos = data.analise_por_tipo ?? []
+  const categorias = data.custo_por_categoria ?? []
+  const alertas = data.alertas ?? []
+  const cct = data.cct_2026
+
+  const ABAS: { id: AbaId; label: string; n: number }[] = [
+    { id: 'por_tipo',       label: 'Por Tipo',       n: tipos.length },
+    { id: 'direcionadores', label: 'Direcionadores',  n: tipos.length },
+    { id: 'atividades',     label: 'Atividades',      n: tipos.filter(t => t.contratos > 0).length },
+    { id: 'pools',          label: 'Pools de Custo',  n: tipos.filter(t => (t.custeio?.custo_direto ?? 0) > 0).length },
+    { id: 'objetos',        label: 'Objetos',         n: categorias.length },
+  ]
+
+  const tiposFiltrados = tipos.filter(tipo => {
+    if (abaAtiva === 'por_tipo' || abaAtiva === 'direcionadores') return true
+    if (abaAtiva === 'atividades') return tipo.contratos > 0
+    if (abaAtiva === 'pools') return (tipo.custeio?.custo_direto ?? 0) > 0
+    return true
   })
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
+
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Custeio ABC
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Análise de margem por tipo de serviço — CCT SINDECOMPRESTS 2026
-        </p>
-      </div>
-
-      {/* KPIs globais */}
-      {!loadingABC && custeioABC && (
-        <div className="grid grid-cols-4 gap-4">
-          {[
-            {
-              label: 'MRR Total', sub: '10 contratos ativos',
-              value: `R$ ${custeioABC.mrr_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-              color: 'text-gray-900'
-            },
-            {
-              label: 'Custo Total Mês', sub: 'banco Inter (mês anterior)',
-              value: `R$ ${custeioABC.custo_total_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-              color: 'text-gray-900'
-            },
-            {
-              label: 'Resultado Estimado', sub: 'MRR - custo total',
-              value: `R$ ${custeioABC.resultado_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-              color: custeioABC.resultado_estimado > 0 ? 'text-green-600' : 'text-red-600'
-            },
-            {
-              label: 'Margem Global', sub: `meta: ${custeioABC.analise_por_tipo[0]?.margens.meta_mc_pct ?? 35}%`,
-              value: `${custeioABC.margem_global_pct}%`,
-              color: custeioABC.margem_global_pct >= 25 ? 'text-green-600' :
-                     custeioABC.margem_global_pct >= 15 ? 'text-yellow-600' : 'text-red-600'
-            },
-          ].map(kpi => (
-            <div key={kpi.label} className="bg-white border border-gray-200 rounded-xl p-4">
-              <p className="text-xs text-gray-500">{kpi.label}</p>
-              <p className={`text-xl font-semibold mt-1 ${kpi.color}`}>{kpi.value}</p>
-              <p className="text-xs text-gray-400 mt-1">{kpi.sub}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* CCT 2026 */}
-      {custeioABC?.cct_2026 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-sm font-medium text-blue-900 mb-2">
-            CCT SINDECOMPRESTS 2026 — Base de cálculo vigente
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Custeio ABC</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Activity-Based Costing · {data.periodo_referencia} · CCT SINDECOMPRESTS 2026
           </p>
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="text-blue-600">Piso vigilante:</span>{' '}
-              <strong>R$ {custeioABC.cct_2026.piso_vigilante.toLocaleString('pt-BR', {minimumFractionDigits: 2})}/mês</strong>
-            </div>
-            <div>
-              <span className="text-blue-600">Encargos:</span>{' '}
-              <strong>{custeioABC.cct_2026.encargos_pct}%</strong> (INSS+FGTS+férias+13º)
-            </div>
-            <div>
-              <span className="text-blue-600">Custo all-in/posto:</span>{' '}
-              <strong>R$ {custeioABC.cct_2026.custo_all_in_posto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>
-            </div>
-          </div>
         </div>
-      )}
-
-      {/* Análise por tipo de serviço */}
-      <div>
-        <h2 className="text-base font-medium text-gray-900 mb-3">
-          Custeio ABC por Tipo de Serviço
-        </h2>
-        {loadingABC ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {custeioABC?.analise_por_tipo.map(tipo => (
-              <div key={tipo.tipo}
-                className="bg-white border border-gray-200 rounded-xl p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-gray-900 capitalize">
-                        {tipo.tipo.replace(/_/g, ' ')}
-                      </h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${classColor[tipo.classificacao]}`}>
-                        {tipo.classificacao === 'estrela' ? '⭐ Estrela' :
-                         tipo.classificacao === 'atencao' ? '⚠️ Atenção' : '❌ Abacaxi'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {tipo.contratos} contrato(s) | {tipo.pct_mrr}% do MRR
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">
-                      R$ {tipo.receita_mensal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </p>
-                    <p className="text-xs text-gray-500">receita/mês</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-4 gap-3 text-sm">
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-xs text-gray-500">Custo direto</p>
-                    <p className="font-medium">
-                      R$ {tipo.custeio.custo_direto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-xs text-gray-500">MC valor</p>
-                    <p className={`font-medium ${tipo.margens.mc_pct >= 35 ? 'text-green-600' :
-                      tipo.margens.mc_pct >= 20 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      R$ {tipo.margens.mc_valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-xs text-gray-500">MC %</p>
-                    <p className={`font-semibold text-lg ${tipo.margens.mc_pct >= 35 ? 'text-green-600' :
-                      tipo.margens.mc_pct >= 20 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {tipo.margens.mc_pct}%
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-xs text-gray-500">Gap da meta</p>
-                    <p className={`font-medium ${tipo.margens.gap_meta <= 0 ? 'text-green-600' : 'text-orange-600'}`}>
-                      {tipo.margens.gap_meta > 0 ? `-${tipo.margens.gap_meta}pp` : `+${Math.abs(tipo.margens.gap_meta)}pp`}
-                    </p>
-                  </div>
-                </div>
-
-                {tipo.recomendacao && tipo.classificacao !== 'estrela' && (
-                  <p className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5">
-                    {tipo.recomendacao}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <button
+          onClick={() => refetch()}
+          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          ↺
+        </button>
       </div>
 
       {/* Alertas */}
-      {custeioABC?.alertas && custeioABC.alertas.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-sm font-medium text-red-900 mb-2">⚠️ Alertas de custeio</p>
-          {custeioABC.alertas.map((alerta, i) => (
-            <p key={i} className="text-sm text-red-700">{alerta}</p>
+      {alertas.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1">
+          {alertas.map((a, i) => (
+            <p key={i} className="text-sm text-amber-800">{a}</p>
           ))}
         </div>
       )}
 
-      {/* Custos por categoria */}
-      {custeioABC?.custo_por_categoria && custeioABC.custo_por_categoria.length > 0 && (
-        <div>
-          <h2 className="text-base font-medium text-gray-900 mb-3">
-            Custos por Categoria (extrato Inter)
-          </h2>
-          <div className="grid grid-cols-3 gap-3">
-            {custeioABC.custo_por_categoria.slice(0, 9).map(cat => (
-              <div key={cat.categoria}
-                className="bg-white border border-gray-200 rounded-xl p-3">
-                <p className="text-xs text-gray-500 capitalize">
-                  {cat.categoria.replace(/_/g, ' ')}
-                </p>
-                <p className="font-semibold text-gray-900 mt-0.5">
-                  R$ {cat.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                </p>
-                <p className="text-xs text-gray-400">{cat.qtd} lançamentos</p>
-              </div>
-            ))}
+      {/* KPIs globais */}
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          {
+            label: 'MRR Total',
+            value: brl(data.mrr_total),
+            sub: `${tipos.length} tipos de serviço`,
+            color: 'text-gray-900',
+          },
+          {
+            label: 'Custo Total/Mês',
+            value: brl(data.custo_total_mes),
+            sub: 'extrato Inter real',
+            color: 'text-gray-900',
+          },
+          {
+            label: 'Resultado Estimado',
+            value: brl(data.resultado_estimado),
+            sub: 'MRR − custo',
+            color: (data.resultado_estimado ?? 0) >= 0 ? 'text-green-600' : 'text-red-600',
+          },
+          {
+            label: 'Margem Global',
+            value: pct(data.margem_global_pct),
+            sub: 'meta: 35%',
+            color: mcColor(data.margem_global_pct),
+          },
+        ].map(k => (
+          <div key={k.label} className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-500">{k.label}</p>
+            <p className={`text-xl font-semibold mt-1 ${k.color}`}>{k.value}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{k.sub}</p>
           </div>
+        ))}
+      </div>
+
+      {/* CCT 2026 */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-3">
+          CCT SINDECOMPRESTS 2026
+        </p>
+        <div className="grid grid-cols-3 gap-6 text-sm">
+          <div>
+            <span className="text-blue-600">Piso vigilante: </span>
+            <strong>{brl(cct?.piso_vigilante ?? 0)}</strong>
+          </div>
+          <div>
+            <span className="text-blue-600">Encargos: </span>
+            <strong>{cct?.encargos_pct ?? 42}%</strong>
+          </div>
+          <div>
+            <span className="text-blue-600">Custo all-in/posto: </span>
+            <strong>{brl(cct?.custo_all_in_posto ?? 0)}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Abas */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+        {ABAS.map(aba => (
+          <button
+            key={aba.id}
+            onClick={() => setAbaAtiva(aba.id)}
+            className={`px-4 py-1.5 text-sm rounded-lg transition-all ${
+              abaAtiva === aba.id
+                ? 'bg-white text-gray-900 font-medium shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {aba.label}
+            <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+              abaAtiva === aba.id ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-500'
+            }`}>{aba.n}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Cards por tipo (todas as abas exceto objetos) */}
+      {abaAtiva !== 'objetos' && (
+        <div className="space-y-3">
+          {tiposFiltrados.map((tipo, idx) => {
+            const cs = CLASS_STYLE[tipo.classificacao] ?? CLASS_STYLE['atencao']!
+            return (
+              <div key={idx} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                {/* Cabeçalho */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-50">
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${cs.bg} ${cs.text} ${cs.border}`}>
+                      {cs.icon} {tipo.classificacao.charAt(0).toUpperCase() + tipo.classificacao.slice(1)}
+                    </span>
+                    <div>
+                      <h3 className="font-medium text-gray-900">
+                        {LABEL[tipo.tipo] ?? tipo.tipo.replace(/_/g, ' ')}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {tipo.contratos} contrato(s) · {pct(tipo.pct_mrr ?? 0)} do MRR
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900">{brl(tipo.receita_mensal)}</p>
+                    <p className="text-xs text-gray-400">receita/mês</p>
+                  </div>
+                </div>
+
+                {/* Métricas */}
+                <div className="grid grid-cols-4 gap-px bg-gray-100">
+                  {[
+                    { label: 'Custo Direto', value: brl(tipo.custeio?.custo_direto ?? 0), color: '', big: false },
+                    { label: 'Overhead',     value: brl(tipo.custeio?.overhead_rateado ?? 0), color: '', big: false },
+                    { label: 'MC %',         value: pct(tipo.margens?.mc_pct ?? 0), color: mcColor(tipo.margens?.mc_pct ?? 0), big: true },
+                    {
+                      label: 'Gap da meta',
+                      value: (tipo.margens?.gap_meta ?? 0) <= 0
+                        ? `+${Math.abs(tipo.margens?.gap_meta ?? 0).toFixed(1)}pp`
+                        : `-${(tipo.margens?.gap_meta ?? 0).toFixed(1)}pp`,
+                      color: (tipo.margens?.gap_meta ?? 0) <= 0 ? 'text-green-600' : 'text-orange-600',
+                      big: false,
+                    },
+                  ].map(m => (
+                    <div key={m.label} className="bg-white p-3">
+                      <p className="text-xs text-gray-400">{m.label}</p>
+                      <p className={`font-semibold mt-0.5 ${m.big ? 'text-lg' : 'text-sm'} ${m.color || 'text-gray-900'}`}>
+                        {m.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Recomendação */}
+                {tipo.recomendacao && tipo.classificacao !== 'estrela' && (
+                  <div className="px-4 py-2.5 bg-amber-50 border-t border-amber-100">
+                    <p className="text-xs text-amber-700">💡 {tipo.recomendacao}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
-      {/* Tabela de contratos */}
-      {!loadingContratos && contratos?.contratos && contratos.contratos.length > 0 && (
-        <div>
-          <h2 className="text-base font-medium text-gray-900 mb-3">
-            Custeio por Contrato Individual ({contratos.total_contratos})
-          </h2>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Cliente</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Tipo</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500">Receita/mês</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500">Custo est.</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500">MC%</th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {contratos.contratos.map((c, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900 truncate max-w-[180px]">{c.cliente}</td>
-                    <td className="px-4 py-3 text-gray-500 capitalize">{c.tipo?.replace(/_/g, ' ')}</td>
-                    <td className="px-4 py-3 text-right text-gray-900">
-                      R$ {c.receita_mensal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-600">
-                      R$ {c.custo_estimado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </td>
-                    <td className={`px-4 py-3 text-right font-semibold ${statusColor[c.status]}`}>
-                      {c.mc_pct}%
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        c.status === 'ok' ? 'bg-green-100 text-green-700' :
-                        c.status === 'atencao' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {c.status === 'ok' ? '✅ OK' : c.status === 'atencao' ? '⚠️ Atenção' : '❌ Crítico'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Objetos de custo = categorias do extrato */}
+      {abaAtiva === 'objetos' && (
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <p className="text-sm font-medium text-gray-900 mb-3">
+            Gastos por Categoria — Extrato Inter
+          </p>
+          {categorias.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhuma categoria disponível</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {categorias.map((cat, i) => (
+                <div key={i} className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 capitalize">
+                    {(cat.categoria ?? '').replace(/_/g, ' ')}
+                  </p>
+                  <p className="font-semibold text-gray-900 mt-0.5">{brl(cat.total)}</p>
+                  <p className="text-xs text-gray-400">{cat.qtd} lançamentos</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
