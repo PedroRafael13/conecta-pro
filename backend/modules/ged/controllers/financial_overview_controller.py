@@ -68,15 +68,6 @@ async def financial_overview_stats(
     }
 
 
-@router.get("/bi-dashboard/bi/dashboards")
-async def financial_dashboards_list(
-    current_user: CurrentActiveUser = None,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """Lista de dashboards disponiveis."""
-    return []
-
-
 @router.get("/payables/payables/stats")
 async def payable_stats(
     condominio_id: str | None = Query(None),

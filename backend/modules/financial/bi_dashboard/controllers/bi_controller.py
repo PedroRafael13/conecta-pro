@@ -63,7 +63,7 @@ from modules.financial.bi_dashboard.services import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/bi", tags=["BI Financeiro"])
+router = APIRouter(prefix="/bi-dashboard/bi", tags=["BI Financeiro"])
 
 
 # =============================================================================
