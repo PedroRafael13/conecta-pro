@@ -2,11 +2,12 @@
 
 import logging
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
@@ -94,7 +95,7 @@ async def create_transaction(
     summary="Listar transações",
 )
 async def list_transactions(
-    bank_account_id: UUID,
+    bank_account_id: UUID | None = Query(None),
     transaction_type: TransactionType | None = Query(None),
     category: TransactionCategory | None = Query(None),
     transaction_status: TransactionStatus | None = Query(None),
@@ -160,46 +161,63 @@ async def get_by_period(
 
 @router.get(
     "/summary",
-    summary="Resumo de transações",
+    summary="Resumo de transações por período",
 )
 async def get_summary(
-    bank_account_id: UUID,
+    bank_account_id: UUID | None = Query(None),
+    period: str | None = Query("30d", description="7d|30d|90d|all"),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
-    repo: BankTransactionRepository = Depends(get_repository),
+    session: AsyncSession = Depends(get_session),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
-    """Retorna resumo de transações por período."""
-    filters = BankTransactionFilter(
-        bank_account_id=bank_account_id,
-        start_date=start_date,
-        end_date=end_date,
+    """
+    Totais de entradas, saídas e saldo por período.
+    Usado pela Conciliação Bancária para exibir os cards de resumo.
+    bank_account_id é opcional — sem ele retorna totais de todas as contas.
+    """
+    hoje = date.today()
+    if start_date and end_date:
+        dt_from = start_date
+        dt_to = end_date
+    elif period == "7d":
+        dt_from = hoje - timedelta(days=7)
+        dt_to = hoje
+    elif period == "90d":
+        dt_from = hoje - timedelta(days=90)
+        dt_to = hoje
+    elif period == "all":
+        dt_from = date(2025, 1, 1)
+        dt_to = hoje
+    else:  # 30d default
+        dt_from = hoje - timedelta(days=30)
+        dt_to = hoje
+
+    where_account = "AND bank_account_id = :account_id" if bank_account_id else ""
+    result = await session.execute(
+        text(
+            f"SELECT "  # noqa: S608
+            "  COUNT(*) as total_transacoes, "
+            "  ROUND(COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0)::numeric, 2) as total_entradas, "
+            "  ROUND(COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)::numeric, 2) as total_saidas, "
+            "  ROUND(COALESCE(SUM(amount), 0)::numeric, 2) as saldo_periodo, "
+            "  MIN(transaction_date) as data_inicio, "
+            "  MAX(transaction_date) as data_fim "
+            f"FROM bank_transactions "
+            f"WHERE transaction_date BETWEEN :dt_from AND :dt_to {where_account}"
+        ),
+        {"dt_from": dt_from, "dt_to": dt_to, "account_id": str(bank_account_id) if bank_account_id else None},
     )
-    transactions = await repo.list_with_filters(filters, skip=0, limit=10000)
-
-    total_credits = Decimal("0")
-    total_debits = Decimal("0")
-    by_category = {}
-
-    for tx in transactions:
-        if tx.transaction_type == TransactionType.CREDITO:
-            total_credits += tx.amount
-        else:
-            total_debits += tx.amount
-
-        cat = tx.category.value
-        if cat not in by_category:
-            by_category[cat] = {"count": 0, "total": Decimal("0")}
-        by_category[cat]["count"] += 1
-        by_category[cat]["total"] += tx.amount
+    row = result.fetchone()
 
     return {
-        "period": {"start": start_date, "end": end_date},
-        "total_transactions": len(transactions),
-        "total_credits": total_credits,
-        "total_debits": total_debits,
-        "net_flow": total_credits - total_debits,
-        "by_category": by_category,
+        "periodo": {"de": dt_from.isoformat(), "ate": dt_to.isoformat(), "filtro": period},
+        "total_transacoes": int(row.total_transacoes or 0),
+        "total_entradas": float(row.total_entradas or 0),
+        "total_saidas": float(row.total_saidas or 0),
+        "saldo_periodo": float(row.saldo_periodo or 0),
+        "data_inicio": row.data_inicio.isoformat() if row.data_inicio else None,
+        "data_fim": row.data_fim.isoformat() if row.data_fim else None,
     }
 
 
