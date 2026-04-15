@@ -128,18 +128,16 @@ class PayableAccountRepository:
 
     async def list(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None,
         filters: PayableAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[PayableAccount]:
         """Lista contas a pagar com filtros."""
-        query = select(PayableAccount).where(
-            and_(
-                PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo.is_(True),  # noqa: E712
-            )
-        )
+        base_conditions = [PayableAccount.ativo.is_(True)]  # noqa: E712
+        if condominio_id is not None:
+            base_conditions.append(PayableAccount.condominio_id == condominio_id)
+        query = select(PayableAccount).where(and_(*base_conditions))
 
         if filters:
             query = self._apply_filters(query, filters)
@@ -232,16 +230,14 @@ class PayableAccountRepository:
 
     async def count(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None,
         filters: PayableAccountFilter | None = None,
     ) -> int:
         """Conta contas a pagar com filtros."""
-        query = select(func.count(PayableAccount.id)).where(
-            and_(
-                PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo.is_(True),  # noqa: E712
-            )
-        )
+        base_conditions = [PayableAccount.ativo.is_(True)]  # noqa: E712
+        if condominio_id is not None:
+            base_conditions.append(PayableAccount.condominio_id == condominio_id)
+        query = select(func.count(PayableAccount.id)).where(and_(*base_conditions))
 
         if filters:
             query = self._apply_filters(query, filters)
@@ -314,32 +310,26 @@ class PayableAccountRepository:
 
     async def get_due_soon(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None,
         days: int = 7,
         limit: int = 100,
     ) -> builtins.list[PayableAccount]:
         """Busca contas a vencer em X dias."""
         today = date.today()
-        end_date = date(today.year, today.month, today.day)
-        # Calcula data futura
         end_date = today + timedelta(days=days)
+
+        conditions = [
+            PayableAccount.ativo.is_(True),  # noqa: E712
+            PayableAccount.due_date >= today,
+            PayableAccount.due_date <= end_date,
+            PayableAccount.status.notin_([PayableStatus.PAGA.value, PayableStatus.CANCELADA.value]),
+        ]
+        if condominio_id is not None:
+            conditions.append(PayableAccount.condominio_id == condominio_id)
 
         result = await self.session.execute(
             select(PayableAccount)
-            .where(
-                and_(
-                    PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo.is_(True),  # noqa: E712
-                    PayableAccount.due_date >= today,
-                    PayableAccount.due_date <= end_date,
-                    PayableAccount.status.notin_(
-                        [
-                            PayableStatus.PAGA.value,
-                            PayableStatus.CANCELADA.value,
-                        ]
-                    ),
-                )
-            )
+            .where(and_(*conditions))
             .options(selectinload(PayableAccount.supplier))
             .order_by(PayableAccount.due_date)
             .limit(limit)

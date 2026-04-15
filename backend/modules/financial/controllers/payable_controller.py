@@ -92,16 +92,8 @@ async def list_accounts(  # pylint: disable=too-many-locals
     current_user=Depends(get_current_user),
 ) -> dict[str, Any]:
     """Lista contas a pagar com filtros, retornando wrapper paginado."""
-    # Gap 1: fallback JWT — inferir condominio_id do usuário logado
+    # fallback JWT — inferir condominio_id do usuário logado; None = visão global (admin)
     effective_cid = condominio_id or getattr(current_user, "condominio_id", None)
-    if not effective_cid:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     filters = PayableAccountFilter(
         search=search,
         supplier_id=supplier_id,
@@ -172,14 +164,6 @@ async def get_due_soon(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[PayableAccountListResponse]:
     """Retorna contas a vencer nos próximos dias."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     accounts = await service.get_due_soon_accounts(condominio_id, days, limit)
     return [PayableAccountListResponse.model_validate(a) for a in accounts]
 

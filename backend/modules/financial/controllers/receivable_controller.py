@@ -107,16 +107,8 @@ async def list_accounts(  # pylint: disable=too-many-locals
     current_user=Depends(get_current_user),
 ) -> dict[str, Any]:
     """Lista contas a receber com filtros, retornando wrapper paginado."""
-    # Gap 1: fallback JWT — inferir condominio_id do usuário logado
+    # fallback JWT — inferir condominio_id do usuário logado; None = visão global (admin)
     effective_cid = condominio_id or getattr(current_user, "condominio_id", None)
-    if not effective_cid:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     filters = ReceivableAccountFilter(
         search=search,
         customer_id=customer_id,

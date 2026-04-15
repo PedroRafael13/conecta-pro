@@ -397,18 +397,16 @@ class ReceivableAccountRepository:
 
     async def list(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None,
         filters: ReceivableAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[ReceivableAccount]:
         """Lista contas a receber com filtros."""
-        query = select(ReceivableAccount).where(
-            and_(
-                ReceivableAccount.condominio_id == condominio_id,
-                ReceivableAccount.ativo.is_(True),  # noqa: E712
-            )
-        )
+        base_conditions = [ReceivableAccount.ativo.is_(True)]  # noqa: E712
+        if condominio_id is not None:
+            base_conditions.append(ReceivableAccount.condominio_id == condominio_id)
+        query = select(ReceivableAccount).where(and_(*base_conditions))
 
         if filters:
             query = self._apply_filters(query, filters)
@@ -505,16 +503,14 @@ class ReceivableAccountRepository:
 
     async def count(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None,
         filters: ReceivableAccountFilter | None = None,
     ) -> int:
         """Conta contas a receber com filtros."""
-        query = select(func.count(ReceivableAccount.id)).where(
-            and_(
-                ReceivableAccount.condominio_id == condominio_id,
-                ReceivableAccount.ativo.is_(True),  # noqa: E712
-            )
-        )
+        base_conditions = [ReceivableAccount.ativo.is_(True)]  # noqa: E712
+        if condominio_id is not None:
+            base_conditions.append(ReceivableAccount.condominio_id == condominio_id)
+        query = select(func.count(ReceivableAccount.id)).where(and_(*base_conditions))
 
         if filters:
             query = self._apply_filters(query, filters)

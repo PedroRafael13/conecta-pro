@@ -77,7 +77,7 @@ class ReceivableService:
 
     async def list_accounts(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None,
         filters: ReceivableAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,

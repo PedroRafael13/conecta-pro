@@ -66,7 +66,7 @@ class PayableService:
 
     async def list_accounts(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None,
         filters: PayableAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
@@ -400,7 +400,7 @@ class PayableService:
 
     async def get_due_soon_accounts(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None,
         days: int = 7,
         limit: int = 100,
     ) -> list[PayableAccount]:
