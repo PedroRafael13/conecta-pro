@@ -514,3 +514,176 @@ async def get_bi_overview(
         }
     except Exception as e:
         return {"error": str(e), "detail": traceback.format_exc()[-800:]}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GET /financial/bi/kpis
+# ──────────────────────────────────────────────────────────────────────────────
+@router.get("/bi/kpis", summary="KPIs financeiros ao vivo — financial_kpis table")
+async def get_bi_kpis(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    KPIs financeiros em tempo real da tabela financial_kpis + dados ao vivo.
+    MRR, saldo Inter, compliance Lucro Real, inadimplência, score saúde 0-100.
+    """
+    try:
+        kpis_result = await db.execute(
+            text("""
+            SELECT nome, valor_atual, unidade, categoria, updated_at
+            FROM financial_kpis
+            WHERE ativo = true
+            ORDER BY categoria, nome
+            """)
+        )
+        kpis_rows = kpis_result.fetchall()
+
+        live_result = await db.execute(
+            text("""
+            SELECT
+                (SELECT COALESCE(round(sum(base_value)::numeric,2), 0)
+                 FROM billing_rules WHERE ativo = true) as mrr,
+                (SELECT COALESCE(round(current_balance::numeric,2), 0)
+                 FROM bank_accounts WHERE bank_code = '077'
+                 ORDER BY updated_at DESC LIMIT 1) as saldo_inter,
+                (SELECT count(*) FROM receivable_accounts
+                 WHERE due_date < CURRENT_DATE
+                 AND status NOT IN ('paga','cancelada','baixada')) as inadimplentes,
+                (SELECT COALESCE(round(sum(net_value)::numeric,2), 0)
+                 FROM receivable_accounts
+                 WHERE due_date < CURRENT_DATE
+                 AND status NOT IN ('paga','cancelada','baixada')) as total_inadimplencia,
+                (SELECT round(count(CASE WHEN category IS NOT NULL AND category != '' THEN 1 END)::numeric /
+                 NULLIF(count(*), 0) * 100, 1)
+                 FROM bank_transactions WHERE amount < 0) as compliance_pct
+            """)
+        )
+        live = live_result.fetchone()
+
+        mrr = float(live.mrr or 0) if live else 0
+        saldo = float(live.saldo_inter or 0) if live else 0
+        inadimplentes = int(live.inadimplentes or 0) if live else 0
+        total_inad = float(live.total_inadimplencia or 0) if live else 0
+        compliance = float(live.compliance_pct or 0) if live else 0
+        inadimplencia_pct = round(total_inad / mrr * 100, 1) if mrr > 0 else 0
+
+        score = round(
+            (min(compliance, 100) * 0.30)
+            + (max(0, 100 - inadimplencia_pct * 10) * 0.30)
+            + (min(saldo / mrr * 100, 100) if mrr > 0 else 50) * 0.20
+            + 20,
+            1,
+        )
+
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "kpis": [
+                {
+                    "name": r.nome,
+                    "value": float(r.valor_atual) if r.valor_atual is not None else None,
+                    "unit": r.unidade,
+                    "category": r.categoria,
+                    "updated_at": str(r.updated_at),
+                }
+                for r in kpis_rows
+            ],
+            "live": {
+                "mrr": mrr,
+                "saldo_inter": saldo,
+                "inadimplentes": inadimplentes,
+                "total_inadimplencia": total_inad,
+                "inadimplencia_pct": inadimplencia_pct,
+                "compliance_lucro_real_pct": compliance,
+                "score_saude": min(round(score, 1), 100),
+            },
+            "total_kpis": len(kpis_rows),
+        }
+    except Exception as e:
+        return {"error": str(e), "detail": traceback.format_exc()[-800:]}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GET /financial/bi/dashboards
+# ──────────────────────────────────────────────────────────────────────────────
+@router.get("/bi/dashboards", summary="Dashboards BI configurados com widgets")
+async def get_bi_dashboards(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Configuração dos dashboards BI com widgets e métricas do painel executivo.
+    """
+    try:
+        result = await db.execute(
+            text("""
+            SELECT id, nome, descricao, is_default, ativo, created_at, updated_at
+            FROM financial_dashboards
+            WHERE ativo = true
+            ORDER BY is_default DESC, updated_at DESC
+            LIMIT 20
+            """)
+        )
+        rows = result.fetchall()
+
+        if not rows:
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "total_dashboards": 0,
+                "dashboards": [],
+                "painel_padrao": {
+                    "nome": "Painel Financeiro Conecta PRO",
+                    "widgets": [
+                        {"id": "mrr", "titulo": "MRR", "tipo": "kpi", "endpoint": "/financial/dashboard"},
+                        {
+                            "id": "cashflow",
+                            "titulo": "Cashflow 30d",
+                            "tipo": "chart",
+                            "endpoint": "/financial/cashflow/forecast",
+                        },
+                        {
+                            "id": "inadimplencia",
+                            "titulo": "Inadimplência",
+                            "tipo": "kpi",
+                            "endpoint": "/financial/receivables",
+                        },
+                        {
+                            "id": "custeio",
+                            "titulo": "Custeio ABC",
+                            "tipo": "table",
+                            "endpoint": "/financial/custeio/abc",
+                        },
+                        {
+                            "id": "precificacao",
+                            "titulo": "Precificação",
+                            "tipo": "table",
+                            "endpoint": "/financial/precificacao/contratos/analise",
+                        },
+                        {
+                            "id": "compliance",
+                            "titulo": "Compliance LR",
+                            "tipo": "gauge",
+                            "endpoint": "/justificativa/compliance",
+                        },
+                    ],
+                },
+            }
+
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "total_dashboards": len(rows),
+            "dashboards": [
+                {
+                    "id": str(r.id),
+                    "nome": r.nome,
+                    "descricao": r.descricao,
+                    "padrao": r.is_default,
+                    "ativo": r.ativo,
+                    "criado_em": str(r.created_at),
+                    "atualizado_em": str(r.updated_at),
+                }
+                for r in rows
+            ],
+        }
+    except Exception as e:
+        return {"error": str(e), "detail": traceback.format_exc()[-800:]}
