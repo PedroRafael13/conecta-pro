@@ -74,7 +74,7 @@ router = APIRouter(prefix="/bi-dashboard/bi", tags=["BI Financeiro"])
 @router.post("/dashboards", response_model=DashboardResponse, status_code=http_status.HTTP_201_CREATED)
 async def create_dashboard(
     data: DashboardCreate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -196,7 +196,7 @@ async def list_dashboards(
 @router.get("/dashboards/{dashboard_id}", response_model=DashboardResponse)
 async def get_dashboard(
     dashboard_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Busca dashboard por ID."""
@@ -215,7 +215,7 @@ async def get_dashboard(
 async def update_dashboard(
     dashboard_id: UUID,
     data: DashboardUpdate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -233,7 +233,7 @@ async def update_dashboard(
 @router.delete("/dashboards/{dashboard_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 async def delete_dashboard(
     dashboard_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Deleta dashboard."""
@@ -250,7 +250,7 @@ async def delete_dashboard(
 @router.post("/dashboards/{dashboard_id}/publish", response_model=DashboardResponse, status_code=201)
 async def publish_dashboard(
     dashboard_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Publica dashboard."""
@@ -270,7 +270,7 @@ async def publish_dashboard(
 @router.post("/dashboards/{dashboard_id}/archive", response_model=DashboardResponse, status_code=201)
 async def archive_dashboard(
     dashboard_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Arquiva dashboard."""
@@ -290,7 +290,7 @@ async def archive_dashboard(
 @router.post("/dashboards/{dashboard_id}/favorite", response_model=DashboardResponse, status_code=201)
 async def toggle_dashboard_favorite(
     dashboard_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Alterna favorito do dashboard."""
@@ -307,7 +307,7 @@ async def toggle_dashboard_favorite(
 @router.post("/dashboards/{dashboard_id}/set-default", response_model=DashboardResponse, status_code=201)
 async def set_default_dashboard(
     dashboard_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Define dashboard como padrao."""
@@ -323,7 +323,7 @@ async def set_default_dashboard(
 
 @router.get("/dashboards/default", response_model=DashboardResponse)
 async def get_default_dashboard(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Busca dashboard padrao."""
@@ -341,7 +341,7 @@ async def get_default_dashboard(
 async def duplicate_dashboard(
     dashboard_id: UUID,
     novo_nome: str = Query(...),
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -358,7 +358,7 @@ async def duplicate_dashboard(
 
 @router.get("/dashboards/stats", response_model=DashboardStats)
 async def get_dashboard_stats(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Retorna estatisticas de dashboards."""
@@ -374,7 +374,7 @@ async def get_dashboard_stats(
 @router.post("/widgets", response_model=WidgetResponse, status_code=http_status.HTTP_201_CREATED)
 async def create_widget(
     data: WidgetCreate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -386,7 +386,7 @@ async def create_widget(
 
 @router.get("/widgets", response_model=list[WidgetResponse])
 async def list_widgets(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     dashboard_id: UUID | None = None,
     tipo: WidgetType | None = None,
     data_source: DataSource | None = None,
@@ -408,7 +408,7 @@ async def list_widgets(
 @router.get("/widgets/{widget_id}", response_model=WidgetResponse)
 async def get_widget(
     widget_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Busca widget por ID."""
@@ -426,7 +426,7 @@ async def get_widget(
 async def update_widget(
     widget_id: UUID,
     data: WidgetUpdate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Atualiza widget."""
@@ -443,7 +443,7 @@ async def update_widget(
 @router.delete("/widgets/{widget_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 async def delete_widget(
     widget_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Deleta widget."""
@@ -460,7 +460,7 @@ async def delete_widget(
 @router.get("/widgets/{widget_id}/data", response_model=WidgetData)
 async def get_widget_data(
     widget_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Busca dados do widget."""
@@ -500,7 +500,7 @@ async def get_widget_data(
 @router.post("/widgets/{widget_id}/refresh", response_model=WidgetData, status_code=201)
 async def refresh_widget_data(
     widget_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Forca refresh dos dados do widget."""
@@ -514,7 +514,7 @@ async def update_widget_position(
     y: int = Query(..., ge=0),
     w: int | None = Query(None, ge=1),
     h: int | None = Query(None, ge=1),
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Atualiza posicao do widget."""
@@ -532,7 +532,7 @@ async def update_widget_position(
 async def set_widget_visibility(
     widget_id: UUID,
     is_visible: bool = Query(...),
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Define visibilidade do widget."""
@@ -550,7 +550,7 @@ async def set_widget_visibility(
 async def clone_widget(
     widget_id: UUID,
     target_dashboard_id: UUID = Query(...),
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -568,7 +568,7 @@ async def clone_widget(
 @router.get("/dashboards/{dashboard_id}/widgets", response_model=list[WidgetResponse])
 async def get_dashboard_widgets(
     dashboard_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Lista widgets de um dashboard."""
@@ -584,7 +584,7 @@ async def get_dashboard_widgets(
 @router.post("/kpis", response_model=KPIResponse, status_code=http_status.HTTP_201_CREATED)
 async def create_kpi(
     data: KPICreate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -696,7 +696,7 @@ async def list_kpis(
 @router.get("/kpis/{kpi_id}", response_model=KPIResponse)
 async def get_kpi(
     kpi_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Busca KPI por ID."""
@@ -714,7 +714,7 @@ async def get_kpi(
 async def update_kpi(
     kpi_id: UUID,
     data: KPIUpdate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -732,7 +732,7 @@ async def update_kpi(
 @router.delete("/kpis/{kpi_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 async def delete_kpi(
     kpi_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Deleta KPI."""
@@ -749,7 +749,7 @@ async def delete_kpi(
 @router.post("/kpis/{kpi_id}/calculate", response_model=KPIValue, status_code=201)
 async def calculate_kpi(
     kpi_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     save_history: bool = Query(True),
     db: Session = Depends(get_db),
 ):
@@ -786,7 +786,7 @@ async def calculate_kpi(
 @router.get("/kpis/{kpi_id}/history", response_model=KPIHistory)
 async def get_kpi_history(
     kpi_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
 ):
@@ -818,7 +818,7 @@ async def get_kpi_history(
 
 @router.get("/kpis/summary", response_model=list[KPIResponse])
 async def get_kpis_summary(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Lista KPIs para resumo."""
@@ -828,7 +828,7 @@ async def get_kpis_summary(
 
 @router.get("/kpis/alerts", response_model=list[KPIResponse])
 async def get_kpis_alerts(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     min_level: AlertLevel = Query(AlertLevel.WARNING),
     db: Session = Depends(get_db),
 ):
@@ -839,7 +839,7 @@ async def get_kpis_alerts(
 
 @router.get("/kpis/stats", response_model=KPISummary)
 async def get_kpis_stats(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Retorna estatisticas de KPIs."""
@@ -849,7 +849,7 @@ async def get_kpis_stats(
 
 @router.post("/kpis/calculate-all", status_code=201)
 async def calculate_all_kpis(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Calcula todos os KPIs pendentes."""
@@ -878,7 +878,7 @@ async def calculate_all_kpis(
 @router.post("/reports", response_model=ReportResponse, status_code=http_status.HTTP_201_CREATED)
 async def create_report(
     data: ReportCreate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -896,7 +896,7 @@ async def create_report(
 
 @router.get("/reports", response_model=list[ReportResponse])
 async def list_reports(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     tipo: ReportType | None = None,
     formato: ReportFormat | None = None,
     status: ReportStatus | None = None,
@@ -922,7 +922,7 @@ async def list_reports(
 @router.get("/reports/{report_id}", response_model=ReportResponse)
 async def get_report(
     report_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Busca relatorio por ID."""
@@ -940,7 +940,7 @@ async def get_report(
 async def update_report(
     report_id: UUID,
     data: ReportUpdate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -958,7 +958,7 @@ async def update_report(
 @router.delete("/reports/{report_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 async def delete_report(
     report_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Deleta relatorio."""
@@ -975,7 +975,7 @@ async def delete_report(
 @router.post("/reports/{report_id}/pause", response_model=ReportResponse, status_code=201)
 async def pause_report(
     report_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Pausa agendamento do relatorio."""
@@ -992,7 +992,7 @@ async def pause_report(
 @router.post("/reports/{report_id}/resume", response_model=ReportResponse, status_code=201)
 async def resume_report(
     report_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Retoma agendamento do relatorio."""
@@ -1009,7 +1009,7 @@ async def resume_report(
 @router.post("/reports/{report_id}/execute", status_code=201)
 async def execute_report_now(
     report_id: UUID,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Executa relatorio imediatamente."""
@@ -1033,7 +1033,7 @@ async def execute_report_now(
 
 @router.get("/reports/due", response_model=list[ReportResponse])
 async def get_due_reports(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Lista relatorios prontos para execucao."""
@@ -1048,7 +1048,7 @@ async def get_due_reports(
 
 @router.get("/cache/stats", response_model=CacheStats)
 async def get_cache_stats(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Retorna estatisticas do cache."""
@@ -1059,7 +1059,7 @@ async def get_cache_stats(
 @router.post("/cache/invalidate", status_code=201)
 async def invalidate_cache(
     data: CacheInvalidate,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Invalida cache."""
@@ -1086,7 +1086,7 @@ async def invalidate_cache(
 
 @router.post("/cache/cleanup", status_code=201)
 async def cleanup_cache(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     older_than_hours: int = Query(24, ge=1, le=168),
     db: Session = Depends(get_db),
 ):
@@ -1248,7 +1248,7 @@ async def calculate_payback(
 
 @router.get("/summary/financial")
 async def get_financial_summary(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
 ):
@@ -1259,7 +1259,7 @@ async def get_financial_summary(
 
 @router.get("/summary/compare")
 async def compare_periods(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     data_source: DataSource = Query(...),
     metric_field: str = Query(...),
     current_days: int = Query(30, ge=1, le=365),
@@ -1284,7 +1284,7 @@ async def compare_periods(
 
 @router.get("/kpis-summary")
 async def get_bi_kpis_summary(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -1336,7 +1336,7 @@ async def get_bi_kpis_summary(
 
 @router.get("/cashflow-analysis")
 async def get_cashflow_analysis(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -1386,7 +1386,7 @@ async def get_cashflow_analysis(
 
 @router.get("/receivables-aging")
 async def get_receivables_aging(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -1447,7 +1447,7 @@ async def get_receivables_aging(
 
 @router.get("/payables-aging")
 async def get_payables_aging(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -1509,7 +1509,7 @@ async def get_payables_aging(
 
 @router.get("/cost-analysis")
 async def get_cost_analysis(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -1557,7 +1557,7 @@ async def get_cost_analysis(
 
 @router.get("/revenue-analysis")
 async def get_revenue_analysis(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -1603,7 +1603,7 @@ async def get_revenue_analysis(
 
 @router.get("/profitability")
 async def get_profitability(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -1656,7 +1656,7 @@ async def get_profitability(
 
 @router.get("/alerts")
 async def get_bi_alerts(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -1708,7 +1708,7 @@ async def get_bi_alerts(
 
 @router.get("/performance-dashboard")
 async def get_performance_dashboard(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -1779,7 +1779,7 @@ async def get_performance_dashboard(
 
 @router.get("/trends")
 async def get_financial_trends(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     months: int = Query(6, ge=1, le=24),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -1837,7 +1837,7 @@ async def get_financial_trends(
 
 @router.get("/comparison")
 async def get_period_comparison(
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     current_period_days: int = Query(30, ge=1, le=365),
     previous_period_days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),

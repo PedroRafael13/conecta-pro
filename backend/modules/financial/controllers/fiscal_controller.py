@@ -365,7 +365,7 @@ async def atualizar_retencao(
 @router.post("/retencao/calcular", response_model=CalculoRetencaoResponse, status_code=201)
 async def calcular_retencoes(
     data: CalculoRetencaoRequest,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
 ) -> CalculoRetencaoResponse:
@@ -692,7 +692,7 @@ async def cancelar_nfe(
 @router.post("/nfe/inutilizar", status_code=201)
 async def inutilizar_numeracao(
     data: NFeInutilizarRequest,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(require_permission("fiscal:nfe:inutilizar")),
 ) -> dict[str, Any]:
@@ -962,7 +962,7 @@ async def obter_sped(
 @router.post("/sped/gerar", status_code=201)
 async def gerar_sped(
     data: SPEDGerarRequest,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(require_permission("fiscal:sped:gerar")),
 ) -> dict[str, Any]:
@@ -1196,7 +1196,7 @@ async def obter_das_competencia(
 @router.post("/das/calcular", response_model=DASCalcularResponse, status_code=201)
 async def calcular_das(
     data: DASCalcularRequest,
-    condominio_id: UUID = Query(...),
+    condominio_id: UUID | None = Query(None),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
 ) -> DASCalcularResponse:
