@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { DollarSign, ArrowLeft, Inbox, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon, Calculator, RefreshCw } from 'lucide-react';
+import { DollarSign, ArrowLeft, Inbox, Loader2, Search, ChevronLeft, ChevronRight as ChevronRightIcon, Calculator, RefreshCw, Banknote, X, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +49,12 @@ export default function FolhaPage() {
   const [sortField, setSortField] = useState<string>('');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // PIX Lote
+  const [pixModalOpen, setPixModalOpen] = useState(false);
+  const [pixLoading, setPixLoading] = useState(false);
+  const [pixConfirming, setPixConfirming] = useState(false);
+  const [pixSimulacao, setPixSimulacao] = useState<{ total_funcionarios: number; total_valor: number; prontos_para_pagar: number; sem_chave_pix: string[] } | null>(null);
 
   const [mes, ano] = useMemo(() => {
     const [y, m] = periodo.split('-');
@@ -110,6 +116,57 @@ export default function FolhaPage() {
   }, [periodo, refreshKey]);
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+
+  const handleOpenPixModal = async () => {
+    setPixModalOpen(true);
+    setPixSimulacao(null);
+    setPixLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/dp/payroll/pay-batch`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ mes_referencia: periodo, modo: 'simulacao' }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setPixSimulacao(d);
+      } else {
+        toast.error('Erro ao buscar simulação PIX', { duration: 4000 });
+        setPixModalOpen(false);
+      }
+    } catch {
+      toast.error('Erro de conexão', { duration: 4000 });
+      setPixModalOpen(false);
+    } finally {
+      setPixLoading(false);
+    }
+  };
+
+  const handleConfirmPixPagamento = async () => {
+    setPixConfirming(true);
+    try {
+      const res = await fetch(`${API_BASE}/dp/payroll/pay-batch`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ mes_referencia: periodo, modo: 'execucao' }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        const total = d.total_valor ?? pixSimulacao?.total_valor ?? 0;
+        const funcs = d.total_funcionarios ?? pixSimulacao?.total_funcionarios ?? 0;
+        toast.success(`PIX agendado: ${funcs} funcionários · ${fmt(total)}`, { duration: 6000 });
+        setPixModalOpen(false);
+        setRefreshKey(k => k + 1);
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao processar pagamento PIX', { duration: 5000 });
+      }
+    } catch {
+      toast.error('Erro de conexão ao processar PIX', { duration: 5000 });
+    } finally {
+      setPixConfirming(false);
+    }
+  };
 
   const handleCalculatePayroll = async () => {
     setCalculating(true);
@@ -219,6 +276,16 @@ export default function FolhaPage() {
           >
             {calculating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Calculator className="h-4 w-4 mr-1" />}
             {calculating ? 'Calculando...' : 'Calcular Folha'}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={loading}
+            onClick={handleOpenPixModal}
+          >
+            <Banknote className="h-4 w-4 mr-1" />
+            Pagar em Lote (PIX)
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={() => setRefreshKey(k => k + 1)}>
             <RefreshCw className="h-4 w-4" />
@@ -358,6 +425,89 @@ export default function FolhaPage() {
             </CardContent>
           </Card>
         </>
+      )}
+
+      {/* Modal PIX Lote */}
+      {pixModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-background rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Banknote className="h-5 w-5 text-blue-600" />
+                Pagar em Lote via PIX
+              </h2>
+              <button
+                type="button"
+                onClick={() => setPixModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground mb-1">Mês de referência</p>
+              <p className="font-medium">{periodo}</p>
+            </div>
+
+            {pixLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                <span className="ml-2 text-sm text-muted-foreground">Buscando simulação...</span>
+              </div>
+            ) : pixSimulacao ? (
+              <>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-blue-600">{pixSimulacao.prontos_para_pagar}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Funcionários prontos</p>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-green-600">{fmt(pixSimulacao.total_valor)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Total a pagar</p>
+                  </div>
+                </div>
+
+                {pixSimulacao.sem_chave_pix && pixSimulacao.sem_chave_pix.length > 0 && (
+                  <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 rounded-lg p-3 mb-4">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                      {pixSimulacao.sem_chave_pix.length} funcionário(s) sem chave PIX serão ignorados.
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground mb-4">
+                  Ao confirmar, os pagamentos PIX serão agendados para todos os funcionários com holerite publicado e chave PIX cadastrada.
+                </p>
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setPixModalOpen(false)}
+                    disabled={pixConfirming}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleConfirmPixPagamento}
+                    disabled={pixConfirming}
+                  >
+                    {pixConfirming ? (
+                      <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Processando...</>
+                    ) : (
+                      <><Banknote className="h-4 w-4 mr-1" /> Confirmar Pagamento</>
+                    )}
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
       )}
     </div>
   );
