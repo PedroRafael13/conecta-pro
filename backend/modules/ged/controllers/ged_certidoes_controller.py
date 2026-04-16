@@ -53,6 +53,7 @@ class CertidaoUpdate(BaseModel):
     file_path: str | None = None
     file_url: str | None = None
     notes: str | None = None
+    observacao: str | None = None  # alias de notes (compatibilidade com prompt)
     alerta_ativo: bool | None = None
 
 
@@ -349,6 +350,12 @@ async def atualizar_certidao(
         )
 
     updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    # observacao é alias de notes — mapear antes de montar SQL
+    if "observacao" in updates:
+        if "notes" not in updates:
+            updates["notes"] = updates.pop("observacao")
+        else:
+            updates.pop("observacao")
     if not updates:
         raise HTTPException(status_code=422, detail={"code": "NO_FIELDS", "message": "Nenhum campo para atualizar."})
 
