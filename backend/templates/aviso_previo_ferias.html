@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; font-size: 12px; margin: 40px; }
+  h1 { text-align: center; font-size: 15px; }
+  p { line-height: 1.6; text-align: justify; }
+  .assinatura { margin-top: 60px; }
+  .linha { border-top: 1px solid #000; width: 250px; margin-top: 40px; }
+  .box { border: 1px solid #000; padding: 15px; margin: 20px 0; }
+</style>
+</head>
+<body>
+<h1>AVISO PRÉVIO DE FÉRIAS</h1>
+
+<div class="box">
+<p><strong>Empregado(a):</strong> {{ employee_name }}</p>
+<p><strong>Cargo:</strong> {{ role }}</p>
+<p><strong>Data de Admissão:</strong> {{ admission_date }}</p>
+<p><strong>Período Aquisitivo:</strong> {{ period_start }} a {{ period_end }}</p>
+</div>
+
+<p>Prezado(a) <strong>{{ employee_name }}</strong>,</p>
+
+<p>Comunicamos que suas férias estão programadas para o período de
+<strong>{{ vacation_start }}</strong> a <strong>{{ vacation_end }}</strong>
+({{ vacation_days }} dias), conforme artigo 135 da CLT e CCT
+SINDECOMPRESTS 2026.</p>
+
+<p>O pagamento das férias será efetuado com antecedência mínima de
+2 (dois) dias, conforme determina o artigo 145 da CLT.</p>
+
+<p>Retorno previsto: <strong>{{ return_date }}</strong>.</p>
+
+<div class="assinatura">
+<p>Manaus/AM, {{ notice_date }}</p>
+<br><br>
+<div style="display:flex; justify-content:space-between;">
+  <div>
+    <div class="linha"></div>
+    <p>JORDAN SANTOS DE JESUS LTDA<br>
+    CNPJ 35.710.481/0001-03<br>Empregadora</p>
+  </div>
+  <div>
+    <div class="linha"></div>
+    <p>{{ employee_name }}<br>Empregado(a)</p>
+  </div>
+</div>
+</div>
+</body>
+</html>

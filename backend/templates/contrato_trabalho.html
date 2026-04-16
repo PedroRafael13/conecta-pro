@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; font-size: 12px; margin: 40px; }
+  h1 { text-align: center; font-size: 16px; }
+  h2 { font-size: 13px; margin-top: 20px; }
+  p { line-height: 1.6; text-align: justify; }
+  .assinatura { margin-top: 60px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>CONTRATO INDIVIDUAL DE TRABALHO</h1>
+<p>Pelo presente instrumento, de um lado,
+<strong>JORDAN SANTOS DE JESUS LTDA</strong>,
+CNPJ 35.710.481/0001-03, com sede em Manaus/AM,
+doravante denominada EMPREGADORA, e de outro,
+<strong>{{ employee_name }}</strong>, CPF {{ cpf }},
+doravante denominado EMPREGADO, têm entre si justo e
+contratado o seguinte:</p>
+
+<h2>CLÁUSULA 1ª — CARGO E FUNÇÃO</h2>
+<p>O EMPREGADO é admitido para exercer o cargo de
+<strong>{{ role }}</strong>, a partir de
+<strong>{{ start_date }}</strong>.</p>
+
+<h2>CLÁUSULA 2ª — REMUNERAÇÃO</h2>
+<p>O EMPREGADO receberá salário mensal de
+<strong>R$ {{ base_salary }}</strong>,
+pago até o 5º dia útil do mês subsequente.</p>
+
+<h2>CLÁUSULA 3ª — JORNADA</h2>
+<p>A jornada de trabalho será de 44 horas semanais,
+conforme escala definida pela EMPREGADORA,
+em conformidade com a CCT SINDECOMPRESTS vigente.</p>
+
+<h2>CLÁUSULA 4ª — REGIME</h2>
+<p>O presente contrato rege-se pela Consolidação das
+Leis do Trabalho (CLT) e pela CCT SINDECOMPRESTS 2026
+(Registro MTE: AM000613/2025).</p>
+
+<div class="assinatura">
+<p>Manaus, {{ contract_date }}</p>
+<br><br>
+<p>_______________________________<br>
+JORDAN SANTOS DE JESUS LTDA<br>CNPJ 35.710.481/0001-03</p>
+<br><br>
+<p>_______________________________<br>
+{{ employee_name }}<br>EMPREGADO</p>
+</div>
+</body>
+</html>

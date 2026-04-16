@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comprovante de Pagamento de Salário</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Arial', sans-serif; font-size: 13px; color: #1a1a1a; background: #f5f5f5; }
+    .container { max-width: 680px; margin: 32px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.10); }
+
+    /* Header */
+    .header { background: #1a56db; color: #fff; padding: 24px 32px; }
+    .header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
+    .header p  { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+    /* Empresa */
+    .empresa { padding: 20px 32px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; }
+    .empresa-nome { font-size: 15px; font-weight: 700; color: #111827; }
+    .empresa-cnpj { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+    /* Funcionário */
+    .funcionario { padding: 20px 32px; border-bottom: 1px solid #e5e7eb; }
+    .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #6b7280; margin-bottom: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-label { font-size: 11px; color: #9ca3af; }
+    .field-value { font-size: 13px; font-weight: 600; color: #111827; margin-top: 2px; }
+
+    /* Pagamento */
+    .pagamento { padding: 20px 32px; border-bottom: 1px solid #e5e7eb; }
+    .valor-destaque { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px 20px; margin-top: 12px; text-align: center; }
+    .valor-destaque .valor-label { font-size: 11px; color: #3b82f6; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+    .valor-destaque .valor-numero { font-size: 28px; font-weight: 800; color: #1e40af; margin-top: 4px; }
+
+    /* Status */
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .status-pago   { background: #d1fae5; color: #065f46; }
+    .status-pendente { background: #fef3c7; color: #92400e; }
+    .status-erro   { background: #fee2e2; color: #991b1b; }
+
+    /* PIX */
+    .pix-info { padding: 20px 32px; border-bottom: 1px solid #e5e7eb; background: #fafafa; }
+    .pix-chave { font-family: monospace; font-size: 12px; background: #f3f4f6; padding: 8px 12px; border-radius: 4px; word-break: break-all; margin-top: 6px; }
+    .e2e-id { font-family: monospace; font-size: 11px; color: #6b7280; margin-top: 4px; word-break: break-all; }
+
+    /* Rodapé */
+    .footer { padding: 16px 32px; text-align: center; font-size: 11px; color: #9ca3af; }
+    .footer strong { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="header">
+      <h1>Comprovante de Pagamento de Salário</h1>
+      <p>Conecta Mais — Segurança e Tecnologia</p>
+    </div>
+
+    <div class="empresa">
+      <div class="empresa-nome">{{ empresa_nome }}</div>
+      <div class="empresa-cnpj">CNPJ {{ empresa_cnpj }}</div>
+    </div>
+
+    <div class="funcionario">
+      <div class="section-title">Dados do Funcionário</div>
+      <div class="grid-2">
+        <div>
+          <div class="field-label">Nome</div>
+          <div class="field-value">{{ nome_funcionario }}</div>
+        </div>
+        <div>
+          <div class="field-label">CPF</div>
+          <div class="field-value">{{ cpf_funcionario }}</div>
+        </div>
+        <div>
+          <div class="field-label">Competência</div>
+          <div class="field-value">{{ competencia }}</div>
+        </div>
+        <div>
+          <div class="field-label">Status</div>
+          <div class="field-value">
+            <span class="status-badge status-{{ status_css }}">{{ status_label }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pagamento">
+      <div class="section-title">Valores</div>
+      <div class="grid-2" style="margin-bottom:12px;">
+        <div>
+          <div class="field-label">Salário Bruto</div>
+          <div class="field-value">{{ salario_bruto }}</div>
+        </div>
+        <div>
+          <div class="field-label">Descontos</div>
+          <div class="field-value">{{ total_descontos }}</div>
+        </div>
+      </div>
+      <div class="valor-destaque">
+        <div class="valor-label">Valor Líquido Pago via PIX</div>
+        <div class="valor-numero">{{ salario_liquido }}</div>
+      </div>
+    </div>
+
+    <div class="pix-info">
+      <div class="section-title">Dados do PIX</div>
+      <div class="grid-2">
+        <div>
+          <div class="field-label">Data/Hora do Pagamento</div>
+          <div class="field-value">{{ data_pagamento }}</div>
+        </div>
+        <div>
+          <div class="field-label">Tipo da Chave PIX</div>
+          <div class="field-value">{{ pix_key_type }}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="field-label">Chave PIX</div>
+        <div class="pix-chave">{{ pix_key }}</div>
+      </div>
+      {% if e2e_id %}
+      <div style="margin-top:8px;">
+        <div class="field-label">ID Transação (E2E)</div>
+        <div class="e2e-id">{{ e2e_id }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="footer">
+      <p>Documento gerado automaticamente pelo sistema <strong>Conecta PRO</strong></p>
+      <p style="margin-top:4px;">Gerado em {{ gerado_em }} · CNPJ 35.710.481/0001-03</p>
+    </div>
+
+  </div>
+</body>
+</html>
