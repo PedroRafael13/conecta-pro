@@ -37,7 +37,9 @@ const PAGE_SIZE = 12;
 export default function FolhaPage() {
   const router = useRouter();
   const now = new Date();
-  const [periodo, setPeriodo] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+  const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+  const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const [periodo, setPeriodo] = useState(`${prevYear}-${String(prevMonth).padStart(2, '0')}`);
   const [dashboard, setDashboard] = useState<any>(null);
   const [rubricas, setRubricas] = useState<any[]>([]);
   const [resumo, setResumo] = useState<any>(null);
@@ -211,6 +213,13 @@ export default function FolhaPage() {
     return items;
   }, [employees, searchTerm, sortField, sortDir]);
 
+  // Mostrar botão PIX apenas quando há holerites published
+  const hasPublishedPayslips = employees.some(e =>
+    e.payslip_status === 'published' ||
+    e.status_folha === 'calculada' ||
+    e.payroll_status === 'calculated'
+  );
+
   const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
   const paginatedData = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
@@ -277,16 +286,18 @@ export default function FolhaPage() {
             {calculating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Calculator className="h-4 w-4 mr-1" />}
             {calculating ? 'Calculando...' : 'Calcular Folha'}
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            disabled={loading}
-            onClick={handleOpenPixModal}
-          >
-            <Banknote className="h-4 w-4 mr-1" />
-            Pagar em Lote (PIX)
-          </Button>
+          {hasPublishedPayslips && (
+            <Button
+              type="button"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={loading}
+              onClick={handleOpenPixModal}
+            >
+              <Banknote className="h-4 w-4 mr-1" />
+              💸 Pagar em Lote (PIX)
+            </Button>
+          )}
           <Button type="button" variant="outline" size="sm" onClick={() => setRefreshKey(k => k + 1)}>
             <RefreshCw className="h-4 w-4" />
           </Button>
