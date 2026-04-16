@@ -46,7 +46,7 @@ interface CusteioABC {
   custo_total_mes: number
   resultado_estimado: number
   margem_global_pct: number
-  cct_2026: { piso_vigilante: number; custo_all_in_posto: number; encargos_pct: number }
+  cct_2026: { piso_base_cct: number; custo_all_in_posto: number; encargos_pct: number }
   custo_por_categoria: CategoriaGasto[]
   analise_por_tipo: TipoAnalise[]
   alertas: string[]
@@ -216,8 +216,8 @@ export default function CusteioPage() {
         </p>
         <div className="grid grid-cols-3 gap-6 text-sm">
           <div>
-            <span className="text-blue-600">Piso vigilante: </span>
-            <strong>{brl(cct?.piso_vigilante ?? 0)}</strong>
+            <span className="text-blue-600">Piso base CCT: </span>
+            <strong>{brl(cct?.piso_base_cct ?? 0)}</strong>
           </div>
           <div>
             <span className="text-blue-600">Encargos: </span>

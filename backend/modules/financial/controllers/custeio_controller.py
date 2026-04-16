@@ -179,7 +179,7 @@ async def get_custeio_abc(
             "resultado_estimado": round(mrr_total - custo_total_global, 2),
             "margem_global_pct": round((mrr_total - custo_total_global) / mrr_total * 100, 1) if mrr_total > 0 else 0,
             "cct_2026": {
-                "piso_vigilante": 1847.93,
+                "piso_base_cct": 1847.93,
                 "custo_all_in_posto": CUSTO_CLT_POSTO,
                 "encargos_pct": 42.0,
             },

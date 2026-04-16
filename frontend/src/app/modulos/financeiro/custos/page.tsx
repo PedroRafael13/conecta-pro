@@ -28,7 +28,7 @@ interface CusteioABC {
   resultado_estimado: number
   margem_global_pct: number
   cct_2026: {
-    piso_vigilante: number
+    piso_base_cct: number
     custo_all_in_posto: number
     encargos_pct: number
   }
@@ -161,9 +161,9 @@ export default function CustosPage() {
           <p className="text-sm font-medium text-blue-900 mb-2">CCT SINDECOMPRESTS 2026</p>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <span className="text-blue-600">Piso vigilante:</span>{' '}
+              <span className="text-blue-600">Piso base CCT:</span>{' '}
               <strong>
-                R$ {(cct.piso_vigilante ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {(cct.piso_base_cct ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </strong>
             </div>
             <div>
