@@ -28,6 +28,7 @@ from core.database import get_db
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dp/payslips", tags=["DP - Contracheques"])
+payroll_router = APIRouter(prefix="/dp/payroll", tags=["DP - Pagamento Folha PIX"])
 
 
 # ─────────────────────────── SCHEMAS ──────────────────────────────
@@ -496,6 +497,61 @@ async def status_pagamento_folha(
     )
 
     return status_pagamentos_folha(mes, ano)
+
+
+class PayBatchRequest(BaseModel):
+    mes_referencia: str = Field(
+        ...,
+        description="Mês de referência no formato AAAA-MM (ex: 2026-03)",
+        pattern=r"^\d{4}-\d{2}$",
+    )
+    modo: str = Field(
+        "simulacao",
+        description="simulacao (preview sem pagar) | execucao (envia PIX reais)",
+    )
+
+
+@payroll_router.post(
+    "/pay-batch",
+    summary="Pagamento lote folha via PIX Inter",
+    description=(
+        "Processa pagamento de salários via PIX para todos os funcionários "
+        "com holerite publicado no período informado. "
+        "modo=simulacao: preview sem enviar PIX. "
+        "modo=execucao: envia PIX reais pelo Banco Inter (mTLS OAuth2)."
+    ),
+)
+async def pagar_folha_lote(
+    body: PayBatchRequest,
+    _user: CurrentActiveUser = None,  # noqa: B008
+):
+    """
+    POST /api/v1/people-management/dp/payroll/pay-batch
+    Body: {"mes_referencia": "2026-03", "modo": "simulacao"}
+    """
+    from modules.people_management.services.folha_payment_service import (
+        processar_folha_completa,
+    )
+
+    try:
+        ano_str, mes_str = body.mes_referencia.split("-")
+        mes = int(mes_str)
+        ano = int(ano_str)
+    except (ValueError, AttributeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"mes_referencia inválido: '{body.mes_referencia}'. Use formato AAAA-MM.",
+        ) from exc
+
+    if not (1 <= mes <= 12):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Mês inválido: {mes}. Deve ser entre 1 e 12.",
+        )
+
+    apenas_preview = body.modo.lower() != "execucao"
+    resultado = await processar_folha_completa(mes, ano, apenas_preview=apenas_preview)
+    return {**resultado, "mes_referencia": body.mes_referencia, "modo": body.modo}
 
 
 @router.put(
