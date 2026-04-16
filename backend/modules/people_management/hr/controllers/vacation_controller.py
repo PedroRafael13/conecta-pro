@@ -6,10 +6,13 @@ cálculo de saldo, detalhes e aprovação.
 """
 
 import asyncio
+import io
 import logging
+from datetime import date, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -22,15 +25,9 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/vacations", tags=["DP - Férias"])
 
-# Re-export do router existente de férias
-# NOTA: o router ops tem prefix="/vacations" → resulta em /hr/vacations/vacations/
-# Mantemos para compatibilidade, e adicionamos endpoint direto em /hr/vacations/
-try:
-    from modules.operacional.vacations.controller import router as _vacation_ops_router
-
-    router.include_router(_vacation_ops_router)
-except ImportError:
-    logger.info("Router de férias operacional não disponível para re-export")
+# FIX 2026-04-16: include_router(_vacation_ops_router) REMOVIDO.
+# O ops router tem prefix="/vacations" — incluí-lo aqui gerava prefix duplo
+# /hr/vacations/vacations/... Rotas DP definidas diretamente abaixo.
 
 
 @router.get(
@@ -213,3 +210,177 @@ async def approve_vacation(
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/{vacation_id}/aviso-previo",
+    summary="Gerar Aviso Prévio de Férias (PDF)",
+    description=(
+        "Gera o Aviso Prévio de Férias em PDF via reportlab. Conforme art. 135 CLT e CCT SINDECOMPRESTS 2026."
+    ),
+)
+async def gerar_aviso_previo_ferias(
+    vacation_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Gera PDF do Aviso Prévio de Férias."""
+    service = VacationService(db)
+    vacation = await service.get_by_id(vacation_id)
+    if not vacation:
+        raise HTTPException(status_code=404, detail="Solicitação de férias não encontrada")
+
+    employee_name = getattr(vacation, "employee_name", None) or "Funcionário"
+    cargo = "Agente de Segurança"
+    admission_date = "Não informada"
+
+    try:
+        from sqlalchemy import select as sa_select
+
+        from modules.operacional.models.employee import Employee
+
+        emp_result = await db.execute(sa_select(Employee).where(Employee.id == vacation.employee_id))
+        emp = emp_result.scalar_one_or_none()
+        if emp:
+            employee_name = emp.nome or employee_name
+            cargo = emp.cargo or cargo
+            if emp.data_admissao:
+                admission_date = emp.data_admissao.strftime("%d/%m/%Y")
+    except Exception:
+        pass
+
+    start_date = getattr(vacation, "start_date", None)
+    end_date = getattr(vacation, "end_date", None)
+    days = getattr(vacation, "days", None)
+
+    vacation_start = start_date.strftime("%d/%m/%Y") if start_date else "—"
+    vacation_end = end_date.strftime("%d/%m/%Y") if end_date else "—"
+    vacation_days = days or (str((end_date - start_date).days + 1) if start_date and end_date else "30")
+
+    if start_date:
+        period_end_dt = start_date - timedelta(days=1)
+        period_start_dt = period_end_dt.replace(year=period_end_dt.year - 1) + timedelta(days=1)
+        period_start = period_start_dt.strftime("%d/%m/%Y")
+        period_end = period_end_dt.strftime("%d/%m/%Y")
+    else:
+        period_start = "—"
+        period_end = "—"
+
+    return_date = (end_date + timedelta(days=1)).strftime("%d/%m/%Y") if end_date else "—"
+    notice_date = date.today().strftime("%d/%m/%Y")
+
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import cm
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=2.5 * cm,
+            leftMargin=2.5 * cm,
+            topMargin=2.5 * cm,
+            bottomMargin=2.5 * cm,
+        )
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle("Title", parent=styles["Heading1"], fontSize=14, spaceAfter=20, alignment=1)
+        body_style = ParagraphStyle(
+            "Body", parent=styles["Normal"], fontSize=11, leading=18, spaceAfter=10, alignment=4
+        )
+        label_style = ParagraphStyle("Label", parent=styles["Normal"], fontSize=11, leading=16)
+
+        story = []
+        story.append(Paragraph("AVISO PRÉVIO DE FÉRIAS", title_style))
+        story.append(Spacer(1, 0.3 * cm))
+
+        box_data = [
+            [Paragraph(f"<b>Empregado(a):</b> {employee_name}", label_style)],
+            [Paragraph(f"<b>Cargo:</b> {cargo}", label_style)],
+            [Paragraph(f"<b>Data de Admissão:</b> {admission_date}", label_style)],
+            [Paragraph(f"<b>Período Aquisitivo:</b> {period_start} a {period_end}", label_style)],
+        ]
+        box = Table(box_data, colWidths=[16 * cm])
+        box.setStyle(
+            TableStyle(
+                [
+                    ("BOX", (0, 0), (-1, -1), 0.75, colors.black),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.lightgrey),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                    ("TOPPADDING", (0, 0), (-1, -1), 6),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ]
+            )
+        )
+        story.append(box)
+        story.append(Spacer(1, 0.5 * cm))
+
+        story.append(Paragraph(f"Prezado(a) <b>{employee_name}</b>,", body_style))
+        story.append(
+            Paragraph(
+                f"Comunicamos que suas férias estão programadas para o período de "
+                f"<b>{vacation_start}</b> a <b>{vacation_end}</b> "
+                f"({vacation_days} dias), conforme artigo 135 da CLT e CCT SINDECOMPRESTS 2026.",
+                body_style,
+            )
+        )
+        story.append(
+            Paragraph(
+                "O pagamento das férias será efetuado com antecedência mínima de "
+                "2 (dois) dias, conforme determina o artigo 145 da CLT.",
+                body_style,
+            )
+        )
+        story.append(Paragraph(f"Retorno previsto: <b>{return_date}</b>.", body_style))
+        story.append(Spacer(1, 1.5 * cm))
+        story.append(Paragraph(f"Manaus/AM, {notice_date}", body_style))
+        story.append(Spacer(1, 2.5 * cm))
+
+        sig_data = [
+            [
+                Paragraph("____________________________", label_style),
+                Paragraph("____________________________", label_style),
+            ],
+            [
+                Paragraph(
+                    "JORDAN SANTOS DE JESUS LTDA<br/>CNPJ 35.710.481/0001-03<br/>Empregadora",
+                    label_style,
+                ),
+                Paragraph(f"{employee_name}<br/>Empregado(a)", label_style),
+            ],
+        ]
+        sig_table = Table(sig_data, colWidths=[8 * cm, 8 * cm])
+        sig_table.setStyle(
+            TableStyle(
+                [
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("TOPPADDING", (0, 1), (-1, 1), 4),
+                ]
+            )
+        )
+        story.append(sig_table)
+
+        doc.build(story)
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+
+        safe_name = employee_name.replace(" ", "_")[:30]
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="aviso_previo_ferias_{safe_name}_{vacation_id[:8]}.pdf"'
+                ),
+                "Cache-Control": "no-store",
+            },
+        )
+    except ImportError:
+        raise HTTPException(status_code=500, detail="reportlab não instalado")
+    except Exception as exc:
+        logger.error("Erro ao gerar aviso prévio férias %s: %s", vacation_id, exc)
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {exc}")
