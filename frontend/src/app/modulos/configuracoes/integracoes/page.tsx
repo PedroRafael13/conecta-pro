@@ -27,6 +27,7 @@ interface IntegrationCard {
   connected: boolean | null;
   lastSync: string | null;
   details?: string;
+  balance?: string | null;
 }
 
 function getAuthHeaders() {
@@ -56,19 +57,38 @@ async function fetchBankingStatus(): Promise<{
   connected: boolean;
   last_sync: string | null;
   details: string;
+  balance: string | null;
 }> {
-  const res = await fetch('/api/v1/integrations/banking/status', {
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) throw new Error('banking');
-  const data = await res.json();
-  const inter = Array.isArray(data)
-    ? data.find((b: { bank_code: string }) => b.bank_code === '077') || data[0]
+  const [statusRes, balancesRes] = await Promise.all([
+    fetch('/api/v1/integrations/banking/status', { headers: getAuthHeaders() }),
+    fetch('/api/v1/integrations/banking/balances', { headers: getAuthHeaders() }),
+  ]);
+
+  const statusData = statusRes.ok ? await statusRes.json() : [];
+  const balancesData = balancesRes.ok ? await balancesRes.json() : null;
+
+  const inter = Array.isArray(statusData)
+    ? statusData.find((b: { bank_code: string }) => b.bank_code === '077') || statusData[0]
     : null;
+
+  let balance: string | null = null;
+  if (balancesData?.balances) {
+    const interBalance = balancesData.balances.find(
+      (b: { bank_code: string }) => b.bank_code === '077'
+    );
+    if (interBalance?.balance != null) {
+      balance = interBalance.balance.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      });
+    }
+  }
+
   return {
     connected: inter?.connected ?? false,
     last_sync: inter?.last_sync || null,
     details: inter ? `${inter.bank_name} — Cód. ${inter.bank_code}` : 'Banco Inter 077',
+    balance,
   };
 }
 
@@ -120,6 +140,7 @@ export default function ConfiguracoesIntegracoesPage() {
       connected: null,
       lastSync: null,
       details: 'Banco Inter — Cód. 077',
+      balance: null,
     },
     {
       id: 'solides',
@@ -187,6 +208,7 @@ export default function ConfiguracoesIntegracoesPage() {
               connected: banking.connected,
               lastSync: banking.last_sync,
               details: banking.details,
+              balance: banking.balance,
             };
           }
           return item;
@@ -284,6 +306,11 @@ export default function ConfiguracoesIntegracoesPage() {
                     {integration.details && (
                       <p className="text-xs text-muted-foreground font-medium">
                         {integration.details}
+                      </p>
+                    )}
+                    {integration.balance && (
+                      <p className="text-sm font-semibold text-green-700">
+                        Saldo: {integration.balance}
                       </p>
                     )}
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
