@@ -248,6 +248,8 @@ async def sincronizar_certidoes_param(
                 "cnpj": cnpj,
                 "status": resultado.get("status"),
                 "validade": resultado.get("validade"),
+                "mensagem": resultado.get("mensagem"),
+                "nota": resultado.get("nota"),
                 "executado_em": datetime.now().isoformat(),
             }
         except Exception as exc:
