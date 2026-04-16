@@ -41,6 +41,7 @@ import {
 import {
   useCashflowEntries,
   useFinancialOverview,
+  useCashflowForecast,
 } from '@/hooks/financial/useFinancial';
 import { CashFlowEntryType } from '@/types/generated/financial/models/cashFlowEntryType';
 import { useCondominio } from '@/contexts/CondominioContext';
@@ -184,12 +185,14 @@ export default function OrcamentosPage() {
     entry_type: CashFlowEntryType.entrada,
   });
   const { data: overviewRaw, isLoading: loadingOverview } = useFinancialOverview({ condominio_id: condominioId });
+  const { data: forecastsRaw } = useCashflowForecast({ condominio_id: condominioId, limit: 12 });
 
   const isLoading = loadingExpenses || loadingIncome || loadingOverview;
 
   const expenses: any[] = (expensesRaw as any)?.items ?? [];
   const incomes: any[] = (incomeRaw as any)?.items ?? [];
   const overview = overviewRaw as any;
+  const forecasts: any[] = Array.isArray(forecastsRaw) ? forecastsRaw : (forecastsRaw as any)?.items ?? [];
 
   // ── Current year ────────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
@@ -199,25 +202,35 @@ export default function OrcamentosPage() {
   const monthlyActual = MONTHS.map((_, idx) => {
     return expenses
       .filter(e => {
-        const d = new Date(e.date ?? e.created_at ?? '');
+        const d = new Date(e.entry_date ?? e.date ?? e.created_at ?? '');
         return d.getFullYear() === currentYear && d.getMonth() === idx;
       })
-      .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+      .reduce((sum: number, e: any) => sum + (Number(e.expected_amount ?? e.amount) || 0), 0);
   });
 
   const monthlyIncome = MONTHS.map((_, idx) => {
     return incomes
       .filter(e => {
-        const d = new Date(e.date ?? e.created_at ?? '');
+        const d = new Date(e.entry_date ?? e.date ?? e.created_at ?? '');
         return d.getFullYear() === currentYear && d.getMonth() === idx;
       })
-      .reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+      .reduce((sum: number, e: any) => sum + (Number(e.expected_amount ?? e.amount) || 0), 0);
   });
 
-  // ── Budget for each month (from localStorage or auto-estimate) ───────────────
+  // ── Budget for each month (forecasts.expected_inflows → localStorage → auto-estimate) ──
+  const getForecastForMonth = (monthIdx: number) => {
+    const f = forecasts.find((fc: any) => {
+      const d = new Date(fc.period_start ?? fc.forecast_date ?? '');
+      return d.getFullYear() === currentYear && d.getMonth() === monthIdx;
+    });
+    return f ? Number(f.expected_inflows ?? 0) : null;
+  };
+
   const getBudgetForMonth = (monthIdx: number) => {
     const key = `month_${currentYear}_${monthIdx}`;
     if (budgets[key] != null) return budgets[key];
+    const forecastVal = getForecastForMonth(monthIdx);
+    if (forecastVal != null && forecastVal > 0) return forecastVal;
     // Default: avg of last 3 months or 0
     if (monthIdx === 0) return (monthlyActual[0] ?? 0) * 1.1 || 0;
     const prevAvg =
@@ -247,7 +260,7 @@ export default function OrcamentosPage() {
   const categoryMap: Record<string, number> = {};
   expenses.forEach((e: any) => {
     const cat = e.category || e.category_name || 'Sem categoria';
-    categoryMap[cat] = (categoryMap[cat] || 0) + (Number(e.amount) || 0);
+    categoryMap[cat] = (categoryMap[cat] || 0) + (Number(e.expected_amount ?? e.amount) || 0);
   });
 
   const categoryData = Object.entries(categoryMap)

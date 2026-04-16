@@ -9,8 +9,10 @@ interface ContaReceber {
   description?: string
   cliente?: string
   customer?: string
+  customer_name?: string
   valor?: number
   amount?: number
+  net_value?: number
   vencimento?: string
   due_date?: string
   status?: string
@@ -79,14 +81,14 @@ export default function ContasReceberPage() {
 
   const items: ContaReceber[] = data?.data ?? data?.items ?? []
   const total = data?.total ?? items.length
-  const totalAmount = data?.total_amount ?? items.reduce((s, i) => s + (i.valor ?? i.amount ?? 0), 0)
+  const totalAmount = data?.total_amount ?? items.reduce((s, i) => s + (i.net_value ?? i.valor ?? i.amount ?? 0), 0)
   const vencendoHoje = data?.vencendo_hoje ?? 0
   const atrasadas = data?.atrasadas ?? 0
   const recebidas = data?.recebidas ?? 0
 
   const filtered = items.filter(item => {
     const desc = (item.descricao ?? item.description ?? '').toLowerCase()
-    const cli = (item.cliente ?? item.customer ?? '').toLowerCase()
+    const cli = (item.customer_name ?? item.cliente ?? item.customer ?? '').toLowerCase()
     return desc.includes(search.toLowerCase()) || cli.includes(search.toLowerCase())
   })
 
@@ -197,14 +199,14 @@ export default function ContasReceberPage() {
               {filtered.map((item, idx) => (
                 <tr key={item.id ?? idx} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-gray-900">{item.descricao ?? item.description ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{item.cliente ?? item.customer ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{item.customer_name ?? item.description ?? item.cliente ?? item.customer ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-600">
                     {(item.vencimento ?? item.due_date)
                       ? new Date(item.vencimento ?? item.due_date ?? '').toLocaleDateString('pt-BR')
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-gray-900">
-                    {(item.valor ?? item.amount ?? 0).toLocaleString('pt-BR', {
+                    {(item.net_value ?? item.valor ?? item.amount ?? 0).toLocaleString('pt-BR', {
                       style: 'currency', currency: 'BRL'
                     })}
                   </td>
