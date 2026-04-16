@@ -1,219 +1,122 @@
-"""Controller para skills jurídicas da Conecta Mais."""
+"""
+Controller para skills jurídicas adaptadas — Conecta Mais
+Serve os templates e prompts das skills 089, 090, 092, 095, 253, 305, 318
+"""
 
-import logging
+import re
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from fastapi import APIRouter
 
-logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/juridico", tags=["Jurídico"])
 
-router = APIRouter(prefix="/juridico", tags=["Jurídico - Skills"])
-
-# ---------------------------------------------------------------------------
-# Catálogo estático de skills jurídicas
-# ---------------------------------------------------------------------------
-
-_SKILLS: list[dict] = [
-    {
-        "id": "089",
-        "codigo": "089",
-        "nome": "Contrato de Prestação de Serviços",
-        "descricao": "Modelos de contrato B2B para Kit Mensal, Portaria Remota e Manutenção CFTV",
-        "categoria": "contrato",
-        "tipos_contrato": ["kit_mensal", "portaria_remota", "manutencao_cftv"],
-        "arquivo": "089-contrato-prestacao-servicos-conecta.md",
-        "versao": "2026-01",
-        "ativo": True,
-    },
-    {
-        "id": "090",
-        "codigo": "090",
-        "nome": "Política de Privacidade LGPD",
-        "descricao": "Política de privacidade e proteção de dados adaptada para CFTV e biometria",
-        "categoria": "lgpd",
-        "tipos_contrato": [],
-        "arquivo": "090-092-lgpd-conecta-pro.md",
-        "versao": "2026-01",
-        "ativo": True,
-    },
-    {
-        "id": "092",
-        "codigo": "092",
-        "nome": "Checklist LGPD Operacional",
-        "descricao": "Checklist de compliance LGPD para implantação de sistemas de segurança eletrônica",
-        "categoria": "lgpd",
-        "tipos_contrato": [],
-        "arquivo": "090-092-lgpd-conecta-pro.md",
-        "versao": "2026-01",
-        "ativo": True,
-    },
-    {
-        "id": "095",
-        "codigo": "095",
-        "nome": "Acordos de Confidencialidade (NDA)",
-        "descricao": "3 modelos de NDA: fornecedor TI, parceiro contencioso e prestador de condomínio",
-        "categoria": "nda",
-        "tipos_contrato": ["nda_fornecedor_ti", "nda_contencioso", "nda_prestador_condominio"],
-        "arquivo": "095-nda-conecta-mais.md",
-        "versao": "2026-01",
-        "ativo": True,
-    },
-    {
-        "id": "253",
-        "codigo": "253",
-        "nome": "OS Rápida (Chamado Corretivo Urgente)",
-        "descricao": "Template de Ordem de Serviço para chamados corretivos com SLA ≤ 4h",
-        "categoria": "ordem_servico",
-        "tipos_contrato": ["os_rapida"],
-        "arquivo": "253-305-318-contratos-operacionais-conecta.md",
-        "versao": "2026-01",
-        "ativo": True,
-    },
-    {
-        "id": "305",
-        "codigo": "305",
-        "nome": "Contrato de Serviço Padrão",
-        "descricao": "Contrato para instalações pontuais e serviços avulsos (até 16 câmeras)",
-        "categoria": "contrato",
-        "tipos_contrato": ["servico_avulso", "instalacao_pontual"],
-        "arquivo": "253-305-318-contratos-operacionais-conecta.md",
-        "versao": "2026-01",
-        "ativo": True,
-    },
-    {
-        "id": "318",
-        "codigo": "318",
-        "nome": "Contrato Operacional Completo",
-        "descricao": "Contrato completo com cronograma, milestones, aceite e DPA para projetos de grande porte",
-        "categoria": "contrato",
-        "tipos_contrato": ["projeto_grande_porte", "portaria_remota_completa"],
-        "arquivo": "253-305-318-contratos-operacionais-conecta.md",
-        "versao": "2026-01",
-        "ativo": True,
-    },
-]
-
-_SKILLS_BY_ID: dict[str, dict] = {s["id"]: s for s in _SKILLS}
-
-_TIPOS_CONTRATO: list[dict] = [
-    {"tipo": "kit_mensal", "nome": "Kit Mensal (Monitoramento)", "skill_id": "089", "vigencia_min_meses": 12},
-    {"tipo": "portaria_remota", "nome": "Portaria Remota", "skill_id": "089", "vigencia_min_meses": 24},
-    {"tipo": "manutencao_cftv", "nome": "Manutenção CFTV", "skill_id": "089", "vigencia_min_meses": 12},
-    {"tipo": "nda_fornecedor_ti", "nome": "NDA Fornecedor de TI", "skill_id": "095", "vigencia_min_meses": 60},
-    {"tipo": "nda_contencioso", "nome": "NDA Parceiro de Contencioso", "skill_id": "095", "vigencia_min_meses": 60},
-    {
-        "tipo": "nda_prestador_condominio",
-        "nome": "NDA Prestador de Condomínio",
-        "skill_id": "095",
-        "vigencia_min_meses": 3,
-    },
-    {"tipo": "os_rapida", "nome": "OS Rápida (Corretiva Urgente)", "skill_id": "253", "vigencia_min_meses": 0},
-    {
-        "tipo": "servico_avulso",
-        "nome": "Serviço Avulso / Instalação Pontual",
-        "skill_id": "305",
-        "vigencia_min_meses": 0,
-    },
-    {"tipo": "instalacao_pontual", "nome": "Instalação Pontual", "skill_id": "305", "vigencia_min_meses": 0},
-    {
-        "tipo": "projeto_grande_porte",
-        "nome": "Projeto Grande Porte (>16 câmeras)",
-        "skill_id": "318",
-        "vigencia_min_meses": 0,
-    },
-    {
-        "tipo": "portaria_remota_completa",
-        "nome": "Portaria Remota Completa",
-        "skill_id": "318",
-        "vigencia_min_meses": 24,
-    },
-]
-
-# Caminho base das skills no filesystem
-_SKILLS_BASE_PATH = Path("/opt/conecta-pro/skills/financeiro/juridico")
+SKILLS_DIR = Path("/tmp/skills/juridico")  # nosec B108
 
 
-# ---------------------------------------------------------------------------
-# Schemas de resposta
-# ---------------------------------------------------------------------------
+def _parse_frontmatter(text: str) -> dict:
+    """Extrai campos name e description do frontmatter YAML simples."""
+    meta: dict = {}
+    for line in text.splitlines():
+        m = re.match(r"^(name|description):\s*(.+)$", line)
+        if m:
+            meta[m.group(1)] = m.group(2).strip()
+    return meta
 
 
-class SkillResponse(BaseModel):
-    id: str
-    codigo: str
-    nome: str
-    descricao: str
-    categoria: str
-    tipos_contrato: list[str]
-    arquivo: str
-    versao: str
-    ativo: bool
+def parse_skill(filepath: Path) -> dict:
+    """Extrai metadata e conteúdo de um arquivo .md de skill."""
+    content = filepath.read_text(encoding="utf-8")
+    # Extrair frontmatter YAML (---...---)
+    fm_match = re.match(r"^---\n(.*?)\n---\n(.*)$", content, re.DOTALL)
+    if fm_match:
+        meta = _parse_frontmatter(fm_match.group(1))
+        body = fm_match.group(2)
+    else:
+        meta = {}
+        body = content
+    return {
+        "id": filepath.stem,
+        "name": meta.get("name", filepath.stem),
+        "description": meta.get("description", ""),
+        "content": body,
+        "filename": filepath.name,
+    }
 
 
-class SkillDetailResponse(SkillResponse):
-    conteudo: str | None = None
-
-
-class TipoContratoResponse(BaseModel):
-    tipo: str
-    nome: str
-    skill_id: str
-    vigencia_min_meses: int
-
-
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
-
-
-@router.get(
-    "/skills",
-    response_model=list[SkillResponse],
-    summary="Listar skills jurídicas",
-)
-async def list_skills(
-    categoria: str | None = None,
-    ativo: bool = True,
-) -> list[SkillResponse]:
-    """Retorna todas as skills jurídicas cadastradas, com filtro opcional por categoria."""
-    result = [s for s in _SKILLS if s["ativo"] == ativo]
-    if categoria:
-        result = [s for s in result if s["categoria"] == categoria]
-    return [SkillResponse(**s) for s in result]
-
-
-@router.get(
-    "/skills/contratos/tipos",
-    response_model=list[TipoContratoResponse],
-    summary="Listar tipos de contrato disponíveis",
-)
-async def list_tipos_contrato() -> list[TipoContratoResponse]:
-    """Retorna os 7 tipos de contrato/instrumento jurídico disponíveis na Conecta Mais."""
-    return [TipoContratoResponse(**t) for t in _TIPOS_CONTRATO]
-
-
-@router.get(
-    "/skills/{skill_id}",
-    response_model=SkillDetailResponse,
-    summary="Buscar skill jurídica por ID",
-)
-async def get_skill(skill_id: str, incluir_conteudo: bool = False) -> SkillDetailResponse:
-    """Retorna detalhes de uma skill jurídica. Com `incluir_conteudo=true` retorna o markdown completo."""
-    skill = _SKILLS_BY_ID.get(skill_id)
-    if not skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Skill '{skill_id}' não encontrada. Skills disponíveis: {list(_SKILLS_BY_ID.keys())}",
-        )
-
-    conteudo = None
-    if incluir_conteudo:
-        skill_path = _SKILLS_BASE_PATH / skill["arquivo"]
+@router.get("/skills")
+async def list_skills():
+    """Lista todas as skills jurídicas disponíveis."""
+    if not SKILLS_DIR.exists():
+        return []
+    skills = []
+    for f in sorted(SKILLS_DIR.glob("*.md")):
         try:
-            conteudo = skill_path.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            logger.warning(f"Arquivo de skill não encontrado: {skill_path}")
-            conteudo = None
+            skills.append(parse_skill(f))
+        except Exception as e:
+            skills.append({"id": f.stem, "error": str(e)})
+    return skills
 
-    return SkillDetailResponse(**skill, conteudo=conteudo)
+
+@router.get("/skills/{skill_id}")
+async def get_skill(skill_id: str):
+    """Retorna uma skill jurídica específica com o prompt completo."""
+    for f in SKILLS_DIR.glob("*.md"):
+        if skill_id in f.stem:
+            return parse_skill(f)
+    return {"error": f"Skill '{skill_id}' não encontrada"}
+
+
+@router.get("/skills/contratos/tipos")
+async def get_contract_types():
+    """Lista os tipos de contrato disponíveis para a UI."""
+    return [
+        {
+            "id": "kit_mensal",
+            "label": "Kit Mensal — Mão de Obra Presencial",
+            "skill": "089-contrato-prestacao-servicos-conecta",
+            "modelo": "A",
+            "descricao": "Portaria + facilities com agentes CLT",
+        },
+        {
+            "id": "portaria_remota",
+            "label": "Portaria Remota",
+            "skill": "089-contrato-prestacao-servicos-conecta",
+            "modelo": "B",
+            "descricao": "Monitoramento remoto 24h",
+        },
+        {
+            "id": "manutencao_cftv",
+            "label": "Manutenção CFTV",
+            "skill": "089-contrato-prestacao-servicos-conecta",
+            "modelo": "C",
+            "descricao": "Manutenção preventiva e corretiva",
+        },
+        {
+            "id": "nda_fornecedor",
+            "label": "NDA — Fornecedor TI",
+            "skill": "095-nda-conecta-mais",
+            "modelo": "1",
+            "descricao": "Para acesso ao Conecta PRO",
+        },
+        {
+            "id": "nda_licitacao",
+            "label": "NDA — Parceiro Licitação",
+            "skill": "095-nda-conecta-mais",
+            "modelo": "2",
+            "descricao": "Para consórcios em editais",
+        },
+        {
+            "id": "lgpd_politica",
+            "label": "Política de Privacidade LGPD",
+            "skill": "090-092-lgpd-conecta-pro",
+            "modelo": "politica",
+            "descricao": "Conformidade LGPD do Conecta PRO",
+        },
+        {
+            "id": "lgpd_checklist",
+            "label": "Checklist LGPD",
+            "skill": "090-092-lgpd-conecta-pro",
+            "modelo": "checklist",
+            "descricao": "Auditoria de conformidade",
+        },
+    ]

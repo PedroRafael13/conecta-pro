@@ -1,157 +1,123 @@
-# SKILL 090+092 — LGPD: Política de Privacidade + Checklist Conecta Mais
-**Versão:** 2026-01
-**Empresa:** JORDAN SANTOS DE JESUS LTDA (Conecta Mais — Segurança e Tecnologia)
-**CNPJ:** 35.710.481/0001-03 | Manaus/AM
-**Aplicação:** Compliance LGPD para sistemas de CFTV, biometria, GPS e dados operacionais
-
+---
+name: lgpd-conecta-pro
+description: Política de privacidade e checklist de conformidade LGPD para o Conecta PRO — plataforma ERP que processa dados de 52 funcionários CLT, 13 clientes condomínios, biometria de ponto, geolocalização de batidas e dados financeiros sensíveis. CNPJ 35.710.481/0001-03.
 ---
 
-## 090 — Política de Privacidade e Proteção de Dados
+# LGPD — Conecta PRO (Skills 090 + 092 unificadas)
 
-### Controlador de Dados
-**Razão Social:** JORDAN SANTOS DE JESUS LTDA
-**Nome Fantasia:** Conecta Mais — Segurança e Tecnologia
-**CNPJ:** 35.710.481/0001-03
-**Endereço:** Manaus/AM (endereço completo conforme contrato social)
-**DPO (Encarregado):** A nomear — até 2026-06-01
-**E-mail privacidade:** privacidade@conectamais.pro
+## Contexto crítico
+O Conecta PRO processa dados especialmente sensíveis:
+- **Biometria:** reconhecimento facial para ponto eletrônico (dado sensível LGPD art. 11)
+- **Geolocalização:** coordenadas GPS de batidas de ponto (localização em tempo real)
+- **Dados trabalhistas:** salários, benefícios, atestados, afastamentos de 52 funcionários
+- **Dados de moradores:** acesso ao condomínio registrado via portaria
+- **Dados bancários:** PIX de 46 funcionários, NFS-e de 13 clientes
+- **Câmeras CFTV:** imagens de áreas comuns dos condomínios
 
----
+## Prompt — Política de Privacidade Conecta PRO
 
-### Dados Coletados e Finalidades
+```
+Você é especialista em LGPD para plataformas SaaS B2B com dados trabalhistas e biométricos.
 
-#### 1. Imagens de CFTV (câmeras de segurança)
-| Dado | Base Legal | Finalidade | Retenção |
-|------|-----------|------------|---------|
-| Imagens de áreas comuns (câmeras externas/internas) | Art. 7º VI — legítimo interesse (segurança patrimonial) | Monitoramento, investigação de incidentes, registro | 30 dias (padrão); 90 dias se houver incidente registrado |
-| Imagens de faces identificáveis | Art. 11 II (a) — consentimento explícito OU Art. 11 II (g) — tutela da saúde/segurança | Controle de acesso + monitoramento | 30 dias |
+Crie a Política de Privacidade completa para:
 
-> **ATENÇÃO:** Imagens com faces identificáveis são **dados sensíveis** (art. 5º II LGPD). Requerem consentimento explícito individualizado por escrito OU enquadramento em hipótese do art. 11.
+**Controlador dos dados:** JORDAN SANTOS DE JESUS LTDA
+CNPJ: 35.710.481/0001-03 | Manaus/AM
+Plataforma: Conecta PRO (erp.conectamais.pro)
+Encarregado (DPO): Jordan Santos de Jesus | jjesus@conectamais.pro
 
-#### 2. Dados biométricos (reconhecimento facial / leitura de placa LPR)
-| Dado | Base Legal | Finalidade | Retenção |
-|------|-----------|------------|---------|
-| Template biométrico facial | Art. 11 II (a) — consentimento explícito | Autenticação/controle de acesso em Portaria Remota | Vigência do contrato + 12 meses |
-| Placa de veículo (LPR) | Art. 7º VI — legítimo interesse (segurança) | Controle de acesso de veículos | 90 dias |
+**Categorias de dados tratados:**
 
-#### 3. Dados de colaboradores (52 CLT)
-| Dado | Base Legal | Finalidade | Retenção |
-|------|-----------|------------|---------|
-| CPF, RG, dados admissionais | Art. 7º II — cumprimento de obrigação legal (CLT, eSocial) | Folha de pagamento, obrigações trabalhistas | 5 anos após desligamento (prazo prescricional) |
-| Localização GPS (campo) | Art. 7º VI — legítimo interesse OU contrato | Rastreamento de equipes técnicas em campo | 60 dias |
-| Ponto eletrônico (biometria) | Art. 7º V — execução de contrato | Controle de jornada (CLT art. 74) | 5 anos |
-| Fotos para crachá/ERP | Art. 7º II — obrigação legal | Identificação funcional | Vigência do contrato de trabalho |
+DADOS DOS FUNCIONÁRIOS (base legal: contrato de trabalho + obrigação legal):
+- Identificação: nome, CPF, RG, data nascimento, endereço
+- Trabalhistas: cargo, salário, benefícios, férias, FGTS, INSS
+- Biométricos (SENSÍVEIS): foto facial para reconhecimento de ponto
+- Localização: coordenadas GPS no momento da batida de ponto
+- Saúde (SENSÍVEIS): atestados médicos, exames ocupacionais, ASO
+- Bancários: chave PIX para pagamento de salário
 
-#### 4. Dados de clientes (condomínios — 13 clientes)
-| Dado | Base Legal | Finalidade | Retenção |
-|------|-----------|------------|---------|
-| CNPJ, dados do síndico/administrador | Art. 7º V — execução de contrato | Gestão contratual, NFS-e, cobrança | Vigência + 5 anos |
-| Dados dos moradores/condôminos | Art. 7º VI — legítimo interesse | Controle de acesso em Portaria Remota | Vigência do contrato |
+DADOS DOS CLIENTES/CONDOMÍNIOS (base legal: contrato + legítimo interesse):
+- Identificação: CNPJ, razão social, responsável, endereço
+- Financeiros: NF-e recebidas, contratos, valores pagos
+- Operacionais: escalas de portaria, ocorrências, relatórios
 
----
+DADOS DE MORADORES (base legal: legítimo interesse de segurança):
+- Registro de acesso: data/hora, veículo, acompanhantes
+- Imagens: câmeras CFTV em áreas comuns (não em áreas privadas)
 
-### Direitos dos Titulares
+**Terceiros que recebem dados:**
+- Banco Inter (077): processamento de PIX e boletos
+- Portal NFS-e Nacional (governo): emissão de notas fiscais
+- Google Drive: armazenamento de documentos de GED
+- Portte Contábil / Domínio Sistemas: folha de pagamento
+- Solides: gestão de admissões e cadastro de funcionários
 
-Os titulares podem exercer os seguintes direitos através de `privacidade@conectamais.pro`:
+**Retenção dos dados:**
+- Trabalhistas: mínimo 5 anos após demissão (obrigação legal)
+- Biométricos: enquanto ativo + 90 dias após desligamento
+- Financeiros: 5 anos (Lucro Real + Receita Federal)
+- Imagens CFTV: 30 dias (padrão segurança patrimonial)
 
-1. **Confirmação** de que dados são tratados
-2. **Acesso** aos dados tratados
-3. **Correção** de dados incompletos ou desatualizados
-4. **Anonimização, bloqueio ou eliminação** (dados desnecessários ou tratados em desconformidade)
-5. **Portabilidade** a outro fornecedor de serviço
-6. **Revogação do consentimento** (quando base legal for consentimento)
-7. **Oposição** ao tratamento
+Estruture a política com linguagem Clara e acessível cobrindo:
+1. Quem somos e como contatar o DPO
+2. Dados coletados por categoria (funcionários / clientes / moradores)
+3. Base legal para cada categoria (LGPD art. 7 e 11)
+4. Finalidade específica de cada dado
+5. Dados biométricos — consentimento explícito + direito de revogação
+6. Compartilhamento com terceiros
+7. Transferência internacional (se aplicável)
+8. Prazo de retenção
+9. Direitos dos titulares (acesso, correção, exclusão, portabilidade)
+10. Segurança (criptografia, acesso por perfil, logs de auditoria)
+11. Cookies e sessões do ERP
+12. Canal de exercício de direitos: privacidade@conectamais.pro
+13. Vigência e atualizações
+```
 
-**Prazo de resposta:** 15 dias úteis (conforme ANPD/Regulamento de Fiscalização)
+## Prompt — Checklist LGPD Conecta PRO
 
----
+```
+Crie um checklist executivo de conformidade LGPD para o Conecta PRO com:
 
-### Compartilhamento de Dados
+**Empresa:** JORDAN SANTOS DE JESUS LTDA | CNPJ 35.710.481/0001-03
+**Contexto:** ERP com dados biométricos, GPS e trabalhistas de 52 funcionários
 
-| Destinatário | Dados | Finalidade | Instrumento |
-|-------------|-------|------------|-------------|
-| Receita Federal / SEFAZ-AM | CNPJ, NF-e/NFS-e | Obrigação fiscal | Lei 6.404/76, CTN |
-| INSS / CEF (FGTS) / eSocial | Dados trabalhistas CLT | Obrigação legal | CLT, Lei 8.036/90 |
-| Banco (cobrança) | CPF/CNPJ, valor | Cobrança via boleto/PIX | Contrato financeiro |
-| Hostinger (VPS 82.25.75.74) | Dados do ERP | Hospedagem do sistema | DPA Hostinger |
-| Operadores de monitoramento | Imagens CFTV | Monitoramento 24h | Contrato de emprego CLT |
+Avalie e liste ações por categoria:
 
-**Não compartilhamos** dados com terceiros para fins comerciais ou de marketing sem consentimento.
+1. MAPEAMENTO DE DADOS
+   [ ] Inventário de todos os dados pessoais tratados
+   [ ] Base legal documentada para cada categoria
+   [ ] Registro de operações de tratamento (ROPA)
 
----
+2. CONSENTIMENTO BIOMÉTRICO
+   [ ] Termo de consentimento específico para uso de biometria
+   [ ] Canal para revogação do consentimento
+   [ ] Alternativa ao biométrico (funcionário que não aceita)
 
-### Segurança dos Dados
+3. SEGURANÇA TÉCNICA
+   [ ] Dados em trânsito criptografados (HTTPS/TLS)
+   [ ] Dados em repouso criptografados no PostgreSQL
+   [ ] Controle de acesso por perfil (admin, gestor, funcionário)
+   [ ] Logs de auditoria de acesso a dados sensíveis
+   [ ] Backup seguro com retenção controlada
 
-- Acesso ao ERP restrito por autenticação JWT + 2FA
-- Dados em repouso: PostgreSQL com criptografia de volume no servidor Hostinger KVM4
-- Dados em trânsito: HTTPS/TLS 1.3 obrigatório
-- Backup diário automatizado com retenção de 30 dias
-- Logs de acesso e auditoria retidos por 6 meses
-- Acesso por perfil de usuário (RBAC implementado no ERP)
+4. DIREITOS DOS TITULARES
+   [ ] Canal para solicitações: privacidade@conectamais.pro
+   [ ] Prazo de resposta: 15 dias úteis
+   [ ] Processo documentado para exclusão de dados
 
----
+5. TERCEIROS E CONTRATOS
+   [ ] DPA (Data Processing Agreement) com Google Drive
+   [ ] DPA com Banco Inter
+   [ ] DPA com Portte Contábil / Solides
 
-### Incidentes de Segurança
+6. TREINAMENTO
+   [ ] Time treinado sobre dados que pode e não pode acessar
+   [ ] Política interna de uso dos dados do ERP
 
-Em caso de incidente envolvendo dados pessoais:
-1. Equipe técnica identifica e contém o incidente
-2. Avaliação de risco em até 24h
-3. Se risco relevante: comunicação à ANPD em até **72 horas** (art. 48 LGPD)
-4. Comunicação aos titulares afetados em prazo razoável
-5. Registro interno no GED do ERP
+7. INCIDENTES
+   [ ] Plano de resposta a incidentes documentado
+   [ ] Prazo ANPD: 72h para notificação de vazamento grave
 
----
-
-## 092 — Checklist LGPD Operacional
-
-### A. Antes de Implantar Sistema CFTV/Portaria Remota
-
-- [ ] **Mapeamento de câmeras:** Identificar quais enquadram pessoas (faces visíveis)
-- [ ] **Sinalização física:** Placas "ÁREA MONITORADA POR CÂMERAS" em todos os pontos de coleta
-- [ ] **Aviso legal digital:** Informativo sobre CFTV no contrato de prestação de serviços (Anexo)
-- [ ] **DPA assinado:** Data Processing Agreement entre Conecta Mais (operador) e condomínio (controlador)
-- [ ] **Consentimento biometria:** Se sistema de reconhecimento facial, coletar consentimento escrito de CADA titular (morador/visitante frequente)
-- [ ] **Base legal documentada:** Registrar no GED qual base legal justifica o tratamento (Art. 7º ou 11)
-- [ ] **Período de retenção definido:** Configurar deletagem automática (30 ou 90 dias conforme caso)
-
-### B. Dados de Colaboradores (RH/DP)
-
-- [ ] **Aviso de privacidade no contrato CLT:** Cláusula de ciência sobre dados tratados
-- [ ] **GPS em campo:** Comunicado formal aos funcionários sobre rastreamento durante expediente
-- [ ] **Ponto biométrico:** Comunicado sobre coleta de digital/facial para controle de jornada
-- [ ] **Acesso ao ERP:** Apenas pessoal autorizado; logs habilitados
-- [ ] **Desligamento:** Procedimento de revogação de acessos e anonimização após 5 anos
-
-### C. Dados de Clientes (CRM/GED)
-
-- [ ] **Aviso de privacidade:** Incluído em todos os contratos (Tipo A, B, C)
-- [ ] **Portal do cliente:** Informação sobre dados tratados visível no login
-- [ ] **Retenção contratual:** Dados apagados ou anonimizados após 5 anos do encerramento do contrato
-- [ ] **Responsabilidade do condomínio:** DPA assinado quando condomínio é o controlador dos dados de moradores
-
-### D. Gestão Contínua
-
-- [ ] **Registro de Operações (ROPA):** Atualizar inventário de tratamentos quando novo serviço iniciar
-- [ ] **Treinamento anual:** Todos os funcionários que acessam dados pessoais — pelo menos 1h/ano
-- [ ] **DPO nomeado até 06/2026:** Publicar canal de contato no site e nos contratos
-- [ ] **Revisão anual da política:** Janeiro de cada ano (próxima: 01/2027)
-- [ ] **Testes de acesso indevido:** Simulação trimestral de phishing/acesso não autorizado
-
-### E. Dados Sensíveis — Atenção Redobrada
-
-> Dados sensíveis (art. 5º II LGPD): biometria facial, dados de saúde (ocupacional), origem racial, convicções religiosas, filiação sindical.
-
-- [ ] Mapeamento específico de todos os dados sensíveis tratados
-- [ ] Base legal: exclusivamente Art. 11 (não Art. 7º)
-- [ ] Consentimento explícito individualizado por escrito (quando aplicável)
-- [ ] Acesso ainda mais restrito: apenas DPO e gestor direto
-- [ ] Relatório de Impacto (RIPD) elaborado antes de implantar sistema biométrico
-
----
-
-## Referências Legais
-
-- Lei 13.709/2018 (LGPD) — arts. 5, 7, 11, 46, 48
-- Resolução ANPD CD/ANPD nº 4/2023 (comunicação de incidentes)
-- ABNT NBR ISO/IEC 29101:2023 (Privacy Architecture Framework)
-- Portaria ANPD 11/2021 (comunicação de incidentes — prazo 72h)
+Prioridade: CRÍTICO | ALTO | MÉDIO | BAIXO
+```
