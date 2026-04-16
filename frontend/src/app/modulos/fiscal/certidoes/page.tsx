@@ -21,6 +21,7 @@ interface Certidao {
   file_path: string | null;
   file_url: string | null;
   notes: string | null;
+  alerta_ativo: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -474,7 +475,12 @@ export default function CertidoesPage() {
                   {filtrados.map((cert) => (
                     <tr key={cert.id} className="hover:bg-[hsl(var(--secondary))]/40 transition-colors">
                       <td className="p-3">
-                        <p className="font-medium text-sm text-[hsl(var(--foreground))]">{cert.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          {cert.alerta_ativo && (
+                            <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" title="Alerta ativo — renovação urgente" />
+                          )}
+                          <p className="font-medium text-sm text-[hsl(var(--foreground))]">{cert.name}</p>
+                        </div>
                         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">{cert.document_type}</p>
                       </td>
                       <td className="p-3 hidden md:table-cell">
@@ -535,6 +541,7 @@ export default function CertidoesPage() {
                 { label: 'Validade', value: formatDate(detalhe.expiry_date) },
                 { label: 'ID', value: <span className="font-mono text-xs">{detalhe.id}</span> },
                 { label: 'Atualizado', value: formatDate(detalhe.updated_at) },
+                ...(detalhe.alerta_ativo ? [{ label: 'Alerta', value: <span className="text-red-600 font-semibold text-xs">⚠️ Renovação urgente</span> }] : []),
                 ...(detalhe.notes ? [{ label: 'Observações', value: detalhe.notes }] : []),
               ].map(({ label, value }) => (
                 <div key={label}>

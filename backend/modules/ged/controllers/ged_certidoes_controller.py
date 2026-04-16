@@ -41,6 +41,7 @@ class CertidaoCreate(BaseModel):
     file_path: str | None = None
     file_url: str | None = None
     notes: str | None = None
+    alerta_ativo: bool = False
 
 
 class CertidaoUpdate(BaseModel):
@@ -52,6 +53,7 @@ class CertidaoUpdate(BaseModel):
     file_path: str | None = None
     file_url: str | None = None
     notes: str | None = None
+    alerta_ativo: bool | None = None
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -82,6 +84,7 @@ def _row_to_dict(row: Any) -> dict:
         "file_path": row["file_path"],
         "file_url": row["file_url"],
         "notes": row["notes"],
+        "alerta_ativo": bool(row["alerta_ativo"]) if row["alerta_ativo"] is not None else False,
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
     }
@@ -100,7 +103,7 @@ async def listar_certidoes(
         text("""
         SELECT id, name, document_type, issuing_body,
                issue_date, expiry_date, file_path, file_url, notes,
-               created_at, updated_at
+               alerta_ativo, created_at, updated_at
         FROM ged_certidoes
         ORDER BY expiry_date ASC NULLS LAST
         """)
@@ -136,10 +139,10 @@ async def criar_certidao(
         text("""
         INSERT INTO ged_certidoes
           (id, name, document_type, issuing_body, issue_date, expiry_date,
-           file_path, file_url, notes, created_at, updated_at)
+           file_path, file_url, notes, alerta_ativo, created_at, updated_at)
         VALUES
           (:id, :name, :document_type, :issuing_body, :issue_date, :expiry_date,
-           :file_path, :file_url, :notes, NOW(), NOW())
+           :file_path, :file_url, :notes, :alerta_ativo, NOW(), NOW())
         """),
         {
             "id": str(new_id),
@@ -151,6 +154,7 @@ async def criar_certidao(
             "file_path": payload.file_path,
             "file_url": payload.file_url,
             "notes": payload.notes,
+            "alerta_ativo": payload.alerta_ativo,
         },
     )
     await db.commit()
