@@ -71,8 +71,8 @@ async def get_contract_types():
     """Lista os tipos de contrato disponíveis para a UI."""
     return [
         {
-            "id": "kit_mensal",
-            "label": "Kit Mensal — Mão de Obra Presencial",
+            "id": "portaria_presencial",
+            "label": "Portaria Presencial — Mão de Obra Presencial",
             "skill": "089-contrato-prestacao-servicos-conecta",
             "modelo": "A",
             "descricao": "Portaria + facilities com agentes CLT",
