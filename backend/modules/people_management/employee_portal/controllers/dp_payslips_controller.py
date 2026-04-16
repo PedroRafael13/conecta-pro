@@ -507,18 +507,18 @@ class PayBatchRequest(BaseModel):
     )
     modo: str = Field(
         "simulacao",
-        description="simulacao (preview sem pagar) | execucao (envia PIX reais)",
+        description="simulacao (preview sem tocar banco) | execucao (registra como pendente_pagamento — SEM PIX real)",
     )
 
 
 @payroll_router.post(
     "/pay-batch",
-    summary="Pagamento lote folha via PIX Inter",
+    summary="Agendamento lote folha — pendente_pagamento",
     description=(
-        "Processa pagamento de salários via PIX para todos os funcionários "
-        "com holerite publicado no período informado. "
-        "modo=simulacao: preview sem enviar PIX. "
-        "modo=execucao: envia PIX reais pelo Banco Inter (mTLS OAuth2)."
+        "Monta payload PIX por funcionário e registra como pendente_pagamento "
+        "para aprovação manual. NUNCA envia PIX real. "
+        "modo=simulacao: preview sem alterar banco. "
+        "modo=execucao: insere em payroll_payments com status=pendente_pagamento."
     ),
 )
 async def pagar_folha_lote(
