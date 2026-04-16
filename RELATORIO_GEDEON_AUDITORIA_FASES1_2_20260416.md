@@ -7,14 +7,26 @@
 
 ## Metodologia
 
-- Token: `jjesus@conectamais.pro` (admin@conectamais.pro inexiste no sistema)
-- Base URL: `http://localhost:8080/api/v1`
+- Token: `jjesus@conectamais.pro` (admin@conectamais.pro inexiste no sistema — prompt usa credencial errada)
+- Base URL: `http://127.0.0.1:8080/api/v1` (prompt usa `localhost`, ajustado conforme CLAUDE.md)
 - Cada endpoint testado com `curl` ao vivo
 - Retornos inspecionados campo a campo
+- STEPs 2-6 testados com path `/buscar` do prompt E com path real `/sync`
 
 ---
 
 ## FASE 1 — M5: CERTIDÕES (5 CNDs)
+
+### STEP 1 — Verificar endpoints de certidões
+
+```
+GET  /api/v1/ged/certidoes      → 200 OK  (sem trailing slash — retorna 8 certidões)
+GET  /api/v1/ged/certidoes/     → 404     (com trailing slash como no prompt — não encontrado)
+GET  /api/v1/ged/certidoes/tipos → 405    (allow: GET,HEAD — rota não funcional no runtime)
+```
+
+Rotas de certidões no código: `backend/modules/ged/controllers/ged_certidoes_controller.py`
+(path `/backend/app/routers/` referenciado no prompt não existe — path real é `/backend/modules/`)
 
 ### Estado real da infraestrutura
 
@@ -48,6 +60,19 @@ POST /ged/certidoes/sync/cnd_municipal    → 404
 GET  /ged/certidoes/tipos                 → 405 (allow: GET,HEAD — mas retorna 405 no runtime)
 POST /ged/certidoes/atualizar-status      → 405 (allow: PUT)
 ```
+
+### STEP 7 — Painel frontend de certidões
+
+Grep `Certidoes|CND|certidoes` em `.tsx`: **28 arquivos** encontrados.
+
+Grep exato do prompt (`receita_federal|fgts_caixa|trabalhista|prefeitura_manaus|sefaz_am`):
+- `trabalhista` → encontrado (genérico em múltiplos contextos, não específico de CND)
+- `receita_federal` → **NÃO encontrado** no frontend
+- `fgts_caixa` → **NÃO encontrado** (frontend usa `crf_fgts`)
+- `prefeitura_manaus` → **NÃO encontrado** (frontend usa `cnd_municipal`)
+- `sefaz_am` → **NÃO encontrado** (frontend usa `cnd_estadual`)
+
+**Conclusão STEP 7:** Nomenclatura do prompt GEDEON não corresponde à nomenclatura real da implementação.
 
 ### Impacto frontend (novo achado — auditoria complementar)
 
