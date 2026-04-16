@@ -1,376 +1,223 @@
-'use client';
+'use client'
 
-import { Users, Search, RefreshCw, Plus, Eye, Edit, Trash2, AlertCircle, Lock, Unlock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ConfirmModal } from '@/components/ui/modal';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { SupplierFormModal } from '@/components/financeiro/supplier-form-modal';
-import { SupplierDetailModal } from '@/components/financeiro/supplier-detail-modal';
-import { useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useBlockSupplier, useUnblockSupplier } from '@/hooks/financial/useSuppliers';
-import { cn } from '@/lib/utils';
-import { customInstance } from '@/lib/api-client';
-
-type TabFilter = 'todos' | 'ativos' | 'bloqueados';
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 
 interface Supplier {
-  id: string;
-  name?: string;
-  company_name?: string;
-  trade_name?: string;
-  cnpj?: string;
-  cpf?: string;
-  email?: string;
-  category?: string;
-  supplier_type?: string;
-  status?: string;
-  is_blocked?: boolean;
-  is_qualified?: boolean;
-  rating?: number;
-  phone?: string;
-  city?: string;
-  state?: string;
+  id: string
+  code: string | null
+  name: string
+  trade_name: string | null
+  supplier_type: string | null
+  category: string | null
+  status: string
+  cpf_cnpj: string | null
+  email: string | null
+  phone: string | null
+  is_qualified: boolean
+  is_blocked: boolean
+  rating: number | null
 }
 
-const formatCnpj = (cnpj?: string) => {
-  if (!cnpj) return '-';
-  const n = cnpj.replace(/\D/g, '');
-  if (n.length === 14) return n.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-  if (n.length === 11) return n.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  return cnpj;
-};
+interface SupplierStats {
+  total: number
+  ativos: number
+  bloqueados: number
+  qualificados: number
+}
 
-const getStatusBadge = (supplier: Supplier) => {
-  if (supplier.is_blocked) return <Badge variant="destructive">Bloqueado</Badge>;
-  const s = (supplier.status || '').toLowerCase();
-  if (s === 'ativo' || s === 'active') return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
-  if (s === 'inativo' || s === 'inactive') return <Badge variant="secondary">Inativo</Badge>;
-  return <Badge variant="outline">{supplier.status || 'N/D'}</Badge>;
-};
+const fetchAuth = (url: string) =>
+  fetch(url, {
+    headers: {
+      Authorization: `Bearer ${typeof window !== 'undefined'
+        ? (localStorage.getItem('access_token') ?? localStorage.getItem('token') ?? '') : ''}`,
+    },
+  }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
 
-const getSupplierDisplayName = (s: Supplier) =>
-  s.trade_name || s.company_name || s.name || '(sem nome)';
+const STATUS_STYLE: Record<string, string> = {
+  ativo:    'bg-green-100 text-green-700',
+  active:   'bg-green-100 text-green-700',
+  inativo:  'bg-gray-100 text-gray-600',
+  inactive: 'bg-gray-100 text-gray-600',
+  bloqueado:'bg-red-100 text-red-700',
+  blocked:  'bg-red-100 text-red-700',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  ativo: 'Ativo', active: 'Ativo',
+  inativo: 'Inativo', inactive: 'Inativo',
+  bloqueado: 'Bloqueado', blocked: 'Bloqueado',
+}
 
 export default function FornecedoresPage() {
-  const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [tab, setTab] = useState<TabFilter>('todos');
-  const [showFormModal, setShowFormModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [search, setSearch]           = useState('')
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'ativo' | 'bloqueado'>('todos')
+  const [abaAtiva, setAbaAtiva]       = useState<'todos' | 'ativos' | 'bloqueados'>('todos')
 
-  // Busca principal — sem condominio_id obrigatório
-  const {
-    data: suppliersRaw = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery<Supplier[]>({
-    queryKey: ['suppliers', search, tab],
-    queryFn: () =>
-      customInstance<Supplier[]>({
-        url: '/api/v1/financial/suppliers',
-        params: {
-          ...(search ? { search } : {}),
-          ...(tab === 'ativos' ? { status: 'ativo' } : {}),
-          ...(tab === 'bloqueados' ? { is_blocked: true } : {}),
-          limit: 200,
-        },
-      }),
-  });
+  // Usa /financial/suppliers diretamente — 200 com 13 registros reais
+  const { data: suppliers = [], isLoading, error, refetch } = useQuery<Supplier[]>({
+    queryKey: ['suppliers-list'],
+    queryFn: () => fetchAuth('/api/v1/financial/suppliers'),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  })
 
-  // Stats — retry: 0 para não travar a página se falhar
-  const { data: statsRaw } = useQuery({
+  // Stats opcionais — não bloqueia a página se falhar
+  const { data: stats } = useQuery<SupplierStats>({
     queryKey: ['suppliers-stats'],
-    queryFn: () =>
-      customInstance<Record<string, number>>({
-        url: '/api/v1/financial/suppliers/stats',
-      }),
+    queryFn: () => fetchAuth('/api/v1/financial/suppliers/stats'),
+    staleTime: 5 * 60 * 1000,
     retry: 0,
-  });
+  })
 
-  const suppliers = Array.isArray(suppliersRaw) ? suppliersRaw : [];
+  // Cálculo de stats a partir da lista (fallback caso /stats falhe)
+  const total    = stats?.total    ?? suppliers.length
+  const ativos   = stats?.ativos   ?? suppliers.filter(s => s.status === 'ativo' || s.status === 'active').length
+  const bloqueados = stats?.bloqueados ?? suppliers.filter(s => s.is_blocked || s.status === 'bloqueado').length
 
-  // Fallback: calcula stats localmente se o endpoint falhar
-  const stats = useMemo(() => {
-    if (statsRaw && typeof statsRaw === 'object' && 'total' in statsRaw) return statsRaw;
-    return {
-      total: suppliers.length,
-      ativos: suppliers.filter((s) => !s.is_blocked && (s.status || '').toLowerCase() !== 'inativo').length,
-      bloqueados: suppliers.filter((s) => s.is_blocked).length,
-      qualificados: suppliers.filter((s) => s.is_qualified).length,
-    };
-  }, [statsRaw, suppliers]);
+  const filtered = suppliers.filter(s => {
+    const matchSearch = !search ||
+      (s.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (s.cpf_cnpj ?? '').includes(search) ||
+      (s.email ?? '').toLowerCase().includes(search.toLowerCase())
 
-  const filtered = useMemo(() => {
-    if (!search) return suppliers;
-    const q = search.toLowerCase();
-    return suppliers.filter(
-      (s) =>
-        getSupplierDisplayName(s).toLowerCase().includes(q) ||
-        (s.cnpj || '').includes(q) ||
-        (s.email || '').toLowerCase().includes(q),
-    );
-  }, [suppliers, search]);
+    const matchStatus = abaAtiva === 'todos' ||
+      (abaAtiva === 'ativos'    && (s.status === 'ativo' || s.status === 'active')) ||
+      (abaAtiva === 'bloqueados' && (s.is_blocked || s.status === 'bloqueado'))
 
-  const createSupplier = useCreateSupplier();
-  const updateSupplier = useUpdateSupplier();
-  const deleteSupplierMutation = useDeleteSupplier();
-  const blockSupplier = useBlockSupplier();
-  const unblockSupplier = useUnblockSupplier();
-
-  const handleDelete = async () => {
-    if (!selectedSupplier) return;
-    setIsDeleting(true);
-    try {
-      await deleteSupplierMutation.mutateAsync(selectedSupplier.id);
-      await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-      setShowDeleteModal(false);
-      setSelectedSupplier(null);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleBlock = async (supplier: Supplier) => {
-    await blockSupplier.mutateAsync({ supplierId: supplier.id, data: { reason: 'Bloqueado manualmente' } });
-    await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-  };
-
-  const handleUnblock = async (supplier: Supplier) => {
-    await unblockSupplier.mutateAsync(supplier.id);
-    await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-  };
-
-  const tabs: { key: TabFilter; label: string; count: number }[] = [
-    { key: 'todos', label: 'Todos', count: Number(stats.total ?? 0) },
-    { key: 'ativos', label: 'Ativos', count: Number(stats.ativos ?? 0) },
-    { key: 'bloqueados', label: 'Bloqueados', count: Number(stats.bloqueados ?? 0) },
-  ];
+    return matchSearch && matchStatus
+  })
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/modulos/financeiro">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="h-6 w-6 text-blue-600" />
-              Fornecedores
-            </h1>
-            <p className="text-sm text-muted-foreground">Gerencie seus fornecedores</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Fornecedores</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {isLoading ? 'Carregando...' : `${total} fornecedores cadastrados`}
+          </p>
         </div>
-        <Button onClick={() => { setSelectedSupplier(null); setShowFormModal(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Fornecedor
-        </Button>
+        <button onClick={() => refetch()}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200
+            rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
+          ↺ Atualizar
+        </button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total', value: stats.total ?? 0, color: 'text-blue-600' },
-          { label: 'Ativos', value: stats.ativos ?? 0, color: 'text-green-600' },
-          { label: 'Bloqueados', value: stats.bloqueados ?? 0, color: 'text-red-600' },
-          { label: 'Qualificados', value: stats.qualificados ?? 0, color: 'text-purple-600' },
-        ].map((kpi) => (
-          <Card key={kpi.label}>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">{kpi.label}</p>
-              <p className={cn('text-2xl font-bold mt-1', kpi.color)}>{kpi.value}</p>
-            </CardContent>
-          </Card>
+          { label: 'Total',     value: total,     icon: '👥', color: 'text-blue-600' },
+          { label: 'Ativos',    value: ativos,    icon: '✅', color: 'text-green-600' },
+          { label: 'Bloqueados',value: bloqueados, icon: '🚫', color: 'text-red-600' },
+        ].map(k => (
+          <div key={k.label} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
+            <span className="text-2xl">{k.icon}</span>
+            <div>
+              <p className="text-xs text-gray-500">{k.label}</p>
+              <p className={`text-3xl font-semibold ${k.color}`}>
+                {isLoading ? '–' : k.value}
+              </p>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Filtros e busca */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex gap-2">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
-                tab === t.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80',
-              )}
-            >
-              {t.label} ({t.count})
+      {/* Busca + Abas */}
+      <div className="flex gap-3">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar por nome, CNPJ/CPF ou email..."
+          className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-lg
+            focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+          {(['todos', 'ativos', 'bloqueados'] as const).map(aba => (
+            <button key={aba} onClick={() => setAbaAtiva(aba)}
+              className={`px-3 py-1.5 text-sm rounded-lg capitalize transition-all ${
+                abaAtiva === aba
+                  ? 'bg-white text-gray-900 font-medium shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}>
+              {aba}
             </button>
           ))}
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, CNPJ ou e-mail..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Button variant="outline" size="icon" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
 
-      {/* Tabela */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-40 text-muted-foreground">
-              <RefreshCw className="h-5 w-5 animate-spin mr-2" />
-              Carregando fornecedores...
-            </div>
-          ) : isError ? (
-            <div className="flex items-center justify-center h-40 text-destructive gap-2">
-              <AlertCircle className="h-5 w-5" />
-              Erro ao carregar fornecedores
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-              <Users className="h-8 w-8 mb-2 opacity-30" />
-              <p>Nenhum fornecedor encontrado</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left px-4 py-3 font-medium">Nome / Razão Social</th>
-                    <th className="text-left px-4 py-3 font-medium">CNPJ / CPF</th>
-                    <th className="text-left px-4 py-3 font-medium hidden md:table-cell">E-mail</th>
-                    <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Categoria</th>
-                    <th className="text-left px-4 py-3 font-medium">Status</th>
-                    <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Rating</th>
-                    <th className="text-right px-4 py-3 font-medium">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((supplier) => (
-                    <tr key={supplier.id} className="border-b hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3 font-medium">
-                        <div>{getSupplierDisplayName(supplier)}</div>
-                        {supplier.trade_name && supplier.company_name && (
-                          <div className="text-xs text-muted-foreground">{supplier.company_name}</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
-                        {formatCnpj(supplier.cnpj || supplier.cpf)}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                        {supplier.email || '-'}
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        <Badge variant="outline" className="text-xs">
-                          {supplier.category || supplier.supplier_type || 'Geral'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">{getStatusBadge(supplier)}</td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        {supplier.rating ? (
-                          <span className="text-yellow-600 font-medium">
-                            {'★'.repeat(Math.round(supplier.rating))}{'☆'.repeat(5 - Math.round(supplier.rating))}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">N/A</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <span className="sr-only">Ações</span>
-                              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                                <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
-                              </svg>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setSelectedSupplier(supplier); setShowDetailModal(true); }}>
-                              <Eye className="h-4 w-4 mr-2" /> Visualizar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setSelectedSupplier(supplier); setShowFormModal(true); }}>
-                              <Edit className="h-4 w-4 mr-2" /> Editar
-                            </DropdownMenuItem>
-                            {supplier.is_blocked ? (
-                              <DropdownMenuItem onClick={() => handleUnblock(supplier)}>
-                                <Unlock className="h-4 w-4 mr-2" /> Desbloquear
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem onClick={() => handleBlock(supplier)}>
-                                <Lock className="h-4 w-4 mr-2" /> Bloquear
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => { setSelectedSupplier(supplier); setShowDeleteModal(true); }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Lista */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin w-6 h-6 border-2 border-blue-500
+              border-t-transparent rounded-full mx-auto mb-2" />
+            <p className="text-sm text-gray-500">Carregando fornecedores...</p>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-red-600 mb-2">Erro: {String(error)}</p>
+            <button onClick={() => refetch()}
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg">
+              Tentar novamente
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-gray-500">Nenhum fornecedor encontrado</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                {['Nome', 'CNPJ/CPF', 'Email', 'Categoria', 'Status', 'Rating'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((s, i) => (
+                <tr key={s.id ?? i}
+                  className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-gray-900">{s.name}</p>
+                    {s.trade_name && <p className="text-xs text-gray-400">{s.trade_name}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 font-mono text-xs">
+                    {s.cpf_cnpj ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{s.email ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 capitalize">
+                    {(s.category ?? s.supplier_type ?? '—').replace(/_/g, ' ')}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium
+                      ${STATUS_STYLE[s.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {STATUS_LABEL[s.status] ?? s.status ?? '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {s.rating != null ? (
+                      <span className="flex items-center gap-0.5 text-amber-500 text-xs">
+                        {'★'.repeat(Math.round(s.rating))}{'☆'.repeat(5 - Math.round(s.rating))}
+                      </span>
+                    ) : <span className="text-gray-300">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-      {/* Modais */}
-      {showFormModal && (
-        <SupplierFormModal
-          open={showFormModal}
-          onClose={() => { setShowFormModal(false); setSelectedSupplier(null); }}
-          supplier={selectedSupplier as Parameters<typeof SupplierFormModal>[0]['supplier']}
-          onSuccess={async () => {
-            await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-            setShowFormModal(false);
-            setSelectedSupplier(null);
-          }}
-        />
+      {filtered.length > 0 && (
+        <p className="text-xs text-gray-400 text-right">
+          {filtered.length} de {suppliers.length} fornecedores exibidos
+        </p>
       )}
-
-      {showDetailModal && selectedSupplier && (
-        <SupplierDetailModal
-          open={showDetailModal}
-          onClose={() => { setShowDetailModal(false); setSelectedSupplier(null); }}
-          supplierId={selectedSupplier.id}
-        />
-      )}
-
-      <ConfirmModal
-        open={showDeleteModal}
-        onClose={() => { setShowDeleteModal(false); setSelectedSupplier(null); }}
-        onConfirm={handleDelete}
-        title="Excluir fornecedor"
-        description={`Tem certeza que deseja excluir "${selectedSupplier ? getSupplierDisplayName(selectedSupplier) : ''}"? Esta ação não pode ser desfeita.`}
-        isLoading={isDeleting}
-      />
     </div>
-  );
+  )
 }
