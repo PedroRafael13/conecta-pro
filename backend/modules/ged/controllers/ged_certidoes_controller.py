@@ -304,6 +304,14 @@ async def sincronizar_certidoes_param(
     )
 
 
+@router.options("/certidoes/{certidao_id}", include_in_schema=False)
+async def options_certidao(certidao_id: str):
+    """Retorna métodos permitidos para /{certidao_id}."""
+    from starlette.responses import Response
+
+    return Response(status_code=200, headers={"Allow": "DELETE, GET, OPTIONS, PUT"})
+
+
 @router.get("/certidoes/{certidao_id}")
 async def obter_certidao(
     certidao_id: str,
