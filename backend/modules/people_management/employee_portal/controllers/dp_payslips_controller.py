@@ -527,12 +527,12 @@ async def pagar_folha_lote(
 ):
     """
     POST /api/v1/people-management/dp/payroll/pay-batch
-    Body: {"mes_referencia": "2026-03", "modo": "simulacao"}
-    """
-    from modules.people_management.services.folha_payment_service import (
-        processar_folha_completa,
-    )
+    Body: {"mes_referencia": "2026-03", "modo": "simulacao|execucao"}
 
+    IMPORTANTE: NÃO executa PIX real.
+    - simulacao: preview sem alterar banco de dados
+    - execucao: registra como 'pendente_pagamento' para aprovação manual
+    """
     try:
         ano_str, mes_str = body.mes_referencia.split("-")
         mes = int(mes_str)
@@ -549,8 +549,21 @@ async def pagar_folha_lote(
             detail=f"Mês inválido: {mes}. Deve ser entre 1 e 12.",
         )
 
-    apenas_preview = body.modo.lower() != "execucao"
-    resultado = await processar_folha_completa(mes, ano, apenas_preview=apenas_preview)
+    if body.modo.lower() == "execucao":
+        # Registra como pendente_pagamento — NÃO envia PIX real
+        from modules.people_management.services.folha_payment_service import (
+            registrar_lote_pendente,
+        )
+
+        resultado = registrar_lote_pendente(mes, ano)
+    else:
+        # Simulação — apenas preview sem tocar banco
+        from modules.people_management.services.folha_payment_service import (
+            processar_folha_completa,
+        )
+
+        resultado = await processar_folha_completa(mes, ano, apenas_preview=True)
+
     return {**resultado, "mes_referencia": body.mes_referencia, "modo": body.modo}
 
 

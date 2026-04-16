@@ -271,6 +271,83 @@ async def processar_folha_completa(mes: int, ano: int, apenas_preview: bool = Fa
     }
 
 
+def registrar_lote_pendente(mes: int, ano: int) -> dict:
+    """
+    Registra folha como pendente_pagamento sem executar PIX real.
+    Monta payload PIX por funcionário e salva como 'pendente_pagamento'
+    para aprovação manual — conforme instrução: NÃO executar PIX real.
+    """
+    lote = preparar_lote_folha(mes, ano)
+
+    if not lote["funcionarios"]:
+        return {
+            "mes": mes,
+            "ano": ano,
+            "total_funcionarios": 0,
+            "registrados_pendente": 0,
+            "erros": 0,
+            "total_valor": 0.0,
+            "status": "pendente_pagamento",
+            "aviso": f"Sem holerites publicados para {mes:02d}/{ano}",
+        }
+
+    conn = _get_conn()
+    cur = conn.cursor()
+    registrados = 0
+    erros_list = []
+
+    try:
+        for func in lote["funcionarios"]:
+            if not func.get("pix_key"):
+                erros_list.append({"nome": func["nome"], "erro": "Sem chave PIX cadastrada"})
+                continue
+
+            payment_id = str(uuid.uuid4())
+            try:
+                cur.execute(
+                    """
+                    INSERT INTO payroll_payments (
+                        id, employee_id, payslip_id, mes, ano,
+                        valor_liquido, metodo, pix_key, status,
+                        created_at, updated_at
+                    ) VALUES (%s,%s,%s,%s,%s,%s,'PIX',%s,'pendente_pagamento',NOW(),NOW())
+                    ON CONFLICT DO NOTHING
+                    """,
+                    (
+                        payment_id,
+                        func["employee_id"],
+                        func.get("payslip_id") or "",
+                        mes,
+                        ano,
+                        float(func["valor_liquido"] or 0),
+                        func["pix_key"],
+                    ),
+                )
+                registrados += 1
+            except Exception as exc:
+                erros_list.append({"nome": func["nome"], "erro": str(exc)[:200]})
+
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
+    return {
+        "mes": mes,
+        "ano": ano,
+        "total_funcionarios": len(lote["funcionarios"]),
+        "registrados_pendente": registrados,
+        "erros": len(erros_list),
+        "total_valor": lote["total_valor"],
+        "status": "pendente_pagamento",
+        "aviso": (
+            f"{registrados} pagamentos registrados como pendente_pagamento"
+            " — aguardando aprovação manual. Nenhum PIX real executado."
+        ),
+        "detalhes_erros": erros_list,
+    }
+
+
 def status_pagamentos_folha(mes: int, ano: int) -> dict:
     """Retorna status dos pagamentos de folha do período."""
     conn = _get_conn()
