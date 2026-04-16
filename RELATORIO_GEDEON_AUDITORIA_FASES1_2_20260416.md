@@ -40,9 +40,25 @@ Causa: o `{certidao_id}` com método PUT absorve o path `/sync` antes do POST se
 
 ```
 OPTIONS /api/v1/ged/certidoes/sync → allow: PUT   ← BUG: deveria allow: POST
-POST /ged/certidoes/sync/{cnd_federal}   → 404
-POST /ged/certidoes/sync/{cndt_trabalhista} → 404
+POST /ged/certidoes/sync/cnd_federal      → 404
+POST /ged/certidoes/sync/cndt_trabalhista → 404
+POST /ged/certidoes/sync/crf_fgts         → 404
+POST /ged/certidoes/sync/cnd_estadual     → 404
+POST /ged/certidoes/sync/cnd_municipal    → 404
+GET  /ged/certidoes/tipos                 → 405 (allow: GET,HEAD — mas retorna 405 no runtime)
+POST /ged/certidoes/atualizar-status      → 405 (allow: PUT)
 ```
+
+### Impacto frontend (novo achado — auditoria complementar)
+
+**28 arquivos frontend** referenciam certidões. Descoberta crítica:
+- `frontend/src/app/modulos/fiscal/certidoes/page.tsx` — hub principal com 9 sub-rotas dedicadas:
+  - `/fiscal/certidoes/federal/`, `/crf-fgts/`, `/cndt/`, `/estadual/`, `/municipal/`, `/trabalhista/`, `/fgts/`, `/cnd-estadual/`, `/cnd-federal/`, `/cnd-municipal/`
+- `frontend/src/app/modulos/gestao-pessoas/ged/certidoes/page.tsx` — portal RH de certidões
+
+O `page.tsx` principal usa array `syncKeys = ['cnd_federal', 'cndt_trabalhista', 'crf_fgts', 'cnd_estadual', 'cnd_municipal']` e executa `POST /api/v1/ged/certidoes/sync/${tipoKey}` para cada tipo — **todos retornam 404**. Também chama `GET /api/v1/ged/certidoes/tipos` → **405**.
+
+**Conclusão:** O bug de rota bloqueia completamente a UI de certidões — nenhum dos 9 botões de sincronização funciona, e o carregamento inicial da tela de tipos também falha.
 
 ---
 
@@ -198,10 +214,28 @@ Fase 2: 1/4 ✅  (3 parciais ⚠️)
 - Férias sem rota registrada
 
 **Pré-requisitos para avançar à Fase 3:**
-1. Corrigir conflito de rotas `certidoes/sync` vs `certidoes/{id}` (ordem de registro)
+1. Corrigir conflito de rotas `certidoes/sync` vs `certidoes/{id}` (ordem de registro) — **bloqueia 9 páginas frontend**
 2. Corrigir `gerar_pdf_contrato` (500 em produção)
 3. Corrigir prefix duplo do vacation_controller
 4. (Desejável) Configurar API key Solides para desbloqueio M6
+
+### Auditoria complementar — caminhos reais vs caminhos do prompt GEDEON
+
+O prompt GEDEON referencia paths legados que não existem no runtime:
+
+| Path do Prompt | HTTP real | Path real no sistema |
+|----------------|-----------|----------------------|
+| `POST /ged/certidoes/buscar` | 405 | não existe — usa `GET /ged/certidoes` com query params |
+| `GET /rh/contratos/` | 404 | `GET /people-management/hr/contracts` |
+| `POST /rh/contratos/gerar` | 404 | `POST /people-management/hr/contracts/{id}/document` |
+| `GET /rh/ferias/avisos` | 404 | não implementado |
+| `POST /rh/ferias/gerar-aviso` | 404 | não implementado |
+| `GET /fiscal/nfse/` | 404 | `GET /financial/nfse` |
+| `GET /financeiro/cobrancas/` | 404 | `GET /integrations/banking/boleto/list` |
+| `GET /rh/beneficios/solides` | 404 | `GET /integrations/solides/status` |
+| `GET /financeiro/folha/comprovantes` | 404 | `GET /people-management/dp/payslips/` |
+
+A auditoria foi conduzida testando **tanto** os paths do prompt quanto os paths reais — os resultados documentados neste relatório refletem o estado real do sistema.
 
 ---
 
