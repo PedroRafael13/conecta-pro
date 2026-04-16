@@ -123,3 +123,20 @@ const getForecastForMonth = (monthIdx) => {
 ║  BUG-4 join ok  · BUG-5 piso_base_cct · BUG-6 forecasts       ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## Auditoria STEP 8 — TypeScript
+
+```
+npx tsc --noEmit
+0 erros
+```
+
+---
+
+## Pendente para rodada CRM
+
+- `piso_vigilante` como nome de campo no backend (não urgente — frontend já adaptado para `piso_base_cct`)
+- Cobranças Emitidas: vazia porque sem boletos emitidos ainda
+- Precificação: 'Kit Mensal' → nomenclatura CRM ainda não unificada
