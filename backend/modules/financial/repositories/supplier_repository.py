@@ -207,20 +207,19 @@ class SupplierRepository:
         await self.session.refresh(supplier)
         return supplier
 
-    async def get_stats(self, condominio_id: UUID) -> SupplierStats:
+    async def get_stats(self, condominio_id: UUID | None) -> SupplierStats:
         """Retorna estatísticas de fornecedores."""
+        base = [Supplier.ativo.is_(True)]
+        if condominio_id is not None:
+            base.append(Supplier.condominio_id == condominio_id)
+
         # Total e por status
         status_query = (
             select(
                 Supplier.status,
                 func.count(Supplier.id).label("count"),
             )
-            .where(
-                and_(
-                    Supplier.condominio_id == condominio_id,
-                    Supplier.ativo.is_(True),
-                )
-            )
+            .where(and_(*base))
             .group_by(Supplier.status)
         )
 
@@ -233,12 +232,7 @@ class SupplierRepository:
                 Supplier.supplier_type,
                 func.count(Supplier.id).label("count"),
             )
-            .where(
-                and_(
-                    Supplier.condominio_id == condominio_id,
-                    Supplier.ativo.is_(True),
-                )
-            )
+            .where(and_(*base))
             .group_by(Supplier.supplier_type)
         )
 
@@ -251,13 +245,7 @@ class SupplierRepository:
                 Supplier.category,
                 func.count(Supplier.id).label("count"),
             )
-            .where(
-                and_(
-                    Supplier.condominio_id == condominio_id,
-                    Supplier.ativo.is_(True),
-                    Supplier.category.isnot(None),
-                )
-            )
+            .where(and_(*base, Supplier.category.isnot(None)))
             .group_by(Supplier.category)
         )
 
@@ -265,13 +253,7 @@ class SupplierRepository:
         category_data = {row.category: row.count for row in category_result}
 
         # Qualificados
-        qualified_query = select(func.count(Supplier.id)).where(
-            and_(
-                Supplier.condominio_id == condominio_id,
-                Supplier.ativo.is_(True),
-                Supplier.is_qualified.is_(True),
-            )
-        )
+        qualified_query = select(func.count(Supplier.id)).where(and_(*base, Supplier.is_qualified.is_(True)))
         qualified_result = await self.session.execute(qualified_query)
         qualified_count = qualified_result.scalar_one()
 

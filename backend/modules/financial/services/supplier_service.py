@@ -149,7 +149,7 @@ class SupplierService:
         logger.info(f"Fornecedor qualificado: {supplier_id}")
         return supplier
 
-    async def get_stats(self, condominio_id: UUID) -> SupplierStats:
+    async def get_stats(self, condominio_id: UUID | None) -> SupplierStats:
         """Retorna estatísticas de fornecedores."""
         return await self.repository.get_stats(condominio_id)
 
