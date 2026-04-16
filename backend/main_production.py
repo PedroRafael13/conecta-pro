@@ -993,11 +993,15 @@ except Exception as e:
 # =============================================================================
 try:
     from modules.people_management.employee_portal.controllers.dp_payslips_controller import (
+        payroll_router as dp_payroll_router,
+    )
+    from modules.people_management.employee_portal.controllers.dp_payslips_controller import (
         router as dp_payslips_router,
     )
 
     api_router.include_router(dp_payslips_router, prefix="/people-management")
-    logger.info("DP Payslips: OK (criar/publicar/importar contracheques)")
+    api_router.include_router(dp_payroll_router, prefix="/people-management")
+    logger.info("DP Payslips: OK (criar/publicar/importar contracheques + pay-batch PIX)")
 except Exception as e:
     logger.warning(f"DP Payslips: {e}")
 
