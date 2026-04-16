@@ -70,19 +70,17 @@ class ChartOfAccountsRepository:
             .first()
         )
 
-    def get_active(self, condominio_id: uuid.UUID) -> ChartOfAccounts | None:
+    def get_active(self, condominio_id: uuid.UUID | None) -> ChartOfAccounts | None:
         """Busca plano de contas ativo do condominio."""
-        return (
-            self.db.query(ChartOfAccounts)
-            .filter(
-                and_(
-                    ChartOfAccounts.condominio_id == condominio_id,
-                    ChartOfAccounts.status == ChartStatus.ACTIVE,
-                    ChartOfAccounts.active.is_(True),  # noqa: E712
-                )
+        q = self.db.query(ChartOfAccounts).filter(
+            and_(
+                ChartOfAccounts.status == ChartStatus.ACTIVE,
+                ChartOfAccounts.active.is_(True),  # noqa: E712
             )
-            .first()
         )
+        if condominio_id is not None:
+            q = q.filter(ChartOfAccounts.condominio_id == condominio_id)
+        return q.first()
 
     def list_all(
         self,

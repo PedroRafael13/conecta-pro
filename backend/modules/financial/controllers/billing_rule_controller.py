@@ -60,7 +60,7 @@ async def create_billing_rule(
     summary="Listar regras de cobranca",
 )
 async def list_billing_rules(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     search: str | None = Query(None, description="Busca no nome"),
     billing_type: str | None = Query(None, alias="type", description="Tipo"),
     frequency: str | None = Query(None, description="Frequencia"),
@@ -90,7 +90,7 @@ async def list_billing_rules(
     summary="Regras ativas",
 )
 async def get_active_rules(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     repo: BillingRuleRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
@@ -105,7 +105,7 @@ async def get_active_rules(
     summary="Regras para geracao",
 )
 async def get_rules_due_for_generation(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     repo: BillingRuleRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
@@ -288,7 +288,7 @@ async def generate_charges(
 
 @router.post("/process-all", summary="Processar todas as regras", status_code=201)
 async def process_all_rules(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None),
     repo: BillingRuleRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):

@@ -322,7 +322,11 @@ async def list_accounts(
 ) -> list[AccountingAccountListResponse]:
     """Lista contas contabeis."""
     if not chart_id:
-        return []
+        chart_repo = ChartOfAccountsRepository(db)
+        active_chart = chart_repo.get_active(None)
+        if not active_chart:
+            return []
+        chart_id = active_chart.id
     try:
         repo = AccountingAccountRepository(db)
         accounts = repo.list_all(
