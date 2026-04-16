@@ -435,37 +435,25 @@ def get_dashboard_folha(db: Session, mes: int, ano: int) -> dict[str, Any]:
             "funcionarios": funcionarios,
         }
 
-    # ── Sistema B: engine interna (fallback) ─────────────────────────────────
-    logger.info("get_dashboard_folha: sem dados Domínio para %d/%d — usando engine interna", mes, ano)
-    batch = calcular_folha_batch(db, mes, ano)
-
-    por_cargo = {}
-    for h in batch["holerites"]:
-        cargo = h["cargo"]
-        if cargo not in por_cargo:
-            por_cargo[cargo] = {"qtd": 0, "total_liquido": 0.0, "total_fgts": 0.0}
-        por_cargo[cargo]["qtd"] += 1
-        por_cargo[cargo]["total_liquido"] += h["liquido"]
-        por_cargo[cargo]["total_fgts"] += h["fgts_empresa"]
-
-    total_inss = sum(d["valor"] for h in batch["holerites"] for d in h["descontos"] if d["codigo"] == "1001")
-    total_irrf = sum(d["valor"] for h in batch["holerites"] for d in h["descontos"] if d["codigo"] == "1002")
-
+    # ── Sistema B: sem dados importados — NUNCA recalcular ───────────────────
+    # Regra: sempre ler da tabela hr_payslips (Domínio Sistemas).
+    # Se não há payslips importados para o período, retorna zeros.
+    logger.info("get_dashboard_folha: sem dados Domínio para %d/%d — retornando zeros (sem engine_interna)", mes, ano)
     return {
         "mes": mes,
         "ano": ano,
-        "total_colaboradores": batch["total_colaboradores"],
-        "total_proventos": batch["total_proventos"],
-        "total_descontos": batch["total_descontos"],
-        "total_liquido": batch["total_liquido"],
-        "total_fgts": batch["total_fgts"],
-        "total_inss": total_inss,
-        "total_irrf": total_irrf,
-        "por_cargo": por_cargo,
+        "total_colaboradores": 0,
+        "total_proventos": 0.0,
+        "total_descontos": 0.0,
+        "total_liquido": 0.0,
+        "total_fgts": 0.0,
+        "total_inss": 0.0,
+        "total_irrf": 0.0,
+        "por_cargo": {},
         "rubricas_count": rubricas_count,
-        "status": "aberta",
-        "fonte": "engine_interna",
-        "funcionarios": batch["holerites"],
+        "status": "sem_dados_importados",
+        "fonte": "sem_dados_importados",
+        "funcionarios": [],
     }
 
 
