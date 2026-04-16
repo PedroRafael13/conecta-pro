@@ -96,7 +96,11 @@ para que as rotas fossem re-registradas.
 | `POST /certidoes/sync/cnd_municipal` | ✅ 200 OK |
 | `GET /certidoes/tipos` | ✅ 200 OK (5 tipos retornados) |
 | `PUT /certidoes/{id}` (regressão) | ✅ 404 (id inexistente — rota funcional) |
+| `DELETE /certidoes/{id}` (regressão) | ✅ 404 (id inexistente — rota funcional) |
+| `GET /certidoes/{id}` (não existe) | ✅ 405 (correto — endpoint por ID não implementado) |
+| `OPTIONS /certidoes/1` | ⚠️ `allow: PUT` (Starlette quirk: handlers separados para PUT e DELETE no mesmo path pattern; DELETE funcional via HTTP 404 em ID inexistente) |
 | MD5 container == MD5 disco | ✅ `d6f9e1209f0840b6c5004bbd6f49ea9e` |
+| Rotas no app (docker exec inspect) | ✅ GET /certidoes, POST /certidoes, GET /tipos, POST /sync, POST /sync/{param}, PUT /{id}, DELETE /{id} |
 
 ---
 
