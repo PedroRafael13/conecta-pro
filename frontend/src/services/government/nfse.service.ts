@@ -137,15 +137,25 @@ export async function consultarLoteNFSe(params: {
 
 /**
  * Lista NFS-e emitidas com filtros
+ * Endpoint real: GET /api/v1/financial/nfse
+ * Normaliza campos do backend financeiro para o contrato esperado pelo frontend
  */
 export async function listarNFSe(
   params: ConsultaNFSeParams
 ): Promise<StandardResponse> {
-  const { data } = await api.get<StandardResponse>(
-    '/api/v1/government/nfse-nacional/listar',
+  const { data } = await api.get<{ total: number; items: any[] }>(
+    '/api/v1/financial/nfse',
     { params }
   );
-  return data;
+  const items = (data.items || []).map((n: any) => ({
+    ...n,
+    numero: n.numero_nfse ?? n.numero,
+    tomador_nome: n.tomador_razao_social ?? n.tomador_nome,
+    tomador_cnpj: n.tomador_cpf_cnpj ?? n.tomador_cnpj,
+    valor_servico: n.valor_servicos ?? n.valor_servico,
+    status: n.status === 'autorizada' ? 'emitida' : n.status,
+  }));
+  return { items, total: data.total } as unknown as StandardResponse;
 }
 
 /**
