@@ -71,3 +71,28 @@ class NfseNacionalService:
 - Todas com status 'autorizada'
 - Serviço: código 11.02 (vigilância/portaria) | ISS 5%
 - Última emissão: 12/02/2026
+
+## Configuração atual do .env (diagnóstico 16/04/2026)
+
+```
+NFSE_MANAUS_CNPJ=35710481000103
+NFSE_MANAUS_IM=45177801        ← Inscrição Municipal Manaus (sistema antigo)
+NFSE_MANAUS_ENVIRONMENT=producao
+
+NFSE_NACIONAL_CNPJ=35710481000103
+NFSE_NACIONAL_IM=              ← ⚠ VAZIO — precisa ser preenchido após habilitação SEMEF
+NFSE_NACIONAL_COD_MUNICIPIO=1302603  (código IBGE Manaus)
+NFSE_NACIONAL_ENVIRONMENT=homologacao  ← ⚠ ainda em homologação
+```
+
+### Ações de configuração pendentes
+1. **`NFSE_NACIONAL_IM`** — Preencher com a Inscrição Municipal obtida na SEMEF
+2. **`NFSE_NACIONAL_ENVIRONMENT`** — Mudar para `producao` após testes em homologação
+3. **Endpoint `/nfse/status`** — Retorna 404 (não implementado); criar health check do serviço
+
+### Checklist para ativar automação completa
+- [ ] Obter `NFSE_NACIONAL_IM` junto à SEMEF Manaus
+- [ ] Preencher `.env` com a IM e trocar environment para `producao`
+- [ ] Testar emissão em homologação com nota de teste
+- [ ] Ativar billing_rules trigger para disparar NFS-e automaticamente
+- [ ] Criar endpoint `GET /nfse/status` para monitoramento
