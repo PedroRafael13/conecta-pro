@@ -26,12 +26,14 @@ CUSTO_CLT_POSTO = PISO_VIGILANTE * (1 + ENCARGOS_PCT) + VR_DIA * DIAS_UTEIS + VT
 
 # ── Benchmarks Manaus 2026 (por posto/mês) ───────────────────────────────────
 BENCH = {
-    "portaria": {"min": 2800, "max": 3800, "label": "Kit Mensal (portaria diurna)"},
-    "portaria_noturno": {"min": 3200, "max": 4500, "label": "Kit Noturno"},
+    "portaria_presencial": {"min": 2800, "max": 3800, "label": "Portaria Presencial"},
+    "portaria": {"min": 2800, "max": 3800, "label": "Portaria Presencial"},  # alias retroativo
+    "portaria_noturno": {"min": 3200, "max": 4500, "label": "Portaria Presencial Noturna"},
     "portaria_remota": {"min": 1200, "max": 2500, "label": "Portaria Remota (Econdos)"},
     "manutencao_cftv": {"min": 600, "max": 1200, "label": "Manutenção CFTV"},
     "seguranca_eletronica": {"min": 1500, "max": 3500, "label": "Seg. Eletrônica + Monitoramento"},
     "limpeza": {"min": 1500, "max": 3000, "label": "Limpeza e Conservação"},
+    "facilities": {"min": 1500, "max": 3000, "label": "Facilities e Serviços Gerais"},
 }
 
 MARGEM_TARGET = 35.0
@@ -47,7 +49,7 @@ def _detectar_tipo(nome: str) -> str:
     if "cftv" in n or "seg. eletr" in n or "eletr" in n:
         return "seguranca_eletronica"
     if "portaria" in n:
-        return "portaria"
+        return "portaria_presencial"
     if "limpeza" in n:
         return "limpeza"
     return "outros"
@@ -67,7 +69,8 @@ def _custo_direto_por_tipo(tipo: str, receita: float) -> float:
 @router.get("/simulador", summary="Simulador de precificação CCT 2026")
 async def get_simulador(
     tipo_servico: str = Query(
-        "portaria", description="portaria | portaria_remota | manutencao_cftv | seguranca_eletronica | limpeza"
+        "portaria",
+        description="portaria_presencial | portaria_remota | manutencao_cftv | seguranca_eletronica | facilities",
     ),
     num_postos: int = Query(1, description="Número de postos / unidades"),
     turno_noturno: bool = Query(False, description="Adicional noturno +20% (CCT 2026)"),
@@ -80,13 +83,19 @@ async def get_simulador(
     Base: CCT SINDECOMPRESTS 2026 + benchmarks do mercado Manaus/AM.
     """
     try:
+        # Retrocompatibilidade: kit_mensal → portaria_presencial
+        TIPO_ALIAS = {"kit_mensal": "portaria_presencial", "portaria": "portaria_presencial"}
+        tipo_servico = TIPO_ALIAS.get(tipo_servico, tipo_servico)
+
         sal_base = PISO_VIGILANTE * (1.20 if turno_noturno else 1.0)
         encargos = sal_base * ENCARGOS_PCT
         vr_mensal = VR_DIA * DIAS_UTEIS
         custo_posto = sal_base + encargos + vr_mensal + VT_MEDIO
 
         # Custo direto total
-        if tipo_servico == "portaria_remota":
+        if tipo_servico in ("portaria_presencial", "portaria", "limpeza", "facilities"):
+            custo_direto = custo_posto * num_postos
+        elif tipo_servico == "portaria_remota":
             custo_direto = 1770.0 + 1500.0 * num_postos
         elif tipo_servico in ("manutencao_cftv", "seguranca_eletronica"):
             custo_direto = 700.0 * num_postos

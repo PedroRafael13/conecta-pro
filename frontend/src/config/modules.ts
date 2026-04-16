@@ -25,6 +25,7 @@ export const modules: Module[] = [
       { id: 'contratos', title: 'Contratos', href: '/modulos/crm/contratos', icon: 'FileSignature', permissions: ['crm:read'] },
       { id: 'contatos', title: 'Contatos', href: '/modulos/crm/contatos', icon: 'Contact', permissions: ['crm:contatos'] },
       { id: 'comissoes', title: 'Comissões', href: '/modulos/crm/comissoes', icon: 'Coins', permissions: ['crm:read'] },
+      { id: 'crm-precificacao', title: 'Precificação', href: '/modulos/crm/precificacao', icon: 'Tag', permissions: ['crm:read'] },
     ],
   },
 
@@ -362,7 +363,7 @@ export const modules: Module[] = [
       // --- Custos e Precificacao ---
       { id: 'custos', title: 'Custos', href: '/modulos/financeiro/custos', icon: 'PieChart', permissions: ['financial:custeio'] },
       { id: 'custeio', title: 'Custeio ABC', href: '/modulos/financeiro/custeio', icon: 'Calculator', permissions: ['financial:custeio'] },
-      { id: 'precificacao', title: 'Precificacao', href: '/modulos/financeiro/precificacao', icon: 'Tag', permissions: ['financial:read'] },
+      { id: 'precificacao', title: 'Precificacao', href: '/modulos/crm/precificacao', icon: 'Tag', permissions: ['financial:read'] },
       { id: 'orcamentos', title: 'Orcamentos', href: '/modulos/financeiro/orcamentos', icon: 'Target', permissions: ['financial:read'] },
       // --- Contabilidade e Relatorios ---
       { id: 'contabilidade', title: 'Contabilidade', href: '/modulos/financeiro/contabilidade', icon: 'Calculator', permissions: ['financial:contabilidade'] },

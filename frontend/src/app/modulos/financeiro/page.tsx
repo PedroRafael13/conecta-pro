@@ -120,7 +120,7 @@ const navigationCards = [
   {
     title: 'Precificação',
     description: 'Calcule preços ideais para novos contratos com IA',
-    href: '/modulos/financeiro/precificacao',
+    href: '/modulos/crm/precificacao',
     icon: Calculator,
   },
 ];
