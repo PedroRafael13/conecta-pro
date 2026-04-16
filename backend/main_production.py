@@ -1028,6 +1028,14 @@ try:
 except Exception as _e:
     logger.warning(f"Webhooks Inter: {_e}")
 
+try:
+    from modules.juridico.skills_controller import router as juridico_skills_router
+
+    api_router.include_router(juridico_skills_router)
+    logger.info("Jurídico Skills: OK (089, 090, 092, 095, 253, 305, 318)")
+except Exception as _e:
+    logger.warning(f"Jurídico Skills: {_e}")
+
 # Incluir router principal
 app.include_router(api_router)
 

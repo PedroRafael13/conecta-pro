@@ -1,0 +1,1 @@
+"""Módulo Jurídico — Conecta Mais."""
