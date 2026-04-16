@@ -4,6 +4,9 @@ GED Certidões Controller.
 Endpoints:
 - GET    /certidoes          → listar certidões da empresa com status calculado
 - POST   /certidoes          → adicionar nova certidão
+- GET    /certidoes/tipos    → listar tipos de CND disponíveis para sync
+- POST   /certidoes/sync     → disparar sync de todas as CNDs
+- POST   /certidoes/sync/{param} → sync por tipo ou CNPJ
 - PUT    /certidoes/{id}     → renovar/atualizar certidão
 - DELETE /certidoes/{id}     → remover certidão
 """
@@ -154,37 +157,27 @@ async def criar_certidao(
     return {"id": str(new_id), "message": "Certidão criada com sucesso."}
 
 
-@router.put("/certidoes/{certidao_id}")
-async def atualizar_certidao(
-    certidao_id: str,
-    payload: CertidaoUpdate,
+# IMPORTANTE: rotas específicas (/tipos, /sync, /sync/{param}) DEVEM vir
+# antes de /{certidao_id} para evitar que FastAPI capture o path como ID.
+
+
+@router.get("/certidoes/tipos")
+async def listar_tipos_certidao(
     current_user: dict = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    """Renova ou atualiza uma certidão existente."""
-    # Verificar existência
-    check = await db.execute(
-        text("SELECT id FROM ged_certidoes WHERE id = :id"),
-        {"id": certidao_id},
-    )
-    if not check.fetchone():
-        raise HTTPException(
-            status_code=404,
-            detail={"code": "CERTIDAO_NOT_FOUND", "message": f"Certidão '{certidao_id}' não encontrada."},
-        )
+    """Lista os tipos de CND disponíveis para sincronização automática."""
+    from modules.people_management.ged.tasks.cnd_sync_task import CERTIDAO_CONFIG
 
-    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
-    if not updates:
-        raise HTTPException(status_code=422, detail={"code": "NO_FIELDS", "message": "Nenhum campo para atualizar."})
-
-    set_clause = ", ".join(f"{k} = :{k}" for k in updates)
-    updates["certidao_id"] = certidao_id
-    await db.execute(
-        text(f"UPDATE ged_certidoes SET {set_clause}, updated_at = NOW() WHERE id = :certidao_id"),
-        updates,
-    )
-    await db.commit()
-    return {"id": certidao_id, "message": "Certidão atualizada com sucesso."}
+    tipos = [
+        {
+            "key": key,
+            "document_type": cfg["document_type"],
+            "name": cfg["name"],
+            "issuing_body": cfg["issuing_body"],
+        }
+        for key, cfg in CERTIDAO_CONFIG.items()
+    ]
+    return {"tipos": tipos, "total": len(tipos)}
 
 
 @router.post("/certidoes/sync", status_code=200)
@@ -304,6 +297,39 @@ async def sincronizar_certidoes_param(
         status_code=422,
         detail=f"Parâmetro inválido: '{param}'. Deve ser um tipo válido {tipos_validos} ou CNPJ de 14 dígitos.",
     )
+
+
+@router.put("/certidoes/{certidao_id}")
+async def atualizar_certidao(
+    certidao_id: str,
+    payload: CertidaoUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Renova ou atualiza uma certidão existente."""
+    # Verificar existência
+    check = await db.execute(
+        text("SELECT id FROM ged_certidoes WHERE id = :id"),
+        {"id": certidao_id},
+    )
+    if not check.fetchone():
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "CERTIDAO_NOT_FOUND", "message": f"Certidão '{certidao_id}' não encontrada."},
+        )
+
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=422, detail={"code": "NO_FIELDS", "message": "Nenhum campo para atualizar."})
+
+    set_clause = ", ".join(f"{k} = :{k}" for k in updates)
+    updates["certidao_id"] = certidao_id
+    await db.execute(
+        text(f"UPDATE ged_certidoes SET {set_clause}, updated_at = NOW() WHERE id = :certidao_id"),
+        updates,
+    )
+    await db.commit()
+    return {"id": certidao_id, "message": "Certidão atualizada com sucesso."}
 
 
 @router.delete("/certidoes/{certidao_id}", status_code=200)
