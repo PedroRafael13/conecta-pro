@@ -168,6 +168,13 @@ async def generate_contract_document(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Gera documento de contrato de trabalho."""
+    import uuid as _uuid
+
+    try:
+        _uuid.UUID(contract_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=422, detail="contract_id inválido: deve ser um UUID válido")
+
     service = ContractService(db)
     contract = await service.get_by_id(contract_id)
     if not contract:
