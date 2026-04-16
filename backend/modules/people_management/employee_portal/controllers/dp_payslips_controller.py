@@ -64,14 +64,28 @@ async def listar_payslips(
     employee_id: str | None = Query(None),
     mes: int | None = Query(None, ge=1, le=12),
     ano: int | None = Query(None, ge=2020, le=2030),
+    mes_referencia: str | None = Query(None, description="Filtro AAAA-MM, ex: 2026-03"),
     payslip_status: str | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    limit: int | None = Query(None, ge=1, le=100, description="Alias para page_size"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Lista contracheques com filtros. Acessível apenas pelo DP/admin."""
     try:
         from modules.hr.employee_portal.models.payslip import PaySlip
+
+        # limit é alias de page_size
+        effective_page_size = limit if limit is not None else page_size
+
+        # mes_referencia=AAAA-MM extrai mes e ano
+        if mes_referencia and not mes and not ano:
+            try:
+                _ano_str, _mes_str = mes_referencia.split("-")
+                ano = int(_ano_str)
+                mes = int(_mes_str)
+            except (ValueError, AttributeError):
+                pass
 
         stmt = select(PaySlip)
         if employee_id:
@@ -84,7 +98,7 @@ async def listar_payslips(
             stmt = stmt.where(PaySlip.status == payslip_status)
 
         stmt = stmt.order_by(PaySlip.reference_year.desc(), PaySlip.reference_month.desc())
-        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+        stmt = stmt.offset((page - 1) * effective_page_size).limit(effective_page_size)
 
         result = await db.execute(stmt)
         payslips = result.scalars().all()
@@ -92,7 +106,7 @@ async def listar_payslips(
         return {
             "payslips": [_serialize_payslip(p) for p in payslips],
             "page": page,
-            "page_size": page_size,
+            "page_size": effective_page_size,
             "total": len(payslips),
         }
     except Exception as exc:
@@ -353,14 +367,30 @@ def _serialize_payslip(p: Any) -> dict:
             for d in deductions_raw
             if isinstance(d, dict)
         ]
+    _bruto = float(p.total_earnings or 0)
+    _liquido = float(p.net_salary or 0)
+    _descontos = float(p.total_deductions or 0)
+    _inss = float(p.inss_value or 0)
+    _fgts = float(p.fgts_value or 0)
+    _irrf = float(p.irrf_value or 0)
+    _mes_ref = getattr(p, "reference_period", None) or f"{p.reference_year:04d}-{p.reference_month:02d}"
     return {
         "id": str(p.id),
         "employee_id": str(p.employee_id),
         "mes": p.reference_month,
         "ano": p.reference_year,
-        "salario_bruto": float(p.total_earnings or 0),
-        "salario_liquido": float(p.net_salary or 0),
-        "descontos": float(p.total_deductions or 0),
+        "mes_referencia": _mes_ref,
+        # campos PT-BR (compatibilidade)
+        "salario_bruto": _bruto,
+        "salario_liquido": _liquido,
+        "descontos": _descontos,
+        # campos EN (exigidos pelo prompt)
+        "gross_salary": _bruto,
+        "net_salary": _liquido,
+        "total_deductions": _descontos,
+        "inss": _inss,
+        "fgts": _fgts,
+        "irrf": _irrf,
         "status": str(p.status) if p.status else "draft",
         "tipo": str(p.payslip_type) if p.payslip_type else "monthly",
         "observacoes": getattr(p, "notes", None),
