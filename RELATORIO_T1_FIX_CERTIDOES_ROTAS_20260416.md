@@ -123,3 +123,33 @@ para que as rotas fossem re-registradas.
 ║  9 páginas frontend de certidões desbloqueadas                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## Complemento — Auditoria pós-entrega (STEP 2 spec completo)
+
+**Gap identificado:** STEP 2 especificava `# 5. GET /{id}` e OPTIONS esperava `allow: PUT,GET,DELETE`.
+
+**Corrigido em commit 442a91d4:**
+- Adicionado `GET /certidoes/{certidao_id}` — retorna certidão por ID (404 se não encontrada)
+- Adicionado `OPTIONS /certidoes/{certidao_id}` explícito — Starlette 0.41.3 não agrega
+  métodos de Route objects separados na auto-resposta OPTIONS
+
+**Resultado final — OPTIONS /certidoes/1:**
+```
+ANTES do fix OPTIONS: allow: GET   (apenas o primeiro Route match)
+DEPOIS do fix OPTIONS: allow: DELETE, GET, OPTIONS, PUT  ✅
+```
+
+**Ordem final no controller (100% conforme STEP 2 spec):**
+```
+1. GET  /certidoes
+2. POST /certidoes
+3. GET  /certidoes/tipos
+4. POST /certidoes/sync
+5. POST /certidoes/sync/{param}
+6. OPTIONS /certidoes/{id}   ← explícito (Starlette fix)
+7. GET    /certidoes/{id}    ← adicionado
+8. PUT    /certidoes/{id}
+9. DELETE /certidoes/{id}
+```
