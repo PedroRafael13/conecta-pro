@@ -303,6 +303,32 @@ async def sincronizar_certidoes_param(
     )
 
 
+@router.get("/certidoes/{certidao_id}")
+async def obter_certidao(
+    certidao_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Retorna uma certidão pelo ID."""
+    result = await db.execute(
+        text("""
+        SELECT id, name, document_type, issuing_body,
+               issue_date, expiry_date, file_path, file_url, notes,
+               alerta_ativo, created_at, updated_at
+        FROM ged_certidoes
+        WHERE id = :id
+        """),
+        {"id": certidao_id},
+    )
+    row = result.mappings().first()
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "CERTIDAO_NOT_FOUND", "message": f"Certidão '{certidao_id}' não encontrada."},
+        )
+    return _row_to_dict(row)
+
+
 @router.put("/certidoes/{certidao_id}")
 async def atualizar_certidao(
     certidao_id: str,
