@@ -1015,6 +1015,14 @@ except Exception as e:
     logger.warning(f"GEDEON router: {e}")
 
 try:
+    from modules.gedeon.onvio.controllers.onvio_controller import router as onvio_router
+
+    api_router.include_router(onvio_router)
+    logger.info("GEDEON Onvio: router registrado (/onvio)")
+except Exception as e:
+    logger.warning(f"GEDEON Onvio router: {e}")
+
+try:
     from modules.gdrive.controllers.gdrive_controller import router as gdrive_router
 
     api_router.include_router(gdrive_router)
