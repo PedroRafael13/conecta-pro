@@ -1,12 +1,14 @@
 """GEDEON Fase 3 — Onvio API Endpoints"""
 
+import asyncio
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from core.database.session import get_sync_db
 from modules.ged.models.onvio_models import OnvioDocument, OnvioSyncLog
 from modules.gedeon.onvio.onvio_client import OnvioClient
 from modules.gedeon.onvio.onvio_sync_service import OnvioSyncService
@@ -26,13 +28,17 @@ async def status_sessao():
 @router.post("/sync")
 async def trigger_sync(
     mes_ref: str | None = None,
-    background_tasks: BackgroundTasks = None,
-    db: AsyncSession = Depends(get_db),
 ):
-    """Inicia sincronização completa ou filtrada por mês (AAAA-MM)."""
-    svc = OnvioSyncService(db)
+    """Inicia sincronização completa ou filtrada por mês (MM.AAAA)."""
+
+    def _run_sync() -> dict:
+        with get_sync_db() as sync_db:
+            svc = OnvioSyncService(sync_db)
+            return svc.sync_completo(mes_ref=mes_ref)
+
     try:
-        resultado = await svc.sync_completo(mes_ref=mes_ref)
+        loop = asyncio.get_event_loop()
+        resultado = await loop.run_in_executor(None, _run_sync)
         return {"message": "Sync iniciado", "resultado": resultado}
     except Exception as exc:
         logger.error("Erro no sync Onvio: %s", exc)

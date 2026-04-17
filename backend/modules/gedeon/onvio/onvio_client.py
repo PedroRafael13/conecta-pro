@@ -1,154 +1,126 @@
-"""GEDEON Fase 3 — Onvio Client (T3)
-
-Conecta ao Onvio API (software contábil Thompson Reuters) para baixar
-documentos de folha, encargos e fiscal.
-
-Credenciais configuradas via ENV:
-  ONVIO_USERNAME  — usuário da empresa no portal Onvio
-  ONVIO_PASSWORD  — senha
-  ONVIO_BASE_URL  — base URL da API (default: https://api.onvio.com.br)
-  ONVIO_COMPANY_ID — CNPJ / company ID no Onvio
+"""
+GEDEON Fase 3 — Onvio HTTP Client (versão consolidada pós-auditoria T7)
+Autenticação: cookies + Authorization: UDSLongToken <long_token>
+API correta: onvio.com.br/api/storage/v1/* (clientcenter)
 """
 
-import logging
+import json
 import os
 
-import httpx
 import redis
+import requests
 
-logger = logging.getLogger(__name__)
-
-ONVIO_BASE_URL = os.getenv("ONVIO_BASE_URL", "https://api.onvio.com.br")
-ONVIO_USERNAME = os.getenv("ONVIO_USERNAME", "")
-ONVIO_PASSWORD = os.getenv("ONVIO_PASSWORD", "")
-ONVIO_COMPANY_ID = os.getenv("ONVIO_COMPANY_ID", "")
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-SESSION_KEY = "onvio:session"
-SESSION_TTL = 3600  # 1h
+ONVIO_BASE = "https://onvio.com.br"
+CLIENT_ID = "92A4D531C6314E309B62FDF3D9F1359C"
+REDIS_KEY = "onvio:session"
+REDIS_DB = 1  # T1 confirmou: sessão salva em DB 1
 
 
 class OnvioClient:
-    """
-    Cliente HTTP para a API do Onvio.
-    Mantém sessão em Redis. Renova automaticamente ao expirar.
-    """
-
     def __init__(self):
-        self._session_token: str | None = None
-        self._redis = self._connect_redis()
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/1")
+        self._redis = redis.from_url(redis_url)
+        self._session = requests.Session()
+        self._session.headers.update(
+            {
+                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0",
+            }
+        )
+        self._session_loaded = False
 
-    # ─── Redis ────────────────────────────────────────────────────────
+    def _load_session(self) -> None:
+        """Lê sessão do Redis. Idempotente — pode chamar múltiplas vezes."""
+        if self._session_loaded:
+            return
+        raw = self._redis.get(REDIS_KEY)
+        if not raw:
+            raise RuntimeError("Sessão Onvio não encontrada no Redis. Execute: python3 /opt/conecta-pro/onvio_auth.py")
+        d = json.loads(raw)
 
-    def _connect_redis(self):
-        try:
-            r = redis.from_url(REDIS_URL, decode_responses=True, socket_timeout=2)
-            r.ping()
-            return r
-        except Exception:
-            logger.warning("OnvioClient: Redis indisponível — sessão apenas em memória")
-            return None
+        # Cookies (httpOnly + JS-visible do login OIDC)
+        for name, value in d.get("cookies", {}).items():
+            self._session.cookies.set(name, value, domain="onvio.com.br")
 
-    def _get_cached_session(self) -> str | None:
-        if self._redis:
-            try:
-                return self._redis.get(SESSION_KEY)
-            except Exception:
-                pass
-        return self._session_token
+        # LongToken header (T1 descobriu via Angular bundle)
+        long_token = d.get("long_token")
+        if not long_token:
+            raise RuntimeError("long_token ausente no Redis. Re-execute onvio_auth.py para regenerar.")
+        self._session.headers["Authorization"] = f"UDSLongToken {long_token}"
+        self._session_loaded = True
 
-    def _cache_session(self, token: str) -> None:
-        self._session_token = token
-        if self._redis:
-            try:
-                self._redis.setex(SESSION_KEY, SESSION_TTL, token)
-            except Exception:
-                pass
-
-    # ─── Auth ─────────────────────────────────────────────────────────
-
-    def autenticar(self) -> str:
-        """Autentica no Onvio e retorna token de sessão."""
-        if not ONVIO_USERNAME or not ONVIO_PASSWORD:
-            logger.warning("OnvioClient: credenciais não configuradas (ONVIO_USERNAME/PASSWORD)")
-            return "sem-credenciais"
-
-        try:
-            resp = httpx.post(
-                f"{ONVIO_BASE_URL}/api/v1/auth/login",
-                json={
-                    "username": ONVIO_USERNAME,
-                    "password": ONVIO_PASSWORD,
-                    "companyId": ONVIO_COMPANY_ID,
-                },
-                timeout=10,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            token = data.get("token") or data.get("access_token", "")
-            self._cache_session(token)
-            logger.info("OnvioClient: autenticado com sucesso")
-            return token
-        except Exception as exc:
-            logger.error("OnvioClient: erro na autenticação: %s", exc)
-            raise
-
-    def _token(self) -> str:
-        token = self._get_cached_session()
-        if not token:
-            token = self.autenticar()
-        return token
+    def _get(self, path: str, params: dict | None = None) -> dict:
+        self._load_session()
+        resp = self._session.get(f"{ONVIO_BASE}{path}", params=params, timeout=30)
+        resp.raise_for_status()
+        return resp.json()
 
     def validar_sessao(self) -> bool:
-        """Retorna True se há sessão válida em Redis."""
-        cached = self._get_cached_session()
-        return bool(cached and cached != "sem-credenciais")
-
-    # ─── Documentos ───────────────────────────────────────────────────
-
-    def listar_documentos_pasta(self, folder_id: str) -> list[dict]:
-        """Lista documentos de uma pasta específica no Onvio."""
-        token = self._token()
+        """
+        Valida fazendo request REAL contra o Onvio.
+        Retorna False se HTTP != 200 (não apenas se a sessão existe no Redis).
+        """
         try:
-            resp = httpx.get(
-                f"{ONVIO_BASE_URL}/api/v1/documents",
-                params={"folderId": folder_id, "companyId": ONVIO_COMPANY_ID},
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=15,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            return data.get("documents", data) if isinstance(data, dict) else data
-        except Exception as exc:
-            logger.error("OnvioClient: erro listar pasta %s: %s", folder_id, exc)
-            return []
+            self._load_session()
+            resp = self._session.get(f"{ONVIO_BASE}/api/security/v1/session-and-bindings", timeout=10)
+            return resp.status_code == 200
+        except Exception:
+            return False
 
-    def listar_todos_documentos(self) -> list[dict]:
-        """Lista documentos de todas as pastas mapeadas."""
-        from modules.gedeon.onvio.onvio_sync_service import FOLDER_MAP
+    def listar_documentos(self, page: int = 1, page_size: int = 100) -> dict:
+        """Lista documentos do cliente (paginado, API clientcenter)."""
+        return self._get(
+            "/api/storage/v1/containers/documents",
+            {
+                "from": page,
+                "pageSize": page_size,
+                "loadPermission": "true",
+                "readByClientUser": "",
+                "customFields": json.dumps([{"name": "clientId", "value": CLIENT_ID, "ignoreCase": True}]),
+            },
+        )
 
-        todos: list[dict] = []
-        for folder_id, nome_pasta in FOLDER_MAP.items():
-            docs = self.listar_documentos_pasta(folder_id)
-            for d in docs:
-                d.setdefault("_pasta", nome_pasta)
-                d.setdefault("parentId", folder_id)
-            todos.extend(docs)
-            logger.debug("OnvioClient: pasta '%s' → %d docs", nome_pasta, len(docs))
-        logger.info("OnvioClient: total de documentos encontrados: %d", len(todos))
+    def listar_todos_documentos(self) -> list:
+        """Pagina automaticamente até buscar todos os documentos."""
+        todos = []
+        page = 1
+        while True:
+            data = self.listar_documentos(page=page, page_size=100)
+            items = data.get("data", {}).get("items", [])
+            todos.extend(items)
+            has_more = data.get("data", {}).get("hasMore", False)
+            if not has_more or not items:
+                break
+            page += 1
+            if page > 50:  # safety cap — 5000 docs máx
+                break
         return todos
 
-    def baixar_pdf(self, folder_id: str, doc_id: str) -> bytes:
-        """Baixa o conteúdo binário de um documento PDF."""
-        token = self._token()
-        try:
-            resp = httpx.get(
-                f"{ONVIO_BASE_URL}/api/v1/documents/{doc_id}/download",
-                params={"folderId": folder_id},
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=30,
-            )
-            resp.raise_for_status()
-            return resp.content
-        except Exception as exc:
-            logger.error("OnvioClient: erro download doc %s: %s", doc_id, exc)
-            raise
+    def baixar_pdf(self, container_id: str, doc_id: str) -> bytes:
+        """
+        Baixa PDF pelo containerId + docId.
+        Usa containerId (T7 confirmou que é o campo correto).
+        NOTA: envia Accept: */* para que o servidor retorne o binário PDF.
+              Se Accept: application/json for enviado, o servidor retorna metadata JSON.
+        """
+        self._load_session()
+        resp = self._session.get(
+            f"{ONVIO_BASE}/api/storage/v1/Folders/{container_id}/documents/{doc_id}",
+            headers={"Accept": "*/*"},
+            timeout=60,
+        )
+        resp.raise_for_status()
+        if not resp.content.startswith(b"%PDF"):
+            raise ValueError(f"Download de {doc_id} não retornou PDF válido")
+        return resp.content
+
+    def get_tree(self) -> dict:
+        """Retorna a árvore de pastas do cliente."""
+        return self._get(
+            "/api/storage/v1/containers/tree",
+            {
+                "clientId": CLIENT_ID,
+                "includeOrphans": "true",
+                "countDocuments": "true",
+            },
+        )
