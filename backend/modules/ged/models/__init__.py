@@ -37,7 +37,7 @@ from modules.ged.models.folder import (
     FolderStatus,
     FolderType,
 )
-from modules.ged.models.onvio_models import (
+from modules.gedeon.models.onvio_models import (
     FgtsGuia,
     InssGuia,
     OnvioDocCategory,
