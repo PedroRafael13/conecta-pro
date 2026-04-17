@@ -43,6 +43,14 @@ from modules.crm.models import (  # noqa: F401
     ProposalTemplate,
 )
 
+# GED - Onvio Sync models (GEDEON Fase 3)
+from modules.ged.models.onvio_models import (  # noqa: F401
+    FgtsGuia,
+    InssGuia,
+    OnvioDocument,
+    OnvioSyncLog,
+)
+
 # Diaristas models
 from modules.operacional.diaristas.models import (  # noqa: F401
     Diarist,

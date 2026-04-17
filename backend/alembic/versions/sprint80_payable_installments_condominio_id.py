@@ -1,7 +1,7 @@
 """sprint80: add condominio_id to payable_installments
 
 Revision ID: sprint80_payable_inst_cond
-Revises: sprint79_justification_employee_uuid
+Revises: sprint79_just_uuid
 Create Date: 2026-04-01
 
 Causa: PayableInstallment model tem coluna condominio_id mas tabela não tinha.
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision = "sprint80_payable_inst_cond"
-down_revision = "sprint79_justification_employee_uuid"
+down_revision = "sprint79_just_uuid"
 branch_labels = None
 depends_on = None
 

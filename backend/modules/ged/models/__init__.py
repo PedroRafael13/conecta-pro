@@ -37,6 +37,14 @@ from modules.ged.models.folder import (
     FolderStatus,
     FolderType,
 )
+from modules.ged.models.onvio_models import (
+    FgtsGuia,
+    InssGuia,
+    OnvioDocCategory,
+    OnvioDocument,
+    OnvioSyncLog,
+    OnvioSyncStatus,
+)
 
 __all__ = [
     # Folder
@@ -70,4 +78,11 @@ __all__ = [
     "SignatureType",
     "SignatureStatus",
     "SignatureRole",
+    # Onvio Sync
+    "OnvioSyncLog",
+    "OnvioSyncStatus",
+    "OnvioDocument",
+    "OnvioDocCategory",
+    "FgtsGuia",
+    "InssGuia",
 ]
