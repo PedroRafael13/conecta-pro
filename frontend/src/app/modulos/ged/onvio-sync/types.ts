@@ -28,8 +28,7 @@ export interface SyncResult {
 
 export interface OnvioStatus {
   sessao_valida: boolean;
-  ultimo_sync_status: string | null;
-  ultimo_sync_at: string | null;
+  redis_key?: string;
 }
 
 export interface DocumentosResponse {
