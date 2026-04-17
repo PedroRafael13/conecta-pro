@@ -36,7 +36,7 @@ ONVIO_PASS   = "Jordan0612*"
 # IMAP para leitura automática do código MFA via e-mail
 IMAP_SERVER   = "imap.titan.email"
 IMAP_PORT     = 993
-IMAP_PASSWORD = ""  # TODO: preencher com a senha do inbox IMAP
+IMAP_PASSWORD = "Adm@conecta#2019"  # pragma: allowlist secret
 
 REDIS_KEY  = "onvio:session"
 REDIS_TTL  = 57600  # 16 horas
@@ -96,12 +96,27 @@ def _read_otp_from_imap(timeout_s: int = 90) -> str | None:
                 else:
                     body = msg.get_payload(decode=True).decode("utf-8", errors="ignore")
 
-                # Procura código de 6 dígitos
-                codes = re.findall(r"\b(\d{6})\b", body)
-                if codes:
+                # Procura código de 6 dígitos isolado em linha própria
+                # Ignora contextos CSS (#color), URLs e atributos HTML
+                otp = None
+                for line in body.split('\n'):
+                    stripped = line.strip()
+                    # Linha com apenas 6 dígitos (possível espaço antes/depois)
+                    if re.match(r'^\d{6}$', stripped):
+                        otp = stripped
+                        break
+                # Fallback: 6 dígitos não precedidos por # (CSS) nem em URL
+                if not otp:
+                    clean = re.sub(r'#[0-9a-fA-F]{3,6}', '', body)
+                    clean = re.sub(r'https?://\S+', '', clean)
+                    found = re.findall(r'(?<![/\-=&])\b(\d{6})\b(?![/\-=&])', clean)
+                    non_zero = [c for c in found if c not in ('000000',)]
+                    if non_zero:
+                        otp = non_zero[0]
+                if otp:
                     imap.logout()
-                    print(f"  [IMAP] Código encontrado: {codes[0]}")
-                    return codes[0]
+                    print(f"  [IMAP] Código encontrado: {otp}")
+                    return otp
             imap.logout()
         except Exception as e:
             print(f"  [IMAP] Erro: {e}")
@@ -114,7 +129,16 @@ def _read_otp_from_imap(timeout_s: int = 90) -> str | None:
 # ── Auth Flow ─────────────────────────────────────────────────────────────────
 
 def login_onvio() -> dict:
-    s = _SESSION
+    # Sessão fresca a cada execução — sem cookies residuais de runs anteriores
+    s = requests.Session()
+    s.headers.update({
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+    })
 
     # STEP 1 — página inicial (obtém cookies de sessão)
     print("[1/6] Carregando página de auth Onvio...")
@@ -194,6 +218,27 @@ def login_onvio() -> dict:
         print("  Login completo sem MFA ✅")
         return _extract_session(s, r5)
 
+    # Auth0 pode redirecionar para resume (device já conhecido) ou MFA
+    if "authorize/resume" in r5.url:
+        print("  Auth0 resume state detectado — processando auto-submit form...")
+        soup_resume = _soup(r5)
+        form = soup_resume.find("form")
+        if form and form.get("action"):
+            hidden = {i["name"]: i.get("value", "") for i in form.find_all("input", {"type": "hidden"}) if i.get("name")}
+            print(f"  POST → {form['action'][:80]} | campos: {list(hidden.keys())}")
+            s.headers.update({
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Origin": "https://auth.thomsonreuters.com",
+                "Referer": r5.url,
+            })
+            r_resume = s.post(form["action"], data=hidden, allow_redirects=True, timeout=30)
+            print(f"  Após resume POST: {r_resume.url[:120]}")
+            if "onvio.com.br" in r_resume.url:
+                print("  Login via resume completo ✅")
+                return _extract_session_with_token(s, r_resume)
+            # Atualizar r5 para continuar fluxo MFA se necessário
+            r5 = r_resume
+
     if "mfa" in r5.url or "mfa" in r5.text.lower():
         print("[6/6] MFA requerido — disparando email OTP...")
         soup5 = _soup(r5)
@@ -234,8 +279,8 @@ def login_onvio() -> dict:
         )
 
         if "onvio.com.br" in r7.url:
-            print("  Login com MFA completo ✅")
-            return _extract_session(s, r7)
+            # SPA Angular troca o code pelo token via /auth-code/session
+            return _extract_session_with_token(s, r7)
 
         # Possível auto-submit form (Auth0 form_post)
         soup7 = _soup(r7)
@@ -245,31 +290,106 @@ def login_onvio() -> dict:
             r8 = s.post(form["action"], data=hidden, timeout=30)
             if "onvio.com.br" in r8.url:
                 print("  Auth0 callback completo ✅")
-                return _extract_session(s, r8)
+                return _extract_session_with_token(s, r8)
 
         raise RuntimeError(f"Login falhou após MFA. URL final: {r7.url[:150]}")
 
     raise RuntimeError(f"Estado inesperado após senha. URL: {r5.url[:150]}")
 
 
-def _extract_session(s: requests.Session, final_resp: requests.Response) -> dict:
-    """Extrai cookies da sessão para armazenamento no Redis."""
+def _extract_session_with_token(s: requests.Session, final_resp: requests.Response) -> dict:
+    """
+    Fluxo completo de troca de tokens:
+      1. POST /api/security/v1/oidc/auth-code/session  → JWT (tokenValue)
+      2. POST /api/security/v3/sessions/jwt             → LongToken (UDS session)
+      3. Usar Authorization: UDSLongToken <LongToken>   em todas as chamadas
+    """
+    from urllib.parse import urlparse, parse_qs
+    parsed = urlparse(final_resp.url)
+    qs = parse_qs(parsed.query)
+    code = (qs.get("code") or [None])[0]
+    state = (qs.get("state") or [None])[0]
+
+    jwt_token = None
+    long_token = None
+
+    if code:
+        print("  [1/2] Trocando code OAuth pelo JWT (tokenValue)...")
+        s.headers.update({
+            "Accept": "application/json, text/plain, */*",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Origin": "https://onvio.com.br",
+            "Referer": "https://onvio.com.br/clientcenter/pt/",
+        })
+        token_url = "https://onvio.com.br/api/security/v1/oidc/auth-code/session"
+        form_data = {"code": code}
+        if state:
+            form_data["state"] = state
+        # Endpoint JAX-RS com @FormParam — exige x-www-form-urlencoded no body
+        r_token = s.post(token_url, data=form_data, timeout=30)
+        print(f"  auth-code/session: {r_token.status_code}")
+
+        try:
+            data = r_token.json()
+            jwt_token = (
+                data.get("tokenValue")      # Onvio JWT (campo real)
+                or data.get("accessToken")
+                or data.get("access_token")
+                or data.get("token")
+                or data.get("id_token")
+            )
+            if jwt_token:
+                print(f"  ✅ JWT obtido ({len(jwt_token)} chars)")
+        except Exception:
+            print(f"  Token response (text): {r_token.text[:200]}")
+
+        # Passo 2: trocar JWT pelo LongToken (UDS session token)
+        if jwt_token:
+            print("  [2/2] Obtendo UDS LongToken...")
+            s.headers.update({
+                "Accept": "application/json, text/plain, */*",
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {jwt_token}",
+                "Origin": "https://onvio.com.br",
+                "Referer": "https://onvio.com.br/clientcenter/pt/",
+            })
+            r_long = s.post(
+                "https://onvio.com.br/api/security/v3/sessions/jwt",
+                json=None,
+                timeout=30,
+            )
+            print(f"  v3/sessions/jwt: {r_long.status_code}")
+            try:
+                long_data = r_long.json()
+                long_token = long_data.get("LongToken") or long_data.get("token")
+                if long_token:
+                    print(f"  ✅ LongToken obtido ({len(long_token)} chars)")
+                else:
+                    print(f"  ⚠️  LongToken não encontrado: {long_data}")
+            except Exception:
+                print(f"  v3/sessions/jwt response: {r_long.text[:200]}")
+    else:
+        print("  ⚠️  URL sem code — usando apenas cookies Auth0")
+
     cookies = {c.name: c.value for c in s.cookies}
-
-    # Cookies Auth0 (domínio thomsonreuters)
-    auth0_cookies = {k: v for k, v in cookies.items() if k.startswith("auth0") or k == "did" or k == "did_compat"}
-
-    # Cookies Onvio
+    auth0_cookies = {k: v for k, v in cookies.items() if k.startswith("auth0") or k in ("did", "did_compat")}
     onvio_cookies = {k: v for k, v in cookies.items() if k not in auth0_cookies}
 
     return {
         "cookies": cookies,
         "auth0_cookies": auth0_cookies,
         "onvio_cookies": onvio_cookies,
+        "uds_token": jwt_token,       # JWT (para referência)
+        "long_token": long_token,     # LongToken — usar em Authorization: UDSLongToken
         "final_url": final_resp.url,
         "extracted_at": time.time(),
         "extracted_at_iso": datetime.utcnow().isoformat() + "Z",
     }
+
+
+def _extract_session(s: requests.Session, final_resp: requests.Response) -> dict:
+    """Alias para retrocompatibilidade."""
+    return _extract_session_with_token(s, final_resp)
 
 
 # ── Redis ─────────────────────────────────────────────────────────────────────
@@ -281,6 +401,7 @@ def save_to_redis(session_data: dict) -> bool:
     print(f"   Key:     {REDIS_KEY}")
     print(f"   TTL:     {REDIS_TTL // 3600}h ({REDIS_TTL}s)")
     print(f"   Cookies: {list(session_data['cookies'].keys())}")
+    print(f"   UDS Token: {'✅' if session_data.get('uds_token') else '❌ não obtido'}")
     return True
 
 

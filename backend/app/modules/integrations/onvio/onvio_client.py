@@ -33,7 +33,8 @@ class OnvioClient:
         d = json.loads(raw)
         for name, value in d.get("cookies", {}).items():
             self._session.cookies.set(name, value, domain="onvio.com.br")
-        self._session.headers["UDS-Session-Token"] = d.get("uds_token", "")
+        long_token = d.get("long_token") or d.get("uds_token", "")
+        self._session.headers["Authorization"] = f"UDSLongToken {long_token}"
         return True
 
     def _get(self, path: str, params: dict = None) -> dict:
