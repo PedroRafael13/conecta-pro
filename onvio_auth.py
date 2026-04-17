@@ -20,27 +20,33 @@ Seletores e endpoints confirmados por inspeção real (2026-04-17):
   - MFA email trigger: POST mfa-login-options com action=email::1
   - OTP input name: code
 """
-import json, sys, time, imaplib, email, re, ssl
+import json, os, sys, time, imaplib, email, re, ssl
 from datetime import datetime
 
 import redis
 import requests
 from bs4 import BeautifulSoup
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv("/opt/conecta-pro/.env")
+except ImportError:
+    pass  # dotenv opcional — vars podem vir do ambiente do container
+
 # ── Configuração ─────────────────────────────────────────────────────────────
 
 ONVIO_URL    = "https://onvio.com.br/clientcenter/pt/auth"
 ONVIO_EMAIL  = "administracao@conectamaistech.com.br"
-ONVIO_PASS   = "Jordan0612*"
+ONVIO_PASS   = os.getenv("ONVIO_PASS", "")
 
 # IMAP para leitura automática do código MFA via e-mail
 IMAP_SERVER   = "imap.titan.email"
 IMAP_PORT     = 993
-IMAP_PASSWORD = "Adm@conecta#2019"  # pragma: allowlist secret
+IMAP_PASSWORD = os.getenv("ONVIO_IMAP_PASSWORD", "")  # pragma: allowlist secret
 
 REDIS_KEY  = "onvio:session"
 REDIS_TTL  = 57600  # 16 horas
-REDIS_URL  = "redis://:15e1eeedc382272306a6aeef092dbd92c9b1ea73eb99067567a144812094da1b4db0ce7b7654a31584e4a2d3fc1a43f4@172.18.0.4:6379/1"
+REDIS_URL  = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
 
 # ── HTTP Session ──────────────────────────────────────────────────────────────
 
