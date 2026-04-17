@@ -13,7 +13,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from modules.ged.models.onvio_models import (
+from modules.gedeon.models.onvio_models import (
     FgtsGuia,
     InssGuia,
     OnvioDocument,

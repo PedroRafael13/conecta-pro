@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from core.database.session import get_sync_db
-from modules.ged.models.onvio_models import OnvioDocument, OnvioSyncLog
+from modules.gedeon.models.onvio_models import OnvioDocument, OnvioSyncLog
 from modules.gedeon.onvio.onvio_client import OnvioClient
 from modules.gedeon.onvio.onvio_sync_service import OnvioSyncService
 
