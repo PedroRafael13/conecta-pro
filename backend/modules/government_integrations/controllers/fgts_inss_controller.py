@@ -4,9 +4,12 @@ Controller para cálculos de FGTS e INSS.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
+from core.database import get_db
 
 # Imports relativos do módulo pai
 from modules.government_integrations.utils import CalculoError
@@ -121,3 +124,90 @@ async def get_inss_table(current_user: CurrentActiveUser) -> StandardResponse:
         message="Tabela INSS 2026",
         data=FGTSINSSService.get_tabela_inss(),
     )
+
+
+@router.get(
+    "/fgts/guias",
+    status_code=status.HTTP_200_OK,
+    summary="Listar guias FGTS",
+    description="Lista guias de recolhimento FGTS (GRF) armazenadas no GED.",
+)
+async def listar_guias_fgts(
+    current_user: CurrentActiveUser,
+    mes_ref: str | None = Query(None, description="Filtro por mês (ex: 03.2026 ou 2026-03)"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Lista guias GRF_FGTS do GED."""
+    from modules.people_management.ged.models.document_kit import GedDocumentKit
+    from modules.people_management.ged.models.kit_document import KitDocument
+
+    query = (
+        select(KitDocument, GedDocumentKit.reference_month)
+        .join(GedDocumentKit, KitDocument.kit_id == GedDocumentKit.id)
+        .where(KitDocument.document_type == "grf_fgts")
+        .order_by(GedDocumentKit.reference_month.desc())
+    )
+    result = await db.execute(query)
+    rows = result.all()
+
+    items = []
+    for doc, ref_month in rows:
+        mes_str = ref_month.strftime("%m.%Y") if ref_month else None
+        if mes_ref and mes_ref not in (mes_str or ""):
+            continue
+        items.append(
+            {
+                "id": str(doc.id),
+                "mes_ref": mes_str,
+                "tipo": doc.document_type,
+                "nome": doc.document_name,
+                "arquivo_pdf": doc.file_path,
+                "status": "disponivel" if doc.file_path else "pendente",
+                "criado_em": doc.created_at.isoformat() if doc.created_at else None,
+            }
+        )
+
+    return {"total": len(items), "items": items}
+
+
+@router.get(
+    "/inss/guias",
+    status_code=status.HTTP_200_OK,
+    summary="Listar guias INSS",
+    description="Lista guias de recolhimento INSS (GPS) armazenadas no GED.",
+)
+async def listar_guias_inss(
+    current_user: CurrentActiveUser,
+    mes_ref: str | None = Query(None, description="Filtro por mês (ex: 03.2026 ou 2026-03)"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Lista guias GPS_INSS do GED."""
+    from modules.people_management.ged.models.document_kit import GedDocumentKit
+    from modules.people_management.ged.models.kit_document import KitDocument
+
+    query = (
+        select(KitDocument, GedDocumentKit.reference_month)
+        .join(GedDocumentKit, KitDocument.kit_id == GedDocumentKit.id)
+        .where(KitDocument.document_type == "gps_inss")
+        .order_by(GedDocumentKit.reference_month.desc())
+    )
+    result = await db.execute(query)
+    rows = result.all()
+
+    items = []
+    for doc, ref_month in rows:
+        mes_str = ref_month.strftime("%m.%Y") if ref_month else None
+        if mes_ref and mes_ref not in (mes_str or ""):
+            continue
+        items.append(
+            {
+                "id": str(doc.id),
+                "mes_ref": mes_str,
+                "nome": doc.document_name,
+                "arquivo_pdf": doc.file_path,
+                "status": "disponivel" if doc.file_path else "pendente",
+                "criado_em": doc.created_at.isoformat() if doc.created_at else None,
+            }
+        )
+
+    return {"total": len(items), "items": items}
