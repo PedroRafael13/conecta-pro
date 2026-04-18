@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select, text
@@ -9,13 +10,88 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from core.database.session import get_sync_db
-from modules.gedeon.models.onvio_models import OnvioDocument, OnvioSyncLog
+from modules.gedeon.models.onvio_models import FgtsGuia, InssGuia, OnvioDocument, OnvioSyncLog
 from modules.gedeon.onvio.onvio_client import OnvioClient
+from modules.gedeon.onvio.onvio_parser import classificar_documento
 from modules.gedeon.onvio.onvio_sync_service import OnvioSyncService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/onvio", tags=["Onvio Sync"])
+
+# CNPJ-like pattern: 14 consecutive digits (para identificar docs DCTFWEB sem prefixo)
+_CNPJ_RE = re.compile(r"\d{14}")
+
+
+def _classificar_extras(nome: str) -> str | None:
+    """
+    Pós-processamento para documentos que parser v2 deixa como 'outros'.
+    Captura padrões de nomes reais do Onvio que o parser não cobre.
+    Retorna nova categoria ou None (mantém 'outros').
+    """
+    u = nome.upper()
+    u_ns = u.replace(" ", "").replace("_", "").replace("-", "")
+    u_nc = u.replace("Ç", "C").replace("Ã", "A").replace("Á", "A").replace("É", "E").replace("Ê", "E").replace("Ó", "O")
+
+    # TRCT = Termo de Rescisão de Contrato de Trabalho
+    if "TRCT" in u:
+        return "rescisao"
+
+    # DCTFWEB sem prefixo "DCTFWEB" — identificado por CNPJ de 14 dígitos no nome
+    has_cnpj = bool(_CNPJ_RE.search(nome))
+    if has_cnpj:
+        if "DECLARACAOCOMPLETA" in u_ns or "DECLARACAO" in u_nc:
+            return "dctfweb_declaracao"
+        if "RESUMOCREDITOS" in u_ns:
+            return "dctfweb_resumo_creditos"
+        if "RESUMODEBITOS" in u_ns:
+            return "dctfweb_resumo_debitos"
+        if "RECIBO" in u:
+            return "dctfweb_recibo"
+        if "GUIAPAGAMENTO" in u_ns:
+            return "inss_guia"
+
+    # DAS / Simples Nacional — variantes sem a palavra "SIMPLES"
+    if "EXIBIRDAS" in u_ns or "EXIBIR" in u and "DAS" in u:
+        return "das_simples_nacional"
+    if "GUIA DAS" in u or "GUIA_DAS" in u_ns:
+        return "das_simples_nacional"
+    if "PGDAS" in u:
+        return "das_simples_nacional"
+    if "SIMPLES NACIONAL" in u or "SIMPLESNACIONAL" in u_ns:
+        return "das_simples_nacional"
+
+    # Parcelamento — PARC_ com underscores (sem espaço em "SIMPLES NACIONAL")
+    if "PARC" in u and ("SIMPLESNACIONAL" in u_ns or "SIMPLENACIONAL" in u_ns or "DIVIDA" in u):
+        return "parcelamento_simples"
+    if "PARCELA" in u and "PGFN" in u:
+        return "parcelamento_simples"
+    if "ENTRADA" in u and "DIVIDA" in u and "SIMPLES" in u_nc:
+        return "parcelamento_simples"
+
+    # DAR ICMS (variante de dar_sefaz)
+    if "DAR" in u and "ICMS" in u:
+        return "dar_sefaz"
+
+    # Empresa / Cadastrais
+    if "CNPJ" in u:
+        return "empresa_docs"
+    if "INSCRICAO MUNICIPAL" in u_nc or "INSCRICAOMUNICIPAL" in u_ns:
+        return "empresa_docs"
+    if "CARTEIRA DE TRABALHO" in u:
+        return "ficha_registro"
+    if "TERMO" in u and ("RESPONSABILIDADE" in u or "RESPONSABILIDADE" in u_nc):
+        return "empresa_docs"
+    if "REQUERIMENTO SD" in u:
+        return "atestado"
+    if "RELACAO DE AFASTAMENTOS" in u_nc or "RELAÇÃO DE AFASTAMENTOS" in u:
+        return "afastamento"
+    if "FOLHAS DE PONTO" in u or "FOLHA DE PONTO" in u:
+        return "folha_ponto"
+    if "RESULTADO" in u and "PERICIA" in u_nc:
+        return "aso"
+
+    return None
 
 
 @router.get("/status")
@@ -113,6 +189,88 @@ async def stats_documentos(db: AsyncSession = Depends(get_db)):
     count_result = await db.execute(select(func.count(OnvioDocument.id)))
     total = count_result.scalar() or 0
     return {"total": total, "por_categoria": dict(cats)}
+
+
+@router.post("/reclassificar")
+async def reclassificar_documentos():
+    """
+    Reaplica o parser v2 a TODOS os documentos já importados.
+    NÃO baixa do Onvio — apenas atualiza categoria e mes_ref.
+    Limpa e repopula fgts_guias e inss_guias com base na nova classificação.
+    """
+
+    def _run():
+        with get_sync_db() as db:
+            docs = db.query(OnvioDocument).all()
+            total = len(docs)
+            mudancas = {"categoria": 0, "mes_ref": 0}
+            por_categoria: dict = {}
+
+            for d in docs:
+                resultado = classificar_documento(d.nome_arquivo)
+                nova_cat = resultado.get("categoria", "outros")
+                novo_mes = resultado.get("mes_ref")
+
+                # Pós-processamento: captura padrões que parser v2 não cobre
+                if nova_cat == "outros":
+                    extra = _classificar_extras(d.nome_arquivo)
+                    if extra:
+                        nova_cat = extra
+
+                if d.categoria != nova_cat:
+                    d.categoria = nova_cat
+                    mudancas["categoria"] += 1
+                if d.mes_ref != novo_mes:
+                    d.mes_ref = novo_mes
+                    mudancas["mes_ref"] += 1
+
+                por_categoria[nova_cat] = por_categoria.get(nova_cat, 0) + 1
+
+            # Limpar tabelas derivadas e repopular
+            db.query(FgtsGuia).delete()
+            db.query(InssGuia).delete()
+
+            fgts_count = 0
+            inss_count = 0
+            for d in docs:
+                cat = d.categoria or ""
+                if cat.startswith("fgts_") and cat != "fgts_crf":
+                    db.add(
+                        FgtsGuia(
+                            mes_ref=d.mes_ref or "",
+                            tipo=cat.replace("fgts_", "").upper(),
+                            arquivo_pdf=d.caminho_local,
+                            onvio_doc_id=d.id,
+                        )
+                    )
+                    fgts_count += 1
+                elif cat == "inss_guia":
+                    db.add(
+                        InssGuia(
+                            mes_ref=d.mes_ref or "",
+                            arquivo_pdf=d.caminho_local,
+                            onvio_doc_id=d.id,
+                        )
+                    )
+                    inss_count += 1
+
+            db.commit()
+
+            return {
+                "total_processados": total,
+                "mudancas": mudancas,
+                "fgts_guias_criados": fgts_count,
+                "inss_guias_criados": inss_count,
+                "por_categoria": dict(sorted(por_categoria.items(), key=lambda x: -x[1])),
+            }
+
+    try:
+        loop = asyncio.get_event_loop()
+        resultado = await loop.run_in_executor(None, _run)
+        return resultado
+    except Exception as exc:
+        logger.error("Erro na reclassificação: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @router.get("/guias/fgts")
