@@ -1,7 +1,7 @@
 # T1 — Fix 404: `/modulos/gestao-pessoas/ged/onvio-sync`
 **Data:** 2026-04-18
 **Branch:** feature/people-management-reorganization
-**Commit:** ver seção Deploy
+**Commits:** `407c3c23` (deploy fix) · `eeb3c200` (SSR split + self-check 4/4)
 
 ---
 
@@ -183,20 +183,22 @@ assinatura JWT). Qualquer valor não-vazio passa. Com token fictício: HTTP 200 
 
 | Etapa | Status |
 |-------|--------|
-| `docker cp standalone` → container | ✅ |
-| BUILD_ID container atualizado para `1776467656752` | ✅ |
-| `docker restart conecta-pro-frontend` | ✅ healthy |
-| `onvio-sync` presente em `/app/.next/server/app/modulos/gestao-pessoas/ged/` | ✅ |
-| Rota retorna 200 (autenticado) em vez de 404 | ✅ |
+| `docker cp standalone` → container (BUILD_ID `1776467656752`) | ✅ `407c3c23` |
+| SSR split: `page.tsx` server component + `onvio-sync-dashboard.tsx` client | ✅ |
+| `metadata` export: `<title>GEDEON — Onvio Sync</title>` server-rendered | ✅ |
+| Rebuild (`npm run build`) — BUILD_ID `1776473026331` | ✅ |
+| `docker cp standalone` novo → container + restart | ✅ |
+| BUILD_ID container final: `1776473026331` | ✅ |
+| `git commit eeb3c200` + push | ✅ |
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║  T1 Frontend 404 Fix ✅                                         ║
+║  T1 Frontend 404 Fix — 100% ✅                                  ║
 ║  Cenário B: container com build stale                           ║
-║  Fix: docker cp standalone + restart                            ║
-║  Antes: 404 (rota inexistente) | Após: 200 (com auth)          ║
-║  Backend onvio/stats: 436 docs ✅                               ║
-║  Bundle JS: GEDEON, Total Documentos, Conectado ✅              ║
+║  Fix 1 (407c3c23): docker cp standalone + restart              ║
+║  Fix 2 (eeb3c200): SSR split → GEDEON no HTML server-side      ║
+║  Self-check 4/4: HTTP 200, GEDEON HTML, stats 436, rotas OK    ║
+║  URL pública: https://erp.conectamais.pro → 200 ✅             ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
