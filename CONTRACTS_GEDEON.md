@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.1
+**Versão:** 1.2
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -337,9 +337,44 @@ OCR não é necessário para o lote atual — BaseExtractor funciona com regex d
 
 ---
 
+## 11. DESCOBERTAS FASE B2 T2 (2026-04-18)
+
+### 11.1. Competência INSS em nome PT-BR (não numérico)
+A competência do DARF INSS aparece como nome do mês em português seguido de ano:
+`Março/2026`, `Janeiro/2026`, `Novembro/2025` — **não** como `03/2026`.
+INSSExtractor inclui dicionário `_MESES_PT` e converte para `MM/YYYY` antes de retornar.
+
+### 11.2. Barcode DARF INSS: 48 dígitos (4×11 + 4 check)
+O código de barras da linha digitável do DARF tem formato:
+`NNNNNNNNNNN D NNNNNNNNNNN D NNNNNNNNNNN D NNNNNNNNNNN D`
+(4 grupos de 11 dígitos + 1 check digit por grupo = **48 dígitos** sem espaços).
+Começa com `858`. Diferente do formato GPS clássico de 47 dígitos.
+
+### 11.3. Discriminador DARF INSS vs DAS Simples Nacional
+Ambos os documentos (INSS e DAS) são gerados pelo sistema SENDA e têm estrutura quase idêntica:
+mesmos campos (competência, vencimento, valor, CNPJ, barcode).
+A diferença está na **linha 2 do cabeçalho**:
+- INSS DARF: `"Documento de Arrecadação\nde Receitas Federais"`
+- DAS: `"Documento de Arrecadação\ndo Simples Nacional"`
+INSSExtractor aplica cap de `0.65` para documentos sem o marcador "de Receitas Federais",
+impedindo que DAS seja aceito como INSS mesmo com todos os outros campos presentes.
+
+### 11.4. Diretório inss_guia contém docs misclassificados (34 vs 4 reais)
+`/app/uploads/onvio/inss_guia/` contém **34 PDFs** mas apenas **4 são DARFs INSS reais**
+(GuiaPagamento Conecta Mais). Os outros 30 são Folha de Pagamento, Recibos e DAS que foram
+classificados antes do parser v2. O DB (`onvio_documents`) tem somente 4–5 com
+`categoria='inss_guia'`. T5 deve filtrar por DB, não por filesystem.
+
+### 11.5. fgts_guia vazio no container (2026-04-18)
+`/app/uploads/onvio/fgts_guia/` estava vazio no container em 2026-04-18.
+A falsificação 2 do INSSExtractor foi executada contra DAS (proxy válido, mesma estrutura).
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
 |--------|------------|------------|------------------------------------------|
 | 1.0    | 2026-04-18 | T_CONTRACT | Contrato inicial pós FASE B1             |
 | 1.1    | 2026-04-18 | T1_B2      | Seção 10: descobertas T1_B2 (tipos errados, revision ID, env.py sync, PDFs texto nativo) |
+| 1.2    | 2026-04-18 | T2_B2      | Seção 11: descobertas T2_B2 (competência PT-BR, barcode 48 dígitos, discriminador DARF vs DAS, dirs misclassificados, fgts_guia vazio) |
