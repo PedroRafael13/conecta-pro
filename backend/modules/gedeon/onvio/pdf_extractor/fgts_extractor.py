@@ -79,6 +79,9 @@ class FGTSExtractor(BaseExtractor):
 
             # GFD usa PIX — código de barras de boleto geralmente ausente, mas tentamos
             result.codigo_barras = self._extract_barcode(texto)
+            # Boleto de arrecadação FGTS começa com 8 — alertar se diferente
+            if result.codigo_barras and not result.codigo_barras.startswith("8"):
+                result.detalhes["barcode_alerta"] = "não começa com 8 (esperado para FGTS)"
 
             # Confiança
             score = 0.0

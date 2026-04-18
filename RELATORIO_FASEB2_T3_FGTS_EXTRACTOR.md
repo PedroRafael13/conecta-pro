@@ -6,6 +6,54 @@
 
 ---
 
+## RESPOSTAS ÀS 5 QUESTÕES DE ANÁLISE (bloco thinking do prompt)
+
+1. **Como diferenciar guia FGTS de relatório FGTS pelo conteúdo?**
+   Guia → header `GFD - Guia do FGTS Digital` + `Pagar este documento até` + data vencimento
+   na linha "Razão Social do Empregador XX/XX/XXXX". Relatório → `Detalhe da Guia Emitida` +
+   `Vencimento da Guia: DD/MM/YYYY` explícito + listão de trabalhadores com CPF/matrícula.
+
+2. **FGTS Consignado tem estrutura igual a FGTS normal?**
+   Sim. Mesma estrutura de guia. A única diferença: a seção de composição diz
+   "Informações de recolhimentos do Consignado" (em vez de FGTS) e a label na tabela
+   é `Competência Consignado Total` (em vez de `FGTS Mensal`). O pattern `Total da Guia:` é idêntico.
+
+3. **Valor FGTS aparece como "Valor a Recolher", "Total FGTS", ou "FGTS Devido"?**
+   Nenhum dos três. O campo mais confiável e unificado é **`Total da Guia: X.XXX,XX`**
+   (presente nos 4 subtipos). "Valor a recolher" existe mas o valor está na mesma linha
+   do cabeçalho da tabela (não isolado), tornando a extração frágil. `Total da Guia[^:]*:`
+   cobre guia (`: 6.009,93`), relatorio (` (FGTS): 5.803,72`) e consignado (` (Consignado): 5.222,96`).
+
+4. **Código de barras FGTS começa com que dígito? (geralmente 8 = arrecadação)**
+   GFD (Guia do FGTS Digital) **não usa boleto** — usa exclusivamente PIX (QR Code e
+   Copia e Cola). Nenhum dos 42 PDFs tem código de barras de boleto. O check
+   `barcode_alerta` para início ≠ "8" foi implementado como alerta de segurança,
+   mas nunca disparou (código_barras = None em todos os documentos).
+
+5. **Qual estratégia para RELATÓRIO (que não tem valor único)?**
+   O relatório TEM valor único: `Total da Guia (FGTS): X.XXX,XX` ou
+   `Total da Guia (Consignado): X.XXX,XX` no cabeçalho. Este total agrega todos os
+   trabalhadores. A estratégia adotada: extrair via regex unificado `Total da Guia[^:]*:`,
+   confiança calculada normalmente (não reduzida). Resultado: 12/12 relatórios = 1.0.
+
+---
+
+## CONTRATO DE ENTREGA — Testes GIVEN/WHEN/THEN
+
+```
+GIVEN  "GFD FGTS 03.2026_Conecta Mais.pdf"
+WHEN   FGTSExtractor(subtipo="guia").extract(pdf_path)
+THEN   tipo="fgts_guia" ✅ | valor=6972.84 (>0) ✅ | vencimento=2026-04-20 ✅ | confianca=1.0 (>=0.85) ✅
+→ PASS ✅
+
+GIVEN  "RELATORIO GFD FGTS 03.2026_Conecta Mais.pdf"
+WHEN   FGTSExtractor(subtipo="relatorio").extract(pdf_path)
+THEN   tipo="fgts_relatorio" ✅ | valor=6972.84 ✅ | confianca=1.0 (>=0.70) ✅
+→ PASS ✅
+```
+
+---
+
 ## STEP 0 — Contrato GEDEON
 
 | Item | Valor |
