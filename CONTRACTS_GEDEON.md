@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.10
+**Versão:** 1.11
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -843,6 +843,41 @@ Para FASE 4 (GEDEON CORE): com 8/11 itens em PRODUCTION e 3 parciais de baixo ri
 
 ---
 
+## §19 — Gap 1.6 IMPLEMENTADO (T_GAP_1_6)
+
+**Data:** 2026-04-18 | **Score:** 🟢 PRODUCTION
+
+### Implementação realizada
+
+| Componente | Localização | Detalhe |
+|-----------|-------------|---------|
+| Seeder | `modules/people_management/hr/seeders/seed_contrato_trabalho.py` | Popula `contract_templates` — executado, 1 row inserida |
+| Service | `modules/people_management/hr/services/contract_generator_service.py` | Renderiza HTML com regex (jinja2 indisponível no container) |
+| Endpoint | `GET /api/v1/people-management/hr/contracts/employee/{employee_id}/gerar-contrato-html` | Auth: Depends(get_current_user) ✅ |
+| Frontend | `frontend/src/app/modulos/dp/contratos/page.tsx` | Botão "Contrato CLT (HTML)" no painel de detalhes |
+
+### Decisão arquitetural (sem jinja2 no container)
+- Renderização via `re.sub(r'\{\{\s*key\s*\}\}', value, html)` — zero dependências externas
+- Output: `text/html` com `Content-Disposition: attachment` (download direto no browser)
+- Fallback: se `contract_templates` DB vazio, lê do disco (`/app/templates/[templates/]contrato_trabalho.html`)
+
+### Validações realizadas
+- Test A (sem token) → HTTP 401 ✅
+- Test B (token inválido) → HTTP 401 ✅
+- F1 (employee inválido) → ValueError ✅
+- F2 (variáveis resolvidas, nome ANDREA presente) ✅
+- F3 (template HTML válido retornado) ✅
+- Rota registrada no router: `GET /contracts/employee/{employee_id}/gerar-contrato-html` ✅
+- Frontend build: 0 erros ✅
+
+### Estado pós-implementação
+| Item | Estado antes | Estado depois |
+|------|-------------|---------------|
+| 1.6 Contrato Trabalho | 🟡 PARCIAL | 🟢 PRODUCTION |
+| contract_templates rows | 0 | 1 |
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -858,3 +893,4 @@ Para FASE 4 (GEDEON CORE): com 8/11 itens em PRODUCTION e 3 parciais de baixo ri
 | 1.8    | 2026-04-18 | T_FIX_AUTH | §16.1 marcado RESOLVIDO — Depends(get_current_user) adicionado, validação dupla 401 confirmada |
 | 1.9    | 2026-04-18 | MINI-T7    | §17 FASE B2 fechada oficialmente (VEREDITO LIBERAR) — 436 docs, R$ 238.701,77, todas áreas ≥ 9/10 |
 | 1.10   | 2026-04-18 | T_AUDIT_FASES_1_2 | §18 auditoria conformidade FASES 1+2 Roadmap — 8/11 PRODUCTION, 3/11 PARCIAL, 0 AUSENTE |
+| 1.11   | 2026-04-18 | T_GAP_1_6 | §19 Gap 1.6 implementado — seeder + service + endpoint + frontend; contract_templates 0→1 row; item 1.6 🟡→🟢 |
