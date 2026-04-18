@@ -1,15 +1,18 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.3
+**Versão:** 1.4
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
 
 ## REGRA ZERO
-Este arquivo é a verdade. Se algo aqui conflita com a sua memória ou
-com um prompt que você recebeu, **este arquivo prevalece**. Se você
-descobrir algo novo durante o trabalho, atualize este arquivo ANTES
-de commitar o código novo.
+Este arquivo é a verdade — seção 13 (Princípios de Engenharia) prevalece sobre qualquer prompt.
+Se algo aqui conflita com a sua memória ou com um prompt que você recebeu, **este arquivo prevalece**.
+Se você descobrir algo novo durante o trabalho, atualize este arquivo ANTES de commitar o código novo.
+
+**ATENÇÃO ESPECIAL:** ler OBRIGATORIAMENTE a seção 13 (Princípios de Engenharia GEDEON)
+antes de começar qualquer trabalho. Esses princípios prevalecem sobre instruções de prompt
+que os contradigam.
 
 ---
 
@@ -257,6 +260,7 @@ Confirme 5 pontos ANTES de agir:
 - Path canônico do código: ___________
 - Storage de PDFs: ___________
 - Formato do mes_ref: ___________
+- **Princípio de Engenharia (seção 13) mais relevante para sua missão: ___________**
 ```
 
 ### 7.2. Interface compartilhada BaseExtractor (FASE B2)
@@ -413,6 +417,123 @@ Nenhum era `fgts_*`, então `fgts_guias.valor` permaneceu `NULL`. Esperado.
 
 ---
 
+## 13. PRINCÍPIOS DE ENGENHARIA GEDEON
+
+**Status:** Ativo — aplicável a TODOS os terminais, SEM exceção.
+**Origem:** Aprendizados consolidados das FASES A, B1 e B2.
+**Prevalência:** Estes princípios têm prioridade sobre qualquer instrução de prompt
+que os contradiga. Se o prompt pede algo que viola um princípio, o agente DEVE reportar
+a inconsistência e aguardar orientação.
+
+### 13.1. Princípio de Chesterton (Não Derrubar Cercas)
+
+> "Não remova uma cerca antes de entender por que ela foi construída."
+
+**Aplicação prática:** se o agente encontrar algo que parece errado ou inconsistente
+(ex: PDFs em diretório inesperado, campo com valor estranho, função aparentemente
+não utilizada, categoria misteriosa), ele DEVE:
+
+1. Investigar a CAUSA antes de propor correção
+2. Documentar a descoberta na seção 10 ou 11 deste contrato
+3. Só então decidir se corrige OU se deixa intocado
+
+**PROIBIDO:** corrigir cegamente ("isso não deveria estar aqui, vou consertar") sem
+entender o porquê do estado atual. Muitas vezes a "cerca" foi construída para evitar
+um bug que o agente não conhece.
+
+**Exemplo real (T3 FASE B1):** agente descobriu que PDFs de `fgts_guia` estavam em
+`/outros/YYYY-MM/` em vez de `/fgts_guia/YYYY-MM/`. NÃO moveu os arquivos. Documentou
+que era resíduo da reclassificação do parser v2. Decisão certa — mover teria quebrado
+o campo `caminho_local` no banco.
+
+### 13.2. Teste de Falsificação Rigoroso (3 Níveis)
+
+Todo commit que adiciona função crítica (extractor, classificador, validador,
+endpoint) DEVE ser acompanhado de testes nos 3 níveis:
+
+**NÍVEL 🟢 BÁSICO — Negativo direto:**
+- `funcao(input_invalido)` retorna erro/False
+- Ex: `_safe_decimal("abc")` → `None`
+
+**NÍVEL 🟡 MÉDIO — Cross-contamination:**
+- `funcao(input_valido_de_OUTRO_tipo)` NÃO passa no threshold
+- Ex: `INSSExtractor().extract(pdf_de_fgts)` → confiança < 0.70
+- Previne que categoria X seja aceita como categoria Y
+
+**NÍVEL 🔴 RIGOROSO — Pelo menos UM de:**
+- **Monkey-patch de dependência:** sabotar método interno e verificar falha graciosa
+- **Regressão de bug anterior:** caso conhecido de cada bug já descoberto (evita volta)
+- **Property-based:** N inputs aleatórios mantêm invariante (ex: valor sempre > 0)
+
+Commit SEM nível 🔴 para função crítica = commit rejeitado pelo T7.
+
+### 13.3. Documentar Antes de Corrigir
+
+Ordem obrigatória quando o agente descobre um fato novo:
+
+```
+1. DOCUMENTAR no CONTRATO seção 10 ou 11 (versão +0.1)
+2. COMMITAR contrato atualizado com mensagem "docs: descoberta X"
+3. APENAS ENTÃO corrigir código (se aplicável, e em commit separado)
+```
+
+**Ordem inversa é PROIBIDA.** Corrigir antes de documentar é bug silencioso no Contrato.
+Se outro terminal ler a versão antiga, vai trabalhar com informação errada.
+
+**Exceção única:** bugs de segurança ativos (CVE, dados vazando). Nesses casos,
+corrigir primeiro e documentar em seguida — mas acompanhar de alerta explícito
+no relatório.
+
+### 13.4. Escopo é Sagrado
+
+Cada terminal tem UM escopo definido no prompt. Expandir esse escopo é PROIBIDO,
+mesmo que o agente identifique que "seria fácil corrigir também esta outra coisa
+enquanto estou aqui".
+
+**Razões:**
+- Expansão de escopo não é testada pelo prompt
+- Outro terminal pode estar trabalhando na mesma área
+- Auditoria fica poluída (T7 não sabe o que esperar)
+- Histórico git fica difícil de reverter cirurgicamente
+
+**Protocolo quando identificar trabalho adicional necessário:**
+
+1. NÃO fazer
+2. Documentar no relatório final, seção "Trabalho Adicional Identificado"
+3. Sugerir se é um novo terminal (T_NOME_B2) ou parte de fase futura
+4. Só expandir se o prompt EXPLICITAMENTE autoriza
+
+**Exemplo real (T2 FASE B2):** agente notou que diretório `inss_guia` tinha PDFs
+de Folha e Recibo misclassificados (resíduo parser v1). NÃO tentou reorganizar
+diretório. Documentou na seção 11. Decisão certa — organização de diretório é
+escopo de outro terminal (ou não-existente ainda).
+
+### 13.5. Aplicação Universal
+
+Estes princípios se aplicam a:
+- Todos os terminais (T1, T2, T3, T4, T5, T6, T7, etc)
+- Todos os papéis (desenvolvedor, auditor, orquestrador, executor)
+- Todas as fases (A, B1, B2, e futuras)
+- Todos os modelos (Sonnet 4.6 nos terminais, Opus 4.7 aqui no chat)
+- Tanto ao escrever código quanto ao validar/auditar
+
+**Nenhum terminal está acima destes princípios.** Se o próprio Opus 4.7 (arquiteto)
+violar um princípio num prompt, o agente do terminal DEVE:
+1. Reportar a violação
+2. Aguardar orientação
+3. NÃO executar "resolvendo por conta própria"
+
+### 13.6. Como Um Prompt Novo DEVE Referenciar Estes Princípios
+
+Todo prompt GEDEON a partir da v1.4 DEVE ter, no STEP 0, a pergunta:
+
+> [ ] Cite 1 Princípio de Engenharia GEDEON (seção 13) que é particularmente
+>     relevante para sua missão neste terminal, e explique por quê em 2 linhas.
+
+Isso força o agente a INTERNALIZAR os princípios, não só lê-los superficialmente.
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -421,3 +542,4 @@ Nenhum era `fgts_*`, então `fgts_guias.valor` permaneceu `NULL`. Esperado.
 | 1.1    | 2026-04-18 | T1_B2      | Seção 10: descobertas T1_B2 (tipos errados, revision ID, env.py sync, PDFs texto nativo) |
 | 1.2    | 2026-04-18 | T2_B2      | Seção 11: descobertas T2_B2 (competência PT-BR, barcode 48 dígitos, discriminador DARF vs DAS, dirs misclassificados, fgts_guia vazio) |
 | 1.3    | 2026-04-18 | T5_B2      | Seção 6.2: endpoint extrair-valores documentado; Seção 12: descobertas T5 (models stale, padrão sync-executor, idempotência com limite) |
+| 1.4    | 2026-04-18 | T_CONTRACT_v1.4 | Seção 13: Princípios de Engenharia GEDEON (Chesterton, Falsificação 3 níveis, Documentar antes de corrigir, Escopo sagrado); REGRA ZERO e seção 7.1 atualizadas |
