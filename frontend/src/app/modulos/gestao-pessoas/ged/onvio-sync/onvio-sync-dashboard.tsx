@@ -177,14 +177,6 @@ export default function OnvioSyncPage() {
         </div>
       </div>
 
-      {/* Card de valores fiscais */}
-      <ValoresFiscaisCard
-        data={valoresFiscais}
-        isLoading={valoresLoading}
-        isError={valoresError}
-        onRetry={() => valoresRefetch()}
-      />
-
       {/* Cards de stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
@@ -209,6 +201,14 @@ export default function OnvioSyncPage() {
           </div>
         ))}
       </div>
+
+      {/* Card de valores fiscais — abaixo dos stats, antes do Histórico */}
+      <ValoresFiscaisCard
+        data={valoresFiscais}
+        isLoading={valoresLoading}
+        isError={valoresError}
+        onRetry={() => valoresRefetch()}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Histórico de syncs */}
