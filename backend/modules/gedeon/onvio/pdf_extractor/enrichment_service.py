@@ -76,12 +76,18 @@ class EnrichmentService:
         docs = query.all()
         total = len(docs)
 
+        # Docs de categorias sem extractor (folha_pagamento, contratos, etc.)
+        # nunca entram no loop — contamos separadamente para o relatório
+        sem_extractor_count = (
+            self.db.query(OnvioDocument).filter(~OnvioDocument.categoria.in_(list(EXTRACTOR_MAP.keys()))).count()
+        )
+
         stats: dict = {
             "processados": 0,
             "salvos_final": 0,
             "salvos_revisao": 0,
             "pulados_baixa_conf": 0,
-            "pulados_sem_extractor": 0,
+            "pulados_sem_extractor": sem_extractor_count,
             "erros": 0,
             "por_categoria": {},
         }
