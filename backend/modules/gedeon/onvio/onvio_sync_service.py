@@ -20,7 +20,7 @@ from modules.gedeon.models.onvio_models import (
     OnvioSyncLog,
 )
 from modules.gedeon.onvio.onvio_client import OnvioClient
-from modules.gedeon.onvio.onvio_parser import classificar_documento
+from modules.gedeon.onvio.onvio_parser import classificar_item_onvio as classificar_documento
 
 logger = logging.getLogger(__name__)
 
