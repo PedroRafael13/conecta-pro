@@ -192,6 +192,47 @@ async def generate_contract_document(
 
 
 @router.get(
+    "/employee/{employee_id}/gerar-contrato-html",
+    summary="Gerar HTML do Contrato de Trabalho",
+    description="Renderiza o template HTML do contrato CLT com dados reais do funcionário e retorna para download.",
+)
+async def gerar_contrato_html(
+    employee_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Renderiza contrato_trabalho.html com dados do funcionário e retorna como download."""
+    import uuid as _uuid
+
+    try:
+        _uuid.UUID(employee_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=422, detail="employee_id inválido: deve ser UUID válido")
+
+    from modules.people_management.hr.services.contract_generator_service import (
+        ContractGeneratorService,
+    )
+
+    try:
+        svc = ContractGeneratorService(db)
+        result = await svc.gerar_contrato_trabalho_html(employee_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error("Erro ao gerar contrato HTML para %s: %s", employee_id, exc)
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar contrato: {exc}") from exc
+
+    return Response(
+        content=result["html_content"].encode("utf-8"),
+        media_type="text/html",
+        headers={
+            "Content-Disposition": f'attachment; filename="{result["filename"]}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.get(
     "/{contract_id}/pdf",
     summary="Download PDF do Contrato",
     description=("Gera e retorna o PDF do contrato de trabalho. Usa contract_templates para cláusulas customizadas."),

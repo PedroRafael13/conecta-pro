@@ -357,6 +357,35 @@ export default function ContratosPage() {
     }
   };
 
+  // --- Gerar Contrato CLT HTML ---
+  const handleGerarContratoHtml = async (employeeId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/contracts/employee/${employeeId}/gerar-contrato-html`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const cd = res.headers.get('Content-Disposition') || '';
+        const match = cd.match(/filename="([^"]+)"/);
+        a.download = match ? match[1] : `contrato_trabalho_${employeeId.slice(0, 8)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success('Contrato CLT gerado e baixado!', { duration: 4000 });
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao gerar contrato', { duration: 5000 });
+      }
+    } catch {
+      toast.error('Erro de conexão', { duration: 5000 });
+    }
+  };
+
   // --- Download PDF do contrato ---
   const handleGenerateDocument = async (contractId: string) => {
     try {
@@ -476,6 +505,9 @@ export default function ContratosPage() {
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => handleGenerateDocument(detailContract.id)}>
                 <FileDown className="h-4 w-4 mr-1" /> Gerar Documento
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleGerarContratoHtml(detailContract.employee_id)}>
+                <FileDown className="h-4 w-4 mr-1" /> Contrato CLT (HTML)
               </Button>
             </div>
           </CardContent>
