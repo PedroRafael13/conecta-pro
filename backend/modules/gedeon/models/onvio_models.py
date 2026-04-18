@@ -3,8 +3,8 @@
 import enum as pyenum
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.sql import func
 
 from core.database import Base
@@ -68,6 +68,11 @@ class OnvioDocument(Base):
     data_importado = Column(DateTime(timezone=True), server_default=func.now())
     processado = Column(Boolean, default=False)
     metadata_json = Column(Text)
+    confianca_extracao = Column(Float, nullable=True)
+    metodo_extracao = Column(String(50), nullable=True)
+    revisao_manual = Column(Boolean, nullable=True)
+    detalhes_json = Column(JSONB, nullable=True)
+    extraido_em = Column(DateTime(timezone=True), nullable=True)
 
 
 class FgtsGuia(Base):
@@ -76,12 +81,18 @@ class FgtsGuia(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     mes_ref = Column(String(7), nullable=False)
     tipo = Column(String(50))  # "GFD", "CONSIGNADO", "RELATORIO"
-    valor = Column(Float)
-    vencimento = Column(DateTime(timezone=True))
+    valor = Column(Numeric(15, 2), nullable=True)
+    vencimento = Column(Date, nullable=True)
+    codigo_barras = Column(String(64), nullable=True)
     status = Column(String(20), default="pendente")
     arquivo_pdf = Column(String(512))
     onvio_doc_id = Column(UUID(as_uuid=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    confianca_extracao = Column(Float, nullable=True)
+    metodo_extracao = Column(String(50), nullable=True)
+    revisao_manual = Column(Boolean, nullable=True)
+    detalhes_json = Column(JSONB, nullable=True)
+    extraido_em = Column(DateTime(timezone=True), nullable=True)
 
 
 class InssGuia(Base):
@@ -89,10 +100,16 @@ class InssGuia(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     mes_ref = Column(String(7), nullable=False)
-    valor = Column(Float)
-    vencimento = Column(DateTime(timezone=True))
+    valor = Column(Numeric(15, 2), nullable=True)
+    vencimento = Column(Date, nullable=True)
+    codigo_barras = Column(String(64), nullable=True)
     competencia = Column(String(7))
     status = Column(String(20), default="pendente")
     arquivo_pdf = Column(String(512))
     onvio_doc_id = Column(UUID(as_uuid=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    confianca_extracao = Column(Float, nullable=True)
+    metodo_extracao = Column(String(50), nullable=True)
+    revisao_manual = Column(Boolean, nullable=True)
+    detalhes_json = Column(JSONB, nullable=True)
+    extraido_em = Column(DateTime(timezone=True), nullable=True)

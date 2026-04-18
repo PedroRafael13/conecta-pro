@@ -273,6 +273,34 @@ async def reclassificar_documentos():
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+@router.post("/extrair-valores")
+async def extrair_valores(
+    forcar: bool = False,
+    limite: int | None = None,
+):
+    """
+    Orquestra extração de valores dos PDFs fiscais.
+
+    Query params:
+      - forcar: reprocessa docs já extraídos (default False)
+      - limite: processa apenas N primeiros — útil em testes (default: sem limite)
+    """
+    from modules.gedeon.onvio.pdf_extractor.enrichment_service import EnrichmentService
+
+    def _run():
+        with get_sync_db() as db:
+            service = EnrichmentService(db)
+            return service.extrair_todos(forcar=forcar, limite=limite)
+
+    try:
+        loop = asyncio.get_event_loop()
+        resultado = await loop.run_in_executor(None, _run)
+        return resultado
+    except Exception as exc:
+        logger.error("Erro na extração de valores: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
 @router.get("/guias/fgts")
 async def listar_guias_fgts(mes_ref: str | None = None, db: AsyncSession = Depends(get_db)):
     sql = "SELECT id, mes_ref, tipo, valor, status, arquivo_pdf FROM fgts_guias"
