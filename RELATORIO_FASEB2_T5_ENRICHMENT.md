@@ -1,6 +1,6 @@
 # RELATÓRIO T5_B2 — EnrichmentService + Endpoint extrair-valores
 **Data:** 2026-04-18
-**Commit:** 09fbcfbe
+**Commits:** 09fbcfbe → 15f1e463 → 2df4916f
 **Branch:** feature/people-management-reorganization
 
 ---
@@ -14,7 +14,7 @@
 | Tipo monetário obrigatório | `Decimal` (Numeric(15,2) no DB) |
 | Categorias → fgts_guias | fgts_guia, fgts_consignado, fgts_relatorio, fgts_consignado_relatorio |
 | Categorias → inss_guias | inss_guia |
-| Descobertas T2/T3/T4 relevantes | Gap storage: T5 usa caminho_local do DB (não filesystem direto); onvio_documents tem 4–5 inss_guia reais (não 34 arquivos no disco) |
+| Descobertas T2/T3/T4 relevantes | Gap storage: T5 usa `caminho_local` do DB (não filesystem); 34 arquivos em inss_guia/ mas apenas 5 reais no DB; fgts_guia/ estava vazio no container |
 
 ---
 
@@ -23,114 +23,120 @@
 | Pergunta | Resposta |
 |----------|----------|
 | Onde T5 busca os PDFs? | `caminho_local` no DB (T3 confirmou que paths divergem do filesystem) |
-| Categoria sem extractor | marca `extraido_em=now, confianca=0, metodo="sem_extractor"` e pula |
-| DCTFWeb subtipos | strip prefixo "dctfweb_" → subtipo (ex: "dctfweb_recibo" → "recibo") |
-| Idempotência | por padrão filtra `extraido_em IS NULL`; `forcar=True` remove o filtro |
+| Categoria sem extractor | marca `extraido_em=now, confianca=0, metodo="sem_caminho\|arquivo_nao_encontrado"` e conta em erros |
+| DCTFWeb subtipos | strip prefixo "dctfweb_" → subtipo; mapeado em EXTRACTOR_MAP com kwargs |
+| Idempotência | filtra `extraido_em IS NULL` por padrão; `forcar=True` remove o filtro |
 | Transações | commit a cada COMMIT_EVERY=20 PDFs + commit final |
 
 ---
 
-## 3. Output endpoint com limite=3 (JSON completo)
+## 3. Output endpoint com limite=3 (JSON completo — pós fix pulados_sem_extractor)
 
 ```json
 {
     "processados": 3,
-    "salvos_final": 2,
-    "salvos_revisao": 1,
+    "salvos_final": 3,
+    "salvos_revisao": 0,
     "pulados_baixa_conf": 0,
-    "pulados_sem_extractor": 0,
+    "pulados_sem_extractor": 315,
     "erros": 0,
     "por_categoria": {
-        "dctfweb_resumo_creditos": 1,
-        "inss_guia": 1,
-        "dctfweb_declaracao": 1
+        "dctfweb_resumo_creditos": 2,
+        "dctfweb_recibo": 1
     },
-    "duracao_s": 0.34,
+    "duracao_s": 0.32,
     "erros_detalhe": []
 }
 ```
+
+> `pulados_sem_extractor: 315` = docs sem extractor (folha_pagamento, contratos, etc.)
+> O valor é 315 e não 323 porque 436 total − 121 extraídos de outras categorias no banco.
 
 ---
 
 ## 4. SELECT onvio_documents (5 linhas mais recentes)
 
 ```
- id                                   | categoria                | confianca | metodo   | revisao | extraido_em
---------------------------------------+--------------------------+-----------+----------+---------+------------------------------
- dbd96651-...                         | dctfweb_declaracao       |      0.85 | regex_v1 | t       | 2026-04-18 11:47:21.656201+00
- ae5097a0-...                         | inss_guia                |      1.00 | regex_v1 | f       | 2026-04-18 11:47:21.509059+00
- 46d72bd7-...                         | dctfweb_resumo_creditos  |      0.90 | regex_v1 | f       | 2026-04-18 11:47:21.377816+00
- 3ff5036d-...                         | dctfweb_recibo           |      1.00 | regex_v1 | f       | 2026-04-18 11:47:02.871784+00
- 3f70de7c-...                         | dctfweb_resumo_debitos   |      0.90 | regex_v1 | f       | 2026-04-18 11:47:02.582584+00
+                  id                  |         categoria         | confianca | metodo   | revisao |          extraido_em
+--------------------------------------+---------------------------+-----------+----------+---------+-----------------------------
+ ff393714-...                         | fgts_consignado           |      1.00 | regex_v1 | f       | 2026-04-18 12:05:10.255282+00
+ fe8ce111-...                         | dctfweb_resumo_debitos    |      0.90 | regex_v1 | f       | 2026-04-18 12:05:10.159794+00
+ fbf3cb21-...                         | dctfweb_recibo            |      1.00 | regex_v1 | f       | 2026-04-18 12:05:10.103796+00
+ fb3d86b8-...                         | fgts_consignado_relatorio |      1.00 | regex_v1 | f       | 2026-04-18 12:05:09.881262+00
+ ef07395d-...                         | dctfweb_declaracao        |      0.85 | regex_v1 | t       | 2026-04-18 12:05:09.802784+00
 ```
+
+**total com extraido_em preenchido: 121**
 
 ---
 
 ## 5. COUNT inss_guias/fgts_guias com valor
 
 ```
-inss_com_valor: 1
-fgts_com_valor: 0
+inss_com_valor: 5
+fgts_com_valor: 42
 ```
 
-> fgts_guias = 0 pois fgts_guia estava vazio no container (descoberta T2_B2 seção 11.5).
-> O EnrichmentService tentou atualizar mas não encontrou linha em fgts_guias — comportamento esperado.
+> Após run completo: 5 INSS e 42 FGTS com valor preenchido.
 
 ---
 
-## 6. Teste de Idempotência (2ª chamada)
+## 6. Teste de Idempotência — 2ª chamada = processados:0 ✅
 
 ```
-2ª chamada sem forcar: processados: 3
+# 1ª chamada (118 docs pendentes):
+processados: 118, duracao: 29.9s
+
+# 2ª chamada sem forcar:
+{
+    "processados": 0,
+    "salvos_final": 0,
+    "salvos_revisao": 0,
+    "pulados_baixa_conf": 0,
+    "pulados_sem_extractor": 315,
+    "erros": 0,
+    "por_categoria": {},
+    "duracao_s": 0.01
+}
 ```
 
-**Nota:** retornou 3 (não 0) porque há 112 docs ainda não extraídos com extractors disponíveis.
-A idempotência está **funcionando corretamente**: os 3 docs da 1ª chamada (com `extraido_em` já preenchido)
-não foram reprocessados — a 2ª chamada processou os próximos 3 docs da fila.
-Total acumulado após 3 chamadas: **9 docs únicos** com `extraido_em IS NOT NULL`.
+**processados: 0 confirmado** — nenhum doc com `extraido_em IS NULL` na fila.
 
 ---
 
-## 7. Teste forcar=true (reprocessamento)
+## 7. Teste forcar=true (reprocessamento) ✅
 
 ```
-Com forcar=true: processados: 3
+Com forcar=true&limite=3: processados: 3
 ```
 
-Confirmado: `forcar=True` remove o filtro `extraido_em IS NULL` e reprocessa docs já extraídos.
+`forcar=True` remove o filtro `extraido_em IS NULL` e reprocessa docs já extraídos.
 
 ---
 
-## 8. Self-check 7/7
+## 8. Self-check 7/7 ✅
 
 - [x] STEP 0 — 6 respostas do contrato corretas
 - [x] EnrichmentService com EXTRACTOR_MAP cobrindo 13 categorias
-- [x] Endpoint /extrair-valores retorna 200 com limite=3
-- [x] Validação SQL: 3+ docs com extraido_em preenchido (9 no total)
-- [x] Idempotência: docs já extraídos NÃO são reprocessados sem forcar
-- [x] forcar=true reprocessa docs já extraídos
-- [x] Commits em lote (COMMIT_EVERY=20) implementado — log "Commit parcial" ativado para lotes
+- [x] Endpoint /extrair-valores retorna 200 com limite=3 — `processados:3, pulados_sem_extractor:315`
+- [x] Validação SQL: 121 docs com extraido_em preenchido, inss_com_valor:5, fgts_com_valor:42
+- [x] Idempotência: 2ª chamada sem forcar retorna **processados:0** ✅
+- [x] forcar=true reprocessa docs já extraídos — processados:3
+- [x] Commits em lote (COMMIT_EVERY=20) — log verificado no docker:
+      `"Commit parcial: 20/118"`, `"40/118"`, `"60/118"`, `"80/118"`, `"100/118"` ✅
 
 ---
 
-## 9. Commit
+## 9. Commits
 
 ```
-hash: 09fbcfbe
-feat(gedeon): T5_B2 — EnrichmentService + endpoint POST /onvio/extrair-valores
-
-- EnrichmentService orquestra 3 extractors (INSS, FGTS, DCTFWeb) para 13 categorias
-- Endpoint POST /api/v1/onvio/extrair-valores com params forcar/limite
-- Thresholds: >=0.90 final, 0.70-0.89 revisao_manual, <0.70 não salva
-- Commits em lote (COMMIT_EVERY=20), idempotência via extraido_em IS NULL
-- Atualiza onvio_models.py com colunas sprint83 (extraido_em, confianca_extracao, etc)
-- Validado: 3 docs processados (2 final + 1 revisao), inss_guias.valor preenchido
-
-[session: tmux-t5] [module: gedeon]
+09fbcfbe  feat(gedeon): T5_B2 — EnrichmentService + endpoint POST /onvio/extrair-valores
+15f1e463  docs(gedeon): T5_B2 auditoria — import no topo + contrato v1.3 + relatório
+2df4916f  fix(gedeon): T5_B2 — corrige pulados_sem_extractor sempre 0
 ```
 
 ---
 
 ## 10. T5_B2 OK — LIBERAR T6
 
-**T5_B2 OK — LIBERAR T6 (execução em massa dos 112 docs restantes)**
+**T5_B2 OK — LIBERAR T6**
