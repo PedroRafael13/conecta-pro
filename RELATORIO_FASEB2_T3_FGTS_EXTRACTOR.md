@@ -20,6 +20,54 @@
 
 ## STEP 1 — Análise Exploratória dos 4 Subtipos
 
+### Output do comando exato do prompt (subdirs por nome de categoria)
+
+```
+============================================================
+SUBTIPO: fgts_guia (0 PDFs)
+============================================================
+(diretório não existe ou sem PDFs — ver caminho_local no banco)
+
+============================================================
+SUBTIPO: fgts_consignado (18 PDFs)
+============================================================
+Arquivo: GFD FGTS - CONSIGNADO 07.2025.pdf
+Tamanho: 1011 chars
+Primeiros 2000 chars:
+GFD - Guia do FGTS Digital
+Pagar este documento até
+CPF/CNPJ do Empregador Nome/Razão Social do Empregador 20/08/2025
+35.710.481 JORDAN SANTOS DE JESUS LTDA
+às 21:59:59 (Brasília)
+Valor a recolher
+Núm. de Pág. Identificador Tag 1.205,66
+1 0125080685072399-2 GFD FGTS - CONSIGNADO 072025
+Composição do Documento
+Informações de recolhimentos do FGTS
+Não há informações de recolhimentos do FGTS
+Informações de recolhimentos do Consignado
+Competência Consignado Total
+07/2025 1.205,66 1.205,66
+Total Consignado: 1.205,66 1.205,66
+Total da Guia: 1.205,66
+...
+
+============================================================
+SUBTIPO: fgts_relatorio (0 PDFs)
+============================================================
+(diretório não existe ou sem PDFs — ver caminho_local no banco)
+
+============================================================
+SUBTIPO: fgts_consignado_relatorio (0 PDFs)
+============================================================
+(diretório não existe ou sem PDFs — ver caminho_local no banco)
+```
+
+**Observação:** Apenas `fgts_consignado` existe como diretório. Os outros 3 subtipos
+(`fgts_guia`, `fgts_relatorio`, `fgts_consignado_relatorio`) têm PDFs em outros
+paths (`/app/uploads/onvio/outros/` ou misturados em `fgts_consignado/`).
+A exploração foi complementada via `caminho_local` no banco para cobrir todos os 42 PDFs.
+
 ### Descoberta crítica: estrutura real do storage
 
 Os PDFs não estão em diretórios nomeados por subtipo. Os caminhos reais vêm de
