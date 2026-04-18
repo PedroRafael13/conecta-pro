@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.5
+**Versão:** 1.6
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -610,6 +610,93 @@ Dashboard que quiser mostrar "valor único pago no mês" deve somar apenas tipo 
 
 ---
 
+## 15. LIÇÃO T6_FIX — VALIDAÇÃO DE FRONTEND (2026-04-18)
+
+### 15.1. Causa raiz do bug de renderização (Cenário C — bundle stale)
+
+**Sintoma:** `ValoresFiscaisCard` não aparecia no dashboard em produção após T6_B2,
+apesar de `curl` retornar HTTP 200.
+
+**Causa:** O comando `docker cp /opt/conecta-pro/frontend/.next/. container:/app/.next/`
+abortou no meio da cópia por causa de um symlink:
+```
+.next/node_modules/xlsx-c3c0a7a876112034 -> ../../node_modules/xlsx
+```
+Docker não consegue copiar symlinks relativos que apontam para fora do diretório-fonte.
+O container ficou com o `.next/server/` e `.next/static/` do build **anterior** (sem o
+componente), enquanto o host tinha o build novo.
+
+**Fix aplicado:** Copiar `server/` e `static/` individualmente (0 symlinks em ambos)
+em vez de copiar `.next/` completo.
+```bash
+docker cp /opt/conecta-pro/frontend/.next/server/. $CONTAINER:/app/.next/server/
+docker cp /opt/conecta-pro/frontend/.next/static/. $CONTAINER:/app/.next/static/
+docker restart $CONTAINER
+```
+
+**Confirmação STEP 4 (pós-fix):**
+- HTML contém RSC payload: `18:I[513701,["/_next/static/chunks/42849a3fc36b9e28.js"],"default"]`
+- HTML tem `<script src="/_next/static/chunks/42849a3fc36b9e28.js" async=""></script>`
+- Container: chunk existe em `/app/.next/static/chunks/42849a3fc36b9e28.js`
+- Chunk contém: `valor_total_fiscal` e `FGTS Consign` ✅
+
+### 15.2. Lição obrigatória — Validação de frontend NUNCA pode ser só HTTP 200
+
+**REGRA:** Para qualquer componente frontend recém-implantado, a validação mínima é:
+
+1. **HTTP status**: `curl -w '%{http_code}'` retorna 200 (condição necessária, NÃO suficiente)
+2. **Bundle referenciado**: HTML contém `<script src="...chunk-hash.js">` do componente
+3. **Bundle no container**: `docker exec $CONTAINER find /app/.next -name "chunk-hash.js"` retorna 1 resultado
+4. **String identificadora no bundle**: `docker exec $CONTAINER grep -o "string_unica" chunk.js` retorna >= 1
+
+**Por que HTTP 200 engana:** Next.js com `output: 'standalone'` serve SSR. Componentes
+`'use client'` não geram texto no HTML — só aparecem após hidratação JS no browser.
+Um redirect 307 para /login também retorna HTML com status 200 (na resposta final após
+seguir o redirect). Sem autenticação, o curl pode estar validando a página de login.
+
+**Exemplo de validação correta:**
+```bash
+CONTAINER=$(docker ps --filter ancestor=conecta-pro-frontend --format '{{.Names}}' | head -1)
+TOKEN=$(curl -sf -X POST http://127.0.0.1:8080/api/v1/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=jjesus@conectamais.pro&password=JsJ618908@#%" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+# 1. HTTP status
+curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/modulos/gestao-pessoas/ged/onvio-sync
+# 2. Bundle referenciado no HTML (grep por chunk hash)
+curl -sf http://127.0.0.1:3001/modulos/gestao-pessoas/ged/onvio-sync | grep -o 'chunks/[a-f0-9]*\.js' | sort -u
+# 3. Bundle no container
+docker exec $CONTAINER find /app/.next/static/chunks -name "42849a3fc36b9e28.js"
+# 4. String única no bundle
+docker exec $CONTAINER grep -oc "valor_total_fiscal" /app/.next/static/chunks/42849a3fc36b9e28.js
+```
+
+### 15.3. Procedimento correto de deploy frontend (com hot-copy seguro)
+
+```bash
+# SEMPRE copiar server/ e static/ individualmente — NUNCA .next/ completo
+CONTAINER=$(docker ps --filter ancestor=conecta-pro-frontend --format '{{.Names}}' | head -1)
+# Verificar symlinks ANTES de copiar
+find /opt/conecta-pro/frontend/.next/static -type l | wc -l    # deve ser 0
+find /opt/conecta-pro/frontend/.next/server -type l | wc -l    # deve ser 0
+# Copiar apenas os diretórios sem symlinks
+docker cp /opt/conecta-pro/frontend/.next/server/. $CONTAINER:/app/.next/server/
+docker cp /opt/conecta-pro/frontend/.next/static/. $CONTAINER:/app/.next/static/
+# Copiar manifests raiz
+docker cp /opt/conecta-pro/frontend/.next/BUILD_ID $CONTAINER:/app/.next/
+docker cp /opt/conecta-pro/frontend/.next/routes-manifest.json $CONTAINER:/app/.next/
+docker cp /opt/conecta-pro/frontend/.next/app-paths-routes-manifest.json $CONTAINER:/app/.next/
+# Reiniciar
+docker restart $CONTAINER
+```
+
+**Por que .next/node_modules/ tem symlinks:** Next.js `output: 'standalone'` cria symlinks
+para otimizar packages de node_modules. O caminho relativo `../../node_modules/xlsx`
+funciona dentro do container mas `docker cp` não consegue resolver symlinks relativos
+fora do contexto do container.
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -620,3 +707,4 @@ Dashboard que quiser mostrar "valor único pago no mês" deve somar apenas tipo 
 | 1.3    | 2026-04-18 | T5_B2      | Seção 6.2: endpoint extrair-valores documentado; Seção 12: descobertas T5 (models stale, padrão sync-executor, idempotência com limite) |
 | 1.4    | 2026-04-18 | T_CONTRACT_v1.4 | Seção 13: Princípios de Engenharia GEDEON (Chesterton, Falsificação 3 níveis, Documentar antes de corrigir, Escopo sagrado); REGRA ZERO e seção 7.1 atualizadas |
 | 1.5    | 2026-04-18 | T6_B2      | Seção 14: descobertas T6 — caso INSS mes_ref="" investigado (Chesterton), gap serializers corrigido (6→12 campos), endpoint /valores-fiscais-resumo criado, H6 GUIA/RELATORIO confirmada como feature |
+| 1.6    | 2026-04-18 | T6_FIX     | Seção 15: lição T6_FIX — bug bundle stale por symlink xlsx em docker cp; regra de validação frontend obrigatória (HTTP 200 não é suficiente); procedimento correto de hot-copy |
