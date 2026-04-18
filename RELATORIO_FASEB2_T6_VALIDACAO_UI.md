@@ -190,4 +190,35 @@ e9490115  feat(gedeon): T6_B2 — validação profunda + UI valores fiscais no d
 
 ---
 
+## 13. Auditoria Pós-Execução (itens corrigidos após revisão)
+
+| Lacuna | Commit correção |
+|--------|----------------|
+| STEP 2.2 — `useValoresFiscaisResumo.ts` não criado (inlined no dashboard) | `edbbff73` |
+| STEP 2.4 — `ValoresFiscaisCard` posicionado antes dos stats (devia ser depois) | `ba2d3170` |
+| `ValoresFiscaisCard` — breakdown mostrava `fgts.total_brl/2` (R$95.659) em vez de R$191.319,74 | `edbbff73` |
+| `ValoresFiscaisCard` — usava `<div>` no error boundary em vez de `shadcn/ui Card` | `edbbff73` |
+| `types.ts` — tipo duplicado `ValoresFiscaisResumo` (definido localmente + no hook) | `edbbff73` |
+| STEP 1.4 etapa 4 — INSSExtractor.extract() isolado não havia sido rodado explicitamente | executado na auditoria |
+
+**Output do INSSExtractor isolado (STEP 1.4 etapa 4):**
+```python
+INSSExtractor().extract(Path('/app/uploads/onvio/outros/0103-24/GuiaPagamento_35710481000103_241120251328364522.pdf'))
+# → tipo=inss_guia valor=608.80 competencia=10/2025 confianca=1.0
+# → 'mes_ref' NOT in output dict  ← confirma: extractor não retorna mes_ref
+```
+Conclusão definitiva: `INSSExtractor` extraiu tudo corretamente. `mes_ref` ficou vazio
+porque a tabela `inss_guias.mes_ref` é populada de `onvio_documents.mes_ref` (vazio),
+e o extractor **não retorna** campo `mes_ref` — apenas `competencia`. Gap de design.
+
+**Ordem final dos commits T6_B2:**
+```
+e6105d00  docs(gedeon): CONTRATO v1.5           ← ANTES do código (Princípio 13.3)
+e9490115  feat(gedeon): T6_B2 implementação principal
+edbbff73  fix(gedeon): T6_B2 auditoria — 5 lacunas
+ba2d3170  fix(gedeon): T6_B2 auditoria2 — posicionamento correto
+```
+
+---
+
 ## T6_B2 OK — LIBERAR T7 AUDITORIA
