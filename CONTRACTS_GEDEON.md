@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.4
+**Versão:** 1.5
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -534,6 +534,82 @@ Isso força o agente a INTERNALIZAR os princípios, não só lê-los superficial
 
 ---
 
+## 14. DESCOBERTAS FASE B2 T6 (2026-04-18)
+
+### 14.1. Caso limite INSS mes_ref="" — causa investigada (Chesterton aplicado)
+
+**Arquivo:** `GuiaPagamento_35710481000103_241120251328364522.pdf`
+**Path no container:** `/app/uploads/onvio/outros/0103-24/...`
+**Categoria:** `inss_guia` (corretamente classificado)
+
+**Causa raiz:**
+O filename contém apenas CNPJ + timestamp (`241120251328364522` = 24-11-2025 13:28:35),
+sem mês de competência em formato `MM.YYYY`. `onvio_parser.py` retorna `mes_ref=None`
+para este arquivo — comportamento CORRETO do parser.
+
+O INSSExtractor **extraiu corretamente** `competencia: "10/2025"` do texto do PDF
+("Período de Apuração: Outubro/2025") e armazenou em `detalhes_json['competencia']`.
+
+**O gap real:** O serviço de enriquecimento popula `inss_guias.mes_ref` a partir de
+`onvio_documents.mes_ref` (vazio), sem usar fallback do `detalhes_json['competencia']`
+extraído pelo INSSExtractor. O `competencia` no DB (`detalhes_json`) tem o valor correto
+("10/2025") — o `mes_ref` é que não foi derivado dele.
+
+**Proposta de fix (terminal T_FIX_INSS_EDGE — NÃO implementar no T6):**
+No serviço de enriquecimento, após extração bem-sucedida, se `mes_ref` estiver vazio mas
+`detalhes_json['competencia']` tiver valor, converter "MM/YYYY" → "MM.YYYY" e
+atualizar `inss_guias.mes_ref`. Isso resolve o único caso edge sem tocar nos extractors.
+
+**Status:** Documentado. Extração funcionou. Persistência de mes_ref é o gap. NÃO corrigido no T6.
+
+### 14.2. Gap serializers corrigido (6 campos → 12+ campos)
+
+Antes do T6, os endpoints `/guias/fgts` e `/guias/inss` retornavam apenas:
+`id, mes_ref, tipo, valor, status, arquivo_pdf`
+
+Após T6, ambos retornam também:
+`vencimento, codigo_barras, confianca_extracao, metodo_extracao, revisao_manual, extraido_em`
+
+O endpoint INSS retorna adicionalmente: `competencia` (campo exclusivo de `inss_guias`).
+
+**Motivo:** Campos estavam no DB (migration sprint83) mas não chegavam ao frontend.
+Dashboard ficava sem dados para UI completa de valores e confiança.
+
+### 14.3. Endpoint /valores-fiscais-resumo criado
+
+Novo endpoint agregador:
+```
+GET /api/v1/onvio/valores-fiscais-resumo
+```
+
+**Retorna:**
+- `fgts.por_tipo`: agregação FGTS por tipo (GUIA, RELATORIO, CONSIGNADO, CONSIGNADO_RELATORIO)
+- `fgts.total_brl`: R$ 191.319,74 (42 registros)
+- `inss.total_brl`: R$ 47.382,03 (5 registros)
+- `consolidado.valor_total_fiscal_brl`: R$ 238.701,77
+- `consolidado.taxa_extracao_pct`: % de docs fiscais com extração completa
+- `confianca.*`: distribuição por nível de confiança
+
+**Validado em produção:** `valor_total_fiscal_brl = 238701.77` ✅
+
+### 14.4. H6 confirmada — GUIA e RELATORIO do mesmo mes_ref têm MESMO valor (é feature)
+
+Hipótese validada em amostragem de 3 pares:
+- 12.2025 GUIA = 12.2025 RELATORIO = R$ 10.980,21 ✅
+- 12.2025 CONSIGNADO = 12.2025 CONSIGNADO_RELATORIO = R$ 3.620,63 ✅
+- 11.2025 GUIA = 11.2025 RELATORIO = R$ 6.644,09 ✅
+
+**Conclusão:** Duplicação aparente nos valores FGTS é **intencional**. GUIA e RELATORIO
+são documentos distintos (guia de pagamento vs relatório analítico GFD) que apresentam
+o mesmo valor total da guia. NÃO são duplicações a remover. O dashboard deve exibir
+ambos com seus tipos distintos.
+
+**Implicação para endpoints:** Endpoint `/valores-fiscais-resumo` agrupa por tipo.
+Dashboard que quiser mostrar "valor único pago no mês" deve somar apenas tipo GUIA
+(não somar RELATORIO junto, pois duplicaria).
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -543,3 +619,4 @@ Isso força o agente a INTERNALIZAR os princípios, não só lê-los superficial
 | 1.2    | 2026-04-18 | T2_B2      | Seção 11: descobertas T2_B2 (competência PT-BR, barcode 48 dígitos, discriminador DARF vs DAS, dirs misclassificados, fgts_guia vazio) |
 | 1.3    | 2026-04-18 | T5_B2      | Seção 6.2: endpoint extrair-valores documentado; Seção 12: descobertas T5 (models stale, padrão sync-executor, idempotência com limite) |
 | 1.4    | 2026-04-18 | T_CONTRACT_v1.4 | Seção 13: Princípios de Engenharia GEDEON (Chesterton, Falsificação 3 níveis, Documentar antes de corrigir, Escopo sagrado); REGRA ZERO e seção 7.1 atualizadas |
+| 1.5    | 2026-04-18 | T6_B2      | Seção 14: descobertas T6 — caso INSS mes_ref="" investigado (Chesterton), gap serializers corrigido (6→12 campos), endpoint /valores-fiscais-resumo criado, H6 GUIA/RELATORIO confirmada como feature |
