@@ -192,6 +192,11 @@ if __name__ == "__main__":
         ("DCTFWEB ResumoDebitos_35710481000103_032026_40_.pdf", "dctfweb_resumo_debitos", "03.2026"),
         ("DCTFWEB DeclaracaoCompleta_35710481000103_032026_40_.pdf", "dctfweb_declaracao", "03.2026"),
         ("DCTFWEB Recibo_35710481000103_032026_40_0000050000467380773.pdf", "dctfweb_recibo", "03.2026"),
+        (
+            "DCTFWEB RelatórioSituaçãoFiscal-35710481000103-20260413.pdf",
+            "dctfweb_situacao",
+            None,
+        ),  # "2026" está dentro de "20260413" — não é MM.YYYY nem _MMYYYY_ nem YYYY isolado
         ("PARC 26_145 DIVIDA ATIVA 1 SIMPLES NACIONAL JORDAN 2026 02.pdf", "parcelamento_simples", "2026"),
         ("DAS 9_60 SIMPLES NACIONAL 2026 01.pdf", "das_simples_nacional", "2026"),
         ("DAR 25_25 PARCELAMENTO SEFAZ 12 2025.pdf", "dar_sefaz", "2025"),
@@ -217,5 +222,5 @@ if __name__ == "__main__":
         else:
             print(f"{status} {nome}")
 
-    print(f"\n{'✅ TODOS OS 20 CASOS PASSARAM' if erros == 0 else f'❌ {erros}/20 FALHARAM'}")
+    print(f"\n{'✅ TODOS OS 21 CASOS PASSARAM' if erros == 0 else f'❌ {erros}/21 FALHARAM'}")
     assert erros == 0, "Testes falharam — não commitar"
