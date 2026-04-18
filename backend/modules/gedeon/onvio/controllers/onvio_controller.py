@@ -14,6 +14,7 @@ from modules.gedeon.models.onvio_models import FgtsGuia, InssGuia, OnvioDocument
 from modules.gedeon.onvio.onvio_client import OnvioClient
 from modules.gedeon.onvio.onvio_parser import classificar_documento
 from modules.gedeon.onvio.onvio_sync_service import OnvioSyncService
+from modules.gedeon.onvio.pdf_extractor.enrichment_service import EnrichmentService
 
 logger = logging.getLogger(__name__)
 
@@ -285,7 +286,6 @@ async def extrair_valores(
       - forcar: reprocessa docs já extraídos (default False)
       - limite: processa apenas N primeiros — útil em testes (default: sem limite)
     """
-    from modules.gedeon.onvio.pdf_extractor.enrichment_service import EnrichmentService
 
     def _run():
         with get_sync_db() as db:

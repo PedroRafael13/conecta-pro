@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.2
+**Versão:** 1.3
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -232,6 +232,9 @@ GET /api/v1/onvio/guias/inss        → [inss_guias]
 ```
 POST /api/v1/onvio/sync             → dispara sync (batch todos ou ?mes_ref=MM.YYYY)
 POST /api/v1/onvio/reclassificar    → reaplica parser aos docs existentes
+POST /api/v1/onvio/extrair-valores  → orquestra extração de valores dos PDFs fiscais
+                                       ?forcar=bool (default false) — reprocessa extraídos
+                                       ?limite=int  (default sem limite) — para testes
 ```
 
 ### 6.3. Regra para NOVOS endpoints (FASE B2)
@@ -371,6 +374,45 @@ A falsificação 2 do INSSExtractor foi executada contra DAS (proxy válido, mes
 
 ---
 
+## 12. DESCOBERTAS FASE B2 T5 (2026-04-18)
+
+### 12.1. onvio_models.py estava desatualizado (corrigido em T5)
+O arquivo `backend/modules/gedeon/models/onvio_models.py` não refletia as colunas
+adicionadas pela migration `sprint83`. As seguintes colunas existiam no banco mas
+faltavam no model Python:
+- `onvio_documents`: `confianca_extracao`, `metodo_extracao`, `revisao_manual`, `detalhes_json`, `extraido_em`
+- `fgts_guias`: `codigo_barras`, `confianca_extracao`, `metodo_extracao`, `revisao_manual`, `detalhes_json`, `extraido_em` + `valor` era `Float` (DB é `Numeric(15,2)`) + `vencimento` era `DateTime` (DB é `Date`)
+- `inss_guias`: idem ao `fgts_guias`
+
+Corrigido no commit `09fbcfbe` do T5.
+
+### 12.2. Padrão correto para endpoints síncronos no controller async
+O `onvio_controller.py` usa `AsyncSession` em todos os endpoints (`async def` + `Depends(get_db)`).
+Para operações CPU-bound/síncronas (como leitura de PDFs), o padrão correto é:
+```python
+async def meu_endpoint():
+    def _run():
+        with get_sync_db() as db:
+            service = MinhaService(db)
+            return service.executar()
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _run)
+```
+NÃO usar `db: Session = Depends(get_db)` em endpoint síncrono — `get_db` retorna `AsyncSession`.
+
+### 12.3. Idempotência do endpoint extrair-valores com limite
+O parâmetro `limite=N` + `forcar=False` NÃO garante que a 2ª chamada retorne `processados=0`.
+Se há mais de N docs pendentes, cada chamada processa os próximos N da fila.
+`processados=0` só ocorre quando `extraido_em IS NOT NULL` em TODOS os docs com extractor.
+Para verificar idempotência real: chamar sem `limite` até `processados=0`.
+
+### 12.4. fgts_guias sem linhas para docs de teste (2026-04-18)
+Com `limite=3`, os 3 primeiros docs sorteados foram `dctfweb_resumo_creditos`, `inss_guia`, `dctfweb_declaracao`.
+Nenhum era `fgts_*`, então `fgts_guias.valor` permaneceu `NULL`. Esperado.
+`inss_guias.valor` foi preenchido para o único `inss_guia` processado.
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -378,3 +420,4 @@ A falsificação 2 do INSSExtractor foi executada contra DAS (proxy válido, mes
 | 1.0    | 2026-04-18 | T_CONTRACT | Contrato inicial pós FASE B1             |
 | 1.1    | 2026-04-18 | T1_B2      | Seção 10: descobertas T1_B2 (tipos errados, revision ID, env.py sync, PDFs texto nativo) |
 | 1.2    | 2026-04-18 | T2_B2      | Seção 11: descobertas T2_B2 (competência PT-BR, barcode 48 dígitos, discriminador DARF vs DAS, dirs misclassificados, fgts_guia vazio) |
+| 1.3    | 2026-04-18 | T5_B2      | Seção 6.2: endpoint extrair-valores documentado; Seção 12: descobertas T5 (models stale, padrão sync-executor, idempotência com limite) |
