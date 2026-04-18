@@ -303,7 +303,12 @@ async def extrair_valores(
 
 @router.get("/guias/fgts")
 async def listar_guias_fgts(mes_ref: str | None = None, db: AsyncSession = Depends(get_db)):
-    sql = "SELECT id, mes_ref, tipo, valor, status, arquivo_pdf FROM fgts_guias"
+    sql = """
+        SELECT id, mes_ref, tipo, valor, status, arquivo_pdf,
+               vencimento, codigo_barras, confianca_extracao,
+               metodo_extracao, revisao_manual, extraido_em
+        FROM fgts_guias
+    """
     params: dict = {}
     if mes_ref:
         sql += " WHERE mes_ref = :mes_ref"
@@ -316,9 +321,15 @@ async def listar_guias_fgts(mes_ref: str | None = None, db: AsyncSession = Depen
             "id": str(r["id"]),
             "mes_ref": r["mes_ref"],
             "tipo": r["tipo"],
-            "valor": r["valor"],
+            "valor": float(r["valor"]) if r["valor"] is not None else None,
             "status": r["status"],
             "arquivo_pdf": r["arquivo_pdf"],
+            "vencimento": str(r["vencimento"]) if r["vencimento"] else None,
+            "codigo_barras": r["codigo_barras"],
+            "confianca_extracao": r["confianca_extracao"],
+            "metodo_extracao": r["metodo_extracao"],
+            "revisao_manual": r["revisao_manual"],
+            "extraido_em": str(r["extraido_em"]) if r["extraido_em"] else None,
         }
         for r in rows
     ]
@@ -326,7 +337,12 @@ async def listar_guias_fgts(mes_ref: str | None = None, db: AsyncSession = Depen
 
 @router.get("/guias/inss")
 async def listar_guias_inss(mes_ref: str | None = None, db: AsyncSession = Depends(get_db)):
-    sql = "SELECT id, mes_ref, valor, status, arquivo_pdf FROM inss_guias"
+    sql = """
+        SELECT id, mes_ref, competencia, valor, status, arquivo_pdf,
+               vencimento, codigo_barras, confianca_extracao,
+               metodo_extracao, revisao_manual, extraido_em
+        FROM inss_guias
+    """
     params: dict = {}
     if mes_ref:
         sql += " WHERE mes_ref = :mes_ref"
@@ -338,9 +354,114 @@ async def listar_guias_inss(mes_ref: str | None = None, db: AsyncSession = Depen
         {
             "id": str(r["id"]),
             "mes_ref": r["mes_ref"],
-            "valor": r["valor"],
+            "competencia": r["competencia"],
+            "valor": float(r["valor"]) if r["valor"] is not None else None,
             "status": r["status"],
             "arquivo_pdf": r["arquivo_pdf"],
+            "vencimento": str(r["vencimento"]) if r["vencimento"] else None,
+            "codigo_barras": r["codigo_barras"],
+            "confianca_extracao": r["confianca_extracao"],
+            "metodo_extracao": r["metodo_extracao"],
+            "revisao_manual": r["revisao_manual"],
+            "extraido_em": str(r["extraido_em"]) if r["extraido_em"] else None,
         }
         for r in rows
     ]
+
+
+_CATEGORIAS_FISCAIS = [
+    "inss_guia",
+    "fgts_guia",
+    "fgts_consignado",
+    "fgts_relatorio",
+    "fgts_consignado_relatorio",
+    "dctfweb_declaracao",
+    "dctfweb_recibo",
+    "dctfweb_debitos",
+    "dctfweb_creditos",
+    "dctfweb_resumo_debitos",
+    "dctfweb_resumo_creditos",
+    "dctfweb_extrato",
+    "dctfweb_situacao",
+]
+
+
+@router.get("/valores-fiscais-resumo")
+async def valores_fiscais_resumo(db: AsyncSession = Depends(get_db)):
+    """Resumo agregado de valores fiscais extraídos (FGTS + INSS)."""
+    # FGTS por tipo
+    fgts_sql = """
+        SELECT tipo,
+               COUNT(*) AS cnt,
+               COALESCE(SUM(valor), 0) AS soma
+        FROM fgts_guias
+        WHERE valor IS NOT NULL
+        GROUP BY tipo
+        ORDER BY soma DESC
+    """
+    fgts_rows = (await db.execute(text(fgts_sql))).mappings().all()
+    fgts_por_tipo = [{"tipo": r["tipo"], "count": r["cnt"], "soma": float(r["soma"])} for r in fgts_rows]
+    fgts_total = sum(row["soma"] for row in fgts_por_tipo)
+    fgts_registros = sum(row["count"] for row in fgts_por_tipo)
+
+    # INSS total
+    inss_sql = """
+        SELECT COUNT(*) AS cnt,
+               COALESCE(SUM(valor), 0) AS soma
+        FROM inss_guias
+        WHERE valor IS NOT NULL
+    """
+    inss_row = (await db.execute(text(inss_sql))).mappings().one()
+    inss_total = float(inss_row["soma"])
+    inss_registros = int(inss_row["cnt"])
+
+    # Total de docs e taxa de extração
+    total_docs = (await db.execute(text("SELECT COUNT(*) FROM onvio_documents"))).scalar() or 0
+
+    cats_placeholder = ", ".join(f"'{c}'" for c in _CATEGORIAS_FISCAIS)
+    total_fiscais = (
+        await db.execute(text(f"SELECT COUNT(*) FROM onvio_documents WHERE categoria IN ({cats_placeholder})"))
+    ).scalar() or 0
+
+    docs_extraidos = (
+        await db.execute(text("SELECT COUNT(*) FROM onvio_documents WHERE extraido_em IS NOT NULL"))
+    ).scalar() or 0
+
+    taxa = round(docs_extraidos / total_fiscais * 100, 1) if total_fiscais else 0.0
+
+    # Distribuição por confiança
+    conf_alta = (
+        await db.execute(text("SELECT COUNT(*) FROM onvio_documents WHERE confianca_extracao >= 0.90"))
+    ).scalar() or 0
+    conf_media = (
+        await db.execute(
+            text("SELECT COUNT(*) FROM onvio_documents WHERE confianca_extracao >= 0.70 AND confianca_extracao < 0.90")
+        )
+    ).scalar() or 0
+    conf_baixa = (
+        await db.execute(text("SELECT COUNT(*) FROM onvio_documents WHERE confianca_extracao < 0.70"))
+    ).scalar() or 0
+
+    return {
+        "fgts": {
+            "por_tipo": fgts_por_tipo,
+            "total_brl": fgts_total,
+            "total_registros": fgts_registros,
+        },
+        "inss": {
+            "total_brl": inss_total,
+            "total_registros": inss_registros,
+        },
+        "consolidado": {
+            "valor_total_fiscal_brl": round(fgts_total + inss_total, 2),
+            "total_docs_sistema": total_docs,
+            "total_docs_fiscais": total_fiscais,
+            "docs_extraidos": docs_extraidos,
+            "taxa_extracao_pct": taxa,
+        },
+        "confianca": {
+            "alta_auto_save": conf_alta,
+            "media_revisao_manual": conf_media,
+            "baixa_rejeitado": conf_baixa,
+        },
+    }

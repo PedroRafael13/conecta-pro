@@ -16,7 +16,9 @@ import type {
   SyncLog,
   SyncResult,
   DocumentosResponse,
+  ValoresFiscaisResumo,
 } from './types';
+import { ValoresFiscaisCard } from './components/ValoresFiscaisCard';
 
 const API = '/api/v1/onvio';
 
@@ -116,6 +118,17 @@ export default function OnvioSyncPage() {
     staleTime: 60_000,
   });
 
+  const {
+    data: valoresFiscais,
+    isLoading: valoresLoading,
+    isError: valoresError,
+    refetch: valoresRefetch,
+  } = useQuery<ValoresFiscaisResumo>({
+    queryKey: ['onvio-valores-fiscais'],
+    queryFn: () => apiFetch<ValoresFiscaisResumo>(`${API}/valores-fiscais-resumo`),
+    staleTime: 60_000,
+  });
+
   const syncMutation = useMutation<SyncResult>({
     mutationFn: () =>
       apiFetch<SyncResult>(`${API}/sync`, { method: 'POST' }),
@@ -167,6 +180,14 @@ export default function OnvioSyncPage() {
           </button>
         </div>
       </div>
+
+      {/* Card de valores fiscais */}
+      <ValoresFiscaisCard
+        data={valoresFiscais}
+        isLoading={valoresLoading}
+        isError={valoresError}
+        onRetry={() => valoresRefetch()}
+      />
 
       {/* Cards de stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
