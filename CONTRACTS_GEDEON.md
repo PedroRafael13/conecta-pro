@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.9
+**Versão:** 1.10
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -796,6 +796,53 @@ INSSExtractor (T2) não pôde ser testado contra DAS porque não há PDFs `das_s
 
 ---
 
+## 18. AUDITORIA DE CONFORMIDADE — FASES 1 E 2 GEDEON (2026-04-18)
+
+**Data:** 2026-04-18 | **Auditor:** T_AUDIT_FASES_1_2 | **Princípios:** 13.1 (Chesterton) + 13.5 (Universal)
+
+### §18.1 Estado consolidado (3 evidências por item)
+
+| Item | Descrição | Endpoint | Tabela | Frontend | Estado |
+|------|-----------|----------|--------|----------|--------|
+| 1.1 | CND Receita Federal | ged_certidoes_controller.py / GET certidoes | ged_certidoes / 8 rows (certidao_negativa_federal ✅) | fiscal/certidoes/cnd-federal/page.tsx | 🟢 PRODUCTION |
+| 1.2 | CND FGTS/Caixa | kit_real_controller / cnd_caixa + cnd_sync_task / crf_fgts | ged_certidoes / certidao_negativa_fgts ✅ | fiscal/certidoes/crf-fgts/page.tsx | 🟢 PRODUCTION |
+| 1.3 | CND Trabalhista TST | ged_certidoes_controller / cndt_trabalhista + cnd_sync_task | ged_certidoes / certidao_negativa_trabalhista ✅ | fiscal/certidoes/cndt/page.tsx | 🟢 PRODUCTION |
+| 1.4 | CND Prefeitura Manaus | kit_real_controller / cnd_prefeitura + cnd_municipal | ged_certidoes / certidao_negativa_municipal ✅ | fiscal/certidoes/cnd-municipal/page.tsx | 🟢 PRODUCTION |
+| 1.5 | CND Sefaz-AM | kit_real_controller / cnd_sefaz (TIPOS_CERTIDAO) | ged_certidoes / certidao_negativa_estadual ✅ | fiscal/certidoes/cnd-estadual/page.tsx | 🟢 PRODUCTION |
+| 1.6 | Template Contrato Trabalho | contrato_trabalho.html em /backend/templates/ | contract_templates / 0 rows ⚠️ | sem página de geração | 🟡 PARCIAL |
+| 1.7 | Template Aviso Prévio Férias | aviso_previo_ferias.html em /backend/templates/ | contract_templates / 0 rows ⚠️ | sem página de geração | 🟡 PARCIAL |
+| 2.1 | NFS-e automática | fiscal_controller / POST /nfse + POST /nfse/emitir | nfses / 27 rows + nfse_entrada / 10 rows ✅ | fiscal/nfse-multi/ + tipos gerados ✅ | 🟢 PRODUCTION |
+| 2.2 | Boleto Inter automático | receivable_controller / generate_boleto + bulk | receivable_installments / 21 rows ✅ | financeiro/boletos/page.tsx ✅ | 🟢 PRODUCTION |
+| 2.3 | Solides VA integração | integrations/controllers / solides_router | solides_employees / 44 rows + config / 2 rows ✅ | integracoes/solides/page.tsx ✅ | 🟢 PRODUCTION |
+| 2.4 | Comprovante salário Inter | payslip_controller / download_payslip ✅ | comprovante_salario.html em disco ✅ | diaristPaymentResponseComprovanteUrl.ts (só diaristas) | 🟡 PARCIAL |
+
+**Resultado: 8/11 🟢 PRODUCTION · 3/11 🟡 PARCIAL · 0 🔴 AUSENTE · 0 ⚠️ STALE**
+
+### §18.2 Gaps identificados
+
+**5.1 — Gaps de integração:**
+- Items 1.6 e 1.7: Templates HTML existem em disco (`/backend/templates/`) mas `contract_templates` tem 0 rows — nunca foram populados via DB. Geração automática dos documentos pode estar incompleta.
+- Item 2.4: Comprovante salário tem template HTML e payslip endpoint (HR portal), mas comprovante PIX específico via Inter API não encontrado — parece cobrir apenas diaristas (`diaristPaymentResponseComprovanteUrl`), não folha principal.
+- `solides_sync_log`: 0 rows — integração Solides configurada (2 configs, 44 employees) mas sync não tem log histórico.
+- `cnd_sync_task.py` existe em `people_management/ged/tasks/` mas não foi encontrado endpoint que dispara o sync — pode ser só task Celery sem UI de trigger.
+
+**5.2 — Gaps de autenticação:**
+Todos os endpoints verificados nas FASES 1/2 têm `Depends(get_current_user)` ou `require_permission()`:
+- `ged_certidoes_controller.py`: ✅ linha 99
+- `fiscal_controller.py` (NFS-e): ✅ `require_permission("fiscal:cfop:create")`
+- `receivable_controller.py` (boleto): ✅ linha 11+70
+- `integrations/connector_controller.py` (Solides): ✅ linha 38
+Zero endpoints sem auth encontrados nas FASES 1/2 ✅
+
+**5.3 — Gaps de documentação:**
+CONTRACTS_GEDEON.md (seções 1-17) não menciona as FASES 1 e 2 do Roadmap GEDEON oficial. Toda a documentação do contrato cobre FASE B2 (Onvio). Adicionado este §18 como registro inaugural.
+
+### §18.3 Recomendação para planejamento
+
+Para FASE 4 (GEDEON CORE): com 8/11 itens em PRODUCTION e 3 parciais de baixo risco, a base está sólida. Próxima decisão de Jordan: (a) fechar os 3 gaps parciais antes de FASE 4, ou (b) avançar FASE 4 e registrar 1.6/1.7/2.4 como backlog. Items 1.6/1.7 são templateware puro (baixo esforço); item 2.4 depende de clarificação do escopo (Inter API ou HR payslip).
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -810,3 +857,4 @@ INSSExtractor (T2) não pôde ser testado contra DAS porque não há PDFs `das_s
 | 1.7    | 2026-04-18 | T7_AUDIT   | Seção 16: achado T7 — endpoint /extrair-valores sem auth dependency (security critical); DCTFWeb delta 74 vs 65/67 explicado (crescimento normal da base) |
 | 1.8    | 2026-04-18 | T_FIX_AUTH | §16.1 marcado RESOLVIDO — Depends(get_current_user) adicionado, validação dupla 401 confirmada |
 | 1.9    | 2026-04-18 | MINI-T7    | §17 FASE B2 fechada oficialmente (VEREDITO LIBERAR) — 436 docs, R$ 238.701,77, todas áreas ≥ 9/10 |
+| 1.10   | 2026-04-18 | T_AUDIT_FASES_1_2 | §18 auditoria conformidade FASES 1+2 Roadmap — 8/11 PRODUCTION, 3/11 PARCIAL, 0 AUSENTE |
