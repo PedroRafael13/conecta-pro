@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.8
+**Versão:** 1.9
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -749,6 +749,53 @@ INSSExtractor (T2) não pôde ser testado contra DAS porque não há PDFs `das_s
 
 ---
 
+## 17. FASE B2 — FECHAMENTO OFICIAL (2026-04-18)
+
+**Data de fechamento:** 2026-04-18
+**Veredito:** LIBERADA ✅ (MINI-T7 reauditoria pós T_FIX_AUTH)
+
+**Terminais executados (10):** T1_B2, T2_B2, T3_B2, T4_B2, T5_B2, T6_B2, T6_FIX, T7, T_FIX_AUTH, MINI-T7
+
+**Total de commits na FASE B2:** 29 (de e5e8baa6 até HEAD)
+
+**Métricas consolidadas de entrega:**
+- 436 docs sincronizados (Onvio/Portte)
+- 121 docs fiscais processados (100% — extraido_em preenchido)
+- 5 guias INSS com valor → R$ 47.382,03
+- 42 guias FGTS com valor → R$ 191.319,74
+- **Total fiscal extraído automaticamente: R$ 238.701,77**
+- Distribuição: 107 auto-salvos / 12 revisão / 2 rejeitados
+- UI renderizada em produção (chunk 42849a3fc36b9e28 confirmado)
+- Endpoint /extrair-valores com autenticação obrigatória (Depends get_current_user)
+- Zero regressões / Zero toques em zonas proibidas
+
+**Score final por área:**
+| Área | Score |
+|------|-------|
+| Backend (extractors) | 10/10 |
+| Backend (endpoint) | 10/10 (corrigido T_FIX_AUTH) |
+| Banco (migration + dados) | 10/10 |
+| Frontend (componente) | 10/10 |
+| Contrato (documentação) | 10/10 |
+| Zonas proibidas (escopo) | 10/10 |
+| Regressão de bugs | 9/10 |
+
+**Relatórios da FASE B2:**
+- RELATORIO_FASEB2_T1_BASE_EXTRACTOR.md
+- RELATORIO_FASEB2_T2_INSS_EXTRACTOR.md
+- RELATORIO_FASEB2_T3_FGTS_EXTRACTOR.md
+- RELATORIO_FASEB2_T4_DCTFWEB_EXTRACTOR.md
+- RELATORIO_FASEB2_T5_ENRICHMENT.md
+- RELATORIO_FASEB2_T6_VALIDACAO_UI.md
+- RELATORIO_FASEB2_T6_FIX_RENDER.md
+- RELATORIO_FASEB2_T7_AUDITORIA.md
+- RELATORIO_T_FIX_AUTH.md
+- RELATORIO_MINI_T7_FASE_B2_LIBERADA.md
+
+**GEDEON Fase 3 do Roadmap oficial (recebimento docs Portte): CUMPRIDA.**
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -762,3 +809,4 @@ INSSExtractor (T2) não pôde ser testado contra DAS porque não há PDFs `das_s
 | 1.6    | 2026-04-18 | T6_FIX     | Seção 15: lição T6_FIX — bug bundle stale por symlink xlsx em docker cp; regra de validação frontend obrigatória (HTTP 200 não é suficiente); procedimento correto de hot-copy |
 | 1.7    | 2026-04-18 | T7_AUDIT   | Seção 16: achado T7 — endpoint /extrair-valores sem auth dependency (security critical); DCTFWeb delta 74 vs 65/67 explicado (crescimento normal da base) |
 | 1.8    | 2026-04-18 | T_FIX_AUTH | §16.1 marcado RESOLVIDO — Depends(get_current_user) adicionado, validação dupla 401 confirmada |
+| 1.9    | 2026-04-18 | MINI-T7    | §17 FASE B2 fechada oficialmente (VEREDITO LIBERAR) — 436 docs, R$ 238.701,77, todas áreas ≥ 9/10 |
