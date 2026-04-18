@@ -149,8 +149,8 @@ GET /employee/{employee_id}/download-aviso/{filename}
 |-------|-----------|
 | A: data_inicio_ferias no passado → ValueError | ✅ `data_inicio_ferias não pode estar no passado: 2026-04-08` |
 | B: dias=0 → ValueError | ✅ `dias deve estar entre 1 e 30, recebido: 0` |
-| C: dias=31 → ValueError | ✅ `dias deve estar entre 1 e 30, recebido: 31` |
-| D: employee inexistente → HTTP 400 | ✅ `Funcionário 00000000... não encontrado` |
+| C: employee inexistente → ValueError (DB real) | ✅ `Funcionário 00000000-...-0099 não encontrado` (async_session_factory real) |
+| D: dias=31 → ValueError (bônus) | ✅ `dias deve estar entre 1 e 30, recebido: 31` |
 
 ---
 
@@ -167,8 +167,24 @@ Versão 1.11 → **1.12**
 |------|------|----------|
 | `40dd07cd` | docs | CONTRACTS_GEDEON v1.12 §20 |
 | `d373a6bd` | feat | Gap 1.7 (seeder + service + endpoint + frontend) |
+| `65d6ac08` | docs | Relatório final |
+| `d6c8284b` | fix | pós-auditoria: current_user sem `= None`, reorder params |
 
-Pushed: `feature/people-management-reorganization` → `e6493870..d373a6bd`
+Pushed: `feature/people-management-reorganization` → `e6493870..d6c8284b`
+
+---
+
+## Auditoria pós-entrega (2ª auditoria)
+
+Itens encontrados e corrigidos após revisão linha a linha do prompt:
+
+| Gap | Problema | Correção |
+|-----|----------|----------|
+| STEP 6 routes | `routes-manifest.json` no container desatualizado (12:55 vs 17:48) | Copiado para container |
+| STEP 6 routes | `app-path-routes-manifest.json` não copiado | Copiado para container |
+| STEP 7 C | employee inexistente testado via HTTP (FakeDB) | Refeito com `async_session_factory` real → `Funcionário ... não encontrado` |
+| STEP 6 D | `current_user: CurrentActiveUser = None` — inconsistente com T1 | Removido `= None` + parâmetros reordenados; revalidação A=401, B=200 |
+| STEP 6 D | Validation D não executada na entrega inicial | Executada na 1ª auditoria: chunk `0b7ed7b4c2eb191e.js` ✅ |
 
 ---
 
@@ -181,12 +197,12 @@ Pushed: `feature/people-management-reorganization` → `e6493870..d373a6bd`
 | 3 | STEP 1.2 — ContractGeneratorService confirmado + método T1 listado | ✅ |
 | 4 | STEP 2 — seeder criado + contract_templates tem 2 rows | ✅ |
 | 5 | STEP 3 — método adicionado AO MESMO service (zero duplicação) | ✅ |
-| 6 | STEP 4 — endpoint com Depends(get_current_user) / CurrentActiveUser | ✅ |
+| 6 | STEP 4 — endpoint com CurrentActiveUser (sem `= None`) | ✅ |
 | 7 | STEP 5 — hook + modal dialog + integração funcionarios/page.tsx | ✅ |
-| 8 | STEP 6 — Validações A+B+C+D passam | ✅ |
-| 9 | STEP 7 — 4 falsificações 🔴 passaram | ✅ |
+| 8 | STEP 6 — Validações A+B+C+D + routes-manifest atualizados | ✅ |
+| 9 | STEP 7 — 3 falsificações 🔴 + 1 bônus (DB real para employee inexistente) | ✅ |
 | 10 | STEP 8 — CONTRATO v1.12 §20 (antes do commit de código) | ✅ |
-| 11 | STEP 9 — 2 commits separados + push | ✅ |
+| 11 | STEP 9 — 2 commits separados + push (+ 2 commits auditoria) | ✅ |
 | 12 | INV-8 respeitado — arquivos do T1 só receberam adições, nada removido/refatorado | ✅ |
 
 ---
