@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BotaoGerarContrato } from '@/app/modulos/gestao-pessoas/dp/components/BotaoGerarContrato';
+import { BotaoAvisoPrevioFerias } from '@/app/modulos/gestao-pessoas/dp/components/BotaoAvisoPrevioFerias';
 
 const API_BASE = '/api/v1/people-management/hr';
 
@@ -608,6 +609,7 @@ export default function FuncionariosPage() {
               </Button>
               <Button variant="outline" size="sm" onClick={() => { setEditingId(null); setValidationErrors({}); }}>Cancelar</Button>
               {editingId && <BotaoGerarContrato employeeId={editingId} />}
+              {editingId && <BotaoAvisoPrevioFerias employeeId={editingId} />}
             </div>
           </CardContent>
         </Card>

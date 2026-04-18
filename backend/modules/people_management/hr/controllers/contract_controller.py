@@ -250,6 +250,71 @@ async def download_contrato_gerado(
     )
 
 
+@router.post(
+    "/employee/{employee_id}/gerar-aviso-previo-ferias-html",
+    summary="Gerar HTML do Aviso Prévio de Férias",
+    description="Renderiza aviso_previo_ferias.html via Jinja2, persiste em /app/uploads/avisos_gerados/ e retorna URL.",
+)
+async def gerar_aviso_previo_ferias_html(
+    employee_id: str,
+    data_inicio_ferias: str = Query(..., description="Data de início das férias (YYYY-MM-DD)"),
+    dias: int = Query(default=30, ge=1, le=30, description="Quantidade de dias de férias"),
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Gera Aviso Prévio de Férias em HTML com dados reais do funcionário."""
+    import uuid as _uuid
+
+    try:
+        _uuid.UUID(employee_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=422, detail="employee_id inválido: deve ser UUID válido")
+
+    from modules.people_management.hr.services.contract_generator_service import (
+        ContractGeneratorService,
+    )
+
+    try:
+        svc = ContractGeneratorService(db)
+        result = await svc.gerar_aviso_previo_ferias_html(
+            employee_id=employee_id,
+            data_inicio_ferias=data_inicio_ferias,
+            dias=dias,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error("Erro ao gerar aviso prévio ferias para %s: %s", employee_id, exc)
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar aviso: {exc}") from exc
+
+    return result.model_dump(mode="json")
+
+
+@router.get(
+    "/employee/{employee_id}/download-aviso/{filename}",
+    summary="Download do Aviso Prévio Gerado",
+)
+async def download_aviso_gerado(
+    employee_id: str,
+    filename: str,
+    current_user: CurrentActiveUser,
+) -> Response:
+    """Serve o arquivo HTML do aviso prévio de férias previamente gerado."""
+    from pathlib import Path
+
+    file_path = Path(f"/app/uploads/avisos_gerados/{employee_id}/{filename}")
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+    return Response(
+        content=file_path.read_bytes(),
+        media_type="text/html",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
 @router.get(
     "/{contract_id}/pdf",
     summary="Download PDF do Contrato",
