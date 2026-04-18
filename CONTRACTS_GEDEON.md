@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.7
+**Versão:** 1.8
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -733,6 +733,10 @@ async def extrair_valores(
 
 **Prioridade:** Alta — bloqueia LIBERAR da FASE B2.
 
+**STATUS:** ✅ RESOLVIDO em T_FIX_AUTH
+**Fix aplicado:** `_: dict = Depends(get_current_user)` adicionado na assinatura + import `from core.auth.dependencies import get_current_user` no topo do controller.
+Validação dupla confirmou: HTTP 401 sem token, HTTP 401 com token inválido. Outros endpoints inalterados.
+
 ### 16.2. DCTFWeb delta: 74 docs vs 65/67 declarado em T4
 
 **Explicação (não é regressão):** T4 processou 65/67 docs disponíveis na época. Entre T4 e T7, novos documentos foram sincronizados do Onvio. Estado atual: 74 docs em 8 categorias dctfweb%, todos extraídos (100%).
@@ -757,3 +761,4 @@ INSSExtractor (T2) não pôde ser testado contra DAS porque não há PDFs `das_s
 | 1.5    | 2026-04-18 | T6_B2      | Seção 14: descobertas T6 — caso INSS mes_ref="" investigado (Chesterton), gap serializers corrigido (6→12 campos), endpoint /valores-fiscais-resumo criado, H6 GUIA/RELATORIO confirmada como feature |
 | 1.6    | 2026-04-18 | T6_FIX     | Seção 15: lição T6_FIX — bug bundle stale por symlink xlsx em docker cp; regra de validação frontend obrigatória (HTTP 200 não é suficiente); procedimento correto de hot-copy |
 | 1.7    | 2026-04-18 | T7_AUDIT   | Seção 16: achado T7 — endpoint /extrair-valores sem auth dependency (security critical); DCTFWeb delta 74 vs 65/67 explicado (crescimento normal da base) |
+| 1.8    | 2026-04-18 | T_FIX_AUTH | §16.1 marcado RESOLVIDO — Depends(get_current_user) adicionado, validação dupla 401 confirmada |
