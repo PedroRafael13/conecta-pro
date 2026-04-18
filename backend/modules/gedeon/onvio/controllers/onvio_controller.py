@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import get_current_user
 from core.database import get_db
 from core.database.session import get_sync_db
 from modules.gedeon.models.onvio_models import FgtsGuia, InssGuia, OnvioDocument, OnvioSyncLog
@@ -278,6 +279,7 @@ async def reclassificar_documentos():
 async def extrair_valores(
     forcar: bool = False,
     limite: int | None = None,
+    _: dict = Depends(get_current_user),
 ):
     """
     Orquestra extração de valores dos PDFs fiscais.
