@@ -1,7 +1,8 @@
 'use client';
 
 import { Banknote, TrendingUp, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
-import type { ValoresFiscaisResumo } from '../types';
+import { Card } from '@/components/ui/card';
+import type { ValoresFiscaisResumo } from '@/hooks/useValoresFiscaisResumo';
 
 const brl = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -35,7 +36,7 @@ export function ValoresFiscaisCard({ data, isLoading, isError, onRetry }: Props)
 
   if (isError || !data) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-center justify-between">
+      <Card className="bg-red-50 border-red-200 p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <AlertTriangle className="text-red-500" size={20} />
           <p className="text-sm text-red-700 font-medium">
@@ -49,7 +50,7 @@ export function ValoresFiscaisCard({ data, isLoading, isError, onRetry }: Props)
           <RefreshCw size={12} />
           Tentar novamente
         </button>
-      </div>
+      </Card>
     );
   }
 
@@ -80,10 +81,8 @@ export function ValoresFiscaisCard({ data, isLoading, isError, onRetry }: Props)
 
       {/* Breakdown */}
       <p className="text-blue-200 text-sm mb-5">
-        FGTS {brl(fgts.total_brl / 2)}{' '}
-        <span className="text-blue-300 text-xs">
-          ({fgts.total_registros / 2} guias)
-        </span>
+        FGTS {brl(fgts.total_brl)}{' '}
+        <span className="text-blue-300 text-xs">({fgts.total_registros} guias)</span>
         {' · '}
         INSS {brl(inss.total_brl)}{' '}
         <span className="text-blue-300 text-xs">({inss.total_registros} guias)</span>

@@ -36,32 +36,5 @@ export interface DocumentosResponse {
   total: number;
 }
 
-export interface FgtsPorTipo {
-  tipo: string;
-  count: number;
-  soma: number;
-}
-
-export interface ValoresFiscaisResumo {
-  fgts: {
-    por_tipo: FgtsPorTipo[];
-    total_brl: number;
-    total_registros: number;
-  };
-  inss: {
-    total_brl: number;
-    total_registros: number;
-  };
-  consolidado: {
-    valor_total_fiscal_brl: number;
-    total_docs_sistema: number;
-    total_docs_fiscais: number;
-    docs_extraidos: number;
-    taxa_extracao_pct: number;
-  };
-  confianca: {
-    alta_auto_save: number;
-    media_revisao_manual: number;
-    baixa_rejeitado: number;
-  };
-}
+// ValoresFiscaisResumo e FgtsPorTipo são exportados pelo hook useValoresFiscaisResumo
+export type { ValoresFiscaisResumo, FgtsPorTipo } from '@/hooks/useValoresFiscaisResumo';

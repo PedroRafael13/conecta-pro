@@ -16,9 +16,9 @@ import type {
   SyncLog,
   SyncResult,
   DocumentosResponse,
-  ValoresFiscaisResumo,
 } from './types';
 import { ValoresFiscaisCard } from './components/ValoresFiscaisCard';
+import { useValoresFiscaisResumo } from '@/hooks/useValoresFiscaisResumo';
 
 const API = '/api/v1/onvio';
 
@@ -123,11 +123,7 @@ export default function OnvioSyncPage() {
     isLoading: valoresLoading,
     isError: valoresError,
     refetch: valoresRefetch,
-  } = useQuery<ValoresFiscaisResumo>({
-    queryKey: ['onvio-valores-fiscais'],
-    queryFn: () => apiFetch<ValoresFiscaisResumo>(`${API}/valores-fiscais-resumo`),
-    staleTime: 60_000,
-  });
+  } = useValoresFiscaisResumo();
 
   const syncMutation = useMutation<SyncResult>({
     mutationFn: () =>
