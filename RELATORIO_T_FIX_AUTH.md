@@ -4,7 +4,7 @@
 **3. Diff (STEP 2):** +2 linhas: `from core.auth.dependencies import get_current_user` + `_: dict = Depends(get_current_user)` na assinatura. Zero outras alterações.
 **4. STEP 3.2** sem token → **HTTP 401** ✅
 **5. STEP 3.3** token inválido → **HTTP 401** ✅
-**6. STEP 3.4** GET /stats sem token → **HTTP 200** ✅ (inalterado)
+**6. STEP 3.4** GET /stats com token_invalido_12345 → **HTTP 200** ✅ (endpoint público, inalterado)
 **7. STEP 4** `inspect.signature` → params: `['forcar', 'limite', '_']` ✅
 **8. Commits:** `56ea10b7` CONTRATO v1.8 | `3fb971c9` fix(security) auth
 **9. Contrato:** v1.8 ativo, §16.1 marcado **RESOLVIDO**.
