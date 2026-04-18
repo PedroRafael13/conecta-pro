@@ -191,17 +191,17 @@ async def generate_contract_document(
     return document
 
 
-@router.get(
+@router.post(
     "/employee/{employee_id}/gerar-contrato-html",
     summary="Gerar HTML do Contrato de Trabalho",
-    description="Renderiza o template HTML do contrato CLT com dados reais do funcionário e retorna para download.",
+    description="Renderiza template Jinja2 CLT com dados do funcionário, persiste em disco e retorna URL de download.",
 )
 async def gerar_contrato_html(
     employee_id: str,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> Response:
-    """Renderiza contrato_trabalho.html com dados do funcionário e retorna como download."""
+) -> Any:
+    """Gera contrato_trabalho.html via Jinja2+StrictUndefined, salva em /app/uploads/contratos_gerados/."""
     import uuid as _uuid
 
     try:
@@ -222,11 +222,29 @@ async def gerar_contrato_html(
         logger.error("Erro ao gerar contrato HTML para %s: %s", employee_id, exc)
         raise HTTPException(status_code=500, detail=f"Erro ao gerar contrato: {exc}") from exc
 
+    return result.model_dump(mode="json")
+
+
+@router.get(
+    "/employee/{employee_id}/download/{filename}",
+    summary="Download do Contrato Gerado",
+)
+async def download_contrato_gerado(
+    employee_id: str,
+    filename: str,
+    current_user: CurrentActiveUser,
+) -> Response:
+    """Serve o arquivo HTML do contrato previamente gerado."""
+    from pathlib import Path
+
+    file_path = Path(f"/app/uploads/contratos_gerados/{employee_id}/{filename}")
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
     return Response(
-        content=result["html_content"].encode("utf-8"),
+        content=file_path.read_bytes(),
         media_type="text/html",
         headers={
-            "Content-Disposition": f'attachment; filename="{result["filename"]}"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "no-store",
         },
     )

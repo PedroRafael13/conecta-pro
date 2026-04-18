@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { BotaoGerarContrato } from '@/app/modulos/gestao-pessoas/dp/components/BotaoGerarContrato';
 
 const API_BASE = '/api/v1/people-management/hr';
 
@@ -600,12 +601,13 @@ export default function FuncionariosPage() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4 flex-wrap">
               <Button size="sm" disabled={saving} onClick={handleSave}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
                 {saving ? 'Salvando...' : 'Salvar Alterações'}
               </Button>
               <Button variant="outline" size="sm" onClick={() => { setEditingId(null); setValidationErrors({}); }}>Cancelar</Button>
+              {editingId && <BotaoGerarContrato employeeId={editingId} />}
             </div>
           </CardContent>
         </Card>
