@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -310,8 +310,36 @@ o agente que descobriu DEVE:
 
 ---
 
+## 10. DESCOBERTAS FASE B2 T1 (2026-04-18)
+
+### 10.1. Colunas pré-existentes com tipos errados (corrigidas em sprint83)
+`fgts_guias` e `inss_guias` já tinham `valor` (double precision) e `vencimento` (timestamptz)
+de uma migration anterior com tipos incorretos. A sprint83 faz drop + recreate com tipos corretos
+(`Numeric(15,2)` e `Date`). Os dados eram NULL — nenhuma perda.
+
+### 10.2. Alembic revision ID — limite de 32 chars
+A tabela `alembic_version` tem `version_num VARCHAR(32)`. IDs estilo
+`sprint83_gedeon_fase_b2_extraction` (35 chars) excedem o limite.
+**Regra:** usar sempre o hash curto gerado automaticamente pelo alembic (ex: `9d91ef5c61f6`).
+O texto descritivo vai no docstring da migration.
+
+### 10.3. Container alembic/env.py pode ficar desatualizado
+O `env.py` no container pode ficar stale em relação ao host. Antes de qualquer
+`alembic upgrade` via `docker exec`, sempre sincronizar:
+```bash
+docker cp backend/alembic/env.py conecta-pro-backend:/app/alembic/env.py
+```
+
+### 10.4. PDFs Onvio são texto nativo (não imagens)
+Confirmado em 3 amostras: pdfplumber extrai 3K–17K chars por PDF.
+Os PDFs são gerados por software (não digitalizados/CamScanner).
+OCR não é necessário para o lote atual — BaseExtractor funciona com regex direto.
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
 |--------|------------|------------|------------------------------------------|
 | 1.0    | 2026-04-18 | T_CONTRACT | Contrato inicial pós FASE B1             |
+| 1.1    | 2026-04-18 | T1_B2      | Seção 10: descobertas T1_B2 (tipos errados, revision ID, env.py sync, PDFs texto nativo) |
