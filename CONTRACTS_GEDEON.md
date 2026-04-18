@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.6
+**Versão:** 1.7
 **Data:** 2026-04-18
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -697,6 +697,54 @@ fora do contexto do container.
 
 ---
 
+## 16. ACHADOS T7_AUDIT (2026-04-18)
+
+### 16.1. CRÍTICO — Endpoint /extrair-valores sem proteção de autenticação
+
+**Arquivo:** `backend/modules/gedeon/onvio/controllers/onvio_controller.py` linha 277
+
+**Evidência:**
+```python
+@router.post("/extrair-valores")
+async def extrair_valores(
+    forcar: bool = False,
+    limite: int | None = None,
+):  # ← SEM Depends(get_current_user)
+```
+
+**Teste confirmado:**
+- `curl -s -X POST http://127.0.0.1:8080/api/v1/onvio/extrair-valores` → **HTTP 200**
+- `curl ... -H "Authorization: Bearer TOKEN_INVALIDO"` → **HTTP 200**
+
+**Impacto:** Qualquer host com acesso à porta 8080 pode acionar extração em massa de PDFs fiscais sem autenticação.
+
+**Correção obrigatória (T_FIX_AUTH):**
+```python
+from core.auth.dependencies import get_current_user
+from core.models.user import User
+
+@router.post("/extrair-valores")
+async def extrair_valores(
+    forcar: bool = False,
+    limite: int | None = None,
+    current_user: User = Depends(get_current_user),  # ← ADICIONAR
+):
+```
+
+**Prioridade:** Alta — bloqueia LIBERAR da FASE B2.
+
+### 16.2. DCTFWeb delta: 74 docs vs 65/67 declarado em T4
+
+**Explicação (não é regressão):** T4 processou 65/67 docs disponíveis na época. Entre T4 e T7, novos documentos foram sincronizados do Onvio. Estado atual: 74 docs em 8 categorias dctfweb%, todos extraídos (100%).
+
+Categorias: dctfweb_creditos(9), dctfweb_debitos(8), dctfweb_declaracao(12), dctfweb_extrato(10), dctfweb_recibo(11), dctfweb_resumo_creditos(11), dctfweb_resumo_debitos(11), dctfweb_situacao(2).
+
+### 16.3. T2 gap storage — DAS não testável em container
+
+INSSExtractor (T2) não pôde ser testado contra DAS porque não há PDFs `das_simples_nacional/` no container. Gap storage documentado. Teste funcional continua dependente de storage real.
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -708,3 +756,4 @@ fora do contexto do container.
 | 1.4    | 2026-04-18 | T_CONTRACT_v1.4 | Seção 13: Princípios de Engenharia GEDEON (Chesterton, Falsificação 3 níveis, Documentar antes de corrigir, Escopo sagrado); REGRA ZERO e seção 7.1 atualizadas |
 | 1.5    | 2026-04-18 | T6_B2      | Seção 14: descobertas T6 — caso INSS mes_ref="" investigado (Chesterton), gap serializers corrigido (6→12 campos), endpoint /valores-fiscais-resumo criado, H6 GUIA/RELATORIO confirmada como feature |
 | 1.6    | 2026-04-18 | T6_FIX     | Seção 15: lição T6_FIX — bug bundle stale por symlink xlsx em docker cp; regra de validação frontend obrigatória (HTTP 200 não é suficiente); procedimento correto de hot-copy |
+| 1.7    | 2026-04-18 | T7_AUDIT   | Seção 16: achado T7 — endpoint /extrair-valores sem auth dependency (security critical); DCTFWeb delta 74 vs 65/67 explicado (crescimento normal da base) |
