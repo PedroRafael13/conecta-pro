@@ -257,10 +257,10 @@ async def download_contrato_gerado(
 )
 async def gerar_aviso_previo_ferias_html(
     employee_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
     data_inicio_ferias: str = Query(..., description="Data de início das férias (YYYY-MM-DD)"),
     dias: int = Query(default=30, ge=1, le=30, description="Quantidade de dias de férias"),
-    current_user: CurrentActiveUser = None,
-    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Gera Aviso Prévio de Férias em HTML com dados reais do funcionário."""
     import uuid as _uuid
