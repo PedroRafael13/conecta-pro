@@ -878,6 +878,70 @@ Para FASE 4 (GEDEON CORE): com 8/11 itens em PRODUCTION e 3 parciais de baixo ri
 
 ---
 
+## §20 — Gap 1.7 IMPLEMENTADO (T_GAP_1_7)
+
+**Data:** 2026-04-18 | **Score:** 🟢 PRODUCTION
+**Dependência:** T_GAP_1_6 — reusa 100% da arquitetura do ContractGeneratorService
+
+### Implementação realizada
+
+| Componente | Localização | Detalhe |
+|-----------|-------------|---------|
+| Seeder | `modules/people_management/hr/seeders/seed_aviso_previo_ferias.py` | Popula `contract_templates` service_type='ferias' — 2ª row |
+| Método | `ContractGeneratorService.gerar_aviso_previo_ferias_html(employee_id, data_inicio_ferias, dias=30)` | Adicionado ao service T1 (INV-1: zero duplicação) |
+| Helper | `ContractGeneratorService._get_template_by_service_type(st, fallback_paths)` | Generalização do _get_template para suportar qualquer service_type |
+| Endpoint | `POST /api/v1/people-management/hr/contracts/employee/{id}/gerar-aviso-previo-ferias-html` | Auth: Depends(get_current_user) ✅ |
+| Download | `GET /api/v1/people-management/hr/contracts/employee/{id}/download-aviso/{filename}` | Serve de `/app/uploads/avisos_gerados/` |
+| Hook | `frontend/src/hooks/useGerarAvisoPrevioFerias.ts` | TanStack useMutation, zero `any` |
+| Componente | `frontend/src/app/modulos/gestao-pessoas/dp/components/BotaoAvisoPrevioFerias.tsx` | Dialog shadcn com inputs data+dias |
+| Integração | `dp/funcionarios/page.tsx` linha ~612 | Botão ao lado do BotaoGerarContrato |
+
+### Variáveis Jinja2 do template (verificadas via grep real — Princípio 13.1)
+
+```
+admission_date, employee_name, notice_date, period_end, period_start,
+return_date, role, vacation_days, vacation_end, vacation_start
+```
+
+### Cálculo do período aquisitivo
+- `period_start`: último aniversário de admissão antes da data_inicio_ferias
+- `period_end`: próximo aniversário de admissão − 1 dia
+- Fallback se data_admissao ausente: 1 ano terminando no dia antes das férias
+
+### Validações de domínio
+- `data_inicio_ferias` no passado → 400
+- `dias <= 0` ou `dias > 30` → 400
+- `employee_id` inexistente → 400
+
+### Validações de integração
+- Sem token → 401 ✅
+- Com token (UUID válido) → 200 + ContratoGerado JSON ✅
+- Arquivo em disco `/app/uploads/avisos_gerados/{employee_id}/` ✅
+- Download endpoint → 200 + HTML ✅
+
+### Falsificação 🔴 (4/4)
+- A) data passada → ValueError ✅
+- B) dias=0 → ValueError ✅
+- C) dias=31 → ValueError ✅
+- D) employee inexistente → HTTP 400 ✅
+
+### Estado pós-implementação
+| Item | Estado antes | Estado depois |
+|------|-------------|---------------|
+| 1.7 Aviso Prévio Férias | 🟡 PARCIAL | 🟢 PRODUCTION |
+| contract_templates rows | 1 | 2 |
+
+### Padrão para futuros templates CLT
+1. Adicionar método `gerar_<slug>_html(employee_id, ...params)` ao ContractGeneratorService
+2. Adicionar seeder em `seeders/seed_<slug>.py` com novo `service_type`
+3. Adicionar endpoint thin no contract_controller.py existente
+4. Criar hook `useGerar<Slug>.ts` + componente no diretório dp/components
+5. Integrar no perfil do funcionário (funcionarios/page.tsx)
+
+NÃO criar classe nova. NÃO duplicar service. NÃO criar novo controller.
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -894,3 +958,4 @@ Para FASE 4 (GEDEON CORE): com 8/11 itens em PRODUCTION e 3 parciais de baixo ri
 | 1.9    | 2026-04-18 | MINI-T7    | §17 FASE B2 fechada oficialmente (VEREDITO LIBERAR) — 436 docs, R$ 238.701,77, todas áreas ≥ 9/10 |
 | 1.10   | 2026-04-18 | T_AUDIT_FASES_1_2 | §18 auditoria conformidade FASES 1+2 Roadmap — 8/11 PRODUCTION, 3/11 PARCIAL, 0 AUSENTE |
 | 1.11   | 2026-04-18 | T_GAP_1_6 | §19 Gap 1.6 implementado — seeder + service + endpoint + frontend; contract_templates 0→1 row; item 1.6 🟡→🟢 |
+| 1.12   | 2026-04-18 | T_GAP_1_7 | §20 Gap 1.7 implementado — aviso_previo_ferias reusando ContractGeneratorService; contract_templates 1→2 rows; item 1.7 🟡→🟢 |
