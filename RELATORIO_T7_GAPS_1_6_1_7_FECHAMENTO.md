@@ -7,11 +7,19 @@
 
 ## STEP 0 — Contrato
 
+Comandos executados (exatos do prompt):
+```
+grep "Versão:" CONTRACTS_GEDEON.md       → **Versão:** 1.13 (após correção T7)
+grep -c "^## [12][0-9]\." CONTRACTS_GEDEON.md → 9  (seções 10-18; §19-§21 usam § diferente)
+```
+
 | Item | Declarado | Medido |
 |------|-----------|--------|
-| Versão header | 1.12 esperado | **1.11** — header desatualizado (corrigido para 1.13 em STEP 8) |
+| Versão header | 1.12 esperado | **1.11** — header desatualizado detectado, corrigido → 1.13 em STEP 8 |
+| Seções `^## [12][0-9]\.` | — | 9 seções (10 a 18) |
 | §19 Gap 1.6 | presente | ✅ linha 846 |
 | §20 Gap 1.7 | presente | ✅ linha 881 |
+| §21 Fechamento T7 | após STEP 8 | ✅ linha 945 |
 | Changelog 1.12 | presente | ✅ linha 961 |
 
 **Princípio relevante:** 13.5 (Aplicação Universal) — T7 audita o próprio trabalho ao final, sem exceções.
@@ -57,7 +65,19 @@ Campo real verificado diretamente: contém 6 variáveis corretas.
 200: async def _get_template_by_service_type(self, service_type: str, fallback_paths)
 ```
 
-### 2.2 — Seeders
+### 2.2 — Helper generalizado: definição + 2 chamadas (prompt pede "pelo menos 1 def + 2 calls")
+
+```
+grep -n "_get_template_by_service_type" contract_generator_service.py
+
+106:  html_template = await self._get_template_by_service_type("ferias", _AVISO_FERIAS_CANDIDATES)
+198:  return await self._get_template_by_service_type("admissao", _TEMPLATE_CANDIDATES)
+200:  async def _get_template_by_service_type(self, service_type, fallback_paths) → DEFINIÇÃO
+```
+
+2 chamadas ✅ + 1 definição ✅
+
+### 2.3 — Seeders
 ```
 seed_aviso_previo_ferias.py  ✅
 seed_contrato_trabalho.py    ✅
@@ -163,6 +183,25 @@ Template('{{ inexistente }}', undefined=StrictUndefined).render({})
 
 ---
 
+## Tabela H1-H10 — Declarado vs Medido (item 2 da estrutura do relatório)
+
+| H | Hipótese | Declarado | Medido | Status |
+|---|----------|-----------|--------|--------|
+| H1 | 2 rows ativas em contract_templates | 2 rows | `admissao` + `ferias` (COUNT=2) | ✅ |
+| H2 | contrato_trabalho >1000 chars | >1000 | 1670 chars | ✅ |
+| H3 | aviso_previo_ferias tem 10 variáveis | 10 vars | array de 10 variáveis confirmado | ✅ |
+| H4 | /gerar-contrato-html exige auth | 401 sem token | HTTP 401 | ✅ |
+| H5 | /gerar-aviso-previo-ferias-html exige auth | 401 sem token | HTTP 401 | ✅ |
+| H6 | ContractGeneratorService tem 2 métodos | 2 métodos | linhas 38, 80 + helper linha 200 | ✅ |
+| H7 | Arquivos HTML gerados em produção | ≥1 arquivo | 3 contratos + 3 avisos em disco | ✅ |
+| H8 | Ambos botões em funcionarios/page.tsx | 2 botões | linhas 611+612 confirmadas | ✅ |
+| H9 | Zero toques em zonas proibidas | 0 commits | 5 categorias git-log vazias | ✅ |
+| H10 | Gap 1.6 funciona após deploy Gap 1.7 | HTTP 200 | `contrato_trabalho_20260419_015005.html` gerado | ✅ |
+
+**10/10 hipóteses confirmadas**
+
+---
+
 ## STEP 7 — Score Consolidado e Veredito
 
 | Área | Score | Evidência |
@@ -219,6 +258,18 @@ Template('{{ inexistente }}', undefined=StrictUndefined).render({})
 | INV-7: Nenhuma área < 9/10 | ✅ mínimo 9/10 |
 | INV-8: Score mínimo por área ≥ 9/10 | ✅ 9.875 médio |
 | INV-9: Ambos endpoints testados em sequência | ✅ STEP 3.3 |
+
+---
+
+## Auditoria Pós-Entrega (3ª auditoria — releitura linha por linha)
+
+Gaps encontrados e corrigidos após releitura do prompt original:
+
+| Gap | Problema | Correção |
+|-----|----------|----------|
+| STEP 0 | `grep -c "^## [12][0-9]\."` não executado nem documentado | Executado: retorna 9 (seções 10-18) |
+| STEP 2.2 | Grep de chamadas do helper não rodado (só encontrei definição) | `grep -n "_get_template_by_service_type"` confirmou: linha 106 (ferias) + 198 (admissao) + 200 (def) |
+| Relatório | Faltava tabela H1-H10 consolidada (item 2 da estrutura especificada) | Tabela adicionada acima do STEP 7 |
 
 ---
 
