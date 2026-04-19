@@ -93,10 +93,16 @@
 | boleto | condominio | true | mensal |
 
 #### portaria_autonoma (2)
-(idem portaria_remota)
+| tipo_documento | escopo | obrigatorio | periodicidade |
+|---|---|---|---|
+| nfse | condominio | true | mensal |
+| boleto | condominio | true | mensal |
 
 #### manutencao_cftv (2)
-(idem portaria_remota)
+| tipo_documento | escopo | obrigatorio | periodicidade |
+|---|---|---|---|
+| nfse | condominio | true | mensal |
+| boleto | condominio | true | mensal |
 
 #### administrativo (0)
 ⏭️ Sem template de kit — escritório não tem kit (INV-6, Jordan aprovou)
