@@ -146,7 +146,8 @@ tipo_documento  |     escopo     | tipo_servico
 |---|---|
 | 🔴 A — Total = 38 | ✅ `count=38` |
 | 🔴 B — UNIQUE constraint rejeita duplicata | ✅ `ERROR: duplicate key value violates unique constraint "uq_kit_template"` |
-| 🔴 C — Idempotência (2ª execução) | ✅ `0 criados, 38 já existentes` |
+| 🔴 C — Idempotência (2ª execução do seeder) | ✅ `0 criados, 38 já existentes` |
+| 🔴 C — SELECT COUNT(*) separado após 2ª execução | ✅ `count=38` (DB confirmado independentemente) |
 | 🔴 D — administrativo sem kit | ✅ `count=0` |
 | 🔴 E — Regressão condominios intactos | ✅ `count=11` (sem mudança BLOCO 1) |
 
@@ -170,8 +171,8 @@ Adicionado ao `CONTRACTS_GEDEON.md`:
 
 | Commit | Hash | Conteúdo |
 |---|---|---|
-| docs | (ver abaixo) | CONTRACTS_GEDEON.md §24 + versão 1.15 |
-| feat | (ver abaixo) | seeder + relatório |
+| docs | `9c928c24` | CONTRACTS_GEDEON.md §24 + versão 1.15 |
+| feat | `787cfa8e` | seeder + relatório |
 
 ---
 
