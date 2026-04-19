@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.14
+**Versão:** 1.15
 **Data:** 2026-04-19
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1084,6 +1084,49 @@ Alterações aplicadas:
 
 ---
 
+## §24 — FASE 3.5 BLOCO 2 (T3) — Kit Documental Templates
+
+**Data:** 2026-04-19
+**Terminal:** T3 (paralelo com T2)
+**Princípios:** §13.1 Chesterton + §13.3 + §13.4
+
+### §24.1 — Fonte
+Matriz 100% da planilha GEDEON_Arquitetura_Modulos_032026.xlsx.
+Zero invenção. Se não está na planilha oficial, não foi seedado.
+
+### §24.2 — Estrutura final (38 rows)
+- kit_mensal:        32 rows (todos os docs M1..M8)
+- portaria_remota:    2 rows (NFS-e + Boleto)
+- portaria_autonoma:  2 rows (NFS-e + Boleto)
+- manutencao_cftv:    2 rows (NFS-e + Boleto)
+- administrativo:     0 rows (ESCRITÓRIO não tem kit)
+
+### §24.3 — Regra crítica: CNDs
+5 CNDs (RFB, Caixa, Prefeitura, Sefaz, TST) têm:
+- escopo='empresa_matriz' (pertencem à Conecta Mais Ltda)
+- tipo_servico='kit_mensal' (entram no kit dos 7 condomínios CLT)
+Isso permite KitBuilder (BLOCO 3) buscar CND por mes_ref + doc_scope='empresa_matriz'
+e incluir no kit de cada condomínio kit_mensal.
+
+### §24.4 — Obrigatoriedade
+- 21 docs marcados obrigatorio=true (mensais críticos)
+- 11 marcados obrigatorio=false (eventos eventuais: férias, rescisão, ASO + comp_vt_va_combinado)
+
+### §24.5 — Distribuição por escopo (kit_mensal + serviços simples)
+- condominio:     17 rows (M1+M2 folha+M3 mensais+M4+M6 recibos)
+- funcionario:    16 rows (M2 contracheque/ponto+M3 rescisão+M6 VT/VA ind+M7+M8)
+- empresa_matriz:  5 rows (CNDs)
+
+### §24.6 — Próximo passo
+BLOCO 3: KitBuilderService cruza template × onvio_documents para medir
+completude por condomínio × mes_ref.
+
+### §24.7 — Seeder
+Arquivo: `backend/scripts/seed_kit_templates_fase_3_5.py`
+Idempotente: verifica UNIQUE antes de inserir, 2ª execução retorna "0 criados, 38 já existentes".
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -1103,3 +1146,4 @@ Alterações aplicadas:
 | 1.12   | 2026-04-18 | T_GAP_1_7 | §20 Gap 1.7 implementado — aviso_previo_ferias reusando ContractGeneratorService; contract_templates 1→2 rows; item 1.7 🟡→🟢 |
 | 1.13   | 2026-04-19 | T7_AUDIT  | §21 Fechamento oficial Gaps 1.6+1.7 — auditoria 8 áreas score 9.875/10; header versão corrigido 1.11→1.13; FASES 1+2 GEDEON CONCLUÍDAS |
 | 1.14   | 2026-04-19 | BLOCO1    | §22 FASE 3.5 BLOCO 1 fundação — migration sprint84 (4 tabelas + 3 colunas FK), 11 condominios (11/11 CRM), 47/49 alocações |
+| 1.15   | 2026-04-19 | T3_BLOCO2 | §24 FASE 3.5 BLOCO 2/T3 — kit_documental_templates 38 rows (planilha oficial); CNDs escopo=empresa_matriz em kit_mensal |
