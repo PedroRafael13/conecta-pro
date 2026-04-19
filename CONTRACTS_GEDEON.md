@@ -1,6 +1,6 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.11
-**Data:** 2026-04-18
+**Versão:** 1.13
+**Data:** 2026-04-19
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
@@ -942,6 +942,71 @@ NÃO criar classe nova. NÃO duplicar service. NÃO criar novo controller.
 
 ---
 
+## §21 — FECHAMENTO OFICIAL GAPS 1.6 + 1.7 (T7_AUDIT)
+
+**Data:** 2026-04-19 | **Auditor:** T7 (Princípio 13.5) | **Veredito:** 🟢 LIBERAR
+
+### §21.1 — Entregas consolidadas
+
+**Gap 1.6 (T_GAP_1_6, commits 16e3f614 → e6493870):**
+- ✅ Template Contrato de Trabalho CLT (1670 chars, service_type=admissao)
+- ✅ `ContractGeneratorService.gerar_contrato_trabalho_html(employee_id)`
+- ✅ Endpoint `POST /contracts/employee/{id}/gerar-contrato-html` — auth 401 confirmada
+- ✅ UI: BotaoGerarContrato em dp/funcionarios/page.tsx linha 611
+- ✅ Arquivo em disco: `/app/uploads/contratos_gerados/{employee_id}/`
+
+**Gap 1.7 (T_GAP_1_7, commits 40dd07cd → fdd1eed0):**
+- ✅ Template Aviso Prévio de Férias (1592 chars, 10 variáveis, service_type=ferias)
+- ✅ `ContractGeneratorService.gerar_aviso_previo_ferias_html(employee_id, data, dias=30)` — zero duplicação
+- ✅ Helper `_get_template_by_service_type` generalizado (melhoria leve, sem refactor)
+- ✅ Endpoint `POST /contracts/employee/{id}/gerar-aviso-previo-ferias-html` — auth 401 confirmada
+- ✅ UI: BotaoAvisoPrevioFerias (Dialog shadcn + inputs data/dias) em dp/funcionarios/page.tsx linha 612
+- ✅ Arquivo em disco: `/app/uploads/avisos_gerados/{employee_id}/`
+
+### §21.2 — Métricas de auditoria T7
+
+| Área | Score | Evidência medida |
+|---|---|---|
+| DB (templates populados) | 9/10 | 2 rows ativas; `admissao.variables` em formato objeto vs array dos outros (menor) |
+| Service (métodos + helper) | 10/10 | grep: linhas 38, 80, 200 do contract_generator_service.py |
+| Filesystem (seeders + uploads) | 10/10 | 2 seeders; 3 contratos + 3 avisos em disco |
+| Endpoints (auth obrigatória) | 10/10 | H4=401, H5=401, H10=200+200 com token |
+| Regressão cruzada (1.6 após 1.7) | 10/10 | `contrato_trabalho_20260419_015005.html` + `aviso_previo_ferias_20260419_015006.html` |
+| Frontend (integração + bundle) | 10/10 | 2 botões (linhas 611+612), 2 hooks, 2 componentes, chunks com strings dos endpoints |
+| Zonas proibidas | 10/10 | git log e6493870..HEAD: financial, government, main_production, .env, alembic = vazios |
+| Falsificação 🔴 | 10/10 | A1: contrato rejeita inexistente; A2: aviso rejeita inexistente; A3: aviso rejeita data passada; B: StrictUndefined ativo |
+
+**Score médio: 9.875/10 — todas áreas ≥ 9/10**
+
+### §21.3 — Nota técnica (não-bloqueante)
+
+`contract_templates.variables` do template `admissao` está gravado como objeto `{"required": [...]}` em vez de array `[...]` como o template `ferias`. Não afeta funcionalidade (service não lê `variables` do DB para renderizar). Débito técnico para uniformização futura.
+
+### §21.4 — Lições reforçadas
+
+- **Princípio 13.4 (Escopo Sagrado):** T_GAP_1_7 reusou ContractGeneratorService sem duplicar
+- **Princípio 13.1 (Chesterton):** ambas implementações extraíram variáveis via grep real do template
+- **Princípio 13.3 (Docs antes de Código):** CONTRATO v1.11 e v1.12 commitados antes dos commits de código
+- **Lição T_FIX_AUTH:** ambos endpoints com `CurrentActiveUser` sem `= None`
+- **Lição T6_FIX:** bundles contêm strings dos endpoints (validado via grep em chunks)
+
+### §21.5 — Continuidade
+
+**FASES 1 e 2 do Roadmap GEDEON oficialmente CONCLUÍDAS.**
+
+Gap 2.4 (Comprovante PIX Inter) CANCELADO — integração Banco Inter já operacional em produção com batch payroll PIX.
+
+Próxima fase: FASE 3.5 Caminho B (vinculação condomínio/funcionário/docs) — iniciar no CPRO 10.
+
+**Padrão estabelecido para futuros templates CLT:**
+1. Adicionar método `gerar_<slug>_html()` ao ContractGeneratorService (nunca nova classe)
+2. Seeder com novo `service_type` em `contract_templates`
+3. Endpoint thin no `contract_controller.py` existente
+4. Hook + componente no diretório `dp/components`
+5. Integrar em `dp/funcionarios/page.tsx` ao lado dos demais botões
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -959,3 +1024,4 @@ NÃO criar classe nova. NÃO duplicar service. NÃO criar novo controller.
 | 1.10   | 2026-04-18 | T_AUDIT_FASES_1_2 | §18 auditoria conformidade FASES 1+2 Roadmap — 8/11 PRODUCTION, 3/11 PARCIAL, 0 AUSENTE |
 | 1.11   | 2026-04-18 | T_GAP_1_6 | §19 Gap 1.6 implementado — seeder + service + endpoint + frontend; contract_templates 0→1 row; item 1.6 🟡→🟢 |
 | 1.12   | 2026-04-18 | T_GAP_1_7 | §20 Gap 1.7 implementado — aviso_previo_ferias reusando ContractGeneratorService; contract_templates 1→2 rows; item 1.7 🟡→🟢 |
+| 1.13   | 2026-04-19 | T7_AUDIT  | §21 Fechamento oficial Gaps 1.6+1.7 — auditoria 8 áreas score 9.875/10; header versão corrigido 1.11→1.13; FASES 1+2 GEDEON CONCLUÍDAS |
