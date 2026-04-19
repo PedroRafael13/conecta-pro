@@ -1156,6 +1156,31 @@ revisao_manual :  83 (19.0%)
 doc_scope NULL :   0 ← INV-8 OK
 ```
 
+### §23.9 — Trabalho Adicional Identificado (§13.4 Escopo Sagrado)
+
+**NÃO resolvido neste bloco** — documentado conforme §13.4 (Escopo Sagrado):
+
+A tabela `employees` tem **dois pares de campos de desligamento redundantes**:
+- `data_demissao` (date) ← campo legado
+- `data_desligamento` (date) ← campo atual
+- `motivo_inatividade` (varchar 255) ← campo legado
+- `motivo_desligamento` (varchar 100) ← campo atual
+
+Qual é o canônico para queries de folha/RH? Não investigado neste bloco.
+**Próximo passo:** Auditoria dos dados reais para determinar qual campo tem preenchimento maior e padronizar.
+
+### §23.10 — Regra Importante para FASE 4 (KitBuilderService)
+
+**CNDs têm `doc_scope='empresa_matriz'` MAS entram em `kit_mensal`.**
+
+O kit mensal de cada condomínio inclui documentos cujo `doc_scope='empresa_matriz'`
+quando o `tipo_documento` do template for de escopo matricial. A lógica de completude
+no KitBuilderService deve cruzar `tipo_servico` do condomínio com `tipo_documento+escopo`
+do template — não filtrar por `doc_scope='condominio'` diretamente.
+
+Exemplo: `dctfweb_declaracao` para IDEAL FLORES → `doc_scope='condominio'` ✅
+         `das_simples_nacional` → `doc_scope='empresa_matriz'`, mas entra no kit se template exigir.
+
 ---
 
 ## §24 — FASE 3.5 BLOCO 2 (T3) — Kit Documental Templates
@@ -1222,3 +1247,4 @@ Idempotente: verifica UNIQUE antes de inserir, 2ª execução retorna "0 criados
 | 1.14   | 2026-04-19 | BLOCO1    | §22 FASE 3.5 BLOCO 1 fundação — migration sprint84 (4 tabelas + 3 colunas FK), 11 condominios (11/11 CRM), 47/49 alocações |
 | 1.15   | 2026-04-19 | T3_BLOCO2 | §24 FASE 3.5 BLOCO 2/T3 — kit_documental_templates 38 rows (planilha oficial); CNDs escopo=empresa_matriz em kit_mensal |
 | 1.16   | 2026-04-19 | T2_BLOCO2 | §23 FASE 3.5 BLOCO 2/T2 — OnvioDocScopeClassifier + backfill 436 docs; INV-8 OK (0 NULL); 4 testes falsificação PASS; bug CAST psycopg2 documentado |
+| 1.17   | 2026-04-19 | T2_AUDIT  | §23.9+§23.10 adicionados: dívida técnica employees (data_demissao vs data_desligamento) + regra FASE 4 CNDs em kit_mensal |
