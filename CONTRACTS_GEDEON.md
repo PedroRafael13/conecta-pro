@@ -1084,6 +1084,80 @@ Alterações aplicadas:
 
 ---
 
+## §23 — FASE 3.5 BLOCO 2 (T2) — OnvioDocScopeClassifier + Backfill
+
+**Data:** 2026-04-19
+**Terminal:** T2 (paralelo com T3)
+**Branch:** feature/people-management-reorganization
+
+### §23.1 — Mapeamento categoria → doc_scope
+
+3 escopos + 2 ambíguos (aprovado Jordan 2026-04-19):
+
+| Grupo | Categorias | doc_scope |
+|-------|-----------|-----------|
+| A (13 cats) | folha_pagamento, recibo_folha, folha_ponto, fgts_guia, fgts_relatorio, dctfweb_* (8) | condominio |
+| B (15 cats) | contrato_trabalho, ficha_registro, declaracao_vt, rescisao, decimo_terceiro, recibo_decimo_terceiro, afastamento, atestado, aso, aviso_previo, ferias, autodeclaracao, portal_empregador, fgts_consignado, fgts_consignado_relatorio | funcionario |
+| C (7 cats) | das_simples_nacional, guia_issqn, parcelamento_simples, dar_sefaz, inss_guia, alvara, empresa_docs | empresa_matriz |
+| D (2 cats) | outros, documento_digitalizado | None → regex |
+
+### §23.2 — Invariantes críticos
+
+- **INV-4 (Idempotência):** backfill re-executável sem duplicar/perder dados
+- **INV-8:** Zero doc_scope NULL após execução (abortа com sys.exit(1) se violado)
+- **INV-9:** `condominio_id` nunca NULL quando `doc_scope='condominio'` — fallback para empresa_matriz se sem match
+- **INV-10:** `referente_a_employee_id` nunca NULL quando `doc_scope='funcionario'` — fallback para empresa_matriz se sem match
+
+### §23.3 — Resolução de condomínio
+
+`match_condominio()` usa 11 padrões regex normalizados (sem acentos, case-insensitive):
+`ideal_flores`, `mirante`, `laranjeiras`, `prime_arena`, `villa_dei_fiori`, `villa_passaros`,
+`michelangelo`, `p_gelain`, `green_hills`, `parise`, `escritorio`
+
+`is_matriz()` detecta CNPJ `35.710.481` ou nome "conecta mais" no arquivo — retorna empresa_matriz **sem revisao_manual**.
+
+### §23.4 — Resolução de funcionário
+
+`match_employee()` testa `primeiro_nome + cada_palavra_subsequente` nos dois padrões:
+- Espaçado: `\bprimeiro\b.*\bsegundo\b`
+- Concatenado: `\bprimerosegundo\b` (cobre "Liviaconsentine" → LIVIA CONSENTINE)
+- Ignora partes < 3 caracteres
+
+### §23.5 — Taxa de revisão manual (19%)
+
+83 docs com `revisao_manual=True` são casos genuinamente irresolvíveis:
+- GFD FGTS CONSIGNADO (relatórios consolidados, sem nome de funcionário)
+- CamScanner scans (sem metadados de condomínio/funcionário)
+- FOLHAS DE PONTO genéricas (sem identificador de condomínio)
+
+Aviso emitido se >10% mas NÃO aborta — INV-8 refere-se a NULL, não a revisao_manual.
+
+### §23.6 — Bug psycopg2 CAST
+
+`db.execute(text(...), list_of_dicts)` com psycopg2 converte `:param` → `%(param)s`
+mas `::uuid` PostgreSQL cast fica como literal → `SyntaxError`.
+**Fix obrigatório:** usar `CAST(:param AS uuid)` em vez de `:param::uuid` em `executemany`.
+
+### §23.7 — Arquivos entregues
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `backend/modules/gedeon/services/onvio_doc_scope_classifier.py` | Classifier + 5 funções públicas |
+| `backend/scripts/backfill_doc_scope_fase_3_5.py` | Backfill idempotente BATCH_SIZE=50 |
+| `backend/scripts/test_falsificacao_bloco2.py` | 4 testes falsificação (A/B/C/D) |
+
+### §23.8 — Resultado backfill produção
+
+```
+empresa_matriz : 281 (64.4%)
+condominio     : 116 (26.6%)
+funcionario    :  39 ( 8.9%)
+revisao_manual :  83 (19.0%)
+doc_scope NULL :   0 ← INV-8 OK
+```
+
+---
+
 ## §24 — FASE 3.5 BLOCO 2 (T3) — Kit Documental Templates
 
 **Data:** 2026-04-19
@@ -1147,3 +1221,4 @@ Idempotente: verifica UNIQUE antes de inserir, 2ª execução retorna "0 criados
 | 1.13   | 2026-04-19 | T7_AUDIT  | §21 Fechamento oficial Gaps 1.6+1.7 — auditoria 8 áreas score 9.875/10; header versão corrigido 1.11→1.13; FASES 1+2 GEDEON CONCLUÍDAS |
 | 1.14   | 2026-04-19 | BLOCO1    | §22 FASE 3.5 BLOCO 1 fundação — migration sprint84 (4 tabelas + 3 colunas FK), 11 condominios (11/11 CRM), 47/49 alocações |
 | 1.15   | 2026-04-19 | T3_BLOCO2 | §24 FASE 3.5 BLOCO 2/T3 — kit_documental_templates 38 rows (planilha oficial); CNDs escopo=empresa_matriz em kit_mensal |
+| 1.16   | 2026-04-19 | T2_BLOCO2 | §23 FASE 3.5 BLOCO 2/T2 — OnvioDocScopeClassifier + backfill 436 docs; INV-8 OK (0 NULL); 4 testes falsificação PASS; bug CAST psycopg2 documentado |
