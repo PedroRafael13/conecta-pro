@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.13
+**Versão:** 1.14
 **Data:** 2026-04-19
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1007,6 +1007,83 @@ Próxima fase: FASE 3.5 Caminho B (vinculação condomínio/funcionário/docs) �
 
 ---
 
+---
+
+## §22 — FASE 3.5 BLOCO 1: Fundação Estrutural GEDEON (2026-04-19)
+
+### §22.1 — Migration Alembic (sprint84_bloco1_condominios)
+
+**Estratégia:** ALTER TABLE em vez de DROP/CREATE — `condominios` já existia com FK refs de `empresas`, `payable_installments`, `bank_reconciliations`.
+
+**Mock row reproposta:** UUID `a1b2c3d4-...` (mock) → convertido para ESCRITÓRIO (preserva FK refs de empresas/payable).
+
+Alterações aplicadas:
+- `condominios`: ADD `nome_normalizado` (varchar, unique), `tipo_servico`, `tem_folha_clt`, `client_id` (FK → clients.id, nullable)
+- CREATE `employee_alocacoes` (employee_id FK + condominio_id FK + funcao + data_inicio)
+- CREATE `kit_documental_templates` (tipo_servico + tipo_documento + escopo — unique constraint)
+- CREATE `kits_gerados` (condominio_id FK + mes_ref + status + docs_incluidos JSONB)
+- `onvio_documents`: ADD `doc_scope`, `condominio_id` (FK), `referente_a_employee_id` (FK) — todos nullable até backfill no BLOCO 2
+
+### §22.2 — Limpeza de Mock Data
+
+1 row mock em `condominios` (cnpj=12.345.678/0001-90, nome='Condomínio Teste Integração') — **convertida** para ESCRITÓRIO em vez de deletada (FK refs em `empresas.condominio_id` NOT NULL impedem deleção). 2 rows em `empresas` (Conecta Mais Eletrônica) mantidas sem alteração.
+
+### §22.3 — Seeders (grafia oficial planilha GEDEON 03/2026)
+
+**Condomínios:** 11 inseridos, **11/11 linked ao CRM** (client_id preenchido).
+
+| nome_normalizado | tipo_servico | tem_folha_clt | client_id |
+|---|---|---|---|
+| prime_arena | kit_mensal | true | ✅ |
+| michelangelo | kit_mensal | true | ✅ |
+| ideal_flores | kit_mensal | true | ✅ |
+| laranjeiras | kit_mensal | true | ✅ |
+| mirante | kit_mensal | true | ✅ |
+| villa_dei_fiori | kit_mensal | true | ✅ |
+| villa_passaros | kit_mensal | true | ✅ |
+| p_gelain | portaria_remota | false | ✅ |
+| green_hills | manutencao_cftv | false | ✅ |
+| parise | portaria_autonoma | false | ✅ |
+| escritorio | administrativo | true | ✅ (Conecta Mais) |
+
+**Alocações:** 47/49 criadas. 2 não encontrados no DB (`ELIZIEL GONZAGA FLORES`, `SEBASTIAO LIMA DE FREITAS` — below threshold of 9).
+
+| Condomínio | Qtd |
+|---|---|
+| ideal_flores | 11 |
+| mirante | 10 |
+| prime_arena | 7 |
+| villa_passaros | 6 |
+| villa_dei_fiori | 6 |
+| laranjeiras | 6 |
+| michelangelo | 1 |
+
+### §22.4 — Decisão Arquitetural (§13.1 Chesterton)
+
+`condominios.client_id` como FK opcional para `clients` (CRM). A dimensão `condominios` é operacional (gerencia folha CLT, alocações, kit mensal) — **não duplica** `clients` (CRM/financeiro). Futuras janelas de manutenção: um condomínio pode ter `client_id=NULL` se ainda não cadastrado no CRM.
+
+### §22.5 — Testes de Falsificação 🔴 (5/5 passaram)
+
+| Teste | Resultado |
+|---|---|
+| A: Rollback alembic -1 | ✅ 0 tabelas novas após downgrade |
+| B: Idempotência (2ª execução) | ✅ 11 condominios, 47 alocações — sem duplicatas |
+| C: FK violation em employee_alocacoes | ✅ IntegrityError com UUIDs falsos |
+| D: Regressão CRM | ✅ 12 clients, 58 employees — intactos |
+| E: Dry-run matching | ✅ villa_passaros=46, villa_dei_fiori=16, laranjeiras=10 |
+
+### §22.6 — Próximo Passo
+
+**BLOCO 2** — backfill de `onvio_documents.condominio_id` para os 436 docs usando os nome_normalizado estabelecidos neste BLOCO 1.
+
+### §22.7 — Lições
+
+- `alembic_version.version_num` é `VARCHAR(32)` — IDs de revisão devem ter ≤32 chars
+- `empresas.condominio_id` NOT NULL — nunca deletar mock row sem verificar refência; repropor UUID é solução mais segura
+- Rollback em tabelas com dados reais (10 rows seed sobrevivem downgrade) — limpar sempre após rollback-test
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -1025,3 +1102,4 @@ Próxima fase: FASE 3.5 Caminho B (vinculação condomínio/funcionário/docs) �
 | 1.11   | 2026-04-18 | T_GAP_1_6 | §19 Gap 1.6 implementado — seeder + service + endpoint + frontend; contract_templates 0→1 row; item 1.6 🟡→🟢 |
 | 1.12   | 2026-04-18 | T_GAP_1_7 | §20 Gap 1.7 implementado — aviso_previo_ferias reusando ContractGeneratorService; contract_templates 1→2 rows; item 1.7 🟡→🟢 |
 | 1.13   | 2026-04-19 | T7_AUDIT  | §21 Fechamento oficial Gaps 1.6+1.7 — auditoria 8 áreas score 9.875/10; header versão corrigido 1.11→1.13; FASES 1+2 GEDEON CONCLUÍDAS |
+| 1.14   | 2026-04-19 | BLOCO1    | §22 FASE 3.5 BLOCO 1 fundação — migration sprint84 (4 tabelas + 3 colunas FK), 11 condominios (11/11 CRM), 47/49 alocações |
