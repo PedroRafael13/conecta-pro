@@ -368,6 +368,105 @@ Seções adicionadas:
 
 ---
 
+## Lista Completa — 83 Docs com revisao_manual=True
+
+| Arquivo | Categoria |
+|---------|-----------|
+| Relação de Afastamentos.pdf | afastamento |
+| Relação de Afastamentos_ Brendo.pdf | afastamento |
+| resultado-de-pericia (1).pdf | aso |
+| Requerimento SD - Sebastiao Lima.pdf | atestado |
+| AUTODECLARAÇÃO ÉTNICO-RACIAL.pdf | autodeclaracao |
+| AUTODECLARAÇÃO ÉTNICO-RACIAL.pdf | autodeclaracao |
+| AUTODECLARAÇÃO ÉTNICO-RACIAL.pdf | autodeclaracao |
+| AUTODECLARAÇÃO ÉTNICO-RACIAL.pdf | autodeclaracao |
+| AUTODECLARAÇÃO ÉTNICO-RACIAL.pdf | autodeclaracao |
+| Contrato de Experiência _Jonhata.pdf | contrato_trabalho |
+| Contrato de Experiência_Marcelo Monteiro.pdf | contrato_trabalho |
+| Prorrogação Contrato de Experiência_Marcelo Monteiro.pdf | contrato_trabalho |
+| 13º SALARIO 2025_Ideal Flores (1).pdf | decimo_terceiro |
+| 13º SALARIO 2025_Laranjeiras Village (1).pdf | decimo_terceiro |
+| 13º SALARIO 2025_Michelangelo (1).pdf | decimo_terceiro |
+| 13º SALARIO 2025_Mirante das Flores (1).pdf | decimo_terceiro |
+| 13º SALARIO 2025_Prime Arena (1).pdf | decimo_terceiro |
+| 13º SALARIO 2025_Villa Dei Fiori (1).pdf | decimo_terceiro |
+| 13º SALARIO 2025_Villa dos Passaros (1).pdf | decimo_terceiro |
+| Declaração Deslocamento Vale Transporte_Marcelo Monteiro.pdf | declaracao_vt |
+| CamScanner 02-03-2026 13.56.pdf | documento_digitalizado |
+| CamScanner 06-03-2026 20.00.pdf | documento_digitalizado |
+| CamScanner 06-03-2026 20.10.pdf | documento_digitalizado |
+| CamScanner 11-03-2026 21.46.pdf | documento_digitalizado |
+| CamScanner 18-03-2026 12.02.pdf | documento_digitalizado |
+| CamScanner 20-02-2026 22.06 (1).pdf | documento_digitalizado |
+| CamScanner 20-03-2026 08.58 (1).pdf | documento_digitalizado |
+| CamScanner 20-03-2026 09.19.pdf | documento_digitalizado |
+| CamScanner 20-03-2026 16.41.pdf | documento_digitalizado |
+| CamScanner 23-03-2026 20.06.pdf | documento_digitalizado |
+| CamScanner 23-03-2026 20.10.pdf | documento_digitalizado |
+| CamScanner 23-03-2026 20.12.pdf | documento_digitalizado |
+| CamScanner 24-03-2026 09.38.pdf | documento_digitalizado |
+| CamScanner 27-02-2026 13.48 (2).pdf | documento_digitalizado |
+| CamScanner 28-02-2026 14.20.pdf | documento_digitalizado |
+| CamScanner 30-03-2026 14.44.pdf | documento_digitalizado |
+| GFD FGTS - CONSIGNADO 01.2026.pdf | fgts_consignado |
+| GFD FGTS - CONSIGNADO 02.2026.pdf | fgts_consignado |
+| GFD FGTS - CONSIGNADO 03.2026.pdf | fgts_consignado |
+| GFD FGTS - CONSIGNADO 07.2025.pdf | fgts_consignado |
+| GFD FGTS - CONSIGNADO 08.2025.pdf | fgts_consignado |
+| GFD FGTS - CONSIGNADO 09.2025.pdf | fgts_consignado |
+| GFD FGTS - CONSIGNADO 10.2025.pdf | fgts_consignado |
+| GFD FGTS - CONSIGNADO 11.2025.pdf | fgts_consignado |
+| GFD FGTS - CONSIGNADO 12.2025.pdf | fgts_consignado |
+| RELATORIO GFD FGTS - CONSIGNADO 01.2026.pdf | fgts_consignado_relatorio |
+| RELATORIO GFD FGTS - CONSIGNADO 02.2026.pdf | fgts_consignado_relatorio |
+| RELATORIO GFD FGTS - CONSIGNADO 03.2026.pdf | fgts_consignado_relatorio |
+| RELATORIO GFD FGTS - CONSIGNADO 07.2025.pdf | fgts_consignado_relatorio |
+| RELATORIO GFD FGTS - CONSIGNADO 08.2025.pdf | fgts_consignado_relatorio |
+| RELATORIO GFD FGTS - CONSIGNADO 09.2025.pdf | fgts_consignado_relatorio |
+| RELATORIO GFD FGTS - CONSIGNADO 10.2025.pdf | fgts_consignado_relatorio |
+| RELATORIO GFD FGTS - CONSIGNADO 11.2025.pdf | fgts_consignado_relatorio |
+| RELATORIO GFD FGTS - CONSIGNADO 12.2025.pdf | fgts_consignado_relatorio |
+| GFD FGTS RESCISAO - Rodrigo Soares.pdf | fgts_guia |
+| GFD FGTS RESCISAO - Sebastiao Lima.pdf | fgts_guia |
+| GFD FGTS RESCISÃO - Marcus Vinicius Lima.pdf | fgts_guia |
+| RELATORIO GFD FGTS RESCISAO - Rodrigo Soares.pdf | fgts_relatorio |
+| RELATORIO GFD FGTS RESCISAO - Sebastiao Lima.pdf | fgts_relatorio |
+| RELATORIO GFD FGTS RESCISÃO - Marcus Vinicius Lima.pdf | fgts_relatorio |
+| Ficha Registro de Empregado_Marcelo Monteiro.pdf | ficha_registro |
+| FOLHAS DE PONTO.pdf | folha_ponto |
+| 14020428 RECIBO DE ADESÃO E CONSOLIDAÇÃO DE NEGOCIAÇÃO.pdf | outros |
+| CNH.pdf | outros |
+| Certificado .pdf | outros |
+| PROCESSO_210052988_322021_133940.pdf | outros |
+| PROCESSO_210055944_222021_105342.pdf | outros |
+| PROCESSO_230159354_832023_94552.pdf | outros |
+| Relatório dos Arquivos Validados.pdf | outros |
+| Rilem DOC.pdf | outros |
+| 4 Portal do Empregador - Orlailson 1.pdf | portal_empregador |
+| Recibo 13º SALARIO 2025_Ideal Flores (1).pdf | recibo_decimo_terceiro |
+| Recibo 13º SALARIO 2025_Laranjeiras Village (1).pdf | recibo_decimo_terceiro |
+| Recibo 13º SALARIO 2025_Michelangelo (1).pdf | recibo_decimo_terceiro |
+| Recibo 13º SALARIO 2025_Mirante das Flores (1).pdf | recibo_decimo_terceiro |
+| Recibo 13º SALARIO 2025_Prime Arena (1).pdf | recibo_decimo_terceiro |
+| Recibo 13º SALARIO 2025_Villa Dei Fiori (1).pdf | recibo_decimo_terceiro |
+| Recibo 13º SALARIO 2025_Villa dos Passaros (1).pdf | recibo_decimo_terceiro |
+| Simulação de Rescisão - Acordo CLT.pdf | rescisao |
+| Simulação de Rescisão - Antonio Aviso Indenizado.pdf | rescisao |
+| TRCT - Marcus Vinicius Lima.pdf | rescisao |
+| TRCT - Rodrigo Soares.pdf | rescisao |
+| TRCT - Sebastiao Lima.pdf | rescisao |
+
+**Total: 83 docs** — todos classificados como `empresa_matriz + revisao_manual=True`
+
+**Padrões identificados para Jordan revisar:**
+- **fgts_consignado/relatorio (18 docs):** GFD FGTS CONSIGNADO — relatórios consolidados sem nome de funcionário no arquivo. Sugestão: criar funcionário "Consolidado" ou mapear para empresa_matriz permanentemente.
+- **decimo_terceiro/recibo_decimo_terceiro (14 docs):** "13º SALARIO 2025_Laranjeiras Village" — "Village" não está no regex de condomínio para Laranjeiras. Fix: adicionar `\blaranjeiras\b` que já existe, mas "Laranjeiras Village" deveria ter matchado. Investigar.
+- **documento_digitalizado — CamScanner (16 docs):** Scans sem metadados. Sem fix possível automaticamente.
+- **rescisao (5 docs):** "Simulação de Rescisão" e "TRCT" sem nome de funcionário direto.
+- **outros (8 docs):** Documentos genéricos sem padrão.
+
+---
+
 ## Resultado Final
 
 **T2_BLOCO2 OK — CENÁRIO C REPORTADO A JORDAN (19% revisão manual)**

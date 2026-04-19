@@ -1084,11 +1084,12 @@ Alterações aplicadas:
 
 ---
 
-## §23 — FASE 3.5 BLOCO 2 (T2) — OnvioDocScopeClassifier + Backfill
+## §23 — FASE 3.5 BLOCO 2 (T2) — Parser + Backfill 436 Docs
 
 **Data:** 2026-04-19
 **Terminal:** T2 (paralelo com T3)
 **Branch:** feature/people-management-reorganization
+**Princípios:** §13.1 Chesterton + §13.3 Docs antes + §13.4 Escopo
 
 ### §23.1 — Mapeamento categoria → doc_scope
 
