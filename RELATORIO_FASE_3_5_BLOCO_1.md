@@ -6,16 +6,22 @@
 
 ## STEP 0 — Pré-voo
 
-| Item | Resultado |
-|---|---|
-| Versão CONTRACTS_GEDEON.md | v1.13 ✅ |
-| Princípios citados | §13.1, §13.3, §13.4 ✅ |
-| Planilha VT_VR | não localizada como arquivo (usada como referência embutida no prompt) |
+```
+grep "Versão:" CONTRACTS_GEDEON.md          → **Versão:** 1.13
+grep -c "^## §2[0-9]\." CONTRACTS_GEDEON.md → 0
+  (Nota: formato real é "## §20 — Título" sem ponto — padrão correto; §20-§22 existem)
+  grep -c "^## §2[0-9]" (sem ponto) → 3 (§20, §21, §22)
+ls uploads/VT_VR*                           → ⚠️ planilha não encontrada (ref embutida no prompt)
+ls uploads/GEDEON_Arquitetura*              → ⚠️ não encontrada
+```
 
-**O que este bloco faz:**
-1. Migration Alembic: ALTER condominios + 3 tabelas novas + 3 colunas em onvio_documents
-2. Seed 11 condomínios (grafia oficial GEDEON) com FK para clients CRM
-3. Seed 47 alocações de funcionários CLT nos 7 condomínios com folha + escritório
+**Resposta obrigatória STEP 0:**
+- [x] Versão contrato: **1.13**
+- [x] Princípios citados: §13.1 (Chesterton — investigar clients antes de criar condominios), §13.3 (Docs antes de código), §13.4 (Escopo Sagrado)
+- [x] O que vai fazer em 3 linhas:
+  1. Alterar tabela `condominios` (já existe) adicionando nome_normalizado/tipo_servico/tem_folha_clt/client_id
+  2. Criar employee_alocacoes, kit_documental_templates, kits_gerados + 3 cols em onvio_documents
+  3. Semear 11 condominios linkados ao CRM e ~49 alocações de funcionários CLT
 
 ---
 
@@ -59,13 +65,34 @@ RESIDENCIAL LARANJEIRAS VILLAGE        | 24632786000128
 - **10/10 matches** ✅
 
 ### 1.5 Mock data em clients/employees
-Nenhum dado mock identificado nos registros reais.
+```sql
+SELECT id, nome FROM clients WHERE nome ILIKE '%test%' OR nome ILIKE '%mock%'
+→ (0 rows)
+```
+Nenhum dado mock identificado.
 
-### 1.6 Funcionários
-58 funcionários, todos com `tipo_contrato=NULL` (CLT por padrão).
+### 1.6 Funcionários ativos
+```sql
+SELECT COUNT(*) FROM employees  → 58
+-- Nota: employees não tem coluna 'ativo'; todos os 58 são considerados ativos
+-- SELECT id, nome, cpf, cargo FROM employees ORDER BY nome LIMIT 10:
+ADAILSON SERRA ALVES | 03527554238 | AGENTE DE PORTARIA
+ADEMIR SALUSTIANO DE SOUZA FILHO | 00480990239 | AGENTE DE SERVIÇOS GERAIS
+AILTON CESAR VASCONCELOS | 73909629253 | AGENTE DE PORTARIA
+ANDREA GONÇALVES DOS SANTOS | 78282705268 | AGENTE DE PORTARIA
+ANDREW COSTA VASCONCELOS | 70120309254 | Agente de Servicos Gerais
+...
+```
 
-### 1.7 Alembic
-Head antes: `9d91ef5c61f6` (sprint83_gedeon_fase_b2_extraction)
+### 1.7 Alembic current + history
+```
+alembic current → sprint84_bloco1_condominios (head)
+alembic history (top 3):
+  9d91ef5c61f6 -> sprint84_bloco1_condominios (head)
+  sprint82b_gedeon_schema_fix -> 9d91ef5c61f6
+  sprint82_gedeon_fase3_onvio -> sprint82b_gedeon_schema_fix
+```
+Head antes da migration: `9d91ef5c61f6` (sprint83_gedeon_fase_b2_extraction)
 
 ### 1.8 Docs por condomínio inferido (H10)
 ```
@@ -214,10 +241,25 @@ ONVIO NEW COLS: ['doc_scope', 'condominio_id', 'referente_a_employee_id'] ✅
 
 ## STEP 9 — Commits
 
-| Tipo | Conteúdo |
-|---|---|
-| docs | CONTRACTS_GEDEON v1.14 §22 |
-| feat | Migration sprint84 + seeders condominios + alocações |
+```bash
+# Commit 1 — docs (ANTES do código — §13.3)
+git add CONTRACTS_GEDEON.md
+git commit -m "docs(gedeon): CONTRATO v1.14 — FASE 3.5 BLOCO 1 fundação"
+→ hash: 9532b14c
+
+# Commit 2 — código
+git add backend/alembic/versions/ backend/scripts/seed_condominios_fase_3_5.py \
+         backend/scripts/seed_alocacoes_fase_3_5.py RELATORIO_FASE_3_5_BLOCO_1.md
+git commit -m "feat(gedeon): FASE 3.5 BLOCO 1 — fundação"
+→ hash: b2ca4d3d
+```
+
+| Hash | Tipo | Conteúdo |
+|---|---|---|
+| `9532b14c` | docs | CONTRACTS_GEDEON v1.14 §22 |
+| `b2ca4d3d` | feat | Migration sprint84 + seeders condominios + alocações + relatório |
+
+Branch: `feature/people-management-reorganization` → pushed ✅
 
 ---
 
@@ -234,7 +276,7 @@ ONVIO NEW COLS: ['doc_scope', 'condominio_id', 'referente_a_employee_id'] ✅
 | 7 | STEP 6 — 47/49 alocações + relatório (2 não encontrados) | ✅ |
 | 8 | STEP 7 — 5 testes 🔴 passam (A,B,C,D,E) | ✅ |
 | 9 | STEP 8 — CONTRATO v1.14 com §22 | ✅ |
-| 10 | STEP 9 — 2 commits separados + push | ✅ (após) |
+| 10 | STEP 9 — 2 commits separados + push | ✅ `9532b14c` + `b2ca4d3d` |
 | 11 | Zero toques em zonas proibidas | ✅ |
 | 12 | 10/11 condominios com client_id linkado (ESCRITÓRIO também) | ✅ 11/11 |
 | 13 | INV-3 Migration reversível | ✅ |
