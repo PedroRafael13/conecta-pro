@@ -1,7 +1,7 @@
 # RELATÓRIO CPRO11 T6 — Higiene de Dados CRM/Vendas + Auditoria Cruzada
-**Data:** 2026-04-20
-**Sessão:** tmux-t6 [module: crm]
-**Contrato:** v1.3 (atualizado nesta sessão, era v1.0)
+**Terminal:** tmux-t6 [module: crm]
+**Início:** 2026-04-20 20:11 UTC  **Fim:** 2026-04-20 21:15 UTC  **Duração:** ~1h
+**Contrato:** v1.0 (início) → v1.4 (fim desta sessão)
 
 ---
 
@@ -29,7 +29,18 @@ docker exec conecta-pro-postgres pg_dump -U postgres -d conecta_pro \
 
 ---
 
-## STEP 2.1 — Validação H1-H8
+## STEP 2.1 — Validação H1-H8 (tabela obrigatória)
+
+| H | Declarado | Medido | Ação tomada |
+|---|---|---|---|
+| H1 | Life Centro existe em clients | 0 rows — não existe | Lead preservado (tem 1 opportunity). **Cenário B.** Requer CNPJ de Jordan. |
+| H2 | Duplicata CNPJ 00000000000000 × 2 | Confirmado: 2 rows | Removido "Matriz escritório" em cascata (kit_items→kits→condo→client) |
+| H3 | PREFEITURA TESTE tem 0 FK refs | 0 opp, 0 mktg_leads | Deletados 2× PREFEITURA TESTE + PREFEITURA MANAUS |
+| H4 | crm_activities mock tem 0 FK refs | Confirmado: sem FK reversa | Deletado "Teste auditoria" |
+| H5 | crm_contacts mock tem 0 FK refs | Confirmado: sem FK reversa | Deletado "Teste" |
+| H6 | commission_rules vazia = intencional | `commission_controller.py` completo, schemas `CommissionRule*` existem | Schema OK, sem dados cadastrados. **NÃO é bug.** |
+| H7 | lead_scores vazia = ML não executou | `LeadScorer` em analytics, Celery beat: **NÃO scheduled** | ML existe, nunca disparado automaticamente. **NÃO é bug.** |
+| H8 | pricing_simulations = feature scaffolded | Zero POST endpoint CRM, zero `useCreateSimulation` no frontend | CPQ sprint futura. **NÃO é bug.** |
 
 ### H1: Life Centro (P0.9)
 
@@ -179,4 +190,42 @@ Para FASE 2 executar:
 
 ---
 
-CPRO11 T6 FASE 1 OK — AGUARDANDO T4 + T5 PARA FASE 2
+## Cenário Identificado
+
+**Cenário B** (H1 refutada — Life Centro não existe em clients):
+- Lead `5839bcd2` status=converted, client_id=NULL, 1 opportunity vinculada
+- Cliente "CONDOMINIO LIFE CENTRO" **não existe** em `clients`
+- Ação: lead preservado por §13.1. `leads.client_id` fica IS NULL até Jordan fornecer o CNPJ real e o registro ser criado manualmente.
+
+**Cenário C** ocorreu para H2 (duplicata tinha contratos em cascata via condomínio):
+- A strategy padrão "DELETE FROM clients WHERE CNPJ duplicado" falhou (FK cascata oculta)
+- Investigação §13.1 revelou: condo TEST-COND-001 → 29 kit_items + 4 kits
+- Resolvido com deleção em cascata na ordem correta
+
+---
+
+## FASE 2 — Cross-Audit (AGUARDANDO T4 + T5)
+
+| Item | Status |
+|---|---|
+| T4 §23.1: enum `contractstatus` existe? | ⏳ AGUARDANDO |
+| T4: 3 endpoints P0.1 → 200 | ⏳ AGUARDANDO |
+| T4: KPIs corretos (leads_conversion_rate > 0, MRR ≠ null) | ⏳ AGUARDANDO |
+| T5 §23.2: CIC 10 telas sem React Error #31 / R$ NaN | ⏳ AGUARDANDO (INV-7: CIC obrigatório, não só curl) |
+| 49 endpoints re-testados — tabela delta | ⏳ AGUARDANDO |
+
+---
+
+## 🎯 VEREDITO
+
+**RETER**
+
+Justificativa: FASE 1 concluída (8/8 testes ✅). FASE 2 bloqueada: T4 (§23.1) e T5 (§23.2) ainda não reportaram conclusão. Para LIBERAR, todos os 5 itens acima devem ser confirmados.
+
+## PRÓXIMO PASSO
+- Monitorar §23.1 + §23.2 no contrato
+- Quando T4 e T5 estiverem ✅: executar STEP 5 (5.1 → 5.2 CIC → 5.3 → 5.4 LIBERAR)
+
+---
+
+CPRO11 T6 FASE 1 OK — VEREDITO: RETER (AGUARDANDO T4 + T5 PARA FASE 2)
