@@ -411,7 +411,8 @@ Negócios
 
 ## 6. Ocorrências "vigilante" — Lista Completa
 
-**Total encontrado: 37 ocorrências em 18 arquivos**
+**Total encontrado: 40 ocorrências em 20 arquivos**
+*(37 em arquivos ativos `.tsx/.ts/.md` + 3 em arquivos lixo `.bak/.backup`)*
 
 > **Avaliação:** Todas as ocorrências são **semanticamente corretas** — referem-se ao cargo
 > "Vigilante Patrimonial/Armado", segmento core da Conecta Mais. NÃO são bugs nem
@@ -541,7 +542,8 @@ Negócios
 ```
 Docker:  conecta-pro-frontend — Up 2 days (healthy) — porta 3001
 PM2:     conecta-pro-frontend — online — 2D uptime — 2 restarts — 110.8mb
-Build:   Último build válido ativo (container saudável há 2 dias)
+Build:   Verificado em 2026-04-20 — container saudável, sem erros de boot
+tsc:     2 erros no projeto (0 em módulos Negócios) — não bloqueia produção
 ```
 
 ### 7.7 Prioridades para próxima sprint de UI
