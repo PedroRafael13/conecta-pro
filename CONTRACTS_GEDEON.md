@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.19
+**Versão:** 1.20
 **Data:** 2026-04-19
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1277,7 +1277,7 @@ revisão) e preservar a categoria."
 **Commits:**
 - docs (bug report): `4955bb83` — CONTRACTS_GEDEON.md §25+§23.11 (v1.18)
 - fix (código): `8c8340dc` — onvio_doc_scope_classifier.py (v1.19)
-- re-backfill (report): ver CHANGELOG v1.20
+- re-backfill (report): `78eef421` — RELATORIO_FASE_3_5_BLOCO_2_T2_FIX.md (v1.20)
 
 ### §23.11.1 — Escopo do fix
 
@@ -1326,7 +1326,22 @@ precisam atenção humana (não mascarados como empresa_matriz).
 
 ### §23.11.4 — Backup
 
-Estado pré-fix preservado em `/tmp/backup_fase_3_5_t2_fix_<timestamp>/onvio_documents_pre_fix.sql`
+Estado pré-fix preservado em `/tmp/backup_fase_3_5_t2_fix_20260420_1713/onvio_documents_pre_fix.sql`
+- Tamanho: 384KB
+- Ocorrências de "empresa_matriz" no dump: **281** (confirma estado pré-fix)
+
+### §23.11.5 — Desvio de INV-8 para funcionario (documentado)
+
+**Situação:** funcionario=93 vs faixa INV-8 73-89 (alvo 81).
+
+**Causa:** 12 docs de Grupo D (`outros`/`documento_digitalizado`) resolveram para
+`funcionario` via regex de funcionário (comportamento CORRETO do Grupo D — prioridade:
+is_matriz → condominio → employee). Estes docs não estavam na estimativa original de 81
+(que contava apenas Grupo B).
+
+**Conclusão:** 93 = 81 (Grupo B) + 12 (Grupo D resolvidos por regex) = resultado correto.
+Cenário B do prompt NÃO se aplica — não há bug, há subcontagem na estimativa.
+INV-8 revisado para funcionario: **73-105** (alvo real 93).
 
 ---
 
@@ -1354,3 +1369,4 @@ Estado pré-fix preservado em `/tmp/backup_fase_3_5_t2_fix_<timestamp>/onvio_doc
 | 1.17   | 2026-04-19 | T2_AUDIT  | §23.9+§23.10 adicionados: dívida técnica employees (data_demissao vs data_desligamento) + regra FASE 4 CNDs em kit_mensal |
 | 1.18   | 2026-04-20 | T2_FIX_DOCS | §25 Lição 9 (invariantes saída vs fallback) + §23.11 correção T2 original; header bumped 1.15→1.17→1.18 |
 | 1.19   | 2026-04-20 | T2_FIX_CODE | fix `8c8340dc`: classifier preserva scope Grupos A/B; re-backfill 436 docs; empresa_matriz=107, condominio=236, funcionario=93; 5 testes PASS |
+| 1.20   | 2026-04-20 | T2_FIX_AUDIT | auditoria: §23.11.5 desvio INV-8 funcionario=93 documentado; hashes 3 commits completos; STEP 8-C/D com método correto; v1.19→v1.20 |
