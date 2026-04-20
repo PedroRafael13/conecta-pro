@@ -98,7 +98,6 @@ export function KitDetalheModal({ kit, open, onClose }: KitDetalheModalProps) {
                     <tr>
                       <th className="p-2 text-left font-medium">Tipo</th>
                       <th className="p-2 text-left font-medium">Escopo</th>
-                      <th className="p-2 text-left font-medium">Obrigatório</th>
                       <th className="p-2 text-left font-medium">Motivo</th>
                     </tr>
                   </thead>
@@ -107,13 +106,6 @@ export function KitDetalheModal({ kit, open, onClose }: KitDetalheModalProps) {
                       <tr key={`${d.tipo_documento}-${i}`} className="border-t">
                         <td className="p-2">{d.tipo_documento}</td>
                         <td className="p-2 text-gray-500">{d.escopo}</td>
-                        <td className="p-2">
-                          {d.obrigatorio ? (
-                            <Badge className="bg-red-100 text-red-800 border-red-300">Sim</Badge>
-                          ) : (
-                            <span className="text-gray-400">Não</span>
-                          )}
-                        </td>
                         <td className="p-2 text-gray-600">{MOTIVO_LABELS[d.motivo]}</td>
                       </tr>
                     ))}

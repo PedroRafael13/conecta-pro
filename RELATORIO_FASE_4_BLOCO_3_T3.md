@@ -165,7 +165,7 @@ export function useKitCompletude(condominioId, mesRef) { ... } // queryKey: ['ki
 | Arquivo | Linhas | Descrição |
 |---|---|---|
 | `KitCard.tsx` | 75 | Card com cores por faixa %, badge SEM KIT para administrativo |
-| `KitDetalheModal.tsx` | 129 | Dialog com 2 tabs "Docs Presentes" \| "Docs Faltantes" |
+| `KitDetalheModal.tsx` | 121 | Dialog com 2 tabs "Docs Presentes" (4 cols) \| "Docs Faltantes" (3 cols: tipo, escopo, motivo — §27.7) |
 | `KitKPIs.tsx` | 52 | 4 KPIs: total, completude confirmada, total, revisão |
 | `MesRefSelector.tsx` | 42 | Dropdown 12 meses gerados dinamicamente |
 
@@ -245,7 +245,7 @@ curl -sL http://127.0.0.1:3001/modulos/gestao-pessoas/ged/kits → 200  ✅
 | 🔴 B — Zero `any` em todos os arquivos | ✅ `grep -c ': any\|<any>\|as any'` → 7 × 0 |
 | 🔴 C — BUG 6 (4 camadas) validado | ✅ Camadas 1-4 todas PASS |
 | 🔴 D — KitCard administrativo edge case (INV-14) | ✅ `tipo_servico === 'administrativo'` → badge "SEM KIT" presente em KitCard.tsx:31+53 |
-| 🔴 E — Regressão banco intacto | ✅ `condominios=11, kit_documental_templates=38` (sem mudança BLOCO 2) |
+| 🔴 E — Regressão backend + T1 intactos | ✅ `30 passed` (`test_kit_builder_service.py` via `docker exec conecta-pro-backend python3 -m pytest`) + `condominios=11, kit_documental_templates=38` |
 
 ---
 
