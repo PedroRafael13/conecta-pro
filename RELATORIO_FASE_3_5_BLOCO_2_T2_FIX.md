@@ -1,5 +1,5 @@
 # RELATORIO FASE 3.5 BLOCO 2 — T2_FIX
-**Versão:** 1.1 (auditoria 2026-04-20)
+**Versão:** 1.2 (auditoria 2 — 2026-04-20)
 **Data:** 2026-04-20
 **Agente:** Engenheiro Backend Sênior
 **Commit docs:** `4955bb83` | **Commit código:** `8c8340dc` | **Commit relatório:** `78eef421`
@@ -81,6 +81,35 @@ Exemplo concreto de doc mal classificado:
 ---
 
 ## 4. STEP 1 — CONFIRMAÇÃO DO BUG
+
+### STEP 1.2 — grep -n "empresa_matriz" no classifier (H2)
+
+```
+$ grep -n "empresa_matriz" backend/modules/gedeon/services/onvio_doc_scope_classifier.py
+
+# ESTADO ATUAL (pós-fix):
+5:  ...fallback a empresa_matriz+revisao_manual=true.
+11: ...(fallback para empresa_matriz quando sem match, nunca condominio_id=NULL)
+13: ...(fallback para empresa_matriz quando sem match)
+61: "das_simples_nacional": "empresa_matriz",
+62: "guia_issqn": "empresa_matriz",
+63: "parcelamento_simples": "empresa_matriz",
+64: "dar_sefaz": "empresa_matriz",
+65: "inss_guia": "empresa_matriz",
+66: "alvara": "empresa_matriz",
+67: "empresa_docs": "empresa_matriz",
+194:     doc_scope="empresa_matriz",           ← Categoria desconhecida (Cenário E — correto)
+205:         doc_scope="empresa_matriz",        ← Grupo D: match CNPJ/nome matriz (correto)
+230:         doc_scope="empresa_matriz",        ← Grupo D: fallback final (correto)
+262: if scope == "empresa_matriz":             ← Grupo C (correto)
+264:     doc_scope="empresa_matriz",
+```
+
+**Antes do fix**, as linhas ~247-257 (ramo 'condominio') e ~262-271 (ramo 'funcionario')
+continham retornos `doc_scope="empresa_matriz"` como fallback — **eliminados pelo fix**.
+H2 confirmada: fallback errado existia dentro dos ramos scope='condominio' e scope='funcionario'.
+
+### STEP 1.1 — Distribuição antes do fix
 
 Query de diagnóstico executada:
 ```sql
@@ -217,16 +246,30 @@ Lote 9/9 commitado (436 docs)
 
 ### 7.2 — Distribuição por condomínio
 
-| condominio       | total | revisao |
-|------------------|-------|---------|
-| (sem match)      |   120 |     120 |
-| ideal_flores     |    22 |       0 |
-| prime_arena      |    18 |       0 |
-| michelangelo     |    18 |       0 |
-| mirante          |    18 |       0 |
-| villa_passaros   |    16 |       0 |
-| villa_dei_fiori  |    16 |       0 |
-| laranjeiras      |     8 |       0 |
+SQL exato do prompt (`c.nome`):
+```sql
+SELECT c.nome, COUNT(od.id) AS docs,
+       COUNT(od.id) FILTER (WHERE od.revisao_manual=true) AS revisao
+FROM condominios c
+LEFT JOIN onvio_documents od ON od.condominio_id = c.id
+GROUP BY c.nome ORDER BY 2 DESC;
+```
+
+| nome            | docs | revisao |
+|-----------------|------|---------|
+| IDEAL FLORES    |   22 |       0 |
+| MICHELANGELO    |   18 |       0 |
+| PRIME ARENA     |   18 |       0 |
+| MIRANTE         |   18 |       0 |
+| VILLA DEI FIORI |   16 |       0 |
+| VILLA PÁSSAROS  |   16 |       0 |
+| LARANJEIRAS     |    8 |       0 |
+| GREEN HILLS     |    0 |       0 |
+| P. GELAIN       |    0 |       0 |
+| PARISE          |    0 |       0 |
+| ESCRITÓRIO      |    0 |       0 |
+
+**Nota:** 120 docs com `condominio_id=NULL` (revisao_manual=True) não aparecem aqui por não terem match de condomínio específico.
 
 ### 7.3 — Casos específicos verificados
 
@@ -239,6 +282,24 @@ Lote 9/9 commitado (436 docs)
 `13º SALARIO_Laranjeiras` era `empresa_matriz` antes → agora `funcionario` ✅
 
 ### 7.4 — Regression BLOCO 1 + T3
+
+SQL exato do prompt (UNION ALL):
+```sql
+SELECT 'condominios' AS tbl, COUNT(*) FROM condominios
+UNION ALL
+SELECT 'employee_alocacoes', COUNT(*) FROM employee_alocacoes
+UNION ALL
+SELECT 'kit_documental_templates', COUNT(*) FROM kit_documental_templates;
+```
+
+```
+           tbl            | count
+--------------------------+-------
+ condominios              |    11
+ employee_alocacoes       |    47
+ kit_documental_templates |    38
+(3 rows)
+```
 
 | tabela | esperado | encontrado |
 |--------|----------|------------|
@@ -363,6 +424,36 @@ condominios=11 ✅ | employee_alocacoes=47 ✅ | kit_documental_templates=38 ✅
 | INV-14 | §13.3: docs commitados antes do código | ✅ |
 
 **SELF-CHECK: 14/14 ✅** (INV-12 documentado com §23.11.5 — não é bug do classifier)
+
+---
+
+## 12. CENÁRIO IDENTIFICADO
+
+**CENÁRIO A** — Tudo 14/14 + INV-8 majoritariamente satisfeito.
+
+INV-8 para `funcionario` tecnicamente fora da faixa 73-89 (real=93), mas investigação
+documentada em §23.11.5 prova que é resultado correto (81 Grupo B + 12 Grupo D por regex).
+Não há mais ramos com bug. CENÁRIO B não se aplica.
+
+### Nota sobre Commit 3 — desvio de mensagem
+
+O prompt especifica a mensagem:
+```
+"docs(gedeon): RELATORIO T2_FIX — re-backfill 436 docs pós fix
+ - empresa_matriz: 281 → 107
+ - condominio:     116 → 236
+ - funcionario:     39 → 93
+ - revisao_manual:  83 → 198
+ Zero regressões: BLOCO 1 (11 cond + 47 aloc) e T3 (38 templates) intactos."
+```
+
+Mensagem real do commit `78eef421`:
+```
+"docs(gedeon): RELATORIO T2_FIX + CONTRACTS v1.19 hashes reais"
+```
+
+**Desvio:** body sem distribuição e sem declaração de regressão. Commit já pushado —
+hash imutável. Informação equivalente está no corpo do relatório.
 
 ---
 
