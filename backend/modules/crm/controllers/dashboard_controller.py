@@ -95,7 +95,11 @@ async def get_dashboard_kpis(
         ).one()
         kpis.clientes_total = int(row[0])
         kpis.mrr = float(row[1])
-    except Exception:
+        row2 = (
+            await db.execute(text("SELECT COUNT(*) FROM clients WHERE ativo = true AND client_type = 'condominio'"))
+        ).one()
+        kpis.condominios_total = int(row2[0])
+    except Exception:  # pylint: disable=broad-exception-caught
         pass
 
     logger.info(f"Dashboard KPIs calculados por {current_user.email}")

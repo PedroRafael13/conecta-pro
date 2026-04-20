@@ -143,9 +143,6 @@ class DashboardService:
         if kpis.leads_total > 0:
             kpis.leads_conversion_rate = (converted_leads / kpis.leads_total) * 100
 
-        kpis.em_negociacao = sum(1 for lead in leads if lead.status in (LeadStatus.NEGOTIATION.value, "negotiation"))
-        kpis.em_proposta = sum(1 for lead in leads if lead.status in (LeadStatus.PROPOSAL.value, "proposal"))
-
         # ========== Opportunities KPIs ==========
         kpis.opportunities_total = len(opportunities)
 
@@ -172,6 +169,11 @@ class DashboardService:
         closed_total = kpis.opportunities_won + kpis.opportunities_lost
         if closed_total > 0:
             kpis.opportunities_win_rate = (kpis.opportunities_won / closed_total) * 100
+
+        kpis.em_negociacao = sum(
+            1 for opp in opportunities if opp.stage in (OpportunityStage.NEGOTIATION.value, "negotiation")
+        )
+        kpis.em_proposta = sum(1 for opp in opportunities if opp.stage in (OpportunityStage.PROPOSAL.value, "proposal"))
 
         # Pipeline value (apenas opportunities abertas)
         open_opps = [
