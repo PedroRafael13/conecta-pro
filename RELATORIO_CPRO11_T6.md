@@ -149,14 +149,61 @@ COMMIT
 
 ## STEP 6 — FASE 2 (Auditoria Cruzada)
 
-**Status:** AGUARDANDO §23.1 (T4) + §23.2 (T5)
+### STEP 5.1 — Pré-validação T4 (executado em 2026-04-20 ~21:35 UTC)
 
-Para FASE 2 executar:
-1. Verificar `SELECT typname FROM pg_type WHERE typname='contractstatus'`
-2. Testar 3 endpoints P0.1 (antes 500, esperado 200)
-3. CIC E2E 10 telas CRM
-4. Re-executar 49 GET endpoints — tabela before/after
-5. Veredito binário: LIBERAR / RETER
+#### 5.1.1 — Enum `contractstatus`
+
+```sql
+SELECT typname, typtype FROM pg_type WHERE typname='contractstatus';
+-- → contractstatus|e  ✅
+SELECT enum_range(NULL::contractstatus);
+-- → {draft,pending_signature,active,suspended,cancelled,terminated}  ✅
+```
+
+**Resultado:** enum existe e tem valores lowercase ✅
+
+#### 5.1.2 — 3 endpoints P0.1
+
+| Endpoint | Esperado | Obtido | Erro |
+|---|---|---|---|
+| `GET /api/v1/crm/contracts/alerts` | 200 | **500** ❌ | `InvalidTextRepresentationError: invalid input value for enum contractstatus: "ACTIVE"` |
+| `GET /api/v1/crm/contracts/templates` | 200 | **500** ❌ | `InvalidTextRepresentationError: invalid input value for enum contractstatus: "ACTIVE"` |
+| `GET /api/v1/crm/proposals/templates` | 200 | **500** ❌ | `ValueError: invalid UUID 'templates'` — rota `/{proposal_id}` capturando `/templates` no processo em execução |
+
+**Causa raiz (contracts):** T4 migrou DB enum para lowercase mas `Enum(ContractStatus)` no SQLAlchemy usa `.name` do enum Python (`"ACTIVE"`) em vez de `.value` (`"active"`). Fix: `values_callable=lambda obj: [e.value for e in obj]`. Bug T4.
+
+**Causa raiz (proposals):** Container iniciou em 20:14 UTC; T4 copiou `proposal_controller.py` às 20:31 UTC via `docker cp` + `kill -HUP 1`. O processo uvicorn retomou mas manteve rota `/{proposal_id}` antes de `/templates` na memória. Container precisa ser reiniciado (não apenas kill -HUP). Bug T4.
+
+**Resultado:** 0/3 endpoints → 200 ❌
+
+#### 5.1.3 — KPIs
+
+```json
+{
+  "leads_conversion_rate": 0.0,  ← esperado: ~90.9% (10/11 leads converted)
+  "leads_total": 11,
+  "opportunities_open": 5,
+  "pipeline_value": 63000.0
+  // AUSENTES: clientes_total, condominios_total, mrr, em_negociacao, em_proposta
+}
+```
+
+**Resultado:** campos `clientes_total`, `mrr`, `condominios_total`, `em_negociacao`, `em_proposta` ausentes da resposta; `leads_conversion_rate = 0.0` ❌ Bug T4 — §23.1 auto-reportou ✅ mas validação independente T6 contradiz.
+
+### STEP 5.2 — CIC E2E (T5 §23.2)
+
+**Status:** ⏳ BLOQUEADO — §23.2 não preenchido (T5 não concluído)
+
+### STEP 5.3 — Re-execução 49 endpoints
+
+**Status:** ⏳ BLOQUEADO — aguarda T5
+
+### STEP 5.4 — Veredito Final
+
+**RETER** — 3 critérios de LIBERAR não atendidos:
+1. ❌ 3/3 endpoints P0.1 ainda 500 (bugs T4 não corrigidos)
+2. ❌ KPIs incompletos (campos ausentes, leads_conversion_rate=0)
+3. ⏳ T5 §23.2 pendente (CIC E2E não validado)
 
 ---
 
@@ -204,15 +251,17 @@ Para FASE 2 executar:
 
 ---
 
-## FASE 2 — Cross-Audit (AGUARDANDO T4 + T5)
+## FASE 2 — Cross-Audit
 
 | Item | Status |
 |---|---|
-| T4 §23.1: enum `contractstatus` existe? | ⏳ AGUARDANDO |
-| T4: 3 endpoints P0.1 → 200 | ⏳ AGUARDANDO |
-| T4: KPIs corretos (leads_conversion_rate > 0, MRR ≠ null) | ⏳ AGUARDANDO |
-| T5 §23.2: CIC 10 telas sem React Error #31 / R$ NaN | ⏳ AGUARDANDO (INV-7: CIC obrigatório, não só curl) |
-| 49 endpoints re-testados — tabela delta | ⏳ AGUARDANDO |
+| T4 §23.1: enum `contractstatus` existe? | ✅ EXISTS (`typtype=e`, valores lowercase) |
+| T4: `contracts/alerts` → 200 | ❌ 500 — `InvalidTextRepresentationError: contractstatus "ACTIVE"` |
+| T4: `contracts/templates` → 200 | ❌ 500 — mesmo erro enum |
+| T4: `proposals/templates` → 200 | ❌ 500 — UUID error (`/{proposal_id}` capturando) |
+| T4: KPIs corretos | ❌ 5 campos ausentes + leads_conversion_rate=0.0 |
+| T5 §23.2: CIC 10 telas sem React Error #31 / R$ NaN | ⏳ AGUARDANDO (T5 não concluído) |
+| 49 endpoints re-testados | ⏳ AGUARDANDO T5 |
 
 ---
 
@@ -220,11 +269,13 @@ Para FASE 2 executar:
 
 **RETER**
 
-Justificativa: FASE 1 concluída (8/8 testes ✅). FASE 2 bloqueada: T4 (§23.1) e T5 (§23.2) ainda não reportaram conclusão. Para LIBERAR, todos os 5 itens acima devem ser confirmados.
+Justificativa: FASE 1 concluída (8/8 testes ✅). FASE 2 falhou na pré-validação T4 (STEP 5.1): 0/3 endpoints retornam 200, KPIs incompletos. Adicionalmente, T5 (§23.2) ainda não concluído. Para LIBERAR: T4 corrigir bugs do enum SQLAlchemy + routing proposals + KPIs; T5 executar CIC E2E.
 
 ## PRÓXIMO PASSO
-- Monitorar §23.1 + §23.2 no contrato
-- Quando T4 e T5 estiverem ✅: executar STEP 5 (5.1 → 5.2 CIC → 5.3 → 5.4 LIBERAR)
+- **T4:** corrigir `Enum(ContractStatus, values_callable=lambda obj: [e.value for e in obj])` no model + reiniciar container (não kill -HUP) para proposals/templates
+- **T4:** corrigir `DashboardKPIs` — campos `clientes_total`, `mrr`, `condominios_total` ausentes
+- **T5:** executar CIC E2E 10 telas + preencher §23.2
+- **T6:** quando ambos OK, re-executar STEP 5 completo
 
 ---
 

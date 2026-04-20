@@ -342,8 +342,16 @@ Após T4+T5+T6 reportarem OK, disparar **T7** em terminal novo com INV-1: "ZERO 
 - [x] P1.11 — mock crm_activities "Teste auditoria" removido ✅
 - [x] P1.12 — mock crm_contacts "Teste" removido ✅
 - [x] P1.14 — `commission_rules` investigado (§13.1) — **CONCLUSÃO: tabela vazia intencional**, 22 colunas OK, produto novo. Idem `lead_scores` e `pricing_simulations`. NÃO tocar.
-- [ ] Auditoria cruzada pós-T4-T5 — veredito: **AGUARDANDO §23.1 + §23.2**
-- [x] Commits: docs=`065f6032` (CONTRATO v1.3) · data=`8d7e163d` (script+backup+relatório)
+- [x] **STEP 5.1 executado** (2026-04-20 ~21:35 UTC) — pré-validação T4:
+  - enum `contractstatus` ✅ existe no DB, valores lowercase
+  - `contracts/alerts` → **500** ❌ (`InvalidTextRepresentationError: contractstatus "ACTIVE"` — ORM usa `.name` não `.value`)
+  - `contracts/templates` → **500** ❌ (mesmo erro enum)
+  - `proposals/templates` → **500** ❌ (UUID error — `/{proposal_id}` capturando em processo running; container iniciou 20:14, arquivo atualizado 20:31, kill -HUP insuficiente)
+  - KPIs: 5 campos ausentes (`clientes_total`, `mrr`, `condominios_total`, `em_negociacao`, `em_proposta`) + `leads_conversion_rate=0.0` ❌
+- [ ] STEP 5.2 CIC E2E — ⏳ BLOQUEADO (§23.2 T5 pendente)
+- [ ] STEP 5.3 49 endpoints — ⏳ BLOQUEADO
+- [x] **VEREDITO T6: RETER** — FASE 1 ✅; FASE 2 falhou STEP 5.1 (T4 bugs) + T5 pendente
+- [x] Commits: docs=`065f6032` (CONTRATO v1.3) · data=`8d7e163d` (script+backup+relatório) · step51=pendente
 - [x] Backup: `reconhecimento/cpro11/t6_backups/tables_backup_20260420_2014.sql` (32KB)
 - [x] Script: `scripts/cpro11_t6_hygiene.sql` — 6 blocos, 8/8 testes ✅
 
