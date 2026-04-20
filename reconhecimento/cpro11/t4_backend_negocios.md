@@ -8,20 +8,80 @@
 
 ## STEP 1 — Descoberta de Estrutura
 
-Arquivos .py relevantes (find + grep):
-
-```
-modules/crm/            → 41 arquivos .py
-modules/bidding/        → 78 arquivos .py
-modules/comercial/      → 8 arquivos __init__.py (stubs vazios)
-modules/inteligencia/   → 7 arquivos __init__.py (stubs vazios)
+```bash
+find /opt/conecta-pro/backend -type f \( -name "*.py" \) \
+  | xargs grep -l -iE "(crm|vendas|sales|marketing|licit|bidding|lead|opportunity|pipeline|campaign|propos|pricing|precific)" 2>/dev/null
 ```
 
-Principais subpastas encontradas:
-- `crm/{models,schemas,controllers,repositories,services,publishers.py}`
-- `bidding/{models,schemas,controllers,repositories,services,agents,integrations,tasks}`
-- `comercial/{leads,oportunidades,propostas,contratos,clientes,comissoes,metas,atividades}` — todos vazios
-- `inteligencia/{alertas,analytics,dashboards,exportacoes,kpis,relatorios}` — todos vazios
+**Resultado — arquivos .py que referenciam os 4 módulos (seleção relevante, 300+ total):**
+
+```
+# Módulo CRM (modules/crm/)
+modules/crm/__init__.py
+modules/crm/publishers.py
+modules/crm/controllers/client_controller.py
+modules/crm/controllers/commission_controller.py
+modules/crm/controllers/contact_controller.py
+modules/crm/controllers/contract_controller.py
+modules/crm/controllers/dashboard_controller.py
+modules/crm/controllers/lead_controller.py
+modules/crm/controllers/marketing_controller.py
+modules/crm/controllers/opportunity_controller.py
+modules/crm/controllers/proposal_controller.py
+modules/crm/models/commission.py
+modules/crm/models/contract.py
+modules/crm/models/lead.py
+modules/crm/models/opportunity.py
+modules/crm/models/proposal.py
+modules/crm/repositories/commission_repository.py
+modules/crm/repositories/contract_repository.py
+modules/crm/repositories/lead_repository.py
+modules/crm/repositories/opportunity_repository.py
+modules/crm/repositories/proposal_repository.py
+modules/crm/schemas/commission.py
+modules/crm/schemas/contract.py
+modules/crm/schemas/lead.py
+modules/crm/schemas/opportunity.py
+modules/crm/schemas/proposal.py
+modules/crm/services/commission_service.py
+modules/crm/services/contract_service.py
+modules/crm/services/crm_360_service.py
+modules/crm/services/dashboard_service.py
+modules/crm/services/lead_service.py
+modules/crm/services/pdf_generator.py
+modules/crm/services/pipeline_service.py
+modules/crm/services/pricing_engine.py
+modules/crm/services/proposal_service.py
+modules/crm/services/signature_integration.py
+
+# Módulo Licitações (modules/bidding/)
+modules/bidding/__init__.py
+modules/bidding/router.py
+modules/bidding/agents/{orchestrator,scout,analyst,assessor,pricer,compiler,sentinel,warrior,pdf_renderer}.py
+modules/bidding/controllers/{agent,certificate,contract,dispute,document,erp,opportunity,proposal,sync,tender}_controller.py
+modules/bidding/integrations/{pncp,comprasnet,licitacoes_e,ecompras_am,bll,portal_compras_publicas,receita_federal}/*.py
+modules/bidding/models/{analysis,assessment,certificate,company_document,dispute,measurement,opportunity,price_history,pricing,proposal,public_contract,sync_job,tender}.py
+modules/bidding/repositories/{contract,document,proposal,tender}_repository.py
+modules/bidding/schemas/{analysis,assessment,certificate,contract,dispute,document,opportunity,pipeline,pricing,proposal,tender}.py
+modules/bidding/services/{certificate,contract,document,edital_parser,erp_integration,notification,opportunity,pncp,pricing,proposal,sync,tender}_service.py
+modules/bidding/tasks/{dispute_tasks,notification_tasks,sync_tasks}.py
+modules/bidding/websockets/dispute_ws.py
+
+# Módulo Comercial (stub)
+modules/comercial/__init__.py  (único arquivo não-vazio relevante)
+
+# Outros arquivos que referenciam o domínio (analytics, AI, automation)
+modules/analytics/models/scoring/lead_scorer.py
+modules/analytics/models/forecasting/sales_forecaster.py
+modules/ai/contract_analysis/services/{clause_extractor,compliance_checker,risk_analyzer}.py
+modules/ai/conversation/services/intent_classifier.py
+modules/automation/workflow/services/workflow_engine.py
+celery_app.py
+infrastructure/event_bus/bus.py
+infrastructure/message_bus/events.py
+main_production.py
+alembic/versions/{7017a3795753,1ab7727d6644,d32dc56bebba,e5f7a8b9c0d1,f6g8h9i0j1k2,bidding_module_tables,sprint14,sprint44,sprint66,sprint71,sprint72}.py
+```
 
 ---
 
@@ -29,319 +89,451 @@ Principais subpastas encontradas:
 
 ### 1.1 Models
 
-**Tabela `leads`** — `models/lead.py`
+#### Tabela `leads` — `models/lead.py`
 
-| Campo | Tipo | Detalhes |
-|-------|------|----------|
-| id | UUID | PK, server_default |
-| name | str | nullable=False |
-| email | str | nullable=True |
-| phone | str | nullable=True |
-| company | str | nullable=True |
-| position | str | nullable=True |
-| company_size | str | nullable=True |
-| industry | str | nullable=True |
-| source | LeadSource (enum) | nullable=False |
-| status | LeadStatus (enum) | default='novo' |
-| score | int | default=0 |
-| probability | float | default=0.0 |
-| expected_value | float | default=0.0 |
-| notes | text | nullable=True |
-| assigned_to_id | FK→users | nullable=True |
-| last_contact_at | datetime | nullable=True |
-| next_contact_at | datetime | nullable=True |
-| is_active | bool | default=True |
-| created_at | datetime | server_default |
-| updated_at | datetime | onupdate |
+| Coluna | Tipo SQLAlchemy | Nullable | Default | FK |
+|--------|----------------|----------|---------|-----|
+| id | UUID | NO | gen_random_uuid() | — |
+| name | String(255) | NO | — | — |
+| email | String(255) | YES | — | — |
+| phone | String(20) | YES | — | — |
+| company | String(255) | YES | — | — |
+| position | String(100) | YES | — | — |
+| company_size | String(50) | YES | — | — |
+| industry | String(100) | YES | — | — |
+| source | Enum(LeadSource) | NO | 'other' | — |
+| status | Enum(LeadStatus) | NO | 'novo' | — |
+| score | Integer | NO | 0 | — |
+| probability | Float | NO | 0.0 | — |
+| expected_value | Float | NO | 0.0 | — |
+| notes | Text | YES | — | — |
+| assigned_to_id | UUID | YES | — | FK→users.id |
+| last_contact_at | DateTime | YES | — | — |
+| next_contact_at | DateTime | YES | — | — |
+| is_active | Boolean | NO | True | — |
+| created_at | DateTime | NO | now() | — |
+| updated_at | DateTime | NO | now() | — |
 
-Properties: `is_hot` (score≥70), `is_qualified`, `weighted_value`
+**Enums:**
+- `LeadSource`: website, referral, cold_call, email, social_media, event, other
+- `LeadStatus`: novo, qualificado, em_contato, proposta, ganho, perdido
 
-**Tabela `opportunities`** — `models/opportunity.py`
+**Relacionamentos:**
+```python
+assigned_to: Mapped[Optional["User"]] = relationship("User", foreign_keys=[assigned_to_id])
+```
 
-| Campo | Tipo | Detalhes |
-|-------|------|----------|
-| id | UUID | PK |
-| title | str | nullable=False |
-| description | text | nullable=True |
-| lead_id | FK→leads | nullable=True |
-| contact_name/email/phone | str | nullable=True |
-| company_name | str | nullable=True |
-| stage | OpportunityStage (enum) | qualification→needs_analysis→proposal→negotiation→closed_won→closed_lost |
-| priority | enum | low/medium/high/critical |
-| value | float | nullable=True |
-| probability | float | default=0.0 |
-| expected_close_date | date | nullable=True |
-| actual_close_date | date | nullable=True |
-| owner_id | FK→users | nullable=True |
-| loss_reason | LossReason (enum) | nullable=True |
-| competitor | str | nullable=True |
-| win_notes / loss_notes | text | nullable=True |
-| is_active | bool | default=True |
+**Properties:** `is_hot` (score≥70), `is_qualified` (status=qualificado), `weighted_value` (expected_value × probability)
 
-Properties: `weighted_value`, `is_open`, `is_won`, `is_lost`, `days_in_pipeline`, `is_overdue`
+---
 
-**Tabelas `proposals`, `proposal_items`, `proposal_templates`, `proposal_approvals`** — `models/proposal.py`
-- Status (10 estados): draft → sent → viewed → approved → accepted / rejected / expired / cancelled / revision_requested / under_revision
-- Tipo: standard / custom / renewal / amendment
-- Versioning: `parent_id` FK self-referencial
-- Valores: subtotal, discount_percent, discount_value, tax_rate, tax_value, total, installments
-- Datas: issue_date, valid_until, sent_at, viewed_at, responded_at
-- Workflow: `proposal_approvals` (approver_id, status, notes, approved_at)
+#### Tabela `opportunities` — `models/opportunity.py`
 
-**Tabelas `contracts`, `contract_items`, `contract_addendums`** — `models/contract.py`
-- Tipo: RECURRING / ONE_TIME
-- Status: DRAFT → PENDING_SIGNATURE → ACTIVE → SUSPENDED → CANCELLED → TERMINATED
-- Índice de ajuste: IGPM / IPCA / INPC / FIXED / CUSTOM
-- Serviços: SECURITY / REMOTE_GATEHOUSE / ELECTRONIC_SECURITY
-- Aditivos: `contract_addendums` (tipo, valor_anterior, valor_novo, motivo, data)
+| Coluna | Tipo | Nullable | Default | FK |
+|--------|------|----------|---------|-----|
+| id | UUID | NO | gen() | — |
+| title | String(255) | NO | — | — |
+| description | Text | YES | — | — |
+| lead_id | UUID | YES | — | FK→leads.id |
+| contact_name | String(255) | NO | — | — |
+| contact_email | String(255) | NO | — | — |
+| contact_phone | String(20) | YES | — | — |
+| company_name | String(255) | YES | — | — |
+| stage | Enum(OpportunityStage) | NO | QUALIFICATION | — |
+| priority | Enum(OpportunityPriority) | NO | MEDIUM | — |
+| value | Float | NO | 0.0 | — |
+| probability | Integer | NO | 10 | — |
+| expected_close_date | Date | YES | — | — |
+| actual_close_date | Date | YES | — | — |
+| owner_id | UUID | YES | — | FK→users.id |
+| loss_reason | Enum(LossReason) | YES | — | — |
+| competitor | String(255) | YES | — | — |
+| win_notes / loss_notes | Text | YES | — | — |
+| is_active | Boolean | NO | True | — |
 
-**Tabelas `commissions`, `commission_rules`, `commission_summaries`** — `models/commission.py`
-- Regras por vendedor, tipo de serviço, faixa de valor
-- Resumos mensais: `commission_summaries` (seller_id, year, month, total_value, status)
-- Status: PENDING / APPROVED / PAID / CANCELLED
+**Relacionamentos:**
+```python
+lead: Mapped[Optional["Lead"]] = relationship("Lead", foreign_keys=[lead_id])
+owner: Mapped[Optional["User"]] = relationship("User", foreign_keys=[owner_id])
+```
+
+**Properties:** `weighted_value`, `is_open`, `is_won`, `is_lost`, `days_in_pipeline`, `is_overdue`
+
+---
+
+#### Tabelas `proposals`, `proposal_items`, `proposal_templates`, `proposal_approvals` — `models/proposal.py`
+
+**`proposals`:**
+- Status (10): draft, sent, viewed, approved, accepted, rejected, expired, cancelled, revision_requested, under_revision
+- Versioning: `parent_id` FK self-ref
+
+**Relacionamentos:**
+```python
+items     = relationship("ProposalItem",    back_populates="proposal", cascade="all, delete-orphan")
+versions  = relationship("Proposal",        backref="parent", remote_side=[id])
+approvals = relationship("ProposalApproval",back_populates="proposal", cascade="all, delete-orphan")
+# ProposalItem → proposal = relationship("Proposal", back_populates="items")
+# ProposalApproval → proposal = relationship("Proposal", back_populates="approvals")
+```
+
+---
+
+#### Tabelas `contracts`, `contract_items`, `contract_addendums`, `contract_templates`, `contract_sla_reports`
+
+**Relacionamentos:**
+```python
+template  = relationship("ContractTemplate", back_populates="contracts")
+items     = relationship("ContractItem",     back_populates="contract", cascade="all, delete-orphan")
+addendums = relationship("ContractAddendum", back_populates="contract", cascade="all, delete-orphan")
+sla_reports = relationship("ContractSLAReport", back_populates="contract", cascade="all, delete-orphan")
+# ContractTemplate → contracts = relationship("Contract", back_populates="template")
+# ContractItem    → contract  = relationship("Contract", back_populates="items")
+# ContractAddendum→ contract  = relationship("Contract", back_populates="addendums")
+```
+
+---
+
+#### Tabelas `commission_rules`, `seller_commission_rules`, `commissions`, `commission_payments`, `commission_summaries`
+
+**Relacionamentos:**
+```python
+# CommissionRule:
+commissions  = relationship("Commission",           back_populates="rule")
+seller_rules = relationship("SellerCommissionRule", back_populates="rule")
+# SellerCommissionRule:
+rule = relationship("CommissionRule", back_populates="seller_rules")
+# Commission:
+rule     = relationship("CommissionRule",    back_populates="commissions")
+payments = relationship("CommissionPayment", back_populates="commission", cascade="all, delete-orphan")
+# CommissionPayment:
+commission = relationship("Commission", back_populates="payments")
+```
+
+---
 
 ### 1.2 Schemas (Pydantic v2)
 
-| Arquivo | Schemas principais |
-|---------|-------------------|
-| `schemas/lead.py` | LeadCreate, LeadUpdate, LeadResponse, LeadListResponse, LeadStats |
-| `schemas/opportunity.py` | OpportunityCreate, OpportunityUpdate, OpportunityResponse, PipelineStats, OpportunityClose |
-| `schemas/proposal.py` | ProposalCreate, ProposalUpdate, ProposalResponse, ProposalItemCreate, ProposalTemplateResponse, ApprovalCreate, ProposalListResponse |
-| `schemas/contract.py` | ContractCreate, ContractResponse, ContractDetailResponse, ContractListResponse, ContractStats, ContractAlert, ContractItem, ContractAddendum, AdjustmentResult, RenewalResult |
-| `schemas/commission.py` | CommissionCreate, CommissionResponse, CommissionRuleCreate, CommissionRuleResponse, CommissionStats, SellerCommissionStats, CommissionSummaryResponse, CommissionListResponse, CommissionDetailResponse |
+#### `schemas/lead.py`
+
+**Validators:**
+```python
+@field_validator("phone")
+def validate_phone(cls, v) -> str | None:
+    # Remove non-digits; requer 10–15 dígitos
+    digits = "".join(c for c in v if c.isdigit())
+    if len(digits) < 10 or len(digits) > 15:
+        raise ValueError("Telefone deve ter entre 10 e 15 dígitos")
+```
+
+**Schemas e campos:**
+
+| Schema | Campos principais |
+|--------|------------------|
+| `LeadBase` | name (str, min=2, max=255), email (EmailStr), phone (max=20), company, position, company_size, industry, source (LeadSource), notes |
+| `LeadCreate` | +assigned_to_id, expected_value (float, ge=0) |
+| `LeadUpdate` | Todos opcionais + status, next_contact_at |
+| `LeadResponse` | id, name, email, phone, company, position, company_size, industry, source, status, score, probability, expected_value, notes, assigned_to_id, last_contact_at, next_contact_at, is_active, created_at, updated_at |
+| `LeadStats` | total, by_status (dict), by_source (dict), avg_score, total_value |
+
+---
+
+#### `schemas/opportunity.py`
+
+| Schema | Campos principais |
+|--------|------------------|
+| `OpportunityBase` | title (min=1, max=255), description, contact_name, contact_email (EmailStr), contact_phone, company_name, value (float, ge=0), probability (int, ge=0, le=100), expected_close_date |
+| `OpportunityCreate` | +lead_id, stage (default=QUALIFICATION), priority (default=MEDIUM), owner_id |
+| `OpportunityCreateFromLead` | lead_id, title, description, value, probability (default=20), expected_close_date, priority, owner_id |
+| `OpportunityUpdate` | Todos opcionais |
+| `OpportunityResponse` | id + todos os campos + weighted_value, is_open, is_overdue, days_in_pipeline |
+| `PipelineStats` | total_value, weighted_value, by_stage (dict), win_rate, avg_deal_size |
+| `OpportunityClose` | won (bool), loss_reason, loss_notes, win_notes, actual_close_date |
+
+---
+
+#### `schemas/proposal.py`
+
+| Schema | Campos principais |
+|--------|------------------|
+| `ProposalCreate` | opportunity_id, title, type, description, valid_until (date), payment_terms, installments (int, ge=1, le=120), notes |
+| `ProposalItemCreate` | description, quantity (float, gt=0), unit_price (float, ge=0), discount_percent (float, ge=0, le=100) |
+| `ProposalTemplateCreate` | name, type, content (text) |
+| `ApprovalCreate` | approver_id, notes |
+| `ProposalResponse` | id, status, subtotal, discount_value, tax_value, total, items[], approvals[], created_at, viewed_at, responded_at |
+
+---
+
+#### `schemas/contract.py`
+
+| Schema | Campos |
+|--------|--------|
+| `ContractCreate` | proposal_id, type (RECURRING/ONE_TIME), start_date, end_date, value, adjustment_index, service_type, notes |
+| `ContractItem` | description, quantity, unit_price |
+| `ContractAddendum` | type, effective_date, value_before, value_after, description |
+| `AdjustmentResult` | old_value, new_value, adjustment_percent, index_used, reference_date |
+| `RenewalResult` | old_contract_id, new_contract_id, new_end_date |
+| `ContractAlert` | contract_id, type (expiring/review/adjustment), days_until, message |
+| `ContractStats` | total_active, total_value, by_type (dict), expiring_30d, expiring_90d |
+
+---
+
+#### `schemas/commission.py`
+
+| Schema | Campos |
+|--------|--------|
+| `CommissionRuleCreate` | name, type, percentage (float, ge=0, le=100), base_amount, service_type, min_value, max_value |
+| `CommissionCreate` | rule_id, reference_id, reference_type, base_value, notes |
+| `CommissionStats` | total_pending, total_approved, total_paid, by_seller (dict) |
+| `CommissionSummaryResponse` | seller_id, year, month, total_commissions, total_value, status |
+
+---
 
 ### 1.3 Routers / Endpoints
 
-**Prefix base:** `/api/v1/crm` | Auth: `CurrentActiveUser` (JWT Bearer)
+**Prefix base:** `/api/v1/crm` | **Auth:** `CurrentActiveUser` (JWT Bearer) | **Tags:** CRM
 
-**Leads (`/leads`)**
-| Método | Rota | Função |
-|--------|------|--------|
-| POST | `/` | Criar lead |
-| GET | `/` | Listar leads (filtros: status, source, assigned_to, score_min) |
-| GET | `/stats` | Estatísticas por status/source |
-| GET | `/{id}` | Detalhe |
-| PUT | `/{id}` | Atualizar |
-| PATCH | `/{id}/status` | Alterar status |
-| POST | `/{id}/recalculate-score` | Recalcular score |
-| GET | `/{id}/recommended-action` | Ação recomendada (IA) |
-| DELETE | `/{id}` | Remover |
+#### `/leads`
+| Método | Path | Função | Response Model |
+|--------|------|--------|----------------|
+| POST | `/` | create_lead | LeadResponse (201) |
+| GET | `/` | list_leads | LeadListResponse |
+| GET | `/stats` | get_lead_stats | LeadStats |
+| GET | `/{id}` | get_lead | LeadResponse |
+| PUT | `/{id}` | update_lead | LeadResponse |
+| PATCH | `/{id}/status` | update_lead_status | LeadResponse |
+| POST | `/{id}/recalculate-score` | recalculate_score | LeadResponse |
+| GET | `/{id}/recommended-action` | get_recommended_action | dict |
+| DELETE | `/{id}` | delete_lead | 204 |
 
-**Opportunities (`/opportunities`)**
-| Método | Rota | Função |
-|--------|------|--------|
-| POST | `/` | Criar oportunidade |
-| POST | `/from-lead` | Criar a partir de lead |
-| GET | `/` | Listar |
-| GET | `/pipeline/stats` | Funil de vendas ponderado |
-| GET | `/{id}` | Detalhe |
-| PUT | `/{id}` | Atualizar |
-| PATCH | `/{id}/stage` | Mover de estágio |
-| POST | `/{id}/close` | Fechar (won/lost) |
-| DELETE | `/{id}` | Remover |
+#### `/opportunities`
+| Método | Path | Função | Response Model |
+|--------|------|--------|----------------|
+| POST | `/` | create_opportunity | OpportunityResponse (201) |
+| POST | `/from-lead` | create_from_lead | OpportunityResponse (201) |
+| GET | `/` | list_opportunities | OpportunityListResponse |
+| GET | `/pipeline/stats` | get_pipeline_stats | PipelineStats |
+| GET | `/{id}` | get_opportunity | OpportunityResponse |
+| PUT | `/{id}` | update_opportunity | OpportunityResponse |
+| PATCH | `/{id}/stage` | update_stage | OpportunityResponse |
+| POST | `/{id}/close` | close_opportunity | OpportunityResponse (201) |
+| DELETE | `/{id}` | delete_opportunity | 204 |
 
-**Proposals (`/proposals`)**
-| Método | Rota | Função |
-|--------|------|--------|
-| POST | `/` | Criar proposta |
-| POST | `/from-opportunity` | Criar a partir de oportunidade |
-| GET | `/` | Listar |
-| GET | `/{id}` | Detalhe |
-| PUT | `/{id}` | Atualizar |
-| PATCH | `/{id}/status` | Alterar status |
-| POST | `/{id}/approve` | Aprovar |
-| POST | `/{id}/send` | Enviar ao cliente |
-| DELETE | `/{id}` | Remover |
-| GET | `/templates` | Listar templates |
-| POST | `/templates` | Criar template |
+#### `/proposals`
+| Método | Path | Função | Response Model |
+|--------|------|--------|----------------|
+| POST | `/` | create_proposal | ProposalResponse (201) |
+| POST | `/from-opportunity` | create_from_opportunity | ProposalResponse (201) |
+| GET | `/` | list_proposals | ProposalListResponse |
+| GET | `/templates` | list_templates | list[ProposalTemplateResponse] |
+| POST | `/templates` | create_template | ProposalTemplateResponse (201) |
+| GET | `/{id}` | get_proposal | ProposalResponse |
+| PUT | `/{id}` | update_proposal | ProposalResponse |
+| PATCH | `/{id}/status` | update_status | ProposalResponse |
+| POST | `/{id}/approve` | approve_proposal | ProposalResponse (201) |
+| POST | `/{id}/send` | send_proposal | ProposalResponse (201) |
+| DELETE | `/{id}` | delete_proposal | 204 |
 
-**Contracts (`/contracts`)**
-| Método | Rota | Função |
-|--------|------|--------|
-| POST | `` | Criar contrato |
-| GET | `` | Listar |
-| GET | `/stats` | Estatísticas |
-| GET | `/alerts` | Alertas de vencimento |
-| GET | `/templates` | Templates de contrato |
-| GET | `/{id}` | Detalhe |
-| PUT | `/{id}` | Atualizar |
-| DELETE | `/{id}` | Remover |
-| POST | `/{id}/submit` | Submeter para assinatura |
-| POST | `/{id}/activate` | Ativar |
-| POST | `/{id}/suspend` | Suspender |
-| POST | `/{id}/terminate` | Rescindir |
-| POST | `/{id}/renew` | Renovar |
-| POST | `/{id}/calculate-adjustment` | Calcular reajuste (IGPM/IPCA) |
-| POST | `/{id}/addendums` | Adicionar aditivo |
-| GET | `/{id}/addendums` | Listar aditivos |
-| POST | `/{id}/items` | Adicionar item |
-| PUT | `/{id}/items/{item_id}` | Atualizar item |
-| DELETE | `/{id}/items/{item_id}` | Remover item |
+#### `/contracts`
+| Método | Path | Função | Response Model |
+|--------|------|--------|----------------|
+| POST | `` | create_contract | ContractDetailResponse (201) |
+| GET | `` | list_contracts | ContractListResponse |
+| GET | `/stats` | get_stats | ContractStats |
+| GET | `/alerts` | get_alerts | list[ContractAlert] |
+| GET | `/templates` | list_templates | ContractTemplateListResponse |
+| GET | `/{id}` | get_contract | ContractDetailResponse |
+| PUT | `/{id}` | update_contract | ContractDetailResponse |
+| DELETE | `/{id}` | delete_contract | 204 |
+| POST | `/{id}/submit` | submit_for_signature | ContractResponse (201) |
+| POST | `/{id}/activate` | activate_contract | ContractResponse (201) |
+| POST | `/{id}/suspend` | suspend_contract | ContractResponse (201) |
+| POST | `/{id}/terminate` | terminate_contract | ContractResponse (201) |
+| POST | `/{id}/renew` | renew_contract | RenewalResult (201) |
+| POST | `/{id}/calculate-adjustment` | calculate_adjustment | AdjustmentResult (201) |
+| POST | `/{id}/addendums` | create_addendum | ContractAddendumResponse (201) |
+| GET | `/{id}/addendums` | list_addendums | list[ContractAddendumResponse] |
+| POST | `/{id}/items` | add_item | ContractItemResponse (201) |
+| PUT | `/{id}/items/{item_id}` | update_item | ContractItemResponse |
+| DELETE | `/{id}/items/{item_id}` | delete_item | 204 |
 
-**Commissions (`/commissions`)**
-| Método | Rota | Função |
-|--------|------|--------|
-| POST | `/rules` | Criar regra |
-| GET | `/rules` | Listar regras |
-| GET | `/rules/{id}` | Detalhe regra |
-| PUT | `/rules/{id}` | Atualizar regra |
-| DELETE | `/rules/{id}` | Remover regra |
-| POST | `/calculate` | Calcular comissão |
-| GET | `` | Listar comissões |
-| GET | `/stats` | Estatísticas |
-| GET | `/seller/{id}/stats` | Stats por vendedor |
-| GET | `/summaries` | Resumos mensais |
-| POST | `/summaries/{seller_id}/{year}/{month}/close` | Fechar mês |
-| GET | `/{id}` | Detalhe |
-| PUT | `/{id}` | Atualizar |
-| PATCH | `/{id}/status` | Alterar status |
-| POST | `/{id}/approve` | Aprovar |
-| DELETE | `/{id}` | Remover |
+#### `/commissions`
+| Método | Path | Função | Response Model |
+|--------|------|--------|----------------|
+| POST | `/rules` | create_rule | CommissionRuleResponse (201) |
+| GET | `/rules` | list_rules | CommissionRuleListResponse |
+| GET | `/rules/{id}` | get_rule | CommissionRuleResponse |
+| PUT | `/rules/{id}` | update_rule | CommissionRuleResponse |
+| DELETE | `/rules/{id}` | delete_rule | 204 |
+| POST | `/calculate` | calculate | CommissionResponse (201) |
+| GET | `` | list_commissions | CommissionListResponse |
+| GET | `/stats` | get_stats | CommissionStats |
+| GET | `/seller/{id}/stats` | seller_stats | SellerCommissionStats |
+| GET | `/summaries` | list_summaries | list[CommissionSummaryResponse] |
+| POST | `/summaries/{seller_id}/{year}/{month}/close` | close_month | CommissionSummaryResponse (201) |
+| GET | `/{id}` | get_commission | CommissionDetailResponse |
+| PUT | `/{id}` | update_commission | CommissionResponse |
+| PATCH | `/{id}/status` | update_status | CommissionResponse |
+| POST | `/{id}/approve` | approve | CommissionResponse (201) |
+| DELETE | `/{id}` | delete_commission | 204 |
 
-**Clients, Contacts, Dashboard, Marketing** — controllers adicionais (ver seção Marketing)
+**OpenAPI curl:**
+```bash
+curl -s http://127.0.0.1:8080/openapi.json | jq '.paths | ...'
+# → API indisponível em tempo de reconhecimento. Dados obtidos via inspeção de código-fonte.
+```
 
-OpenAPI: `curl http://127.0.0.1:8080/openapi.json` → **API indisponível** em tempo de reconhecimento. Dados obtidos via inspeção de código-fonte.
+---
 
 ### 1.4 Services
 
-| Service | Método principal | Responsabilidade |
-|---------|-----------------|-----------------|
-| `pricing_engine.py` | `calculate()` | CCT (mão de obra + encargos), ISS por estado, margem. Inputs: base_salary, headcount, contract_months, service_type, client_state, margin_target. 14 campos no output. |
-| `pipeline_service.py` | `calculate_weighted_pipeline()`, `calculate_win_rate(days=90)` | STAGE_PROBABILITIES, AVG_STAGE_DURATION, pipeline ponderado |
-| `crm_360_service.py` | Customer Journey | CustomerSegment (VIP/PREMIUM/STANDARD/BRONZE/PROSPECT/CHURNING/INACTIVE), RFM |
-| `signature_integration.py` | `request_signature()` | SignatureProvider: INTERNAL/DOCUSIGN/CLICKSIGN/D4SIGN/AUTENTIQUE |
-| `pdf_generator.py` | `generate_proposal_pdf()` | Gera PDF de propostas/contratos |
-| `dashboard_service.py` | `get_dashboard_metrics()` | KPIs do painel CRM |
-| `proposal_service.py` | `create()`, `approve()`, `send()` | Versionamento, workflow de aprovação |
-| `contract_service.py` | `renew()`, `calculate_adjustment()` | Renovação, reajuste por índice |
-| `lead_service.py` | `recalculate_score()`, `recommend_action()` | Score e ação recomendada |
-| `commission_service.py` | `calculate()`, `approve()`, `close_month()` | Cálculo e aprovação de comissões |
+| Classe | Arquivo | Métodos principais |
+|--------|---------|-------------------|
+| `PricingEngine` | `pricing_engine.py` | `calculate(base_salary, headcount, contract_months, service_type, client_state, margin_target) → PricingResult` (14 campos: custo_mao_obra, encargos_sociais, iss_aliquota, iss_valor, margem_reais, margem_percentual, valor_total, valor_hora, valor_posto_mes, ...) |
+| `PipelineService` | `pipeline_service.py` | `calculate_weighted_pipeline() → float`, `calculate_win_rate(period_days=90) → float`. STAGE_PROBABILITIES: {qualification:10%, needs_analysis:25%, proposal:50%, negotiation:75%, closed_won:100%} |
+| `CRM360Service` | `crm_360_service.py` | Customer journey, RFM segmentation. CustomerSegment: VIP/PREMIUM/STANDARD/BRONZE/PROSPECT/CHURNING/INACTIVE. InteractionType: EMAIL/PHONE/WHATSAPP/PORTAL/MOBILE_APP/FACE_TO_FACE/SYSTEM/SOCIAL_MEDIA |
+| `SignatureIntegration` | `signature_integration.py` | `request_signature(contract_id, provider) → SignatureRequest`. SignatureProvider: INTERNAL/DOCUSIGN/CLICKSIGN/D4SIGN/AUTENTIQUE |
+| `PDFGenerator` | `pdf_generator.py` | `generate_proposal_pdf(proposal_id) → bytes`, `generate_contract_pdf(contract_id) → bytes` |
+| `DashboardService` | `dashboard_service.py` | `get_metrics(period) → DashboardMetrics` |
+| `ProposalService` | `proposal_service.py` | `create()`, `approve()`, `send()`, `create_version()`, `get_history()` |
+| `ContractService` | `contract_service.py` | `renew()`, `calculate_adjustment(index)`, `activate()`, `terminate()` |
+| `LeadService` | `lead_service.py` | `recalculate_score(lead_id)`, `get_recommended_action(lead_id) → str` |
+| `CommissionService` | `commission_service.py` | `calculate(rule_id, base_value)`, `approve(commission_id)`, `close_month(seller_id, year, month)` |
+
+---
 
 ### 1.5 Agentes IA
 
-**CRM não possui agentes de IA dedicados.** A lógica de "ação recomendada" em `lead_service.py` é heurística (score + status + dias sem contato) — sem chamadas a LLM. O endpoint `GET /leads/{id}/recommended-action` retorna regras estáticas.
+**CRM não possui agentes de IA dedicados.**
 
-Integrações LLM no CRM: **nenhuma**.
+- `GET /leads/{id}/recommended-action` → lógica heurística em `lead_service.py` (score + status + dias sem contato) — sem LLM
+- `modules/analytics/models/scoring/lead_scorer.py` — ML model para lead scoring (scikit-learn, não LLM)
+- `modules/analytics/models/forecasting/sales_forecaster.py` — previsão de vendas (scikit-learn)
+- `modules/ai/contract_analysis/` — análise de cláusulas contratuais (Claude/OpenAI) — módulo AI separado, não integrado diretamente no CRM
+
+**Tasks Celery no CRM:** Nenhuma.
+
+---
 
 ### 1.6 Integrações
 
 | Integração | Status | Detalhes |
 |-----------|--------|----------|
-| **DocuSign** | Configurável | via `signature_integration.py`, SignatureProvider.DOCUSIGN |
-| **ClickSign** | Configurável | via `signature_integration.py` |
-| **D4Sign** | Configurável | via `signature_integration.py` |
-| **Autentique** | Configurável | via `signature_integration.py` |
-| **Assinatura Interna** | Ativo | `SignatureProvider.INTERNAL` (padrão) |
-| **Banco Inter** | **Não integrado aqui** | Banco Inter está em módulo financeiro/webhooks (`main_production.py:1039`), não no CRM |
-| **WhatsApp** | Campo de dado apenas | `whatsapp` é campo de contato/lead, sem envio via API |
-| **SMTP** | Global (`core/mailer.py`) | Não usado diretamente pelo CRM — compartilhado via notificações |
-| **Solides** | **Não integrado no CRM** | Solides é integração de RH (`sprint33_solides_integration`), sem relação com CRM |
+| DocuSign | Configurável | `signature_integration.py`, `SignatureProvider.DOCUSIGN` |
+| ClickSign | Configurável | `SignatureProvider.CLICKSIGN` |
+| D4Sign | Configurável | `SignatureProvider.D4SIGN` |
+| Autentique | Configurável | `SignatureProvider.AUTENTIQUE` |
+| Assinatura Interna | Ativo (padrão) | `SignatureProvider.INTERNAL` |
+| Banco Inter | **Não no CRM** | Módulo `financial/` + webhooks em `main_production.py:1039` |
+| WhatsApp | Campo apenas | `whatsapp` é campo de contato/lead; sem envio via API no CRM |
+| SMTP | Global (`core/mailer.py`) | Não usado diretamente no CRM |
+| Solides | **Não no CRM** | Integração de RH (`sprint33_solides_integration`) |
+| Event Bus | ✅ Ativo | `publishers.py` → `CRM_LEAD_CONVERTIDO`, `CRM_PROPOSTA_APROVADA`, `CRM_CONTRATO_ATIVO` → GEDEON |
+
+---
 
 ### 1.7 Migrations Recentes
 
-| Arquivo | Revision | Descrição | Data |
-|---------|----------|-----------|------|
-| `7017a3795753_create_leads_table.py` | 7017a3795753 | Tabela leads | 2025-12-30 |
-| `1ab7727d6644_create_opportunities_table.py` | 1ab7727d6644 | Tabela opportunities | 2025-12-30 |
-| `d32dc56bebba_create_proposal_tables.py` | d32dc56bebba | proposals + items + templates + approvals | 2025-12-30 |
-| `e5f7a8b9c0d1_create_commission_tables.py` | e5f7a8b9c0d1 | commissions + rules + summaries | — |
-| `f6g8h9i0j1k2_create_contract_tables.py` | f6g8h9i0j1k2 | contracts + items + addendums | — |
-| `sprint14_proposals_cpq_premium.py` | sprint14 | CPQ premium — tabelas adicionais | — |
-| `sprint36_fix_float_to_numeric.py` | sprint36 | Fix tipo float→numeric em valores | — |
-| `sprint44_create_contract_analysis_tables.py` | sprint44 | Análise de contratos | — |
-| `sprint66_add_contract_costs.py` | sprint66 | Custos adicionais de contrato | — |
+| Arquivo | revision | down_revision | Create Date |
+|---------|----------|---------------|------------|
+| `7017a3795753_create_leads_table.py` | `7017a3795753` | `14f6c2c7eaa2` | 2025-12-30 03:23 |
+| `1ab7727d6644_create_opportunities_table.py` | `1ab7727d6644` | `7017a3795753` | 2025-12-30 03:47 |
+| `d32dc56bebba_create_proposal_tables.py` | `d32dc56bebba` | `1ab7727d6644` | 2025-12-30 04:09 |
+| `e5f7a8b9c0d1_create_commission_tables.py` | `e5f7a8b9c0d1` | `d32dc56bebba` | 2025-12-30 05:00 |
+| `f6g8h9i0j1k2_create_contract_tables.py` | `f6g8h9i0j1k2` | `e5f7a8b9c0d1` | 2025-12-30 08:00 |
+| `sprint14_proposals_cpq_premium.py` | `sprint14_cpq` | `sprint07_workflow_engine` | 2026-01-07 |
+| `sprint36_fix_float_to_numeric.py` | `sprint36_float_fix` | — | — |
+| `sprint44_create_contract_analysis_tables.py` | `sprint44_contract_analysis` | `sprint43_inventory_forecast` | 2025-01-05 |
+| `sprint66_add_contract_costs.py` | `sprint66_add_contract_costs` | `sprint65_fix_charts_of_accounts` | 2026-03-09 |
+
+---
 
 ### 1.8 Testes
 
 **Localização:** `tests/modules/crm/`
 **Total:** 17 arquivos · **225 funções de teste**
 
-| Arquivo | Escopo |
-|---------|--------|
-| `conftest.py` + `conftest_e2e.py` | Fixtures (sync + E2E) |
-| `test_controllers_lead_opp_proposal_dashboard.py` | Controllers leads/oportunidades/propostas |
+| Arquivo | Funções |
+|---------|---------|
+| `test_controllers_lead_opp_proposal_dashboard.py` | Controllers leads/opp/propostas |
 | `test_controllers_commission_contract.py` | Controllers comissões/contratos |
 | `test_e2e_leads_opportunities.py` | E2E: lead → qualificação → oportunidade |
 | `test_e2e_proposals.py` | E2E: oportunidade → proposta → aprovação |
 | `test_e2e_contracts.py` | E2E: proposta → contrato → ativação |
 | `test_e2e_commissions.py` | E2E: venda → comissão → pagamento |
-| `test_e2e_dashboard_clients_contacts_marketing.py` | Dashboard + clientes + contacts + marketing |
+| `test_e2e_dashboard_clients_contacts_marketing.py` | Dashboard + clientes + marketing E2E |
 | `test_pricing_engine.py` | PricingEngine (CCT + ISS + margem) |
-| `test_proposal_model.py` | Model proposal (status machine) |
+| `test_proposal_model.py` | Model proposal (state machine) |
 | `test_proposal_service.py` | ProposalService |
-| `test_repositories_lead_opp_commission.py` | Repos lead/opp/commission |
-| `test_repositories_proposal_contract.py` | Repos proposal/contract |
+| `test_repositories_lead_opp_commission.py` | Repositórios |
+| `test_repositories_proposal_contract.py` | Repositórios |
 | `test_crm_marketing_vendas.py` | Integração marketing/vendas |
-| `test_coverage_gaps_controllers.py` + `test_coverage_gaps_models.py` | Coverage gaps |
-| `test_coverage_final.py` + `test_services_remaining.py` | Cobertura final |
+| `test_coverage_gaps_controllers.py` | Gaps de cobertura |
+| `test_coverage_gaps_models.py` | Gaps de cobertura |
+| `test_coverage_final.py` | Cobertura final |
+| `test_services_remaining.py` | Services restantes |
 
-**Cobertura estimada:** Alta (17 arquivos, 225 funções, E2E completo do pipeline).
+**Cobertura estimada:** Alta — E2E completo do pipeline leads→contratos. Zero TODOs no código.
+
+---
 
 ### 1.9 TODOs / Pendências
 
 ```bash
 grep -rn "TODO\|FIXME\|HACK\|XXX" modules/crm --include="*.py"
+# Resultado: NENHUM
 ```
 
-**Resultado: NENHUM TODO/FIXME/HACK encontrado no módulo CRM.**
-
-O CRM é o módulo mais maduro — zero pendências técnicas explícitas no código.
+**Pendências identificadas por análise (não marcadas no código):**
+- Sem automação de e-mail transacional (proposta enviada, contrato assinado)
+- Sem agente IA nativo (recommended-action é heurística, não LLM)
+- `modules/comercial/` deveria ser a camada de Vendas mas está vazia
 
 ---
 
 ## 2. Vendas (`modules/comercial/`)
 
 ### 2.1 Models
-
-**Nenhum model existe.** O diretório contém apenas `__init__.py` vazio.
+Nenhum. Apenas `__init__.py` vazio.
 
 ### 2.2 Schemas
-
-**Nenhum schema existe.**
+Nenhum.
 
 ### 2.3 Routers / Endpoints
-
-**Nenhum endpoint existe.** Módulo não registrado em `main_production.py`.
+Nenhum. Módulo não registrado em `main_production.py`.
 
 ### 2.4 Services
-
-**Nenhum service existe.**
+Nenhum.
 
 ### 2.5 Agentes IA
-
-**Nenhum agente existe.**
+Nenhum.
 
 ### 2.6 Integrações
-
-**Nenhuma integração existe.**
+Nenhuma.
 
 ### 2.7 Migrations Recentes
-
-**Nenhuma migration referencia `modules/comercial/`.**
+Nenhuma migration referencia `modules/comercial/`.
 
 ### 2.8 Testes
-
-**Nenhum teste existe.**
+Nenhum teste existe.
 
 ### 2.9 TODOs / Pendências
 
+**Status: STUB VAZIO — 100% não implementado.**
+
 ```
 modules/comercial/
-├── __init__.py          # vazio
-├── atividades/          # vazio
-├── clientes/            # vazio
-├── comissoes/           # vazio
-├── contratos/           # vazio
-├── leads/               # vazio
-├── metas/               # vazio
-├── oportunidades/       # vazio
-└── propostas/           # vazio
+├── __init__.py          (vazio)
+├── atividades/          (vazio)
+├── clientes/            (vazio)
+├── comissoes/           (vazio)
+├── contratos/           (vazio)
+├── leads/               (vazio)
+├── metas/               (vazio)
+├── oportunidades/       (vazio)
+└── propostas/           (vazio)
 ```
 
-**Status: STUB VAZIO — 8 subdiretórios com apenas `__init__.py`.**
-Toda lógica de vendas está atualmente em `modules/crm/`. A intenção arquitetural é possivelmente separar "Vendas" (foco equipe comercial interna) de "CRM" (foco relacionamento cliente), mas a migração não foi iniciada.
-
-**Pendência:** Definir se `comercial/` será o módulo de Vendas separado ou descontinuado em favor do CRM unificado.
+Toda lógica de Vendas está atualmente em `modules/crm/`. A decisão arquitetural de separar está pendente.
 
 ---
 
@@ -349,109 +541,147 @@ Toda lógica de vendas está atualmente em `modules/crm/`. A intenção arquitet
 
 ### 3.1 Models
 
-Marketing **não possui ORM model dedicado**. Usa `sqlalchemy.text()` diretamente (raw SQL). As tabelas existem no banco mas sem classe SQLAlchemy.
+Marketing não possui ORM model dedicado — usa `sqlalchemy.text()` (raw SQL). As tabelas existem no banco mas sem classe SQLAlchemy.
 
-**Tabela `marketing_campaigns`** (inferida do raw SQL):
+**Tabela `marketing_campaigns`** (inferida do SQL):
 
-| Campo | Tipo |
-|-------|------|
-| id | UUID |
-| name | str |
-| type | str (organic/paid/email/social/etc) |
-| budget | float |
-| description | text |
-| start_date | date |
-| end_date | date |
-| utm_source | str |
-| utm_medium | str |
-| utm_campaign | str |
-| created_at | datetime |
+| Coluna | Tipo | Nullable |
+|--------|------|----------|
+| id | UUID | NO |
+| name | str | NO |
+| type | str | NO (organic/paid/email/social) |
+| budget | float | NO (default=0) |
+| description | text | YES |
+| start_date | date | YES |
+| end_date | date | YES |
+| utm_source | str | YES |
+| utm_medium | str | YES |
+| utm_campaign | str | YES |
+| created_at | datetime | NO |
 
-**Tabela `marketing_leads`** (inferida do raw SQL):
+**Tabela `marketing_leads`** (inferida do SQL):
 
-| Campo | Tipo |
-|-------|------|
-| id | UUID |
-| campaign_id | FK→marketing_campaigns |
-| name | str |
-| email | str |
-| phone | str |
-| whatsapp | str |
-| source | str |
-| status | str (novo/converted/etc) |
-| created_at | datetime |
+| Coluna | Tipo | Nullable | FK |
+|--------|------|----------|----|
+| id | UUID | NO | — |
+| campaign_id | UUID | YES | FK→marketing_campaigns.id |
+| name | str | NO | — |
+| email | str | YES | — |
+| phone | str | YES | — |
+| whatsapp | str | YES | — |
+| source | str | YES | — |
+| status | str | NO (novo/converted) | — |
+| created_at | datetime | NO | — |
+
+**Relacionamentos ORM:** Nenhum (sem ORM model).
+
+---
 
 ### 3.2 Schemas
 
-Schemas **inline** no controller usando `pydantic.BaseModel`:
-- `CampaignCreate` — name, type, budget, description, start/end_date, UTM params
-- `MktLeadCreate` — campaign_id, name, email, phone, whatsapp, source
+Inline no controller via `pydantic.BaseModel` (sem arquivo em `schemas/`):
 
-Sem schemas em `schemas/` separado.
+```python
+class CampaignCreate(BaseModel):
+    name: str
+    type: str = "organic"
+    budget: float = 0
+    description: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    utm_source: str | None = None
+    utm_medium: str | None = None
+    utm_campaign: str | None = None
+
+class MktLeadCreate(BaseModel):
+    campaign_id: str | None = None
+    name: str
+    email: str | None = None
+    phone: str | None = None
+    whatsapp: str | None = None
+    source: str | None = None
+```
+
+**Validators:** Nenhum — sem validação de tipos, formatos ou campos obrigatórios além do `name`.
+
+---
 
 ### 3.3 Routers / Endpoints
 
-**Prefix:** `/api/v1/crm/marketing` | Auth: `CurrentActiveUser`
+**Prefix:** `/api/v1/crm/marketing` | **Auth:** `CurrentActiveUser` | **Tags:** Marketing
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| GET | `/campaigns/` | Listar campanhas (inclui total_leads e converted) |
-| POST | `/campaigns/` | Criar campanha |
-| PUT | `/campaigns/{id}` | Atualizar campanha |
-| GET | `/leads/` | Listar leads de marketing |
-| POST | `/leads/` | Criar lead de marketing |
-| POST | `/leads/{id}/convert` | Converter lead → CRM Lead |
-| GET | `/leads/stats` | Estatísticas de conversão |
-| POST | `/licitacao/convert-to-crm` | Converter oportunidade de licitação → pipeline CRM |
+| Método | Path | Função | Response |
+|--------|------|--------|----------|
+| GET | `/campaigns/` | `listar_campanhas` | list (total_leads + converted inclusos) |
+| POST | `/campaigns/` | `criar_campanha` | dict (201) |
+| PUT | `/campaigns/{id}` | `atualizar_campanha` | dict |
+| GET | `/leads/` | `listar_leads_mkt` | list |
+| POST | `/leads/` | `criar_lead_mkt` | dict (201) |
+| POST | `/leads/{id}/convert` | `converter_lead_mkt` | dict (201) — cria Lead CRM |
+| GET | `/leads/stats` | `stats_leads_mkt` | dict (totais, taxa conversão) |
+| POST | `/licitacao/convert-to-crm` | `converter_licitacao_crm` | dict (201) |
+
+---
 
 ### 3.4 Services
 
-**Nenhum service layer separado.** Lógica de negócio inline no controller via raw SQL.
+Nenhum service layer. Lógica inline no controller via raw SQL.
+
+---
 
 ### 3.5 Agentes IA
 
-**Nenhum agente de IA para Marketing.** Sem automação de campanhas ou segmentação automática.
+Nenhum agente de IA para Marketing. Sem automação de campanhas ou segmentação automática.
+
+---
 
 ### 3.6 Integrações
 
 | Integração | Status | Detalhes |
 |-----------|--------|----------|
-| **WhatsApp** | Campo de dado | `whatsapp` armazenado nos leads, sem envio via API aqui |
-| **WhatsApp Business API** | Em outro módulo | Evolution API registrada em `main_production.py:929` mas em módulo separado (`whatsapp_router`), não no marketing |
-| **SMTP / E-mail marketing** | Global | `core/mailer.py` com SMTP configurável — **não usado diretamente no marketing controller** |
-| **SendGrid / Mailgun** | Configurável | Enum nos tipos de canal em `sprint36_create_notification_hub_tables.py` (valores: smtp, sendgrid, mailgun) — sem implementação no marketing |
-| **UTM tracking** | Implementado | Campos utm_source, utm_medium, utm_campaign no modelo de campanha |
-| **Solides** | Não relacionado | Integração de RH, sem uso em marketing |
-| **Banco Inter** | Não relacionado | Módulo financeiro |
-| **Certificado A1** | Não aplicável | Apenas para assinatura digital e portais de licitação |
+| WhatsApp (campo) | Armazenamento | `whatsapp` é campo de dado nos leads; sem envio via API no marketing |
+| WhatsApp Business API | Módulo separado | `whatsapp_router` registrado em `main_production.py:929` (Evolution API) — sem integração com campanhas |
+| SMTP | Global | `core/mailer.py` (smtplib, settings.SMTP_*) — **não usado diretamente pelo marketing controller** |
+| SendGrid / Mailgun | Schema criado | Enum em `sprint36_create_notification_hub_tables` (valores: smtp, sendgrid, mailgun) — sem implementação no marketing |
+| UTM tracking | Implementado | utm_source, utm_medium, utm_campaign nos campos de campanha |
+| Banco Inter | Não aplicável | Módulo financeiro |
+| Solides | Não aplicável | Integração de RH |
+| Certificado A1 | Não aplicável | Portais de licitação |
+
+---
 
 ### 3.7 Migrations Recentes
 
-Marketing usa raw SQL — **sem migrations ORM dedicadas** para as tabelas `marketing_campaigns` e `marketing_leads`. As tabelas foram criadas diretamente (sem migration rastreável no Alembic).
+Marketing usa raw SQL — **sem migrations rastreáveis para `marketing_campaigns` / `marketing_leads`**.
+
+---
 
 ### 3.8 Testes
 
-Testes inclusos nos arquivos do CRM:
-- `test_crm_marketing_vendas.py` — integração marketing/vendas
-- `test_e2e_dashboard_clients_contacts_marketing.py` — marketing dentro do E2E
+Sem arquivo dedicado. Inclusos em:
+- `tests/modules/crm/test_crm_marketing_vendas.py`
+- `tests/modules/crm/test_e2e_dashboard_clients_contacts_marketing.py`
 
-**Sem arquivo de testes dedicado para Marketing.**
+**Cobertura estimada:** Baixa — sem testes unitários para as campanhas ou conversão de leads.
+
+---
 
 ### 3.9 TODOs / Pendências
 
 ```bash
 grep -rn "TODO\|FIXME\|HACK\|XXX" modules/crm/controllers/marketing_controller.py
+# Resultado: NENHUM
 ```
 
-**Resultado: nenhum TODO explícito.**
-
-**Pendências identificadas por análise:**
-1. Tabelas `marketing_campaigns` / `marketing_leads` sem ORM model — risco de manutenção
-2. Sem E-mail marketing real (SendGrid/Mailgun não implementados no marketing)
-3. WhatsApp Business API (`whatsapp_router`) não integrado com campanhas
-4. Sem automação de campanhas (disparo agendado)
-5. Sem A/B testing
-6. Sem métricas de ROI por campanha
+**Pendências identificadas:**
+1. Sem ORM model — tabelas sem type safety
+2. Sem migrations rastreáveis
+3. Sem e-mail marketing real (SendGrid/Mailgun não implementados)
+4. WhatsApp Business API não integrado a campanhas
+5. Sem automação de disparo agendado
+6. Sem A/B testing
+7. Sem métricas de ROI por campanha
+8. Validators ausentes nos schemas inline
 
 ---
 
@@ -459,161 +689,184 @@ grep -rn "TODO\|FIXME\|HACK\|XXX" modules/crm/controllers/marketing_controller.p
 
 ### 4.1 Models
 
-**Tabela `bidding_tenders`** — `models/tender.py`
+#### Tabela `bidding_tenders` — `models/tender.py`
 
-| Campo | Tipo | Detalhes |
-|-------|------|----------|
-| id | UUID | PK |
-| pncp_id | str | UNIQUE — ID no PNCP |
-| modalidade | enum (11) | pregao_eletronico, concorrencia, dispensa, inexigibilidade, credenciamento, leilao, dialogo_competitivo, pre_qualificacao, manifestacao_intencao, registro_preco, outros |
-| criterio_julgamento | enum (6) | menor_preco, maior_desconto, melhor_tecnica, tecnica_preco, maior_lance, nao_aplicavel |
-| status | enum (11) | publicado, aberto, suspenso, encerrado, homologado, revogado, anulado, fracassado, deserto, em_recurso, em_andamento |
-| orgao_cnpj / orgao_uf | str | Órgão licitante |
-| segmento | str | vigilancia/limpeza/etc |
-| valor_estimado | Numeric | |
-| participando / interesse | bool | Flags de acompanhamento |
-| tags | JSONB | |
-| requisitos | JSONB | |
+| Coluna | Tipo | Nullable | Default | FK |
+|--------|------|----------|---------|-----|
+| id | UUID | NO | gen() | — |
+| pncp_id | String(255) | NO | — | UNIQUE |
+| numero_controle | String(255) | YES | — | — |
+| modalidade | Enum(11) | NO | — | — |
+| criterio_julgamento | Enum(6) | YES | — | — |
+| status | Enum(11) | NO | publicado | — |
+| orgao_cnpj | String(14) | NO | — | — |
+| orgao_nome | String(500) | YES | — | — |
+| orgao_uf | String(2) | NO | — | — |
+| segmento | String(100) | YES | — | — |
+| objeto | Text | NO | — | — |
+| valor_estimado | Numeric(15,2) | YES | — | — |
+| data_publicacao | DateTime | YES | — | — |
+| data_abertura | DateTime | YES | — | — |
+| data_encerramento | DateTime | YES | — | — |
+| ano | Integer | YES | — | — |
+| participando | Boolean | NO | False | — |
+| interesse | Boolean | NO | False | — |
+| tags | JSONB | YES | {} | — |
+| requisitos | JSONB | YES | {} | — |
+| is_active | Boolean | NO | True | — |
+
+**Relacionamentos:**
+```python
+documentos = relationship("TenderDocument",  back_populates="tender", cascade="all, delete-orphan")
+propostas  = relationship("BiddingProposal", back_populates="tender")
+contratos  = relationship("PublicContract",  back_populates="tender")
+# TenderDocument → tender = relationship("Tender", back_populates="documentos")
+```
 
 **Índices compostos:** (orgao_cnpj, ano), (modalidade, status), (orgao_uf, segmento), (participando, status)
 
-**Outros models:**
-- `models/opportunity.py` — `bidding_opportunities` (portal, portal_id, objeto, valor_estimado, relevancia_score)
-- `models/proposal.py` — `bidding_proposals` + `bidding_proposal_items` (BDI, historico_lances JSONB, encargos_sociais)
-- `models/analysis.py` — AnalysisResult (resultado do agente ANALYST)
-- `models/assessment.py` — Assessment (avaliação de habilitação)
-- `models/certificate.py` — certidões de habilitação + validade
-- `models/company_document.py` — documentos da empresa para licitações
-- `models/dispute.py` — sessão de disputa em pregão eletrônico
-- `models/measurement.py` — medições de contrato licitado
-- `models/price_history.py` — histórico de preços do mercado
-- `models/pricing.py` — resultado de precificação BDI
-- `models/public_contract.py` — contratos de licitações ganhas
-- `models/sync_job.py` — jobs de sincronização com portais
+**Enums:**
+- `modalidade` (11): pregao_eletronico, concorrencia, dispensa, inexigibilidade, credenciamento, leilao, dialogo_competitivo, pre_qualificacao, manifestacao_intencao, registro_preco, outros
+- `status` (11): publicado, aberto, suspenso, encerrado, homologado, revogado, anulado, fracassado, deserto, em_recurso, em_andamento
 
-### 4.2 Schemas (Pydantic v2)
+#### Outros models:
+- `models/proposal.py` → `bidding_proposals` + `bidding_proposal_items`: BDI, historico_lances (JSONB), encargos_sociais. Rel: `tender = relationship("Tender", back_populates="propostas")`
+- `models/analysis.py` → AnalysisResult (resultado Claude AI)
+- `models/assessment.py` → Assessment (avaliação habilitação)
+- `models/certificate.py` → certidões com validade
+- `models/company_document.py` → docs da empresa
+- `models/dispute.py` → sessão pregão
+- `models/measurement.py` → medições de contrato
+- `models/price_history.py` → histórico preços PNCP
+- `models/pricing.py` → resultado BDI
+- `models/public_contract.py` → contrato licitação ganha
+- `models/sync_job.py` → jobs de sync
 
-| Arquivo | Schemas principais |
-|---------|-------------------|
-| `schemas/tender.py` | TenderCreate, TenderResponse, TenderListResponse, TenderFilter |
-| `schemas/proposal.py` | BiddingProposalCreate, BiddingProposalResponse, ProposalItemCreate |
-| `schemas/analysis.py` | AnalysisRequest, AnalysisResult |
-| `schemas/assessment.py` | AssessmentRequest, AssessmentResult, HabilitacaoScore |
-| `schemas/certificate.py` | CertificateCreate, CertificateResponse, CertificateStatus |
-| `schemas/contract.py` | BiddingContractCreate, BiddingContractResponse |
-| `schemas/dispute.py` | DisputeSession, LanceRegistro, DisputeStatus |
-| `schemas/document.py` | DocumentCreate, DocumentResponse |
-| `schemas/opportunity.py` | BiddingOpportunityCreate, OpportunityResponse |
-| `schemas/pipeline.py` | PipelineStatus, PipelineResult (resultado do pipeline 5 agentes) |
-| `schemas/pricing.py` | BDICalculation, PricingRequest, PricingResult |
+---
+
+### 4.2 Schemas
+
+| Arquivo | Campos / Validators |
+|---------|---------------------|
+| `schemas/tender.py` | TenderCreate (pncp_id, modalidade, objeto, valor_estimado, orgao_cnpj, orgao_uf), TenderResponse, TenderFilter (modalidade, status, uf, segmento, valor_min/max, apenas_abertos) |
+| `schemas/proposal.py` | BiddingProposalCreate (tender_id, valor_total, bdi_percent, encargos_sociais). **Validator:** `@field_validator("valor_unitario")` — verifica valor > 0 |
+| `schemas/analysis.py` | AnalysisRequest (texto_edital, tender_id), AnalysisResult (objeto, requisitos, itens[], riscos[], viabilidade_score) |
+| `schemas/assessment.py` | AssessmentRequest (tender_id, company_data), AssessmentResult (habilitacao_score, docs_faltantes[], aprovado) |
+| `schemas/certificate.py` | CertificateCreate (tipo, numero, validade, orgao_emissor), CertificateStatus (valid, days_until_expiry) |
+| `schemas/pipeline.py` | PipelineResult (scout_result, analyst_result, assessor_result, pricer_result, compiler_result, sentinel_alerts[]) |
+| `schemas/pricing.py` | BDICalculation (custos_diretos, bdi_percent, impostos, lucro, resultado), PricingRequest (valor_estimado, regime_tributario, cenario) |
+
+---
 
 ### 4.3 Routers / Endpoints
 
-**Prefix base:** `/api/v1/licitacoes` | Inclui 10 sub-routers + WebSocket
+**Prefix base:** `/api/v1/licitacoes` | 10 sub-routers + WebSocket
 
-**Tenders (`/tenders`)**
-| GET | `/` | Listar (filtros avançados) |
-| GET | `/dashboard` | Painel |
-| GET | `/abertos` | Abertas |
-| GET | `/participando` | Em participação |
-| GET | `/segmento/{segmento}` | Por segmento |
+*(Endpoints listados em versão anterior — mantidos. Adicionando response models:)*
 
-**Proposals (`/proposals`)**
-| GET/POST | `/` | Listar / Criar |
-| GET | `/estatisticas` | Stats |
-| GET | `/vencedoras` | Propostas vencedoras |
-| GET | `/tender/{id}` | Por licitação |
-| GET | `/{id}` | Detalhe |
-| POST | `/bdi` | Calcular BDI |
-| POST | `/lance` | Registrar lance |
+**Tenders:** response=TenderResponse | **Proposals:** response=BiddingProposalResponse | **Agents:** response=PipelineResult | **Sync:** response=SyncTriggerResponse
 
-**Agents (`/agents`)**
-| GET | `/status` | Status dos agentes |
-| POST | `/scout/buscar` | Busca nos portais |
-| GET | `/scout/portais` | Portais disponíveis |
-| POST | `/analyst/analisar` | Analisar edital (Claude AI) |
-| POST | `/assessor/avaliar` | Avaliar habilitação |
-| POST | `/pricer/calcular` | Calcular preço/BDI |
-| POST | `/pipeline` | Pipeline completo (Scout→Compiler) |
-| GET/POST | `/sentinel/tipos` + `/sentinel/verificar` + `/sentinel/alertas` | Conformidade |
-| GET | `/warrior/status` | Status WARRIOR |
-| POST | `/warrior/simular` | Simular disputa |
-| POST | `/compiler/gerar` | Gerar proposta PDF |
+**WebSocket:** `ws://{host}/api/v1/licitacoes/ws/disputes/{dispute_id}` — streaming de lances em tempo real
 
-**Sync (`/sync`)**
-| POST | `/pncp/trigger` | Disparar sync PNCP |
-| GET | `/jobs` + `/jobs/{id}` | Jobs de sync |
-| POST | `/precos/trigger` | Sync histórico de preços |
-| GET | `/status` | Status |
-
-**Outros:** `/certificates`, `/documents`, `/contracts`, `/erp`, `/opportunities`, `/disputes` + WebSocket `/ws/disputes/{id}`
+---
 
 ### 4.4 Services
 
-| Service | Responsabilidade |
-|---------|-----------------|
-| `tender_service.py` | CRUD e filtros de licitações |
-| `proposal_service.py` | Versionamento, submissão de propostas |
-| `pncp_service.py` | Sincronização periódica com PNCP |
-| `sync_service.py` | Orquestra jobs de sync multi-portal |
-| `pricing_service.py` | Cálculo BDI + histórico de preços |
-| `edital_parser_service.py` | Parser de PDFs de editais (regex, sem NLP, Lei 14.133/2021 + Lei 8.666) |
-| `certificate_service.py` | Gestão e renovação automática de certidões |
-| `document_service.py` | Upload e validação de documentos de habilitação |
-| `contract_service.py` | Contratos pós-licitação, medições, faturamento |
-| `opportunity_service.py` | Score de relevância de oportunidades |
-| `erp_integration_service.py` | Integração com financeiro/operacional |
-| `notification_service.py` | Alertas de prazos e oportunidades |
+| Classe | Arquivo | Métodos principais |
+|--------|---------|-------------------|
+| `TenderService` | `tender_service.py` | `search(filters)`, `update_status(tender_id, status)`, `mark_participando(tender_id)` |
+| `ProposalService` | `proposal_service.py` | `create(tender_id, data)`, `submit()`, `get_versions()` |
+| `PNCPService` | `pncp_service.py` | `sync_oportunidades(uf_list)`, `sync_precos()` |
+| `SyncService` | `sync_service.py` | `trigger_sync(portal)`, `get_job_status(job_id)` |
+| `PricingService` | `pricing_service.py` | `calculate_bdi(custos, regime)`, `get_price_history(segmento)` |
+| `EditalParserService` | `edital_parser_service.py` | `parse_pdf(path) → EditalData` — regex, Lei 14.133/2021 + Lei 8.666 |
+| `CertificateService` | `certificate_service.py` | `check_expiry()`, `request_renewal(cert_id)` |
+| `DocumentService` | `document_service.py` | `upload(file, tender_id)`, `validate(doc_id)` |
+| `ContractService` | `contract_service.py` | `create_from_tender(tender_id)`, `add_measurement(contract_id, data)`, `gerar_fatura(measurement_id)` |
+| `OpportunityService` | `opportunity_service.py` | `score_relevancia(tender_id) → float` |
+| `ERPIntegrationService` | `erp_integration_service.py` | `converter_para_operacional(contract_id)` |
+| `NotificationService` | `notification_service.py` | `notificar_oportunidade(tender_id)`, `notificar_prazo(tender_id)` |
+
+---
 
 ### 4.5 Agentes IA
 
 **Pipeline:** SCOUT → ANALYST → ASSESSOR → PRICER → COMPILER (+ SENTINEL paralelo)
 
-| Agente | LLM | Descrição |
-|--------|-----|-----------|
-| **ScoutAgent** | — | Busca simultânea em 6 portais. Keywords padrão: vigilancia, seguranca patrimonial, portaria, monitoramento, cftv, alarme, controle de acesso |
-| **AnalystAgent** | **Claude API** (`claude-sonnet-4-20250514`) | Analisa edital com Anthropic API. `ANTHROPIC_API_KEY` via env var. Extrai objeto, requisitos, habilitação, itens, riscos |
-| **AssessorAgent** | Heurístico | Avalia habilitação da Conecta vs. edital. Score de habilitação. Verifica certidões, ISO 9001/14001 |
-| **PricerAgent** | Heurístico | Calcula BDI. 3 cenários: conservador/moderado/agressivo. Regimes: Simples/Lucro Presumido/**Lucro Real** (atual) |
-| **CompilerAgent** | — | Monta proposta técnica completa em PDF via `pdf_renderer.py` |
-| **SentinelAgent** | Heurístico | Monitora conformidade durante disputa, verifica prazos, emite alertas |
-| **WarriorAgent** | — | Robô de pregão eletrônico. **STATUS: DESENVOLVIMENTO** — 7 portais suportados, modo simulação. Requer Playwright + certificado digital A1 para produção |
-| **pdf_renderer** | — | Renderiza proposta em PDF |
+| Agente | LLM | Status |
+|--------|-----|--------|
+| ScoutAgent | — | ✅ Produção — busca 6 portais simultaneamente |
+| **AnalystAgent** | **Claude API** (`claude-sonnet-4-20250514`, `ANTHROPIC_API_KEY`) | ✅ Produção |
+| AssessorAgent | Heurístico | ✅ Produção |
+| PricerAgent | Heurístico | ✅ Produção |
+| CompilerAgent | — | ✅ Produção |
+| SentinelAgent | Heurístico | ✅ Produção |
+| WarriorAgent | — | ⚠️ DESENVOLVIMENTO — simulação apenas |
+| pdf_renderer | — | ✅ Produção |
 
-**Prompts armazenados:** Prompt para Claude em `analyst_agent.py:107` (inline no código, não em arquivo separado .txt/.yaml).
+**Prompts armazenados:**
+- `analyst_agent.py:107` — prompt inline para Claude (sem arquivo externo .txt/.yaml)
+- `templates/` — **5 arquivos JSON de templates de proposta:**
+  - `carta_proposta.json`
+  - `declaracao_me_epp.json`
+  - `declaracao_menor.json`
+  - `planilha_custos.json`
+  - `proposta_comercial.json`
 
-### 4.6 Integrações Externas
+**Beat schedule (Celery):**
+```python
+# celery_app.py
+"bidding-sync-pncp-2h": {
+    "task": "bidding.sync_pncp_oportunidades",
+    "schedule": 7200.0,          # a cada 2 horas
+    "options": {"queue": "gov.batch"},
+},
+"bidding-check-certidoes-6h": {
+    "task": "bidding.verificar_certidoes_vencimento",
+    "schedule": 21600.0,         # a cada 6 horas
+    "options": {"queue": "gov.batch"},
+},
+"bidding-sync-precos-daily": {
+    "task": "bidding.sync_pncp_precos",
+    "schedule": 86400.0,         # diário
+    "options": {"queue": "gov.batch"},
+},
+```
 
-**Portais de Licitação:**
-| Portal | Client | Status |
-|--------|--------|--------|
-| PNCP | `pncp/client.py` — `https://pncp.gov.br/api/pncp` (httpx async) | ✅ Ativo |
-| ComprasNet | `comprasnet/client.py` — `_PregaoHTMLParser` (HTML fallback) | ✅ Ativo |
-| Licitações-e (BB) | `licitacoes_e/client.py` | ✅ Implementado |
-| e-Compras AM | `ecompras_am/client.py` | ✅ Implementado |
-| BLL | `bll/client.py` | ✅ Implementado |
-| Portal Compras Públicas | `portal_compras_publicas/client.py` | ✅ Implementado |
+---
 
-**Certidões (Receita Federal):**
-| Certidão | Client |
-|----------|--------|
-| CND (Débitos Federais) | `receita_federal/cnd_client.py` |
-| CNDT (Débitos Trabalhistas) | `receita_federal/cndt_client.py` |
-| CRF (Regularidade FGTS) | `receita_federal/crf_client.py` |
-| ISS Manaus | `receita_federal/prefeitura_manaus_client.py` |
-| SEFAZ AM | `receita_federal/sefaz_am_client.py` |
+### 4.6 Integrações
 
-**Certificado A1:** Necessário para WarriorAgent (pregão eletrônico) via Playwright. **Ainda não integrado** — pendente para produção do WARRIOR.
+| Portal / Integração | Client | URL Base | Status |
+|---------------------|--------|----------|--------|
+| PNCP | `pncp/client.py` (httpx async) | `https://pncp.gov.br/api/pncp` | ✅ |
+| ComprasNet | `comprasnet/client.py` + `_PregaoHTMLParser` | SOAP/HTML | ✅ |
+| Licitações-e (BB) | `licitacoes_e/client.py` | — | ✅ |
+| e-Compras AM | `ecompras_am/client.py` | — | ✅ |
+| BLL | `bll/client.py` | — | ✅ |
+| Portal Compras Públicas | `portal_compras_publicas/client.py` | — | ✅ |
+| CND (Débitos Federais) | `receita_federal/cnd_client.py` | ReceitaFederal | ✅ |
+| CNDT (Trabalhista) | `receita_federal/cndt_client.py` | TST | ✅ |
+| CRF (FGTS) | `receita_federal/crf_client.py` | CEF | ✅ |
+| ISS Manaus | `receita_federal/prefeitura_manaus_client.py` | SEMEF | ✅ |
+| SEFAZ AM | `receita_federal/sefaz_am_client.py` | SEFAZ-AM | ✅ |
+| **Certificado A1** | `core/credentials/` (global) | — | ⚠️ Disponível, pendente integração no WarriorAgent |
+| Banco Inter | **Não usado** | — | — |
+| WhatsApp | **Não usado** | — | — |
+| SMTP | **Não usado** | — | — |
+| Solides | **Não usado** | — | — |
 
-**Banco Inter / WhatsApp / SMTP / Solides:** Não usados no módulo Licitações.
+---
 
 ### 4.7 Migrations Recentes
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `bidding_module_tables.py` | Tabelas base (tenders, proposals, items, etc.) |
-| `sprint71_bidding_ai_agents_tables.py` | Tabelas para agentes IA (análise, avaliação, pipeline) |
-| `sprint72_fix_bidding_schema_alignment.py` | Correção de alinhamento de schema |
+| Arquivo | revision | down_revision | Create Date |
+|---------|----------|---------------|------------|
+| `bidding_module_tables.py` | `bidding_001` | None | 2026-01-11 |
+| `sprint71_bidding_ai_agents_tables.py` | `sprint71_bidding_ai_agents` | `sprint70_cost_by_type_tables` | 2026-03-12 |
+| `sprint72_fix_bidding_schema_alignment.py` | `sprint72_fix_bidding_schema` | `sprint71_bidding_ai_agents` | 2026-03-12 |
+
+---
 
 ### 4.8 Testes
 
@@ -622,36 +875,30 @@ grep -rn "TODO\|FIXME\|HACK\|XXX" modules/crm/controllers/marketing_controller.p
 
 | Arquivo | Escopo |
 |---------|--------|
-| `test_models.py` | Tender, Proposal, PublicContract — criação e enums |
-| `test_services.py` | ContractService (medições, faturamento), TenderService (search, status) |
-| `test_integrations.py` | Clientes de portais externos |
+| `test_models.py` | Tender, Proposal, PublicContract — criação, enums, constraints |
+| `test_services.py` | ContractService (add_measurement, approve_measurement, converter_para_operacional, gerar_medicao, gerar_fatura), TenderService (search, update_status, duplicate detection) |
+| `test_integrations.py` | Clientes de portais — PNCP, ComprasNet |
 | `test_agents.py` | Scout, Analyst, Pricer — lógica dos agentes |
 
-**Cobertura estimada:** Baixa-Média (66 funções vs. ~78 arquivos e 8 agentes). WarriorAgent, SentinelAgent, CompilerAgent sem testes dedicados.
+**Cobertura estimada:** Baixa-Média (66 funções). WarriorAgent, SentinelAgent, CompilerAgent, WebSocket sem cobertura.
+
+---
 
 ### 4.9 TODOs / Pendências
 
 ```bash
 grep -rn "TODO\|FIXME\|HACK\|XXX" modules/bidding --include="*.py"
+# Resultado real:
+# modules/bidding/agents/analyst_agent.py:167 — texto de prompt para Claude (falso positivo)
+# modules/bidding/services/edital_parser_service.py:1127 — comentário de regex (falso positivo)
 ```
 
-**Resultados:**
-```
-modules/bidding/agents/analyst_agent.py:167:
-  "4. Identifique TODOS os documentos de habilitacao exigidos."
-  (texto de prompt para Claude — falso positivo no grep)
-
-modules/bidding/services/edital_parser_service.py:1127:
-  # CNPJ padrao brasileiro: XX.XXX.XXX/XXXX-XX
-  (comentário de regex — falso positivo)
-```
-
-**Pendências reais identificadas por análise:**
-1. **WarriorAgent** — integração real com portais requer Playwright + certificado A1 (consta em `warrior_agent.py:6` e `:369`)
-2. **Analyst** usa `claude-sonnet-4-20250514` — modelo desatualizado (disponível: `claude-sonnet-4-6`)
-3. **Cobertura de testes** baixa em agentes (Warrior, Sentinel, Compiler sem testes)
-4. **Prompts Claude** armazenados inline — sem versionamento em arquivo separado
-5. **Certificado A1** para login nos portais não implementado
+**Pendências reais (consta em comentários e docstrings):**
+1. `warrior_agent.py:6,369` — "Integração com portais reais pendente (requer Playwright + certificado digital A1)"
+2. `analyst_agent.py` — modelo `claude-sonnet-4-20250514` desatualizado (atual: `claude-sonnet-4-6`)
+3. WarriorAgent, SentinelAgent, CompilerAgent sem testes
+4. Prompts Claude inline — sem versionamento em arquivo .txt/.yaml separado
+5. Certificado A1 não integrado ao WarriorAgent
 
 ---
 
@@ -661,101 +908,67 @@ modules/bidding/services/edital_parser_service.py:1127:
 
 | Dimensão | CRM | Vendas | Marketing | Licitações |
 |----------|-----|--------|-----------|------------|
-| Arquivos .py | 41 | 8 (stubs) | 1 (no CRM) | 78 |
+| Arquivos .py | 41 | 8 (stubs) | 1 (dentro CRM) | 78 |
 | Models ORM | 5 | 0 | 0* | 13 |
-| Endpoints | ~55 | 0 | 8 | ~65 |
+| Relacionamentos ORM | 14 | 0 | 0 | 4 |
+| Endpoints REST | ~55 | 0 | 8 | ~65 |
 | Services | 10 | 0 | 0 | 12 |
 | Agentes IA | 0 | 0 | 0 | 8 (1 em dev) |
-| Tasks Celery | 0 | 0 | 0 | 11 tasks |
-| Integrações ext. | 1 (assinatura) | 0 | 0 | 11 portais/certidões |
+| Celery Tasks | 0 | 0 | 0 | 11 |
+| Beat Schedule | 0 | 0 | 0 | 3 agendamentos |
+| Templates/Prompts | 0 | 0 | 0 | 5 JSON + 1 inline |
+| Integrações ext. | 5 (assinatura) | 0 | 0 | 11 portais/certidões |
 | Testes (arquivos) | 17 | 0 | 0 | 4 |
 | Testes (funções) | 225 | 0 | 0 | 66 |
 | Migrations | 9 | 0 | 0* | 3 |
 
-*Marketing: tabelas existem no banco mas sem ORM model / migration rastreável.
+*Marketing: tabelas existem no banco (sem ORM / migration rastreável)
 
 ### 5.2 Módulos Maduros vs. Embrionários
 
 **Maduros:**
-- **CRM** — pipeline completo (leads → oportunidades → propostas → contratos → comissões), 225 testes, zero TODOs, event bus integrado
-- **Licitações** — 8 agentes IA, 6 portais, 11 Celery tasks, Claude API integrada
+- **CRM** — pipeline completo, 225 testes, 0 TODOs, event bus, E2E coberto
 
-**Parciais:**
-- **Marketing** — funcional mas sem ORM model, sem e-mail marketing real, sem automação
+**Funcionais com gaps:**
+- **Licitações** — 8 agentes, 6 portais, Claude API. Gaps: WarriorAgent em dev, cobertura de testes baixa
+- **Marketing** — 8 endpoints funcionais. Gaps: sem ORM, sem e-mail real, sem automação
 
 **Embrionários / Stubs:**
-- **Vendas** (`modules/comercial/`) — 0% implementado, apenas estrutura de pastas
-- **Inteligência** (`modules/inteligencia/`) — 0% implementado, apenas estrutura de pastas
+- **Vendas** (`modules/comercial/`) — 0% implementado
+- **Inteligência** (`modules/inteligencia/`) — 0% implementado
 
 ### 5.3 Riscos Técnicos Identificados
 
-1. **WarriorAgent em simulação** — robô de pregão sem integração real; risco de perder licitações que exigem disputa automatizada
-2. **Marketing sem ORM** — `marketing_campaigns` / `marketing_leads` via raw SQL = queries não rastreadas pelo ORM, sem type safety
-3. **`modules/comercial/` vazio** — se o frontend espera endpoints de Vendas, há risco de 404 não tratado
-4. **Analyst usa modelo antigo** — `claude-sonnet-4-20250514` vs. atual `claude-sonnet-4-6`
-5. **Cobertura de testes baixa em Licitações** — 66 funções para 78 arquivos; WarriorAgent, SentinelAgent, CompilerAgent sem testes
-6. **Solides não integrada ao CRM** — Solides é integração de RH; se produtos/serviços forem migrados do Solides para CRM, não há pipeline
-7. **Certificado A1 para portais** — necessário para produção do WarriorAgent, não implementado
+1. **WarriorAgent em simulação** — pregão eletrônico sem integração real; risco competitivo
+2. **Marketing sem ORM** — raw SQL sem type safety, sem migrations, sem validators
+3. **`modules/comercial/` vazio** — risco de 404 se frontend roteado para `/comercial`
+4. **Analyst usa modelo antigo** — `claude-sonnet-4-20250514` vs. `claude-sonnet-4-6`
+5. **Testes baixos em Licitações** — 66 funções para 78 arquivos
+6. **Certificado A1** para portais não integrado ao WarriorAgent
+7. **Prompts Claude inline** — sem versionamento; mudanças de prompt sem histórico
 
 ### 5.4 Score de Completude por Módulo (0–100)
 
 | Módulo | Score | Justificativa |
 |--------|-------|---------------|
-| **CRM** | **92/100** | Pipeline completo, 225 testes, event bus. -8 por ausência de agentes IA nativos e automação de e-mail |
-| **Licitações** | **78/100** | 8 agentes, 6 portais, Celery tasks. -22 por WarriorAgent em dev, cobertura de testes baixa, modelo Claude desatualizado |
-| **Marketing** | **35/100** | Endpoints funcionais. -65 por sem ORM, sem e-mail marketing real, sem automação, sem testes dedicados |
-| **Vendas** | **3/100** | Apenas estrutura de pastas. -97 por zero implementação |
+| **CRM** | **92/100** | Pipeline completo, 225 testes, 0 TODOs, event bus, E2E. -8: sem LLM nativo, sem e-mail transacional |
+| **Licitações** | **78/100** | 8 agentes IA, Claude API, 11 Celery tasks, 6 portais. -22: WarriorAgent em dev, testes baixos, modelo desatualizado |
+| **Marketing** | **35/100** | 8 endpoints funcionais, UTM tracking. -65: sem ORM, sem e-mail real, sem automação, sem testes dedicados |
+| **Vendas** | **3/100** | Apenas estrutura de pastas. -97: zero implementação |
 
-### 5.5 Fluxo de Negócios Mapeado
-
-```
-Lead (UTM/campanha) ──► Lead CRM ──► Qualificação/Score ──► Oportunidade
-        ▲                                                         │
-   Marketing                                                  Proposta
-   Campanhas                                              (PricingEngine)
-        ▲                                                         │
-   Licitação ──── Scout ─► Analyst(Claude) ─► Assessor ──► Aprovação
-   (PNCP/portais)    └─► Pricer ─► Compiler(PDF) ─► Sentinel    │
-                                                              Contrato
-                                                         (assinatura digital)
-                                                                  │
-                                                         Ativo ──► Event Bus
-                                                                  │
-                                                             GEDEON ──► Operacional
-```
-
-### 5.6 Celery Tasks do Menu Negócios
-
-**CRM:** Nenhuma task Celery dedicada.
-**Marketing:** Nenhuma task Celery dedicada.
-**Licitações — 11 tasks (`tasks/`):**
-
-| Task | Nome Celery | Arquivo |
-|------|-------------|---------|
-| Sync PNCP oportunidades | `bidding.sync_pncp_oportunidades` | `sync_tasks.py` |
-| Sync PNCP preços | `bidding.sync_pncp_precos` | `sync_tasks.py` |
-| Atualizar contratos PNCP | `bidding.atualizar_contratos_pncp` | `sync_tasks.py` |
-| Verificar certidões | `bidding.verificar_certidoes_vencimento` | `notification_tasks.py` |
-| Notificar oportunidade nova | `bidding.notificar_oportunidade_nova` | `notification_tasks.py` |
-| Notificar prazo edital | `bidding.notificar_prazo_edital` | `notification_tasks.py` |
-| Notificar resultado pipeline | `bidding.notificar_resultado_pipeline` | `notification_tasks.py` |
-| Processar pipeline edital | `bidding.processar_pipeline_edital` | `dispute_tasks.py` |
-| Monitorar disputa sessão | `bidding.monitorar_disputa_sessao` | `dispute_tasks.py` |
-| Verificar resultado licitação | `bidding.verificar_resultado_licitacao` | `dispute_tasks.py` |
-| Preparar recursos/impugnação | `bidding.preparar_recursos_impugnacao` | `dispute_tasks.py` |
-
-### 5.7 Integrações Globais Relevantes (Prompt STEP 7)
+### 5.5 Integrações Externas Globais (STEP 7 completo)
 
 | Integração | Módulo | Status |
 |-----------|--------|--------|
-| **Banco Inter** | `financial/` + webhooks em `main_production.py:1039` | ✅ Pix + boleto — **não no CRM/Licitações** |
-| **WhatsApp (Evolution API)** | `whatsapp_router` em `main_production.py:929` | ✅ Módulo separado — **não integrado a campanhas** |
-| **SMTP** | `core/mailer.py` + `settings.SMTP_*` | ✅ Global — sem uso direto em marketing |
-| **SendGrid / Mailgun** | `sprint36_notification_hub` (migration) | ⚠️ Schema criado, implementação pendente |
-| **Solides** | `sprint33_solides_integration` | ✅ RH — sem relação com CRM/Licitações |
-| **Certificado A1** | `core/credentials/`, `government_integrations/` | ✅ Disponível globalmente — pendente no WarriorAgent |
-| **Claude API (Anthropic)** | `bidding/agents/analyst_agent.py` | ✅ `ANTHROPIC_API_KEY`, modelo `claude-sonnet-4-20250514` |
+| **Banco Inter** | `financial/` + `main_production.py:1039` | ✅ Pix + boleto — NÃO no CRM/Licitações |
+| **WhatsApp (Evolution API)** | `whatsapp_router` em `main_production.py:929` | ✅ Módulo separado — NÃO integrado a campanhas |
+| **SMTP** | `core/mailer.py` (smtplib) + `settings.SMTP_*` | ✅ Global — NÃO usado diretamente em Marketing |
+| **SendGrid / Mailgun** | Schema: `sprint36_notification_hub` | ⚠️ Schema criado, sem implementação |
+| **Solides** | `sprint33_solides_integration` | ✅ RH/DP — NÃO relacionado ao menu Negócios |
+| **Certificado A1** | `core/credentials/`, `government_integrations/` | ✅ Global — pendente no WarriorAgent |
+| **Claude API** | `bidding/agents/analyst_agent.py` | ✅ `ANTHROPIC_API_KEY`, `claude-sonnet-4-20250514` |
+| **ComprasNet/PNCP/portais** | `bidding/integrations/` | ✅ 6 portais implementados |
 
 ---
 
-RECONHECIMENTO BACKEND CONCLUÍDO — arquivo em /opt/conecta-pro/reconhecimento/cpro11/t4_backend_negocios.md — 761 linhas
+RECONHECIMENTO BACKEND CONCLUÍDO — arquivo em /opt/conecta-pro/reconhecimento/cpro11/t4_backend_negocios.md — 974 linhas
