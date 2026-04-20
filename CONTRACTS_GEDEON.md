@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.23
+**Versão:** 1.24
 **Data:** 2026-04-20
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1715,10 +1715,10 @@ usando o padrão `safe_import()`).
 
 | motivo (API)            | Exibição PT-BR                            |
 |-------------------------|-------------------------------------------|
-| `nao_encontrado_onvio`  | Não encontrado no Onvio                   |
+| `nao_encontrado_onvio`  | Não sincronizado do Onvio                 |
 | `aguarda_fase_1_cnd`    | Aguarda busca automática CND (FASE 1)     |
 | `aguarda_fase_2_banco`  | Aguarda integração bancária (FASE 2)      |
-| `nao_sincronizado`      | Tipo sem sincronização configurada        |
+| `nao_sincronizado`      | Não sincronizado                          |
 
 ### §27.8 — Testes de integração
 
@@ -1781,3 +1781,4 @@ Após ambos entregarem relatórios:
 | 1.21   | 2026-04-20 | T1_BLOCO3  | §26 FASE 4 BLOCO 3 T1 — KitBuilderService contrato: DTOs, CategoriaToTipoDocumento (20 entradas), regras CNDs/comp_pagamentos, H1-H7 validados |
 | 1.22   | 2026-04-20 | T1_AUDIT   | §26 reescrito: DTOs @dataclass corretos (onvio_document_id, revisao_pendente, pct_completude_confirmada/total), CategoriaToTipoDocumento PascalCase, §26.5 performance alvo, §26.6 10 cenários, §26.7 regex mes_ref |
 | 1.23   | 2026-04-20 | PIONEIRO_B3 | §27 Contrato de API BLOCO 3 — endpoints /kits/completude/{id} e /kits/lote, response JSON literal, Pydantic schemas, UI dashboard (cores/modal/componentes), error handling, 10 testes T2 + testes T3 |
+| 1.24   | 2026-04-20 | AUDIT_B3    | §27 auditoria: 2 traduções de motivo corrigidas (nao_encontrado_onvio → "Não sincronizado do Onvio"; nao_sincronizado → "Não sincronizado") conforme prompt pioneiro |
