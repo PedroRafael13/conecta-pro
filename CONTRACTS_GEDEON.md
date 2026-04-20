@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.18
+**Versão:** 1.19
 **Data:** 2026-04-19
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1275,8 +1275,8 @@ revisão) e preservar a categoria."
 
 **Data:** 2026-04-20
 **Commits:**
-- docs (bug report): ver CHANGELOG v1.18
-- fix (código): ver CHANGELOG v1.19
+- docs (bug report): `4955bb83` — CONTRACTS_GEDEON.md §25+§23.11 (v1.18)
+- fix (código): `8c8340dc` — onvio_doc_scope_classifier.py (v1.19)
 - re-backfill (report): ver CHANGELOG v1.20
 
 ### §23.11.1 — Escopo do fix
@@ -1353,3 +1353,4 @@ Estado pré-fix preservado em `/tmp/backup_fase_3_5_t2_fix_<timestamp>/onvio_doc
 | 1.16   | 2026-04-19 | T2_BLOCO2 | §23 FASE 3.5 BLOCO 2/T2 — OnvioDocScopeClassifier + backfill 436 docs; INV-8 OK (0 NULL); 4 testes falsificação PASS; bug CAST psycopg2 documentado |
 | 1.17   | 2026-04-19 | T2_AUDIT  | §23.9+§23.10 adicionados: dívida técnica employees (data_demissao vs data_desligamento) + regra FASE 4 CNDs em kit_mensal |
 | 1.18   | 2026-04-20 | T2_FIX_DOCS | §25 Lição 9 (invariantes saída vs fallback) + §23.11 correção T2 original; header bumped 1.15→1.17→1.18 |
+| 1.19   | 2026-04-20 | T2_FIX_CODE | fix `8c8340dc`: classifier preserva scope Grupos A/B; re-backfill 436 docs; empresa_matriz=107, condominio=236, funcionario=93; 5 testes PASS |
