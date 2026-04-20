@@ -32,3 +32,9 @@ export const leadStatusConfig = (status?: string | null) =>
     label: status || '—',
     color: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
   };
+
+// Retorna apenas o label PT-BR — spec do prompt CPRO11-T5 §2.2
+export const leadStatusLabel = (status?: string): string => {
+  if (!status) return '—';
+  return LEAD_STATUS_LABELS[status]?.label || status;
+};

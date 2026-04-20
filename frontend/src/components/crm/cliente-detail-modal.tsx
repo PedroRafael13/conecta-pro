@@ -80,7 +80,10 @@ export function ClienteDetailModal({
         </div>
         <div className="col-span-2">
           <Label className="text-muted-foreground text-xs">Endereço</Label>
-          {(() => {
+          {/* endereco_texto = campo adicionado por T4 (P0.2 backend); fallback para objeto estruturado */}
+          {cliente.endereco_texto ? (
+            <p className="text-sm">{cliente.endereco_texto}</p>
+          ) : (() => {
             const e = cliente.endereco;
             if (!e) return <p className="text-sm">-</p>;
             if (typeof e === 'string') return <p className="text-sm">{e}</p>;
