@@ -1,5 +1,5 @@
 # CONTRATO CRM / VENDAS — Conecta PRO
-**Versão:** v1.3
+**Versão:** v1.4
 **Data:** 2026-04-20
 **Mantenedor:** Opus CPRO 11
 **Escopo:** Menu "Negócios" → CRM / Vendas (tudo que vive em `modules/crm/` no backend e `frontend/src/app/modulos/crm/`)
@@ -290,18 +290,22 @@ Após T4+T5+T6 reportarem OK, disparar **T7** em terminal novo com INV-1: "ZERO 
 
 > Cada terminal escreve SEU status aqui e nenhum outro. T4 escreve em §23.1, T5 em §23.2, T6 em §23.3. Evita conflito de merge.
 
-### §23.1 — Status T4 (Backend)
-*(a ser preenchido pelo T4 ao concluir cada passo)*
+### §23.1 — Status T4 (Backend) — CONCLUÍDO 2026-04-20
+*(atualizado por CPRO11-T4)*
 
-- [ ] STEP 0 executado
-- [ ] H1-H10 validadas
-- [ ] P0.1 Migration `contractstatus` — status: ___
-- [ ] P0.2 backend — schema `ClientResponse` com `endereco` estruturado — status: ___
-- [ ] P0.5 backend — `/crm/dashboard/kpis` corrigido — status: ___
-- [ ] P0.6 backend — cálculo MRR — status: ___
-- [ ] P0.11 — `leads_conversion_rate` — status: ___
-- [ ] Testes 🔴 executados: ___
-- [ ] Commits: docs=<hash> code=<hash>
+- [x] STEP 0 executado — H1-H10 validadas (ver relatório RELATORIO_CPRO11_T4.md)
+- [x] **P0.1 Migration** `cpro11_001_contractstatus_enum` — ✅ APLICADA
+  - Criados: contractstatus, contracttype, adjustmentindex, addendumtype
+  - Dados normalizados UPPERCASE → lowercase
+  - Contratos ALTER'd: contracts.status, contract_type, adjustment_index; contract_addendums.addendum_type, adjustment_index
+  - ContractTemplate.service_type → String(30) (dados históricos inválidos: 'admissao', 'ferias')
+- [x] **P0.2 backend** — `client_controller.py`: campo `endereco_texto` (string) adicionado ao lado do objeto `endereco` — ✅
+- [x] **P0.3 proposals/templates** — rota movida ANTES de `/{proposal_id}` em `proposal_controller.py` — ✅
+- [x] **P0.5 backend** — `DashboardKPIs` com campos `clientes_total`, `condominios_total`, `mrr`, `em_negociacao`, `em_proposta` — ✅
+- [x] **P0.6 backend** — `dashboard_controller.py`: query direta `clients + client_contracts` para MRR real com COALESCE — ✅
+- [x] **P0.11** — `leads_conversion_rate` agora conta status "converted" (além de "won") — ✅
+- [x] **Testes 🔴** — 8/8 passando em `tests/modules/crm/test_cpro11_regressions.py`
+- [ ] Commits: docs=<pending> code=<pending>
 
 ### §23.2 — Status T5 (Frontend)
 *(a ser preenchido pelo T5 ao concluir cada passo)*
