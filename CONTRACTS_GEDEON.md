@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.21
+**Versão:** 1.22
 **Data:** 2026-04-20
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1345,105 +1345,52 @@ INV-8 revisado para funcionario: **73-105** (alvo real 93).
 
 ---
 
-## §26 — FASE 4 BLOCO 3 (T1) — KitBuilderService
+## §26 — FASE 4 BLOCO 3 / T1 — KitBuilderService
 
 **Data:** 2026-04-20
-**Autor:** T1_BLOCO3
-**Escopo:** Serviço read-only de cálculo de completude de kit documental — ZERO endpoints, ZERO UI, ZERO ZIP
+**Terminal:** T1
+**Princípios:** §13.1 Chesterton + §13.3 Docs antes + §13.4 Escopo
 
-### §26.1 — Contrato de escopo (§13.4 Escopo Sagrado)
+### §26.1 — Escopo
 
-`KitBuilderService` é **leitura pura**. Responsabilidades:
-1. Receber `(condominio_id: UUID, mes_ref: str)` e retornar `CompletudeKit`
-2. Cruzar `kit_documental_templates` × `onvio_documents` para medir completude
-3. Devolver `docs_presentes`, `docs_faltantes`, `MetricasKit`
+Service que dado (condominio_id, mes_ref) retorna CompletudeKit com:
+- lista de docs PRESENTES (confirmados, com onvio_document.id)
+- lista de docs PRESENTES_PENDENTE_REVISAO (revisao_manual=True)
+- lista de docs FALTANTES (esperados pelo template, ausentes do onvio)
+- métricas: total_esperado, total_presente, total_pendente, pct_completude
 
-Proibido neste serviço: escrita no banco, geração de ZIP, chamadas HTTP externas, endpoints REST.
+FORA DO ESCOPO: endpoints (T2), UI/dashboard (T3), geração de ZIP (FASE 4 futura).
 
-### §26.2 — Tabelas envolvidas (confirmadas H1-H7)
-
-| Tabela | Papel |
-|--------|-------|
-| `condominios` | tipo_servico (kit_mensal/portaria_autonoma/portaria_remota/manutencao_cftv) |
-| `kit_documental_templates` | templates esperados por (tipo_servico, tipo_documento, escopo) |
-| `onvio_documents` | docs presentes (categoria, mes_ref, condominio_id, referente_a_employee_id, doc_scope) |
-| `employee_alocacoes` | funcionários ativos do condomínio no mês |
-
-**Contagens validadas (H1-H7):**
-- condominios: 11 ✅
-- employee_alocacoes: 47 ✅
-- kit_documental_templates: 38 ✅ (32 kit_mensal + 2 portaria_autonoma + 2 portaria_remota + 2 manutencao_cftv)
-- onvio_documents: 436 ✅
-
-### §26.3 — CategoriaToTipoDocumento (20 entradas, imutável sem nova seção)
+### §26.2 — Contrato de interface (T2 e T3 consumirão)
 
 ```python
-CATEGORIA_TO_TIPO_DOCUMENTO: dict[str, str] = {
-    "folha_pagamento":        "folha_pagamento",
-    "recibo_folha":           "contracheque",
-    "folha_ponto":            "folhas_ponto",
-    "fgts_guia":              "gfd_fgts_mensal",
-    "fgts_relatorio":         "relatorio_gfd_fgts",
-    "dctfweb_declaracao":     "dctfweb_declaracao",
-    "dctfweb_recibo":         "dctfweb_recibo",
-    "dctfweb_extrato":        "dctfweb_extrato",
-    "dctfweb_resumo_creditos": "dctfweb_extrato",
-    "dctfweb_resumo_debitos":  "dctfweb_extrato",
-    "dctfweb_creditos":       "dctfweb_extrato",
-    "dctfweb_debitos":        "dctfweb_extrato",
-    "dctfweb_situacao":       "dctfweb_extrato",
-    "contrato_trabalho":      "contrato_trabalho",
-    "ficha_registro":         "ficha_empregado",
-    "rescisao":               "rescisao_contrato",
-    "aso":                    "aso",
-    "aviso_previo":           "aviso_previo_ferias",
-    "ferias":                 "recibo_ferias",
-    "declaracao_vt":          "comp_vt_individual",
-}
-```
-
-### §26.4 — Regra CNDs (sempre faltantes via FASE 1)
-
-CNDs (`cnd_caixa`, `cnd_prefeitura`, `cnd_rfb`, `cnd_sefaz`, `cnd_trabalhista`) têm
-`escopo='empresa_matriz'` em `kit_documental_templates`. Elas **nunca aparecem** em
-`onvio_documents` — são geradas pela FASE 1.
-
-**Regra:** Quando template.tipo_documento começa com `cnd_` → sempre inserir em
-`docs_faltantes` com `motivo='aguarda_fase_1_cnd'`, independente de onvio_documents.
-
-### §26.5 — Regra comp_pagamentos (sempre faltantes via FASE 2)
-
-`comp_pag_fgts` e `comp_salario_individual` (escopo='condominio') são gerados pela FASE 2.
-
-**Regra:** Quando template.tipo_documento in (`comp_pag_fgts`, `comp_salario_individual`,
-`comp_va_solides`) → sempre inserir em `docs_faltantes` com `motivo='aguarda_fase_2_banco'`.
-
-### §26.6 — DTOs (Pydantic v2, imutáveis)
-
-```python
-class DocumentoPresente(BaseModel):
-    tipo_documento: str
-    escopo: str             # condominio | funcionario | empresa_matriz
-    onvio_id: str
+@dataclass
+class DocumentoPresente:
+    tipo_documento: str  # ex: 'folha_pagamento'
+    escopo: str  # condominio | empresa_matriz | funcionario
+    onvio_document_id: UUID
     nome_arquivo: str
-    condominio_id: UUID | None
-    employee_id: UUID | None
-    mes_ref: str
+    revisao_pendente: bool  # True se revisao_manual=True
 
-class DocumentoFaltante(BaseModel):
+@dataclass
+class DocumentoFaltante:
     tipo_documento: str
     escopo: str
     obrigatorio: bool
-    motivo: str             # "nao_encontrado" | "aguarda_fase_1_cnd" | "aguarda_fase_2_banco"
+    periodicidade: str  # mensal | eventual | anual
+    motivo: str  # 'nao_encontrado_onvio' | 'aguarda_fase_1_cnd' | 'aguarda_fase_2_banco' | 'nao_sincronizado'
 
-class MetricasKit(BaseModel):
-    total_esperados: int
-    total_presentes: int
-    total_faltantes: int
-    percentual_completude: float  # 0.0-100.0
-    obrigatorios_faltantes: int
+@dataclass
+class MetricasKit:
+    total_esperado: int           # rows do kit_documental_templates para o tipo_servico
+    total_presente_confirmado: int
+    total_presente_pendente_revisao: int
+    total_faltante: int
+    pct_completude_confirmada: float  # (confirmado / total_esperado) * 100
+    pct_completude_total: float       # ((confirmado + pendente) / total_esperado) * 100
 
-class CompletudeKit(BaseModel):
+@dataclass
+class CompletudeKit:
     condominio_id: UUID
     condominio_nome: str
     tipo_servico: str
@@ -1451,25 +1398,73 @@ class CompletudeKit(BaseModel):
     docs_presentes: list[DocumentoPresente]
     docs_faltantes: list[DocumentoFaltante]
     metricas: MetricasKit
+    gerado_em: datetime
 ```
+
+### §26.3 — Mapping categoria → tipo_documento
+
+Documentado em dict constante `CategoriaToTipoDocumento` (PascalCase) exportado pelo
+módulo. T2 importa para usar em filtros quando necessário. 20 entradas validadas.
+
+Categorias sem match direto com kit_documental_templates: `decimo_terceiro`,
+`recibo_decimo_terceiro`, `afastamento`, `atestado`, `autodeclaracao`,
+`portal_empregador`, `fgts_consignado`, `fgts_consignado_relatorio`
+→ existem em onvio_documents mas não fazem parte do kit obrigatório.
+
+### §26.4 — Regras especiais
+
+- **CNDs** (`cnd_rfb`, `cnd_caixa`, `cnd_prefeitura`, `cnd_sefaz`, `cnd_trabalhista`):
+  aparecem em kit_mensal mas onvio_documents não tem essas categorias
+  (FASE 1 gera via Claude in Chrome). Até lá, aparecem como FALTANTES
+  com `motivo='aguarda_fase_1_cnd'`.
+- **comp_pag_fgts, comp_fgts_rescisao, comp_salario_individual, comp_rescisao**:
+  aparecem como FALTANTES com `motivo='aguarda_fase_2_banco'` até
+  integração bancária gerar. Idem `nfse` e `boleto`.
+- **Administrativo (ESCRITÓRIO):** kit vazio, métricas com total_esperado=0.
+- **Condomínios sem tem_folha_clt** (P. Gelain, Green Hills, Parise): kit com
+  apenas NFS-e + Boleto (kit_documental_templates para esses tipos_servico
+  tem 2 rows cada).
+- **TIPOS_DOCUMENTO_SEM_SINCRONIZACAO** (`comp_vt_va_combinado`, `recibo_vt_va`,
+  `comp_va_solides`, `relatorio_pedido_va`): motivo=`'nao_sincronizado'`.
+
+### §26.5 — Performance alvo
+
+`build_completude` de 1 condomínio: **<500ms** (medido: 9.6ms) ✅
+`build_lote_condominios` (11 condomínios): **<3s** (medido: 0.07s) ✅
+Não otimizar prematuramente (sem cache, sem view materializada).
+
+### §26.6 — Testes unitários
+
+10 cenários cobertos (30 testes pytest — 30/30 PASS):
+
+1. kit_mensal com docs confirmados vs pendentes revisão separados
+2. kit_mensal: 32 templates, percentual entre 0-100, campos corretos
+3. kit_mensal faltando CNDs (aguarda_fase_1_cnd) — 5/5 com escopo=empresa_matriz
+4. kit_mensal faltando comp pagamento (aguarda_fase_2_banco) — >=3 tipos
+5. portaria_remota (só NFS-e + Boleto = 2 templates)
+6. manutencao_cftv (idem 2 templates)
+7. portaria_autonoma (idem 2 templates)
+8. administrativo retorna kit vazio (total_esperado=0, pct=0.0)
+9. mes_ref formato inválido (incl. "13.2026", "00.2026", None) → raise ValueError
+10. condominio_id inexistente → raise ValueError
 
 ### §26.7 — Validação mes_ref
 
-Formato aceito: `"MM.YYYY"` (ex: `"03.2026"`). Validar com regex `^\d{2}\.\d{4}$`.
-Rejeitar formato inválido com `ValueError`. Formato `"YYYY"` isolado: não aceitar no serviço
-(é residual de docs antigos sem competência mensal).
+Regex: `^(0[1-9]|1[0-2])\.\d{4}$` — valida mês 01-12.
+`"13.2026"` e `"00.2026"` → raise ValueError. Implementada como função
+pública `_validate_mes_ref()` exportada pelo módulo.
 
-### §26.8 — Descobertas H1-H7 (validação pré-código)
+### §26.8 — Evidências H1-H7 (pré-código — §13.1 Chesterton)
 
 | Hipótese | Esperado | Real | Status |
 |----------|----------|------|--------|
-| H1: condominios.tipo_servico existe | sim | sim | ✅ |
-| H2: kit_documental_templates tem tipo_servico+tipo_documento+escopo | sim | sim | ✅ |
+| H1: condominios.tipo_servico existe | sim | sim (5 valores únicos) | ✅ |
+| H2: kit_documental_templates tem tipo_servico+tipo_documento+escopo+periodicidade | sim | sim | ✅ |
 | H3: onvio_documents tem condominio_id+referente_a_employee_id+doc_scope | sim | sim | ✅ |
-| H4: kit_mensal tem 32 templates | 32 | 32 | ✅ |
-| H5: onvio categorias cobrem CATEGORIA_TO_TIPO_DOCUMENTO | maioria | maioria | ✅ |
-| H6: CNDs não estão em onvio_documents (geradas FASE 1) | sim | sim (0 rows) | ✅ |
-| H7: mes_ref formato "MM.YYYY" (+ residuais "YYYY") | sim | sim | ✅ |
+| H4: kit_mensal tem 32 templates (21 obrigatórios) | 32 | 32 | ✅ |
+| H5: onvio categorias cobrem CategoriaToTipoDocumento | maioria | confirmado | ✅ |
+| H6: CNDs ausentes de onvio_documents (geradas FASE 1) | 0 rows | 0 rows | ✅ |
+| H7: mes_ref formato "MM.YYYY" (+ residuais "YYYY") | sim | confirmado | ✅ |
 
 ---
 
@@ -1499,3 +1494,4 @@ Rejeitar formato inválido com `ValueError`. Formato `"YYYY"` isolado: não acei
 | 1.19   | 2026-04-20 | T2_FIX_CODE | fix `8c8340dc`: classifier preserva scope Grupos A/B; re-backfill 436 docs; empresa_matriz=107, condominio=236, funcionario=93; 5 testes PASS |
 | 1.20   | 2026-04-20 | T2_FIX_AUDIT | auditoria: §23.11.5 desvio INV-8 funcionario=93 documentado; hashes 3 commits completos; STEP 8-C/D com método correto; v1.19→v1.20 |
 | 1.21   | 2026-04-20 | T1_BLOCO3  | §26 FASE 4 BLOCO 3 T1 — KitBuilderService contrato: DTOs, CategoriaToTipoDocumento (20 entradas), regras CNDs/comp_pagamentos, H1-H7 validados |
+| 1.22   | 2026-04-20 | T1_AUDIT   | §26 reescrito: DTOs @dataclass corretos (onvio_document_id, revisao_pendente, pct_completude_confirmada/total), CategoriaToTipoDocumento PascalCase, §26.5 performance alvo, §26.6 10 cenários, §26.7 regex mes_ref |
