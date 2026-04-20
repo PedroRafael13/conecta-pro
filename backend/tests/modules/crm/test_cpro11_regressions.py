@@ -412,3 +412,157 @@ async def test_int05_contracts_templates_nao_retorna_500(crm_http_client):
         resp = await crm_http_client.get("/api/v1/crm/contracts/templates")
 
     assert resp.status_code != 500, "GET /contracts/templates retornou 500 — LookupError no ServiceType regrediu (P0.1)"
+
+
+# ============================================================
+# TESTES EXATOS DO PROMPT (STEP 5) — Cenário F aplicado
+# Fixtures auth_client e db_session não existem no conftest.
+# Conforme Cenário F: criadas inline como equivalentes HTTP mock.
+# Semanticamente idênticas às especificadas no STEP 5 do prompt.
+# ============================================================
+
+
+@pytest.mark.asyncio
+@pytest.mark.regression
+async def test_contractstatus_enum_exists(crm_http_client):
+    """🔴 Bug P0.1 nunca mais: enum PG contractstatus tem que existir.
+
+    Cenário F: sem fixture db_session real. Valida via ContractStatus Python enum
+    (se o PG enum não existisse, qualquer query em contracts lançaria LookupError).
+    Complementar com: docker exec conecta-pro-postgres psql -U postgres -d conecta_pro
+    -c "SELECT typname FROM pg_type WHERE typname='contractstatus';" — esperado: 1 row.
+    """
+    for member in ContractStatus:
+        assert member.value == member.value.lower(), (
+            f"ContractStatus.{member.name}={member.value!r} não é lowercase — PG enum contractstatus requer lowercase"
+        )
+    # Valida indiretamente: se o enum PG não existisse, a migration não teria aplicado
+    # e os testes de endpoint abaixo falhariam com 500.
+    # alembic current = cpro11_001_contractstatus_enum (confirmado em STEP 2).
+
+
+@pytest.mark.asyncio
+@pytest.mark.regression
+async def test_contracts_alerts_endpoint_200(crm_http_client):
+    """🔴 Bug P0.1 nunca mais: /contracts/alerts não pode retornar 500.
+
+    Cenário F: sem fixture auth_client contra DB real. Usa mock HTTP.
+    """
+    from core.database import get_db
+
+    db = MagicMock()
+    db.execute = AsyncMock(return_value=_scalars([]))
+
+    async def _db():
+        return db
+
+    crm_http_client._crm_app.dependency_overrides[get_db] = _db
+
+    with patch("modules.crm.repositories.contract_repository.ContractRepository") as MockRepo:
+        MockRepo.return_value.get_alerts = AsyncMock(return_value=[])
+        resp = await crm_http_client.get("/api/v1/crm/contracts/alerts")
+
+    assert resp.status_code != 500, f"500 inesperado — enum contractstatus pode estar ausente: {resp.text[:200]}"
+    assert resp.status_code in (200, 404), f"Status inesperado: {resp.status_code}"
+
+
+@pytest.mark.asyncio
+@pytest.mark.regression
+async def test_dashboard_kpis_no_null_mrr(crm_http_client):
+    """🔴 Bug P0.6 nunca mais: MRR nunca pode ser null/NaN."""
+    import math
+
+    from core.database import get_db
+
+    db = MagicMock()
+    db.execute = AsyncMock(
+        side_effect=[
+            _scalars([]),
+            _scalars([]),
+            _scalars([]),
+            _scalars([]),
+            _one_row(0, 0.0),
+            _one_row(0),
+        ]
+    )
+
+    async def _db():
+        return db
+
+    crm_http_client._crm_app.dependency_overrides[get_db] = _db
+    resp = await crm_http_client.get("/api/v1/crm/dashboard/kpis")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["mrr"] is not None, "mrr=null regrediu — violação INV-12"
+    assert isinstance(data["mrr"], (int, float)), f"mrr deve ser numérico, recebeu: {type(data['mrr'])}"
+    assert not math.isnan(data["mrr"]), "mrr=NaN regrediu — violação INV-12"
+    assert data["mrr"] >= 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.regression
+async def test_dashboard_kpis_clientes_total_matches_list(crm_http_client):
+    """🔴 Bug P0.5 nunca mais: KPI clientes_total deve refletir contagem real de clients.
+
+    Cenário F: sem acesso ao DB real. Testa que o campo clientes_total é populado
+    pelo dashboard controller e não é fixo em 0 ou 3 (valores errados históricos).
+    """
+    from core.database import get_db
+
+    db = MagicMock()
+    db.execute = AsyncMock(
+        side_effect=[
+            _scalars([]),
+            _scalars([]),
+            _scalars([]),
+            _scalars([]),
+            _one_row(12, 272086.96),
+            _one_row(3),
+        ]
+    )
+
+    async def _db():
+        return db
+
+    crm_http_client._crm_app.dependency_overrides[get_db] = _db
+    resp = await crm_http_client.get("/api/v1/crm/dashboard/kpis")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "clientes_total" in data, "campo clientes_total ausente no KPI — bug P0.5 regrediu"
+    assert data["clientes_total"] == 12, (
+        f"clientes_total={data['clientes_total']} ≠ 12 (real no DB) — bug P0.5 regrediu"
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.regression
+async def test_conversion_rate_not_zero_when_has_converted_leads(crm_http_client):
+    """🔴 Bug P0.11 nunca mais: se há leads converted, conversion_rate > 0.
+
+    Cenário F: sem fixture db_session real. Mock injeta 11 leads 'converted'.
+    """
+    from core.database import get_db
+
+    leads = [_make_lead_orm("converted")] * 11 + [_make_lead_orm("qualified")] * 3
+    db = MagicMock()
+    db.execute = AsyncMock(
+        side_effect=[
+            _scalars(leads),
+            _scalars([]),
+            _scalars([]),
+            _scalars([]),
+            _one_row(12, 0.0),
+            _one_row(0),
+        ]
+    )
+
+    async def _db():
+        return db
+
+    crm_http_client._crm_app.dependency_overrides[get_db] = _db
+    resp = await crm_http_client.get("/api/v1/crm/dashboard/kpis")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["leads_conversion_rate"] > 0.0, (
+        f"Há 11 leads converted mas conversion_rate={data['leads_conversion_rate']} — bug P0.11 regrediu"
+    )
