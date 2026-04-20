@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.25
+**Versão:** 1.26
 **Data:** 2026-04-20
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1753,6 +1753,69 @@ Após ambos entregarem relatórios:
 
 ---
 
+## §29 — FASE 4 BLOCO 3 / T3 — Dashboard Completude Kit
+
+**Data:** 2026-04-20
+**Terminal:** T3 (paralelo com T2)
+**Princípios:** §13.1 (padrões existentes: shadcn, TanStack Query) + §13.3 + §13.4
+
+### §29.1 — Escopo implementado
+
+Dashboard em `/modulos/gestao-pessoas/ged/kits` conforme §27.7.
+Consome endpoints §27.1–§27.3 via TanStack Query v5 com fixture mode.
+Substitui page.tsx existente (534 linhas — checklist antiga de ged/kits).
+
+### §29.2 — Arquivos criados
+
+- `frontend/src/app/modulos/gestao-pessoas/ged/kits/page.tsx`
+- `frontend/src/hooks/useKitsCompletude.ts`
+- `frontend/src/types/kit-completude.ts`
+- `frontend/src/components/gedeon/KitCard.tsx`
+- `frontend/src/components/gedeon/KitDetalheModal.tsx`
+- `frontend/src/components/gedeon/KitKPIs.tsx`
+- `frontend/src/components/gedeon/MesRefSelector.tsx`
+- `frontend/src/fixtures/kits-completude.ts` (criado diretório `fixtures/`)
+
+### §29.3 — Convenção de naming (decisão)
+
+**snake_case** nos tipos TypeScript (ex: `condominio_id`, `tipo_servico`, `mes_ref`).
+Motivo: H6 confirmou `condominio_id` snake_case em `src/types/temp-placeholders.d.ts`,
+`src/types/disciplinary.ts`, e nos schemas gerados pelo orval — alinha com API FastAPI.
+Hooks usam `customInstance` de `@/lib/api-client` (axios com interceptor de auth).
+
+### §29.4 — Fixture mode (flag USE_FIXTURE)
+
+Constante `USE_FIXTURE = true` em `useKitsCompletude.ts`.
+Quando T2 sobe endpoints + testado E2E: mudar para `false` (1 linha).
+Fixture em `src/fixtures/kits-completude.ts` usa IDs/nomes reais do banco
+(11 condomínios da tabela `condominios` com `ativo=true`).
+
+### §29.5 — Mapeamento Tailwind de cores (§27.7)
+
+Implementado em `getCardClasses(pct, tipoServico)` em `KitCard.tsx`:
+
+| Faixa       | border          | bg          |
+|-------------|-----------------|-------------|
+| 0–49%       | border-red-600  | bg-red-50   |
+| 50–79%      | border-amber-500| bg-amber-50 |
+| 80–99%      | border-blue-600 | bg-blue-50  |
+| 100%        | border-green-600| bg-green-50 |
+| administrativo | border-gray-500 | bg-gray-50 |
+
+### §29.6 — Tradução de motivos (§27.7)
+
+Constante `MOTIVO_LABELS` em `KitDetalheModal.tsx`:
+- `nao_encontrado_onvio` → "Não sincronizado do Onvio"
+- `aguarda_fase_1_cnd` → "Aguarda busca automática CND (FASE 1)"
+- `aguarda_fase_2_banco` → "Aguarda integração bancária (FASE 2)"
+- `nao_sincronizado` → "Não sincronizado"
+
+### §29.7 — Resultados
+
+Preenchido após deploy + validação BUG 6 (STEP 9).
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -1782,4 +1845,5 @@ Após ambos entregarem relatórios:
 | 1.22   | 2026-04-20 | T1_AUDIT   | §26 reescrito: DTOs @dataclass corretos (onvio_document_id, revisao_pendente, pct_completude_confirmada/total), CategoriaToTipoDocumento PascalCase, §26.5 performance alvo, §26.6 10 cenários, §26.7 regex mes_ref |
 | 1.23   | 2026-04-20 | PIONEIRO_B3 | §27 Contrato de API BLOCO 3 — endpoints /kits/completude/{id} e /kits/lote, response JSON literal, Pydantic schemas, UI dashboard (cores/modal/componentes), error handling, 10 testes T2 + testes T3 |
 | 1.24   | 2026-04-20 | AUDIT_B3    | §27 auditoria: 2 traduções de motivo corrigidas (nao_encontrado_onvio → "Não sincronizado do Onvio"; nao_sincronizado → "Não sincronizado") conforme prompt pioneiro |
-| 1.25   | 2026-04-20 | AUDIT_B3_2  | §27 auditoria 2: labels de tabs do modal corrigidos ("Docs Presentes" | "Docs Faltantes" conforme prompt pioneiro) |
+| 1.25   | 2026-04-20 | AUDIT_B3_2  | §27 auditoria 2: labels de tabs do modal corrigidos ("Docs Presentes" \| "Docs Faltantes" conforme prompt pioneiro) |
+| 1.26   | 2026-04-20 | T3_BLOCO3   | §29 FASE 4 BLOCO 3/T3 — dashboard completude kit: page, hook, tipos, 4 componentes, fixture 11 condomínios reais |
