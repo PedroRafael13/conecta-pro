@@ -328,7 +328,7 @@ Após T4+T5+T6 reportarem OK, disparar **T7** em terminal novo com INV-1: "ZERO 
 - [x] P1.12 — mock crm_contacts "Teste" removido ✅
 - [x] P1.14 — `commission_rules` investigado (§13.1) — **CONCLUSÃO: tabela vazia intencional**, 22 colunas OK, produto novo. Idem `lead_scores` e `pricing_simulations`. NÃO tocar.
 - [ ] Auditoria cruzada pós-T4-T5 — veredito: **AGUARDANDO §23.1 + §23.2**
-- [x] Commits: docs=`<pendente commit>` data=`<pendente commit>`
+- [x] Commits: docs=`065f6032` (CONTRATO v1.3) · data=`8d7e163d` (script+backup+relatório)
 - [x] Backup: `reconhecimento/cpro11/t6_backups/tables_backup_20260420_2014.sql` (32KB)
 - [x] Script: `scripts/cpro11_t6_hygiene.sql` — 6 blocos, 8/8 testes ✅
 
