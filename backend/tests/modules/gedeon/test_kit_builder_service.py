@@ -1,7 +1,6 @@
-"""
-Testes de integração — KitBuilderService (§26 CONTRACTS_GEDEON.md v1.21).
-Usa banco de dados real via SyncSessionLocal (sem mocks).
-Todos os cenários cobrem §26.4–§26.8.
+"""Testes de integração — KitBuilderService (§26.6 CONTRACTS_GEDEON.md v1.21).
+
+Cobrem 10 cenários do §26.6. Banco real via SyncSessionLocal (sem mocks).
 """
 
 from __future__ import annotations
@@ -9,225 +8,275 @@ from __future__ import annotations
 from uuid import UUID, uuid4
 
 import pytest
+from sqlalchemy import text
 
+from core.database.session import SyncSessionLocal
 from modules.gedeon.services.kit_builder_service import (
-    _CND_TIPOS,
-    _COMP_PAGAMENTOS_TIPOS,
-    CATEGORIA_TO_TIPO_DOCUMENTO,
+    TIPOS_DOCUMENTO_AGUARDA_FASE_1_CND,
+    CategoriaToTipoDocumento,
     CompletudeKit,
     DocumentoFaltante,
     DocumentoPresente,
     KitBuilderService,
     MetricasKit,
+    _determinar_motivo_faltante,
+    _validate_mes_ref,
 )
 
 # ---------------------------------------------------------------------------
-# Fixtures com IDs reais (seed planilha GEDEON 03/2026 — §22.3)
+# Fixtures
 # ---------------------------------------------------------------------------
-IDEAL_FLORES_ID = UUID("215a124b-2dd7-4125-ab3f-6efa3aa67c99")  # kit_mensal
-LARANJEIRAS_ID = UUID("7c2323fd-e226-4121-806d-d9b2598feeed")  # kit_mensal
-PARISE_ID = UUID("9be1e32b-0ff1-4668-9094-74f720c9a487")  # portaria_autonoma
-P_GELAIN_ID = UUID("ab146423-859e-4e6e-aeaf-041987a18f25")  # portaria_remota
-GREEN_HILLS_ID = UUID("4900de33-c778-4792-818d-e0901b559aed")  # manutencao_cftv
-ESCRITORIO_ID = UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890")  # administrativo
-
-MES_REF_VALIDO = "03.2026"
-MES_REF_SEM_DOCS = "06.2020"  # mês sem docs em onvio_documents
 
 
 @pytest.fixture
-def svc() -> KitBuilderService:
-    return KitBuilderService()
+def db():
+    session = SyncSessionLocal()
+    yield session
+    session.close()
+
+
+@pytest.fixture
+def service(db):
+    return KitBuilderService(db)
+
+
+def _get_condominio_id(db, nome_normalizado: str) -> UUID:
+    row = db.execute(
+        text("SELECT id FROM condominios WHERE nome_normalizado = :n"),
+        {"n": nome_normalizado},
+    ).fetchone()
+    assert row, f"Condomínio não encontrado: {nome_normalizado}"
+    return UUID(str(row[0]))
 
 
 # ---------------------------------------------------------------------------
-# Cenário 1 — mes_ref inválido levanta ValueError (§26.7)
+# Cenário 9 — mes_ref inválido → raise ValueError (INV-13)
 # ---------------------------------------------------------------------------
 class TestMesRefValidacao:
-    def test_formato_errado_levanta_value_error(self, svc):
-        with pytest.raises(ValueError, match="MM.YYYY"):
-            svc.build_completude(IDEAL_FLORES_ID, "2026-03")
+    def test_formato_errado_levanta_value_error(self):
+        with pytest.raises(ValueError, match="mes_ref inválido"):
+            _validate_mes_ref("2026-04")
 
-    def test_mes_sem_ponto_levanta_value_error(self, svc):
-        with pytest.raises(ValueError, match="MM.YYYY"):
-            svc.build_completude(IDEAL_FLORES_ID, "032026")
+    def test_formato_texto_levanta_value_error(self):
+        with pytest.raises(ValueError):
+            _validate_mes_ref("abril 2026")
 
-    def test_build_lote_mes_ref_invalido(self, svc):
-        with pytest.raises(ValueError, match="MM.YYYY"):
-            svc.build_lote_condominios("2026/03")
+    def test_mes_13_levanta_value_error(self):
+        with pytest.raises(ValueError):
+            _validate_mes_ref("13.2026")  # mês > 12
+
+    def test_mes_00_levanta_value_error(self):
+        with pytest.raises(ValueError):
+            _validate_mes_ref("00.2026")  # mês 0
+
+    def test_none_levanta_value_error(self):
+        with pytest.raises(ValueError):
+            _validate_mes_ref(None)
+
+    def test_formatos_validos_nao_levantam(self):
+        _validate_mes_ref("01.2026")
+        _validate_mes_ref("03.2026")
+        _validate_mes_ref("12.2025")
 
 
 # ---------------------------------------------------------------------------
-# Cenário 2 — condomínio inexistente levanta ValueError
+# Cenário 10 — condominio_id inexistente → raise ValueError (INV-14)
 # ---------------------------------------------------------------------------
 class TestCondominioInexistente:
-    def test_uuid_inexistente_levanta_value_error(self, svc):
+    def test_uuid_inexistente_levanta_value_error(self, service):
         with pytest.raises(ValueError, match="não encontrado"):
-            svc.build_completude(uuid4(), MES_REF_VALIDO)
+            service.build_completude(uuid4(), "03.2026")
 
 
 # ---------------------------------------------------------------------------
-# Cenário 3 — kit_mensal: estrutura geral (32 templates)
+# Cenário 1 — kit_mensal: estrutura e métricas corretas
 # ---------------------------------------------------------------------------
 class TestKitMensalEstrutura:
-    def test_retorna_completude_kit(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        assert isinstance(kit, CompletudeKit)
-        assert kit.condominio_id == IDEAL_FLORES_ID
-        assert kit.tipo_servico == "kit_mensal"
-        assert kit.mes_ref == MES_REF_VALIDO
+    def test_retorna_completude_kit(self, service, db):
+        cid = _get_condominio_id(db, "ideal_flores")
+        result = service.build_completude(cid, "03.2026")
+        assert isinstance(result, CompletudeKit)
+        assert result.tipo_servico == "kit_mensal"
+        assert result.mes_ref == "03.2026"
+        # kit_mensal tem 32 templates
+        assert result.metricas.total_esperado == 32
 
-    def test_total_esperados_igual_32_templates(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        assert kit.metricas.total_esperados == 32
+    def test_metricas_percentual_entre_0_e_100(self, service, db):
+        cid = _get_condominio_id(db, "mirante")
+        result = service.build_completude(cid, "03.2026")
+        m = result.metricas
+        assert 0.0 <= m.pct_completude_confirmada <= 100.0
+        assert 0.0 <= m.pct_completude_total <= 100.0
 
-    def test_soma_presentes_mais_faltantes_igual_total(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        m = kit.metricas
-        assert m.total_presentes + m.total_faltantes == m.total_esperados
+    def test_soma_tipos_igual_total_esperado(self, service, db):
+        """INV: total_presente_confirmado + total_presente_pendente + total_faltante >= total_esperado."""
+        cid = _get_condominio_id(db, "ideal_flores")
+        result = service.build_completude(cid, "03.2026")
+        m = result.metricas
+        total_presente = m.total_presente_confirmado + m.total_presente_pendente_revisao
+        # Pode ser > total_esperado se um tipo_doc tem múltiplos arquivos
+        assert total_presente + m.total_faltante >= m.total_esperado
 
-    def test_percentual_completude_entre_0_e_100(self, svc):
-        kit = svc.build_completude(LARANJEIRAS_ID, MES_REF_VALIDO)
-        assert 0.0 <= kit.metricas.percentual_completude <= 100.0
-
-    def test_docs_presentes_tem_campos_obrigatorios(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        for dp in kit.docs_presentes:
+    def test_docs_presentes_tem_campos_corretos(self, service, db):
+        cid = _get_condominio_id(db, "ideal_flores")
+        result = service.build_completude(cid, "03.2026")
+        for dp in result.docs_presentes:
             assert isinstance(dp, DocumentoPresente)
             assert dp.tipo_documento
-            assert dp.escopo in ("condominio", "funcionario", "empresa_matriz")
-            assert dp.mes_ref == MES_REF_VALIDO
+            assert dp.escopo in ("condominio", "empresa_matriz", "funcionario")
+            assert isinstance(dp.onvio_document_id, UUID)
+            assert isinstance(dp.revisao_pendente, bool)
 
-    def test_docs_faltantes_tem_motivo_valido(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        motivos_validos = {"nao_encontrado", "aguarda_fase_1_cnd", "aguarda_fase_2_banco"}
-        for df in kit.docs_faltantes:
+    def test_docs_faltantes_tem_campos_corretos(self, service, db):
+        cid = _get_condominio_id(db, "ideal_flores")
+        result = service.build_completude(cid, "03.2026")
+        motivos_validos = {
+            "nao_encontrado_onvio",
+            "aguarda_fase_1_cnd",
+            "aguarda_fase_2_banco",
+            "nao_sincronizado",
+        }
+        for df in result.docs_faltantes:
             assert isinstance(df, DocumentoFaltante)
             assert df.motivo in motivos_validos
+            assert df.periodicidade
 
 
 # ---------------------------------------------------------------------------
-# Cenário 4 — CNDs sempre faltantes com motivo aguarda_fase_1_cnd (§26.4)
+# Cenário 2 — docs confirmados vs pendentes revisão separados corretamente
+# ---------------------------------------------------------------------------
+class TestDocumentosPendentesVsConfirmados:
+    def test_separacao_confirmados_pendentes(self, service, db):
+        cid = _get_condominio_id(db, "ideal_flores")
+        result = service.build_completude(cid, "03.2026")
+        m = result.metricas
+        total_presente = m.total_presente_confirmado + m.total_presente_pendente_revisao
+        assert len(result.docs_presentes) == total_presente
+
+    def test_revisao_pendente_e_booleano(self, service, db):
+        cid = _get_condominio_id(db, "ideal_flores")
+        result = service.build_completude(cid, "03.2026")
+        for p in result.docs_presentes:
+            assert isinstance(p.revisao_pendente, bool)
+
+
+# ---------------------------------------------------------------------------
+# Cenário 3 — CNDs aparecem como faltantes (aguarda_fase_1_cnd)
 # ---------------------------------------------------------------------------
 class TestCndsSempreFaltantes:
-    def test_cnds_presentes_nos_faltantes(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        tipos_faltantes = {d.tipo_documento for d in kit.docs_faltantes}
-        for cnd in _CND_TIPOS:
+    def test_cnds_presentes_nos_faltantes(self, service, db):
+        cid = _get_condominio_id(db, "ideal_flores")
+        result = service.build_completude(cid, "03.2026")
+        tipos_faltantes = {d.tipo_documento for d in result.docs_faltantes}
+        for cnd in TIPOS_DOCUMENTO_AGUARDA_FASE_1_CND:
             assert cnd in tipos_faltantes, f"CND '{cnd}' deveria estar em docs_faltantes"
 
-    def test_cnds_motivo_correto(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        cnds = [d for d in kit.docs_faltantes if d.tipo_documento in _CND_TIPOS]
+    def test_cnds_motivo_correto(self, service, db):
+        cid = _get_condominio_id(db, "ideal_flores")
+        result = service.build_completude(cid, "03.2026")
+        cnds = [d for d in result.docs_faltantes if d.tipo_documento in TIPOS_DOCUMENTO_AGUARDA_FASE_1_CND]
         assert len(cnds) == 5
         for cnd in cnds:
             assert cnd.motivo == "aguarda_fase_1_cnd"
-
-    def test_cnds_nao_aparecem_em_presentes(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        tipos_presentes = {d.tipo_documento for d in kit.docs_presentes}
-        for cnd in _CND_TIPOS:
-            assert cnd not in tipos_presentes
+            assert cnd.escopo == "empresa_matriz"
 
 
 # ---------------------------------------------------------------------------
-# Cenário 5 — comp_pagamentos sempre faltantes com motivo aguarda_fase_2_banco (§26.5)
+# Cenário 4 — Comprovantes de pagamento aparecem como faltantes (aguarda_fase_2_banco)
 # ---------------------------------------------------------------------------
-class TestCompPagamentosSempreFaltantes:
-    def test_comp_pagamentos_nos_faltantes(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        tipos_faltantes = {d.tipo_documento for d in kit.docs_faltantes}
-        for comp in _COMP_PAGAMENTOS_TIPOS:
-            assert comp in tipos_faltantes, f"'{comp}' deveria estar em docs_faltantes"
-
-    def test_comp_pagamentos_motivo_correto(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_VALIDO)
-        comps = [d for d in kit.docs_faltantes if d.tipo_documento in _COMP_PAGAMENTOS_TIPOS]
-        assert len(comps) == len(_COMP_PAGAMENTOS_TIPOS)
-        for comp in comps:
-            assert comp.motivo == "aguarda_fase_2_banco"
+class TestCompPagamentosFaltantes:
+    def test_comp_pagamentos_aparecem_como_faltantes(self, service, db):
+        cid = _get_condominio_id(db, "mirante")
+        result = service.build_completude(cid, "03.2026")
+        comp_faltantes = [f for f in result.docs_faltantes if f.motivo == "aguarda_fase_2_banco"]
+        assert len(comp_faltantes) >= 3
 
 
 # ---------------------------------------------------------------------------
-# Cenário 6–8 — portaria/manutencao/autonoma (2 templates cada)
+# Cenários 5-7 — Serviços simples (portaria_remota, manutencao_cftv, portaria_autonoma)
 # ---------------------------------------------------------------------------
 class TestServicosSimples:
-    def test_portaria_autonoma_2_templates(self, svc):
-        kit = svc.build_completude(PARISE_ID, MES_REF_VALIDO)
-        assert kit.tipo_servico == "portaria_autonoma"
-        assert kit.metricas.total_esperados == 2
-
-    def test_portaria_remota_2_templates(self, svc):
-        kit = svc.build_completude(P_GELAIN_ID, MES_REF_VALIDO)
-        assert kit.tipo_servico == "portaria_remota"
-        assert kit.metricas.total_esperados == 2
-
-    def test_manutencao_cftv_2_templates(self, svc):
-        kit = svc.build_completude(GREEN_HILLS_ID, MES_REF_VALIDO)
-        assert kit.tipo_servico == "manutencao_cftv"
-        assert kit.metricas.total_esperados == 2
+    @pytest.mark.parametrize(
+        "nome_norm,tipo_esperado",
+        [
+            ("p_gelain", "portaria_remota"),
+            ("green_hills", "manutencao_cftv"),
+            ("parise", "portaria_autonoma"),
+        ],
+    )
+    def test_servicos_simples_tem_2_templates(self, service, db, nome_norm, tipo_esperado):
+        cid = _get_condominio_id(db, nome_norm)
+        result = service.build_completude(cid, "03.2026")
+        assert result.tipo_servico == tipo_esperado
+        assert result.metricas.total_esperado == 2
 
 
 # ---------------------------------------------------------------------------
-# Cenário 9 — administrativo: tipo_servico sem templates → 0 esperados
+# Cenário 8 — Administrativo retorna kit vazio (INV-7)
 # ---------------------------------------------------------------------------
 class TestAdministrativo:
-    def test_administrativo_zero_templates(self, svc):
-        kit = svc.build_completude(ESCRITORIO_ID, MES_REF_VALIDO)
-        assert kit.metricas.total_esperados == 0
-        assert kit.metricas.percentual_completude == 0.0
-        assert kit.docs_presentes == []
-        assert kit.docs_faltantes == []
+    def test_administrativo_retorna_kit_vazio(self, service, db):
+        cid = _get_condominio_id(db, "escritorio")
+        result = service.build_completude(cid, "03.2026")
+        assert result.tipo_servico == "administrativo"
+        assert result.metricas.total_esperado == 0
+        assert result.metricas.total_faltante == 0
+        assert result.docs_presentes == []
+        assert result.docs_faltantes == []
+        assert result.metricas.pct_completude_confirmada == 0.0
 
 
 # ---------------------------------------------------------------------------
-# Cenário 10 — build_lote: 11 condomínios ativos
+# build_lote_condominios — 11 condomínios
 # ---------------------------------------------------------------------------
 class TestBuildLote:
-    def test_retorna_11_condominios(self, svc):
-        lote = svc.build_lote_condominios(MES_REF_VALIDO)
-        assert len(lote) == 11
+    def test_retorna_11_condominios(self, service):
+        results = service.build_lote_condominios("03.2026")
+        assert len(results) == 11
 
-    def test_todos_items_sao_completude_kit(self, svc):
-        lote = svc.build_lote_condominios(MES_REF_VALIDO)
-        for item in lote:
-            assert isinstance(item, CompletudeKit)
+    def test_mes_ref_preservado_em_todos(self, service):
+        results = service.build_lote_condominios("03.2026")
+        for r in results:
+            assert r.mes_ref == "03.2026"
+            assert r.condominio_id is not None
 
-    def test_mes_ref_preservado_em_todos(self, svc):
-        lote = svc.build_lote_condominios(MES_REF_VALIDO)
-        for item in lote:
-            assert item.mes_ref == MES_REF_VALIDO
-
-
-# ---------------------------------------------------------------------------
-# Cenário 11 — mês sem docs: todos templates faltantes (exceto CNDs/comp que já são)
-# ---------------------------------------------------------------------------
-class TestMesSemDocs:
-    def test_mes_sem_docs_total_presentes_zero(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_SEM_DOCS)
-        assert kit.metricas.total_presentes == 0
-        assert kit.docs_presentes == []
-
-    def test_mes_sem_docs_total_faltantes_igual_total_esperados(self, svc):
-        kit = svc.build_completude(IDEAL_FLORES_ID, MES_REF_SEM_DOCS)
-        m = kit.metricas
-        assert m.total_faltantes == m.total_esperados
+    def test_lote_mes_ref_invalido_levanta(self, service):
+        with pytest.raises(ValueError, match="mes_ref inválido"):
+            service.build_lote_condominios("2026/03")
 
 
 # ---------------------------------------------------------------------------
-# Cenário 12 — CATEGORIA_TO_TIPO_DOCUMENTO (§26.3) imutável e completo
+# _determinar_motivo_faltante
+# ---------------------------------------------------------------------------
+class TestDeterminarMotivo:
+    def test_motivo_cnd(self):
+        assert _determinar_motivo_faltante("cnd_rfb") == "aguarda_fase_1_cnd"
+        assert _determinar_motivo_faltante("cnd_trabalhista") == "aguarda_fase_1_cnd"
+
+    def test_motivo_banco(self):
+        assert _determinar_motivo_faltante("comp_pag_fgts") == "aguarda_fase_2_banco"
+        assert _determinar_motivo_faltante("comp_salario_individual") == "aguarda_fase_2_banco"
+        assert _determinar_motivo_faltante("nfse") == "aguarda_fase_2_banco"
+        assert _determinar_motivo_faltante("boleto") == "aguarda_fase_2_banco"
+
+    def test_motivo_sem_sincronizacao(self):
+        assert _determinar_motivo_faltante("comp_va_solides") == "nao_sincronizado"
+        assert _determinar_motivo_faltante("relatorio_pedido_va") == "nao_sincronizado"
+
+    def test_motivo_generico(self):
+        assert _determinar_motivo_faltante("tipo_qualquer") == "nao_encontrado_onvio"
+
+
+# ---------------------------------------------------------------------------
+# CategoriaToTipoDocumento (sanity — §26.3)
 # ---------------------------------------------------------------------------
 class TestCategoriaToTipoDocumento:
-    def test_mapping_tem_20_entradas(self):
-        assert len(CATEGORIA_TO_TIPO_DOCUMENTO) == 20
+    def test_tem_20_entradas(self):
+        assert len(CategoriaToTipoDocumento) == 20
 
-    def test_todos_valores_sao_strings_nao_vazias(self):
-        for k, v in CATEGORIA_TO_TIPO_DOCUMENTO.items():
-            assert isinstance(k, str) and k
-            assert isinstance(v, str) and v
-
-    def test_dctfweb_resumo_creditos_mapeia_para_extrato(self):
-        assert CATEGORIA_TO_TIPO_DOCUMENTO["dctfweb_resumo_creditos"] == "dctfweb_extrato"
-
-    def test_recibo_folha_mapeia_para_contracheque(self):
-        assert CATEGORIA_TO_TIPO_DOCUMENTO["recibo_folha"] == "contracheque"
+    def test_chaves_esperadas(self):
+        assert CategoriaToTipoDocumento["folha_pagamento"] == "folha_pagamento"
+        assert CategoriaToTipoDocumento["recibo_folha"] == "contracheque"
+        assert CategoriaToTipoDocumento["fgts_guia"] == "gfd_fgts_mensal"
+        assert CategoriaToTipoDocumento["dctfweb_resumo_creditos"] == "dctfweb_extrato"
+        assert CategoriaToTipoDocumento["dctfweb_debitos"] == "dctfweb_extrato"

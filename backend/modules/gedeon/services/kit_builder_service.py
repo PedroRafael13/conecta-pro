@@ -1,30 +1,34 @@
-"""
-KitBuilderService — FASE 4 BLOCO 3 T1 (§26 CONTRACTS_GEDEON.md v1.21).
-Serviço read-only: calcula completude de kit documental por condomínio/mês.
-ZERO endpoints, ZERO UI, ZERO ZIP. Apenas build_completude + build_lote_condominios.
+"""KitBuilderService — FASE 4 BLOCO 3 / T1
+
+Dada (condominio_id, mes_ref), retorna CompletudeKit com docs presentes
+e faltantes, separando confirmados vs pendentes revisão.
+
+§26 do CONTRACTS_GEDEON.md v1.21.
 """
 
 from __future__ import annotations
 
-import logging
 import re
-from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
-from core.database.session import SyncSessionLocal
-
-logger = logging.getLogger(__name__)
-
-# §26.3 — Mapeamento imutável categoria Onvio → tipo_documento do kit
-CATEGORIA_TO_TIPO_DOCUMENTO: dict[str, str] = {
+# ============================================================================
+# MAPPING categoria (onvio) → tipo_documento (kit_documental_templates)
+# Exportado como constante pública (T2 importa se necessário)
+# ============================================================================
+CategoriaToTipoDocumento: dict[str, str] = {
+    # M2 Contábil
     "folha_pagamento": "folha_pagamento",
     "recibo_folha": "contracheque",
     "folha_ponto": "folhas_ponto",
+    # M3 FGTS
     "fgts_guia": "gfd_fgts_mensal",
     "fgts_relatorio": "relatorio_gfd_fgts",
+    # M4 DCTFWeb
     "dctfweb_declaracao": "dctfweb_declaracao",
     "dctfweb_recibo": "dctfweb_recibo",
     "dctfweb_extrato": "dctfweb_extrato",
@@ -33,240 +37,262 @@ CATEGORIA_TO_TIPO_DOCUMENTO: dict[str, str] = {
     "dctfweb_creditos": "dctfweb_extrato",
     "dctfweb_debitos": "dctfweb_extrato",
     "dctfweb_situacao": "dctfweb_extrato",
+    # M7 RH
     "contrato_trabalho": "contrato_trabalho",
     "ficha_registro": "ficha_empregado",
     "rescisao": "rescisao_contrato",
     "aso": "aso",
     "aviso_previo": "aviso_previo_ferias",
     "ferias": "recibo_ferias",
+    # M6 VT/VA
     "declaracao_vt": "comp_vt_individual",
 }
 
-# §26.4 — CNDs: geradas pela FASE 1, nunca em onvio_documents
-_CND_TIPOS: frozenset[str] = frozenset({"cnd_caixa", "cnd_prefeitura", "cnd_rfb", "cnd_sefaz", "cnd_trabalhista"})
+# tipo_documento que AGUARDA FASE 1 (CNDs — Claude in Chrome)
+TIPOS_DOCUMENTO_AGUARDA_FASE_1_CND: frozenset[str] = frozenset(
+    {"cnd_rfb", "cnd_caixa", "cnd_prefeitura", "cnd_sefaz", "cnd_trabalhista"}
+)
 
-# §26.5 — comp_pagamentos: gerados pela FASE 2, nunca em onvio_documents
-_COMP_PAGAMENTOS_TIPOS: frozenset[str] = frozenset({"comp_pag_fgts", "comp_salario_individual", "comp_va_solides"})
+# tipo_documento que AGUARDA FASE 2 (comprovantes bancários / NFS-e / Boleto)
+TIPOS_DOCUMENTO_AGUARDA_FASE_2_BANCO: frozenset[str] = frozenset(
+    {
+        "comp_pag_fgts",
+        "comp_fgts_rescisao",
+        "comp_salario_individual",
+        "comp_rescisao",
+        "nfse",
+        "boleto",
+    }
+)
 
-_MES_REF_RE = re.compile(r"^\d{2}\.\d{4}$")
+# tipo_documento sem categoria Onvio correspondente (não sincronizado)
+TIPOS_DOCUMENTO_SEM_SINCRONIZACAO: frozenset[str] = frozenset(
+    {"comp_vt_va_combinado", "recibo_vt_va", "comp_va_solides", "relatorio_pedido_va"}
+)
+
+# Regex com validação de mês 01-12 (§26.7)
+MES_REF_PATTERN = re.compile(r"^(0[1-9]|1[0-2])\.\d{4}$")
 
 
-# ---------------------------------------------------------------------------
+# ============================================================================
 # DTOs (§26.6)
-# ---------------------------------------------------------------------------
+# ============================================================================
 
 
-class DocumentoPresente(BaseModel):
-    tipo_documento: str
-    escopo: str
-    onvio_id: str
+@dataclass
+class DocumentoPresente:
+    tipo_documento: str  # ex: 'folha_pagamento'
+    escopo: str  # condominio | empresa_matriz | funcionario
+    onvio_document_id: UUID
     nome_arquivo: str
-    condominio_id: UUID | None
-    employee_id: UUID | None
-    mes_ref: str
+    revisao_pendente: bool  # True se revisao_manual=True
 
 
-class DocumentoFaltante(BaseModel):
+@dataclass
+class DocumentoFaltante:
     tipo_documento: str
     escopo: str
     obrigatorio: bool
-    motivo: str  # "nao_encontrado" | "aguarda_fase_1_cnd" | "aguarda_fase_2_banco"
+    periodicidade: str  # mensal | eventual | anual
+    motivo: str  # 'nao_encontrado_onvio' | 'aguarda_fase_1_cnd' | 'aguarda_fase_2_banco' | 'nao_sincronizado'
 
 
-class MetricasKit(BaseModel):
-    total_esperados: int
-    total_presentes: int
-    total_faltantes: int
-    percentual_completude: float
-    obrigatorios_faltantes: int
+@dataclass
+class MetricasKit:
+    total_esperado: int  # rows do kit_documental_templates para o tipo_servico
+    total_presente_confirmado: int
+    total_presente_pendente_revisao: int
+    total_faltante: int
+    pct_completude_confirmada: float  # (confirmado / total_esperado) * 100
+    pct_completude_total: float  # ((confirmado + pendente) / total_esperado) * 100
 
 
-class CompletudeKit(BaseModel):
+@dataclass
+class CompletudeKit:
     condominio_id: UUID
     condominio_nome: str
     tipo_servico: str
     mes_ref: str
-    docs_presentes: list[DocumentoPresente]
-    docs_faltantes: list[DocumentoFaltante]
-    metricas: MetricasKit
+    docs_presentes: list[DocumentoPresente] = field(default_factory=list)
+    docs_faltantes: list[DocumentoFaltante] = field(default_factory=list)
+    metricas: MetricasKit | None = None
+    gerado_em: datetime = field(default_factory=datetime.utcnow)
 
 
-# ---------------------------------------------------------------------------
-# Service
-# ---------------------------------------------------------------------------
+# ============================================================================
+# Helpers públicos (importados pelos testes e T2)
+# ============================================================================
+
+
+def _validate_mes_ref(mes_ref: str) -> None:
+    """Valida formato 'MM.YYYY' (ex: '03.2026'). Mês deve ser 01-12."""
+    if not isinstance(mes_ref, str) or not MES_REF_PATTERN.match(mes_ref):
+        raise ValueError(f"mes_ref inválido: '{mes_ref}'. Formato esperado: 'MM.YYYY' (ex: '03.2026').")
+
+
+def _determinar_motivo_faltante(tipo_documento: str) -> str:
+    """Determina motivo da ausência de um tipo_documento no kit."""
+    if tipo_documento in TIPOS_DOCUMENTO_AGUARDA_FASE_1_CND:
+        return "aguarda_fase_1_cnd"
+    if tipo_documento in TIPOS_DOCUMENTO_AGUARDA_FASE_2_BANCO:
+        return "aguarda_fase_2_banco"
+    if tipo_documento in TIPOS_DOCUMENTO_SEM_SINCRONIZACAO:
+        return "nao_sincronizado"
+    return "nao_encontrado_onvio"
+
+
+# ============================================================================
+# KitBuilderService
+# ============================================================================
 
 
 class KitBuilderService:
-    """
-    Calcula completude de kit documental para um condomínio + mês.
-    Leitura pura — sem escrita no banco, sem efeitos colaterais.
-    """
+    def __init__(self, db: Session) -> None:
+        self.db = db
 
     def build_completude(self, condominio_id: UUID, mes_ref: str) -> CompletudeKit:
-        """
-        Retorna CompletudeKit para (condominio_id, mes_ref).
+        """Monta completude do kit para 1 condomínio × 1 mes_ref."""
+        _validate_mes_ref(mes_ref)
 
-        Raises:
-            ValueError: mes_ref fora do formato MM.YYYY ou condomínio inexistente.
-        """
-        # §26.7 — validar mes_ref
-        if not _MES_REF_RE.match(mes_ref):
-            raise ValueError(f"mes_ref inválido: '{mes_ref}'. Formato esperado: 'MM.YYYY' (ex: '03.2026')")
+        # 1. Buscar condominio
+        row = self.db.execute(
+            text(
+                "SELECT id, nome, nome_normalizado, tipo_servico, tem_folha_clt "
+                "FROM condominios WHERE id = CAST(:cid AS uuid) AND ativo = true"
+            ),
+            {"cid": str(condominio_id)},
+        ).fetchone()
 
-        with SyncSessionLocal() as session:
-            # 1. Buscar condomínio
-            cond = (
-                session.execute(
-                    text("SELECT id, nome, tipo_servico FROM condominios WHERE id = :id AND ativo = true"),
-                    {"id": str(condominio_id)},
-                )
-                .mappings()
-                .first()
+        if not row:
+            raise ValueError(f"Condomínio não encontrado ou inativo: {condominio_id}")
+
+        cond_id = row[0]
+        cond_nome = row[1]
+        tipo_servico = row[3]
+
+        # 2. Administrativo → kit vazio (INV-7)
+        if tipo_servico == "administrativo":
+            return CompletudeKit(
+                condominio_id=UUID(str(cond_id)),
+                condominio_nome=cond_nome,
+                tipo_servico=tipo_servico,
+                mes_ref=mes_ref,
+                docs_presentes=[],
+                docs_faltantes=[],
+                metricas=MetricasKit(
+                    total_esperado=0,
+                    total_presente_confirmado=0,
+                    total_presente_pendente_revisao=0,
+                    total_faltante=0,
+                    pct_completude_confirmada=0.0,
+                    pct_completude_total=0.0,
+                ),
             )
 
-            if not cond:
-                raise ValueError(f"Condomínio {condominio_id} não encontrado ou inativo")
+        # 3. Buscar templates do tipo_servico
+        templates = self.db.execute(
+            text(
+                "SELECT tipo_documento, escopo, obrigatorio, periodicidade "
+                "FROM kit_documental_templates "
+                "WHERE tipo_servico = :ts ORDER BY tipo_documento"
+            ),
+            {"ts": tipo_servico},
+        ).fetchall()
 
-            # 2. Buscar templates para o tipo_servico deste condomínio
-            templates = (
-                session.execute(
-                    text(
-                        "SELECT tipo_documento, escopo, obrigatorio "
-                        "FROM kit_documental_templates WHERE tipo_servico = :ts"
-                    ),
-                    {"ts": cond["tipo_servico"]},
-                )
-                .mappings()
-                .all()
+        # 4. Buscar docs Onvio: condomínio + empresa_matriz + funcionários alocados
+        onvio_rows = self.db.execute(
+            text(
+                "SELECT od.id, od.categoria, od.doc_scope, od.nome_arquivo, od.revisao_manual "
+                "FROM onvio_documents od "
+                "WHERE od.mes_ref = :mes "
+                "  AND ( "
+                "    (od.doc_scope = 'condominio' AND od.condominio_id = CAST(:cid AS uuid)) "
+                "    OR (od.doc_scope = 'empresa_matriz') "
+                "    OR (od.doc_scope = 'funcionario' AND od.referente_a_employee_id IN ( "
+                "        SELECT employee_id FROM employee_alocacoes "
+                "        WHERE condominio_id = CAST(:cid AS uuid) AND ativo = true "
+                "    )) "
+                "  )"
+            ),
+            {"mes": mes_ref, "cid": str(condominio_id)},
+        ).fetchall()
+
+        # 5. Mapear onvio_docs por tipo_documento (via CategoriaToTipoDocumento)
+        docs_por_tipo: dict[str, list] = {}
+        for od in onvio_rows:
+            od_id, categoria, scope, nome_arq, revisao = od[0], od[1], od[2], od[3], od[4]
+            tipo_doc = CategoriaToTipoDocumento.get(categoria)
+            if not tipo_doc:
+                continue
+            docs_por_tipo.setdefault(tipo_doc, []).append(
+                {
+                    "onvio_id": od_id,
+                    "escopo": scope,
+                    "nome_arquivo": nome_arq,
+                    "revisao_pendente": bool(revisao),
+                }
             )
 
-            # 3. Buscar onvio_documents deste condomínio no mês
-            onvio_docs = (
-                session.execute(
-                    text(
-                        "SELECT onvio_id, nome_arquivo, categoria, "
-                        "condominio_id, referente_a_employee_id, doc_scope "
-                        "FROM onvio_documents "
-                        "WHERE condominio_id = :cid AND mes_ref = :mr"
-                    ),
-                    {"cid": str(condominio_id), "mr": mes_ref},
-                )
-                .mappings()
-                .all()
-            )
-
-        # 4. Indexar onvio_docs por tipo_documento derivado
-        tipo_to_docs: dict[str, list] = defaultdict(list)
-        for doc in onvio_docs:
-            tipo = CATEGORIA_TO_TIPO_DOCUMENTO.get(doc["categoria"])
-            if tipo:
-                tipo_to_docs[tipo].append(doc)
-
-        # 5. Processar cada template
-        docs_presentes: list[DocumentoPresente] = []
-        docs_faltantes: list[DocumentoFaltante] = []
-        tipos_com_doc: set[str] = set()
+        # 6. Para cada template, verificar se tem doc correspondente
+        presentes: list[DocumentoPresente] = []
+        faltantes: list[DocumentoFaltante] = []
 
         for t in templates:
-            tipo = t["tipo_documento"]
-            escopo = t["escopo"]
-            obrigatorio = bool(t["obrigatorio"])
+            tipo_doc, escopo, obrig, period = t[0], t[1], t[2], t[3]
+            docs_encontrados = docs_por_tipo.get(tipo_doc, [])
 
-            # §26.4 — CND → sempre faltante (gerado por FASE 1)
-            if tipo in _CND_TIPOS:
-                docs_faltantes.append(
-                    DocumentoFaltante(
-                        tipo_documento=tipo,
-                        escopo=escopo,
-                        obrigatorio=obrigatorio,
-                        motivo="aguarda_fase_1_cnd",
-                    )
-                )
-                continue
-
-            # §26.5 — comp_pagamentos → sempre faltante (gerado por FASE 2)
-            if tipo in _COMP_PAGAMENTOS_TIPOS:
-                docs_faltantes.append(
-                    DocumentoFaltante(
-                        tipo_documento=tipo,
-                        escopo=escopo,
-                        obrigatorio=obrigatorio,
-                        motivo="aguarda_fase_2_banco",
-                    )
-                )
-                continue
-
-            # Demais tipos: cruzar com onvio_documents
-            matching = tipo_to_docs.get(tipo, [])
-            if matching:
-                tipos_com_doc.add(tipo)
-                for doc in matching:
-                    docs_presentes.append(
+            if docs_encontrados:
+                for doc in docs_encontrados:
+                    presentes.append(
                         DocumentoPresente(
-                            tipo_documento=tipo,
-                            escopo=escopo,
-                            onvio_id=doc["onvio_id"] or "",
-                            nome_arquivo=doc["nome_arquivo"] or "",
-                            condominio_id=(UUID(str(doc["condominio_id"])) if doc["condominio_id"] else None),
-                            employee_id=(
-                                UUID(str(doc["referente_a_employee_id"])) if doc["referente_a_employee_id"] else None
-                            ),
-                            mes_ref=mes_ref,
+                            tipo_documento=tipo_doc,
+                            escopo=doc["escopo"],
+                            onvio_document_id=UUID(str(doc["onvio_id"])),
+                            nome_arquivo=doc["nome_arquivo"],
+                            revisao_pendente=doc["revisao_pendente"],
                         )
                     )
             else:
-                docs_faltantes.append(
+                faltantes.append(
                     DocumentoFaltante(
-                        tipo_documento=tipo,
+                        tipo_documento=tipo_doc,
                         escopo=escopo,
-                        obrigatorio=obrigatorio,
-                        motivo="nao_encontrado",
+                        obrigatorio=bool(obrig),
+                        periodicidade=period or "mensal",
+                        motivo=_determinar_motivo_faltante(tipo_doc),
                     )
                 )
 
-        # 6. Calcular métricas
-        total_esperados = len(templates)
-        # presentes = tipos distintos que têm ao menos 1 doc; faltantes = restantes
-        total_presentes = len(tipos_com_doc)
-        total_faltantes = total_esperados - total_presentes
-        percentual = round(total_presentes / total_esperados * 100, 2) if total_esperados else 0.0
-        obrig_faltantes = sum(1 for d in docs_faltantes if d.obrigatorio)
+        # 7. Calcular métricas
+        total_esperado = len(templates)
+        total_confirmado = sum(1 for p in presentes if not p.revisao_pendente)
+        total_pendente = sum(1 for p in presentes if p.revisao_pendente)
+        total_faltante = len(faltantes)
+
+        pct_conf = (total_confirmado / total_esperado * 100) if total_esperado else 0.0
+        pct_total = ((total_confirmado + total_pendente) / total_esperado * 100) if total_esperado else 0.0
 
         return CompletudeKit(
-            condominio_id=condominio_id,
-            condominio_nome=str(cond["nome"]),
-            tipo_servico=str(cond["tipo_servico"]),
+            condominio_id=UUID(str(cond_id)),
+            condominio_nome=cond_nome,
+            tipo_servico=tipo_servico,
             mes_ref=mes_ref,
-            docs_presentes=docs_presentes,
-            docs_faltantes=docs_faltantes,
+            docs_presentes=presentes,
+            docs_faltantes=faltantes,
             metricas=MetricasKit(
-                total_esperados=total_esperados,
-                total_presentes=total_presentes,
-                total_faltantes=total_faltantes,
-                percentual_completude=percentual,
-                obrigatorios_faltantes=obrig_faltantes,
+                total_esperado=total_esperado,
+                total_presente_confirmado=total_confirmado,
+                total_presente_pendente_revisao=total_pendente,
+                total_faltante=total_faltante,
+                pct_completude_confirmada=round(pct_conf, 2),
+                pct_completude_total=round(pct_total, 2),
             ),
         )
 
     def build_lote_condominios(self, mes_ref: str) -> list[CompletudeKit]:
-        """
-        Retorna CompletudeKit para todos os condomínios ativos no mês.
-        Erros individuais são logados e pulados (não aborta o lote).
-        """
-        if not _MES_REF_RE.match(mes_ref):
-            raise ValueError(f"mes_ref inválido: '{mes_ref}'. Formato esperado: 'MM.YYYY'")
+        """Monta completude do kit para TODOS os condomínios ativos em 1 mes_ref."""
+        _validate_mes_ref(mes_ref)
 
-        with SyncSessionLocal() as session:
-            conds = (
-                session.execute(text("SELECT id FROM condominios WHERE ativo = true ORDER BY nome")).mappings().all()
-            )
+        rows = self.db.execute(text("SELECT id FROM condominios WHERE ativo = true ORDER BY nome")).fetchall()
 
-        resultados: list[CompletudeKit] = []
-        for row in conds:
-            try:
-                kit = self.build_completude(UUID(str(row["id"])), mes_ref)
-                resultados.append(kit)
-            except Exception as exc:
-                logger.warning("build_lote: falha no condomínio %s — %s", row["id"], exc)
-
-        return resultados
+        return [self.build_completude(UUID(str(r[0])), mes_ref) for r in rows]
