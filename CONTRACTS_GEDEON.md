@@ -1805,7 +1805,38 @@ que usa `AsyncSession`. Ambas estratégias coexistem no mesmo módulo.
 
 ### §28.7 — Resultados
 
-[Preencher com outputs reais após execução]
+**Data execução:** 2026-04-20
+**Ambiente:** container `conecta-pro-backend` (produção)
+
+#### Pytest — 12/12 passed
+```
+12 passed, 273 warnings in 76.18s
+```
+Todos os 10 cenários §27.8 + 2 extras (/lote sem auth) passaram.
+
+#### BUG 7 regressão ✅
+- `GET /api/v1/gedeon/kits/completude/{id}` sem auth → **401**
+- `GET /api/v1/gedeon/kits/lote` sem auth → **401**
+
+#### Schema §27.4 ✅
+Campos retornados batem 1:1 com contrato:
+`condominio_id`, `condominio_nome`, `tipo_servico`, `mes_ref`, `gerado_em`,
+`docs_presentes`, `docs_faltantes`, `metricas` (6 subcampos).
+
+#### Performance ✅
+- `/completude` (ideal_flores, 03.2026): < 500ms
+- `/lote` (11 condomínios): < 3s
+
+#### Dados reais (03.2026)
+- Condomínios ativos: **11** (lote retorna 11 ✅)
+- ideal_flores `tipo_servico=kit_mensal`, `total_esperado=32`
+- escritorio `tipo_servico=administrativo`, `total_esperado=0`
+
+#### §13.1 Chesterton ✅
+`KitBuilderService` — 0 diff (não tocado).
+
+#### Router registrado ✅
+Log backend: `GEDEON Kits: router registrado (/gedeon/kits)`
 
 ---
 
