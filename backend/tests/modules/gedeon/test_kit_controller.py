@@ -113,7 +113,7 @@ def test_completude_uuid_invalido_retorna_422(client_auth):
 # ============================================================================
 # Cenário 5 — kit_mensal retorna CompletudeKit válido
 # ============================================================================
-def test_completude_kit_mensal_retorna_200(client_auth, condominio_id_ideal_flores):
+def test_completude_kit_mensal_retorna_200_valido(client_auth, condominio_id_ideal_flores):
     resp = client_auth.get(
         f"/api/v1/gedeon/kits/completude/{condominio_id_ideal_flores}",
         params={"mes_ref": MES_REF_VALIDO},

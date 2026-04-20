@@ -26,10 +26,11 @@ from modules.gedeon.services.kit_builder_service import KitBuilderService
 
 router = APIRouter(prefix="/gedeon", tags=["GEDEON — Kits"])
 
-_MES_REF_QUERY = Query(
+MES_REF_QUERY = Query(
     ...,
     description="Mês de referência no formato MM.YYYY (ex: 03.2026)",
     regex=r"^(0[1-9]|1[0-2])\.\d{4}$",
+    examples=["03.2026"],
 )
 
 
@@ -41,7 +42,7 @@ _MES_REF_QUERY = Query(
 )
 def get_completude_kit(
     condominio_id: UUID,
-    mes_ref: str = _MES_REF_QUERY,
+    mes_ref: str = MES_REF_QUERY,
     db: Session = Depends(get_sync_db_dependency),
     current_user=Depends(get_current_user),
 ) -> CompletudeKitResponse:
@@ -69,7 +70,7 @@ def get_completude_kit(
     description="Retorna array de CompletudeKit (1 por condomínio ativo).",
 )
 def get_completude_lote(
-    mes_ref: str = _MES_REF_QUERY,
+    mes_ref: str = MES_REF_QUERY,
     db: Session = Depends(get_sync_db_dependency),
     current_user=Depends(get_current_user),
 ) -> list[CompletudeKitResponse]:
