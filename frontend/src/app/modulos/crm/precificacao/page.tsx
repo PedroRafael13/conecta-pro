@@ -78,6 +78,7 @@ const TIPOS_SERVICO = [
   { id: 'manutencao_cftv',      label: 'Manutenção CFTV',      desc: 'CFTV e eletrônica' },
   { id: 'seguranca_eletronica', label: 'Seg. Eletrônica',      desc: 'Sistemas de segurança' },
   { id: 'facilities',           label: 'Facilities',           desc: 'Serviços gerais e limpeza' },
+  { id: 'limpeza',              label: 'Limpeza',              desc: 'Serviços de limpeza e conservação' },
 ]
 
 type AbaId = 'simulador' | 'analise'

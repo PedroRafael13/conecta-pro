@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { customInstance } from '@/lib/api-client';
 import {
@@ -61,6 +62,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function ContratosPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(0);
@@ -100,20 +102,18 @@ export default function ContratosPage() {
     },
   });
 
-  const { data: alertsData } = useQuery({
+  const { data: alertsData, error: alertsError } = useQuery({
     queryKey: ['crm-contracts-alerts'],
-    queryFn: async () => {
-      try {
-        const res = await customInstance({
-          url: '/api/v1/crm/contracts/alerts',
-          method: 'GET',
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
+    queryFn: () => customInstance({ url: '/api/v1/crm/contracts/alerts', method: 'GET' }),
+    retry: false,
   });
+
+  useEffect(() => {
+    if (alertsError) {
+      console.error('[CRM] Falha ao carregar alertas de contratos:', alertsError);
+      toast.error('Não foi possível carregar os alertas de contratos');
+    }
+  }, [alertsError]);
 
   const contracts = (contractsData as any)?.items || (Array.isArray(contractsData) ? contractsData : []);
   const total = (contractsData as any)?.total || contracts.length;
@@ -206,7 +206,7 @@ export default function ContratosPage() {
             <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(stats.mrr)}</div>
+            <div className="text-2xl font-bold text-blue-600">{formatCurrency(stats.mrr ?? 0)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -323,7 +323,7 @@ export default function ContratosPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => toast.info('Detalhes do contrato em desenvolvimento')}
+                            onClick={() => router.push(`/modulos/crm/contratos/${item.id}`)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             Ver detalhes

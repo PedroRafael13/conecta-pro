@@ -3,20 +3,27 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customInstance } from '@/lib/api-client';
 
-// Tipos baseados no backend real
+// Tipos baseados no backend real (suporte a nomes em PT e EN)
 export interface Lead {
   id: string;
-  nome: string;
-  contato: string;
-  telefone: string;
-  email: string;
-  origem: string;
+  nome?: string;
+  name?: string;
+  contato?: string;
+  contact_name?: string;
+  company?: string;
+  telefone?: string;
+  phone?: string;
+  email?: string;
+  origem?: string;
+  source?: string;
   status: string;
-  valor_estimado: number;
+  valor_estimado?: number;
+  value?: number;
   observacoes?: string;
+  description?: string;
   created_at: string;
   updated_at?: string;
-  ativo: boolean;
+  ativo?: boolean;
 }
 
 export interface LeadCreate {

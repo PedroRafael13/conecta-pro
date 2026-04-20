@@ -3,6 +3,7 @@
 import { Modal } from '@/components/ui/modal';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { clientLabel } from '@/utils/crm/clientLabel';
 
 interface ClienteDetailModalProps {
   isOpen: boolean;
@@ -10,10 +11,12 @@ interface ClienteDetailModalProps {
   cliente: any | null;
 }
 
-const tipoConfig: Record<string, { label: string; className: string }> = {
-  condominio: { label: 'Condomínio', className: 'bg-blue-100 text-blue-800' },
-  empresa: { label: 'Empresa', className: 'bg-purple-100 text-purple-800' },
-  residencial: { label: 'Residencial', className: 'bg-green-100 text-green-800' },
+const segmentoConfig: Record<string, { label: string; className: string }> = {
+  residencial: { label: 'Residencial', className: 'bg-teal-100 text-teal-800' },
+  comercial:   { label: 'Comercial',   className: 'bg-amber-100 text-amber-800' },
+  industrial:  { label: 'Industrial',  className: 'bg-blue-100 text-blue-800' },
+  publico:     { label: 'Público',     className: 'bg-purple-100 text-purple-800' },
+  misto:       { label: 'Misto',       className: 'bg-indigo-100 text-indigo-800' },
 };
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -29,13 +32,13 @@ export function ClienteDetailModal({
 }: ClienteDetailModalProps) {
   if (!cliente) return null;
 
-  const tipo = tipoConfig[cliente.tipo] || {
-    label: cliente.tipo,
+  const segmento = segmentoConfig[cliente.segment] || {
+    label: cliente.segment || '-',
     className: 'bg-gray-100 text-gray-800',
   };
 
   const status = statusConfig[cliente.status] || {
-    label: cliente.status || 'Ativo',
+    label: cliente.status || '-',
     className: 'bg-gray-100 text-gray-800',
   };
 
@@ -49,7 +52,7 @@ export function ClienteDetailModal({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label className="text-muted-foreground text-xs">Nome</Label>
-          <p className="text-sm font-medium">{cliente.nome}</p>
+          <p className="text-sm font-medium">{clientLabel(cliente)}</p>
         </div>
         <div>
           <Label className="text-muted-foreground text-xs">CNPJ</Label>
@@ -64,9 +67,9 @@ export function ClienteDetailModal({
           <p className="text-sm">{cliente.telefone || '-'}</p>
         </div>
         <div>
-          <Label className="text-muted-foreground text-xs">Tipo</Label>
+          <Label className="text-muted-foreground text-xs">Segmento</Label>
           <div className="mt-1">
-            <Badge className={tipo.className}>{tipo.label}</Badge>
+            <Badge className={segmento.className}>{segmento.label}</Badge>
           </div>
         </div>
         <div>
@@ -77,7 +80,18 @@ export function ClienteDetailModal({
         </div>
         <div className="col-span-2">
           <Label className="text-muted-foreground text-xs">Endereço</Label>
-          <p className="text-sm">{cliente.endereco || '-'}</p>
+          {(() => {
+            const e = cliente.endereco;
+            if (!e) return <p className="text-sm">-</p>;
+            if (typeof e === 'string') return <p className="text-sm">{e}</p>;
+            const partes = [
+              e.rua && e.numero ? `${e.rua}, ${e.numero}` : e.rua,
+              e.bairro,
+              e.cidade && e.estado ? `${e.cidade}/${e.estado}` : e.cidade,
+              e.cep ? `CEP ${e.cep}` : null,
+            ].filter(Boolean);
+            return <p className="text-sm">{partes.length ? partes.join(' — ') : '-'}</p>;
+          })()}
         </div>
         <div>
           <Label className="text-muted-foreground text-xs">Criado em</Label>

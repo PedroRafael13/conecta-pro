@@ -36,6 +36,7 @@ import { ClienteFormModal } from '@/components/crm/cliente-form-modal';
 import { ClienteDetailModal } from '@/components/crm/cliente-detail-modal';
 import { useCRMClients } from '@/hooks/crm/useCRMClients';
 import { useCreateClient, useUpdateClient, useDeleteClient } from '@/hooks/clients';
+import { clientLabel } from '@/utils/crm/clientLabel';
 
 export default function ClientesPage() {
   const [search, setSearch] = useState('');
@@ -67,8 +68,9 @@ export default function ClientesPage() {
 
   // Client-side filtering
   const filteredClients = allClients.filter((client: any) => {
+    const nome = clientLabel(client).toLowerCase();
     const matchesSearch = !search ||
-      (client.nome || '').toLowerCase().includes(search.toLowerCase()) ||
+      nome.includes(search.toLowerCase()) ||
       (client.cnpj || '').includes(search) ||
       (client.email || '').toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
@@ -80,9 +82,9 @@ export default function ClientesPage() {
 
   const stats = {
     total: allClients.length,
-    ativos: allClients.filter((c: any) => c.status === 'active').length,
-    condominios: allClients.filter((c: any) => c.tipo === 'condominio').length,
-    bloqueados: allClients.filter((c: any) => c.status === 'blocked').length,
+    ativos: allClients.filter((c: any) => ['active', 'ativo'].includes(c.status)).length,
+    condominios: allClients.filter((c: any) => c.segment === 'comercial' || c.segment === 'residencial').length,
+    bloqueados: allClients.filter((c: any) => ['blocked', 'bloqueado'].includes(c.status)).length,
   };
 
   const openConfirm = (title: string, message: string, action: () => Promise<void>, variant: 'danger' | 'warning' | 'info' = 'warning') => {
@@ -104,28 +106,40 @@ export default function ClientesPage() {
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, string> = {
-      active: 'bg-green-100 text-green-800',
-      suspended: 'bg-yellow-100 text-yellow-800',
-      blocked: 'bg-red-100 text-red-800',
-      inactive: 'bg-gray-100 text-gray-800',
+      active: 'bg-green-100 text-green-800', ativo: 'bg-green-100 text-green-800',
+      suspended: 'bg-yellow-100 text-yellow-800', suspenso: 'bg-yellow-100 text-yellow-800',
+      blocked: 'bg-red-100 text-red-800', bloqueado: 'bg-red-100 text-red-800',
+      inactive: 'bg-gray-100 text-gray-800', inativo: 'bg-gray-100 text-gray-800',
+      inadimplente: 'bg-orange-100 text-orange-800',
+      prospect: 'bg-cyan-100 text-cyan-800',
     };
     const labels: Record<string, string> = {
-      active: 'Ativo',
-      suspended: 'Suspenso',
-      blocked: 'Bloqueado',
-      inactive: 'Inativo',
+      active: 'Ativo', ativo: 'Ativo',
+      suspended: 'Suspenso', suspenso: 'Suspenso',
+      blocked: 'Bloqueado', bloqueado: 'Bloqueado',
+      inactive: 'Inativo', inativo: 'Inativo',
+      inadimplente: 'Inadimplente',
+      prospect: 'Prospecto',
     };
-    return <Badge className={map[status] || 'bg-gray-100 text-gray-800'}>{labels[status] || status}</Badge>;
+    return <Badge className={map[status] || 'bg-gray-100 text-gray-800'}>{labels[status] || status || '-'}</Badge>;
   };
 
-  const getTipoBadge = (tipo: string) => {
+  const getSegmentoBadge = (segment: string) => {
     const map: Record<string, string> = {
-      condominio: 'bg-blue-100 text-blue-800',
-      empresa: 'bg-purple-100 text-purple-800',
       residencial: 'bg-teal-100 text-teal-800',
       comercial: 'bg-amber-100 text-amber-800',
+      industrial: 'bg-blue-100 text-blue-800',
+      publico: 'bg-purple-100 text-purple-800',
+      misto: 'bg-indigo-100 text-indigo-800',
     };
-    return <Badge className={map[tipo] || 'bg-gray-100 text-gray-800'}>{tipo || '-'}</Badge>;
+    const labels: Record<string, string> = {
+      residencial: 'Residencial',
+      comercial: 'Comercial',
+      industrial: 'Industrial',
+      publico: 'Público',
+      misto: 'Misto',
+    };
+    return <Badge className={map[segment] || 'bg-gray-100 text-gray-800'}>{labels[segment] || segment || '-'}</Badge>;
   };
 
   return (
@@ -254,7 +268,7 @@ export default function ClientesPage() {
                   <TableHead>Nome</TableHead>
                   <TableHead>CNPJ</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>Segmento</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
@@ -267,12 +281,12 @@ export default function ClientesPage() {
                         href={`/modulos/crm/clientes/${client.id}`}
                         className="font-medium text-primary hover:underline"
                       >
-                        {client.nome}
+                        {clientLabel(client)}
                       </Link>
                     </TableCell>
                     <TableCell className="text-sm">{client.cnpj || '-'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{client.email || '-'}</TableCell>
-                    <TableCell>{getTipoBadge(client.tipo)}</TableCell>
+                    <TableCell>{getSegmentoBadge(client.segment)}</TableCell>
                     <TableCell>{getStatusBadge(client.status)}</TableCell>
                     <TableCell>
                       <DropdownMenu>

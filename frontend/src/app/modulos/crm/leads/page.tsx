@@ -7,15 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLeads, useLeadsStats, useCreateLead } from '@/hooks/useLeads';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-  novo: { label: 'Novo', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  qualificado: { label: 'Qualificado', color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' },
-  proposta: { label: 'Proposta', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
-  negociacao: { label: 'Negociação', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
-  ganho: { label: 'Ganho', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-  perdido: { label: 'Perdido', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
-};
+import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, leadStatusConfig } from '@/constants/crm/leadStatus';
 
 export default function LeadsPage() {
   const [search, setSearch] = useState('');
@@ -46,7 +38,7 @@ export default function LeadsPage() {
   // Métricas (do stats ou calculadas)
   const statsAny = stats as Record<string, number> | undefined;
   const totalLeads = statsAny?.total || total;
-  const leadsNovos = statsAny?.novos || leads.filter(l => l.status === 'novo').length;
+  const leadsNovos = statsAny?.novos || leads.filter(l => l.status === 'new' || l.status === 'novo').length;
   const valorTotal = statsAny?.valor_pipeline || leads.reduce((acc, lead) => acc + (lead.valor_estimado || 0), 0);
 
   return (
@@ -237,7 +229,7 @@ export default function LeadsPage() {
           >
             Todos
           </Button>
-          {Object.entries(statusConfig).slice(0, 4).map(([key, config]) => (
+          {Object.entries(LEAD_STATUS_LABELS).filter(([k]) => ['new','contacted','qualified','won'].includes(k)).map(([key, config]) => (
             <Button
               key={key}
               variant={statusFilter === key ? 'primary' : 'secondary'}
@@ -312,7 +304,7 @@ export default function LeadsPage() {
                 </thead>
                 <tbody className="divide-y divide-[hsl(var(--border))]">
                   {leads.map((lead) => {
-                    const status = statusConfig[lead.status] ?? statusConfig.novo;
+                    const status = leadStatusConfig(lead.status);
                     return (
                       <tr
                         key={lead.id}
@@ -321,10 +313,10 @@ export default function LeadsPage() {
                         <td className="p-4">
                           <div>
                             <p className="font-medium text-[hsl(var(--foreground))]">
-                              {lead.nome}
+                              {lead.name || lead.nome || '—'}
                             </p>
                             <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                              {lead.contato}
+                              {lead.contact_name || lead.contato || lead.company || ''}
                             </p>
                           </div>
                         </td>
@@ -346,7 +338,7 @@ export default function LeadsPage() {
                         </td>
                         <td className="p-4 hidden lg:table-cell">
                           <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                            {lead.origem || '-'}
+                            {LEAD_SOURCE_LABELS[lead.source ?? ''] || lead.source || lead.origem || '-'}
                           </span>
                         </td>
                         <td className="p-4">
