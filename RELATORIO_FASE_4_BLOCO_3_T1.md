@@ -2,13 +2,13 @@
 **Data:** 2026-04-20
 **Agente:** Engenheiro Backend Sênior — FASE 4 BLOCO 3 / T1
 **Branch:** feature/people-management-reorganization
-**Commit docs:** `aac68ed8` | **Commit código:** `f2b7cad2`
+**Commit docs:** `aac68ed8` | **Commit código:** `f2b7cad2` | **Commit auditoria §26:** `3659dbb9`
 
 ---
 
 ## 1. STEP 0 — Pré-voo
 
-**Versão contrato:** 1.20 (CENÁRIO B — meta era 1.19, já superada → §26 adicionado em 1.21)
+**Versão contrato:** 1.22 (CENÁRIO B — meta era 1.19 → §26 adicionado em 1.21 → interface corrigida em 1.22)
 
 **Princípios citados:**
 - §13.1 Chesterton: investigar 4 tabelas ANTES de escrever service
@@ -86,15 +86,15 @@ villa_passaros   | kit_mensal   |   16
 
 ## 3. STEP 2 — §26 adicionado ao CONTRACTS_GEDEON.md (antes do código — §13.3)
 
-**Versão:** 1.20 → 1.21
+**Versão:** 1.20 → 1.21 → 1.22 (auditoria pós-código)
 **Seção adicionada:** §26 com 8 subseções:
-- §26.1 Escopo (ZERO endpoints, UI, ZIP)
-- §26.2 Contrato de interface + DTOs
-- §26.3 CategoriaToTipoDocumento (20 entradas)
-- §26.4 Regras CNDs (aguarda_fase_1_cnd)
-- §26.5 Performance alvo (<500ms/cond, <3s/lote)
-- §26.6 Testes — 10 cenários
-- §26.7 Validação mes_ref regex
+- §26.1 Escopo (PRESENTES/PRESENTES_PENDENTE_REVISAO/FALTANTES/métricas; ZERO endpoints, UI, ZIP)
+- §26.2 Contrato de interface + DTOs @dataclass (onvio_document_id, revisao_pendente, pct_completude_confirmada/total)
+- §26.3 CategoriaToTipoDocumento (PascalCase, 20 entradas)
+- §26.4 Regras especiais (CNDs, comp_pagamentos, administrativo, sem_folha_clt, TIPOS_SEM_SINCRONIZACAO)
+- §26.5 Performance alvo (<500ms/9.6ms, <3s/0.07s)
+- §26.6 10 cenários de testes (30/30 PASS)
+- §26.7 Validação mes_ref regex ^(0[1-9]|1[0-2])\\.\d{4}$
 - §26.8 Evidências H1-H7
 
 ---
@@ -257,6 +257,14 @@ feat(gedeon): FASE 4 BLOCO 3/T1 — KitBuilderService (auditoria: interface corr
 9cb2c907..f2b7cad2 → origin/feature/people-management-reorganization  ✅
 ```
 
+### Commit 3 (auditoria §26 — interface correta)
+```
+hash: 3659dbb9
+docs(gedeon): CONTRATO v1.22 — §26 reescrito com interface correta (auditoria T1)
+1 file changed, 93 insertions(+), 97 deletions(-)
+push: 4968f16d..3659dbb9 → origin/feature/people-management-reorganization  ✅
+```
+
 ---
 
 ## 11. Artefatos Entregues
@@ -265,7 +273,7 @@ feat(gedeon): FASE 4 BLOCO 3/T1 — KitBuilderService (auditoria: interface corr
 |----------|------|--------|
 | KitBuilderService | `backend/modules/gedeon/services/kit_builder_service.py` | ✅ |
 | Testes de integração | `backend/tests/modules/gedeon/test_kit_builder_service.py` | ✅ |
-| CONTRACTS_GEDEON.md v1.21 | `CONTRACTS_GEDEON.md` | ✅ |
+| CONTRACTS_GEDEON.md v1.22 | `CONTRACTS_GEDEON.md` | ✅ |
 | Relatório | `RELATORIO_FASE_4_BLOCO_3_T1.md` | ✅ |
 
 ---
@@ -276,7 +284,7 @@ feat(gedeon): FASE 4 BLOCO 3/T1 — KitBuilderService (auditoria: interface corr
 |---|------|--------|
 | 1 | STEP 0 — contrato lido + princípios §13.1/§13.3/§13.4 citados | ✅ |
 | 2 | STEP 1 — 7 investigações H1-H7 com outputs reais | ✅ |
-| 3 | STEP 2 — §26 adicionado ao CONTRATO (v1.21) ANTES do código | ✅ |
+| 3 | STEP 2 — §26 adicionado ao CONTRATO (v1.22) com interface correta | ✅ |
 | 4 | STEP 3 — Commit 1 (docs) push OK, hash `aac68ed8` | ✅ |
 | 5 | STEP 4 — KitBuilderService(db) com DTOs @dataclass conforme §26 | ✅ |
 | 6 | STEP 5 — 30 testes com 10+ cenários §26.6 | ✅ |
