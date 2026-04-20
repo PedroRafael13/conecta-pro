@@ -1868,7 +1868,13 @@ Constante `MOTIVO_LABELS` em `KitDetalheModal.tsx`:
 
 ### §29.7 — Resultados
 
-Preenchido após deploy + validação BUG 6 (STEP 9).
+Build Next.js: ✅ PASSA (○ Static `/modulos/gestao-pessoas/ged/kits`)
+Chunk SSR: `src_app_modulos_gestao-pessoas_ged_kits_page_tsx_5630a931._.js` (38 KB)
+Chunk estático: `56f0b0dd90b2c9a3.js` (54 KB)
+Linhas de código: 896 total (475 src + 421 fixture)
+BUG 6: 4 camadas validadas — chunk hash HTML, chunk existe, strings no chunk, HTTP 200
+Commits: `debda0f5` (docs §29) + `ebc4f36c` (código)
+Fixture: 11 condomínios reais, cobre 0% / 12.5% / 31.25% / 62.5% / 87.5% / 100% + administrativo
 
 ---
 
