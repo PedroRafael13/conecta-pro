@@ -167,8 +167,8 @@ export default function OportunidadesPage() {
   const pipeline = pipelineData as any;
   const stats = {
     total,
-    emNegociacao: pipeline?.by_stage?.negociacao || oportunidades.filter((o: any) => o.stage === 'negociacao').length,
-    propostas: pipeline?.by_stage?.proposta || oportunidades.filter((o: any) => o.stage === 'proposta').length,
+    emNegociacao: pipeline?.by_stage?.negotiation ?? pipeline?.by_stage?.negociacao ?? oportunidades.filter((o: any) => o.stage === 'negotiation' || o.stage === 'negociacao').length,
+    propostas: pipeline?.by_stage?.proposal ?? pipeline?.by_stage?.proposta ?? oportunidades.filter((o: any) => o.stage === 'proposal' || o.stage === 'proposta').length,
     valorPipeline: pipeline?.total_value || oportunidades.reduce((acc: number, o: any) => acc + (o.value || o.valor_estimado || 0), 0),
   };
 
@@ -191,17 +191,19 @@ export default function OportunidadesPage() {
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, string> = {
-      qualificado: 'bg-blue-100 text-blue-800',
-      proposta: 'bg-purple-100 text-purple-800',
-      negociacao: 'bg-yellow-100 text-yellow-800',
-      ganho: 'bg-green-100 text-green-800',
+      qualification: 'bg-blue-100 text-blue-800',   needs_analysis: 'bg-cyan-100 text-cyan-800',
+      proposal: 'bg-purple-100 text-purple-800',    negotiation: 'bg-yellow-100 text-yellow-800',
+      closed_won: 'bg-green-100 text-green-800',    closed_lost: 'bg-red-100 text-red-800',
+      qualificado: 'bg-blue-100 text-blue-800',     proposta: 'bg-purple-100 text-purple-800',
+      negociacao: 'bg-yellow-100 text-yellow-800',  ganho: 'bg-green-100 text-green-800',
       perdido: 'bg-red-100 text-red-800',
     };
     const labels: Record<string, string> = {
-      qualificado: 'Qualificado',
-      proposta: 'Proposta',
-      negociacao: 'Negociacao',
-      ganho: 'Ganho',
+      qualification: 'Qualificação',  needs_analysis: 'Análise',
+      proposal: 'Proposta',           negotiation: 'Negociação',
+      closed_won: 'Ganho',            closed_lost: 'Perdido',
+      qualificado: 'Qualificado',     proposta: 'Proposta',
+      negociacao: 'Negociação',       ganho: 'Ganho',
       perdido: 'Perdido',
     };
     return <Badge className={map[status] || 'bg-gray-100 text-gray-800'}>{labels[status] || status}</Badge>;
