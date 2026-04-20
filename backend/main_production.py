@@ -1015,6 +1015,14 @@ except Exception as e:
     logger.warning(f"GEDEON router: {e}")
 
 try:
+    from modules.gedeon.controllers.kit_controller import router as gedeon_kit_router
+
+    api_router.include_router(gedeon_kit_router)
+    logger.info("GEDEON Kits: router registrado (/gedeon/kits)")
+except Exception as e:
+    logger.warning(f"GEDEON Kits router: {e}")
+
+try:
     from modules.gedeon.onvio.controllers.onvio_controller import router as onvio_router
 
     api_router.include_router(onvio_router)
