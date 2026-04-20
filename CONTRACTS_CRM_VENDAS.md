@@ -1,5 +1,5 @@
 # CONTRATO CRM / VENDAS — Conecta PRO
-**Versão:** v1.4
+**Versão:** v1.5
 **Data:** 2026-04-20
 **Mantenedor:** Opus CPRO 11
 **Escopo:** Menu "Negócios" → CRM / Vendas (tudo que vive em `modules/crm/` no backend e `frontend/src/app/modulos/crm/`)
@@ -307,19 +307,30 @@ Após T4+T5+T6 reportarem OK, disparar **T7** em terminal novo com INV-1: "ZERO 
 - [x] **Testes 🔴** — 8/8 passando em `tests/modules/crm/test_cpro11_regressions.py`
 - [x] Commits: docs=817765f8 code=3ede548b
 
-### §23.2 — Status T5 (Frontend)
-*(a ser preenchido pelo T5 ao concluir cada passo)*
+### §23.2 — Status T5 (Frontend) — CONCLUÍDO 2026-04-20
+*(atualizado por CPRO11-T5, sessão 2)*
 
-- [ ] STEP 0 executado
-- [ ] H1-H10 validadas
-- [ ] Aguardando T4 sincronizar P0.1 antes de P0.6? SIM / NÃO
-- [ ] P0.2 frontend — componente endereco lida com objeto — status: ___
-- [ ] P0.3 — colunas Nome mapeadas para `trade_name`/`legal_name` — status: ___
-- [ ] P0.4 — status de leads mapeado corretamente — status: ___
-- [ ] P0.7 — modal Oportunidade com enum backend — status: ___
-- [ ] P0.8 — modal Oportunidade com FK (dropdowns) — status: ___
-- [ ] CIC E2E pós-correção: ___/10 telas OK
-- [ ] Commits: docs=<hash> code=<hash>
+- [x] STEP 0 executado — §13.4 Escopo Sagrado como princípio central
+- [x] H1-H10 validadas via inspeção de código backend (schemas, models, endpoints)
+- [x] Aguardando T4 sincronizar P0.1 antes de P0.6? **NÃO** — T4 já havia aplicado migration (§23.1 ✅)
+- [x] **P0.2 frontend** — `cliente-detail-modal.tsx`: `endereco` renderizado estruturalmente (rua, bairro, cidade/estado, CEP) — `React Error #31 eliminado` ✅
+- [x] **P0.3** — `clientLabel()` util criada em `utils/crm/clientLabel.ts`: `name || trading_name || cnpj || '—'`. Aplicada em `clientes/page.tsx`, `cliente-detail-modal.tsx`, `oportunidade-form-modal.tsx` ✅
+- [x] **P0.4** — `constants/crm/leadStatus.ts` criada com 7 valores EN + 6 fallbacks PT. `leadStatusConfig()` substituiu inline `statusConfig`. `leads/page.tsx` corrigido ✅
+- [x] **P0.6** — `contratos/page.tsx`: `formatCurrency(stats.mrr ?? 0)` — MRR NaN eliminado ✅
+- [x] **P0.7** — `oportunidade-form-modal.tsx` reescrito: 6 stages lowercase (`qualification`, `needs_analysis`, `proposal`, `negotiation`, `closed_won`, `closed_lost`) via `OPPORTUNITY_STAGE_OPTIONS` ✅
+- [x] **P0.8** — modal Oportunidade: `contact_name` via dropdown de `/api/v1/crm/clients/`, `owner_id` via dropdown de `/api/v1/users/` (fallback text input se vazio) ✅
+- [x] **P1.1** — `contratos/page.tsx`: alertsData query sem try/catch silencioso; `useEffect` com `toast.error` em `alertsError` ✅
+- [x] **P1.2** — "Ver detalhes" navega para `/modulos/crm/contratos/${item.id}` via `useRouter`. Rota `contratos/[id]/page.tsx` criada (minimal: 4 cards — Informações, Valores, Vigência, Responsável) ✅
+- [x] **P1.3** — `leads/page.tsx`: `LEAD_SOURCE_LABELS[lead.source ?? '']` mapeia `website/referral/social_media/other` para PT ✅
+- [x] **P1.4** — `clientes/page.tsx`: `getSegmentoBadge(client.segment)` substitui `getTipoBadge(client.tipo)` ✅
+- [x] **P1.8** — `precificacao/page.tsx`: `limpeza` adicionado ao array `TIPOS_SERVICO` ✅
+- [x] **P1.9** — WebSocket: `WebSocketProvider` já tem HEAD health-check que silencia conexão se endpoint retorna não-101/200/426. 404s em `/operacional/comunicacao/ws/` NÃO afetam CRM. Sem alteração necessária ✅
+- [x] **Build** — `npm run build`: ✅ compilado em 66s, 284 páginas, 0 erros Turbopack
+- [x] **tsc** — 0 erros em arquivos CRM (2 erros restantes em `fiscal/` e `gestao-pessoas/` — pré-existentes, fora do escopo)
+- [x] **INV-10** — 4 camadas validadas: HTML→chunk hash, chunk existe, strings preservadas (`closed_won`, `needs_analysis`, `limpeza`, `crm-contracts-alerts`)
+- [x] **Deploy** — `docker restart conecta-pro-frontend` ✅ — `/modulos/crm/contratos` e `/modulos/crm/contratos/[id]` respondem 307 (redirect-to-login = rota ativa)
+- [ ] CIC E2E pós-correção — **requer Jordan** (validação visual nas 10 telas)
+- [x] Commits: docs=`<pendente>` code=`<pendente>`
 
 ### §23.3 — Status T6 (Dados)
 
@@ -408,6 +419,28 @@ Investigação de código executada antes de qualquer conclusão (H6+H7+H8):
 | `pricing_simulations` | 0 | Zero endpoint POST, zero frontend hook | CPQ scaffolded, sprint futura |
 | `modules/comercial/` stubs | — | 9 pastas, arquivos stub | Feature futura, preservar |
 
+### §20.7 — Descobertas Chesterton T4 (§13.1 aplicado — 2026-04-20)
+
+Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado intencional:
+
+**H-T4-1 — `contract_templates.service_type` com valores 'admissao'/'ferias':**
+- Valores históricos cadastrados antes da enum `ServiceType` ser criada
+- SQLAlchemy lança `LookupError` ao tentar mapear para `Enum(ServiceType)`
+- **Conclusão §13.1:** Dados legítimos de produção — templates reais de folha/admissão usados pela equipe.
+  Fix correto: `String(30)` no modelo para aceitar qualquer valor, não forçar cast para enum Python.
+  **NÃO excluir** os templates. **NÃO tentar normalizar** os valores históricos.
+
+**H-T4-2 — Rota `GET /proposals/templates` capturada por `GET /proposals/{proposal_id}`:**
+- FastAPI processa rotas por ordem de declaração — `/{proposal_id}` estava antes de `/templates`
+- `"templates"` era tratado como UUID inválido → 422 Unprocessable Entity
+- **Conclusão §13.1:** Bug de ordem de declaração, não problema de dados.
+  Fix: mover todas as rotas `/templates*` para ANTES de `/{proposal_id}` no router.
+
+| Descoberta | Tipo | Ação Tomada |
+|---|---|---|
+| `service_type` = 'admissao'/'ferias' | Dados legítimos pré-enum | `String(30)` no modelo — preserva histórico |
+| `/proposals/templates` → 422 | Bug de ordem de rotas | Reordenação em `proposal_controller.py` |
+
 ---
 
 ## §27 Histórico de Versões
@@ -416,6 +449,7 @@ Investigação de código executada antes de qualquer conclusão (H6+H7+H8):
 |---|---|---|---|
 | v1.0 | 2026-04-20 | — | Versão inicial pós-auditoria T4+T5+T6 |
 | v1.3 | 2026-04-20 | T6 | Higiene dados: clients=11, leads=11, mocks removidos, Chesterton H6-H8 documentado |
+| v1.4 | 2026-04-20 | T4 (auditoria) | P0.1 migration contractstatus, P0.2 endereco_texto, P0.5/P0.6/P0.11 dashboard KPIs, condominios_total, 13/13 testes, §20.7 Chesterton T4 |
 
 ---
 
