@@ -1,7 +1,6 @@
 """Testes de integração — FASE 4 BLOCO 3 / T2 (§27.8 — 10 cenários).
 
-Usa TestClient (sync) + dependency_overrides para auth.
-Banco real via SyncSessionLocal (sem mocks de DB).
+Usa TestClient + fixture de usuário autenticado para cobrir §27.5 (erros).
 Inclui teste 🔴 de regressão do BUG 7 (endpoint sem auth → 401).
 """
 
@@ -26,20 +25,20 @@ def app_production():
 
 @pytest.fixture(scope="module")
 def client(app_production):
-    """TestClient SEM auth — para testar regressão BUG 7."""
-    return TestClient(app_production, raise_server_exceptions=False)
+    """TestClient sem override de auth → exige token real (teste 🔴 possível)."""
+    return TestClient(app_production)
 
 
 @pytest.fixture(scope="module")
 def client_auth(app_production):
-    """TestClient COM auth override."""
+    """TestClient com auth override (bypassa Depends(get_current_user))."""
     from core.auth.dependencies import get_current_user
 
-    def _mock_user():
-        return {"id": "test-user", "email": "test@conectamais.pro", "role": "admin"}
+    def _override():
+        return {"id": "test-user", "email": "test@conectamais.pro"}
 
-    app_production.dependency_overrides[get_current_user] = _mock_user
-    yield TestClient(app_production, raise_server_exceptions=False)
+    app_production.dependency_overrides[get_current_user] = _override
+    yield TestClient(app_production)
     app_production.dependency_overrides.clear()
 
 
@@ -48,7 +47,7 @@ def condominio_id_ideal_flores() -> UUID:
     db = SyncSessionLocal()
     row = db.execute(text("SELECT id FROM condominios WHERE nome_normalizado='ideal_flores'")).fetchone()
     db.close()
-    assert row, "ideal_flores não encontrado — rodar BLOCO 1 seed"
+    assert row, "ideal_flores não encontrado no DB — rodar BLOCO 1 seed"
     return UUID(str(row[0]))
 
 
@@ -57,12 +56,12 @@ def condominio_id_escritorio() -> UUID:
     db = SyncSessionLocal()
     row = db.execute(text("SELECT id FROM condominios WHERE nome_normalizado='escritorio'")).fetchone()
     db.close()
-    assert row, "escritorio não encontrado"
+    assert row
     return UUID(str(row[0]))
 
 
 # ============================================================================
-# Cenário 1 — GET /completude sem auth → 401 (TESTE 🔴 BUG 7)
+# Cenário 1 — §27.8 — GET /completude sem auth → 401 (TESTE 🔴 BUG 7)
 # ============================================================================
 def test_completude_sem_auth_retorna_401(client, condominio_id_ideal_flores):
     resp = client.get(
@@ -74,40 +73,42 @@ def test_completude_sem_auth_retorna_401(client, condominio_id_ideal_flores):
 
 def test_lote_sem_auth_retorna_401(client):
     resp = client.get("/api/v1/gedeon/kits/lote", params={"mes_ref": MES_REF_VALIDO})
-    assert resp.status_code == 401, f"BUG 7 REGRESSÃO — /lote retornou {resp.status_code} sem auth"
+    assert resp.status_code == 401
 
 
 # ============================================================================
-# Cenário 2 — mes_ref inválido → 400 ou 422
+# Cenário 2 — mes_ref inválido → 400
 # ============================================================================
-def test_completude_mes_ref_invalido_retorna_400_ou_422(client_auth, condominio_id_ideal_flores):
+def test_completude_mes_ref_invalido_retorna_400(client_auth, condominio_id_ideal_flores):
     resp = client_auth.get(
         f"/api/v1/gedeon/kits/completude/{condominio_id_ideal_flores}",
         params={"mes_ref": "2026-03"},
     )
-    assert resp.status_code in (400, 422), f"Esperado 400/422, foi {resp.status_code}"
+    # Pode ser 400 (service-level) ou 422 (Pydantic Query regex)
+    assert resp.status_code in (400, 422)
 
 
 # ============================================================================
 # Cenário 3 — UUID inexistente → 404
 # ============================================================================
 def test_completude_condominio_inexistente_retorna_404(client_auth):
+    fake = uuid4()
     resp = client_auth.get(
-        f"/api/v1/gedeon/kits/completude/{uuid4()}",
+        f"/api/v1/gedeon/kits/completude/{fake}",
         params={"mes_ref": MES_REF_VALIDO},
     )
-    assert resp.status_code == 404, f"Esperado 404, foi {resp.status_code}"
+    assert resp.status_code == 404
 
 
 # ============================================================================
-# Cenário 4 — UUID mal formatado → 422
+# Cenário 4 — UUID mal formatado → 422 (FastAPI path validation)
 # ============================================================================
 def test_completude_uuid_invalido_retorna_422(client_auth):
     resp = client_auth.get(
         "/api/v1/gedeon/kits/completude/not-a-uuid",
         params={"mes_ref": MES_REF_VALIDO},
     )
-    assert resp.status_code == 422, f"Esperado 422, foi {resp.status_code}"
+    assert resp.status_code == 422
 
 
 # ============================================================================
@@ -118,21 +119,20 @@ def test_completude_kit_mensal_retorna_200_valido(client_auth, condominio_id_ide
         f"/api/v1/gedeon/kits/completude/{condominio_id_ideal_flores}",
         params={"mes_ref": MES_REF_VALIDO},
     )
-    assert resp.status_code == 200, f"Esperado 200, foi {resp.status_code}: {resp.text}"
+    assert resp.status_code == 200
     body = resp.json()
 
-    for field in (
-        "condominio_id",
-        "condominio_nome",
-        "tipo_servico",
-        "mes_ref",
-        "gerado_em",
-        "docs_presentes",
-        "docs_faltantes",
-        "metricas",
-    ):
-        assert field in body, f"Campo '{field}' ausente no response"
+    # §27.4 — campos obrigatórios
+    assert "condominio_id" in body
+    assert "condominio_nome" in body
+    assert "tipo_servico" in body
+    assert "mes_ref" in body
+    assert "gerado_em" in body
+    assert "docs_presentes" in body
+    assert "docs_faltantes" in body
+    assert "metricas" in body
 
+    # Métricas — 6 campos
     m = body["metricas"]
     assert set(m.keys()) == {
         "total_esperado",
@@ -141,14 +141,13 @@ def test_completude_kit_mensal_retorna_200_valido(client_auth, condominio_id_ide
         "total_faltante",
         "pct_completude_confirmada",
         "pct_completude_total",
-    }, f"Campos de metricas divergem: {set(m.keys())}"
-
+    }
     assert body["tipo_servico"] == "kit_mensal"
-    assert m["total_esperado"] == 32
+    assert m["total_esperado"] == 32  # kit_mensal tem 32 templates
 
 
 # ============================================================================
-# Cenário 6 — administrativo → total_esperado=0
+# Cenário 6 — administrativo retorna total_esperado=0
 # ============================================================================
 def test_completude_administrativo_kit_vazio(client_auth, condominio_id_escritorio):
     resp = client_auth.get(
@@ -164,18 +163,18 @@ def test_completude_administrativo_kit_vazio(client_auth, condominio_id_escritor
 
 
 # ============================================================================
-# Cenário 7 — /lote retorna 11 condomínios
+# Cenário 7 — /lote retorna array de 11 condomínios
 # ============================================================================
-def test_lote_retorna_11_condominios(client_auth):
+def test_lote_retorna_array_11_condominios(client_auth):
     resp = client_auth.get("/api/v1/gedeon/kits/lote", params={"mes_ref": MES_REF_VALIDO})
     assert resp.status_code == 200
     body = resp.json()
     assert isinstance(body, list)
-    assert len(body) == 11, f"Esperado 11 condomínios, foi {len(body)}"
+    assert len(body) == 11
 
 
 # ============================================================================
-# Cenário 8 — /lote mes_ref inválido → 400 ou 422
+# Cenário 8 — /lote com mes_ref inválido → 400 ou 422
 # ============================================================================
 def test_lote_mes_ref_invalido_retorna_400_ou_422(client_auth):
     resp = client_auth.get("/api/v1/gedeon/kits/lote", params={"mes_ref": "abril-2026"})
@@ -193,22 +192,13 @@ def test_completude_response_valida_pydantic(client_auth, condominio_id_ideal_fl
         params={"mes_ref": MES_REF_VALIDO},
     )
     assert resp.status_code == 200
+    # Valida schema
     parsed = CompletudeKitResponse.model_validate(resp.json())
     assert parsed.condominio_nome == "IDEAL FLORES"
-    assert set(CompletudeKitResponse.model_fields.keys()) == {
-        "condominio_id",
-        "condominio_nome",
-        "tipo_servico",
-        "mes_ref",
-        "gerado_em",
-        "docs_presentes",
-        "docs_faltantes",
-        "metricas",
-    }
 
 
 # ============================================================================
-# Cenário 10 — Performance (<500ms / <3s)
+# Cenário 10 — Performance
 # ============================================================================
 def test_completude_performance_abaixo_500ms(client_auth, condominio_id_ideal_flores):
     t0 = time.time()

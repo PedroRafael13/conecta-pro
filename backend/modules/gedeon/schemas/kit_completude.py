@@ -3,12 +3,12 @@
 Refletem 1:1 os dataclasses do KitBuilderService v1.22 (§26).
 Usados pelos endpoints definidos em §27.
 
-§13.1 Chesterton: NÃO inventar campos. Bater 1:1 com §27.4 e §27.6.
+§13.1 Chesterton: NÃO inventar campos. Bater 1:1 com §27.4 e dataclasses.
 """
 
 from __future__ import annotations
 
-import dataclasses
+from dataclasses import asdict
 from datetime import datetime
 from uuid import UUID
 
@@ -59,4 +59,4 @@ class CompletudeKitResponse(BaseModel):
     @classmethod
     def from_dataclass(cls, kit: CompletudeKit) -> CompletudeKitResponse:
         """Converte dataclass CompletudeKit para response Pydantic."""
-        return cls.model_validate(dataclasses.asdict(kit))
+        return cls.model_validate(asdict(kit))
