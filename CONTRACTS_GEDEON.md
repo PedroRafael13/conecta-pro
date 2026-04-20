@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.22
+**Versão:** 1.23
 **Data:** 2026-04-20
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1468,6 +1468,291 @@ pública `_validate_mes_ref()` exportada pelo módulo.
 
 ---
 
+## §27 — FASE 4 BLOCO 3 / CONTRATO DE API (endpoints + dashboard)
+
+**Data:** 2026-04-20
+**Status:** PIONEIRO — T2 e T3 consomem este §27 em paralelo
+**Princípios:** §13.1 Chesterton + §13.3 Docs antes + §13.4 Escopo sagrado
+
+### §27.1 — Escopo
+
+Dois endpoints HTTP que expõem `KitBuilderService` (ver §26):
+
+1. **GET /api/v1/gedeon/kits/completude/{condominio_id}**
+   Completude de 1 condomínio × mes_ref
+
+2. **GET /api/v1/gedeon/kits/lote**
+   Completude de TODOS os condomínios ativos × mes_ref
+
+**FORA DO ESCOPO deste BLOCO 3:**
+- Geração de ZIP físico com PDFs (FASE 4 futura)
+- Envio automático ao cliente por e-mail/WhatsApp (FASE 4 futura)
+- Persistência de `kits_gerados` (FASE 4 futura — tabela já existe vazia)
+
+**Nota URL (§13.1 Chesterton — validado H1):** prefixo `kits` (plural) confirma
+padrão já existente em `/gedeon/kits/status` e `/gedeon/kits/config`.
+`api_router` tem prefix `/api/v1`; gedeon_controller tem prefix `/gedeon`.
+URL completa: `/api/v1/gedeon/kits/completude/{id}` e `/api/v1/gedeon/kits/lote`.
+
+### §27.2 — URL + Método + Autenticação
+
+| # | Método | URL                                                        | Auth |
+|---|--------|------------------------------------------------------------|------|
+| 1 | GET    | /api/v1/gedeon/kits/completude/{condominio_id}             | Depends(get_current_user) |
+| 2 | GET    | /api/v1/gedeon/kits/lote                                   | Depends(get_current_user) |
+
+**Import de auth (validado H2):**
+```python
+from core.auth.dependencies import get_current_user
+```
+
+**INV universal:** TODO endpoint deve ter `Depends(get_current_user)` (lição Bug 7 do CPRO 9).
+
+### §27.3 — Parâmetros
+
+**Endpoint 1 — /kits/completude/{condominio_id}**
+
+| Param          | Tipo  | Fonte | Obrigatório | Validação                             |
+|----------------|-------|-------|-------------|---------------------------------------|
+| condominio_id  | UUID  | path  | sim         | FastAPI valida formato UUID           |
+| mes_ref        | str   | query | sim         | Regex `^(0[1-9]|1[0-2])\.\d{4}$`     |
+
+Exemplo: `GET /api/v1/gedeon/kits/completude/abc123...?mes_ref=03.2026`
+
+**Endpoint 2 — /kits/lote**
+
+| Param      | Tipo  | Fonte | Obrigatório | Validação                             |
+|------------|-------|-------|-------------|---------------------------------------|
+| mes_ref    | str   | query | sim         | Regex `^(0[1-9]|1[0-2])\.\d{4}$`     |
+
+Exemplo: `GET /api/v1/gedeon/kits/lote?mes_ref=03.2026`
+
+### §27.4 — Response Schema
+
+**Status 200 — JSON EXATO do endpoint /completude/{id} (exemplo literal):**
+
+```json
+{
+  "condominio_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "condominio_nome": "IDEAL FLORES",
+  "tipo_servico": "kit_mensal",
+  "mes_ref": "03.2026",
+  "gerado_em": "2026-04-20T14:30:00.000000",
+  "docs_presentes": [
+    {
+      "tipo_documento": "folha_pagamento",
+      "escopo": "condominio",
+      "onvio_document_id": "f1e2d3c4-b5a6-9870-fedc-ba9876543210",
+      "nome_arquivo": "Folha 03.2026_Ideal Flores.pdf",
+      "revisao_pendente": false
+    }
+  ],
+  "docs_faltantes": [
+    {
+      "tipo_documento": "cnd_rfb",
+      "escopo": "empresa_matriz",
+      "obrigatorio": true,
+      "periodicidade": "mensal",
+      "motivo": "aguarda_fase_1_cnd"
+    }
+  ],
+  "metricas": {
+    "total_esperado": 32,
+    "total_presente_confirmado": 4,
+    "total_presente_pendente_revisao": 0,
+    "total_faltante": 28,
+    "pct_completude_confirmada": 12.5,
+    "pct_completude_total": 12.5
+  }
+}
+```
+
+**Endpoint 2 — /kits/lote** retorna **array** do mesmo objeto:
+
+```json
+[
+  { "condominio_id": "...", "condominio_nome": "IDEAL FLORES", "tipo_servico": "kit_mensal", "mes_ref": "03.2026", "gerado_em": "...", "docs_presentes": [...], "docs_faltantes": [...], "metricas": {...} },
+  { "condominio_id": "...", "condominio_nome": "MICHELANGELO", "tipo_servico": "kit_mensal", "mes_ref": "03.2026", "gerado_em": "...", "docs_presentes": [...], "docs_faltantes": [...], "metricas": {...} }
+]
+```
+
+Array com 11 itens (todos os condomínios ativos). Ordem: alfabética por `condominio_nome`.
+
+### §27.5 — Error Handling
+
+| Código | Quando                                        | Body (JSON)                                                                    |
+|--------|-----------------------------------------------|--------------------------------------------------------------------------------|
+| 200    | Sucesso                                       | CompletudeKit JSON (§27.4)                                                     |
+| 400    | mes_ref formato inválido                      | `{"detail": "mes_ref inválido: '<valor>'. Formato esperado: 'MM.YYYY' (ex: '03.2026')."}`  |
+| 401    | Sem token de auth                             | `{"detail": "Not authenticated"}`                                              |
+| 404    | condominio_id não existe / inativo            | `{"detail": "Condomínio não encontrado ou inativo: <uuid>"}`                   |
+| 422    | condominio_id não é UUID válido               | FastAPI default (validation error Pydantic)                                    |
+| 500    | Erro interno (exceção não prevista)           | `{"detail": "Erro interno ao montar completude do kit"}`                       |
+
+**Padrão de conversão ValueError → HTTPException (validado H5):**
+```python
+try:
+    result = service.build_completude(condominio_id, mes_ref)
+except ValueError as exc:
+    msg = str(exc)
+    if "mes_ref" in msg:
+        raise HTTPException(status_code=400, detail=msg)
+    raise HTTPException(status_code=404, detail=msg)
+except Exception as exc:
+    raise HTTPException(status_code=500, detail="Erro interno ao montar completude do kit")
+```
+
+### §27.6 — Pydantic Schemas (T2 implementa)
+
+T2 DEVE criar `backend/modules/gedeon/schemas/kit_completude.py` com:
+
+```python
+from uuid import UUID
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict
+
+
+class DocumentoPresenteResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    tipo_documento: str
+    escopo: str  # condominio | empresa_matriz | funcionario
+    onvio_document_id: UUID
+    nome_arquivo: str
+    revisao_pendente: bool
+
+
+class DocumentoFaltanteResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    tipo_documento: str
+    escopo: str
+    obrigatorio: bool
+    periodicidade: str  # mensal | eventual | anual
+    motivo: str  # nao_encontrado_onvio | aguarda_fase_1_cnd | aguarda_fase_2_banco | nao_sincronizado
+
+
+class MetricasKitResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    total_esperado: int
+    total_presente_confirmado: int
+    total_presente_pendente_revisao: int
+    total_faltante: int
+    pct_completude_confirmada: float
+    pct_completude_total: float
+
+
+class CompletudeKitResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    condominio_id: UUID
+    condominio_nome: str
+    tipo_servico: str
+    mes_ref: str
+    gerado_em: datetime
+    docs_presentes: list[DocumentoPresenteResponse]
+    docs_faltantes: list[DocumentoFaltanteResponse]
+    metricas: MetricasKitResponse
+```
+
+**Conversão dataclass → Pydantic:** como os DTOs do serviço são `@dataclass` (não ORM),
+usar `model_validate(dataclasses.asdict(service_result))` ou serializar via:
+
+```python
+import dataclasses
+
+def _to_response(kit: CompletudeKit) -> CompletudeKitResponse:
+    return CompletudeKitResponse.model_validate(dataclasses.asdict(kit))
+```
+
+**Router T2** deve ser criado em `backend/modules/gedeon/controllers/kit_controller.py`
+com `prefix="/kits"` e registrado em `gedeon_controller.py` (ou em `main_production.py`
+usando o padrão `safe_import()`).
+
+### §27.7 — Dashboard (T3 consome)
+
+**Página alvo:** `/modulos/gestao-pessoas/ged/kits` (frontend Next.js)
+
+**Componentes hierárquicos:**
+
+1. **Header:** Seletor de `mes_ref` (dropdown MM.YYYY). Default = mês corrente formatado
+2. **KPI bar (4 números):**
+   - Total condomínios (count do array /lote)
+   - Completude média confirmada (média de `metricas.pct_completude_confirmada`)
+   - Completude média total (média de `metricas.pct_completude_total`)
+   - Docs em revisão pendente (soma de `metricas.total_presente_pendente_revisao`)
+3. **Grid de cards (11 condomínios):** 1 card por item do array /lote
+4. **Modal de detalhe:** ao clicar no card, GET /completude/{id}?mes_ref=... → tabela
+
+**Componente Card — campos obrigatórios:**
+
+| Campo UI                      | Source JSON                                          |
+|-------------------------------|------------------------------------------------------|
+| Nome do condomínio            | `condominio_nome`                                    |
+| Tipo serviço (badge)          | `tipo_servico`                                       |
+| % completude confirmada       | `metricas.pct_completude_confirmada`                 |
+| Barra de progresso            | `total_presente_confirmado / total_esperado`         |
+| X/Y docs                      | `metricas.total_presente_confirmado` / `metricas.total_esperado` |
+| Pendentes revisão (badge)     | `metricas.total_presente_pendente_revisao` (só se >0) |
+| Cor do card                   | conforme tabela abaixo                               |
+
+**Cores por `metricas.pct_completude_confirmada`:**
+
+| Faixa       | Cor      | Hex      | Tailwind         |
+|-------------|----------|----------|------------------|
+| 0–49%       | Vermelho | #DC2626  | `border-red-600` |
+| 50–79%      | Amarelo  | #F59E0B  | `border-amber-500` |
+| 80–99%      | Azul     | #2563EB  | `border-blue-600` |
+| 100%        | Verde    | #16A34A  | `border-green-600` |
+
+**Exceção — `tipo_servico='administrativo'`:**
+- `total_esperado=0` → mostrar badge "SEM KIT" em cinza (`#6B7280` / `border-gray-500`)
+- Nunca calcular % (divisão por zero)
+
+**Modal de detalhe:**
+- Abre ao clicar no card; chama GET `/api/v1/gedeon/kits/completude/{id}?mes_ref=...`
+- Tabs: "Presentes" | "Faltantes"
+- **Tab Presentes:** tabela com colunas `tipo_documento`, `escopo`, `nome_arquivo`;
+  badge amarelo (`bg-amber-100 text-amber-800`) se `revisao_pendente=true`
+- **Tab Faltantes:** tabela com colunas `tipo_documento`, `escopo`, `motivo` (traduzido):
+
+| motivo (API)            | Exibição PT-BR                            |
+|-------------------------|-------------------------------------------|
+| `nao_encontrado_onvio`  | Não encontrado no Onvio                   |
+| `aguarda_fase_1_cnd`    | Aguarda busca automática CND (FASE 1)     |
+| `aguarda_fase_2_banco`  | Aguarda integração bancária (FASE 2)      |
+| `nao_sincronizado`      | Tipo sem sincronização configurada        |
+
+### §27.8 — Testes de integração
+
+**T2 (endpoints) — 10 cenários mínimos via FastAPI TestClient:**
+
+1. GET /kits/completude sem auth → 401
+2. GET /kits/completude com `mes_ref` inválido (`2026-04`) → 400
+3. GET /kits/completude com UUID inexistente → 404
+4. GET /kits/completude com UUID mal formatado → 422
+5. GET /kits/completude kit_mensal retorna CompletudeKit válido → 200, campo `metricas.total_esperado=32`
+6. GET /kits/completude administrativo → 200, `metricas.total_esperado=0`
+7. GET /kits/lote retorna array de 11 condomínios → 200, `len(response)==11`
+8. GET /kits/lote com `mes_ref` inválido → 400
+9. Response JSON valida 1:1 com `CompletudeKitResponse` Pydantic (sem campos extras/faltantes)
+10. Performance: /completude <500ms, /lote <3s
+
+**T3 (dashboard) — testes de componentes:**
+- Fixture JSON = exemplo do §27.4 (11 items para /lote, 1 item para /completude)
+- Testar renderização de cor correta por faixa de % (vermelho/amarelo/azul/verde)
+- Testar card com `tipo_servico='administrativo'` → badge "SEM KIT", sem barra de progresso
+- Testar modal de detalhe: tabs Presentes + Faltantes renderizadas
+- Testar tradução de `motivo` para PT-BR (tabela §27.7)
+- Testar badge `revisao_pendente=true` amarelo na tab Presentes
+
+### §27.9 — Próximo passo após T2 + T3
+
+Após ambos entregarem relatórios:
+- T2 CENÁRIO A (10/10) + T3 CENÁRIO A (10/10) → integração end-to-end (~10min):
+  T3 troca fixture estática por fetch real do endpoint T2
+- Se T2 ou T3 em CENÁRIO B/C → Opus audita o gap antes da integração
+- BLOCO 3 fechado → FASE 4 oficialmente entregue
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -1495,3 +1780,4 @@ pública `_validate_mes_ref()` exportada pelo módulo.
 | 1.20   | 2026-04-20 | T2_FIX_AUDIT | auditoria: §23.11.5 desvio INV-8 funcionario=93 documentado; hashes 3 commits completos; STEP 8-C/D com método correto; v1.19→v1.20 |
 | 1.21   | 2026-04-20 | T1_BLOCO3  | §26 FASE 4 BLOCO 3 T1 — KitBuilderService contrato: DTOs, CategoriaToTipoDocumento (20 entradas), regras CNDs/comp_pagamentos, H1-H7 validados |
 | 1.22   | 2026-04-20 | T1_AUDIT   | §26 reescrito: DTOs @dataclass corretos (onvio_document_id, revisao_pendente, pct_completude_confirmada/total), CategoriaToTipoDocumento PascalCase, §26.5 performance alvo, §26.6 10 cenários, §26.7 regex mes_ref |
+| 1.23   | 2026-04-20 | PIONEIRO_B3 | §27 Contrato de API BLOCO 3 — endpoints /kits/completude/{id} e /kits/lote, response JSON literal, Pydantic schemas, UI dashboard (cores/modal/componentes), error handling, 10 testes T2 + testes T3 |
