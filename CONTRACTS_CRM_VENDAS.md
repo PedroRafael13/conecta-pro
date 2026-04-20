@@ -450,6 +450,7 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 | v1.0 | 2026-04-20 | — | Versão inicial pós-auditoria T4+T5+T6 |
 | v1.3 | 2026-04-20 | T6 | Higiene dados: clients=11, leads=11, mocks removidos, Chesterton H6-H8 documentado |
 | v1.4 | 2026-04-20 | T4 (auditoria) | P0.1 migration contractstatus, P0.2 endereco_texto, P0.5/P0.6/P0.11 dashboard KPIs, condominios_total, 13/13 testes, §20.7 Chesterton T4 |
+| v1.5 | 2026-04-20 | T5 | Frontend mismatches: P0.2/P0.3/P0.4/P0.5/P0.6/P0.7/P0.8/P1.1/P1.2/P1.3/P1.4/P1.6/P1.8 corrigidos; 4 arquivos criados, 9 modificados; build 66s 284 págs; tsc 0 erros CRM |
 
 ---
 
@@ -474,7 +475,7 @@ Para LIBERAR, T7 deve confirmar:
 
 ---
 
-**FIM DO CONTRATO v1.4**
+**FIM DO CONTRATO v1.5**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
 > algo novo, documente ANTES de corrigir. Escopo é sagrado. Chesterton não

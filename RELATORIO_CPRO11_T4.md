@@ -14,9 +14,10 @@
 | STEP 2 — Migration cpro11_001 criada e aplicada | ✅ |
 | STEP 3 — P0.2 endereco_texto adicionado | ✅ |
 | STEP 4 — Dashboard KPIs corrigido (P0.5, P0.6, P0.11) | ✅ |
-| STEP 5 — 8/8 testes regressão passando | ✅ |
-| STEP 6 — CONTRACTS_CRM_VENDAS.md atualizado para v1.4 | ✅ |
+| STEP 5 — 13/13 testes regressão passando (8 unit + 5 integração) | ✅ |
+| STEP 6 — CONTRACTS_CRM_VENDAS.md atualizado para v1.4 (§20.7, §27 v1.4) | ✅ |
 | STEP 7 — 2 commits (docs + code) | ✅ |
+| STEP 8 — Auditoria pós-T4: condominios_total, em_negociacao/em_proposta, pylint 10/10 | ✅ |
 
 ---
 
@@ -129,13 +130,19 @@ converted_leads = sum(
 )
 ```
 
-Fix `em_negociacao` e `em_proposta`:
+Fix `em_negociacao` e `em_proposta` (corrigido na auditoria — usam opportunity.stage, não lead.status):
 ```python
-kpis.em_negociacao = sum(1 for lead in leads if lead.status in ("negotiation", ...))
-kpis.em_proposta = sum(1 for lead in leads if lead.status in ("proposal", ...))
+kpis.em_negociacao = sum(
+    1 for opp in opportunities
+    if opp.stage in (OpportunityStage.NEGOTIATION.value, "negotiation")
+)
+kpis.em_proposta = sum(
+    1 for opp in opportunities
+    if opp.stage in (OpportunityStage.PROPOSAL.value, "proposal")
+)
 ```
 
-### dashboard_controller.py — Clientes + MRR (P0.5/P0.6)
+### dashboard_controller.py — Clientes + MRR + Condomínios (P0.5/P0.6/P1.5)
 
 Após `service.calculate_kpis()`, query direta com COALESCE:
 ```sql
@@ -150,12 +157,15 @@ WHERE c.ativo = true
 ```
 - `clientes_total` = COUNT(*) → esperado: 12 (confirmado no DB)
 - `mrr` = soma dos contratos ativos — COALESCE garante 0.0, nunca NaN (INV-12)
+- `condominios_total` = `SELECT COUNT(*) FROM clients WHERE ativo=true AND client_type='condominio'`
 
 ---
 
 ## STEP 5 — Testes de Regressão
 
 **Arquivo:** `backend/tests/modules/crm/test_cpro11_regressions.py`
+
+### Testes unitários (REG)
 
 | Teste | Bug | Status |
 |-------|-----|--------|
@@ -168,7 +178,23 @@ WHERE c.ativo = true
 | test_dashboard_kpis_mrr_nunca_nan | INV-12 | ✅ PASS |
 | test_proposals_templates_rota_declarada_antes_de_proposal_id | P0.1 fix 3 | ✅ PASS |
 
-**Total: 8/8 ✅**
+### Testes de integração HTTP (INT) — adicionados na auditoria pós-T4
+
+| Teste | Bug | Status |
+|-------|-----|--------|
+| test_int01_dashboard_kpis_tem_campos_cpro11 | P0.5/P0.6/P1.5 | ✅ PASS |
+| test_int02_dashboard_kpis_converted_leads | P0.11 | ✅ PASS |
+| test_int03_clients_endereco_texto_e_string | P0.2 | ✅ PASS |
+| test_int04_proposals_templates_nao_retorna_422 | P0.1 fix 3 | ✅ PASS |
+| test_int05_contracts_templates_nao_retorna_500 | P0.1 | ✅ PASS |
+
+**Total: 13/13 ✅**
+
+### Pylint — dashboard_controller.py (arquivo com mais mudanças da auditoria)
+```
+-------------------------------------------------------------------
+Your code has been rated at 10.00/10
+```
 
 ---
 
@@ -190,6 +216,23 @@ Atualizado: v1.3 → v1.4
 | P0.5 clientes_total=0 | DashboardKPIs não tinha o campo | Campo adicionado + query direta |
 | P0.6 mrr=NaN | DashboardKPIs não tinha o campo | Campo + COALESCE no controller |
 | P0.11 leads_conversion_rate=0.0 | Checa 'won' mas DB tem 'converted' | Checa ambos |
+| P1.5 condominios_total=0 | Controller não tinha query | `COUNT(*) WHERE client_type='condominio'` |
+| P1.6 em_negociacao/em_proposta contava lead.status | Deveria usar opportunity.stage | `opp.stage in (NEGOTIATION, PROPOSAL)` |
+
+---
+
+## AUDITORIA PÓS-T4 (2026-04-20)
+
+Gaps encontrados e corrigidos após revisão 100% do prompt original:
+
+| Gap | Arquivo | Correção |
+|-----|---------|---------|
+| condominios_total não populado | dashboard_controller.py | Query `COUNT(*) WHERE client_type='condominio'` |
+| em_negociacao/em_proposta usavam lead.status | dashboard_service.py | Corrigido para opportunity.stage |
+| Apenas testes unitários (sem integração) | test_cpro11_regressions.py | +5 testes INT HTTP (13/13 total) |
+| §20.7 ausente no contrato | CONTRACTS_CRM_VENDAS.md | Chesterton T4 documentado |
+| §27 sem entry v1.4 | CONTRACTS_CRM_VENDAS.md | Linha v1.4 adicionada |
+| pylint 9.82 no controller | dashboard_controller.py | Linha dividida + disable inline → 10.00/10 |
 
 ---
 
