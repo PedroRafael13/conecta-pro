@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.15
+**Versão:** 1.18
 **Data:** 2026-04-19
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1227,6 +1227,109 @@ Idempotente: verifica UNIQUE antes de inserir, 2ª execução retorna "0 criados
 
 ---
 
+## §25 — LIÇÃO 9: Invariantes de Saída vs Regras de Fallback
+
+**Data:** 2026-04-20
+**Bug descoberto:** T2 FASE 3.5 BLOCO 2 (auditoria Opus CPRO 10)
+**Contexto:** 162/436 docs (37%) mal classificados
+
+### §25.1 — Descrição do bug
+
+Classifier original aplicava fallback para `empresa_matriz` quando não
+encontrava `condominio_id` ou `employee_id` nos Grupos A e B. Isso violava
+o mapping aprovado onde:
+- Grupo A (13 categorias) SEMPRE deve resultar em `doc_scope='condominio'`
+- Grupo B (15 categorias) SEMPRE deve resultar em `doc_scope='funcionario'`
+
+### §25.2 — Causa raiz: interpretação de invariante
+
+`INV-9 original:` "condominio_id preenchido SEMPRE que doc_scope='condominio'"
+- Leitura **ERRADA** (que causou bug): "Se condominio_id=NULL, forçar scope≠condominio"
+- Leitura **CORRETA**: "Esta é regra de ESTADO FINAL. Se scope='condominio' mas
+  ID é NULL → levantar revisao_manual=True. Não mudar scope."
+
+### §25.3 — Distinção permanente
+
+Em prompts futuros, separar claramente:
+- **Invariantes de saída**: descrevem estado final legítimo do sistema
+- **Regras de fallback**: descrevem o que fazer quando dados faltam
+
+Exemplo correto: "Se scope='condominio' e cond_id=NULL → levantar
+revisao_manual, NÃO mudar scope."
+
+### §25.4 — Aplicação universal (§13.5)
+
+Todo prompt que define mapping de dados deve explicitar, para cada regra:
+1. O que o valor de saída DEVE ser
+2. O que fazer quando input é insuficiente (levantar flag, NÃO mudar categoria)
+
+### §25.5 — Regra geral derivada
+
+"Um classificador não deve mudar a categoria lógica de um dado só porque
+falhou em preencher um campo de detalhe. Deve registrar a falha (flag de
+revisão) e preservar a categoria."
+
+---
+
+## §23.11 — Correção do T2 original (fix cirúrgico)
+
+**Data:** 2026-04-20
+**Commits:**
+- docs (bug report): ver CHANGELOG v1.18
+- fix (código): ver CHANGELOG v1.19
+- re-backfill (report): ver CHANGELOG v1.20
+
+### §23.11.1 — Escopo do fix
+
+Apenas 2 ramos do classifier alterados:
+- `OnvioDocScopeClassifier.classify()` ramo `'condominio'`
+- `OnvioDocScopeClassifier.classify()` ramo `'funcionario'`
+
+### §23.11.2 — Diff lógico
+
+**ANTES (errado):**
+```python
+if scope == "condominio":
+    cond_id = match_condominio(...)
+    if cond_id:
+        return ClassificationResult(doc_scope="condominio", condominio_id=cond_id, ...)
+    if is_matriz(nome_arquivo):
+        return ClassificationResult(doc_scope="empresa_matriz", ...)  # BUG
+    return ClassificationResult(doc_scope="empresa_matriz", revisao_manual=True, ...)  # BUG
+```
+
+**DEPOIS (correto):**
+```python
+if scope == "condominio":
+    cond_id = match_condominio(...)
+    return ClassificationResult(
+        doc_scope="condominio",
+        condominio_id=cond_id,
+        revisao_manual=(cond_id is None),
+        motivo=("OK" if cond_id else f"Grupo A sem match condomínio: {nome_arquivo}"),
+    )
+```
+
+Mesma mudança para ramo `funcionario`.
+
+### §23.11.3 — Distribuição antes vs depois
+
+| escopo         | antes | esperado depois | motivo          |
+|----------------|-------|-----------------|-----------------|
+| empresa_matriz |   281 |     ~119        | -162 (bug fix)  |
+| condominio     |   116 |     ~236        | +120 (Grupo A)  |
+| funcionario    |    39 |      ~81        | +42 (Grupo B)   |
+| revisao_manual |    83 |    100-180      | inflado: honesto|
+
+Revisão manual aumentando é INTENCIONAL — transparência real sobre docs que
+precisam atenção humana (não mascarados como empresa_matriz).
+
+### §23.11.4 — Backup
+
+Estado pré-fix preservado em `/tmp/backup_fase_3_5_t2_fix_<timestamp>/onvio_documents_pre_fix.sql`
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -1249,3 +1352,4 @@ Idempotente: verifica UNIQUE antes de inserir, 2ª execução retorna "0 criados
 | 1.15   | 2026-04-19 | T3_BLOCO2 | §24 FASE 3.5 BLOCO 2/T3 — kit_documental_templates 38 rows (planilha oficial); CNDs escopo=empresa_matriz em kit_mensal |
 | 1.16   | 2026-04-19 | T2_BLOCO2 | §23 FASE 3.5 BLOCO 2/T2 — OnvioDocScopeClassifier + backfill 436 docs; INV-8 OK (0 NULL); 4 testes falsificação PASS; bug CAST psycopg2 documentado |
 | 1.17   | 2026-04-19 | T2_AUDIT  | §23.9+§23.10 adicionados: dívida técnica employees (data_demissao vs data_desligamento) + regra FASE 4 CNDs em kit_mensal |
+| 1.18   | 2026-04-20 | T2_FIX_DOCS | §25 Lição 9 (invariantes saída vs fallback) + §23.11 correção T2 original; header bumped 1.15→1.17→1.18 |
