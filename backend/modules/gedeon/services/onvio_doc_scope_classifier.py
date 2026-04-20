@@ -235,61 +235,27 @@ class OnvioDocScopeClassifier:
             )
 
         # Grupo A — condomínio
+        # §23.11: preservar scope='condominio' mesmo sem match — levantar revisao_manual
         if scope == "condominio":
             cond_id = match_condominio(nome_arquivo, cond_lookup)
-            if cond_id:
-                return ClassificationResult(
-                    doc_scope="condominio",
-                    condominio_id=cond_id,
-                    referente_a_employee_id=None,
-                    revisao_manual=False,
-                    motivo="OK",
-                )
-            # Documento da Conecta Mais (CNPJ/nome no arquivo): empresa_matriz certa, sem revisão
-            if is_matriz(nome_arquivo):
-                return ClassificationResult(
-                    doc_scope="empresa_matriz",
-                    condominio_id=None,
-                    referente_a_employee_id=None,
-                    revisao_manual=False,
-                    motivo="Grupo A: CNPJ/nome Conecta Mais → empresa_matriz",
-                )
-            # Genuinamente ambíguo — revisao_manual (preserva INV-9: nunca condominio_id=NULL)
             return ClassificationResult(
-                doc_scope="empresa_matriz",
-                condominio_id=None,
+                doc_scope="condominio",
+                condominio_id=cond_id,
                 referente_a_employee_id=None,
-                revisao_manual=True,
-                motivo=f"Grupo A sem match condomínio: {nome_arquivo[:60]}",
+                revisao_manual=(cond_id is None),
+                motivo=("OK" if cond_id else f"Grupo A sem match condomínio: {nome_arquivo[:60]}"),
             )
 
         # Grupo B — funcionário
+        # §23.11: preservar scope='funcionario' mesmo sem match — levantar revisao_manual
         if scope == "funcionario":
             emp_id = match_employee(nome_arquivo, emp_lookup)
-            if emp_id:
-                return ClassificationResult(
-                    doc_scope="funcionario",
-                    condominio_id=None,
-                    referente_a_employee_id=emp_id,
-                    revisao_manual=False,
-                    motivo="OK",
-                )
-            # Documento da Conecta Mais (ex: GFD FGTS CONSIGNADO consolidado): empresa_matriz certa
-            if is_matriz(nome_arquivo):
-                return ClassificationResult(
-                    doc_scope="empresa_matriz",
-                    condominio_id=None,
-                    referente_a_employee_id=None,
-                    revisao_manual=False,
-                    motivo="Grupo B: CNPJ/nome Conecta Mais → empresa_matriz",
-                )
-            # Genuinamente ambíguo — revisao_manual (preserva INV-10)
             return ClassificationResult(
-                doc_scope="empresa_matriz",
+                doc_scope="funcionario",
                 condominio_id=None,
-                referente_a_employee_id=None,
-                revisao_manual=True,
-                motivo=f"Grupo B sem match funcionário: {nome_arquivo[:60]}",
+                referente_a_employee_id=emp_id,
+                revisao_manual=(emp_id is None),
+                motivo=("OK" if emp_id else f"Grupo B sem match funcionário: {nome_arquivo[:60]}"),
             )
 
         # Grupo C — empresa matriz (sempre resolve sem ambiguidade)
