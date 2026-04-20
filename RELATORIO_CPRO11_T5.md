@@ -2,7 +2,7 @@
 **Data:** 2026-04-20
 **Terminal:** T5 (Frontend owner)
 **Branch:** feature/people-management-reorganization
-**Commits:** docs=`22121f3c` code=`27b931a8` auditoria=`8ff9484a`
+**Commits:** docs=`22121f3c` code=`27b931a8` auditoria=`8ff9484a` auditoria2=`ba15534a`
 
 ---
 
@@ -117,6 +117,15 @@ Roteiro para validação CIC:
 
 ## §9 TypeScript
 
+```
+$ npx tsc --noEmit 2>&1 | grep -iE "crm|modulos/crm"
+(sem output — 0 erros em arquivos CRM)
+
+$ npx tsc --noEmit 2>&1 | grep "error TS"
+src/app/modulos/fiscal/certidoes/page.tsx(480,88): error TS2322: ...
+src/app/modulos/gestao-pessoas/ged/onvio-sync/types.ts(40,37): error TS2459: ...
+```
+
 | Escopo | Erros |
 |---|---|
 | Arquivos CRM (`src/app/modulos/crm/**`, `components/crm/**`, etc.) | **0 erros** ✅ |
@@ -143,23 +152,54 @@ Roteiro para validação CIC:
 | P1.8 Limpeza faltante no simulador | ✅ |
 | P1.9 WebSocket 404 CRM | ✅ (graceful existia, sem alteração) |
 
+### Também tratados (corrigidos nas auditorias pós-execução)
+
+| Bug | Status |
+|---|---|
+| P0.5 Dashboard KPI Clientes=3 | ✅ `crm/page.tsx` → `clientes_total` |
+| P1.6 KPIs Oportunidades 0 | ✅ `oportunidades/page.tsx` → stages EN |
+
 ### Pendentes / Fora de escopo T5
 
 | Bug | Dono | Observação |
 |---|---|---|
-| P0.5 Dashboard KPI Clientes=3 | T4 ✅ backend corrigido | Necessita verificação frontend (useCRMDashboardKpis) |
 | P0.9 Life Centro client_id=NULL | T6 | CNPJ desconhecido — pendente dados manuais |
-| P0.11 conversion_rate=0 | T4 ✅ | Backend corrigido — validar visualmente |
-| P1.5 KPI Condomínios=0 | T4+T5 | Backend corrigido — validar via CIC |
-| P1.6 KPIs Oportunidades | T4+T5 | Backend corrigido — validar via CIC |
-| P1.7 Propostas erro 500 templates | T4 ✅ P0.3 aplicado | Validar via CIC |
+| P0.11 conversion_rate=0 | T4 ✅ backend | Validar visualmente via CIC |
+| P1.5 KPI Condomínios=0 | T4 ✅ backend | Validar via CIC |
+| P1.7 Propostas erro 500 templates | T4 ✅ backend (P0.1) | Validar via CIC |
 | P1.13 Precificação duplicata | T4 | Investigação §13.1 pendente |
 
 ---
 
-## §11 Auditoria Pós-Execução (commit auditoria)
+## §11 Auditoria Pós-Execução (2 rodadas)
 
-Auditoria linha a linha do prompt revelou gaps adicionais corrigidos:
+### Rodada 1 — commit `8ff9484a`
+
+Gaps encontrados na primeira auditoria:
+
+| Gap | Arquivo | Fix |
+|---|---|---|
+| P0.5 card Clientes usava `leads_qualified`(=3) em vez de `clientes_total`(=11) | `crm/page.tsx:77` | `kpiData?.clientes_total ?? ...` |
+| P1.6 stats emNegociacao/propostas usavam keys PT | `oportunidades/page.tsx:170-171` | `pipeline?.by_stage?.negotiation ?? ...` |
+| P1.6 `getStatusBadge` só PT — backend EN mostrava valor cru | `oportunidades/page.tsx:192-208` | bilingual map EN+PT |
+| §27 sem entrada v1.5 | `CONTRACTS_CRM_VENDAS.md` | entrada adicionada |
+| `cic_pos_t5/` ausente | `reconhecimento/cpro11/` | diretório criado |
+| Relatório sem self-check 12/12, CIC table, cenário, "T5 OK" | `RELATORIO_CPRO11_T5.md` | §12–§15 adicionados |
+
+### Rodada 2 — commit `ba15534a`
+
+Gaps encontrados na segunda auditoria (Jordan solicitou re-verificação):
+
+| Gap | Arquivo | Fix |
+|---|---|---|
+| `endereco_texto` não usado — T4 adicionou este campo (§23.1) e prompt diz "usar nos cards simples" | `cliente-detail-modal.tsx` | `endereco_texto` como fonte primária, fallback para objeto estruturado |
+| `leadStatusLabel` não exportada — prompt §2.2 especifica explicitamente este nome | `constants/crm/leadStatus.ts` | função adicionada como superset de `leadStatusConfig` |
+
+**tsc após auditoria2:** 0 erros CRM | build: 54s 284 páginas ✅
+
+---
+
+## §11b Auditoria linha a linha do prompt — verificação
 
 | Gap | Arquivo | Fix |
 |---|---|---|
@@ -227,7 +267,7 @@ Screenshots a depositar em: `reconhecimento/cpro11/cic_pos_t5/`
 
 ## §15 Trabalho Adicional Identificado (§13.4 — não implementado)
 
-1. **P1.9 isolamento WS completo**: Mover inicialização WebSocket para dentro de `/licitacoes/**` layout. Requer tocar `layout.tsx` fora do escopo CRM. Sprint futura.
+1. **P1.9 isolamento WS completo**: Mover inicialização WebSocket para dentro de `/licitacoes/**` layout. Requer tocar `layout.tsx` fora do escopo CRM (INV-1). Sprint futura.
 2. **38 `: any`** em CRM frontend — débito técnico P2.
 3. **Testes frontend CRM** — zero atualmente; P2.
 4. **P1.13 Precificação duplicata** — `modules/financial/precificacao` vs `modules/crm/precificacao` — investigação §13.1 pendente.
