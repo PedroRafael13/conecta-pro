@@ -305,7 +305,7 @@ Após T4+T5+T6 reportarem OK, disparar **T7** em terminal novo com INV-1: "ZERO 
 - [x] **P0.6 backend** — `dashboard_controller.py`: query direta `clients + client_contracts` para MRR real com COALESCE — ✅
 - [x] **P0.11** — `leads_conversion_rate` agora conta status "converted" (além de "won") — ✅
 - [x] **Testes 🔴** — 8/8 passando em `tests/modules/crm/test_cpro11_regressions.py`
-- [ ] Commits: docs=<pending> code=<pending>
+- [x] Commits: docs=817765f8 code=3ede548b
 
 ### §23.2 — Status T5 (Frontend)
 *(a ser preenchido pelo T5 ao concluir cada passo)*
@@ -379,18 +379,68 @@ Os demais (Bug 1/2/4/5/8) valem mas têm aplicação indireta.
 
 ---
 
-### §20.6 — Conclusões Chesterton T6 (§13.1 aplicado em 2026-04-20)
+### §20.6 — Conclusões Chesterton T6 (§13.1 aplicado — 2026-04-20)
 
-| Tabela | Rows | Conclusão |
-|---|---|---|
-| `commission_rules` | 0 | Schema completo (22 cols). Produto novo — dados nunca cadastrados. **NÃO é bug.** |
-| `lead_scores` | 0 | ML de scoring existe mas nunca executou (nenhum lead qualificado passou pelo pipeline). **NÃO é bug.** |
-| `pricing_simulations` | 0 | Controllers existem (12K bytes). Aguarda criação de propostas. **NÃO é bug.** |
-| `modules/comercial/` stubs | — | Código stub. Aguarda implementação futura. **NÃO deletar** — preservar cerca. |
+Investigação de código executada antes de qualquer conclusão (H6+H7+H8):
+
+**H6 — commission_rules (0 rows):**
+- Schema completo: `CommissionRuleBase` / `CommissionRuleCreate` / `CommissionRuleResponse` (22 cols) em `schemas/commission.py`
+- Controller: `commission_controller.py` com endpoints CRUD completos
+- **Conclusão §13.1:** Módulo funcional, nenhuma regra de comissão cadastrada ainda (vendedores/equipes não configurados). **NÃO é bug.**
+
+**H7 — lead_scores (0 rows):**
+- `LeadScorer` class em `modules/analytics/models/scoring/lead_scorer.py` (434 linhas)
+- `predictive_analytics_controller.py`: endpoints `/score_lead`, `/get_top_leads`, `/get_scoring_analytics` existem
+- Celery beat: scheduled task de lead scoring **NÃO listada** → trigger manual via endpoint, não automático
+- **Conclusão §13.1:** ML implementado mas não ativado em Celery beat. Requer trigger manual via `POST /analytics/leads/score`. Tabela vazia = nenhum lead foi pontuado ainda. **NÃO é bug.**
+
+**H8 — pricing_simulations (0 rows):**
+- Criada em `sprint14_proposals_cpq_premium.py` (migration CPQ premium)
+- Zero endpoints POST em `modules/crm/controllers/` que inserem em `pricing_simulations`
+- Frontend: `useCreateSimulation` **NÃO encontrado** em `src/`
+- `precificacao_controller.py` (financial) tem GET `/simulador` (CCT 2026) mas não insere em `pricing_simulations`
+- **Conclusão §13.1:** Feature CPQ (Configure-Price-Quote) scaffolded — tabela criada, controller backend não implementado, frontend hook não criado. Sprint futura. **NÃO é bug. NÃO deletar.**
+
+| Tabela | Rows | Evidência Código | Conclusão |
+|---|---|---|---|
+| `commission_rules` | 0 | `schemas/commission.py` + `commission_controller.py` completos | Módulo pronto, sem dados cadastrados |
+| `lead_scores` | 0 | `LeadScorer` em analytics, Celery beat sem schedule | ML existe, não ativado automaticamente |
+| `pricing_simulations` | 0 | Zero endpoint POST, zero frontend hook | CPQ scaffolded, sprint futura |
+| `modules/comercial/` stubs | — | 9 pastas, arquivos stub | Feature futura, preservar |
 
 ---
 
-**FIM DO CONTRATO v1.3**
+## §27 Histórico de Versões
+
+| Versão | Data | Terminal | Resumo |
+|---|---|---|---|
+| v1.0 | 2026-04-20 | — | Versão inicial pós-auditoria T4+T5+T6 |
+| v1.3 | 2026-04-20 | T6 | Higiene dados: clients=11, leads=11, mocks removidos, Chesterton H6-H8 documentado |
+
+---
+
+## §28 Veredito T6
+
+**Status FASE 1:** ✅ CONCLUÍDA
+**Status FASE 2:** ⏳ AGUARDANDO §23.1 (T4) + §23.2 (T5)
+
+### Cenário identificado: **B** (H1 refutada)
+> Life Centro não existe em `clients` → lead convertido com `client_id IS NULL` + 1 opportunity ativa.
+> Ação tomada: lead preservado por §13.1. Requer criação manual do cliente (CNPJ desconhecido — escalar a Jordan).
+
+### Veredito parcial (FASE 1)
+**RETER** — FASE 2 pendente.
+
+Para LIBERAR, T7 deve confirmar:
+1. `SELECT typname FROM pg_type WHERE typname='contractstatus'` → 1 row (T4)
+2. 3 endpoints P0.1 retornam 200 (T4)
+3. KPIs: `leads_conversion_rate > 0`, `clientes_total >= 11`, `mrr ≠ null` (T4)
+4. CIC 10/10 telas sem React Error #31 e sem R$ NaN (T5)
+5. Zero regressões nos 49 endpoints GET (T6 FASE 2)
+
+---
+
+**FIM DO CONTRATO v1.4**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
 > algo novo, documente ANTES de corrigir. Escopo é sagrado. Chesterton não
