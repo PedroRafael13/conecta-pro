@@ -52,6 +52,13 @@ class DashboardKPIs(BaseModel):
     commissions_pending_value: float = 0.0
     commissions_paid_value: float = 0.0
 
+    # Clientes e MRR (preenchidos pelo controller via query direta)
+    clientes_total: int = 0
+    condominios_total: int = 0
+    mrr: float = 0.0
+    em_negociacao: int = 0
+    em_proposta: int = 0
+
 
 class DashboardTrend(BaseModel):
     """Tendência de um métrica ao longo do tempo."""
@@ -132,9 +139,12 @@ class DashboardService:
 
         kpis.leads_qualified = sum(1 for lead in leads if lead.status in (LeadStatus.QUALIFIED.value, "qualified"))
 
-        converted_leads = sum(1 for lead in leads if lead.status in (LeadStatus.WON.value, "won"))
+        converted_leads = sum(1 for lead in leads if lead.status in (LeadStatus.WON.value, "won", "converted"))
         if kpis.leads_total > 0:
             kpis.leads_conversion_rate = (converted_leads / kpis.leads_total) * 100
+
+        kpis.em_negociacao = sum(1 for lead in leads if lead.status in (LeadStatus.NEGOTIATION.value, "negotiation"))
+        kpis.em_proposta = sum(1 for lead in leads if lead.status in (LeadStatus.PROPOSAL.value, "proposal"))
 
         # ========== Opportunities KPIs ==========
         kpis.opportunities_total = len(opportunities)

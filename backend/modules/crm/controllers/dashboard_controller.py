@@ -5,7 +5,7 @@ Controller (endpoints) para Dashboard CRM.
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -77,6 +77,26 @@ async def get_dashboard_kpis(
         date_from=date_from,
         date_to=date_to,
     )
+
+    # P0.6/P0.11 — clientes_total e mrr via query direta (tabela clients)
+    try:
+        row = (
+            await db.execute(
+                text(
+                    "SELECT COUNT(*), COALESCE(SUM(mrr_calc.mrr), 0) FROM clients c "
+                    "LEFT JOIN LATERAL ("
+                    "  SELECT COALESCE(SUM(cc.monthly_value), 0) AS mrr"
+                    "  FROM client_contracts cc"
+                    "  WHERE cc.client_id = c.id AND cc.status = 'active'"
+                    ") mrr_calc ON true "
+                    "WHERE c.ativo = true"
+                )
+            )
+        ).one()
+        kpis.clientes_total = int(row[0])
+        kpis.mrr = float(row[1])
+    except Exception:
+        pass
 
     logger.info(f"Dashboard KPIs calculados por {current_user.email}")
     return kpis

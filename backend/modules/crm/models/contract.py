@@ -320,8 +320,8 @@ class ContractTemplate(Base):  # pylint: disable=too-few-public-methods
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
 
-    # Tipo de serviço
-    service_type = Column(Enum(ServiceType), nullable=True)
+    # Tipo de serviço (varchar — dados históricos não conformes com o enum Python)
+    service_type = Column(String(30), nullable=True)
 
     # Conteúdo
     content_template = Column(Text, nullable=False)
@@ -372,7 +372,7 @@ class ContractItem(Base):  # pylint: disable=too-few-public-methods
     )
 
     # Serviço
-    service_type = Column(Enum(ServiceType), nullable=False)
+    service_type = Column(String(30), nullable=False)
     service_name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
 

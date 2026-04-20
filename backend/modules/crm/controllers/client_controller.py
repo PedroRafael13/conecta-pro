@@ -83,6 +83,7 @@ async def listar_clientes(
                     "estado": r[12],
                     "cep": r[13],
                 },
+                "endereco_texto": ", ".join(p for p in [r[8], r[9], r[10], r[11], r[12]] if p) or None,
                 "status": r[14],
                 "segment": r[15],
                 "contract_start_date": str(r[16]) if r[16] else None,
