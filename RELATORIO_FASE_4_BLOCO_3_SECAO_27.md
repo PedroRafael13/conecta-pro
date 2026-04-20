@@ -2,7 +2,7 @@
 **Data:** 2026-04-20
 **Agente:** Engenheiro Backend Sênior — FASE 4 BLOCO 3 PIONEIRO
 **Branch:** feature/people-management-reorganization
-**Commit §27:** `2444299c` | **Commit auditoria 1:** `e196c5b2` | **Commit auditoria 2:** `(ver abaixo)`
+**Commit §27:** `2444299c` | **Commit auditoria 1:** `e196c5b2` | **Commit auditoria 2:** `cc13d563`
 
 ---
 
