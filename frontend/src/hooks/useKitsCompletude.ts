@@ -6,7 +6,7 @@ import type { CompletudeKit } from '@/types/kit-completude';
 import { FIXTURE_KITS_04_2026 } from '@/fixtures/kits-completude';
 
 // Enquanto T2 não sobe endpoints: true. Mudar para false após deploy T2 + E2E.
-const USE_FIXTURE = true;
+const USE_FIXTURE = false;
 
 const API_BASE = '/api/v1/gedeon/kits';
 
