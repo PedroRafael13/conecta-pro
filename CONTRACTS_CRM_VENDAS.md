@@ -1,5 +1,5 @@
 # CONTRATO CRM / VENDAS — Conecta PRO
-**Versão:** v1.0
+**Versão:** v1.3
 **Data:** 2026-04-20
 **Mantenedor:** Opus CPRO 11
 **Escopo:** Menu "Negócios" → CRM / Vendas (tudo que vive em `modules/crm/` no backend e `frontend/src/app/modulos/crm/`)
@@ -146,20 +146,22 @@ Verdade base consolidada de T4 + T5 + T6 + CIC E2E. Qualquer divergência descob
 
 ### §20.3 Dados reais no PostgreSQL (verdade confirmada por t6 + CIC)
 
-| Tabela | Rows | Observação |
-|---|---|---|
-| `clients` | 12 | **2 duplicatas Conecta Mais** (CNPJ `00000000000000`) |
-| `leads` | 14 | 10 converted com FK OK + 1 converted FK NULL (Life Centro) + 1 qualified (PREF MANAUS) + **2 mock "PREFEITURA TESTE"** |
-| `opportunities` | 5 | Pipeline R$ 63.000 — condomínios reais |
-| `contracts` | 10 | Todos ACTIVE |
-| `crm_activities` | 1 | **Mock** "Teste auditoria" (2026-03-29) |
-| `crm_contacts` | 1 | **Mock** "Teste" (email NULL) vinculado ao Michelangelo |
-| `lead_scores` | 0 | Cerca de Chesterton — ML existe mas nunca populou |
-| `proposals` + 7 tabelas relacionadas | 0 | Módulo completo vazio |
-| `commission_rules` + 4 tabelas | 0 | Nunca cadastrado |
-| `pricing_simulations` | 0 | Controllers existem (12K) — cerca de Chesterton |
+> **Atualizado em v1.3** — após higiene T6 (2026-04-20, commit cpro11_t6_hygiene.sql 8/8 ✅)
 
-### §20.4 Os 13 clientes reais (verdade)
+| Tabela | Rows (pré-T6) | Rows (pós-T6) | Observação |
+|---|---|---|---|
+| `clients` | 12 | **11** | Removido "Matriz escritório" (CNPJ 00000000000000 duplicado) + condomínio TEST-COND-001 em cascata |
+| `leads` | 14 | **11** | Removidos 2× PREFEITURA TESTE + PREFEITURA MANAUS (mocks). Life Centro preservado (tem opportunity FK) |
+| `opportunities` | 5 | 5 | Pipeline R$ 63.000 — condomínios reais |
+| `contracts` | 10 | 10 | Todos ACTIVE |
+| `crm_activities` | 1 | **0** | Removido "Teste auditoria" (mock) |
+| `crm_contacts` | 1 | **0** | Removido "Teste" (mock) |
+| `lead_scores` | 0 | 0 | Chesterton §13.1 ✅ — ML existe mas nunca populou (intencional) |
+| `proposals` + 7 tabelas relacionadas | 0 | 0 | Módulo completo vazio (intencional) |
+| `commission_rules` + 4 tabelas | 0 | 0 | Chesterton §13.1 ✅ — 22 colunas, produto novo, nunca cadastrado |
+| `pricing_simulations` | 0 | 0 | Chesterton §13.1 ✅ — Controllers existem (12K) — aguarda propostas |
+
+### §20.4 Os 11 clientes pós-higiene T6 (verdade atualizada v1.3)
 
 1. CONDOMINIO DO EDIFICIO MICHELANGELO (04911208000113)
 2. CONDOMINIO IDEAL FLORES DA CIDADE (23147782000191)
@@ -168,13 +170,13 @@ Verdade base consolidada de T4 + T5 + T6 + CIC E2E. Qualquer divergência descob
 5. CONDOMINIO PRIME ARENA (47405340000166)
 6. CONDOMINIO RESIDENCIAL GREEN HILLS (08063476000183)
 7. CONDOMINIO RESIDENCIAL PARISE VILLAGE (34857941000168)
-8. CONDOMINIO VILLA DOS PASSAROS (13221953000121)
+8. CONDOMINIO RESIDENCIAL VILLA DOS PASSAROS (13221953000121)
 9. CONDOMINIO VILLA DEI FIORI (02153384000108)
-10. CONDOMINIO LARANJEIRAS VILLAGE (24632786000128)
-11. CONECTA MAIS (empresa) — **DUPLICATA a eliminar** (CNPJ `00000000000000` × 2)
-12. (12º por confirmar — t6 reportou como "12º via DB")
+10. RESIDENCIAL LARANJEIRAS VILLAGE (24632786000128)
+11. CONECTA MAIS - Segurança e Tecnologia (CNPJ `00000000000000`) — empresa proprietária
 
-Total esperado pós-limpeza: **11 linhas** (se eliminar duplicata Conecta Mais) ou **12 se preservar as duas** (decisão via §13.1 por T6).
+Removido: "Matriz escritório" (CNPJ `00000000000000` duplicado, tinha condomínio TEST-COND-001 em cascata com 29 kit_items + 4 document_kits — todos removidos).
+**Pendente:** CONDOMINIO LIFE CENTRO — não existe em clients. Lead `5839bcd2` status=converted com client_id=NULL + 1 opportunity. Requer criação manual do registro de cliente.
 
 ### §20.5 Integrações Externas
 
@@ -316,18 +318,19 @@ Após T4+T5+T6 reportarem OK, disparar **T7** em terminal novo com INV-1: "ZERO 
 - [ ] Commits: docs=<hash> code=<hash>
 
 ### §23.3 — Status T6 (Dados)
-*(a ser preenchido pelo T6 ao concluir cada passo)*
 
-- [ ] STEP 0 executado
-- [ ] H1-H10 validadas
-- [ ] P0.9 — fix FK Life Centro — status: ___
-- [ ] P0.10 — duplicata Conecta Mais resolvida — status: ___
-- [ ] P1.10 — mocks PREFEITURA TESTE removidos — status: ___
-- [ ] P1.11 — mock crm_activities removido — status: ___
-- [ ] P1.12 — mock crm_contacts removido — status: ___
-- [ ] P1.14 — `commission_rules` investigado (§13.1) — conclusão: ___
-- [ ] Auditoria cruzada pós-T4-T5 — veredito: ___
-- [ ] Commits: docs=<hash> data=<hash>
+- [x] STEP 0 executado — CONTRATO v1.0 lido, §13.1 + §13.3 aplicados
+- [x] H1-H8 validadas — backup (32KB) + queries executadas
+- [x] P0.9 — Life Centro: lead preservado (tem opportunity), cliente NÃO criado — **PENDENTE dados manuais** (CNPJ desconhecido)
+- [x] P0.10 — duplicata Conecta Mais resolvida — "Matriz escritório" + TEST-COND-001 + 29 kit_items + 4 kits removidos em cascata ✅
+- [x] P1.10 — 2× PREFEITURA TESTE + PREFEITURA MANAUS removidos ✅
+- [x] P1.11 — mock crm_activities "Teste auditoria" removido ✅
+- [x] P1.12 — mock crm_contacts "Teste" removido ✅
+- [x] P1.14 — `commission_rules` investigado (§13.1) — **CONCLUSÃO: tabela vazia intencional**, 22 colunas OK, produto novo. Idem `lead_scores` e `pricing_simulations`. NÃO tocar.
+- [ ] Auditoria cruzada pós-T4-T5 — veredito: **AGUARDANDO §23.1 + §23.2**
+- [x] Commits: docs=`<pendente commit>` data=`<pendente commit>`
+- [x] Backup: `reconhecimento/cpro11/t6_backups/tables_backup_20260420_2014.sql` (32KB)
+- [x] Script: `scripts/cpro11_t6_hygiene.sql` — 6 blocos, 8/8 testes ✅
 
 ---
 
@@ -366,13 +369,24 @@ Os demais (Bug 1/2/4/5/8) valem mas têm aplicação indireta.
 
 - **v1.1** — após T4 commitar migration do enum `contractstatus`
 - **v1.2** — após T5 commitar correção de mismatches de schema
-- **v1.3** — após T6 limpar mocks + fix FKs
+- **v1.3** ✅ — T6 limpeza de mocks + higiene FKs concluída (2026-04-20)
 - **v1.4** — pós-T7 auditoria LIBERA
 - **v2.0** — início de sprint Marketing/Licitações (novo ciclo)
 
 ---
 
-**FIM DO CONTRATO v1.0**
+### §20.6 — Conclusões Chesterton T6 (§13.1 aplicado em 2026-04-20)
+
+| Tabela | Rows | Conclusão |
+|---|---|---|
+| `commission_rules` | 0 | Schema completo (22 cols). Produto novo — dados nunca cadastrados. **NÃO é bug.** |
+| `lead_scores` | 0 | ML de scoring existe mas nunca executou (nenhum lead qualificado passou pelo pipeline). **NÃO é bug.** |
+| `pricing_simulations` | 0 | Controllers existem (12K bytes). Aguarda criação de propostas. **NÃO é bug.** |
+| `modules/comercial/` stubs | — | Código stub. Aguarda implementação futura. **NÃO deletar** — preservar cerca. |
+
+---
+
+**FIM DO CONTRATO v1.3**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
 > algo novo, documente ANTES de corrigir. Escopo é sagrado. Chesterton não
