@@ -330,7 +330,7 @@ Após T4+T5+T6 reportarem OK, disparar **T7** em terminal novo com INV-1: "ZERO 
 - [x] **INV-10** — 4 camadas validadas: HTML→chunk hash, chunk existe, strings preservadas (`closed_won`, `needs_analysis`, `limpeza`, `crm-contracts-alerts`)
 - [x] **Deploy** — `docker restart conecta-pro-frontend` ✅ — `/modulos/crm/contratos` e `/modulos/crm/contratos/[id]` respondem 307 (redirect-to-login = rota ativa)
 - [ ] CIC E2E pós-correção — **requer Jordan** (validação visual nas 10 telas)
-- [x] Commits: docs=`22121f3c` code=`27b931a8`
+- [x] Commits: docs=`22121f3c` code=`27b931a8` auditoria=`8ff9484a`
 
 ### §23.3 — Status T6 (Dados)
 

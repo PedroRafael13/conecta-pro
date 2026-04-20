@@ -2,7 +2,7 @@
 **Data:** 2026-04-20
 **Terminal:** T5 (Frontend owner)
 **Branch:** feature/people-management-reorganization
-**Commits:** docs=`22121f3c` code=`27b931a8` auditoria=`<pendente>`
+**Commits:** docs=`22121f3c` code=`27b931a8` auditoria=`8ff9484a`
 
 ---
 
