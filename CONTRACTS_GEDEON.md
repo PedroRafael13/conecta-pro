@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.26
+**Versão:** 1.27
 **Data:** 2026-04-20
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1753,6 +1753,62 @@ Após ambos entregarem relatórios:
 
 ---
 
+## §28 — FASE 4 BLOCO 3 / T2 — Endpoints Completude Kit
+
+**Data:** 2026-04-20
+**Terminal:** T2 (paralelo com T3)
+**Princípios:** §13.1 (KitBuilderService imutável) + §13.3 + §13.4
+
+### §28.1 — Escopo implementado
+
+Endpoints definidos em §27.1, implementando contrato §27.2–§27.5.
+KitBuilderService importado como está (v1.22) — zero alteração.
+
+### §28.2 — Arquivos criados
+
+- `backend/modules/gedeon/controllers/kit_controller.py` — router + 2 endpoints
+- `backend/modules/gedeon/schemas/__init__.py` — package de schemas
+- `backend/modules/gedeon/schemas/kit_completude.py` — 4 Pydantic schemas
+- `backend/tests/modules/gedeon/test_kit_controller.py` — 10 cenários §27.8
+
+### §28.3 — Arquivo modificado
+
+- `backend/main_production.py`: 1 bloco `try/except` adicionado (padrão safe_import)
+  registrando `kit_controller.router` no `api_router`
+
+### §28.4 — Conversão dataclass → Pydantic
+
+```python
+import dataclasses
+from modules.gedeon.schemas.kit_completude import CompletudeKitResponse
+
+def _to_response(kit: CompletudeKit) -> CompletudeKitResponse:
+    return CompletudeKitResponse.model_validate(dataclasses.asdict(kit))
+```
+
+Usa `dataclasses.asdict()` + `model_validate()` do Pydantic v2.
+Campos 1:1 com §27.4 e §27.6 (zero campos extras ou faltantes).
+
+### §28.5 — Tratamento de erros
+
+| Código | Quando | Implementação |
+|--------|--------|---------------|
+| 400 | ValueError com "mes_ref" | `HTTPException(400, detail=str(e))` |
+| 404 | ValueError sem "mes_ref" | `HTTPException(404, detail=str(e))` |
+| 500 | Qualquer outra exceção | `HTTPException(500, "Erro interno ao montar completude")` |
+
+### §28.6 — Sessão DB
+
+Controller usa `get_sync_db_dependency()` (sync) pois `KitBuilderService` usa
+`Session` síncrona (`sqlalchemy.orm.Session`). Diferente de `gedeon_controller.py`
+que usa `AsyncSession`. Ambas estratégias coexistem no mesmo módulo.
+
+### §28.7 — Resultados
+
+[Preencher com outputs reais após execução]
+
+---
+
 ## §29 — FASE 4 BLOCO 3 / T3 — Dashboard Completude Kit
 
 **Data:** 2026-04-20
@@ -1847,3 +1903,4 @@ Preenchido após deploy + validação BUG 6 (STEP 9).
 | 1.24   | 2026-04-20 | AUDIT_B3    | §27 auditoria: 2 traduções de motivo corrigidas (nao_encontrado_onvio → "Não sincronizado do Onvio"; nao_sincronizado → "Não sincronizado") conforme prompt pioneiro |
 | 1.25   | 2026-04-20 | AUDIT_B3_2  | §27 auditoria 2: labels de tabs do modal corrigidos ("Docs Presentes" \| "Docs Faltantes" conforme prompt pioneiro) |
 | 1.26   | 2026-04-20 | T3_BLOCO3   | §29 FASE 4 BLOCO 3/T3 — dashboard completude kit: page, hook, tipos, 4 componentes, fixture 11 condomínios reais |
+| 1.27   | 2026-04-20 | T2_BLOCO3   | §28 FASE 4 BLOCO 3/T2 — endpoints completude kit: controller + schemas Pydantic + testes §27.8; sync DB; §28.6 estratégia sessão documentada |
