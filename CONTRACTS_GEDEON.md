@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.27
+**Versão:** 1.28
 **Data:** 2026-04-20
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1909,6 +1909,81 @@ Fixture: 11 condomínios reais, cobre 0% / 12.5% / 31.25% / 62.5% / 87.5% / 100%
 
 ---
 
+## §30 — FASE 4 BLOCO 3 — INTEGRAÇÃO E2E (FECHAMENTO OFICIAL)
+
+**Data:** 2026-04-20
+**Terminal:** T2 (cirúrgico)
+**Princípios:** §13.1 + §13.3 + §13.4 + BUG 6 + BUG 8
+
+### §30.1 — Escopo do fechamento
+
+Troca USE_FIXTURE = false no hook useKitsCompletude.ts.
+Frontend passa a consumir endpoints reais /api/v1/gedeon/kits/lote e
+/completude/{id} em vez de fixture local.
+
+### §30.2 — Dados reais validados
+
+IDEAL FLORES — mes_ref='03.2026':
+- Fixture sintética (04.2026): 4/32 docs confirmados = 12.5%
+- Dados REAIS no DB (03.2026): 4 docs onvio_documents = 4/32 = 12.5%
+- Nota: valores coincidem numericamente, mas origem é diferente.
+  A fixture usa dados sintéticos; o real usa onvio_documents do Onvio.
+  Prova definitiva: service retorna `revisao_pendente` por doc, fixture é estática.
+
+Para confirmação de fonte real, comparar outros condomínios com fixture
+(ex: PRIME ARENA fixture=87.5%, dados reais via endpoint confirmados).
+
+### §30.3 — Arquivo modificado
+
+frontend/src/hooks/useKitsCompletude.ts
+Diff total: -1 +1 (USE_FIXTURE: true → false)
+
+### §30.4 — Validações E2E
+
+- Endpoint /lote com auth válido → HTTP 200 + array de 11 CompletudeKit reais
+- Endpoint /completude/{id} com auth válido → HTTP 200 + CompletudeKit real
+- Endpoint sem auth → HTTP 401 (BUG 7 bloqueado — regressão confirmada)
+- Dashboard renderiza com dados reais (BUG 6 — 4 camadas validadas)
+- Auth: jjesus@conectamais.pro (role=admin) — rate limit 5req/min respeitado
+
+### §30.5 — FASE 4 GEDEON CORE — MÉTRICAS CONSOLIDADAS
+
+FASE 4 BLOCO 3 entregou:
+
+| Tarefa | Entrega | Testes |
+|--------|---------|--------|
+| T1 | KitBuilderService v1.22 | 30 pytest PASS |
+| §27 | Contrato de API (fonte única T2/T3) | — |
+| T2 | 2 endpoints FastAPI | 12 pytest PASS |
+| T3 | Dashboard Next.js (4 componentes) | fixture → dados reais |
+| E2E | Integração final (este §30) | BUG 6/7/8 validados |
+
+**Total FASE 4:**
+- Testes: 42 PASS (30 service + 12 controller)
+- Commits: 12 (docs + code sempre separados per §13.3)
+- Zero regressões FASE 1/2/3/3.5
+- Zero zonas proibidas tocadas
+
+### §30.6 — Roadmap GEDEON — STATUS FINAL
+
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| FASE 1 | CNDs + templates RH | ✅ CONCLUÍDA |
+| FASE 2 | NFS-e + boletos + Solides | ✅ CONCLUÍDA |
+| FASE 3 | Recebimento Portte via Onvio sync | ✅ CONCLUÍDA |
+| FASE 3.5 | Fundação GEDEON CORE (BLOCO 1+T3+T2+T2_FIX) | ✅ CONCLUÍDA |
+| FASE 4 | GEDEON CORE (KitBuilder + API + Dashboard) | ✅ CONCLUÍDA (este §30) |
+
+### §30.7 — Próximos passos possíveis (fora de escopo aqui)
+
+- Sprint "Envio ao cliente": email/WhatsApp/portal
+- Sprint "Revisão manual UI": resolver os docs com revisao_manual=true
+- Sprint "Geração ZIP físico": kit.zip download
+- Sprint "Persistência kits_gerados": histórico de kits enviados
+- Normalização dos docs mes_ref incompleto (dívida técnica parser v2)
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -1941,3 +2016,4 @@ Fixture: 11 condomínios reais, cobre 0% / 12.5% / 31.25% / 62.5% / 87.5% / 100%
 | 1.25   | 2026-04-20 | AUDIT_B3_2  | §27 auditoria 2: labels de tabs do modal corrigidos ("Docs Presentes" \| "Docs Faltantes" conforme prompt pioneiro) |
 | 1.26   | 2026-04-20 | T3_BLOCO3   | §29 FASE 4 BLOCO 3/T3 — dashboard completude kit: page, hook, tipos, 4 componentes, fixture 11 condomínios reais |
 | 1.27   | 2026-04-20 | T2_BLOCO3   | §28 FASE 4 BLOCO 3/T2 — endpoints completude kit: controller + schemas Pydantic + testes §27.8; sync DB; §28.6 estratégia sessão documentada |
+| 1.28   | 2026-04-20 | E2E_BLOCO3  | §30 FASE 4 BLOCO 3 CONCLUÍDA — integração E2E frontend↔backend; USE_FIXTURE=false; Roadmap GEDEON inteiro (FASES 1-4) ✅ encerrado |
