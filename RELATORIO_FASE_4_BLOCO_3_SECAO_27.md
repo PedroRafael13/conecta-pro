@@ -2,7 +2,7 @@
 **Data:** 2026-04-20
 **Agente:** Engenheiro Backend Sênior — FASE 4 BLOCO 3 PIONEIRO
 **Branch:** feature/people-management-reorganization
-**Commit §27:** `2444299c`
+**Commit §27:** `2444299c` | **Commit auditoria 1:** `e196c5b2` | **Commit auditoria 2:** `(ver abaixo)`
 
 ---
 
@@ -248,3 +248,20 @@ consumir endpoint /lote para grid de cards, /completude/{id} para modal,
 aplicar cores por faixa % e traduzir motivos para PT-BR conforme §27.
 
 Ambos citam `CONTRACTS_GEDEON.md §27` como única fonte de verdade.
+
+---
+
+## 9. Auditorias pós-entrega
+
+### Auditoria 1 (e196c5b2)
+Gap: §27.7 traduções de `motivo` divergiam do prompt.
+- `nao_encontrado_onvio`: "Não encontrado no Onvio" → **"Não sincronizado do Onvio"** ✅
+- `nao_sincronizado`: "Tipo sem sincronização configurada" → **"Não sincronizado"** ✅
+CONTRATO: v1.23 → v1.24
+
+### Auditoria 2 (ver commit final)
+Gap: §27.7 labels das tabs do modal divergiam do prompt.
+- "Presentes" | "Faltantes" → **"Docs Presentes" | "Docs Faltantes"** ✅
+CONTRATO: v1.24 → v1.25
+
+**Self-check pós-auditorias: 10/10 — PROMPT 100% IMPLEMENTADO** ✅
