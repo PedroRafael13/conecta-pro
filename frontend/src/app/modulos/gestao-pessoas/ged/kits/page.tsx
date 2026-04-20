@@ -1,533 +1,64 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Loader2, Eye, Send, CheckCircle, Filter, FolderOpen,
-  Plus, X, Wand2,
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import GedeonChecklist from '@/components/gedeon/GedeonChecklist';
-import GedeonChecklistTipo2 from '@/components/gedeon/GedeonChecklistTipo2';
-import BotaoEnviarDrive from '@/components/gdrive/BotaoEnviarDrive';
+import { useState } from 'react';
+import { useKitsLote } from '@/hooks/useKitsCompletude';
+import { KitCard } from '@/components/gedeon/KitCard';
+import { KitDetalheModal } from '@/components/gedeon/KitDetalheModal';
+import { KitKPIs } from '@/components/gedeon/KitKPIs';
+import { MesRefSelector } from '@/components/gedeon/MesRefSelector';
+import type { CompletudeKit } from '@/types/kit-completude';
 
-const API_BASE = '/api/v1/ged';
-
-function formatRefMonth(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
-  return new Intl.DateTimeFormat('pt-BR', { month: '2-digit', year: 'numeric' }).format(d);
+function defaultMesRef(): string {
+  const d = new Date();
+  return `${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
 }
 
-function getAuthHeaders() {
-  if (typeof window === 'undefined') return { 'Content-Type': 'application/json' } as HeadersInit;
-  let token: string | null = null;
-  try {
-    token = localStorage.getItem('access_token') || localStorage.getItem('token');
-  } catch {
-    token = null;
-  }
-  if (!token) {
-    window.location.href = '/login';
-    return { 'Content-Type': 'application/json' } as HeadersInit;
-  }
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-  } as HeadersInit;
-}
-
-function showToast(msg: string, type: 'success' | 'error' = 'success') {
-  const el = document.createElement('div');
-  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
-}
-
-interface Kit {
-  id: string;
-  client_name: string;
-  client_id: string;
-  reference_month: string;
-  status: string;
-  total_documents: number;
-  documents_signed: number;
-  signed_documents: number;
-  completion_percentage: number;
-}
-
-interface Client {
-  id: string;
-  name: string;
-}
-
-const statusColors: Record<string, string> = {
-  em_montagem: 'bg-yellow-100 text-yellow-800',
-  completo: 'bg-blue-100 text-blue-800',
-  enviado: 'bg-green-100 text-green-800',
-  conferido: 'bg-purple-100 text-purple-800',
-  aprovado: 'bg-emerald-100 text-emerald-800',
-};
-
-const statusLabels: Record<string, string> = {
-  em_montagem: 'Em Montagem',
-  completo: 'Completo',
-  enviado: 'Enviado',
-  conferido: 'Conferido',
-  aprovado: 'Aprovado',
-};
-
-const statusOptions = [
-  { value: '', label: 'Todos os Status' },
-  { value: 'em_montagem', label: 'Em Montagem' },
-  { value: 'completo', label: 'Completo' },
-  { value: 'enviado', label: 'Enviado' },
-  { value: 'conferido', label: 'Conferido' },
-  { value: 'aprovado', label: 'Aprovado' },
-];
-
-export default function KitsListPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [kits, setKits] = useState<Kit[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filterMonth, setFilterMonth] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterClient, setFilterClient] = useState('');
-  const [showNewKit, setShowNewKit] = useState(false);
-  const [showMontarConfirm, setShowMontarConfirm] = useState(false);
-  const [showGedeonChecklist, setShowGedeonChecklist] = useState(false);
-  const [tipoKitCliente, setTipoKitCliente] = useState<string | null>(null);
-  const [newKitClient, setNewKitClient] = useState('');
-  const [newKitMonth, setNewKitMonth] = useState('');
-  const [newKitErrors, setNewKitErrors] = useState<{ client?: string; month?: string }>({});
-  const [creatingKit, setCreatingKit] = useState(false);
-  const [montando, setMontando] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalKits, setTotalKits] = useState(0);
-  const PAGE_SIZE = 15;
-
-  useEffect(() => {
-    if (searchParams?.get('new') === 'true') setShowNewKit(true);
-  }, [searchParams]);
-
-  useEffect(() => { fetchClients(); }, []);
-  useEffect(() => { setPage(1); }, [filterMonth, filterStatus, filterClient]);
-  useEffect(() => { fetchKits(); }, [filterMonth, filterStatus, filterClient, page]);
-  useEffect(() => {
-    if (!filterClient) { setTipoKitCliente(null); return; }
-    const comp = filterMonth || new Date().toISOString().slice(0, 7);
-    fetch(`/api/v1/gedeon/context/${filterClient}/${comp}`, { headers: getAuthHeaders() })
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => {
-        if (d?.tipo_kit && d.tipo_kit !== 'duplo') { setTipoKitCliente(d.tipo_kit); return; }
-        return fetch('/api/v1/gedeon/kits/config', { headers: getAuthHeaders() })
-          .then((r) => r.ok ? r.json() : null)
-          .then((cfg) => {
-            const entry = cfg?.configs?.find((c: { cliente_id: string }) => c.cliente_id === filterClient);
-            setTipoKitCliente(entry?.tipo_kit ?? 'maos_de_obra');
-          });
-      })
-      .catch(() => setTipoKitCliente('maos_de_obra'));
-  }, [filterClient, filterMonth]);
-
-  async function fetchClients() {
-    try {
-      const res = await fetch(`${API_BASE}/clients`, { headers: getAuthHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        setClients(Array.isArray(data) ? data : data.items || []);
-      }
-    } catch (err) {
-      console.error('fetchClients:', err);
-    }
-  }
-
-  async function fetchKits() {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filterMonth) params.append('reference_month', filterMonth);
-      if (filterStatus) params.append('status', filterStatus);
-      if (filterClient) params.append('client_id', filterClient);
-      params.append('page', String(page));
-      params.append('page_size', String(PAGE_SIZE));
-      const res = await fetch(`${API_BASE}/kits?${params.toString()}`, { headers: getAuthHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        setKits(Array.isArray(data) ? data : data.items || []);
-        setTotalKits(Array.isArray(data) ? data.length : data.total ?? 0);
-      }
-    } catch (err) {
-      console.error('fetchKits:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleCreateKit() {
-    const errs: { client?: string; month?: string } = {};
-    if (!newKitClient) errs.client = 'Selecione um cliente';
-    if (!newKitMonth) errs.month = 'Selecione o mês de referência';
-    if (Object.keys(errs).length) { setNewKitErrors(errs); return; }
-    setNewKitErrors({});
-    setCreatingKit(true);
-    try {
-      const res = await fetch(`${API_BASE}/kits`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ client_id: newKitClient, reference_month: newKitMonth + '-01' }),
-      });
-      if (res.ok) {
-        showToast('Kit criado com sucesso');
-        setShowNewKit(false);
-        setNewKitClient('');
-        setNewKitMonth('');
-        fetchKits();
-      } else if (res.status === 401 || res.status === 403) {
-        showToast('Sessão expirada. Faça login novamente.', 'error');
-        setTimeout(() => { window.location.href = '/login'; }, 1500);
-      } else {
-        const err = await res.json().catch(() => null);
-        showToast(err?.detail || `Erro ${res.status}: não foi possível criar o kit`, 'error');
-      }
-    } catch (error) {
-      showToast('Erro de conexão ao criar kit', 'error');
-      console.error('createKit:', error);
-    } finally {
-      setCreatingKit(false);
-    }
-  }
-
-  async function handleSend(kitId: string) {
-    if (!confirm('Confirma o envio deste kit ao cliente?')) return;
-    try {
-      const res = await fetch(`${API_BASE}/kits/${kitId}/send`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-      if (res.ok) {
-        showToast('Kit enviado com sucesso');
-        fetchKits();
-      } else {
-        const err = await res.json().catch(() => null);
-        showToast(err?.detail || `Erro ${res.status} ao enviar kit`, 'error');
-      }
-    } catch (error) {
-      showToast('Erro de conexão ao enviar', 'error');
-      console.error('handleSend:', error);
-    }
-  }
-
-  async function handleApprove(kitId: string) {
-    if (!confirm('Confirma a aprovação deste kit?')) return;
-    try {
-      const res = await fetch(`${API_BASE}/kits/${kitId}/approve`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-      if (res.ok) {
-        showToast('Kit aprovado com sucesso');
-        fetchKits();
-      } else {
-        const err = await res.json().catch(() => null);
-        showToast(err?.detail || `Erro ${res.status} ao aprovar kit`, 'error');
-      }
-    } catch (error) {
-      showToast('Erro de conexão ao aprovar', 'error');
-      console.error('handleApprove:', error);
-    }
-  }
-
-  async function handleMontarKits() {
-    setMontando(true);
-    try {
-      const res = await fetch(`${API_BASE}/kits/montar`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        showToast(`Kits montados: ${data.kits_criados}`);
-        fetchKits();
-      } else {
-        const err = await res.json().catch(() => null);
-        showToast(err?.detail || 'Erro ao montar kits', 'error');
-      }
-    } catch (error) {
-      showToast('Erro de conexão', 'error');
-      console.error('montarKits:', error);
-    } finally {
-      setMontando(false);
-    }
-  }
-
-  const selectedClient = clients.find((c) => c.id === filterClient);
-  const competenciaAtual = filterMonth || new Date().toISOString().slice(0, 7);
+export default function KitsCompletudeePage() {
+  const [mesRef, setMesRef] = useState(defaultMesRef);
+  const [selected, setSelected] = useState<CompletudeKit | null>(null);
+  const { data: kits, isLoading, error } = useKitsLote(mesRef);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-6">
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kits Documentais</h1>
-          <p className="text-gray-500 mt-1">Listagem e gerenciamento de kits</p>
+          <h1 className="text-3xl font-bold text-[#0A2540]">Completude Kit Documental</h1>
+          <p className="text-gray-600">Status dos kits documentais por condomínio</p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              if (filterClient) {
-                setShowGedeonChecklist(true);
-              } else {
-                setShowMontarConfirm(true);
-              }
-            }}
-            disabled={montando}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
-          >
-            {montando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            {filterClient
-              ? tipoKitCliente === 'seguranca_eletronica'
-                ? 'Montar Tipo 2 — Seg. Eletronica'
-                : 'Montar Tipo 1 — Mao de Obra'
-              : 'Montar Kits'}
-          </button>
-          {filterClient && competenciaAtual && (
-            <BotaoEnviarDrive
-              clienteId={filterClient}
-              clienteNome={clients.find((c) => c.id === filterClient)?.name ?? ''}
-              competencia={competenciaAtual}
-            />
-          )}
-          <button
-            onClick={() => setShowNewKit(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" />Novo Kit
-          </button>
-        </div>
+        <MesRefSelector value={mesRef} onChange={setMesRef} />
       </div>
 
-      <Card className="border border-gray-200">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Mês de Referência</label>
-              <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Status</label>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none">
-                {statusOptions.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Cliente</label>
-              <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none">
-                <option value="">Todos os Clientes</option>
-                {clients.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-              </select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          <span className="ml-2 text-gray-500">Carregando kits...</span>
-        </div>
-      ) : (
-        <Card className="border border-gray-200">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Cliente</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Mês</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Docs</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Assinados</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Conclusão</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {kits.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-gray-400">
-                        <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        Nenhum kit encontrado
-                      </td>
-                    </tr>
-                  ) : (
-                    kits.map((kit) => (
-                      <tr key={kit.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium text-gray-900">{kit.client_name || '—'}</td>
-                        <td className="py-3 px-4 text-gray-600">{formatRefMonth(kit.reference_month)}</td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[kit.status] || 'bg-gray-100 text-gray-800'}`}>
-                            {statusLabels[kit.status] || kit.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">{kit.total_documents ?? 0}</td>
-                        <td className="py-3 px-4 text-gray-600">{kit.documents_signed ?? kit.signed_documents ?? 0}/{kit.total_documents ?? 0}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
-                              <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${Math.min(100, kit.completion_percentage ?? 0)}%` }} />
-                            </div>
-                            <span className="text-xs text-gray-500">{Math.round(kit.completion_percentage ?? 0)}%</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => router.push(`/modulos/gestao-pessoas/ged/kits/${kit.id}`)} className="p-1.5 rounded hover:bg-gray-100" title="Visualizar kit" aria-label="Visualizar kit">
-                              <Eye className="h-4 w-4 text-gray-600" />
-                            </button>
-                            <button onClick={() => handleSend(kit.id)} className="p-1.5 rounded hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed" title="Enviar kit" aria-label="Enviar kit" disabled={kit.status === 'enviado' || kit.status === 'aprovado'}>
-                              <Send className="h-4 w-4 text-blue-500" />
-                            </button>
-                            <button onClick={() => handleApprove(kit.id)} className="p-1.5 rounded hover:bg-green-50 disabled:opacity-40 disabled:cursor-not-allowed" title="Aprovar kit" aria-label="Aprovar kit" disabled={kit.status === 'aprovado'}>
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Estados de loading / erro */}
+      {isLoading && (
+        <div className="py-16 text-center text-gray-500">Carregando kits...</div>
       )}
-
-      {totalKits > PAGE_SIZE && (
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <span>Exibindo {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalKits)} de {totalKits} kits</span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40"
-            >
-              Anterior
-            </button>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page * PAGE_SIZE >= totalKits}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40"
-            >
-              Proximo
-            </button>
-          </div>
+      {error && (
+        <div className="py-16 text-center text-red-600">
+          Erro ao carregar kits. Tente novamente.
         </div>
       )}
 
-      {showNewKit && createPortal(
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
-            <button onClick={() => setShowNewKit(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <X className="h-5 w-5" />
-            </button>
-            <h2 className="text-lg font-bold mb-4">Novo Kit Documental</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                <select
-                  value={newKitClient}
-                  onChange={e => { setNewKitClient(e.target.value); setNewKitErrors(p => ({ ...p, client: undefined })); }}
-                  className={`w-full px-3 py-2 border rounded-lg text-sm ${newKitErrors.client ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">Selecione o cliente</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                {newKitErrors.client && <p className="mt-1 text-xs text-red-600">{newKitErrors.client}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mês de Referência *</label>
-                <input
-                  type="month"
-                  value={newKitMonth}
-                  onChange={e => { setNewKitMonth(e.target.value); setNewKitErrors(p => ({ ...p, month: undefined })); }}
-                  className={`w-full px-3 py-2 border rounded-lg text-sm ${newKitErrors.month ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
-                />
-                {newKitErrors.month && <p className="mt-1 text-xs text-red-600">{newKitErrors.month}</p>}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowNewKit(false)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button onClick={handleCreateKit} disabled={creatingKit} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                {creatingKit ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
-                Criar Kit
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Conteúdo principal */}
+      {kits && (
+        <>
+          {/* KPIs */}
+          <KitKPIs kits={kits} />
 
-      {showMontarConfirm && createPortal(
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold text-[#1E3A5F] mb-2">Confirmar Montagem de Kits</h3>
-            <p className="text-gray-600 mb-4 text-sm">
-              Esta acao ira criar kits documentais para o mes de referencia de todos os clientes
-              ativos. Deseja continuar?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowMontarConfirm(false)}
-                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  setShowMontarConfirm(false);
-                  handleMontarKits();
-                }}
-                className="px-4 py-2 bg-[#F97316] text-white rounded-lg text-sm font-medium hover:bg-orange-600"
-              >
-                Sim, Montar Kits
-              </button>
-            </div>
+          {/* Grid de cards */}
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {kits.map((kit) => (
+              <KitCard key={kit.condominio_id} kit={kit} onClick={() => setSelected(kit)} />
+            ))}
           </div>
-        </div>,
-        document.body
-      )}
 
-      {showGedeonChecklist && filterClient && createPortal(
-        tipoKitCliente === 'seguranca_eletronica' ? (
-          <GedeonChecklistTipo2
-            clienteId={filterClient}
-            competencia={competenciaAtual}
-            clienteNome={selectedClient?.name ?? filterClient}
-            onConfirmar={() => {
-              setShowGedeonChecklist(false);
-              handleMontarKits();
-            }}
-            onCancelar={() => setShowGedeonChecklist(false)}
+          {/* Modal de detalhe */}
+          <KitDetalheModal
+            kit={selected}
+            open={!!selected}
+            onClose={() => setSelected(null)}
           />
-        ) : (
-          <GedeonChecklist
-            clienteId={filterClient}
-            competencia={competenciaAtual}
-            clienteNome={selectedClient?.name ?? filterClient}
-            onConfirmar={(dados) => {
-              setShowGedeonChecklist(false);
-              handleMontarKits();
-              console.log('GEDEON checklist confirmado:', dados);
-            }}
-            onCancelar={() => setShowGedeonChecklist(false)}
-          />
-        ),
-        document.body
+        </>
       )}
     </div>
   );
