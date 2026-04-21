@@ -1,6 +1,6 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.30
-**Data:** 2026-04-20
+**Versão:** 1.31
+**Data:** 2026-04-21
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
@@ -2132,6 +2132,50 @@ Certidões GED: `GET /api/v1/ged/certidoes` → `total=8, resumo={validas:6, ven
 
 ---
 
+## §32 — FIX: RATE LIMIT LOGIN (homologação)
+
+**Data:** 2026-04-21
+**Terminal:** T1
+**Princípios:** §13.1 + §13.3 + §13.4
+**Gatilho:** Jordan bloqueado por HTTP 429 no /auth/login durante E2E
+
+### §32.1 — Causa raiz
+Rate limit de 5/min em /api/v1/auth/login muito agressivo para homologação
+com múltiplas sessões de teste.
+
+### §32.2 — Fix aplicado
+Arquivo: `backend/api/v1/endpoints/auth.py`
+Linha: 88
+ANTES: `@limiter.limit("5/minute")`
+DEPOIS: `@limiter.limit("20/minute")`
+
+### §32.3 — Limpeza Redis
+Chaves deletadas (db1):
+- `LIMITS:LIMITER/ip:127.0.0.1//api/v1/auth/login/5/1/minute`
+- `LIMITS:LIMITER/ip:172.18.0.1//api/v1/auth/login/5/1/minute`
+FLUSHDB NÃO executado (preservação de outras chaves)
+
+### §32.4 — Outros rate limits preservados
+| Linha | Endpoint | Limite |
+|-------|----------|--------|
+| 51 | POST /auth/register | 5/min (INTOCADO) |
+| 153 | POST /auth/refresh | 10/min (INTOCADO) |
+| 207 | POST /auth/logout | 10/min (INTOCADO) |
+| 252 | POST /auth/forgot-password | 3/min (INTOCADO) |
+| 297 | POST /auth/reset-password | 5/min (INTOCADO) |
+
+### §32.5 — Validação
+- Login com credenciais válidas → 200
+- Login com credenciais inválidas → 401
+- 21ª tentativa em <1min → 429 (rate limit ainda funciona, limite novo é 20)
+
+### §32.6 — Fora de escopo
+- Configurar rate limit via variável de ambiente
+- Rate limit diferenciado por role de usuário
+- Ajuste de outros endpoints (só login mudou)
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -2167,3 +2211,4 @@ Certidões GED: `GET /api/v1/ged/certidoes` → `total=8, resumo={validas:6, ven
 | 1.28   | 2026-04-20 | E2E_BLOCO3  | §30 FASE 4 BLOCO 3 CONCLUÍDA — integração E2E frontend↔backend; USE_FIXTURE=false; Roadmap GEDEON inteiro (FASES 1-4) ✅ encerrado |
 | 1.29   | 2026-04-20 | HOMOLOGACAO | §31 (v1) Homologação E2E — 5 decisões ETAPA 1 |
 | 1.30   | 2026-04-20 | AUDIT_HOMO  | §31 reescrito com estrutura correta do prompt: §31.1 mapa 2 sistemas, §31.2 decisões BUG1/2/3, §31.3 limpeza executada, §31.4 PDFs 465 reais localizados, §31.5 estado final (E2E 11 condos), §31.6 fora de escopo |
+| 1.31   | 2026-04-21 | T1          | §32 fix rate limit login 5/min → 20/min; chaves Redis limpas; outros endpoints preservados |
