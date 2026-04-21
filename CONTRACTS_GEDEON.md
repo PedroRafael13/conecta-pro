@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.31
+**Versão:** 1.32
 **Data:** 2026-04-21
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -2212,3 +2212,104 @@ FLUSHDB NÃO executado (preservação de outras chaves)
 | 1.29   | 2026-04-20 | HOMOLOGACAO | §31 (v1) Homologação E2E — 5 decisões ETAPA 1 |
 | 1.30   | 2026-04-20 | AUDIT_HOMO  | §31 reescrito com estrutura correta do prompt: §31.1 mapa 2 sistemas, §31.2 decisões BUG1/2/3, §31.3 limpeza executada, §31.4 PDFs 465 reais localizados, §31.5 estado final (E2E 11 condos), §31.6 fora de escopo |
 | 1.31   | 2026-04-21 | T1          | §32 fix rate limit login 5/min → 20/min; chaves Redis limpas; outros endpoints preservados |
+| 1.32   | 2026-04-21 | T1          | §33 regressão /ged/kits — ChunkLoadError por partial deployment; auto-reparado; procedimento seguro documentado |
+
+---
+
+## §33 — REGRESSÃO /ged/kits — ChunkLoadError por Deployment Parcial
+
+**Data:** 2026-04-21
+**Terminal:** T1
+**Princípios:** §13.1 (Chesterton) — investigação completa antes de qualquer fix
+**Gatilho:** ErrorBoundary "Nova versão detectada. Recarregando..." em `/modulos/gestao-pessoas/ged/kits` em aba nova; `/certidoes` funcionava normalmente
+
+### §33.1 — Causa raiz (Chesterton §13.1 aplicado)
+
+**Partial deployment** do build `conecta-pro-1776805618454` ao Docker container:
+
+| Componente | Estado no incidente | Estado atual |
+|-----------|---------------------|--------------|
+| Container `BUILD_ID` | `conecta-pro-1776799695451` (ANTIGO) | `conecta-pro-1776805618454` ✅ |
+| Container `build-manifest.json` | Referenciava NOVO build (inconsistente) | NOVO build ✅ |
+| Container SSR chunks | NOVO build (atualizado) | NOVO build ✅ |
+| Container `static/` | Builds antigos, SEM `1776805618454/` | Builds antigos (irrelevante¹) |
+| Host `static/` | SEM `1776805618454/` (sendo escrito) | TEM `1776805618454/` com 381 chunks ✅ |
+
+¹ Nginx serve static do HOST filesystem — container não precisa ter `/app/.next/static/`.
+
+### §33.2 — Mecânica do ChunkLoadError
+
+Durante a janela de build/deploy:
+1. Container passou a gerar HTML com chunk refs do novo build `1776805618454`
+2. Host ainda estava escrevendo os novos chunks em `.next/static/chunks/`
+3. Dois chunks específicos da página `/ged/kits` (ausentes em `/certidoes`) ainda não estavam disponíveis:
+   - `3213305fd1efd0f4.js` — Radix UI RovingFocusGroup (usado por `KitDetalheModal`)
+   - `11c5aebcd6eb4a58.js` — Radix UI Dialog (usado por `KitDetalheModal`)
+4. Browser requisitou esses chunks → nginx não encontrou no host → 404 → `ChunkLoadError`
+5. `error.tsx` capturou via `isChunkError()` → exibiu "Nova versão detectada. Recarregando..."
+6. sessionStorage `chunk-error-reload` impediu loop infinito
+
+### §33.3 — Por que /certidoes não foi afetado
+
+`/certidoes` usa chunks diferentes (sem Dialog/RovingFocusGroup do Radix). Esses chunks foram
+escritos antes dos chunks específicos de `/ged/kits` durante o build, ou já existiam com hash
+idêntico de um build anterior.
+
+### §33.4 — Diagnóstico aplicado (§13.1 Chesterton)
+
+Investigação seguiu:
+1. Comparou `BUILD_ID` container vs standalone: divergência confirmada
+2. Comparou `build-manifest.json` container vs host: referência a novo build no container
+3. Listou chunks da `page_client-reference-manifest.js` dos kits: 11 chunks identificados
+4. Verificou presença de cada chunk no HOST filesystem: inicialmente 2 aparentavam ausentes
+5. Corrigiu falso positivo: grep pattern `[a-f0-9]{16}\.js` capturava sufixo de `turbopack-1c14b7295eced5b6.js`
+6. Confirmou com grep exato: todos 11 chunks presentes → regressão era TRANSIENTE
+
+### §33.5 — Estado atual (auto-reparado + container corrigido)
+
+```
+ANTES (incidente):            APÓS (estado atual):
+container BUILD_ID = OLD      container BUILD_ID = 1776805618454 ✅
+container SSR = NEW           container SSR = 1776805618454 ✅
+host static chunks = WRITING  host static chunks = COMPLETO (381 files) ✅
+```
+
+O container foi atualizado (provavelmente pelo PM2 restart que escreveu os arquivos `standalone/`)
+e o host completou o build. Regressão auto-reparada.
+
+### §33.6 — Fix preventivo: procedimento seguro de deploy
+
+**Regra documentada:** Nunca fazer hot-copy parcial durante build ativo.
+
+Sequência correta de deploy (quando autorizado por Jordan):
+```bash
+# 1. Build completo no host (AGUARDAR terminar)
+cd /opt/conecta-pro/frontend
+NODE_OPTIONS=--max-old-space-size=4096 npm run build
+# BUILD_ID agora em .next/standalone/.next/BUILD_ID
+
+# 2. SOMENTE após build 100% completo: atualizar container
+CONTAINER=$(docker ps --filter ancestor=conecta-pro-frontend --format '{{.Names}}' | head -1)
+docker cp /opt/conecta-pro/frontend/.next/standalone/. $CONTAINER:/app/
+docker restart $CONTAINER
+
+# 3. Verificar consistência
+docker exec $CONTAINER cat /app/.next/BUILD_ID
+# deve bater com: cat /opt/conecta-pro/frontend/.next/standalone/.next/BUILD_ID
+```
+
+### §33.7 — Validações executadas (5/5 PASS)
+
+| Check | Resultado |
+|-------|-----------|
+| pytest gedeon (42 testes) | ✅ 42 passed, 0 failed |
+| GET /kits/lote sem auth → 401 | ✅ 401 Unauthorized |
+| GET /kits/lote com auth → 11 condos | ✅ 11 condominios retornados |
+| DB: API retorna total_esperado=230 | ✅ dados coerentes |
+| git diff zonas protegidas | ✅ CLEAN — nenhum arquivo protegido |
+
+### §33.8 — Fora de escopo
+- Mudança no código do frontend (nenhuma alteração de source)
+- Mudança nos endpoints de backend
+- Alteração na lógica de detecção de ChunkLoadError em `error.tsx`
+- Modificação do `generateBuildId` (timestamp-based — intencional)
