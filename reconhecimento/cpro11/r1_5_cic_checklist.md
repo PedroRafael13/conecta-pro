@@ -14,15 +14,15 @@
 | C05 | PG type `adjustmentindex` existe | ✅ PASS | `SELECT typname FROM pg_type WHERE typname='adjustmentindex'` → 1 row |
 | C06 | PG type `addendumtype` existe | ✅ PASS | `SELECT typname FROM pg_type WHERE typname='addendumtype'` → 1 row |
 | C07 | `Column(Enum())` com `values_callable` em `contract.py` | ✅ PASS | 5 ocorrências corrigidas (linhas 124, 129, 156, 419, 425) |
-| C08 | `GET /crm/contracts/alerts` → 200 | ⏳ AGUARDANDO GATE | Verificado após restart do backend |
-| C09 | `GET /crm/contracts/templates` → 200 | ⏳ AGUARDANDO GATE | Verificado após restart do backend |
-| C10 | `GET /crm/proposals/templates` → 200 | ⏳ AGUARDANDO GATE | Rotas ordenadas corretamente (templates antes de /{id}) |
-| C11 | `GET /crm/dashboard/kpis` tem `clientes_total` | ⏳ AGUARDANDO GATE | Campo existente + query direta na tabela clients |
-| C12 | `GET /crm/dashboard/kpis` tem `mrr` não-NaN | ⏳ AGUARDANDO GATE | COALESCE no SQL protege de NULL |
-| C13 | `GET /crm/dashboard/kpis` tem `em_negociacao` | ⏳ AGUARDANDO GATE | Calculado por dashboard_service |
-| C14 | `GET /crm/dashboard/kpis` tem `leads_conversion_rate` | ⏳ AGUARDANDO GATE | Calculado por dashboard_service |
+| C08 | `GET /crm/contracts/alerts` → 200 | ✅ PASS | HTTP 200 — FASE 5 audit 2026-04-21 |
+| C09 | `GET /crm/contracts/templates` → 200 | ✅ PASS | HTTP 200 — schema UUID/variables/service_type fixados |
+| C10 | `GET /crm/proposals/templates` → 200 | ✅ PASS | HTTP 200 — rota templates antes de /{id} |
+| C11 | `GET /crm/dashboard/kpis` tem `clientes_total` | ✅ PASS | HTTP 200, campo `clientes_total` presente |
+| C12 | `GET /crm/dashboard/kpis` tem `mrr` não-NaN | ✅ PASS | `mrr` >= 0.0, não NaN |
+| C13 | `GET /crm/dashboard/kpis` tem `em_negociacao` | ✅ PASS | Campo `em_negociacao` presente |
+| C14 | `GET /crm/dashboard/kpis` tem `leads_conversion_rate` | ✅ PASS | Campo `leads_conversion_rate` presente |
 | C15 | Frontend BUILD_ID posterior aos commits T5 | ✅ PASS | BUILD_ID 1776721155887 = 2026-04-20 21:39 UTC > commit 27b931a8 (20:56 UTC) |
-| C16 | 10/10 testes regressão runtime passando | ⏳ AGUARDANDO FASE 4 | `test_cpro11_regressions_real.py` criado |
+| C16 | 10/10 testes regressão runtime passando | ✅ PASS | `10 passed in 2.25s` — 2026-04-21 FASE 4 gate |
 
 ## Hipóteses Validadas
 
