@@ -9,9 +9,7 @@ import {
   XCircle,
   ShieldCheck,
   Search,
-  ExternalLink,
   FileText,
-  Clock,
   Filter,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const API_BASE = '/api/v1/bidding/certificates';
+const API_BASE = '/api/v1/ged/certidoes';
 
 function showToast(msg: string, type: 'success' | 'error' = 'success') {
   const el = document.createElement('div');
@@ -51,37 +49,31 @@ function getAuthHeaders() {
 
 interface Certificate {
   id: string;
-  tipo: string;
-  nome: string;
-  cnpj: string;
-  razao_social: string;
-  status: string;
-  situacao: string;
-  data_emissao: string;
-  data_validade: string;
-  dias_para_vencer: number;
-  esta_valida: boolean;
-  esta_vencendo: boolean;
-  precisa_renovar: boolean;
-  pode_usar_licitacao: boolean;
-  orgao_emissor: string;
-  orgao_url?: string;
-  arquivo_url?: string;
-  codigo_verificacao?: string;
-  ultima_tentativa?: string;
-  fonte: string;
-  obtencao_automatica: boolean;
+  name: string;
+  document_type: string;
+  issuing_body: string | null;
+  issue_date: string | null;
+  expiry_date: string | null;
+  status: 'valida' | 'vencida' | 'a_vencer' | 'sem_vencimento';
+  file_path: string | null;
+  file_url: string | null;
+  notes: string | null;
+  alerta_ativo: boolean;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface CertType {
-  tipo: string;
-  nome: string;
-  descricao: string;
-  orgao_emissor: string;
-  url_emissao: string;
-  validade_padrao_dias: number;
-  renovacao_automatica_disponivel: boolean;
-  obrigatoria: boolean;
+  key: string;
+  document_type: string;
+  name: string;
+  issuing_body: string;
+}
+
+interface Resumo {
+  validas: number;
+  vencidas: number;
+  a_vencer_30d: number;
 }
 
 const typeLabels: Record<string, string> = {
@@ -95,14 +87,24 @@ const typeLabels: Record<string, string> = {
   AUTORIZACAO_PF: 'Autorização Polícia Federal',
 };
 
+function daysUntilExpiry(expiry_date: string | null): number {
+  if (!expiry_date) return 9999;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiry_date);
+  expiry.setHours(0, 0, 0, 0);
+  return Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 function getStatusConfig(cert: Certificate) {
-  if (!cert.esta_valida && cert.dias_para_vencer <= 0) {
+  const days = daysUntilExpiry(cert.expiry_date);
+  if (cert.status === 'vencida' || days <= 0) {
     return { label: 'Vencida', color: 'bg-red-100 text-red-800', icon: XCircle, priority: 0 };
   }
-  if (cert.dias_para_vencer <= 7) {
+  if (days <= 7) {
     return { label: 'Crítico', color: 'bg-red-100 text-red-800', icon: AlertTriangle, priority: 1 };
   }
-  if (cert.dias_para_vencer <= 30) {
+  if (cert.status === 'a_vencer' || days <= 30) {
     return { label: 'Vencendo', color: 'bg-yellow-100 text-yellow-800', icon: AlertTriangle, priority: 2 };
   }
   return { label: 'Válida', color: 'bg-green-100 text-green-800', icon: CheckCircle, priority: 3 };
@@ -115,7 +117,7 @@ function getDaysColor(days: number) {
   return 'text-green-600';
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string | null) {
   if (!dateStr) return '-';
   return new Date(dateStr).toLocaleDateString('pt-BR');
 }
@@ -123,6 +125,7 @@ function formatDate(dateStr: string) {
 export default function CertidoesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [certTypes, setCertTypes] = useState<CertType[]>([]);
+  const [resumo, setResumo] = useState<Resumo>({ validas: 0, vencidas: 0, a_vencer_30d: 0 });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState('');
@@ -138,7 +141,8 @@ export default function CertidoesPage() {
 
       if (certsRes.ok) {
         const data = await certsRes.json();
-        setCertificates(Array.isArray(data) ? data : data.items || []);
+        setCertificates(data.certidoes || []);
+        setResumo(data.resumo || { validas: 0, vencidas: 0, a_vencer_30d: 0 });
       }
       if (typesRes.ok) {
         const data = await typesRes.json();
@@ -159,14 +163,16 @@ export default function CertidoesPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await fetch(`${API_BASE}/atualizar-status`, {
+      const res = await fetch(`${API_BASE}/sync`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({}),
       });
       if (!res.ok) {
-        console.error('Erro ao atualizar status:', res.status);
+        console.error('Erro ao sincronizar certidões:', res.status);
         showToast('Erro ao sincronizar certidões. Endpoint pode estar indisponível.', 'error');
+      } else {
+        showToast('Sincronização iniciada com sucesso.');
       }
       await loadData();
     } catch (err) {
@@ -177,38 +183,40 @@ export default function CertidoesPage() {
     }
   };
 
-  // Computed stats
-  const validCount = certificates.filter((c) => c.esta_valida && c.dias_para_vencer > 30).length;
-  const expiringCount = certificates.filter(
-    (c) => c.esta_valida && c.dias_para_vencer > 0 && c.dias_para_vencer <= 30
-  ).length;
-  const expiredCount = certificates.filter((c) => !c.esta_valida || c.dias_para_vencer <= 0).length;
-  const urgentCount = certificates.filter((c) => c.dias_para_vencer <= 7 && c.dias_para_vencer > 0).length;
+  const validCount = resumo.validas;
+  const expiringCount = resumo.a_vencer_30d;
+  const expiredCount = resumo.vencidas;
+  const urgentCount = certificates.filter((c) => {
+    const days = daysUntilExpiry(c.expiry_date);
+    return days > 0 && days <= 7;
+  }).length;
 
-  // Filter
   const filtered = certificates
     .filter((c) => {
-      if (filterType !== 'all' && c.tipo !== filterType) return false;
-      if (filterStatus === 'valida' && (!c.esta_valida || c.dias_para_vencer <= 30)) return false;
-      if (filterStatus === 'vencendo' && (c.dias_para_vencer > 30 || c.dias_para_vencer <= 0)) return false;
-      if (filterStatus === 'vencida' && c.dias_para_vencer > 0) return false;
+      if (filterType !== 'all' && c.document_type !== filterType) return false;
+      if (filterStatus === 'valida' && c.status !== 'valida') return false;
+      if (filterStatus === 'vencendo' && c.status !== 'a_vencer') return false;
+      if (filterStatus === 'vencida' && c.status !== 'vencida') return false;
       if (search) {
         const q = search.toLowerCase();
         return (
-          (c.nome || '').toLowerCase().includes(q) ||
-          (c.tipo || '').toLowerCase().includes(q) ||
-          (c.razao_social || '').toLowerCase().includes(q) ||
-          (c.orgao_emissor || '').toLowerCase().includes(q)
+          (c.name || '').toLowerCase().includes(q) ||
+          (c.document_type || '').toLowerCase().includes(q) ||
+          (c.issuing_body || '').toLowerCase().includes(q)
         );
       }
       return true;
     })
-    .sort((a, b) => a.dias_para_vencer - b.dias_para_vencer);
+    .sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date));
 
-  // Cards por tipo
   const typeGroups = certTypes.map((t) => {
-    const certs = certificates.filter((c) => c.tipo === t.tipo);
-    const worst = certs.length > 0 ? certs.sort((a, b) => a.dias_para_vencer - b.dias_para_vencer)[0] : null;
+    const certs = certificates.filter((c) => c.document_type === t.document_type);
+    const worst =
+      certs.length > 0
+        ? [...certs].sort(
+            (a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date)
+          )[0]
+        : null;
     return { type: t, certs, worst };
   });
 
@@ -235,7 +243,7 @@ export default function CertidoesPage() {
         </div>
         <Button onClick={handleSync} disabled={syncing}>
           <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Sincronizando...' : 'Atualizar Status'}
+          {syncing ? 'Sincronizando...' : 'Sincronizar'}
         </Button>
       </div>
 
@@ -300,21 +308,24 @@ export default function CertidoesPage() {
             const worst = g.worst;
             const cfg = worst ? getStatusConfig(worst) : null;
             const StatusIcon = cfg?.icon || CheckCircle;
+            const days = worst ? daysUntilExpiry(worst.expiry_date) : null;
             return (
               <Card
-                key={g.type.tipo}
+                key={g.type.document_type}
                 className={`cursor-pointer hover:shadow-md transition-shadow ${
-                  filterType === g.type.tipo ? 'ring-2 ring-primary' : ''
+                  filterType === g.type.document_type ? 'ring-2 ring-primary' : ''
                 }`}
-                onClick={() => setFilterType(filterType === g.type.tipo ? 'all' : g.type.tipo)}
+                onClick={() =>
+                  setFilterType(filterType === g.type.document_type ? 'all' : g.type.document_type)
+                }
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-muted-foreground truncate">
-                        {g.type.orgao_emissor}
+                        {g.type.issuing_body}
                       </p>
-                      <p className="text-sm font-semibold mt-0.5 truncate">{g.type.nome}</p>
+                      <p className="text-sm font-semibold mt-0.5 truncate">{g.type.name}</p>
                     </div>
                     {cfg && (
                       <Badge className={`${cfg.color} text-xs ml-2 flex-shrink-0`}>
@@ -326,15 +337,10 @@ export default function CertidoesPage() {
                       <Badge variant="outline" className="text-xs ml-2 flex-shrink-0">0</Badge>
                     )}
                   </div>
-                  {worst && (
-                    <p className={`text-xs mt-2 ${getDaysColor(worst.dias_para_vencer)}`}>
-                      {worst.dias_para_vencer <= 0
-                        ? 'Vencida'
-                        : `${worst.dias_para_vencer} dia(s) restante(s)`}
+                  {worst && days !== null && (
+                    <p className={`text-xs mt-2 ${getDaysColor(days)}`}>
+                      {days <= 0 ? 'Vencida' : `${days} dia(s) restante(s)`}
                     </p>
-                  )}
-                  {g.type.obrigatoria && (
-                    <Badge variant="secondary" className="text-xs mt-1">Obrigatória</Badge>
                   )}
                 </CardContent>
               </Card>
@@ -352,7 +358,7 @@ export default function CertidoesPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome, tipo, empresa ou órgão..."
+                placeholder="Buscar por nome, tipo ou órgão emissor..."
                 className="pl-10"
               />
             </div>
@@ -363,7 +369,7 @@ export default function CertidoesPage() {
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 {certTypes.map((t) => (
-                  <SelectItem key={t.tipo} value={t.tipo}>{t.nome}</SelectItem>
+                  <SelectItem key={t.document_type} value={t.document_type}>{t.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -379,7 +385,11 @@ export default function CertidoesPage() {
               </SelectContent>
             </Select>
             {(filterType !== 'all' || filterStatus !== 'all' || search) && (
-              <Button variant="ghost" size="sm" onClick={() => { setFilterType('all'); setFilterStatus('all'); setSearch(''); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setFilterType('all'); setFilterStatus('all'); setSearch(''); }}
+              >
                 <Filter className="h-4 w-4 mr-1" /> Limpar
               </Button>
             )}
@@ -402,7 +412,6 @@ export default function CertidoesPage() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-3 font-medium text-muted-foreground">Certidão</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Empresa</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Emissão</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Validade</th>
                     <th className="text-center p-3 font-medium text-muted-foreground">Dias</th>
@@ -414,27 +423,22 @@ export default function CertidoesPage() {
                   {filtered.map((cert) => {
                     const cfg = getStatusConfig(cert);
                     const StatusIcon = cfg.icon;
+                    const days = daysUntilExpiry(cert.expiry_date);
                     return (
                       <tr key={cert.id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="p-3">
                           <div>
-                            <p className="font-medium">{typeLabels[cert.tipo] || cert.nome}</p>
-                            <p className="text-xs text-muted-foreground">{cert.orgao_emissor}</p>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <div>
-                            <p className="text-sm">{cert.razao_social}</p>
-                            <p className="text-xs text-muted-foreground font-mono">
-                              {cert.cnpj?.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')}
+                            <p className="font-medium">
+                              {typeLabels[cert.document_type] || cert.name}
                             </p>
+                            <p className="text-xs text-muted-foreground">{cert.issuing_body}</p>
                           </div>
                         </td>
-                        <td className="p-3 text-muted-foreground">{formatDate(cert.data_emissao)}</td>
-                        <td className="p-3 text-muted-foreground">{formatDate(cert.data_validade)}</td>
+                        <td className="p-3 text-muted-foreground">{formatDate(cert.issue_date)}</td>
+                        <td className="p-3 text-muted-foreground">{formatDate(cert.expiry_date)}</td>
                         <td className="p-3 text-center">
-                          <span className={getDaysColor(cert.dias_para_vencer)}>
-                            {cert.dias_para_vencer <= 0 ? 'Vencida' : `${cert.dias_para_vencer}d`}
+                          <span className={getDaysColor(days)}>
+                            {days <= 0 ? 'Vencida' : `${days}d`}
                           </span>
                         </td>
                         <td className="p-3">
@@ -444,28 +448,16 @@ export default function CertidoesPage() {
                           </Badge>
                         </td>
                         <td className="p-3">
-                          <div className="flex items-center gap-1">
-                            {cert.arquivo_url && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => window.open(cert.arquivo_url, '_blank')}
-                              >
-                                <FileText className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                            {cert.orgao_url && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => window.open(cert.orgao_url, '_blank')}
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                          </div>
+                          {cert.file_url && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => window.open(cert.file_url!, '_blank')}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     );

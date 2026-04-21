@@ -290,6 +290,9 @@ export default function KitDetailPage() {
           <p className="text-gray-500 mt-1">
             Referência: {formatRefMonth(kit.reference_month)} | {kit.documents?.length || kit.total_documents} documentos | {kit.documents_signed} assinados
           </p>
+          <span className="inline-block mt-1 text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded px-2 py-0.5">
+            GED — Montagem de Kit para Cliente
+          </span>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={handleSendKit} disabled={kit.status === 'enviado' || kit.status === 'aprovado'} className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">

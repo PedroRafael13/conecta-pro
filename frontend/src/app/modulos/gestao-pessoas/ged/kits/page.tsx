@@ -25,6 +25,9 @@ export default function KitsCompletudeePage() {
         <div>
           <h1 className="text-3xl font-bold text-[#0A2540]">Completude Kit Documental</h1>
           <p className="text-gray-600">Status dos kits documentais por condomínio</p>
+          <span className="inline-block mt-1 text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded px-2 py-0.5">
+            GEDEON CORE — Completude via Onvio
+          </span>
         </div>
         <MesRefSelector value={mesRef} onChange={setMesRef} />
       </div>
