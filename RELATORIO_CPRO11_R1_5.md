@@ -284,8 +284,10 @@ Executada via `urllib.request` dentro do container com JWT `type=access`:
 | # | Hash | Tipo | Descrição |
 |---|---|---|---|
 | 1 | e7863000 | docs | CONTRACTS_CRM_VENDAS.md v1.6 — §23.4, §20.8, §27 |
-| 2 | c38726e3 | fix | conftest.py real + test_cpro11_regressions_real.py 10 testes |
-| 3 | 7701c546 | docs | relatório R1.5 + CIC checklist 16/16 |
+| 2 | c38726e3 | fix | models/contract.py values_callable + schemas/contract.py + test_cpro11_regressions_real.py 10 testes |
+| 3 | 7701c546 | docs | relatório R1.5_20260421 + CIC checklist (formato técnico) |
+| 4 | 8c396e08 | docs | RELATORIO_CPRO11_R1_5.md (nome correto ANEXO A) + CIC checklist formato browser/manual |
+| 5 | 36818842 | fix | conftest.py auth_client + db_session reais (STEP 4.1) + §23.4 F5 ✅ |
 
 ---
 
