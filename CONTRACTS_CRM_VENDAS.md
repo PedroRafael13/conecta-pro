@@ -1,6 +1,6 @@
 # CONTRATO CRM / VENDAS — Conecta PRO
-**Versão:** v1.5
-**Data:** 2026-04-20
+**Versão:** v1.6
+**Data:** 2026-04-21
 **Mantenedor:** Opus CPRO 11
 **Escopo:** Menu "Negócios" → CRM / Vendas (tudo que vive em `modules/crm/` no backend e `frontend/src/app/modulos/crm/`)
 **Fora de escopo:** Marketing, Licitações (sprints futuras)
@@ -459,13 +459,56 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 | v1.3 | 2026-04-20 | T6 | Higiene dados: clients=11, leads=11, mocks removidos, Chesterton H6-H8 documentado |
 | v1.4 | 2026-04-20 | T4 (auditoria) | P0.1 migration contractstatus, P0.2 endereco_texto, P0.5/P0.6/P0.11 dashboard KPIs, condominios_total, 13/13 testes, §20.7 Chesterton T4 |
 | v1.5 | 2026-04-20 | T5 | Frontend mismatches: P0.2/P0.3/P0.4/P0.5/P0.6/P0.7/P0.8/P1.1/P1.2/P1.3/P1.4/P1.6/P1.8 corrigidos; 4 arquivos criados, 9 modificados; build 66s 284 págs; tsc 0 erros CRM |
+| v1.6 | 2026-04-21 | t4 (R1.5) | CPRO11-R1.5: enum SQLAlchemy values_callable + schema UUID/variables fix + docker restart + 10 testes regressão runtime 10/10 |
+
+---
+
+## §23.4 — Status Rodada 1.5 (CPRO11-R1.5 — 2026-04-21)
+
+**Objetivo:** Corrigir runtime 0% de R1 — código certo no disco, processo velho na memória.
+
+### Hipóteses R1.5
+
+| ID | Hipótese | Status |
+|---|---|---|
+| H1 | Backend StartedAt < commits — uvicorn com bytecode antigo | CONFIRMADA |
+| H2 | `Column(Enum())` sem `values_callable` — SQLAlchemy usa `.name` (uppercase) | CONFIRMADA |
+| H6 | Frontend image antes dos commits | REFUTADA — BUILD_ID `1776721155887` = 2026-04-20 21:39 UTC, posterior a commit 27b931a8 |
+
+### Fases Executadas
+
+| Fase | Status | Detalhe |
+|---|---|---|
+| F1 Diagnóstico | ✅ | H1+H2 confirmadas, 4 bugs reproduzidos |
+| F2 Fix Backend | ✅ | 5 `Column(Enum())` + `ContractTemplateResponse` schema + docker restart |
+| F3 Frontend | ✅ (validado) | Sem rebuild — build host já incluía commits T5 |
+| F4 Testes | ✅ | 10/10 testes `test_cpro11_regressions_real.py` passando |
+| F5 Gate Final | ✅ | 3/3 endpoints 200, 6/6 campos KPIs OK |
+
+### §20.8 — Descobertas §13.1 desta Rodada (2026-04-21)
+
+**D-R1.5-1 — `kill -HUP 1` não recarrega módulos Python:**
+- `docker cp + kill -HUP 1` atualiza arquivos no disco MAS não força reimport de módulos já carregados
+- INV-7 confirmado: sempre usar `docker restart <container>` para alterações em modelos.
+
+**D-R1.5-2 — SQLAlchemy Enum usa `.name` por padrão:**
+- Sem `values_callable`, o PG type é consultado com valores uppercase mas foi criado com lowercase
+- Fix: `values_callable=lambda obj: [e.value for e in obj]` + `name="<pg_typname>"`
+
+**D-R1.5-3 — `ContractTemplateResponse` tinha 2 bugs secundários:**
+- `id: str` com `UUID(as_uuid=True)` → precisa de `field_validator("id")` para converter
+- `variables: list[str]` mas BD tem `dict{"required":[...]}` → `normalize_variables` validator
+- **Conclusão §13.1:** Dados históricos não-conformes devem ser tolerados nos schemas de resposta
+
+**D-R1.5-4 — Rate limiter de login: 5 req/min interfere em diagnóstico:**
+- **Trabalho Adicional:** Criar endpoint interno `/api/v1/internal/test-token` sem rate limit
 
 ---
 
 ## §28 Veredito T6
 
 **Status FASE 1:** ✅ CONCLUÍDA
-**Status FASE 2:** ⏳ AGUARDANDO §23.1 (T4) + §23.2 (T5)
+**Status FASE 2:** ✅ CONCLUÍDA (CPRO11-R1.5)
 
 ### Cenário identificado: **B** (H1 refutada)
 > Life Centro não existe em `clients` → lead convertido com `client_id IS NULL` + 1 opportunity ativa.
@@ -483,7 +526,7 @@ Para LIBERAR, T7 deve confirmar:
 
 ---
 
-**FIM DO CONTRATO v1.5**
+**FIM DO CONTRATO v1.6**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
 > algo novo, documente ANTES de corrigir. Escopo é sagrado. Chesterton não
