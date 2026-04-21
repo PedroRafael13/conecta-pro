@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.28
+**Versão:** 1.29
 **Data:** 2026-04-20
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -1984,6 +1984,144 @@ FASE 4 BLOCO 3 entregou:
 
 ---
 
+## §31 — HOMOLOGAÇÃO GEDEON — Investigação E2E (2026-04-20)
+
+**Data:** 2026-04-20
+**Agente:** Engenheiro Sênior — Homologação E2E pós FASE 4
+**Princípios:** §13.1 Chesterton (investigar antes de agir) | §13.4 Escopo sagrado
+
+### §31.1 — Escopo
+
+Investigação disparada por Jordan Jesus após teste E2E manual via CIC que identificou
+3 inconsistências visuais:
+
+- **BUG 1**: Dois sistemas "kit" coexistentes com dados conflitantes
+- **BUG 2**: `/ged/certidoes` exibe "5 Vencidas, 3 Válidas, 8 Total" nos KPIs mas
+  "Nenhuma certidão encontrada" no listing
+- **BUG 3**: "Escala do Mês" aparece em Sistema B mas não consta na planilha GEDEON
+
+Invariantes de preservação:
+- `onvio_documents` = 436 linhas intocadas
+- Sistema A (`/ged/kits`) funcional durante toda a homologação
+
+### §31.2 — Decisão 1: Sistema B — MANTER com fronteira documentada
+
+**Sistema A** (`/modulos/gestao-pessoas/ged/kits`):
+- Dashboard de completude — BLOCO 3 / FASE 4
+- Tabelas: `kit_documental_templates × onvio_documents`
+- Backend: `GET /api/v1/gedeon/kits/lote` + `/completude/{id}`
+- Hook: `useKitsLote`, componentes: `KitCard`, `KitDetalheModal`, `KitKPIs`
+- Status: produção, 42 testes PASS
+
+**Sistema B** (`/modulos/gestao-pessoas/ged/kits/[id]`):
+- Montagem física de kit documental para entrega ao cliente
+- Tabelas: `ged_document_kits` (37 rows) + `ged_kit_documents` (396 rows)
+- Backend: `GET /api/v1/ged/kits/{id}` + `/kit-real/{id}/checklist`
+- Funcionalidades: ZIP download, send ao cliente, approve, workflow de assinatura
+- FK: `ged_kit_documents.kit_id → ged_document_kits.id`
+- FK: `client_tickets` também referencia `ged_document_kits`
+
+**Decisão:** Sistema B é funcionalidade legítima pré-BLOCO 3 (montagem/entrega).
+MANTER. Os 37 kits são dados de teste de desenvolvimento — cleanup autorizado
+por Jordan Jesus (ETAPA 3). O sistema em si (código + modelo) permanece.
+
+### §31.3 — Decisão 2: BUG 2 — Certidões chama endpoint errado
+
+**Root cause confirmado:**
+```
+frontend/src/app/modulos/gestao-pessoas/ged/certidoes/page.tsx:
+  const API_BASE = '/api/v1/bidding/certificates';   ← ERRADO
+```
+
+A página foi construída reutilizando o schema do módulo `bidding`.
+O endpoint correto do módulo GED é `/api/v1/ged/certidoes`.
+
+**Schemas comparados:**
+- `bidding/certificates` retorna: `tipo, cnpj, razao_social, esta_valida, dias_para_vencer, orgao_emissor, data_emissao, data_validade`
+- `ged/certidoes` retorna: `{certidoes: [...], total, resumo: {validas, vencidas, a_vencer_30d}}`
+
+**Endpoint GED confirmado funcionando:** `total=8, resumo={validas:6, vencidas:1, a_vencer_30d:1}`
+
+**Fix ETAPA 3:** mudar `API_BASE` para `/api/v1/ged/certidoes`, adaptar destructuring
+para `data.certidoes`, e usar `resumo.validas/vencidas/a_vencer_30d` para KPIs.
+O botão "Atualizar Status" chama `POST /api/v1/bidding/certificates/atualizar-status`
+(201 ✅) — avaliar se mantém ou migra para `/api/v1/ged/certidoes/atualizar-status`.
+
+### §31.4 — Decisão 3: BUG 3 — Escala do Mês
+
+**Localização:**
+```
+backend/modules/people_management/ged/models/kit_document.py:61
+  ESCALA_MES = "escala_mes"
+
+backend/modules/people_management/agents/ged_agent.py:97
+  "escala_mes": {"categoria": "operacional", "obrigatorio": True}
+
+backend/modules/ged/controllers/kit_pdf_controller.py:602
+  "escala_mes"
+
+frontend/.../ged/kits/[id]/page.tsx
+  typeLabels: { ..., escala_mes: 'Escala do Mês', ... }
+```
+
+**Decisão:** `escala_mes` é tipo de documento legítimo do Sistema B (montagem de kits
+para serviços operacionais com escala). Não faz parte do GEDEON CORE (§22-§30)
+porque não é gerado via Onvio sync — é operacional.
+
+Não adicionar à planilha GEDEON nem a `kit_documental_templates`.
+Manter apenas em Sistema B (models + frontend `typeLabels`).
+Documentado aqui como fronteira intencional.
+
+### §31.5 — Decisão 4: PDFs e contagens DB
+
+**Contagens confirmadas no início da homologação:**
+
+| Tabela | Linhas | Observação |
+|--------|--------|------------|
+| `condominios` | 11 | Intocado |
+| `employee_alocacoes` | 47 | Intocado |
+| `kit_documental_templates` | 38 | Intocado |
+| `onvio_documents` | 436 | **NUNCA TOCAR** |
+| `ged_document_kits` | 37 | Dados de teste — cleanup ETAPA 3 |
+| `ged_kit_documents` | 396 | FK dep de ged_document_kits — cleanup primeiro |
+| `kits_gerados` | 0 | Já limpo |
+
+**PDFs em disco:**
+- `/opt/conecta-pro/uploads/onvio/` — 432 arquivos (real Onvio sync)
+- `/opt/conecta-pro/uploads/ged/historico/` — 26 arquivos (histórico GED)
+- `/opt/conecta-pro/folhas-validacao/` — 7 arquivos
+
+### §31.6 — Decisão 5: Cleanup e plano ETAPA 3
+
+**Backup obrigatório antes do cleanup:**
+```sql
+-- Backup Sistema B (antes de truncar)
+COPY ged_document_kits TO '/tmp/backup_ged_document_kits_20260420.csv' CSV HEADER;
+COPY ged_kit_documents TO '/tmp/backup_ged_kit_documents_20260420.csv' CSV HEADER;
+```
+
+**Ordem de cleanup (FK constraints):**
+```sql
+TRUNCATE TABLE ged_kit_documents;          -- 396 rows, depende de ged_document_kits
+-- verificar client_tickets FK antes de truncar ged_document_kits
+TRUNCATE TABLE ged_document_kits;          -- 37 rows
+-- kits_gerados: já 0, nenhuma ação
+```
+
+**Fixes de código ETAPA 3:**
+1. `certidoes/page.tsx`: trocar `API_BASE` + adaptar schema + manter ou migrar botão status
+2. Sistema A: adicionar label de fronteira ("GEDEON CORE — Completude Onvio")
+3. Sistema B: adicionar label de fronteira ("GED — Montagem de Kits para Cliente")
+
+**Contagens pós-ETAPA 3 esperadas:**
+- `ged_document_kits` = 0
+- `ged_kit_documents` = 0
+- `onvio_documents` = 436 (INVARIANTE)
+- Sistema A: funcional (endpoints + dashboard)
+- Sistema B: funcional (código mantido, dados de teste removidos)
+
+---
+
 ## CHANGELOG
 
 | Versão | Data       | Autor      | Mudança                                  |
@@ -2017,3 +2155,4 @@ FASE 4 BLOCO 3 entregou:
 | 1.26   | 2026-04-20 | T3_BLOCO3   | §29 FASE 4 BLOCO 3/T3 — dashboard completude kit: page, hook, tipos, 4 componentes, fixture 11 condomínios reais |
 | 1.27   | 2026-04-20 | T2_BLOCO3   | §28 FASE 4 BLOCO 3/T2 — endpoints completude kit: controller + schemas Pydantic + testes §27.8; sync DB; §28.6 estratégia sessão documentada |
 | 1.28   | 2026-04-20 | E2E_BLOCO3  | §30 FASE 4 BLOCO 3 CONCLUÍDA — integração E2E frontend↔backend; USE_FIXTURE=false; Roadmap GEDEON inteiro (FASES 1-4) ✅ encerrado |
+| 1.29   | 2026-04-20 | HOMOLOGACAO | §31 Homologação E2E — 5 decisões ETAPA 1: Sistema B (MANTER), BUG 2 (certidoes API_BASE errado), BUG 3 (escala_mes = Sistema B apenas), PDFs 432 onvio, cleanup ged_document_kits (37) + ged_kit_documents (396) |
