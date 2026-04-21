@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.32
+**Versão:** 1.33
 **Data:** 2026-04-21
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -2213,6 +2213,7 @@ FLUSHDB NÃO executado (preservação de outras chaves)
 | 1.30   | 2026-04-20 | AUDIT_HOMO  | §31 reescrito com estrutura correta do prompt: §31.1 mapa 2 sistemas, §31.2 decisões BUG1/2/3, §31.3 limpeza executada, §31.4 PDFs 465 reais localizados, §31.5 estado final (E2E 11 condos), §31.6 fora de escopo |
 | 1.31   | 2026-04-21 | T1          | §32 fix rate limit login 5/min → 20/min; chaves Redis limpas; outros endpoints preservados |
 | 1.32   | 2026-04-21 | T1          | §33 regressão /ged/kits — ChunkLoadError por partial deployment; auto-reparado; procedimento seguro documentado |
+| 1.33   | 2026-04-21 | T1          | §35 modelo canônico planilha: 32 docs, 8 módulos, matriz 32×10, fórmula completude dinâmica (BLOCO A) |
 
 ---
 
@@ -2313,3 +2314,138 @@ docker exec $CONTAINER cat /app/.next/BUILD_ID
 - Mudança nos endpoints de backend
 - Alteração na lógica de detecção de ChunkLoadError em `error.tsx`
 - Modificação do `generateBuildId` (timestamp-based — intencional)
+
+---
+
+## §35 — MODELO CANÔNICO GEDEON (planilha como fonte de verdade)
+
+**Data:** 2026-04-21
+**Bloco:** A de 3 (modelo → 1º kit real → extensão)
+**Gatilho:** Jordan confirmou planilha GEDEON_Arquitetura_Modulos_032026.xlsx
+             como fonte de verdade oficial.
+
+### §35.1 — 32 documentos em 8 módulos
+
+| # | Módulo | Documento | Slug | Status | Escopo |
+|---|--------|-----------|------|--------|--------|
+| 1 | M1 — Fiscal | NFS-e | nfse | 🟢 GERA | condominio |
+| 2 | M1 — Fiscal | Boleto de Cobrança | boleto | 🟢 GERA | condominio |
+| 3 | M2 — Contábil | Folha de Pagamento | folha_pagamento | 🔵 RECEBE | condominio |
+| 4 | M2 — Contábil | Contracheques | contracheque | 🔵 RECEBE | funcionario |
+| 5 | M2 — Contábil | Folhas de Ponto | folhas_ponto | 🔵 RECEBE | funcionario |
+| 6 | M3 — FGTS | GFD FGTS Mensal | gfd_fgts_mensal | 🔵 RECEBE | condominio |
+| 7 | M3 — FGTS | Relatório GFD FGTS | relatorio_gfd_fgts | 🔵 RECEBE | condominio |
+| 8 | M3 — FGTS | Comprovante Pagamento FGTS | comp_pag_fgts | 🟢 GERA | condominio |
+| 9 | M3 — FGTS | GFD FGTS Rescisão | gfd_fgts_rescisao | 🔵 RECEBE | funcionario |
+| 10 | M3 — FGTS | Relatório GFD FGTS Rescisão | relatorio_gfd_rescisao | 🔵 RECEBE | funcionario |
+| 11 | M3 — FGTS | Comprovante Pagamento FGTS Rescisão | comp_fgts_rescisao | 🟢 GERA | funcionario |
+| 12 | M4 — DCTFWEB | DCTFWEB — Declaração Completa | dctfweb_declaracao | 🔵 RECEBE | condominio |
+| 13 | M4 — DCTFWEB | DCTFWEB — Recibo de Entrega | dctfweb_recibo | 🔵 RECEBE | condominio |
+| 14 | M4 — DCTFWEB | DCTFWEB — Relatório/Extrato | dctfweb_extrato | 🔵 RECEBE | condominio |
+| 15 | M5 — CND | CND Receita Federal | cnd_rfb | 🟡 BUSCA | empresa_matriz |
+| 16 | M5 — CND | CND FGTS/Caixa | cnd_caixa | 🟡 BUSCA | empresa_matriz |
+| 17 | M5 — CND | CND Prefeitura | cnd_prefeitura | 🟡 BUSCA | empresa_matriz |
+| 18 | M5 — CND | CND Sefaz | cnd_sefaz | 🟡 BUSCA | empresa_matriz |
+| 19 | M5 — CND | CND Trabalhista (TST) | cnd_trabalhista | 🟡 BUSCA | empresa_matriz |
+| 20 | M6 — Benefícios | Comprovante VT Individual | comp_vt_individual | 🔵 RECEBE | funcionario |
+| 21 | M6 — Benefícios | Comprovante VA — Solides | comp_va_solides | 🔵 RECEBE | funcionario |
+| 22 | M6 — Benefícios | Comprovante VT+VA Combinado | comp_vt_va_combinado | 🔵 RECEBE | funcionario |
+| 23 | M6 — Benefícios | Recibo VT e VA Geral | recibo_vt_va | 🔵 RECEBE | condominio |
+| 24 | M6 — Benefícios | Relatório Pedido VA — Solides | relatorio_pedido_va | 🔵 RECEBE | condominio |
+| 25 | M7 — RH | ASO — Atestado Saúde Ocupacional | aso | 🔵 RECEBE | condominio |
+| 26 | M7 — RH | Contrato de Trabalho | contrato_trabalho | 🟢 GERA | funcionario |
+| 27 | M7 — RH | Ficha de Empregado/Registro | ficha_empregado | 🔵 RECEBE | funcionario |
+| 28 | M7 — RH | Aviso Prévio de Férias | aviso_previo_ferias | 🟢 GERA | funcionario |
+| 29 | M7 — RH | Recibo Pagamento Férias | recibo_ferias | 🔵 RECEBE | funcionario |
+| 30 | M7 — RH | Rescisão de Contrato | rescisao_contrato | 🔵 RECEBE | funcionario |
+| 31 | M7 — RH | Comprovante Pagamento Rescisão | comp_rescisao | 🟢 GERA | funcionario |
+| 32 | M8 — Pagamentos | Comprovante Salário Individual | comp_salario_individual | 🟢 GERA | funcionario |
+
+**Eventuais (obrigatorio=false):** 9, 10, 11 (FGTS Rescisão), 25 (ASO), 28, 29, 30, 31 (Férias/Rescisão RH)
+
+### §35.2 — Matriz 32 × 10 condomínios
+
+Legenda: ✅=obrigatorio | ⚠️=eventual | —=na
+
+| Doc | Prime Arena | Michelangelo | P. Gelain | Green Hills | Ideal Flores | Laranjeiras | Mirante | Parise | Villa Dei Fiori | Villa Pássaros |
+|-----|-------------|--------------|-----------|-------------|--------------|-------------|---------|--------|-----------------|----------------|
+| 1 (nfse) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 2 (boleto) | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| 3 (folha_pagamento) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 4 (contracheque) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 5 (folhas_ponto) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 6 (gfd_fgts_mensal) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 7 (relatorio_gfd_fgts) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 8 (comp_pag_fgts) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 9 (gfd_fgts_rescisao) | ✅ | — | — | — | ✅ | ✅ | ✅ | — | — | — |
+| 10 (relatorio_gfd_rescisao) | ✅ | — | — | — | ✅ | ✅ | ✅ | — | — | — |
+| 11 (comp_fgts_rescisao) | ✅ | — | — | — | — | ✅ | — | — | — | — |
+| 12 (dctfweb_declaracao) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 13 (dctfweb_recibo) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 14 (dctfweb_extrato) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 15 (cnd_rfb) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 16 (cnd_caixa) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 17 (cnd_prefeitura) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 18 (cnd_sefaz) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 19 (cnd_trabalhista) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 20 (comp_vt_individual) | ✅ | — | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 21 (comp_va_solides) | ✅ | — | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 22 (comp_vt_va_combinado) | ✅ | — | — | — | ✅ | ✅ | ✅ | — | ✅ | — |
+| 23 (recibo_vt_va) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 24 (relatorio_pedido_va) | ✅ | — | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| 25 (aso) | ✅ | — | — | — | ✅ | ✅ | — | — | — | — |
+| 26 (contrato_trabalho) | ✅ | — | — | — | ✅ | ✅ | ✅ | — | ✅ | — |
+| 27 (ficha_empregado) | ✅ | — | — | — | ✅ | ✅ | ✅ | — | ✅ | — |
+| 28 (aviso_previo_ferias) | — | — | — | — | ⚠️ | — | — | — | — | — |
+| 29 (recibo_ferias) | — | — | — | — | ⚠️ | — | — | — | — | ⚠️ |
+| 30 (rescisao_contrato) | ⚠️ | — | — | — | ⚠️ | ⚠️ | ⚠️ | — | — | — |
+| 31 (comp_rescisao) | ⚠️ | — | — | — | ⚠️ | ⚠️ | ⚠️ | — | — | — |
+| 32 (comp_salario_individual) | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+
+### §35.3 — 3 escopos canônicos
+
+- **empresa_matriz** (5 docs): CNDs — docs 15-19 — mesma pra todos os condomínios (CNPJ único)
+- **condominio** (12 docs): 1 por condomínio/mês — docs 1,2,3,6,7,8,12,13,14,23,24,25
+- **funcionario** (15 docs): 1 por funcionário alocado — docs 4,5,9,10,11,20,21,22,26,27,28,29,30,31,32
+
+### §35.4 — Fórmula de completude refatorada
+
+```
+total_esperado =
+  COUNT(presença='obrigatorio' AND escopo='empresa_matriz') × 1 +
+  COUNT(presença='obrigatorio' AND escopo='condominio')     × 1 +
+  COUNT(presença='obrigatorio' AND escopo='funcionario')    × N_funcionarios_ativos
+
+⚠️ = presença='eventual' → NÃO entra em total_esperado (conta em "opcionais" se presente)
+— = presença='na' → NÃO entra
+```
+
+Condomínios com 0 funcionários alocados (P. Gelain, Green Hills, Parise):
+- P. Gelain: 0 empresa_matriz + 2 condominio (nfse+boleto) + 0 funcionario = **2**
+- Green Hills: 0 empresa_matriz + 2 condominio (nfse+boleto) + 0 funcionario = **2**
+- Parise: 0 empresa_matriz + 2 condominio (nfse+boleto) + 0 funcionario = **2**
+
+### §35.5 — Migrations aplicadas
+
+- `sprint85_bloco_a_modelo_canonico` — ALTER kit_documental_templates (num, modulo, slug, status_origem) + CREATE TABLE kit_template_presenca
+
+### §35.6 — Refactor KitBuilderService
+
+- `build_completude`: lê kit_template_presenca JOIN kit_documental_templates para calcular total_esperado dinâmico por condomínio
+- Novo método interno: `_count_funcionarios_ativos(condominio_id, mes_ref)` — lê employee_alocacoes
+- Signature pública preservada: `build_completude(condominio_id, mes_ref) → CompletudeKit` (§27)
+- `build_lote_condominios(mes_ref) → list[CompletudeKit]` inalterado
+
+### §35.7 — Roadmap do GEDEON (ABA 3)
+
+- FASE 1 (7 ações): 5 CND busca auto + Contrato + Aviso Férias
+- FASE 2 (4 ações): NFS-e + Boleto + Solides VA + Comp Salário
+- FASE 3 (4 ações): Recebimento auto Portte (Folha, Contracheque, FGTS, DCTFWEB)
+- FASE 4 Dashboard: **JÁ ENTREGUE** (commit 086bcb2a / §31 / §33)
+
+### §35.8 — Fora de escopo deste BLOCO A
+
+- Montagem do 1º kit real (BLOCO B)
+- Extensão aos outros 9 condomínios (BLOCO C)
+- Automações FASE 1/2/3 (backlog do roadmap)
+- Frontend (segue servindo dashboard com dados do endpoint existente)
