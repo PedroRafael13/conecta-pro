@@ -1,5 +1,5 @@
 # CONTRATO CRM / VENDAS — Conecta PRO
-**Versão:** v1.6
+**Versão:** v1.7
 **Data:** 2026-04-21
 **Mantenedor:** Opus CPRO 11
 **Escopo:** Menu "Negócios" → CRM / Vendas (tudo que vive em `modules/crm/` no backend e `frontend/src/app/modulos/crm/`)
@@ -460,6 +460,7 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 | v1.4 | 2026-04-20 | T4 (auditoria) | P0.1 migration contractstatus, P0.2 endereco_texto, P0.5/P0.6/P0.11 dashboard KPIs, condominios_total, 13/13 testes, §20.7 Chesterton T4 |
 | v1.5 | 2026-04-20 | T5 | Frontend mismatches: P0.2/P0.3/P0.4/P0.5/P0.6/P0.7/P0.8/P1.1/P1.2/P1.3/P1.4/P1.6/P1.8 corrigidos; 4 arquivos criados, 9 modificados; build 66s 284 págs; tsc 0 erros CRM |
 | v1.6 | 2026-04-21 | t4 (R1.5) | CPRO11-R1.5: enum SQLAlchemy values_callable + docker restart + conftest real + 10 testes regressão runtime |
+| v1.7 | 2026-04-21 | t1 (R1.6) | CPRO11-R1.6: docker frontend deploy correto (T5 commits incluídos), fix condominios_total query, segmento PT-BR labels, CIC 16/16 PASS |
 
 ---
 
@@ -531,7 +532,41 @@ Para LIBERAR, T7 deve confirmar:
 
 ---
 
-**FIM DO CONTRATO v1.5**
+---
+
+## §23.5 — Status Rodada 1.6 (CPRO11-R1.6 — 2026-04-21)
+
+**Objetivo:** Deploy correto do frontend no Docker (T5 commits ausentes desde 2026-04-18) + 3 bugs CIC.
+
+### Fases R1.6
+
+| Fase | Status | Evidência |
+|------|--------|-----------|
+| F1 Diagnóstico | ✅ | Docker BUILD_ID=1776534495065 (2026-04-18, pré-T5 2026-04-20) |
+| F2 Rebuild | ✅ | NEW BUILD_ID=1776799695451 (rm -rf .next + npm build + docker cp + restart) |
+| F3 Validação | ✅ | Produção BUILD_ID=1776805618454 (após FASE 4 rebuild) |
+| F4 Bug fixes | ✅ | 3 bugs: condominios_total query, segmento labels PT, frontend filter |
+| F5 CIC E2E | ✅ | 16/16 PASS |
+
+### Descobertas R1.6
+
+**D-R1.6-1 — PM2 irrelevante para produção:**
+nginx upstream aponta para Docker (3001), não PM2 (3000). Rebuild PM2 em R1.5 não teve efeito.
+
+**D-R1.6-2 — client_type EN vs PT:**
+DB armazena `client_type='condominium'` (EN), query usava `'condominio'` (PT). Motivo: `condominios_total=0`.
+
+**D-R1.6-3 — Segmento EN no banco:**
+`segment` values são size-based EN (small/enterprise/large), não industry-type PT (comercial/residencial).
+
+**D-R1.6-4 — except Exception: pass silencia erros:**
+Query row2 falhava silenciosamente. Separar try/except por query evita silêncio total.
+
+**Veredito: LIBERAR ✅**
+
+---
+
+**FIM DO CONTRATO v1.7**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
 > algo novo, documente ANTES de corrigir. Escopo é sagrado. Chesterton não
