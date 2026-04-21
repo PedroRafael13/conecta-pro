@@ -180,3 +180,78 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+# ==========================================================================
+# CPRO11-R1.5 — Fixtures REAIS (sem mocks)
+# Substitui Cenário F da Rodada 1 (INV-8: testes 🔴 reais)
+# Usa HTTP real contra backend na porta 8080 (evita event-loop conflict do ASGITransport)
+# ==========================================================================
+def _make_real_token() -> str:
+    """Gera JWT real a partir de JWT_SECRET_KEY do env + user_id do DB."""
+    import datetime
+    import os
+
+    import jwt as pyjwt
+
+    secret = os.environ.get("JWT_SECRET_KEY", "")
+    if not secret:
+        pytest.skip("JWT_SECRET_KEY não disponível — pular teste real")
+
+    from sqlalchemy import create_engine, text
+
+    db_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "")
+    if not db_url:
+        pytest.skip("DATABASE_URL não disponível")
+
+    engine = create_engine(db_url)
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT id, email FROM users WHERE email='jjesus@conectamais.pro' LIMIT 1")).fetchone()
+    engine.dispose()
+
+    if not row:
+        pytest.skip("Usuário jjesus@conectamais.pro não encontrado")
+
+    payload = {
+        "sub": str(row[0]),
+        "email": row[1],
+        "type": "access",
+        "role": "admin",
+        "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=2),
+    }
+    return pyjwt.encode(payload, secret, algorithm="HS256")
+
+
+@pytest_asyncio.fixture
+async def auth_client() -> AsyncGenerator[AsyncClient, None]:
+    """HTTP client real com JWT válido — chama backend na porta 8080 (sem mock).
+    CPRO11-R1.5: implementação real per STEP 4.1 do prompt.
+    """
+    token = _make_real_token()
+    async with AsyncClient(base_url="http://127.0.0.1:8080", headers={"Authorization": f"Bearer {token}"}) as ac:
+        yield ac
+
+
+@pytest.fixture
+def db_session():
+    """Sessão DB real via sync engine com rollback automático.
+    CPRO11-R1.5: implementação real per STEP 4.1 do prompt.
+    """
+    import os
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    db_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "")
+    if not db_url:
+        pytest.skip("DATABASE_URL não disponível")
+
+    engine = create_engine(db_url)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
+        engine.dispose()

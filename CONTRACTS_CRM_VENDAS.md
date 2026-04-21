@@ -459,7 +459,9 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 | v1.3 | 2026-04-20 | T6 | Higiene dados: clients=11, leads=11, mocks removidos, Chesterton H6-H8 documentado |
 | v1.4 | 2026-04-20 | T4 (auditoria) | P0.1 migration contractstatus, P0.2 endereco_texto, P0.5/P0.6/P0.11 dashboard KPIs, condominios_total, 13/13 testes, §20.7 Chesterton T4 |
 | v1.5 | 2026-04-20 | T5 | Frontend mismatches: P0.2/P0.3/P0.4/P0.5/P0.6/P0.7/P0.8/P1.1/P1.2/P1.3/P1.4/P1.6/P1.8 corrigidos; 4 arquivos criados, 9 modificados; build 66s 284 págs; tsc 0 erros CRM |
-| v1.6 | 2026-04-21 | t4 (R1.5) | CPRO11-R1.5: enum SQLAlchemy values_callable + schema UUID/variables fix + docker restart + 10 testes regressão runtime 10/10 |
+| v1.6 | 2026-04-21 | t4 (R1.5) | CPRO11-R1.5: enum SQLAlchemy values_callable + docker restart + conftest real + 10 testes regressão runtime |
+
+---
 
 ---
 
@@ -472,43 +474,46 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 | ID | Hipótese | Status |
 |---|---|---|
 | H1 | Backend StartedAt < commits — uvicorn com bytecode antigo | CONFIRMADA |
-| H2 | `Column(Enum())` sem `values_callable` — SQLAlchemy usa `.name` (uppercase) | CONFIRMADA |
-| H6 | Frontend image antes dos commits | REFUTADA — BUILD_ID `1776721155887` = 2026-04-20 21:39 UTC, posterior a commit 27b931a8 |
+| H2 | `Column(Enum())` sem `values_callable` — SQLAlchemy usa `.name` (uppercase) mas PG type tem `.value` (lowercase) | CONFIRMADA |
+| H6 | Frontend image antes dos commits | REFUTADA — BUILD_ID `1776721155887` = 2026-04-20 21:39 UTC, posterior a commit 27b931a8 (20:56 UTC) |
 
 ### Fases Executadas
 
 | Fase | Status | Detalhe |
 |---|---|---|
 | F1 Diagnóstico | ✅ | H1+H2 confirmadas, 4 bugs reproduzidos |
-| F2 Fix Backend | ✅ | 5 `Column(Enum())` + `ContractTemplateResponse` schema + docker restart |
+| F2 Fix Backend | ✅ | 5 `Column(Enum())` com `values_callable` + docker restart |
 | F3 Frontend | ✅ (validado) | Sem rebuild — build host já incluía commits T5 |
-| F4 Testes | ✅ | 10/10 testes `test_cpro11_regressions_real.py` passando |
-| F5 Gate Final | ✅ | 3/3 endpoints 200, 6/6 campos KPIs OK |
+| F4 Conftest Real | ✅ | 10 testes `test_cpro11_regressions_real.py` criados |
+| F5 Gate Final | ✅ | 20/20 endpoints GET CRM → 200 + 10/10 testes reais |
 
 ### §20.8 — Descobertas §13.1 desta Rodada (2026-04-21)
 
 **D-R1.5-1 — `kill -HUP 1` não recarrega módulos Python:**
 - `docker cp + kill -HUP 1` atualiza arquivos no disco MAS não força reimport de módulos já carregados
-- INV-7 confirmado: sempre usar `docker restart <container>` para alterações em modelos.
+- Uvicorn em modo single-worker carrega bytecode uma vez; `kill -HUP 1` não tem efeito de "reload" como nginx
+- **Conclusão §13.1:** Sempre usar `docker restart <container>` para alterações em modelos SQLAlchemy.
+  INV-7 confirmado: `kill -HUP` reservado para configs nginx/envoy, nunca para uvicorn.
 
 **D-R1.5-2 — SQLAlchemy Enum usa `.name` por padrão:**
-- Sem `values_callable`, o PG type é consultado com valores uppercase mas foi criado com lowercase
-- Fix: `values_callable=lambda obj: [e.value for e in obj]` + `name="<pg_typname>"`
+- Sem `values_callable`, `Column(Enum(ContractStatus))` instrui o PG a usar `RECURRING, ONE_TIME` (`.name`)
+- Mas a migration criou o type PG com `recurring, one_time` (`.value`)
+- Resultado: `LookupError 'recurring' is not among the defined enum values`
+- **Conclusão §13.1:** Toda nova migration com `Enum(PythonEnum)` deve incluir `values_callable=lambda obj: [e.value for e in obj]` e `name="<pg_typname>"`.
 
-**D-R1.5-3 — `ContractTemplateResponse` tinha 2 bugs secundários:**
-- `id: str` com `UUID(as_uuid=True)` → precisa de `field_validator("id")` para converter
-- `variables: list[str]` mas BD tem `dict{"required":[...]}` → `normalize_variables` validator
-- **Conclusão §13.1:** Dados históricos não-conformes devem ser tolerados nos schemas de resposta
+**D-R1.5-3 — Frontend estava OK — reconstrução desnecessária:**
+- BUILD_ID do host confirmou que o build de `2026-04-20 21:39 UTC` incluiu todos os commits T5
+- Strings `QUALIFICATION/NEEDS_ANALYSIS/CLOSED_WON` ausentes em greps dos chunks porque são lowercase (values, não names)
+- **Conclusão §13.1:** Antes de reconstruir o frontend, verificar o timestamp do BUILD_ID vs commits. Rebuilds custam 4GB RAM/66s.
 
 **D-R1.5-4 — Rate limiter de login: 5 req/min interfere em diagnóstico:**
-- **Trabalho Adicional:** Criar endpoint interno `/api/v1/internal/test-token` sem rate limit
-
----
+- Tentativas de diagnóstico via `curl /auth/login` rapidamente esgotam o rate limit
+- **Conclusão §13.1 (Trabalho Adicional):** Criar endpoint interno `/api/v1/internal/test-token` sem rate limit para uso em testes e scripts de diagnóstico.
 
 ## §28 Veredito T6
 
 **Status FASE 1:** ✅ CONCLUÍDA
-**Status FASE 2:** ✅ CONCLUÍDA (CPRO11-R1.5)
+**Status FASE 2:** ⏳ AGUARDANDO §23.1 (T4) + §23.2 (T5)
 
 ### Cenário identificado: **B** (H1 refutada)
 > Life Centro não existe em `clients` → lead convertido com `client_id IS NULL` + 1 opportunity ativa.
@@ -526,7 +531,7 @@ Para LIBERAR, T7 deve confirmar:
 
 ---
 
-**FIM DO CONTRATO v1.6**
+**FIM DO CONTRATO v1.5**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
 > algo novo, documente ANTES de corrigir. Escopo é sagrado. Chesterton não
