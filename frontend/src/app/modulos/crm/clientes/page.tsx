@@ -83,7 +83,7 @@ export default function ClientesPage() {
   const stats = {
     total: allClients.length,
     ativos: allClients.filter((c: any) => ['active', 'ativo'].includes(c.status)).length,
-    condominios: allClients.filter((c: any) => c.segment === 'comercial' || c.segment === 'residencial').length,
+    condominios: allClients.filter((c: any) => c.client_type === 'condominio' || (c.name || c.nome || '').toLowerCase().includes('condominio')).length,
     bloqueados: allClients.filter((c: any) => ['blocked', 'bloqueado'].includes(c.status)).length,
   };
 
@@ -131,6 +131,10 @@ export default function ClientesPage() {
       industrial: 'bg-blue-100 text-blue-800',
       publico: 'bg-purple-100 text-purple-800',
       misto: 'bg-indigo-100 text-indigo-800',
+      small: 'bg-sky-100 text-sky-800',
+      medium: 'bg-cyan-100 text-cyan-800',
+      large: 'bg-blue-100 text-blue-800',
+      enterprise: 'bg-indigo-100 text-indigo-800',
     };
     const labels: Record<string, string> = {
       residencial: 'Residencial',
@@ -138,6 +142,10 @@ export default function ClientesPage() {
       industrial: 'Industrial',
       publico: 'Público',
       misto: 'Misto',
+      small: 'Pequeno Porte',
+      medium: 'Médio Porte',
+      large: 'Grande Porte',
+      enterprise: 'Enterprise',
     };
     return <Badge className={map[segment] || 'bg-gray-100 text-gray-800'}>{labels[segment] || segment || '-'}</Badge>;
   };

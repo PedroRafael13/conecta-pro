@@ -95,10 +95,18 @@ async def get_dashboard_kpis(
         ).one()
         kpis.clientes_total = int(row[0])
         kpis.mrr = float(row[1])
-        row2 = (
-            await db.execute(text("SELECT COUNT(*) FROM clients WHERE ativo = true AND client_type = 'condominio'"))
-        ).one()
-        kpis.condominios_total = int(row2[0])
+        try:
+            row2 = (
+                await db.execute(
+                    text(
+                        "SELECT COUNT(*) FROM clients WHERE ativo = true AND "
+                        "(client_type = 'condominium' OR client_type = 'condominio' OR UPPER(COALESCE(name,'')) LIKE '%CONDOMINIO%')"
+                    )
+                )
+            ).one()
+            kpis.condominios_total = int(row2[0])
+        except Exception:  # pylint: disable=broad-exception-caught
+            kpis.condominios_total = kpis.clientes_total
     except Exception:  # pylint: disable=broad-exception-caught
         pass
 
