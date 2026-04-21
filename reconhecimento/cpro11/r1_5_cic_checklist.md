@@ -1,47 +1,69 @@
-# CIC Checklist — CPRO11 Rodada 1.5
+# CIC E2E Checklist — Rodada 1.5 Validação Final
 **Data:** 2026-04-21
 **Branch:** feature/people-management-reorganization
 **Versão contrato:** v1.6
+**Executor:** Jordan Jesus
 
-## Resultado por Check
+---
+
+## Preparação
+1. Hard-refresh no navegador (Ctrl+Shift+Del → Cached images)
+2. DevTools aberto em Console + Network
+3. Logar como jjesus@conectamais.pro
+
+---
+
+## 16 Checks — cada um deve ser ✅
+
+### Dashboard (/modulos/crm)
+- [ ] 1. KPI Clientes = 11 (não 0, não 3)
+- [ ] 2. KPI Win Rate > 0 (ou evidência clara de "sem dados")
+- [ ] 3. KPI MRR R$ 272.086,96 (ou valor formatado não-NaN)
+- [ ] 4. % conversão > 0 (esperado ~90.9%)
+
+### Clientes (/modulos/crm/clientes)
+- [ ] 5. Total Clientes = 11
+- [ ] 6. Condomínios = 11 (ou 10)
+- [ ] 7. Coluna Nome preenchida em TODAS as 11 rows
+- [ ] 8. Coluna Tipo mostra "Condomínio" (label PT-BR)
+
+### Cliente detalhe (/modulos/crm/clientes/[id])
+- [ ] 9. Abrir qualquer row → sem "Algo deu errado"
+- [ ] 10. Console SEM React error #31
+
+### Leads (/modulos/crm/leads)
+- [ ] 11. Status variados (Convertido, Novo, Qualificado) — NÃO todos "Novo"
+- [ ] 12. Origem com labels reais — NÃO "-"
+
+### Oportunidades Modal "Nova Oportunidade"
+- [ ] 13. Select Stage com 6 opções incluindo "Análise de necessidades"
+- [ ] 14. Campo Cliente é DROPDOWN (não input de texto)
+- [ ] 15. Campo Responsável é DROPDOWN
+
+### Contratos (/modulos/crm/contratos)
+- [ ] 16. MRR = R$ 272.086,96 (não NaN, não R$0)
+
+---
+
+## Resultado (preencher após execução)
 
 | # | Check | Resultado | Evidência |
-|---|---|---|---|
-| C01 | PG type `contractstatus` existe | ✅ PASS | `SELECT typname FROM pg_type WHERE typname='contractstatus'` → 1 row |
-| C02 | Valores `contractstatus` são lowercase | ✅ PASS | `draft, pending_signature, active, suspended, cancelled, terminated` |
-| C03 | PG type `contracttype` existe | ✅ PASS | `SELECT typname FROM pg_type WHERE typname='contracttype'` → 1 row |
-| C04 | Valores `contracttype` são lowercase | ✅ PASS | `recurring, one_time` |
-| C05 | PG type `adjustmentindex` existe | ✅ PASS | `SELECT typname FROM pg_type WHERE typname='adjustmentindex'` → 1 row |
-| C06 | PG type `addendumtype` existe | ✅ PASS | `SELECT typname FROM pg_type WHERE typname='addendumtype'` → 1 row |
-| C07 | `Column(Enum())` com `values_callable` em `contract.py` | ✅ PASS | 5 ocorrências corrigidas (linhas 124, 129, 156, 419, 425) |
-| C08 | `GET /crm/contracts/alerts` → 200 | ✅ PASS | HTTP 200 — FASE 5 audit 2026-04-21 |
-| C09 | `GET /crm/contracts/templates` → 200 | ✅ PASS | HTTP 200 — schema UUID/variables/service_type fixados |
-| C10 | `GET /crm/proposals/templates` → 200 | ✅ PASS | HTTP 200 — rota templates antes de /{id} |
-| C11 | `GET /crm/dashboard/kpis` tem `clientes_total` | ✅ PASS | HTTP 200, campo `clientes_total` presente |
-| C12 | `GET /crm/dashboard/kpis` tem `mrr` não-NaN | ✅ PASS | `mrr` >= 0.0, não NaN |
-| C13 | `GET /crm/dashboard/kpis` tem `em_negociacao` | ✅ PASS | Campo `em_negociacao` presente |
-| C14 | `GET /crm/dashboard/kpis` tem `leads_conversion_rate` | ✅ PASS | Campo `leads_conversion_rate` presente |
-| C15 | Frontend BUILD_ID posterior aos commits T5 | ✅ PASS | BUILD_ID 1776721155887 = 2026-04-20 21:39 UTC > commit 27b931a8 (20:56 UTC) |
-| C16 | 10/10 testes regressão runtime passando | ✅ PASS | `10 passed in 2.25s` — 2026-04-21 FASE 4 gate |
+|---|-------|-----------|-----------|
+| 1 | KPI Clientes = 11 | ⬜ | |
+| 2 | Win Rate > 0 | ⬜ | |
+| 3 | MRR formatado não-NaN | ⬜ | |
+| 4 | % conversão > 0 | ⬜ | |
+| 5 | Total Clientes = 11 | ⬜ | |
+| 6 | Condomínios = 11 | ⬜ | |
+| 7 | Coluna Nome preenchida | ⬜ | |
+| 8 | Coluna Tipo PT-BR | ⬜ | |
+| 9 | Sem "Algo deu errado" | ⬜ | |
+| 10 | Console sem React #31 | ⬜ | |
+| 11 | Status variados (não todos "Novo") | ⬜ | |
+| 12 | Origem com labels reais | ⬜ | |
+| 13 | Stage dropdown 6 opções | ⬜ | |
+| 14 | Campo Cliente é dropdown | ⬜ | |
+| 15 | Campo Responsável é dropdown | ⬜ | |
+| 16 | MRR contratos não-NaN | ⬜ | |
 
-## Hipóteses Validadas
-
-| H# | Hipótese | Resultado |
-|---|---|---|
-| H1 | Backend StartedAt < commit 3ede548b | CONFIRMADA — backend startedAt 20:14 < commit 20:35 |
-| H2 | Enum sem values_callable | CONFIRMADA — `LookupError 'recurring' not in enum values` reproduzido |
-| H3 | PyC cache impedindo reload | NÃO NECESSÁRIO — docker restart resolve H1 e H2 |
-| H4 | DashboardKPIs sem campos P0 | REFUTADA — campos existem no schema |
-| H5 | Controller não popula campos | REFUTADA — controller popula clientes_total/mrr/condominios_total |
-| H6 | Frontend image antes dos commits | REFUTADA — BUILD_ID confirma build posterior |
-| H7/H8 | Chunks sem strings T5 | REFUTADA — strings são lowercase (values, não names uppercase) |
-| H10 | Ordem rotas proposals/templates | JÁ CORRIGIDA em commits anteriores (templates antes de /{id}) |
-| H11/H12 | Conftest com mocks, não DB real | CONFIRMADA — conftest.py atual usa AsyncMock, não DB real |
-
-## Trabalho Adicional Identificado (§13.1)
-
-1. **Rate limiter de login:** 5 req/min interfere em diagnóstico. Criar `/api/v1/internal/test-token` sem rate limit.
-2. **`docker cp + kill -HUP` em documentação CLAUDE.md:** Documentar que este procedimento NÃO funciona para uvicorn — sempre `docker restart` para alterações em models.
-3. **Template de docs para novas migrations:** Adicionar checklist de `values_callable` para migrations com enums.
-4. **CPQ feature scaffolded:** `pricing_simulations` table existe mas endpoints não implementados.
-5. **Life Centro lead:** Lead convertido com `client_id IS NULL` — requer criação manual do cliente com CNPJ correto.
+**RESULTADO FINAL:** ___/16 — LIBERAR / RETER
