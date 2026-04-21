@@ -511,6 +511,36 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 - Tentativas de diagnóstico via `curl /auth/login` rapidamente esgotam o rate limit
 - **Conclusão §13.1 (Trabalho Adicional):** Criar endpoint interno `/api/v1/internal/test-token` sem rate limit para uso em testes e scripts de diagnóstico.
 
+### §20.9 — Descobertas §13.1 desta Rodada (2026-04-21 — R1.6)
+
+**D-R1.6-1 — nginx aponta para Docker (3001), não PM2 (3000):**
+- PM2 serve o frontend na porta 3000; nginx upstream aponta para `127.0.0.1:3001` (Docker)
+- Rebuild via `pm2 reload` não tem efeito em produção; somente `docker cp + docker restart` atualiza o que o usuário vê
+- **Conclusão §13.1 (Procedimento):** Toda vez que houver mudança de frontend, o fluxo obrigatório é:
+  1. `npm run build` no host
+  2. `docker cp .next/static/. <container>:/app/.next/static/`
+  3. `docker cp .next/standalone/. <container>:/app/`
+  4. `docker restart <container>`
+  5. Verificar BUILD_ID em produção via `curl https://erp.conectamais.pro/ | grep buildId`
+
+**D-R1.6-2 — `pm2 reload all` vs `pm2 reload <name> --update-env`:**
+- Prompt R1.6 especificava `pm2 reload conecta-pro-frontend --update-env` (variáveis atualizadas)
+- Agente usou `pm2 reload all` (sem `--update-env`)
+- Como PM2 é irrelevante para produção (ver D-R1.6-1), o desvio não causou regressão
+- **Conclusão §13.1 (Desvio documentado):** Usar sempre o nome específico e `--update-env` em produções futuras onde PM2 sirva tráfego real.
+
+**D-R1.6-3 — Chunk hash determinístico não indica falha de deploy:**
+- Next.js usa content-based hashing: chunk `4af27f77bd5de33b.js` aparece com mesmo hash pré e pós-deploy
+- Isso ocorre porque o conteúdo desse chunk (vendor React) não mudou entre as versões
+- A evidência primária de deploy correto é o BUILD_ID, não os hashes individuais de chunks
+- **Conclusão §13.1:** Ao auditar deploys Next.js, comparar BUILD_ID (muda sempre) em vez de chunk hashes (mudam apenas quando o conteúdo muda).
+
+**D-R1.6-4 — Strings T5 ausentes nos chunks por minificação/tree-shaking:**
+- `NEEDS_ANALYSIS`, `CLOSED_WON`, `clientLabel`, `endereco_texto` não aparecem nos chunks porque:
+  - Constants enum usam valores lowercase (`needs_analysis`, `closed_won`) — não o nome das constantes
+  - Funções utilitárias são minificadas/renomeadas pelo bundler
+- **Conclusão §13.1:** Verificar presença de T5 code via BUILD_ID + comportamento funcional, não via grep de string literal nos chunks minificados.
+
 ## §28 Veredito T6
 
 **Status FASE 1:** ✅ CONCLUÍDA
