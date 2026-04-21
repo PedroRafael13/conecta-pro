@@ -121,12 +121,12 @@ class Contract(Base):
 
     # Tipo e Status
     contract_type = Column(
-        Enum(ContractType),
+        Enum(ContractType, values_callable=lambda obj: [e.value for e in obj], name="contracttype"),
         nullable=False,
         default=ContractType.RECURRING,
     )
     status = Column(
-        Enum(ContractStatus),
+        Enum(ContractStatus, values_callable=lambda obj: [e.value for e in obj], name="contractstatus"),
         nullable=False,
         default=ContractStatus.DRAFT,
     )
@@ -153,7 +153,9 @@ class Contract(Base):
 
     # Reajuste
     adjustment_enabled = Column(Boolean, default=True)
-    adjustment_index = Column(Enum(AdjustmentIndex), nullable=True)
+    adjustment_index = Column(
+        Enum(AdjustmentIndex, values_callable=lambda obj: [e.value for e in obj], name="adjustmentindex"), nullable=True
+    )
     adjustment_fixed_percent = Column(Numeric(5, 2), nullable=True)
     adjustment_base_date = Column(Date, nullable=True)
     last_adjustment_date = Column(Date, nullable=True)
@@ -416,13 +418,17 @@ class ContractAddendum(Base):
     addendum_number = Column(String(30), nullable=False, index=True)
 
     # Tipo
-    addendum_type = Column(Enum(AddendumType), nullable=False)
+    addendum_type = Column(
+        Enum(AddendumType, values_callable=lambda obj: [e.value for e in obj], name="addendumtype"), nullable=False
+    )
 
     # Valores (para reajuste)
     previous_value = Column(Numeric(12, 2), nullable=True)
     new_value = Column(Numeric(12, 2), nullable=True)
     adjustment_percent = Column(Numeric(5, 2), nullable=True)
-    adjustment_index = Column(Enum(AdjustmentIndex), nullable=True)
+    adjustment_index = Column(
+        Enum(AdjustmentIndex, values_callable=lambda obj: [e.value for e in obj], name="adjustmentindex"), nullable=True
+    )
 
     # Datas
     effective_date = Column(Date, nullable=False)

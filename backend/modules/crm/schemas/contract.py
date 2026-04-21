@@ -405,7 +405,8 @@ class ContractTemplateResponse(BaseModel):
     id: str
     name: str
     description: str | None = None
-    service_type: ServiceType | None = None
+    # service_type aceita qualquer string — dados históricos ('admissao', 'ferias') pré-enum §20.7 H-T4-1
+    service_type: str | None = None
     content_template: str
     clauses: list[dict[str, Any]] | None = None
     variables: list[str] | None = None
@@ -416,6 +417,28 @@ class ContractTemplateResponse(BaseModel):
     updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def stringify_id(cls, v: Any) -> str:
+        """Converte UUID para str — model usa UUID(as_uuid=True)."""
+        return str(v) if v is not None else v
+
+    @field_validator("variables", mode="before")
+    @classmethod
+    def normalize_variables(cls, v: Any) -> list[str] | None:
+        """Aceita list[str] ou dict{required:[...]} — dados históricos §20.7."""
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return [str(i) for i in v]
+        if isinstance(v, dict):
+            # {"required": [...]} ou qualquer dict
+            items = v.get("required") or v.get("variables") or []
+            if isinstance(items, list):
+                return [str(i) for i in items]
+            return list(v.keys())
+        return None
 
 
 class ContractTemplateListResponse(BaseModel):
