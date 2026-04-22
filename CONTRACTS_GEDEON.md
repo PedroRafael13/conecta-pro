@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.33
+**Versão:** 1.34
 **Data:** 2026-04-21
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -2214,6 +2214,7 @@ FLUSHDB NÃO executado (preservação de outras chaves)
 | 1.31   | 2026-04-21 | T1          | §32 fix rate limit login 5/min → 20/min; chaves Redis limpas; outros endpoints preservados |
 | 1.32   | 2026-04-21 | T1          | §33 regressão /ged/kits — ChunkLoadError por partial deployment; auto-reparado; procedimento seguro documentado |
 | 1.33   | 2026-04-21 | T1          | §35 modelo canônico planilha: 32 docs, 8 módulos, matriz 32×10, fórmula completude dinâmica (BLOCO A) |
+| 1.34   | 2026-04-22 | T1_AUDIT    | Auditoria BLOCO A: downgrade() corrigido (DELETE antes de SET NOT NULL); version bumped v1.33→v1.34 conforme spec |
 
 ---
 

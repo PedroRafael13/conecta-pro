@@ -64,6 +64,9 @@ def downgrade() -> None:
     op.drop_index("ix_presenca_template", table_name="kit_template_presenca")
     op.drop_table("kit_template_presenca")
 
+    # Templates canônicos (BLOCO A) não têm tipo_servico — limpar antes de SET NOT NULL
+    op.execute("DELETE FROM kit_documental_templates WHERE tipo_servico IS NULL")
+
     op.drop_constraint("uq_kit_template_slug", "kit_documental_templates", type_="unique")
     op.drop_column("kit_documental_templates", "status_origem")
     op.drop_column("kit_documental_templates", "slug")
