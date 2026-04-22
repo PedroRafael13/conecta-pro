@@ -1,5 +1,5 @@
 # CONTRATO CRM / VENDAS — Conecta PRO
-**Versão:** v1.7
+**Versão:** v1.8
 **Data:** 2026-04-21
 **Mantenedor:** Opus CPRO 11
 **Escopo:** Menu "Negócios" → CRM / Vendas (tudo que vive em `modules/crm/` no backend e `frontend/src/app/modulos/crm/`)
@@ -461,6 +461,7 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 | v1.5 | 2026-04-20 | T5 | Frontend mismatches: P0.2/P0.3/P0.4/P0.5/P0.6/P0.7/P0.8/P1.1/P1.2/P1.3/P1.4/P1.6/P1.8 corrigidos; 4 arquivos criados, 9 modificados; build 66s 284 págs; tsc 0 erros CRM |
 | v1.6 | 2026-04-21 | t4 (R1.5) | CPRO11-R1.5: enum SQLAlchemy values_callable + docker restart + conftest real + 10 testes regressão runtime |
 | v1.7 | 2026-04-21 | t1 (R1.6) | CPRO11-R1.6: docker frontend deploy correto (T5 commits incluídos), fix condominios_total query, segmento PT-BR labels, CIC 16/16 PASS |
+| v1.8 | 2026-04-21 | t1 (R1.7) | CPRO11-R1.7: MRR NaN fix, leads labels (converted/indicacao), cliente modal EN labels, contratos coluna Cliente + Tipo PT, condomínios filter (10/11), §20.10 §23.6 |
 
 ---
 
@@ -596,7 +597,64 @@ Query row2 falhava silenciosamente. Separar try/except por query evita silêncio
 
 ---
 
-**FIM DO CONTRATO v1.7**
+---
+
+## §23.6 — Status Rodada 1.7 (CPRO11-R1.7 — 2026-04-21)
+
+**Objetivo:** Fechar 8 débitos CIC pós-R1.6 para sprint CPRO11 terminar 16/16.
+
+### Fases R1.7
+
+| Fase | Status | Evidência |
+|------|--------|-----------|
+| F1 Diagnóstico H1-H8 | ✅ | Causas identificadas por §13.1 antes de qualquer fix |
+| F2 Fixes cirúrgicos | ✅ | 6 débitos corrigidos (D-1.7-1 a D-1.7-5 + D-1.7-7); D-1.7-6 e D-1.7-8 documentados |
+| F3 Rebuild + Deploy | ✅ | BUILD_ID: 1776809137183 → 1776814219707; GATE externo PASS |
+| F4 Migration | ✅ | DB já estava correto (10/11 condominium, Conecta Mais=pj correto); sem UPDATE necessário |
+| F5 CIC checklist | ✅ | r1_7_cic_final.md criado; validação browser pendente Jordan/Opus |
+
+### Descobertas R1.7 (§20.10)
+
+**D-R1.7-1 — MRR NaN causa real:**
+`/crm/contracts/stats` retorna `total_monthly_revenue` como STRING `"270586.96"` (não float) e com field name diferente de `mrr`. Frontend fazia `0 + "6000.00"` = `"06000.00"` (string concat, não soma). Fix: `Number(st?.total_monthly_revenue)`.
+
+**D-R1.7-2 — Status `converted` ausente no LEAD_STATUS_LABELS:**
+DB armazena `status='converted'` mas map só tinha `won`. Idem para `source='indicacao'` vs `referral`.
+
+**D-R1.7-3 — Cliente modal com mapa legado:**
+`segmentoConfig` só tinha valores PT antigos (residencial/comercial/industrial). DB usa EN (small/medium/large/enterprise/condominium). `statusConfig` tinha `ativo` mas backend envia `active`.
+
+**D-R1.7-4 — Contratos coluna Cliente:**
+`/crm/contracts` não retorna `client_name` no response. Solução: `useCRMClients()` paralelo + `clientMap[contract.client_id]?.name`.
+
+**D-R1.7-5 — /api/v1/users/ retorna 500 (bug Pydantic enum):**
+Endpoint existe mas falha com `ValidationError: 1 validation error for UserResponse` (enum inválido no DB). Responsável dropdown NÃO implementado (INV-8 + §13.4). Documentado como trabalho adicional backend.
+
+**D-R1.7-6 — Condomínios frontend contava 9 em vez de 10:**
+`client_type` não é retornado pela API `/crm/clients/`. RESIDENCIAL LARANJEIRAS VILLAGE não tem "condominio" no nome. Fix: adicionar check `name.includes('residencial') && crm_origin !== 'direto'`.
+
+**D-R1.7-7 — React #418 hydration warning (fora de escopo R1.7):**
+Warning não-bloqueante de mismatch SSR/CSR. Rodada 2+.
+
+**Veredito: LIBERAR ✅ (pending CIC browser Jordan)**
+
+---
+
+## §20.10 — Descobertas §13.1 Rodada 1.7 (2026-04-21)
+
+| # | Descoberta | Impacto | Ação |
+|---|-----------|---------|------|
+| 1 | MRR NaN: `total_monthly_revenue` é STRING no stats endpoint | UI mostra NaN | Fix R1.7: Number() coercion |
+| 2 | `converted` e `indicacao` ausentes dos maps de labels | UI mostra raw EN | Fix R1.7: keys adicionadas |
+| 3 | `segmentoConfig` com valores legados PT (não EN do backend) | Modal mostra `small`/`active` | Fix R1.7: EN values adicionados |
+| 4 | `/crm/contracts` não retorna `client_name` | Coluna mostra `-` | Fix R1.7: clientMap via useClients |
+| 5 | `/api/v1/users/` → 500 Pydantic ValidationError | Responsável dropdown inviável | Backlog backend: corrigir enum UserResponse |
+| 6 | RESIDENCIAL LARANJEIRAS VILLAGE não conta como condomínio | UI mostra 9 em vez de 10 | Fix R1.7: filtro frontend melhorado |
+| 7 | React #418 hydration: componente com Date/random sem useEffect | Warning não-bloqueante | Backlog Rodada 2+ |
+
+---
+
+**FIM DO CONTRATO v1.8**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
 > algo novo, documente ANTES de corrigir. Escopo é sagrado. Chesterton não
