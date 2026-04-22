@@ -462,7 +462,7 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 | v1.6 | 2026-04-21 | t4 (R1.5) | CPRO11-R1.5: enum SQLAlchemy values_callable + docker restart + conftest real + 10 testes regressão runtime |
 | v1.7 | 2026-04-21 | t1 (R1.6) | CPRO11-R1.6: docker frontend deploy correto (T5 commits incluídos), fix condominios_total query, segmento PT-BR labels, CIC 16/16 PASS |
 | v1.8 | 2026-04-21 | t1 (R1.7) | CPRO11-R1.7: MRR NaN fix, leads labels (converted/indicacao), cliente modal EN labels, contratos coluna Cliente + Tipo PT, condomínios filter (10/11), §20.10 §23.6 |
-| v1.9 | 2026-04-22 | t1 (R2) | CPRO11-R2: BrasilAPI proxy (CNPJ/CEP/Taxas) — backend modules/integrations/brasilapi + endpoints /crm/enrichment/* + React Query hooks + CnpjSearchButton + CepAutoFill + TaxasWidget; 8/8 testes; BUILD_ID conecta-pro-1776872076415 |
+| v1.9 | 2026-04-22 | t1 (R2) | CPRO11-R2: BrasilAPI proxy (CNPJ/CEP/Taxas) — backend modules/integrations/brasilapi + endpoints /crm/enrichment/* + React Query hooks + CnpjSearchButton + CepAutoFill + TaxasWidget; 9/9 testes; INV-13 logging; BUILD_ID conecta-pro-1776872076415 |
 
 ---
 
@@ -674,7 +674,7 @@ Warning não-bloqueante de mismatch SSR/CSR. Rodada 2+.
 **Gates:**
 - GATE FASE 1: módulos backend 100% importáveis ✅
 - GATE FASE 2: endpoints respondem 200/422/200/200 + X-Cache HIT ✅
-- GATE FASE 3: 8/8 testes reais ✅
+- GATE FASE 3: 9/9 testes reais ✅
 - GATE FASE 4: 0 erros TypeScript nos arquivos criados ✅
 - GATE FASE 5: BUILD_ID `conecta-pro-1776872076415` externo = local ✅
 - GATE FASE 6: CIC 16/16 ✅
