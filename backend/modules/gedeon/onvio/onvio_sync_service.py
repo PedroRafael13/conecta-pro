@@ -53,8 +53,18 @@ class OnvioSyncService:
             novos = erros = pulados = 0
             erros_detalhe = []
 
+            EXTENSOES_VALIDAS = {".pdf", ".PDF"}
+
             for item in todos_docs:
                 try:
+                    nome = item.get("name", "")
+                    ext = "." + nome.rsplit(".", 1)[-1] if "." in nome else ""
+
+                    # Pular arquivos não-PDF (xlsx, xlt, docx, etc.)
+                    if ext not in EXTENSOES_VALIDAS:
+                        pulados += 1
+                        continue
+
                     # Pular se já importado
                     if self._ja_importado(item.get("id")):
                         pulados += 1
