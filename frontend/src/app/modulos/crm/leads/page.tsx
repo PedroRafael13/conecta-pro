@@ -2,18 +2,21 @@
 
 import { Plus, Search, Filter, MoreHorizontal, Phone, Mail, User, Building2, TrendingUp, RefreshCw, AlertCircle, X } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLeads, useLeadsStats, useCreateLead } from '@/hooks/useLeads';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
 import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, leadStatusConfig } from '@/constants/crm/leadStatus';
+import { CnpjSearchButton } from '@/components/crm/CnpjSearchButton';
+import type { CNPJEnrichment } from '@/types/crm/enrichment';
 
 export default function LeadsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [showNovoLead, setShowNovoLead] = useState(false);
-  const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', contato: '', email: '', telefone: '' });
+  const [novoLeadForm, setNovoLeadForm] = useState({ cnpj: '', nome: '', contato: '', email: '', telefone: '' });
   const [savingLead, setSavingLead] = useState(false);
   const createLead = useCreateLead();
 
@@ -78,6 +81,34 @@ export default function LeadsPage() {
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label htmlFor="lead-cnpj" className="text-sm font-medium mb-1 block">CNPJ</label>
+                <div className="flex gap-2">
+                  <input
+                    id="lead-cnpj"
+                    name="cnpj"
+                    type="text"
+                    placeholder="00.000.000/0000-00"
+                    aria-label="CNPJ"
+                    value={novoLeadForm.cnpj}
+                    onChange={e => setNovoLeadForm(p => ({ ...p, cnpj: e.target.value }))}
+                    className="flex-1 px-3 py-2 border rounded-md text-sm"
+                  />
+                  <CnpjSearchButton
+                    cnpj={novoLeadForm.cnpj}
+                    onSuccess={(data: CNPJEnrichment) => {
+                      setNovoLeadForm(p => ({
+                        ...p,
+                        nome: data.razao_social ?? p.nome,
+                        contato: data.razao_social ?? p.contato,
+                        telefone: data.telefone ?? p.telefone,
+                      }));
+                      toast.success('Dados preenchidos via Receita Federal');
+                    }}
+                    onError={(msg: string) => toast.error(msg)}
+                  />
+                </div>
+              </div>
               <div>
                 <label htmlFor="lead-nome" className="text-sm font-medium mb-1 block">Nome *</label>
                 <input
@@ -144,7 +175,7 @@ export default function LeadsPage() {
                       telefone: novoLeadForm.telefone.trim() || undefined,
                     });
                     setShowNovoLead(false);
-                    setNovoLeadForm({ nome: '', contato: '', email: '', telefone: '' });
+                    setNovoLeadForm({ cnpj: '', nome: '', contato: '', email: '', telefone: '' });
                     refetch();
                   } finally {
                     setSavingLead(false);

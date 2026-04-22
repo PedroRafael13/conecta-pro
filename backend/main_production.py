@@ -377,6 +377,10 @@ try:
     api_router.include_router(crm_contract_router, prefix="/crm", tags=["CRM - Contratos"])
     api_router.include_router(crm_commission_router, prefix="/crm", tags=["CRM - Comissoes"])
     api_router.include_router(crm_dashboard_router, prefix="/crm", tags=["CRM - Dashboard"])
+    # CRM Enrichment (BrasilAPI proxy — CNPJ, CEP, Taxas)
+    from modules.crm.controllers.enrichment_controller import router as crm_enrichment_router
+
+    api_router.include_router(crm_enrichment_router, prefix="/crm", tags=["CRM - Enrichment"])
     # CRM Contacts + Activities + 360°
     from modules.crm.controllers.contact_controller import router as crm_contact_router
 

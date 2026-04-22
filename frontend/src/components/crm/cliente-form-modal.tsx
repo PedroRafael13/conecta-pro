@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CnpjSearchButton } from '@/components/crm/CnpjSearchButton';
+import { CepAutoFill } from '@/components/crm/CepAutoFill';
+import type { CNPJEnrichment, CEPEnrichment } from '@/types/crm/enrichment';
 
 interface ClienteFormModalProps {
   isOpen: boolean;
@@ -28,6 +32,7 @@ const createInitialForm = (cliente?: any | null) => ({
   email: cliente?.email || '',
   telefone: cliente?.telefone || '',
   tipo: cliente?.tipo || 'condominio',
+  cep: cliente?.cep || '',
   endereco: cliente?.endereco || '',
 });
 
@@ -78,12 +83,34 @@ export function ClienteFormModal({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="cnpj">CNPJ</Label>
-            <Input
-              id="cnpj"
-              value={form.cnpj}
-              onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
-              placeholder="00.000.000/0000-00"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="cnpj"
+                value={form.cnpj}
+                onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                placeholder="00.000.000/0000-00"
+              />
+              <CnpjSearchButton
+                cnpj={form.cnpj}
+                onSuccess={(data: CNPJEnrichment) => {
+                  setForm((f: typeof form) => ({
+                    ...f,
+                    nome: data.razao_social ?? f.nome,
+                    endereco: [
+                      data.endereco.logradouro,
+                      data.endereco.numero,
+                      data.endereco.bairro,
+                      data.endereco.municipio && data.endereco.uf
+                        ? `${data.endereco.municipio}/${data.endereco.uf}`
+                        : data.endereco.municipio,
+                    ].filter(Boolean).join(', '),
+                    telefone: data.telefone ?? f.telefone,
+                  }));
+                  toast.success('Dados preenchidos via Receita Federal');
+                }}
+                onError={(msg: string) => toast.error(msg)}
+              />
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -122,14 +149,33 @@ export function ClienteFormModal({
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="endereco">Endereço</Label>
-            <Input
-              id="endereco"
-              value={form.endereco}
-              onChange={(e) => setForm({ ...form, endereco: e.target.value })}
-              placeholder="Rua, número, bairro, cidade"
+            <Label htmlFor="cep">CEP</Label>
+            <CepAutoFill
+              cep={form.cep}
+              onCepChange={(v) => setForm({ ...form, cep: v })}
+              onAutoFill={(data: CEPEnrichment) => {
+                setForm((f: typeof form) => ({
+                  ...f,
+                  endereco: [
+                    data.logradouro,
+                    data.bairro,
+                    data.cidade && data.uf ? `${data.cidade}/${data.uf}` : data.cidade,
+                  ].filter(Boolean).join(', '),
+                }));
+                toast.success('Endereço preenchido pelo CEP');
+              }}
+              onError={(msg: string) => toast.error(msg)}
             />
           </div>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="endereco">Endereço</Label>
+          <Input
+            id="endereco"
+            value={form.endereco}
+            onChange={(e) => setForm({ ...form, endereco: e.target.value })}
+            placeholder="Rua, número, bairro, cidade"
+          />
         </div>
       </div>
       <ModalFooter>

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { customInstance } from '@/lib/api-client';
 import { useCRMDashboardKpis } from '@/hooks/crm';
 import { formatCurrency } from '@/lib/utils';
+import { TaxasWidget } from '@/components/crm/TaxasWidget';
 
 export default function CRMDashboardPage() {
   const router = useRouter();
@@ -137,6 +138,9 @@ export default function CRMDashboardPage() {
           </Card>
         </div>
       )}
+
+      {/* Taxas do dia */}
+      <TaxasWidget />
 
       {/* Cards de navegacao */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
