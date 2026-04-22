@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.35
+**Versão:** 1.36
 **Data:** 2026-04-21
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -2505,3 +2505,69 @@ Lista completa em seed_bloco_b_laranjeiras_042026.py.
 - Upload UI de PDFs faltantes
 - Automação geração NFS-e/Boleto/Contratos (FASE 1/2 roadmap)
 - Refactor do modal detalhe pra mostrar N instâncias por funcionário
+
+---
+
+## §37 — BLOCO C: EXTENSÃO AOS 9 CONDOMÍNIOS (04/2026)
+
+**Data:** 2026-04-22
+**Bloco:** C de 3 — final da trilogia (modelo → 1º kit → extensão)
+**Dependência:** BLOCO A (§35) + BLOCO B (§36) concluídos
+**Gatilho:** Jordan autorizou após CIC validar BLOCO B
+
+### §37.1 — Escopo e totais esperados
+
+9 condomínios × 04/2026 (LARANJEIRAS já tem kit do BLOCO B):
+
+| Condomínio | Tipo | Kit? | Esperado | N func |
+|---|---|---|---|---|
+| ESCRITÓRIO | administrativo | NÃO | - | - |
+| PRIME ARENA | kit_mensal | SIM | 94 | 7 |
+| IDEAL FLORES | kit_mensal | SIM | 127 | 11 |
+| MIRANTE | kit_mensal | SIM | 116 | 10 |
+| VILLA DEI FIORI | kit_mensal | SIM | 64 | 6 |
+| VILLA PÁSSAROS | kit_mensal | SIM | 45 | 6 |
+| MICHELANGELO | kit_mensal | SIM | 17 | 1 |
+| GREEN HILLS | manutencao_cftv | SIM | 2 | 0 |
+| P. GELAIN | portaria_remota | SIM | 2 | 0 |
+| PARISE | portaria_autonoma | SIM | 2 | 0 |
+
+Total ged_document_kits após BLOCO C: 10 (LARANJEIRAS + 9)
+Total ged_kit_documents após BLOCO C: 83 + 94 + 127 + 116 + 64 + 45 + 17 + 2 + 2 + 2 = 552
+
+### §37.2 — Script de loop
+
+Arquivo: backend/scripts/seed_bloco_c_extensao_042026.py
+Reaproveita lógica do seed BLOCO B em loop sobre lista de condomínios.
+SKIP automático para ESCRITÓRIO (templates aplicáveis = 0 e sem ged_client).
+
+Mapeamento ged_clients confirmado (STEP 1):
+- green_hills → b4a13504 (CONDOMINIO RESIDENCIAL GREEN HILLS)
+- ideal_flores → 4db583b6 (CONDOMINIO IDEAL FLORES DA CIDADE)
+- michelangelo → 02d784d5 (CONDOMINIO DO EDIFICIO MICHELANGELO)
+- mirante → 130186bf (CONDOMINIO MIRANTE DAS FLORES)
+- p_gelain → 8199960d (CONDOMINIO PARQUE RESIDENCIAL GELAIN)
+- parise → d4dd6c53 (CONDOMINIO RESIDENCIAL PARISE VILLAGE)
+- prime_arena → 52958919 (CONDOMINIO PRIME ARENA)
+- villa_dei_fiori → 14809ac8 (CONDOMINIO VILLA DEI FIORI)
+- villa_passaros → 4909237d (CONDOMINIO RESIDENCIAL VILLA DOS PASSAROS)
+
+### §37.3 — Resultado
+
+ged_document_kits: 1 → 10 (+9 kits)
+ged_kit_documents: 83 → 552 (+469 placeholders)
+
+### §37.4 — Próximos passos (backlog fora de escopo)
+
+- Upload manual de PDFs via UI (feature futura)
+- Sync Onvio 04/2026 quando fechar (abril completo → maio)
+- FASE 1 roadmap (busca auto CND) → alimentar 5 CNDs empresa
+- FASE 2 roadmap (NFS-e/Boleto auto) → alimentar condomínio
+- Corrigir label "ISS Retido" vs "Relatório GFD FGTS" (observação BLOCO B)
+
+### §37.5 — Fora de escopo BLOCO C
+
+- 03/2026 (preservar 2 docs reais existentes)
+- Refactor de modelo
+- UI de upload
+- Qualquer condomínio em outro mês
