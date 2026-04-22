@@ -57,6 +57,65 @@ Taxas count: 3
 | `/api/v1/crm/enrichment/cep/{cep}` | GET | JWT | `CEPEnrichment` | HIT/MISS |
 | `/api/v1/crm/enrichment/taxas` | GET | JWT | `TaxasResponse` | HIT/MISS |
 
+### Responses de Exemplo
+
+**GET /cnpj/35710481000103**
+```json
+{
+  "cnpj": "35710481000103",
+  "razao_social": "CONECTAMAIS ELETRONICA LTDA",
+  "nome_fantasia": "CONECTA MAIS",
+  "cnae_principal": "6319400 - Portais, provedores de conteúdo e outros serviços de informação na internet",
+  "cnaes_secundarios": [],
+  "qsa": [{"nome_socio": "JORDAN JESUS", "qualificacao_socio": "Sócio-Administrador"}],
+  "capital_social": 100000.0,
+  "situacao": "2",
+  "endereco": {"logradouro": "RUA X", "numero": "123", "complemento": "", "bairro": "CENTRO", "municipio": "MANAUS", "uf": "AM", "cep": "69073488"},
+  "telefone": "92999999999",
+  "porte": "MICRO EMPRESA",
+  "data_abertura": "2020-01-01",
+  "simples_nacional": true,
+  "cache_hit": false
+}
+```
+
+**GET /cep/69073488**
+```json
+{
+  "cep": "69073-488",
+  "logradouro": "Rua Exemplo",
+  "bairro": "Adrianópolis",
+  "cidade": "Manaus",
+  "uf": "AM",
+  "coordenadas": null,
+  "cache_hit": false
+}
+```
+
+**GET /taxas**
+```json
+{
+  "taxas": [
+    {"nome": "Selic", "valor": 14.75},
+    {"nome": "CDI", "valor": 14.65},
+    {"nome": "IPCA", "valor": 4.14}
+  ],
+  "selic": 14.75,
+  "cdi": 14.65,
+  "ipca": 4.14,
+  "cache_hit": false
+}
+```
+
+### INV-13 — Observabilidade Python
+
+`logger.info()` adicionado em cada endpoint com `cache_hit` e `latency_ms`:
+```
+INFO enrichment cnpj=35710481000103 cache_hit=False latency_ms=97
+INFO enrichment cep=69073488 cache_hit=True latency_ms=3
+INFO enrichment taxas cache_hit=True latency_ms=2
+```
+
 ### Erros PT-BR
 
 | Código | Mensagem |
@@ -72,11 +131,11 @@ Taxas count: 3
 
 ## FASE 3 — Testes 🔴
 
-### 8 testes reais (sem mock)
+### 9 testes reais (1 com mock para fallback)
 
 | # | Teste | Descrição | Status |
 |---|-------|-----------|--------|
-| 1 | `test_cnpj_conecta_mais_real` | CNPJ 35710481000103 → razão social + municipio + cnae | PASSED |
+| 1 | `test_cnpj_conecta_mais_real` | CNPJ 35710481000103 → razão social + municipio + cnae + formato cnpj | PASSED |
 | 2 | `test_cnpj_invalid_format` | CNPJ com < 14 dígitos → 422 | PASSED |
 | 3 | `test_cnpj_not_found` | CNPJ 00000000000000 → 404/503 | PASSED |
 | 4 | `test_cnpj_cache_hit` | 2ª chamada → X-Cache: HIT + cache_hit=true | PASSED |
@@ -84,14 +143,15 @@ Taxas count: 3
 | 6 | `test_cep_invalid` | CEP "abc" → 422 | PASSED |
 | 7 | `test_taxas_has_all_three` | selic/cdi/ipca como float > 0, ≥3 items | PASSED |
 | 8 | `test_taxas_cache` | 2ª chamada → X-Cache: HIT | PASSED |
+| 9 | `test_cep_brasilapi_5xx_fallback_viacep` | BrasilAPI 503 → fallback ViaCEP retorna dados válidos (INV-4) | PASSED |
 
 ### Pytest output
 
 ```
-======================== 8 passed, 3 warnings in 0.63s =========================
+======================== 9 passed, 3 warnings in 0.65s =========================
 ```
 
-**GATE FASE 3: ✅ (8/8)**
+**GATE FASE 3: ✅ (9/9)**
 
 ---
 
@@ -174,8 +234,8 @@ npx tsc --noEmit --skipLibCheck 2>&1 | grep -E "crm/page|cliente-form|leads/page
 | 8 | FASE 2: erros PT-BR (404 não encontrado, 503 indisponível) | ✅ |
 | 9 | FASE 2: X-Cache header visível | ✅ |
 | 10 | GATE FASE 2 aprovado | ✅ |
-| 11 | FASE 3: 8 testes 🔴 reais criados | ✅ |
-| 12 | FASE 3: 8/8 passando | ✅ |
+| 11 | FASE 3: 9 testes 🔴 criados (8 reais + 1 mock INV-4) | ✅ |
+| 12 | FASE 3: 9/9 passando | ✅ |
 | 13 | GATE FASE 3 aprovado | ✅ |
 | 14 | FASE 4: 3 hooks + types criados | ✅ |
 | 15 | FASE 4: TypeScript zero erros novos | ✅ |
@@ -239,7 +299,7 @@ npx tsc --noEmit --skipLibCheck 2>&1 | grep -E "crm/page|cliente-form|leads/page
 
 **LIBERAR** (pendente CIC browser Opus/Jordan)
 
-**Justificativa:** 20/20 self-check. Backend 8/8 testes. BUILD_ID externo confirma deploy. 3 UCs implementados com circuit breaker + Redis cache + ViaCEP fallback. Zero breaking changes. Zero erros TypeScript. CIC enviado para validação human-in-the-loop.
+**Justificativa:** 20/20 self-check. Backend 9/9 testes. BUILD_ID externo confirma deploy. 3 UCs implementados com circuit breaker + Redis cache + ViaCEP fallback. INV-13 logging (cache_hit + latency_ms) via loguru em todos os endpoints. Zero breaking changes. Zero erros TypeScript. CIC enviado para validação human-in-the-loop.
 
 ---
 

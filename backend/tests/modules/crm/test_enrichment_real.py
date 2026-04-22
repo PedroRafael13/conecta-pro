@@ -12,6 +12,7 @@ async def test_cnpj_conecta_mais_real(auth_client):
     assert data["razao_social"] is not None
     assert data["endereco"]["municipio"] is not None
     assert data["cnae_principal"] is not None
+    assert "35.710.481" in data["cnpj"] or data["cnpj"] == "35710481000103"
 
 
 @pytest.mark.asyncio

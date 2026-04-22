@@ -1,6 +1,9 @@
 """Enrichment endpoints (CNPJ, CEP, Taxas) via BrasilAPI proxy."""
 
+import time
+
 from fastapi import APIRouter, HTTPException, Response
+from loguru import logger
 
 from core.auth.dependencies import CurrentActiveUser
 from modules.integrations.brasilapi.client import BrasilAPIClient
@@ -27,6 +30,7 @@ async def enrich_cnpj(
     response: Response,
     current_user: CurrentActiveUser,
 ):
+    t0 = time.monotonic()
     try:
         data, cache_hit = await _client.get_cnpj(cnpj)
     except BrasilAPIInvalidFormatError as e:
@@ -36,6 +40,8 @@ async def enrich_cnpj(
     except BrasilAPIUnavailableError:
         raise HTTPException(status_code=503, detail="Serviço temporariamente indisponível")
 
+    latency_ms = (time.monotonic() - t0) * 1000
+    logger.info(f"enrichment cnpj={cnpj} cache_hit={cache_hit} latency_ms={latency_ms:.0f}")
     response.headers["X-Cache"] = "HIT" if cache_hit else "MISS"
 
     cnae_principal = None
@@ -83,6 +89,7 @@ async def enrich_cep(
     response: Response,
     current_user: CurrentActiveUser,
 ):
+    t0 = time.monotonic()
     try:
         data, cache_hit = await _client.get_cep(cep)
     except BrasilAPIInvalidFormatError as e:
@@ -92,6 +99,8 @@ async def enrich_cep(
     except BrasilAPIUnavailableError:
         raise HTTPException(status_code=503, detail="Serviço temporariamente indisponível")
 
+    latency_ms = (time.monotonic() - t0) * 1000
+    logger.info(f"enrichment cep={cep} cache_hit={cache_hit} latency_ms={latency_ms:.0f}")
     response.headers["X-Cache"] = "HIT" if cache_hit else "MISS"
 
     coordenadas = None
@@ -117,11 +126,14 @@ async def get_taxas(
     response: Response,
     current_user: CurrentActiveUser,
 ):
+    t0 = time.monotonic()
     try:
         taxas, cache_hit = await _client.get_taxas()
     except BrasilAPIUnavailableError:
         raise HTTPException(status_code=503, detail="Serviço temporariamente indisponível")
 
+    latency_ms = (time.monotonic() - t0) * 1000
+    logger.info(f"enrichment taxas cache_hit={cache_hit} latency_ms={latency_ms:.0f}")
     response.headers["X-Cache"] = "HIT" if cache_hit else "MISS"
 
     def _find(nome_lower: str) -> float | None:
