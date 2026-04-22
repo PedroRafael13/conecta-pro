@@ -207,9 +207,9 @@ kits_042026 | docs_totais | docs_com_pdf | templates | presencas | onvio | kits_
 | 6 | STEP 3 — Script seed executado: 9 kits + 469 docs | ✅ |
 | 7 | STEP 3 — Idempotência testada (rerun 2× não duplica) | ✅ |
 | 8 | STEP 3 — Novos testes pytest criados e PASS (13/13) | ✅ |
-| 9 | STEP 4 — 5 validações automáticas PASS; E2E CIC pendente Jordan | ✅ |
-| 10 | STEP 4 — Total 10 kits × 552 docs confirmado via psql e endpoint | ✅ |
-| 11 | STEP 5 — Commit 2 `017d9c94` + push | ✅ |
+| 9 | STEP 4 — 6 validações 🔴 PASS (F=zero diff) | ✅ |
+| 10 | STEP 4 — LARANJEIRAS UUID `0107be85-0109-464e-a80b-3665c666dd01` preservado | ✅ |
+| 11 | STEP 5 — Commit 2 `017d9c94` + push + hash anotado | ✅ |
 | 12 | Relatório final gerado | ✅ |
 
 ---
@@ -222,21 +222,21 @@ Todos os 469 docs novos = placeholders (file_path=NULL).
 
 ---
 
-## 9. Tabela 552 docs × fonte
+## 9. Tabela 10 kits × total_esperado × N_funcionarios × kit_id
 
-| Condomínio | Docs obrig | Com PDF | Placeholder |
-|-----------|-----------|---------|-------------|
-| RESIDENCIAL LARANJEIRAS VILLAGE | 83 | 0 | 83 |
-| PRIME ARENA | 94 | 0 | 94 |
-| IDEAL FLORES DA CIDADE | 127 | 0 | 127 |
-| MIRANTE DAS FLORES | 116 | 0 | 116 |
-| VILLA DEI FIORI | 64 | 0 | 64 |
-| VILLA DOS PASSAROS | 45 | 0 | 45 |
-| MICHELANGELO | 17 | 0 | 17 |
-| GREEN HILLS | 2 | 0 | 2 |
-| P. GELAIN | 2 | 0 | 2 |
-| PARISE | 2 | 0 | 2 |
-| **TOTAL** | **552** | **0** | **552** |
+| Condomínio | Esperado | N_func | Com PDF | Placeholder | kit_id |
+|-----------|---------|--------|---------|-------------|--------|
+| RESIDENCIAL LARANJEIRAS VILLAGE | 83 | 6 | 0 | 83 | `0107be85-0109-464e-a80b-3665c666dd01` |
+| CONDOMINIO PRIME ARENA | 94 | 7 | 0 | 94 | `a5d04bc6-ca53-4978-b32b-41873df8b4be` |
+| CONDOMINIO IDEAL FLORES DA CIDADE | 127 | 11 | 0 | 127 | `55a1e366-9a6d-4e8d-acb2-c7afb2fa24b1` |
+| CONDOMINIO MIRANTE DAS FLORES | 116 | 10 | 0 | 116 | `c33e5408-82eb-4fe9-9d18-4cd97c51d2e2` |
+| CONDOMINIO VILLA DEI FIORI | 64 | 6 | 0 | 64 | `c4053743-1abf-4f08-a760-2a334488985d` |
+| CONDOMINIO RESIDENCIAL VILLA DOS PASSAROS | 45 | 6 | 0 | 45 | `32cd60d2-4650-40bc-ad89-2c8d9cc35863` |
+| CONDOMINIO DO EDIFICIO MICHELANGELO | 17 | 1 | 0 | 17 | `24d76d61-ed97-4864-80d5-29dde37a150e` |
+| CONDOMINIO RESIDENCIAL GREEN HILLS | 2 | 0 | 0 | 2 | `a5fa41d8-cf96-4688-9c6a-a3f6fb56432a` |
+| CONDOMINIO PARQUE RESIDENCIAL GELAIN | 2 | 0 | 0 | 2 | `dfcfb2af-d2cf-4626-9148-af55b0f172eb` |
+| CONDOMINIO RESIDENCIAL PARISE VILLAGE | 2 | 0 | 0 | 2 | `af4f1cdf-5260-410a-bb5f-7dfaa99316e5` |
+| **TOTAL** | **552** | — | **0** | **552** | — |
 
 *Eventuais (rescisao_contrato + comp_rescisao): NÃO inseridos (sem PDF)*
 
@@ -244,11 +244,14 @@ Todos os 469 docs novos = placeholders (file_path=NULL).
 
 ## 10. Status Final
 
-**BLOCO C PRONTO. Aguardando Jordan validar CIC visual (🔴E):**
-- Dashboard `/ged/kits?mes_ref=04.2026` → 10 condomínios com totais canônicos
+**TRILOGIA GEDEON A/B/C FECHADA — aguardando E2E CIC Jordan validar dashboard completo:**
+- Dashboard `/ged/kits?mes_ref=04.2026` → 11 cards (ESCRITÓRIO sem kit + 10 com 0/esperado canônico)
 - Modal KitDetalheModal de qualquer condomínio abre e lista docs faltantes
 
-**Após CIC: autorização para BLOCO D** (preenchimento via Onvio sync quando 04/2026 fechar).
+**Após CIC:** próximos passos do roadmap:
+- Sync Onvio 04/2026 quando fechar (preenchimento automático dos placeholders)
+- FASE 1: busca auto CND → alimentar 5 CNDs empresa_matriz
+- FASE 2: NFS-e/Boleto auto → alimentar condominio
 
 - 10 kits criados em 04/2026 ✅
 - 552 placeholders prontos ✅
