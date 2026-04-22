@@ -103,7 +103,7 @@ class TestBlocoC:
             text(
                 "SELECT COUNT(*) FROM ged_document_kits dk "
                 "JOIN ged_clients gc ON gc.id = dk.client_id "
-                "WHERE gc.name ILIKE '%escritorio%' OR gc.name ILIKE '%escrit%' "
+                "WHERE (gc.name ILIKE '%escritorio%' OR gc.name ILIKE '%escrit%') "
                 "  AND dk.reference_month = CAST(:rm AS date)"
             ),
             {"rm": REFERENCE_MONTH},
