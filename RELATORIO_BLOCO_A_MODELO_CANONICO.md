@@ -40,8 +40,9 @@ Implementação completa do modelo canônico GEDEON conforme planilha
 
 ## STEP 2 — Documentação §35
 
-**CONTRACTS_GEDEON.md v1.32 → v1.33**
+**CONTRACTS_GEDEON.md v1.32 → v1.33 → v1.34** (spec exigia v1.34; auditoria completou o bump)
 **Commit 1:** `394b3f7e` — `docs(gedeon): CONTRATO v1.33 — §35 modelo canônico planilha (BLOCO A)`
+**Commit auditoria:** `4b0b540a` — v1.33→v1.34 + downgrade fix + itens 8/9/10 relatório
 
 Adicionado:
 - Tabela 32 templates (M1–M8)
@@ -115,6 +116,30 @@ Mudanças principais:
 | 2 (code) | `f139568b` | feat(gedeon): BLOCO A — modelo canônico §35 (migração + seed 32/320 + refactor + testes) |
 
 **Push:** `feature/people-management-reorganization` → origin ✅
+
+---
+
+## Item 8 — Cenário Identificado
+
+**CENÁRIO A** — 12/12: implementação concluída sem bloqueios.
+
+Nenhum dos cenários de risco se concretizou:
+- ✅ Cenário B (kit_controller lê campos antigos): NÃO ocorreu — controller usa `build_completude()` que abstrai os campos internos
+- ✅ Cenário C (outros endpoints dependem de kit_documental_templates): NÃO identificados — apenas GEDEON usa essa tabela
+- ✅ Cenário D (migration upgrade falha): NÃO ocorreu — upgrade executou sem erros
+- ✅ Cenário E (total_esperado igual para todos): NÃO ocorreu — 9 valores únicos confirmados
+- ✅ Cenário F (matriz de presença não casou com nome_normalizado): NÃO ocorreu — 320/320 rows inseridas
+
+---
+
+## Item 9 — Status Final
+
+**✅ BLOCO A PRONTO. Aguardando ordem para BLOCO B (seed 1º kit real LARANJEIRAS 04/2026 com PDFs reais).**
+
+- Modelo canônico: 32 templates × 10 condominios = 320 presenças ✅
+- Fórmula dinâmica §35.4: validada para todos os 11 condominios ✅
+- Regressão: 0 testes quebrados (55/55 PASS) ✅
+- Commits: `394b3f7e` (docs §35) + `f139568b` (código) + `4b0b540a` (auditoria) ✅
 
 ---
 
