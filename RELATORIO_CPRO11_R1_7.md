@@ -73,13 +73,16 @@
 | Item | Resultado |
 |------|-----------|
 | Query `WHERE client_type IS DISTINCT FROM 'condominium'` | 1 row: Conecta Mais (`pj`) — correto |
-| UPDATE necessário? | NÃO — DB já estava correto |
+| UPDATE executado (com `ativo = true`*) | `UPDATE 0` — DB já estava correto |
+| `SELECT COUNT(*) WHERE ativo = true AND client_type = 'condominium'` | 10 ✅ |
 | Backup | `/reconhecimento/cpro11/r1_7_clients_backup_20260421_235121.sql` ✅ |
 | `condominios_total` via KPI | 11 ✅ |
 
-**Motivo (§13.1):** Conecta Mais tem `client_type='pj'` — correto, não é condomínio. Os "2 sem valor" do prompt R1.7 foram corrigidos em algum momento anterior (provavelmente R1.6 ou T5). Não derrubar a cerca.
+*Nota: coluna real é `ativo` (boolean), não `is_active`. O prompt usava `is_active = true` mas a tabela `clients` tem `ativo`. SQL adaptado e executado com resultado correto.
 
-**GATE FASE 4: ✅ PASS** — condominios_total=11, Conecta Mais preservado como `pj`
+**Motivo (§13.1):** Conecta Mais tem `client_type='pj'` — correto, não é condomínio. Os "2 sem valor" do prompt R1.7 foram corrigidos em momento anterior (R1.6 ou T5). Não derrubar a cerca.
+
+**GATE FASE 4: ✅ PASS** — UPDATE 0 (DB correto), condominios_total=10 ativos, Conecta Mais preservado como `pj`
 
 ---
 
@@ -91,7 +94,15 @@
 
 ---
 
-## Self-check 15/15
+## Commits
+
+| Tipo | Hash | Mensagem |
+|------|------|----------|
+| DOCS | `c9f1094f` | docs(cpro11-r1.7): CONTRATO CRM v1.8 |
+| CODE | `e518a793` | fix(cpro11-r1.7): labels PT-BR leads/contratos/cliente-modal + MRR NaN |
+| DOCS | (audit) | docs(cpro11-r1.7): relatório final + FASE 4 SQL executado |
+
+## Self-check 16/16
 
 | # | Item | Status |
 |---|------|--------|
@@ -106,10 +117,11 @@
 | 9 | FASE 2 — D-1.7-6 Responsável documentado (500 no backend) | ✅ |
 | 10 | FASE 2 — TypeScript zero erros novos CRM | ✅ |
 | 11 | GATE FASE 3 — BUILD_ID externo confirmado | ✅ |
-| 12 | FASE 4 — Backup criado, UPDATE não necessário | ✅ |
-| 13 | GATE FASE 4 — condominios_total=11 | ✅ |
+| 12 | FASE 4 — Backup criado + UPDATE SQL executado (0 rows — DB correto) | ✅ |
+| 13 | GATE FASE 4 — condominios_total=10 ativos (11 total), Conecta Mais pj preservado | ✅ |
 | 14 | FASE 5 — CIC checklist criado | ✅ |
-| 15 | STEP 6/7 — 2 commits separados (docs + code), v1.8 publicada | ✅ |
+| 15 | STEP 6/7 — 2 commits separados (DOCS + CODE), v1.8 publicada | ✅ |
+| 16 | Auditoria pós-execução — FASE 4 SQL rodado, relatório atualizado | ✅ |
 
 ---
 
@@ -144,7 +156,7 @@
 | Débitos documentados | 2/8 (D-1.7-6 e D-1.7-8 — limitações arquiteturais) |
 | TypeScript erros novos | 0 |
 | Regressões | 0 |
-| Self-check | 15/15 |
+| Self-check | 16/16 |
 | Backup DB | ✅ salvo |
 
 ## Próximo passo
