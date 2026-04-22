@@ -1,6 +1,6 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.36
-**Data:** 2026-04-21
+**Versão:** 1.37
+**Data:** 2026-04-22
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
@@ -2571,3 +2571,66 @@ ged_kit_documents: 83 → 552 (+469 placeholders)
 - Refactor de modelo
 - UI de upload
 - Qualquer condomínio em outro mês
+
+## §38 — D1: ONVIO AUTH + SYNC (2026-04-22)
+
+### §38.1 — Gargalo resolvido
+
+A sessão Onvio estava ausente do Redis desde antes de 2026-04-22 04:01:05
+(último log de falha). Causa raiz: REDIS_URL no crontab apontava para
+127.0.0.1 (inacessível do host). Redis não expõe porta para o host —
+só acessível via IP do container na rede Docker.
+
+### §38.2 — Arquitetura de auth (confirmada)
+
+- Script: `/opt/conecta-pro/onvio_auth.py` (PATH A — requests puro, sem Playwright)
+- Fluxo: OIDC Auth0 6 etapas → JWT + LongToken (sem MFA em 22/04)
+- Redis key: `onvio:session` (DB 1, TTL 57600s = 16h)
+- Formato: `{cookies: {...}, long_token: "...", uds_token: "...", ...}`
+- Crontab: `0 4 * * *` (renovação diária às 04:00)
+
+### §38.3 — Correções aplicadas
+
+| Bug | Causa | Fix |
+|-----|-------|-----|
+| Redis inacessível do host | REDIS_URL=127.0.0.1 (sem rota) | onvio-auth-refresh.sh resolve IP via docker inspect |
+| /app/uploads/onvio/ inexistente | Volume não inicializado | mkdir -p /opt/conecta-pro/uploads/onvio (chmod 777) |
+| xlsx/xlt causavam erro no sync | baixar_pdf() valida %PDF | Skip por extensão antes de download |
+| kill -HUP 1 não recarrega Python | uvicorn produção sem hot-reload | Usar docker restart após docker cp |
+
+### §38.4 — Estado pós-D1
+
+| Métrica | Antes | Depois |
+|---------|-------|--------|
+| Redis onvio:session | AUSENTE | PRESENTE (TTL ~16h) |
+| onvio_documents | 436 | 534 |
+| PDFs em disco | 0 | 98 |
+| Erros de sync | 101 | 0 |
+| 04/2026 docs | 0 | 0 (Onvio sem PDFs ainda) |
+
+### §38.5 — Comportamento de negócio confirmado
+
+Abril 2026: 0 documentos no Onvio API em 22/04/2026. Comportamento
+esperado — folha fechada tipicamente dia 30 do mês, PDFs aparecem no
+Onvio 1-7 dias depois. O sync mensal cron `0 7 7 * *` executará
+automaticamente em 2026-05-07 às 07:00 e capturará os PDFs de 04/2026.
+
+### §38.6 — Regra operacional (PERMANENTE)
+
+Para renovar sessão Onvio manualmente:
+```bash
+cd /opt/conecta-pro
+REDIS_PASS=$(grep REDIS_PASSWORD .env | cut -d= -f2)
+REDIS_IP=$(docker inspect conecta-pro-redis | python3 -c "import sys,json; print(list(json.load(sys.stdin)[0]['NetworkSettings']['Networks'].values())[0]['IPAddress'])")
+REDIS_URL="redis://:${REDIS_PASS}@${REDIS_IP}:6379/1" python3 onvio_auth.py
+```
+
+Para rodar sync manualmente:
+```bash
+TOKEN=$(curl -sf -X POST http://127.0.0.1:8080/api/v1/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=jjesus@conectamais.pro&password=JsJ618908@#%" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+curl -s -X POST "http://127.0.0.1:8080/api/v1/onvio/sync?mes_ref=04.2026" \
+  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
+```
