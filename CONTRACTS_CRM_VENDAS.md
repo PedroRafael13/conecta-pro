@@ -462,6 +462,7 @@ Descobertas feitas durante T4 (backend CRM) que parecem bugs mas são estado int
 | v1.6 | 2026-04-21 | t4 (R1.5) | CPRO11-R1.5: enum SQLAlchemy values_callable + docker restart + conftest real + 10 testes regressão runtime |
 | v1.7 | 2026-04-21 | t1 (R1.6) | CPRO11-R1.6: docker frontend deploy correto (T5 commits incluídos), fix condominios_total query, segmento PT-BR labels, CIC 16/16 PASS |
 | v1.8 | 2026-04-21 | t1 (R1.7) | CPRO11-R1.7: MRR NaN fix, leads labels (converted/indicacao), cliente modal EN labels, contratos coluna Cliente + Tipo PT, condomínios filter (10/11), §20.10 §23.6 |
+| v1.9 | 2026-04-22 | t1 (R2) | CPRO11-R2: BrasilAPI proxy (CNPJ/CEP/Taxas) — backend modules/integrations/brasilapi + endpoints /crm/enrichment/* + React Query hooks + CnpjSearchButton + CepAutoFill + TaxasWidget; 8/8 testes; BUILD_ID conecta-pro-1776872076415 |
 
 ---
 
@@ -654,7 +655,45 @@ Warning não-bloqueante de mismatch SSR/CSR. Rodada 2+.
 
 ---
 
-**FIM DO CONTRATO v1.8**
+---
+
+## §23.7 — Status Rodada 2 (CPRO11-R2 — 2026-04-22)
+
+**Objetivo:** BrasilAPI proxy — CNPJ auto-fill, CEP auto-fill, Taxas do dia.
+
+**Entregáveis:**
+- Backend: `modules/integrations/brasilapi/` (client, cache Redis, circuit breaker, schemas, exceptions)
+- Backend: `modules/crm/controllers/enrichment_controller.py` + `modules/crm/schemas/enrichment.py`
+- Endpoints: `GET /api/v1/crm/enrichment/cnpj/{cnpj}`, `/cep/{cep}`, `/taxas`
+- Frontend: `types/crm/enrichment.ts`, `hooks/crm/useEnrichment.ts`
+- Frontend: `CnpjSearchButton.tsx`, `CepAutoFill.tsx`, `TaxasWidget.tsx`
+- UI: `CnpjSearchButton` em `cliente-form-modal.tsx` + `leads/page.tsx`
+- UI: `CepAutoFill` em `cliente-form-modal.tsx` (campo CEP novo)
+- UI: `TaxasWidget` no CRM Dashboard (`crm/page.tsx`)
+
+**Gates:**
+- GATE FASE 1: módulos backend 100% importáveis ✅
+- GATE FASE 2: endpoints respondem 200/422/200/200 + X-Cache HIT ✅
+- GATE FASE 3: 8/8 testes reais ✅
+- GATE FASE 4: 0 erros TypeScript nos arquivos criados ✅
+- GATE FASE 5: BUILD_ID `conecta-pro-1776872076415` externo = local ✅
+- GATE FASE 6: CIC 16/16 ✅
+
+---
+
+## §20.11 — Descobertas §13.1 Rodada 2 (CPRO11-R2 — 2026-04-22)
+
+| # | Descoberta | Impacto | Ação |
+|---|-----------|---------|------|
+| 1 | `situacao_cadastral` BrasilAPI = int (2=Ativa), não string | ValidationError 500 em CNPJ | Fix: `Optional[Any]` no schema |
+| 2 | `coordinates` BrasilAPI retorna `{}` vazio, não null | ValidationError CEP | Fix: `field_validator` converte `{}` → None |
+| 3 | `CurrentActiveUser` é Annotated com Depends embutido | `= Depends()` causa duplo inject | Fix: anotação sem `= Depends()` |
+| 4 | `docker cp modules/` não copia novos arquivos em sub-dirs | Endpoints 404 após hot copy | Fix: `docker cp` individual + `docker restart` |
+| 5 | `kill -HUP 1` não recarrega novas rotas | Apenas reinicia workers, não re-importa | Fix: usar `docker restart` para novos módulos |
+| 6 | Cache Redis com dado ruim antes de corrigir schema | Retorna dado inválido mesmo após fix | Fix: `r.delete('brasilapi:cnpj:...')` manual |
+| 7 | Taxa nomes capitalizados na API: 'Selic', 'CDI', 'IPCA' | `_find()` com `.lower()` necessário | Fix: comparação case-insensitive |
+
+**FIM DO CONTRATO v1.9**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
 > algo novo, documente ANTES de corrigir. Escopo é sagrado. Chesterton não
