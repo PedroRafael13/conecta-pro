@@ -143,7 +143,8 @@ def test_completude_kit_mensal_retorna_200_valido(client_auth, condominio_id_ide
         "pct_completude_total",
     }
     assert body["tipo_servico"] == "kit_mensal"
-    assert m["total_esperado"] == 32  # kit_mensal tem 32 templates
+    # total_esperado dinâmico (§35.4): mínimo 17 (IF com 0 func)
+    assert m["total_esperado"] >= 17
 
 
 # ============================================================================

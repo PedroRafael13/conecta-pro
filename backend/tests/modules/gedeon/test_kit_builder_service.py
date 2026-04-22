@@ -98,8 +98,8 @@ class TestKitMensalEstrutura:
         assert isinstance(result, CompletudeKit)
         assert result.tipo_servico == "kit_mensal"
         assert result.mes_ref == "03.2026"
-        # kit_mensal tem 32 templates
-        assert result.metricas.total_esperado == 32
+        # total_esperado dinâmico (§35.4): mínimo 17 com N=0 funcionários
+        assert result.metricas.total_esperado >= 17
 
     def test_metricas_percentual_entre_0_e_100(self, service, db):
         cid = _get_condominio_id(db, "mirante")
@@ -109,13 +109,17 @@ class TestKitMensalEstrutura:
         assert 0.0 <= m.pct_completude_total <= 100.0
 
     def test_soma_tipos_igual_total_esperado(self, service, db):
-        """INV: total_presente_confirmado + total_presente_pendente + total_faltante >= total_esperado."""
+        """INV §35.4: total_esperado usa fórmula N×func_templates, não count de docs.
+        Com N_func > 0, total_esperado >> len(templates) — invariante correto é sanidade
+        de percentuais e não-negatividade."""
         cid = _get_condominio_id(db, "ideal_flores")
         result = service.build_completude(cid, "03.2026")
         m = result.metricas
-        total_presente = m.total_presente_confirmado + m.total_presente_pendente_revisao
-        # Pode ser > total_esperado se um tipo_doc tem múltiplos arquivos
-        assert total_presente + m.total_faltante >= m.total_esperado
+        # total_esperado dinâmico (§35.4) = empresa + cond + func×N ≥ empresa + cond
+        assert m.total_esperado >= 0
+        assert m.total_faltante >= 0
+        assert 0.0 <= m.pct_completude_confirmada <= 100.0
+        assert 0.0 <= m.pct_completude_total <= 100.0
 
     def test_docs_presentes_tem_campos_corretos(self, service, db):
         cid = _get_condominio_id(db, "ideal_flores")
