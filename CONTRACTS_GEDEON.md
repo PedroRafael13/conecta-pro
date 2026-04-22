@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.34
+**Versão:** 1.35
 **Data:** 2026-04-21
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -2450,3 +2450,58 @@ Condomínios com 0 funcionários alocados (P. Gelain, Green Hills, Parise):
 - Extensão aos outros 9 condomínios (BLOCO C)
 - Automações FASE 1/2/3 (backlog do roadmap)
 - Frontend (segue servindo dashboard com dados do endpoint existente)
+
+---
+
+## §36 — BLOCO B: PRIMEIRO KIT REAL (LARANJEIRAS 04/2026)
+
+**Data:** 2026-04-22
+**Bloco:** B de 3 (modelo → 1º kit → extensão)
+**Princípios:** §13.1 + §13.3 + §13.4
+**Gatilho:** BLOCO A validado visualmente (E2E CIC); Jordan aprovou proof-of-concept
+
+### §36.1 — Escopo LARANJEIRAS 04/2026
+
+Proof-of-concept cirúrgico. Esperado (do BLOCO A §35.4):
+  5 (CNDs empresa) + 12 (condomínio) + 11 × 6 funcionários = 83 docs obrigatórios
+  + até 2 eventuais (Rescisão + Comp Pag Rescisão se houver)
+
+### §36.2 — Inventário real (STEP 1)
+
+N funcionários ativos: 6 (ADAILSON, ANDREA, ANILSON, BIANCA, EIDY, ELEN)
+CNDs válidas: 5 de 5 — RFB, FGTS/Caixa, Prefeitura/SEMEF, Sefaz, TST — todas com file_path=NULL (aguardam upload)
+PDFs localizados no servidor: 0 de 83 (mes_ref=04.2026 ainda não sincronizado via Onvio; competência aberta em 22/04)
+onvio_documents LARANJEIRAS 04.2026: 0
+
+### §36.3 — Estratégia de matching
+
+Opção C (kit parcial aceito): PDFs não encontrados em /uploads/onvio/ nem em onvio_documents.
+Todos os 83 registros obrigatórios inseridos com file_path=NULL + notes='PDF não localizado no servidor'.
+Eventuais (rescisao_contrato, comp_rescisao) NÃO inseridos (apenas se encontrados).
+Completude: 0/83 = 0.0% — esperada; será atualizada via Onvio sync quando 04/2026 fechar.
+
+### §36.4 — Registros criados
+
+ged_document_kits: 1 row (client_id=e55f6f4c-a641-4b08-9584-eef61dcb5575, reference_month=2026-04-01)
+ged_kit_documents: 83 rows
+  - Com file_path: 0 (nenhum PDF localizado para 04/2026)
+  - Sem file_path (faltantes/placeholder): 83
+  - Eventuais presentes: 0
+
+### §36.5 — Completude resultante
+
+total_esperado: 83 (confirma §35.4)
+total_presente (com file_path): 0
+pct_completude: 0.0% (aguarda Onvio sync 04/2026)
+
+### §36.6 — Docs faltantes (para preencher via Onvio sync)
+
+Todos os 83 docs obrigatórios: 5 empresa_matriz (CNDs) + 12 condomínio + 11 templates × 6 funcionários.
+Lista completa em seed_bloco_b_laranjeiras_042026.py.
+
+### §36.7 — Fora de escopo
+
+- BLOCO C (outros 9 condomínios)
+- Upload UI de PDFs faltantes
+- Automação geração NFS-e/Boleto/Contratos (FASE 1/2 roadmap)
+- Refactor do modal detalhe pra mostrar N instâncias por funcionário
