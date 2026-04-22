@@ -41,7 +41,7 @@
 |---|--------|--------|---------|---------|
 | D-1.7-1 | MRR NaN | ✅ | `contratos/page.tsx` | `Number(st?.total_monthly_revenue)` + Number() em reduce |
 | D-1.7-2 | Leads labels | ✅ | `constants/crm/leadStatus.ts` | `converted` + `indicacao`/`evento`/`outro` adicionados aos maps |
-| D-1.7-3 | Cliente modal | ✅ | `components/crm/cliente-detail-modal.tsx` | EN values adicionados: small/medium/large/enterprise/condominium/pj/active/inactive/blocked |
+| D-1.7-3 | Cliente modal | ✅ | `components/crm/cliente-detail-modal.tsx` + `constants/crm/clientSegment.ts` + `constants/crm/clientStatus.ts` | Constants extraídas para arquivos dedicados; modal importa CLIENT_SEGMENT_LABELS/COLORS + CLIENT_STATUS_LABELS/COLORS |
 | D-1.7-4 | Contratos Cliente | ✅ | `contratos/page.tsx` | `useCRMClients()` + `clientMap[contract.client_id]?.name` |
 | D-1.7-5 | Contratos Tipo | ✅ | `contratos/page.tsx` | `CONTRACT_TYPE_LABELS` adicionado (recurring→Recorrente, etc.) |
 | D-1.7-6 | Responsável dropdown | ⚠️ DOCUMENTADO | — | `/api/v1/users/` → 500 (bug Pydantic enum). INV-8: NÃO implementar. Backlog backend. |
@@ -100,7 +100,8 @@
 |------|------|----------|
 | DOCS | `c9f1094f` | docs(cpro11-r1.7): CONTRATO CRM v1.8 |
 | CODE | `e518a793` | fix(cpro11-r1.7): labels PT-BR leads/contratos/cliente-modal + MRR NaN |
-| DOCS | (audit) | docs(cpro11-r1.7): relatório final + FASE 4 SQL executado |
+| DOCS | `057a15fc` | docs(cpro11-r1.7): auditoria final — FASE 4 SQL executado + self-check 16/16 |
+| CODE | `ff74f612` | fix(cpro11-r1.7): extrair constants clientSegment + clientStatus (STEP 2.3 gap) |
 
 ## Self-check 16/16
 
