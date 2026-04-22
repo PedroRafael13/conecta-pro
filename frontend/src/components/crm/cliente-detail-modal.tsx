@@ -4,40 +4,14 @@ import { Modal } from '@/components/ui/modal';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { clientLabel } from '@/utils/crm/clientLabel';
+import { CLIENT_SEGMENT_LABELS, CLIENT_SEGMENT_COLORS } from '@/constants/crm/clientSegment';
+import { CLIENT_STATUS_LABELS, CLIENT_STATUS_COLORS } from '@/constants/crm/clientStatus';
 
 interface ClienteDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   cliente: any | null;
 }
-
-const segmentoConfig: Record<string, { label: string; className: string }> = {
-  // EN — valores reais do backend
-  small:        { label: 'Pequeno Porte', className: 'bg-sky-100 text-sky-800' },
-  medium:       { label: 'Médio Porte',   className: 'bg-cyan-100 text-cyan-800' },
-  large:        { label: 'Grande Porte',  className: 'bg-blue-100 text-blue-800' },
-  enterprise:   { label: 'Enterprise',    className: 'bg-indigo-100 text-indigo-800' },
-  condominium:  { label: 'Condomínio',    className: 'bg-teal-100 text-teal-800' },
-  pj:           { label: 'Pessoa Jurídica', className: 'bg-purple-100 text-purple-800' },
-  // PT — fallback legado
-  residencial: { label: 'Residencial',   className: 'bg-teal-100 text-teal-800' },
-  comercial:   { label: 'Comercial',     className: 'bg-amber-100 text-amber-800' },
-  industrial:  { label: 'Industrial',    className: 'bg-blue-100 text-blue-800' },
-  publico:     { label: 'Público',       className: 'bg-purple-100 text-purple-800' },
-  misto:       { label: 'Misto',         className: 'bg-indigo-100 text-indigo-800' },
-};
-
-const statusConfig: Record<string, { label: string; className: string }> = {
-  // EN — valores reais do backend
-  active:    { label: 'Ativo',      className: 'bg-green-100 text-green-800' },
-  inactive:  { label: 'Inativo',    className: 'bg-red-100 text-red-800' },
-  blocked:   { label: 'Bloqueado',  className: 'bg-orange-100 text-orange-800' },
-  prospect:  { label: 'Prospecto',  className: 'bg-yellow-100 text-yellow-800' },
-  // PT — fallback legado
-  ativo:     { label: 'Ativo',      className: 'bg-green-100 text-green-800' },
-  inativo:   { label: 'Inativo',    className: 'bg-red-100 text-red-800' },
-  prospecto: { label: 'Prospecto',  className: 'bg-yellow-100 text-yellow-800' },
-};
 
 export function ClienteDetailModal({
   isOpen,
@@ -46,14 +20,14 @@ export function ClienteDetailModal({
 }: ClienteDetailModalProps) {
   if (!cliente) return null;
 
-  const segmento = segmentoConfig[cliente.segment] || {
-    label: cliente.segment || '-',
-    className: 'bg-gray-100 text-gray-800',
+  const segmento = {
+    label: CLIENT_SEGMENT_LABELS[cliente.segment] ?? cliente.segment ?? '-',
+    className: CLIENT_SEGMENT_COLORS[cliente.segment] ?? 'bg-gray-100 text-gray-800',
   };
 
-  const status = statusConfig[cliente.status] || {
-    label: cliente.status || '-',
-    className: 'bg-gray-100 text-gray-800',
+  const status = {
+    label: CLIENT_STATUS_LABELS[cliente.status] ?? cliente.status ?? '-',
+    className: CLIENT_STATUS_COLORS[cliente.status] ?? 'bg-gray-100 text-gray-800',
   };
 
   return (
