@@ -1,49 +1,33 @@
-# CIC — CPRO11-R2 BrasilAPI Integration
-**Data:** 2026-04-22
-**Branch:** feature/people-management-reorganization
-**BUILD_ID:** conecta-pro-1776872076415
+# CIC E2E — Rodada 2 BrasilAPI
+**Data:** 2026-04-22 — Aguardando validação browser por Opus/Jordan
+**Hard-refresh obrigatório:** Ctrl+Shift+R em https://erp.conectamais.pro/
 
-## Checklist de Integridade e Conformidade (16 checks)
+---
 
-### Backend — Módulo BrasilAPI
+## UC-03: Widget Taxas Dashboard (3 checks)
+- [ ] 1. Dashboard CRM carrega sem erros em `/modulos/crm`
+- [ ] 2. Widget "Taxas do dia" aparece com Selic/CDI/IPCA valores numéricos (ex.: 14.75%)
+- [ ] 3. Refresh: widget mostra badge "cached" (HIT no 2º load)
 
-| # | Check | Resultado |
-|---|-------|-----------|
-| 1 | `modules/integrations/brasilapi/__init__.py` existe | ✅ |
-| 2 | `modules/integrations/brasilapi/client.py` — `BrasilAPIClient` com `get_cnpj()`, `get_cep()`, `get_taxas()` | ✅ |
-| 3 | `modules/integrations/brasilapi/cache.py` — `RedisCache` com TTL diferenciado (30d/365d/6h) | ✅ |
-| 4 | `modules/integrations/brasilapi/circuit_breaker.py` — 5 falhas → 120s cooldown | ✅ |
-| 5 | `modules/integrations/brasilapi/schemas.py` — `situacao_cadastral: Optional[Any]`, `field_validator` para coordenadas vazias | ✅ |
-| 6 | `modules/crm/schemas/enrichment.py` — `CNPJEnrichment`, `CEPEnrichment`, `TaxasResponse` | ✅ |
-| 7 | `modules/crm/controllers/enrichment_controller.py` — 3 endpoints registrados, `X-Cache` header | ✅ |
+## UC-02: CEP AutoFill (3 checks)
+- [ ] 4. Modal Novo Cliente → preencher CEP `69073488` → on blur autofila Manaus/AM
+- [ ] 5. CEP inválido (`123`) não mostra erro barulhento — silencioso
+- [ ] 6. CEP inexistente (`99999999`) mostra toast "CEP não encontrado"
 
-### Backend — Endpoints
+## UC-01: Buscar CNPJ (5 checks)
+- [ ] 7. Modal Novo Cliente → digitar CNPJ `35710481000103` → clicar "🔍 Buscar CNPJ"
+- [ ] 8. Spinner visível durante request (~500ms)
+- [ ] 9. Razão social autopreenchida: "CONECTAMAIS ELETRONICA LTDA" ou similar
+- [ ] 10. Endereço autopreenchido com dados de Manaus/AM
+- [ ] 11. CNPJ inválido (`123`) mostra erro "CNPJ deve ter 14 dígitos"
 
-| # | Check | Resultado |
-|---|-------|-----------|
-| 8 | `GET /api/v1/crm/enrichment/cnpj/35710481000103` → 200 + razao_social preenchida | ✅ |
-| 9 | `GET /api/v1/crm/enrichment/cep/69057040` → 200 + logradouro preenchido | ✅ |
-| 10 | `GET /api/v1/crm/enrichment/taxas` → 200 + selic/cdi/ipca numéricos | ✅ |
-| 11 | 2ª chamada CNPJ → `X-Cache: HIT` | ✅ |
+## Checks de regressão (R1.7)
+- [ ] 12. Dashboard Clientes = 11
+- [ ] 13. Modal Detalhes cliente: "Pequeno Porte" (não "small")
+- [ ] 14. Leads: "Convertido" (não "converted")
+- [ ] 15. Contratos: MRR R$ 272.086,96 (não NaN)
+- [ ] 16. Contratos: coluna Cliente com nomes preenchidos
 
-### Frontend — Componentes e Hooks
+---
 
-| # | Check | Resultado |
-|---|-------|-----------|
-| 12 | `src/types/crm/enrichment.ts` — interfaces TS para os 3 tipos | ✅ |
-| 13 | `src/hooks/crm/useEnrichment.ts` — `useEnrichCNPJ`, `useEnrichCEP`, `useTaxasVigentes` | ✅ |
-| 14 | `CnpjSearchButton` integrado em `cliente-form-modal.tsx` + `leads/page.tsx` | ✅ |
-| 15 | `CepAutoFill` integrado em `cliente-form-modal.tsx` (campo CEP novo) | ✅ |
-| 16 | `TaxasWidget` integrado em CRM Dashboard (`crm/page.tsx`) | ✅ |
-
-### Build e Deploy
-
-| Métrica | Valor |
-|---------|-------|
-| BUILD_ID local | conecta-pro-1776872076415 |
-| BUILD_ID container | conecta-pro-1776872076415 |
-| Pages geradas | 284 |
-| TypeScript erros (novos arquivos) | 0 |
-| Testes backend (8/8) | ✅ PASS |
-
-**CIC FINAL: 16/16 ✅**
+**GATE FASE 6:** ≥14/16 = LIBERAR | <14 = RETER

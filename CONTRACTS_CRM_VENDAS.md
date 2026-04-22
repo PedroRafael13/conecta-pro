@@ -693,6 +693,59 @@ Warning não-bloqueante de mismatch SSR/CSR. Rodada 2+.
 | 6 | Cache Redis com dado ruim antes de corrigir schema | Retorna dado inválido mesmo após fix | Fix: `r.delete('brasilapi:cnpj:...')` manual |
 | 7 | Taxa nomes capitalizados na API: 'Selic', 'CDI', 'IPCA' | `_find()` com `.lower()` necessário | Fix: comparação case-insensitive |
 
+---
+
+## §29 — Integrações Externas (BrasilAPI — Arquitetura)
+
+> STEP 7 NOVO — adicionado em CPRO11-R2 (2026-04-22). O §22 original trata do protocolo
+> de terminais paralelos; este §29 documenta a arquitetura da integração BrasilAPI.
+
+### §29.1 Visão Geral
+
+| Item | Valor |
+|------|-------|
+| API externa | BrasilAPI (https://brasilapi.com.br) |
+| Custo | Zero (público) |
+| Autenticação | Nenhuma |
+| Rate limit | ~180 req/min |
+| Padrão | Backend proxy — frontend NUNCA consome BrasilAPI diretamente |
+
+### §29.2 Endpoints Utilizados
+
+| Endpoint BrasilAPI | TTL Cache | Uso |
+|--------------------|-----------|-----|
+| `GET /api/cnpj/v1/{cnpj}` | 30 dias | UC-01: enrich cliente/lead |
+| `GET /api/cep/v2/{cep}` | 365 dias | UC-02: autofill endereço |
+| `GET /api/taxas/v1` | 6 horas | UC-03: widget Selic/CDI/IPCA |
+
+### §29.3 Camadas de Resiliência
+
+```
+Request → Circuit Breaker (5 falhas/60s → open 120s)
+        → Redis Cache (lookup antes de chamar BrasilAPI)
+        → httpx AsyncClient (timeout=5s, retry 2x, backoff 1s/2s)
+        → BrasilAPI
+        → [se timeout/5xx] → ViaCEP fallback (CEP apenas)
+```
+
+### §29.4 Path dos Módulos
+
+| Camada | Path |
+|--------|------|
+| Client/Cache/CB/Schemas | `backend/modules/integrations/brasilapi/` |
+| Endpoints REST | `backend/modules/crm/controllers/enrichment_controller.py` |
+| Response schemas | `backend/modules/crm/schemas/enrichment.py` |
+| React Query hooks | `frontend/src/hooks/crm/useEnrichment.ts` |
+| TypeScript types | `frontend/src/types/crm/enrichment.ts` |
+| Componentes UI | `frontend/src/components/crm/{CnpjSearchButton,CepAutoFill,TaxasWidget}.tsx` |
+
+### §29.5 Observabilidade
+
+- `X-Cache: HIT|MISS` header em todos os endpoints de enriquecimento
+- Campo `cache_hit: boolean` no body de resposta
+- Taxas reais medidas em produção (2026-04-22): Selic 14.75%, CDI 14.65%, IPCA 4.14%
+- Latência BrasilAPI ao vivo (da VPS): ~97ms. Latência cache Redis: ~9ms
+
 **FIM DO CONTRATO v1.9**
 
 > "Não se acomode. Sempre eleve. Quando errar, admita rápido. Quando descobrir
