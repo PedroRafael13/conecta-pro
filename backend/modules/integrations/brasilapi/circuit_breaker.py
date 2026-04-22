@@ -1,12 +1,12 @@
 """Minimal in-memory circuit breaker for BrasilAPI."""
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class _State:
-    failures: int = 0
+    failure_times: list = field(default_factory=list)
     opened_at: float = 0.0
 
 
@@ -42,9 +42,12 @@ class CircuitBreaker:
 
     def record_failure(self, key: str) -> None:
         s = self._state.setdefault(key, _State())
-        s.failures += 1
-        if s.failures >= self._threshold:
-            s.opened_at = time.monotonic()
+        now = time.monotonic()
+        # Trim failures outside the sliding window
+        s.failure_times = [t for t in s.failure_times if now - t <= self._window]
+        s.failure_times.append(now)
+        if len(s.failure_times) >= self._threshold:
+            s.opened_at = now
 
 
 # Singleton

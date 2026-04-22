@@ -1,6 +1,6 @@
 # CONTRATO CRM / VENDAS — Conecta PRO
-**Versão:** v1.8
-**Data:** 2026-04-21
+**Versão:** v1.9
+**Data:** 2026-04-22
 **Mantenedor:** Opus CPRO 11
 **Escopo:** Menu "Negócios" → CRM / Vendas (tudo que vive em `modules/crm/` no backend e `frontend/src/app/modulos/crm/`)
 **Fora de escopo:** Marketing, Licitações (sprints futuras)

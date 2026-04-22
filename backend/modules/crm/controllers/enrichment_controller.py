@@ -57,7 +57,9 @@ async def enrich_cnpj(
         cnaes_secundarios=cnaes_sec,
         qsa=[m.model_dump() for m in data.qsa],
         capital_social=data.capital_social,
-        situacao=data.descricao_situacao_cadastral or data.situacao_cadastral,
+        situacao=str(data.descricao_situacao_cadastral or data.situacao_cadastral)
+        if (data.descricao_situacao_cadastral or data.situacao_cadastral) is not None
+        else None,
         endereco={
             "logradouro": data.logradouro,
             "numero": data.numero,

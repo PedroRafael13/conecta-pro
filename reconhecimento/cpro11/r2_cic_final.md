@@ -1,6 +1,8 @@
 # CIC E2E — Rodada 2 BrasilAPI
 **Data:** 2026-04-22 — Aguardando validação browser por Opus/Jordan
-**Hard-refresh obrigatório:** Ctrl+Shift+R em https://erp.conectamais.pro/
+
+## Pré-requisito
+Hard-refresh (Ctrl+Shift+R) em https://erp.conectamais.pro/
 
 ---
 
