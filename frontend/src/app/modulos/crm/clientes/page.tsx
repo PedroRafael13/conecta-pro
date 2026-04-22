@@ -83,7 +83,12 @@ export default function ClientesPage() {
   const stats = {
     total: allClients.length,
     ativos: allClients.filter((c: any) => ['active', 'ativo'].includes(c.status)).length,
-    condominios: allClients.filter((c: any) => c.client_type === 'condominio' || (c.name || c.nome || '').toLowerCase().includes('condominio')).length,
+    condominios: allClients.filter((c: any) => {
+      const name = (c.name || c.nome || '').toLowerCase();
+      return c.client_type === 'condominium' || c.client_type === 'condominio' ||
+        name.includes('condominio') || name.includes('condomínio') ||
+        (name.includes('residencial') && c.crm_origin !== 'direto');
+    }).length,
     bloqueados: allClients.filter((c: any) => ['blocked', 'bloqueado'].includes(c.status)).length,
   };
 

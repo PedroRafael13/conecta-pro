@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { customInstance } from '@/lib/api-client';
@@ -46,6 +46,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useCRMClients } from '@/hooks/crm/useCRMClients';
+
+const CONTRACT_TYPE_LABELS: Record<string, string> = {
+  recurring:   'Recorrente',
+  one_time:    'Avulso',
+  project:     'Projeto',
+  maintenance: 'Manutenção',
+};
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-800',
@@ -67,6 +75,8 @@ export default function ContratosPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(0);
   const pageSize = 20;
+
+  const { data: clientsData } = useCRMClients();
 
   const {
     data: contractsData,
@@ -123,11 +133,16 @@ export default function ContratosPage() {
   const alertCount = alerts?.total || alerts?.length || 0;
 
   const stats = {
-    total: st?.total || total,
-    ativos: st?.active || st?.ativos || contracts.filter((c: any) => c.status === 'active').length,
-    mrr: st?.mrr || st?.valor_mrr || contracts.reduce((acc: number, c: any) => acc + (c.monthly_value || c.valor_mensal || 0), 0),
+    total: st?.total_contracts || st?.total || total,
+    ativos: st?.active_contracts || st?.active || st?.ativos || contracts.filter((c: any) => c.status === 'active').length,
+    mrr: Number(st?.total_monthly_revenue) || Number(st?.mrr) || Number(st?.valor_mrr) || contracts.reduce((acc: number, c: any) => acc + (Number(c.monthly_value) || Number(c.valor_mensal) || 0), 0),
     alertas: alertCount,
   };
+
+  const clientMap = useMemo(() => {
+    const items = (clientsData as any)?.items ?? (Array.isArray(clientsData) ? clientsData : []);
+    return Object.fromEntries(items.map((c: any) => [c.id, c]));
+  }, [clientsData]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -302,10 +317,10 @@ export default function ContratosPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {item.client_name || item.cliente || item.client?.name || '-'}
+                      {item.client_name || item.client?.name || clientMap[item.client_id]?.name || item.cliente || '-'}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {item.type || item.tipo || item.contract_type || '-'}
+                      {CONTRACT_TYPE_LABELS[item.contract_type || item.type || item.tipo || ''] || item.contract_type || item.type || item.tipo || '-'}
                     </TableCell>
                     <TableCell className="text-sm font-medium">
                       {formatCurrency(item.monthly_value || item.valor_mensal || 0)}
