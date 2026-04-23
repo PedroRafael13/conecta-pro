@@ -167,7 +167,7 @@ Março 2026 preservado e idempotente ✅
 |--------|----------|------|
 | `f22a449e` | fix(gedeon): D1 onvio auth+sync — 3 bugs corrigidos, 97 docs baixados | Fix código |
 | `8d5c13ca` | docs(gedeon): CONTRACTS_GEDEON v1.37 — §38 D1 onvio auth+sync | Fix docs (STEP 4) |
-| (este) | fix(gedeon): D1 auditoria — validações completas, STEP 3.4 | Auditoria |
+| `1b072540` | fix(gedeon): D1 auditoria — validações completas, STEP 3.4 | Auditoria |
 
 ### Arquivos modificados
 

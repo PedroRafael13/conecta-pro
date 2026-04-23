@@ -2572,65 +2572,38 @@ ged_kit_documents: 83 → 552 (+469 placeholders)
 - UI de upload
 - Qualquer condomínio em outro mês
 
-## §38 — D1: ONVIO AUTH + SYNC (2026-04-22)
+## §38 — D1: ONVIO AUTH + SYNC RESTAURADO
 
-### §38.1 — Gargalo resolvido
+**Data:** 2026-04-22
+**Sprint:** D1 de 6 (destravamento de dados reais)
+**Gatilho:** D0 revelou que sync existe mas session Redis faltava
 
-A sessão Onvio estava ausente do Redis desde antes de 2026-04-22 04:01:05
-(último log de falha). Causa raiz: REDIS_URL no crontab apontava para
-127.0.0.1 (inacessível do host). Redis não expõe porta para o host —
-só acessível via IP do container na rede Docker.
+### §38.1 — Diagnóstico
 
-### §38.2 — Arquitetura de auth (confirmada)
+- `onvio_auth.py`: existente em `/opt/conecta-pro/onvio_auth.py` (360 linhas), PATH A — requests puro, sem Playwright, fluxo OIDC Auth0 6 etapas → JWT + LongToken
+- Session Redis antes: AUSENTE — `onvio:session` inexistente em Redis DB 1 (último log de falha: 2026-04-22 04:01:05, `ConnectionRefusedError` porque REDIS_URL apontava para 127.0.0.1 inacessível do host)
+- Path tomado: PATH A (arquivo existente rodado com REDIS_URL corrigido)
 
-- Script: `/opt/conecta-pro/onvio_auth.py` (PATH A — requests puro, sem Playwright)
-- Fluxo: OIDC Auth0 6 etapas → JWT + LongToken (sem MFA em 22/04)
-- Redis key: `onvio:session` (DB 1, TTL 57600s = 16h)
-- Formato: `{cookies: {...}, long_token: "...", uds_token: "...", ...}`
-- Crontab: `0 4 * * *` (renovação diária às 04:00)
+### §38.2 — Ação
 
-### §38.3 — Correções aplicadas
+Arquivo existente (`onvio_auth.py`) rodado com `REDIS_URL` corrigido para IP do container Redis (`172.18.0.14`). Script `rotinas/scripts/onvio-auth-refresh.sh` atualizado para resolver IP dinamicamente via `docker inspect`. Sessão populada após execução bem-sucedida das 6 etapas OIDC (sem MFA em 22/04/2026).
 
-| Bug | Causa | Fix |
-|-----|-------|-----|
-| Redis inacessível do host | REDIS_URL=127.0.0.1 (sem rota) | onvio-auth-refresh.sh resolve IP via docker inspect |
-| /app/uploads/onvio/ inexistente | Volume não inicializado | mkdir -p /opt/conecta-pro/uploads/onvio (chmod 777) |
-| xlsx/xlt causavam erro no sync | baixar_pdf() valida %PDF | Skip por extensão antes de download |
-| kill -HUP 1 não recarrega Python | uvicorn produção sem hot-reload | Usar docker restart após docker cp |
+### §38.3 — Resultado
 
-### §38.4 — Estado pós-D1
+- Session Redis: VÁLIDA (`long_token` presente, TTL 57600s = 16h, cookies `['did', 'auth0', 'did_compat', 'auth0_compat', 'mfa_enrolled', 'uid']`)
+- Sync 04/2026: 0 novos docs (Cenário E — Onvio ainda sem PDFs de abril; folha fecha ~dia 30)
+- Sync 03/2026: 0 novos (validação cross-check ✅ — dados preservados, idempotente)
+- Sync irrestrito: 97 novos docs, total `onvio_documents` passou de 436 → 534
+- `/opt/conecta-pro/uploads/onvio/`: 98 arquivos PDF em disco
 
-| Métrica | Antes | Depois |
-|---------|-------|--------|
-| Redis onvio:session | AUSENTE | PRESENTE (TTL ~16h) |
-| onvio_documents | 436 | 534 |
-| PDFs em disco | 0 | 98 |
-| Erros de sync | 101 | 0 |
-| 04/2026 docs | 0 | 0 (Onvio sem PDFs ainda) |
+### §38.4 — Backlog deste bloco
 
-### §38.5 — Comportamento de negócio confirmado
+- Session expira em 57600s (16h). Precisa refresh automático (→ D4 Coleta Automática); cron `0 4 * * *` já existe em `rotinas/scripts/onvio-auth-refresh.sh`
+- Fix botão "Montar Kits" endpoint errado (→ D2)
+- Casar docs Onvio sincronizados com `ged_kit_documents` placeholders (próximo bloco, não existe ainda no plano)
 
-Abril 2026: 0 documentos no Onvio API em 22/04/2026. Comportamento
-esperado — folha fechada tipicamente dia 30 do mês, PDFs aparecem no
-Onvio 1-7 dias depois. O sync mensal cron `0 7 7 * *` executará
-automaticamente em 2026-05-07 às 07:00 e capturará os PDFs de 04/2026.
+### §38.5 — Fora de escopo
 
-### §38.6 — Regra operacional (PERMANENTE)
-
-Para renovar sessão Onvio manualmente:
-```bash
-cd /opt/conecta-pro
-REDIS_PASS=$(grep REDIS_PASSWORD .env | cut -d= -f2)
-REDIS_IP=$(docker inspect conecta-pro-redis | python3 -c "import sys,json; print(list(json.load(sys.stdin)[0]['NetworkSettings']['Networks'].values())[0]['IPAddress'])")
-REDIS_URL="redis://:${REDIS_PASS}@${REDIS_IP}:6379/1" python3 onvio_auth.py
-```
-
-Para rodar sync manualmente:
-```bash
-TOKEN=$(curl -sf -X POST http://127.0.0.1:8080/api/v1/auth/login \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=jjesus@conectamais.pro&password=JsJ618908@#%" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-curl -s -X POST "http://127.0.0.1:8080/api/v1/onvio/sync?mes_ref=04.2026" \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
-```
+- MFA automation
+- Refactor OnvioSyncService
+- Cron (D4)
