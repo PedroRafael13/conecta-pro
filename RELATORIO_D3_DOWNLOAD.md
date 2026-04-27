@@ -177,7 +177,7 @@ STATUS=400 BODY={"detail":"Path de arquivo invalido"}  ✅
 
 ### 4.3 — pytest gedeon
 ```
-92/92 PASS (88 anteriores + 4 novos D3)
+94/94 PASS (88 anteriores + 6 D3: 4 HTTP + 2 DB-state)
 ```
 
 ---
@@ -195,6 +195,7 @@ STATUS=400 BODY={"detail":"Path de arquivo invalido"}  ✅
 | Commit | Hash | Tipo |
 |--------|------|------|
 | fix(ged): D3 endpoint download retorna PDF real (§40) | `db50f479` | Fix |
+| test(gedeon): D3 — todos 6 testes PASS (traversal usa requests live server) | `b4dfdc0b` | Test |
 
 ### Arquivos modificados
 
@@ -202,7 +203,7 @@ STATUS=400 BODY={"detail":"Path de arquivo invalido"}  ✅
 |---------|------|---------|
 | `frontend/src/app/modulos/gestao-pessoas/ged/kits/[id]/page.tsx` | Fix | linha 226: `/uploads/${doc.file_path}` → `/api/v1/people-management/ged/documents/${doc.id}/download` |
 | `backend/modules/people_management/ged/controllers/document_controller.py` | Fix | path traversal protection + media_type fixo |
-| `backend/tests/modules/gedeon/test_d3_download.py` | Novo | 4 testes D3 |
+| `backend/tests/modules/gedeon/test_d3_download.py` | Novo | 6 testes D3 (4 HTTP + 2 DB-state) |
 | `CONTRACTS_GEDEON.md` | Docs | v1.38 → v1.39, §40 adicionado |
 
 ---
@@ -211,7 +212,7 @@ STATUS=400 BODY={"detail":"Path de arquivo invalido"}  ✅
 
 | # | Validação | Resultado |
 |---|-----------|-----------|
-| 🔴 A | pytest gedeon ≥88 PASS (+4 D3) | ✅ **92/92 PASS** |
+| 🔴 A | pytest gedeon ≥88 PASS (+6 D3) | ✅ **94/94 PASS** |
 | 🔴 B | Download doc real: 200 + PDF binário | ✅ 121KB %PDF-1.3 |
 | 🔴 C | Download placeholder: 404 | ✅ "Documento nao possui arquivo vinculado" |
 | 🔴 D | Download sem auth: 401 (BUG 7 regressão) | ✅ |
@@ -236,9 +237,10 @@ STATUS=400 BODY={"detail":"Path de arquivo invalido"}  ✅
 | STEP 4.2b — UUID inválido → 404 | ✅ |
 | STEP 4.2c — sem auth → 401 | ✅ |
 | STEP 4.2d — path traversal → 400 | ✅ |
-| STEP 4.3 — pytest 92/92 PASS | ✅ |
+| STEP 4.3 — pytest 94/94 PASS | ✅ |
+| STEP 4.4 — 6 testes D3 (4 HTTP + 2 DB-state) | ✅ |
 | STEP 5 — §40 v1.39 commitado (`9ff16fd4`) | ✅ |
-| STEP 6 — código commitado (`db50f479`) | ✅ |
+| STEP 6 — código commitado (`db50f479` + `b4dfdc0b`) | ✅ |
 | 🔴 A-F todas PASS | ✅ |
 | Zero credenciais em logs/commits | ✅ |
 | Relatório D3 criado | ✅ |
