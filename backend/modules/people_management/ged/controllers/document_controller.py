@@ -277,7 +277,7 @@ async def download_document(
     # Path traversal protection (INV-3)
     _base = Path("/app/uploads").resolve()
     _target = Path(full_path).resolve()
-    if not str(_target).startswith(str(_base)):
+    if not _target.is_relative_to(_base):
         raise HTTPException(status_code=400, detail="Path de arquivo invalido")
 
     if not _target.exists():
