@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.38
+**Versão:** 1.39
 **Data:** 2026-04-27
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -2676,3 +2676,75 @@ MIRANTE DAS FLORES, PRIME ARENA, VILLA DOS PASSAROS, VILLA DEI FIORI, LARANJEIRA
 - Onvio docs per-employee (recibo_folha, ficha_registro): precisariam de referente_a_employee_id no parser
 - dctfweb_*, gfd_fgts_*: existem na Onvio mas sem condominio_id → não casaram em D2
 - CIC visual validação pendente (Jordan clicar botão e ver PDFs)
+
+---
+
+## §40 — D3: DOWNLOAD DE PDFs FUNCIONAL
+
+**Data:** 2026-04-27
+**Sprint:** D3 de 6
+**Gatilho:** D0 identificou bug no botão ⬇️. D2 produziu 7 kit_docs com file_path real.
+Objetivo: fazer Jordan conseguir baixar os PDFs clicando ⬇️ no Sistema B.
+
+### §40.1 — Bug identificado
+
+**H4 (principal):** Frontend (`kits/[id]/page.tsx`) chamava `/uploads/${doc.file_path}`
+diretamente em vez do endpoint de API. Como `file_path` é um caminho absoluto no
+container (`/app/uploads/onvio/...`), a URL ficava `/uploads//app/uploads/...` — inválida.
+
+**H5 (secundário):** Os 7 caminhos Onvio casados em D2 apontavam para
+`/app/uploads/onvio/outros/2026-04/` — diretório não existente em disco.
+Os PDFs físicos disponíveis eram de 2025. Criados diretórios e copiados PDFs de teste
+para validação. Quando o sync Onvio 2026 rodar, os PDFs reais substituirão esses.
+
+**Bug extra:** `GET /api/v1/ged/documents/{id}/download` rota para `modules/ged`
+(tabela `ged_documents`, documentos de gestão geral) — não para `ged_kit_documents`.
+O endpoint correto para kit_documents está em
+`GET /api/v1/people-management/ged/documents/{id}/download`.
+
+### §40.2 — Fix aplicado
+
+**Frontend (1 linha):**
+```
+ANTES:  fetch(`/uploads/${doc.file_path}`, ...)
+DEPOIS: fetch(`/api/v1/people-management/ged/documents/${doc.id}/download`, ...)
+```
+Arquivo: `frontend/src/app/modulos/gestao-pessoas/ged/kits/[id]/page.tsx`, linha 226.
+
+**Backend — path traversal protection + media_type:**
+Arquivo: `backend/modules/people_management/ged/controllers/document_controller.py`
+
+Adicionado na função `download_document()`:
+```python
+from pathlib import Path
+
+_base = Path("/app/uploads").resolve()
+_target = Path(full_path).resolve()
+if not str(_target).startswith(str(_base)):
+    raise HTTPException(status_code=400, detail="Path de arquivo invalido")
+```
+Também corrigido `media_type` para sempre `"application/pdf"` (era `doc.mime_type or "application/octet-stream"`).
+
+### §40.3 — Path traversal protection
+
+`Path.resolve()` + `startswith("/app/uploads")` — bloqueia `../../etc/passwd` e similares.
+Retorna 400, não 500 (conforme INV-3).
+
+### §40.4 — Validações
+
+| Caso | Esperado | Obtido |
+|------|----------|--------|
+| Doc com file_path real | 200 + PDF binário (%PDF-1.3, 121KB) | ✅ |
+| Placeholder (NULL) | 404 + mensagem clara | ✅ |
+| UUID inexistente | 404 | ✅ |
+| Sem auth | 401 (BUG 7 regressão) | ✅ |
+| Path traversal `../../etc/passwd` | 400 | ✅ |
+
+### §40.5 — Backlog
+
+- Upload manual de PDF via UI (D3.5 separado)
+- Preview inline (D11+)
+- ZIP do kit (D11+)
+- Sync Onvio 2026: quando rodar, sobrescrever os PDFs de teste com os reais
+- Adicionar endpoint `/api/v1/ged/kits/{kit_id}/documents/{doc_id}/download`
+  sob o prefixo `/ged` (mais RESTful) — por ora usa `/people-management/ged/...`
