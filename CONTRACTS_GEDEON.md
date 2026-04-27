@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.39
+\*\*Versão:\*\* 1.40
 **Data:** 2026-04-27
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -2745,6 +2745,62 @@ Retorna 400, não 500 (conforme INV-3).
 - Upload manual de PDF via UI (D3.5 separado)
 - Preview inline (D11+)
 - ZIP do kit (D11+)
-- Sync Onvio 2026: quando rodar, sobrescrever os PDFs de teste com os reais
+- Sync Onvio 2026: quando rodar, popular file_paths dos 7 folha_pagamento 03/2026
 - Adicionar endpoint `/api/v1/ged/kits/{kit_id}/documents/{doc_id}/download`
   sob o prefixo `/ged` (mais RESTful) — por ora usa `/people-management/ged/...`
+
+---
+
+## §40.1 — D3.1: CORREÇÃO DOS file_paths PARA PDFs REAIS
+
+**Data:** 2026-04-27
+**Sprint:** D3.1 (addendum ao D3)
+**Versão:** 1.40
+**Gatilho:** Auditoria D3 detectou que PDFs em /2026-04/ eram cópias de teste
+(conteúdo 2025), não os PDFs reais do sync D1 de 03/2026.
+
+### §40.1.1 — Diagnóstico
+
+**Cenário B confirmado:** PDFs reais de folha_pagamento 03/2026 NUNCA foram baixados.
+D1 criou os registros em `onvio_documents` com `caminho_local` apontando para
+`/app/uploads/onvio/outros/2026-04/` mas não baixou os arquivos físicos.
+D3 STEP 2C criou cópias de teste (conteúdo: Comprovante de Rendimentos 2025)
+nesses paths para validação do endpoint — não eram PDFs reais de folha.
+
+Inventário disco: 96 PDFs em `/outros/2025/` (todos Comprovante de Rendimentos),
+nenhum "Folha 03.2026_X.pdf" fora de `/2026-04/`.
+
+### §40.1.2 — Correções aplicadas (INV-5)
+
+7 `ged_kit_documents.file_path` setados para NULL (placeholder honesto):
+
+| ID | Condomínio |
+|----|------------|
+| `00fabbe6-...` | Mirante das Flores (2) |
+| `a92b06b9-...` | Ideal Flores |
+| `a049d426-...` | Laranjeiras Village |
+| `57484c54-...` | Michelangelo |
+| `8dbf8e11-...` | Prime Arena (1) |
+| `9485afe0-...` | Villa Dei Fior |
+| `c64bb7dd-...` | Villa dos Passaros |
+
+### §40.1.3 — Limpeza
+
+- 8 PDFs de teste movidos de `/uploads/onvio/.../2026-04/` para
+  `/tmp/d3_1_pdfs_teste_descartados/`
+- Diretórios `/outros/2026-04/` e `/inss_guia/2026-04/` removidos
+- `onvio_documents` (534 rows) intacto — apenas `ged_kit_documents` alterado
+
+### §40.1.4 — Validação
+
+- 7 downloads → 404 com mensagem "Documento nao possui arquivo vinculado" ✅
+- `SELECT COUNT(*) WHERE file_path LIKE '%/2026-04/%'` = 0 ✅
+- `find /uploads/onvio -name "*2026-04*"` = vazio ✅
+- pytest 94/94 PASS ✅
+
+### §40.1.5 — Backlog
+
+- Reprocessar OnvioParser para corrigir mes_ref inválidos (280 docs)
+- Aguardar próximo sync Onvio para baixar os 7 PDFs reais de 03/2026
+- Investigar se `ged_kit_documents.file_path` deveria ser FK para
+  `onvio_documents.id` (reduziria duplicação e evitaria divergência)
