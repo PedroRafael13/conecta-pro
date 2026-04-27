@@ -85,6 +85,21 @@ Cenário B: updates=[] (todos NULL — sem path pra validar em disco)
 TODOS OK — SEGURO COMITAR
 ```
 
+**STEP 2.5 — Verificação pós-UPDATE (folha_pagamento 03/2026 com file_path NOT NULL):**
+```sql
+SELECT kd.id, kd.document_type, kd.file_path,
+       EXISTS(SELECT 1 FROM pg_ls_dir('/app/uploads') WHERE 1=0) AS dummy
+FROM ged_kit_documents kd
+JOIN ged_document_kits dk ON dk.id=kd.kit_id
+WHERE dk.reference_month='2026-03-01'
+  AND kd.document_type='folha_pagamento'
+  AND kd.file_path IS NOT NULL
+```
+```
+folha_pagamento 03/2026 com file_path NOT NULL: 0 rows
+```
+→ ✅ Cenário B confirmado — todos os 7 file_paths foram zerados corretamente.
+
 **STEP 2 — Tabela de UPDATEs:**
 
 | ID | Tipo | file_path ANTES | file_path DEPOIS |
@@ -154,25 +169,50 @@ find /uploads/onvio -name "*2026-04*" → (vazio) ✅
 
 ## 5. STEP 4 — Validação E2E
 
-### 4.1 — Download dos 7 docs (esperado: 404 placeholder)
+### 4.1 — Download dos 7 docs (curl %{http_code}|%{size_download}|%{content_type})
 
-| Doc ID | Status | Resultado |
-|--------|--------|-----------|
-| `00fabbe6-...` | 404 | ✅ |
-| `a92b06b9-...` | 404 | ✅ |
-| `a049d426-...` | 404 | ✅ |
-| `57484c54-...` | 404 | ✅ |
-| `8dbf8e11-...` | 404 | ✅ |
-| `9485afe0-...` | 404 | ✅ |
-| `c64bb7dd-...` | 404 | ✅ |
+```bash
+for DOC in ${DOCS[@]}; do
+  curl -s -o /dev/null -w "%{http_code}|%{size_download}|%{content_type}" \
+    -H "Authorization: Bearer $TOKEN" \
+    "http://127.0.0.1:8080/api/v1/people-management/ged/documents/${DOC}/download"
+done
+```
 
-### 4.2 — onvio_documents intacto
+| Doc ID | http_code | size_download | content_type |
+|--------|-----------|---------------|--------------|
+| `00fabbe6-...` | 404 | 51 | application/json |
+| `a92b06b9-...` | 404 | 51 | application/json |
+| `a049d426-...` | 404 | 51 | application/json |
+| `57484c54-...` | 404 | 51 | application/json |
+| `8dbf8e11-...` | 404 | 51 | application/json |
+| `9485afe0-...` | 404 | 51 | application/json |
+| `c64bb7dd-...` | 404 | 51 | application/json |
+
+✅ Todos 7 retornam 404 + JSON (51 bytes = `{"detail":"Documento nao possui arquivo vinculado"}`)
+
+### 4.2 — Loop de tamanho (folha_pagamento 03/2026 com path Onvio)
+
+```sql
+SELECT kd.id, kd.document_type, kd.file_path
+FROM ged_kit_documents kd
+JOIN ged_document_kits dk ON dk.id=kd.kit_id
+WHERE dk.reference_month='2026-03-01'
+  AND kd.document_type='folha_pagamento'
+  AND kd.file_path LIKE '/app/uploads/onvio/%'
+```
+```
+folha_pagamento 03/2026 com path Onvio: 0 rows
+```
+→ ✅ N/A — nenhum doc com path Onvio em disco (Cenário B)
+
+### 4.3 — onvio_documents intacto
 
 ```
 SELECT COUNT(*) FROM onvio_documents → 534 ✅
 ```
 
-### 4.3 — pytest gedeon
+### 4.4 — pytest gedeon
 
 ```
 94/94 PASS ✅
@@ -185,11 +225,13 @@ Testes atualizados para refletir estado pós-D3.1:
 
 ---
 
-## 6. STEP 5 — §40.1 v1.40 Commitado
+## 6. STEP 5 + STEP 6 — §40.1 v1.40 Commitado
 
 | Commit | Hash | Tipo |
 |--------|------|------|
+| fix(gedeon): D3.1 — file_paths Onvio zerados + testes atualizados (§40.1) | `b17d795a` | Fix |
 | docs(gedeon): CONTRATO v1.40 — §40.1 D3.1 correção file_paths | `4e42d4da` | Docs |
+| docs(gedeon): D3.1 relatório correção file_paths (§40.1) | `e4ceef48` | Docs |
 
 ---
 
@@ -223,7 +265,10 @@ Testes atualizados para refletir estado pós-D3.1:
 | STEP 4 — onvio_documents intacto (534) | ✅ |
 | STEP 4 — pytest 94/94 PASS | ✅ |
 | 🔴 G — trilogia A/B/C: 32 templates, 320 presenças, 10 kits, 552 docs 04/2026, 8 certidões | ✅ |
-| STEP 5 — §40.1 v1.40 commitado (`4e42d4da`) | ✅ |
+| STEP 2.5 — query explícita: 0 folha_pagamento 03/2026 com file_path NOT NULL | ✅ |
+| STEP 4.1 — curl loop com %{http_code}\|%{size_download}\|%{content_type} | ✅ |
+| STEP 4.2 — loop size: 0 docs com path Onvio em disco (Cenário B N/A) | ✅ |
+| STEP 5 — fix commitado (`b17d795a`) + contrato (`4e42d4da`) + relatório (`e4ceef48`) | ✅ |
 | 🔴 A-G todas PASS | ✅ |
 | Zero código alterado (controllers, services, models, frontend) | ✅ |
 
