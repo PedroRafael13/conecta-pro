@@ -7,6 +7,7 @@ upload manual, assinatura digital, download e listagem.
 
 import logging
 import os
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -273,10 +274,16 @@ async def download_document(
     if not os.path.isabs(doc.file_path):
         full_path = os.path.join(GED_STORAGE_BASE, doc.file_path)
 
-    if not os.path.exists(full_path):
+    # Path traversal protection (INV-3)
+    _base = Path("/app/uploads").resolve()
+    _target = Path(full_path).resolve()
+    if not str(_target).startswith(str(_base)):
+        raise HTTPException(status_code=400, detail="Path de arquivo invalido")
+
+    if not _target.exists():
         raise HTTPException(
             status_code=404,
-            detail=f"Arquivo nao encontrado no storage: {doc.file_path}",
+            detail=f"PDF nao encontrado em disco: {Path(full_path).name}",
         )
 
     # Registrar log de acesso
@@ -294,9 +301,9 @@ async def download_document(
     await db.commit()
 
     return FileResponse(
-        path=full_path,
+        path=str(_target),
         filename=os.path.basename(full_path),
-        media_type=doc.mime_type or "application/octet-stream",
+        media_type="application/pdf",
     )
 
 

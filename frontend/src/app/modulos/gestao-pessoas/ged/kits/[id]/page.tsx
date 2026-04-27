@@ -223,7 +223,7 @@ export default function KitDetailPage() {
   async function handleDownloadDoc(doc: KitDocument) {
     if (!doc.file_path) { showToast('Arquivo não disponível', 'error'); return; }
     try {
-      const res = await fetch(`/uploads/${doc.file_path}`, { headers: getAuthHeaders() });
+      const res = await fetch(`/api/v1/people-management/ged/documents/${doc.id}/download`, { headers: getAuthHeaders() });
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
