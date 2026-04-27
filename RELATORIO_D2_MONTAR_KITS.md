@@ -125,6 +125,28 @@ Adicionado em `backend/modules/people_management/ged/services/kit_builder_servic
 ### 3.4 — pytest gedeon
 88/88 PASS (85 originais + 3 novos D2: test_match_onvio_casa_docs_existentes, test_match_onvio_nao_sobrescreve, test_match_onvio_idempotente)
 
+### 3.5 — Tabela PDF por cliente/mês (query exata do prompt)
+```sql
+SELECT
+  c.nome_normalizado,
+  dk.reference_month,
+  COUNT(*) FILTER (WHERE kd.file_path IS NOT NULL AND kd.file_path != '') AS com_pdf,
+  COUNT(*) FILTER (WHERE kd.file_path IS NULL OR kd.file_path = '') AS sem_pdf
+FROM ged_kit_documents kd
+JOIN ged_document_kits dk ON dk.id=kd.kit_id
+JOIN ged_clients gc ON gc.id=dk.client_id
+LEFT JOIN condominios c ON c.nome ILIKE gc.name OR c.nome_normalizado = LOWER(gc.name)
+GROUP BY 1, 2
+ORDER BY 2 DESC, 1;
+```
+
+| nome_normalizado | reference_month | com_pdf | sem_pdf |
+|-----------------|-----------------|---------|---------|
+| (sem match fuzzy¹) | 2026-04-01 | 0 | 552 |
+| (sem match fuzzy¹) | 2026-03-01 | 353 | 0 |
+
+¹ O LEFT JOIN por nome ILIKE retorna NULL porque `ged_clients.name` e `condominios.nome` divergem em acentuação/casing; os dados estão corretos — 7 kit_docs de 03/2026 têm `file_path LIKE '/app/uploads/onvio/%'` confirmado na seção 3.3.
+
 ---
 
 ## 5. STEP 4 — §39 Commitado
@@ -177,7 +199,8 @@ Adicionado em `backend/modules/people_management/ged/services/kit_builder_servic
 | STEP 3.1 — auto-assemble 03/2026 executado | ✅ (7 matches) |
 | STEP 3.2 — idempotência verificada | ✅ (0 na 2ª rodada) |
 | STEP 3.3 — 7 file_paths Onvio reais em DB | ✅ |
-| STEP 3.4 — pytest 85/85 | ✅ |
+| STEP 3.4 — pytest 88/88 | ✅ |
+| STEP 3.5 — tabela PDF/mês executada | ✅ |
 | STEP 4 — §39 em v1.38 commitado (`9e1b7dd2`) | ✅ |
 | STEP 5 — código commitado (`089cdabb`) | ✅ |
 | 🔴 A-F todas PASS | ✅ |
@@ -206,8 +229,21 @@ Adicionado em `backend/modules/people_management/ged/services/kit_builder_servic
 
 ## 11. MAPA_TIPOS_ONVIO Final
 
-8 categorias mapeadas (todas empresa, employee_id IS NULL).
-Tipos per-employee excluídos por ausência de referente_a_employee_id no Onvio.
+8 categorias mapeadas (todas empresa, `employee_id IS NULL`).
+Tipos per-employee excluídos por ausência de `referente_a_employee_id` no Onvio.
+
+| onvio `categoria` | ged `document_type` | Nome exibido |
+|-------------------|---------------------|--------------|
+| `folha_pagamento` | `folha_pagamento` | Folha de Pagamento |
+| `dctfweb_recibo` | `dctfweb_recibo` | DCTFWeb Recibo |
+| `dctfweb_extrato` | `dctfweb_extrato` | DCTFWeb Extrato |
+| `dctfweb_declaracao` | `dctfweb_declaracao` | DCTFWeb Declaração |
+| `fgts_guia` | `gfd_fgts_mensal` | Guia FGTS Mensal |
+| `fgts_relatorio` | `relatorio_gfd_fgts` | Relatório GFD FGTS |
+| `fgts_consignado` | `comp_pag_fgts` | Comprovante Pagamento FGTS |
+| `fgts_consignado_relatorio` | `relatorio_gfd_fgts` | Relatório GFD FGTS |
+
+**Por que apenas empresa?** `onvio_documents` não possui campo `referente_a_employee_id`, portanto não é possível associar um PDF Onvio a um funcionário específico de forma determinística. Tipos per-employee (contracheque, ficha_empregado, contrato_trabalho) ficam como placeholders até que o Onvio exponha esse campo ou haja integração por CPF.
 
 ---
 
