@@ -123,7 +123,7 @@ Adicionado em `backend/modules/people_management/ged/services/kit_builder_servic
 | RESIDENCIAL LARANJEIRAS VILLAGE | folha_pagamento | `/app/uploads/onvio/outros/2026-04/Folha 03.2026_Laranjeiras Village.pdf` |
 
 ### 3.4 — pytest gedeon
-85/85 PASS (2 asserções atualizadas para acomodar kits 03/2026 criados pelo D2)
+88/88 PASS (85 originais + 3 novos D2: test_match_onvio_casa_docs_existentes, test_match_onvio_nao_sobrescreve, test_match_onvio_idempotente)
 
 ---
 
@@ -157,7 +157,7 @@ Adicionado em `backend/modules/people_management/ged/services/kit_builder_servic
 
 | # | Validação | Resultado |
 |---|-----------|-----------|
-| 🔴 A | pytest gedeon ≥85 PASS | ✅ **85/85 PASS** |
+| 🔴 A | pytest gedeon ≥85 PASS | ✅ **88/88 PASS** (+3 novos testes D2) |
 | 🔴 B | GET /api/v1/ged/kits sem erro | ✅ total=18, status OK |
 | 🔴 C | kits 04/2026 não duplicados (count=10) | ✅ count=10 |
 | 🔴 D | ged_kit_documents.file_path preenchido > 0 | ✅ 7 com path Onvio real |
