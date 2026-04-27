@@ -1,6 +1,6 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.37
-**Data:** 2026-04-22
+**Versão:** 1.38
+**Data:** 2026-04-27
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
@@ -2607,3 +2607,72 @@ Arquivo existente (`onvio_auth.py`) rodado com `REDIS_URL` corrigido para IP do 
 - MFA automation
 - Refactor OnvioSyncService
 - Cron (D4)
+
+## §39 — D2: BOTÃO "MONTAR KITS" CONECTADO + MATCHING ONVIO
+
+**Data:** 2026-04-27
+**Sprint:** D2 de 6
+**Gatilho:** D0 identificou bug (endpoint errado). D1 destravou dados. D2 conecta os pontos.
+
+### §39.1 — Fix Frontend
+
+Arquivo: `frontend/src/app/modulos/gestao-pessoas/ged/page.tsx`, linha 131
+```
+ANTES:  fetch(`${API_BASE}/kits/montar`, ...)
+DEPOIS: fetch(`${API_BASE}/auto-assemble`, ...)
+```
+Fix de 1 linha. `/kits/montar` criava shells vazios (INSERT UUID sem documentos).
+`/auto-assemble` chama `KitBuilderService.auto_build_all_kits()` com matching Onvio.
+
+### §39.2 — Matching Onvio (PATH 2B)
+
+`KitBuilderService` NÃO tinha matching com onvio_documents (BLOCO A era sobre modelo, não ingestão).
+
+Adicionado método `_match_onvio_docs(kit_id, client_name, reference_month)` em
+`backend/modules/people_management/ged/services/kit_builder_service.py`.
+
+Chamado automaticamente ao final de `build_kit_for_client()`:
+1. Fuzzy match nome ged_client → condominios (subset check — mesmo padrão de `get_employees_for_client`)
+2. Consulta onvio_documents via `condominio_id + mes_ref + categoria`
+3. Atualiza placeholder existente (NULL ou path fake `documents/...`) com caminho real `/app/uploads/onvio/...`
+4. Se não existe placeholder: cria novo kit_document (INSERT) com caminho real
+5. Idempotente: skip se já existe kit_doc com path real `/app/...` para o tipo
+
+### §39.3 — MAPA_TIPOS_ONVIO (categoria Onvio → document_type kit)
+
+Restrito a documentos de empresa (employee_id IS NULL):
+
+| Onvio categoria | Kit document_type |
+|-----------------|-------------------|
+| folha_pagamento | folha_pagamento |
+| dctfweb_recibo | dctfweb_recibo |
+| dctfweb_extrato | dctfweb_extrato |
+| dctfweb_declaracao | dctfweb_declaracao |
+| fgts_guia | gfd_fgts_mensal |
+| fgts_relatorio | relatorio_gfd_fgts |
+| fgts_consignado | comp_pag_fgts |
+| fgts_consignado_relatorio | relatorio_gfd_fgts |
+
+Tipos per-employee (recibo_folha, ficha_registro, contrato_trabalho) excluídos:
+onvio_documents não têm referente_a_employee_id para casar 1:1 com funcionários.
+
+### §39.4 — Resultado
+
+| Métrica | Antes | Depois |
+|---------|-------|--------|
+| ged_kit_documents com path Onvio real | 0 | 7 |
+| kits 04/2026 intactos | 10 | 10 ✅ |
+| kits 03/2026 (criados D2) | 0 | 8 |
+| pytest gedeon | 85/85 | 85/85 ✅ |
+| BUILD_ID frontend | batendo | batendo ✅ |
+
+7 folha_pagamento de 03/2026 casados: 1 por condomínio (MICHELANGELO, IDEAL FLORES,
+MIRANTE DAS FLORES, PRIME ARENA, VILLA DOS PASSAROS, VILLA DEI FIORI, LARANJEIRAS).
+
+### §39.5 — Backlog deste bloco
+
+- Tipos Onvio sem condominio_id (283 docs): parser v2 não extraiu condomínio → backlog reprocessamento
+- mes_ref inválido (None, "2025", "2026"): ~155 docs não casam — parser v2 backlog
+- Onvio docs per-employee (recibo_folha, ficha_registro): precisariam de referente_a_employee_id no parser
+- dctfweb_*, gfd_fgts_*: existem na Onvio mas sem condominio_id → não casaram em D2
+- CIC visual validação pendente (Jordan clicar botão e ver PDFs)
