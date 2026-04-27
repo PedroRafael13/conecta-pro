@@ -128,7 +128,7 @@ export default function GEDDashboardPage() {
   async function handleAutoAssemble() {
     try {
       showToast('Montando kits...');
-      const res = await fetch(`${API_BASE}/kits/montar`, {
+      const res = await fetch(`${API_BASE}/auto-assemble`, {
         method: 'POST',
         headers: getAuthHeaders(),
       });

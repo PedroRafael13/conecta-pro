@@ -18,6 +18,51 @@ from modules.people_management.ged.models.kit_document import DocumentType, KitD
 
 logger = logging.getLogger(__name__)
 
+# Mapa de conversão: categoria onvio_documents → document_type ged_kit_documents
+# Restrito a documentos de EMPRESA (employee_id IS NULL) — D2 auditoria 2026-04-27
+# Tipos per-employee (recibo_folha, ficha_registro, contrato_trabalho) excluídos:
+# não temos referente_a_employee_id nos onvio_documents para casar 1:1 com funcionários.
+MAPA_TIPOS_ONVIO: dict[str, str] = {
+    "folha_pagamento": "folha_pagamento",
+    "dctfweb_recibo": "dctfweb_recibo",
+    "dctfweb_extrato": "dctfweb_extrato",
+    "dctfweb_declaracao": "dctfweb_declaracao",
+    "fgts_guia": "gfd_fgts_mensal",
+    "fgts_relatorio": "relatorio_gfd_fgts",
+    "fgts_consignado": "comp_pag_fgts",
+    "fgts_consignado_relatorio": "relatorio_gfd_fgts",
+}
+
+# Nomes de exibição para docs criados via Onvio matching
+_NOMES_DOCS_ONVIO: dict[str, str] = {
+    "folha_pagamento": "Folha de Pagamento",
+    "dctfweb_recibo": "DCTFWeb Recibo",
+    "dctfweb_extrato": "DCTFWeb Extrato",
+    "dctfweb_declaracao": "DCTFWeb Declaração",
+    "gfd_fgts_mensal": "Guia FGTS Mensal",
+    "relatorio_gfd_fgts": "Relatório GFD FGTS",
+    "comp_pag_fgts": "Comprovante Pagamento FGTS",
+}
+
+# Stop words ignoradas no fuzzy match de nomes de clientes/condomínios
+_STOP_WORDS_MATCH = {
+    "CONDOMINIO",
+    "CONDOMINIUM",
+    "RESIDENCIAL",
+    "EDIFICIO",
+    "PREDIAL",
+    "VILLAGE",
+    "DO",
+    "DA",
+    "DE",
+    "DOS",
+    "DAS",
+    "E",
+    "O",
+    "A",
+    "EM",
+}
+
 # Tipos de documento esperados por funcionario em um kit mensal
 EMPLOYEE_DOCUMENT_TYPES = [
     DocumentType.CONTRACHEQUE,
@@ -148,11 +193,15 @@ class KitBuilderService:
 
         total_collected = sum(v for k, v in collected.items() if k != "errors")
 
+        # Casar placeholders com PDFs reais do Onvio (conservador: só NULL, só empresa)
+        onvio_matched = await self._match_onvio_docs(str(kit.id), client.name, ref)
+
         logger.info(
-            "Kit montado para %s [%s]: %d docs coletados (%d funcionarios)",
+            "Kit montado para %s [%s]: %d docs coletados, %d casados Onvio (%d funcionarios)",
             client.name,
             ref.strftime("%m/%Y"),
             total_collected,
+            onvio_matched,
             len(employee_ids),
         )
 
@@ -165,6 +214,7 @@ class KitBuilderService:
             "total_documents": kit.total_documents,
             "completion_percentage": float(kit.completion_percentage),
             "collected": collected,
+            "onvio_matched": onvio_matched,
         }
 
     async def collect_payslips(
@@ -469,6 +519,7 @@ class KitBuilderService:
             "kits_created": 0,
             "kits_updated": 0,
             "total_documents": 0,
+            "onvio_matched": 0,
             "errors": [],
         }
 
@@ -486,6 +537,7 @@ class KitBuilderService:
                     results["total_documents"] += build_result["total_documents"]
                 else:
                     results["kits_updated"] += 1
+                results["onvio_matched"] += build_result.get("onvio_matched", 0)
 
             except Exception as e:
                 logger.error("Erro ao montar kit para cliente %s: %s", client.name, e)
@@ -505,6 +557,131 @@ class KitBuilderService:
         )
 
         return results
+
+    async def _match_onvio_docs(self, kit_id: str, client_name: str, reference_month: date) -> int:
+        """Casa kit_documents de empresa com PDFs do Onvio já sincronizados.
+
+        Para cada tipo em MAPA_TIPOS_ONVIO:
+        1. Atualiza placeholder existente (file_path IS NULL ou path fake) → caminho real
+        2. Se não existe placeholder deste tipo, cria novo kit_document com o caminho real
+
+        Regras (INV-6):
+        - Só docs de empresa (employee_id IS NULL)
+        - Nunca sobrescreve file_path que começa com '/app/' ou 'http' (real/externo)
+        - Matching condomínio via palavras significativas do nome do cliente GED
+
+        Returns: quantidade de file_paths preenchidos (updates + inserts).
+        """
+        mes_ref = reference_month.strftime("%m.%Y")
+
+        def _normalize(s: str) -> str:
+            nfkd = unicodedata.normalize("NFKD", (s or "").upper())
+            return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+        def _sig(s: str) -> set[str]:
+            return {w for w in _normalize(s).split() if w not in _STOP_WORDS_MATCH and len(w) >= 3}
+
+        ged_sig = _sig(client_name)
+        if not ged_sig:
+            return 0
+
+        # Encontrar condomínios com interseção de palavras significativas
+        cond_result = await self.db.execute(text("SELECT id::text, nome FROM condominios WHERE ativo = true"))
+        matching_cond_ids: list[str] = []
+        for cond_id, cond_nome in cond_result.all():
+            cond_sig = _sig(cond_nome or "")
+            # Subset check (igual a get_employees_for_client): um conjunto deve
+            # ser subconjunto do outro para evitar falsos positivos por palavras comuns
+            if cond_sig and (cond_sig <= ged_sig or ged_sig <= cond_sig):
+                matching_cond_ids.append(cond_id)
+
+        if not matching_cond_ids:
+            logger.debug("_match_onvio_docs: nenhum condomínio para '%s'", client_name)
+            return 0
+
+        count = 0
+        for onvio_cat, kit_doc_type in MAPA_TIPOS_ONVIO.items():
+            # Melhor doc Onvio para este condomínio/mês/categoria
+            onvio_row = await self.db.execute(
+                text("""
+                    SELECT caminho_local FROM onvio_documents
+                    WHERE condominio_id = ANY(CAST(:ids AS uuid[]))
+                      AND mes_ref = :mes_ref
+                      AND categoria = :cat
+                      AND caminho_local IS NOT NULL
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """),
+                {"ids": matching_cond_ids, "mes_ref": mes_ref, "cat": onvio_cat},
+            )
+            row = onvio_row.first()
+            if not row:
+                continue
+
+            caminho = row[0]
+
+            # Tentar atualizar placeholder existente (NULL ou path fake)
+            updated = await self.db.execute(
+                text("""
+                    UPDATE ged_kit_documents
+                    SET file_path = :path,
+                        source_module = 'gedeon',
+                        updated_at = NOW()
+                    WHERE kit_id = :kit_id
+                      AND document_type = :doc_type
+                      AND employee_id IS NULL
+                      AND (
+                        file_path IS NULL
+                        OR (file_path NOT LIKE '/app/%' AND file_path NOT LIKE 'http%')
+                      )
+                """),
+                {"path": caminho, "kit_id": kit_id, "doc_type": kit_doc_type},
+            )
+
+            if updated.rowcount > 0:
+                count += updated.rowcount
+            else:
+                # Checar se já existe kit_doc com path real para este tipo (idempotência)
+                already = await self.db.execute(
+                    text("""
+                        SELECT 1 FROM ged_kit_documents
+                        WHERE kit_id = :kit_id
+                          AND document_type = :doc_type
+                          AND employee_id IS NULL
+                          AND (file_path LIKE '/app/%' OR file_path LIKE 'http%')
+                        LIMIT 1
+                    """),
+                    {"kit_id": kit_id, "doc_type": kit_doc_type},
+                )
+                if already.first():
+                    continue
+
+                # Criar novo kit_document com path real do Onvio
+                nome = _NOMES_DOCS_ONVIO.get(kit_doc_type, kit_doc_type)
+                new_doc = KitDocument(
+                    kit_id=kit_id,
+                    employee_id=None,
+                    document_type=kit_doc_type,
+                    document_name=f"{nome} {reference_month.strftime('%m/%Y')}",
+                    file_path=caminho,
+                    mime_type="application/pdf",
+                    source_module="gedeon",
+                    auto_generated=True,
+                    is_signed=False,
+                )
+                self.db.add(new_doc)
+                count += 1
+
+        if count > 0:
+            await self.db.flush()
+            logger.info(
+                "_match_onvio_docs: %d doc(s) Onvio casados (kit=%s mes=%s cliente='%s')",
+                count,
+                kit_id,
+                mes_ref,
+                client_name,
+            )
+        return count
 
     async def get_employees_for_client(self, client_id: str) -> list[str]:
         """Busca IDs dos funcionarios alocados nos postos de um cliente GED.

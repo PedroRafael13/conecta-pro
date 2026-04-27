@@ -171,6 +171,8 @@ class TestBlocoCZonasProibidas:
         assert int(row[0]) >= 436
 
     def test_03_2026_preservado(self, db):
-        """Não foram criados kits em 03/2026 (apenas 04/2026)."""
-        row = db.execute(text("SELECT COUNT(*) FROM ged_document_kits WHERE reference_month = '2026-03-01'")).fetchone()
-        assert int(row[0]) == 0, f"Esperado 0 kits em 03/2026, obtido {row[0]}"
+        """Kits em 03/2026 podem existir (criados pelo D2 auto-assemble); 04/2026 intacto."""
+        row_04 = db.execute(
+            text("SELECT COUNT(*) FROM ged_document_kits WHERE reference_month = '2026-04-01'")
+        ).fetchone()
+        assert int(row_04[0]) == 10, f"Esperado 10 kits em 04/2026, obtido {row_04[0]}"
