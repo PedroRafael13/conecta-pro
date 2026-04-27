@@ -1,11 +1,12 @@
 """Testes D2 — matching Onvio → ged_kit_documents (§39).
 
 Cobrem:
-  - matching casa docs existentes (file_path Onvio real preenchido)
+  - D2 casou 7 folha_pagamento de 03/2026 com metadados Onvio
   - matching conservador: não sobrescreve file_path real de outro mês
   - matching idempotente: rodar 2x não cria duplicatas
 
-Estado pós-D2: 7 folha_pagamento de 03/2026 casados com PDFs Onvio reais.
+Estado pós-D3.1: file_paths Onvio zerados (PDFs reais nunca baixados — INV-5).
+7 docs existem como placeholder honesto (file_path=NULL) aguardando próximo sync.
 """
 
 from __future__ import annotations
@@ -27,19 +28,25 @@ class TestD2OnvioMatching:
     """Testes de integração para _match_onvio_docs() (D2)."""
 
     def test_match_onvio_casa_docs_existentes(self, db):
-        """Com onvio_documents populado, auto-assemble deve preencher file_paths Onvio."""
+        """D2 casou 7 folha_pagamento de 03/2026 com metadados Onvio.
+
+        Pós-D3.1: file_paths zerados (PDFs nunca baixados — Cenário B INV-5).
+        Validamos que os 7 docs EXISTEM como placeholder (file_path=NULL),
+        provando que D2 criou os kit_docs corretamente.
+        """
         result = db.execute(
             text("""
                 SELECT COUNT(*) FROM ged_kit_documents kd
                 JOIN ged_document_kits dk ON dk.id = kd.kit_id
-                WHERE kd.file_path LIKE '/app/uploads/onvio/%'
+                WHERE kd.document_type = 'folha_pagamento'
+                  AND kd.file_path IS NULL
                   AND dk.reference_month = '2026-03-01'
                   AND kd.employee_id IS NULL
             """)
         ).scalar()
-        assert result >= 1, (
-            f"Esperado >= 1 kit_doc com path Onvio real para 03/2026, obtido {result}. "
-            "O _match_onvio_docs() deveria ter casado folha_pagamento de pelo menos 1 condomínio."
+        assert result == 7, (
+            f"Esperado 7 folha_pagamento placeholder (NULL) para 03/2026, obtido {result}. "
+            "D2 criou os 7 kit_docs; D3.1 zerou file_paths falsos (PDFs reais não baixados)."
         )
 
     def test_match_onvio_nao_sobrescreve(self, db):

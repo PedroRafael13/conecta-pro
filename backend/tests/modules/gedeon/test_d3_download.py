@@ -59,16 +59,44 @@ def client_auth(app_production):
     app_production.dependency_overrides.clear()
 
 
+_TEST_REAL_DOC_ID = "ffff0001-0001-0000-0000-000000000001"
+_REAL_PDF_PATH = (
+    "/app/uploads/ged/historico/52958919-0a15-4e4f-806d-be3c75e5951b/2025-01/40756c97_Folha de Pagamento.pdf"
+)
+
+
 @pytest.fixture(scope="module")
 def real_doc_id() -> str:
-    """ID de kit_doc com file_path Onvio real (/app/uploads/onvio/...)."""
+    """Kit_doc temporário apontando pro PDF histórico real em disco.
+
+    Após D3.1 os paths Onvio foram zerados (PDFs nunca baixados).
+    Usa PDF do histórico GED que existe independente do sync Onvio.
+    """
     db = SyncSessionLocal()
-    row = db.execute(
-        text("SELECT id FROM ged_kit_documents WHERE file_path LIKE '/app/uploads/onvio/%' LIMIT 1")
-    ).fetchone()
-    db.close()
-    assert row, "Nenhum kit_doc com path Onvio real — D2 deve ter rodado antes de D3"
-    return str(row[0])
+    try:
+        db.execute(
+            text("""
+                INSERT INTO ged_kit_documents
+                  (id, kit_id, document_type, document_name, file_path,
+                   source_module, is_signed, auto_generated, created_at, updated_at)
+                VALUES (
+                  :id,
+                  (SELECT id FROM ged_document_kits LIMIT 1),
+                  'outro', 'test_d3_real_pdf', :fp,
+                  'test', false, false, NOW(), NOW()
+                )
+                ON CONFLICT (id) DO UPDATE SET file_path = :fp
+            """),
+            {"id": _TEST_REAL_DOC_ID, "fp": _REAL_PDF_PATH},
+        )
+        db.commit()
+    finally:
+        db.close()
+    yield _TEST_REAL_DOC_ID
+    db2 = SyncSessionLocal()
+    db2.execute(text("DELETE FROM ged_kit_documents WHERE id = :id"), {"id": _TEST_REAL_DOC_ID})
+    db2.commit()
+    db2.close()
 
 
 @pytest.fixture(scope="module")
@@ -193,21 +221,26 @@ class TestD3DownloadHTTP:
 class TestD3DownloadDBState:
     """Testes de estado do banco — validam pré-condições de D3."""
 
-    def test_docs_com_path_onvio_existem(self):
-        """7 kit_docs de 03/2026 devem ter file_path /app/uploads/onvio/."""
+    def test_folha_pagamento_03_2026_placeholder(self):
+        """Pós-D3.1: 7 folha_pagamento de 03/2026 devem ser placeholder (file_path=NULL).
+
+        D3.1 zerou os file_paths Onvio porque os PDFs reais nunca foram baixados
+        (Cenário B — INV-5). Estado honesto: NULL até próximo sync.
+        """
         db = SyncSessionLocal()
         result = db.execute(
             text("""
                 SELECT COUNT(*) FROM ged_kit_documents kd
                 JOIN ged_document_kits dk ON dk.id = kd.kit_id
-                WHERE kd.file_path LIKE '/app/uploads/onvio/%'
+                WHERE kd.document_type = 'folha_pagamento'
+                  AND kd.file_path IS NULL
                   AND dk.reference_month = '2026-03-01'
             """)
         ).scalar()
         db.close()
         assert result == 7, (
-            f"Esperado 7 kit_docs com path Onvio para 03/2026, obtido {result}. "
-            "D2 deveria ter casado 7 folha_pagamento."
+            f"Esperado 7 folha_pagamento placeholder (NULL) para 03/2026, obtido {result}. "
+            "D3.1 deveria ter zerado os 7 file_paths Onvio falsos."
         )
 
     def test_path_onvio_sem_formato_desconhecido(self):
