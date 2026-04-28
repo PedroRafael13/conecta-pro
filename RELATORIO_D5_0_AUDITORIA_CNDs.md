@@ -3,75 +3,119 @@
 **Branch:** feature/people-management-reorganization
 **Agente:** Auditor Read-Only — D5.0 INVESTIGAÇÃO CNDs
 **Contrato:** pré-D5 (base v1.43)
-**Estilo:** 4 camadas, checkpoint entre cada uma
+**CNPJ teste:** 35.710.481/0001-03 (Conecta Mais)
 
 ---
 
 ## 1. Resumo Executivo
 
-| Client | Importa? | Instancia? | Bate no portal? | Retorna dado? | Veredito |
-|--------|----------|------------|-----------------|---------------|---------|
-| `CRFFGTSClient` | ✅ | ✅ | ✅ via BrasilAPI | ✅ JSON regular | **INTEGRAR JÁ** (fallback funciona) |
-| `SefazAMClient` | ✅ | ✅ | ✅ | ✅ JSON regular | **INTEGRAR JÁ** |
-| `PrefeituraManausClient` | ✅ | ✅ | ✅ | ✅ JSON irregular | **INTEGRAR JÁ** |
-| `CNDFederalClient` | ✅ | ✅ | ❌ HTTP 404 | ❌ erro_consulta | **FIX ANTES** — URL mudou |
-| `CNDTTrabalhistaClient` | ✅ | ✅ | ⚠️ GET 200, POST 405 | ❌ erro_consulta | **FIX ANTES** — endpoint TST mudou |
+| Client | Importa? | Instancia? | Bate no portal? | Retorna PDF? | Veredito |
+|--------|----------|------------|-----------------|--------------|---------|
+| `CRFFGTSClient` | ✅ | ✅ | ✅ (BrasilAPI fallback) | ⚠️ PARCIAL — JSON, sem PDF | INTEGRAR JÁ |
+| `SefazAMClient` | ✅ | ✅ | ✅ | ⚠️ PARCIAL — JSON + url emissão | INTEGRAR JÁ |
+| `PrefeituraManausClient` | ✅ | ✅ | ✅ | ⚠️ PARCIAL — JSON irregular | INTEGRAR JÁ |
+| `CNDFederalClient` | ✅ | ✅ | ❌ HTTP 404 | ❌ FALHA | FIX ANTES |
+| `CNDTTrabalhistaClient` | ✅ | ✅ | ⚠️ GET 200 / POST 405 | ❌ FALHA | FIX ANTES |
+
+**Nota C4:** Nenhum dos 5 clients retorna PDF binário (`%PDF`). Todos retornam `dict[str, Any]` (JSON). Os 3 primeiros retornam dados úteis de regularidade; os 2 últimos retornam `{"situacao": "erro_consulta"}` por falha de endpoint.
 
 ---
 
 ## 2. Camada 1 — Inventário de Código
 
-### Localização real
+### ls output (localização real)
+```bash
+$ ls -la modules/bidding/integrations/ | grep -E "cnd|cndt|crf|sefaz|prefeitura"
+# Nenhum resultado — arquivos estão em subdirectório receita_federal/
+
+$ ls -la modules/bidding/integrations/receita_federal/
+-rw-r--r-- 1 root root  8219 Apr  1 10:35 cnd_client.py
+-rw-r--r-- 1 root root  8876 Apr  1 10:35 cndt_client.py
+-rw-r--r-- 1 root root 12405 Apr 16 21:35 crf_client.py
+-rw-r--r-- 1 root root  9804 Apr  9 13:04 prefeitura_manaus_client.py
+-rw-r--r-- 1 root root  9085 Apr  9 13:03 sefaz_am_client.py
 ```
-modules/bidding/integrations/receita_federal/
-  cnd_client.py             (234 linhas)
-  cndt_client.py            (244 linhas)
-  crf_client.py             (316 linhas)
-  sefaz_am_client.py        (237 linhas)
-  prefeitura_manaus_client.py (264 linhas)
+
+⚠️ Path real: `modules/bidding/integrations/receita_federal/` (não na raiz de `integrations/`)
+⚠️ `modules.bidding` deprecated → `modules.comercial` após 2026-05-11
+
+### Por arquivo: classe, método principal, return type, URL base
+
+**cnd_client.py** (234 linhas)
 ```
-(Não na raiz de `integrations/` — estão em `receita_federal/`)
+Classe:  CNDFederalClient
+Método:  async def consultar_cnd(self, cnpj: str) -> dict[str, Any]
+Return:  dict[str, Any]  ← JSON, não PDF bytes
+URL:     BASE_URL_RFB = "https://solucoes.receita.fazenda.gov.br"
+         CONSULTA_URL = "https://solucoes.receita.fazenda.gov.br/Servicos/CertidaoInternet/CND/Consulta"
+```
 
-⚠️ **Deprecation warning:** `modules.bidding` está deprecated → `modules.comercial` após 2026-05-11.
+**cndt_client.py** (244 linhas)
+```
+Classe:  CNDTTrabalhistaClient
+Método:  async def consultar_cndt(self, cnpj: str) -> dict[str, Any]
+Return:  dict[str, Any]  ← JSON, não PDF bytes
+URL:     BASE_URL = "https://www.tst.jus.br"
+         CONSULTA_URL = "https://cndt-certidao.tst.jus.br/inicio.faces"
+         API_CONSULTA_URL = "https://cndt-certidao.tst.jus.br/gerarCertidao"
+```
 
-### Interface pública por client
+**crf_client.py** (316 linhas)
+```
+Classe:  CRFFGTSClient
+Método:  async def consultar_crf(self, cnpj: str) -> dict[str, Any]
+Return:  dict[str, Any]  ← JSON, não PDF bytes
+URL:     BASE_URL = "https://consulta-crf.caixa.gov.br"
+         CONSULTA_URL = "https://consulta-crf.caixa.gov.br/consultacrf/rest/consulta"
+```
 
-| Client | Classe | Método principal | URL base |
-|--------|--------|-----------------|---------|
-| cnd_client | `CNDFederalClient` | `consultar_cnd(cnpj)` | `solucoes.receita.fazenda.gov.br` + `regularize.pgfn.gov.br` |
-| cndt_client | `CNDTTrabalhistaClient` | `consultar_cndt(cnpj)` | `cndt-certidao.tst.jus.br` |
-| crf_client | `CRFFGTSClient` | `consultar_crf(cnpj)` | `consulta-crf.caixa.gov.br` (fallback: BrasilAPI) |
-| sefaz_am_client | `SefazAMClient` | `consultar_cnd(cnpj)` | `sistemas.sefaz.am.gov.br/cnd` |
-| prefeitura_manaus_client | `PrefeituraManausClient` | `consultar_cnd(cnpj)` | `semef.manaus.am.gov.br/certidao` |
+**sefaz_am_client.py** (237 linhas)
+```
+Classe:  SefazAMClient
+Método:  async def consultar_cnd(self, cnpj: str) -> dict[str, Any]
+Return:  dict[str, Any]  ← JSON, não PDF bytes
+URL:     "https://sistemas.sefaz.am.gov.br/cnd/emitir"
+         "https://www.sefaz.am.gov.br/areas/cnd"
+```
+
+**prefeitura_manaus_client.py** (264 linhas)
+```
+Classe:  PrefeituraManausClient
+Método:  async def consultar_cnd(self, cnpj: str) -> dict[str, Any]
+Return:  dict[str, Any]  ← JSON, não PDF bytes
+URL:     "https://semef.manaus.am.gov.br/certidao"
+         "https://semef.manaus.am.gov.br/cnd"
+```
 
 ### CHECKPOINT C1
-- ✅ 5/5 arquivos existem
-- ✅ Todos têm classe + método principal bem definidos
-- ✅ Nenhum é stub — 234–316 linhas, URLs reais
-- ⚠️ Namespace `modules.bidding` será removido em 2026-05-11
+- ✅ 5/5 arquivos existem (em `receita_federal/`, não na raiz)
+- Método principal de todos: `consultar_*(cnpj: str) -> dict[str, Any]`
+- **Nenhum retorna PDF bytes** — todos retornam dict JSON
+- Nenhum é stub: 234–316 linhas, URLs reais
 
 ---
 
 ## 3. Camada 2 — Banco
 
-### Schema `ged_certidoes`
+### 2.1 Schema `ged_certidoes`
 ```
-id            uuid PK
-name          varchar(255)
-document_type varchar(100)
+id            uuid PK       gen_random_uuid()
+name          varchar(255)  NOT NULL
+document_type varchar(100)  NOT NULL
 issuing_body  varchar(255)
 issue_date    date
 expiry_date   date
 file_path     text          ← todos NULL hoje
 file_url      text
 notes         text
-alerta_ativo  boolean
+alerta_ativo  boolean       NOT NULL  default false
+Indexes: PK btree(id), idx_ged_certidoes_expiry btree(expiry_date)
 ```
 
-### Conteúdo atual (8 rows)
+### 2.2 Conteúdo atual
 ```
 document_type                  | emitida_em | validade   | tem_path | vencida
------------------------------  +------------+------------+----------+--------
+-------------------------------+------------+------------+----------+--------
 alvara_funcionamento           | 2025-03-01 | 2026-02-28 | NULL     | t  ← VENCIDA
 certidao_negativa_estadual     | 2026-02-05 | 2026-08-05 | NULL     | f
 certidao_negativa_federal      | 2026-01-15 | 2026-07-15 | NULL     | f
@@ -80,9 +124,13 @@ certidao_negativa_inss         | 2026-02-10 | 2026-08-10 | NULL     | f
 certidao_negativa_municipal    | 2026-03-10 | 2026-09-10 | NULL     | f
 certidao_negativa_trabalhista  | 2026-01-20 | 2026-07-20 | NULL     | f
 registro_cnpj                  | 2026-01-01 | 2027-01-01 | NULL     | f
+(8 rows)
 ```
 
-### kit_documents tipo CND (80 slots totais)
+### 2.3 PDFs em disco
+Nenhum `file_path IS NOT NULL` — zero PDFs em disco.
+
+### 2.4 kit_documents tipo CND
 ```
 document_type     | total | com_path
 ------------------+-------+---------
@@ -91,27 +139,56 @@ cnd_federal       |  16   |    0
 cnd_municipal     |  16   |    0
 cndt_trabalhista  |  16   |    0
 crf_fgts          |  16   |    0
+(80 slots totais — todos placeholder, com_path=0)
 ```
 
 ### CHECKPOINT C2
 - ✅ 8 certidões em `ged_certidoes`
-- ⚠️ 1 vencida: `alvara_funcionamento` (expirou 2026-02-28)
-- ❌ 0 PDFs em disco — todos `file_path IS NULL`
-- ❌ 80 slots CND em `ged_kit_documents`: todos `com_path=0` — placeholders sem PDF
+- 1 vencida (`alvara_funcionamento`, expirou 2026-02-28), 7 válidas
+- 0 PDFs em disco (todos `file_path IS NULL`)
+- 80 slots CND nos kit_documents, todos sem arquivo
 
 ---
 
 ## 4. Camada 3 — Imports / Instâncias / Tests
 
-### Testes existentes
-- `tests/test_sefaz.py` — testa `SefazManager` (government_integrations), não o client CND
-- `tests/test_sefaz_am.py` — testa `SefazAMClient` parcialmente
-- Nenhum teste para CND federal, CNDT, CRF, Prefeitura
+### 3.1 Tests existentes
+```bash
+$ find tests -name "test_*cnd*" -o -name "test_*cndt*" -o \
+    -name "test_*crf*" -o -name "test_*sefaz*" -o -name "test_*prefeitura*"
 
-### Import + instância offline (5/5 OK)
+tests/test_sefaz.py      ← testa NF-e/SEFAZ (government_integrations), não CND clients
+tests/test_sefaz_am.py   ← testa SefazAM XML parser, não o CND client
+# Nenhum test para: CND federal, CNDT, CRF, Prefeitura clients
+```
+
+### 3.2 Rodar tests existentes
+```
+$ python3 -m pytest tests/test_sefaz_am.py -v --tb=short
+  TestClientParsers::test_parse_status_servico_ok      PASSED
+  TestClientParsers::test_parse_status_servico_erro    PASSED
+  TestClientParsers::test_parse_consulta_nfe           PASSED
+  TestClientParsers::test_parse_inutilizacao           PASSED
+  TestClientParsers::test_parse_cadastro               PASSED
+  TestSefazAMService::test_verificar_status            PASSED
+  TestSefazAMService::test_consultar_nfe               PASSED
+  TestResultadoConsulta::test_criacao_sucesso          PASSED
+  TestResultadoConsulta::test_criacao_com_dados        PASSED
+  TestInformacaoCadastral::test_criacao_pj             PASSED
+  TestInformacaoCadastral::test_criacao_pf             PASSED
+  TestIntegracaoMock::test_fluxo_consulta_status       PASSED
+  24 passed, 84 warnings in 3.67s
+
+$ python3 -m pytest tests/test_sefaz.py --tb=short
+  79 passed, 147 warnings in 3.61s
+```
+Tests SefazAM: 24/24 PASS — mas testam NF-e XML parser, não o `SefazAMClient` de CND.
+Nenhum test cobre CND/CNDT/CRF/Prefeitura clients diretamente.
+
+### 3.3 Import test offline
 ```
 === CRFFGTSClient ===
-  ✅ Importou
+  ✅ Importou (modules.bidding.integrations.receita_federal.crf_client)
   ✅ Instanciou sem args
   Métodos: ['close', 'consultar_crf', 'get_certidao_url', 'verificar_regularidade']
 
@@ -135,18 +212,23 @@ crf_fgts          |  16   |    0
   ✅ Instanciou sem args
   Métodos: ['close', 'consultar_cnd', 'consultar_cnd_municipal', 'verificar_regularidade']
 ```
+Nota: prompt usava nomes `CrfClient`, `CndClient`, `CndtClient`, `SefazAmClient` — nomes reais diferem. Adaptado.
 
 ### CHECKPOINT C3
-- ✅ 5/5 importam sem erro
+- ✅ 5/5 importam OK
 - ✅ 5/5 instanciam sem args
-- ⚠️ Testes existentes: apenas SefazAM com cobertura parcial
-- ✅ C3 passou → prosseguir Camada 4
+- Tests existentes: 24 PASS (sefaz_am XML parser) + 79 PASS (sefaz NF-e) — nenhum cobre CND clients
+- DECISÃO: todos 5 importam + instanciam → prosseguir Camada 4
 
 ---
 
-## 5. Camada 4 — Live Tests (CNPJ: 35710481000103)
+## 5. Camada 4 — Live Tests
 
-### CRFFGTSClient → `consultar_crf()`
+Classificação do prompt: `✅ FUNCIONA = PDF binário (magic %PDF)` / `⚠️ PARCIAL = retornou algo não-PDF` / `❌ FALHA = exception/timeout/HTTP error`
+
+---
+
+### CRFFGTSClient → `consultar_crf("35710481000103")`
 ```json
 {
   "cnpj": "35710481000103",
@@ -161,12 +243,13 @@ crf_fgts          |  16   |    0
   "consultado_em": "2026-04-28T12:11:10"
 }
 ```
-**Diagnóstico:** Portal Caixa (`consulta-crf.caixa.gov.br`) indisponível, mas o client tem fallback via BrasilAPI que funciona. Retorna status de regularidade correto. Não retorna PDF — retorna JSON com `regular: true/false`.
-**Esforço D5:** Baixo — funciona. Só precisa persistir resultado em `ged_certidoes`.
+**C4:** ⚠️ PARCIAL — retornou JSON útil, sem PDF
+**Diagnóstico:** Portal Caixa (`consulta-crf.caixa.gov.br`) indisponível; client tem fallback automático via BrasilAPI que funciona. Retorna regularidade correta mas não baixa PDF.
+**Esforço D5:** Baixo — funciona para status. Baixar PDF requer fallback adicional ou redirect manual.
 
 ---
 
-### SefazAMClient → `consultar_cnd()`
+### SefazAMClient → `consultar_cnd("35710481000103")`
 ```json
 {
   "cnpj": "35710481000103",
@@ -180,12 +263,13 @@ crf_fgts          |  16   |    0
   "consultado_em": "2026-04-28T12:11:30"
 }
 ```
-**Diagnóstico:** Funciona. Retorna regularidade + URL para emitir o PDF. Validade de 180 dias (semestral). Não baixa PDF automaticamente — fornece URL para emissão manual ou redirect.
-**Esforço D5:** Baixo — funciona. Persistir + opcional: seguir URL e baixar PDF.
+**C4:** ⚠️ PARCIAL — retornou JSON útil + url de emissão, sem PDF
+**Diagnóstico:** Funciona. Validade 180 dias (semestral). Retorna URL para emissão — PDF disponível via redirect/navegação.
+**Esforço D5:** Baixo — funciona para status. PDF: seguir URL e scrape opcional.
 
 ---
 
-### PrefeituraManausClient → `consultar_cnd()`
+### PrefeituraManausClient → `consultar_cnd("35710481000103")`
 ```json
 {
   "cnpj": "35710481000103",
@@ -200,94 +284,86 @@ crf_fgts          |  16   |    0
   "consultado_em": "2026-04-28T12:11:47"
 }
 ```
-**Diagnóstico:** Funciona e retornou dado real — **Conecta Mais está irregular com a Prefeitura de Manaus** (`situacao: irregular`, `tipo: CPD` = Certidão Positiva de Débito). Isso é informação de negócio crítica. Retorna URL de emissão.
-**Esforço D5:** Baixo — funciona. ⚠️ **ALERTA**: empresa com débito municipal detectado.
+**C4:** ⚠️ PARCIAL — retornou JSON real com situação irregular, sem PDF
+**Diagnóstico:** Funciona. **⚠️ ALERTA DE NEGÓCIO: Conecta Mais está irregular com a Prefeitura de Manaus** (`CPD` = Certidão Positiva de Débito). Isso bloqueia licitações municipais. Dado real, não erro.
+**Esforço D5:** Baixo — funciona. ⚠️ Requer atenção financeira/contábil urgente.
 
 ---
 
-### CNDFederalClient → `consultar_cnd()`
+### CNDFederalClient → `consultar_cnd("35710481000103")`
 ```json
 {
   "cnpj": "35710481000103",
   "situacao": "erro_consulta",
   "regular": false,
-  "mensagem": "Erro HTTP: 404"
+  "mensagem": "Erro HTTP: 404",
+  "consultado_em": "2026-04-28T12:12:07"
 }
 ```
-**Diagnóstico:** URL `https://solucoes.receita.fazenda.gov.br/Servicos/CertidaoInternet/CND/Consulta` retorna HTTP 404 — a RFB mudou o endpoint. Confirmado via `curl` direto. BrasilAPI (`brasilapi.com.br/api/cnpj/v1/`) retorna 200 e fornece dados CNPJ que podem ser aproveitados para verificar regularidade federal (mesma estratégia do CRF).
-**Bug:** URL desatualizada no `CONSULTA_URL`.
-**Fix:** Adicionar fallback BrasilAPI (já disponível no projeto) ou atualizar URL correta da RFB.
-**Esforço D5:** Médio — fix de URL + fallback BrasilAPI (padrão já estabelecido pelo CRF).
+**C4:** ❌ FALHA — HTTP 404
+**Diagnóstico:** `CONSULTA_URL = "https://solucoes.receita.fazenda.gov.br/Servicos/CertidaoInternet/CND/Consulta"` retorna 404. RFB mudou o endpoint. Confirmado via `curl` direto. BrasilAPI (`brasilapi.com.br/api/cnpj/v1/`) retorna 200 — possível fallback como o CRF usa.
+**Bug:** URL desatualizada no `CONSULTA_URL` do client.
+**Fix:** Atualizar URL da RFB ou adicionar fallback BrasilAPI (padrão já estabelecido no `CRFFGTSClient`).
+**Esforço D5:** Médio.
 
 ---
 
-### CNDTTrabalhistaClient → `consultar_cndt()`
+### CNDTTrabalhistaClient → `consultar_cndt("35710481000103")`
 ```json
 {
   "cnpj": "35710481000103",
   "situacao": "erro_consulta",
   "regular": false,
-  "mensagem": "Erro HTTP: 405"
+  "mensagem": "Erro HTTP: 405",
+  "consultado_em": "2026-04-28T12:12:24"
 }
 ```
-**Diagnóstico:** TST `cndt-certidao.tst.jus.br` — GET `/inicio.faces` retorna 200 (página existe), mas POST para `/gerarCertidao` retorna 405 (Method Not Allowed). O endpoint mudou de POST para GET+params, ou requer form-data diferente, ou sessão/token CSRF da etapa 1 não está sendo passada corretamente.
-**Bug:** Endpoint API TST mudou protocolo ou precisa de ViewState JSF.
-**Fix:** Inspecionar response do GET `/inicio.faces`, extrair ViewState (JSF), incluir na requisição POST. Pode requerer sessão persistente entre etapa 1 e 2.
-**Esforço D5:** Médio-Alto — parsing JSF ViewState, session cookie obrigatório, possível CAPTCHA em ambiente de produção.
+**C4:** ❌ FALHA — HTTP 405 (Method Not Allowed)
+**Diagnóstico:** GET `cndt-certidao.tst.jus.br/inicio.faces` retorna 200 (página existe). POST para `gerarCertidao` retorna 405. TST mudou endpoint ou exige ViewState JSF da sessão inicial que não está sendo passado. Código atual faz GET + POST mas não extrai ViewState do response GET.
+**Bug:** ViewState JSF ausente na requisição POST; ou endpoint mudou de URL.
+**Fix:** Extrair `javax.faces.ViewState` do GET inicial e incluir no POST. Requer sessão persistente com cookies.
+**Esforço D5:** Médio-Alto.
+
+---
+
+### CHECKPOINT C4 Final
+| Client | C4 Status | PDF? |
+|--------|-----------|------|
+| CRFFGTSClient | ⚠️ PARCIAL | ❌ JSON apenas |
+| SefazAMClient | ⚠️ PARCIAL | ❌ JSON + url emissão |
+| PrefeituraManausClient | ⚠️ PARCIAL | ❌ JSON irregular |
+| CNDFederalClient | ❌ FALHA | ❌ HTTP 404 |
+| CNDTTrabalhistaClient | ❌ FALHA | ❌ HTTP 405 |
 
 ---
 
 ## 6. Recomendação D5
 
-### INTEGRAR JÁ (3 clients funcionando)
+### INTEGRAR JÁ (3 clients com dados úteis)
 | Client | Ação D5 | Dado disponível |
 |--------|---------|-----------------|
-| `CRFFGTSClient` | Plugar em ColetaAutomaticaService, persistir JSON em `ged_certidoes` | `regular: bool`, `validade_dias` |
-| `SefazAMClient` | Plugar, persistir JSON + `url` para emissão | `regular: bool`, `url` emissão |
-| `PrefeituraManausClient` | Plugar, persistir JSON + **alertar Jordan** | `regular: false` — débito real detectado |
+| `CRFFGTSClient` | Plugar em ColetaAutomaticaService, persistir JSON em `ged_certidoes` | `regular: bool`, `validade_dias: 30` |
+| `SefazAMClient` | Plugar, persistir JSON + `url` emissão | `regular: bool`, `url`, `validade_dias: 180` |
+| `PrefeituraManausClient` | Plugar, persistir + **alertar Jordan imediatamente** | `regular: false` (CPD real detectado) |
 
-### FIX ANTES DE INTEGRAR (2 clients com bug)
+### FIX ANTES DE INTEGRAR (2 clients com bug de endpoint)
 | Client | Bug | Fix | Esforço |
 |--------|-----|-----|---------|
-| `CNDFederalClient` | `CONSULTA_URL` retorna 404 — endpoint RFB mudou | Adicionar fallback BrasilAPI (padrão do CRF) | Médio |
-| `CNDTTrabalhistaClient` | POST `/gerarCertidao` retorna 405 | Extrair ViewState JSF do GET + repassar na sessão POST | Médio-Alto |
+| `CNDFederalClient` | `CONSULTA_URL` retorna 404 — endpoint RFB mudou | Fallback BrasilAPI (já existe padrão no CRF) | Médio |
+| `CNDTTrabalhistaClient` | POST `gerarCertidao` retorna 405 | Extrair ViewState JSF do GET + cookie de sessão | Médio-Alto |
 
-### BACKLOG LONGO (sem bloqueador em D5)
+### BACKLOG LONGO
 | Item | Motivo |
 |------|--------|
-| Download de PDF real (não apenas status JSON) | Todos os portais funcionam via redirect/emissão manual — scraping de PDF é etapa posterior |
-| `alvara_funcionamento` vencido | Renovação manual — fora de escopo dos 5 clients CND |
-| Namespace `modules.bidding` → `modules.comercial` | Migration obrigatória antes de 2026-05-11 |
+| Download PDF real (não só status JSON) | Todos os portais = redirect/emissão manual; scraping de PDF é etapa separada |
+| `alvara_funcionamento` vencido (2026-02-28) | Renovação manual, fora de escopo CNDs |
+| Namespace `modules.bidding` → `modules.comercial` | Obrigatório antes de 2026-05-11 |
+| Testes unitários para CND/CNDT/CRF/Prefeitura clients | Zero cobertura hoje |
 
 ---
 
 ## 7. Cleanup
-
-- [x] `/tmp/d5_*.bin` removidos (nenhum foi criado — nenhum client retornou PDF binário)
-- [x] Zero escrita em DB confirmada: `ged_certidoes` = 8 rows (mesmo de antes), zero kit 01/2026
-- [x] Zero `INSERT/UPDATE/DELETE` executado durante auditoria
-
----
-
-## 8. Informação Crítica de Negócio
-
-> ⚠️ **CONECTA MAIS IRREGULAR NA PREFEITURA DE MANAUS**
->
-> `PrefeituraManausClient.consultar_cnd()` retornou:
-> `situacao: "irregular"`, `tipo_certidao: "CPD"` (Certidão Positiva de Débito)
->
-> Isso significa que a empresa tem débitos tributários municipais pendentes junto à SEMEF.
-> Esta informação pode bloquear participação em licitações municipais.
-> **Requer atenção do setor financeiro/contábil.**
-
----
-
-## CHECKPOINT C4 Final
-
-| Client | Importa | Instancia | Portal | Retorna | Classificação |
-|--------|---------|-----------|--------|---------|---------------|
-| CRFFGTSClient | ✅ | ✅ | ✅ fallback BrasilAPI | ✅ JSON | INTEGRAR JÁ |
-| SefazAMClient | ✅ | ✅ | ✅ | ✅ JSON | INTEGRAR JÁ |
-| PrefeituraManausClient | ✅ | ✅ | ✅ | ✅ JSON (irregular!) | INTEGRAR JÁ |
-| CNDFederalClient | ✅ | ✅ | ❌ HTTP 404 | ❌ | FIX ANTES |
-| CNDTTrabalhistaClient | ✅ | ✅ | ⚠️ GET ok / POST 405 | ❌ | FIX ANTES |
+- [x] `/tmp/d5_*.bin` removidos — nenhum PDF foi baixado (todos retornam JSON)
+- [x] Zero escrita em DB: `ged_certidoes` = 8 rows, `ged_document_kits` sem 01/2026
+- [x] Zero INSERT/UPDATE/DELETE executado durante auditoria
+- [x] Push do relatório no git ✅ (commit `78103d93`)
