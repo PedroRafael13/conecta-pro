@@ -238,8 +238,6 @@ class KitBuilderService:
             Quantidade de contracheques coletados.
         """
         collected = 0
-        ref_str = reference_month.strftime("%Y-%m")
-
         for emp_id in employee_ids:
             # Verificar se ja existe documento deste tipo para este funcionario/kit
             existing = await self.db.execute(
@@ -252,9 +250,9 @@ class KitBuilderService:
             if existing.scalar_one_or_none():
                 continue
 
-            # Criar placeholder para contracheque
-            # Em producao, buscaria o arquivo real do modulo DP
-            file_path = f"documents/dp/contracheques/{ref_str}/{emp_id}.pdf"
+            # Placeholder honesto: NULL até pipeline DP gerar o arquivo real.
+            # Path fake "documents/..." causava 400 no download (D3.1.1).
+            file_path = None
 
             doc = KitDocument(
                 kit_id=kit_id,
@@ -293,8 +291,6 @@ class KitBuilderService:
             Quantidade de folhas de ponto coletadas.
         """
         collected = 0
-        ref_str = reference_month.strftime("%Y-%m")
-
         for emp_id in employee_ids:
             existing = await self.db.execute(
                 select(KitDocument).where(
@@ -306,7 +302,8 @@ class KitBuilderService:
             if existing.scalar_one_or_none():
                 continue
 
-            file_path = f"documents/dp/folhas_ponto/{ref_str}/{emp_id}.pdf"
+            # Placeholder honesto: NULL até pipeline DP gerar o arquivo real (D3.1.1).
+            file_path = None
 
             doc = KitDocument(
                 kit_id=kit_id,
@@ -345,7 +342,6 @@ class KitBuilderService:
             Quantidade de comprovantes coletados.
         """
         collected = 0
-        ref_str = reference_month.strftime("%Y-%m")
         benefit_types = [
             (DocumentType.COMPROVANTE_VT, "VT"),
             (DocumentType.COMPROVANTE_VA, "VA"),
@@ -364,7 +360,8 @@ class KitBuilderService:
                 if existing.scalar_one_or_none():
                     continue
 
-                file_path = f"documents/dp/beneficios/{ref_str}/{benefit_name.lower()}/{emp_id}.pdf"
+                # Placeholder honesto: NULL até pipeline DP gerar o arquivo real (D3.1.1).
+                file_path = None
 
                 doc = KitDocument(
                     kit_id=kit_id,
@@ -419,7 +416,8 @@ class KitBuilderService:
                 DocumentType.CNDT_TRABALHISTA: "CNDT Trabalhista (TST)",
             }
 
-            file_path = f"documents/fiscal/certidoes/{cert_type}.pdf"
+            # Placeholder honesto: NULL até pipeline Fiscal baixar a certidão real (D3.1.1).
+            file_path = None
 
             doc = KitDocument(
                 kit_id=kit_id,
@@ -460,8 +458,6 @@ class KitBuilderService:
             Quantidade de escalas coletadas.
         """
         collected = 0
-        ref_str = reference_month.strftime("%Y-%m")
-
         for emp_id in employee_ids:
             existing = await self.db.execute(
                 select(KitDocument).where(
@@ -473,7 +469,8 @@ class KitBuilderService:
             if existing.scalar_one_or_none():
                 continue
 
-            file_path = f"documents/operacoes/escalas/{ref_str}/{emp_id}.pdf"
+            # Placeholder honesto: NULL até pipeline Operações exportar a escala real (D3.1.1).
+            file_path = None
 
             doc = KitDocument(
                 kit_id=kit_id,
