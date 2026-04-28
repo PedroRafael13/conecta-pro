@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.47
+**Versão:** 1.48
 **Data:** 2026-04-28
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3400,7 +3400,7 @@ Adicionados:
 | CPF: escolher fonte para diarist_controller | D5.1.1 |
 | OAuth2 gov.br para emissão real de CND | D5.2.1 |
 | Playwright: navegar fluxo JSF+captcha imagem TST para CNDT real | D5.6 |
-| CertidoesUpdaterService (consolidar 3 CNDs) | D5.4 |
+| ~~CertidoesUpdaterService (consolidar 5 CNDs)~~ | ~~D5.4~~ ✅ |
 | UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
 
 ---
@@ -3464,5 +3464,5 @@ Nenhum fix de código aplicado — critério "se não tá quebrado, não consert
 | CPF: escolher fonte para diarist_controller | D5.1.1 |
 | OAuth2 gov.br para emissão real de CND | D5.2.1 |
 | Playwright: navegar fluxo JSF+captcha imagem TST para CNDT real | D5.6 |
-| CertidoesUpdaterService (consolidar 3 CNDs) | D5.4 |
+| ~~CertidoesUpdaterService (consolidar 5 CNDs)~~ | ~~D5.4~~ ✅ |
 | UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
