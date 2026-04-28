@@ -3316,3 +3316,4 @@ Patch target: `modules.bidding.integrations.receita_federal.cnd_client.BrasilAPI
 | Fix CNDT ViewState (JSF javax.faces.ViewState) + regular=None | D5.3 |
 | CertidoesUpdaterService (consolidar 5 CNDs) | D5.4 |
 | UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
+| Download PDF da certidão CND (depende de auth OAuth2 gov.br D5.2.1) | D5.6 |
