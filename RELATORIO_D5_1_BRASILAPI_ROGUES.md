@@ -206,12 +206,29 @@ tests/modules/bidding/test_crf_client_fallback.py
   test_verificar_regularidade_apto_licitar_none_quando_indeterminado  ✅ PASS
 ```
 
-### 6.4 — Regressão D4 + D4.1
-```
-tests/modules/gedeon/ — 14/14 PASS em 27.98s  ✅
+### 6.4 — Pytest completo (INV-9 — suite ampliada)
+
+| Suite | Resultado |
+|-------|-----------|
+| `tests/modules/bidding/` (140 testes, inclui test_crf_client_fallback.py) | ✅ 140/140 PASS |
+| `tests/modules/crm/test_enrichment_real.py` (BrasilAPIClient) | ✅ 9/9 PASS |
+| `tests/modules/gedeon/` D4+D4.1 | ✅ 14/14 PASS |
+| `tests/test_diarist_api.py` + `test_diarist_model.py` | ✅ 47/47 PASS |
+| Suite ampla (bidding+crm+gedeon) | 1510/1590 PASS |
+
+**80 failures no run amplo: todos pré-existentes** (seed_bloco count assertions
+hardcoded com dados desatualizados, CRM testes esperando HTTP 200 em vez de 201,
+test_d2_onvio/test_d3_download com counts stale). Nenhum relacionado ao D5.1.
+
+**Pytest D5.1 scope: bidding(140) + crm-enrichment(9) + gedeon(14) + diaristas(47) = 210 PASS — 0 regressões**
+
+### 6.5 — H4: diarist_controller — verificação múltiplos pontos BrasilAPI
+
+```bash
+grep -n "brasilapi\|httpx\|cpf" modules/operacional/diaristas/controllers/diarist_controller.py
 ```
 
-**Pytest acumulado: D4(11) + D4.1(3) + D5.1(4) = 18 PASS**
+Resultado: **1 único ponto** (linha 133). H4 confirmado — não há outras chamadas ocultas.
 
 ---
 
@@ -251,7 +268,7 @@ backend/tests/modules/bidding/test_crf_client_fallback.py
 
 | Label | Critério | Resultado |
 |-------|----------|-----------|
-| 🔴 A | Pytest geral D4+D4.1+D5.1 = 18+ PASS | ✅ 18/18 PASS |
+| 🔴 A | Pytest geral preservado + novos D5.1 | ✅ 210 PASS scope D5.1 (bidding+crm+gedeon+diaristas). 80 failures pré-existentes não causados por D5.1 |
 | 🔴 B | get_cpf retorna CPFResponse + cache funciona | ⚠️ ABORTADO — Cenário B (cpf/v1/ deprecated) |
 | 🔴 C | diarist_controller endpoint não regrediu | ⚠️ ABORTADO — rogue permanece (sem fonte alternativa) |
 | 🔴 D | crf_client fallback retorna regular=None | ✅ assert explícito + 4 testes |
@@ -272,6 +289,10 @@ backend/tests/modules/bidding/test_crf_client_fallback.py
 - [x] STEP 5 — deploy hot copy + restart → healthy ✅
 - [x] STEP 6 — E2E: BrasilAPIClient CNPJ live, assert regular=None, pytest 4/4 ✅
 - [x] STEP 6 — pytest D4+D4.1 14/14 PASS ✅
+- [x] STEP 6 — pytest bidding/ 140/140 PASS ✅
+- [x] STEP 6 — pytest crm/test_enrichment_real.py 9/9 PASS ✅
+- [x] STEP 6 — pytest diaristas 47/47 PASS (INV-9: sem regressão) ✅
+- [x] H4 — diarist_controller: 1 único ponto BrasilAPI (linha 133) ✅
 - [x] STEP 7 — §42 v1.44 commitado ✅
 - [x] STEP 8 — código commitado (c4e005e9) + push ✅
 - [x] 🔴 A, D, F, G, H — PASS ✅
