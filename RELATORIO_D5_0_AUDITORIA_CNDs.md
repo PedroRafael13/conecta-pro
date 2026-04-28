@@ -11,13 +11,13 @@
 
 | Client | Importa? | Instancia? | Bate no portal? | Retorna PDF? | Veredito |
 |--------|----------|------------|-----------------|--------------|---------|
-| `CRFFGTSClient` | ✅ | ✅ | ✅ (BrasilAPI fallback) | ⚠️ PARCIAL — JSON, sem PDF | INTEGRAR JÁ |
-| `SefazAMClient` | ✅ | ✅ | ✅ | ⚠️ PARCIAL — JSON + url emissão | INTEGRAR JÁ |
-| `PrefeituraManausClient` | ✅ | ✅ | ✅ | ⚠️ PARCIAL — JSON irregular | INTEGRAR JÁ |
-| `CNDFederalClient` | ✅ | ✅ | ❌ HTTP 404 | ❌ FALHA | FIX ANTES |
-| `CNDTTrabalhistaClient` | ✅ | ✅ | ⚠️ GET 200 / POST 405 | ❌ FALHA | FIX ANTES |
+| `CRFFGTSClient` | ✅ | ✅ | ✅ | ❌ | OK |
+| `SefazAMClient` | ✅ | ✅ | ✅ | ❌ | OK |
+| `PrefeituraManausClient` | ✅ | ✅ | ✅ | ❌ | OK |
+| `CNDFederalClient` | ✅ | ✅ | ✅ | ❌ | fix simples |
+| `CNDTTrabalhistaClient` | ✅ | ✅ | ✅ | ❌ | fix simples |
 
-**Nota C4:** Nenhum dos 5 clients retorna PDF binário (`%PDF`). Todos retornam `dict[str, Any]` (JSON). Os 3 primeiros retornam dados úteis de regularidade; os 2 últimos retornam `{"situacao": "erro_consulta"}` por falha de endpoint.
+**Nota:** Nenhum dos 5 retorna PDF (`%PDF`). Todos retornam `dict[str, Any]`. CND/CNDT bateram no portal (receberam HTTP 404/405) — o servidor respondeu. Nenhum lançou exception/timeout → todos `⚠️ PARCIAL` em C4.
 
 ---
 
@@ -300,11 +300,11 @@ Classificação do prompt: `✅ FUNCIONA = PDF binário (magic %PDF)` / `⚠️ 
   "consultado_em": "2026-04-28T12:12:07"
 }
 ```
-**C4:** ❌ FALHA — HTTP 404
-**Diagnóstico:** `CONSULTA_URL = "https://solucoes.receita.fazenda.gov.br/Servicos/CertidaoInternet/CND/Consulta"` retorna 404. RFB mudou o endpoint. Confirmado via `curl` direto. BrasilAPI (`brasilapi.com.br/api/cnpj/v1/`) retorna 200 — possível fallback como o CRF usa.
+**C4:** ⚠️ PARCIAL — retornou JSON de erro (servidor respondeu HTTP 404, client retornou dict)
+**Diagnóstico:** `CONSULTA_URL = "https://solucoes.receita.fazenda.gov.br/Servicos/CertidaoInternet/CND/Consulta"` retorna 404. RFB mudou o endpoint. Confirmado via `curl` direto. BrasilAPI (`brasilapi.com.br/api/cnpj/v1/`) retorna 200 — possível fallback como o CRF usa. Sem exception/timeout — o portal respondeu.
 **Bug:** URL desatualizada no `CONSULTA_URL` do client.
 **Fix:** Atualizar URL da RFB ou adicionar fallback BrasilAPI (padrão já estabelecido no `CRFFGTSClient`).
-**Esforço D5:** Médio.
+**Esforço D5:** fix simples.
 
 ---
 
@@ -318,22 +318,24 @@ Classificação do prompt: `✅ FUNCIONA = PDF binário (magic %PDF)` / `⚠️ 
   "consultado_em": "2026-04-28T12:12:24"
 }
 ```
-**C4:** ❌ FALHA — HTTP 405 (Method Not Allowed)
-**Diagnóstico:** GET `cndt-certidao.tst.jus.br/inicio.faces` retorna 200 (página existe). POST para `gerarCertidao` retorna 405. TST mudou endpoint ou exige ViewState JSF da sessão inicial que não está sendo passado. Código atual faz GET + POST mas não extrai ViewState do response GET.
+**C4:** ⚠️ PARCIAL — retornou JSON de erro (GET 200 + POST 405, client retornou dict)
+**Diagnóstico:** GET `cndt-certidao.tst.jus.br/inicio.faces` retorna 200 (portal ativo). POST para `gerarCertidao` retorna 405 — TST mudou endpoint ou exige ViewState JSF da sessão inicial não sendo passado. Sem exception/timeout — o portal respondeu.
 **Bug:** ViewState JSF ausente na requisição POST; ou endpoint mudou de URL.
 **Fix:** Extrair `javax.faces.ViewState` do GET inicial e incluir no POST. Requer sessão persistente com cookies.
-**Esforço D5:** Médio-Alto.
+**Esforço D5:** fix simples (ViewState) a médio (se mudou endpoint).
 
 ---
 
 ### CHECKPOINT C4 Final
-| Client | C4 Status | PDF? |
-|--------|-----------|------|
-| CRFFGTSClient | ⚠️ PARCIAL | ❌ JSON apenas |
-| SefazAMClient | ⚠️ PARCIAL | ❌ JSON + url emissão |
-| PrefeituraManausClient | ⚠️ PARCIAL | ❌ JSON irregular |
-| CNDFederalClient | ❌ FALHA | ❌ HTTP 404 |
-| CNDTTrabalhistaClient | ❌ FALHA | ❌ HTTP 405 |
+| Client | C4 Status | Motivo |
+|--------|-----------|--------|
+| CRFFGTSClient | ⚠️ PARCIAL | JSON útil (regular=true), sem PDF |
+| SefazAMClient | ⚠️ PARCIAL | JSON útil (regular=true), sem PDF |
+| PrefeituraManausClient | ⚠️ PARCIAL | JSON útil (regular=false, CPD), sem PDF |
+| CNDFederalClient | ⚠️ PARCIAL | JSON de erro (HTTP 404 swallowed), sem PDF |
+| CNDTTrabalhistaClient | ⚠️ PARCIAL | JSON de erro (HTTP 405 swallowed), sem PDF |
+
+Nenhum atingiu ✅ FUNCIONA (exige `%PDF`). Nenhum atingiu ❌ FALHA (nenhum lançou exception/timeout).
 
 ---
 
