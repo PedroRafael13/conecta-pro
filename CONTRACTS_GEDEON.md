@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.45
+**Versão:** 1.46
 **Data:** 2026-04-28
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3313,7 +3313,92 @@ Patch target: `modules.bidding.integrations.receita_federal.cnd_client.BrasilAPI
 |------|--------|
 | CPF: escolher fonte (gov.br / SERPRO / pago) para diarist_controller | D5.1.1 |
 | OAuth2 gov.br para emissão real de CND | D5.2.1 |
-| Fix CNDT ViewState (JSF javax.faces.ViewState) + regular=None | D5.3 |
+| Fix CNDT ViewState (JSF javax.faces.ViewState) + regular=None | D5.3 ✅ |
 | CertidoesUpdaterService (consolidar 5 CNDs) | D5.4 |
 | UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
 | Download PDF da certidão CND (depende de auth OAuth2 gov.br D5.2.1) | D5.6 |
+
+---
+
+## §44 — D5.3: CNDT TST — Investigação + ROTA-FALLBACK + §42.4
+
+**Data:** 2026-04-28
+**Sprint:** D5.3
+**Contrato:** v1.45 → v1.46
+**Gatilho:** CNDTTrabalhistaClient retornava `regular=False` em erros (bug semântico).
+Sem BrasilAPI fallback. Investigação live revelou captcha de imagem no portal TST.
+
+### §44.1 — Investigação portal TST (STEP 2)
+
+```
+GET  https://cndt-certidao.tst.jus.br/inicio.faces   → HTTP 200 ✅
+POST /inicio.faces (Emitir Certidão)                   → HTTP 200, step 2
+  Step 2 contém:
+    - gerarCertidaoForm:cpfCnpj (text, campo CNPJ)
+    - resposta (text, captcha de imagem — "Digite os caracteres da imagem")
+    - tokenDesafio (hidden, VAZIO — populado via JavaScript)
+    - reCAPTCHA API carregada (3 menções no HTML step 2)
+```
+
+**Diagnóstico:** `tokenDesafio` é injetado por JavaScript ao exibir o captcha de imagem.
+Sem browser headless (Playwright), não é possível obter o token.
+Tentar POST sem `tokenDesafio` resulta em validação inválida.
+
+**Critério STEP 3:** captcha presente → ROTA-FALLBACK.
+
+### §44.2 — ROTA-FALLBACK adotada
+
+```python
+# CNDTTrabalhistaClient.consultar_cndt():
+# D5.3: portal TST exige captcha imagem (tokenDesafio via JS).
+# Fallback BrasilAPI direto, sem tentar TST.
+return await self._fallback_brasilapi(cnpj_limpo)
+
+# _fallback_brasilapi() → princípio §42.4:
+return {
+    "situacao": "indeterminado_portal_indisponivel",
+    "regular": None,  # NUNCA True via fallback
+    "cnpj_ativo_rfb": cnpj_ativo,
+    "fonte": "BrasilAPI (fallback)",
+    "nota": "Portal TST exige captcha de imagem... Status CNDT NÃO confirmado...",
+}
+```
+
+Adicionados:
+- Imports `BrasilAPIClient`, `BrasilAPINotFoundError`, `BrasilAPIUnavailableError` no nível de módulo
+- `_fallback_brasilapi()` helper (idêntico ao CND/CRF, tipo_certidao="CNDT")
+- `verificar_regularidade()` tripartite (True/False/None) — interface consistente com CRF/CND
+- `verificar_debitos()` atualizado: `apto_licitar=bool(regular) if regular is not None else None`
+- Removidos: `_request_with_retry`, `_parse_resultado_cndt`, `asyncio`, `httpx` (não necessários)
+
+### §44.3 — Testes D5.3 (5 novos)
+
+| Teste | Resultado |
+|-------|-----------|
+| `test_cndt_url_aponta_para_tst_jus_br` | ✅ PASS |
+| `test_cndt_fallback_brasilapi_regular_none` | ✅ PASS |
+| `test_cndt_fallback_total_retorna_regular_none` | ✅ PASS |
+| `test_verificar_regularidade_tripartite_none` | ✅ PASS |
+| `test_cndt_fallback_cnpj_baixado_cnpj_ativo_rfb_false` | ✅ PASS |
+
+**Pytest acumulado:** D4(11) + D4.1(3) + D5.1(4) + D5.2(4) + D5.3(5) = **27 PASS**
+
+### §44.4 — §42.4: 3/3 clients concluídos
+
+| Client | Portal | Fallback BrasilAPI | regular=None |
+|--------|--------|-------------------|-------------|
+| `CRFFGTSClient` | Caixa/FGTS | ✅ `BrasilAPIClient().get_cnpj()` | ✅ D5.1 |
+| `CNDFederalClient` | RFB/PGFN | ✅ `BrasilAPIClient().get_cnpj()` | ✅ D5.2 |
+| `CNDTTrabalhistaClient` | TST | ✅ `BrasilAPIClient().get_cnpj()` | ✅ D5.3 |
+
+**Princípio §42.4 aplicado a 3/3 clients de certidão.**
+
+### §44.5 — Backlog D5.x (atualizado)
+
+| Item | Sprint |
+|------|--------|
+| CPF: escolher fonte para diarist_controller | D5.1.1 |
+| OAuth2 gov.br para emissão real de CND | D5.2.1 |
+| Playwright: navegar fluxo JSF+captcha imagem TST para CNDT real | D5.6 |
+| CertidoesUpdaterService (consolidar 3 CNDs) | D5.4 |
+| UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
