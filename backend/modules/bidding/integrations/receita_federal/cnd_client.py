@@ -17,6 +17,12 @@ from typing import Any
 
 import httpx
 
+from modules.integrations.brasilapi.client import BrasilAPIClient
+from modules.integrations.brasilapi.exceptions import (
+    BrasilAPINotFoundError,
+    BrasilAPIUnavailableError,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,9 +36,12 @@ class CNDFederalClient:
     """
 
     # URLs dos servicos
-    BASE_URL_RFB = "https://servicos.receita.fazenda.gov.br"
+    BASE_URL_RFB = "https://servicos.receitafederal.gov.br"
     BASE_URL_PGFN = "https://www.regularize.pgfn.gov.br"
-    CONSULTA_URL = "https://solucoes.receita.fazenda.gov.br/Servicos/CertidaoInternet/CND/Consulta"
+    # Portal unificado gov.br/receitafederal (atualizado D5.2 — URL antiga 404 desde ~03/2025).
+    # Emissão exige login gov.br vinculado ao CNPJ matriz — sem API pública.
+    # Consulta programática usa fallback BrasilAPI (princípio §42.4).
+    CONSULTA_URL = "https://servicos.receitafederal.gov.br/servico/certidoes/"
     TIMEOUT = 30.0
     MAX_RETRIES = 3
     BACKOFF_BASE = 2.0
@@ -95,14 +104,15 @@ class CNDFederalClient:
         return re.sub(r"\D", "", cnpj)
 
     async def consultar_cnd(self, cnpj: str) -> dict[str, Any]:
-        """
-        Consulta CND Federal (RFB + PGFN) de um CNPJ.
+        """Consulta CND Federal (RFB + PGFN) de um CNPJ.
 
-        Args:
-            cnpj: CNPJ da empresa (com ou sem formatacao)
+        Tentativa 1: portal RFB direto (GET com CNPJ).
+        Tentativa 2: fallback BrasilAPI (princípio §42.4 — regular=None quando
+        portal RFB indisponível ou exige auth gov.br).
 
-        Returns:
-            Dict com status da certidao, tipo, validade e URL
+        IMPORTANTE: portal RFB exige login gov.br vinculado ao CNPJ matriz.
+        Sem auth configurada, a Tentativa 1 sempre falha e cai no fallback.
+        Emissão real aguarda D5.2.1 (OAuth2 gov.br).
         """
         cnpj_limpo = self._format_cnpj(cnpj)
         if len(cnpj_limpo) != 14:
@@ -110,35 +120,59 @@ class CNDFederalClient:
 
         logger.info("Consultando CND Federal para CNPJ %s", cnpj_limpo)
 
+        # Tentativa 1: portal RFB direto
         try:
             response = await self._request_with_retry(
-                "POST",
+                "GET",
                 self.CONSULTA_URL,
-                data={
-                    "NI": cnpj_limpo,
-                    "Tipo": "2",  # 2 = CNPJ
-                },
+                params={"cnpj": cnpj_limpo},
             )
+            if response.status_code == 200:
+                parsed = self._parse_resultado_cnd(response.text, cnpj_limpo)
+                # Só retorna resultado direto se conseguiu extrair tipo de certidão real
+                if parsed.get("tipo_certidao") is not None:
+                    return parsed
+        except Exception as exc:
+            logger.debug("CND Federal portal direto falhou para %s: %s", cnpj_limpo, exc)
 
-            if response.status_code != 200:
-                return {
-                    "cnpj": cnpj_limpo,
-                    "tipo_certidao": None,
-                    "situacao": "erro_consulta",
-                    "regular": False,
-                    "mensagem": f"Erro HTTP: {response.status_code}",
-                    "consultado_em": datetime.utcnow().isoformat(),
-                }
-
-            return self._parse_resultado_cnd(response.text, cnpj_limpo)
-
-        except Exception as e:
-            logger.error("Erro ao consultar CND Federal para %s: %s", cnpj_limpo, e)
+        # Tentativa 2: fallback BrasilAPI (princípio §42.4)
+        # IMPORTANTE: BrasilAPI CNPJ retorna situacao_cadastral da RFB, que é
+        # INDEPENDENTE da regularidade fiscal (CND/PGFN). Empresa pode estar ATIVA
+        # na RFB mas com débitos tributários e na dívida ativa.
+        # Por isso retornamos `regular=None` — nunca afirmar regularidade CND
+        # baseado em CNPJ ativo. Caller trata None como "status desconhecido".
+        try:
+            cnpj_data, _ = await BrasilAPIClient().get_cnpj(cnpj_limpo)
+            situacao_cadastral = (cnpj_data.descricao_situacao_cadastral or "").upper()
+            cnpj_ativo = situacao_cadastral == "ATIVA"
+            logger.warning(
+                "CND Federal portal RFB indisponivel para %s. Apenas RFB cadastral: %s",
+                cnpj_limpo,
+                situacao_cadastral,
+            )
+            return {
+                "cnpj": cnpj_limpo,
+                "tipo_certidao": "CND",
+                "situacao": "indeterminado_portal_indisponivel",
+                "regular": None,
+                "cnpj_ativo_rfb": cnpj_ativo,
+                "fonte": "BrasilAPI (fallback)",
+                "nota": (
+                    "Portal RFB indisponível ou exige login gov.br. "
+                    "Status CND/PGFN NÃO confirmado via fonte oficial. "
+                    "Apenas situação cadastral RFB conhecida "
+                    f"({'ativa' if cnpj_ativo else 'inativa'})."
+                ),
+                "consultado_em": datetime.utcnow().isoformat(),
+            }
+        except (BrasilAPINotFoundError, BrasilAPIUnavailableError) as e:
+            logger.error("CND Federal BrasilAPI fallback falhou para %s: %s", cnpj_limpo, e)
             return {
                 "cnpj": cnpj_limpo,
                 "tipo_certidao": None,
                 "situacao": "erro_consulta",
-                "regular": False,
+                "regular": None,
+                "fonte": "RFB + BrasilAPI ambos indisponíveis",
                 "mensagem": str(e),
                 "consultado_em": datetime.utcnow().isoformat(),
             }
@@ -198,17 +232,21 @@ class CNDFederalClient:
             Dict com 'regular' (bool), 'tipo_certidao' e 'detalhes'
         """
         resultado = await self.consultar_cnd(cnpj)
+        regular = resultado.get("regular")
         return {
             "cnpj": resultado["cnpj"],
-            "regular": resultado["regular"],
+            "regular": regular,
             "tipo_certidao": resultado.get("tipo_certidao"),
             "situacao": resultado.get("situacao"),
             "data_validade": resultado.get("data_validade"),
-            "apto_licitar": resultado["regular"],
+            "apto_licitar": bool(regular) if regular is not None else None,
             "observacao": (
                 "Empresa regular perante a Receita Federal e PGFN"
-                if resultado["regular"]
+                if regular is True
                 else "Empresa com pendencias fiscais federais — verificar debitos RFB/PGFN"
+                if regular is False
+                else "Status CND federal indeterminado — portal RFB indisponivel, "
+                "consultar manualmente em servicos.receitafederal.gov.br"
             ),
         }
 
@@ -223,7 +261,7 @@ class CNDFederalClient:
             URL do servico correspondente
         """
         urls = {
-            "cnd": self.CONSULTA_URL,
+            "cnd": self.BASE_URL_RFB,
             "pgfn": f"{self.BASE_URL_PGFN}/api/consulta",
             "regularize": self.BASE_URL_PGFN,
             "ecac": f"{self.BASE_URL_RFB}/ecac",
