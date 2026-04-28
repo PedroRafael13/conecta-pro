@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.44
+**Versão:** 1.45
 **Data:** 2026-04-28
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3183,7 +3183,136 @@ from modules.integrations.brasilapi.exceptions import (
 | Item | Sprint |
 |------|--------|
 | CPF: escolher fonte (gov.br / SERPRO / pago) para diarist_controller | D5.1.1 |
-| Fix CND Federal endpoint URL (stale desde mudança RFB) | D5.2 |
+| Fix CND Federal endpoint URL (stale desde mudança RFB) | D5.2 ✅ |
 | Fix CNDT ViewState (JSF javax.faces.ViewState) | D5.3 |
+| CertidoesUpdaterService (consolidar 5 CNDs) | D5.4 |
+| UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
+
+---
+
+## §43 — D5.2: Fix CND Federal Endpoint + Fallback Semântico
+
+**Data:** 2026-04-28
+**Sprint:** D5.2
+**Contrato:** v1.44 → v1.45
+**Gatilho:** URL `solucoes.receita.fazenda.gov.br` retorna 404 desde ~03/2025.
+Portal novo exige login gov.br vinculado ao CNPJ matriz — sem API pública.
+
+### §43.1 — Cenário C: Portal RFB sem API pública
+
+```
+Curl para CONSULTA_URL (antiga): HTTP 404
+Curl para servicos.receitafederal.gov.br/servico/certidoes/: HTTP 200 HTML + hCaptcha
+Sem form CNPJ, sem endpoint programático.
+```
+
+**Diagnóstico:** emissão real de CND exige login gov.br (OAuth2). Sem auth
+configurada, `_request_with_retry` sempre falha → sempre cai no fallback BrasilAPI.
+
+**Decisão:** URL atualizada para `servicos.receitafederal.gov.br/servico/certidoes/`
+(referência correta). Fluxo OAuth2 postergado para D5.2.1. Fallback BrasilAPI ativado.
+
+### §43.2 — Fix CNDFederalClient (CONCLUÍDO)
+
+**Arquivo:** `modules/bidding/integrations/receita_federal/cnd_client.py`
+
+#### URLs atualizadas
+
+```python
+# Antes (404 desde ~03/2025):
+BASE_URL_RFB = "https://servicos.receita.fazenda.gov.br"
+CONSULTA_URL = "https://solucoes.receita.fazenda.gov.br/..."
+
+# Depois (D5.2):
+BASE_URL_RFB = "https://servicos.receitafederal.gov.br"
+CONSULTA_URL = "https://servicos.receitafederal.gov.br/servico/certidoes/"
+```
+
+#### Imports — nível de módulo
+
+```python
+from modules.integrations.brasilapi.client import BrasilAPIClient
+from modules.integrations.brasilapi.exceptions import (
+    BrasilAPINotFoundError,
+    BrasilAPIUnavailableError,
+)
+```
+
+#### consultar_cnd() — Tentativa 2: fallback BrasilAPI (§42.4)
+
+```python
+# Tentativa 1: portal RFB direto (falha sem auth gov.br)
+try:
+    response = await self._request_with_retry("GET", self.CONSULTA_URL, params={"cnpj": cnpj_limpo})
+    if response.status_code == 200:
+        parsed = self._parse_resultado_cnd(response.text, cnpj_limpo)
+        if parsed.get("tipo_certidao") is not None:
+            return parsed
+except Exception:
+    pass
+
+# Tentativa 2: BrasilAPI (princípio §42.4 — regular=None)
+cnpj_data, _ = await BrasilAPIClient().get_cnpj(cnpj_limpo)
+situacao_cadastral = (cnpj_data.descricao_situacao_cadastral or "").upper()
+cnpj_ativo = situacao_cadastral == "ATIVA"
+return {
+    "situacao": "indeterminado_portal_indisponivel",
+    "regular": None,  # NUNCA afirmar CND regular via fallback
+    "cnpj_ativo_rfb": cnpj_ativo,
+    "fonte": "BrasilAPI (fallback)",
+    "nota": "Portal RFB indisponível. Status CND/PGFN NÃO confirmado...",
+}
+```
+
+#### verificar_regularidade() — tripartite
+
+```python
+regular = resultado.get("regular")
+return {
+    "apto_licitar": bool(regular) if regular is not None else None,
+    "observacao": (
+        "Empresa regular junto à RFB/PGFN" if regular is True
+        else "Empresa com débitos federais pendentes" if regular is False
+        else "Status CND federal indeterminado — portal RFB indisponivel, "
+             "consultar manualmente em servicos.receitafederal.gov.br"
+    ),
+}
+```
+
+### §43.3 — Testes D5.2 (4 novos)
+
+| Teste | Arquivo | Resultado |
+|-------|---------|-----------|
+| `test_cnd_federal_url_atualizada` | `test_cnd_federal_fallback.py` | ✅ PASS |
+| `test_cnd_federal_fallback_brasilapi_regular_none` | `test_cnd_federal_fallback.py` | ✅ PASS |
+| `test_cnd_federal_fallback_total_retorna_regular_none` | `test_cnd_federal_fallback.py` | ✅ PASS |
+| `test_verificar_regularidade_apto_licitar_none_quando_indeterminado` | `test_cnd_federal_fallback.py` | ✅ PASS |
+
+**Pytest acumulado:** D4(11) + D4.1(3) + D5.1(4) + D5.2(4) = **22 PASS**
+
+Patch target: `modules.bidding.integrations.receita_federal.cnd_client.BrasilAPIClient`
+
+### §43.4 — Princípio Reafirmado
+
+**§42.4 se aplica a TODOS os clientes de certidão:**
+
+> CNPJ ATIVO na RFB ≠ regular perante CND/PGFN, CRF/FGTS, CNDT, ou qualquer
+> outra certidão fiscal/trabalhista. Quando o portal oficial cai e o fallback
+> BrasilAPI é acionado, o único retorno honesto é `regular=None`.
+> Afirmar `regular=True` baseado em CNPJ ativo é falso positivo.
+
+| Cliente | Portal | Fallback | regular=None |
+|---------|--------|----------|-------------|
+| `CRFFGTSClient` | Caixa | BrasilAPI CNPJ | ✅ (D5.1) |
+| `CNDFederalClient` | RFB/PGFN | BrasilAPI CNPJ | ✅ (D5.2) |
+| `CNDTTrabalhistaClient` | TST | BrasilAPI CNPJ | 🔄 (D5.3) |
+
+### §43.5 — Backlog D5.x (atualizado)
+
+| Item | Sprint |
+|------|--------|
+| CPF: escolher fonte (gov.br / SERPRO / pago) para diarist_controller | D5.1.1 |
+| OAuth2 gov.br para emissão real de CND | D5.2.1 |
+| Fix CNDT ViewState (JSF javax.faces.ViewState) + regular=None | D5.3 |
 | CertidoesUpdaterService (consolidar 5 CNDs) | D5.4 |
 | UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
