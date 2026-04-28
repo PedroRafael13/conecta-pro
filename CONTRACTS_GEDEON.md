@@ -3016,3 +3016,10 @@ Executado em 2026-04-28 via curl com token real:
 - Agendamento por condomínio (alguns fecham antes que outros — granularidade por cliente)
 - UI: indicador de progresso em tempo real (WebSocket)
 - Lock Redis com TTL maior se sync demorar mais que 10min
+### §41.9 — Fora de Escopo D4
+
+- D5 — Baixar CNDs automaticamente (FGTS, INSS, Receita Federal)
+- D6 — Integração extrato Inter (reconciliação bancária automática)
+- Geração de arquivos reais: contracheques (DP), DARFs/CNDs (Fiscal), escalas PDF (Operações) — esses pipelines ainda não existem
+- Refactor Celery para arquitetura de workers separados por módulo
+- Autenticação multi-fator para disparo manual de coleta

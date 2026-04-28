@@ -105,7 +105,7 @@ Card "Coleta Automática" implementado com:
 | TestD4ColetaLogs | 2 | ✅ 2/2 PASS |
 | TestD4ColetaEndpoints | 3 | ✅ 3/3 PASS |
 
-**Total suite (container):** 9/9 PASS (todos D4)
+**Total suite (container):** 11/11 PASS (todos D4)
 
 ---
 
@@ -179,7 +179,7 @@ SELECT last_run, last_status FROM ged_coleta_config WHERE id=1;
 - §41.3 Endpoints REST
 - §41.4 Celery Beat PATH B
 - §41.5 Frontend UI
-- §41.6 Testes (9/9 PASS)
+- §41.6–§41.9 Testes (11/11 PASS) + Backlog + Fora de escopo
 - §41.7 Validação E2E
 - §41.8 Backlog D4
 
@@ -225,7 +225,7 @@ Push: ✅ `git push origin feature/people-management-reorganization`
 - [x] Background task com session própria (não reutiliza request session)
 - [x] Timezone Manaus calculada corretamente no celery_app.py
 - [x] Frontend com polling pós-run
-- [x] 9 testes novos, todos PASS
+- [x] 11 testes novos, todos PASS
 - [x] §41 no contrato, versão 1.42
 
 ---
@@ -249,7 +249,7 @@ Resumo técnico:
 - **4 endpoints** REST funcionais com auth
 - **1 Celery Beat** agendado para dia 21 às 06:00 Manaus (`ged.auto_collect_documents` registrado em todos os 5 nodes ✅)
 - **UI completa** na página de configurações GED
-- **11 testes** novos (9 originais + 2 auditoria), todos PASS
+- **11 testes** novos D4, todos PASS (incluindo run_now e idempotência)
 - **§41** documentado em CONTRACTS_GEDEON.md v1.42
 - Execução real: `status=success, kits_assembled=24, duration_ms=3427`
 - Trilogia preservada: 32 templates, 320 presenças, 0 fake ✅
