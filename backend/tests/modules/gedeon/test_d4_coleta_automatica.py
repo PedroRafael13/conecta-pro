@@ -139,6 +139,20 @@ class TestD4ColetaLogs:
             db.close()
 
 
+@pytest.fixture(autouse=True, scope="module")
+def clear_coleta_lock():
+    """Limpa lock Redis de coleta antes/após suite para evitar 409 espúrio."""
+    import redis as redis_lib
+
+    from core.config.settings import get_settings
+
+    settings = get_settings()
+    r = redis_lib.from_url(settings.redis_url, decode_responses=True)
+    r.delete("ged:coleta:running")
+    yield
+    r.delete("ged:coleta:running")
+
+
 class TestD4ColetaEndpoints:
     """Testes E2E via HTTP dos endpoints /coleta-automatica."""
 
@@ -235,8 +249,20 @@ class TestD4ColetaEndpoints:
     def test_run_now_idempotencia_409_se_em_andamento(self, token):
         """2 POSTs simultâneos → um retorna 202 (started) e outro 409 (Conflict)."""
         import concurrent.futures
+        import time
 
+        import redis as redis_lib
         import requests
+
+        from core.config.settings import get_settings
+
+        # Garantir que o lock está limpo antes de testar idempotência
+        r_client = redis_lib.from_url(get_settings().redis_url, decode_responses=True)
+        for _ in range(15):
+            if not r_client.exists("ged:coleta:running"):
+                break
+            time.sleep(2)
+        r_client.delete("ged:coleta:running")  # força limpeza se ainda preso
 
         def post_run():
             return requests.post(  # noqa: S113

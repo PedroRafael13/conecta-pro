@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.42
+**Versão:** 1.43
 **Data:** 2026-04-28
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3023,3 +3023,79 @@ Executado em 2026-04-28 via curl com token real:
 - Geração de arquivos reais: contracheques (DP), DARFs/CNDs (Fiscal), escalas PDF (Operações) — esses pipelines ainda não existem
 - Refactor Celery para arquitetura de workers separados por módulo
 - Autenticação multi-fator para disparo manual de coleta
+
+---
+
+## §41.1 — D4.1: AJUSTE COLETA AUTOMÁTICA + CLEANUP 02/2026
+
+**Versão:** 1.43
+**Data:** 2026-04-28
+**Sprint:** D4.1 (addendum ao D4)
+**Gatilho:** Sanity check pós-D4 detectou que execução manual criou 8 kits em 2026-02-01 sem autorização. `ColetaAutomaticaService` chamava `_meses_recentes(3)` que incluía meses sem kits, e `auto_build_all_kits` criava kits novos automaticamente.
+
+### §41.1.1 — Princípio instalado
+
+- **"Criar kit" é decisão de negócio** (cliente fechou competência, Jordan autorizou)
+- **Auto-assemble (rotina automática) PREENCHE kits existentes — não cria novos**
+- Mês sem kits → **SKIP** com log de aviso (`fase: planejamento, status: error`)
+- Criar kit novo → **endpoint /auto-assemble explícito** (UI: botão "Montar Kits")
+- Este princípio protege contra execuções cron/manuais que criariam kits "fantasma" em meses não autorizados
+
+### §41.1.2 — Cleanup aplicado
+
+```sql
+DELETE FROM ged_kit_documents
+WHERE kit_id IN (SELECT id FROM ged_document_kits WHERE reference_month='2026-02-01');
+-- DELETE 352
+
+DELETE FROM ged_document_kits WHERE reference_month='2026-02-01';
+-- DELETE 8
+```
+
+Estado pós-cleanup: **18 kits** (10 em 04/2026 + 8 em 03/2026). 02/2026 zerado.
+Backup: `/tmp/backup_before_d4_1_20260428_033329.sql` (403KB).
+
+### §41.1.3 — Code fix
+
+**Arquivo:** `modules/people_management/ged/services/coleta_automatica_service.py`
+
+`_meses_recentes(n=3)` **REMOVIDO** → substituído por `_meses_com_kits()`:
+
+```python
+async def _meses_com_kits(self) -> list[date]:
+    """Retorna meses que JÁ TÊM kits em ged_document_kits, desc."""
+    result = await self.db.execute(
+        select(GedDocumentKit.reference_month).distinct()
+        .order_by(GedDocumentKit.reference_month.desc())
+    )
+    return [row[0] for row in result.all()]
+```
+
+`executar()` agora:
+- Sem `mes_ref`: processa `_meses_com_kits()` (somente meses existentes)
+- Com `mes_ref`: valida se mês tem kits; se não → `status=error`, erro claro
+- Sem kits em nenhum mês → `status=error` com mensagem orientativa
+
+### §41.1.4 — Validação E2E
+
+| Teste | Resultado |
+|-------|-----------|
+| Run sem mes_ref após cleanup | ✅ processou 03+04/2026, NÃO criou 02/2026 |
+| Run com mes_ref='2026-01-01' | ✅ status=error, "Mês não tem kits", 0 kits criados |
+| DB pós-validação: 04=10, 03=8 | ✅ 02 e 01 ausentes |
+
+### §41.1.5 — Testes D4.1 (3 novos)
+
+**Arquivo:** `tests/modules/gedeon/test_d4_1_meses_com_kits.py`
+
+- `test_meses_com_kits_retorna_apenas_existentes` — 02/2026 não aparece, 03+04 sim
+- `test_executar_sem_mes_ref_nao_cria_kits_novos` — run sem mes_ref não cria meses novos
+- `test_executar_com_mes_ref_inexistente_retorna_erro` — mes_ref sem kits → error claro
+
+**Suite D4 + D4.1: 14/14 PASS**
+
+### §41.1.6 — Backlog D4.1
+
+- Endpoint explícito "Criar kits do mês X" na UI (hoje via /auto-assemble que é mais genérico)
+- Badge na UI: "Mês YYYY-MM aguardando criação" quando auto-assemble pula meses
+- Notificação Jordan quando coleta pula mês por falta de kits

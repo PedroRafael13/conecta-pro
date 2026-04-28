@@ -5,13 +5,14 @@ import time
 from datetime import UTC, date, datetime
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database.session import SyncSessionLocal
 from core.logging import logger
 
 from ..models.coleta_automatica import GedColetaConfig, GedColetaLog
+from ..models.document_kit import GedDocumentKit
 
 
 class ColetaAutomaticaService:
@@ -60,7 +61,32 @@ class ColetaAutomaticaService:
             )
 
             builder = KitBuilderService(self.db)
-            meses_alvo = [date.fromisoformat(mes_ref)] if mes_ref else self._meses_recentes(3)
+
+            if mes_ref:
+                mes_date = date.fromisoformat(mes_ref).replace(day=1)
+                # Validar: mês deve ter kits existentes
+                has_kits = await self.db.scalar(
+                    select(func.count(GedDocumentKit.id)).where(GedDocumentKit.reference_month == mes_date)
+                )
+                if not has_kits:
+                    erros.append(
+                        {
+                            "fase": "planejamento",
+                            "erro": f"Mês {mes_date.isoformat()} não tem kits. Crie kits primeiro via /auto-assemble.",
+                        }
+                    )
+                    meses_alvo = []
+                else:
+                    meses_alvo = [mes_date]
+            else:
+                meses_alvo = await self._meses_com_kits()
+                if not meses_alvo:
+                    erros.append(
+                        {
+                            "fase": "planejamento",
+                            "erro": "Nenhum mês tem kits cadastrados. Use /auto-assemble explicitamente para criar kits novos.",
+                        }
+                    )
 
             for mes in meses_alvo:
                 try:
@@ -142,19 +168,17 @@ class ColetaAutomaticaService:
         finally:
             db.close()
 
-    def _meses_recentes(self, n: int = 3) -> list[date]:
-        """Retorna os últimos N meses (primeiro dia de cada mês)."""
-        hoje = date.today()
-        meses = []
-        mes = hoje.replace(day=1)
-        for _ in range(n):
-            meses.append(mes)
-            # Regredir 1 mês
-            if mes.month == 1:
-                mes = mes.replace(year=mes.year - 1, month=12)
-            else:
-                mes = mes.replace(month=mes.month - 1)
-        return meses
+    async def _meses_com_kits(self) -> list[date]:
+        """Retorna meses que JÁ TÊM kits em ged_document_kits, desc.
+
+        Princípio D4.1: auto-assemble PREENCHE kits existentes — NÃO cria
+        kits novos sozinho. Mês sem kits → SKIP. Criar kits novos é decisão
+        de negócio via endpoint /auto-assemble explícito.
+        """
+        result = await self.db.execute(
+            select(GedDocumentKit.reference_month).distinct().order_by(GedDocumentKit.reference_month.desc())
+        )
+        return [row[0] for row in result.all()]
 
     async def get_config(self) -> GedColetaConfig:
         """Retorna a config singleton (id=1)."""
