@@ -173,13 +173,13 @@ backend/tests/modules/gedeon/test_d3_2_kitbuilder_no_fake_paths.py  3 passed
 
 Seções adicionadas ao `CONTRACTS_GEDEON.md`:
 
-- **§40.2** — D3.2: Limpeza de file_paths Fake e Fix do KitBuilderService
-  - §40.2.1 Contexto
-  - §40.2.2 Diagnóstico
-  - §40.2.3 Correção
-  - §40.2.4 Migração de dados
-  - §40.2.5 Testes de regressão
-  - §40.2.6 Invariante pós-D3.2
+- **§40.2** — D3.2: LIMPEZA file_paths FAKE + FIX KitBuilderService
+  - §40.2.1 Causa raiz (H2 confirmado — 5 pontos hardcoded)
+  - §40.2.2 Fix aplicado (arquivo + assinatura recalculate_completion preservada)
+  - §40.2.3 Limpeza DB (UPDATE 346 → NULL)
+  - §40.2.4 Validação (dry-run 02/2026, pytest 97/97)
+  - §40.2.5 Resultado final (905 total, 0 fake, 404 limpo)
+  - §40.2.6 Backlog (D-DP-1, D-FISCAL-1, D-OPS-1)
 
 ---
 
@@ -194,15 +194,15 @@ Seções adicionadas ao `CONTRACTS_GEDEON.md`:
 
 ## Validações 🔴 A–G
 
-| ID | Validação | Resultado |
-|----|-----------|-----------|
-| 🔴 A | `SELECT COUNT(*) WHERE file_path LIKE 'documents/%'` = 0 | ✅ **0** |
-| 🔴 B | Auto-assemble 02/2026 → fake_count = 0 | ✅ **0** |
-| 🔴 C | Auto-assemble 02/2026 → null_count > 0 | ✅ **346** |
-| 🔴 D | Invariante global pós-assemble ainda 0 fake | ✅ **0** |
-| 🔴 E | 97/97 testes PASS (incluindo 3 novos D3.2) | ✅ **97/97** |
-| 🔴 F | `CONTRACTS_GEDEON.md` v1.41 com §40.2 | ✅ `f618a392` |
-| 🔴 G | `kit_builder_service.py` sem nenhum `documents/` | ✅ grep retornou 0 |
+| ID | Validação (conforme prompt D3.2) | Resultado |
+|----|----------------------------------|-----------|
+| 🔴 A | Pytest gedeon ≥94 PASS (com testes ajustados + 3 novos D3.2) | ✅ **97/97** |
+| 🔴 B | DB: 905 kit_documents totais, 0 com `file_path LIKE 'documents/%'` | ✅ **905 total / 0 fake** |
+| 🔴 C | Auto-assemble dry-run 02/2026 gera 0 `file_path` fake | ✅ **0 fake / 346 NULL / 6 reais** |
+| 🔴 D | `build_completude` / `recalculate_completion` signature §27 preservada | ✅ `kit.recalculate_completion()` intacto |
+| 🔴 E | Trilogia A/B/C: 32 templates, 320 presenças, 10 kits 04/2026, 8 kits 03/2026, 552 docs 04/2026 | ✅ **32 / 320 / 10 / 8 / 552** |
+| 🔴 F | Endpoint download retorna 404 limpo (não 400) para docs com `file_path=NULL` | ✅ **HTTP 404** (testado: `GET /ged/documents/{id}/download`) |
+| 🔴 G | Zero diff em zonas proibidas (alembic, docker-compose, .env, credentials, main_production, onvio_*, ged_certidoes) | ✅ git diff retornou 0 arquivos proibidos |
 
 ---
 
@@ -258,6 +258,13 @@ KitBuilderService corrigido.
 Auto-assemble 02/2026 dry-run validou que futuros meses não terão paths fake.
 Dashboard agora mostra 0% honesto em 03/2026.
 Aguardando CIC + autorização D4 (cron Coleta Automática).
+
+---
+
+**Jordan: validar CIC**
+Abrir dashboard GED → mês 03/2026 → verificar que completude exibe **0%** (esperado: sem PDFs reais).
+Download de qualquer doc 03/2026 deve retornar **404** limpo (não 400).
+Se estiver assim, D3.2 está íntegro — autorizar D4 (cron Coleta Automática).
 
 ---
 
