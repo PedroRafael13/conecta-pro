@@ -217,6 +217,8 @@ async def get_history(
             "sync_novos": log.sync_novos,
             "kits_assembled": log.kits_assembled,
             "onvio_matched": log.onvio_matched,
+            "certidoes_atualizadas": log.certidoes_atualizadas,
+            "alertas_disparados": log.alertas_disparados,
             "triggered_by": log.triggered_by,
             "erros": log.erros,
         }

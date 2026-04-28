@@ -3466,3 +3466,99 @@ Nenhum fix de código aplicado — critério "se não tá quebrado, não consert
 | Playwright: navegar fluxo JSF+captcha imagem TST para CNDT real | D5.6 |
 | ~~CertidoesUpdaterService (consolidar 5 CNDs)~~ | ~~D5.4~~ ✅ |
 | UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
+
+---
+
+## §46 — D5.4: CertidoesUpdaterService
+
+**Data:** 2026-04-28
+**Commits:** ver RELATORIO_D5_4_CERTIDOES_UPDATER.md
+**Objetivo:** Service que orquestra 5 clients §42.4-compliant + atualiza ged_certidoes + Fase 3 em ColetaAutomaticaService
+
+### §46.1 — Design: mapeamento client → document_type
+
+| document_type (ged_certidoes) | Client | Método | Nota |
+|-------------------------------|--------|--------|------|
+| `certidao_negativa_fgts` | `CRFFGTSClient` | `consultar_crf` | |
+| `certidao_negativa_federal` | `CNDFederalClient` | `consultar_cnd` | |
+| `certidao_negativa_inss` | `CNDFederalClient` | `consultar_cnd` | DEDUP cache in-memory |
+| `certidao_negativa_trabalhista` | `CNDTTrabalhistaClient` | `consultar_cndt` | |
+| `certidao_negativa_estadual` | `SefazAMClient` | `consultar_cnd` | |
+| `certidao_negativa_municipal` | `PrefeituraManausClient` | `consultar_cnd` | |
+| `alvara_funcionamento` | — | SKIP | sem client D5.4 |
+| `registro_cnpj` | — | SKIP | sem client D5.4 |
+
+**Dedup:** 6 doc_types → 5 chamadas efetivas (federal + inss = 1 chamada via cache key `(mod_path, cls_name, method_name)`).
+
+**Decisão INSS:** `certidao_negativa_inss` reusa `CNDFederalClient` porque a RFB unificou contribuições previdenciárias desde 2023. Mesma fonte, mesmo dado.
+
+### §46.2 — CertidoesUpdaterService
+
+Arquivo: `backend/modules/people_management/ged/services/certidoes_updater_service.py`
+
+Métodos:
+- `executar(cnpj: str) → {certidoes_atualizadas, alertas_disparados, erros}` — ponto de entrada
+- `_chamar_client(mod_path, cls_name, method_name, cnpj)` — import dinâmico + close
+- `_atualizar_certidao(doc_type, resultado)` — UPDATE expiry_date + notes TEXT (JSON) em ged_certidoes
+- `_set_alerta(cert_id, ativo)` — UPDATE alerta_ativo
+- `_deve_alertar(resultado, expiry_date) → bool` — lógica 3 condições
+- `_calcular_expiry_date(resultado, atual, doc_type) → date | None` — data_validade → validade_dias → padrão por tipo
+
+Invariante §42.4: service nunca afirma `regular=True` baseado em proxy. Propaga exatamente o que o client retorna.
+
+### §46.3 — Lógica alerta_ativo (3 condições)
+
+`alerta_ativo = True` quando QUALQUER:
+1. `regular == False` — irregular confirmado
+2. `regular is None` — indeterminado (portal indisponível) — alerta preventivo
+3. `expiry_date < hoje + 30 dias` — vencendo em breve
+
+### §46.4 — Fase 3 em ColetaAutomaticaService
+
+Adicionado após Fase 2 (auto-assemble) em `coleta_automatica_service.py`:
+- Erro na Fase 3 não interrompe Fases 1+2 (try/except isolado)
+- Status `partial` se Fase 3 falhar com Fases 1+2 OK
+- Resultado gravado em `ged_coleta_logs.certidoes_atualizadas` + `alertas_disparados`
+
+### §46.5 — Endpoint manual
+
+`POST /api/v1/ged/coleta-automatica/cnds/run`
+- Lock Redis `ged:certidoes:running` TTL 300s (separado do lock `ged:coleta:running`)
+- 202 `{status: "started"}` se lock livre
+- 409 `{detail: "Atualização de certidões já em execução."}` se lock ativo
+- Background task: `CertidoesUpdaterService(session).executar(cnpj)`
+
+### §46.6 — Migration
+
+`alembic/versions/sprint85_d5_4_coleta_logs_certidoes.py` (revision: `sprint85_d5_4_certidoes`)
+
+Campos adicionados em `ged_coleta_logs`:
+- `certidoes_atualizadas INTEGER NOT NULL DEFAULT 0`
+- `alertas_disparados INTEGER NOT NULL DEFAULT 0`
+
+Expostos em `GET /coleta-automatica/history` (certidoes_atualizadas, alertas_disparados).
+
+### §46.7 — Testes D5.4 (5 novos)
+
+`backend/tests/modules/gedeon/test_d5_4_certidoes_updater.py` — 5/5 PASS
+
+| Teste | Cenário | Assert |
+|-------|---------|--------|
+| `test_certidoes_updater_atualiza_6_tipos` | 6 doc_types no CLIENTS_MAP, todos mock OK | certidoes_atualizadas==6, erros==[] |
+| `test_certidoes_updater_alerta_quando_regular_false` | todos clients retornam regular=False | alertas_disparados==6 |
+| `test_certidoes_updater_sem_alerta_quando_regular_true` | regular=True, validade_dias=180 | alertas_disparados==0 |
+| `test_certidoes_updater_dedup_cnd_federal_inss` | contar chamadas reais | call_count==5 (não 6) |
+| `test_certidoes_updater_erro_em_um_client_nao_interrompe` | 1ª chamada levanta exception | erros==1, certidoes_atualizadas>=4 |
+
+Pytest suite D5.4+D4+D4.1+D5.1+D5.2+D5.3: **31/32 PASS** (1 flaky pré-existente timeout HTTP).
+
+### §46.8 — Backlog D5.x (atualizado)
+
+| Item | Sprint |
+|------|--------|
+| CPF: escolher fonte para diarist_controller | D5.1.1 |
+| OAuth2 gov.br para emissão real de CND | D5.2.1 |
+| Playwright: navegar fluxo JSF+captcha imagem TST para CNDT real | D5.6 |
+| UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
+| `alvara_funcionamento` sem automação (manual) | D5.x |
+| `registro_cnpj` sem automação (sem client) | D5.x |
