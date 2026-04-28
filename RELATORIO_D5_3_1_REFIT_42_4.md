@@ -83,16 +83,40 @@ return {
 
 ## 6. STEP 5 — Validação + Pytest
 
-Pytest: apenas testes D5.1+D5.2+D5.3 (sem novos testes — nenhum fix aplicado).
+Sem deploy (zero mudança de código). Sem novos testes (nenhum fix aplicado).
+
+**Live test §42.4 (CNPJ 35710481000103):**
+
+```
+  SefazAM:
+    fonte: None
+    regular: True
+    situacao: regular
+    requer_manual: None
+    ✅ Portal respondeu direto (regular=True real — Sefaz-AM vivo)
+
+  PrefMan:
+    fonte: None
+    regular: False
+    situacao: irregular
+    requer_manual: None
+    ✅ Portal respondeu direto (regular=False real — CPD SEMEF detectado)
+```
+
+§42.4 confirmado: nenhum dos dois usa BrasilAPI. Quando portal está vivo,
+retornam dados reais. Quando inacessível → `regular=None` (bloco requer_manual).
+
+**Pytest D5.1+D5.2+D5.3:**
 
 ```
 test_crf_client_fallback.py      4/4 PASS  (D5.1)
 test_cnd_federal_fallback.py     4/4 PASS  (D5.2)
 test_cndt_client_fallback.py     5/5 PASS  (D5.3)
-======================== 13 passed ========================
+======================== 13 passed, 16 warnings in 7.44s ========================
 ```
 
-Sem deploy necessário (zero mudança de código).
+Nota: `test_sefaz_am_fallback.py` e `test_prefeitura_manaus_fallback.py` não
+criados — nenhum fix aplicado (ambos já compliant).
 
 ---
 
