@@ -102,9 +102,30 @@ class ColetaAutomaticaService:
             logger.error("Fase auto_assemble falhou: %s", e)
             erros.append({"fase": "auto_assemble", "erro": str(e)})
 
+        # ── Fase 3: Certidões (D5.4) ─────────────────────────────────────────
+        certidoes_atualizadas = 0
+        alertas_disparados = 0
+        try:
+            import os
+
+            from modules.people_management.ged.services.certidoes_updater_service import (
+                CertidoesUpdaterService,
+            )
+
+            cnpj_empresa = os.getenv("EMPRESA_CNPJ", "35710481000103")
+            cert_result = await CertidoesUpdaterService(self.db).executar(cnpj_empresa)
+            certidoes_atualizadas = cert_result["certidoes_atualizadas"]
+            alertas_disparados = cert_result["alertas_disparados"]
+            for e in cert_result["erros"]:
+                erros.append({"fase": "certidoes", **e})
+            logger.info("Fase certidoes: atualizadas=%d alertas=%d", certidoes_atualizadas, alertas_disparados)
+        except Exception as e:
+            logger.error("Fase certidoes falhou: %s", e)
+            erros.append({"fase": "certidoes", "erro": str(e)})
+
         # ── Resultado ─────────────────────────────────────────────────────────
         duration_ms = int((time.time() - start) * 1000)
-        if erros and (kits_assembled == 0 and sync_novos == 0):
+        if erros and (kits_assembled == 0 and sync_novos == 0 and certidoes_atualizadas == 0):
             status = "error"
         elif erros:
             status = "partial"
@@ -119,6 +140,8 @@ class ColetaAutomaticaService:
             sync_novos=sync_novos,
             kits_assembled=kits_assembled,
             onvio_matched=onvio_matched,
+            certidoes_atualizadas=certidoes_atualizadas,
+            alertas_disparados=alertas_disparados,
             erros=erros if erros else None,
             triggered_by=triggered_by,
         )

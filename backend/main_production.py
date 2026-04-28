@@ -642,6 +642,17 @@ try:
 except Exception as e:
     logger.warning(f"Modulo GED Kit Real: {e}")
 
+# GED Coleta Automatica (D4 — config, run manual, historico)
+try:
+    from modules.people_management.ged.controllers.coleta_automatica_controller import (
+        router as ged_coleta_router,
+    )
+
+    api_router.include_router(ged_coleta_router, prefix="/ged", tags=["GED - Coleta Automatica"])
+    logger.info("Modulo GED Coleta Automatica: OK")
+except Exception as e:
+    logger.warning(f"Modulo GED Coleta Automatica: {e}")
+
 # Saude Ocupacional (NR-4, NR-6, NR-7, NR-9)
 try:
     from modules.health_occupational import router as health_occupational_router

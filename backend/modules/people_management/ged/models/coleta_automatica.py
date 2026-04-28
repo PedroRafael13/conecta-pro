@@ -40,3 +40,5 @@ class GedColetaLog(Base):
     onvio_matched: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     erros: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     triggered_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    certidoes_atualizadas: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    alertas_disparados: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
