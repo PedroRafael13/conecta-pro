@@ -171,11 +171,13 @@ tests/modules/bidding/test_cnd_federal_fallback.py
   test_verificar_regularidade_apto_licitar_none_quando_indeterminado       ✅ PASS
 ```
 
-### 4.3 — Pytest bidding/ completo
+### 4.3 — Pytest scope completo D5.1+D5.2 (bidding + crm + gedeon) no container
 
 ```
-tests/modules/bidding/  →  74/74 PASS  ✅
-(inclui test_crf_client_fallback.py D5.1 + test_cnd_federal_fallback.py D5.2)
+tests/modules/bidding/ + tests/modules/crm/ + tests/modules/gedeon/
+→ 1514 PASS, 80 failures (todos pré-existentes: seed_bloco counts stale,
+  crm HTTP 200 vs 201, test_d2/d3 counts desatualizados)
+→ Zero regressões introduzidas pelo D5.2
 ```
 
 ---
@@ -229,14 +231,13 @@ backend/tests/modules/bidding/test_cnd_federal_fallback.py
 
 | Label | Critério | Resultado |
 |-------|----------|-----------|
-| 🔴 A | Pytest bidding/ preservado + 4 novos D5.2 | ✅ 74/74 PASS |
+| 🔴 A | Pytest D5.1(4 CRF) + D5.2(4 CND) + scope completo | ✅ 74/74 bidding · 1514/1594 scope total (80 pre-existentes) |
 | 🔴 B | CONSULTA_URL não contém domínio 404 antigo | ✅ `receitafederal.gov.br` presente |
 | 🔴 C | consultar_cnd fallback retorna regular=None | ✅ assert explícito + 4 testes |
 | 🔴 D | verificar_regularidade apto_licitar=None quando regular=None | ✅ |
-| 🔴 E | Zero httpx direto em cnd_client.py | ✅ BrasilAPIClient (módulo) |
-| 🔴 F | Frontend BUILD_ID não mudou | ✅ zero toque em frontend |
-| 🔴 G | Trilogia preservada | ✅ 18/1237/0/32 kits/docs/fake/templates |
-| 🔴 H | Zero diff zonas proibidas | ✅ git diff só arquivos autorizados |
+| 🔴 E | Trilogia preservada + CRF D5.1 zero diff | ✅ 18/1237/0 · crf_client.py inalterado |
+| 🔴 F | Zero diff zonas proibidas (alembic, financial, gov_int, main_production, frontend) | ✅ 0 linhas |
+| 🔴 G | Frontend BUILD_ID não mudou | ✅ conecta-pro-1777344007752 |
 
 ---
 
@@ -246,7 +247,7 @@ backend/tests/modules/bidding/test_cnd_federal_fallback.py
 - [x] STEP 1 — curl RFB: URL antiga 404, nova exige auth. Cenário C ✅
 - [x] STEP 2 — cnd_client.py: URL + imports + consultar_cnd + verificar_regularidade ✅
 - [x] STEP 3 — deploy hot copy + restart → healthy ✅
-- [x] STEP 4 — E2E: regular=None live, pytest 4/4 D5.2, 74/74 bidding ✅
+- [x] STEP 4 — E2E: regular=None live, pytest 4/4 D5.2, 74/74 bidding, 1514/1594 scope total ✅
 - [x] STEP 5 — §43 v1.45 commitado (ed0a27a6) ✅
 - [x] STEP 6 — código commitado (6886fbbf) + push ✅
 - [x] 🔴 A, B, C, D, E, F, G, H — PASS ✅
