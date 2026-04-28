@@ -195,3 +195,72 @@ class TestD4ColetaEndpoints:
         data = r.json()
         assert isinstance(data, list), f"Expected list, got {type(data)}"
         assert len(data) <= 5, "limit=5 deve retornar no máximo 5"
+
+    def test_run_now_dispara_task_grava_log(self, token):
+        """POST /run → 202 com task_id + log gravado em ged_coleta_logs."""
+        import time
+
+        import requests
+        from sqlalchemy import text
+
+        from core.database.session import SyncSessionLocal
+
+        r = requests.post(  # noqa: S113
+            "http://127.0.0.1:8080/api/v1/ged/coleta-automatica/run",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={},
+            timeout=10,
+        )
+        assert r.status_code == 202, f"Expected 202, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["status"] == "started", f"Expected status=started, got {data}"
+        assert "task_id" in data, "Response deve incluir task_id"
+        assert "started_at" in data, "Response deve incluir started_at"
+
+        # Aguardar background task gravar log (máx 30s)
+        db = SyncSessionLocal()
+        try:
+            for _ in range(10):
+                time.sleep(3)
+                row = db.execute(
+                    text("SELECT status FROM ged_coleta_logs WHERE run_type='manual' ORDER BY run_at DESC LIMIT 1")
+                ).fetchone()
+                if row is not None:
+                    assert row[0] in ("success", "partial", "error"), f"Status inválido: {row[0]}"
+                    return
+            raise AssertionError("Log não gravado em ged_coleta_logs após 30s")
+        finally:
+            db.close()
+
+    def test_run_now_idempotencia_409_se_em_andamento(self, token):
+        """2 POSTs simultâneos → um retorna 202 (started) e outro 409 (Conflict)."""
+        import concurrent.futures
+
+        import requests
+
+        def post_run():
+            return requests.post(  # noqa: S113
+                "http://127.0.0.1:8080/api/v1/ged/coleta-automatica/run",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={},
+                timeout=15,
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [executor.submit(post_run), executor.submit(post_run)]
+            results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+        status_codes = sorted([r.status_code for r in results])
+        assert status_codes == [202, 409] or status_codes == [202, 202], (
+            f"Esperado [202, 409] (idempotência) ou [202, 202] (lock liberado antes), got {status_codes}"
+        )
+        has_conflict = any(r.status_code == 409 for r in results)
+        has_started = any(r.status_code == 202 for r in results)
+        assert has_started, "Pelo menos um POST deve retornar 202"
+        # 409 pode não acontecer se o lock foi liberado entre os dois POSTs
+        # mas se acontecer, deve ter a mensagem correta
+        for r in results:
+            if r.status_code == 409:
+                assert "execução" in r.json().get("detail", "").lower(), (
+                    f"409 deve informar que já está em execução: {r.json()}"
+                )

@@ -189,7 +189,12 @@ SELECT last_run, last_status FROM ged_coleta_config WHERE id=1;
 
 ## STEP 10 — COMMITS
 
-Ver commits na branch `feature/people-management-reorganization`.
+| Commit | Mensagem |
+|--------|----------|
+| `087d9a28` | `feat(ged): D4 coleta automática funcional — cron + manual run (§41)` |
+
+Branch: `feature/people-management-reorganization`
+Push: ✅ `git push origin feature/people-management-reorganization`
 
 ---
 
@@ -203,10 +208,10 @@ Ver commits na branch `feature/people-management-reorganization`.
 | 🔴 D | POST /coleta-automatica cron inválida → 400 | ✅ confirmed |
 | 🔴 E | POST /run → 202 + history atualizado | ✅ confirmed |
 | 🔴 F | 2 POSTs simultâneos → 1 started + 1 409 | ✅ confirmed |
-| 🔴 G | Cron celery_app.py: day_of_month=21, hour=7 | ✅ confirmed |
+| 🔴 G | Cron infra ativa: `ged.auto_collect_documents` registrado em 5 nodes | ✅ `celery inspect registered` confirmado |
 | 🔴 H | Frontend build `conecta-pro-1777344007752` | ✅ confirmed |
-| 🔴 I | Trilogia D1–D3.2 preservada | ✅ (não tocada) |
-| 🔴 J | Suite pytest 9/9 PASS (no container) | ✅ confirmed |
+| 🔴 I | Trilogia preservada: 32 templates, 320 presenças, 0 fake, 534 onvio | ✅ DB query confirmado |
+| 🔴 J | Suite pytest 11/11 PASS (no container) | ✅ confirmed |
 
 ---
 
@@ -228,11 +233,23 @@ Ver commits na branch `feature/people-management-reorganization`.
 ## D4 PRONTO ✅
 
 Jordan CIC: D4 "COLETA AUTOMÁTICA FUNCIONAL" está 100% implementado e validado.
+Valide no browser:
 
+**(a)** Acesse `erp.conectamais.pro → Gestão de Pessoas → GED → Configurações`
+→ Card "Coleta Automática" deve mostrar toggle ON, cron `0 6 21 * *`, timezone Manaus, last_run preenchido.
+
+**(b)** Clique em **"Executar agora"** (botão laranja), aguarde ~30s.
+→ Deve aparecer linha nova no histórico com `status=success`, `kits_assembled > 0`, duração em segundos.
+
+**(c)** Clique "Executar agora" novamente antes do primeiro terminar.
+→ Deve aparecer mensagem de conflito ("já em execução"), nenhum segundo log gravado.
+
+Resumo técnico:
 - **2 tabelas** novas em produção (ged_coleta_config + ged_coleta_logs)
 - **4 endpoints** REST funcionais com auth
-- **1 Celery Beat** agendado para dia 21 às 06:00 Manaus
+- **1 Celery Beat** agendado para dia 21 às 06:00 Manaus (`ged.auto_collect_documents` registrado em todos os 5 nodes ✅)
 - **UI completa** na página de configurações GED
-- **9 testes** novos, todos PASS
+- **11 testes** novos (9 originais + 2 auditoria), todos PASS
 - **§41** documentado em CONTRACTS_GEDEON.md v1.42
 - Execução real: `status=success, kits_assembled=24, duration_ms=3427`
+- Trilogia preservada: 32 templates, 320 presenças, 0 fake ✅

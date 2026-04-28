@@ -1,6 +1,7 @@
 """D4 — Coleta Automática: GET/POST config, POST run, GET history."""
 
 import logging
+import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -96,6 +97,7 @@ async def run_now(
     # Setar lock
     await redis.set(RUNNING_LOCK_KEY, "1", ex=RUNNING_LOCK_TTL)
 
+    task_id = str(uuid.uuid4())
     triggered_by = getattr(current_user, "email", "unknown")
     started_at = datetime.now(UTC)
 
@@ -128,6 +130,7 @@ async def run_now(
     background_tasks.add_task(_run)
 
     return {
+        "task_id": task_id,
         "status": "started",
         "started_at": started_at.isoformat(),
         "message": "Coleta iniciada em background. Acompanhe em /coleta-automatica/history",

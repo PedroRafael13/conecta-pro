@@ -3009,7 +3009,10 @@ Executado em 2026-04-28 via curl com token real:
 
 ### §41.8 — Backlog D4
 
-- Notificação Telegram pós-coleta automática (cron)
+- Notificação Telegram quando partial/error (ver TELEGRAM_BOT_TOKEN em memória)
+- Beat dinâmico (django-celery-beat) para mudança de cron via UI sem redeploy (PATH B atual exige redeploy)
 - Cancelar coleta em andamento (DELETE /coleta-automatica/run)
 - Retry automático em partial/error
+- Agendamento por condomínio (alguns fecham antes que outros — granularidade por cliente)
 - UI: indicador de progresso em tempo real (WebSocket)
+- Lock Redis com TTL maior se sync demorar mais que 10min
