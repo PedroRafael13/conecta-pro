@@ -1,6 +1,6 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-\*\*Versão:\*\* 1.40
-**Data:** 2026-04-27
+**Versão:** 1.41
+**Data:** 2026-04-28
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
@@ -2755,7 +2755,7 @@ Retorna 400, não 500 (conforme INV-3).
 
 **Data:** 2026-04-27
 **Sprint:** D3.1 (addendum ao D3)
-**Versão:** 1.40
+**Versão:** 1.41
 **Gatilho:** Auditoria D3 detectou que PDFs em /2026-04/ eram cópias de teste
 (conteúdo 2025), não os PDFs reais do sync D1 de 03/2026.
 
@@ -2804,3 +2804,65 @@ nenhum "Folha 03.2026_X.pdf" fora de `/2026-04/`.
 - Aguardar próximo sync Onvio para baixar os 7 PDFs reais de 03/2026
 - Investigar se `ged_kit_documents.file_path` deveria ser FK para
   `onvio_documents.id` (reduziria duplicação e evitaria divergência)
+
+## §40.2 — D3.2: LIMPEZA file_paths FAKE + FIX KitBuilderService
+
+**Data:** 2026-04-28
+**Sprint:** D3.2 (addendum ao D3, follow-up D3.1.1)
+**Versão:** 1.41
+**Gatilho:** D3.1.1 detectou que KitBuilderService gerava paths fake
+(`documents/...`) em 346 kit_documents, dando ilusão de % no dashboard.
+Endpoint download retornava 400 (path traversal block) em vez de 404 limpo.
+
+### §40.2.1 — Causa raiz (H2 confirmado)
+
+5 pontos hardcoded em `kit_builder_service.py` geravam paths fake:
+
+| Método | Linha | Path fake gerado |
+|--------|-------|-----------------|
+| `collect_payslips` | 257 | `documents/dp/contracheques/{ref}/{emp_id}.pdf` |
+| `collect_time_sheets` | 309 | `documents/dp/folhas_ponto/{ref}/{emp_id}.pdf` |
+| `collect_benefit_receipts` | 367 | `documents/dp/beneficios/{ref}/{tipo}/{emp_id}.pdf` |
+| `collect_company_certificates` | 422 | `documents/fiscal/certidoes/{cert_type}.pdf` |
+| `collect_schedules` | 476 | `documents/operacoes/escalas/{ref}/{emp_id}.pdf` |
+
+`GED_STORAGE_BASE = /opt/conecta-pro/storage/ged` (diretório inexistente).
+INV-3 bloqueava todos com 400 (paths não relativos a `/app/uploads/`).
+
+### §40.2.2 — Fix aplicado
+
+Arquivo modificado: `backend/modules/people_management/ged/services/kit_builder_service.py`
+
+Cada `file_path = f"documents/..."` substituído por `file_path = None`.
+Signature pública dos métodos preservada. `recalculate_completion()` intacto (§27).
+
+### §40.2.3 — Limpeza DB
+
+```sql
+-- Antes: 905 total (346 fake + 559 NULL)
+UPDATE ged_kit_documents SET file_path=NULL, updated_at=NOW()
+WHERE file_path LIKE 'documents/%';
+-- Resultado: UPDATE 346
+-- Depois: 905 total (905 NULL)
+```
+
+### §40.2.4 — Validação
+
+- Auto-assemble dry-run 02/2026: **0 paths fake gerados** ✅
+- Cleanup kits teste 02/2026: DELETE 352 docs + 8 kits ✅
+- Pytest **97/97 PASS** (94 anteriores + 3 novos D3.2) ✅
+- `test_auto_assemble_gera_null_nao_fake`: valida regressão D3.1.1 ✅
+
+### §40.2.5 — Resultado final
+
+- 905 kit_documents totais
+- TODOS com `file_path=NULL` (zero fake, zero uploads_reais ainda)
+- Dashboard mostra 0% honesto em 03/2026 (correto — sem PDFs reais)
+- Download retorna 404 limpo em vez de 400
+
+### §40.2.6 — Backlog
+
+- Pipeline DP gerando contracheques reais (D-DP-1)
+- Pipeline Fiscal baixando CNDs reais (D-FISCAL-1)
+- Pipeline Operações exportando escalas (D-OPS-1)
+- Definir `GED_STORAGE_BASE` correto (hoje aponta para dir inexistente)
