@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.46
+**Versão:** 1.47
 **Data:** 2026-04-28
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3394,6 +3394,70 @@ Adicionados:
 **Princípio §42.4 aplicado a 3/3 clients de certidão.**
 
 ### §44.5 — Backlog D5.x (atualizado)
+
+| Item | Sprint |
+|------|--------|
+| CPF: escolher fonte para diarist_controller | D5.1.1 |
+| OAuth2 gov.br para emissão real de CND | D5.2.1 |
+| Playwright: navegar fluxo JSF+captcha imagem TST para CNDT real | D5.6 |
+| CertidoesUpdaterService (consolidar 3 CNDs) | D5.4 |
+| UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
+
+---
+
+## §45 — D5.3.1: Auditoria §42.4 — SefazAMClient + PrefeituraManausClient
+
+**Data:** 2026-04-28
+**Commits:** ver RELATORIO_D5_3_1_REFIT_42_4.md
+**Objetivo:** Confirmar 5/5 clients §42.4-compliant antes do D5.4
+
+### §45.1 — Auditoria SefazAMClient
+
+Arquivo: `modules/bidding/integrations/receita_federal/sefaz_am_client.py`
+
+| Pergunta | Resposta |
+|----------|----------|
+| P1. Try/except captura erro de portal? | SIM — loop `for url_base` com `except Exception: continue` |
+| P2. Em erro, retorna regular=? | `regular=None` + `requer_manual=True` — nunca False ou True falso |
+| P3. Fallback BrasilAPI? | NÃO — fallback é bloco "portal inacessivel" com instrução manual |
+| P4. Fallback afirma regular=True via CNPJ? | N/A — sem BrasilAPI |
+| P5. `verificar_regularidade` trata None? | SIM — `.get("regular", False)` retorna `None` quando chave existe com valor `None`; `apto_licitar=None` ✅ |
+
+**Decisão: OK** — §42.4 já satisfeito. Sem fix necessário.
+
+### §45.2 — Auditoria PrefeituraManausClient
+
+Arquivo: `modules/bidding/integrations/receita_federal/prefeitura_manaus_client.py`
+
+Estrutura idêntica ao SefazAMClient. Mesmas respostas P1–P5.
+
+Portal inacessível → `regular=None` (não `False`) + `requer_manual=True`.
+`verificar_regularidade`: `apto_licitar=None` quando `regular=None`. ✅
+
+**Decisão: OK** — §42.4 já satisfeito. Sem fix necessário.
+
+### §45.3 — Tabela de Decisão STEP 3
+
+| Client | Tem fallback inseguro? | Fallback afirma regular=True via CNPJ? | verificar_regularidade trata None? | Decisão |
+|--------|------------------------|----------------------------------------|-------------------------------------|---------|
+| SefazAMClient | NÃO | N/A | SIM | OK |
+| PrefeituraManausClient | NÃO | N/A | SIM | OK |
+
+Nenhum fix de código aplicado — critério "se não tá quebrado, não conserta".
+
+### §45.4 — §42.4: 5/5 clients confirmados
+
+| Client | Portal | Fallback quando portal cai | regular=None garantido | Status |
+|--------|--------|---------------------------|------------------------|--------|
+| `CRFFGTSClient` | Caixa/FGTS | BrasilAPI (`get_cnpj`) | ✅ | D5.1 |
+| `CNDFederalClient` | RFB/PGFN | BrasilAPI (`get_cnpj`) | ✅ | D5.2 |
+| `CNDTTrabalhistaClient` | TST | BrasilAPI (`get_cnpj`) | ✅ | D5.3 |
+| `SefazAMClient` | Sefaz-AM | Bloco manual (`requer_manual=True`) | ✅ | D5.3.1 auditado |
+| `PrefeituraManausClient` | SEMEF/Manaus | Bloco manual (`requer_manual=True`) | ✅ | D5.3.1 auditado |
+
+**§42.4 aplicado a 5/5 clients de certidão. Princípio consolidado.**
+
+### §45.5 — Backlog D5.x (atualizado)
 
 | Item | Sprint |
 |------|--------|
