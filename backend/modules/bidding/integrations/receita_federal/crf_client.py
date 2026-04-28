@@ -20,6 +20,8 @@ from typing import Any
 
 import httpx
 
+from modules.integrations.brasilapi.client import BrasilAPIClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -150,39 +152,34 @@ class CRFFGTSClient:
             logger.warning("CRF HTML fallback falhou para %s: %s", cnpj_limpo, exc)
 
         # Tentativa 3: BrasilAPI — fallback quando portal Caixa bloqueia (403/WAF)
+        # IMPORTANTE: BrasilAPI CNPJ retorna situacao_cadastral da RFB, que é
+        # INDEPENDENTE da regularidade FGTS na Caixa. Empresa pode estar ATIVA na
+        # RFB mas com débito FGTS pendente. Por isso retornamos `regular=None` —
+        # afirmar regular=True baseado em CNPJ ativo é falso positivo. Caller deve
+        # tratar `regular=None` como "status FGTS desconhecido".
         try:
-            brasilapi_url = f"https://brasilapi.com.br/api/cnpj/v1/{cnpj_limpo}"
-            response = await self.client.get(brasilapi_url, timeout=10.0)
-            if response.status_code == 200:
-                data = response.json()
-                situacao_cadastral = data.get("descricao_situacao_cadastral", "").upper()
-                regular = situacao_cadastral == "ATIVA"
-                data_validade = (datetime.utcnow() + timedelta(days=self.VALIDADE_DIAS)).isoformat()
-                logger.info(
-                    "CRF/FGTS via BrasilAPI para %s: situacao=%s regular=%s",
-                    cnpj_limpo,
-                    situacao_cadastral,
-                    regular,
-                )
-                return {
-                    "cnpj": cnpj_limpo,
-                    "tipo_certidao": self.TIPO_REGULAR if regular else self.TIPO_IRREGULAR,
-                    "situacao": "regular" if regular else "irregular",
-                    "regular": regular,
-                    "data_validade": data_validade,
-                    "validade": data_validade,
-                    "numero": "",
-                    "fonte": "BrasilAPI/ReceitaFederal",
-                    "codigo_controle": None,
-                    "validade_dias": self.VALIDADE_DIAS,
-                    "emitida_por": "CEF/FGTS (via BrasilAPI)",
-                    "situacao_receita": situacao_cadastral,
-                    "nota": (
-                        "Portal Caixa indisponivel — regularidade confirmada via "
-                        f"BrasilAPI (situacao Receita: {situacao_cadastral})"
-                    ),
-                    "consultado_em": datetime.utcnow().isoformat(),
-                }
+            cnpj_data, _ = await BrasilAPIClient().get_cnpj(cnpj_limpo)
+            situacao_cadastral = (cnpj_data.descricao_situacao_cadastral or "").upper()
+            cnpj_ativo = situacao_cadastral == "ATIVA"
+            logger.warning(
+                "CRF/FGTS portal Caixa indisponivel para %s. Apenas RFB disponivel: %s",
+                cnpj_limpo,
+                situacao_cadastral,
+            )
+            return {
+                "cnpj": cnpj_limpo,
+                "tipo_certidao": "CRF",
+                "situacao": "indeterminado_portal_indisponivel",
+                "regular": None,
+                "cnpj_ativo_rfb": cnpj_ativo,
+                "fonte": "BrasilAPI (fallback)",
+                "nota": (
+                    "Portal Caixa indisponível. Status FGTS NÃO confirmado via "
+                    "fonte oficial. Apenas situação cadastral RFB conhecida "
+                    f"({'ativa' if cnpj_ativo else 'inativa'})."
+                ),
+                "consultado_em": datetime.utcnow().isoformat(),
+            }
         except Exception as exc:
             logger.error("CRF BrasilAPI fallback falhou para %s: %s", cnpj_limpo, exc)
 
@@ -191,7 +188,7 @@ class CRFFGTSClient:
             "cnpj": cnpj_limpo,
             "tipo_certidao": None,
             "situacao": "erro_consulta",
-            "regular": False,
+            "regular": None,
             "mensagem": "Portal CRF/FGTS e BrasilAPI indisponiveis",
             "consultado_em": datetime.utcnow().isoformat(),
         }
@@ -297,17 +294,20 @@ class CRFFGTSClient:
             Dict com 'regular' (bool), 'tipo_certidao' e 'detalhes'
         """
         resultado = await self.consultar_crf(cnpj)
+        regular = resultado.get("regular")
         return {
             "cnpj": resultado["cnpj"],
-            "regular": resultado["regular"],
+            "regular": regular,
             "tipo_certidao": resultado.get("tipo_certidao"),
             "situacao": resultado.get("situacao"),
             "data_validade": resultado.get("data_validade"),
-            "apto_licitar": resultado["regular"],
+            "apto_licitar": bool(regular) if regular is not None else None,
             "observacao": (
                 "Empresa regular perante a Caixa Economica Federal (FGTS)"
-                if resultado["regular"]
+                if regular is True
                 else "Empresa com pendencias FGTS — verificar debitos na Caixa"
+                if regular is False
+                else "Status FGTS indeterminado — portal Caixa indisponivel, consultar manualmente"
             ),
         }
 
