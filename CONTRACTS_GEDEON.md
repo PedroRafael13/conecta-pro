@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.43
+**Versão:** 1.44
 **Data:** 2026-04-28
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3099,3 +3099,91 @@ async def _meses_com_kits(self) -> list[date]:
 - Endpoint explícito "Criar kits do mês X" na UI (hoje via /auto-assemble que é mais genérico)
 - Badge na UI: "Mês YYYY-MM aguardando criação" quando auto-assemble pula meses
 - Notificação Jordan quando coleta pula mês por falta de kits
+
+---
+
+## §42 — D5.1: BrasilAPI Consolidação + Fix Semântico CRF
+
+**Data:** 2026-04-28
+**Sprint:** D5.1 (subbloco do D5)
+**Contrato:** v1.43 → v1.44
+**Gatilho:** D5.0.1 detectou 2 rogues (httpx direto sem cache/CB) e
+fallback CRF com bug semântico (afirmava `regular=True` baseado em CNPJ ativo RFB).
+
+### §42.1 — Cenário B: cpf/v1/ deprecated
+
+STEP 1 testou `brasilapi.com.br/api/cpf/v1/` → retornou HTML 404 (Next.js 404 page).
+Endpoint removido da BrasilAPI. Per INV-11 + Cenário B:
+
+- **STEP 2 (get_cpf) — ABORTADO**: sem endpoint, não há como implementar
+- **STEP 3 (diarist_controller) — ABORTADO**: sem fonte alternativa definida
+- `diarist_controller.py:133` mantém httpx direto (rogue documentado) até D5.x
+
+**Ação pendente (backlog):** escolher fonte para CPF — gov.br, serpro/CPF-API, ou serviço pago.
+
+### §42.2 — Fix Semântico CRF (CONCLUÍDO)
+
+**Arquivo:** `modules/bidding/integrations/receita_federal/crf_client.py`
+
+**Bug anterior (Tentativa 3 — fallback BrasilAPI):**
+```python
+regular = situacao_cadastral == "ATIVA"  # FALSO POSITIVO
+```
+Afirmava `regular=True` se CNPJ estava ATIVO na RFB. Bug: empresa pode estar
+ATIVA na RFB mas com débito FGTS pendente na Caixa.
+
+**Fix aplicado:**
+```python
+# regular=None — status FGTS NÃO pode ser confirmado via CNPJ RFB
+return {
+    "situacao": "indeterminado_portal_indisponivel",
+    "regular": None,
+    "cnpj_ativo_rfb": cnpj_ativo,
+    "fonte": "BrasilAPI (fallback)",
+    "nota": "Portal Caixa indisponível. Status FGTS NÃO confirmado..."
+}
+```
+
+Também corrigido:
+- Retorno final (todas falhas): `regular: False` → `regular: None`
+- `verificar_regularidade()`: `apto_licitar=None` quando `regular=None`
+  (antes: `apto_licitar=False`, agora: tratamento tripartite True/False/None)
+
+**Import movido para nível de módulo** (era lazy import dentro do try):
+```python
+from modules.integrations.brasilapi.client import BrasilAPIClient
+from modules.integrations.brasilapi.exceptions import (
+    BrasilAPINotFoundError, BrasilAPIUnavailableError,
+)
+```
+
+### §42.3 — Testes D5.1 (4 novos)
+
+**Arquivo:** `tests/modules/bidding/test_crf_client_fallback.py`
+
+| Teste | Resultado |
+|-------|-----------|
+| `test_crf_fallback_brasilapi_nao_afirma_regular_true` | ✅ PASS |
+| `test_crf_fallback_cnpj_baixado_regular_none` | ✅ PASS |
+| `test_crf_fallback_total_retorna_regular_none` | ✅ PASS |
+| `test_verificar_regularidade_apto_licitar_none_quando_indeterminado` | ✅ PASS |
+
+**Pytest acumulado:** D4(11) + D4.1(3) + D5.1(4) = **18 PASS**
+
+### §42.4 — Princípio Consolidado
+
+> **CNPJ ATIVO na RFB ≠ FGTS regular na Caixa.**
+> Quando o portal da Caixa cai e o fallback BrasilAPI é acionado,
+> o único retorno honesto é `regular=None`.
+> Callers devem exibir "Status FGTS indeterminado — verificar manualmente"
+> em vez de verde (regular) ou vermelho (irregular).
+
+### §42.5 — Backlog D5.x
+
+| Item | Sprint |
+|------|--------|
+| CPF: escolher fonte (gov.br / SERPRO / pago) para diarist_controller | D5.1.1 |
+| Fix CND Federal endpoint URL (stale desde mudança RFB) | D5.2 |
+| Fix CNDT ViewState (JSF javax.faces.ViewState) | D5.3 |
+| CertidoesUpdaterService (consolidar 5 CNDs) | D5.4 |
+| UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
