@@ -347,10 +347,12 @@ app.conf.beat_schedule = {
         "schedule": crontab(hour=6, minute=30),
         "options": {"queue": "ged"},
     },
-    # Geração mensal de kits — dia 1 às 02:00 (substitui APScheduler)
+    # Coleta mensal D4 — dia 21 às 07:00 SP (= 06:00 Manaus UTC-4, tz global SP UTC-3)
+    # INV-12: America/Manaus offset. Celery global tz = America/Sao_Paulo.
+    # Manaus 06:00 = Sao Paulo 07:00 (horário padrão, sem DST em Manaus).
     "ged-auto-collect-monthly": {
         "task": "ged.auto_collect_documents",
-        "schedule": crontab(day_of_month="1", hour="2", minute="0"),
+        "schedule": crontab(day_of_month="21", hour="7", minute="0"),
         "args": [None],  # reference_month=None → usa mês atual
         "options": {"queue": "operacional"},
     },

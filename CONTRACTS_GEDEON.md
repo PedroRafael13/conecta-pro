@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.41
+**Versão:** 1.42
 **Data:** 2026-04-28
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -2866,3 +2866,150 @@ WHERE file_path LIKE 'documents/%';
 - Pipeline Fiscal baixando CNDs reais (D-FISCAL-1)
 - Pipeline Operações exportando escalas (D-OPS-1)
 - Definir `GED_STORAGE_BASE` correto (hoje aponta para dir inexistente)
+
+---
+
+## §41 — D4: COLETA AUTOMÁTICA MENSAL
+
+**Versão:** 1.42
+**Data:** 2026-04-28
+**Status:** Implementado e validado em produção
+
+### §41.1 — Tabelas de Persistência
+
+Duas tabelas criadas via migration `sprint85_d4_coleta_automatica` (down_revision: `5ec309bea85c`):
+
+#### ged_coleta_config (singleton id=1)
+| Coluna | Tipo | Padrão |
+|--------|------|--------|
+| id | INTEGER PK | 1 (CHECK id=1) |
+| enabled | BOOLEAN | TRUE |
+| cron_expr | VARCHAR(50) | `0 6 21 * *` |
+| timezone | VARCHAR(50) | `America/Manaus` |
+| last_run | TIMESTAMPTZ | NULL |
+| last_status | VARCHAR(20) | NULL |
+| updated_at | TIMESTAMPTZ | now() |
+| updated_by | VARCHAR(255) | NULL |
+
+#### ged_coleta_logs
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| id | UUID PK | gen_random_uuid() |
+| run_at | TIMESTAMPTZ | server_default now() |
+| run_type | VARCHAR(10) | `manual` / `cron` |
+| status | VARCHAR(20) | `success` / `partial` / `error` |
+| duration_ms | INTEGER | NULL |
+| sync_novos | INTEGER | default 0 |
+| kits_assembled | INTEGER | default 0 |
+| onvio_matched | INTEGER | default 0 |
+| erros | JSONB | NULL |
+| triggered_by | VARCHAR(255) | NULL |
+
+Índice: `ix_ged_coleta_logs_run_at` em `run_at`.
+
+### §41.2 — Service ColetaAutomaticaService
+
+**Arquivo:** `modules/people_management/ged/services/coleta_automatica_service.py`
+
+```python
+class ColetaAutomaticaService:
+    async def executar(run_type, triggered_by, mes_ref=None, force_resync=False) -> dict
+    async def get_config() -> GedColetaConfig
+    async def update_config(enabled, cron_expr, updated_by) -> None
+    async def get_history(limit=20) -> list[GedColetaLog]
+```
+
+**Fluxo de `executar()`:**
+1. **Fase 1 — Sync Onvio** (sync em thread pool executor — OnvioSyncService usa psycopg2)
+2. **Fase 2 — Auto-assemble** via `KitBuilderService.auto_build_all_kits(mes)` para 3 meses recentes (ou `mes_ref` específico)
+3. **Log** gravado em `ged_coleta_logs`
+4. **Config** atualizada: `last_run`, `last_status`
+5. Retorna `{status, duration_ms, sync_novos, kits_assembled, onvio_matched, erros}`
+
+**Bridge sync→async:** `asyncio.get_event_loop().run_in_executor(None, _sync_onvio_sync, mes_ref)`
+
+### §41.3 — Endpoints REST
+
+**Prefixo:** `/api/v1/ged/coleta-automatica`
+**Auth:** Bearer JWT obrigatório em todos
+
+| Método | Rota | Status | Descrição |
+|--------|------|--------|-----------|
+| GET | `/coleta-automatica` | 200 | Retorna config atual (enabled, cron_expr, timezone, last_run, last_status) |
+| POST | `/coleta-automatica` | 200 | Atualiza enabled + cron_expr. Valida croniter. Retorna 400 se cron inválida |
+| POST | `/coleta-automatica/run` | 202 | Dispara coleta manual em background. Idempotente via lock Redis (409 se já running) |
+| GET | `/coleta-automatica/history?limit=N` | 200 | Histórico de execuções (máx 100) |
+
+**Idempotência:** Lock Redis key `ged:coleta:running`, TTL 600s.
+POST `/run` com lock ativo retorna HTTP 409 com detail explicativo.
+
+**Background isolation:** `_run()` cria `create_async_engine` + `async_sessionmaker` próprios (não reutiliza session do request).
+
+### §41.4 — Celery Beat (PATH B — Static Schedule)
+
+**Arquivo:** `celery_app.py`
+**Task:** `ged.auto_collect_documents` → `modules/people_management/ged/tasks/auto_collect_task.py`
+
+```python
+"ged-auto-collect-monthly": {
+    "task": "ged.auto_collect_documents",
+    "schedule": crontab(day_of_month="21", hour="7", minute="0"),
+    # Manaus 06:00 = Sao Paulo 07:00 (Manaus UTC-4, celery tz=America/Sao_Paulo UTC-3)
+    "options": {"queue": "operacional"},
+}
+```
+
+A task Celery orquestra `ColetaAutomaticaService.executar(run_type="cron", triggered_by="celery-beat")` via `asyncio.run()`.
+
+### §41.5 — Frontend UI
+
+**Arquivo:** `frontend/src/app/modulos/gestao-pessoas/ged/configuracoes/page.tsx`
+
+Card "Coleta Automática" na página de configurações GED com:
+- Toggle ON/OFF (`enabled`)
+- Campo `cron_expr` editável
+- Display de `last_run` + badge `last_status`
+- Botão "Salvar" (azul) — POST config
+- Botão "Executar agora" (laranja) — POST /run + polling 3s no history
+- Tabela history com rows expansíveis (status, data, tipo, duração, stats, erros JSON)
+- Build: `conecta-pro-1777344007752`
+
+### §41.6 — Testes
+
+**Arquivo:** `tests/modules/gedeon/test_d4_coleta_automatica.py`
+**9 testes novos** — todos PASS:
+
+| Classe | Teste |
+|--------|-------|
+| TestD4ColetaConfig | `test_config_default_pos_migration` |
+| TestD4ColetaConfig | `test_update_config_persiste_no_db` |
+| TestD4ColetaConfig | `test_config_aceita_cron_valida` |
+| TestD4ColetaConfig | `test_singleton_constraint` |
+| TestD4ColetaLogs | `test_log_insert_e_leitura` |
+| TestD4ColetaLogs | `test_history_ordena_por_run_at_desc` |
+| TestD4ColetaEndpoints | `test_get_config_retorna_default` |
+| TestD4ColetaEndpoints | `test_update_config_rejeita_cron_invalida` |
+| TestD4ColetaEndpoints | `test_history_retorna_lista` |
+
+**Total suite:** 106/106 PASS (97 anteriores + 9 D4)
+
+### §41.7 — Validação E2E
+
+Executado em 2026-04-28 via curl com token real:
+
+| Teste | Resultado |
+|-------|-----------|
+| GET /coleta-automatica → config default | ✅ `cron_expr: "0 6 21 * *"`, `timezone: "America/Manaus"` |
+| POST /coleta-automatica cron válida | ✅ 200, `ok: true` |
+| POST /coleta-automatica cron inválida | ✅ 400 Bad Request |
+| POST /run manual | ✅ 202 `{"status":"started"}` |
+| GET /history após run | ✅ `{status:"success", kits_assembled:24, onvio_matched:13, duration_ms:3427}` |
+| Idempotência (2 POSTs paralelos) | ✅ 1× 202 started + 1× 409 Conflict |
+| DB: config last_run + last_status | ✅ Atualizados após execução |
+
+### §41.8 — Backlog D4
+
+- Notificação Telegram pós-coleta automática (cron)
+- Cancelar coleta em andamento (DELETE /coleta-automatica/run)
+- Retry automático em partial/error
+- UI: indicador de progresso em tempo real (WebSocket)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Loader2,
@@ -16,6 +16,10 @@ import {
   ToggleRight,
   Link,
   Unlink,
+  Play,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -60,11 +64,25 @@ interface DocumentType {
   enabled: boolean;
 }
 
-interface ScheduleConfig {
+interface ColetaConfig {
   enabled: boolean;
-  cron_expression: string;
-  description: string;
+  cron_expr: string;
+  timezone: string;
   last_run: string | null;
+  last_status: string | null;
+}
+
+interface ColetaLog {
+  id: string;
+  run_at: string;
+  run_type: string;
+  status: string;
+  duration_ms: number | null;
+  sync_novos: number;
+  kits_assembled: number;
+  onvio_matched: number;
+  triggered_by: string | null;
+  erros: Record<string, unknown>[] | null;
 }
 
 export default function ConfiguracoesPage() {
@@ -84,12 +102,17 @@ export default function ConfiguracoesPage() {
 
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
 
-  const [schedule, setSchedule] = useState<ScheduleConfig>({
-    enabled: false,
-    cron_expression: '0 6 1 * *',
-    description: 'Todo dia 1 as 06:00',
+  const [coleta, setColeta] = useState<ColetaConfig>({
+    enabled: true,
+    cron_expr: '0 6 21 * *',
+    timezone: 'America/Manaus',
     last_run: null,
+    last_status: null,
   });
+  const [coletaLogs, setColetaLogs] = useState<ColetaLog[]>([]);
+  const [runningColeta, setRunningColeta] = useState(false);
+  const [expandedLog, setExpandedLog] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Tratar callback OAuth do Google Drive (?gdrive=conectado ou ?gdrive=erro)
   useEffect(() => {
@@ -115,11 +138,10 @@ export default function ConfiguracoesPage() {
   async function fetchConfig() {
     setLoading(true);
     try {
-      const [driveRes, templatesRes, typesRes, scheduleRes] = await Promise.all([
+      const [driveRes, templatesRes, typesRes] = await Promise.all([
         fetch(`${GDRIVE_BASE}/status`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/config/email-templates`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/config/document-types`, { headers: getAuthHeaders() }),
-        fetch(`${API_BASE}/config/schedule`, { headers: getAuthHeaders() }),
       ]);
 
       if (driveRes.ok) {
@@ -139,7 +161,9 @@ export default function ConfiguracoesPage() {
         const data = await typesRes.json();
         setDocumentTypes(Array.isArray(data) ? data : data.tipos || data.types || data.items || []);
       }
-      if (scheduleRes.ok) setSchedule(await scheduleRes.json());
+      const coletaRes = await fetch(`${API_BASE}/coleta-automatica`, { headers: getAuthHeaders() });
+      if (coletaRes.ok) setColeta(await coletaRes.json());
+      await fetchColetaHistory();
     } catch (error) {
       console.error('fetchConfig:', error);
       showToast('Erro ao carregar configurações', 'error');
@@ -224,22 +248,87 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  async function saveSchedule() {
-    setSavingSection('schedule');
+  async function fetchColetaHistory() {
     try {
-      const res = await fetch(`${API_BASE}/config/schedule`, {
-        method: 'PUT',
+      const res = await fetch(`${API_BASE}/coleta-automatica/history?limit=10`, { headers: getAuthHeaders() });
+      if (res.ok) setColetaLogs(await res.json());
+    } catch (e) {
+      console.error('fetchColetaHistory:', e);
+    }
+  }
+
+  async function saveColetaConfig() {
+    setSavingSection('coleta');
+    try {
+      const { croniter } = await import('croniter').catch(() => ({ croniter: null }));
+      const res = await fetch(`${API_BASE}/coleta-automatica`, {
+        method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify(schedule),
+        body: JSON.stringify({ enabled: coleta.enabled, cron_expr: coleta.cron_expr }),
       });
-      if (res.ok) showToast('Agendamento salvo com sucesso');
+      if (res.ok) showToast('Configuração salva com sucesso');
       else showToast(`Erro ao salvar: ${res.status}`, 'error');
     } catch (error) {
       showToast('Erro de conexão', 'error');
-      console.error('saveSchedule:', error);
+      console.error('saveColetaConfig:', error);
     } finally {
       setSavingSection(null);
     }
+  }
+
+  async function runColetaAgora() {
+    if (runningColeta) return;
+    setRunningColeta(true);
+    try {
+      const res = await fetch(`${API_BASE}/coleta-automatica/run`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({}),
+      });
+      if (res.status === 202) {
+        showToast('Coleta iniciada! Aguarde os resultados...');
+        // Poll history a cada 3s até novo log aparecer
+        const before = coletaLogs.length;
+        let attempts = 0;
+        pollRef.current = setInterval(async () => {
+          attempts++;
+          await fetchColetaHistory();
+          setColetaLogs((logs) => {
+            if (logs.length > before || attempts > 20) {
+              if (pollRef.current) clearInterval(pollRef.current);
+              setRunningColeta(false);
+            }
+            return logs;
+          });
+        }, 3000);
+      } else if (res.status === 409) {
+        showToast('Coleta já em execução. Aguarde.', 'error');
+        setRunningColeta(false);
+      } else {
+        showToast(`Erro: ${res.status}`, 'error');
+        setRunningColeta(false);
+      }
+    } catch (error) {
+      showToast('Erro de conexão', 'error');
+      console.error('runColetaAgora:', error);
+      setRunningColeta(false);
+    }
+  }
+
+  function formatDuration(ms: number | null) {
+    if (!ms) return '—';
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(1)}s`;
+  }
+
+  function statusBadge(status: string) {
+    const map: Record<string, string> = {
+      success: 'bg-emerald-100 text-emerald-800',
+      partial: 'bg-amber-100 text-amber-800',
+      error: 'bg-red-100 text-red-800',
+      running: 'bg-blue-100 text-blue-800',
+    };
+    return `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${map[status] ?? 'bg-gray-100 text-gray-600'}`;
   }
 
   if (loading) {
@@ -417,7 +506,7 @@ export default function ConfiguracoesPage() {
         </CardContent>
       </Card>
 
-      {/* Schedule */}
+      {/* Coleta Automatica — D4 */}
       <Card className="border border-gray-200">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-3">
@@ -426,13 +515,16 @@ export default function ConfiguracoesPage() {
             </div>
             <div className="flex-1">
               <CardTitle className="text-base font-semibold">Coleta Automatica</CardTitle>
-              <p className="text-sm text-gray-500">Agendamento de montagem automatica de kits</p>
+              <p className="text-sm text-gray-500">
+                Sync Onvio + montagem de kits + matching. Padrao: dia 21 as 06h (Manaus).
+              </p>
             </div>
             <button
-              onClick={() => setSchedule({ ...schedule, enabled: !schedule.enabled })}
+              onClick={() => setColeta({ ...coleta, enabled: !coleta.enabled })}
               className="focus:outline-none"
+              title={coleta.enabled ? 'Desativar agendamento' : 'Ativar agendamento'}
             >
-              {schedule.enabled ? (
+              {coleta.enabled ? (
                 <ToggleRight className="h-7 w-7 text-blue-600" />
               ) : (
                 <ToggleLeft className="h-7 w-7 text-gray-400" />
@@ -441,34 +533,120 @@ export default function ConfiguracoesPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Config cron */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Expressao Cron</label>
             <input
               type="text"
-              value={schedule.cron_expression}
-              onChange={(e) => setSchedule({ ...schedule, cron_expression: e.target.value })}
+              value={coleta.cron_expr}
+              onChange={(e) => setColeta({ ...coleta, cron_expr: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              placeholder="0 6 1 * *"
+              placeholder="0 6 21 * *"
             />
-            <p className="text-xs text-gray-500 mt-1">{schedule.description}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Formato: min hora dia-do-mes mes dia-da-semana · Timezone: {coleta.timezone}
+            </p>
           </div>
-          {schedule.last_run && (
-            <p className="text-xs text-gray-500">
-              Ultima execucao: {new Date(schedule.last_run).toLocaleString('pt-BR')}
+
+          {/* Status e ultima execucao */}
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            {coleta.last_run && (
+              <span>Ultima execucao: {new Date(coleta.last_run).toLocaleString('pt-BR')}</span>
+            )}
+            {coleta.last_status && (
+              <span className={statusBadge(coleta.last_status)}>{coleta.last_status}</span>
+            )}
+          </div>
+
+          {/* Botoes */}
+          <div className="flex gap-2">
+            <button
+              onClick={saveColetaConfig}
+              disabled={savingSection === 'coleta'}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {savingSection === 'coleta' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Salvar
+            </button>
+            <button
+              onClick={runColetaAgora}
+              disabled={runningColeta}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors"
+              title="Dispara sync + auto-assemble agora"
+            >
+              {runningColeta ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+              {runningColeta ? 'Em execucao...' : 'Executar agora'}
+            </button>
+            <button
+              onClick={fetchColetaHistory}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              title="Atualizar historico"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Historico */}
+          {coletaLogs.length > 0 && (
+            <div className="mt-2">
+              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                Historico (ultimas {coletaLogs.length})
+              </p>
+              <div className="space-y-1">
+                {coletaLogs.map((log) => (
+                  <div key={log.id} className="border border-gray-100 rounded-lg">
+                    <button
+                      className="w-full flex items-center gap-3 p-2.5 text-left hover:bg-gray-50 transition-colors rounded-lg"
+                      onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                    >
+                      <span className={statusBadge(log.status)}>{log.status}</span>
+                      <span className="text-xs text-gray-500 flex-1">
+                        {new Date(log.run_at).toLocaleString('pt-BR', { timeZone: 'America/Manaus' })}
+                      </span>
+                      <span className="text-xs text-gray-400 font-mono">{log.run_type}</span>
+                      <span className="text-xs text-gray-400">{formatDuration(log.duration_ms)}</span>
+                      {expandedLog === log.id ? (
+                        <ChevronUp className="h-3 w-3 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3 text-gray-400" />
+                      )}
+                    </button>
+                    {expandedLog === log.id && (
+                      <div className="px-3 pb-3 text-xs text-gray-600 space-y-1 border-t border-gray-100 pt-2">
+                        <div className="flex gap-4">
+                          <span>Sync novos: <strong>{log.sync_novos}</strong></span>
+                          <span>Kits montados: <strong>{log.kits_assembled}</strong></span>
+                          <span>Onvio casados: <strong>{log.onvio_matched}</strong></span>
+                        </div>
+                        {log.triggered_by && (
+                          <div className="text-gray-400">Por: {log.triggered_by}</div>
+                        )}
+                        {log.erros && log.erros.length > 0 && (
+                          <pre className="bg-red-50 text-red-700 p-2 rounded text-xs overflow-x-auto max-h-32">
+                            {JSON.stringify(log.erros, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {coletaLogs.length === 0 && !loading && (
+            <p className="text-xs text-gray-400 text-center py-2">
+              Nenhuma execucao registrada. Clique em "Executar agora" para iniciar.
             </p>
           )}
-          <button
-            onClick={saveSchedule}
-            disabled={savingSection === 'schedule'}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {savingSection === 'schedule' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Salvar Agendamento
-          </button>
         </CardContent>
       </Card>
     </div>
