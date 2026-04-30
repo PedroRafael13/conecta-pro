@@ -212,7 +212,7 @@ async def emitir_cobranca(
               (cobranca_id_inter, valor, vencimento, pagador, status,
                url_boleto, pix_copia_cola, barcode, linha_digitavel, descricao)
             VALUES
-              (:cid, :valor, :venc, :pagador::jsonb, 'A_RECEBER',
+              (:cid, :valor, :venc, cast(:pagador as jsonb), 'A_RECEBER',
                :url, :pix, :barcode, :ld, :desc)
         """),
         {
@@ -318,11 +318,20 @@ async def sync_pix_recebidos(
 
     async def _run():
         import json
+        from datetime import datetime
 
         from sqlalchemy import text as _text
         from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
         from core.config.settings import get_settings
+
+        def _parse_dt(val: str | None):
+            if not val:
+                return None
+            try:
+                return datetime.fromisoformat(val.replace("Z", "+00:00"))
+            except Exception:
+                return None
 
         adapter = _get_adapter()
         try:
@@ -343,7 +352,7 @@ async def sync_pix_recebidos(
                             _text("""
                                 INSERT INTO inter_pix_recebidos
                                   (end_to_end_id, txid, valor, pagador, data_horario, raw_payload)
-                                VALUES (:e2e, :txid, :valor, :pagador::jsonb, :dt, :raw::jsonb)
+                                VALUES (:e2e, :txid, :valor, cast(:pagador as jsonb), :dt, cast(:raw as jsonb))
                                 ON CONFLICT (end_to_end_id) DO NOTHING
                             """),
                             {
@@ -351,7 +360,7 @@ async def sync_pix_recebidos(
                                 "txid": p.get("txid"),
                                 "valor": float(p.get("valor", 0)),
                                 "pagador": json.dumps(p.get("pagador") or p.get("devedor") or {}),
-                                "dt": p.get("horario", p.get("dataHorario")),
+                                "dt": _parse_dt(p.get("horario", p.get("dataHorario"))),
                                 "raw": json.dumps(p),
                             },
                         )
