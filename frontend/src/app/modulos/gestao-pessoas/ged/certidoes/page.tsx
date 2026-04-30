@@ -4,13 +4,19 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Loader2,
   RefreshCw,
-  CheckCircle,
+  CheckCircle2,
   AlertTriangle,
   XCircle,
   ShieldCheck,
   Search,
   FileText,
   Filter,
+  MinusCircle,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  CheckCircle,
+  XCircle as XCircleSmall,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +31,9 @@ import {
 } from '@/components/ui/select';
 
 const API_BASE = '/api/v1/ged/certidoes';
+const COLETA_BASE = '/api/v1/ged/coleta-automatica';
+
+// ── Helpers de UI ─────────────────────────────────────────────────────────────
 
 function showToast(msg: string, type: 'success' | 'error' = 'success') {
   const el = document.createElement('div');
@@ -36,16 +45,34 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 
 function getAuthHeaders() {
   let token: string | null = null;
-  try {
-    token = localStorage.getItem('access_token') || localStorage.getItem('token');
-  } catch {
-    token = null;
-  }
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  try { token = localStorage.getItem('access_token') || localStorage.getItem('token'); } catch { /* noop */ }
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
+
+function relativeTime(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  const ms = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return 'agora mesmo';
+  if (mins < 60) return `${mins} min atrás`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h}h atrás`;
+  return `${Math.floor(h / 24)}d atrás`;
+}
+
+function formatDate(dateStr: string | null) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('pt-BR');
+}
+
+function daysUntilExpiry(expiry_date: string | null): number {
+  if (!expiry_date) return 9999;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiry_date); expiry.setHours(0, 0, 0, 0);
+  return Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+}
+
+// ── Tipos ─────────────────────────────────────────────────────────────────────
 
 interface Certificate {
   id: string;
@@ -63,6 +90,17 @@ interface Certificate {
   updated_at: string | null;
 }
 
+interface ParsedNotes {
+  regular: boolean | null | undefined;
+  fonte: string;
+  situacao: string;
+  cnpj_ativo_rfb?: boolean | null;
+  validade_dias?: number | null;
+  consultado_em?: string;
+  nota?: string | null;
+  mensagem?: string | null;
+}
+
 interface CertType {
   key: string;
   document_type: string;
@@ -76,120 +114,161 @@ interface Resumo {
   a_vencer_30d: number;
 }
 
-const typeLabels: Record<string, string> = {
-  cnd_federal: 'CND Federal (PGFN/RFB)',
-  cnd_trabalhista: 'CND Trabalhista (CNDT)',
-  crf_fgts: 'CRF/FGTS (CEF)',
-  cnd_municipal: 'CND Municipal (ISS)',
-  cnd_estadual: 'CND Estadual (SEFAZ)',
-  cnd_previdenciaria: 'CND Previdenciária',
-  ALVARA: 'Alvará de Funcionamento',
-  AUTORIZACAO_PF: 'Autorização Polícia Federal',
+interface HistoryEntry {
+  id: string;
+  run_at: string;
+  run_type: string;
+  status: string;
+  duration_ms: number;
+  sync_novos: number;
+  kits_assembled: number;
+  certidoes_atualizadas: number;
+  alertas_disparados: number;
+  triggered_by: string;
+  erros: unknown[] | null;
+}
+
+// ── Lógica semáforo D5.4 ──────────────────────────────────────────────────────
+
+const SKIP_AUTOMATION = new Set(['alvara_funcionamento', 'registro_cnpj']);
+
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  certidao_negativa_fgts: 'FGTS — Caixa',
+  certidao_negativa_federal: 'Federal — RFB/PGFN',
+  certidao_negativa_inss: 'INSS — Federal',
+  certidao_negativa_trabalhista: 'Trabalhista — TST',
+  certidao_negativa_estadual: 'Estadual — Sefaz AM',
+  certidao_negativa_municipal: 'Municipal — SEMEF',
+  alvara_funcionamento: 'Alvará de Funcionamento',
+  registro_cnpj: 'Registro CNPJ — RFB',
 };
 
-function daysUntilExpiry(expiry_date: string | null): number {
-  if (!expiry_date) return 9999;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiry_date);
-  expiry.setHours(0, 0, 0, 0);
-  return Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+function parseNotes(notes: string | null): ParsedNotes | null {
+  if (!notes) return null;
+  try { return JSON.parse(notes) as ParsedNotes; } catch { return null; }
 }
 
-function getStatusConfig(cert: Certificate) {
-  const days = daysUntilExpiry(cert.expiry_date);
-  if (cert.status === 'vencida' || days <= 0) {
-    return { label: 'Vencida', color: 'bg-red-100 text-red-800', icon: XCircle, priority: 0 };
-  }
-  if (days <= 7) {
-    return { label: 'Crítico', color: 'bg-red-100 text-red-800', icon: AlertTriangle, priority: 1 };
-  }
-  if (cert.status === 'a_vencer' || days <= 30) {
-    return { label: 'Vencendo', color: 'bg-yellow-100 text-yellow-800', icon: AlertTriangle, priority: 2 };
-  }
-  return { label: 'Válida', color: 'bg-green-100 text-green-800', icon: CheckCircle, priority: 3 };
+type SemaforoColor = 'verde' | 'amarelo' | 'vermelho' | 'cinza';
+
+function getColor(c: Certificate): SemaforoColor {
+  if (SKIP_AUTOMATION.has(c.document_type)) return 'cinza';
+  const parsed = parseNotes(c.notes);
+  const dias = daysUntilExpiry(c.expiry_date);
+  if (dias < 0) return 'vermelho';
+  if (parsed?.regular === false) return 'vermelho';
+  if (parsed?.regular === null) return 'amarelo';
+  if (dias < 7) return 'vermelho';
+  if (dias < 30) return 'amarelo';
+  if (parsed?.regular === true) return 'verde';
+  return 'cinza';
 }
 
-function getDaysColor(days: number) {
-  if (days <= 0) return 'text-red-600 font-bold';
-  if (days <= 7) return 'text-red-600 font-semibold';
-  if (days <= 30) return 'text-yellow-600 font-semibold';
-  return 'text-green-600';
-}
+const COLOR_STYLES: Record<SemaforoColor, { border: string; bg: string; badge: string; label: string }> = {
+  verde:    { border: 'border-l-green-500',  bg: 'bg-green-50',  badge: 'bg-green-100 text-green-800',   label: 'Regular' },
+  amarelo:  { border: 'border-l-yellow-400', bg: 'bg-yellow-50', badge: 'bg-yellow-100 text-yellow-800', label: 'Indeterminado' },
+  vermelho: { border: 'border-l-red-500',    bg: 'bg-red-50',    badge: 'bg-red-100 text-red-800',       label: 'Irregular/Vencido' },
+  cinza:    { border: 'border-l-gray-300',   bg: 'bg-gray-50',   badge: 'bg-gray-100 text-gray-600',     label: 'Manual' },
+};
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('pt-BR');
-}
+const COLOR_ICONS: Record<SemaforoColor, React.FC<{ className?: string }>> = {
+  verde:    ({ className }) => <CheckCircle2 className={className} />,
+  amarelo:  ({ className }) => <AlertTriangle className={className} />,
+  vermelho: ({ className }) => <XCircle className={className} />,
+  cinza:    ({ className }) => <MinusCircle className={className} />,
+};
+
+const COLOR_TEXT: Record<SemaforoColor, string> = {
+  verde:    'text-green-600',
+  amarelo:  'text-yellow-600',
+  vermelho: 'text-red-600',
+  cinza:    'text-gray-400',
+};
+
+// ── Componente principal ───────────────────────────────────────────────────────
 
 export default function CertidoesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [certTypes, setCertTypes] = useState<CertType[]>([]);
   const [resumo, setResumo] = useState<Resumo>({ validas: 0, vencidas: 0, a_vencer_30d: 0 });
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
-      const [certsRes, typesRes] = await Promise.all([
+      const [certsRes, typesRes, histRes] = await Promise.all([
         fetch(API_BASE, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/tipos`, { headers: getAuthHeaders() }),
+        fetch(`${COLETA_BASE}/history?limit=20`, { headers: getAuthHeaders() }),
       ]);
 
       if (certsRes.ok) {
         const data = await certsRes.json();
-        setCertificates(data.certidoes || []);
+        const certs: Certificate[] = data.certidoes || [];
+        setCertificates(certs);
         setResumo(data.resumo || { validas: 0, vencidas: 0, a_vencer_30d: 0 });
+        // Última atualização = max(updated_at) dentre as certidões
+        const dates = certs.map((c) => c.updated_at).filter(Boolean) as string[];
+        if (dates.length) setLastUpdate(dates.sort().at(-1) ?? null);
       }
       if (typesRes.ok) {
         const data = await typesRes.json();
         setCertTypes(data.tipos || []);
       }
+      if (histRes.ok) {
+        const all: HistoryEntry[] = await histRes.json();
+        const filtered = all.filter((h) => (h.certidoes_atualizadas ?? 0) > 0).slice(0, 5);
+        setHistory(filtered);
+      }
     } catch (err) {
       console.error('Erro ao carregar certidões:', err);
-      showToast('Erro ao carregar certidões.', 'error');
+      showToast('Erro ao carregar dados.', 'error');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
-  const handleSync = async () => {
-    setSyncing(true);
+  const handleUpdate = async () => {
+    setIsUpdating(true);
     try {
-      const res = await fetch(`${API_BASE}/sync`, {
+      const res = await fetch(`${COLETA_BASE}/cnds/run`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({}),
       });
-      if (!res.ok) {
-        console.error('Erro ao sincronizar certidões:', res.status);
-        showToast('Erro ao sincronizar certidões. Endpoint pode estar indisponível.', 'error');
-      } else {
-        showToast('Sincronização iniciada com sucesso.');
+      if (res.status === 409) {
+        showToast('Atualização já em andamento. Aguarde.', 'error');
+        return;
       }
-      await loadData();
-    } catch (err) {
-      console.error('Erro ao sincronizar certidões:', err);
-      showToast('Erro de conexão ao sincronizar certidões.', 'error');
-    } finally {
-      setSyncing(false);
+      if (!res.ok) {
+        showToast('Erro ao disparar atualização.', 'error');
+        return;
+      }
+      showToast('Atualização iniciada! Dados serão recarregados em breve.');
+      setTimeout(async () => {
+        await loadData();
+        setIsUpdating(false);
+      }, 8000);
+    } catch {
+      showToast('Erro de conexão.', 'error');
+      setIsUpdating(false);
     }
   };
 
-  const validCount = resumo.validas;
-  const expiringCount = resumo.a_vencer_30d;
-  const expiredCount = resumo.vencidas;
-  const urgentCount = certificates.filter((c) => {
-    const days = daysUntilExpiry(c.expiry_date);
-    return days > 0 && days <= 7;
-  }).length;
+  // ── Contagens semáforo ─────────────────────────────────────────────────────
+  const semaforoCount = (certificates ?? []).reduce(
+    (acc, c) => { const cor = getColor(c); acc[cor] = (acc[cor] ?? 0) + 1; return acc; },
+    {} as Record<SemaforoColor, number>,
+  );
+
+  // ── Tabela filtrada ────────────────────────────────────────────────────────
+  const urgentCount = certificates.filter((c) => { const d = daysUntilExpiry(c.expiry_date); return d > 0 && d <= 7; }).length;
 
   const filtered = certificates
     .filter((c) => {
@@ -199,26 +278,11 @@ export default function CertidoesPage() {
       if (filterStatus === 'vencida' && c.status !== 'vencida') return false;
       if (search) {
         const q = search.toLowerCase();
-        return (
-          (c.name || '').toLowerCase().includes(q) ||
-          (c.document_type || '').toLowerCase().includes(q) ||
-          (c.issuing_body || '').toLowerCase().includes(q)
-        );
+        return (c.name || '').toLowerCase().includes(q) || (c.document_type || '').toLowerCase().includes(q) || (c.issuing_body || '').toLowerCase().includes(q);
       }
       return true;
     })
     .sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date));
-
-  const typeGroups = certTypes.map((t) => {
-    const certs = certificates.filter((c) => c.document_type === t.document_type);
-    const worst =
-      certs.length > 0
-        ? [...certs].sort(
-            (a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date)
-          )[0]
-        : null;
-    return { type: t, certs, worst };
-  });
 
   if (loading) {
     return (
@@ -230,38 +294,120 @@ export default function CertidoesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-[#0A2540]">
             <ShieldCheck className="h-6 w-6" />
-            Certidões Negativas (CND)
+            Certidões da Empresa
           </h1>
-          <p className="text-muted-foreground">
-            Controle de validade e renovação de certidões
+          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+            <Clock className="h-3.5 w-3.5" />
+            Última atualização: {relativeTime(lastUpdate)}
           </p>
         </div>
-        <Button onClick={handleSync} disabled={syncing}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Sincronizando...' : 'Sincronizar'}
+        <Button
+          onClick={handleUpdate}
+          disabled={isUpdating}
+          className="bg-[#FF6B35] hover:bg-[#e85d2a] text-white shadow-md"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isUpdating ? 'animate-spin' : ''}`} />
+          {isUpdating ? 'Atualizando...' : 'Atualizar agora'}
         </Button>
       </div>
 
-      {/* Alert */}
-      {(expiredCount > 0 || urgentCount > 0) && (
+      {/* ── Resumo semáforo ─────────────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-4 text-sm font-medium">
+        {(['verde', 'amarelo', 'vermelho', 'cinza'] as SemaforoColor[]).map((cor) => {
+          const Icon = COLOR_ICONS[cor];
+          const style = COLOR_STYLES[cor];
+          return (
+            <span key={cor} className={`flex items-center gap-1.5 ${COLOR_TEXT[cor]}`}>
+              <Icon className="h-4 w-4" />
+              {semaforoCount[cor] ?? 0} {style.label.toLowerCase()}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* ── 8 Cards semáforo ────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {certificates.map((c) => {
+          const cor = getColor(c);
+          const style = COLOR_STYLES[cor];
+          const Icon = COLOR_ICONS[cor];
+          const parsed = parseNotes(c.notes);
+          const dias = daysUntilExpiry(c.expiry_date);
+          const isOpen = expandedId === c.id;
+          const label = DOCUMENT_TYPE_LABELS[c.document_type] ?? c.name;
+          const situacaoLabel = parsed?.situacao ?? (SKIP_AUTOMATION.has(c.document_type) ? 'não automatizado' : '—');
+
+          return (
+            <Card key={c.id} className={`border-l-4 ${style.border} transition-shadow hover:shadow-sm`}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${COLOR_TEXT[cor]}`} />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-[#0A2540] truncate">{label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Validade: {c.expiry_date ? `${formatDate(c.expiry_date)} (${dias > 0 ? `${dias}d` : 'vencida'})` : '—'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${style.badge}`}>
+                    {situacaoLabel}
+                  </span>
+                </div>
+
+                {parsed?.fonte && (
+                  <p className="text-xs text-muted-foreground mt-2 truncate">
+                    📡 {parsed.fonte}
+                  </p>
+                )}
+                {parsed?.nota && (
+                  <p className="text-xs italic text-gray-600 mt-1 line-clamp-2">{parsed.nota}</p>
+                )}
+
+                <button
+                  onClick={() => setExpandedId(isOpen ? null : c.id)}
+                  className="mt-2 flex items-center gap-1 text-xs text-[#1E3A5F] hover:text-[#0A2540] underline-offset-2 hover:underline"
+                >
+                  {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {isOpen ? 'Ocultar detalhes' : 'Ver detalhes'}
+                </button>
+
+                {isOpen && (
+                  <div className="mt-2 rounded-md bg-slate-50 border border-slate-100 p-2 overflow-x-auto">
+                    <pre className="text-[11px] text-slate-700 leading-5 whitespace-pre-wrap">
+                      {parsed
+                        ? JSON.stringify(parsed, null, 2)
+                        : (c.notes ?? 'sem dados')}
+                    </pre>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* ── Alerta vencimento urgente ────────────────────────────────────── */}
+      {(resumo.vencidas > 0 || urgentCount > 0) && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-red-800">Atenção! Há certidões que precisam de ação imediata</p>
-            <p className="text-sm text-red-600 mt-1">
-              {expiredCount > 0 && `${expiredCount} certidão(ões) vencida(s). `}
+            <p className="font-medium text-red-800">Atenção — certidões precisam de ação</p>
+            <p className="text-sm text-red-600 mt-0.5">
+              {resumo.vencidas > 0 && `${resumo.vencidas} vencida(s). `}
               {urgentCount > 0 && `${urgentCount} vence(m) em menos de 7 dias.`}
             </p>
           </div>
         </div>
       )}
 
-      {/* Stats */}
+      {/* ── Stats de validade ────────────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -269,7 +415,7 @@ export default function CertidoesPage() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{validCount}</div>
+            <div className="text-2xl font-bold text-green-600">{resumo.validas}</div>
           </CardContent>
         </Card>
         <Card className="border-yellow-200">
@@ -278,16 +424,16 @@ export default function CertidoesPage() {
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{expiringCount}</div>
+            <div className="text-2xl font-bold text-yellow-600">{resumo.a_vencer_30d}</div>
           </CardContent>
         </Card>
         <Card className="border-red-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Vencidas</CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
+            <XCircleSmall className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{expiredCount}</div>
+            <div className="text-2xl font-bold text-red-600">{resumo.vencidas}</div>
           </CardContent>
         </Card>
         <Card>
@@ -301,55 +447,7 @@ export default function CertidoesPage() {
         </Card>
       </div>
 
-      {/* Type cards */}
-      {typeGroups.length > 0 && (
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {typeGroups.map((g) => {
-            const worst = g.worst;
-            const cfg = worst ? getStatusConfig(worst) : null;
-            const StatusIcon = cfg?.icon || CheckCircle;
-            const days = worst ? daysUntilExpiry(worst.expiry_date) : null;
-            return (
-              <Card
-                key={g.type.document_type}
-                className={`cursor-pointer hover:shadow-md transition-shadow ${
-                  filterType === g.type.document_type ? 'ring-2 ring-primary' : ''
-                }`}
-                onClick={() =>
-                  setFilterType(filterType === g.type.document_type ? 'all' : g.type.document_type)
-                }
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground truncate">
-                        {g.type.issuing_body}
-                      </p>
-                      <p className="text-sm font-semibold mt-0.5 truncate">{g.type.name}</p>
-                    </div>
-                    {cfg && (
-                      <Badge className={`${cfg.color} text-xs ml-2 flex-shrink-0`}>
-                        <StatusIcon className="h-3 w-3 mr-0.5" />
-                        {g.certs.length}
-                      </Badge>
-                    )}
-                    {g.certs.length === 0 && (
-                      <Badge variant="outline" className="text-xs ml-2 flex-shrink-0">0</Badge>
-                    )}
-                  </div>
-                  {worst && days !== null && (
-                    <p className={`text-xs mt-2 ${getDaysColor(days)}`}>
-                      {days <= 0 ? 'Vencida' : `${days} dia(s) restante(s)`}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Filters */}
+      {/* ── Filtros ─────────────────────────────────────────────────────── */}
       <Card>
         <CardContent className="pt-4 pb-3">
           <div className="flex flex-col md:flex-row gap-3">
@@ -362,7 +460,7 @@ export default function CertidoesPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={filterType} onValueChange={setFilterType} aria-label="Filter Type">
+            <Select value={filterType} onValueChange={setFilterType} aria-label="Tipo">
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
@@ -373,7 +471,7 @@ export default function CertidoesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus} aria-label="Filter Status">
+            <Select value={filterStatus} onValueChange={setFilterStatus} aria-label="Status">
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -385,11 +483,7 @@ export default function CertidoesPage() {
               </SelectContent>
             </Select>
             {(filterType !== 'all' || filterStatus !== 'all' || search) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { setFilterType('all'); setFilterStatus('all'); setSearch(''); }}
-              >
+              <Button variant="ghost" size="sm" onClick={() => { setFilterType('all'); setFilterStatus('all'); setSearch(''); }}>
                 <Filter className="h-4 w-4 mr-1" /> Limpar
               </Button>
             )}
@@ -397,14 +491,14 @@ export default function CertidoesPage() {
         </CardContent>
       </Card>
 
-      {/* Table */}
+      {/* ── Tabela de certidões ─────────────────────────────────────────── */}
       <Card>
         <CardContent className="p-0">
           {filtered.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <ShieldCheck className="h-12 w-12 mx-auto mb-3 opacity-40" />
               <p className="font-medium">Nenhuma certidão encontrada</p>
-              <p className="text-sm mt-1">Ajuste os filtros ou sincronize as certidões</p>
+              <p className="text-sm mt-1">Ajuste os filtros ou atualize as certidões</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -421,40 +515,36 @@ export default function CertidoesPage() {
                 </thead>
                 <tbody>
                   {filtered.map((cert) => {
-                    const cfg = getStatusConfig(cert);
-                    const StatusIcon = cfg.icon;
+                    const cor = getColor(cert);
+                    const Icon = COLOR_ICONS[cor];
+                    const style = COLOR_STYLES[cor];
                     const days = daysUntilExpiry(cert.expiry_date);
                     return (
                       <tr key={cert.id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="p-3">
-                          <div>
-                            <p className="font-medium">
-                              {typeLabels[cert.document_type] || cert.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{cert.issuing_body}</p>
+                          <div className="flex items-center gap-2">
+                            <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${COLOR_TEXT[cor]}`} />
+                            <div>
+                              <p className="font-medium">{DOCUMENT_TYPE_LABELS[cert.document_type] ?? cert.name}</p>
+                              <p className="text-xs text-muted-foreground">{cert.issuing_body}</p>
+                            </div>
                           </div>
                         </td>
                         <td className="p-3 text-muted-foreground">{formatDate(cert.issue_date)}</td>
                         <td className="p-3 text-muted-foreground">{formatDate(cert.expiry_date)}</td>
                         <td className="p-3 text-center">
-                          <span className={getDaysColor(days)}>
+                          <span className={days <= 0 ? 'text-red-600 font-bold' : days <= 7 ? 'text-red-600 font-semibold' : days <= 30 ? 'text-yellow-600 font-semibold' : 'text-green-600'}>
                             {days <= 0 ? 'Vencida' : `${days}d`}
                           </span>
                         </td>
                         <td className="p-3">
-                          <Badge className={`${cfg.color} text-xs`}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {cfg.label}
-                          </Badge>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${style.badge}`}>
+                            {style.label}
+                          </span>
                         </td>
                         <td className="p-3">
                           {cert.file_url && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => window.open(cert.file_url!, '_blank')}
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(cert.file_url!, '_blank')}>
                               <FileText className="h-3.5 w-3.5" />
                             </Button>
                           )}
@@ -468,6 +558,48 @@ export default function CertidoesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Histórico CND ───────────────────────────────────────────────── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            Histórico de atualizações (últimas 5 execuções com certidões)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {history.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Nenhuma execução registrada ainda. Clique em &quot;Atualizar agora&quot; ou aguarde a coleta automática.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {history.map((h) => (
+                <div key={h.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 border-b last:border-0 text-sm">
+                  <Badge
+                    variant={h.status === 'success' ? 'default' : 'outline'}
+                    className={
+                      h.status === 'success' ? 'bg-green-100 text-green-800 border-green-200' :
+                      h.status === 'partial' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                      'bg-red-100 text-red-800 border-red-200'
+                    }
+                  >
+                    {h.status}
+                  </Badge>
+                  <span className="text-muted-foreground">{new Date(h.run_at).toLocaleString('pt-BR')}</span>
+                  <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{h.run_type}</span>
+                  <span className="font-medium text-green-700">✓ {h.certidoes_atualizadas} atualizadas</span>
+                  {(h.alertas_disparados ?? 0) > 0 && (
+                    <span className="font-medium text-amber-700">⚠ {h.alertas_disparados} alertas</span>
+                  )}
+                  <span className="ml-auto text-muted-foreground text-xs">{((h.duration_ms ?? 0) / 1000).toFixed(1)}s</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
