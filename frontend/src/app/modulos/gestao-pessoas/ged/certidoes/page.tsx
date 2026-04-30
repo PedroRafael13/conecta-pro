@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   RefreshCw,
   CheckCircle2,
@@ -128,6 +129,37 @@ interface HistoryEntry {
   erros: unknown[] | null;
 }
 
+// ── Query functions ────────────────────────────────────────────────────────────
+
+async function fetchCertidoes(): Promise<{ certidoes: Certificate[]; resumo: Resumo }> {
+  const res = await fetch(API_BASE, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error('Falha ao carregar certidões');
+  return res.json();
+}
+
+async function fetchTipos(): Promise<{ tipos: CertType[] }> {
+  const res = await fetch(`${API_BASE}/tipos`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error('Falha ao carregar tipos');
+  return res.json();
+}
+
+async function fetchHistory(): Promise<HistoryEntry[]> {
+  const res = await fetch(`${COLETA_BASE}/history?limit=20`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error('Falha ao carregar histórico');
+  const all: HistoryEntry[] = await res.json();
+  return all.filter((h) => (h.certidoes_atualizadas ?? 0) > 0).slice(0, 5);
+}
+
+async function runCnds(): Promise<unknown> {
+  const res = await fetch(`${COLETA_BASE}/cnds/run`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (res.status === 409) throw new Error('Atualização já em andamento. Aguarde.');
+  if (!res.ok) throw new Error('Erro ao disparar atualização.');
+  return res.json();
+}
+
 // ── Lógica semáforo D5.4 ──────────────────────────────────────────────────────
 
 const SKIP_AUTOMATION = new Set(['alvara_funcionamento', 'registro_cnpj']);
@@ -187,83 +219,67 @@ const COLOR_TEXT: Record<SemaforoColor, string> = {
 // ── Componente principal ───────────────────────────────────────────────────────
 
 export default function CertidoesPage() {
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [certTypes, setCertTypes] = useState<CertType[]>([]);
-  const [resumo, setResumo] = useState<Resumo>({ validas: 0, vencidas: 0, a_vencer_30d: 0 });
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [isPolling, setIsPolling] = useState(false);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [certsRes, typesRes, histRes] = await Promise.all([
-        fetch(API_BASE, { headers: getAuthHeaders() }),
-        fetch(`${API_BASE}/tipos`, { headers: getAuthHeaders() }),
-        fetch(`${COLETA_BASE}/history?limit=20`, { headers: getAuthHeaders() }),
-      ]);
+  const {
+    data: certsData,
+    isLoading: certsLoading,
+    isError: certsError,
+    error: certsErrorMsg,
+    refetch: refetchCerts,
+  } = useQuery({
+    queryKey: ['certidoes'],
+    queryFn: fetchCertidoes,
+    staleTime: 30000,
+  });
 
-      if (certsRes.ok) {
-        const data = await certsRes.json();
-        const certs: Certificate[] = data.certidoes || [];
-        setCertificates(certs);
-        setResumo(data.resumo || { validas: 0, vencidas: 0, a_vencer_30d: 0 });
-        // Última atualização = max(updated_at) dentre as certidões
-        const dates = certs.map((c) => c.updated_at).filter(Boolean) as string[];
-        if (dates.length) setLastUpdate(dates.sort().at(-1) ?? null);
-      }
-      if (typesRes.ok) {
-        const data = await typesRes.json();
-        setCertTypes(data.tipos || []);
-      }
-      if (histRes.ok) {
-        const all: HistoryEntry[] = await histRes.json();
-        const filtered = all.filter((h) => (h.certidoes_atualizadas ?? 0) > 0).slice(0, 5);
-        setHistory(filtered);
-      }
-    } catch (err) {
-      console.error('Erro ao carregar certidões:', err);
-      setError('Não foi possível carregar as certidões. Verifique sua conexão e tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: tiposData } = useQuery({
+    queryKey: ['certidoes-tipos'],
+    queryFn: fetchTipos,
+    staleTime: 300000,
+  });
 
-  useEffect(() => { loadData(); }, [loadData]);
+  const { data: historyData } = useQuery({
+    queryKey: ['certidoes-history'],
+    queryFn: fetchHistory,
+    staleTime: 30000,
+  });
 
-  const handleUpdate = async () => {
-    setIsUpdating(true);
-    try {
-      const res = await fetch(`${COLETA_BASE}/cnds/run`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-      if (res.status === 409) {
-        showToast('Atualização já em andamento. Aguarde.', 'error');
-        return;
-      }
-      if (!res.ok) {
-        showToast('Erro ao disparar atualização.', 'error');
-        return;
-      }
+  const updateMutation = useMutation({
+    mutationFn: runCnds,
+    onSuccess: () => {
       showToast('Atualização iniciada! Dados serão recarregados em breve.');
-      setTimeout(async () => {
-        await loadData();
-        setIsUpdating(false);
+      setIsPolling(true);
+      setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ['certidoes'] });
+        qc.invalidateQueries({ queryKey: ['certidoes-history'] });
+        setIsPolling(false);
       }, 8000);
-    } catch {
-      showToast('Erro de conexão.', 'error');
-      setIsUpdating(false);
-    }
-  };
+    },
+    onError: (err: Error) => {
+      showToast(err.message || 'Erro de conexão.', 'error');
+    },
+  });
+
+  const isUpdating = updateMutation.isPending || isPolling;
+
+  const certificates = certsData?.certidoes ?? [];
+  const resumo = certsData?.resumo ?? { validas: 0, vencidas: 0, a_vencer_30d: 0 };
+  const certTypes = tiposData?.tipos ?? [];
+  const history = historyData ?? [];
+
+  const lastUpdate = useMemo(() => {
+    const dates = certificates.map((c) => c.updated_at).filter(Boolean) as string[];
+    return dates.length ? (dates.sort().at(-1) ?? null) : null;
+  }, [certificates]);
 
   // ── Contagens semáforo ─────────────────────────────────────────────────────
-  const semaforoCount = (certificates ?? []).reduce(
+  const semaforoCount = certificates.reduce(
     (acc, c) => { const cor = getColor(c); acc[cor] = (acc[cor] ?? 0) + 1; return acc; },
     {} as Record<SemaforoColor, number>,
   );
@@ -285,7 +301,15 @@ export default function CertidoesPage() {
     })
     .sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date));
 
-  if (loading) {
+  const toggleExpanded = (id: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  };
+
+  if (certsLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-start justify-between">
@@ -308,15 +332,17 @@ export default function CertidoesPage() {
     );
   }
 
-  if (error) {
+  if (certsError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <XCircle className="h-12 w-12 text-red-400" />
         <div className="text-center">
           <p className="font-semibold text-red-700">Erro ao carregar certidões</p>
-          <p className="text-sm text-muted-foreground mt-1">{error}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {certsErrorMsg instanceof Error ? certsErrorMsg.message : 'Verifique sua conexão e tente novamente.'}
+          </p>
         </div>
-        <Button variant="outline" onClick={() => { setError(null); setLoading(true); loadData(); }}>
+        <Button variant="outline" onClick={() => refetchCerts()}>
           <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
         </Button>
       </div>
@@ -339,7 +365,7 @@ export default function CertidoesPage() {
           </p>
         </div>
         <Button
-          onClick={handleUpdate}
+          onClick={() => updateMutation.mutate()}
           disabled={isUpdating}
           className="bg-[#FF6B35] hover:bg-[#e85d2a] text-white shadow-md"
         >
@@ -370,7 +396,7 @@ export default function CertidoesPage() {
           const Icon = COLOR_ICONS[cor];
           const parsed = parseNotes(c.notes);
           const dias = daysUntilExpiry(c.expiry_date);
-          const isOpen = expandedId === c.id;
+          const isOpen = expandedRows.has(c.id);
           const label = DOCUMENT_TYPE_LABELS[c.document_type] ?? c.name;
           const situacaoLabel = parsed?.situacao ?? (SKIP_AUTOMATION.has(c.document_type) ? 'não automatizado' : '—');
 
@@ -402,7 +428,7 @@ export default function CertidoesPage() {
                 )}
 
                 <button
-                  onClick={() => setExpandedId(isOpen ? null : c.id)}
+                  onClick={() => toggleExpanded(c.id)}
                   className="mt-2 flex items-center gap-1 text-xs text-[#1E3A5F] hover:text-[#0A2540] underline-offset-2 hover:underline"
                 >
                   {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
