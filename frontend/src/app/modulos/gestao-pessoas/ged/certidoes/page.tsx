@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Loader2,
   RefreshCw,
   CheckCircle2,
   AlertTriangle,
@@ -22,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -194,6 +194,7 @@ export default function CertidoesPage() {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -227,7 +228,7 @@ export default function CertidoesPage() {
       }
     } catch (err) {
       console.error('Erro ao carregar certidões:', err);
-      showToast('Erro ao carregar dados.', 'error');
+      setError('Não foi possível carregar as certidões. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -286,8 +287,38 @@ export default function CertidoesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+        <div className="flex gap-4">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-5 w-28" />)}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => <Skeleton key={i} className="h-28 w-full rounded-lg" />)}
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <XCircle className="h-12 w-12 text-red-400" />
+        <div className="text-center">
+          <p className="font-semibold text-red-700">Erro ao carregar certidões</p>
+          <p className="text-sm text-muted-foreground mt-1">{error}</p>
+        </div>
+        <Button variant="outline" onClick={() => { setError(null); setLoading(true); loadData(); }}>
+          <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
+        </Button>
       </div>
     );
   }
