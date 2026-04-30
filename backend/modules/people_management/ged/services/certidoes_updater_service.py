@@ -3,11 +3,14 @@
 import json
 import logging
 import os
+import time
 from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models.coleta_automatica import GedColetaLog
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +78,23 @@ class CertidoesUpdaterService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def executar(self, cnpj: str = EMPRESA_CNPJ) -> dict[str, Any]:
+    async def executar(
+        self,
+        cnpj: str = EMPRESA_CNPJ,
+        run_type: str = "cnds_only",
+        triggered_by: str = "system",
+        write_log: bool = True,
+    ) -> dict[str, Any]:
         """Consulta clients e atualiza ged_certidoes.
+
+        D5.5.2: grava ged_coleta_logs quando write_log=True (default).
+        Passar write_log=False quando chamado por ColetaAutomaticaService
+        (evita duplicação — Coleta grava 1 log unificado).
 
         Returns:
             dict com certidoes_atualizadas, alertas_disparados, erros
         """
+        start = time.time()
         certidoes_atualizadas = 0
         alertas_disparados = 0
         erros: list[dict[str, Any]] = []
@@ -118,11 +132,33 @@ class CertidoesUpdaterService:
             alertas_disparados,
             len(erros),
         )
-        return {
+
+        result = {
             "certidoes_atualizadas": certidoes_atualizadas,
             "alertas_disparados": alertas_disparados,
             "erros": erros,
         }
+
+        if write_log:
+            duration_ms = int((time.time() - start) * 1000)
+            status = "error" if erros and certidoes_atualizadas == 0 else ("partial" if erros else "success")
+            log = GedColetaLog(
+                run_type=run_type,
+                status=status,
+                duration_ms=duration_ms,
+                sync_novos=0,
+                kits_assembled=0,
+                onvio_matched=0,
+                certidoes_atualizadas=certidoes_atualizadas,
+                alertas_disparados=alertas_disparados,
+                erros=erros or None,
+                triggered_by=triggered_by,
+            )
+            self.db.add(log)
+            await self.db.commit()
+            logger.info("D5.5.2 log gravado: run_type=%s status=%s duration=%dms", run_type, status, duration_ms)
+
+        return result
 
     async def _chamar_client(
         self,

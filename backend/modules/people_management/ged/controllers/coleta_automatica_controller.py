@@ -156,6 +156,7 @@ async def run_cnds_now(
     await redis.set(RUNNING_LOCK_KEY_CNDS, "1", ex=RUNNING_LOCK_TTL_CNDS)
 
     started_at = datetime.now(UTC)
+    triggered_by = getattr(current_user, "email", "system")
 
     async def _run() -> None:
         import os
@@ -173,8 +174,12 @@ async def run_cnds_now(
             _factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
             async with _factory() as session:
                 cnpj = os.getenv("EMPRESA_CNPJ", "35710481000103")
-                result = await CertidoesUpdaterService(session).executar(cnpj)
-                await session.commit()
+                result = await CertidoesUpdaterService(session).executar(
+                    cnpj,
+                    run_type="cnds_only",
+                    triggered_by=triggered_by,
+                    write_log=True,
+                )
                 logger.info("cnds/run concluído: %s", result)
         except Exception as e:
             logger.error("cnds/run background falhou: %s", e)

@@ -113,7 +113,12 @@ class ColetaAutomaticaService:
             )
 
             cnpj_empresa = os.getenv("EMPRESA_CNPJ", "35710481000103")
-            cert_result = await CertidoesUpdaterService(self.db).executar(cnpj_empresa)
+            cert_result = await CertidoesUpdaterService(self.db).executar(
+                cnpj_empresa,
+                run_type=run_type,
+                triggered_by=triggered_by,
+                write_log=False,  # D5.5.2: ColetaAutomaticaService grava 1 log unificado
+            )
             certidoes_atualizadas = cert_result["certidoes_atualizadas"]
             alertas_disparados = cert_result["alertas_disparados"]
             for e in cert_result["erros"]:
