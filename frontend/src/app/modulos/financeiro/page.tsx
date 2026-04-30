@@ -118,6 +118,12 @@ const navigationCards = [
     icon: Building2,
   },
   {
+    title: 'Inter — D6',
+    description: 'Extrato, conciliação folha, cobranças e PIX recebidos (D6)',
+    href: '/modulos/financeiro/inter',
+    icon: Building2,
+  },
+  {
     title: 'Precificação',
     description: 'Calcule preços ideais para novos contratos com IA',
     href: '/modulos/crm/precificacao',
