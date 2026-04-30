@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.49
+**Versão:** 1.50
 **Data:** 2026-04-30
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3632,4 +3632,82 @@ Validação smoke: `GET /modulos/gestao-pessoas/ged/certidoes` → HTTP 307 (red
 | `alvara_funcionamento` sem automação (manual) | D5.x |
 | `registro_cnpj` sem automação (sem client) | D5.x |
 | Animação polling pós-update (progress bar) | D5.5.1 |
-| Histórico CND: log via /cnds/run (hoje só via coleta completa) | D5.5.2 |
+| ~~Histórico CND: log via /cnds/run~~ | ~~D5.5.2~~ ✅ |
+
+---
+
+## §48 — D5.5.2: Logging do /cnds/run em ged_coleta_logs
+
+**Commit:** `d80df95b`
+**Data:** 2026-04-30
+**Implementado por:** Claude Code (session tmux-t1)
+
+### §48.1 — Motivação
+
+O endpoint `POST /cnds/run` disparava `CertidoesUpdaterService` sem gravar histórico em `ged_coleta_logs`. A coleta completa (`/coleta-automatica/run`) já gravava 1 log unificado — mas execuções isoladas de certidões eram invisíveis no histórico.
+
+### §48.2 — Contrato `CertidoesUpdaterService.executar()`
+
+```python
+async def executar(
+    self,
+    cnpj: str = EMPRESA_CNPJ,
+    run_type: str = "cnds_only",
+    triggered_by: str = "system",
+    write_log: bool = True,          # D5.5.2: novo parâmetro
+) -> dict[str, Any]:
+    ...
+    if write_log:
+        log = GedColetaLog(
+            run_type=run_type,        # 'cnds_only' para execução isolada
+            sync_novos=0,             # sempre 0 (certidões não sincronizam Onvio)
+            kits_assembled=0,         # sempre 0
+            certidoes_atualizadas=certidoes_atualizadas,
+            alertas_disparados=alertas_disparados,
+            ...
+        )
+        self.db.add(log)
+        await self.db.commit()
+```
+
+### §48.3 — Anti-duplicação em ColetaAutomaticaService
+
+A Fase 3 da coleta completa passa `write_log=False` para evitar duplicação:
+
+```python
+cert_result = await CertidoesUpdaterService(self.db).executar(
+    cnpj_empresa,
+    run_type=run_type,
+    triggered_by=triggered_by,
+    write_log=False,  # ColetaAutomaticaService grava 1 log unificado
+)
+```
+
+### §48.4 — run_type valores válidos
+
+| run_type | Gravado por | Contexto |
+|----------|-------------|----------|
+| `cnds_only` | `CertidoesUpdaterService` (write_log=True) | POST /cnds/run isolado |
+| `manual` | `ColetaAutomaticaService` | POST /coleta-automatica/run |
+| `cron` | `ColetaAutomaticaService` | Execução agendada |
+
+> `run_type VARCHAR(10)` — sem CHECK constraint na coluna.
+
+### §48.5 — Validação em Produção (2026-04-30)
+
+| Teste | Resultado |
+|-------|-----------|
+| VAL 4.1: código novo no container | ✅ `write_log` presente em certidoes_updater_service.py |
+| VAL 4.2: POST /cnds/run grava 1 log cnds_only | ✅ `run_type=cnds_only, triggered_by=jjesus@conectamais.pro, certidoes_atualizadas=6` |
+| VAL 4.3: GET /history exibe cnds_only | ✅ aparece na posição 1 |
+| VAL 4.4: coleta completa diff=1 (não 2) | ✅ `55→56` (+1 log manual, sem cnds_only duplicado) |
+| pytest 20/20 | ✅ D5.5.2 (4) + D5.4 (5) + D4 (11) |
+
+### §48.6 — Testes D5.5.2 (4 novos)
+
+| Teste | Assertion |
+|-------|-----------|
+| `test_cnds_run_grava_log_em_ged_coleta_logs` | `write_log=True` → `db.add` + `db.commit` chamados |
+| `test_cnds_run_log_run_type_cnds_only` | log tem `run_type='cnds_only'`, `triggered_by` correto, `sync_novos=0` |
+| `test_certidoes_updater_write_log_false_nao_grava` | `write_log=False` → `db.add` e `db.commit` NÃO chamados |
+| `test_coleta_completa_grava_apenas_um_log_unificado` | `write_log=False` retorna resultado; Updater não grava log |
