@@ -99,6 +99,7 @@ export default function InterPage() {
   const [msg, setMsg] = useState('')
   const [competencia, setCompetencia] = useState('2026-03')
   const [syncDias, setSyncDias] = useState(7)
+  const [ultimaSync, setUltimaSync] = useState<Date | null>(null)
   const [token, setToken] = useState('')
 
   const getToken = useCallback(async () => {
@@ -194,6 +195,7 @@ export default function InterPage() {
     try {
       const t = await getToken()
       await fetch(`${API}/sync-extrato?dias=${syncDias}`, { method: 'POST', headers: auth(t) })
+      setUltimaSync(new Date())
       setMsg(`Sync iniciado para os últimos ${syncDias} dias.`)
       setTimeout(loadTxs, 3000)
     } catch {
@@ -549,6 +551,16 @@ export default function InterPage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Footer — última sincronização */}
+      <div className="mt-4 flex items-center justify-between text-xs text-gray-400">
+        <span>
+          {ultimaSync
+            ? `Última sincronização: ${Math.round((Date.now() - ultimaSync.getTime()) / 60000)} min atrás`
+            : 'Nenhuma sincronização nesta sessão'}
+        </span>
+        <span style={{ color: '#FF6B35' }}>Banco Inter · Open Banking</span>
       </div>
     </div>
   )

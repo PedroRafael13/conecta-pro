@@ -39,19 +39,51 @@ def _get_adapter():
 
 @router.get("/saldo")
 async def get_saldo(current_user=Depends(get_current_user)):
-    """Consulta saldo atual da conta Inter (token cacheado no Redis 50min)."""
+    """Consulta saldo atual da conta Inter (token cacheado 50min, lock Redis 5s)."""
+    # D6.0.4 — lock Redis para evitar 2 calls simultâneos
+    try:
+        from core.cache.redis import get_redis
+
+        redis = await get_redis()
+        lock_key = "inter:saldo:lock"
+        acquired = await redis.set(lock_key, "1", nx=True, ex=5)
+        if not acquired:
+            # Tentar retornar cache de saldo se existir
+            cached = await redis.get("inter:saldo:cache")
+            if cached:
+                import json
+
+                return json.loads(cached)
+    except Exception:
+        redis = None
+        acquired = True
+
     adapter = _get_adapter()
     try:
         balance = await adapter.get_balance()
-        return {
+        result = {
             "disponivel": float(balance.available),
             "bloqueado": float(balance.blocked),
             "total": float(balance.total),
             "conta": os.getenv("INTER_ACCOUNT", ""),
             "updated_at": balance.updated_at.isoformat() if balance.updated_at else datetime.now().isoformat(),
         }
+        # Cachear saldo por 5 min
+        try:
+            if redis:
+                import json
+
+                await redis.set("inter:saldo:cache", json.dumps(result), ex=300)
+        except Exception:
+            pass
+        return result
     finally:
         await adapter.close()
+        try:
+            if redis and acquired:
+                await redis.delete("inter:saldo:lock")
+        except Exception:
+            pass
 
 
 # ── D6.1 — EXTRATO + SYNC ────────────────────────────────────────────────────
@@ -402,3 +434,71 @@ async def listar_pix_recebidos(
         .all()
     )
     return {"total": len(rows), "pix": [dict(r) for r in rows]}
+
+
+# ── D6.3 extra — PDF do boleto + sincronizar status ──────────────────────────
+
+
+@router.get("/cobrancas/{cobranca_id}/pdf")
+async def baixar_boleto_pdf(
+    cobranca_id: str,
+    current_user=Depends(get_current_user),
+):
+    """Retorna URL do PDF do boleto consultando a API Inter."""
+    adapter = _get_adapter()
+    try:
+        result = await adapter.get_boleto(cobranca_id)
+        pdf_url = result.get("pdf_url") or result.get("linkPdf") or result.get("urlPdf")
+        if not pdf_url:
+            raise HTTPException(status_code=404, detail="PDF não disponível para esta cobrança")
+        return {"cobranca_id": cobranca_id, "pdf_url": pdf_url}
+    finally:
+        await adapter.close()
+
+
+@router.post("/cobrancas/sincronizar-status", status_code=202)
+async def sincronizar_status_cobrancas(
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Atualiza status de cobranças A_RECEBER consultando a API Inter (background)."""
+
+    async def _run():
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+        from core.config.settings import get_settings
+        from modules.integrations.inter.cobranca_service import CobrancaService
+
+        settings = get_settings()
+        engine = create_async_engine(settings.database_url)
+        factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with factory() as session:
+            result = await CobrancaService(session).sincronizar_status()
+            logger.info("D6.3 sincronizar_status concluído: %s", result)
+
+    background_tasks.add_task(_run)
+    return {"status": "started", "message": "Sincronização de status iniciada em background."}
+
+
+# ── D6.4 extra — consultar PIX individual ────────────────────────────────────
+
+
+@router.get("/pix/{e2e_id}")
+async def consultar_pix(
+    e2e_id: str,
+    current_user=Depends(get_current_user),
+):
+    """Consulta PIX individual pelo end-to-end ID (API Inter + registro local)."""
+
+    # Primeiro busca no banco local
+    adapter = _get_adapter()
+    try:
+        result = await adapter.get_pix_received()
+        pix_list = result.get("pix", []) if result.get("success") else []
+        pix = next((p for p in pix_list if p.get("endToEndId") == e2e_id or p.get("e2eId") == e2e_id), None)
+        if pix:
+            return {"source": "inter_api", "pix": pix}
+        raise HTTPException(status_code=404, detail=f"PIX {e2e_id} não encontrado")
+    finally:
+        await adapter.close()
