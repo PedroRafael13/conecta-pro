@@ -3609,12 +3609,15 @@ function getColor(c: Certificate): 'verde' | 'amarelo' | 'vermelho' | 'cinza' {
 5. **Histórico**: GET /history filtrado por `certidoes_atualizadas > 0`, últimas 5 execuções
 6. **Badge "última atualização"**: `max(updated_at)` das 8 certidões → `relativeTime()` ("3h atrás")
 
-Botão: após POST 202 → polling 8s → `loadData()` recarrega certidões + histórico automaticamente.
+Botão: após POST 202 → `useMutation.onSuccess` → polling 8s → `invalidateQueries(['certidoes', 'certidoes-history'])` recarrega automaticamente.
+
+**Padrão de fetch (auditoria 2):** `useQuery/useMutation/useQueryClient` (TanStack Query 5.x). `expandedRows: Set<string>` para múltiplos cards simultâneos.
 
 ### §47.5 — Build
 
 **BUILD_ID inicial:** `conecta-pro-1777520447143` (57s, implementação principal)
-**BUILD_ID pós-auditoria:** `conecta-pro-1777549731606` (71s, Skeleton + error boundary)
+**BUILD_ID auditoria 1:** `conecta-pro-1777549731606` (71s, Skeleton + error boundary)
+**BUILD_ID auditoria 2:** `conecta-pro-1777551977125` (64s, TanStack Query + expandedRows Set)
 **Deploy:** docker cp .next/static + standalone → docker restart → healthy
 
 Validação smoke: `GET /modulos/gestao-pessoas/ged/certidoes` → HTTP 307 (redirect login) ✅

@@ -86,6 +86,20 @@ Histórico: últimas 5 execuções com certidoes_atualizadas > 0
 | Modificado | Tabela: ícone semáforo + badge por `getColor()` |
 | Mantido | Stats cards, filter bar, tabela completa |
 
+**Auditoria 2 — TanStack Query + expandedRows (commit `b6f2fcda`):**
+
+| Mudança | Detalhe |
+|---------|---------|
+| Migrado | `useState/useEffect/useCallback + fetch` → `useQuery/useMutation/useQueryClient` |
+| Adicionado | `useQuery(['certidoes'])` — GET certidoes com `staleTime: 30000` |
+| Adicionado | `useQuery(['certidoes-tipos'])` — GET tipos com `staleTime: 300000` |
+| Adicionado | `useQuery(['certidoes-history'])` — GET history filtrado |
+| Adicionado | `useMutation(runCnds)` — POST /cnds/run com `invalidateQueries` pós-8s |
+| Adicionado | `isPolling` state para cobrir janela de 8s pós-mutation |
+| Migrado | `lastUpdate` de state manual → `useMemo` derivado de `certidoes` |
+| Corrigido | `expandedId: string \| null` → `expandedRows: Set<string>` (múltiplos cards) |
+| Corrigido | Error boundary usa `isError + refetch()` do TanStack Query |
+
 ---
 
 ## 6. STEP 5 — Build e deploy
@@ -98,7 +112,8 @@ Histórico: últimas 5 execuções com certidoes_atualizadas > 0
 ```
 
 **BUILD_ID inicial:** `conecta-pro-1777520447143`
-**BUILD_ID pós-auditoria:** `conecta-pro-1777549731606` (Skeleton + error boundary)
+**BUILD_ID auditoria 1:** `conecta-pro-1777549731606` (Skeleton + error boundary)
+**BUILD_ID auditoria 2:** `conecta-pro-1777551977125` (TanStack Query + expandedRows Set)
 
 **Deploy:**
 ```
