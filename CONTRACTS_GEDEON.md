@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.50
+**Versão:** 1.51
 **Data:** 2026-04-30
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3711,3 +3711,142 @@ cert_result = await CertidoesUpdaterService(self.db).executar(
 | `test_cnds_run_log_run_type_cnds_only` | log tem `run_type='cnds_only'`, `triggered_by` correto, `sync_novos=0` |
 | `test_certidoes_updater_write_log_false_nao_grava` | `write_log=False` → `db.add` e `db.commit` NÃO chamados |
 | `test_coleta_completa_grava_apenas_um_log_unificado` | `write_log=False` retorna resultado; Updater não grava log |
+
+---
+
+## §49 — D6: INTEGRAÇÃO BANCO INTER COMPLETA
+
+**Versão:** 1.51
+**Data:** 2026-04-30
+**Commits:** f869945f, cc0db11f, 8e48fbf2
+**Status:** ✅ Implementado e validado
+
+### §49.0 — Visão Geral D6
+
+Integração completa com Banco Inter Open Banking sobre o `InterAdapter` existente.
+Adicionadas camadas de persistência, cache Redis e UI dedicada.
+
+| Sub-fase | Entrega | Validação |
+|----------|---------|-----------|
+| D6.0 | Redis token cache (inter:token, TTL 50min) | Saldo R$1.220,11 ✅ |
+| D6.1 | InterSyncService → inter_transactions (536 tx) | 518 PIX + 14 DEBITO + 4 BOLETO ✅ |
+| D6.2 | ConciliacaoService → inter_conciliacao_folha (46 registros) | Lógica FORTE/MÉDIO/FRACO ✅ |
+| D6.3 | Endpoints cobranças/boletos + inter_cobrancas | Endpoints ativos ✅ |
+| D6.4 | PIX recebidos sync + inter_pix_recebidos + UI | 1 PIX salvo, UI 4 tabs ✅ |
+| Tests | 5/5 pytest passando | D6.0 × 3, D6.1, D6.2 ✅ |
+
+### §49.1 — Arquitetura de Arquivos
+
+```
+backend/
+├── modules/integrations/banking/adapters/inter.py  # D6.0: Redis cache adicionado
+├── modules/integrations/inter/
+│   ├── __init__.py
+│   ├── inter_sync_service.py      # D6.1: sync extrato → inter_transactions
+│   ├── conciliacao_service.py     # D6.2: conciliação folha vs PIX/TED
+│   └── inter_controller.py       # D6.0–D6.4: todos os endpoints
+├── alembic/versions/sprint86_d6_inter_tables.py  # 4 novas tabelas
+└── tests/modules/integrations/inter/test_d6_inter.py  # 5 testes
+
+frontend/
+└── src/app/modulos/financeiro/inter/page.tsx  # D6.4: UI 4 tabs
+```
+
+### §49.2 — Tabelas Novas (Migration sprint86_d6_inter_tables)
+
+| Tabela | Chave | Propósito |
+|--------|-------|-----------|
+| `inter_transactions` | UNIQUE(data_lancamento,tipo_operacao,valor,descricao) | Extrato sincronizado |
+| `inter_cobrancas` | PK uuid | Boletos emitidos via Inter |
+| `inter_pix_recebidos` | UNIQUE(end_to_end_id) | PIX recebidos |
+| `inter_conciliacao_folha` | UNIQUE(employee_id,competencia) | Conciliação folha × extrato |
+
+### §49.3 — Endpoints Registrados
+
+Prefixo: `/api/v1/financeiro/inter/`
+
+| Método | Path | Sub-fase |
+|--------|------|----------|
+| GET | `/saldo` | D6.0 |
+| POST | `/sync-extrato?dias=N` | D6.1 background |
+| GET | `/transactions` | D6.1 |
+| GET | `/extrato/resumo` | D6.1 |
+| POST | `/conciliar/{competencia}` | D6.2 |
+| GET | `/payroll/pagamentos` | D6.2 |
+| GET | `/payroll/divergencias` | D6.2 |
+| POST | `/cobrancas` | D6.3 |
+| GET | `/cobrancas` | D6.3 |
+| GET | `/cobrancas/{id}` | D6.3 |
+| POST | `/cobrancas/{id}/cancelar` | D6.3 |
+| POST | `/pix/sync-recebidos?dias=N` | D6.4 background |
+| GET | `/pix/recebidos` | D6.4 |
+
+### §49.4 — Redis Token Cache
+
+```python
+REDIS_TOKEN_KEY = "inter:token"
+REDIS_TOKEN_TTL = 50 * 60  # 50 min (token valid 1h)
+
+# Fluxo em authenticate():
+# 1. redis.get("inter:token") → cache hit → usa token cached
+# 2. cache miss → OAuth2 mTLS request → redis.set(key, token, ex=TTL)
+# 3. redis indisponível → Exception capturada → autentica direto (graceful fallback)
+```
+
+### §49.5 — InterSyncService (D6.1)
+
+```python
+# inter_sync_service.py
+async def sincronizar_extrato(dias=7) → {sincronizadas, duplicadas, erros}
+async def listar_transactions(inicio, fim, tipo_operacao, limit) → list[dict]
+async def resumo(dias) → {periodo_dias, resumo: [{tipo_operacao, tipo_transacao, qtd, total}]}
+
+# Dedup via UNIQUE constraint:
+INSERT ... ON CONFLICT ON CONSTRAINT uq_inter_transactions_dedup DO NOTHING
+```
+
+### §49.6 — ConciliacaoService (D6.2)
+
+```python
+# conciliacao_service.py
+# Critérios (§42.4 anti-automação):
+MATCH_FORTE: CPF destinatário == employee.cpf AND |valor_diff| ≤ R$0.01 → status='pago'
+MATCH_MÉDIO: CPF match AND |valor_diff| ≤ R$0.50 → status='pago'
+MATCH_FRACO: valor exato AND nome em descrição → status='pago'
+AMBÍGUO:    múltiplos matches dentro de tolerância MÉDIO → status='em_conciliacao'
+SEM_MATCH:  não cria registro
+
+async def preparar_competencia(competencia) → {criados}  # cria registros 'previsto'
+async def conciliar_folha(competencia) → {matches_fortes, matches_medios, em_conciliacao, total_txs_analisadas}
+async def listar_pagamentos(competencia) → list[dict]
+async def listar_divergencias() → list[dict]
+```
+
+### §49.7 — Bugs Corrigidos Durante D6
+
+| Bug | Arquivo | Fix |
+|-----|---------|-----|
+| E402 Module level import | inter.py | Moveu constantes REDIS_TOKEN_KEY/TTL após imports |
+| F841 unused var `result` | inter_sync_service.py | Removeu query SELECT desnecessária |
+| SIM117 nested `with` | test_d6_inter.py | Usou `with (A, B):` syntax |
+| ::jsonb SQLAlchemy parser | inter_controller.py | `cast(:param as jsonb)` em vez de `:param::jsonb` |
+| datetime str ISO 8601 | inter_controller.py | `_parse_dt()` converte antes do INSERT |
+
+### §49.8 — Credenciais Inter
+
+Variáveis de ambiente (`.env`):
+- `INTER_CLIENT_ID`, `INTER_CLIENT_SECRET`
+- `INTER_CERT_PATH` → `/app/credentials/inter/certificate.crt`
+- `INTER_KEY_PATH` → `/app/credentials/inter/private.key`
+- `INTER_AGENCY`, `INTER_ACCOUNT`
+- `INTER_ENVIRONMENT` → `production` | `sandbox`
+
+### §49.9 — Testes D6 (5/5)
+
+| Teste | Assertion |
+|-------|-----------|
+| `test_token_cache_hit_redis` | Redis hit → usa cached token, não chama Inter |
+| `test_token_cache_miss_chama_inter` | Redis miss → autêntica Inter, salva no Redis |
+| `test_redis_indisponivel_autentica_direto` | Redis down → fallback direto Inter, token obtido |
+| `test_sincronizar_extrato_insere_transactions` | sincronizar_extrato() → INSERT + commit |
+| `test_conciliacao_match_forte` | CPF+valor_exato → matches_fortes=1, status='pago' |
