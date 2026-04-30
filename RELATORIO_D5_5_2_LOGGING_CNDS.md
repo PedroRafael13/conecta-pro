@@ -7,6 +7,17 @@
 
 ---
 
+## 0. Timestamps
+
+| Marco | Horário |
+|-------|---------|
+| T+0 — início (leitura código) | 2026-04-30 ~17:00 UTC |
+| T+18 — deploy (hot copy + restart) | 2026-04-30 ~17:18 UTC |
+| T+28 — validação concluída (VAL 4.4 ✅) | 2026-04-30 ~17:28 UTC |
+| T+30 — commit + push | 2026-04-30 ~17:30 UTC |
+
+---
+
 ## 1. Objetivo
 
 Implementar gravação de `ged_coleta_logs` quando o endpoint `POST /cnds/run` é chamado de forma isolada, para que execuções manuais de certidões apareçam no histórico (`GET /coleta-automatica/history`).
@@ -88,7 +99,25 @@ cert_result = await CertidoesUpdaterService(self.db).executar(
 
 ---
 
-## 6. Contratos
+## 6. run_type — Valores Pré/Pós D5.5.2
+
+| run_type | Quem grava | Contexto | Status |
+|----------|-----------|----------|--------|
+| `cron` | `ColetaAutomaticaService` | Celery Beat (dia 21) | pré-D5.5.2 |
+| `manual` | `ColetaAutomaticaService` | POST /coleta-automatica/run | pré-D5.5.2 |
+| `cnds_only` | `CertidoesUpdaterService` (write_log=True) | POST /cnds/run isolado | **novo D5.5.2** |
+
+> `run_type VARCHAR(10)` sem CHECK constraint — não foi necessária migration alembic.
+
+---
+
+## 7. Backlog
+
+Nenhum. D5.5.2 fecha o gap de histórico de execuções isoladas de certidões. A UI passa a mostrar as execuções de `/cnds/run` no histórico com `run_type='cnds_only'`.
+
+---
+
+## 8. Contratos
 
 - **CONTRACTS_GEDEON.md** v1.49 → v1.50
 - §47.6: item D5.5.2 marcado ✅
