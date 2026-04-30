@@ -97,7 +97,8 @@ Histórico: últimas 5 execuções com certidoes_atualizadas > 0
 0 erros Turbopack
 ```
 
-**BUILD_ID:** `conecta-pro-1777520447143`
+**BUILD_ID inicial:** `conecta-pro-1777520447143`
+**BUILD_ID pós-auditoria:** `conecta-pro-1777549731606` (Skeleton + error boundary)
 
 **Deploy:**
 ```

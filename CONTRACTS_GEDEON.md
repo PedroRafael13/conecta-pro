@@ -3613,8 +3613,8 @@ Botão: após POST 202 → polling 8s → `loadData()` recarrega certidões + hi
 
 ### §47.5 — Build
 
-**BUILD_ID:** `conecta-pro-1777520447143`
-**Compilado em:** 57s | 0 erros Turbopack | build limpo
+**BUILD_ID inicial:** `conecta-pro-1777520447143` (57s, implementação principal)
+**BUILD_ID pós-auditoria:** `conecta-pro-1777549731606` (71s, Skeleton + error boundary)
 **Deploy:** docker cp .next/static + standalone → docker restart → healthy
 
 Validação smoke: `GET /modulos/gestao-pessoas/ged/certidoes` → HTTP 307 (redirect login) ✅
