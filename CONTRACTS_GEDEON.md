@@ -1,6 +1,6 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.48
-**Data:** 2026-04-28
+**Versão:** 1.49
+**Data:** 2026-04-30
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
@@ -3559,6 +3559,74 @@ Pytest suite D5.4+D4+D4.1+D5.1+D5.2+D5.3: **31/32 PASS** (1 flaky pré-existente
 | CPF: escolher fonte para diarist_controller | D5.1.1 |
 | OAuth2 gov.br para emissão real de CND | D5.2.1 |
 | Playwright: navegar fluxo JSF+captcha imagem TST para CNDT real | D5.6 |
-| UI card Certidões com semáforo (verde/amarelo/vermelho) | D5.5 |
+| ~~UI card Certidões com semáforo (verde/amarelo/vermelho)~~ | ~~D5.5~~ ✅ |
 | `alvara_funcionamento` sem automação (manual) | D5.x |
 | `registro_cnpj` sem automação (sem client) | D5.x |
+
+---
+
+## §47 — D5.5: UI Card Certidões com Semáforo
+
+**Data:** 2026-04-30
+**Commit:** ver RELATORIO_D5_5_UI_CERTIDOES.md
+**Objetivo:** Página /certidoes ganha semáforo D5.4-aware: 6 itens da META implementados
+
+### §47.1 — Componentes adicionados / modificados
+
+Arquivo: `frontend/src/app/modulos/gestao-pessoas/ged/certidoes/page.tsx` (transformação total)
+
+Componentes shadcn/ui usados: `Card`, `CardContent`, `CardHeader`, `CardTitle`, `Button`, `Badge`, `Input`, `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`
+
+Novos ícones lucide-react: `CheckCircle2`, `XCircle`, `MinusCircle`, `ChevronDown`, `ChevronUp`, `Clock`
+
+### §47.2 — Lógica semáforo getColor() — 4 cores, 6 condições
+
+```typescript
+function getColor(c: Certificate): 'verde' | 'amarelo' | 'vermelho' | 'cinza' {
+  if (SKIP_AUTOMATION.has(c.document_type)) return 'cinza';   // alvara, cnpj
+  const parsed = parseNotes(c.notes);
+  const dias = daysUntilExpiry(c.expiry_date);
+  if (dias < 0)                    return 'vermelho';  // vencida
+  if (parsed?.regular === false)   return 'vermelho';  // irregular real
+  if (parsed?.regular === null)    return 'amarelo';   // indeterminado (portal down)
+  if (dias < 7)                    return 'vermelho';  // vencendo crítico
+  if (dias < 30)                   return 'amarelo';   // atenção
+  if (parsed?.regular === true)    return 'verde';     // regular confirmado
+  return 'cinza';                                      // sem dados
+}
+```
+
+### §47.3 — Endpoints utilizados (STEP 2 pulado)
+
+`GET /api/v1/ged/certidoes` — já existia (`modules/ged/controllers/ged_certidoes_controller.py`), retorna as 8 rows com `notes` (JSON D5.4), `alerta_ativo`, `expiry_date`, `updated_at`. Nenhum endpoint novo criado.
+
+### §47.4 — UX flow completo (6 itens da META)
+
+1. **Header resumo**: X regular / Y indeterminado / Z irregular/vencido / W manual
+2. **8 cards semáforo**: grid 2 colunas, border-left colorida, badge situação, fonte, nota
+3. **Ver detalhes**: colapso/expande notes JSON parseado por `parseNotes()` com try/catch
+4. **Botão laranja "Atualizar agora"**: `POST /api/v1/ged/coleta-automatica/cnds/run` → 202/409
+5. **Histórico**: GET /history filtrado por `certidoes_atualizadas > 0`, últimas 5 execuções
+6. **Badge "última atualização"**: `max(updated_at)` das 8 certidões → `relativeTime()` ("3h atrás")
+
+Botão: após POST 202 → polling 8s → `loadData()` recarrega certidões + histórico automaticamente.
+
+### §47.5 — Build
+
+**BUILD_ID:** `conecta-pro-1777520447143`
+**Compilado em:** 57s | 0 erros Turbopack | build limpo
+**Deploy:** docker cp .next/static + standalone → docker restart → healthy
+
+Validação smoke: `GET /modulos/gestao-pessoas/ged/certidoes` → HTTP 307 (redirect login) ✅
+
+### §47.6 — Backlog D5.x (atualizado)
+
+| Item | Sprint |
+|------|--------|
+| CPF: escolher fonte para diarist_controller | D5.1.1 |
+| OAuth2 gov.br para emissão real de CND | D5.2.1 |
+| Playwright: navegar fluxo JSF+captcha imagem TST para CNDT real | D5.6 |
+| `alvara_funcionamento` sem automação (manual) | D5.x |
+| `registro_cnpj` sem automação (sem client) | D5.x |
+| Animação polling pós-update (progress bar) | D5.5.1 |
+| Histórico CND: log via /cnds/run (hoje só via coleta completa) | D5.5.2 |
