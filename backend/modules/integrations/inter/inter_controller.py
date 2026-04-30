@@ -1,0 +1,395 @@
+"""D6 — Controller Inter: saldo, extrato, transactions, conciliação, cobrancas, PIX."""
+
+import logging
+import os
+from datetime import date, datetime
+from decimal import Decimal
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.auth.dependencies import get_current_user
+from core.database import get_db
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/financeiro/inter", tags=["Financeiro - Banco Inter"])
+
+
+def _get_adapter():
+    from modules.integrations.banking.adapters.base import BankCredentials
+    from modules.integrations.banking.adapters.inter import InterAdapter
+
+    return InterAdapter(
+        BankCredentials(
+            client_id=os.getenv("INTER_CLIENT_ID", ""),
+            client_secret=os.getenv("INTER_CLIENT_SECRET", ""),
+            certificate_path=os.getenv("INTER_CERT_PATH"),
+            private_key_path=os.getenv("INTER_KEY_PATH"),
+            agency=os.getenv("INTER_AGENCY"),
+            account=os.getenv("INTER_ACCOUNT"),
+            environment=os.getenv("INTER_ENVIRONMENT", "production"),
+        )
+    )
+
+
+# ── D6.0 — SALDO ─────────────────────────────────────────────────────────────
+
+
+@router.get("/saldo")
+async def get_saldo(current_user=Depends(get_current_user)):
+    """Consulta saldo atual da conta Inter (token cacheado no Redis 50min)."""
+    adapter = _get_adapter()
+    try:
+        balance = await adapter.get_balance()
+        return {
+            "disponivel": float(balance.available),
+            "bloqueado": float(balance.blocked),
+            "total": float(balance.total),
+            "conta": os.getenv("INTER_ACCOUNT", ""),
+            "updated_at": balance.updated_at.isoformat() if balance.updated_at else datetime.now().isoformat(),
+        }
+    finally:
+        await adapter.close()
+
+
+# ── D6.1 — EXTRATO + SYNC ────────────────────────────────────────────────────
+
+
+@router.post("/sync-extrato", status_code=202)
+async def sync_extrato(
+    background_tasks: BackgroundTasks,
+    dias: int = Query(default=7, ge=1, le=90),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Sincroniza extrato Inter dos últimos N dias em inter_transactions (background)."""
+
+    async def _run():
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+        from core.config.settings import get_settings
+        from modules.integrations.inter.inter_sync_service import InterSyncService
+
+        settings = get_settings()
+        engine = create_async_engine(settings.database_url)
+        factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with factory() as session:
+            result = await InterSyncService(session).sincronizar_extrato(dias=dias)
+            logger.info("D6.1 sync-extrato concluído: %s", result)
+
+    background_tasks.add_task(_run)
+    return {"status": "started", "dias": dias, "message": "Sincronização iniciada em background."}
+
+
+@router.get("/transactions")
+async def list_transactions(
+    inicio: date | None = Query(default=None),
+    fim: date | None = Query(default=None),
+    tipo: str | None = Query(default=None, description="C ou D"),
+    limit: int = Query(default=100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Lista transações sincronizadas em inter_transactions."""
+    from modules.integrations.inter.inter_sync_service import InterSyncService
+
+    svc = InterSyncService(db)
+    rows = await svc.listar_transactions(inicio=inicio, fim=fim, tipo_operacao=tipo, limit=limit)
+    return {"total": len(rows), "transactions": rows}
+
+
+@router.get("/extrato/resumo")
+async def resumo_extrato(
+    dias: int = Query(default=30, ge=1, le=365),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Totais crédito/débito por tipo nos últimos N dias."""
+    from modules.integrations.inter.inter_sync_service import InterSyncService
+
+    return await InterSyncService(db).resumo(dias=dias)
+
+
+# ── D6.2 — CONCILIAÇÃO FOLHA ─────────────────────────────────────────────────
+
+
+@router.post("/conciliar/{competencia}")
+async def conciliar_folha(
+    competencia: str,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Concilia transactions de débito da competência com folha de pagamento.
+
+    competencia: '2026-04'
+    """
+    if len(competencia) != 7 or "-" not in competencia:
+        raise HTTPException(status_code=400, detail="competencia deve ser 'YYYY-MM'")
+    from modules.integrations.inter.conciliacao_service import ConciliacaoService
+
+    svc = ConciliacaoService(db)
+    await svc.preparar_competencia(competencia)
+    return await svc.conciliar_folha(competencia)
+
+
+@router.get("/payroll/pagamentos")
+async def listar_pagamentos(
+    competencia: str = Query(..., description="YYYY-MM"),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Lista conciliação de folha da competência."""
+    from modules.integrations.inter.conciliacao_service import ConciliacaoService
+
+    rows = await ConciliacaoService(db).listar_pagamentos(competencia)
+    return {"competencia": competencia, "total": len(rows), "pagamentos": rows}
+
+
+@router.get("/payroll/divergencias")
+async def listar_divergencias(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Lista pagamentos em_conciliacao (ambíguos — requerem revisão manual)."""
+    from modules.integrations.inter.conciliacao_service import ConciliacaoService
+
+    rows = await ConciliacaoService(db).listar_divergencias()
+    return {"total": len(rows), "divergencias": rows}
+
+
+# ── D6.3 — COBRANÇA / BOLETOS ────────────────────────────────────────────────
+
+
+class EmitirCobrancaRequest(BaseModel):
+    valor: float
+    vencimento: str  # YYYY-MM-DD
+    payer_name: str
+    payer_document: str
+    descricao: str
+    payer_address: str | None = None
+    payer_city: str | None = "Manaus"
+    payer_state: str | None = "AM"
+    payer_zip: str | None = "69000000"
+    payer_number: str | None = "S/N"
+    payer_neighborhood: str | None = "Centro"
+
+
+@router.post("/cobrancas", status_code=201)
+async def emitir_cobranca(
+    req: EmitirCobrancaRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Emite boleto/cobrança via Inter e persiste em inter_cobrancas."""
+    from sqlalchemy import text
+
+    adapter = _get_adapter()
+    try:
+        vencimento = date.fromisoformat(req.vencimento)
+        result = await adapter.generate_boleto(
+            amount=Decimal(str(req.valor)),
+            due_date=vencimento,
+            payer_name=req.payer_name,
+            payer_document=req.payer_document,
+            description=req.descricao,
+            payer_address=req.payer_address,
+            payer_city=req.payer_city,
+            payer_state=req.payer_state,
+            payer_zip=req.payer_zip,
+            payer_number=req.payer_number,
+            payer_neighborhood=req.payer_neighborhood,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Erro Inter: {exc}") from exc
+    finally:
+        await adapter.close()
+
+    await db.execute(
+        text("""
+            INSERT INTO inter_cobrancas
+              (cobranca_id_inter, valor, vencimento, pagador, status,
+               url_boleto, pix_copia_cola, barcode, linha_digitavel, descricao)
+            VALUES
+              (:cid, :valor, :venc, :pagador::jsonb, 'A_RECEBER',
+               :url, :pix, :barcode, :ld, :desc)
+        """),
+        {
+            "cid": result.get("boleto_id"),
+            "valor": req.valor,
+            "venc": vencimento,
+            "pagador": f'{{"nome": "{req.payer_name}", "cpfCnpj": "{req.payer_document}"}}',
+            "url": result.get("pdf_url"),
+            "pix": result.get("pix_qrcode"),
+            "barcode": result.get("barcode"),
+            "ld": result.get("digitable_line"),
+            "desc": req.descricao,
+        },
+    )
+    await db.commit()
+    return {"ok": True, **result}
+
+
+@router.get("/cobrancas")
+async def listar_cobrancas(
+    status: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Lista cobranças emitidas em inter_cobrancas."""
+    from sqlalchemy import text
+
+    where = "1=1"
+    params: dict = {"limit": limit}
+    if status:
+        where = "status = :status"
+        params["status"] = status.upper()
+
+    rows = (
+        (
+            await db.execute(
+                text(f"""
+                SELECT id, cobranca_id_inter, valor, vencimento, status,
+                       pagador, url_boleto, pix_copia_cola, barcode, descricao, created_at
+                FROM inter_cobrancas
+                WHERE {where}
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """),
+                params,
+            )
+        )
+        .mappings()
+        .all()
+    )
+    return {"total": len(rows), "cobrancas": [dict(r) for r in rows]}
+
+
+@router.get("/cobrancas/{cobranca_id}")
+async def consultar_cobranca(
+    cobranca_id: str,
+    current_user=Depends(get_current_user),
+):
+    """Consulta cobrança diretamente na API Inter."""
+    adapter = _get_adapter()
+    try:
+        return await adapter.get_boleto(cobranca_id)
+    finally:
+        await adapter.close()
+
+
+@router.post("/cobrancas/{cobranca_id}/cancelar")
+async def cancelar_cobranca(
+    cobranca_id: str,
+    motivo: str = "ACERTOS",
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Cancela cobrança e atualiza status no DB."""
+    from sqlalchemy import text
+
+    adapter = _get_adapter()
+    try:
+        result = await adapter.cancel_boleto(cobranca_id, motivo)
+    finally:
+        await adapter.close()
+
+    if result.get("success"):
+        await db.execute(
+            text("UPDATE inter_cobrancas SET status='CANCELADO', updated_at=NOW() WHERE cobranca_id_inter=:cid"),
+            {"cid": cobranca_id},
+        )
+        await db.commit()
+    return result
+
+
+# ── D6.4 — PIX RECEBIDOS ─────────────────────────────────────────────────────
+
+
+@router.post("/pix/sync-recebidos", status_code=202)
+async def sync_pix_recebidos(
+    background_tasks: BackgroundTasks,
+    dias: int = Query(default=30, ge=1, le=90),
+    current_user=Depends(get_current_user),
+):
+    """Sincroniza PIX recebidos em inter_pix_recebidos (background)."""
+
+    async def _run():
+        import json
+
+        from sqlalchemy import text as _text
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+        from core.config.settings import get_settings
+
+        adapter = _get_adapter()
+        try:
+            result = await adapter.get_pix_received()
+            pix_list = result.get("pix", []) if result.get("success") else []
+
+            settings = get_settings()
+            engine = create_async_engine(settings.database_url)
+            factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+            async with factory() as session:
+                salvos = 0
+                for p in pix_list:
+                    e2e = p.get("endToEndId", p.get("e2eId", ""))
+                    if not e2e:
+                        continue
+                    try:
+                        await session.execute(
+                            _text("""
+                                INSERT INTO inter_pix_recebidos
+                                  (end_to_end_id, txid, valor, pagador, data_horario, raw_payload)
+                                VALUES (:e2e, :txid, :valor, :pagador::jsonb, :dt, :raw::jsonb)
+                                ON CONFLICT (end_to_end_id) DO NOTHING
+                            """),
+                            {
+                                "e2e": e2e,
+                                "txid": p.get("txid"),
+                                "valor": float(p.get("valor", 0)),
+                                "pagador": json.dumps(p.get("pagador") or p.get("devedor") or {}),
+                                "dt": p.get("horario", p.get("dataHorario")),
+                                "raw": json.dumps(p),
+                            },
+                        )
+                        salvos += 1
+                    except Exception as exc:
+                        logger.warning("D6.4 pix_recebidos insert erro: %s", exc)
+                await session.commit()
+                logger.info("D6.4 pix sync: %d salvos de %d", salvos, len(pix_list))
+        finally:
+            await adapter.close()
+
+    background_tasks.add_task(_run)
+    return {"status": "started", "message": "Sync PIX recebidos iniciado."}
+
+
+@router.get("/pix/recebidos")
+async def listar_pix_recebidos(
+    limit: int = Query(default=50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Lista PIX recebidos persistidos em inter_pix_recebidos."""
+    from sqlalchemy import text
+
+    rows = (
+        (
+            await db.execute(
+                text("""
+                SELECT id, end_to_end_id, txid, valor, pagador,
+                       data_horario, created_at
+                FROM inter_pix_recebidos
+                ORDER BY data_horario DESC NULLS LAST
+                LIMIT :limit
+            """),
+                {"limit": limit},
+            )
+        )
+        .mappings()
+        .all()
+    )
+    return {"total": len(rows), "pix": [dict(r) for r in rows]}

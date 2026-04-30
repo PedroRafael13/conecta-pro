@@ -34,6 +34,9 @@ from .base import (
 
 logger = logging.getLogger(__name__)
 
+REDIS_TOKEN_KEY = "inter:token"
+REDIS_TOKEN_TTL = 50 * 60  # 50 min (token vale 1h, renovar antes)
+
 
 class InterAdapter(BaseBankingAdapter):
     """
@@ -96,10 +99,25 @@ class InterAdapter(BaseBankingAdapter):
     async def authenticate(self) -> bool:
         """
         Autentica via OAuth2 com certificado mTLS.
+        D6.0: token cacheado em Redis (chave inter:token, TTL 50min).
 
         Returns:
             True se autenticado com sucesso.
         """
+        # D6.0: verificar cache Redis antes de chamar Inter
+        try:
+            from core.cache.redis import get_redis
+
+            redis = await get_redis()
+            cached = await redis.get(REDIS_TOKEN_KEY)
+            if cached:
+                self._access_token = cached.decode() if isinstance(cached, bytes) else cached
+                self._token_expires_at = datetime.now() + timedelta(seconds=REDIS_TOKEN_TTL)
+                logger.debug("Inter token: cache hit Redis")
+                return True
+        except Exception as redis_err:
+            logger.debug("Inter token: Redis indisponível (%s), autenticando direto", redis_err)
+
         try:
             client = await self._get_client()
 
@@ -140,6 +158,16 @@ class InterAdapter(BaseBankingAdapter):
             self._access_token = data["access_token"]
             expires_in = data.get("expires_in", 3600)
             self._token_expires_at = datetime.now() + timedelta(seconds=expires_in)
+
+            # D6.0: gravar token no Redis (TTL 50min)
+            try:
+                from core.cache.redis import get_redis
+
+                r = await get_redis()
+                await r.set(REDIS_TOKEN_KEY, self._access_token, ex=REDIS_TOKEN_TTL)
+                logger.debug("Inter token: gravado no Redis TTL=%ds", REDIS_TOKEN_TTL)
+            except Exception as cache_err:
+                logger.debug("Inter token: falha ao gravar Redis (%s)", cache_err)
 
             logger.info("Autenticado no Banco Inter com sucesso")
             return True

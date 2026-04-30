@@ -931,6 +931,14 @@ try:
     api_router.include_router(connector_router, tags=["Integrations - Conectores"])
     api_router.include_router(solides_router, prefix="/integrations", tags=["Integrations - Sólides RH/DP"])
     api_router.include_router(banking_router, prefix="/integrations", tags=["Integrations - Banking"])
+    # D6 — Inter endpoints consolidados (/financeiro/inter/)
+    try:
+        from modules.integrations.inter.inter_controller import router as _inter_d6_router
+
+        api_router.include_router(_inter_d6_router)
+        logger.info("D6 Inter controller: OK")
+    except Exception as _e:
+        logger.warning(f"D6 Inter controller: {_e}")
     # Banking Payments (DARF + barcode + lote)
     try:
         from modules.integrations.banking.controllers.payment_controller import (
