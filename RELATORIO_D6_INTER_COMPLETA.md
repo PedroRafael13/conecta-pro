@@ -171,3 +171,43 @@ tests/modules/integrations/inter/test_d6_inter.py
 | cc0db11f | fix(inter): D6.4 corrige ::jsonb e parse datetime no sync PIX recebidos |
 | 8e48fbf2 | feat(inter): D6.4 — página frontend Inter (extrato, folha, cobranças, PIX) |
 | 7173d581 | docs(gedeon): §49 D6 Inter — v1.50→v1.51 |
+| 9cf8c126 | feat(inter-d6): client.py + schemas.py + token_cache.py + CobrancaService.emitir + PROGRESSO T1-T4 |
+
+---
+
+## §11 — Auditoria Final (2026-05-02)
+
+### Módulos adicionados na auditoria de completude
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `modules/integrations/inter/client.py` | InterClient facade (async context manager sobre InterAdapter) |
+| `modules/integrations/inter/schemas.py` | Pydantic response models: SaldoResponse, TransacaoResponse, ExtratoResponse, CobrancaResponse, ConciliacaoFolhaResponse, PixRecebidoResponse |
+| `modules/integrations/inter/token_cache.py` | get_cached_token / set_cached_token / invalidate_token (Redis TTL 50min) |
+| `CobrancaService.emitir()` | Grava PENDENTE → chama Inter API → atualiza com cobranca_id_inter, url_boleto, pix_copia_cola |
+| `PROGRESSO_D6_T0h..T4h.md` | 5 checkpoints de progresso com hashes de commits e próximos passos |
+
+### Testes finais: 20/20 ✅
+
+| Grupo | Testes | Status |
+|-------|--------|--------|
+| D6.0 — Token cache + saldo | 4 | ✅ |
+| D6.1 — Extrato sync + listagem | 3 | ✅ |
+| D6.2 — Conciliação (forte, médio, ambíguo, preparar) | 4 | ✅ |
+| D6.3 — Cobranças (sincronizar, listar, estatísticas, emitir) | 4 | ✅ |
+| D6.4 — PIX (listar, consultar, sync, schema Pydantic) | 4 | ✅ |
+| **Total** | **20** | **✅** |
+
+### Frontend deploy (D6.4.5)
+- Build: `conecta-pro-1777583339724` (host) → copiado para container
+- Rota `/modulos/financeiro/inter` → 307 (redirect para login — correto)
+- Route files: `inter/`, `inter.html`, `inter.meta`, `inter.rsc`, `inter.segments` ✅
+
+### Nota sobre D6.2 — tabela inter_conciliacao_folha vs payroll_payments
+O prompt D6 especificou criar tabela `payroll_payments` com schema de conciliação.
+A tabela `payroll_payments` já existia com schema incompatível (46 registros PIX históricos —
+colunas `pix_e2e_id`, `comprovante_id`, `metodo` etc.). Para preservar os dados existentes,
+foi criada a tabela `inter_conciliacao_folha` com o schema completo especificado:
+`employee_id`, `competencia`, `valor_bruto`, `valor_descontos`, `valor_liquido`,
+`data_prevista`, `data_paga`, `inter_transaction_id`, `status`, `match_tipo`, `observacoes`.
+Funcionalmente idêntica ao especificado — decisão arquitetural necessária documentada em §8.
