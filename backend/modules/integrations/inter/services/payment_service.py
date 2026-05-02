@@ -520,7 +520,9 @@ def _validar_destinatario(payment_type: str, dest: dict) -> None:
         "gps": ["competencia", "codigo_pagamento"],
         "ted_interno": ["agencia", "conta", "banco"],
     }
-    campos = required.get(payment_type, [])
+    if payment_type not in required:
+        raise PaymentError(f"payment_type inválido: {payment_type}. Válidos: {set(required)}")
+    campos = required[payment_type]
     faltando = [c for c in campos if not dest.get(c)]
     if faltando:
         raise PaymentError(f"destinatario faltando campos para {payment_type}: {faltando}")

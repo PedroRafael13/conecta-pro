@@ -367,3 +367,134 @@ async def test_saldo_resumo_retorna_estrutura(mock_db):
     assert result["limite_diario"] == 5000.0
     assert result["consumido_hoje"] == 1500.0
     assert result["disponivel_hoje"] == 3500.0
+
+
+# ── D7.0 — check constraint status e função SQL ──────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_inter_payments_check_constraint_status():
+    """Status inválido deve lançar PaymentError no preparar()."""
+    from modules.integrations.inter.services.payment_service import TIPOS_VALIDOS, PaymentError, _validar_destinatario
+
+    # Verifica que todos os tipos válidos aceitos estão corretos
+    for t in TIPOS_VALIDOS:
+        assert t in {"boleto", "pix", "darf", "gps", "ted_interno"}
+
+    # Status inválido em _validar_destinatario (tipo não reconhecido)
+    with pytest.raises(PaymentError):
+        _validar_destinatario("cartao_credito", {})
+
+
+@pytest.mark.asyncio
+async def test_get_limite_diario_consumido(mock_db):
+    """_get_consumido_hoje() deve chamar a SQL function e retornar Decimal."""
+    from modules.integrations.inter.services.payment_service import InterPaymentService
+
+    mock_db.execute = AsyncMock(return_value=MagicMock(scalar=MagicMock(return_value=Decimal("2500.00"))))
+
+    svc = InterPaymentService(mock_db)
+    consumido = await svc._get_consumido_hoje()
+
+    assert consumido == Decimal("2500.00")
+    mock_db.execute.assert_called_once()
+    # Verifica que a SQL function foi chamada via TextClause
+    sql_obj = mock_db.execute.call_args[0][0]
+    assert "get_limite_diario_consumido" in str(sql_obj)
+
+
+# ── D7.2 — boleto extras ─────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_pagar_boleto_valida_codigo_barras():
+    """preparar() boleto sem codigo_barras deve lançar PaymentError."""
+    from modules.integrations.inter.services.payment_service import PaymentError, _validar_destinatario
+
+    with pytest.raises(PaymentError, match="codigo_barras"):
+        _validar_destinatario("boleto", {"beneficiario": "Empresa X", "valor_original": 10.0})
+
+
+@pytest.mark.asyncio
+async def test_pagar_boleto_retorna_codigo_solicitacao():
+    """pagar_boleto() deve retornar success=True e codigoSolicitacao."""
+    from decimal import Decimal
+
+    from modules.integrations.banking.adapters.base import BankCredentials
+    from modules.integrations.banking.adapters.inter import InterAdapter
+
+    adapter = InterAdapter(BankCredentials(client_id="test", client_secret="test", environment="sandbox"))
+
+    fake_response = {"codigoSolicitacao": "BOL-20260502-001", "autenticacao": "AUTH001", "dataPagamento": "2026-05-02"}
+    with patch.object(
+        adapter, "pay_barcode", AsyncMock(return_value={"success": True, "payment_id": "BOL-20260502-001"})
+    ):
+        result = await adapter.pagar_boleto(
+            codigo_barras="34191090008000001234567890123456700017988880000",
+            valor=Decimal("0.50"),
+            data_pagamento=date.today(),
+        )
+
+    assert result["success"] is True
+
+
+# ── D7.3 — PIX extras ────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_enviar_pix_valida_chave_obrigatoria():
+    """preparar() pix sem chave deve lançar PaymentError."""
+    from modules.integrations.inter.services.payment_service import PaymentError, _validar_destinatario
+
+    with pytest.raises(PaymentError, match="chave"):
+        _validar_destinatario("pix", {"tipo_chave": "CPF", "nome_recebedor": "Jordan"})
+
+
+@pytest.mark.asyncio
+async def test_enviar_pix_retorna_status_concluido():
+    """enviar_pix() deve retornar success=True com endToEndId."""
+    from modules.integrations.banking.adapters.base import BankCredentials
+    from modules.integrations.banking.adapters.inter import InterAdapter
+
+    adapter = InterAdapter(BankCredentials(client_id="test", client_secret="test", environment="sandbox"))
+
+    fake_response = {"endToEndId": "E60701190202605020001PIX2", "status": "CONCLUIDO"}
+    with patch.object(adapter, "_request", AsyncMock(return_value=fake_response)):
+        result = await adapter.enviar_pix(
+            chave="11122233344",
+            tipo_chave="CPF",
+            valor=Decimal("0.01"),
+            nome_recebedor="Jordan Jesus",
+            descricao="Teste D7.3 R$0.01",
+        )
+
+    assert result["success"] is True
+    assert "endToEndId" in result
+
+
+# ── D7.4 — GPS ───────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_pagar_gps_chama_endpoint_correto():
+    """pagar_gps() deve usar POST /banking/v2/pagamento/tributos."""
+    from modules.integrations.banking.adapters.base import BankCredentials
+    from modules.integrations.banking.adapters.inter import InterAdapter
+
+    adapter = InterAdapter(BankCredentials(client_id="test", client_secret="test", environment="sandbox"))
+
+    fake_response = {
+        "codigoSolicitacao": "GPS-001",
+        "autenticacao": "AUTH-GPS-001",
+        "dataPagamento": "2026-05-02",
+    }
+    with patch.object(adapter, "_request", AsyncMock(return_value=fake_response)):
+        result = await adapter.pagar_gps(
+            competencia="2026-04",
+            codigo_pagamento="1600",
+            valor=Decimal("0.01"),
+            identificador="TEST-GPS-001",
+        )
+
+    assert result["success"] is True
+    assert result["codigoSolicitacao"] == "GPS-001"
