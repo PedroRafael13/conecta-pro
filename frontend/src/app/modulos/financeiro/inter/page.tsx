@@ -553,14 +553,23 @@ export default function InterPage() {
         )}
       </div>
 
-      {/* Footer — última sincronização */}
+      {/* Footer — última sincronização + link pagamentos */}
       <div className="mt-4 flex items-center justify-between text-xs text-gray-400">
         <span>
           {ultimaSync
             ? `Última sincronização: ${Math.round((Date.now() - ultimaSync.getTime()) / 60000)} min atrás`
             : 'Nenhuma sincronização nesta sessão'}
         </span>
-        <span style={{ color: '#FF6B35' }}>Banco Inter · Open Banking</span>
+        <div className="flex items-center gap-4">
+          <a
+            href="/modulos/financeiro/inter/pagamentos"
+            className="text-xs font-medium px-3 py-1 rounded-full"
+            style={{ background: '#FF6B35', color: '#fff' }}
+          >
+            💳 Pagamentos (D7)
+          </a>
+          <span style={{ color: '#FF6B35' }}>Banco Inter · Open Banking</span>
+        </div>
       </div>
     </div>
   )

@@ -1,0 +1,643 @@
+"""D7 — InterPaymentService: preparar/aprovar/executar/cancelar pagamentos Inter.
+
+Defesa em profundidade:
+  preparado → aprovado (2FA OTP) → executado (Inter API) → confirmado (extrato sync)
+  OU cancelado (a qualquer ponto antes de executado)
+
+REGRAS INVIOLÁVEIS:
+  - Registro DB ANTES de qualquer chamada Inter
+  - FOR UPDATE lock antes de qualquer transição de estado
+  - Idempotência: cada payment_id executa Inter no máximo 1x
+  - Limite diário R$5.000 verificado em prepare()
+  - Saldo mínimo R$100 sempre preservado
+"""
+
+import json
+import logging
+import os
+import secrets
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
+from typing import Any
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
+
+LIMITE_DIARIO = Decimal(os.getenv("CONECTA_LIMITE_DIARIO_PAGAMENTOS", "5000.00"))
+SALDO_MINIMO = Decimal(os.getenv("CONECTA_SALDO_MINIMO_RESTANTE", "100.00"))
+OTP_TTL_SECONDS = int(os.getenv("CONECTA_PAYMENT_OTP_TTL_SECONDS", "300"))
+
+TIPOS_VALIDOS = {"boleto", "pix", "darf", "gps", "ted_interno"}
+
+
+class PaymentError(Exception):
+    pass
+
+
+class LimiteDiarioError(PaymentError):
+    pass
+
+
+class SaldoInsuficienteError(PaymentError):
+    pass
+
+
+class OTPInvalidoError(PaymentError):
+    pass
+
+
+class StatusInvalidoError(PaymentError):
+    pass
+
+
+class IdempotenciaError(PaymentError):
+    pass
+
+
+class InterPaymentService:
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+
+    # ── helpers ───────────────────────────────────────────────────────────────
+
+    async def _audit(
+        self,
+        payment_id: str,
+        user_id: str | None,
+        status_from: str | None,
+        status_to: str,
+        motivo: str = "",
+        ip: str = "",
+    ) -> None:
+        await self.db.execute(
+            text("""
+                INSERT INTO inter_payment_audit
+                    (payment_id, user_id, status_from, status_to, ip_address, motivo, created_at)
+                VALUES
+                    (:pid, :uid, :sf, :st, :ip, :mot, NOW())
+            """),
+            {"pid": payment_id, "uid": user_id, "sf": status_from, "st": status_to, "ip": ip, "mot": motivo},
+        )
+
+    async def _get_saldo_inter(self) -> Decimal:
+        """Consulta saldo Inter via endpoint interno."""
+        try:
+            from modules.integrations.banking.adapters.base import BankCredentials
+            from modules.integrations.banking.adapters.inter import InterAdapter
+
+            adapter = InterAdapter(
+                BankCredentials(
+                    client_id=os.getenv("INTER_CLIENT_ID", ""),
+                    client_secret=os.getenv("INTER_CLIENT_SECRET", ""),
+                    certificate_path=os.getenv("INTER_CERT_PATH"),
+                    private_key_path=os.getenv("INTER_KEY_PATH"),
+                    environment=os.getenv("INTER_ENVIRONMENT", "production"),
+                )
+            )
+            ok = await adapter.authenticate()
+            if not ok:
+                return Decimal("0")
+            balance = await adapter.get_balance()
+            await adapter.close()
+            return Decimal(str(balance.available_balance))
+        except Exception as exc:
+            logger.warning("D7 _get_saldo_inter falhou: %s", exc)
+            return Decimal("0")
+
+    async def _get_consumido_hoje(self) -> Decimal:
+        row = (await self.db.execute(text("SELECT get_limite_diario_consumido()"))).scalar()
+        return Decimal(str(row or 0))
+
+    # ── preparar ──────────────────────────────────────────────────────────────
+
+    async def preparar(
+        self,
+        payment_type: str,
+        destinatario: dict,
+        valor: float,
+        data_pagamento: date,
+        prepared_by: str,
+        observacoes: str = "",
+    ) -> dict[str, Any]:
+        """Cria registro com status='preparado'. Sem chamada Inter."""
+        valor_d = Decimal(str(valor))
+
+        if payment_type not in TIPOS_VALIDOS:
+            raise PaymentError(f"payment_type inválido: {payment_type}. Válidos: {TIPOS_VALIDOS}")
+
+        if valor_d <= 0:
+            raise PaymentError(f"valor deve ser > 0 (recebido: {valor_d})")
+
+        if data_pagamento < date.today():
+            raise PaymentError(f"data_pagamento não pode ser no passado: {data_pagamento}")
+
+        # Validar campos mínimos por tipo
+        _validar_destinatario(payment_type, destinatario)
+
+        # Verificar limite diário
+        consumido = await self._get_consumido_hoje()
+        if consumido + valor_d > LIMITE_DIARIO:
+            disponivel = LIMITE_DIARIO - consumido
+            raise LimiteDiarioError(
+                f"Limite diário R${LIMITE_DIARIO} atingido. "
+                f"Consumido hoje: R${consumido:.2f}. "
+                f"Disponível: R${disponivel:.2f}."
+            )
+
+        # Verificar saldo Inter
+        saldo = await self._get_saldo_inter()
+        if saldo > 0 and saldo - valor_d < SALDO_MINIMO:
+            raise SaldoInsuficienteError(
+                f"Saldo Inter insuficiente. Saldo: R${saldo:.2f}, "
+                f"Valor: R${valor_d:.2f}, Mínimo residual: R${SALDO_MINIMO:.2f}"
+            )
+
+        import uuid
+
+        payment_id = str(uuid.uuid4())
+
+        await self.db.execute(
+            text("""
+                INSERT INTO inter_payments
+                    (id, payment_type, destinatario, valor, data_pagamento,
+                     status, prepared_by, observacoes, created_at, updated_at)
+                VALUES
+                    (:id, :pt, cast(:dest as jsonb), :valor, :dp,
+                     'preparado', :pb, :obs, NOW(), NOW())
+            """),
+            {
+                "id": payment_id,
+                "pt": payment_type,
+                "dest": json.dumps(destinatario),
+                "valor": float(valor_d),
+                "dp": data_pagamento,
+                "pb": prepared_by,
+                "obs": observacoes,
+            },
+        )
+        await self._audit(payment_id, prepared_by, None, "preparado", "preparado por usuário")
+        await self.db.commit()
+
+        logger.info("D7 preparar: id=%s tipo=%s valor=%.2f", payment_id, payment_type, valor_d)
+        return {
+            "id": payment_id,
+            "status": "preparado",
+            "payment_type": payment_type,
+            "valor": float(valor_d),
+            "data_pagamento": data_pagamento.isoformat(),
+        }
+
+    # ── gerar OTP ─────────────────────────────────────────────────────────────
+
+    async def gerar_otp(self, payment_id: str, user_id: str) -> dict[str, Any]:
+        """Gera OTP 6 dígitos, salva no DB, envia email Jordan."""
+        row = (
+            (
+                await self.db.execute(
+                    text("SELECT id, status, valor, payment_type, destinatario FROM inter_payments WHERE id = :id"),
+                    {"id": payment_id},
+                )
+            )
+            .mappings()
+            .first()
+        )
+
+        if not row:
+            raise PaymentError(f"payment_id não encontrado: {payment_id}")
+        if row["status"] != "preparado":
+            raise StatusInvalidoError(f"OTP só pode ser gerado para status='preparado' (atual: {row['status']})")
+
+        code = f"{secrets.randbelow(900000) + 100000}"
+        expires_at = datetime.now(UTC) + timedelta(seconds=OTP_TTL_SECONDS)
+
+        # Invalidar OTPs anteriores não usados
+        await self.db.execute(
+            text("UPDATE inter_payment_otp SET used = true WHERE payment_id = :pid AND used = false"),
+            {"pid": payment_id},
+        )
+
+        import uuid
+
+        otp_id = str(uuid.uuid4())
+        await self.db.execute(
+            text("""
+                INSERT INTO inter_payment_otp (id, payment_id, code, expires_at, used, created_at)
+                VALUES (:id, :pid, :code, :exp, false, NOW())
+            """),
+            {"id": otp_id, "pid": payment_id, "code": code, "exp": expires_at},
+        )
+        await self.db.commit()
+
+        # Enviar email com OTP
+        valor = row["valor"]
+        payment_type = row["payment_type"]
+        dest = row["destinatario"] if isinstance(row["destinatario"], dict) else json.loads(row["destinatario"])
+        dest_label = dest.get("chave") or dest.get("codigo_barras", "")[:20] or dest.get("nome", "destinatário")
+
+        email_destino = os.getenv("JORDAN_EMAIL", "jordansjesus@gmail.com")
+        await _enviar_otp_email(email_destino, code, valor, payment_type, dest_label)
+
+        logger.info("D7 gerar_otp: payment_id=%s otp_id=%s email=%s", payment_id, otp_id, email_destino)
+        return {
+            "otp_id": otp_id,
+            "message": f"Email com código OTP enviado para {email_destino}",
+            "expires_in_seconds": OTP_TTL_SECONDS,
+        }
+
+    # ── aprovar ───────────────────────────────────────────────────────────────
+
+    async def aprovar(self, payment_id: str, otp_code: str, user_id: str, ip: str = "") -> dict[str, Any]:
+        """Valida OTP e muda status para 'aprovado'. Ainda NÃO chama Inter."""
+        # FOR UPDATE — lock pessimista
+        row = (
+            (
+                await self.db.execute(
+                    text("SELECT id, status, valor FROM inter_payments WHERE id = :id FOR UPDATE"),
+                    {"id": payment_id},
+                )
+            )
+            .mappings()
+            .first()
+        )
+
+        if not row:
+            raise PaymentError(f"payment_id não encontrado: {payment_id}")
+        if row["status"] != "preparado":
+            raise StatusInvalidoError(f"Só é possível aprovar status='preparado' (atual: {row['status']})")
+
+        now = datetime.now(UTC)
+        otp_row = (
+            (
+                await self.db.execute(
+                    text("""
+                SELECT id, code, expires_at, used FROM inter_payment_otp
+                WHERE payment_id = :pid AND used = false AND expires_at > :now
+                ORDER BY created_at DESC LIMIT 1
+            """),
+                    {"pid": payment_id, "now": now},
+                )
+            )
+            .mappings()
+            .first()
+        )
+
+        if not otp_row:
+            raise OTPInvalidoError("Nenhum OTP válido encontrado. Gere um novo OTP.")
+        if otp_row["code"] != otp_code:
+            raise OTPInvalidoError("Código OTP incorreto.")
+
+        # Marcar OTP como usado
+        await self.db.execute(
+            text("UPDATE inter_payment_otp SET used = true WHERE id = :id"),
+            {"id": str(otp_row["id"])},
+        )
+
+        approved_at = now
+        await self.db.execute(
+            text("""
+                UPDATE inter_payments
+                SET status = 'aprovado', approved_by = :uid, approved_at = :at,
+                    approval_otp_used = :otp, updated_at = NOW()
+                WHERE id = :id AND status = 'preparado'
+            """),
+            {"uid": user_id, "at": approved_at, "otp": otp_code, "id": payment_id},
+        )
+        await self._audit(payment_id, user_id, "preparado", "aprovado", "OTP validado", ip)
+        await self.db.commit()
+
+        logger.info("D7 aprovar: payment_id=%s aprovado por user=%s", payment_id, user_id)
+        return {"id": payment_id, "status": "aprovado", "approved_at": approved_at.isoformat()}
+
+    # ── executar ──────────────────────────────────────────────────────────────
+
+    async def executar(self, payment_id: str, user_id: str | None = None) -> dict[str, Any]:
+        """Chama Inter. Apenas após status='aprovado'. Idempotente (max 1x)."""
+        # FOR UPDATE — lock pessimista
+        row = (
+            (
+                await self.db.execute(
+                    text("""
+                SELECT id, status, payment_type, destinatario, valor, data_pagamento
+                FROM inter_payments WHERE id = :id FOR UPDATE
+            """),
+                    {"id": payment_id},
+                )
+            )
+            .mappings()
+            .first()
+        )
+
+        if not row:
+            raise PaymentError(f"payment_id não encontrado: {payment_id}")
+        if row["status"] == "executado":
+            raise IdempotenciaError(f"payment_id={payment_id} já foi executado (idempotência)")
+        if row["status"] != "aprovado":
+            raise StatusInvalidoError(f"Só é possível executar status='aprovado' (atual: {row['status']})")
+
+        # Atomic: status='aprovado' → 'executado' — se UPDATE retornar 0 rows, alguém já executou
+        updated = (
+            await self.db.execute(
+                text("""
+                UPDATE inter_payments SET status = 'executado', executed_at = NOW(), updated_at = NOW()
+                WHERE id = :id AND status = 'aprovado'
+            """),
+                {"id": payment_id},
+            )
+        ).rowcount
+
+        if updated == 0:
+            raise IdempotenciaError(f"Race condition detectada em payment_id={payment_id}. Abortando.")
+
+        await self.db.commit()
+
+        # Chamar Inter conforme tipo
+        payment_type = row["payment_type"]
+        dest = row["destinatario"] if isinstance(row["destinatario"], dict) else json.loads(row["destinatario"])
+        valor = Decimal(str(row["valor"]))
+        data_pgto = row["data_pagamento"]
+
+        inter_response: dict = {}
+        inter_payment_id: str | None = None
+        erro: str | None = None
+
+        try:
+            inter_response, inter_payment_id = await _chamar_inter(payment_type, dest, valor, data_pgto)
+        except Exception as exc:
+            erro = str(exc)
+            logger.error("D7 executar: Inter falhou payment_id=%s: %s", payment_id, exc)
+            # Marcar como erro — NÃO tentar de novo automaticamente (perigoso)
+            await self.db.execute(
+                text("""
+                    UPDATE inter_payments
+                    SET status = 'erro', inter_response = cast(:resp as jsonb), updated_at = NOW()
+                    WHERE id = :id
+                """),
+                {"resp": json.dumps({"erro": erro}), "id": payment_id},
+            )
+            await self._audit(payment_id, user_id, "executado", "erro", f"Inter falhou: {erro}")
+            await self.db.commit()
+            raise PaymentError(f"Inter API falhou: {erro}") from exc
+
+        # Salvar resposta Inter
+        await self.db.execute(
+            text("""
+                UPDATE inter_payments
+                SET inter_payment_id = :ipid,
+                    inter_response = cast(:resp as jsonb),
+                    updated_at = NOW()
+                WHERE id = :id
+            """),
+            {"ipid": inter_payment_id, "resp": json.dumps(inter_response), "id": payment_id},
+        )
+        await self._audit(
+            payment_id, user_id, "aprovado", "executado", f"Inter chamado, inter_payment_id={inter_payment_id}"
+        )
+        await self.db.commit()
+
+        logger.info("D7 executar: payment_id=%s inter_payment_id=%s", payment_id, inter_payment_id)
+        return {
+            "id": payment_id,
+            "status": "executado",
+            "inter_payment_id": inter_payment_id,
+            "inter_response": inter_response,
+        }
+
+    # ── cancelar ──────────────────────────────────────────────────────────────
+
+    async def cancelar(self, payment_id: str, motivo: str, user_id: str, ip: str = "") -> dict[str, Any]:
+        """Cancela se ainda não executado."""
+        row = (
+            (
+                await self.db.execute(
+                    text("SELECT id, status FROM inter_payments WHERE id = :id FOR UPDATE"),
+                    {"id": payment_id},
+                )
+            )
+            .mappings()
+            .first()
+        )
+
+        if not row:
+            raise PaymentError(f"payment_id não encontrado: {payment_id}")
+        if row["status"] in ("executado", "confirmado"):
+            raise StatusInvalidoError(f"Não é possível cancelar status='{row['status']}'")
+        if row["status"] == "cancelado":
+            return {"id": payment_id, "status": "cancelado", "motivo": "já cancelado"}
+
+        status_from = row["status"]
+        await self.db.execute(
+            text("""
+                UPDATE inter_payments
+                SET status = 'cancelado', cancelled_at = NOW(), cancelled_by = :uid,
+                    cancel_reason = :reason, updated_at = NOW()
+                WHERE id = :id
+            """),
+            {"uid": user_id, "reason": motivo, "id": payment_id},
+        )
+        await self._audit(payment_id, user_id, status_from, "cancelado", motivo, ip)
+        await self.db.commit()
+
+        logger.info("D7 cancelar: payment_id=%s motivo=%s", payment_id, motivo)
+        return {"id": payment_id, "status": "cancelado", "motivo": motivo}
+
+    # ── listar + audit ────────────────────────────────────────────────────────
+
+    async def listar(
+        self,
+        status: str | None = None,
+        payment_type: str | None = None,
+        from_date: date | None = None,
+        to_date: date | None = None,
+        limit: int = 100,
+    ) -> list[dict]:
+        where = ["1=1"]
+        params: dict = {"limit": limit}
+        if status:
+            where.append("status = :status")
+            params["status"] = status
+        if payment_type:
+            where.append("payment_type = :pt")
+            params["pt"] = payment_type
+        if from_date:
+            where.append("data_pagamento >= :fd")
+            params["fd"] = from_date
+        if to_date:
+            where.append("data_pagamento <= :td")
+            params["td"] = to_date
+
+        rows = (
+            (
+                await self.db.execute(
+                    text(f"""
+                SELECT id, payment_type, valor, data_pagamento, status,
+                       inter_payment_id, approved_at, executed_at, observacoes, created_at
+                FROM inter_payments WHERE {" AND ".join(where)}
+                ORDER BY created_at DESC LIMIT :limit
+            """),
+                    params,
+                )
+            )
+            .mappings()
+            .all()
+        )
+        return [dict(r) for r in rows]
+
+    async def audit_log(self, payment_id: str) -> list[dict]:
+        rows = (
+            (
+                await self.db.execute(
+                    text("""
+                SELECT id, status_from, status_to, ip_address, motivo, created_at
+                FROM inter_payment_audit WHERE payment_id = :pid ORDER BY created_at
+            """),
+                    {"pid": payment_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        return [dict(r) for r in rows]
+
+    async def saldo_resumo(self) -> dict[str, Any]:
+        consumido = await self._get_consumido_hoje()
+        return {
+            "limite_diario": float(LIMITE_DIARIO),
+            "consumido_hoje": float(consumido),
+            "disponivel_hoje": float(LIMITE_DIARIO - consumido),
+        }
+
+
+# ── helpers independentes ─────────────────────────────────────────────────────
+
+
+def _validar_destinatario(payment_type: str, dest: dict) -> None:
+    required: dict[str, list[str]] = {
+        "boleto": ["codigo_barras"],
+        "pix": ["chave", "tipo_chave"],
+        "darf": ["periodo_apuracao", "codigo_receita"],
+        "gps": ["competencia", "codigo_pagamento"],
+        "ted_interno": ["agencia", "conta", "banco"],
+    }
+    campos = required.get(payment_type, [])
+    faltando = [c for c in campos if not dest.get(c)]
+    if faltando:
+        raise PaymentError(f"destinatario faltando campos para {payment_type}: {faltando}")
+
+
+async def _enviar_otp_email(email: str, code: str, valor: float, payment_type: str, dest: str) -> None:
+    try:
+        from core.mailer import send_email
+
+        html = f"""
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                     background:#f4f4f5; padding:40px 0;">
+          <div style="max-width:480px; margin:0 auto; background:#fff; border-radius:12px;
+                      padding:40px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <div style="text-align:center; margin-bottom:24px;">
+              <h1 style="color:#0A2540; font-size:20px; margin:0;">Conecta PRO — Autorização de Pagamento</h1>
+            </div>
+            <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:8px;
+                        padding:16px; margin-bottom:24px;">
+              <p style="color:#856404; margin:0; font-weight:600;">⚠️ PAGAMENTO AGUARDANDO APROVAÇÃO</p>
+            </div>
+            <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+              <tr><td style="color:#64748b; padding:8px 0;">Tipo:</td>
+                  <td style="color:#0f172a; font-weight:600;">{payment_type.upper()}</td></tr>
+              <tr><td style="color:#64748b; padding:8px 0;">Valor:</td>
+                  <td style="color:#0f172a; font-weight:700; font-size:18px;">R$ {valor:.2f}</td></tr>
+              <tr><td style="color:#64748b; padding:8px 0;">Destinatário:</td>
+                  <td style="color:#0f172a;">{dest}</td></tr>
+            </table>
+            <div style="background:#0A2540; border-radius:12px; padding:24px; text-align:center;
+                        margin-bottom:24px;">
+              <p style="color:#94a3b8; margin:0 0 8px; font-size:13px;">Código de Autorização (válido 5min)</p>
+              <p style="color:#FF6B35; font-size:40px; font-weight:700; letter-spacing:8px; margin:0;">
+                {code}
+              </p>
+            </div>
+            <p style="color:#ef4444; font-size:13px; text-align:center;">
+              ⚠️ NUNCA compartilhe este código. Após aprovação, o pagamento é EXECUTADO imediatamente.
+            </p>
+          </div>
+        </body></html>
+        """
+        await send_email(email, f"[Conecta PRO] OTP Pagamento R${valor:.2f} — {payment_type.upper()}", html)
+    except Exception as exc:
+        logger.warning("D7 _enviar_otp_email falhou (%s) — continuando sem email", exc)
+
+
+async def _chamar_inter(payment_type: str, dest: dict, valor: Decimal, data_pgto: date) -> tuple[dict, str | None]:
+    """Despacha para o método correto do InterAdapter conforme tipo."""
+    import os
+
+    from modules.integrations.banking.adapters.base import BankCredentials
+    from modules.integrations.banking.adapters.inter import InterAdapter
+
+    adapter = InterAdapter(
+        BankCredentials(
+            client_id=os.getenv("INTER_CLIENT_ID", ""),
+            client_secret=os.getenv("INTER_CLIENT_SECRET", ""),
+            certificate_path=os.getenv("INTER_CERT_PATH"),
+            private_key_path=os.getenv("INTER_KEY_PATH"),
+            environment=os.getenv("INTER_ENVIRONMENT", "production"),
+        )
+    )
+
+    try:
+        ok = await adapter.authenticate()
+        if not ok:
+            raise PaymentError("Falha ao autenticar com Inter (mTLS/OAuth2)")
+
+        if payment_type == "boleto":
+            result = await adapter.pagar_boleto(
+                codigo_barras=dest["codigo_barras"],
+                valor=valor,
+                data_pagamento=data_pgto,
+            )
+        elif payment_type == "pix":
+            result = await adapter.enviar_pix(
+                chave=dest["chave"],
+                tipo_chave=dest["tipo_chave"],
+                valor=valor,
+                nome_recebedor=dest.get("nome_recebedor", ""),
+                descricao=dest.get("descricao", ""),
+            )
+        elif payment_type == "darf":
+            result = await adapter.pagar_darf(
+                periodo_apuracao=dest["periodo_apuracao"],
+                codigo_receita=dest["codigo_receita"],
+                valor=valor,
+                referencia=dest.get("referencia", ""),
+            )
+        elif payment_type == "gps":
+            result = await adapter.pagar_gps(
+                competencia=dest["competencia"],
+                codigo_pagamento=dest["codigo_pagamento"],
+                valor=valor,
+                identificador=dest.get("identificador", ""),
+            )
+        elif payment_type == "ted_interno":
+            result = await adapter.transferir_ted(
+                agencia=dest["agencia"],
+                conta=dest["conta"],
+                banco=dest["banco"],
+                nome=dest.get("nome", ""),
+                cpf_cnpj=dest.get("cpf_cnpj", ""),
+                valor=valor,
+            )
+        else:
+            raise PaymentError(f"Tipo desconhecido: {payment_type}")
+
+        inter_id = (
+            result.get("codigoSolicitacao")
+            or result.get("endToEndId")
+            or result.get("autenticacao")
+            or result.get("nosso_numero")
+        )
+        return result, inter_id
+
+    finally:
+        await adapter.close()

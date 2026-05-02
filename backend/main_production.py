@@ -939,6 +939,13 @@ try:
         logger.info("D6 Inter controller: OK")
     except Exception as _e:
         logger.warning(f"D6 Inter controller: {_e}")
+    try:
+        from modules.integrations.inter.payment_controller import router as _inter_d7_router
+
+        api_router.include_router(_inter_d7_router)
+        logger.info("D7 Inter payment controller: OK")
+    except Exception as _e:
+        logger.warning(f"D7 Inter payment controller: {_e}")
     # Banking Payments (DARF + barcode + lote)
     try:
         from modules.integrations.banking.controllers.payment_controller import (

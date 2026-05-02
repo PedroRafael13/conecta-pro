@@ -941,6 +941,99 @@ class InterAdapter(BaseBankingAdapter):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    # ── D7 Write wrappers ─────────────────────────────────────────────────────
+
+    async def pagar_boleto(self, codigo_barras: str, valor: Decimal, data_pagamento: date) -> dict:
+        """D7.2 — Pagar boleto por código de barras. POST /banking/v2/pagamento."""
+        return await self.pay_barcode(
+            codigo_barras=codigo_barras,
+            valor=float(valor),
+            data_pagamento=data_pagamento.isoformat(),
+        )
+
+    async def enviar_pix(
+        self, chave: str, tipo_chave: str, valor: Decimal, nome_recebedor: str = "", descricao: str = ""
+    ) -> dict:
+        """D7.3 — Enviar PIX. POST /banking/v2/pix."""
+        try:
+            payload = {
+                "valor": str(valor),
+                "descricao": descricao or f"PIX para {nome_recebedor or chave}",
+                "destinatario": {
+                    "chave": chave,
+                    "tipo": tipo_chave.upper(),
+                },
+            }
+            if nome_recebedor:
+                payload["destinatario"]["nome"] = nome_recebedor
+            data = await self._request("POST", "/banking/v2/pix", json=payload)
+            return {
+                "success": True,
+                "endToEndId": data.get("endToEndId", ""),
+                "codigoSolicitacao": data.get("codigoSolicitacao", ""),
+                "status": data.get("status", "processando"),
+            }
+        except BankingAdapterError as exc:
+            return {"success": False, "status_code": exc.code, "detail": str(exc)}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    async def pagar_darf(
+        self, periodo_apuracao: str, codigo_receita: str, valor: Decimal, referencia: str = ""
+    ) -> dict:
+        """D7.4 — Pagar DARF. POST /banking/v2/pagamento/darf."""
+        cnpj = os.getenv("CONECTA_CNPJ", "35710481000103")
+        return await self.pay_darf(
+            cnpj_cpf=cnpj,
+            periodo_apuracao=periodo_apuracao,
+            numero_referencia=referencia or periodo_apuracao.replace("-", ""),
+            valor_principal=float(valor),
+            codigo_receita=codigo_receita,
+        )
+
+    async def pagar_gps(self, competencia: str, codigo_pagamento: str, valor: Decimal, identificador: str = "") -> dict:
+        """D7.4 — Pagar GPS (INSS). POST /banking/v2/pagamento/tributos."""
+        try:
+            cnpj = "".join(c for c in os.getenv("CONECTA_CNPJ", "35710481000103") if c.isdigit())
+            payload = {
+                "codigoPagamento": codigo_pagamento,
+                "competencia": competencia,
+                "cnpjCpf": cnpj,
+                "valor": float(valor),
+                "identificador": identificador or competencia.replace("-", ""),
+            }
+            data = await self._request("POST", "/banking/v2/pagamento/tributos", json=payload)
+            return {
+                "success": True,
+                "codigoSolicitacao": data.get("codigoSolicitacao", ""),
+                "autenticacao": data.get("autenticacao", ""),
+            }
+        except BankingAdapterError as exc:
+            return {"success": False, "status_code": exc.code, "detail": str(exc)}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    async def transferir_ted(
+        self,
+        agencia: str,
+        conta: str,
+        banco: str,
+        nome: str = "",
+        cpf_cnpj: str = "",
+        valor: Decimal = Decimal("0"),
+        tipo_conta: str = "CORRENTE",
+    ) -> dict:
+        """D7.4 — Transferência TED. POST /banking/v2/transferencia."""
+        return await self.initiate_ted(
+            valor=float(valor),
+            banco=banco,
+            agencia=agencia,
+            conta=conta,
+            tipo_conta=tipo_conta,
+            cpf_cnpj=cpf_cnpj,
+            nome=nome,
+        )
+
     async def close(self) -> None:
         """Fecha conexão."""
         if self._client:

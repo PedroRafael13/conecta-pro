@@ -1,6 +1,6 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.51
-**Data:** 2026-04-30
+**Versão:** 1.52
+**Data:** 2026-05-02
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
@@ -3850,3 +3850,90 @@ Variáveis de ambiente (`.env`):
 | `test_redis_indisponivel_autentica_direto` | Redis down → fallback direto Inter, token obtido |
 | `test_sincronizar_extrato_insere_transactions` | sincronizar_extrato() → INSERT + commit |
 | `test_conciliacao_match_forte` | CPF+valor_exato → matches_fortes=1, status='pago' |
+
+---
+
+## §50 — D7: Pagamentos Inter (Write Operations)
+**Versão:** 1.52
+**Data:** 2026-05-02
+
+### §50.0 — Invariantes de Segurança
+
+| Invariante | Implementação |
+|------------|---------------|
+| Registro DB ANTES de Inter | preparar() cria status='preparado', executar() só chama Inter depois |
+| 4 estados obrigatórios | preparado → aprovado → executado → confirmado |
+| FOR UPDATE lock | aprovar() e executar() usam SELECT ... FOR UPDATE |
+| Limite diário R$5.000 | `get_limite_diario_consumido()` SQL em cada preparar() |
+| Saldo mínimo R$100 | `_get_saldo_inter()` em preparar() |
+| 2FA OTP obrigatório | gerar_otp() → email Jordan → aprovar() com código |
+| Idempotência | UPDATE WHERE status='aprovado' rowcount=0 → IdempotenciaError |
+| Audit log | inter_payment_audit em CADA transição de estado |
+| Testes prod ≤ R$1 | Protocolo documentado, execução sob supervisão Jordan |
+
+### §50.1 — Tabelas Novas (Migration sprint87_d7_payments)
+
+| Tabela | Propósito |
+|--------|-----------|
+| `inter_payments` | Registro de cada pagamento (todos os tipos) |
+| `inter_payment_otp` | OTPs gerados por pagamento (CASCADE DELETE) |
+| `inter_payment_audit` | Log imutável de transições de estado |
+
+**Função SQL:** `get_limite_diario_consumido()` — soma diária dos aprovados/executados/confirmados
+
+### §50.2 — Serviço e Controller
+
+- `backend/modules/integrations/inter/services/payment_service.py` — InterPaymentService
+- `backend/modules/integrations/inter/payment_controller.py` — endpoints REST
+
+### §50.3 — Endpoints D7
+
+```
+POST /api/v1/financeiro/inter/payments              — preparar
+POST /api/v1/financeiro/inter/payments/{id}/gerar-otp
+POST /api/v1/financeiro/inter/payments/{id}/aprovar
+POST /api/v1/financeiro/inter/payments/{id}/executar
+POST /api/v1/financeiro/inter/payments/{id}/cancelar
+GET  /api/v1/financeiro/inter/payments              — listar
+GET  /api/v1/financeiro/inter/payments/saldo-limite
+GET  /api/v1/financeiro/inter/payments/{id}/audit
+```
+
+### §50.4 — Tipos de Pagamento
+
+| Tipo | Endpoint Inter | Campos obrigatórios destinatario |
+|------|---------------|----------------------------------|
+| `boleto` | POST /banking/v2/pagamento | codigo_barras |
+| `pix` | POST /banking/v2/pix | chave, tipo_chave |
+| `darf` | POST /banking/v2/pagamento/darf | periodo_apuracao, codigo_receita |
+| `gps` | POST /banking/v2/pagamento/tributos | competencia, codigo_pagamento |
+| `ted_interno` | POST /banking/v2/transferencia | agencia, conta, banco |
+
+### §50.5 — OTP Email
+
+- SMTP: smtp.hostinger.com:465 (SSL)
+- De: noreply@conectamais.pro
+- Para: jordansjesus@gmail.com (env JORDAN_EMAIL)
+- TTL: 300s (5min) — env CONECTA_PAYMENT_OTP_TTL_SECONDS
+
+### §50.6 — ENV Variables D7
+
+```
+CONECTA_LIMITE_DIARIO_PAGAMENTOS=5000.00
+CONECTA_SALDO_MINIMO_RESTANTE=100.00
+CONECTA_PAYMENT_OTP_TTL_SECONDS=300
+JORDAN_EMAIL=jordansjesus@gmail.com
+CONECTA_CNPJ=35710481000103
+```
+
+### §50.7 — Testes D7 (15/15)
+
+Cobertura: estados válidos, validação destinatário, limite diário, saldo insuficiente, data passada, OTP inválido, execução sem aprovação, idempotência, boleto adapter, PIX adapter, DARF adapter, cancelar, saldo resumo.
+
+### §50.8 — Frontend D7
+
+`frontend/src/app/modulos/financeiro/inter/pagamentos/page.tsx`
+- 5 tabs: Novo | Aguardando Aprovação | Aguardando Execução | Histórico | Audit Log
+- NovoPagamentoForm: form dinâmico por tipo + confirmação dupla
+- AprovacaoPagamento: warning vermelho + OTP input + Aprovar e Executar
+- Build: conecta-pro-1777693855615
