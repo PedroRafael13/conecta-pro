@@ -127,6 +127,120 @@ class CobrancaService:
         )
         return [dict(r) for r in rows]
 
+    async def emitir(
+        self,
+        cliente_crm_id: str,
+        valor: float,
+        vencimento: date,
+        descricao: str = "",
+        pagador: dict | None = None,
+    ) -> dict[str, Any]:
+        """Emite cobrança: grava em DB → chama Inter API → atualiza com cobranca_id_inter."""
+        import uuid
+
+        local_id = str(uuid.uuid4())
+        seu_numero = f"CPRO-{local_id[:8].upper()}"
+
+        await self.db.execute(
+            text("""
+                INSERT INTO inter_cobrancas
+                    (id, seu_numero, valor, vencimento, status, descricao, pagador, created_at, updated_at)
+                VALUES
+                    (:id, :seu_numero, :valor, :vencimento, 'PENDENTE', :descricao,
+                     cast(:pagador as jsonb), NOW(), NOW())
+            """),
+            {
+                "id": local_id,
+                "seu_numero": seu_numero,
+                "valor": valor,
+                "vencimento": vencimento,
+                "descricao": descricao,
+                "pagador": __import__("json").dumps(pagador or {}),
+            },
+        )
+        await self.db.commit()
+
+        import os
+
+        from modules.integrations.banking.adapters.base import BankCredentials
+        from modules.integrations.banking.adapters.inter import InterAdapter
+
+        adapter = InterAdapter(
+            BankCredentials(
+                client_id=os.getenv("INTER_CLIENT_ID", ""),
+                client_secret=os.getenv("INTER_CLIENT_SECRET", ""),
+                certificate_path=os.getenv("INTER_CERT_PATH"),
+                private_key_path=os.getenv("INTER_KEY_PATH"),
+                environment=os.getenv("INTER_ENVIRONMENT", "production"),
+            )
+        )
+
+        cobranca_id_inter: str | None = None
+        url_boleto: str | None = None
+        pix_copia_cola: str | None = None
+        barcode: str | None = None
+        linha_digitavel: str | None = None
+        novo_status = "PENDENTE"
+
+        try:
+            autenticado = await adapter.authenticate()
+            if autenticado:
+                result = await adapter.generate_boleto(
+                    valor=valor,
+                    vencimento=vencimento.isoformat(),
+                    descricao=descricao,
+                    seu_numero=seu_numero,
+                    pagador=pagador or {},
+                )
+                cobranca_id_inter = result.get("codigoSolicitacao") or result.get("nosso_numero")
+                url_boleto = result.get("linkBoleto") or result.get("url_boleto")
+                pix_copia_cola = result.get("pixCopiaECola") or result.get("pix_copia_cola")
+                barcode = result.get("codigoBarras") or result.get("barcode")
+                linha_digitavel = result.get("linhaDigitavel") or result.get("linha_digitavel")
+                novo_status = "A_RECEBER"
+        except Exception as exc:
+            logger.warning("D6.3 emitir: Inter API falhou (%s) — mantendo PENDENTE", exc)
+        finally:
+            await adapter.close()
+
+        await self.db.execute(
+            text("""
+                UPDATE inter_cobrancas
+                SET cobranca_id_inter = :cid,
+                    url_boleto        = :url,
+                    pix_copia_cola    = :pix,
+                    barcode           = :barcode,
+                    linha_digitavel   = :ld,
+                    status            = :status,
+                    updated_at        = NOW()
+                WHERE id = :id
+            """),
+            {
+                "cid": cobranca_id_inter,
+                "url": url_boleto,
+                "pix": pix_copia_cola,
+                "barcode": barcode,
+                "ld": linha_digitavel,
+                "status": novo_status,
+                "id": local_id,
+            },
+        )
+        await self.db.commit()
+
+        logger.info("D6.3 emitir: id=%s cid=%s status=%s", local_id, cobranca_id_inter, novo_status)
+        return {
+            "id": local_id,
+            "cobranca_id_inter": cobranca_id_inter,
+            "seu_numero": seu_numero,
+            "valor": valor,
+            "vencimento": vencimento.isoformat(),
+            "status": novo_status,
+            "url_boleto": url_boleto,
+            "pix_copia_cola": pix_copia_cola,
+            "barcode": barcode,
+            "linha_digitavel": linha_digitavel,
+        }
+
     async def estatisticas(self) -> dict[str, Any]:
         """Totais agrupados por status."""
         rows = (
