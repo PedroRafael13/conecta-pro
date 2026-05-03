@@ -1,6 +1,6 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.52
-**Data:** 2026-05-02
+**Versão:** 1.53
+**Data:** 2026-05-03
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
 ---
@@ -3937,3 +3937,43 @@ Cobertura: estados válidos, validação destinatário, limite diário, saldo in
 - NovoPagamentoForm: form dinâmico por tipo + confirmação dupla
 - AprovacaoPagamento: warning vermelho + OTP input + Aprovar e Executar
 - Build: conecta-pro-1777693855615
+
+---
+
+## §51 — Fix Divergência Dashboard vs /certidoes (2026-05-03)
+
+### §51.1 — Causa Raiz
+
+`dashboardStatsService.fetchCertificateAlerts()` chamava `/api/v1/bidding/certificates`
+(módulo licitações, tabela separada com dados antigos) em vez de `/api/v1/ged/certidoes`
+(D5.4, fonte única da verdade).
+
+- `bidding/certificates`: FGTS validade=2026-03-31 (dado antigo)
+- `ged/certidoes`: FGTS expiry_date=2026-05-30 (atualizado pelo D5.4 em 2026-04-30)
+
+### §51.2 — Fix Aplicado
+
+`frontend/src/services/dashboard/dashboardStatsService.ts`:
+- Endpoint alterado: `/api/v1/bidding/certificates` → `/api/v1/ged/certidoes`
+- Mapeamento de campos: `name→nome`, `document_type→tipo`, `expiry_date→data_validade`
+- `dias_para_vencer` calculado client-side (não vinha na resposta da API)
+- `esta_valida` derivado de `status === 'valida'`
+- Filtro: `situacao !== 'valida' || dias_para_vencer <= 30`
+
+### §51.3 — Certificado Digital A1
+
+Decisão [A2]: não está em `ged_certidoes` (é cert de máquina, não certidão empresarial).
+Removido do dashboard por ser proveniente apenas de `bidding/certificates` (escopo diferente).
+Ação futura: criar endpoint separado se necessário.
+
+### §51.4 — Dashboard pós-fix
+
+Mostra (ordenado por urgência):
+1. 🔴 Alvará de Funcionamento — Vencida desde 28/02/2026 (-64d)
+2. 🟡 Certidão Negativa FGTS — Vence em 27 dia(s) (validade 2026-05-30)
+
+Idêntico ao que `/certidoes` exibe. Fonte única: `ged_certidoes`.
+
+### §51.5 — Build
+
+`conecta-pro-1777851782277`

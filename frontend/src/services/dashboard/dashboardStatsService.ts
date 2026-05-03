@@ -168,6 +168,16 @@ export interface CertificateAlert {
   data_validade: string;
 }
 
+// Tipo interno para resposta bruta de ged/certidoes
+interface GedCertidao {
+  id: string;
+  name: string;
+  document_type: string;
+  expiry_date: string | null;
+  status: 'valida' | 'a_vencer' | 'vencida' | 'sem_validade';
+  alerta_ativo: boolean;
+}
+
 export interface KitStats {
   total_kits: number;
   kits_ativos: number;
@@ -183,11 +193,28 @@ export interface GedStats {
 
 export async function fetchCertificateAlerts(): Promise<CertificateAlert[]> {
   try {
-    const { data } = await api.get('/api/v1/bidding/certificates');
-    const items = Array.isArray(data) ? data : data.items ?? [];
+    const { data } = await api.get('/api/v1/ged/certidoes');
+    const items: GedCertidao[] = data.certidoes ?? (Array.isArray(data) ? data : []);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return items
-      .filter((c: CertificateAlert) => c.dias_para_vencer <= 30 || !c.esta_valida)
-      .sort((a: CertificateAlert, b: CertificateAlert) => a.dias_para_vencer - b.dias_para_vencer);
+      .map((c) => {
+        const diasParaVencer = c.expiry_date
+          ? Math.round((new Date(c.expiry_date).getTime() - today.getTime()) / 86_400_000)
+          : 9999;
+        return {
+          id: c.id,
+          tipo: c.document_type,
+          nome: c.name,
+          dias_para_vencer: diasParaVencer,
+          situacao: c.status,
+          esta_valida: c.status === 'valida',
+          data_validade: c.expiry_date ?? '',
+        };
+      })
+      .filter((c) => c.situacao !== 'valida' || c.dias_para_vencer <= 30)
+      .sort((a, b) => a.dias_para_vencer - b.dias_para_vencer);
   } catch {
     return [];
   }
