@@ -489,7 +489,8 @@ class InterPaymentService:
             (
                 await self.db.execute(
                     text("""
-                SELECT id, status_from, status_to, ip_address, motivo, created_at
+                SELECT id, payment_id, user_id, status_from, status_to,
+                       ip_address, motivo, created_at
                 FROM inter_payment_audit WHERE payment_id = :pid ORDER BY created_at
             """),
                     {"pid": payment_id},

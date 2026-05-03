@@ -78,7 +78,7 @@ function fmt(v: number) {
 
 // ── componente: formulário novo pagamento ─────────────────────────────────────
 
-function NovoPagamentoForm({ onPrepared }: { onPrepared: () => void }) {
+function NovoPagamentoForm({ onPrepared, saldo }: { onPrepared: () => void; saldo: SaldoLimite | null }) {
   const [type, setType] = useState<PaymentType>("pix");
   const [valor, setValor] = useState("");
   const [dataPgto, setDataPgto] = useState(() => new Date().toISOString().slice(0, 10));
@@ -284,6 +284,22 @@ function NovoPagamentoForm({ onPrepared }: { onPrepared: () => void }) {
         </div>
       )}
 
+      {/* Alertas de limite/saldo */}
+      {saldo && valor && parseFloat(valor) > 0 && (
+        <>
+          {parseFloat(valor) > saldo.disponivel_hoje && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 text-red-700 text-sm">
+              ⛔ Valor excede o limite diário disponível ({fmt(saldo.disponivel_hoje)})
+            </div>
+          )}
+          {parseFloat(valor) > 0 && saldo.disponivel_hoje <= 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 text-red-700 text-sm">
+              ⛔ Limite diário esgotado (R$ 5.000 atingido)
+            </div>
+          )}
+        </>
+      )}
+
       {confirmando ? (
         <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 mb-4">
           <p className="font-semibold text-amber-800 mb-2">⚠️ Confirme o pagamento</p>
@@ -313,7 +329,14 @@ function NovoPagamentoForm({ onPrepared }: { onPrepared: () => void }) {
         </div>
       ) : (
         <button
-          onClick={() => setConfirmando(true)}
+          onClick={() => {
+            if (saldo && parseFloat(valor) > saldo.disponivel_hoje) {
+              setError(`Valor excede o limite diário disponível (${fmt(saldo.disponivel_hoje)})`);
+              return;
+            }
+            setError("");
+            setConfirmando(true);
+          }}
           disabled={!valor || parseFloat(valor) <= 0}
           className="bg-[#0A2540] hover:bg-[#1a3a5c] text-white px-6 py-2 rounded-lg text-sm font-medium disabled:opacity-40"
         >
@@ -451,6 +474,18 @@ export default function PagamentosPage() {
   const [loading, setLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [auditLog, setAuditLog] = useState<unknown[]>([]);
+  const [isJordan, setIsJordan] = useState(false);
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("auth_token") || "";
+      if (token) {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const email: string = payload.email || payload.sub || "";
+        setIsJordan(email === "jjesus@conectamais.pro" || email === "jordansjesus@gmail.com");
+      }
+    } catch { /* JWT inválido — não é Jordan */ }
+  }, []);
 
   const fetchPayments = useCallback(async (statusFilter?: string) => {
     setLoading(true);
@@ -496,7 +531,7 @@ export default function PagamentosPage() {
     { key: "preparados", label: "Aguardando Aprovação" },
     { key: "aprovados", label: "Aguardando Execução" },
     { key: "historico", label: "Histórico" },
-    { key: "audit", label: "Audit Log" },
+    ...(isJordan ? [{ key: "audit" as Tab, label: "🔒 Audit Log" }] : []),
   ];
 
   return (
@@ -546,7 +581,7 @@ export default function PagamentosPage() {
       {/* Conteúdo */}
       <div className="p-6 max-w-5xl mx-auto">
         {tab === "novo" && (
-          <NovoPagamentoForm onPrepared={() => { setTab("preparados"); fetchSaldo(); }} />
+          <NovoPagamentoForm saldo={saldo} onPrepared={() => { setTab("preparados"); fetchSaldo(); }} />
         )}
 
         {(tab === "preparados" || tab === "aprovados" || tab === "historico") && (
@@ -583,13 +618,16 @@ export default function PagamentosPage() {
                         <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
                         <td className="px-4 py-3 text-xs text-gray-400 font-mono">{p.inter_payment_id || "—"}</td>
                         <td className="px-4 py-3">
-                          {p.status === "preparado" && (
+                          {p.status === "preparado" && isJordan && (
                             <button
                               onClick={() => setSelectedPayment(p)}
                               className="text-xs bg-[#FF6B35] text-white px-3 py-1 rounded-full hover:bg-orange-600"
                             >
                               Aprovar
                             </button>
+                          )}
+                          {p.status === "preparado" && !isJordan && (
+                            <span className="text-xs text-gray-400">Aguardando Jordan</span>
                           )}
                           {p.status === "aprovado" && (
                             <button
@@ -642,6 +680,8 @@ export default function PagamentosPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b">
                     <tr>
+                      <th className="px-4 py-3 text-left">Pagamento</th>
+                      <th className="px-4 py-3 text-left">Usuário</th>
                       <th className="px-4 py-3 text-left">Status</th>
                       <th className="px-4 py-3 text-left">IP</th>
                       <th className="px-4 py-3 text-left">Motivo</th>
@@ -649,8 +689,10 @@ export default function PagamentosPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {(auditLog as Array<{status_from?: string; status_to: string; ip_address?: string; motivo?: string; created_at: string}>).map((entry, i) => (
+                    {(auditLog as Array<{payment_id?: string; user_id?: string; status_from?: string; status_to: string; ip_address?: string; motivo?: string; created_at: string}>).map((entry, i) => (
                       <tr key={i}>
+                        <td className="px-4 py-3 text-xs text-gray-400 font-mono">{entry.payment_id ? entry.payment_id.slice(0, 8) + "…" : "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-400 font-mono">{entry.user_id ? entry.user_id.slice(0, 8) + "…" : "—"}</td>
                         <td className="px-4 py-3">
                           <span className="text-gray-400">{entry.status_from || "—"}</span>
                           {" → "}
