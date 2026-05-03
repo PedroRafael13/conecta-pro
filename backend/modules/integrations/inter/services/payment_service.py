@@ -236,7 +236,7 @@ class InterPaymentService:
         dest = row["destinatario"] if isinstance(row["destinatario"], dict) else json.loads(row["destinatario"])
         dest_label = dest.get("chave") or dest.get("codigo_barras", "")[:20] or dest.get("nome", "destinatário")
 
-        email_destino = os.getenv("JORDAN_EMAIL", "jordansjesus@gmail.com")
+        email_destino = os.getenv("JORDAN_EMAIL", "jjesus@conectamais.pro")
         await _enviar_otp_email(email_destino, code, valor, payment_type, dest_label)
 
         logger.info("D7 gerar_otp: payment_id=%s otp_id=%s email=%s", payment_id, otp_id, email_destino)

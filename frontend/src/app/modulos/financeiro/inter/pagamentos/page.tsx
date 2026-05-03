@@ -429,7 +429,7 @@ function AprovacaoPagamento({ payment, onAction }: { payment: Payment; onAction:
         </button>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-green-700">✅ Código enviado para jordansjesus@gmail.com. Digite o código:</p>
+          <p className="text-sm text-green-700">✅ Código enviado para jjesus@conectamais.pro. Digite o código:</p>
           <input
             type="text"
             maxLength={6}
