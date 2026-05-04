@@ -77,6 +77,32 @@ class GoogleDriveService:
         Returns:
             Dicionario com status da configuracao.
         """
+        # Prioridade 1: OAuth2 tokens no banco (gdrive_config)
+        try:
+            from sqlalchemy import text as _sa_text
+
+            row = (
+                (
+                    await self.db.execute(
+                        _sa_text(
+                            "SELECT owner_email, is_connected FROM gdrive_config WHERE is_connected = TRUE LIMIT 1"
+                        )
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            if row:
+                return {
+                    "configured": True,
+                    "credentials_file_exists": os.path.exists(GOOGLE_CREDENTIALS_PATH),
+                    "credentials_path": GOOGLE_CREDENTIALS_PATH,
+                    "message": f"Google Drive conectado via OAuth2 ({row['owner_email']})",
+                }
+        except Exception as exc:
+            logger.warning("GoogleDriveService.check_credentials OAuth2: %s", exc)
+
+        # Prioridade 2: service account (arquivo JSON)
         service = self._ensure_service()
         credentials_exist = os.path.exists(GOOGLE_CREDENTIALS_PATH)
 
