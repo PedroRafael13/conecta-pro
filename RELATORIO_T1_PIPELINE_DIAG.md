@@ -97,24 +97,52 @@ aparece apenas em `government_integrations/extractors/` (FGTS, eCac, DCTFWeb etc
 
 ## STEP 4 — Código KitBuilderService (GEDEON)
 
-**Arquivo:** `backend/modules/gedeon/services/kit_builder_service.py`
+**Arquivo:** `backend/modules/gedeon/services/kit_builder_service.py` (13.200 bytes, modificado 2026-04-22)
 
-`build_completude()` (linha 200) — usada para o dashboard de completude:
+`build_completude()` (linha 200) — lê `onvio_documents` **diretamente**, NÃO filtra em `ged_kit_documents.file_path`:
+
 ```python
-# Lê diretamente de onvio_documents (NÃO de ged_kit_documents)
-onvio_rows = self.db.execute(
-    "FROM onvio_documents od WHERE ..."
-)
+def build_completude(self, condominio_id: UUID, mes_ref: str) -> CompletudeKit:
+    # 4. Buscar docs Onvio: condomínio + empresa_matriz + funcionários alocados
+    onvio_rows = self.db.execute(
+        text("""
+            SELECT od.id, od.categoria, od.doc_scope, od.nome_arquivo, od.revisao_manual
+            FROM onvio_documents od
+            WHERE od.mes_ref = :mes
+              AND (
+                (od.doc_scope = 'condominio' AND od.condominio_id = CAST(:cid AS uuid))
+                OR (od.doc_scope = 'empresa_matriz')
+                OR (od.doc_scope = 'funcionario' AND od.referente_a_employee_id IN (
+                    SELECT employee_id FROM employee_alocacoes
+                    WHERE condominio_id = CAST(:cid AS uuid) AND ativo = true
+                ))
+              )
+        """),
+        {"mes": mes_ref, "cid": str(condominio_id)},
+    ).fetchall()
+    # 5. Mapear onvio_docs por slug (via CategoriaToTipoDocumento)
+    for od in onvio_rows:
+        slug = CategoriaToTipoDocumento.get(categoria)
+        ...
 ```
 
-⚠️ O `KitBuilderService` em `gedeon/services/` lê `onvio_documents` diretamente para calcular
-completude — NÃO usa `ged_kit_documents.file_path` como filtro.
+⚠️ `KitBuilderService` em `gedeon/services/` (GEDEON completude dashboard) lê `onvio_documents` diretamente via `doc_scope`/`categoria` — **NÃO usa `ged_kit_documents.file_path`**. O "0%" no dashboard não vem de file_path NULL — vem de `doc_scope=NULL` nos 156 docs sem classificação.
 
-O `KitBuilderService` em `people_management/ged/services/` (diferente!) é quem faz o matching:
+O `KitBuilderService` em `people_management/ged/services/` (diferente!) é quem faz o matching Onvio→ged_kit_documents:
 
 ---
 
 ## STEP 5 — Quem insere em ged_kit_documents
+
+**Modelo ORM:** `KitDocument` em `backend/modules/people_management/ged/models/kit_document.py`
+(não existe classe `GedKitDocument` — o nome ORM é `KitDocument`, `__tablename__ = "ged_kit_documents"`)
+
+**INSERTs em produção (não-teste):**
+- `ged/controllers/kit_real_controller.py` — 5 INSERTs com file_path
+- `ged/controllers/kit_pdf_controller.py` — 1 INSERT + 1 UPDATE file_path
+- `people_management/ged/services/kit_builder_service.py` — via ORM `KitDocument()`
+
+**`GedKitDocument(` grep → zero resultados** — confirmado: o ORM usa `KitDocument(`, não `GedKitDocument(`.
 
 | Origem | Arquivo | Método | file_path |
 |--------|---------|--------|-----------|
@@ -127,6 +155,27 @@ O `KitBuilderService` em `people_management/ged/services/` (diferente!) é quem 
 ---
 
 ## STEP 6 — onvio_sync_service.py
+
+**Arquivo:** `backend/modules/gedeon/onvio/onvio_sync_service.py` (6.083 bytes, 2026-04-22)
+
+**Funções:**
+```
+32: def __init__(self, db: Session)
+36: def sync_completo(self, mes_ref: str | None = None) -> dict
+118: def _ja_importado(self, onvio_id: str) -> bool
+121: def _baixar_e_salvar(self, item: dict, cl) -> str
+140: def _salvar_db(self, item: dict, cl, caminho: str) -> None
+```
+
+**Escrita no DB (`db.add`):**
+```python
+linha 45:  self.db.add(log)             # onvio_sync_log
+linha 153: self.db.add(doc)             # onvio_documents (novo)
+linha 157: self.db.add(...)             # onvio_documents (atualização)
+linha 165: self.db.add(...)             # onvio_documents (fallback)
+```
+
+**Sem `file_path`, sem `save_to_disk`, sem `download` no grep** — `_baixar_e_salvar` retorna `caminho_local` (string) que vai para `_salvar_db`, mas não escreve `file_path` em lugar nenhum.
 
 ```python
 # O que faz:
@@ -153,6 +202,30 @@ algum trigger de `auto_build_all_kits()` nesse dia.
 
 `source_record_id` = NULL nos 7 docs → linkagem feita por fuzzy match de nome de cliente,
 não por ID de onvio_document. Sem trilha de auditoria direta.
+
+**GROUP BY document_type (top 20 por com_path DESC):**
+
+| document_type | total | com_path |
+|---------------|-------|----------|
+| folha_pagamento | **14** | **7** |
+| contracheque | 135 | 0 |
+| comprovante_vt | 102 | 0 |
+| comprovante_vr | 102 | 0 |
+| comprovante_va | 102 | 0 |
+| folha_ponto | 102 | 0 |
+| escala_mes | 102 | 0 |
+| ... (demais) | — | 0 |
+
+→ Apenas `folha_pagamento` tem docs reais. Todos os outros tipos = 0 com_path.
+
+**Padrão de paths (REGEXP_REPLACE remove filename):**
+
+| path_pattern |
+|---|
+| `/app/uploads/onvio/outros/2026-04/...` |
+| `/app/uploads/onvio/inss_guia/2026-04/...` |
+
+→ 2 sub-diretórios de origem: `outros/` e `inss_guia/` — ambos ref `2026-04` (mes de upload, não mes_ref do doc).
 
 **Categorias mapeadas por MAPA_TIPOS_ONVIO:**
 
@@ -187,22 +260,46 @@ não por ID de onvio_document. Sem trilha de auditoria direta.
 
 ## STEP 8 — 58 docs T2 em ged_kit_documents?
 
-```sql
--- ged_kit_documents criados após T2 sync (2026-05-04 17:30):
-→ 0 registros
+**Docs criados hoje em onvio_documents (NOW() - 12h):**
 
--- onvio_documents criados pelo T2 sync:
-→ 58 docs, todos processado=false, categoria='outros', doc_scope=NULL
+| id | categoria | caminho_local | created_at |
+|----|-----------|---------------|------------|
+| dd43430e | outros | /app/uploads/onvio/outros/sem-ref/ANTECEDENTES ESTADUAL_SEBASTIAO.pdf | 2026-05-04 18:47 |
+| 1a6c07e2 | outros | /app/uploads/onvio/outros/sem-ref/PIS_SEBASTIÃO.pdf | 2026-05-04 18:47 |
+| dd97b906 | outros | /app/uploads/onvio/outros/sem-ref/Comprovante de Pagamento de Vidro Quebrado.pdf | 2026-05-04 18:47 |
+| ... (58 total) | outros | /app/uploads/onvio/outros/sem-ref/... | 2026-05-04 18:47 |
+
+**Docs criados hoje em ged_kit_documents (NOW() - 4h):** → **0 registros**
+
+```
+onvio_documents: +58 (categoria='outros', caminho_local preenchido)
+ged_kit_documents: +0 (nenhum matching executado)
 ```
 
 **Os 58 docs T2 estão em onvio_documents mas NÃO em ged_kit_documents.**
 
-Motivo: categoria = `outros` → não está em `MAPA_TIPOS_ONVIO` → `_match_onvio_docs()` ignora.
-Mesmo se o auto_build rodar em 21/05, esses 58 docs **não serão casados**.
+Nota adicional: categoria=`outros`, `mes_ref=sem-ref` (sem referência mensal) e `doc_scope=NULL` →
+mesmo expandindo `MAPA_TIPOS_ONVIO` para cobrir `outros`, esses docs não teriam `mes_ref` válido
+para serem casados com kits mensais. São documentos avulsos de funcionários (PIS, carteira etc.).
 
 ---
 
 ## STEP 9 — Tasks Celery que tocam ged_kit_documents
+
+**Grep direto em `backend/modules/*/tasks/`:**
+```bash
+grep -rn "ged_kit_documents\|GedKitDocument" backend/modules/*/tasks/
+→ zero resultados
+```
+
+**Grep `build_kit|montar_kit|coleta_documentos` em gedeon:**
+```bash
+grep -rn "build_kit\|montar_kit\|coleta_documentos" backend/modules/gedeon/
+→ zero resultados
+```
+
+**Conclusão STEP 9:** Nenhuma task Celery em `tasks/` toca `ged_kit_documents` diretamente.
+O acesso acontece via service chamado de dentro da task `ged.auto_collect_documents`.
 
 | Task | Schedule | Arquivo |
 |------|----------|---------|
@@ -270,6 +367,20 @@ ged-auto-collect-monthly (Celery Beat, dia 21 07:00)
 |----------|----------|
 | Por que `file_path` NULL em 99% dos docs? | `auto_build_all_kits()` ainda não rodou para a maioria dos meses/condomínios |
 | Por que `processado=false` em 592 docs? | Campo vestigial — nenhum código Onvio o atualiza |
-| Os 58 docs T2 serão matchados automaticamente? | **Não** — categoria `outros` fora do MAPA_TIPOS_ONVIO |
+| Os 58 docs T2 serão matchados automaticamente? | **Não** — categoria `outros` + `mes_ref=sem-ref` → impossível casar com kit mensal |
 | O pipeline está quebrado? | **Não** — funcionou em 2026-04-27. Próxima execução: 2026-05-21 |
 | Quantos docs são mapeáveis? | 144/592 (24%) — 8 categorias no mapa atual |
+| KitBuilderService (gedeon) usa `file_path IS NOT NULL`? | **Não** — lê `onvio_documents` direto. O 0% no dashboard GEDEON vem de `doc_scope=NULL`, não de file_path |
+| Qual ORM escreve em `ged_kit_documents`? | `KitDocument` em `people_management/ged/models/kit_document.py` (não `GedKitDocument`) |
+
+---
+
+## AUDITORIA STEP 4 — CORREÇÃO IMPORTANTE
+
+O prompt original afirmava:
+> *"KitBuilderService.build_completude() filtra WHERE file_path IS NOT NULL, por isso UI mostra 0,0%"*
+
+A auditoria do código real revelou que essa premissa é **parcialmente incorreta**:
+- `gedeon/services/kit_builder_service.py:build_completude()` — lê `onvio_documents` diretamente, sem filtro `file_path`
+- O 0% no dashboard GEDEON vem de `doc_scope=NULL` nos 156 docs sem classificação — não de `file_path=NULL`
+- **O que usa `file_path IS NOT NULL`** é o `people_management/ged/services/kit_builder_service.py` (outro módulo) no `_build_kit()` para contar docs "presentes"
