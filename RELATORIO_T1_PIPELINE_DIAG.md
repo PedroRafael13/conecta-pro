@@ -19,13 +19,73 @@
 
 ## STEP 1 — Schema e Contadores
 
-### onvio_documents (592 linhas)
+### Schema onvio_documents (`\d onvio_documents`)
+
+```
+                                Table "public.onvio_documents"
+         Column          |           Type           | Nullable |      Default
+-------------------------+--------------------------+----------+-------------------
+ id                      | uuid                     | not null | gen_random_uuid()
+ onvio_id                | character varying(100)   | not null |
+ onvio_folder_id         | character varying(100)   |          |
+ nome_arquivo            | character varying(500)   | not null |
+ categoria               | character varying(100)   |          |
+ mes_ref                 | character varying(10)    |          |
+ caminho_local           | character varying(1000)  |          |
+ data_onvio              | timestamp with time zone |          |
+ processado              | boolean                  | not null | false
+ created_at              | timestamp with time zone | not null | now()
+ tamanho_bytes           | integer                  |          |
+ data_importado          | timestamp with time zone |          | now()
+ metadata_json           | text                     |          |
+ confianca_extracao      | double precision         |          |
+ metodo_extracao         | character varying(50)    |          |
+ revisao_manual          | boolean                  |          |
+ detalhes_json           | jsonb                    |          |
+ extraido_em             | timestamp with time zone |          |
+ doc_scope               | character varying(50)    |          |
+ condominio_id           | uuid                     |          |
+ referente_a_employee_id | uuid                     |          |
+FK: condominio_id → condominios(id)
+FK: referente_a_employee_id → employees(id)
+SEM coluna file_path — usa caminho_local
+```
+
+### Schema ged_kit_documents (`\d ged_kit_documents`)
+
+```
+                            Table "public.ged_kit_documents"
+      Column      |           Type           | Nullable |      Default
+------------------+--------------------------+----------+-------------------
+ id               | uuid                     | not null | gen_random_uuid()
+ kit_id           | uuid                     | not null |
+ employee_id      | uuid                     |          |
+ document_type    | character varying(50)    | not null |
+ document_name    | character varying(255)   | not null |
+ file_path        | character varying(500)   |          |       ← NULL = sem arquivo
+ file_size_bytes  | bigint                   |          |
+ mime_type        | character varying(100)   |          |
+ is_signed        | boolean                  | not null | false
+ signed_at        | timestamp with time zone |          |
+ signed_by        | uuid                     |          |
+ signature_hash   | character varying(64)    |          |
+ source_module    | character varying(50)    |          |
+ source_record_id | uuid                     |          |
+ auto_generated   | boolean                  | not null | false
+ notes            | text                     |          |
+ created_at       | timestamp with time zone | not null | now()
+ updated_at       | timestamp with time zone |          |
+FK: kit_id → ged_document_kits(id) ON DELETE CASCADE
+SEM FK para onvio_documents
+```
+
+### onvio_documents (605 linhas — nota: eram 592 no T2, +13 desde então)
 
 | Campo | Preenchimento |
 |-------|---------------|
-| `caminho_local` | **592/592 — 100%** — todos preenchidos |
-| `doc_scope` | 436/592 (74%) — 156 NULL |
-| `processado` | **0/592 = false** — 100% false (campo vestigial) |
+| `caminho_local` | **605/605 — 100%** — todos preenchidos |
+| `doc_scope` | 436/605 — 169 NULL |
+| `processado` | **0/605 = false** — 100% false (campo vestigial) |
 | `condominio_id` | parcialmente preenchido (docs scope=condominio) |
 
 ### ged_kit_documents (1.237 linhas)
@@ -47,6 +107,18 @@
 | folha_pagamento | gedeon | /app/uploads/onvio/outros/2026-04/Folha 03.2026_Michelangelo.pdf | 2026-04-27 02:54 |
 | folha_pagamento | gedeon | /app/uploads/onvio/inss_guia/2026-04/Folha 03.2026_Mirante das Flores.pdf | 2026-04-27 02:57 |
 | folha_pagamento | gedeon | /app/uploads/onvio/outros/2026-04/Folha 03.2026_Villa Dei Fior.pdf | 2026-04-27 02:57 |
+
+**Amostra dos 5 mais recentes com file_path IS NULL:**
+
+| document_type | document_name | file_path | created_at |
+|---------------|---------------|-----------|------------|
+| contracheque | Contracheque 04/2026 | NULL | 2026-04-28 02:48 |
+| folha_ponto | Folha de Ponto 04/2026 | NULL | 2026-04-28 02:48 |
+| contracheque | Contracheque 04/2026 | NULL | 2026-04-28 02:48 |
+| contracheque | Contracheque 04/2026 | NULL | 2026-04-28 02:48 |
+| folha_ponto | Folha de Ponto 04/2026 | NULL | 2026-04-28 02:48 |
+
+→ Todos do mês 04/2026, criados 2026-04-28 → placeholders DP (auto-assemble).
 
 **Conclusão STEP 1:** Os 7 docs reais são todos `folha_pagamento 03/2026`, criados em 2026-04-27 por `_match_onvio_docs()`. O módulo `dp` cria 496 placeholders (`auto_generated=true`, `file_path=NULL`) que nunca têm arquivo real associado via onvio.
 
@@ -72,7 +144,41 @@
 
 ---
 
-## STEP 3 — Campo `processado` em onvio_documents
+## STEP 3 — Amostra real de onvio_documents
+
+**Query original do prompt (colunas inexistentes):**
+```
+ERROR: column "document_type" does not exist
+→ onvio_documents NÃO tem: document_type, document_name, file_path, client_id
+→ Colunas reais: id, nome_arquivo, categoria, doc_scope, mes_ref, caminho_local, ...
+```
+
+**Query ajustada (colunas reais, DESC LIMIT 5):**
+
+| id | nome_arquivo | categoria | doc_scope | mes_ref | caminho_local |
+|----|-------------|-----------|-----------|---------|---------------|
+| dd43430e | ANTECEDENTES ESTADUAL_SEBASTIAO.pdf | outros | NULL | NULL | /app/uploads/onvio/outros/sem-ref/... |
+| 1a6c07e2 | PIS_SEBASTIÃO.pdf | outros | NULL | NULL | /app/uploads/onvio/outros/sem-ref/... |
+| dd97b906 | Comprovante de Pagamento de Vidro Quebrado.pdf | outros | NULL | NULL | /app/uploads/onvio/outros/sem-ref/... |
+| 4067feee | CARTEIRA DE TRABALHO_SEBASTIÃO.pdf | outros | NULL | NULL | /app/uploads/onvio/outros/sem-ref/... |
+| 40c1ef64 | COMPROVANTE DE RESIDENCIA_SEBASTIÃO.pdf | outros | NULL | NULL | /app/uploads/onvio/outros/sem-ref/... |
+
+**file_path em onvio_documents? (query original):**
+```
+ERROR: column "file_path" does not exist
+→ CONFIRMADO: onvio_documents usa caminho_local (não file_path)
+```
+
+**caminho_local count (coluna real):**
+```
+total | com_caminho_local | sem_caminho_local
+  605 |               605 |                 0
+→ 100% dos docs têm caminho_local preenchido
+```
+
+---
+
+## STEP 3b — Campo `processado` em onvio_documents
 
 ```sql
 SELECT COUNT(*) FROM onvio_documents WHERE processado = true;  → 0
