@@ -503,10 +503,13 @@ class InterPaymentService:
 
     async def saldo_resumo(self) -> dict[str, Any]:
         consumido = await self._get_consumido_hoje()
+        saldo_inter = await self._get_saldo_inter()
         return {
+            "saldo_inter": float(saldo_inter),
             "limite_diario": float(LIMITE_DIARIO),
             "consumido_hoje": float(consumido),
             "disponivel_hoje": float(LIMITE_DIARIO - consumido),
+            "limite_restante": float(LIMITE_DIARIO - consumido),
         }
 
 

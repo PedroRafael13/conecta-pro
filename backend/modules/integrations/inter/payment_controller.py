@@ -6,8 +6,9 @@ Prefixo: /api/v1/financeiro/inter/payments
 import logging
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
@@ -172,6 +173,65 @@ async def saldo_limite(
     """Retorna limite diário consumido e disponível."""
     svc = InterPaymentService(db)
     return await svc.saldo_resumo()
+
+
+@router.get("/audit")
+async def audit_log_global(
+    limit: int = Query(default=100, le=500),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Audit log global — todas as transições de pagamento.
+    Restrito a Jordan (validação dual: dependency + check explícito no handler)."""
+    user_email = getattr(current_user, "email", "")
+    if user_email not in ("jjesus@conectamais.pro", "jordansjesus@gmail.com"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas Jordan tem acesso ao audit log global",
+        )
+
+    res = await db.execute(
+        text("""
+            SELECT
+                a.id,
+                a.payment_id,
+                a.user_id,
+                u.email   AS user_email,
+                a.status_from,
+                a.status_to,
+                a.ip_address,
+                a.motivo,
+                a.created_at,
+                p.payment_type,
+                p.valor,
+                p.destinatario
+            FROM inter_payment_audit a
+            LEFT JOIN users u ON a.user_id = u.id
+            LEFT JOIN inter_payments p ON a.payment_id = p.id
+            ORDER BY a.created_at DESC
+            LIMIT :limit OFFSET :offset
+        """),
+        {"limit": limit, "offset": offset},
+    )
+
+    rows = res.fetchall()
+    return [
+        {
+            "id": str(r._mapping["id"]),
+            "payment_id": str(r._mapping["payment_id"]) if r._mapping["payment_id"] else None,
+            "user_email": r._mapping["user_email"],
+            "status_from": r._mapping["status_from"],
+            "status_to": r._mapping["status_to"],
+            "ip_address": r._mapping["ip_address"],
+            "motivo": r._mapping["motivo"],
+            "created_at": (r._mapping["created_at"].isoformat() if r._mapping["created_at"] else None),
+            "payment_type": r._mapping["payment_type"],
+            "valor": float(r._mapping["valor"]) if r._mapping["valor"] else None,
+            "destinatario": r._mapping["destinatario"],
+        }
+        for r in rows
+    ]
 
 
 @router.get("/{payment_id}/audit")

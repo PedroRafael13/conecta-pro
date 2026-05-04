@@ -1,5 +1,5 @@
 # CONTRATO GEDEON — Fonte Única de Verdade
-**Versão:** 1.53
+**Versão:** 1.54
 **Data:** 2026-05-03
 **Status:** Ativo — todo terminal da FASE B2+ DEVE ler ANTES de implementar
 
@@ -3983,5 +3983,44 @@ Itens de ged_certidoes = idêntico ao que `/certidoes` exibe.
 Cert A1 = fonte específica bidding/certificates, tipo CERTIFICADO_DIGITAL.
 
 ### §51.5 — Build
+
+`conecta-pro-1777853080585`
+
+## §52 — Fix Desvios Visuais D7 Pagamentos Inter (2026-05-03)
+
+### §52.1 — Problema (auditoria CIC)
+
+Três desvios visuais detectados na página `/modulos/financeiro/inter/pagamentos`:
+1. Header sem 3 cards de saldo (Saldo Inter / Consumido Hoje / Limite Restante)
+2. Aba "Audit Log" exigia UUID manual em vez de auto-fetch global
+3. `GET /api/v1/financeiro/inter/payments/audit` retornava 404 (não existia)
+
+### §52.2 — Backend: endpoint global audit + saldo_resumo
+
+`payment_controller.py`: adicionado `GET /payments/audit` (global, sem payment_id)
+- Posicionado ANTES de `/{payment_id}/audit` para evitar captura pelo router
+- Dual-check Jordan: dependency + handler explícito
+- Parâmetros: `limit` (max 500), `offset`
+- Join com `users` (email) e `inter_payments` (tipo, valor, destinatario)
+
+`payment_service.py`: `saldo_resumo()` expandido
+- Adicionado `saldo_inter` (saldo real via Inter API)
+- Adicionado `limite_restante` (alias de `disponivel_hoje`)
+
+### §52.3 — Frontend: 3 cards + AuditLogTable
+
+`frontend/src/app/modulos/financeiro/inter/pagamentos/page.tsx`:
+- `SaldoLimite` interface: adicionado `saldo_inter` e `limite_restante`
+- Imports lucide-react: `Wallet`, `TrendingDown`, `ShieldCheck`
+- Header dark banner: removido inline saldo flex
+- Grid `grid-cols-1 md:grid-cols-3 gap-4 mb-6 mt-6` após o header com:
+  - Card 1 "Saldo Inter": dark gradient `#0A2540→#1E3A5F`, Wallet icon
+  - Card 2 "Consumido Hoje": branco, TrendingDown laranja, mostra limite embaixo
+  - Card 3 "Limite Restante": branco, ShieldCheck verde
+- Aba audit: UUID input removido; auto-fetch `GET /audit?limit=100` ao entrar na aba
+- Tabela audit: colunas Quando / Usuário (email) / Pagamento (tipo+valor) / Transição / IP / Motivo
+- Badges de status usam `STATUS_COLOR` map existente
+
+### §52.4 — Build
 
 `conecta-pro-1777853080585`

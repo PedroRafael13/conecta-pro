@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Wallet, TrendingDown, ShieldCheck } from "lucide-react";
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
 
@@ -21,9 +22,11 @@ interface Payment {
 }
 
 interface SaldoLimite {
+  saldo_inter: number;
   limite_diario: number;
   consumido_hoje: number;
   disponivel_hoje: number;
+  limite_restante: number;
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -514,17 +517,18 @@ export default function PagamentosPage() {
     if (tab === "preparados") fetchPayments("preparado");
     else if (tab === "aprovados") fetchPayments("aprovado");
     else if (tab === "historico") fetchPayments();
+    else if (tab === "audit") fetchAudit();
     else if (tab === "novo") setPayments([]);
-  }, [tab, fetchPayments, fetchSaldo]);
+  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);
 
-  const fetchAudit = async (paymentId: string) => {
+  const fetchAudit = useCallback(async () => {
     try {
-      const data = await apiFetch(`${API}/${paymentId}/audit`);
-      setAuditLog(data.audit || []);
+      const data = await apiFetch(`${API}/audit?limit=100`);
+      setAuditLog(Array.isArray(data) ? data : []);
     } catch {
       setAuditLog([]);
     }
-  };
+  }, []);
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "novo", label: "Novo Pagamento" },
@@ -541,22 +545,44 @@ export default function PagamentosPage() {
         className="px-6 py-8 text-white">
         <h1 className="text-2xl font-bold mb-1">Pagamentos Inter</h1>
         <p className="text-blue-200 text-sm">Módulo D7 — Operações de escrita com 2FA obrigatório</p>
-        {saldo && (
-          <div className="flex gap-6 mt-4">
-            <div>
-              <p className="text-xs text-blue-300">Limite Diário</p>
-              <p className="text-lg font-bold">{fmt(saldo.limite_diario)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-blue-300">Usado Hoje</p>
-              <p className="text-lg font-bold text-[#FF6B35]">{fmt(saldo.consumido_hoje)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-blue-300">Disponível Hoje</p>
-              <p className="text-lg font-bold text-green-300">{fmt(saldo.disponivel_hoje)}</p>
-            </div>
+      </div>
+
+      {/* Saldo cards */}
+      <div className="px-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 mt-6">
+        {/* Card 1: Saldo Inter */}
+        <div style={{ background: "linear-gradient(135deg, #0A2540 0%, #1E3A5F 100%)" }}
+          className="rounded-xl p-5 text-white flex items-center gap-4 shadow">
+          <div className="bg-white/10 p-3 rounded-lg">
+            <Wallet className="w-6 h-6 text-white" />
           </div>
-        )}
+          <div>
+            <p className="text-xs text-blue-300 uppercase tracking-wide">Saldo Inter</p>
+            <p className="text-xl font-bold mt-0.5">{saldo ? fmt(saldo.saldo_inter) : "—"}</p>
+          </div>
+        </div>
+
+        {/* Card 2: Consumido Hoje */}
+        <div className="bg-white rounded-xl p-5 flex items-center gap-4 shadow-sm border border-gray-100">
+          <div className="bg-orange-100 p-3 rounded-lg">
+            <TrendingDown className="w-6 h-6 text-[#FF6B35]" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Consumido Hoje</p>
+            <p className="text-xl font-bold text-[#FF6B35] mt-0.5">{saldo ? fmt(saldo.consumido_hoje) : "—"}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Limite: {saldo ? fmt(saldo.limite_diario) : "—"}</p>
+          </div>
+        </div>
+
+        {/* Card 3: Limite Restante */}
+        <div className="bg-white rounded-xl p-5 flex items-center gap-4 shadow-sm border border-gray-100">
+          <div className="bg-green-100 p-3 rounded-lg">
+            <ShieldCheck className="w-6 h-6 text-green-600" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Limite Restante</p>
+            <p className="text-xl font-bold text-green-600 mt-0.5">{saldo ? fmt(saldo.limite_restante) : "—"}</p>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -656,51 +682,66 @@ export default function PagamentosPage() {
 
         {tab === "audit" && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <p className="text-sm text-gray-600 mb-3">Digite o ID do pagamento para ver o audit log:</p>
-              <div className="flex gap-2">
-                <input
-                  id="audit-id-input"
-                  className="border rounded-lg px-3 py-2 text-sm flex-1 font-mono"
-                  placeholder="UUID do pagamento"
-                />
-                <button
-                  onClick={() => {
-                    const input = document.getElementById("audit-id-input") as HTMLInputElement;
-                    if (input?.value) fetchAudit(input.value);
-                  }}
-                  className="bg-[#0A2540] text-white px-4 py-2 rounded-lg text-sm"
-                >
-                  Buscar
-                </button>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-[#0A2540]">Audit Log Global</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Todas as transições de pagamento — acesso restrito a Jordan</p>
               </div>
+              <button
+                onClick={fetchAudit}
+                className="text-xs bg-[#0A2540] text-white px-3 py-1.5 rounded-lg hover:bg-[#1a3a5c] transition-colors"
+              >
+                Atualizar
+              </button>
             </div>
-            {auditLog.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {auditLog.length === 0 ? (
+              <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm border border-gray-100">
+                Nenhum registro de auditoria encontrado
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-4 py-3 text-left">Pagamento</th>
-                      <th className="px-4 py-3 text-left">Usuário</th>
-                      <th className="px-4 py-3 text-left">Status</th>
-                      <th className="px-4 py-3 text-left">IP</th>
-                      <th className="px-4 py-3 text-left">Motivo</th>
-                      <th className="px-4 py-3 text-left">Quando</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Quando</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Usuário</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Pagamento</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Transição</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">IP</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Motivo</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {(auditLog as Array<{payment_id?: string; user_id?: string; status_from?: string; status_to: string; ip_address?: string; motivo?: string; created_at: string}>).map((entry, i) => (
-                      <tr key={i}>
-                        <td className="px-4 py-3 text-xs text-gray-400 font-mono">{entry.payment_id ? entry.payment_id.slice(0, 8) + "…" : "—"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-400 font-mono">{entry.user_id ? entry.user_id.slice(0, 8) + "…" : "—"}</td>
-                        <td className="px-4 py-3">
-                          <span className="text-gray-400">{entry.status_from || "—"}</span>
-                          {" → "}
-                          <span className="font-medium text-[#0A2540]">{entry.status_to}</span>
+                    {(auditLog as Array<{
+                      payment_id?: string; user_email?: string; payment_type?: string;
+                      valor?: number; status_from?: string; status_to: string;
+                      ip_address?: string; motivo?: string; created_at: string;
+                    }>).map((entry, i) => (
+                      <tr key={i} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                          {new Date(entry.created_at).toLocaleString("pt-BR")}
                         </td>
-                        <td className="px-4 py-3 text-gray-500 font-mono text-xs">{entry.ip_address || "—"}</td>
-                        <td className="px-4 py-3 text-gray-600">{entry.motivo || "—"}</td>
-                        <td className="px-4 py-3 text-gray-400 text-xs">{new Date(entry.created_at).toLocaleString("pt-BR")}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600">{entry.user_email || "—"}</td>
+                        <td className="px-4 py-3 text-xs">
+                          {entry.payment_type && (
+                            <span className="font-medium text-[#0A2540]">{TYPE_LABEL[entry.payment_type as PaymentType] || entry.payment_type}</span>
+                          )}
+                          {entry.valor != null && (
+                            <span className="text-gray-400 ml-1">{fmt(entry.valor)}</span>
+                          )}
+                          {!entry.payment_type && <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${STATUS_COLOR[(entry.status_from || "") as PaymentStatus] || "bg-gray-100 text-gray-500"}`}>
+                            {entry.status_from || "—"}
+                          </span>
+                          <span className="text-gray-300 mx-1">→</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${STATUS_COLOR[entry.status_to as PaymentStatus] || "bg-gray-100 text-gray-500"}`}>
+                            {entry.status_to}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-400 font-mono">{entry.ip_address || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600">{entry.motivo || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
