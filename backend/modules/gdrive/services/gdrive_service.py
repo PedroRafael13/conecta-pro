@@ -90,6 +90,27 @@ class GDriveService:
         """Verificar se o serviço Drive está conectado."""
         if self._service is not None:
             return True
+        # Tentar OAuth2 do banco PRIMEIRO (antes de service account)
+        try:
+            import psycopg2
+
+            raw_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "")
+            if raw_url:
+                conn = psycopg2.connect(raw_url)
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT access_token, refresh_token, token_expiry "
+                    "FROM gdrive_config WHERE is_connected = TRUE LIMIT 1"
+                )
+                row = cur.fetchone()
+                conn.close()
+                if row:
+                    at, rt, exp = row
+                    expiry_str = exp.isoformat() if exp else None
+                    if self.conectar_com_tokens(at or "", rt or "", expiry_str):
+                        return True
+        except Exception as exc:
+            logger.warning("GDrive esta_conectado: erro OAuth2 DB: %s", exc)
         return self._init_service()
 
     # ── OAUTH2 ────────────────────────────────────────────────────────────────
