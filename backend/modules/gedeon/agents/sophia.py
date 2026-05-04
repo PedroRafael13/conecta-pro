@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # ── Constantes ────────────────────────────────────────────────────────────────
 
 EMBEDDING_DIM = 1536
-ANTHROPIC_MODEL = "claude-3-haiku-20240307"
+ANTHROPIC_MODEL = os.getenv("LLM_MODEL", "claude-haiku-4-5-20251001")
 EMBEDDING_MODEL_NAME_ANTHROPIC = "anthropic_haiku_1536"
 EMBEDDING_MODEL_NAME_FALLBACK = "sophia_dense_1536"
 SIMILARITY_THRESH = 0.60
