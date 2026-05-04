@@ -82,7 +82,19 @@ class InterPaymentService:
         )
 
     async def _get_saldo_inter(self) -> Decimal:
-        """Consulta saldo Inter via endpoint interno."""
+        """Consulta saldo Inter — Redis cache D6 primeiro, depois adapter direto."""
+        try:
+            import json as _json
+
+            from core.cache.redis import get_redis
+
+            redis = await get_redis()
+            cached = await redis.get("inter:saldo:cache")
+            if cached:
+                data = _json.loads(cached)
+                return Decimal(str(data.get("disponivel", 0)))
+        except Exception:
+            pass
         try:
             from modules.integrations.banking.adapters.base import BankCredentials
             from modules.integrations.banking.adapters.inter import InterAdapter
@@ -101,7 +113,7 @@ class InterPaymentService:
                 return Decimal("0")
             balance = await adapter.get_balance()
             await adapter.close()
-            return Decimal(str(balance.available_balance))
+            return Decimal(str(balance.available))
         except Exception as exc:
             logger.warning("D7 _get_saldo_inter falhou: %s", exc)
             return Decimal("0")
