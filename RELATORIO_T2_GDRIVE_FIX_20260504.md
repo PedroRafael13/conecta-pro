@@ -2,7 +2,7 @@
 **Data:** 2026-05-04
 **Sessão:** tmux-t2 | **Módulo:** gdrive
 **Branch:** feature/people-management-reorganization
-**Commit:** `b28df119`
+**Commits:** `b28df119` (GDriveService) + `5dfe6b11` (GoogleDriveService)
 
 ---
 
@@ -98,22 +98,24 @@ HTTP 200
 
 **`drive_conectado` voltou ao real:** `true` ✅
 
-### /gdrive/ingestao/status
+### /gdrive/ingestao/status — após fix §56b
 
 ```json
 {
-  "drive_conectado": false,
+  "drive_conectado": true,
   "kits_enviados": 0,
   "kits_pendentes": 18,
   "total_kits": 18,
   "ultima_atualizacao": "2026-04-28 02:48:24.53377+00",
-  "status": "aguardando_autorizacao"
+  "status": "ativo"
 }
 ```
 
-⚠️ `drive_conectado: false` no `/ingestao/status` — este endpoint lê estado de tabela separada
-(`gdrive_ingestao_config`), não de `gdrive_service.esta_conectado()`. Não é regressão — era assim antes.
-O serviço Drive está conectado conforme confirmado em `/gdrive/status`.
+**`drive_conectado: true`** ✅ — `status` passou de `"aguardando_autorizacao"` para `"ativo"`.
+
+**Fix adicional aplicado (§56b):** `GoogleDriveService.check_credentials()` em
+`people_management/ged/services/google_drive_service.py` usava a mesma lógica quebrada
+(só service account). Corrigida com OAuth2 do banco como prioridade 1, commit `5dfe6b11`.
 
 ---
 
@@ -135,11 +137,11 @@ e o token será salvo automaticamente no banco (`gdrive_config`).
 
 ---
 
-## 6. STEP 7 — Commit
+## 6. STEP 7 — Commits
 
 ```
-Commit: b28df119
-Mensagem: fix(gdrive): inverter ordem em esta_conectado — OAuth2 antes de service account (§56)
+Commit §56:  b28df119 — fix(gdrive): inverter ordem em esta_conectado — OAuth2 antes de service account
+Commit §56b: 5dfe6b11 — fix(gdrive): OAuth2 antes de service account em GoogleDriveService.check_credentials
 Branch: feature/people-management-reorganization
 Push: ✅ origin/feature/people-management-reorganization
 ```
@@ -150,8 +152,11 @@ Push: ✅ origin/feature/people-management-reorganization
 
 | Item | Antes | Depois |
 |------|-------|--------|
-| `esta_conectado()` | tenta service account → falha → trava | tenta OAuth2 DB → sucesso |
+| `GDriveService.esta_conectado()` | service account → falha → trava | OAuth2 DB primeiro → sucesso |
+| `GoogleDriveService.check_credentials()` | service account → `configured: false` | OAuth2 DB primeiro → `configured: true` |
 | Startup log | silêncio / fallback | "conectado via OAuth2 tokens" |
-| `/gdrive/status` | `"conectado": false` (ou erro) | `"conectado": true` ✅ |
+| `/gdrive/status` `conectado` | `false` | `true` ✅ |
+| `/gdrive/ingestao/status` `drive_conectado` | `false` | `true` ✅ |
+| `/gdrive/ingestao/status` `status` | `"aguardando_autorizacao"` | `"ativo"` ✅ |
 | Token renovado | nunca (expirado 23 dias) | sim, via `conectar_com_tokens` |
-| `_service` no singleton | `None` permanente | Drive service ativo |
+| Arquivos modificados | — | `gdrive_service.py` + `google_drive_service.py` |
