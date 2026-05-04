@@ -17,6 +17,11 @@ que bloqueiam 448/592 docs de serem casados com kits GED.
 Arquivo: `backend/modules/people_management/ged/services/kit_builder_service.py:25`
 Tamanho: 28953 bytes (modificado 2026-04-28)
 
+> **Nota técnica (auditoria):** O grep exato do prompt (`MAPA_TIPOS_ONVIO\s*=`) retornou
+> vazio porque o arquivo usa type annotation: `MAPA_TIPOS_ONVIO: dict[str, str] = {`.
+> O padrão `\s*=` não faz match com `: dict[str, str] ` no meio. Conteúdo recuperado
+> via `grep -B2 -A30 "MAPA_TIPOS_ONVIO"` (sem `\s*=`) — dados abaixo são corretos.
+
 ```python
 # Mapa de conversão: categoria onvio_documents → document_type ged_kit_documents
 # Restrito a documentos de EMPRESA (employee_id IS NULL) — D2 auditoria 2026-04-27

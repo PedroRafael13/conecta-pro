@@ -14,6 +14,7 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.mailer import send_email
 from modules.operacional.communication.models.notification import (
     Notification,
     NotificationChannel,
@@ -243,7 +244,15 @@ class NotificationService:
                         )
 
                 elif channel == NotificationChannel.EMAIL.value:
-                    logger.debug(f"Email para {notification.user_id}: {notification.title}")
+                    from core.models.user import User
+
+                    user = await self.db.get(User, notification.user_id)
+                    if user and user.email:
+                        ok = await send_email(user.email, notification.title, notification.body)
+                        if not ok:
+                            logger.error(f"Falha ao enviar email para user {notification.user_id}")
+                    else:
+                        logger.error(f"Email não encontrado para user {notification.user_id}")
 
                 elif channel == NotificationChannel.SMS.value:
                     logger.debug(f"SMS para {notification.user_id}: {notification.body}")
