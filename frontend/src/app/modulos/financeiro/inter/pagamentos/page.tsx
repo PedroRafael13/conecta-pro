@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Wallet, TrendingDown, ShieldCheck } from "lucide-react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { Wallet, TrendingDown, ShieldCheck, Lock } from "lucide-react";
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
 
@@ -514,11 +514,13 @@ export default function PagamentosPage() {
 
   useEffect(() => {
     fetchSaldo();
+    const interval = setInterval(fetchSaldo, 60_000);
     if (tab === "preparados") fetchPayments("preparado");
     else if (tab === "aprovados") fetchPayments("aprovado");
     else if (tab === "historico") fetchPayments();
     else if (tab === "audit") fetchAudit();
     else if (tab === "novo") setPayments([]);
+    return () => clearInterval(interval);
   }, [tab, fetchPayments, fetchSaldo, fetchAudit]);
 
   const fetchAudit = useCallback(async () => {
@@ -530,12 +532,14 @@ export default function PagamentosPage() {
     }
   }, []);
 
-  const TABS: { key: Tab; label: string }[] = [
+  const TABS: { key: Tab; label: ReactNode; red?: boolean }[] = [
     { key: "novo", label: "Novo Pagamento" },
     { key: "preparados", label: "Aguardando Aprovação" },
     { key: "aprovados", label: "Aguardando Execução" },
     { key: "historico", label: "Histórico" },
-    ...(isJordan ? [{ key: "audit" as Tab, label: "🔒 Audit Log" }] : []),
+    ...(isJordan
+      ? [{ key: "audit" as Tab, label: <span className="flex items-center gap-1"><Lock className="w-3 h-3" />Audit Log</span>, red: true }]
+      : []),
   ];
 
   return (
@@ -558,6 +562,7 @@ export default function PagamentosPage() {
           <div>
             <p className="text-xs text-blue-300 uppercase tracking-wide">Saldo Inter</p>
             <p className="text-xl font-bold mt-0.5">{saldo ? fmt(saldo.saldo_inter) : "—"}</p>
+            <p className="text-xs opacity-70 mt-1">Conta 370990072-2</p>
           </div>
         </div>
 
@@ -581,6 +586,7 @@ export default function PagamentosPage() {
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide">Limite Restante</p>
             <p className="text-xl font-bold text-green-600 mt-0.5">{saldo ? fmt(saldo.limite_restante) : "—"}</p>
+            <p className="text-xs text-gray-400 mt-1">disponível pra hoje</p>
           </div>
         </div>
       </div>
@@ -594,8 +600,12 @@ export default function PagamentosPage() {
               onClick={() => { setTab(t.key); setSelectedPayment(null); }}
               className={`py-3 text-sm font-medium border-b-2 transition-colors ${
                 tab === t.key
-                  ? "border-[#FF6B35] text-[#FF6B35]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? t.red
+                    ? "border-red-600 text-red-700"
+                    : "border-[#FF6B35] text-[#FF6B35]"
+                  : t.red
+                    ? "border-transparent text-red-600 hover:text-red-700"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               {t.label}
