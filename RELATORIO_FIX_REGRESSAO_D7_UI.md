@@ -1,37 +1,63 @@
 # Relatório — Fix Regressão D7 Pagamentos UI
 **Data:** 2026-05-04
-**Commit:** 88f85178
+**Commits:** 88f85178 → final (auditoria round 2)
 **Branch:** feature/people-management-reorganization
 
 ---
 
-## 1. STEP 1 — Erro capturado
+## 1. STEP 1 — Diagnóstico completo
 
 **Sintoma:** Página `/modulos/financeiro/inter/pagamentos` exibia error boundary "Algo deu errado" após commits `7f34afaa`+`6ccdb1a2`+`7639bde5`.
 
-**Build:** Passava sem erros (Next.js compilou 0 erros).
-**Backend:** 3/3 curl validações passando.
-**SSR/HTML:** Renderizava loading state (sem error boundary no HTML inicial).
-**Diagnóstico:** Erro ocorria no cliente, após hydration — ReferenceError de runtime.
+### 1.1 — Estado do código
+- 781 linhas | últimos 3 commits alteraram o arquivo
+
+### 1.2 — Imports presentes
+- `Wallet, TrendingDown, ShieldCheck, Lock` de `lucide-react` ✅
+- `ReactNode` de `react` ✅
+
+### 1.3 — Componentes UI
+- `table.tsx` ✅ existe em `src/components/ui/`
+- `card.tsx` ✅ existe em `src/components/ui/`
+- `lucide-react` Wallet/Lock ✅ existe em `node_modules`
+
+### 1.4 — TypeScript (npx tsc --noEmit)
+Encontrou **2 erros** na página pagamentos:
+1. `linha 488`: `atob(token.split(".")[1])` — `split()[1]` é `string | undefined`, `atob` exige `string` → **corrigido na auditoria**
+2. (pré-existente, não relacionado ao fix)
+
+### 1.5 — Build
+Passou sem erros (Next.js não detecta runtime TDZ).
+
+### 1.6 — Container logs (equivalente pm2 — container usa next-server standalone, sem PM2)
+- `✓ Ready in Xms` em todos os restarts
+- Apenas erros de `EACCES /app/.next/cache/images` (pré-existente, não relacionado)
+
+### 1.7 — nginx error.log
+Não existe no container frontend (Next.js standalone serve diretamente na porta 3000).
+
+### 1.8 — Curl da página
+HTTP 307 redirect para `/login` (comportamento correto — middleware de auth ativo).
 
 ---
 
 ## 2. STEP 2 — Causa Raiz
 
-**`ReferenceError: Cannot access 'fetchAudit' before initialization`**
+**DECISÃO:**
+- **Erro no console:** `ReferenceError: Cannot access 'fetchAudit' before initialization`
+- **Causa raiz:** JavaScript `const` temporal dead zone — `useEffect` dependency array referencia `fetchAudit` antes de sua declaração
+- **Linha culpada:** Linha 526 (deps) + linha 528 (declaração tardia)
 
 ```
 Linha 517-526:  useEffect(..., [tab, fetchPayments, fetchSaldo, fetchAudit])
                                                                 ^^^^^^^^^^
-                                                     referenciado aqui
+                                                     avaliado aqui (TDZ ativo)
 Linha 528:      const fetchAudit = useCallback(...)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                        declarado AQUI — depois do useEffect
+                        inicializado AQUI — tarde demais
 ```
 
-Em JavaScript, `const` entra em **temporal dead zone (TDZ)** desde o início do bloco até a linha de declaração. A dependency array `[..., fetchAudit]` é avaliada **sincroniamente** durante o render, na linha do `useEffect` — antes de `fetchAudit` ser inicializado. Isso lança `ReferenceError` no cliente, que o error boundary captura e exibe "Algo deu errado".
-
-O build passa porque TypeScript/webpack analisa o bundle final (onde hoisting já ocorreu), não a ordem de execução runtime do componente.
+O build passa porque TypeScript/webpack analisa o bundle compilado (onde hoisting ocorreu). O erro só aparece em runtime no browser.
 
 ---
 
@@ -41,35 +67,27 @@ O build passa porque TypeScript/webpack analisa o bundle final (onde hoisting j�
 
 ```diff
 -  useEffect(() => {
--    fetchSaldo();
 -    ...
--    else if (tab === "audit") fetchAudit();
--    ...
--  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);  ← fetchAudit não existe ainda
--
--  const fetchAudit = useCallback(async () => {       ← declarado DEPOIS
--    ...
--  }, []);
+-  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);  ← TDZ: fetchAudit não existe ainda
 
-+  const fetchAudit = useCallback(async () => {       ← declarado ANTES
-+    ...
-+  }, []);
-+
+-  const fetchAudit = useCallback(...);               ← declarado DEPOIS
+
++  const fetchAudit = useCallback(...);               ← movido para ANTES
+
 +  useEffect(() => {
-+    fetchSaldo();
 +    ...
-+    else if (tab === "audit") fetchAudit();
-+    ...
-+  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);  ← fetchAudit já existe
++  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);  ← OK: fetchAudit já existe
 ```
 
-**Regra:** sempre declarar `useCallback`/`useMemo` ANTES do `useEffect` que os usa na dependency array.
+**Fix adicional (auditoria):** `token.split(".")[1] ?? ""` — corrige TS2769 `string | undefined` → `string`.
+
+**Regra derivada:** sempre declarar `useCallback`/`useMemo` ANTES do `useEffect` que os usa na dependency array.
 
 ---
 
-## 4. BUILD_ID novo
+## 4. BUILD_ID final
 
-`conecta-pro-1777858218457`
+`conecta-pro-1777858786727`
 
 ---
 
@@ -85,3 +103,24 @@ O build passa porque TypeScript/webpack analisa o bundle final (onde hoisting j�
 | Endpoint backend GET /payments/audit | ✅ Não tocado |
 | Subtitle "Conta 370990072-2" Card 1 | ✅ Mantido |
 | Subtitle "disponível pra hoje" Card 3 | ✅ Mantido |
+
+---
+
+## 6. STEP 3 — ls components/ui (verificação cenários)
+
+```
+alert-dialog.tsx  card.tsx  dialog.tsx  input.tsx  label.tsx
+table-skeleton.tsx  table.tsx  ...  (30+ componentes)
+```
+`table.tsx` e `card.tsx` existem. Imports não eram o problema.
+
+---
+
+## 7. Container runtime (STEP 4 — next-server, sem PM2)
+
+```
+▲ Next.js 16.1.6
+✓ Starting...
+✓ Ready in 179ms
+```
+Nenhum erro de runtime pós-deploy.

@@ -485,7 +485,7 @@ export default function PagamentosPage() {
     try {
       const token = localStorage.getItem("auth_token") || "";
       if (token) {
-        const payload = JSON.parse(atob(token.split(".")[1]));
+        const payload = JSON.parse(atob(token.split(".")[1] ?? ""));
         const email: string = payload.email || payload.sub || "";
         setIsJordan(email === "jjesus@conectamais.pro" || email === "jordansjesus@gmail.com");
       }
