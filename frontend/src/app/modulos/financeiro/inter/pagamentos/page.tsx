@@ -34,7 +34,7 @@ interface SaldoLimite {
 const API = "/api/v1/financeiro/inter/payments";
 
 async function apiFetch(path: string, options?: RequestInit) {
-  const token = localStorage.getItem("auth_token") || "";
+  const token = localStorage.getItem("access_token") || "";
   const res = await fetch(path, {
     ...options,
     headers: {
@@ -483,7 +483,7 @@ export default function PagamentosPage() {
 
   useEffect(() => {
     try {
-      const token = localStorage.getItem("auth_token") || "";
+      const token = localStorage.getItem("access_token") || "";
       if (token) {
         const payload = JSON.parse(atob(token.split(".")[1] ?? ""));
         const email: string = payload.email || payload.sub || "";
