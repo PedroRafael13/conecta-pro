@@ -25,7 +25,7 @@ class LLMModel(StrEnum):
     # Anthropic
     CLAUDE_3_OPUS = "claude-3-opus-20240229"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
-    CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
+    CLAUDE_3_HAIKU = "claude-haiku-4-5-20251001"  # atualizado de claude-3-haiku-20240307 (deprecated)
 
     # Local/Fallback
     LOCAL = "local"

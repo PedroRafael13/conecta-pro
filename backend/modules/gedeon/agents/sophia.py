@@ -5,7 +5,7 @@ SOPHIA v2.0 — Busca Semântica Cross-Módulo do GEDEON
 Versão: 2.0
 Escopo: DP · RH · GED · Operacional · Fiscal · Contratos · Licitações · Financeiro
 
-Motor: Anthropic API (claude-3-haiku) + fallback dense 1536 dims
+Motor: Anthropic API (claude-haiku-4-5) + fallback dense 1536 dims
 Capacidades:
 - busca_semantica com filtros cross-módulo
 - perguntar_linguagem_natural
@@ -571,7 +571,7 @@ class Sophia:
     """
     SOPHIA v2.0 — Busca Semântica Cross-Módulo.
 
-    Motor: Anthropic claude-3-haiku (primário) + dense 1536 fallback.
+    Motor: Anthropic claude-haiku-4-5 (primário) + dense 1536 fallback.
     Escopo: dp, rh, ged, operacional, fiscal, contratos, licitacoes, financeiro.
     """
 
