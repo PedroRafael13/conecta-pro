@@ -151,9 +151,38 @@
 
 **Serviços:** kit_builder_service, onvio_doc_scope_classifier
 
+**README/docs:** nenhum arquivo README* ou *.md encontrado em `backend/modules/gedeon/`.
+
 ---
 
 ## 7. Tabelas DB — Estado Real
+
+**Contadores exatos (query do prompt):**
+
+| tab_gedeon | tab_kronos | tab_themis | tab_alert |
+|------------|------------|------------|-----------|
+| 5 | 0 | 0 | 8 |
+
+**Loop por-tabela (filtro exato do prompt: gedeon/kronos/themis/orquestr/orchestrad/monitoring/alert):**
+
+| Tabela | Linhas |
+|--------|--------|
+| contract_alerts | 0 |
+| drift_alerts | 0 |
+| fraud_alerts | 0 |
+| marketplace_alerts | 0 |
+| monitoring_thresholds | 0 |
+| monitoring_alerts | 0 |
+| communication_alerts | 7 |
+| rh_alertas_absenteismo | 3 |
+| climate_alerts | 0 |
+| gedeon_kit_config | 13 |
+| gedeon_kit_history | 11 |
+| gedeon_client_patterns | 6 |
+| gedeon_learning_events | 0 |
+| gedeon_document_index | 617 |
+
+**Tabelas completas (filtro expandido incluindo ged/onvio/kit/gdrive):**
 
 | Tabela | Linhas | Status |
 |--------|--------|--------|
@@ -189,8 +218,12 @@
 
 ## 8. Telegram Bot
 
+**Nota:** O prompt executa `grep -E "^TELEGRAM" /opt/conecta-pro/backend/.env` — resultado vazio.
+`TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` estão em `/opt/conecta-pro/.env` (raiz), não em `backend/.env`.
+
 | Item | Status |
 |------|--------|
+| `grep ^TELEGRAM backend/.env` | Vazio — variáveis não estão no .env do backend |
 | `TELEGRAM_BOT_TOKEN` | ✅ em `/opt/conecta-pro/.env` (REDACTED) |
 | `TELEGRAM_CHAT_ID` | ✅ em `/opt/conecta-pro/.env` (REDACTED) |
 | `MONITOR_BOT_TOKEN` | Exposto no crontab (bot diferente — CTO monitor) |
