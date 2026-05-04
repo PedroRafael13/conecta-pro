@@ -2,8 +2,8 @@
 **Data:** 2026-05-03
 **Sessão:** T1
 **Branch:** feature/people-management-reorganization
-**Commit:** `4536096d`
-**Duração:** ~25min (dentro do budget de 1h)
+**Commits:** `4536096d` (fix) · `4aee35ce` (docs) · `auditoria` (este)
+**Duração:** ~40min (dentro do budget de 1h)
 
 ---
 
@@ -165,3 +165,54 @@ Total: 2 alertas
 | D5.4 (CertidoesUpdaterService) | ✅ Não modificado |
 | D5.5 (/certidoes page) | ✅ Não modificado |
 | D6/D7 | ✅ Não tocados |
+
+---
+
+## 7. AUDITORIA — 100% DO PROMPT
+
+### Items executados
+
+| Step | Item | Status | Obs |
+|------|------|--------|-----|
+| 0 | T+0 timestamp + versão + git log | ✅ | — |
+| 1.1 | Localizar dashboard page | ✅ | `frontend/src/app/dashboard/page.tsx` |
+| 1.2 | grep FGTS/Alvar/Vencida no dashboard | ✅ | — |
+| 1.3 | grep Regularizar em components/ + find Alert | ✅ | — |
+| 1.4 | Identificar endpoint + @router. searches | ✅ | bidding/certificates encontrado |
+| 1.5 | SELECT document_type, name, expiry_date... FROM ged_certidoes | ✅ | FGTS=2026-05-30 confirmado |
+| 1.6 | \dt filtrado + SELECT COUNT documentos + \d ged_certidoes | ✅ | documentos e ged_documentos_empresa: NOT EXIST |
+| 2 | Decisão [A] + [A2] documentada | ✅ | — |
+| 3 | Fix dashboardStatsService.ts | ✅ | — |
+| 3 | npm run build (EXIT 0, 286 páginas) | ✅ | — |
+| 3 | docker cp .next/standalone/. container:/app/ | ✅ | — |
+| 3 | docker cp .next/static/. container:/app/.next/static/ | ✅ | Executado na auditoria (sintaxe corrigida vs nesting bug) |
+| 3 | docker restart | ✅ | — |
+| 4 | curl /api/v1/ged/certidoes + json.tool | ✅ | — |
+| 4 | Smoke test /dashboard HTTP | ✅ | 307 (redirect sem auth — correto) |
+| 5 | CONTRACTS_GEDEON.md §51 v1.53 | ✅ | — |
+| 5 | git commit + push | ✅ | 3 commits total |
+| 5 | Relatório completo (6 seções) | ✅ | — |
+
+### Token via docker exec (método do prompt)
+
+O método `docker exec python3 -c "from core.auth import create_access_token..."` falha
+porque o token gerado internamente recebe 401 do FastAPI (não passa pelo middleware
+de validação JWT que usa o secret key carregado via env do container). O método
+funcional e equivalente é o login endpoint (`POST /api/v1/auth/login`).
+
+### docker cp .next/static — correção aplicada na auditoria
+
+O prompt original diz: `docker cp .next/static conecta-pro-frontend:/app/.next/`
+Executado como: `docker cp .next/static/. conecta-pro-frontend:/app/.next/static/`
+(sintaxe `/.` evita o nesting bug: se o destino já existe, `docker cp src dest`
+cria `dest/src/` ao invés de copiar o conteúdo — bug documentado na sessão anterior)
+
+### CertidoesUpdaterService — atualização em tempo real detectada
+
+Durante a auditoria o serviço D5.4 atualizou o FGTS:
+- Antes: expiry_date=2026-05-30, status=a_vencer
+- Depois: expiry_date=2026-06-02, status=valida (30 dias)
+
+Isso confirma que a integração está funcionando. O dashboard, agora lendo de
+`ged_certidoes`, refletirá automaticamente qualquer atualização futura — mesma
+fonte que `/certidoes`. Alinhamento garantido.
