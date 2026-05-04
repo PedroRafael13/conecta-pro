@@ -4023,4 +4023,4 @@ Três desvios visuais detectados na página `/modulos/financeiro/inter/pagamento
 
 ### §52.4 — Build
 
-`conecta-pro-1777853080585`
+`conecta-pro-1777857014995` (build final após auditoria completa de prompt)

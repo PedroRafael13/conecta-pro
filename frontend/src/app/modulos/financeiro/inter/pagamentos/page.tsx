@@ -477,6 +477,8 @@ export default function PagamentosPage() {
   const [loading, setLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [auditLog, setAuditLog] = useState<unknown[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState("");
   const [isJordan, setIsJordan] = useState(false);
 
   useEffect(() => {
@@ -524,11 +526,16 @@ export default function PagamentosPage() {
   }, [tab, fetchPayments, fetchSaldo, fetchAudit]);
 
   const fetchAudit = useCallback(async () => {
+    setAuditLoading(true);
+    setAuditError("");
     try {
       const data = await apiFetch(`${API}/audit?limit=100`);
       setAuditLog(Array.isArray(data) ? data : []);
-    } catch {
+    } catch (e: unknown) {
+      setAuditError(e instanceof Error ? e.message : "Erro ao carregar audit log");
       setAuditLog([]);
+    } finally {
+      setAuditLoading(false);
     }
   }, []);
 
@@ -704,9 +711,17 @@ export default function PagamentosPage() {
                 Atualizar
               </button>
             </div>
-            {auditLog.length === 0 ? (
+            {auditLoading ? (
               <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm border border-gray-100">
-                Nenhum registro de auditoria encontrado
+                Carregando audit log...
+              </div>
+            ) : auditError ? (
+              <div className="bg-white rounded-xl p-8 text-center text-red-600 shadow-sm border border-gray-100">
+                Erro: {auditError}
+              </div>
+            ) : auditLog.length === 0 ? (
+              <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm border border-gray-100">
+                Nenhum registro de auditoria encontrado — execute o primeiro pagamento.
               </div>
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">

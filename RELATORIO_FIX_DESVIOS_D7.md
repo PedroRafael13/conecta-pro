@@ -90,22 +90,42 @@ Header dark banner: inline saldo removido (substituído pelos cards).
 - Colunas: Quando / Usuário (email) / Pagamento (tipo+valor) / Transição / IP / Motivo
 - Badges de status via `STATUS_COLOR` map existente
 - Botão "Atualizar" para refresh manual
+- Estados: `auditLoading` ("Carregando audit log...") + `auditError` (mensagem vermelha)
+- Tab usa ícone `Lock` (lucide-react) + `text-red-700` em vez de emoji
+- `refetchInterval 60s`: `setInterval(fetchSaldo, 60_000)` com cleanup no useEffect
 
 ---
 
-## 4. Build e Deploy
+## 4. Validações curl (3 VALs)
+
+| VAL | Endpoint | Resultado |
+|-----|----------|-----------|
+| 1 | `GET /saldo-limite` (Jordan) | `{"saldo_inter":0.0,"limite_diario":5000.0,...}` HTTP 200 ✅ |
+| 2 | `GET /audit?limit=5` (Jordan) | `[] HTTP 200` ✅ (tabela vazia) |
+| 3 | `GET /audit?limit=5` (awsilva, não-Jordan) | `{"detail":"Apenas Jordan..."}` HTTP 403 ✅ |
+
+---
+
+## 5. Build e Deploy
 
 - Build: `NODE_OPTIONS=--max-old-space-size=4096 npm run build` ✅
 - `docker cp .next/standalone/.` → container ✅
 - `docker cp .next/static/.` → container ✅
 - `docker restart conecta-pro-frontend` ✅
+- Build ID final: `conecta-pro-1777857014995` ✅
 - Verificação: HTTP redirect para login (comportamento correto) ✅
 
 ---
 
-## 5. Governança
+## 6. Backlog
+
+Vazio — nenhum item pendente.
+
+---
+
+## 7. Governança
 
 - Módulo declarado: `inter-d7`
 - Arquivos fora do módulo: nenhum
 - Revert proibido: sem reversão
-- Commit: `7f34afaa` — `fix(inter-d7): header saldo+limite + tab audit log global Jordan (§52)`
+- Commits: `7f34afaa` → `6ccdb1a2` → `<final>`
