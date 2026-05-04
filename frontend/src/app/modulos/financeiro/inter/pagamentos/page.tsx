@@ -514,17 +514,6 @@ export default function PagamentosPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchSaldo();
-    const interval = setInterval(fetchSaldo, 60_000);
-    if (tab === "preparados") fetchPayments("preparado");
-    else if (tab === "aprovados") fetchPayments("aprovado");
-    else if (tab === "historico") fetchPayments();
-    else if (tab === "audit") fetchAudit();
-    else if (tab === "novo") setPayments([]);
-    return () => clearInterval(interval);
-  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);
-
   const fetchAudit = useCallback(async () => {
     setAuditLoading(true);
     setAuditError("");
@@ -538,6 +527,17 @@ export default function PagamentosPage() {
       setAuditLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchSaldo();
+    const interval = setInterval(fetchSaldo, 60_000);
+    if (tab === "preparados") fetchPayments("preparado");
+    else if (tab === "aprovados") fetchPayments("aprovado");
+    else if (tab === "historico") fetchPayments();
+    else if (tab === "audit") fetchAudit();
+    else if (tab === "novo") setPayments([]);
+    return () => clearInterval(interval);
+  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);
 
   const TABS: { key: Tab; label: ReactNode; red?: boolean }[] = [
     { key: "novo", label: "Novo Pagamento" },
