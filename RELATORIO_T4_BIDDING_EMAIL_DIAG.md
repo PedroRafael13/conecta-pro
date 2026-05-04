@@ -12,6 +12,59 @@ backend/modules/bidding/services/notification_service.py
 -rw-r--r-- 1 root root 46182 Apr  1 10:35
 ```
 
+### Função `_dispatch_email` completa (`grep -B2 -A30 | head -60`)
+
+```python
+        elif canal == NotificationChannel.EMAIL:
+            self._dispatch_email(notification)
+
+        elif canal == NotificationChannel.PUSH:
+            self._push_buffer.append(notification)
+            logger.info(
+                "[BIDDING_NOTIF][PUSH] Armazenado no buffer: %s",
+                notification.titulo,
+            )
+
+        # Marcar como "enviado" (internamente registrado)
+        notification.enviado = True
+        notification.enviado_em = datetime.utcnow()
+
+    def _dispatch_email(self, notification: BiddingNotification) -> None:
+        """
+        Envia notificacao por email via SMTP.
+
+        Le configuracao de SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+        das variaveis de ambiente. Se nao configurado, faz fallback para log.
+
+        Args:
+            notification: Notificacao a ser enviada por email.
+        """
+        if not self._smtp_host or not self._smtp_user:
+            logger.info(
+                "[BIDDING_NOTIF][EMAIL] SMTP nao configurado (fallback log): %s",
+                notification.titulo,
+            )
+            return
+
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = f"[Conecta PRO - Licitacoes] {notification.titulo}"
+            msg["From"] = self._smtp_user
+            msg["To"] = self._smtp_user  # Default: envia para o proprio usuario SMTP
+            msg.set_content(
+                f"{notification.titulo}\n"
+                f"{'=' * 50}\n\n"
+                f"Prioridade: {notification.prioridade.value.upper()}\n"
+                f"Tipo: {notification.tipo.value}\n\n"
+                f"{notification.mensagem}\n\n"
+                f"---\n"
+                f"Referencia: {notification.referencia_tipo or 'N/A'} "
+                f"(ID: {notification.referencia_id or 'N/A'})\n"
+```
+
+> ⚠️ Linha crítica visível: `msg["To"] = self._smtp_user` — remetente = destinatário.
+> ⚠️ Condição de saída antecipada: `if not self._smtp_host or not self._smtp_user: return`
+
 ---
 
 ## STEP 2 — Quem chama `_dispatch_email`?
@@ -172,7 +225,7 @@ Se executasse, cairia na `except Exception` silenciosa — `logger.warning`.
 
 ---
 
-## Respostas às 3 perguntas
+## Respostas às 4 perguntas (REPORTAR)
 
 ### 1. `_dispatch_email` envia pro próprio remetente OU pro destinatário real?
 
@@ -201,9 +254,7 @@ está rodando (último: 2026-04-28). As tasks de notif de bidding nunca foram di
 Adicionalmente: **as tasks Celery não usam `BiddingNotificationService`** — são completamente
 desconectadas. Mesmo que fossem disparadas, não chamariam `_dispatch_email`.
 
----
-
-## Recomendação de fix (sem aplicar)
+### 4. Recomendação de fix (sem aplicar)
 
 **3 mudanças no `notification_service.py` + 1 no `.env`:**
 
