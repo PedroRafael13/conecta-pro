@@ -178,6 +178,15 @@ interface GedCertidao {
   alerta_ativo: boolean;
 }
 
+// Tipo interno para resposta bruta de bidding/certificates (Cert Digital A1)
+interface BiddingCertificate {
+  id: string;
+  tipo: string;
+  nome: string;
+  data_validade: string | null;
+  situacao: string;
+}
+
 export interface KitStats {
   total_kits: number;
   kits_ativos: number;
@@ -192,32 +201,58 @@ export interface GedStats {
 }
 
 export async function fetchCertificateAlerts(): Promise<CertificateAlert[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const calcDias = (dateStr: string | null): number =>
+    dateStr
+      ? Math.round((new Date(dateStr).getTime() - today.getTime()) / 86_400_000)
+      : 9999;
+
+  // Fonte 1: ged_certidoes (D5.4) — certidões empresariais
+  let gedAlerts: CertificateAlert[] = [];
   try {
     const { data } = await api.get('/api/v1/ged/certidoes');
     const items: GedCertidao[] = data.certidoes ?? (Array.isArray(data) ? data : []);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    gedAlerts = items
+      .map((c) => ({
+        id: c.id,
+        tipo: c.document_type,
+        nome: c.name,
+        dias_para_vencer: calcDias(c.expiry_date),
+        situacao: c.status,
+        esta_valida: c.status === 'valida',
+        data_validade: c.expiry_date ?? '',
+      }))
+      .filter((c) => c.situacao !== 'valida' || c.dias_para_vencer <= 30);
+  } catch { /* silencioso */ }
 
-    return items
+  // Fonte 2: bidding/certificates — apenas CERTIFICADO_DIGITAL (Decisão A2)
+  // Cert digital A1 é cert de máquina (assina NFes), não entra em ged_certidoes,
+  // mas deve aparecer no dashboard como alerta separado.
+  let certDigitalAlerts: CertificateAlert[] = [];
+  try {
+    const { data } = await api.get('/api/v1/bidding/certificates');
+    const items: BiddingCertificate[] = data.items ?? (Array.isArray(data) ? data : []);
+    certDigitalAlerts = items
+      .filter((c) => c.tipo === 'CERTIFICADO_DIGITAL')
       .map((c) => {
-        const diasParaVencer = c.expiry_date
-          ? Math.round((new Date(c.expiry_date).getTime() - today.getTime()) / 86_400_000)
-          : 9999;
+        const dias = calcDias(c.data_validade);
         return {
           id: c.id,
-          tipo: c.document_type,
-          nome: c.name,
-          dias_para_vencer: diasParaVencer,
-          situacao: c.status,
-          esta_valida: c.status === 'valida',
-          data_validade: c.expiry_date ?? '',
+          tipo: c.tipo,
+          nome: c.nome,
+          dias_para_vencer: dias,
+          situacao: dias <= 0 ? 'vencida' : c.situacao.toLowerCase(),
+          esta_valida: dias > 0,
+          data_validade: c.data_validade ?? '',
         };
       })
-      .filter((c) => c.situacao !== 'valida' || c.dias_para_vencer <= 30)
-      .sort((a, b) => a.dias_para_vencer - b.dias_para_vencer);
-  } catch {
-    return [];
-  }
+      .filter((c) => !c.esta_valida || c.dias_para_vencer <= 30);
+  } catch { /* silencioso */ }
+
+  return [...gedAlerts, ...certDigitalAlerts]
+    .sort((a, b) => a.dias_para_vencer - b.dias_para_vencer);
 }
 
 export async function fetchKitStats(): Promise<KitStats> {

@@ -216,3 +216,49 @@ Durante a auditoria o serviço D5.4 atualizou o FGTS:
 Isso confirma que a integração está funcionando. O dashboard, agora lendo de
 `ged_certidoes`, refletirá automaticamente qualquer atualização futura — mesma
 fonte que `/certidoes`. Alinhamento garantido.
+
+---
+
+## 8. CORREÇÃO PÓS-AUDITORIA — Cert A1 + Agregação (decisão [A2] real)
+
+### Gap corrigido
+
+A implementação anterior removeu o Cert Digital A1 do dashboard.
+O prompt exige [A2]: "Manter Cert A1 fora de ged_certidoes **e adicionar fonte específica**"
++ "dashboard deve agregar ambas as fontes no mesmo card de Pendências".
+
+### Fix aplicado
+
+`fetchCertificateAlerts` agora faz 2 chamadas paralelas:
+
+```typescript
+// Fonte 1: ged_certidoes (certidões empresariais — D5.4)
+GET /api/v1/ged/certidoes
+
+// Fonte 2: bidding/certificates (apenas CERTIFICADO_DIGITAL — decisão A2)
+GET /api/v1/bidding/certificates → filter(tipo === 'CERTIFICADO_DIGITAL')
+
+// Merge + sort por urgência
+[...gedAlerts, ...certDigitalAlerts].sort((a,b) => a.dias_para_vencer - b.dias_para_vencer)
+```
+
+### Dashboard após correção completa (3 alertas)
+
+| # | Ícone | dias | Status | Nome | Fonte |
+|---|-------|------|--------|------|-------|
+| 1 | 🔴 | -65d | vencida | Alvará de Funcionamento | ged_certidoes |
+| 2 | 🔴 | -33d | vencida | Certificado Digital A1 - e-CNPJ | bidding/certificates |
+| 3 | 🟡 | +29d | a_vencer | Certidão Negativa FGTS | ged_certidoes |
+
+### Build final
+
+`conecta-pro-1777853080585`
+
+### Commits desta sessão
+
+| Hash | Descrição |
+|------|-----------|
+| `4536096d` | fix(dashboard): endpoint ged/certidoes |
+| `4aee35ce` | docs: relatório inicial |
+| `40e821cc` | docs: auditoria §7 + docker cp static |
+| `este` | fix(dashboard): agregação Cert A1 + auditoria final |

@@ -3962,18 +3962,26 @@ Cobertura: estados válidos, validação destinatário, limite diário, saldo in
 
 ### §51.3 — Certificado Digital A1
 
-Decisão [A2]: não está em `ged_certidoes` (é cert de máquina, não certidão empresarial).
-Removido do dashboard por ser proveniente apenas de `bidding/certificates` (escopo diferente).
-Ação futura: criar endpoint separado se necessário.
+Decisão [A2]: não entra em `ged_certidoes` (é cert de máquina — assina NFes,
+não é certidão empresarial). Mas **o dashboard agrega ambas as fontes** conforme
+o prompt exige.
 
-### §51.4 — Dashboard pós-fix
+Implementação: `fetchCertificateAlerts` faz 2 chamadas em paralelo:
+1. `GET /api/v1/ged/certidoes` → certidões empresariais (fonte principal)
+2. `GET /api/v1/bidding/certificates` → filtra apenas `tipo=CERTIFICADO_DIGITAL`
+
+Ambos os resultados são mesclados e ordenados por urgência.
+
+### §51.4 — Dashboard pós-fix (3 fontes agregadas)
 
 Mostra (ordenado por urgência):
-1. 🔴 Alvará de Funcionamento — Vencida desde 28/02/2026 (-64d)
-2. 🟡 Certidão Negativa FGTS — Vence em 27 dia(s) (validade 2026-05-30)
+1. 🔴 Alvará de Funcionamento — Vencida desde 28/02/2026 (-65d) [ged_certidoes]
+2. 🔴 Certificado Digital A1 — Vencido desde 01/04/2026 (-33d) [bidding/certificates]
+3. 🟡 Certidão Negativa FGTS — Vence em 29 dia(s) (2026-06-02) [ged_certidoes]
 
-Idêntico ao que `/certidoes` exibe. Fonte única: `ged_certidoes`.
+Itens de ged_certidoes = idêntico ao que `/certidoes` exibe.
+Cert A1 = fonte específica bidding/certificates, tipo CERTIFICADO_DIGITAL.
 
 ### §51.5 — Build
 
-`conecta-pro-1777851782277`
+`conecta-pro-1777853080585`
