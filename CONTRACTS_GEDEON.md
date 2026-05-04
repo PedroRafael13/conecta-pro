@@ -4024,3 +4024,56 @@ Três desvios visuais detectados na página `/modulos/financeiro/inter/pagamento
 ### §52.4 — Build
 
 `conecta-pro-1777857014995` (build final após auditoria completa de prompt)
+
+---
+
+## §53 — D7 Pagamentos Inter: Fix Auth Key client-side (2026-05-04)
+
+**Commit:** a05c70d5
+**Branch:** feature/people-management-reorganization
+
+### §53.1 — Problema
+
+Cards da página `/modulos/financeiro/inter/pagamentos` exibiam `—` e aba "Audit Log" não aparecia apesar de acesso Jordan. `isJordan` retornava `false`, `fetchSaldo()` retornava erro silencioso.
+
+### §53.2 — Causa raiz
+
+`page.tsx` lia `localStorage.getItem("auth_token")` — chave usada apenas pelo cookie SSR do Next.js middleware. O JWT de sessão é armazenado sob a chave `"access_token"` (padrão do `api.ts`).
+
+### §53.3 — Fix
+
+`frontend/src/app/modulos/financeiro/inter/pagamentos/page.tsx`:
+- Linha 37 (`apiFetch`): `"auth_token"` → `"access_token"`
+- Linha 486 (`isJordan` useEffect): `"auth_token"` → `"access_token"`
+
+### §53.4 — Build
+
+`conecta-pro-1777859686351`
+
+---
+
+## §54 — D7 Pagamentos Inter: Fix saldo_inter R$0 → R$32.298,58 (2026-05-04)
+
+**Commit:** 82bdf3f4
+**Branch:** feature/people-management-reorganization
+
+### §54.1 — Problema
+
+Card "Saldo Inter" exibia R$0,00 enquanto D6 `/financeiro/inter` mostrava R$32.298,58 para a mesma conta 370990072-2.
+
+### §54.2 — Causa raiz
+
+`_get_saldo_inter()` em `payment_service.py` acessava `balance.available_balance` — campo inexistente em `AccountBalance` (dataclass com campos `available`, `blocked`, `total`). O `AttributeError` era capturado silenciosamente retornando `Decimal("0")`.
+
+### §54.3 — Fix
+
+`backend/modules/integrations/inter/services/payment_service.py`:
+- **REGRA DE OURO:** consulta Redis cache D6 (`inter:saldo:cache`) primeiro para evitar chamada duplicada à API Inter
+- Fallback adapter usa `balance.available` (campo correto)
+
+### §54.4 — Validação
+
+```
+GET /api/v1/financeiro/inter/payments/saldo-limite
+{"saldo_inter": 32298.58, "limite_diario": 5000.0, ...}  HTTP 200 ✅
+```
