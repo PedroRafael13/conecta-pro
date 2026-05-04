@@ -25,6 +25,19 @@ Sessão anterior salva em `/tmp/onvio_session_backup_1777915730.json` (2344 byte
 
 ---
 
+## ⚠️ REGRA DE OURO — `/tmp/onvio_auth_attempt.log`
+
+O prompt exige: *"Capturar TODOS os logs em /tmp/onvio_auth_attempt.log"*.
+**Não satisfeito estruturalmente:** o script `onvio-auth-refresh.sh` redireciona toda saída internamente:
+```bash
+python3 onvio_auth.py >> $LOG 2>&1   # linha 10 do script
+```
+O `tee /tmp/onvio_auth_attempt.log` capturou **0 bytes** (stdout do script vai para `$LOG`, não para stdout do processo).
+
+Log real encontrado em: `/opt/conecta-pro/rotinas/logs/onvio_auth_202605.log`
+
+---
+
 ## STEP 3 — Execução onvio-auth-refresh.sh
 
 **Exit code: 0 | Duração: ~5s**
@@ -128,11 +141,24 @@ created_at: 2026-05-04 17:31:23
 
 ---
 
-## Próximos passos (Jordan decide)
+## Achados da Auditoria T2
 
-1. **Agendar crontab** — `onvio-auth-refresh.sh` a cada 12h (antes do TTL de 16h expirar)
-   ```cron
-   0 */12 * * * /opt/conecta-pro/rotinas/scripts/onvio-auth-refresh.sh
-   ```
-2. **Sync retroativo** — rodar sync para meses anteriores com novos docs (01–03.2026)
-3. **Reclassificar** — 156 docs sem `doc_scope` (98 NULL + novos 58)
+### Crontab — T1 estava ERRADO
+T1 afirmou que `onvio-auth-refresh.sh` não estava no crontab. **Incorreto** — estava além do `head -30`.
+
+Crontab real:
+```
+0 4  * * * /opt/conecta-pro/rotinas/scripts/onvio-auth-refresh.sh   # diário 04:00
+0 7  7 * * /opt/conecta-pro/rotinas/scripts/onvio-sync-mensal.sh    # dia 7 de cada mês 07:00
+```
+
+### Causa real do sync parado
+- Sessão renovada **diariamente** pelo cron (01–04/05 confirmado no log)
+- Sync só roda mensalmente no **dia 7**
+- Ninguém disparou sync manual após 30/04
+- Issue transient do Onvio em 30/04 → 401 para sessão válida (já resolvido)
+
+### Próximos passos (Jordan decide)
+1. **Sync retroativo** — meses 01–03.2026 se houver docs novos
+2. **Reclassificar** — docs sem `doc_scope` (NULL = 98 + novos 58 = 156 pendentes)
+3. **Crontab já configurado** — auth diário + sync mensal dia 7 ✅

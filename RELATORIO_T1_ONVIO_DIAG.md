@@ -5,13 +5,26 @@
 
 ---
 
-## CAUSA RAIZ (TL;DR)
+## CAUSA RAIZ — CORRIGIDA PELA AUDITORIA T2
 
-> **Sessão Onvio no Redis existe mas está inválida no servidor.**
-> `onvio:session` tem TTL ativo (~4.8h restantes), mas Onvio retorna
-> `403 SessionNotFoundException` e `401 Unauthorized` ao usá-la.
-> O refresh da sessão (`onvio_auth.py`) **não está agendado no crontab**
-> e depende de execução manual.
+> **Sessão Onvio no Redis existia mas estava inválida no servidor (transient 401 em 30/04).**
+> O refresh de sessão (`onvio_auth.py`) **JÁ estava agendado no crontab às 04:00 diário** —
+> T1 perdeu esta linha por causa de `head -30` na listagem do crontab.
+> O sync mensal roda via cron no **dia 7 às 07:00**.
+> A causa real: Onvio retornou 401 para sessão válida em 30/04 (issue transient server-side).
+> Ninguém disparou sync manual após 30/04. Resolvido pelo T2 em 04/05.
+
+### ⚠️ Correção T1 — Erro de diagnóstico
+
+T1 afirmou: *"onvio-auth-refresh.sh não está no crontab"* — **INCORRETO**.
+
+Crontab real (linhas além do `head -30` usado em T1):
+```
+# GEDEON Fase 3 — Onvio Sync
+0 4  * * * /opt/conecta-pro/rotinas/scripts/onvio-auth-refresh.sh   # Renovar sessão 04:00 diário
+0 7  7 * * /opt/conecta-pro/rotinas/scripts/onvio-sync-mensal.sh    # Sync mensal dia 7 07:00
+```
+Evidência: log `rotinas/logs/onvio_auth_202605.log` mostra renovações às 04:00 em 01, 02, 03 e 04/05.
 
 ---
 
@@ -111,7 +124,14 @@ https://onvio.com.br/api/storage/v1/containers/documents
 
 ## 7. Crontab — entradas onvio
 
-**Resultado:** nenhuma entrada com "onvio" no crontab.
+**Resultado T1 (incorreto — perdido por `head -30`):** nenhuma entrada encontrada.
+
+**Resultado real (corrigido pela auditoria T2):**
+```
+0 4  * * * /opt/conecta-pro/rotinas/scripts/onvio-auth-refresh.sh   # diário 04:00
+0 7  7 * * /opt/conecta-pro/rotinas/scripts/onvio-sync-mensal.sh    # dia 7 de cada mês 07:00
+```
+O sync mensal próximo seria 2026-05-07 07:00 (já antecipado pelo T2 em 2026-05-04).
 
 ---
 
@@ -164,24 +184,25 @@ O `long_token` e cookies foram invalidados pelo Onvio (logout forçado, expiraç
 
 ---
 
-## DIAGNÓSTICO FINAL
+## DIAGNÓSTICO FINAL — REVISADO
 
-### Causa raiz
-O `long_token` Onvio expirou no servidor (Thomson Reuters/Onvio invalida sessões após ~16h ou ao detectar IP diferente). O script `onvio_auth.py` precisa rodar para obter um novo token via OIDC completo com MFA.
+### Causa raiz real
+Onvio retornou `401` para sessão válida em 2026-04-30 14:45–47 (issue transient server-side).
+O cron de renovação **já existia e funcionava** (04:00 diário).
+Ninguém disparou sync manual após 30/04. O próximo sync agendado seria 07/05.
 
-### Por que não renovava automaticamente
-`onvio-auth-refresh.sh` **não está no crontab**. Depende de execução manual.
-
-### Cronologia
-1. 2026-04-18: primeiros 401 intermitentes (sessão começando a ter problemas)
+### Cronologia corrigida
+1. 2026-04-18: primeiros 401 intermitentes (Onvio rejeitava sessões de vez em quando)
 2. 2026-04-28 04:46: última sync bem-sucedida
-3. 2026-04-28 19:20: sessão expirou definitivamente
-4. 2026-04-30 03:14: TTL Redis expirou (16h sem renovação)
-5. 2026-04-30 14:44: renovação manual tentada — nova sessão também 401 (Onvio rejeitou)
-6. 2026-05-04 15:12: sessão Redis existe, TTL ~4.8h, mas **403/401 no servidor**
+3. 2026-04-28 19:20: 401 novamente — sessão ou expirou ou Onvio rejeitou
+4. 2026-04-30 03:14: sync manual tentado antes da renovação das 04:00 → "sessão não encontrada"
+5. 2026-04-30 04:00: **cron renovou sessão** (`[2026-04-30 04:00:14] ✅ Sessão renovada`)
+6. 2026-04-30 14:44–47: tentativas manuais de sync → **401 mesmo com sessão fresca**
+7. 2026-05-01 a 04: cron renovou sessão diariamente às 04:00 ✅
+8. 2026-05-04 17:31: **T2 disparou sync manual → success, 58 novos docs, 0 erros**
 
-### O que o fix precisa fazer
-1. Rodar `python3 /opt/conecta-pro/onvio_auth.py` para obter novo token válido (MFA via IMAP)
-2. Adicionar `onvio-auth-refresh.sh` no crontab (renovação automática a cada 12h)
-3. Verificar se MFA IMAP ainda funciona (`ONVIO_IMAP_PASSWORD`)
-4. Validar sessão após obtenção
+### O que estava faltando (real)
+Apenas um disparo manual do sync. O cron de auth estava funcionando.
+
+### Status após T2
+Resolvido. Próxima renovação de sessão: cron 05/05 às 04:00. Próximo sync mensal: 07/05 às 07:00.
