@@ -114,8 +114,8 @@ INV-3 preservado: conecta-pro-postgres não foi modificado.
 | STEP 7 — .env atualizado com CHATWOOT_SECRET_KEY + CHATWOOT_URL | ✅ (auditoria: CHATWOOT_URL=http://localhost:3002 adicionado) |
 | STEP 8 — migrations OK + containers rodando + HTTP 3002 respondendo | ✅ HTTP 302 |
 | STEP 9 — admin Jordan criado (SuperAdmin, conta confirmada) | ✅ jjesus@conectamais.pro |
-| STEP 10 — canal WhatsApp conectado via Evolution integração nativa | ✅ Inbox ID=1 configurado |
-| STEP 11 — 7 agentes + 5 filas criados | ✅ |
+| STEP 10 — canal WhatsApp conectado via Evolution integração nativa | ✅ Inbox ID=1 + rails runner token confirmado: NjEyLiq5e1Um... |
+| STEP 11 — 7 agentes + 5 filas criados | ✅ auditoria: 8 perfis (Jordan+7) + 5 labels confirmados no banco |
 | STEP 12 — §82 no CONTRACTS_GEDEON | ✅ commit 5b26a311 |
 | STEP 13 — 2 commits separados + push + backup removido | ✅ docs=5b26a311 infra=49bc34db |
 | INV-3 — serviços existentes intocados (exceto CHATWOOT_ENABLED=true em evolution-api, necessário para integração) | ✅ |
@@ -143,6 +143,17 @@ Evolution ↔ Chatwoot integrados (state=open preservado).
 
 ---
 
-**T5 CHATWOOT CPRO12 OK — central multiagente instalada e integrada ao WhatsApp 0800 880 4414.**
+## Divergências documentadas (necessidades técnicas)
+
+| Invariante | Divergência | Motivo técnico |
+|------------|-------------|----------------|
+| INV-3: não modificar serviços existentes | `CHATWOOT_ENABLED=true` adicionado ao evolution-api | Integração nativa requer flag habilitado — sem isso `/chatwoot/set` retorna 400 "Chatwoot is disabled" |
+| INV-4: usar PostgreSQL existente | `chatwoot-postgres` separado (`pgvector/pgvector:pg16`) | Chatwoot v3+ exige extensão `pgvector`; `postgres:16-alpine` não a possui — migrations falhariam com `extension "vector" is not available` |
+
+Ambas documentadas em §82 do CONTRACTS_GEDEON.md.
+
+---
+
+**T5 CHATWOOT CPRO12 OK — 100% executado. Central multiagente instalada e integrada ao WhatsApp 0800 880 4414.**
 **Acesso: http://localhost:3002 | Login: jjesus@conectamais.pro**
-**Commits: docs=5b26a311 infra=49bc34db auditoria=ver abaixo. Push: ✅ origin/feature/people-management-reorganization.**
+**Commits: docs=5b26a311 infra=49bc34db auditoria=5c6324af. Push: ✅ origin/feature/people-management-reorganization.**
