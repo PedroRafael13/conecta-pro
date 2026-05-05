@@ -270,6 +270,7 @@ class EventTypes:
     GED_KIT_MONTADO = "ged.kit.montado"
     GED_KIT_ENVIADO = "ged.kit.enviado"
     GED_KIT_CONFIRMADO = "ged.kit.confirmado"
+    GED_KIT_DOCUMENTO_VINCULADO = "ged.kit.documento_vinculado"  # HERMES — §94
     GED_CERTIDAO_VENCIDA = "ged.certidao.vencida"
     GED_CERTIDAO_VENCENDO = "ged.certidao.vencendo"
     GED_CERTIDAO_RENOVADA = "ged.certidao.renovada"

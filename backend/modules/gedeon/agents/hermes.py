@@ -602,6 +602,11 @@ class Hermes:
             erros,
             kits_atualizados,
         )
+
+        # Publicar evento GED_KIT_DOCUMENTO_VINCULADO (CAMADA 1 — FLUXO)
+        if vinculados > 0:
+            self._publicar_evento_vinculados(mes_ref, vinculados)
+
         return {
             "mes_ref": mes_ref,
             "vinculados": vinculados,
@@ -609,6 +614,24 @@ class Hermes:
             "erros": erros,
             "kits_atualizados": kits_atualizados,
         }
+
+    def _publicar_evento_vinculados(self, mes_ref: str, vinculados: int) -> None:
+        """Publica GED_KIT_DOCUMENTO_VINCULADO no barramento após linking bem-sucedido."""
+        import asyncio
+
+        try:
+            from infrastructure.event_bus.bus import EventTypes, event_bus
+
+            asyncio.run(
+                event_bus.emit(
+                    event_type=EventTypes.GED_KIT_DOCUMENTO_VINCULADO,
+                    payload={"mes_ref": mes_ref, "vinculados": vinculados},
+                    source_module="hermes",
+                )
+            )
+            logger.info("HERMES: evento GED_KIT_DOCUMENTO_VINCULADO publicado (%d docs)", vinculados)
+        except Exception as exc:
+            logger.warning("HERMES: evento não publicado (bus desconectado?): %s", exc)
 
 
 # Singleton global
