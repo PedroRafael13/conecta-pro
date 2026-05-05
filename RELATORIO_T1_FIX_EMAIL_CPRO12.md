@@ -99,11 +99,11 @@ if resultado.get("sucesso"):
 | H1: ged_clients.contact_email populado para kits | ✅ CONFIRMADO | Query auditoria: 5 kits com email — dfcfb2af→gelain@, c3b20b43→gelain@, af4f1cdf→parisevillage@, a5fa41d8→greenhills@, c4053743→villadei@ |
 | H2: query correta usa ged_clients | ✅ CONFIRMADO | grep auditoria: `GedClient` + `contact_email` em kit_controller linhas 107,129,303,321,326,331,341,349,352,357 |
 | H3: ponto claro no gdrive_controller para UPDATE | ✅ CONFIRMADO | grep auditoria: `# G2: Atualizar sent_at` linha 256 gdrive_controller; `enviar_kit_por_email` linha 250 |
-| H4: JOIN kit_controller funcional (não quebrado) | ✅ CONFIRMADO | token expirado = falso positivo; HTTP 201 com token válido |
-| H5: EmailKitService aceita share_link como parâmetro | ✅ CONFIRMADO | `def enviar_kit_por_email(self, ..., share_link: str | None = None, ...)` linha 172 |
-| H6: email real via ged_clients | ✅ CONFIRMADO | michelangelo@conectamais.pro, gelain@conectamais.pro |
+| H4: JOIN kit_controller funcional (não quebrado) | ✅ CONFIRMADO | sed auditoria: busca direta `select(GedDocumentKit).where(GedDocumentKit.id == kit_id)` + INV-5 + G4 delegação visíveis no bloco |
+| H5: EmailKitService aceita share_link como parâmetro | ✅ CONFIRMADO | grep auditoria: linha 174 `def enviar_kit_por_email`, linha 178 `share_link: str | None = None` |
+| H6: email real via ged_clients | ✅ CONFIRMADO | SELECT auditoria: idealflores@, PRIME.ARENAA@, villapassaros@ via JOIN ged_document_kits |
 | H7: completion_percentage tipo numeric | ✅ CONFIRMADO | information_schema: `completion_percentage | numeric` + `sent_at | timestamp with time zone` + `sent_method | character varying` + `sent_to | character varying` |
-| H8: py_compile OK | ✅ CONFIRMADO | 3/3 arquivos — email_kit_service.py, gdrive_controller.py, kit_controller.py |
+| H8: py_compile OK | ✅ CONFIRMADO | re-validado na auditoria: 3/3 OK — email_kit_service.py, gdrive_controller.py, kit_controller.py |
 
 ---
 
@@ -172,6 +172,36 @@ linha 256: # G2: Atualizar sent_at após envio bem-sucedido
 ```
 G2 confirmado — sent_at atualizado após envio.
 
+### H4 — sed send_kit_email pós-fix (comando exato do prompt):
+```
+@router.post("/{kit_id}/send-email", status_code=201)
+async def send_kit_email(...):
+    # G3: buscar kit diretamente em ged_document_kits
+    kit_result = await db.execute(select(GedDocumentKit).where(GedDocumentKit.id == kit_id))
+    # INV-5: envio bloqueado se completion_percentage < 100
+    pct = float(kit.completion_percentage or 0)
+    if pct < 100:
+        raise HTTPException(status_code=400, ...)
+    # G4: delegação para EmailKitService
+```
+G3 (busca direta) + G4 (delegação) + INV-5 (HTTP 400) todos confirmados em um bloco coeso.
+
+### H5 — grep share_link em email_kit_service.py:
+```
+linha 174: def enviar_kit_por_email(
+linha 178:     share_link: str | None = None,
+linha 217: usar_link = total_size > TAMANHO_MAX_ANEXO or share_link is not None
+```
+EmailKitService aceita share_link como parâmetro opcional — confirmado.
+
+### H6 — SELECT contact_email via JOIN ged_document_kits:
+```
+idealflores@conectamais.pro
+PRIME.ARENAA@GMAIL.COM
+villapassaros@conectamais.pro
+```
+email real chega do ged_clients.contact_email pós-fix G1 — confirmado.
+
 ### H7 — information_schema.columns para ged_document_kits:
 ```
 completion_percentage | numeric
@@ -181,6 +211,14 @@ sent_method           | character varying
 sent_to               | character varying
 ```
 Tipos confirmados — `float()` necessário para numeric, colunas G2 existem no schema.
+
+### H8 — py_compile pós-fix (re-validado na auditoria):
+```
+OK: backend/modules/gdrive/services/email_kit_service.py
+OK: backend/modules/gdrive/controllers/gdrive_controller.py
+OK: backend/modules/people_management/ged/controllers/kit_controller.py
+```
+3/3 arquivos sem erros de sintaxe.
 
 ---
 
