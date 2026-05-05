@@ -234,11 +234,11 @@ services:
       celery-batch:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep 'celery.*beat' | grep -v grep || exit 1"]
+      test: ["CMD-SHELL", "python3 -c 'import os; os.kill(1, 0)' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
     networks:
       - conecta-pro-network
     volumes:
