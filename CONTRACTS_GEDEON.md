@@ -4447,3 +4447,14 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
   py_compile: OK
 **Hot-copy:** priority + sefaz (containers que exibiam warning)
 **Princípio:** §13.1 ambos lidos inteiros; §13.4 adição mínima em F3; warning→debug em F4.
+
+## §74 — Fix F5 Opção A: celery-beat healthcheck ps→python3 os.kill (CPRO 12 T2-F5-A)
+**Data:** 2026-05-05
+**Autorização:** Jordan Jesus explicitamente autorizou edição do docker-compose.celery.yml
+**Problema:** healthcheck usava `ps aux | grep 'celery.*beat'` — `ps` ausente na imagem slim. FailingStreak 297+.
+**Fix:** test: ["CMD-SHELL", "python3 -c 'import os; os.kill(1, 0)' || exit 1"]
+  start_period: 30s → 60s (beat precisa de mais tempo para iniciar)
+**Arquivo:** docker-compose.celery.yml (serviço celery-beat, bloco healthcheck)
+**Método:** str_replace cirúrgico + docker compose up --no-deps -d celery-beat
+**Impacto:** beat passa de unhealthy→healthy; monitoramento correto; downtime ~20s
+**Princípio:** §13.1 docker-compose.celery.yml lido inteiro; INV-3 apenas healthcheck do beat.
