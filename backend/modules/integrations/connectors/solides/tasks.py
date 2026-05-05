@@ -8,11 +8,87 @@ Tasks agendadas para sincronização automática e health checks.
 import asyncio
 import logging
 import os
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from celery import shared_task
 
 logger = logging.getLogger(__name__)
+
+
+# ==================== SYNC LOG HELPERS ====================
+
+
+def _log_sync_start(db_url: str, condominio_id: str | None, sync_type: str, triggered_by: str) -> str | None:
+    """Insere linha na solides_sync_log com status=running e retorna o log_id."""
+    if not db_url:
+        return None
+    try:
+        from sqlalchemy import create_engine
+        from sqlalchemy import text as sa_text
+
+        log_id = str(uuid4())
+        # Resolve condominio_id: usa o informado ou busca da config
+        cid = condominio_id
+        if not cid:
+            engine = create_engine(db_url)
+            with engine.connect() as conn:
+                row = conn.execute(sa_text("SELECT condominio_id FROM solides_integration_config LIMIT 1")).first()
+                if row:
+                    cid = str(row[0])
+                else:
+                    cid = "615bbcf6-f473-48aa-a304-43eaea9bfaf7"
+        else:
+            engine = create_engine(db_url)
+
+        with engine.connect() as conn:
+            conn.execute(
+                sa_text(
+                    "INSERT INTO solides_sync_log "
+                    "(id, condominio_id, entity_type, sync_type, direction, status, "
+                    " started_at, triggered_by, ativo, created_at) "
+                    "VALUES (:id, :cid, 'all', :stype, 'solides_to_conecta', 'running', "
+                    " :ts, :tby, true, :ts)"
+                ),
+                {"id": log_id, "cid": cid, "stype": sync_type, "ts": datetime.utcnow(), "tby": triggered_by},
+            )
+            conn.commit()
+        return log_id
+    except Exception as exc:
+        logger.warning("[Solides] Não foi possível criar sync_log: %s", exc)
+        return None
+
+
+def _log_sync_end(db_url: str, log_id: str | None, success: bool, duration_ms: int, items: int, created: int) -> None:
+    """Atualiza linha na solides_sync_log com resultado final."""
+    if not db_url or not log_id:
+        return
+    try:
+        from sqlalchemy import create_engine
+        from sqlalchemy import text as sa_text
+
+        final_status = "completed" if success else "failed"
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            conn.execute(
+                sa_text(
+                    "UPDATE solides_sync_log SET "
+                    "  status = :st, completed_at = :ts, duration_ms = :dur, "
+                    "  items_processed = :proc, items_created = :creat "
+                    "WHERE id = :id"
+                ),
+                {
+                    "st": final_status,
+                    "ts": datetime.utcnow(),
+                    "dur": duration_ms,
+                    "proc": items,
+                    "creat": created,
+                    "id": log_id,
+                },
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.warning("[Solides] Não foi possível atualizar sync_log %s: %s", log_id, exc)
 
 
 def get_event_loop():
@@ -234,6 +310,9 @@ def sync_solides_full(
         triggered_by: Quem disparou (user, scheduler, webhook)
     """
     logger.info("[Solides Task] Iniciando full sync")
+    db_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "")
+    started_at = datetime.utcnow()
+    log_id = _log_sync_start(db_url, condominio_id, "full", triggered_by)
 
     async def _sync():
         from modules.integrations.connectors.solides.connector import SolidesConnector
@@ -293,9 +372,18 @@ def sync_solides_full(
             await connector.teardown()
 
     try:
-        return run_async(_sync())
+        ret = run_async(_sync())
+        duration_ms = int((datetime.utcnow() - started_at).total_seconds() * 1000)
+        total = ret.get("total", 0) if isinstance(ret, dict) else 0
+        created = ret.get("propagation", {}).get("propagated", 0) if isinstance(ret, dict) else 0
+        _log_sync_end(
+            db_url, log_id, ret.get("success", False) if isinstance(ret, dict) else False, duration_ms, total, created
+        )
+        return ret
     except Exception as e:
         logger.error(f"[Solides Task] Erro no full sync: {e}")
+        duration_ms = int((datetime.utcnow() - started_at).total_seconds() * 1000)
+        _log_sync_end(db_url, log_id, False, duration_ms, 0, 0)
         raise self.retry(exc=e)
 
 
@@ -312,6 +400,9 @@ def sync_solides_incremental(self, condominio_id: str = None, entity_types: list
     Task para sincronização incremental com Sólides.
     """
     logger.debug("[Solides Task] Iniciando incremental sync")
+    db_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "")
+    started_at = datetime.utcnow()
+    log_id = _log_sync_start(db_url, condominio_id, "incremental", "scheduler")
 
     async def _sync():
         from modules.integrations.connectors.solides.connector import SolidesConnector
@@ -350,9 +441,23 @@ def sync_solides_incremental(self, condominio_id: str = None, entity_types: list
             await connector.teardown()
 
     try:
-        return run_async(_sync())
+        ret = run_async(_sync())
+        duration_ms = int((datetime.utcnow() - started_at).total_seconds() * 1000)
+        processed = ret.get("processed", 0) if isinstance(ret, dict) else 0
+        created = ret.get("propagation", {}).get("propagated", 0) if isinstance(ret, dict) else 0
+        _log_sync_end(
+            db_url,
+            log_id,
+            ret.get("success", False) if isinstance(ret, dict) else False,
+            duration_ms,
+            processed,
+            created,
+        )
+        return ret
     except Exception as e:
         logger.error(f"[Solides Task] Erro no incremental sync: {e}")
+        duration_ms = int((datetime.utcnow() - started_at).total_seconds() * 1000)
+        _log_sync_end(db_url, log_id, False, duration_ms, 0, 0)
         raise self.retry(exc=e)
 
 

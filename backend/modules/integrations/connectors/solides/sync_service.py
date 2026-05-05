@@ -226,13 +226,13 @@ class SolidesSyncService:
             duration = int((datetime.utcnow() - start_time).total_seconds())
             sync_log.status = SyncStatus.COMPLETED if total_stats.errors == 0 else SyncStatus.PARTIAL
             sync_log.completed_at = datetime.utcnow()
-            sync_log.duration_seconds = duration
-            sync_log.total_processed = total_stats.total_processed
-            sync_log.created_count = total_stats.created
-            sync_log.updated_count = total_stats.updated
-            sync_log.conflict_count = total_stats.conflicts
-            sync_log.error_count = total_stats.errors
-            sync_log.errors = total_stats.error_details
+            sync_log.duration_ms = duration * 1000
+            sync_log.items_processed = total_stats.total_processed
+            sync_log.items_created = total_stats.created
+            sync_log.items_updated = total_stats.updated
+            sync_log.conflicts_detected = total_stats.conflicts
+            sync_log.items_failed = total_stats.errors
+            sync_log.error_details = total_stats.error_details if total_stats.error_details else None
             self.db.commit()
 
             logger.info(
