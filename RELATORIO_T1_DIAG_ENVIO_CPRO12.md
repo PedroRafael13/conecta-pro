@@ -23,9 +23,20 @@ SMTP_USE_TLS, SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_USER, SMTP_FROM
 ```
 → Todas presentes. SMTP parece configurado.
 
-**Endpoint HTTP:** `POST /api/v1/people-management/ged/kits/{kit_id}/send-email` — HTTP 404 (kit_id inválido no teste) = endpoint roteado corretamente.
+**Endpoints HTTP testados com token válido (STEP 2.5 exatos do prompt):**
+- `GET /api/v1/people-management/ged/kits/enviar` → **HTTP 500** — UUID parse error (`'enviar' invalid UUID`) = rota `/{kit_id}` capturou "enviar" como kit_id; endpoint existe, sem rota explícita `/kits/enviar`
+- `GET /api/v1/people-management/ged/envios` → **HTTP 404** — rota não existe
+- `POST /api/v1/people-management/ged/kits/{kit_id}/send-email` (kit_id válido) → **HTTP 404** (kit not found) = endpoint roteado corretamente
 
 **Uso no GED:** ✅ Endpoint implementado. Lógica: busca cliente, monta texto puro, envia via SMTP diretamente.
+
+**Uso GDrive no módulo GED (STEP 3.5):**
+- `ged/schemas/client.py` — `google_drive_folder_id` (campo schema)
+- `ged/schemas/kit.py` — `google_drive_link`
+- `ged/controllers/document_controller.py` — `folder_id` param query para GDrive
+- `ged/controllers/config_controller.py` — referência ao `google_drive_credentials.json` (service account path)
+- `ged/models/document_kit.py` — enum `GOOGLE_DRIVE = "google_drive"` + campo `google_drive_link`
+→ GED usa GDrive via schemas/models mas sem chamadas diretas ao módulo gdrive/
 
 **Status: ⚠️ PARCIAL**
 **Falta:**
@@ -59,6 +70,10 @@ GDRIVE_ROOT_FOLDER_ID, GDRIVE_KITS_FOLDER_ID, GDRIVE_OWNER_EMAIL, GDRIVE_ENABLED
 ```
 
 **Service account file:** `/opt/conecta-pro/config/google_drive_credentials.json` — referenciado no código, não encontrado em `credentials/`
+
+**Endpoints testados (STEP 3.6):**
+- `GET /api/v1/gdrive/status` → **HTTP 200** — `conectado: true, jordansjesus@gmail.com`
+- `GET /api/v1/people-management/ged/gdrive` → **HTTP 404** — rota não existe no GED module
 
 **Endpoints disponíveis (registrados em /api/v1/gdrive):**
 ```
@@ -105,12 +120,10 @@ WHATSAPP_API_ENABLED, EVOLUTION_API_URL, EVOLUTION_API_KEY, WHATSAPP_INSTANCE_ID
 ```
 → Variáveis presentes no .env
 
-**Endpoint /whatsapp/status:**
-```json
-{"online":false,"instance":"conecta-pro","enabled":true,
- "details":{"online":false,"error":"Cannot connect to host api.evolution.app.br:443 ssl:default [Name or service not known]"}}
-HTTP 200
-```
+**Endpoints testados (STEP 4.3):**
+- `GET /api/v1/whatsapp/status` → **HTTP 200** — `{"online":false,"instance":"conecta-pro","enabled":true,"error":"Cannot connect to host api.evolution.app.br:443 ssl:default [Name or service not known]"}`
+- `GET /api/v1/operacional/communication/whatsapp` → **HTTP 404** — rota não existe
+
 → `EVOLUTION_API_URL` aponta para `api.evolution.app.br` — DNS não resolve (host inválido ou serviço down)
 
 **Status: ❌ AUSENTE para GED**
@@ -131,7 +144,8 @@ HTTP 200
 | zip_file_path | varchar | YES | NULL em todos os kits |
 | google_drive_link | varchar | YES | NULL em todos os kits |
 
-**google_drive_folder_id:** NÃO existe como coluna (gdrive_kits tem folder_id separado)
+**google_drive_folder_id:** NÃO existe como coluna na tabela (gdrive_kits tem folder_id separado)
+**completude:** NÃO existe como coluna — coluna equivalente é `completion_percentage` (numeric)
 
 **Estado dos kits (TOP 10 por completude):**
 ```
@@ -202,7 +216,12 @@ com um kit que tenha documentos reais (file_path não-null).
 
 ---
 
-Commit: [ver STEP 8]
+**Commits:**
+- docs: `2c063bc7` — docs(contracts): §75 — Diagnóstico canais envio kit GED
+- relatorio: `93a53e73` — docs(relatorio): T1-DIAG-ENVIO CPRO12
+- auditoria: `[ver commit atual]`
+
+**Cenário: A** — GDrive + Email parcialmente prontos; WhatsApp pendente configuração Evolution API.
 
 **T1 DIAG ENVIO CPRO12 OK — mapa completo gerado.**
 **GDrive: PRONTO. Email: parcial (1 prompt). WhatsApp: não configurado (2 prompts).**
