@@ -35,12 +35,31 @@ CONTAINER=$(docker ps --format "{{.Names}}" | grep "$CONTAINER_NAME" | head -1)
 [[ -z "$CONTAINER" ]] && die "Container $CONTAINER_NAME não encontrado. Verifique: docker ps"
 log "Container: $CONTAINER"
 
-# ── STEP 1: Capturar BUILD_ID atual do host
+# ── STEP 1: Verificar BUILD_ID — abortar se idêntico (build não mudou)
 HOST_BUILD_ID=$(cat "$FRONTEND_DIR/.next/BUILD_ID" 2>/dev/null || echo "NONE")
 CONTAINER_BUILD_ID=$(docker exec "$CONTAINER" cat /app/.next/BUILD_ID 2>/dev/null || echo "NONE")
 log "BUILD_ID host=$HOST_BUILD_ID  container=$CONTAINER_BUILD_ID"
 
-# ── STEP 2: Salvar chunks antigos do container para arquivo local (INV-2: nunca deletar)
+if [[ "$HOST_BUILD_ID" == "$CONTAINER_BUILD_ID" && "$HOST_BUILD_ID" != "NONE" ]]; then
+    log "⚠️  BUILD_ID idêntico — build não mudou. Abortando (nada a fazer)."
+    exit 0
+fi
+
+# ── STEP 2: Verificar symlinks no build (§15.3 — usar standalone/ se symlinks detectados)
+SYMLINKS_STATIC=$(find "$FRONTEND_DIR/.next/static" -type l 2>/dev/null | wc -l)
+SYMLINKS_SERVER=$(find "$FRONTEND_DIR/.next/server" -type l 2>/dev/null | wc -l)
+log "Symlinks: static/$SYMLINKS_STATIC  server/$SYMLINKS_SERVER"
+
+if [[ "$SYMLINKS_STATIC" -gt 0 || "$SYMLINKS_SERVER" -gt 0 ]]; then
+    log "⚠️  Symlinks detectados — usando standalone/ em vez de .next/ direto"
+    STATIC_SRC="$FRONTEND_DIR/.next/standalone/.next/static"
+    SERVER_SRC="$FRONTEND_DIR/.next/standalone/.next/server"
+else
+    STATIC_SRC="$FRONTEND_DIR/.next/static"
+    SERVER_SRC="$FRONTEND_DIR/.next/server"
+fi
+
+# ── STEP 3: Salvar chunks antigos do container para arquivo local (INV-2: nunca deletar)
 ARCHIVE_PATH="$BACKUP_DIR/$TIMESTAMP"
 log "Arquivando chunks antigos do container → $ARCHIVE_PATH"
 run "mkdir -p $ARCHIVE_PATH"
@@ -48,43 +67,47 @@ run "docker cp $CONTAINER:/app/.next/static/chunks/. $ARCHIVE_PATH/"
 ARCHIVED=$(ls "$ARCHIVE_PATH" 2>/dev/null | wc -l || echo "?")
 log "Chunks arquivados: $ARCHIVED"
 
-# ── STEP 3: Build Next.js no host (serializado — nunca simultâneo)
+# ── STEP 4: Build Next.js no host (serializado — nunca simultâneo)
 log "Iniciando build Next.js..."
 run "cd $FRONTEND_DIR && NODE_OPTIONS=--max-old-space-size=4096 npm run build"
 NEW_BUILD_ID=$(cat "$FRONTEND_DIR/.next/BUILD_ID" 2>/dev/null || echo "NONE")
 log "Novo BUILD_ID: $NEW_BUILD_ID"
 
-# ── STEP 4: Sincronizar novo build → container
+# ── STEP 5: Sincronizar novo build → container
 log "Sincronizando novo build → $CONTAINER"
-run "docker cp $FRONTEND_DIR/.next/static/.     $CONTAINER:/app/.next/static/"
-run "docker cp $FRONTEND_DIR/.next/standalone/. $CONTAINER:/app/.next/standalone/"
-run "docker cp $FRONTEND_DIR/.next/server/.     $CONTAINER:/app/.next/server/"
+run "docker cp $STATIC_SRC/.  $CONTAINER:/app/.next/static/"
+run "docker cp $SERVER_SRC/.  $CONTAINER:/app/.next/server/"
+run "docker cp $FRONTEND_DIR/.next/standalone/. $CONTAINER:/app/.next/standalone/" 2>/dev/null || true
 run "docker cp $FRONTEND_DIR/.next/BUILD_ID     $CONTAINER:/app/.next/BUILD_ID"
+run "docker cp $FRONTEND_DIR/.next/routes-manifest.json $CONTAINER:/app/.next/" 2>/dev/null || true
 
-# ── STEP 5: Reinjetar chunks antigos no container (preservação anti-ChunkLoadError)
+# ── STEP 6: Reinjetar chunks antigos no container (preservação anti-ChunkLoadError)
 log "Reinjetando chunks antigos → container (preservação)"
-if [[ -d "$ARCHIVE_PATH" && "$(ls -A $ARCHIVE_PATH)" ]]; then
+if [[ -d "$ARCHIVE_PATH" && "$(ls -A "$ARCHIVE_PATH")" ]]; then
     run "docker cp $ARCHIVE_PATH/. $CONTAINER:/app/.next/static/chunks/"
     log "Chunks antigos preservados no container ✅"
 else
     log "Nenhum chunk antigo para reinjetar (primeiro deploy?)"
 fi
 
-# ── STEP 6: Reiniciar container + pm2
+# ── STEP 7: Reiniciar container + pm2
 log "Reiniciando container..."
 run "docker restart $CONTAINER"
 log "Aguardando container ficar healthy..."
-for i in $(seq 1 30); do
-    STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER" 2>/dev/null || echo "none")
-    [[ "$STATUS" == "healthy" || "$STATUS" == "none" ]] && break
-    [[ $i -eq 30 ]] && die "Container não ficou healthy após 30s"
-    sleep 1
-done
+if ! $DRY_RUN; then
+    sleep 15
+    for i in $(seq 1 30); do
+        STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER" 2>/dev/null || echo "none")
+        [[ "$STATUS" == "healthy" || "$STATUS" == "none" ]] && break
+        [[ $i -eq 30 ]] && die "Container não ficou healthy após 45s"
+        sleep 1
+    done
+fi
 run "pm2 restart all" || true
 
-# ── STEP 7: Validação
+# ── STEP 8: Validação
 log "Validando..."
-sleep 3
+if ! $DRY_RUN; then sleep 3; fi
 HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/ 2>/dev/null || echo "000")
 CONTAINER_BUILD_ID_NEW=$(docker exec "$CONTAINER" cat /app/.next/BUILD_ID 2>/dev/null || echo "ERR")
 CONTAINER_CHUNKS=$(docker exec "$CONTAINER" find /app/.next/static/chunks -name "*.js" | wc -l 2>/dev/null || echo "?")
