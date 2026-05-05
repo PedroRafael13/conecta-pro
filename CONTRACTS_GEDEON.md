@@ -5013,6 +5013,20 @@ A proteção está na camada de dados (`users.permissions`) e pode ser expandida
 **Endpoint:** `GET /api/v1/gedeon/colaborador/{nome}/pagamentos?mes_ref=MM.YYYY`
 **Validação produção:** 48 funcionários DP com match | GRACIENE PEREIRA DE CASTRO → 7 txs R$510,07 (03.2026)
 
+## §101 — InterCategorizacaoService: categorização de transações Inter para o kit documental (CPRO12 T-CATEGORIAS)
+**Data:** 2026-05-05
+**Decisão Jordan:** categorizar transações Inter por tipo para o GEDEON saber o que vai pro kit (salário, VT, VA) vs o que não vai (diárias, outros)
+**Categorias kit:** salario → comp_salario_individual | vale_transporte → comp_vt_individual | vale_alimentacao → comp_va_solides | vt_va_combinado → comp_vt_va_combinado
+**Heurísticas:** histórico 3 meses (conf. 0.9) > valor (conf. 0.5-0.7: VT R$8-12, VA R$20-25, VT+VA R$28-40, salário ≥R$800) > fallback 'outros' (conf. 0.2)
+**INV-5:** incluir_no_kit calculado automaticamente da categoria — nunca setado manualmente
+**INV-6:** categorização manual (sugerido_por_ia=false) sempre sobrescreve sugestão de IA
+**INV-7:** idempotente — ON CONFLICT DO UPDATE (nunca duplica)
+**Arquivo:** modules/integrations/inter/services/categorizacao_service.py
+**Migration:** sprint88_inter_cat (tabela inter_transaction_categorias — 12 colunas)
+**Endpoints:** POST /transacoes/{id}/categorizar | GET /colaborador/{nome}/categorias | POST /colaborador/{nome}/auto-categorizar | GET /categorias/stats
+**Integração HERMES:** _vincular_funcionario() chama auto_categorizar_colaborador() + resumo_kit_colaborador() para tipos TIPOS_INTER
+**Validação produção:** GRACIENE PEREIRA DE CASTRO 03.2026 → 7 txs auto-categorizadas | categorização manual vale_transporte → HTTP 200 | stats 04.2026 → sem_categoria=522
+
 ## §100 — Fix modal KitDetalheModal fundo transparente + diagnóstico ponto Sólides
 **Data:** 2026-05-05
 **Fix A:** KitDetalheModal — DialogContent recebeu `bg-white dark:bg-gray-900` (fundo opaco) — Cenário A
