@@ -4483,12 +4483,12 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
   - H1: ✅ EmailKitService = fonte do template #1E3A5F — commit 4ba5d0f5 (07/04/2026)
   - H2: ✅ Envio via endpoint HTTP (gdrive_controller), NÃO task Celery
   - H3: ✅ "0 documentos" — ged_kit_documents vazia antes de 08/04; 1230/1237 file_path NULL
-  - H4: ✅ Destinatário dinâmico — EmailKitService→clients.email; kit_controller→ged_clients.contact_email
+  - H4: ✅ ⚠️ CRÍTICO — clients.email é NULL para todos os kits; fonte correta é ged_clients.contact_email
   - H5: ✅ SMTP funcional — smtp.hostinger.com:465 SMTP_SSL; 7 vars presentes no container
   - H6: ✅ kit_controller retorna 404 — kit_id válido sem GedClient associado
   - H7: ✅ EmailKitService desconectado do kit_controller — dois caminhos separados
   - H8: ✅ Zero sent_at gravados — gdrive_controller não atualiza ged_document_kits após envio
-**5 gaps:** (1) kit_controller texto puro→HTML, (2) sent_at não gravado após envio, (3) STUB em export_service, (4) FK ged_clients ausente, (5) core/mailer.py não usado no GED
+**6 gaps:** (1) kit_controller texto puro→HTML, (2) sent_at não gravado após envio, (3) STUB em export_service, (4) FK ged_clients ausente, (5) core/mailer.py não usado no GED, (6) EmailKitService usa clients.email NULL em vez de ged_clients.contact_email
 **Princípio:** INV-2 READ-ONLY absoluto; §13.1 evidências reais; INV-8 zero side effects
 
 ## §77 — Diagnóstico profundo WhatsApp (CPRO 12 T2-DIAG-WHATSAPP)
