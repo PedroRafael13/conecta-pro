@@ -4757,11 +4757,16 @@ WHERE ea.ativo = true AND e.cpf = :cpf;
 
 | Método | Responsabilidade |
 |--------|-----------------|
-| `_build_cond_to_ged_map(db)` | Mapeia condominios.id → ged_clients.id via word-set intersection (espelho de kit_builder_service._match_onvio_docs) |
-| `_vincular_empresa(db, cond_to_ged, categoria, caminho_local, cond_id, ref_date)` | Vincula doc empresa/condomínio ao slot ged_kit_documents (INV-5: só slots vazios) |
-| `_vincular_funcionario(db, cond_to_ged, categoria, caminho_local, employee_id, ref_date)` | Vincula doc per-employee via employee_alocacoes → condominio → ged_client → kit → slot |
+| `resolver_colaborador(nome_arquivo, db)` | INV-4: resolve employee_id + condominio_id por nome ILIKE (fallback quando referente_a_employee_id IS NULL) |
+| `_extrair_nome_do_arquivo(nome_arquivo)` | Extrai nome do colaborador do filename via regex `_([^_]+)\.\w+$` |
+| `_update_doc_fks(doc_id, emp_id, cond_id, db)` | Grava referente_a_employee_id + condominio_id no onvio_documents (apenas se NULL) |
+| `vincular_doc_ao_kit(doc_id, ..., cond_to_ged, db)` | Vincula doc ao slot correto: chama resolver_colaborador quando FK ausente, depois _vincular_empresa ou _vincular_funcionario |
+| `_get_docs_sem_vinculo(mes_ref, db)` | Retorna onvio_documents do mês com caminho_local IS NOT NULL |
+| `_build_cond_to_ged_map(db)` | Mapeia condominios.id → ged_clients.id via word-set intersection |
+| `_vincular_empresa(db, cond_to_ged, ...)` | Vincula doc empresa/condomínio ao slot (INV-5: só slots vazios) |
+| `_vincular_funcionario(db, cond_to_ged, ...)` | Vincula doc per-employee via employee_alocacoes → condominio → kit → slot |
 | `_recalcular_completude_mes(db, ref_date)` | Recalcula completion_percentage de todos kits do mês (INV-12) |
-| `processar_mes(mes_ref)` | Orquestra o matching completo: get_sync_db → cond_to_ged → docs → vincular → commit → recalcular → commit |
+| `processar_mes(mes_ref)` | Orquestra: get_sync_db → cond_to_ged → _get_docs_sem_vinculo → vincular_doc_ao_kit → _recalcular_completude_mes |
 
 ### Novos mapas de conversão
 
@@ -4783,11 +4788,22 @@ MAPA_TIPOS_ONVIO_FUNCIONARIO = {
 ### Fluxo de matching
 
 ```
-onvio_documents (mes_ref, caminho_local IS NOT NULL)
-    ├── doc_scope=funcionario + referente_a_employee_id → employee_alocacoes → condominio_id
-    │       → cond_to_ged → ged_client_id → kit → slot (employee_id + document_type) → UPDATE file_path
-    └── condominio_id SET → cond_to_ged → ged_client_id → kit → slot (document_type, employee_id IS NULL) → UPDATE file_path
+processar_mes(mes_ref)
+  ├── _build_cond_to_ged_map() — condominios.id → ged_clients.id
+  ├── _get_docs_sem_vinculo() — onvio_documents WHERE mes_ref AND caminho_local IS NOT NULL
+  └── para cada doc → vincular_doc_ao_kit():
+        ├── scope=funcionario sem FK → resolver_colaborador() (ILIKE nome) → _update_doc_fks()
+        ├── scope=funcionario + employee_id → _vincular_funcionario()
+        │     employee_alocacoes → condominio → cond_to_ged → kit → slot (emp+tipo) → UPDATE file_path
+        └── condominio_id SET → _vincular_empresa()
+              cond_to_ged → kit → slot (tipo, emp IS NULL) → UPDATE file_path
 ```
+
+### Matching — INV-4 (CPF primário, nome fallback)
+
+`resolver_colaborador()` usa ILIKE no campo `employees.nome` (nome fallback).
+Para o CPF (primário): `referente_a_employee_id` já é preenchido pelo parser Onvio
+quando o CPF é encontrado no documento — HERMES usa esse FK diretamente.
 
 ### Celery task adicionada
 
@@ -4805,10 +4821,22 @@ def hermes_vincular_docs_mes(self, mes_ref: str | None = None):
 - `args`: `[None]` → mês corrente
 - `queue`: `gov.batch`
 
+### Verificação de completude (STEP 6 — retroativo 02/03/04.2026)
+
+```
+reference_month | kits | slots | preenchidos | pct
+2026-03-01      |    8 |   353 |           7 | 2.0
+2026-04-01      |   10 |   884 |           0 | 0.0
+```
+
+02.2026: sem kits criados (0 linhas). 03.2026 e 04.2026: 0 vinculados novos —
+slots empresa-level já preenchidos por kit_builder_service (INV-5 respeitado).
+
 ### Invariantes respeitados
 
 | INV | Regra | Implementação |
 |-----|-------|---------------|
+| INV-4 | CPF primário, nome fallback | FK `referente_a_employee_id` primário; `resolver_colaborador()` ILIKE como fallback |
 | INV-5 | Nunca sobrescrever file_path já preenchido | `WHERE file_path IS NULL OR file_path = ''` |
 | INV-12 | Recalcular completion_percentage após vincular | `_recalcular_completude_mes()` pós-commit |
 | INV-3 | Código existente não modificado | Apenas métodos novos adicionados à classe Hermes |

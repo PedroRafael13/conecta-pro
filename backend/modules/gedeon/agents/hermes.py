@@ -231,6 +231,120 @@ class Hermes:
 
     # ── Matching: onvio_documents → colaborador → condomínio → kit ──────────
 
+    def _extrair_nome_do_arquivo(self, nome_arquivo: str) -> str | None:
+        """Extrai nome do colaborador do nome_arquivo.
+
+        Exemplos:
+          'Ficha Registro de Empregado_Daniel Larroque.pdf' → 'Daniel Larroque'
+          'Atestado médico - Antônio Walcicley 17-03-2026.pdf' → None (sem padrão _)
+        """
+        match = re.search(r"_([^_]+)\.\w+$", nome_arquivo)
+        if match:
+            return match.group(1).strip()
+        return None
+
+    def resolver_colaborador(
+        self,
+        nome_arquivo: str,
+        db,
+    ) -> tuple[str | None, str | None]:
+        """Resolve employee_id + condominio_id para doc scope=funcionario sem FK.
+
+        INV-4: matching por nome (ILIKE) — fallback quando referente_a_employee_id IS NULL.
+        Retorna (employee_id, condominio_id) como strings UUID, ou (None, None).
+        """
+        from sqlalchemy import text
+
+        nome = self._extrair_nome_do_arquivo(nome_arquivo)
+        if not nome:
+            return None, None
+
+        row = db.execute(
+            text("""
+                SELECT e.id::text AS emp_id, c.id::text AS cond_id
+                FROM employee_alocacoes ea
+                JOIN employees e ON e.id = ea.employee_id
+                JOIN condominios c ON c.id = ea.condominio_id
+                WHERE ea.ativo = true
+                  AND LOWER(TRIM(e.nome)) ILIKE LOWER(TRIM(:nome))
+                LIMIT 1
+            """),
+            {"nome": f"%{nome}%"},
+        ).fetchone()
+        if row:
+            return row[0], row[1]
+        return None, None
+
+    def _update_doc_fks(
+        self,
+        doc_id: str,
+        emp_id: str,
+        cond_id: str,
+        db,
+    ) -> None:
+        """Grava referente_a_employee_id e condominio_id no onvio_documents (apenas se NULL)."""
+        from sqlalchemy import text
+
+        db.execute(
+            text("""
+                UPDATE onvio_documents
+                SET referente_a_employee_id = CAST(:emp_id AS uuid),
+                    condominio_id = CAST(:cond_id AS uuid)
+                WHERE id = CAST(:doc_id AS uuid)
+                  AND referente_a_employee_id IS NULL
+            """),
+            {"emp_id": emp_id, "cond_id": cond_id, "doc_id": doc_id},
+        )
+
+    def _get_docs_sem_vinculo(self, mes_ref: str, db) -> list:
+        """Retorna onvio_documents do mês com caminho_local preenchido."""
+        from sqlalchemy import text
+
+        return db.execute(
+            text("""
+                SELECT id::text, nome_arquivo, categoria, caminho_local,
+                       doc_scope, condominio_id::text,
+                       referente_a_employee_id::text
+                FROM onvio_documents
+                WHERE mes_ref = :mes_ref
+                  AND caminho_local IS NOT NULL
+            """),
+            {"mes_ref": mes_ref},
+        ).fetchall()
+
+    def vincular_doc_ao_kit(
+        self,
+        doc_id: str,
+        nome_arquivo: str,
+        categoria: str,
+        caminho_local: str,
+        doc_scope: str | None,
+        cond_id: str | None,
+        employee_id: str | None,
+        ref_date: str,
+        cond_to_ged: dict[str, str],
+        db,
+    ) -> bool:
+        """Vincula doc Onvio ao slot correto no kit GED.
+
+        Para scope=funcionario sem FK: resolve via resolver_colaborador() (INV-4).
+        INV-5: só preenche slots com file_path IS NULL.
+        """
+        # Resolver employee_id quando ausente (INV-4 — nome como fallback)
+        if doc_scope == "funcionario" and not employee_id:
+            resolved_emp, resolved_cond = self.resolver_colaborador(nome_arquivo, db)
+            if resolved_emp:
+                self._update_doc_fks(doc_id, resolved_emp, resolved_cond, db)
+                employee_id = resolved_emp
+                if not cond_id:
+                    cond_id = resolved_cond
+
+        if doc_scope == "funcionario" and employee_id:
+            return self._vincular_funcionario(db, cond_to_ged, categoria, caminho_local, employee_id, ref_date)
+        elif cond_id:
+            return self._vincular_empresa(db, cond_to_ged, categoria, caminho_local, cond_id, ref_date)
+        return False
+
     def _normalize(self, s: str) -> str:
         nfkd = unicodedata.normalize("NFKD", (s or "").upper())
         return "".join(c for c in nfkd if not unicodedata.combining(c))
@@ -436,8 +550,6 @@ class Hermes:
         """
         from datetime import date
 
-        from sqlalchemy import text
-
         from core.database.session import get_sync_db
 
         if mes_ref is None:
@@ -452,50 +564,27 @@ class Hermes:
 
         with get_sync_db() as db:
             cond_to_ged = self._build_cond_to_ged_map(db)
-
-            docs = db.execute(
-                text("""
-                    SELECT id::text, nome_arquivo, categoria, caminho_local,
-                           doc_scope, condominio_id::text,
-                           referente_a_employee_id::text
-                    FROM onvio_documents
-                    WHERE mes_ref = :mes_ref
-                      AND caminho_local IS NOT NULL
-                """),
-                {"mes_ref": mes_ref},
-            ).fetchall()
+            docs = self._get_docs_sem_vinculo(mes_ref, db)
 
             for doc in docs:
                 doc_id, nome_arquivo, categoria, caminho_local, doc_scope, cond_id, employee_id = doc
                 try:
-                    ok = False
-                    if doc_scope == "funcionario" and employee_id:
-                        ok = self._vincular_funcionario(
-                            db,
-                            cond_to_ged,
-                            categoria,
-                            caminho_local,
-                            employee_id,
-                            ref_date,
-                        )
-                    elif cond_id:
-                        ok = self._vincular_empresa(
-                            db,
-                            cond_to_ged,
-                            categoria,
-                            caminho_local,
-                            cond_id,
-                            ref_date,
-                        )
-                    else:
-                        ignorados += 1
-                        continue
-
+                    ok = self.vincular_doc_ao_kit(
+                        doc_id,
+                        nome_arquivo,
+                        categoria,
+                        caminho_local,
+                        doc_scope,
+                        cond_id,
+                        employee_id,
+                        ref_date,
+                        cond_to_ged,
+                        db,
+                    )
                     if ok:
                         vinculados += 1
                     else:
                         ignorados += 1
-
                 except Exception as exc:
                     logger.error("HERMES: erro doc %s (%s): %s", doc_id, nome_arquivo, exc)
                     erros += 1
