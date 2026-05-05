@@ -4827,3 +4827,36 @@ hermes.py OK | kronos_tasks.py OK | celery_app.py OK
 **Endpoint GEDEON:** `GET /api/v1/people-management/hr/employees/cpf/{cpf}` → 200 ✅ (INV-9: já existe, não criado)
 **Nota trailing slash:** `GET /api/v1/operacional/allocations/` (com /) retorna 200; sem / retorna 404 (comportamento FastAPI)
 **INV-7 (6/6):** /hr/employees/cpf ✅ | /hr/employees ✅ | /hr/employees/search ✅ | /hr/employees/{id} ✅ | /allocations/ ✅ | /allocations/employee/{id} ✅
+
+## §95 — Fix Onvio: Grupo A is_matriz + sync router + MAPA_TIPOS expandido (CPRO12 T5-ONVIO)
+**Data:** 2026-05-05
+
+### Problema 1 (Sub-task A) — Bug Grupo A no OnvioDocScopeClassifier
+- **Causa raiz:** Bloco `scope == "condominio"` não chamava `is_matriz()` antes de `match_condominio()`
+- **Efeito:** Docs Conecta Mais com categoria Grupo A (ex: `folha_pagamento`) recebiam `doc_scope="condominio"` em vez de `"empresa_matriz"`
+- **Fix:** Adicionado guard `if is_matriz(nome_arquivo): return empresa_matriz` antes de `match_condominio()`
+- **Arquivo:** `backend/modules/gedeon/services/onvio_doc_scope_classifier.py` (linhas 241-249)
+
+### Problema 2 (Sub-task B) — POST /onvio/sync retornava 404
+- **Causa raiz:** `modules.gedeon.onvio` inteiro estava AUSENTE do container — não era roteador não-registrado
+- **Fix:** Hot-copy de `gedeon/onvio/` completo para container; adicionado registro de `onvio_stats_router` em `main_production.py`
+- **Import fix:** `EnrichmentService` movido para import lazy dentro de `_run()` em `/extrair-valores` (pdfplumber ausente no container)
+- **Resultado:** `GET /onvio/status` → 200 ✅ | `POST /onvio/sync` → 500 com `401 Onvio` (token expirado — esperado) ✅
+
+### Problema 3 (Sub-task C) — 169 docs com doc_scope=NULL
+- **Causa raiz:** Scope classifier nunca foi executado nos docs importados
+- **Fix:** Executado `backfill_doc_scope_fase_3_5.py` — 605/605 docs classificados
+- **Resultado:** `doc_scope NULL após: 0` — INV-8 OK ✅
+- **Distribuição final:** empresa_matriz=370, condominio=124, funcionario=111, revisao_manual=251 (41,5%)
+
+### Problema 4 (Sub-task D) — MAPA_TIPOS_ONVIO cobria ~50% das categorias
+- **Fix:** `MAPA_TIPOS_ONVIO` expandido de 19 para 27 entradas; `_NOMES_DOCS_ONVIO` expandido com 8 nomes
+- **Categorias adicionadas:** recibo_folha, fgts_crf, contrato_trabalho, ficha_registro, aso, atestado, rescisao, aviso_previo
+- **Arquivo:** `backend/modules/people_management/ged/services/kit_builder_service.py`
+
+### py_compile — 3/3 OK
+```
+onvio_doc_scope_classifier.py OK | kit_builder_service.py OK | onvio_controller.py OK
+```
+
+**Princípio:** §13.1 estado verificado antes; INV-8 zero doc_scope NULL; INV-3 apenas fixes nas 4 sub-tasks identificadas; INV-9 is_matriz Grupo A não viola §23.11 (scope preservado — mas reclassificado para empresa_matriz quando CNPJ/nome detectado)
