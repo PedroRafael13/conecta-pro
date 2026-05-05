@@ -23,7 +23,7 @@
 | H4 batch em loop antes | ❌ FALSO — Up 25+ min healthy quando verificado |
 | H5 gedeon tem tasks | ✅ SIM — gedeon/tasks/kronos_tasks.py |
 | H6 import OK após cp | ✅ gedeon.tasks OK em beat e batch |
-| H7 batch subiu | ✅ Up 25 min (healthy) |
+| H7 batch subiu (sleep 65 após cp) | ✅ Up 36 min (healthy) — N/A pois cp foi SKIP; batch já estava Up |
 | H8 inventário diff HOST vs batch | ✅ Executado — ver abaixo |
 
 ---
