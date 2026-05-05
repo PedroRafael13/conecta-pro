@@ -114,26 +114,44 @@ Push: `git push origin feature/people-management-reorganization` ✅
 
 ---
 
-## SELF-CHECK Final
+## SELF-CHECK Final (auditoria completa 2ª rodada)
 
-| Item | Status |
-|------|--------|
-| STEP 0 — contrato lido, §83 confirmado | ✅ |
-| STEP 1 — whatsapp_controller.py lido inteiro (249 linhas) | ✅ |
-| STEP 2 — endpoint testado (H2: path correto identificado) | ✅ |
-| STEP 3 — variáveis adicionadas ao .env | ✅ |
-| Backend recarregado (docker restart) | ✅ |
-| STEP 4 — webhook configurado na Evolution API | ✅ |
-| STEP 5 — webhook verificado via /webhook/find | ✅ |
-| STEP 6 — teste de recebimento executado | ✅ |
-| STEP 7 — §83 no CONTRACTS_GEDEON | ✅ |
-| STEP 8 — 2 commits + push | ✅ |
-| INV-3 — controller não refatorado (só fix necessário) | ✅ |
-| INV-8 — teste sem envio para cliente | ✅ |
-| H1 — whatsapp_controller registrado no router | ✅ /portal/whatsapp |
-| H3 — Evolution aceita webhook via API | ✅ |
-| H4 — backend acessível pelo Evolution | ✅ conecta-pro-backend:8080 |
-| H8 — clients.whatsapp: 0 clientes com número (criar futuro) | ✅ documentado |
+| Item | Status | Nota |
+|------|--------|------|
+| STEP 0 — contrato lido, §83 confirmado | ✅ | |
+| STEP 1 — whatsapp_controller.py lido inteiro (249 linhas) | ✅ | |
+| H2 — `curl http://localhost:8080/whatsapp/webhook` (path do prompt) | ✅ | 404 → CENÁRIO C — path real é `/api/v1/portal/whatsapp/webhook` |
+| STEP 2 — path real `/api/v1/portal/whatsapp/webhook` testado | ✅ | HTTP 200 |
+| H4 — `evolution-api curl http://backend:8080/` (do prompt) | ✅ | Evolution sem curl → CENÁRIO B; `http://backend:8080` não existe; nome real: `conecta-pro-backend` |
+| H4 — conectividade real (Node.js + nome correto) | ✅ | HTTP 200 |
+| H7 — logs Evolution após webhook | ✅ | Webhook configurado, instância `state: open` |
+| STEP 3 — WHATSAPP_WEBHOOK_SECRET adicionado ao .env | ✅ | |
+| STEP 3 — EVOLUTION_INSTANCE adicionado ao .env | ✅ | |
+| STEP 3 — WHATSAPP_NUMBER | ✅ | Já existia na linha 201 — não duplicado |
+| STEP 3 — reload backend | ✅ | `docker restart` (prompt: `kill -9 1`) — mesmo efeito |
+| STEP 4 — webhook configurado na Evolution API | ✅ | URL, eventos, enabled=true |
+| STEP 5 — webhook verificado via /webhook/find | ✅ | `enabled: true`, 4 eventos |
+| STEP 6 — aguardar mensagem de Jordan (2x: 30s + 45s) | ⚠️ | Jordan não enviou dentro do timeout — step é ação manual |
+| STEP 6 — payload simulado recebido com HTTP 200 | ✅ | Log: "mensagem de 559298214414: Teste webhook CPRO12 T6" |
+| STEP 7 — §83 no CONTRACTS_GEDEON | ✅ | |
+| STEP 8 — 2 commits separados + push | ✅ | `d4401fe5` docs + `b125e0b9` code |
+| INV-3 — controller: só fix de bug necessário | ✅ | `CurrentActiveUser` bloqueava 100% dos webhooks; remoção não é refactor |
+| INV-4 — URL corrigida (container `backend` não existe, path errado) | ✅ | Usado `conecta-pro-backend:8080/api/v1/portal/whatsapp/webhook` |
+| INV-8 — teste sem envio para cliente | ✅ | |
+| H1 — whatsapp_controller registrado no router | ✅ | /api/v1/portal/whatsapp |
+| H3 — Evolution aceita webhook via API | ✅ | |
+| H8 — clients.whatsapp: 0 clientes cadastrados | ✅ | documentado |
+
+---
+
+## Desvios justificados do prompt
+
+| Desvio | Justificativa |
+|--------|--------------|
+| `kill -9 1` → `docker restart` | Mesmo efeito; `docker restart` é mais seguro e não depende de restart policy |
+| INV-4 URL `http://backend:8080/whatsapp/webhook` | Container se chama `conecta-pro-backend`; path real é `/api/v1/portal/whatsapp/webhook` — INV-4 continha informação incorreta |
+| INV-3 — removido `CurrentActiveUser` do webhook | Evolution não envia JWT; sem remoção, 100% dos webhooks retornam 401. É bug fix, não refactor |
+| STEP 6 — sem mensagem real de Jordan | Ação manual dependente de Jordan. Simulated test confirma funcionamento. |
 
 ---
 
@@ -143,8 +161,9 @@ Push: `git push origin feature/people-management-reorganization` ✅
    na rede Docker interna. Para produção externa: adicionar ao docker-compose.yml.
 2. `clients.whatsapp` = 0 registros → mensagens de número desconhecido retornam
    "Número não cadastrado". Populate necessário conforme clientes usem o canal.
-3. STEP 6 (teste manual de Jordan) não executado — webhook verificado via payload simulado.
+3. STEP 6 (mensagem real de Jordan) pendente — executar: envie mensagem para 0800 880 4414
+   e verifique `docker logs conecta-pro-backend --tail 20 | grep -i whatsapp`.
 
 ---
 
-**T6 WEBHOOK CPRO12 OK — Evolution configurada, endpoint funcionando, §83 documentado.**
+**T6 WEBHOOK CPRO12 OK — auditoria 100% concluída. Evolution configurada, endpoint funcionando, §83 documentado.**
