@@ -31,14 +31,14 @@ def verificar_asos_vencendo(dias_antecedencia: int = 30) -> str:
     """
     from sqlalchemy import text
 
-    from core.database import get_sync_session
+    from core.database.session import get_sync_db
 
     hoje = date.today()
     limite_atencao = hoje + timedelta(days=dias_antecedencia)
     limite_critico = hoje + timedelta(days=7)  # noqa: F841
 
     try:
-        with get_sync_session() as db:
+        with get_sync_db() as db:
             # ASOs vencendo (consulta direta para evitar dependência circular)
             result = db.execute(
                 text(
@@ -161,13 +161,13 @@ def verificar_epis_vencendo(dias_antecedencia: int = 30) -> str:
     """
     from sqlalchemy import text
 
-    from core.database import get_sync_session
+    from core.database.session import get_sync_db
 
     hoje = date.today()
     limite_atencao = hoje + timedelta(days=dias_antecedencia)
 
     try:
-        with get_sync_session() as db:
+        with get_sync_db() as db:
             result = db.execute(
                 text(
                     """
@@ -243,13 +243,13 @@ def verificar_exames_pendentes(dias_sem_exame: int = 365) -> str:
     """
     from sqlalchemy import text
 
-    from core.database import get_sync_session
+    from core.database.session import get_sync_db
 
     hoje = date.today()
     limite = hoje - timedelta(days=dias_sem_exame)
 
     try:
-        with get_sync_session() as db:
+        with get_sync_db() as db:
             result = db.execute(
                 text(
                     """

@@ -25,9 +25,9 @@ SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 def _get_db_session():
     """Obtém sessão síncrona do banco."""
-    from core.database import get_sync_session
+    from core.database.session import get_sync_db
 
-    return get_sync_session()
+    return get_sync_db()
 
 
 def _schedule_exam_sync(
