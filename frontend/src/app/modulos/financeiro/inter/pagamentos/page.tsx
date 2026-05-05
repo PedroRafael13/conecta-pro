@@ -468,7 +468,43 @@ function AprovacaoPagamento({ payment, onAction }: { payment: Payment; onAction:
 
 // ── página principal ──────────────────────────────────────────────────────────
 
-type Tab = "novo" | "preparados" | "aprovados" | "historico" | "audit";
+type Tab = "novo" | "preparados" | "aprovados" | "historico" | "categorizacao" | "audit";
+
+const CATEGORIAS_VALIDAS = [
+  "salario", "vale_transporte", "vale_alimentacao", "vt_va_combinado",
+  "diaria_avulsa", "adiantamento", "reembolso", "fgts", "inss", "outros",
+] as const;
+type Categoria = typeof CATEGORIAS_VALIDAS[number];
+
+const CATEGORIA_LABEL: Record<Categoria, string> = {
+  salario: "Salário", vale_transporte: "Vale Transporte", vale_alimentacao: "Vale Alimentação",
+  vt_va_combinado: "VT+VA", diaria_avulsa: "Diária", adiantamento: "Adiantamento",
+  reembolso: "Reembolso", fgts: "FGTS", inss: "INSS", outros: "Outros",
+};
+
+const CATEGORIAS_KIT: Set<Categoria> = new Set(["salario", "vale_transporte", "vale_alimentacao", "vt_va_combinado"]);
+
+interface CatTx {
+  id: string;
+  data: string;
+  valor: number;
+  beneficiario: string | null;
+  descricao: string | null;
+  categoria: Categoria | null;
+  document_type: string | null;
+  incluir_no_kit: boolean | null;
+  sugerido_por_ia: boolean | null;
+  confianca_sugestao: number | null;
+}
+
+interface StatsCategoria {
+  categoria: string;
+  incluir_no_kit: boolean;
+  qtd: number;
+  total_valor: number;
+}
+
+const API_CAT = "/api/v1/financeiro/inter";
 
 export default function PagamentosPage() {
   const [tab, setTab] = useState<Tab>("preparados");
@@ -479,6 +515,15 @@ export default function PagamentosPage() {
   const [auditLog, setAuditLog] = useState<unknown[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState("");
+  const [catNome, setCatNome] = useState("");
+  const [catMes, setCatMes] = useState(() => {
+    const d = new Date();
+    return `${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  });
+  const [catTxs, setCatTxs] = useState<CatTx[]>([]);
+  const [catStats, setCatStats] = useState<StatsCategoria[]>([]);
+  const [catLoading, setCatLoading] = useState(false);
+  const [catError, setCatError] = useState("");
   const [isJordan, setIsJordan] = useState(false);
 
   useEffect(() => {
@@ -528,6 +573,61 @@ export default function PagamentosPage() {
     }
   }, []);
 
+  const fetchCatStats = useCallback(async () => {
+    setCatLoading(true);
+    setCatError("");
+    try {
+      const data = await apiFetch(`${API_CAT}/categorias/stats?mes_ref=${catMes}`);
+      setCatStats(data.por_categoria || []);
+    } catch (e: unknown) {
+      setCatError(e instanceof Error ? e.message : "Erro ao carregar stats");
+    } finally {
+      setCatLoading(false);
+    }
+  }, [catMes]);
+
+  const fetchCatTxs = useCallback(async () => {
+    if (!catNome.trim()) return;
+    setCatLoading(true);
+    setCatError("");
+    try {
+      const nome = encodeURIComponent(catNome.trim());
+      const data = await apiFetch(`${API_CAT}/colaborador/${nome}/categorias?mes_ref=${catMes}`);
+      setCatTxs(Array.isArray(data) ? data : []);
+    } catch (e: unknown) {
+      setCatError(e instanceof Error ? e.message : "Erro ao carregar transações");
+    } finally {
+      setCatLoading(false);
+    }
+  }, [catNome, catMes]);
+
+  const handleAutoCat = async () => {
+    if (!catNome.trim()) return;
+    setCatLoading(true);
+    setCatError("");
+    try {
+      const nome = encodeURIComponent(catNome.trim());
+      await apiFetch(`${API_CAT}/colaborador/${nome}/auto-categorizar?mes_ref=${catMes}`, { method: "POST" });
+      await fetchCatTxs();
+    } catch (e: unknown) {
+      setCatError(e instanceof Error ? e.message : "Erro na auto-categorização");
+    } finally {
+      setCatLoading(false);
+    }
+  };
+
+  const handleCategorizar = async (transactionId: string, categoria: Categoria) => {
+    try {
+      await apiFetch(`${API_CAT}/transacoes/${transactionId}/categorizar`, {
+        method: "POST",
+        body: JSON.stringify({ categoria }),
+      });
+      await fetchCatTxs();
+    } catch (e: unknown) {
+      setCatError(e instanceof Error ? e.message : "Erro ao categorizar");
+    }
+  };
+
   useEffect(() => {
     fetchSaldo();
     const interval = setInterval(fetchSaldo, 60_000);
@@ -535,15 +635,17 @@ export default function PagamentosPage() {
     else if (tab === "aprovados") fetchPayments("aprovado");
     else if (tab === "historico") fetchPayments();
     else if (tab === "audit") fetchAudit();
+    else if (tab === "categorizacao") { fetchCatStats(); setCatTxs([]); }
     else if (tab === "novo") setPayments([]);
     return () => clearInterval(interval);
-  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);
+  }, [tab, fetchPayments, fetchSaldo, fetchAudit, fetchCatStats]);
 
   const TABS: { key: Tab; label: ReactNode; red?: boolean }[] = [
     { key: "novo", label: "Novo Pagamento" },
     { key: "preparados", label: "Aguardando Aprovação" },
     { key: "aprovados", label: "Aguardando Execução" },
     { key: "historico", label: "Histórico" },
+    { key: "categorizacao", label: "Categorização" },
     ...(isJordan
       ? [{ key: "audit" as Tab, label: <span className="flex items-center gap-1"><Lock className="w-3 h-3" />Audit Log</span>, red: true }]
       : []),
@@ -692,6 +794,156 @@ export default function PagamentosPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "categorizacao" && (
+          <div className="space-y-4">
+            {/* Filtros */}
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-wrap gap-3 items-end">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Colaborador</label>
+                <input
+                  className="border rounded-lg px-3 py-2 text-sm w-56"
+                  placeholder="Nome do colaborador"
+                  value={catNome}
+                  onChange={(e) => setCatNome(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Mês (MM.AAAA)</label>
+                <input
+                  className="border rounded-lg px-3 py-2 text-sm w-32"
+                  placeholder="04.2026"
+                  value={catMes}
+                  onChange={(e) => setCatMes(e.target.value)}
+                />
+              </div>
+              <button
+                onClick={fetchCatTxs}
+                disabled={catLoading || !catNome.trim()}
+                className="bg-[#0A2540] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#1a3a5c] disabled:opacity-50"
+              >
+                Buscar
+              </button>
+              <button
+                onClick={handleAutoCat}
+                disabled={catLoading || !catNome.trim()}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+              >
+                Auto-Categorizar
+              </button>
+              <button
+                onClick={fetchCatStats}
+                disabled={catLoading}
+                className="border border-gray-300 px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Stats do Mês
+              </button>
+            </div>
+
+            {catError && (
+              <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">
+                {catError}
+              </div>
+            )}
+
+            {/* Stats do mês */}
+            {catStats.length > 0 && catTxs.length === 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                <div className="px-4 py-3 border-b">
+                  <h3 className="font-semibold text-[#0A2540] text-sm">Estatísticas — {catMes}</h3>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Categoria</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Kit?</th>
+                      <th className="px-4 py-3 text-right text-gray-600 font-medium">Qtd</th>
+                      <th className="px-4 py-3 text-right text-gray-600 font-medium">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {catStats.map((s, i) => (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-[#0A2540]">
+                          {CATEGORIA_LABEL[s.categoria as Categoria] || s.categoria}
+                        </td>
+                        <td className="px-4 py-3">
+                          {s.incluir_no_kit
+                            ? <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">Kit</span>
+                            : <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">Fora</span>}
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-600">{s.qtd}</td>
+                        <td className="px-4 py-3 text-right font-medium text-[#0A2540]">{fmt(s.total_valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Transações do colaborador */}
+            {catTxs.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                <div className="px-4 py-3 border-b flex justify-between items-center">
+                  <h3 className="font-semibold text-[#0A2540] text-sm">{catNome} — {catMes}</h3>
+                  <span className="text-xs text-gray-500">{catTxs.length} transações</span>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Data</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Beneficiário</th>
+                      <th className="px-4 py-3 text-right text-gray-600 font-medium">Valor</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Categoria</th>
+                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Badges</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {catTxs.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{tx.data || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-700 max-w-xs truncate">
+                          {tx.beneficiario || tx.descricao || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium text-[#0A2540] whitespace-nowrap">{fmt(tx.valor)}</td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={tx.categoria || ""}
+                            onChange={(e) => {
+                              if (e.target.value) void handleCategorizar(tx.id, e.target.value as Categoria);
+                            }}
+                            className="border rounded px-2 py-1 text-xs text-gray-700"
+                          >
+                            <option value="">— sem categoria —</option>
+                            {CATEGORIAS_VALIDAS.map((c) => (
+                              <option key={c} value={c}>{CATEGORIA_LABEL[c]}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1 flex-wrap">
+                            {tx.sugerido_por_ia && (
+                              <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">IA{tx.confianca_sugestao !== null ? ` ${Math.round((tx.confianca_sugestao ?? 0) * 100)}%` : ""}</span>
+                            )}
+                            {tx.incluir_no_kit
+                              ? <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">Kit</span>
+                              : tx.categoria && <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-full">Fora</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {catLoading && (
+              <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm border border-gray-100">
+                Carregando...
               </div>
             )}
           </div>

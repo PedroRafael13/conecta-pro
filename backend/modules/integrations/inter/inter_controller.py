@@ -8,9 +8,11 @@ from decimal import Decimal
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from core.auth.dependencies import get_current_user
 from core.database import get_db
+from core.database.session import get_sync_db_dependency
 
 logger = logging.getLogger(__name__)
 
@@ -502,3 +504,77 @@ async def consultar_pix(
         raise HTTPException(status_code=404, detail=f"PIX {e2e_id} não encontrado")
     finally:
         await adapter.close()
+
+
+# ── T-CATEGORIAS — Categorização de transações Inter ─────────────────────────
+
+
+class CategorizarBody(BaseModel):
+    categoria: str
+    observacao: str | None = None
+
+
+@router.post("/transacoes/{transaction_id}/categorizar")
+def categorizar_transacao(
+    transaction_id: str,
+    body: CategorizarBody,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_sync_db_dependency),
+):
+    """Categoriza manualmente uma transação Inter (INV-6: sempre sobrescreve IA)."""
+    from modules.integrations.inter.services.categorizacao_service import InterCategorizacaoService
+
+    svc = InterCategorizacaoService(db)
+    try:
+        result = svc.categorizar(
+            transaction_id=transaction_id,
+            categoria=body.categoria,
+            observacao=body.observacao,
+            user_id=str(current_user.id),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return result
+
+
+@router.get("/colaborador/{nome}/categorias")
+def listar_categorias_colaborador(
+    nome: str,
+    mes_ref: str = Query(..., description="Mês de referência — formato MM.YYYY"),
+    apenas_kit: bool = Query(False),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_sync_db_dependency),
+):
+    """Lista transações de um colaborador no mês com categorização."""
+    from modules.integrations.inter.services.categorizacao_service import InterCategorizacaoService
+
+    svc = InterCategorizacaoService(db)
+    return svc.listar_por_colaborador(nome, mes_ref, apenas_kit=apenas_kit)
+
+
+@router.post("/colaborador/{nome}/auto-categorizar")
+def auto_categorizar_colaborador(
+    nome: str,
+    mes_ref: str = Query(..., description="Mês de referência — formato MM.YYYY"),
+    apenas_sem_categoria: bool = Query(True),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_sync_db_dependency),
+):
+    """Auto-categoriza transações de um colaborador no mês por heurísticas + histórico."""
+    from modules.integrations.inter.services.categorizacao_service import InterCategorizacaoService
+
+    svc = InterCategorizacaoService(db)
+    return svc.auto_categorizar_colaborador(nome, mes_ref, apenas_sem_categoria)
+
+
+@router.get("/categorias/stats")
+def stats_categorias(
+    mes_ref: str = Query(..., description="Mês de referência — formato MM.YYYY"),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_sync_db_dependency),
+):
+    """Estatísticas de categorização do mês."""
+    from modules.integrations.inter.services.categorizacao_service import InterCategorizacaoService
+
+    svc = InterCategorizacaoService(db)
+    return svc.stats_mes(mes_ref)

@@ -455,7 +455,7 @@ class Hermes:
         """Vincular doc per-employee ao slot correspondente no kit."""
         from sqlalchemy import text
 
-        # Para categorias Inter: buscar transações e logar (INV-10, INV-11)
+        # Para categorias Inter: auto-categorizar + resumo kit (T-CATEGORIAS)
         if categoria in TIPOS_INTER and employee_id:
             try:
                 emp_row = db.execute(
@@ -464,16 +464,22 @@ class Hermes:
                 ).fetchone()
                 if emp_row:
                     mes_fmt = ref_date[5:7] + "." + ref_date[:4]  # "2026-03-01" → "03.2026"
-                    resultado = self.buscar_pagamentos_inter(emp_row[0], mes_fmt, db)
+                    from modules.integrations.inter.services.categorizacao_service import (
+                        InterCategorizacaoService,
+                    )
+
+                    cat_svc = InterCategorizacaoService(db)
+                    cat_svc.auto_categorizar_colaborador(emp_row[0], mes_fmt)
+                    resumo = cat_svc.resumo_kit_colaborador(emp_row[0], mes_fmt)
                     logger.info(
-                        "HERMES Inter: %s (%s) → %d txs R$%.2f",
+                        "HERMES Inter categorias: %s (%s) → kit R$%.2f (%d docs)",
                         emp_row[0],
                         mes_fmt,
-                        resultado["total_transacoes"],
-                        resultado["total_valor"],
+                        resumo["total_pago_kit"],
+                        len(resumo["por_tipo_documento"]),
                     )
             except Exception as exc:
-                logger.debug("HERMES Inter lookup falhou: %s", exc)
+                logger.debug("HERMES Inter categorias falhou: %s", exc)
 
         kit_doc_type = MAPA_TIPOS_ONVIO_FUNCIONARIO.get(categoria)
         if not kit_doc_type:
