@@ -9,111 +9,65 @@
 
 | H | Descrição | Resultado |
 |---|-----------|---------|
-| H1 | Docs Onvio de Março/2026 no banco | ✅ 43 docs mes_ref='03.2026' no banco; Prime Arena tem 2 (folha_pagamento + recibo_folha) |
-| H2 | Prime Arena tem client_id mapeado | ✅ ged_clients.id=52958919-... / condominios.id=21929c3d-... |
+| H1 | Docs Onvio de Março/2026 no banco | ✅ 43 docs mes_ref='03.2026'; Prime Arena: 2 (folha_pagamento + recibo_folha) |
+| H2 | Prime Arena tem client_id mapeado | ✅ ged_clients.id=52958919 / condominios.id=21929c3d |
 | H3 | Endpoint /onvio/sync existe e responde | ❌ HTTP 404 — router não registrado em main_production.py |
-| H4 | Endpoint auto-build existe | ✅ `POST /api/v1/ged/auto-assemble` → HTTP 201 |
-| H5 | Após sync, novos docs de Março aparecem | ✅ Sync já rodou em 2026-05-04 (12 docs para 03.2026) |
-| H6 | Após auto-build, kit Prime Arena tem docs | ❌ 0 docs file_path — mes_ref='04.2026' ausente para Prime Arena |
-| H7 | Endpoint auto-build existe | ✅ `POST /api/v1/ged/auto-assemble` + `POST /api/v1/ged/kits/montar` |
-| H8 | Kit Prime Arena 04/2026 já existe | ✅ id=a5d04bc6-..., 133 slots, completion=3.76% (stale) |
+| H4 | Endpoint auto-build existe | ✅ POST /api/v1/ged/auto-assemble → HTTP 201 |
+| H5 | Após sync, novos docs de Março aparecem | N/A — sync retornou 404; last sync foi 2026-05-04 (12 docs 03.2026) |
+| H6 | Após auto-build, kit Prime Arena tem docs | ❌ 0 file_paths — mes_ref='04.2026' ausente para Prime Arena no Onvio |
+| H7 | Endpoint /ged/kits/auto-build existe | ❌ HTTP 405 — URL casa com /kits/{kit_id} sem handler POST |
+| H8 | Kit Prime Arena 04/2026 já existe | ✅ id=a5d04bc6, 133 slots GED / 94 esperados GEDEON |
 
 ---
 
-## Estado Pré-Sync (READ-ONLY)
+## Estado pré-sync
 
-### Documentos Onvio no banco (total: 605)
+Docs Onvio no banco: 605
 
-| mes_ref | total |
-|---------|-------|
-| 03.2026 | 43 |
-| 02.2026 | 29 |
-| 01.2026 | 27 |
-| 04.2026 | 10 |
-| 12.2025 | 29 |
-| 11.2025 | 27 |
-| 10.2025 | 21 |
-| NULL | 165 |
-| 2026 (sem MM) | 20 |
-| 2025 (sem MM) | 155 |
+Categorias presentes:
 
-**Atenção:** 489/605 docs (81%) têm `condominio_id = NULL` — não associados a nenhum condomínio.
+| categoria | total | min_mes | max_mes |
+|-----------|-------|---------|---------|
+| outros | 160 | 02.2026 | 2025 |
+| folha_pagamento | 69 | 01.2026 | 12.2025 |
+| recibo_folha | 68 | 01.2026 | 12.2025 |
+| documento_digitalizado | 26 | 02.2026 | 04.2026 |
+| das_simples_nacional | 21 | 11.2025 | 2026 |
+| guia_issqn | 20 | 2025 | 2026 |
+| parcelamento_simples | 20 | 2025 | 2026 |
+| contrato_trabalho | 16 | — | — |
+| ficha_registro | 13 | — | — |
+| fgts_relatorio | 12 | 01.2026 | 12.2025 |
+| dctfweb_declaracao | 12 | 01.2026 | 2025 |
+| (+ 14 outras categorias) | 118 | | |
 
-### Docs Onvio do Prime Arena (condominios.id = 21929c3d)
+Prime Arena 04/2026 slots: 94 (GEDEON esperado) / 133 (ged_kit_documents real)
 
-| categoria | mes_ref | total |
-|-----------|---------|-------|
-| folha_pagamento | 03.2026 | 1 ✅ |
-| recibo_folha | 03.2026 | 1 ✅ |
-| folha_pagamento | 02.2026 | 1 |
-| recibo_folha | 02.2026 | 1 |
-| folha_pagamento | 01.2026 | 1 |
-| recibo_folha | 01.2026 | 1 |
-| folha_pagamento | 12.2025 | 1 |
-| recibo_folha | 12.2025 | 1 |
-| (outros meses 07-11/2025) | ... | 10 |
-| **TOTAL** | | **18** |
+Docs preenchidos antes: 0
 
-**Prime Arena tem ZERO docs com mes_ref='04.2026'.**
-
-### Kit Prime Arena 04/2026 (pré-operações)
-
-- `ged_document_kits.id`: a5d04bc6-ca53-4978-b32b-41873df8b4be
-- `completion_percentage`: 3.76% (valor stale — calculado anteriormente)
-- `status`: em_montagem
-- Slots em `ged_kit_documents`: 133 total, 0 com file_path
+Completude antes: 0.0% (GEDEON) / 3.76% estale (ged_document_kits)
 
 ---
 
-## Sync Onvio (STEP 3 — ANTES/DEPOIS)
+## Sync Onvio
 
-**Docs Onvio antes do sync:** 605
-**Endpoint disparado:** `POST /api/v1/onvio/sync` → HTTP 404 `{"detail":"Not Found"}`
-**Sleep 30s executado:** sim
-**Docs Onvio depois do sync:** 605
-**Novos docs:** 0
+HTTP status: 404 `{"detail":"Not Found"}`
 
-### Status do endpoint
-- `POST /api/v1/onvio/sync` → **HTTP 404**
-- `POST /api/v1/gedeon/onvio/sync` → **HTTP 404**
+Docs novos adicionados: 0
 
-### Causa raiz do 404
-O `main_production.py` tenta importar `modules.gedeon.onvio.controllers.onvio_controller`
-(caminho inexistente). O endpoint real está em `modules.gedeon.controllers.onvio_controller`
-(linha 84: `@router.post("/sync")`), mas esse controller **não está registrado** em
-`main_production.py`.
+Resposta: endpoint `POST /api/v1/onvio/sync` não está registrado em main_production.py. O controller `modules.gedeon.controllers.onvio_controller` tem o endpoint na linha 84 mas não é importado no app. A última sync real foi em 2026-05-04 via cron interno (03.2026: 12 docs, 04.2026: 58 docs). Contagem ANTES=605, sleep 30s, DEPOIS=605.
 
-### Última sync registrada (onvio_sync_log)
-| mes_ref | status | docs_baixados | docs_novos | data |
-|---------|--------|---------------|------------|------|
-| 04.2026 | success | 58 | 58 | 2026-05-04 17:31 |
-| 03.2026 | success | 12 | 12 | 2026-05-04 18:46 |
-| 02.2026 | success | 1 | 1 | 2026-05-04 18:45 |
-| 01.2026 | success | 0 | 0 | 2026-05-04 18:42 |
-| all | error | 0 | 0 | 2026-05-05 02:42 |
-
-**INV-4 aplicado: endpoint inacessível documentado, não corrigido.**
+**INV-4 aplicado:** erro documentado, não corrigido.
 
 ---
 
-## Endpoints Auto-Build Mapeados (STEP 4)
+## Auto-build 04/2026
 
-| Endpoint | Método | HTTP | Resultado |
-|----------|--------|------|-----------|
-| `/api/v1/ged/auto-assemble` | POST | 201 | ✅ Endpoint válido — 880 docs, 8 kits |
-| `/api/v1/ged/kits/montar` | POST | 201 | ✅ Endpoint válido — 3 kits criados |
-| `/api/v1/ged/kits/auto-build` | POST | **405** | ❌ Method Not Allowed — URL casa com `/kits/{kit_id}` (sem handler POST direto) |
-| `/api/v1/gedeon/kits/lote?mes_ref=04.2026` | GET | 200 | ✅ 11 kits, completude via Onvio |
+Endpoint usado: `POST /api/v1/ged/auto-assemble?reference_month=2026-04-01`
 
-**Endpoint escolhido para STEP 5:** `POST /api/v1/ged/auto-assemble?reference_month=2026-04-01`
+HTTP status: 201
 
----
-
-## Auto-Build para Abril/2026 (STEP 5)
-
-### Operações disparadas
-
-**Operação 1:** `POST /api/v1/ged/auto-assemble?reference_month=2026-04-01`
+Resposta:
 ```json
 {
   "reference_month": "2026-04-01",
@@ -124,39 +78,18 @@ O `main_production.py` tenta importar `modules.gedeon.onvio.controllers.onvio_co
   "errors": []
 }
 ```
-HTTP 201 ✅
 
-**Operação 2:** `POST /api/v1/ged/kits/montar` com `{"mes_ref": "04.2026"}`
-```json
-{
-  "kits_criados": 3,
-  "detalhes": [
-    {"client": "Conecta Mais - Seguranca e Tecnologia"},
-    {"client": "CONDOMINIO RESIDENCIAL PARISE VILLAGE"},
-    {"client": "CONDOMINIO RESIDENCIAL GREEN HILLS"}
-  ]
-}
-```
-HTTP 201 ✅
-
-**Sleep 20s executado** (aguardar processamento pós-build) ✅
+Sleep 20s executado após o build. Operação 2 complementar: `POST /api/v1/ged/kits/montar` com `{"mes_ref":"04.2026"}` → HTTP 201, 3 kits novos (Conecta Matriz, Parise Village, Green Hills).
 
 ---
 
-## Estado Pós-Auto-Build (STEP 6)
+## Estado pós-build
 
-### Prime Arena 04/2026 — GEDEON Completude
+Docs preenchidos depois: 0/94
 
-| Métrica | Valor |
-|---------|-------|
-| total_esperado | 94 |
-| total_presente_confirmado | **0** |
-| total_presente_pendente_revisao | 0 |
-| total_faltante | 30 (tipos distintos) |
-| pct_completude_confirmada | **0.0%** |
-| pct_completude_total | 0.0% |
+Completude depois: 0.0%
 
-### Prime Arena 04/2026 — GED Kit Documents (STEP 6 — query ✅/❌)
+Docs por tipo:
 
 | document_type | total | preenchidos | status |
 |---------------|-------|-------------|--------|
@@ -200,10 +133,7 @@ HTTP 201 ✅
 | relatorio_pedido_va | 1 | 0 | ❌ |
 | **TOTAL** | **133** | **0** | |
 
-### Prime Arena 04/2026 — Via API (STEP 6)
-
-`GET /api/v1/ged/kits?client_id=52958919-...&month=4&year=2026&limit=1` → HTTP 200:
-
+Confirmação via API `GET /api/v1/ged/kits?client_id=52958919&month=4&year=2026`:
 ```json
 {
   "total": 1,
@@ -221,96 +151,44 @@ HTTP 201 ✅
 }
 ```
 
-> **Nota:** `documents_signed=5` e `completion_percentage=4` são valores stale na coluna
-> `ged_document_kits` — não refletem o estado atual. A query direta em `ged_kit_documents`
-> confirma 0 docs com `file_path`. O Prime Arena tem 6 funcionários alocados.
+---
 
-### Resumo GED Kit Documents
+## Docs faltantes (categorias sem arquivo)
 
-| Campo | Valor |
-|-------|-------|
-| Slots totais | 133 |
-| Com file_path | **0** |
-| Sem file_path | 133 |
-| completion_percentage (stale) | 4% |
-| documents_signed (stale) | 5 |
+Classificação por causa raiz:
+
+**nao_encontrado_onvio (14 tipos)** — Onvio não tem mes_ref='04.2026' para Prime Arena:
+folha_pagamento, contracheque, folhas_ponto, folha_ponto, escala_mes, gfd_fgts_mensal,
+relatorio_gfd_fgts, gfd_fgts_rescisao, relatorio_gfd_rescisao, dctfweb_declaracao,
+dctfweb_recibo, dctfweb_extrato, aso, contrato_trabalho, ficha_empregado, rescisao_contrato
+
+**aguarda_fase_2_banco (9 tipos)** — integração bancária (FASE 2 GEDEON não implementada):
+boleto, nfse, comp_pag_fgts, crf_fgts, comp_fgts_rescisao, comp_rescisao,
+comp_salario_individual, comp_vt_individual, comprovante_va, comprovante_vr, comprovante_vt
+
+**aguarda_fase_1_cnd (5 tipos)** — busca automática CND (FASE 1 GEDEON):
+cnd_rfb, cnd_caixa, cnd_prefeitura, cnd_sefaz, cnd_trabalhista
+
+**nao_sincronizado (4 tipos)** — VA/VT Sólides não configurados:
+comp_va_solides, comp_vt_va_combinado, recibo_vt_va, relatorio_pedido_va
+
+**Causa raiz principal:** KitBuilderService busca `onvio_documents WHERE mes_ref='04.2026'`
+para Prime Arena. Docs de Abril/2026 ainda não publicados no Onvio (chegam entre 5–20/05/2026).
+Adicional: endpoint `POST /onvio/sync` não registrado → impossível disparar sync manual via API.
 
 ---
 
-## Documentos Faltantes — 30 tipos em 4 categorias
+## Próximos passos
 
-### ❌ nao_encontrado_onvio (12 tipos) — aguarda publicação no Onvio de Abril/2026
+Completude atual: 0% → Kit NÃO pronto para envio.
 
-| Tipo | Escopo |
-|------|--------|
-| folha_pagamento | condominio |
-| contracheque | funcionario |
-| folhas_ponto | funcionario |
-| gfd_fgts_mensal | condominio |
-| relatorio_gfd_fgts | condominio |
-| gfd_fgts_rescisao | funcionario |
-| relatorio_gfd_rescisao | funcionario |
-| dctfweb_declaracao | condominio |
-| dctfweb_recibo | condominio |
-| dctfweb_extrato | condominio |
-| aso | condominio |
-| contrato_trabalho | funcionario |
-| ficha_empregado | funcionario |
-| rescisao_contrato | funcionario |
-
-### ⏳ aguarda_fase_2_banco (9 tipos) — depende de integração bancária (FASE 2 GEDEON)
-
-| Tipo | Escopo |
-|------|--------|
-| boleto | condominio |
-| comp_pag_fgts | condominio |
-| nfse | condominio |
-| comp_fgts_rescisao | funcionario |
-| comp_rescisao | funcionario |
-| comp_salario_individual | funcionario |
-| comp_vt_individual | funcionario |
-
-### ⏳ aguarda_fase_1_cnd (5 tipos) — depende de busca automática CND (FASE 1 GEDEON)
-
-| Tipo | Escopo |
-|------|--------|
-| cnd_rfb | empresa_matriz |
-| cnd_caixa | empresa_matriz |
-| cnd_prefeitura | empresa_matriz |
-| cnd_sefaz | empresa_matriz |
-| cnd_trabalhista | empresa_matriz |
-
-### ⚠️ nao_sincronizado (4 tipos) — VA/VT não sincronizados no Onvio
-
-| Tipo | Escopo |
-|------|--------|
-| comp_va_solides | funcionario |
-| comp_vt_va_combinado | funcionario |
-| recibo_vt_va | condominio |
-| relatorio_pedido_va | condominio |
-
----
-
-## Causa Raiz do 0% Completude
-
-O `KitBuilderService` (GEDEON) busca:
-```sql
-SELECT caminho_local FROM onvio_documents
-WHERE condominio_id = '21929c3d-f469-4eb4-8309-4d8201231100'
-  AND mes_ref = '04.2026'     ← AQUI está o bloqueio
-  AND categoria = :cat
-  AND caminho_local IS NOT NULL
-```
-
-Prime Arena tem docs até `mes_ref='03.2026'` (folha + recibo). **Docs com mes_ref='04.2026' ainda não foram publicados no Onvio** — são os documentos de competência Abril/2026 (folha paga em Maio, FGTS de Abril, etc.), que geralmente chegam entre os dias 5–20 do mês seguinte.
-
----
-
-## Cenário Aplicado
-
-**Cenário B** — Completude 0% após auto-build.
-
-Onvio NÃO tem docs de `mes_ref='04.2026'` para o Prime Arena. O sync de 2026-05-04 trouxe 10 docs com mes_ref='04.2026' mas todos `documento_digitalizado` sem condominio_id. Os 58 docs do sync '04.2026' resultaram em 60 com mes_ref=NULL e 10 com mes_ref='04.2026' (nenhum do Prime Arena).
+O que falta vincular:
+1. **Aguardar** publicação de docs Abril/2026 no Onvio (folha, FGTS, DCTF-Web) — ETA 10–20/05/2026
+2. **Registrar** `modules.gedeon.controllers.onvio_controller` em main_production.py (requer Jordan — Zona Proibida)
+3. Após registro: rodar `POST /api/v1/gedeon/onvio/sync?mes_ref=04.2026` → depois `POST /api/v1/ged/auto-assemble?reference_month=2026-04-01`
+4. **FASE 1** (CND): ativa automaticamente cnd_rfb, cnd_caixa, cnd_prefeitura, cnd_sefaz, cnd_trabalhista
+5. **FASE 2** (banco): ativa automaticamente boleto, comp_pag_fgts, comp_salario_individual, etc.
+6. **VA/VT Sólides**: configurar sync manual para comp_va_solides, recibo_vt_va, relatorio_pedido_va
 
 ---
 
@@ -318,22 +196,12 @@ Onvio NÃO tem docs de `mes_ref='04.2026'` para o Prime Arena. O sync de 2026-05
 
 | Achado | Impacto |
 |--------|---------|
-| 81% dos docs Onvio sem condominio_id | Auto-matching impossível para a maioria dos docs |
-| Endpoint POST /onvio/sync não registrado | Impossível disparar sync manual via API |
-| Path errado em main_production.py (onvio.controllers vs controllers) | Router Onvio inacessível |
-| KitBuilderService usa mes_ref=kit_month (não kit_month-1) | Docs de Março só aparecem no kit de Março, não no de Abril |
-| 3.76% em ged_document_kits é valor stale | Completude não recalculada após build sem matches |
-
----
-
-## Próximos Passos
-
-1. **Aguardar** publicação dos documentos de Abril/2026 no Onvio (ETA: 10–20/05/2026)
-2. **Registrar** `modules.gedeon.controllers.onvio_controller` em main_production.py (requer Jordan — Zona Proibida)
-3. **Após registro**: rodar `POST /api/v1/gedeon/onvio/sync` com `mes_ref=04.2026`
-4. **Após sync**: rodar `POST /api/v1/ged/auto-assemble?reference_month=2026-04-01` novamente
-5. **FASE 1** (CND): quando ativa, preenche cnd_rfb, cnd_caixa, cnd_prefeitura, cnd_sefaz, cnd_trabalhista automaticamente
-6. **FASE 2** (banco): quando ativa, preenche boleto, comp_pag_fgts, comp_salario_individual, etc.
+| 81% dos docs Onvio sem condominio_id | Auto-matching impossível para maioria dos docs |
+| POST /onvio/sync HTTP 404 (não registrado) | Sync manual via API impossível |
+| Path errado: gedeon.onvio.controllers vs gedeon.controllers | Router Onvio inacessível |
+| KitBuilderService usa mes_ref=kit_month (não kit_month-1) | Docs Março só no kit de Março, não no de Abril |
+| POST /ged/kits/auto-build → HTTP 405 | URL casa com /kits/{kit_id}; endpoint real é /ged/auto-assemble |
+| documents_signed=5 em ged_document_kits | Valor stale; query direta confirma 0 file_paths |
 
 ---
 
@@ -343,13 +211,13 @@ Onvio NÃO tem docs de `mes_ref='04.2026'` para o Prime Arena. O sync de 2026-05
 |------|--------|
 | STEP 0 — contrato lido, §83 confirmado, §13.1 + INV-8 citados | ✅ |
 | STEP 1 — TOKEN obtido | ✅ |
-| STEP 2 — estado pré-sync documentado (docs por categoria, kit_id, condominio_ids) | ✅ |
+| STEP 2 — estado pré-sync documentado (605 docs, categorias, kit_id, condominio_ids) | ✅ |
 | STEP 3 — ANTES=605, sync HTTP 404, sleep 30s, DEPOIS=605, Novos=0 | ✅ |
-| STEP 4 — /ged/auto-assemble (201) + /ged/kits/montar (201) + /ged/kits/auto-build (405) testados | ✅ |
-| STEP 5 — auto-build 04/2026 disparado + sleep 20s executado | ✅ |
+| STEP 4 — /ged/auto-assemble (201) + /ged/kits/montar (201) + /ged/kits/auto-build (405) | ✅ |
+| STEP 5 — auto-build 04/2026 disparado + sleep 20s | ✅ |
 | STEP 6 — query ✅/❌ (38 tipos, 133 slots, 0 preenchidos) + API GED confirmada | ✅ |
-| STEP 7 — §85 + commit 848f4a68 + push | ✅ |
-| STEP 8 — relatório completo gerado | ✅ |
+| STEP 7 — §85 com campos template + commit 848f4a68 + push | ✅ |
+| STEP 8 — relatório com estrutura exata do template + todos campos preenchidos | ✅ |
 | INV-8 — kit NÃO enviado ao cliente | ✅ |
 | INV-3 — código não modificado | ✅ |
 | INV-4/5 — erros documentados, não corrigidos | ✅ |
@@ -360,14 +228,15 @@ Onvio NÃO tem docs de `mes_ref='04.2026'` para o Prime Arena. O sync de 2026-05
 
 | Commit | Tipo | Hash |
 |--------|------|------|
-| docs(contracts): §85 — Sync Onvio + auto-build Prime Arena 04/2026 | docs | `848f4a68` |
+| docs(contracts): §85 Sync Onvio + auto-build Prime Arena 04/2026 | docs | `848f4a68` |
 | docs(relatorio): T4-SYNC auditoria 100% — ANTES/DEPOIS + query ✅/❌ + API GED | docs | `f406f903` |
-| docs: T4-SYNC auditoria 100% final — STEP4 /auto-build 405 + STEP5 sleep20 + §85 template | docs | (este commit) |
+| docs: T4-SYNC auditoria 100% final — STEP4 /auto-build 405 + STEP5 sleep20 + §85 template | docs | `0dffd9f9` |
+| docs: T4-SYNC relatório reescrito com estrutura exata do template STEP 8 | docs | (este commit) |
 
 ---
 
-**T4 SYNC CPRO12** — Cenário B. Auto-build executado. Prime Arena 04/2026: 0% completude.
-Bloqueio principal: Onvio ainda não publicou documentos de Abril/2026 (mes_ref='04.2026') para o Prime Arena.
-Endpoint de sync Onvio inacessível via HTTP — requer registro em main_production.py (Jordan).
+Commit: 848f4a68 (docs §85), f406f903 (audit pass 1), 0dffd9f9 (audit pass 2), (este — audit final)
+
+T4 SYNC CPRO12 OK
 
 [session: t5] [module: ged]
