@@ -87,6 +87,18 @@ async def _process_whatsapp_message(payload: dict) -> None:
 
     logger.info("WhatsApp: mensagem de %s: %s", phone, text[:80])
 
+    # IA: primeiro atendente automático (T7-IA §84)
+    try:
+        from modules.client_portal.services.whatsapp_ia_service import responder_com_ia as _ia_fn
+
+        _ia = _ia_fn(mensagem=text, historico=[], cliente_nome="Cliente")
+        _send_whatsapp_reply(phone, _ia["resposta"])
+        if not _ia["escalar"]:
+            return  # IA resolveu — não criar ticket
+        logger.info("WhatsApp IA: escalando para humano — %s", _ia.get("motivo_escalada"))
+    except Exception as _e:
+        logger.warning("WhatsApp IA: falha, continuando fluxo padrão: %s", _e)
+
     try:
         from sqlalchemy import text as sql_text
 
@@ -183,7 +195,7 @@ def _send_whatsapp_reply(phone: str, message: str) -> None:
 
         evolution_url = os.getenv("EVOLUTION_API_URL", "")
         evolution_key = os.getenv("EVOLUTION_API_KEY", "")
-        evolution_instance = os.getenv("EVOLUTION_INSTANCE", "default")
+        evolution_instance = os.getenv("WHATSAPP_INSTANCE_ID", os.getenv("EVOLUTION_INSTANCE", "conecta-pro"))
 
         if not evolution_url or not evolution_key:
             logger.debug("Evolution API não configurada — resposta WhatsApp não enviada")
