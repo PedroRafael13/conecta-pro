@@ -253,6 +253,18 @@ async def montar_e_enviar(
         share_link=share_link,
     )
 
+    # G2: Atualizar sent_at após envio bem-sucedido
+    if resultado_email.get("sucesso"):
+        await db.execute(
+            text(
+                "UPDATE ged_document_kits "
+                "SET sent_at = NOW(), sent_method = 'email', sent_to = :email "
+                "WHERE id = :kit_id"
+            ),
+            {"kit_id": str(kit.id), "email": resultado_email.get("destinatario", "")},
+        )
+        await db.commit()
+
     return {
         "drive": {
             "sucesso": sync.get("configured", False),
@@ -279,6 +291,7 @@ async def enviar_kit_email(
     competencia: str,
     destinatario: str | None = None,
     current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Enviar kit por e-mail.
@@ -291,6 +304,25 @@ async def enviar_kit_email(
         competencia=competencia,
         destinatario_override=destinatario,
     )
+
+    # G2: Atualizar sent_at após envio bem-sucedido
+    if resultado.get("sucesso"):
+        await db.execute(
+            text(
+                "UPDATE ged_document_kits "
+                "SET sent_at = NOW(), sent_method = 'email', sent_to = :email "
+                "WHERE client_id = :client_id "
+                "AND DATE_TRUNC('month', reference_month) = "
+                "DATE_TRUNC('month', :competencia::date)"
+            ),
+            {
+                "client_id": client_id,
+                "competencia": f"{competencia}-01",
+                "email": resultado.get("destinatario", ""),
+            },
+        )
+        await db.commit()
+
     return resultado
 
 

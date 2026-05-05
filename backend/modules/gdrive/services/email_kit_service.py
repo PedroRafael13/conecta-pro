@@ -77,13 +77,15 @@ class EmailKitService:
 
     def _buscar_email_cliente(self, client_id: str) -> str | None:
         """Buscar e-mail do cliente no banco."""
-        rows = _psql(f"SELECT email FROM clients WHERE id='{client_id}' LIMIT 1")
+        # G1: ged_clients.contact_email é a fonte correta (clients.email é NULL para todos os kits GED)
+        rows = _psql(f"SELECT contact_email FROM ged_clients WHERE id='{client_id}' LIMIT 1")
         if rows and rows[0].strip():
             return rows[0].strip()
+        # Fallback: crm_contacts
         rows = _psql(
             f"SELECT cc.email FROM crm_contacts cc "
-            f"JOIN clients c ON c.id=cc.client_id "
-            f"WHERE c.id='{client_id}' AND cc.email IS NOT NULL LIMIT 1"
+            f"JOIN ged_clients gc ON gc.id='{client_id}' "
+            f"WHERE cc.email IS NOT NULL LIMIT 1"
         )
         if rows:
             return rows[0].strip()
