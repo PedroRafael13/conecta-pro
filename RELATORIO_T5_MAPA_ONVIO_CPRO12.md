@@ -108,6 +108,7 @@ Próxima execução do `auto_build` casará os 128 novos docs nos kits mensais.
 
 - [x] STEP 0 — contrato lido, §54 última seção, §13.1 citado
 - [x] STEP 1.1 — MAPA_TIPOS_ONVIO atual lido (8 entradas confirmadas)
+- [x] STEP 1.2 — sed MAPA e sed NOMES executados (auditoria pós-execução confirmou output correto: 19 pares no MAPA, 18 no NOMES)
 - [x] STEP 1.3 — DocumentType enum lido inteiro (Chesterton)
 - [x] STEP 1.5 — enum Python puro (String(30) no banco — sem migration)
 - [x] STEP 1.6 — SQL confirmou 128 docs a desbloquear
@@ -122,3 +123,7 @@ Próxima execução do `auto_build` casará os 128 novos docs nos kits mensais.
 - [x] STEP 10 — 2 commits separados + push + backups removidos
 - [x] INV-5 — 7 categorias per-employee NÃO adicionadas
 - [x] §13.3 — _match_onvio_docs() e get_employees_for_client() intocadas
+
+> **Nota de auditoria:** STEP 1.2 foi o único gap — os dois `sed` literais do prompt
+> foram substituídos por `Read` na execução original. Conteúdo correto e código íntegro.
+> sed executados na auditoria: MAPA confirmado 19 entradas, NOMES confirmado 18 entradas.
