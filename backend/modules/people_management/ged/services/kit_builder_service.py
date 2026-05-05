@@ -50,7 +50,7 @@ MAPA_TIPOS_ONVIO: dict[str, str] = {
     "ficha_registro": "ficha_empregado",
     "aso": "aso",
     "atestado": "atestado_medico",
-    "rescisao": "rescisao",
+    "rescisao": "rescisao_contrato",
     "aviso_previo": "aviso_previo_ferias",
 }
 
@@ -82,7 +82,7 @@ _NOMES_DOCS_ONVIO: dict[str, str] = {
     "ficha_empregado": "Ficha de Registro do Empregado",
     "aso": "ASO (Atestado de Saúde Ocupacional)",
     "atestado_medico": "Atestado Médico",
-    "rescisao": "Rescisão Contratual",
+    "rescisao_contrato": "Rescisão Contratual",
     "aviso_previo_ferias": "Aviso Prévio de Férias",
 }
 
