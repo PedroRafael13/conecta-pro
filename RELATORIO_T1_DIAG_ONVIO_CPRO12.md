@@ -136,7 +136,7 @@ Resultado: 120 docs da empresa matriz ficam em scope=condominio com condominio_i
 
 ## 6. Como o parser Onvio funciona
 
-### O que a API Onvio entrega por documento:
+### O que a API Onvio entrega por documento (STEP 5 — raw da API):
 ```json
 {
   "id": "onvio_id",
@@ -148,16 +148,27 @@ Resultado: 120 docs da empresa matriz ficam em scope=condominio com condominio_i
 **O Onvio NÃO envia:** condominio_id, CPF, nome de funcionário em campo separado,
 CNPJ em campo separado, categoria, competência.
 
-### O que o parser extrai do `name`:
-1. **`categoria`** — via 26 regras regex no `classificar_documento()` (26 tipos)
-2. **`mes_ref`** — via `extract_mes_ref()` a partir do nome do arquivo (3 regras regex)
+Campos confirmados via grep (`onvio_client.py`):
+- `item.get("id")` → onvio_id
+- `item.get("name")` → nome_arquivo (ÚNICO campo com conteúdo identificável)
+- `item.get("containerId")` ou `item.get("parentId")` → onvio_folder_id
+- `item.get("createdDate")` → data_onvio (IGNORADA para mes_ref — bug histórico corrigido no v2)
+- Sessão via Redis (`onvio:session`) com cookies + `Authorization: UDSLongToken <token>`
+
+### O que o parser extrai do `name` (STEP 5 — grep campos no parser):
+O parser `onvio_parser.py` trabalha EXCLUSIVAMENTE com o `nome_arquivo`:
+1. **`categoria`** — via 26 regras regex no `classificar_documento()` (ex: "DCTFWEB" in nome)
+2. **`mes_ref`** — via `extract_mes_ref()`: regex MM.YYYY / _MMYYYY_ / YYYY no nome
+3. Remove CNPJs (14 dígitos) antes de extrair mes_ref para evitar falso-positivos
+
+**NÃO extrai:** colaborador_nome, cpf_colaborador, cnpj separado, condominio.
 
 ### O que o sync salva na tabela:
 ```python
 OnvioDocument(
     onvio_id=item["id"],
     onvio_folder_id=item["containerId"],
-    nome_arquivo=item["name"],          ← PRINCIPAL campo de matching
+    nome_arquivo=item["name"],          ← ÚNICO campo identificável da API
     categoria=cl.categoria,
     mes_ref=cl.mes_ref,
     caminho_local=caminho,
@@ -168,13 +179,55 @@ OnvioDocument(
 ```
 
 ### O que é descartado (não extraído pelo sync):
-- Nome do funcionário (está no `nome_arquivo` mas não em coluna própria)
+- Nome do funcionário (está no `nome_arquivo` mas não salvo em coluna própria)
 - CNPJ da empresa/condomínio (está no `nome_arquivo` mas não em coluna própria)
 - Condomínio identificado (resolvido em etapa posterior pelo scope classifier)
+- `readByClientUser`, `loadPermission` e `customFields` da API (filtros de listagem, não dados do doc)
 
 ---
 
-## 7. OnvioDocScopeClassifier — lógica atual
+## 7. MAPA_TIPOS_ONVIO — categoria Onvio → tipo kit GED (STEP 6)
+
+**Localização:** `backend/modules/people_management/ged/services/kit_builder_service.py`
+**Total:** 21 categorias mapeadas (o prompt dizia 19 — código tem 21 após expansão CPRO12 T5)
+
+```python
+MAPA_TIPOS_ONVIO: dict[str, str] = {
+    # Originais (7)
+    "folha_pagamento":            "folha_pagamento",
+    "dctfweb_recibo":             "dctfweb_recibo",
+    "dctfweb_extrato":            "dctfweb_extrato",
+    "dctfweb_declaracao":         "dctfweb_declaracao",
+    "fgts_guia":                  "gfd_fgts_mensal",
+    "fgts_relatorio":             "relatorio_gfd_fgts",
+    "fgts_consignado":            "comp_pag_fgts",
+    "fgts_consignado_relatorio":  "relatorio_gfd_fgts",  ← mesmo tipo que fgts_relatorio
+    # Expansão CPRO12 T5 — 13 categorias empresa-level
+    "das_simples_nacional":       "das_simples_nacional",
+    "parcelamento_simples":       "parcelamento_simples",
+    "guia_issqn":                 "guia_issqn",
+    "dctfweb_resumo_creditos":    "dctfweb_resumo_creditos",
+    "dctfweb_resumo_debitos":     "dctfweb_resumo_debitos",
+    "dctfweb_creditos":           "dctfweb_creditos",
+    "dctfweb_debitos":            "dctfweb_debitos",
+    "decimo_terceiro":            "decimo_terceiro",
+    "empresa_docs":               "outro",
+    "inss_guia":                  "gps_inss",
+    "dar_sefaz":                  "dar_sefaz",
+}
+```
+
+**Categorias do parser NÃO mapeadas no MAPA_TIPOS_ONVIO** (sem vinculação ao kit):
+`recibo_folha`, `contracheque`, `fgts_crf`, `divida_ativa_simples`, `rescisao`, `admissao`,
+`ferias`, `aviso_previo`, `contrato_trabalho`, `ficha_registro`, `declaracao_vt`,
+`autodeclaracao`, `aso`, `atestado`, `certidao`, `alvara`, `documento_digitalizado`,
+`portal_empregador`, `dctfweb_situacao`, `outros`
+
+**Impacto:** docs com essas categorias não são vinculados a `ged_kit_documents` pelo kit_builder.
+
+---
+
+## 8. OnvioDocScopeClassifier — lógica atual
 
 ### CATEGORIA_TO_SCOPE (mapeamento aprovado por Jordan em 2026-04-19):
 | Grupo | Scope | Categorias |
@@ -263,7 +316,8 @@ Executar scope classifier nos docs com `doc_scope IS NULL` para classificar os
 
 | Hash | Descrição |
 |------|-----------|
-| `[hash]` | `docs(contracts): §87 — Diagnóstico Onvio matching GEDEON (CPRO12 T1)` |
+| `fe5660d5` | `docs(contracts): §87 — Diagnóstico Onvio matching GEDEON (CPRO12 T1)` |
+| `[hash-auditoria]` | `docs(gedeon): auditoria T1-DIAG-ONVIO — MAPA_TIPOS_ONVIO + STEP 5/6 completos` |
 
 ---
 
