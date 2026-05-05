@@ -21,7 +21,7 @@ Você é especialista em LGPD para plataformas SaaS B2B com dados trabalhistas e
 
 Crie a Política de Privacidade completa para:
 
-**Controlador dos dados:** JORDAN SANTOS DE JESUS LTDA
+**Controlador dos dados:** CONECTAMAIS ELETRONICA LTDA
 CNPJ: 35.710.481/0001-03 | Manaus/AM
 Plataforma: Conecta PRO (erp.conectamais.pro)
 Encarregado (DPO): Jordan Santos de Jesus | jjesus@conectamais.pro
@@ -79,7 +79,7 @@ Estruture a política com linguagem Clara e acessível cobrindo:
 ```
 Crie um checklist executivo de conformidade LGPD para o Conecta PRO com:
 
-**Empresa:** JORDAN SANTOS DE JESUS LTDA | CNPJ 35.710.481/0001-03
+**Empresa:** CONECTAMAIS ELETRONICA LTDA | CNPJ 35.710.481/0001-03
 **Contexto:** ERP com dados biométricos, GPS e trabalhistas de 52 funcionários
 
 Avalie e liste ações por categoria:

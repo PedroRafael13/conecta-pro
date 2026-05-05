@@ -244,7 +244,7 @@ Todos os componentes seguem padrão Radix UI com acessibilidade completa.
 
 ## 👥 EQUIPE
 
-**Desenvolvido por:** Jordan Santos de Jesus LTDA
+**Desenvolvido por:** CONECTAMAIS ELETRONICA LTDA
 **Projeto:** Conecta PRO ERP
 **Módulo:** GED (Gestão Eletrônica de Documentos)
 **Versão:** 2.0
@@ -271,7 +271,7 @@ Todos os componentes seguem padrão Radix UI com acessibilidade completa.
 
 ## 📝 LICENÇA
 
-Propriedade de Jordan Santos de Jesus LTDA
+Propriedade de CONECTAMAIS ELETRONICA LTDA
 Todos os direitos reservados © 2026
 
 ---

@@ -194,7 +194,7 @@ export default function ContratosPage() {
         <div>
           <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">Gestão de Contratos</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            {summary.total_ativos} contratos ativos — Jordan Santos de Jesus Ltda
+            {summary.total_ativos} contratos ativos — CONECTAMAIS ELETRONICA LTDA
           </p>
         </div>
         <div className="flex items-center gap-3">

@@ -281,7 +281,7 @@ docker compose restart backend frontend
 ## Contatos e Suporte
 
 **Projeto:** Conecta PRO - Sistema ERP
-**Empresa:** Jordan Santos de Jesus LTDA
+**Empresa:** CONECTAMAIS ELETRONICA LTDA
 **Ambiente:** VPS Production Ubuntu 24.04
 
 **Última Integração:**

@@ -38,7 +38,7 @@ Use dados reais — não invente métricas.
 Crie o pitch deck completo do Conecta PRO com:
 
 **Produto:** Conecta PRO — ERP de gestão para segurança patrimonial e facilities
-**Empresa:** JORDAN SANTOS DE JESUS LTDA | Manaus/AM | Lucro Real desde 01/2026
+**Empresa:** CONECTAMAIS ELETRONICA LTDA | Manaus/AM | Lucro Real desde 01/2026
 **Stage:** Produto em produção (dogfooding) — buscando primeiros clientes externos
 
 **Métricas reais:**

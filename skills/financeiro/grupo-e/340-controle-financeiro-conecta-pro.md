@@ -13,7 +13,7 @@ Você é controller financeiro de uma PME de serviços.
 Crie a rotina de controle financeiro usando o Conecta PRO:
 
 **Ferramenta:** erp.conectamais.pro | Módulo Financeiro
-**Empresa:** JORDAN SANTOS DE JESUS LTDA | 13 clientes | 52 funcionários
+**Empresa:** CONECTAMAIS ELETRONICA LTDA | 13 clientes | 52 funcionários
 
 ROTINA DIÁRIA (15 minutos):
 1. Verificar saldo Inter no dashboard (R$54k atual)

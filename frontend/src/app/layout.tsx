@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
   description: 'Sistema ERP para gestão de vigilância e segurança patrimonial',
   keywords: ['ERP', 'vigilância', 'segurança', 'gestão', 'Conecta PRO'],
-  authors: [{ name: 'Jordan Santos de Jesus LTDA' }],
+  authors: [{ name: 'CONECTAMAIS ELETRONICA LTDA' }],
   robots: 'noindex, nofollow',
   icons: {
     icon: '/favicon.ico',

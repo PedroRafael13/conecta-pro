@@ -51,7 +51,7 @@ Gere contrato padrão para:
 **Início:** [data]
 
 Use o template padrão da Conecta Mais com:
-- Cabeçalho: JORDAN SANTOS DE JESUS LTDA | CNPJ 35.710.481/0001-03
+- Cabeçalho: CONECTAMAIS ELETRONICA LTDA | CNPJ 35.710.481/0001-03
 - Cláusula de substituição: prazo máximo 24h para posto crítico
 - Reajuste: INPC anual ou CCT (o que for maior)
 - Rescisão: 30 dias de aviso ou multa de 1 mês

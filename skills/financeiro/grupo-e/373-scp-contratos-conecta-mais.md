@@ -16,7 +16,7 @@ a SCP permite fazer consórcio informal com outra empresa sem burocracia.
 Você é advogado especializado em contratos empresariais e licitações no Brasil.
 
 Crie o contrato de SCP para:
-**Sócio Ostensivo:** JORDAN SANTOS DE JESUS LTDA | CNPJ 35.710.481/0001-03
+**Sócio Ostensivo:** CONECTAMAIS ELETRONICA LTDA | CNPJ 35.710.481/0001-03
 **Sócio Participante:** [empresa parceira]
 **Objeto:** Participação no edital [número] — [objeto da licitação]
 **Valor estimado do contrato:** R$[valor]

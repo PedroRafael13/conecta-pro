@@ -20,7 +20,7 @@ Para: empresas de TI, consultores, desenvolvedores freelancers
 
 ```
 Partes:
-- Divulgadora: JORDAN SANTOS DE JESUS LTDA (CNPJ 35.710.481/0001-03)
+- Divulgadora: CONECTAMAIS ELETRONICA LTDA (CNPJ 35.710.481/0001-03)
 - Receptora: [nome/CNPJ do fornecedor]
 
 Informações confidenciais (específicas):
@@ -75,7 +75,7 @@ Você é especialista em NDAs para empresas de segurança patrimonial e tecnolog
 
 Gere o NDA para:
 **Modelo:** [1 — Fornecedor TI / 2 — Parceiro Licitação / 3 — Prestador Condomínio]
-**Divulgadora:** JORDAN SANTOS DE JESUS LTDA | CNPJ: 35.710.481/0001-03
+**Divulgadora:** CONECTAMAIS ELETRONICA LTDA | CNPJ: 35.710.481/0001-03
 **Receptora:** [nome, CNPJ, representante]
 **Contexto:** [descrever o que será compartilhado]
 **Prazo do projeto/relação:** [duração]

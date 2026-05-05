@@ -102,7 +102,7 @@ export default function CentralRelatoriosPage() {
       doc.setFontSize(16);
       doc.text('Conecta PRO - Relatorio', 14, 15);
       doc.setFontSize(9);
-      doc.text('Jordan Santos de Jesus LTDA | CNPJ: 35.710.481/0001-03', 14, 22);
+      doc.text('CONECTAMAIS ELETRONICA LTDA | CNPJ: 35.710.481/0001-03', 14, 22);
       doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')} | Periodo: ${periodLabel}`, 14, 27);
       doc.setTextColor(0, 0, 0);
 

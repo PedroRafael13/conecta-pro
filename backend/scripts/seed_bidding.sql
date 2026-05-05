@@ -1,6 +1,6 @@
 -- =============================================================================
 -- SEED DATA: Bidding Module - Conecta PRO
--- Empresa: Jordan Santos de Jesus Ltda (CNPJ 35.710.481/0001-03)
+-- Empresa: CONECTAMAIS ELETRONICA LTDA (CNPJ 35.710.481/0001-03)
 -- Manaus-AM | Seguranca Patrimonial
 -- Idempotente: usa ON CONFLICT ou verifica existencia
 -- =============================================================================
@@ -539,7 +539,7 @@ VALUES
 -- Valid (future expiry)
 ('88888888-aaaa-bbbb-cccc-000000000001', 'CND_FEDERAL',
  'Certidao Negativa de Debitos Relativos aos Tributos Federais e a Divida Ativa da Uniao',
- 'CNDF-2026-8A3B-C4D5', '35710481000103', 'Jordan Santos de Jesus Ltda',
+ 'CNDF-2026-8A3B-C4D5', '35710481000103', 'CONECTAMAIS ELETRONICA LTDA',
  '2026-02-15 10:30:00', '2026-08-14 23:59:59',
  'NEGATIVA', 'valid', true, 'manual',
  'Receita Federal do Brasil / PGFN', 'AM', 'https://solucoes.receita.fazenda.gov.br/Servicos/certidaointernet/PJ/Emitir',
@@ -547,7 +547,7 @@ VALUES
 
 ('88888888-aaaa-bbbb-cccc-000000000002', 'FGTS',
  'Certificado de Regularidade do FGTS - CRF',
- 'CRF-2026-1234567890', '35710481000103', 'Jordan Santos de Jesus Ltda',
+ 'CRF-2026-1234567890', '35710481000103', 'CONECTAMAIS ELETRONICA LTDA',
  '2026-03-01 08:00:00', '2026-03-31 23:59:59',
  'REGULAR', 'valid', true, 'manual',
  'Caixa Economica Federal', NULL, 'https://consulta-crf.caixa.gov.br',
@@ -555,7 +555,7 @@ VALUES
 
 ('88888888-aaaa-bbbb-cccc-000000000003', 'CNDT',
  'Certidao Negativa de Debitos Trabalhistas',
- 'CNDT-2026-9876543210', '35710481000103', 'Jordan Santos de Jesus Ltda',
+ 'CNDT-2026-9876543210', '35710481000103', 'CONECTAMAIS ELETRONICA LTDA',
  '2026-02-20 14:00:00', '2026-08-19 23:59:59',
  'NEGATIVA', 'valid', true, 'manual',
  'Tribunal Superior do Trabalho', NULL, 'https://www.tst.jus.br/certidao',
@@ -563,7 +563,7 @@ VALUES
 
 ('88888888-aaaa-bbbb-cccc-000000000004', 'SICAF',
  'Registro no SICAF - Nivel VI (completo)',
- 'SICAF-2026-UAS-001', '35710481000103', 'Jordan Santos de Jesus Ltda',
+ 'SICAF-2026-UAS-001', '35710481000103', 'CONECTAMAIS ELETRONICA LTDA',
  '2026-01-10 09:00:00', '2027-01-10 23:59:59',
  'CREDENCIADO', 'valid', true, 'manual',
  'Ministerio da Gestao e Inovacao', NULL, 'https://sicaf.gov.br',
@@ -572,7 +572,7 @@ VALUES
 -- Expiring soon (15-30 days)
 ('88888888-aaaa-bbbb-cccc-000000000005', 'CND_ESTADUAL',
  'Certidao Negativa de Debitos Estaduais - SEFAZ/AM',
- 'CNDE-2026-AM-5678', '35710481000103', 'Jordan Santos de Jesus Ltda',
+ 'CNDE-2026-AM-5678', '35710481000103', 'CONECTAMAIS ELETRONICA LTDA',
  '2025-10-15 10:00:00', '2026-04-12 23:59:59',
  'NEGATIVA', 'expiring', true, 'manual',
  'Secretaria de Estado da Fazenda do Amazonas - SEFAZ/AM', 'AM', 'https://sefaz.am.gov.br',
@@ -580,7 +580,7 @@ VALUES
 
 ('88888888-aaaa-bbbb-cccc-000000000006', 'CND_MUNICIPAL',
  'Certidao Negativa de Tributos Municipais - SEMEF Manaus',
- 'CNDM-2026-MNS-3456', '35710481000103', 'Jordan Santos de Jesus Ltda',
+ 'CNDM-2026-MNS-3456', '35710481000103', 'CONECTAMAIS ELETRONICA LTDA',
  '2025-10-20 11:00:00', '2026-04-05 23:59:59',
  'NEGATIVA', 'expiring', true, 'manual',
  'Secretaria Municipal de Financas e Tecnologia da Informacao - SEMEF', 'AM', 'https://semef.manaus.am.gov.br',
@@ -589,7 +589,7 @@ VALUES
 -- Expired
 ('88888888-aaaa-bbbb-cccc-000000000007', 'ALVARA',
  'Alvara de Funcionamento - Seguranca Privada',
- 'ALV-2025-PF-1234', '35710481000103', 'Jordan Santos de Jesus Ltda',
+ 'ALV-2025-PF-1234', '35710481000103', 'CONECTAMAIS ELETRONICA LTDA',
  '2024-06-01 09:00:00', '2026-02-28 23:59:59',
  'VENCIDA', 'expired', true, 'manual',
  'Policia Federal - Delegacia de Controle de Seguranca Privada', 'AM', 'https://www.gov.br/pf/seguranca-privada',
@@ -597,7 +597,7 @@ VALUES
 
 ('88888888-aaaa-bbbb-cccc-000000000008', 'CERTIFICADO_DIGITAL',
  'Certificado Digital A1 - e-CNPJ',
- 'CD-A1-2025-JSJ', '35710481000103', 'Jordan Santos de Jesus Ltda',
+ 'CD-A1-2025-JSJ', '35710481000103', 'CONECTAMAIS ELETRONICA LTDA',
  '2025-04-01 10:00:00', '2026-04-01 23:59:59',
  'VALIDO', 'expiring', true, 'manual',
  'Certisign Certificadora Digital S.A.', NULL, 'https://www.certisign.com.br',

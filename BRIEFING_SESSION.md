@@ -10,7 +10,7 @@
 
 ## 1. CONTEXTO DO PROJETO
 
-**Empresa:** Jordan Santos de Jesus LTDA (Conecta Mais)
+**Empresa:** CONECTAMAIS ELETRONICA LTDA (Conecta Mais)
 - CNPJ: 35.710.481/0001-03
 - Regime: Simples Nacional
 - Setor: Vigilancia, seguranca patrimonial e tecnologia

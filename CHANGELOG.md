@@ -300,5 +300,5 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
-**Mantido por:** Jordan Santos de Jesus LTDA
+**Mantido por:** CONECTAMAIS ELETRONICA LTDA
 **Última atualização:** 2026-01-26

@@ -500,7 +500,7 @@ sudo systemctl reload nginx
 
 ## 📞 SUPORTE
 
-**Desenvolvido por:** Jordan Santos de Jesus LTDA
+**Desenvolvido por:** CONECTAMAIS ELETRONICA LTDA
 **Projeto:** Conecta PRO ERP
 **Módulo:** GED (Gestão Eletrônica de Documentos)
 **Versão:** 2.0

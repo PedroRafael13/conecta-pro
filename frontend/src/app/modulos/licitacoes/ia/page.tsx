@@ -186,7 +186,7 @@ export default function IAHubPage() {
           regime_tributario: 'lucro_real',
           salario_base_vigilante: 1800.0,
           empresa: {
-            razao_social: 'JORDAN SANTOS DE JESUS LTDA',
+            razao_social: 'CONECTAMAIS ELETRONICA LTDA',
             cnpj: '35.710.481/0001-03',
             cidade: 'Manaus',
             representante: 'Jordan Santos de Jesus',

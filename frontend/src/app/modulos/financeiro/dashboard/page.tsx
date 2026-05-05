@@ -269,7 +269,7 @@ export default function DashboardFinanceiroPage() {
         <div>
           <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">Dashboard Financeiro</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Dados reais das NFS-e — Jordan Santos de Jesus Ltda
+            Dados reais das NFS-e — CONECTAMAIS ELETRONICA LTDA
           </p>
         </div>
         <div className="flex items-center gap-3">

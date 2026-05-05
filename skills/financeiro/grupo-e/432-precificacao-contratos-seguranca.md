@@ -16,7 +16,7 @@ custo por posto de trabalho (escala 12x36 ou 44h), encargos da CCT-AM e margem r
 Você é consultor de precificação para empresas de segurança patrimonial no Brasil.
 
 Crie modelo de precificação para a Conecta Mais:
-**Empresa:** JORDAN SANTOS DE JESUS LTDA | CNPJ 35.710.481/0001-03
+**Empresa:** CONECTAMAIS ELETRONICA LTDA | CNPJ 35.710.481/0001-03
 **Regime:** Lucro Real | MRR R$270k | 52 funcionários | Manaus/AM
 **CCT:** Sindicato dos Vigilantes do Amazonas
 **Contratos ativos:** 13 clientes (condomínios residenciais)

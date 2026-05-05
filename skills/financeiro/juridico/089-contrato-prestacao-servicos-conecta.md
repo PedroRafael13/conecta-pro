@@ -6,7 +6,7 @@ description: Gerar contrato de prestação de serviços da Conecta Mais para con
 # Contrato de Prestação de Serviços — Conecta Mais
 
 ## Contexto da Empresa
-- **Prestador:** JORDAN SANTOS DE JESUS LTDA | CNPJ 35.710.481/0001-03 | Manaus/AM
+- **Prestador:** CONECTAMAIS ELETRONICA LTDA | CNPJ 35.710.481/0001-03 | Manaus/AM
 - **Regime Tributário:** Lucro Real (ISS 5%, PIS/COFINS 9,25%, CSLL 9%, IRPJ 15%)
 - **CCT Aplicável:** SINDECOMPRESTS 2026 (agentes de portaria e facilities — NÃO vigilância armada)
 - **Serviços oferecidos:** Portaria presencial, portaria remota, manutenção CFTV, facilities
@@ -40,7 +40,7 @@ IMPORTANTE: Para contratos acima de R$50.000/mês, recomenda-se revisão por adv
 
 Gere o contrato de prestação de serviços com:
 
-**Prestador:** JORDAN SANTOS DE JESUS LTDA
+**Prestador:** CONECTAMAIS ELETRONICA LTDA
 CNPJ: 35.710.481/0001-03
 Endereço: [endereço completo Manaus/AM]
 Responsável: Jordan Santos de Jesus

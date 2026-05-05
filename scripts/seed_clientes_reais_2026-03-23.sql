@@ -1,5 +1,5 @@
 -- ============================================================
--- SEED: 11 Clientes Reais das NFS-e Jordan Santos de Jesus Ltda
+-- SEED: 11 Clientes Reais das NFS-e CONECTAMAIS ELETRONICA LTDA
 -- Executado em: 2026-03-23
 -- ============================================================
 

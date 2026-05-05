@@ -6,7 +6,7 @@ description: Organização financeira da Conecta Mais — separar pessoa física
 # Organização Financeira — Conecta Mais (Skill 249 reescrita)
 
 ## Contexto real
-Jordan Santos de Jesus é sócio e CEO da JORDAN SANTOS DE JESUS LTDA.
+Jordan Santos de Jesus é sócio e CEO da CONECTAMAIS ELETRONICA LTDA.
 No Lucro Real, a separação PF/PJ tem implicações fiscais diretas:
 - Pró-labore: tributado pelo IRRF + INSS (obrigatório, mínimo 1 salário mínimo)
 - Distribuição de lucros: isenta de IR para o sócio (art. 10 Lei 9.249/95)
@@ -19,7 +19,7 @@ Você é consultor financeiro especializado em empresas de serviços no regime L
 
 Crie um plano de organização financeira para:
 
-**Empresa:** JORDAN SANTOS DE JESUS LTDA | Lucro Real | MRR R$270.586,96
+**Empresa:** CONECTAMAIS ELETRONICA LTDA | Lucro Real | MRR R$270.586,96
 **Sócio:** Jordan Santos de Jesus | CEO | único sócio
 **Contexto:** Empresa de portaria e facilities, 52 CLTs, 13 clientes condomínios
 

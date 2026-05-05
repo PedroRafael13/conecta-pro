@@ -69,7 +69,7 @@ frontend/src/app/modulos/operacional/ ← fora de escopo
 - Path: `/opt/conecta-pro/credentials/certificates/certificado.pfx`
 - Senha: `Conecta123`
 - Válido até: Janeiro/2027
-- CN: JORDAN SANTOS DE JESUS LTDA:35710481000103
+- CN: CONECTAMAIS ELETRONICA LTDA:35710481000103
 - Uso no CRM: nenhum (apenas Licitações)
 
 ---
