@@ -71,6 +71,12 @@ async def create_allocation(
 
 
 @router.get(
+    "",
+    response_model=AllocationListResponse,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_VIEW)],
+    include_in_schema=False,
+)
+@router.get(
     "/",
     response_model=AllocationListResponse,
     dependencies=[require_operacional_permission(Permission.ALLOCATIONS_VIEW)],
