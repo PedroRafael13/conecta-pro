@@ -396,7 +396,7 @@ para casos que o parser v2 deixa em "outros" (TRCT, DCTFWEB sem prefixo, DAS sem
 |------|-----------|
 | `fe5660d5` | `docs(contracts): §87 — Diagnóstico Onvio matching GEDEON (CPRO12 T1)` |
 | `0aaa185d` | `docs(gedeon): auditoria T1-DIAG-ONVIO — MAPA_TIPOS_ONVIO 21 cats + STEP 5/6 completos` |
-| `[hash-2ª-auditoria]` | `docs(gedeon): auditoria 2ª rodada T1-DIAG-ONVIO — INV-1 100% (todos os arquivos lidos)` |
+| `d7f8cb0d` | `docs(gedeon): auditoria 2ª rodada T1-DIAG-ONVIO — INV-1 100% todos arquivos lidos` |
 
 ---
 
