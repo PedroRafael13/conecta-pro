@@ -4699,3 +4699,25 @@ Prime Arena tem apenas `mes_ref IN ('07.2025'..'03.2026')` — os docs de Abril/
 **INV-5:** GEDEON NÃO pode buscar comprovante de salário por colaborador — 3 bloqueios: (1) módulo não no container, (2) detalhes_destinatario NULL em 536/536 rows, (3) código "Cp :" na descricao tem 8 dígitos vs CPF 11 dígitos
 **Próximos passos:** fix inter_sync_service.py:82 → hot-copy inter/ → re-sync extrato → executar conciliação → endpoint GEDEON comprovante
 **Princípio:** §13.1 estado verificado; INV-2 zero API calls Inter; INV-3 apenas nomes de variáveis
+
+## §90 — Diagnóstico profundo GEDEON — matching e retroativos (CPRO12 T4-DIAG-GEDEON)
+**Data:** 2026-05-05
+**Tipo:** READ-ONLY (INV-2: zero alterações de código)
+**Objetivo:** mapear quem faz matching Onvio→kit, identificar lacunas, planejar 3 meses retroativos
+
+**Achados principais:**
+- KRONOS/THEMIS/ATLAS/SOPHIA são agentes de monitoramento/alertas — nenhum faz matching de documentos
+- Matching feito por 2 serviços: `OnvioDocScopeClassifier` (regex filename → scope) + `KitBuilderService` (categoria → doc_type)
+- `referente_a_employee_id` preenchido em apenas 39/605 docs (6,4%) — matching por funcionário quase impossível
+- Feb/2026: 29 docs Onvio disponíveis, 0 kits construídos (auto_build nunca executado para esse mês)
+- Mar/2026: 43 docs, 8 kits criados (7 em_montagem + 1 enviado), completude parcial
+- Abr/2026: 10 docs, 10 com doc_scope=NULL — bloqueio total até scope re-classification
+- `MAPA_TIPOS_ONVIO` cobre 19/38 categorias (~50% de cobertura)
+
+**Plano retroativos (3 passos sem code change):**
+1. `POST /api/v1/onvio/reclassify` → resolver 169 docs com doc_scope=NULL
+2. `POST /people-management/ged/auto-assemble?reference_month=2026-02-01` → criar kits Fev
+3. `POST /people-management/ged/auto-assemble?reference_month=2026-03-01 + 04-01` → complementar Mar/Abr
+
+**Ver:** RELATORIO_T4_DIAG_GEDEON_CPRO12.md
+**Princípio:** INV-2 zero alterações; INV-1 todos os agentes lidos por completo (Chesterton)
