@@ -4230,3 +4230,88 @@ autodeclaracao, recibo_decimo_terceiro, rescisao
 **Próximo erro após gedeon (INV-11):** Redis localhost:6379 — publisher bug pré-existente, NÃO ModuleNotFoundError.
 **Regra estabelecida:** script sync_celery_workers.sh criado para futuros hot-copies.
 **Princípio:** §13.1 verificado estado real antes de agir; §13.4 escopo respeitado.
+
+## §64 — Fix TenantStatus enum completo: PT-BR → inglês (CPRO 12 T2-B)
+**Data:** 2026-05-05
+**Arquivo:** backend/modules/config/models/tenant.py
+**Problema:** 5 dos 6 valores do enum TenantStatus em PT-BR incompatíveis com DB.
+T4 CPRO12 corrigiu apenas ATIVO cirurgicamente em notification_triggers.py.
+Este fix completa o alinhamento do próprio enum — fonte de verdade do Python.
+**Valores alterados:** ativo→active, inativo→inactive, suspenso→suspended,
+  bloqueado→blocked, cancelado→cancelled. TRIAL mantido ("trial" já correto).
+**Testes atualizados:** 1 arquivo — test_config_model.py:648-653 (6 assertions .value).
+**Resultado testes:** 105 passed, 0 failed.
+**Princípio:** §13.1 todos os 14 usos lidos antes de alterar; INV-5 apenas .value
+  alterado, .name (ATIVO, INATIVO, SUSPENSO, BLOQUEADO, CANCELADO) preservado —
+  zero impacto nos 14 usos do codebase. §13.4 escopo restrito a TenantStatus.
+
+---
+
+## §65 — Fix get_sync_session → get_sync_db nas tasks SST (CPRO 12 T3-B)
+**Data:** 2026-05-05
+**Branch:** feature/people-management-reorganization
+
+### §65.1 — Problema
+3 tasks SST (ASO, EPI, exames) importavam `get_sync_session` que não existe em `core.database`.
+`hr_events.py` (mesmo módulo) tinha o mesmo problema.
+ImportError em runtime impedia qualquer execução desde a implementação.
+
+### §65.2 — Causa raiz
+`get_sync_session` nunca existiu no codebase. `get_sync_db` é a função correta em
+`core.database.session` (decorada com `@contextmanager`, assinatura `with get_sync_db() as db:` idêntica ao uso no código).
+`get_sync_db` NÃO estava exportada via `core.database/__init__.py` → import correto: `from core.database.session import get_sync_db`.
+
+### §65.3 — Fix
+Arquivos corrigidos (mesmo módulo `health_occupational`):
+- `backend/modules/health_occupational/tasks/sst_alerts_tasks.py` — 3 imports + 3 usos
+- `backend/modules/health_occupational/integrations/hr_events.py` — 1 import + 1 uso
+
+Substituição: `from core.database import get_sync_session` → `from core.database.session import get_sync_db`
+Uso: `with get_sync_session() as db:` → `with get_sync_db() as db:`
+
+### §65.4 — Tasks desbloqueadas
+- `verificar_asos_vencendo` (sst.verificar_asos_vencendo)
+- `verificar_epis_vencendo` (sst.verificar_epis_vencendo)
+- `verificar_exames_pendentes` (sst.verificar_exames_pendentes)
+
+### §65.5 — Outros arquivos com get_sync_session (módulos diferentes — NÃO corrigidos, §13.4)
+- `backend/modules/people_management/sst/tasks/afastamento_tasks.py` — linhas 21,25,58,62
+- `backend/modules/notifications/anti_procrastination/integration/module_integrator.py` — linhas 169,171
+
+### §65.6 — Princípios
+§13.1 Chesterton: ambos os arquivos lidos inteiros antes de alterar.
+§13.4 Escopo: apenas arquivos de `health_occupational/` corrigidos.
+INV-5: assinatura `get_sync_db` verificada antes de substituir — `@contextmanager`, compatível.
+
+## §66 — Inventário completo módulos containers (CPRO 12 T4-INVENTÁRIO)
+**Data:** 2026-05-05
+**Tipo:** READ-ONLY — diagnóstico de sincronização
+**Containers verificados:** 8 (backend + 7 Celery: beat, batch, operacional, integrations, priority, nfse, sefaz)
+**Total módulos HOST:** 48
+
+**Achados críticos:**
+- gedeon/tasks: ausente em operacional, integrations, priority, nfse, sefaz — tasks NÃO carregadas
+- financial/tasks.py: ausente em operacional, integrations, priority, nfse, sefaz
+- health_occupational/tasks: ausente em operacional, priority, nfse, sefaz
+- celery_app.py: TODOS os 7 workers têm versão desatualizada vs HOST
+
+**Módulos ausentes em TODOS os workers (sem tasks):** gdrive, juridico, search
+
+**Anomalia:** health_occupational em celery-beat tem diretório aninhado duplicado
+(docker cp anterior criou /app/modules/health_occupational/health_occupational/)
+
+**Módulos críticos ausentes (com tasks no include celery_app):**
+1. gedeon → operacional, integrations, priority, nfse, sefaz
+2. financial → operacional, integrations, priority, nfse, sefaz
+3. health_occupational → operacional, priority, nfse, sefaz
+
+**Próximos syncs recomendados (prioridade):**
+CRÍTICO: celery_app.py → todos os 7 workers (unlock gedeon/financial/health_occupational tasks)
+CRÍTICO: gedeon/ → operacional, integrations, priority, nfse, sefaz
+CRÍTICO: financial/tasks.py → operacional, integrations, priority, nfse, sefaz
+ALTO: health_occupational/ → operacional, priority, nfse, sefaz
+MÉDIO: gdrive/, juridico/, search/ → todos os workers (sem tasks, baixo risco)
+BAIXO: remover diretório duplicado health_occupational/health_occupational/ do beat
+
+**Princípio:** §13.1 estado real coletado de TODOS os 8 containers antes de qualquer conclusão.
+§13.4 ZERO alterações em containers (read-only).
