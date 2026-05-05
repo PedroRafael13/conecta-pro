@@ -14,6 +14,7 @@ from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request, 
 from pydantic import BaseModel
 
 from core.auth.dependencies import CurrentActiveUser
+from modules.client_portal.services.whatsapp_ia_service import responder_com_ia
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +90,14 @@ async def _process_whatsapp_message(payload: dict) -> None:
 
     # IA: primeiro atendente automático (T7-IA §84)
     try:
-        from modules.client_portal.services.whatsapp_ia_service import responder_com_ia as _ia_fn
-
-        _ia = _ia_fn(mensagem=text, historico=[], cliente_nome="Cliente")
-        _send_whatsapp_reply(phone, _ia["resposta"])
-        if not _ia["escalar"]:
+        _ia = responder_com_ia(mensagem=text, historico=[], cliente_nome="Cliente")
+        if _ia["resposta"]:
+            _send_whatsapp_reply(phone, _ia["resposta"])
+        if _ia["escalar"]:
+            logger.info("WhatsApp IA: escalando para humano — %s", _ia.get("motivo_escalada"))
+            # Futuro: notificar agente no Chatwoot
+        else:
             return  # IA resolveu — não criar ticket
-        logger.info("WhatsApp IA: escalando para humano — %s", _ia.get("motivo_escalada"))
     except Exception as _e:
         logger.warning("WhatsApp IA: falha, continuando fluxo padrão: %s", _e)
 
@@ -220,7 +222,6 @@ def _send_whatsapp_reply(phone: str, message: str) -> None:
 async def receive_whatsapp_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
-    current_user: CurrentActiveUser,
     x_webhook_secret: str | None = Header(None, alias="X-Webhook-Secret"),
 ) -> dict:
     """Recebe webhook do Evolution API e processa mensagens em background."""
