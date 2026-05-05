@@ -132,6 +132,50 @@ workers que têm celery_app.py antigo sem os `include` corretos.
 
 ---
 
+## main_production.py: TODOS os containers desatualizados (INV-12)
+
+> ⚠️ Zona Proibida — este arquivo NÃO pode ser alterado por sessão autônoma. Documentação apenas.
+
+| Localização | Linhas |
+|-------------|--------|
+| HOST (backend/main_production.py) | **1.103** |
+| Todos os 7 workers Celery | **679** |
+| Diferença | **424 linhas ausentes nos containers** |
+
+Seções presentes no HOST e ausentes em TODOS os workers:
+- ConectaEventBus (inicialização no startup)
+- GEDEON orquestrador invisível
+- GDrive tokens no startup
+- Health endpoint `/api/v1/health`
+- CCT 2026 SINDECOMPRESTS
+- GED Auto-Assemble + Dashboard
+- NFS-e + Dashboard Financeiro
+- GED Kit PDFs (geração, ZIP, email)
+- GED Coleta Automática (D4)
+- Saúde Ocupacional (NR-4, NR-6, NR-7, NR-9)
+- Justificativas Fiscais (Lucro Real)
+- Dashboard Financeiro (KPIs + Cashflow + BI)
+- Custeio ABC + Precificação CCT
+- Cobrança PIX Recorrente (MRR)
+- Conciliação Automática Inter × Notas
+- MCP Financial Server
+- NF-e Entrada e NF-e Saída (SEFAZ-AM)
+- Dashboard Fiscal-Financeiro
+- Government Integrations (bloco isolado)
+- OpenClaw Multi-Agent
+- CCT DB Admin (§13)
+- DP Payslips endpoint (§14)
+
+Impacto nos workers Celery: `main_production.py` nos workers é usado apenas como referência
+de configuração de rotas e imports — os workers Celery não servem HTTP diretamente.
+O impacto funcional real é na inicialização de ConectaEventBus e GEDEON context que os
+workers dependem para operar o event bus.
+
+**Ação recomendada:** Jordan decidir se `main_production.py` deve ser sincronizado via
+`docker cp` (apenas para o container backend — não para workers Celery, que não usam HTTP).
+
+---
+
 ## Profundidade de tasks (STEP 4)
 
 | Módulo | beat | batch | operacional | integrations | priority | nfse | sefaz |
@@ -255,6 +299,7 @@ correspondentes. O sync de celery_app.py é pré-requisito para os demais syncs.
 | STEP 3 — tabela matricial módulo × container gerada | ✅ |
 | STEP 4 — profundidade tasks verificada em todos os workers | ✅ |
 | STEP 5 — celery_app.py diff executado em todos os workers | ✅ |
+| INV-12 — main_production.py verificado (1103 HOST vs 679 containers, 424 linhas ausentes) | ✅ |
 | STEP 6 — módulos pós março/2026 identificados | ✅ |
 | STEP 7 — lista priorizada CRÍTICO/ALTO/MÉDIO/BAIXO gerada | ✅ |
 | STEP 8 — §66 no CONTRACTS_GEDEON + commit de docs | ✅ |

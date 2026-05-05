@@ -4294,6 +4294,7 @@ INV-5: assinatura `get_sync_db` verificada antes de substituir — `@contextmana
 - financial/tasks.py: ausente em operacional, integrations, priority, nfse, sefaz
 - health_occupational/tasks: ausente em operacional, priority, nfse, sefaz
 - celery_app.py: TODOS os 7 workers têm versão desatualizada vs HOST
+- main_production.py: 1.103 linhas HOST vs 679 containers — 424 linhas ausentes (ConectaEventBus, GEDEON, GDrive, 22+ routers novos)
 
 **Módulos ausentes em TODOS os workers (sem tasks):** gdrive, juridico, search
 
