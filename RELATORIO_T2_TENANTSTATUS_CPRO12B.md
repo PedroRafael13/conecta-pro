@@ -40,6 +40,30 @@
 
 ---
 
+## Hot-copy para containers
+
+Após auditoria de acompanhamento, detectou-se que `celery-beat` e `celery-batch` ainda
+retornavam `"ativo"` (PT-BR) — hot-copy não havia sido propagado para os workers Celery.
+
+**Fix aplicado (auditoria 2026-05-05):**
+
+```bash
+docker cp backend/modules/config/models/tenant.py <container>:/app/modules/config/models/tenant.py
+```
+
+| Container | Antes | Depois |
+|-----------|-------|--------|
+| conecta-pro-backend | active | ✅ active |
+| conecta-pro-celery-beat | ativo ❌ | ✅ active |
+| conecta-pro-celery-batch | ativo ❌ | ✅ active |
+| conecta-pro-celery-integrations | ativo ❌ | ✅ active |
+| 297439d0453a_conecta-pro-celery-operacional | ativo ❌ | ✅ active |
+| 34bbe0bcda76_conecta-pro-celery-priority | ativo ❌ | ✅ active |
+| a853a3056bf9_conecta-pro-celery-sefaz | ativo ❌ | ✅ active |
+| 8f30ad3e29ad_conecta-pro-celery-nfse | ativo ❌ | ✅ active |
+
+---
+
 ## Worker operacional pós-fix
 
 ```
