@@ -4853,8 +4853,8 @@ hermes.py OK | kronos_tasks.py OK | celery_app.py OK
 **Causa raiz corrigida:** `No module named 'modules.operacional.ai'` → 14+ sub-routers do HR falhavam
 **Resultado:** Modulo Operacoes OK (15:50:40) + Modulo People Management OK
 **Endpoint GEDEON:** `GET /api/v1/people-management/hr/employees/cpf/{cpf}` → 200 ✅ (INV-9: já existe, não criado)
-**Nota trailing slash:** `GET /api/v1/operacional/allocations/` (com /) retorna 200; sem / retorna 404 (comportamento FastAPI)
-**INV-7 (6/6):** /hr/employees/cpf ✅ | /hr/employees ✅ | /hr/employees/search ✅ | /hr/employees/{id} ✅ | /allocations/ ✅ | /allocations/employee/{id} ✅
+**Trailing slash fix (audit):** dual decorator `@router.get("")` + `@router.get("/")` em `list_allocations` — `allocation_controller.py` — `GET /allocations` sem slash → **200** ✅ (commit `8b26bf12`)
+**INV-7 (6/6):** /hr/employees/cpf ✅ | /hr/employees ✅ | /hr/employees/search ✅ | /hr/employees/{id} ✅ | /allocations (sem slash) ✅ | /allocations/employee/{id} ✅
 
 ## §95 — Fix Onvio: Grupo A + sync registrado + 169 NULL + MAPA expandido (CPRO12 T5-ONVIO)
 **Data:** 2026-05-05
