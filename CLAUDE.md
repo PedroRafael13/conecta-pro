@@ -87,7 +87,10 @@ CONTAINER=$(docker ps --filter ancestor=conecta-pro-backend \
 docker cp /opt/conecta-pro/backend/modules/ $CONTAINER:/app/modules/
 docker exec $CONTAINER kill -HUP 1
 
-# Build frontend (serializado — nunca simultâneo)
+# Deploy frontend CORRETO (preserva chunks antigos — evita ChunkLoadError)
+./scripts/deploy/deploy_frontend.sh
+
+# Build frontend manual (somente se deploy_frontend.sh não aplicável)
 cd /opt/conecta-pro/frontend
 NODE_OPTIONS=--max-old-space-size=4096 npm run build
 pm2 restart all
@@ -96,6 +99,56 @@ pm2 restart all
 cd /opt/conecta-pro
 python3 agents/orchestrator_geral.py
 ```
+
+## REGRA CRÍTICA — DEPLOY FRONTEND SEM ChunkLoadError
+### Origem: CPRO12 (2026-05-05) — DevOps fix chunks
+
+**NUNCA** fazer deploy frontend com `npm run build` + `pm2 restart all` direto.
+**SEMPRE** usar `./scripts/deploy/deploy_frontend.sh`.
+
+### Por que essa regra existe
+
+Next.js gera chunks com hash de conteúdo (ex: `ee79b3aa27b940fc.js`).
+Browsers cacheiam com `Cache-Control: immutable, 1y` — o browser continua pedindo o chunk antigo após o deploy.
+O nginx faz `proxy_pass http://frontend` (container) para `/_next/static/` — **não** serve do host.
+Se o container for reiniciado sem preservar os chunks antigos, o browser pede o hash antigo → nginx não encontra no container → 404 → **ChunkLoadError**.
+
+### Como o nginx funciona aqui (importante)
+
+```nginx
+# nginx.conf linha 169-178:
+location /_next/static/ {
+    proxy_pass http://frontend;          # ← container, NÃO host filesystem
+    proxy_cache static_cache;
+    proxy_cache_valid 200 365d;
+    proxy_cache_use_stale error timeout updating;
+}
+```
+
+Os chunks ficam **no container**. O host guarda o `.next/` como fonte de build mas o nginx não lê de lá.
+
+### Fluxo correto de deploy frontend
+
+```bash
+# Script completo (preferencial):
+./scripts/deploy/deploy_frontend.sh
+
+# O script faz:
+# 1. Arquiva chunks antigos do container → /opt/conecta-pro/.chunk_archive/TIMESTAMP/
+# 2. npm run build no host
+# 3. docker cp .next/{static,standalone,server,BUILD_ID} → container
+# 4. Reinjecta chunks antigos no container (preservação anti-ChunkLoadError)
+# 5. docker restart + pm2 restart all
+# 6. Valida HTTP 200 + BUILD_ID host==container
+```
+
+### Dry-run (sem executar)
+
+```bash
+./scripts/deploy/deploy_frontend.sh --dry-run
+```
+
+---
 
 ## REGRA CRÍTICA — HOT-COPY PARA TODOS OS CONTAINERS CELERY
 ### Origem: CPRO12 (2026-05-04) — §66 (inventário módulos), §69 (fix sync session), T4 CPRO12 (pyc stale)
