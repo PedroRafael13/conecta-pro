@@ -202,3 +202,28 @@ def verificar_kits_completos(self):
     except Exception as exc:
         logger.error("verificar_kits_completos falhou: %s", exc)
         raise self.retry(exc=exc, countdown=300)
+
+
+@shared_task(name="gedeon.hermes_vincular_docs_mes", bind=True, max_retries=3)
+def hermes_vincular_docs_mes(self, mes_ref: str | None = None):
+    """
+    Vincula onvio_documents do mês aos slots ged_kit_documents via HERMES.
+    Executa dia 1 às 09:00 (após cron Onvio overnight).
+    mes_ref=None → mês corrente. Formato: 'MM.YYYY'.
+    """
+    try:
+        from modules.gedeon.agents.hermes import Hermes
+
+        hermes = Hermes()
+        result = hermes.processar_mes(mes_ref)
+        logger.info(
+            "HERMES %s: %d vinculados, %d ignorados, %d erros",
+            result.get("mes_ref"),
+            result.get("vinculados", 0),
+            result.get("ignorados", 0),
+            result.get("erros", 0),
+        )
+        return result
+    except Exception as exc:
+        logger.error("hermes_vincular_docs_mes falhou: %s", exc)
+        raise self.retry(exc=exc, countdown=300)

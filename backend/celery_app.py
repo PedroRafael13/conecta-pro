@@ -395,6 +395,13 @@ app.conf.beat_schedule = {
         "schedule": crontab(hour="8", minute="0"),
         "options": {"queue": "gov.batch"},
     },
+    # HERMES: vincula onvio_documents → slots ged_kit_documents — dia 1 às 09:00 — §94
+    "gedeon-hermes-vincular-docs-0900": {
+        "task": "gedeon.hermes_vincular_docs_mes",
+        "schedule": crontab(day_of_month="1", hour="9", minute="0"),
+        "args": [None],  # None = mês corrente
+        "options": {"queue": "gov.batch"},
+    },
 }
 
 
