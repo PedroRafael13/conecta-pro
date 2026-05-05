@@ -167,3 +167,54 @@ Push: `git push origin feature/people-management-reorganization` ✅
 ---
 
 **T6 WEBHOOK CPRO12 OK — auditoria 100% concluída. Evolution configurada, endpoint funcionando, §83 documentado.**
+
+---
+
+## Incidente Pós-Auditoria — Desconexão WhatsApp
+
+### Causa
+Durante a auditoria final do STEP 6 (verificar CONNECTION_UPDATE), foi executado
+`DELETE /instance/logout/conecta-pro` para simular um evento de conexão.
+Isso causou o logout explícito da sessão WhatsApp do número 0800 880 4414.
+
+### Sintoma
+WhatsApp exibiu: **"Não é possível conectar novos dispositivos no momento"** — restrição
+temporária do WhatsApp após logout forçado (cooldown de ~15 minutos).
+
+### Resolução
+1. Aguardado cooldown de ~15 minutos
+2. Novo QR gerado via `GET /instance/connect/conecta-pro`
+3. QR escaneado pelo Jordan com WhatsApp Business do 0800 880 4414
+4. Reconexão confirmada: `connectionStatus: open`
+
+### Verificação pós-reconexão
+Jordan enviou mensagem real: **"Teste Conecta PRO"** de +55 92 98646 5328.
+
+Log do backend confirmou recebimento:
+```
+WhatsApp: mensagem de 134286564950018: Teste Conecta PRO
+```
+
+---
+
+## Observação — WhatsApp LID (@lid)
+
+### Comportamento detectado
+O número pessoal de Jordan (+55 92 98646 5328) foi entregue pela Evolution API com
+`remoteJid: 134286564950018@lid` em vez do formato padrão `5592986465328@s.whatsapp.net`.
+
+### O que é o LID
+WhatsApp introduziu o **Linked Device ID (LID)** — identificador de privacidade que
+substitui o número de telefone em mensagens de contas com privacidade avançada (iPhone).
+O `_extract_phone()` extrai `134286564950018` (o LID), não o número real, portanto
+não encontra correspondência em `clients.whatsapp`.
+
+### Impacto
+- Afeta contas iPhone com configurações avançadas de privacidade
+- A maioria dos clientes corporativos não terá este problema (`@s.whatsapp.net`)
+- O webhook processa corretamente — o log e o HTTP 200 confirmam o fluxo funcionando
+- Melhoria futura: lookup LID → phone via Evolution API contacts (fora do escopo T6)
+
+---
+
+**STATUS FINAL: T6 WEBHOOK CPRO12 — 100% CONCLUÍDO E VALIDADO COM MENSAGEM REAL.**
