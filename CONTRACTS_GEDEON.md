@@ -4684,3 +4684,18 @@ Prime Arena tem apenas `mes_ref IN ('07.2025'..'03.2026')` — os docs de Abril/
 - 169 docs com doc_scope=NULL aguardam execução do scope classifier
 - Onvio não envia condominio_id — matching exclusivamente por nome_arquivo
 - Ver RELATORIO_T1_DIAG_ONVIO_CPRO12.md para análise completa
+
+
+## §87 — Diagnóstico Profundo Banco Inter (CPRO 12 T3-INTER)
+**Data:** 2026-05-05 **Executor:** Claude Sonnet 4.6 [session: t5] [module: ged]
+**Tipo:** DIAGNÓSTICO READ-ONLY (INV-2: zero chamadas à API Inter real)
+**Módulo:** `backend/modules/integrations/inter/` — 11 arquivos, D6 (extrato/conciliação) + D7 (pagamentos OTP)
+**Variáveis .env:** INTER_CLIENT_ID, INTER_CLIENT_SECRET, INTER_CERT_PATH, INTER_KEY_PATH, INTER_AGENCY, INTER_ACCOUNT, INTER_ENVIRONMENT, INTER_BASE_URL, INTER_PIX_KEY, INTER_WEBHOOK_CA_PATH, INTER_WEBHOOK_CA_PATH
+**Scopes OAuth2:** extrato.read, boleto-cobranca.read/write, pagamento-pix.read, pagamento-boleto.read, cob.read/write (ausente: pagamento-pix.write)
+**Endpoints D6+D7:** 25 endpoints mapeados — todos HTTP 404 em produção (inter/ ausente no container)
+**Tabelas:** inter_transactions (536), inter_conciliacao_folha (46 previsto/nunca conciliadas), inter_payments (0), inter_pix_recebidos (1), inter_cobrancas (0)
+**Achado crítico 1:** `modules/integrations/inter/` ausente no container — safe_import silenciou ImportError → 100% endpoints 404
+**Achado crítico 2:** `inter_sync_service.py:82` hardcoded `raw_payload=None` → detalhes_destinatario nunca salvo → conciliação por CPF impossível
+**INV-5:** GEDEON NÃO pode buscar comprovante de salário por colaborador — 3 bloqueios: (1) módulo não no container, (2) detalhes_destinatario NULL em 536/536 rows, (3) código "Cp :" na descricao tem 8 dígitos vs CPF 11 dígitos
+**Próximos passos:** fix inter_sync_service.py:82 → hot-copy inter/ → re-sync extrato → executar conciliação → endpoint GEDEON comprovante
+**Princípio:** §13.1 estado verificado; INV-2 zero API calls Inter; INV-3 apenas nomes de variáveis
