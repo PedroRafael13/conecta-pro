@@ -35,6 +35,21 @@ from .base import (
 logger = logging.getLogger(__name__)
 
 REDIS_TOKEN_KEY = "inter:token"
+
+
+def _extrair_nome_da_descricao(descricao: str) -> str:
+    """
+    Extrai nome do beneficiário da descrição PIX do Banco Inter.
+    Formato: 'PIX ENVIADO - Cp :BANK_CODE-Nome Completo'
+    """
+    if not descricao or " - Cp :" not in descricao:
+        return ""
+    parte = descricao.split(" - Cp :")[-1]
+    if "-" in parte:
+        return parte.split("-", 1)[1].strip()
+    return ""
+
+
 REDIS_TOKEN_TTL = 50 * 60  # 50 min (token vale 1h, renovar antes)
 
 
@@ -249,14 +264,22 @@ class InterAdapter(BaseBankingAdapter):
             elif "BOLETO" in tipo:
                 tx_type = TransactionType.BOLETO
 
+            # Extrai beneficiário: prefere detalhes.nome da API, fallback na descrição
+            detalhes = item.get("detalhes", {}) or {}
+            descricao = item.get("descricao", "")
+            c_name = detalhes.get("nome") or _extrair_nome_da_descricao(descricao)
+            c_doc = detalhes.get("cpfCnpj") or detalhes.get("cpf") or ""
+
             transactions.append(
                 BankTransaction(
                     transaction_id=item.get("idTransacao", ""),
                     date=datetime.fromisoformat(item.get("dataEntrada", "")),
                     amount=self._parse_amount(item.get("valor", 0)),
                     transaction_type=tx_type,
-                    description=item.get("descricao", ""),
+                    description=descricao,
                     balance_after=self._parse_amount(item.get("saldo", 0)) if item.get("saldo") else None,
+                    counterpart_name=c_name or None,
+                    counterpart_document=c_doc or None,
                 )
             )
 

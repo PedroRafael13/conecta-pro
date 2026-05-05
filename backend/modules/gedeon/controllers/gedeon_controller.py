@@ -29,12 +29,15 @@ async def sophia_startup() -> None:
     """
     from modules.gedeon.agents.sophia import sophia
 
-    s = sophia.status()
-    logger.info(
-        "SOPHIA v2.0 startup: %d documentos indexados, motor=%s",
-        s.get("total_documentos", 0),
-        s.get("motor_ativo", "unknown"),
-    )
+    try:
+        s = sophia.status()
+        logger.info(
+            "SOPHIA v2.0 startup: %d documentos indexados, motor=%s",
+            s.get("total_documentos", 0),
+            s.get("motor_ativo", "unknown"),
+        )
+    except Exception as exc:
+        logger.warning("SOPHIA v2.0 startup: status indisponível (%s)", exc)
 
 
 @router.get("/context/{cliente_id}/{competencia}")
@@ -397,6 +400,20 @@ async def sophia_indexar(
 
     resultado = sophia.indexar_acervo_completo()
     return {"status": "ok", **resultado}
+
+
+@router.get("/colaborador/{nome}/pagamentos")
+async def colaborador_pagamentos(
+    nome: str,
+    mes_ref: str | None = Query(None, description="Filtro de mês — formato MM.YYYY ex: 03.2026"),
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """G9.1 — Busca pagamentos do Banco Inter por nome do colaborador."""
+    from modules.gedeon.services.inter_comprovante_service import InterComprovanteService
+
+    svc = InterComprovanteService(db)
+    return await svc.gerar_resumo_pagamentos(nome=nome, mes_ref=mes_ref)
 
 
 def _gerar_checklist(ctx: dict) -> dict:

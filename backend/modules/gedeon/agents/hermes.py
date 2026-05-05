@@ -110,6 +110,16 @@ MAPA_TIPOS_ONVIO_FUNCIONARIO: dict[str, str] = {
     "escala_mes": "escala_mes",
 }
 
+# Categorias de comprovante de pagamento que devem ser buscadas no Banco Inter
+TIPOS_INTER: set[str] = {
+    "comp_salario_individual",
+    "comprovante_va",
+    "comprovante_vt",
+    "comp_pag_fgts",
+    "comp_vt_individual",
+    "comp_va_solides",
+}
+
 # Stop words ignoradas no matching de nomes (espelho de kit_builder_service)
 _STOP_WORDS_MATCH = {
     "CONDOMINIO",
@@ -613,6 +623,84 @@ class Hermes:
             "ignorados": ignorados,
             "erros": erros,
             "kits_atualizados": kits_atualizados,
+        }
+
+    def buscar_pagamentos_inter(
+        self,
+        nome: str,
+        mes_ref: str | None,
+        db,
+    ) -> dict:
+        """
+        Busca transações de débito no Banco Inter por nome do colaborador (sync).
+        Usado pelo endpoint /gedeon/colaborador/{nome}/pagamentos.
+
+        Args:
+            nome: Nome parcial — ex: "GRACIENE" ou "JONHATA DINIZ"
+            mes_ref: Filtro MM.YYYY — ex: "03.2026"
+            db: Session síncrona (SQLAlchemy)
+        """
+        from sqlalchemy import text
+
+        pattern = f"%{nome.upper()}%"
+        params: dict = {"pattern": pattern}
+        date_filter = ""
+
+        if mes_ref:
+            partes = mes_ref.split(".")
+            if len(partes) == 2:
+                import calendar
+
+                mes, ano = int(partes[0]), int(partes[1])
+                ultimo = calendar.monthrange(ano, mes)[1]
+                from datetime import date as _date
+
+                params["inicio"] = _date(ano, mes, 1)
+                params["fim"] = _date(ano, mes, ultimo)
+                date_filter = "AND data_lancamento BETWEEN :inicio AND :fim"
+
+        rows = db.execute(
+            text(f"""
+                SELECT id, data_lancamento, tipo_transacao, valor, descricao,
+                       raw_payload, detalhes_destinatario
+                FROM inter_transactions
+                WHERE tipo_operacao = 'D'
+                  AND (
+                      UPPER(descricao) ILIKE :pattern
+                      OR UPPER(raw_payload->>'counterpart_name') ILIKE :pattern
+                  )
+                  {date_filter}
+                ORDER BY data_lancamento DESC, valor DESC
+                LIMIT 50
+            """),
+            params,
+        ).fetchall()
+
+        transacoes = []
+        total_valor = 0.0
+        for r in rows:
+            raw = r.raw_payload or {}
+            det = r.detalhes_destinatario or {}
+            valor = float(r.valor) if r.valor else 0.0
+            total_valor += valor
+            transacoes.append(
+                {
+                    "id": str(r.id),
+                    "data": str(r.data_lancamento),
+                    "tipo_transacao": r.tipo_transacao,
+                    "valor": valor,
+                    "descricao": r.descricao,
+                    "nome_beneficiario": det.get("nome") or raw.get("counterpart_name"),
+                    "banco_beneficiario": det.get("banco") or raw.get("counterpart_bank"),
+                }
+            )
+
+        return {
+            "nome_buscado": nome,
+            "mes_ref": mes_ref,
+            "total_transacoes": len(transacoes),
+            "total_valor": round(total_valor, 2),
+            "transacoes": transacoes,
         }
 
     def _publicar_evento_vinculados(self, mes_ref: str, vinculados: int) -> None:
