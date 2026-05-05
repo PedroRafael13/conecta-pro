@@ -5096,3 +5096,18 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 **Arquivo:** backend/modules/people_management/ponto/services/dashboard_service.py (linhas 328-337)
 **Hot-copy:** conecta-pro-backend + celery-beat + celery-operacional + docker restart backend
 **Validação:** POST /api/v1/people-management/ponto/sincronizar-solides → HTTP 201, erros=[]
+
+## §103 — Fix collect_time_sheets: UPDATE slots file_path=NULL + asyncpg date fix (CPRO12 T4)
+**Data:** 2026-05-05
+**Problema 1:** collect_time_sheets() saltava registros existentes com file_path=NULL via `continue` incondicional
+**Problema 2:** asyncpg rejeitava strings como parâmetros de data — exige datetime.date/datetime.datetime
+**Fix 1:** existing_doc is not None AND file_path is not None → continue; caso contrário → UPDATE se file_path gerado
+**Fix 2:** dt_inicio = date(ano_i, mes_i, 1); dt_fim = datetime(ano_i, mes_i, ultimo_dia, 23, 59, 59)
+**Arquivo:** backend/modules/people_management/ged/services/kit_builder_service.py
+**Lógica corrigida:**
+  - existing_doc com file_path preenchido → skip (já OK)
+  - existing_doc com file_path=NULL + batidas encontradas → UPDATE file_path + mime_type
+  - sem existing_doc → INSERT novo KitDocument
+  - sem batidas em qualquer caso → file_path=None (honesto)
+**Validação:** reset 1 employee para NULL → auto-assemble → 43/51 com_arquivo (era 42/51)
+**Auto-assemble resultado:** 11 clientes, 8 kits, 0 erros (era 6 erros de DataError asyncpg)
