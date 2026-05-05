@@ -4570,7 +4570,7 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 ## §84 — IA Claude como primeiro atendente WhatsApp (CPRO 12 T7-IA)
 **Data:** 2026-05-05
 **Service:** client_portal/services/whatsapp_ia_service.py
-**Modelo:** claude-haiku-4-5-20251001 (rápido para WhatsApp)
+**Modelo:** claude-sonnet-4-6
 **Integração:** whatsapp_controller.py linha 89 — chamada antes do fluxo de tickets
 **Escalada automática (INV-6):** urgente, emergência, preço, valor, contrato, cancelar, roubo, invasão...
 **INV-4:** IA nunca confirma valores ou fecha contratos (enforced no system prompt)
