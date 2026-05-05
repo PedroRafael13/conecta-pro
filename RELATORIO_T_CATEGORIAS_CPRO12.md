@@ -101,7 +101,9 @@ Funcionalidades:
 - Resumo topo: "Total Kit: R$X | Salário: R$X | VT: R$X | VA: R$X" quando colaborador buscado
 - Badges: IA + % confiança (amarelo) | ✓ Kit (verde) | ✗ Fora (cinza)
 - Botão "Salvar" por linha para salvar observação + categoria
+- INV-10: `useQuery+staleTime=30_000` para catTxs e catStats, `useMutation+invalidateQueries` para categorizar e auto-categorizar
 - Zero `any` TypeScript ✅
+- Build: OK — BUILD_ID: `conecta-pro-1778013278636`
 
 ---
 
@@ -166,37 +168,49 @@ Containers afetados: `conecta-pro-backend` + `conecta-pro-celery-integrations`
 
 ---
 
-## SELF-CHECK FINAL
+## SELF-CHECK FINAL (prompt original — todos os 16 itens)
 
 | Item | Status | Dados reais |
 |------|--------|-------------|
-| STEP 2 — migration sprint88_inter_cat | ✅ | 12 colunas + 3 índices |
-| STEP 3 — categorizacao_service.py criado | ✅ | 6 métodos |
-| STEP 3 — CATEGORIAS_KIT calculado automaticamente | ✅ | INV-5 |
-| STEP 3 — ON CONFLICT DO UPDATE | ✅ | INV-7 |
-| STEP 3 — sugerido_por_ia=false não sobrescrito por IA | ✅ | INV-6 |
+| STEP 0 — contrato lido, §99 confirmado, decisão Jordan | ✅ | §99 era última seção |
+| STEP 1 — wc -l arquivos relevantes (Chesterton) | ✅ | inter_controller=580 / hermes=752 / inter_comprovante=146 / cat_svc=402 |
+| STEP 2 — migration sprint88_inter_cat executada | ✅ | 12 colunas + 3 índices |
+| STEP 3 — categorizacao_service.py criado, py_compile OK | ✅ | 402 linhas, 6 métodos |
+| STEP 3 — CATEGORIAS_KIT calculado automaticamente (INV-5) | ✅ | |
+| STEP 3 — ON CONFLICT DO UPDATE idempotente (INV-7) | ✅ | |
+| STEP 3 — manual não sobrescrito por IA (INV-6) | ✅ | WHERE sugerido_por_ia=true |
 | STEP 3 — heurísticas VT/VA/salário por valor | ✅ | |
 | STEP 4 — 4 endpoints REST adicionados | ✅ | |
 | STEP 4 — get_sync_db_dependency (sessão síncrona) | ✅ | |
 | STEP 5 — HERMES chama auto_categorizar + resumo_kit | ✅ | |
 | STEP 6 — tab "Categorização" no frontend | ✅ | |
-| STEP 6 — select inline para categorização | ✅ | |
-| STEP 6 — badges IA + Kit + Fora | ✅ | |
+| STEP 6 — coluna Observação (input + botão Salvar por linha) | ✅ | |
+| STEP 6 — resumo topo "Total Kit: R$ \| Salário \| VT \| VA" | ✅ | |
+| STEP 6 — badges IA amarelo \| ✓ Kit verde \| ✗ Fora cinza | ✅ | |
+| STEP 6 — INV-10: useQuery+staleTime=30k, useMutation, never useState([]) | ✅ | catTxs e catStats via useQuery |
 | STEP 6 — zero `any` TypeScript | ✅ | tsc sem erros |
-| STEP 7 — py_compile 3 arquivos | ✅ | OK |
-| STEP 7 — GET /categorias/stats | ✅ | HTTP 200 sem_categoria=522 |
-| STEP 7 — GET /colaborador/.../categorias | ✅ | HTTP 200 7 txs |
-| STEP 7 — POST auto-categorizar GRACIENE 03.2026 | ✅ | 7 auto_categorizadas |
-| STEP 7 — POST categorizar vale_transporte | ✅ | incluir_no_kit=true |
-| STEP 8 — hot-copy 2 containers + SIGTERM | ✅ | container healthy |
-| STEP 9 — §101 com campos template | ✅ | |
+| STEP 6 — build Next.js OK | ✅ | BUILD_ID: conecta-pro-1778013278636 |
+| STEP 7.1 — py_compile 3 arquivos | ✅ | OK |
+| STEP 7.2 — POST /transacoes/{id}/categorizar | ✅ | HTTP 200 incluir_no_kit=true |
+| STEP 7.3 — POST auto-categorizar GRACIENE 03.2026 | ✅ | 7 auto_categorizadas |
+| STEP 7.4 — banco confirmado (categorias corretas) | ✅ | 7 rows, incluir_no_kit correto |
+| STEP 8 — hot-copy 2 containers + SIGTERM + healthy | ✅ | |
+| STEP 9 — §101 CONTRACTS + 2 commits separados + push | ✅ | |
+| STEP 10 — relatório completo com Distribuição + BUILD_ID | ✅ | |
+| INV-5 — incluir_no_kit nunca manual | ✅ | |
+| INV-6 — manual sobrescreve IA | ✅ | |
+| INV-7 — idempotente | ✅ | |
+| INV-8 — SIGTERM (não kill -9) | ✅ | |
+| INV-9 — py_compile após cada arquivo | ✅ | |
+| INV-10 — zero any, useQuery+staleTime | ✅ | |
+| INV-12 — 2 commits separados (docs + code) | ✅ | |
 
 ---
 
 ## STATUS FINAL
 
 - `inter_transaction_categorias`: **CRIADA** (12 colunas, produção)
-- `categorizacao_service.py`: **CRIADO** (6 métodos, sync)
+- `categorizacao_service.py`: **CRIADO** (402 linhas, 6 métodos, sync)
 - 4 endpoints: **HTTP 200** em produção
 - Auto-categorização GRACIENE 03.2026: **7 txs categorizadas**
 - Categorização manual vale_transporte: **incluir_no_kit=true, document_type=comp_vt_individual**

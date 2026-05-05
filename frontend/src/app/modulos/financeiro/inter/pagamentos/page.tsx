@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Wallet, TrendingDown, ShieldCheck, Lock } from "lucide-react";
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
@@ -517,15 +518,13 @@ export default function PagamentosPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState("");
   const [catNome, setCatNome] = useState("");
+  const [catNomeBusca, setCatNomeBusca] = useState("");
   const [catMes, setCatMes] = useState(() => {
     const d = new Date();
     return `${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
   });
-  const [catTxs, setCatTxs] = useState<CatTx[]>([]);
-  const [catStats, setCatStats] = useState<StatsCategoria[]>([]);
-  const [catLoading, setCatLoading] = useState(false);
-  const [catError, setCatError] = useState("");
   const [catObs, setCatObs] = useState<Record<string, string>>({});
+  const qc = useQueryClient();
   const [isJordan, setIsJordan] = useState(false);
 
   useEffect(() => {
@@ -575,59 +574,52 @@ export default function PagamentosPage() {
     }
   }, []);
 
-  const fetchCatStats = useCallback(async () => {
-    setCatLoading(true);
-    setCatError("");
-    try {
-      const data = await apiFetch(`${API_CAT}/categorias/stats?mes_ref=${catMes}`);
-      setCatStats(data.por_categoria || []);
-    } catch (e: unknown) {
-      setCatError(e instanceof Error ? e.message : "Erro ao carregar stats");
-    } finally {
-      setCatLoading(false);
-    }
-  }, [catMes]);
+  const { data: catStatsRaw, isLoading: catStatsLoading, error: catStatsError } = useQuery({
+    queryKey: ["inter-cat-stats", catMes],
+    queryFn: () => apiFetch(`${API_CAT}/categorias/stats?mes_ref=${catMes}`) as Promise<{ por_categoria: StatsCategoria[] }>,
+    enabled: tab === "categorizacao",
+    staleTime: 30_000,
+  });
+  const catStats: StatsCategoria[] = catStatsRaw?.por_categoria ?? [];
 
-  const fetchCatTxs = useCallback(async () => {
-    if (!catNome.trim()) return;
-    setCatLoading(true);
-    setCatError("");
-    try {
-      const nome = encodeURIComponent(catNome.trim());
-      const data = await apiFetch(`${API_CAT}/colaborador/${nome}/categorias?mes_ref=${catMes}`);
-      setCatTxs(Array.isArray(data) ? data : []);
-    } catch (e: unknown) {
-      setCatError(e instanceof Error ? e.message : "Erro ao carregar transações");
-    } finally {
-      setCatLoading(false);
-    }
-  }, [catNome, catMes]);
+  const { data: catTxsRaw, isLoading: catTxsLoading, error: catTxsError } = useQuery({
+    queryKey: ["inter-cat-txs", catNomeBusca, catMes],
+    queryFn: () => apiFetch(`${API_CAT}/colaborador/${encodeURIComponent(catNomeBusca.trim())}/categorias?mes_ref=${catMes}`) as Promise<CatTx[]>,
+    enabled: tab === "categorizacao" && catNomeBusca.trim().length > 0,
+    staleTime: 30_000,
+  });
+  const catTxs: CatTx[] = Array.isArray(catTxsRaw) ? catTxsRaw : [];
+  const catLoading = catStatsLoading || catTxsLoading;
+  const catError = catStatsError instanceof Error ? catStatsError.message
+    : catTxsError instanceof Error ? catTxsError.message : "";
 
-  const handleAutoCat = async () => {
-    if (!catNome.trim()) return;
-    setCatLoading(true);
-    setCatError("");
-    try {
-      const nome = encodeURIComponent(catNome.trim());
-      await apiFetch(`${API_CAT}/colaborador/${nome}/auto-categorizar?mes_ref=${catMes}`, { method: "POST" });
-      await fetchCatTxs();
-    } catch (e: unknown) {
-      setCatError(e instanceof Error ? e.message : "Erro na auto-categorização");
-    } finally {
-      setCatLoading(false);
-    }
+  const autoCatMutation = useMutation({
+    mutationFn: (nome: string) => apiFetch(
+      `${API_CAT}/colaborador/${encodeURIComponent(nome)}/auto-categorizar?mes_ref=${catMes}`,
+      { method: "POST" },
+    ),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["inter-cat-txs", catNomeBusca, catMes] });
+    },
+  });
+
+  const categorizarMutation = useMutation({
+    mutationFn: ({ id, categoria, observacao }: { id: string; categoria: Categoria; observacao?: string }) =>
+      apiFetch(`${API_CAT}/transacoes/${id}/categorizar`, {
+        method: "POST",
+        body: JSON.stringify({ categoria, observacao: observacao ?? null }),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["inter-cat-txs", catNomeBusca, catMes] });
+    },
+  });
+
+  const handleAutoCat = () => {
+    if (catNomeBusca.trim()) autoCatMutation.mutate(catNomeBusca.trim());
   };
 
-  const handleCategorizar = async (transactionId: string, categoria: Categoria, observacao?: string) => {
-    try {
-      await apiFetch(`${API_CAT}/transacoes/${transactionId}/categorizar`, {
-        method: "POST",
-        body: JSON.stringify({ categoria, observacao: observacao || null }),
-      });
-      await fetchCatTxs();
-    } catch (e: unknown) {
-      setCatError(e instanceof Error ? e.message : "Erro ao categorizar");
-    }
+  const handleCategorizar = (transactionId: string, categoria: Categoria, observacao?: string) => {
+    categorizarMutation.mutate({ id: transactionId, categoria, observacao });
   };
 
   useEffect(() => {
@@ -637,10 +629,9 @@ export default function PagamentosPage() {
     else if (tab === "aprovados") fetchPayments("aprovado");
     else if (tab === "historico") fetchPayments();
     else if (tab === "audit") fetchAudit();
-    else if (tab === "categorizacao") { fetchCatStats(); setCatTxs([]); }
     else if (tab === "novo") setPayments([]);
     return () => clearInterval(interval);
-  }, [tab, fetchPayments, fetchSaldo, fetchAudit, fetchCatStats]);
+  }, [tab, fetchPayments, fetchSaldo, fetchAudit]);
 
   const TABS: { key: Tab; label: ReactNode; red?: boolean }[] = [
     { key: "novo", label: "Novo Pagamento" },
@@ -824,25 +815,25 @@ export default function PagamentosPage() {
                 />
               </div>
               <button
-                onClick={fetchCatTxs}
+                onClick={() => setCatNomeBusca(catNome)}
                 disabled={catLoading || !catNome.trim()}
                 className="bg-[#0A2540] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#1a3a5c] disabled:opacity-50"
               >
                 Buscar
               </button>
               <button
-                onClick={handleAutoCat}
-                disabled={catLoading || !catNome.trim()}
+                onClick={() => { setCatNomeBusca(catNome); handleAutoCat(); }}
+                disabled={catLoading || !catNome.trim() || autoCatMutation.isPending}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
               >
-                Auto-Categorizar
+                {autoCatMutation.isPending ? "Processando..." : "Auto-Categorizar"}
               </button>
               <button
-                onClick={fetchCatStats}
+                onClick={() => void qc.invalidateQueries({ queryKey: ["inter-cat-stats", catMes] })}
                 disabled={catLoading}
                 className="border border-gray-300 px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
               >
-                Stats do Mês
+                Atualizar Stats
               </button>
             </div>
 
