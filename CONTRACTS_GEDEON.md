@@ -5068,3 +5068,18 @@ A proteção está na camada de dados (`users.permissions`) e pode ser expandida
 cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (10 rows), nfses (27 rows) — registros históricos, nome correto na época da emissão.
 
 **tenants.nome já correto:** CONECTAMAIS ELETRONICA LTDA (não necessitou UPDATE)
+
+## §105 — UI Gestão de Permissões por Módulo (CPRO12 T3)
+**Data:** 2026-05-05
+**Página:** /modulos/configuracoes/usuarios
+**Endpoint GET:** GET /api/v1/users/ (lista com permissions[], role como str — sem enum)
+**Endpoint PATCH:** PATCH /api/v1/users/{id}/permissions
+**Restrição de escrita:** apenas Jordan Jesus (jjesus@conectamais.pro) pode editar
+**Módulos válidos:** module:financeiro, module:fiscal, module:dp, module:operacional, module:crm, module:ged, module:dev
+**Módulo financeiro:** exclusivo Jordan — bloqueado via HTTP 400 se tentado por outros
+**Jordan self-edit:** bloqueado via HTTP 400 (permissões imutáveis)
+**UI:** tabela com nome, email, role, módulos (badges), ativo | drawer lateral checkboxes por módulo
+**Proteção UI:** Jordan mostra "Acesso Total (CEO)" sem checkboxes editáveis; financeiro mostra Lock "Exclusivo CEO"
+**TypeScript:** sem `any`; useQuery<UsersResponse> staleTime 30s; useMutation para PATCH
+**Schema backend:** UserListItem (role: str, permissions: list[str]) — evita falha de enum UserRole
+**Deploy:** build via deploy_frontend.sh; backend hot-copy + docker restart
