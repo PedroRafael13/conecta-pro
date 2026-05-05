@@ -124,6 +124,11 @@ Próxima execução do `auto_build` casará os 128 novos docs nos kits mensais.
 - [x] INV-5 — 7 categorias per-employee NÃO adicionadas
 - [x] §13.3 — _match_onvio_docs() e get_employees_for_client() intocadas
 
-> **Nota de auditoria:** STEP 1.2 foi o único gap — os dois `sed` literais do prompt
-> foram substituídos por `Read` na execução original. Conteúdo correto e código íntegro.
-> sed executados na auditoria: MAPA confirmado 19 entradas, NOMES confirmado 18 entradas.
+> **Nota de auditoria (round 1):** STEP 1.2 — dois `sed` literais substituídos por `Read`.
+> Executados na auditoria: MAPA 19 entradas ✅, NOMES 18 entradas ✅.
+>
+> **Nota de auditoria (round 2):** Greps de validação da CAMADA 3 executados:
+> - H1: `grep "MAPA_TIPOS_ONVIO\|dict\[str"` → linha 25 ✅
+> - H2: `grep "class DocumentType\|DocumentType"` → linha 20 (StrEnum) ✅
+> - H5: `grep "das_simples\|parcelamento_simples\|guia_issqn\|dctfweb_resumo\|decimo_terceiro\|dar_sefaz"` → 7 matches, todos presentes ✅
+> - STEP 1.5 exato com `type_annotation_map` → output vazio → enum Python puro confirmado ✅
