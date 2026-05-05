@@ -4549,3 +4549,20 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Status final:** online=true, connectionStatus=open ✅
 **Próximos passos:** integrar GED→WhatsApp + instalar Chatwoot multiagente
 **Princípio:** §13.1 docker-compose lido inteiro antes de editar; INV-3 serviços existentes intocados
+
+## §81 — Botão Enviar Kit + Endpoint Unificado GDrive+Email (CPRO 12 T5)
+**Data:** 2026-05-05
+**Tipo:** FEATURE — backend + frontend
+**Endpoint principal:** `POST /api/v1/ged/kits/{kit_id}/enviar` (auto_assemble_controller.py)
+**Endpoint acessório:** `POST /api/v1/ged/kits/{kit_id}/enviar` idêntico adicionado a people_management/ged/kit_controller.py (não acessível via HTTP — arquivo correto não registrado em main_production)
+**Frontend:** KitDetalheModal + KitCard (kits/page.tsx) — GEDEON kits page
+**Fluxo atômico:** GDrive sync primeiro → email só se GDrive OK → grava sent_at/sent_method='email+gdrive'/sent_to
+**Validação:** HTTP 400 se completion_percentage < 100
+**Frontend 2-step:** GET /api/v1/ged/kits?client_id={condominio_id}&month={M}&year={YYYY} → kit_id → POST /enviar
+**INV-5:** envio bloqueado (HTTP 400) se completion_percentage < 100 ✅
+**INV-13:** badge 'Enviado' aparece via sentMap local (sem refresh de página) ✅
+**Achado:** modules/gedeon/schemas/ não existe no container → GEDEON router não registrado em produção (try/except silencia o erro no startup)
+**Achado:** GET /api/v1/ged/kits é servido por modules/ged/controllers/auto_assemble_controller.py (não por people_management/ged/kit_controller.py)
+**Achado:** docker restart preserva writable layer (docker cp changes sobrevivem ao restart) — diferente de kill -9
+**Smoke test:** HTTP 400 confirmado para kit com completion_percentage=0.0% ✅
+**Princípio:** §13.1 arquivos lidos integralmente; INV-9 zero any no TypeScript novo; INV-13 sem refresh
