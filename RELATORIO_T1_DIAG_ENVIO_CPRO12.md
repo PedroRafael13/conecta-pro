@@ -219,7 +219,7 @@ com um kit que tenha documentos reais (file_path não-null).
 **Commits:**
 - docs: `2c063bc7` — docs(contracts): §75 — Diagnóstico canais envio kit GED
 - relatorio: `93a53e73` — docs(relatorio): T1-DIAG-ENVIO CPRO12
-- auditoria: `[ver commit atual]`
+- auditoria: `56152fbb` — docs(relatorio): T1-DIAG-ENVIO auditoria — STEP 2.5/3.5/3.6/4.3/5.1 + Cenário A
 
 **Cenário: A** — GDrive + Email parcialmente prontos; WhatsApp pendente configuração Evolution API.
 
