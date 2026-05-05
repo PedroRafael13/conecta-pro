@@ -4472,21 +4472,24 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Próximo passo:** 1 prompt para Email (integrar EmailKitService); GDrive pronto para acionar
 **Princípio:** §13.1 evidências reais antes de implementar; INV-2 READ-ONLY respeitado; INV-9 tabela por canal
 
-## §76 — Diagnóstico WhatsApp/Evolution API (CPRO 12 T2-DIAG-WHATSAPP)
+## §77 — Diagnóstico profundo WhatsApp (CPRO 12 T2-DIAG-WHATSAPP)
 **Data:** 2026-05-05
+**Número alvo:** (92) 98221-4414
 **Tipo:** READ-ONLY — diagnóstico pré-implementação
 **Achados:**
-  - Evolution API NÃO instalada no VPS: zero containers, nenhuma imagem, DNS `api.evolution.app.br` falha
-  - Código PRONTO: dois serviços implementados (simples aiohttp + completo com fila/banco)
-  - Endpoints REST registrados: 5 endpoints em /api/v1/whatsapp/ (kit, certidão, nfse, custom, status)
+  - Evolution API NÃO instalada no VPS: zero containers, DNS NXDOMAIN, portas 8081/8082/4000 livres
+  - Três serviços WhatsApp no código: (A) connectors/whatsapp/service.py (aiohttp simples),
+    (B) integrations/whatsapp/services/whatsapp_service.py (fila+banco, envio simulado),
+    (C) client_portal/controllers/whatsapp_controller.py (webhook tickets)
+  - Status endpoint: {"online":false,"enabled":true,"error":"Cannot connect to api.evolution.app.br:443 ssl:default"}
   - Tabelas DB (whatsapp_configs, message_queue, message_log, message_template): NÃO existem no banco
-  - WHATSAPP_API_ENABLED=true no .env mas URL inválida → exception em toda chamada
-  - Número (92) 98221-4414: não cadastrado em .env nem em nenhum cliente
+  - WHATSAPP_API_ENABLED=true no .env mas URL inválida; WHATSAPP_NUMBER e EVOLUTION_INSTANCE não configurados
+  - Número (92) 98221-4414: não cadastrado em .env nem em clientes (campo whatsapp na tabela clients existe)
   - VPS tem recursos: 13 GB RAM disponível, 331 GB disco livre, porta 8081 livre
-  - Integração GED→WhatsApp ausente: send_kit não chama WhatsApp
+  - GED people_management/ged/: sem referência a WhatsApp; send_kit não integra WhatsApp
 **Bloqueadores:** B1 DNS/URL inválida (CRÍTICO), B2 tabelas ausentes (CRÍTICO), B3 número não cadastrado, B4 GED não integrado
 **Opções para Jordan:**
   A) Evolution API self-hosted: docker-compose + porta 8081 + QR code scan (RECOMENDADA)
   B) Evolution API cloud: conta paga em evolution.app.br
   C) WhatsApp Business API Meta: oficial, templates aprovados, migration necessária
-**Princípio:** INV-2 READ-ONLY absoluto; INV-8 zero mensagens enviadas; §13.1 todos os arquivos lidos inteiros.
+**Princípio:** INV-2 READ-ONLY absoluto; INV-8 zero mensagens enviadas; §13.1 três serviços lidos inteiros.
