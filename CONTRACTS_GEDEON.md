@@ -4336,7 +4336,19 @@ Este fix completa o alinhamento do próprio enum — fonte de verdade do Python.
 **Arquivo:** CLAUDE.md
 **Regra adicionada:** todo hot-copy inclui beat+batch+operacional+integrations+priority+nfse+sefaz; limpar pyc antes do cp; celery_app.py sync obrigatório quando include muda.
 **Posição:** inserida entre "Comandos Essenciais" e "Zonas Proibidas" (linha 100).
-**Referência:** §66 (inventário — 46 dias beat parado), T4 CPRO12 (pyc stale descoberto).
+**Referência:** §66 (inventário módulos), §69 (fix sync session T3-C), T4 CPRO12 (pyc stale). Nota: §67/§68 não existem — tarefas paralelas T1-C/T2-C não executadas.
 **Script:** scripts/deploy/sync_celery_workers.sh (ferramenta padrão).
 **Linhas adicionadas:** 85 (CLAUDE.md: 240 → 325 linhas).
 **Princípio:** §13.1 CLAUDE.md lido inteiro antes de editar; §13.4 apenas adição, sem remoção de seções existentes.
+
+## §69 — Fix get_sync_session → get_sync_db: people_management e notifications (CPRO 12 T3-C)
+**Data:** 2026-05-05
+**Arquivos corrigidos:** 2
+- backend/modules/people_management/sst/tasks/afastamento_tasks.py — 2 imports + 2 usos
+- backend/modules/notifications/anti_procrastination/integration/module_integrator.py — 1 import + 1 uso
+**Import correto:** from core.database.session import get_sync_db
+**Import errado removido:** from core.database import get_sync_session (não existe)
+**Tasks desbloqueadas:** verificar_afastamentos_vencidos, verificar_inss_pendente
+**Contexto:** T3-B (§65) corrigiu health_occupational/; esta tarefa conclui os 2 módulos restantes listados em §13.4.
+**py_compile:** OK (ambos arquivos).
+**Princípio:** §13.1 ambos os arquivos lidos inteiros antes de alterar; INV-3 apenas imports trocados, lógica de negócio intacta; §13.4 escopo restrito a people_management e notifications.

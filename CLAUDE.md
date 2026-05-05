@@ -98,7 +98,7 @@ python3 agents/orchestrator_geral.py
 ```
 
 ## REGRA CRÍTICA — HOT-COPY PARA TODOS OS CONTAINERS CELERY
-### Origem: CPRO12 (2026-05-04) — §66 do Contrato (inventário), T4 CPRO12 (pyc stale)
+### Origem: CPRO12 (2026-05-04) — §66 (inventário módulos), §69 (fix sync session), T4 CPRO12 (pyc stale)
 
 **NUNCA copie um módulo apenas para o container `backend`.**
 **TODO hot-copy deve incluir TODOS os containers Celery relevantes.**
