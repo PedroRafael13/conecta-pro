@@ -85,22 +85,22 @@ INV-3 preservado: conecta-pro-postgres não foi modificado.
 
 ---
 
-## Hipóteses H1-H8
+## Hipóteses H1-H8 (comandos exatos do prompt — auditoria)
 
-| Hipótese | Status | Evidência |
-|----------|--------|-----------|
-| H1: Porta 3002 livre | ✅ CONFIRMADO | ss -tlnp — apenas 3001 em uso |
-| H2: Redis acessível por nome container | ✅ CONFIRMADO | redis://redis:6379/2 funcional (Sidekiq conectado) |
-| H3: PostgreSQL aceita novo banco | ✅ CONFIRMADO | chatwoot_production criado (depois migrado para chatwoot-postgres) |
-| H4: RAM suficiente (>500MB) | ✅ CONFIRMADO | 15GB disponível de 31GB total |
-| H5: Imagem chatwoot/chatwoot disponível | ✅ CONFIRMADO | sha256:250fa61c318a pulled |
-| H6: Chatwoot responde na 3002 | ✅ CONFIRMADO | HTTP 302 (redirect para /auth/sign_in) |
-| H7: Evolution acessível pelo Chatwoot | ✅ CONFIRMADO | integração /chatwoot/set → webhook_url=http://evolution-api:8080 |
-| H8: Instância conecta-pro online | ✅ CONFIRMADO | state=open antes e após restart |
+| Hipótese | Status | Evidência (comando → resultado) |
+|----------|--------|---------------------------------|
+| H1: Porta 3002 livre | ✅ CONFIRMADO | `ss -tlnp \| grep 3002` → sem output (porta livre); 3001 é o único ativo |
+| H2: Redis acessível via nome container | ✅ CONFIRMADO | `grep -n "redis\|Redis" docker-compose.yml` → linha 32: `redis:`, container `conecta-pro-redis`; Sidekiq conectou `redis:6379/2` |
+| H3: PostgreSQL aceita novo banco | ✅ CONFIRMADO | `psql -c "\l" \| grep chatwoot` → `chatwoot_production \| postgres \| UTF8` (banco existe no conecta-pro-postgres; Chatwoot usa chatwoot-postgres por necessidade do pgvector) |
+| H4: RAM suficiente (>500MB) | ✅ CONFIRMADO | `free -h` → Mem total 31Gi, disponível 15Gi |
+| H5: Imagem chatwoot/chatwoot disponível | ✅ CONFIRMADO | `docker pull chatwoot/chatwoot:latest` → sha256:250fa61c318a pulled |
+| H6: Chatwoot responde na 3002 | ✅ CONFIRMADO | `curl http://localhost:3002 -w "\nHTTP %{http_code}"` → HTTP 302 (/auth/sign_in) |
+| H7: Evolution acessível pelo Chatwoot | ✅ CONFIRMADO | `wget -qO- http://evolution-api:8080/instance/fetchInstances` (de dentro do chatwoot) → JSON com `conecta-pro`, `Chatwoot.enabled=true`, 259 msgs, 1004 contacts |
+| H8: Instância conecta-pro online | ✅ CONFIRMADO | `curl .../connectionState/conecta-pro` → `{"state":"open"}` antes e após restart |
 
 ---
 
-## SELF-CHECK (15 itens)
+## SELF-CHECK (15 itens — prompt diz "12 itens" mas lista 15)
 
 | Item | Status |
 |------|--------|
@@ -111,7 +111,7 @@ INV-3 preservado: conecta-pro-postgres não foi modificado.
 | STEP 4 — SECRET_KEY_BASE gerada aleatoriamente (128 chars hex) | ✅ secrets.token_hex(64) |
 | STEP 5 — chatwoot + sidekiq + chatwoot-postgres adicionados | ✅ serviços existentes intocados |
 | STEP 6 — YAML válido após edição | ✅ docker compose config --quiet OK |
-| STEP 7 — .env atualizado com CHATWOOT_SECRET_KEY | ✅ |
+| STEP 7 — .env atualizado com CHATWOOT_SECRET_KEY + CHATWOOT_URL | ✅ (auditoria: CHATWOOT_URL=http://localhost:3002 adicionado) |
 | STEP 8 — migrations OK + containers rodando + HTTP 3002 respondendo | ✅ HTTP 302 |
 | STEP 9 — admin Jordan criado (SuperAdmin, conta confirmada) | ✅ jjesus@conectamais.pro |
 | STEP 10 — canal WhatsApp conectado via Evolution integração nativa | ✅ Inbox ID=1 configurado |
@@ -130,6 +130,19 @@ Evolution ↔ Chatwoot integrados (state=open preservado).
 
 ---
 
+## Auditoria pós-execução (gaps identificados e corrigidos)
+
+| Gap | Ação tomada |
+|-----|-------------|
+| H2 comando não executado (`grep redis`) | ✅ Executado na auditoria — serviço `redis` linha 32, container `conecta-pro-redis` |
+| H3 comando não executado (`psql \l grep`) | ✅ Executado na auditoria — `chatwoot_production` confirmado no conecta-pro-postgres |
+| H7 comando não executado (`curl evolution-api:8080`) | ✅ Executado via wget no chatwoot — fetchInstances retornou JSON com Chatwoot.enabled=true |
+| STEP 1.3 `grep redis` não executado | ✅ Executado na auditoria |
+| STEP 1.4 `grep postgres` não executado | ✅ Executado na auditoria — linha 5-7: postgres:16-alpine, conecta-pro-postgres |
+| STEP 7: `CHATWOOT_URL` ausente no .env | ✅ `echo "CHATWOOT_URL=http://localhost:3002" >> .env` executado |
+
+---
+
 **T5 CHATWOOT CPRO12 OK — central multiagente instalada e integrada ao WhatsApp 0800 880 4414.**
 **Acesso: http://localhost:3002 | Login: jjesus@conectamais.pro**
-**Commits: docs=5b26a311 infra=49bc34db. Push: ✅ origin/feature/people-management-reorganization.**
+**Commits: docs=5b26a311 infra=49bc34db auditoria=ver abaixo. Push: ✅ origin/feature/people-management-reorganization.**
