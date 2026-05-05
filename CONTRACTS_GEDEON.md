@@ -4654,3 +4654,21 @@ Prime Arena tem apenas `mes_ref IN ('07.2025'..'03.2026')` — os docs de Abril/
 4. Fase 2 (banco): quando FASE 2 estiver ativa, comprovantes de pagamento serão preenchidos
 
 **Princípio:** §13.1 estado verificado antes; INV-8 kit NÃO enviado ao cliente; INV-3 código não modificado; INV-4/5 erros documentados, não corrigidos
+
+## §86 — Equipe real cadastrada no Chatwoot + Conecta PRO (CPRO 12 T1-EQUIPE)
+**Data:** 2026-05-05
+**Chatwoot — 6 agentes corrigidos com emails reais (via update_columns, bypass Devise):**
+- ID 2: Pyetra Jesus | pjesus@conectamais.pro
+- ID 3: Orlailson Paiva | opaiva@conectamais.pro
+- ID 4: Eliziel Gonzaga | egonzaga@conectamais.pro
+- ID 5: Ramon Araujo | romondossantosaraujo16@gmail.com
+- ID 6: Vaga Disponivel | vaga.comercial@conectamais.pro (slot extra — time tem 6 pessoas reais)
+- ID 7: Pedro Neves | pedrorafaeldsn12@gmail.com
+- ID 8: Ruan Souza | ruansouza538@gmail.com
+**Convites enviados:** 6 agentes (send_confirmation_instructions)
+**Conecta PRO — 3 usuários cadastrados via /auth/register:**
+- Pyetra Jesus (pjesus@conectamais.pro) — HTTP 201
+- Ramon Araujo (romondossantosaraujo16@gmail.com) — HTTP 201
+- Ruan Souza (ruansouza538@gmail.com) — HTTP 201
+**Conecta PRO — 1 já existia:** Pedro Neves (pedrorafaeldsn12@gmail.com — como "Pedro rafael")
+**Princípio:** §13.1 estado verificado antes; INV-3 nenhum agente removido; INV-5 senhas não expostas; INV-6 duplicatas verificadas
