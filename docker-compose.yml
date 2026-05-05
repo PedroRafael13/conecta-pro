@@ -238,6 +238,98 @@ services:
       - conecta-pro-network
 
   # ==========================================================================
+  # Chatwoot PostgreSQL (pgvector/pgvector:pg16 — necessário para Chatwoot v3+)
+  # Autorização Jordan Jesus 2026-05-05 — §82
+  # ==========================================================================
+  chatwoot-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: chatwoot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: chatwoot_production
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - chatwoot_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chatwoot_production"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - conecta-pro-network
+
+  # ==========================================================================
+  # Chatwoot — Central Multiagente WhatsApp
+  # Autorização Jordan Jesus 2026-05-05 — §82
+  # ==========================================================================
+  chatwoot:
+    image: chatwoot/chatwoot:latest
+    container_name: chatwoot
+    restart: unless-stopped
+    command: bundle exec rails s -p 3000 -b 0.0.0.0
+    ports:
+      - "3002:3000"
+    environment:
+      - RAILS_ENV=production
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY}
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@chatwoot-postgres:5432/chatwoot_production
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/2
+      - FRONTEND_URL=https://chat.conectamais.pro
+      - DEFAULT_LOCALE=pt_BR
+      - INSTALLATION_ENV=docker
+      - MAILER_SENDER_EMAIL=noreply@conectamais.pro
+      - SMTP_ADDRESS=${SMTP_HOST:-smtp.hostinger.com}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_ENABLE_STARTTLS_AUTO=false
+      - SMTP_TLS=true
+      - FORCE_SSL=false
+      - ENABLE_ACCOUNT_SIGNUP=false
+    depends_on:
+      chatwoot-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - conecta-pro-network
+    volumes:
+      - chatwoot_data:/app/storage
+
+  chatwoot-sidekiq:
+    image: chatwoot/chatwoot:latest
+    container_name: chatwoot-sidekiq
+    restart: unless-stopped
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    environment:
+      - RAILS_ENV=production
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY}
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@chatwoot-postgres:5432/chatwoot_production
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/2
+      - FRONTEND_URL=https://chat.conectamais.pro
+      - DEFAULT_LOCALE=pt_BR
+      - INSTALLATION_ENV=docker
+      - MAILER_SENDER_EMAIL=noreply@conectamais.pro
+      - SMTP_ADDRESS=${SMTP_HOST:-smtp.hostinger.com}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_ENABLE_STARTTLS_AUTO=false
+      - SMTP_TLS=true
+      - FORCE_SSL=false
+    depends_on:
+      chatwoot-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - conecta-pro-network
+    volumes:
+      - chatwoot_data:/app/storage
+
+  # ==========================================================================
   # Evolution API — WhatsApp Business (auto-hospedada)
   # Autorização Jordan Jesus 2026-05-05 — §80
   # ==========================================================================
@@ -263,6 +355,8 @@ services:
       - WEBSOCKET_ENABLED=true
       - WEBSOCKET_GLOBAL_EVENTS=true
       - CONFIG_SESSION_PHONE_VERSION=2.3000.1035194821
+      # Chatwoot integration — habilitado em T5-CHATWOOT (2026-05-05)
+      - CHATWOOT_ENABLED=true
     depends_on:
       postgres:
         condition: service_healthy
@@ -279,6 +373,10 @@ volumes:
   nginx_cache:
     driver: local
   evolution_data:
+    driver: local
+  chatwoot_data:
+    driver: local
+  chatwoot_postgres_data:
     driver: local
 
 networks:
