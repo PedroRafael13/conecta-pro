@@ -4077,3 +4077,81 @@ Card "Saldo Inter" exibia R$0,00 enquanto D6 `/financeiro/inter` mostrava R$32.2
 GET /api/v1/financeiro/inter/payments/saldo-limite
 {"saldo_inter": 32298.58, "limite_diario": 5000.0, ...}  HTTP 200 ✅
 ```
+
+## §62 — Expansão MAPA_TIPOS_ONVIO: 8 → 19 categorias (CPRO 12 T5)
+**Data:** 2026-05-05
+**Branch:** feature/people-management-reorganization
+**Arquivos:** kit_builder_service.py (MAPA + NOMES) + kit_document.py (enum DocumentType)
+
+### §62.1 — Antes
+- 8 categorias no mapa: folha_pagamento, dctfweb_recibo/extrato/declaracao, fgts_guia/relatorio/consignado/consignado_relatorio
+- Docs casáveis: 144/605 (24%)
+
+### §62.2 — Depois
+- 19 categorias no mapa
+- Docs casáveis: 272/605 (45%)
+- +128 docs desbloqueados
+
+### §62.3 — Categorias adicionadas
+das_simples_nacional (21), parcelamento_simples (20), guia_issqn (20),
+dctfweb_resumo_creditos (11), dctfweb_resumo_debitos (11), dctfweb_creditos (9),
+dctfweb_debitos (9), decimo_terceiro (8), empresa_docs→outro (8),
+inss_guia→gps_inss (5), dar_sefaz (6)
+
+### §62.4 — NÃO adicionadas (per-employee)
+recibo_folha, contrato_trabalho, ficha_registro, declaracao_vt,
+autodeclaracao, recibo_decimo_terceiro, rescisao
+
+### §62.5 — Decisões técnicas
+- H4: DocumentType é StrEnum Python puro (String(30) no banco) — sem migration necessária
+- empresa_docs → "outro" (OUTRO já existia no enum)
+- inss_guia → "gps_inss" (GPS_INSS já existia no enum)
+- 9 novos valores adicionados ao enum DocumentType
+- _match_onvio_docs() e get_employees_for_client() intocadas (INV-3)
+
+### §62.6 — Princípios
+§13.1 Chesterton: ambos os arquivos lidos inteiros antes de alterar.
+§13.4 Escopo: apenas MAPA + NOMES + enum tocados.
+
+---
+
+## §60 — Seed Bug C3: Tenant Conecta Mais criado (CPRO 12 T3)
+**Data:** 2026-05-05
+**Branch:** feature/people-management-reorganization
+
+### §60.1 — Problema
+`tenants = 0 linhas`; `_get_active_tenants()` sempre retornava `[]`; notificações operacionais nunca disparavam.
+
+### §60.2 — Fix
+INSERT do tenant Conecta Mais (CNPJ 35.710.481/0001-03, `status='active'`).
+Script reproduzível: `seeds/seed_tenant_conecta_mais.sql`
+
+Campos obrigatórios preenchidos:
+- `codigo = 'CPRO-001'` (UNIQUE)
+- `nome = 'CONECTAMAIS ELETRONICA LTDA'`
+- `documento = '35710481000103'` (UNIQUE)
+- `email = 'jjesus@conectamais.pro'`
+- `status = 'active'::tenant_status`
+- `plano = 'free'::tenant_plan`
+- `tipo = 'company'::tenant_type`
+- `ativo = true`
+
+### §60.3 — Cenário D (divergência crítica detectada)
+O Python model `TenantStatus.ATIVO = "ativo"` mas o DB enum `tenant_status` contém valores em inglês `{active, inactive, suspended, ...}`.
+- `WHERE status = 'active'` → 1 linha ✅ (valor válido no DB)
+- `WHERE status::text = 'ativo'` → 0 linhas ❌ (Python _get_active_tenants não encontrará o tenant)
+
+**Decisão pendente (Jordan):** corrigir `TenantStatus.ATIVO = "active"` no Python para alinhar com DB enum.
+
+### §60.4 — Validação
+```sql
+SELECT id, nome, cnpj, status, ativo FROM tenants;
+-- retorna: 841a3906-5410-4047-a076-bc7bce95ffd2 | CONECTAMAIS ELETRONICA LTDA | 35.710.481/0001-03 | active | t
+
+SELECT COUNT(*) FROM tenants WHERE status = 'active';
+-- retorna: 1
+```
+
+### §60.5 — Princípios
+- §13.1 Chesterton: schema `\d tenants` lido ANTES do INSERT
+- §13.4 Escopo sagrado: apenas 1 tenant inserido, zero código Python alterado
