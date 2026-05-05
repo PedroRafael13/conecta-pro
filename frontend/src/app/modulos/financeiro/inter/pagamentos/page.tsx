@@ -492,6 +492,7 @@ interface CatTx {
   descricao: string | null;
   categoria: Categoria | null;
   document_type: string | null;
+  observacao: string | null;
   incluir_no_kit: boolean | null;
   sugerido_por_ia: boolean | null;
   confianca_sugestao: number | null;
@@ -524,6 +525,7 @@ export default function PagamentosPage() {
   const [catStats, setCatStats] = useState<StatsCategoria[]>([]);
   const [catLoading, setCatLoading] = useState(false);
   const [catError, setCatError] = useState("");
+  const [catObs, setCatObs] = useState<Record<string, string>>({});
   const [isJordan, setIsJordan] = useState(false);
 
   useEffect(() => {
@@ -616,11 +618,11 @@ export default function PagamentosPage() {
     }
   };
 
-  const handleCategorizar = async (transactionId: string, categoria: Categoria) => {
+  const handleCategorizar = async (transactionId: string, categoria: Categoria, observacao?: string) => {
     try {
       await apiFetch(`${API_CAT}/transacoes/${transactionId}/categorizar`, {
         method: "POST",
-        body: JSON.stringify({ categoria }),
+        body: JSON.stringify({ categoria, observacao: observacao || null }),
       });
       await fetchCatTxs();
     } catch (e: unknown) {
@@ -886,60 +888,98 @@ export default function PagamentosPage() {
             )}
 
             {/* Transações do colaborador */}
-            {catTxs.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-                <div className="px-4 py-3 border-b flex justify-between items-center">
-                  <h3 className="font-semibold text-[#0A2540] text-sm">{catNome} — {catMes}</h3>
-                  <span className="text-xs text-gray-500">{catTxs.length} transações</span>
-                </div>
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Data</th>
-                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Beneficiário</th>
-                      <th className="px-4 py-3 text-right text-gray-600 font-medium">Valor</th>
-                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Categoria</th>
-                      <th className="px-4 py-3 text-left text-gray-600 font-medium">Badges</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {catTxs.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{tx.data || "—"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-700 max-w-xs truncate">
-                          {tx.beneficiario || tx.descricao || "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right font-medium text-[#0A2540] whitespace-nowrap">{fmt(tx.valor)}</td>
-                        <td className="px-4 py-3">
-                          <select
-                            value={tx.categoria || ""}
-                            onChange={(e) => {
-                              if (e.target.value) void handleCategorizar(tx.id, e.target.value as Categoria);
-                            }}
-                            className="border rounded px-2 py-1 text-xs text-gray-700"
-                          >
-                            <option value="">— sem categoria —</option>
-                            {CATEGORIAS_VALIDAS.map((c) => (
-                              <option key={c} value={c}>{CATEGORIA_LABEL[c]}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1 flex-wrap">
-                            {tx.sugerido_por_ia && (
-                              <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">IA{tx.confianca_sugestao !== null ? ` ${Math.round((tx.confianca_sugestao ?? 0) * 100)}%` : ""}</span>
-                            )}
-                            {tx.incluir_no_kit
-                              ? <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">Kit</span>
-                              : tx.categoria && <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-full">Fora</span>}
-                          </div>
-                        </td>
-                      </tr>
+            {catTxs.length > 0 && (() => {
+              const kitTxs = catTxs.filter(tx => tx.incluir_no_kit);
+              const totalKit = kitTxs.reduce((s, tx) => s + tx.valor, 0);
+              const porCat: Partial<Record<Categoria, number>> = {};
+              kitTxs.forEach(tx => {
+                if (tx.categoria) porCat[tx.categoria as Categoria] = (porCat[tx.categoria as Categoria] ?? 0) + tx.valor;
+              });
+              return (
+                <>
+                  {/* Resumo topo */}
+                  <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex flex-wrap gap-4 items-center text-sm">
+                    <span className="font-semibold text-green-800">Total Kit: {fmt(totalKit)}</span>
+                    {Object.entries(porCat).map(([cat, val]) => (
+                      <span key={cat} className="text-green-700">{CATEGORIA_LABEL[cat as Categoria]}: {fmt(val ?? 0)}</span>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    <span className="ml-auto text-gray-500 text-xs">{catTxs.length} transações ({kitTxs.length} no kit)</span>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                    <div className="px-4 py-3 border-b flex justify-between items-center">
+                      <h3 className="font-semibold text-[#0A2540] text-sm">{catNome} — {catMes}</h3>
+                      <span className="text-xs text-gray-500">{catTxs.length} transações</span>
+                    </div>
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-gray-600 font-medium">Data</th>
+                          <th className="px-4 py-3 text-left text-gray-600 font-medium">Beneficiário</th>
+                          <th className="px-4 py-3 text-right text-gray-600 font-medium">Valor</th>
+                          <th className="px-4 py-3 text-left text-gray-600 font-medium">Categoria</th>
+                          <th className="px-4 py-3 text-left text-gray-600 font-medium">Observação</th>
+                          <th className="px-4 py-3 text-left text-gray-600 font-medium">Badges</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {catTxs.map((tx) => (
+                          <tr key={tx.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{tx.data || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-gray-700 max-w-xs truncate">
+                              {tx.beneficiario || tx.descricao || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-[#0A2540] whitespace-nowrap">{fmt(tx.valor)}</td>
+                            <td className="px-4 py-3">
+                              <select
+                                value={tx.categoria || ""}
+                                onChange={(e) => {
+                                  if (e.target.value) void handleCategorizar(tx.id, e.target.value as Categoria, catObs[tx.id]);
+                                }}
+                                className="border rounded px-2 py-1 text-xs text-gray-700"
+                              >
+                                <option value="">— sem categoria —</option>
+                                {CATEGORIAS_VALIDAS.map((c) => (
+                                  <option key={c} value={c}>{CATEGORIA_LABEL[c]}</option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-1 items-center">
+                                <input
+                                  className="border rounded px-2 py-1 text-xs text-gray-700 w-32"
+                                  placeholder="Observação"
+                                  value={catObs[tx.id] ?? tx.observacao ?? ""}
+                                  onChange={(e) => setCatObs(prev => ({ ...prev, [tx.id]: e.target.value }))}
+                                />
+                                {catObs[tx.id] !== undefined && tx.categoria && (
+                                  <button
+                                    onClick={() => void handleCategorizar(tx.id, tx.categoria as Categoria, catObs[tx.id])}
+                                    className="text-xs bg-[#0A2540] text-white px-2 py-1 rounded hover:bg-[#1a3a5c]"
+                                  >
+                                    Salvar
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-1 flex-wrap">
+                                {tx.sugerido_por_ia && (
+                                  <span className="bg-yellow-100 text-yellow-700 text-xs px-1.5 py-0.5 rounded-full">IA{tx.confianca_sugestao !== null ? ` ${Math.round((tx.confianca_sugestao ?? 0) * 100)}%` : ""}</span>
+                                )}
+                                {tx.incluir_no_kit
+                                  ? <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">✓ Kit</span>
+                                  : tx.categoria && <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-full">✗ Fora</span>}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
 
             {catLoading && (
               <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm border border-gray-100">

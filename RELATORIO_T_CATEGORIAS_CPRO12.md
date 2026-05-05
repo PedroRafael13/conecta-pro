@@ -97,8 +97,10 @@ Funcionalidades:
 - Filtros: campo "Colaborador" + campo "Mês (MM.AAAA)"
 - Botões: Buscar | Auto-Categorizar | Stats do Mês
 - Tabela de stats: categoria / kit? / qtd / total
-- Tabela de transações: data / beneficiário / valor / select categoria (inline) / badges IA + Kit
-- Badges: IA + % confiança (roxo) | Kit (verde) | Fora (cinza)
+- Tabela de transações: data / beneficiário / valor / select categoria (inline) / Observação (input) / badges IA + Kit
+- Resumo topo: "Total Kit: R$X | Salário: R$X | VT: R$X | VA: R$X" quando colaborador buscado
+- Badges: IA + % confiança (amarelo) | ✓ Kit (verde) | ✗ Fora (cinza)
+- Botão "Salvar" por linha para salvar observação + categoria
 - Zero `any` TypeScript ✅
 
 ---
@@ -121,6 +123,20 @@ GET  /api/v1/financeiro/inter/colaborador/GRACIENE%20PEREIRA%20DE%20CASTRO/categ
 
 POST /api/v1/financeiro/inter/colaborador/GRACIENE%20PEREIRA%20DE%20CASTRO/auto-categorizar?mes_ref=03.2026
 → HTTP 200  {"total_transacoes":7,"auto_categorizadas":7}  ✅
+
+STEP 7.4 — banco query (dados reais):
+categoria        | incluir_no_kit | sugerido_por_ia | confianca | valor
+vale_transporte  | t              | f               | NULL      | 10.00  (manual Jordan)
+vt_va_combinado  | t              | t               | 0.7       | 32.00
+outros           | f              | t               | 0.2       | 362.07
+vt_va_combinado  | t              | t               | 0.7       | 32.00
+vt_va_combinado  | t              | t               | 0.7       | 32.00
+vale_transporte  | t              | t               | 0.65      | 10.00
+vt_va_combinado  | t              | t               | 0.7       | 32.00
+
+Distribuição GRACIENE 03.2026: vt_va_combinado:4, vale_transporte:2, outros:1
+Total para o kit: R$138,00 (excluído R$362,07 outros)
+HERMES resumo_kit_colaborador() chamado em _vincular_funcionario(): SIM ✅
 
 POST /api/v1/financeiro/inter/transacoes/5b47f411-843f-47d0-8781-ea3f274057ae/categorizar
 body: {"categoria":"vale_transporte"}
