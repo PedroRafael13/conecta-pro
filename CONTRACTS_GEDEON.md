@@ -4513,3 +4513,23 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Evolution API:** não instalada | **Próximo passo:** self-hosted porta 8081 → QR code → integrar GED
 **Estimativa:** 1 prompt implementação + 1 ação manual Jordan (QR Code no celular da Conecta Mais)
 **Princípio:** INV-2 READ-ONLY absoluto; INV-8 zero mensagens enviadas; §13.1 5 arquivos lidos inteiramente.
+
+## §79 — KRONOS task verificar_kits_completos (CPRO 12 T2-KRONOS)
+**Data:** 2026-05-05
+**Regra de negócio:** envio SEMPRE aprovado por humano — KRONOS alerta, Jordan confere e clica "Enviar".
+**Task:** gedeon.verificar_kits_completos — diária às 08:00 Manaus (crontab hour=8, minute=0 = 12:00 UTC)
+**Lógica:** completion_percentage=100 AND sent_at IS NULL AND NOT EXISTS notificação nas últimas 24h (reference_type='ged_kit_completo')
+**Resultado:** cria communication_notifications (type='kit_completo', channels='["in_app"]') para jjesus@conectamais.pro
+**Idempotência:** check EXISTS reference_id + reference_type + created_at > NOW()-24h (INV-6)
+**Queue:** gov.batch | **INV-4:** NÃO envia email/WhatsApp — apenas notificação interna
+**Cenário C hoje:** 0 kits com completion_percentage=100 AND sent_at IS NULL — task correta, sem alertas
+**Princípio:** §13.1 kronos_tasks lido inteiro; INV-3 tasks existentes intocadas; INV-8 sem docker restart
+
+## §78 — Fix pipeline email kit GED: G1+G2+G3+G4 (CPRO 12 T1-FIX-EMAIL)
+**Data:** 2026-05-05
+**G1:** EmailKitService._buscar_email_cliente → ged_clients.contact_email (clients.email era NULL para todos os kits)
+**G2:** gdrive_controller → UPDATE sent_at + sent_method='email' + sent_to após envio bem-sucedido (montar-e-enviar + enviar-email)
+**G3:** kit_controller send-email → busca direta em ged_document_kits (404 diagnóstico era token expirado — endpoint já funcionava; G3 formaliza a query direta)
+**G4:** kit_controller send-email → delega para EmailKitService (HTML #1E3A5F + link Drive), remove smtplib plain text
+**Regra de negócio (INV-5):** envio bloqueado (HTTP 400) se completion_percentage < 100
+**Princípio:** §13.1 3 arquivos lidos inteiros; §13.4 apenas os 4 gaps corrigidos; INV-9 hot-copy
