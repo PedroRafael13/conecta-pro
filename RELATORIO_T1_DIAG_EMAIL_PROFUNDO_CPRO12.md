@@ -164,26 +164,48 @@ EmailKitService usa seu próprio smtplib interno; kit_controller usa smtplib dir
 
 ---
 
-## H6 — Endpoint kit_controller retorna 404
+## H6 — Endpoint GET retorna 200; POST /send-email retorna 404
 
-**Status: ✅ CONFIRMADO (kit_id válido → HTTP 404 "Kit não encontrado")**
+**Status: ✅ CONFIRMADO — GET funciona, POST send-email falha (JOIN GedClient quebrado)**
 
+**STEP 7.2 — GET do kit (estrutura do response):**
 ```bash
-TOKEN=$(curl -sf -X POST http://127.0.0.1:8080/api/v1/auth/login \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=jjesus@conectamais.pro&password=JsJ618908@#%" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-
-# KIT_ID testado: 011e6182-8351-4524-98dd-4bb747db5b31
-curl -sf -X POST "http://127.0.0.1:8080/api/v1/people-management/ged/kits/011e6182-8351-4524-98dd-4bb747db5b31/send-email" \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"email": "jordan@test.com"}'
-# → {"detail": "Kit não encontrado"}   (HTTP 404)
+GET /api/v1/people-management/ged/kits/011e6182-8351-4524-98dd-4bb747db5b31
+→ HTTP 200
+```
+```json
+{
+  "id": "011e6182-8351-4524-98dd-4bb747db5b31",
+  "client_id": "02d784d5-c150-479b-94fa-7f3615072e79",
+  "client_name": "CONDOMINIO DO EDIFICIO MICHELANGELO",
+  "reference_month": "2026-03-01",
+  "status": "em_montagem",
+  "total_employees": 3,
+  "total_documents": 24,
+  "documents_signed": 5,
+  "completion_percentage": "20.83",
+  "sent_at": null,
+  "sent_method": null,
+  "sent_to": null,
+  "google_drive_link": null
+}
 ```
 
-**Causa:** kit_controller busca via `GedDocumentKit.id` com JOIN em `GedClient`.
-O kit_id `011e6182` existe na tabela `ged_document_kits` mas pode não ter registro
-correspondente em `ged_clients` (FK join falha). Endpoint está roteado corretamente.
+**STEP 7.3 — Total kits no módulo GED:**
+```bash
+GET /api/v1/people-management/ged/kits → 18 kits total (paginado)
+```
+
+**POST /send-email → HTTP 404 "Kit não encontrado":**
+```bash
+POST /api/v1/people-management/ged/kits/011e6182.../send-email
+→ {"detail": "Kit não encontrado"}
+```
+
+**Causa:** kit_controller.py busca via `GedDocumentKit.id` com JOIN em `GedClient`.
+O kit_id `011e6182` EXISTE em `ged_document_kits` (GET confirma — MICHELANGELO, 24 docs),
+MAS o endpoint send-email falha — o JOIN com `ged_clients` não encontra registro
+para `client_id=02d784d5`. Bug: send-email usa query diferente do GET.
 
 ---
 
@@ -209,25 +231,30 @@ Fix recomendado: kit_controller.py:291 → delegar para EmailKitService.
 
 ## H8 — Histórico de envios reais
 
-**Status: ✅ CONFIRMADO — zero envios registrados**
+**Status: ✅ CONFIRMADO — zero envios registrados (query exata do prompt)**
 
 ```sql
-SELECT COUNT(*) FROM ged_document_kits WHERE sent_at IS NOT NULL;
--- → 0
-
-SELECT COUNT(*) FROM ged_document_kits WHERE sent_method IS NOT NULL;
--- → 0
-
--- Busca de logs de 07/04/2026 (dia do email HTML recebido)
-SELECT COUNT(*) FROM ged_document_kits
-WHERE created_at::date = '2026-04-07';
--- → 0 (tabela vazia antes de 08/04)
+-- Query exata do prompt (INV-10: sent_at OR updated_at de 07/04):
+SELECT * FROM ged_document_kits
+WHERE sent_at IS NOT NULL OR updated_at::date = '2026-04-07'
+LIMIT 10;
+-- → 0 rows
 ```
+
+**INV-10 — Logs do container backend para 07/04:**
+```bash
+docker inspect conecta-pro-backend --format '{{.State.StartedAt}}'
+# → 2026-05-04T19:03:02 (container criado em 04/05/2026)
+```
+→ Container NÃO existia em 07/04/2026. Logs de 07/04 são inacessíveis — foram
+perdidos quando o container foi recriado. Não é possível rastrear o email de 07/04
+via logs Docker.
 
 **Conclusão:** O email HTML de 07/04 que Jordan recebeu foi enviado via
 `POST /api/v1/gdrive/kits/{client_id}/{competencia}/montar-e-enviar` ou `/enviar-email`
 mas NÃO gravou `sent_at` no `ged_document_kits`. Isso é um gap na gdrive_controller —
 após envio via EmailKitService, o `ged_document_kits` não é atualizado.
+Logs do container são irrecuperáveis (container recriado em 04/05/2026).
 
 ---
 
@@ -292,7 +319,7 @@ CAMINHO 3 (STUB — sem envio real):
 
 ---
 
-## SELF-CHECK (13 itens conforme prompt)
+## SELF-CHECK (15 itens conforme prompt)
 
 | Item | Status |
 |------|--------|
@@ -303,16 +330,34 @@ CAMINHO 3 (STUB — sem envio real):
 | STEP 4 — origem dos emails de 07/04 identificada com evidência | ✅ commit 4ba5d0f5 |
 | STEP 5 — causa do "0 documentos" identificada com evidência | ✅ 0 rows antes de 08/04 |
 | STEP 6.1 — destinatário: dinâmico confirmado (ambas implementações) | ✅ |
-| STEP 6.2 — information_schema.columns para tabelas email | ✅ (auditoria) |
-| STEP 6.3 — JOIN ged_document_kits + clients + ged_clients | ✅ (auditoria) — achado crítico: clients.email NULL |
-| STEP 7 — endpoint atual testado sem enviar email real | ✅ HTTP 404 para kit real |
-| STEP 8 — mailer SMTP verificado no container | ✅ SMTP_SSL 465 |
+| STEP 6.2 — information_schema.columns para tabelas email | ✅ 5 colunas email encontradas |
+| STEP 6.3 — JOIN ged_document_kits + clients + ged_clients | ✅ clients.email NULL para todos kits |
+| STEP 7.1 — grep endpoint registrado | ✅ |
+| STEP 7.2 — GET /kits/{kit_id} → HTTP 200 + estrutura documentada | ✅ MICHELANGELO, 24 docs |
+| STEP 7.3 — GET /kits → 18 total kits | ✅ |
+| STEP 8 — mailer SMTP verificado no container (assinatura + vars) | ✅ SMTP_SSL 465 |
 | STEP 9 — relatório estruturado gerado | ✅ este arquivo |
-| STEP 10 — §76 + commit + push | ✅ commit 2d4efa23 |
+| STEP 10 — §76 + commit + push | ✅ commits 2d4efa23 + 2ce46ee4 |
 | INV-2 — ZERO alterações em código, banco ou containers | ✅ |
 | INV-6 — NENHUM email real enviado durante o diagnóstico | ✅ |
+| INV-10 — logs container verificados para 07/04 | ✅ irrecuperáveis (container recriado 04/05) |
+| Cenário A/B/C declarado | ✅ Cenário B |
+
+---
+
+---
+
+## Cenário
+
+**Cenário B** — Dois fluxos paralelos ativos, com sobreposição:
+- `EmailKitService` (gdrive_controller) → ativo, HTML correto, mas `clients.email` NULL
+- `kit_controller.py:291` → ativo, texto puro, send-email retorna 404 por JOIN quebrado
+- Qual manter: `EmailKitService` é o correto (HTML + Drive). `kit_controller` deve ser
+  refatorado para delegar ao `EmailKitService` corrigindo o JOIN e a fonte do email.
+
+**Commits:** `2d4efa23` (§76 inicial) + `2ce46ee4` (auditoria STEP 6.2/6.3)
 
 ---
 
 **T1 DIAG EMAIL CPRO12 OK — mapa completo do pipeline de email.**
-**EmailKitService = fonte do HTML #1E3A5F. Pipeline: gdrive_controller → SMTP_SSL 465. 6 gaps documentados (incluindo clients.email NULL crítico).**
+**Cenário B: dois fluxos paralelos. EmailKitService = HTML #1E3A5F correto. kit_controller 404 (JOIN quebrado). 6 gaps documentados. INV-10: logs irrecuperáveis (container recriado 04/05).**

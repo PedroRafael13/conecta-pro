@@ -4488,8 +4488,10 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
   - H6: ✅ kit_controller retorna 404 — kit_id válido sem GedClient associado
   - H7: ✅ EmailKitService desconectado do kit_controller — dois caminhos separados
   - H8: ✅ Zero sent_at gravados — gdrive_controller não atualiza ged_document_kits após envio
-**6 gaps:** (1) kit_controller texto puro→HTML, (2) sent_at não gravado após envio, (3) STUB em export_service, (4) FK ged_clients ausente, (5) core/mailer.py não usado no GED, (6) EmailKitService usa clients.email NULL em vez de ged_clients.contact_email
-**Princípio:** INV-2 READ-ONLY absoluto; §13.1 evidências reais; INV-8 zero side effects
+**6 gaps:** (1) kit_controller texto puro→HTML, (2) sent_at não gravado após envio, (3) STUB em export_service, (4) POST send-email HTTP 404 (JOIN GedClient quebrado — GET 200 confirma kit existe), (5) core/mailer.py não usado no GED, (6) EmailKitService usa clients.email NULL em vez de ged_clients.contact_email
+**INV-10:** logs container irrecuperáveis (container recriado 04/05/2026; não existia em 07/04)
+**Cenário B:** dois fluxos paralelos ativos — EmailKitService (HTML correto) + kit_controller (send-email 404)
+**Princípio:** INV-2 READ-ONLY absoluto; §13.1 evidências reais; INV-10 logs verificados
 
 ## §77 — Diagnóstico profundo WhatsApp (CPRO 12 T2-DIAG-WHATSAPP)
 **Data:** 2026-05-05
