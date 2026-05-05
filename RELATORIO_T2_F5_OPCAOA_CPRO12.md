@@ -98,6 +98,7 @@ celery-operacional              Up 59min (healthy)   ✅
 |------|------|----------|
 | docs | `a52b84c4` | `docs(contracts): §74 — Fix F5-A celery-beat healthcheck ps→python3 os.kill (CPRO12)` |
 | fix | `9e6ba46b` | `fix(infra): celery-beat healthcheck ps→python3 os.kill — beat healthy (§74)` |
+| relatorio | `f096105f` | `docs(relatorio): T2-F5-A CPRO12 — beat healthy, incidente operacional.ai documentado` |
 
 ---
 
