@@ -4578,3 +4578,18 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Histórico:** últimas 10 mensagens para contexto (INV-7)
 **Bug fix:** EVOLUTION_INSTANCE → WHATSAPP_INSTANCE_ID em _send_whatsapp_reply
 **Princípio:** §13.1 controller lido inteiro (249L); INV-3 apenas adição de chamada (11 linhas)
+
+## §82 — Chatwoot multiagente instalado (CPRO 12 T5-CHATWOOT)
+**Data:** 2026-05-05
+**Autorização:** Jordan Jesus — docker-compose + .env (explícita no chat)
+**Containers:** chatwoot (porta 3002), chatwoot-sidekiq, chatwoot-postgres (pgvector/pgvector:pg16)
+**Nota técnica:** Chatwoot v3+ requer extensão pgvector — container postgres dedicado (não o conecta-pro-postgres)
+**Banco:** chatwoot_production (chatwoot-postgres separado com pgvector)
+**Admin:** Jordan Jesus (jjesus@conectamais.pro, SuperAdmin, Account ID=1)
+**Canal:** WhatsApp 0800 880 4414 — Inbox ID=1, tipo Channel::Api
+**Integração Evolution:** CHATWOOT_ENABLED=true em evolution-api + /chatwoot/set/conecta-pro configurado
+**Webhook Evolution→Chatwoot:** http://chatwoot:3000 (auto-cria conversas para msgs recebidas)
+**Filas (Labels):** administrativa, operacional, comercial, suporte_tecnico, campo
+**Agentes (7):** Administrativo, Supervisor Operacional, Gerente Operacional, Consultor de Vendas, Desenvolvedor 1, Desenvolvedor 2, Implantador de Campo
+**Acesso:** http://localhost:3002 | Produção: https://chat.conectamais.pro
+**Princípio:** §13.1 docker-compose lido inteiro; INV-3 serviços existentes intocados exceto CHATWOOT_ENABLED=true em evolution-api (necessidade técnica do T5)
