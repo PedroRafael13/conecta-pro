@@ -4364,3 +4364,41 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **H5 confirmado:** beat agendou `gedeon.risk_monitor` e `gedeon-risk-monitor-5min` após sync.
 **H4 confirmado:** dia 21 às 07:00 (HOST) substituiu dia 1 às 02:00 (containers antigos).
 **Princípio:** §13.1 diff verificado antes; §13.4 sem modificação de código; INV-9 erros = listar.
+
+## §71 — Auditoria GEDEON Roadmap 4 Fases (CPRO12 T5 READ-ONLY)
+
+**Data:** 2026-05-05
+**Tipo:** READ-ONLY (INV-2) — nenhum arquivo de código modificado
+
+### §71.1 — Resultado consolidado
+
+| Fase | Descrição | Itens | Status auditado |
+|------|-----------|-------|-----------------|
+| FASE 1 | CNDs (5) + Templates RH (2) | 7 | 5 🟢 + 2 🟡 infra |
+| FASE 2 | NFS-e + Boleto + Solides + Comp. Salário | 4 | 3 🟢 + 1 🟡 escopo |
+| FASE 3 | Recebimento Portte via Onvio sync | 1 | 1 🟢 |
+| FASE 4 | GEDEON CORE (T1+T2+T3+E2E) | 4 | 4 🟢 |
+| **Total** | | **16** | **12 🟢 · 3 🟡 · 0 🔴** |
+
+### §71.2 — Pontos-chave verificados
+
+- `contract_templates`: 2 rows ✅ (era 0 no §18; corrigido por §19+§20)
+- `onvio_documents`: 605 docs, 436 com doc_scope (72%)
+- `nfses`: 27 ✅ · `receivable_installments`: 21 ✅
+- `ged_document_kits`: 18 · `ged_kit_documents`: 1237 · `kit_documental_templates`: 32
+- Kits/status 2026-04: 12 clientes, **12 prontos**, score=100
+
+### §71.3 — Gaps residuais (não novos)
+
+- 1.6/1.7: `/app/uploads/contratos_gerados|avisos_gerados` — diretórios ausentes no container (já em §19/§20 como gap infra)
+- 2.4: Comp. salário cobre apenas diaristas (já em §18.2 como gap de escopo)
+
+### §71.4 — Rotas reais descobertas (correção de documentação)
+
+| Rota documentada | Rota real |
+|-----------------|-----------|
+| `/api/v1/fiscal/nfse` | `/api/v1/financial/nfse` (prefix=/financial, main_production.py:613) |
+| `/api/v1/ged/cnds` | `/api/v1/ged/coleta-automatica/history` |
+| `/api/v1/people-management/dp/contratos/templates` | `/api/v1/people-management/hr/contracts/...` (prefix=/contracts) |
+
+**Princípio:** §13.1 — todos os arquivos de código lidos antes de qualquer conclusão; INV-9 — apenas "confirmado" / "não encontrado"; INV-2 — zero modificações de código.
