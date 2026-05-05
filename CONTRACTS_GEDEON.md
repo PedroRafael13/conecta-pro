@@ -4566,3 +4566,15 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Achado:** docker restart preserva writable layer (docker cp changes sobrevivem ao restart) — diferente de kill -9
 **Smoke test:** HTTP 400 confirmado para kit com completion_percentage=0.0% ✅
 **Princípio:** §13.1 arquivos lidos integralmente; INV-9 zero any no TypeScript novo; INV-13 sem refresh
+
+## §84 — IA Claude como primeiro atendente WhatsApp (CPRO 12 T7-IA)
+**Data:** 2026-05-05
+**Service:** client_portal/services/whatsapp_ia_service.py
+**Modelo:** claude-haiku-4-5-20251001 (rápido para WhatsApp)
+**Integração:** whatsapp_controller.py linha 89 — chamada antes do fluxo de tickets
+**Escalada automática (INV-6):** urgente, emergência, preço, valor, contrato, cancelar, roubo, invasão...
+**INV-4:** IA nunca confirma valores ou fecha contratos (enforced no system prompt)
+**INV-5:** escalar=True → log + ticket criado para equipe humana
+**Histórico:** últimas 10 mensagens para contexto (INV-7)
+**Bug fix:** EVOLUTION_INSTANCE → WHATSAPP_INSTANCE_ID em _send_whatsapp_reply
+**Princípio:** §13.1 controller lido inteiro (249L); INV-3 apenas adição de chamada (11 linhas)
