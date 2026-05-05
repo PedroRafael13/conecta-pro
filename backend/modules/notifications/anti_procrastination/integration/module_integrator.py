@@ -166,9 +166,9 @@ class ModuleIntegrator:
         try:
             from sqlalchemy import text
 
-            from core.database import get_sync_session
+            from core.database.session import get_sync_db
 
-            with get_sync_session() as db:
+            with get_sync_db() as db:
                 # ASOs vencendo nos próximos 30 dias
                 try:
                     result = db.execute(

@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 @app.task(name="sst.verificar_afastamentos_vencidos")
 def verificar_afastamentos_vencidos():
     """Encerra afastamentos com data_fim_prevista anterior a hoje."""
-    from core.database import get_sync_session
+    from core.database.session import get_sync_db
 
     hoje = date.today()
     try:
-        with get_sync_session() as db:
+        with get_sync_db() as db:
             result = db.execute(
                 text(
                     "UPDATE sst_afastamentos "
@@ -55,11 +55,11 @@ def verificar_afastamentos_vencidos():
 @app.task(name="sst.verificar_inss_pendente")
 def verificar_inss_pendente():
     """Alerta afastamentos > 15 dias sem encaminhamento INSS."""
-    from core.database import get_sync_session
+    from core.database.session import get_sync_db
 
     hoje = date.today()
     try:
-        with get_sync_session() as db:
+        with get_sync_db() as db:
             result = db.execute(
                 text(
                     "SELECT employee_nome, data_inicio, "
