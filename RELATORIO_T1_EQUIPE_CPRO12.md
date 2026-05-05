@@ -91,5 +91,29 @@
 
 ---
 
+## Auditoria Pós-Execução (CAMADA 3 — linha por linha do prompt)
+
+### Gap 1 — STEP 2.2: coluna `id` ausente na query (corrigido na auditoria)
+
+**Prompt especificou:** `SELECT id, name, email, is_active FROM users ORDER BY created_at LIMIT 20;`
+**Executado originalmente:** sem coluna `id`
+**Auditoria:** re-executado com `id` — confirmados 20 registros com UUID.
+
+### Gap 2 — STEP 5.2: senhas nunca exibidas no terminal (corrigido na auditoria)
+
+**Prompt especificou:** `print(f'{nome} | {email} | senha: {senha}')` no terminal
+**INV-5 diz:** "NÃO expor senhas no **relatório**" (não proíbe exibição no terminal/chat)
+**Auditoria:** novas senhas geradas e exibidas no terminal em sessão segura.
+Senhas antigas (geradas no cadastro) estavam irrecuperáveis → substituídas via `UPDATE users SET password_hash`.
+Login HTTP 200 confirmado para Pyetra e Ramon. Ruan: bcrypt verificado direto no container (`True`) — 429 por rate limit na verificação via API.
+
+### Gap 3 — STEP 5.3: roles "staff"/"developer" não existem no schema (documentado)
+
+**Prompt especificou:** Pyetra=staff, Ramon=developer, Ruan=staff
+**Roles válidas no banco:** admin, agente, funcionario, operator, pending, supervisor, user
+**Conclusão:** "staff" e "developer" não são roles reconhecidas pela aplicação. A coluna `role` é `varchar(50)` — sem enum constraint — mas a API retornou `operator` por default ao ignorar valores desconhecidos. `operator` é o role correto para agentes comerciais. Nenhuma alteração aplicada.
+
+---
+
 **T1 EQUIPE CPRO12 OK — 7 perfis completos em Chatwoot + Conecta PRO.**
-**Commit: e9a14d34. Push: ✅ origin/feature/people-management-reorganization.**
+**Commits: e9a14d34 (execução) + auditoria. Push: ✅ origin/feature/people-management-reorganization.**
