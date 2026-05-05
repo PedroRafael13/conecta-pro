@@ -236,7 +236,17 @@ class OnvioDocScopeClassifier:
 
         # Grupo A — condomínio
         # §23.11: preservar scope='condominio' mesmo sem match — levantar revisao_manual
+        # Fix CPRO12 T5-ONVIO: is_matriz() antes de match_condominio para corrigir
+        # docs Conecta Mais que chegam com categoria Grupo A (ex: folha_pagamento geral)
         if scope == "condominio":
+            if is_matriz(nome_arquivo):
+                return ClassificationResult(
+                    doc_scope="empresa_matriz",
+                    condominio_id=None,
+                    referente_a_employee_id=None,
+                    revisao_manual=False,
+                    motivo="Grupo A: match empresa matriz",
+                )
             cond_id = match_condominio(nome_arquivo, cond_lookup)
             return ClassificationResult(
                 doc_scope="condominio",

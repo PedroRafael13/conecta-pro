@@ -15,7 +15,8 @@ from modules.gedeon.models.onvio_models import FgtsGuia, InssGuia, OnvioDocument
 from modules.gedeon.onvio.onvio_client import OnvioClient
 from modules.gedeon.onvio.onvio_parser import classificar_documento
 from modules.gedeon.onvio.onvio_sync_service import OnvioSyncService
-from modules.gedeon.onvio.pdf_extractor.enrichment_service import EnrichmentService
+
+# EnrichmentService importado lazily em /extrair-valores (requer pdfplumber)
 
 logger = logging.getLogger(__name__)
 
@@ -290,6 +291,8 @@ async def extrair_valores(
     """
 
     def _run():
+        from modules.gedeon.onvio.pdf_extractor.enrichment_service import EnrichmentService  # noqa: PLC0415
+
         with get_sync_db() as db:
             service = EnrichmentService(db)
             return service.extrair_todos(forcar=forcar, limite=limite)

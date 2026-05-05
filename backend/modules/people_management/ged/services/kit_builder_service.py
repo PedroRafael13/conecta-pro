@@ -43,6 +43,15 @@ MAPA_TIPOS_ONVIO: dict[str, str] = {
     "empresa_docs": "outro",
     "inss_guia": "gps_inss",
     "dar_sefaz": "dar_sefaz",
+    # Expansão CPRO12 T5-ONVIO — categorias faltantes (recibo_folha Grupo A + Grupo B)
+    "recibo_folha": "contracheque",
+    "fgts_crf": "crf_fgts",
+    "contrato_trabalho": "contrato_trabalho",
+    "ficha_registro": "ficha_empregado",
+    "aso": "aso",
+    "atestado": "atestado_medico",
+    "rescisao": "rescisao",
+    "aviso_previo": "aviso_previo_ferias",
 }
 
 # Nomes de exibição para docs criados via Onvio matching
@@ -66,6 +75,15 @@ _NOMES_DOCS_ONVIO: dict[str, str] = {
     "outro": "Documentos da Empresa",
     "gps_inss": "Guia INSS (GPS)",
     "dar_sefaz": "DAR SEFAZ",
+    # Expansão CPRO12 T5-ONVIO
+    "contracheque": "Contracheque",
+    "crf_fgts": "CRF FGTS (Caixa)",
+    "contrato_trabalho": "Contrato de Trabalho",
+    "ficha_empregado": "Ficha de Registro do Empregado",
+    "aso": "ASO (Atestado de Saúde Ocupacional)",
+    "atestado_medico": "Atestado Médico",
+    "rescisao": "Rescisão Contratual",
+    "aviso_previo_ferias": "Aviso Prévio de Férias",
 }
 
 # Stop words ignoradas no fuzzy match de nomes de clientes/condomínios
