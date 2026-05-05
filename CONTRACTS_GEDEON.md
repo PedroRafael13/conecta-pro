@@ -4458,3 +4458,16 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Método:** str_replace cirúrgico + docker compose up --no-deps -d celery-beat
 **Impacto:** beat passa de unhealthy→healthy; monitoramento correto; downtime ~20s
 **Princípio:** §13.1 docker-compose.celery.yml lido inteiro; INV-3 apenas healthcheck do beat.
+
+## §75 — Diagnóstico canais de envio kit GED (CPRO 12 T1-DIAG-ENVIO)
+**Data:** 2026-05-05
+**Tipo:** READ-ONLY — diagnóstico pré-implementação
+**Canais auditados:** Email, Google Drive, WhatsApp
+**Achados:**
+  - GDrive: ✅ PRONTO — OAuth2 conectado (jordansjesus@gmail.com), endpoint /montar-e-enviar existe
+  - Email: ⚠️ PARCIAL — endpoint existe mas usa texto puro; EmailKitService (HTML+Drive) não integrado
+  - WhatsApp: ❌ AUSENTE — Evolution API URL inválida (DNS fail), sem endpoint GED
+  - Banco: todos os campos presentes (sent_at, sent_method, zip_file_path, google_drive_link)
+  - KRONOS: sem task automática de envio — gatilho 100% manual por ora
+**Próximo passo:** 1 prompt para Email (integrar EmailKitService); GDrive pronto para acionar
+**Princípio:** §13.1 evidências reais antes de implementar; INV-2 READ-ONLY respeitado; INV-9 tabela por canal
