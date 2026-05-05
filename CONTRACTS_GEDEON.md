@@ -4496,19 +4496,18 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Número alvo:** (92) 98221-4414
 **Tipo:** READ-ONLY — diagnóstico pré-implementação
 **Achados:**
-  - Evolution API NÃO instalada no VPS: zero containers, DNS NXDOMAIN, portas 8081/8082/4000 livres
-  - Três serviços WhatsApp no código: (A) connectors/whatsapp/service.py (aiohttp simples),
-    (B) integrations/whatsapp/services/whatsapp_service.py (fila+banco, envio simulado),
-    (C) client_portal/controllers/whatsapp_controller.py (webhook tickets)
-  - Status endpoint: {"online":false,"enabled":true,"error":"Cannot connect to api.evolution.app.br:443 ssl:default"}
-  - Tabelas DB (whatsapp_configs, message_queue, message_log, message_template): NÃO existem no banco
-  - WHATSAPP_API_ENABLED=true no .env mas URL inválida; WHATSAPP_NUMBER e EVOLUTION_INSTANCE não configurados
-  - Número (92) 98221-4414: não cadastrado em .env nem em clientes (campo whatsapp na tabela clients existe)
-  - VPS tem recursos: 13 GB RAM disponível, 331 GB disco livre, porta 8081 livre
-  - GED people_management/ged/: sem referência a WhatsApp; send_kit não integra WhatsApp
-**Bloqueadores:** B1 DNS/URL inválida (CRÍTICO), B2 tabelas ausentes (CRÍTICO), B3 número não cadastrado, B4 GED não integrado
-**Opções para Jordan:**
-  A) Evolution API self-hosted: docker-compose + porta 8081 + QR code scan (RECOMENDADA)
-  B) Evolution API cloud: conta paga em evolution.app.br
-  C) WhatsApp Business API Meta: oficial, templates aprovados, migration necessária
-**Princípio:** INV-2 READ-ONLY absoluto; INV-8 zero mensagens enviadas; §13.1 três serviços lidos inteiros.
+  - Evolution API NÃO instalada: zero containers, DNS NXDOMAIN, curl 8081/manager sem resposta
+  - 5 arquivos .py lidos integralmente: connectors/whatsapp/service.py (aiohttp Evolution),
+    connectors/whatsapp/controller.py (REST endpoints), integrations/whatsapp/services/whatsapp_service.py
+    (fila simulada), integrations/whatsapp/models/whatsapp_config.py (modelo Meta Cloud — tabela wa_configs),
+    client_portal/controllers/whatsapp_controller.py (webhook tickets Evolution)
+  - Status endpoint real: {"online":false,"enabled":true,"error":"...api.evolution.app.br:443 ssl:default [Name or service not known]"}
+  - Tabelas ausentes: wa_configs (nome real, não whatsapp_configs), message_queue, message_log, message_template
+  - whatsapp_config.py suporta Meta Cloud/Twilio/Zenvia — sistema paralelo ao Evolution API
+  - WHATSAPP_NUMBER e EVOLUTION_INSTANCE não configurados no .env
+  - Número (92) 98221-4414: não em .env, não em clients.whatsapp (campo existe mas vazio)
+  - VPS: Docker v29.1.3, Compose v5.0.0, 13 GB RAM, 331 GB disco livre (/var/lib/docker), porta 8081 livre
+  - GED people_management/ged/: zero referências WhatsApp; send_kit não chama WhatsApp
+**Evolution API:** não instalada | **Próximo passo:** self-hosted porta 8081 → QR code → integrar GED
+**Estimativa:** 1 prompt implementação + 1 ação manual Jordan (QR Code no celular da Conecta Mais)
+**Princípio:** INV-2 READ-ONLY absoluto; INV-8 zero mensagens enviadas; §13.1 5 arquivos lidos inteiramente.
