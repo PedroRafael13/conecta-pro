@@ -4330,3 +4330,13 @@ Este fix completa o alinhamento do próprio enum — fonte de verdade do Python.
 **Princípio:** §13.1 todos os 14 usos lidos antes de alterar; INV-5 apenas .value
   alterado, .name (ATIVO, INATIVO, SUSPENSO, BLOQUEADO, CANCELADO) preservado —
   zero impacto nos 14 usos do codebase. §13.4 escopo restrito a TenantStatus.
+
+## §70 — CLAUDE.md atualizado: regra hot-copy todos containers (CPRO 12 T4-C)
+**Data:** 2026-05-05
+**Arquivo:** CLAUDE.md
+**Regra adicionada:** todo hot-copy inclui beat+batch+operacional+integrations+priority+nfse+sefaz; limpar pyc antes do cp; celery_app.py sync obrigatório quando include muda.
+**Posição:** inserida entre "Comandos Essenciais" e "Zonas Proibidas" (linha 100).
+**Referência:** §66 (inventário — 46 dias beat parado), T4 CPRO12 (pyc stale descoberto).
+**Script:** scripts/deploy/sync_celery_workers.sh (ferramenta padrão).
+**Linhas adicionadas:** 85 (CLAUDE.md: 240 → 325 linhas).
+**Princípio:** §13.1 CLAUDE.md lido inteiro antes de editar; §13.4 apenas adição, sem remoção de seções existentes.

@@ -97,6 +97,91 @@ cd /opt/conecta-pro
 python3 agents/orchestrator_geral.py
 ```
 
+## REGRA CRÍTICA — HOT-COPY PARA TODOS OS CONTAINERS CELERY
+### Origem: CPRO12 (2026-05-04) — §66 do Contrato (inventário), T4 CPRO12 (pyc stale)
+
+**NUNCA copie um módulo apenas para o container `backend`.**
+**TODO hot-copy deve incluir TODOS os containers Celery relevantes.**
+
+### Por que esta regra existe
+
+Em 2026-03-20, o `celery-beat` parou de funcionar. A causa foi que `punch_controller.py`
+foi corrigido no disco mas nunca copiado para os containers `celery-beat` e `celery-batch`.
+O beat ficou **46 dias em loop de crash** por essa omissão.
+Adicionalmente, descobriu-se que limpar o `__pycache__` é obrigatório antes do `docker cp` —
+sem isso, o container usa bytecode antigo mesmo com o arquivo novo copiado (pyc stale).
+
+### Lista completa de containers (verificar quais são relevantes por módulo)
+
+```
+conecta-pro-backend                    ← sempre incluir
+conecta-pro-celery-beat                ← incluir se módulo tem tasks agendadas (beat schedule)
+conecta-pro-celery-batch               ← incluir se módulo tem tasks batch/import
+conecta-pro-celery-operacional         ← incluir se módulo tem tasks operacionais
+conecta-pro-celery-integrations        ← incluir se módulo tem tasks de integração externa
+conecta-pro-celery-priority            ← incluir se módulo tem tasks eSocial/FGTS
+conecta-pro-celery-nfse                ← incluir se módulo tem tasks NFS-e
+conecta-pro-celery-sefaz               ← incluir se módulo tem tasks SEFAZ/NF-e
+```
+
+> ⚠️ Alguns containers têm prefixo de hash no nome (ex: `297439d0453a_conecta-pro-celery-operacional`).
+> Sempre resolver com: `docker ps --format "{{.Names}}" | grep "celery-operacional"`
+
+### Fluxo obrigatório de hot-copy
+
+```bash
+# OPÇÃO 1 — Script padrão (preferencial):
+./scripts/deploy/sync_celery_workers.sh nome_do_modulo
+
+# OPÇÃO 2 — Manual (quando precisar controlar quais containers):
+MODULO=nome_do_modulo
+for CONTAINER in conecta-pro-backend conecta-pro-celery-beat conecta-pro-celery-batch \
+  conecta-pro-celery-operacional conecta-pro-celery-integrations \
+  conecta-pro-celery-priority conecta-pro-celery-nfse conecta-pro-celery-sefaz; do
+  # 1. Limpar pyc ANTES do cp (obrigatório — evita pyc stale)
+  docker exec $CONTAINER find /app/modules/$MODULO/__pycache__ -name "*.pyc" -delete 2>/dev/null || true
+  # 2. Copiar módulo
+  docker cp backend/modules/$MODULO/ $CONTAINER:/app/modules/$MODULO/ && echo "OK: $CONTAINER"
+done
+# 3. Recarregar apenas o backend (workers Celery recarregam automaticamente)
+docker exec conecta-pro-backend kill -HUP 1
+```
+
+### Por que limpar pyc antes do cp (pyc stale — T4 CPRO12)
+
+O Python carrega bytecode compilado (`.pyc`) em preferência ao `.py` se o pyc existir.
+Sem limpar o cache, o container continua usando o bytecode antigo mesmo após o `docker cp`.
+**Sintoma:** fix commitado e copiado, mas o erro persiste — worker lê `.pyc` antigo.
+
+### NUNCA usar docker restart
+
+```bash
+# ERRADO — derruba e reinicia o container, perde contexto:
+docker restart conecta-pro-backend
+
+# CORRETO — hot-reload sem derrubar:
+docker exec conecta-pro-backend kill -HUP 1
+
+# Para workers Celery sem kill binary:
+docker exec $CELERY_CONTAINER python3 -c "import os, signal; os.kill(1, signal.SIGHUP)"
+```
+
+### celery_app.py também precisa de sync
+
+O `celery_app.py` controla quais módulos de tasks os workers carregam (`include=[]`).
+Se um módulo novo foi adicionado ao `include`, o `celery_app.py` deve ser copiado
+para TODOS os workers — caso contrário as tasks não são descobertas mesmo com o módulo presente.
+
+```bash
+for CONTAINER in conecta-pro-celery-beat conecta-pro-celery-batch \
+  conecta-pro-celery-operacional conecta-pro-celery-integrations \
+  conecta-pro-celery-priority conecta-pro-celery-nfse conecta-pro-celery-sefaz; do
+  docker cp backend/celery_app.py $CONTAINER:/app/celery_app.py && echo "OK: $CONTAINER"
+done
+```
+
+---
+
 ## Zonas Proibidas
 | Path | Motivo |
 |------|--------|
