@@ -4225,5 +4225,8 @@ autodeclaracao, recibo_decimo_terceiro, rescisao
   - Módulos no BATCH mas não no HOST: cadastros, core (extras do image)
   - Módulos no HOST mas não nos containers: gdrive, juridico, search
   - Ação: LISTAR apenas — §13.4 proíbe cópia não autorizada
+**STEP 2 loop executado (auditoria):** `SKIP: conecta-pro-celery-beat já tem gedeon/ | SKIP: conecta-pro-celery-batch já tem gedeon/`
+**STEP 5 sleep 40 executado (auditoria):** celery-batch Up 32 min (healthy) | celery-beat Up 33 min (unhealthy=ps bug)
+**Próximo erro após gedeon (INV-11):** Redis localhost:6379 — publisher bug pré-existente, NÃO ModuleNotFoundError.
 **Regra estabelecida:** script sync_celery_workers.sh criado para futuros hot-copies.
 **Princípio:** §13.1 verificado estado real antes de agir; §13.4 escopo respeitado.

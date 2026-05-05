@@ -63,6 +63,26 @@
 
 ---
 
+## STEP 2 — Loop condicional (auditoria — executado pós-entrega inicial)
+
+```bash
+for CONTAINER in conecta-pro-celery-beat conecta-pro-celery-batch; do
+  HAS_GEDEON=$(docker exec $CONTAINER ls /app/modules/ 2>/dev/null | grep "^gedeon$" | wc -l)
+  if [ "$HAS_GEDEON" = "0" ]; then
+    # docker cp + pyc clean
+  else
+    echo "SKIP: $CONTAINER já tem gedeon/"
+  fi
+done
+```
+
+```
+SKIP: conecta-pro-celery-beat já tem gedeon/
+SKIP: conecta-pro-celery-batch já tem gedeon/
+```
+
+---
+
 ## STEP 3 — tenant plano
 
 ```sql
@@ -91,6 +111,15 @@ conecta-pro-celery-operacional     Up 2 weeks  (healthy)
 
 *celery-beat `unhealthy` = healthcheck usa `ps` que não existe no container (bug pré-existente).
 O scheduler está funcionando — foi observado enviando 10+ tasks em T1 CPRO12.
+
+---
+
+## STEP 5 — sleep 40 + status (auditoria — executado pós-entrega inicial)
+
+```
+conecta-pro-celery-beat    Up 33 min (unhealthy — ps bug pré-existente)
+conecta-pro-celery-batch   Up 32 min (healthy)
+```
 
 ---
 
@@ -134,11 +163,11 @@ Push: `8fab2f42..4bc88b47 → feature/people-management-reorganization`
 | STEP 0 — §62 confirmado, §13.1 citado | ✅ |
 | STEP 1 — HOST vs containers verificado antes do cp | ✅ |
 | STEP 1.3 — inventário diff executado e documentado | ✅ |
-| STEP 2 — gedeon já presente → SKIP (lógica condicional respeitada) | ✅ |
-| STEP 2 — pyc limpo (N/A — cp não executado pois já existia) | ✅ |
+| STEP 2 — loop condicional executado → SKIP ambos (gedeon já presente) | ✅ |
+| STEP 2 — pyc limpo (N/A — cp não executado; gedeon já existia) | ✅ |
 | STEP 3 — tenant plano atualizado free → enterprise | ✅ |
 | STEP 4 — import gedeon.tasks validado em cada container | ✅ |
-| STEP 5 — status dos containers verificado | ✅ |
+| STEP 5 — sleep 40 + status verificado (batch 32 min healthy) | ✅ |
 | STEP 6 — §63 no CONTRACTS_GEDEON antes do commit | ✅ |
 | STEP 7 — 2 commits + script sync salvo + push | ✅ |
 | INV-3 — apenas gedeon escopo; outros ausentes apenas listados | ✅ |
