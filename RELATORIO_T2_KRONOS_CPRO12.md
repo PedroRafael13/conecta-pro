@@ -171,4 +171,34 @@ O novo agendamento `gedeon-verificar-kits-completos-0800` está registrado e ser
 
 ---
 
-**T2 KRONOS CPRO12 OK — task implementada, agendada, hot-copiada e documentada em §79.**
+## Gap corrigido na auditoria (2026-05-05)
+
+**Gap detectado:** 4 workers (`celery-operacional`, `celery-priority`, `celery-nfse`, `celery-sefaz`)
+não receberam `kronos_tasks.py` nem `celery_app.py` no hot-copy inicial — INV-10/INV-11 violados.
+
+**Correção executada:**
+```bash
+# Copiado para os 4 workers faltantes + SIGHUP
+for CONTAINER in celery-operacional celery-priority celery-nfse celery-sefaz:
+  docker cp kronos_tasks.py $CONTAINER:/app/modules/gedeon/tasks/kronos_tasks.py
+  docker cp celery_app.py $CONTAINER:/app/celery_app.py
+  docker exec $CONTAINER python3 -c "import os, signal; os.kill(1, signal.SIGHUP)"
+```
+
+**Verificação final:** `celery inspect registered` confirmou `gedeon.verificar_kits_completos`
+registrada em todos os workers ativos.
+
+| Container | kronos_tasks | celery_app |
+|-----------|-------------|-----------|
+| backend | ✅ | ✅ |
+| celery-beat | ✅ | ✅ |
+| celery-batch | ✅ | ✅ |
+| celery-operacional | ✅ (fix) | ✅ (fix) |
+| celery-integrations | ✅ | ✅ |
+| celery-priority | ✅ (fix) | ✅ (fix) |
+| celery-nfse | ✅ (fix) | ✅ (fix) |
+| celery-sefaz | ✅ (fix) | ✅ (fix) |
+
+---
+
+**T2 KRONOS CPRO12 OK — task implementada, agendada, hot-copiada em todos os 8 containers e documentada em §79.**
