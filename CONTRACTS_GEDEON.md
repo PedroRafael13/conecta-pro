@@ -4995,3 +4995,9 @@ portanto as dependências são corretamente compiladas nas rotas finais do `api_
 ### Nota sobre módulos sem restrição atual
 Os módulos `operacional`, `ged`, `crm`, `dp`, `fiscal` não têm proteção de rota implementada nesta iteração.
 A proteção está na camada de dados (`users.permissions`) e pode ser expandida com novos `requer_modulo()` em futuros módulos.
+
+## §98 — Desativação usuário órfão epaiva@conectamais.pro (CPRO12 T1-FIX-EPAIVA)
+**Data:** 2026-05-05
+**Ação:** epaiva@conectamais.pro desativado (is_active=false, permissions=[])
+**Email correto:** opaiva@conectamais.pro (Orlailson Paiva — Supervisor Operacional)
+**Motivo:** email antigo tinha {all} — violava INV-4 (financeiro apenas Jordan)
