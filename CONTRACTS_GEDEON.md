@@ -4672,3 +4672,15 @@ Prime Arena tem apenas `mes_ref IN ('07.2025'..'03.2026')` — os docs de Abril/
 - Ruan Souza (ruansouza538@gmail.com) — HTTP 201
 **Conecta PRO — 1 já existia:** Pedro Neves (pedrorafaeldsn12@gmail.com — como "Pedro rafael")
 **Princípio:** §13.1 estado verificado antes; INV-3 nenhum agente removido; INV-5 senhas não expostas; INV-6 duplicatas verificadas
+
+## §87 — Diagnóstico profundo Onvio para matching GEDEON (CPRO12 T1-DIAG-ONVIO)
+**Data:** 2026-05-05
+**Tipo:** READ-ONLY — zero alterações
+**Objetivo:** mapear campos Onvio disponíveis para matching com DP/condomínio no GEDEON
+**Achados principais:**
+- 605 docs total | 26 categorias | 3 escopos (condominio/funcionario/empresa_matriz)
+- Matching funciona via regex no `nome_arquivo` → `condominio_id` (116/236 resolvidos) e `referente_a_employee_id` (39/93)
+- Bug identificado: Grupo A não checa is_matriz() → 120 docs empresa_matriz ficam como condominio+revisao_manual
+- 169 docs com doc_scope=NULL aguardam execução do scope classifier
+- Onvio não envia condominio_id — matching exclusivamente por nome_arquivo
+- Ver RELATORIO_T1_DIAG_ONVIO_CPRO12.md para análise completa
