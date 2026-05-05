@@ -83,7 +83,7 @@ export function KitDetalheModal({ kit, open, onClose, onEnviado, sentResult }: K
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-900">
         <DialogHeader>
           <DialogTitle>
             {kit.condominio_nome} — {kit.mes_ref}
