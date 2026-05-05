@@ -5012,3 +5012,10 @@ A proteção está na camada de dados (`users.permissions`) e pode ser expandida
 **Adapter fix:** inter.py — `_extrair_nome_da_descricao()` extrai nome da descrição PIX (`PIX ENVIADO - Cp :BANK-Nome`)
 **Endpoint:** `GET /api/v1/gedeon/colaborador/{nome}/pagamentos?mes_ref=MM.YYYY`
 **Validação produção:** 48 funcionários DP com match | GRACIENE PEREIRA DE CASTRO → 7 txs R$510,07 (03.2026)
+
+## §101 — Fix modal KitDetalheModal fundo transparente + diagnóstico ponto Sólides
+**Data:** 2026-05-05
+**Fix A:** KitDetalheModal — DialogContent recebeu `bg-white dark:bg-gray-900` (fundo opaco) — Cenário A
+**Diagnóstico B:** CENÁRIO B — batidas em `gp_clock_punches` (1830 registros/março 2026), porém `collect_time_sheets()` cria KitDocument com `file_path=None` (placeholder D3.1.1 — sem geração de PDF)
+**Sólides connector:** sincroniza employees/departments/positions/absences — NÃO sincroniza batidas de ponto
+**Próximo passo ponto:** criar endpoint `POST /ponto/folha-pdf/{employee_id}` que gera PDF a partir das batidas em `gp_clock_punches` e atualiza `file_path` no KitDocument (estimativa: 1 terminal)
