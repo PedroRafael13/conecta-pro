@@ -4401,6 +4401,8 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 | `/api/v1/ged/cnds` | `/api/v1/ged/coleta-automatica/history` |
 | `/api/v1/people-management/dp/contratos/templates` | `/api/v1/people-management/hr/contracts/...` (prefix=/contracts) |
 
+**Confirmados:** CND Federal, CND FGTS/Caixa, CND Trabalhista/TST, CND Prefeitura, CND Sefaz-AM, NFS-e (27 rows), Boleto (21 rows), Onvio sync FASE 3 (605 docs), Verificação completude kit (18 kits), Alertas automáticos (Kronos), Relatório mensal (Atlas HTTP 200), THEMIS (themis.py confirmado)
+**Pendentes:** Envio automático kit (❌ ausente — sem controller), Upload dirs container 1.6/1.7 (⚠️ infra), Comprovante salário (⚠️ só diaristas), Sessão Onvio expirada (operacional mas credencial vencida)
 **Princípio:** §13.1 — todos os arquivos de código lidos antes de qualquer conclusão; INV-9 — apenas "confirmado" / "não encontrado"; INV-2 — zero modificações de código.
 
 ## §68 — Sync gedeon + financial/tasks + health_occupational/tasks nos workers (CPRO 12 T2-C)
