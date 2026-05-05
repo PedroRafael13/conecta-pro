@@ -5049,3 +5049,22 @@ A proteção está na camada de dados (`users.permissions`) e pode ser expandida
 **Backfill 03/2026:** 43/51 kit_documents folha_ponto atualizados com file_path via script; 8 sem batidas (file_path=None correto)
 **Validações:** POST→201 com 19 dias/68 batidas | download→200 HTML | sem auth→401 | sem batidas→201 total_batidas=0
 **Nota:** Sólides NÃO sincroniza batidas — batidas já estão localmente em gp_clock_punches; integração é diretamente com banco local
+
+## §106 — Atualização Razão Social: Jordan Santos de Jesus Ltda → CONECTAMAIS ELETRONICA LTDA
+**Data:** 2026-05-05
+**Tipo:** Correção de dados — zero mudanças de código
+**CNPJ:** 35.710.481/0001-03 (inalterado)
+**Backup:** /tmp/backup_razao_social_20260505_213121.sql (empresas + tenants + condominios)
+
+**Tabelas atualizadas:**
+| Tabela | Campo | Antes | Depois | Linhas |
+|--------|-------|-------|--------|--------|
+| empresas | razao_social | Jordan Santos de Jesus Ltda | CONECTAMAIS ELETRONICA LTDA | 1 |
+| tenants | endereco_logradouro/bairro/cep | (vazio) | Rua Adalberto Pinto Borges, Crespo, 69073-488 | 1 |
+| bidding_certificates | razao_social | Jordan Santos de Jesus Ltda | CONECTAMAIS ELETRONICA LTDA | 8 |
+| ged_clients | contact_name | Jordan Santos | Jordan Jesus | 1 |
+
+**Tabelas históricas mantidas (sem alteração):**
+cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (10 rows), nfses (27 rows) — registros históricos, nome correto na época da emissão.
+
+**tenants.nome já correto:** CONECTAMAIS ELETRONICA LTDA (não necessitou UPDATE)
