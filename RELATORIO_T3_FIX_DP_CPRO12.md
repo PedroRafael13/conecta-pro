@@ -70,5 +70,5 @@ WHERE ea.ativo = true AND e.cpf = :cpf
 
 | Hash | Mensagem |
 |------|----------|
-| ver abaixo | `docs(contracts): §92 — Fix DP endpoints HR + operacional.ai (CPRO12 T3)` |
+| `706f9bc7` | `docs(contracts): §92+§94 — commitado em conjunto com T4 (CPRO12 T3+T4)` |
 | ver abaixo | `chore(deploy): operacional.ai hot-copy → backend container (§92)` |
