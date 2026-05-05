@@ -207,7 +207,7 @@ def build_pdf():
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#3182ce")))
     story.append(Spacer(1, 5 * mm))
     story.append(Paragraph(
-        f"<b>Empresa:</b> Jordan Santos de Jesus LTDA (CNPJ: 35.710.481/0001-03)<br/>"
+        f"<b>Empresa:</b> CONECTAMAIS ELETRONICA LTDA (CNPJ: 35.710.481/0001-03)<br/>"
         f"<b>Período:</b> Dezembro/2025, Janeiro/2026, Fevereiro/2026<br/>"
         f"<b>Data de geração:</b> {date.today().strftime('%d/%m/%Y')}<br/>"
         f"<b>Gerado por:</b> Conecta PRO — Multi-Agent System<br/>"
@@ -418,7 +418,7 @@ def build_pdf():
     story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#a0aec0")))
     story.append(Paragraph(
         f"Conecta PRO — Relatório gerado automaticamente em {date.today().strftime('%d/%m/%Y')} | "
-        f"Jordan Santos de Jesus LTDA | CNPJ 35.710.481/0001-03",
+        f"CONECTAMAIS ELETRONICA LTDA | CNPJ 35.710.481/0001-03",
         ParagraphStyle("Footer", parent=small_style, alignment=TA_CENTER, textColor=colors.HexColor("#a0aec0")),
     ))
 
