@@ -85,11 +85,12 @@ Fix aguarda autorização de Jordan (Opção A ou B acima).
 
 ---
 
-## Commit
+## Commits
 
 | Tipo | Hash | Mensagem |
 |------|------|----------|
-| docs | 4fa144ec | §73 CONTRACTS_GEDEON.md |
+| docs | `4fa144ec` | `docs(contracts): §73 — Fix F5 celery-beat healthcheck ps→kill-0 CENÁRIO B (CPRO12 T2-F5)` |
+| relatorio | `feb3a6a4` | `docs(relatorio): T2-F5 CPRO12 — beat healthcheck CENÁRIO B documentado (Docker 29.1.3)` |
 
 ---
 
