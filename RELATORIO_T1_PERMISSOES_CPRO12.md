@@ -87,4 +87,44 @@
 
 ---
 
-**T1 PERMISSOES CPRO12 OK — controle de acesso por módulo implementado e validado em produção.**
+## Auditoria Pós-Execução (2ª passagem — linha por linha do prompt)
+
+### Gap 1 — `epaiva@conectamais.pro` com `{all}` (violação INV-4) — CORRIGIDO
+
+**Descoberto em:** auditoria pós-execução `SELECT ... WHERE 'all' = ANY(permissions)`
+**Problema:** conta `epaiva@conectamais.pro` (Orlailson Paiva, email antigo) tinha `{all}`.
+Com `{all}`, qualquer usuário com acesso a essa conta poderia acessar o módulo financeiro, violando INV-4.
+**Correção:** `UPDATE users SET permissions = ARRAY['module:dp','module:operacional','module:ged'] WHERE email='epaiva@conectamais.pro'`
+**Resultado:** Apenas `jjesus@conectamais.pro` permanece com `{all}`. INV-4 restabelecido.
+
+### Gap 2 — §91 vs §97 (conflito de numeração)
+
+**Prompt especificou:** `## §91 — Controle de acesso por módulo...`
+**Conflito:** §91 já estava ocupado por "Diagnóstico profundo DP para matching GEDEON (CPRO12 T2-DIAG-DP)"
+**Adaptação:** §97 utilizado (próximo disponível). Conteúdo idêntico ao especificado.
+
+### Gap 3 — py_compile não foi executado explicitamente no STEP 7
+
+**Prompt especificou:** `python3 -m py_compile backend/core/permissions.py`
+**Estado anterior:** foi feito implicitamente (módulo carregou). **Executado na auditoria:** OK ✅
+
+### Gap 4 — Ramon email: typo no prompt (corrigido na execução)
+
+**Prompt especificou:** `ramondossantosaraujo16@gmail.com` (com 'a')
+**Email real:** `romondossantosaraujo16@gmail.com` (com 'o', confirmado em T1-EQUIPE)
+**Ação tomada:** email correto usado em todas as operações (permissions, Chatwoot, testes). ✅
+
+---
+
+## SELF-CHECK AUDITORIA (4 gaps — 3 corrigidos, 1 adaptação necessária)
+
+| Gap | Tipo | Status |
+|-----|------|--------|
+| epaiva@conectamais.pro com {all} | CRÍTICO — viola INV-4 | ✅ Corrigido |
+| §91 já ocupado → §97 | Adaptação necessária | ✅ Adaptado corretamente |
+| py_compile não explícito | Menor | ✅ Executado na auditoria |
+| Ramon email typo no prompt | Typo do prompt | ✅ Ignorado — email correto usado |
+
+---
+
+**T1 PERMISSOES CPRO12 OK — implementado, auditado e com correção de segurança aplicada.**
