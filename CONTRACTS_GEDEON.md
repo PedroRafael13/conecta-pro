@@ -5112,3 +5112,14 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
   - sem batidas em qualquer caso → file_path=None (honesto)
 **Validação:** reset 1 employee para NULL → auto-assemble → 43/51 com_arquivo (era 42/51)
 **Auto-assemble resultado:** 11 clientes, 8 kits, 0 erros (era 6 erros de DataError asyncpg)
+
+## §107 — Sólides Sync Logging ativado (CPRO12 T5-SOLIDES)
+**Data:** 2026-05-05
+**Problema:** solides_sync_log sempre com 0 linhas — tasks.py bypassa SolidesSyncService
+**Root cause:** sync_solides_full e sync_solides_incremental chamam SolidesConnector diretamente
+**Fix logging tasks.py:** _log_sync_start() + _log_sync_end() via raw SQL (mesmo padrão de _propagate_employees_to_db)
+**Fix colunas sync_service.py:** duration_seconds→duration_ms, total_processed→items_processed, created_count→items_created, updated_count→items_updated, conflict_count→conflicts_detected, error_count→items_failed, errors→error_details
+**Webhook:** POST /webhook existe (recebe eventos); /webhook/configure e /webhook/status são 404 (não implementados — pendência futura)
+**Validação:** sync triggered → solides_sync_log: id=8bdff952, status=completed, duration_ms=3853, items_processed=89, items_created=45
+**Arquivos:** backend/modules/integrations/connectors/solides/tasks.py + sync_service.py
+**Hot-copy:** conecta-pro-backend + conecta-pro-celery-integrations (+ SIGHUP em ambos)
