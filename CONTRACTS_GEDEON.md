@@ -4212,3 +4212,18 @@ autodeclaracao, recibo_decimo_terceiro, rescisao
 §13.4 Escopo: apenas MAPA + NOMES + enum tocados.
 
 ---
+
+## §63 — Sync gedeon/ containers + plano enterprise (CPRO12 T_SYNC) — 2026-05-05
+**Data:** 2026-05-05
+**Problema:** celery-batch confirmado em ModuleNotFoundError: modules.gedeon (T2 CPRO12)
+**Diagnóstico (Chesterton):** gedeon/ já presente em AMBOS os containers (copiado em T1 CPRO12). Ambos Up 25+ min.
+**Cenário:** C — gedeon já estava nos containers (SKIP confirmado para ambos).
+**Fix:** Nenhum copy necessário — módulo já sincronizado desde T1 CPRO12.
+**Aproveitamento §13.4:** tenant Conecta Mais atualizado plano='free'→'enterprise' (UPDATE 1, id=841a3906).
+**Import validado:** gedeon.tasks OK em celery-beat e celery-batch.
+**Inventário diff HOST vs containers (P4 antecipado):**
+  - Módulos no BATCH mas não no HOST: cadastros, core (extras do image)
+  - Módulos no HOST mas não nos containers: gdrive, juridico, search
+  - Ação: LISTAR apenas — §13.4 proíbe cópia não autorizada
+**Regra estabelecida:** script sync_celery_workers.sh criado para futuros hot-copies.
+**Princípio:** §13.1 verificado estado real antes de agir; §13.4 escopo respeitado.
