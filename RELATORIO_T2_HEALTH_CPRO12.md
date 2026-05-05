@@ -141,7 +141,7 @@ ModuleNotFoundError: No module named 'modules.gedeon'
 | Tipo | Hash | Mensagem |
 |------|------|----------|
 | docs | `cc871a5b` | `docs(contracts): §59 — Fix Bug C4 health_occupational ModuleNotFoundError (CPRO12 T2)` |
-| code | — | não necessário — tasks/ já existia no git, fix foi deployment |
+| code | `1759cbaa` | `fix(celery): resolve ModuleNotFoundError health_occupational — destravar batch (§59)` |
 
 ---
 
