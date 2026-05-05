@@ -5034,3 +5034,18 @@ A proteção está na camada de dados (`users.permissions`) e pode ser expandida
 **Sólides connector:** sincroniza employees/departments/positions/absences (44 rows) — NÃO sincroniza batidas de ponto (solides_sync_log=0)
 **BUG 6 validation:** `bg-white` confirmado no chunk `_bd461bf0._.js` do servidor compilado
 **Próximo passo ponto:** criar endpoint `POST /ponto/folha-pdf/{employee_id}` que gera PDF a partir das batidas em `gp_clock_punches` e atualiza `file_path` no KitDocument (estimativa: 1 terminal)
+
+## §102 — PontoFolhaPDFService: geração HTML folha de ponto (CPRO12 T3-PONTO-PDF)
+**Data:** 2026-05-05
+**Diagnóstico origem:** §100 CENÁRIO B — 1830 batidas em gp_clock_punches (03/2026), collect_time_sheets() criava file_path=None
+**Arquivo service:** modules/people_management/ponto/services/folha_pdf_service.py
+**Storage:** /app/uploads/ponto/{employee_id}/{mes_ref}/FolhaPonto_MM.YYYY_Nome.html
+**Endpoint POST:** POST /api/v1/people-management/ponto/folha-pdf/{employee_id}?mes_ref=MM.YYYY → HTTP 201
+**Endpoint GET:** GET /api/v1/people-management/ponto/folha-pdf/{employee_id}/download?mes_ref=MM.YYYY → HTTP 200 (FileResponse HTML)
+**Auth:** Depends(get_current_user) em ambos (BUG 7 coverage) — sem auth → HTTP 401
+**Integração GED:** collect_time_sheets() atualizado — gera HTML via PontoFolhaPDFService.gerar_html() (static method) antes de inserir KitDocument; file_path preenchido se há batidas, None se não há (honesto)
+**Schema gp_clock_punches confirmado:** punch_timestamp (não punch_time) — coluna corrigida no service
+**Fix permissão:** /app/uploads/ponto chown erp:erp (container roda como uid=999)
+**Backfill 03/2026:** 43/51 kit_documents folha_ponto atualizados com file_path via script; 8 sem batidas (file_path=None correto)
+**Validações:** POST→201 com 19 dias/68 batidas | download→200 HTML | sem auth→401 | sem batidas→201 total_batidas=0
+**Nota:** Sólides NÃO sincroniza batidas — batidas já estão localmente em gp_clock_punches; integração é diretamente com banco local
