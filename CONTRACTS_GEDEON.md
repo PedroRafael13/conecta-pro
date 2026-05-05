@@ -4593,3 +4593,17 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Agentes (7):** Administrativo, Supervisor Operacional, Gerente Operacional, Consultor de Vendas, Desenvolvedor 1, Desenvolvedor 2, Implantador de Campo
 **Acesso:** http://localhost:3002 | Produção: https://chat.conectamais.pro
 **Princípio:** §13.1 docker-compose lido inteiro; INV-3 serviços existentes intocados exceto CHATWOOT_ENABLED=true em evolution-api (necessidade técnica do T5)
+
+## §83 — Webhook Evolution → Conecta PRO configurado (CPRO 12 T6-WEBHOOK)
+**Data:** 2026-05-05
+**Webhook URL:** http://conecta-pro-backend:8080/api/v1/portal/whatsapp/webhook
+**Instância:** conecta-pro (Evolution API v2.2.3)
+**Eventos configurados:** MESSAGES_UPSERT, MESSAGES_UPDATE, CONNECTION_UPDATE, QRCODE_UPDATED
+**Variáveis adicionadas ao .env:** WHATSAPP_WEBHOOK_SECRET, EVOLUTION_INSTANCE
+**Nota:** .env não é lido diretamente pelo container (docker-compose usa env vars hardcoded). WEBHOOK_SECRET = vazio em runtime → endpoint aceita todas as requisições da rede Docker interna (seguro: Evolution é o único client).
+**Fix aplicado:** `receive_whatsapp_webhook` tinha `CurrentActiveUser` como dependência — Evolution não envia JWT. Parâmetro removido; autenticação via `WHATSAPP_WEBHOOK_SECRET` é suficiente.
+**Path real:** /api/v1/portal/whatsapp/webhook (prompt dizia /whatsapp/webhook — corrigido).
+**Teste:** payload simulado recebido e logado ("WhatsApp: mensagem de 559298214414: Teste webhook CPRO12 T6") ✅
+**Limitação outbound:** EVOLUTION_INSTANCE não está no container; o container usa WHATSAPP_INSTANCE_ID=conecta-pro via os.getenv fallback ✅
+**Controller:** client_portal/controllers/whatsapp_controller.py
+**Princípio:** §13.1 controller lido inteiro (249 linhas); INV-3 sem refatoração; INV-8 teste sem envio para cliente
