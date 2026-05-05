@@ -312,12 +312,91 @@ Executar scope classifier nos docs com `doc_scope IS NULL` para classificar os
 
 ---
 
+## 11. PDF Extractors — o que extraem de cada tipo (INV-1 — arquivos lidos inteiros)
+
+### EnrichmentService (`pdf_extractor/enrichment_service.py`)
+Orquestra os 3 extractors (INSS, FGTS, DCTF). Categorias com extractor:
+
+```python
+EXTRACTOR_MAP = {
+    "inss_guia":                 INSSExtractor,
+    "fgts_guia":                 FGTSExtractor(subtipo="guia"),
+    "fgts_consignado":           FGTSExtractor(subtipo="consignado"),
+    "fgts_relatorio":            FGTSExtractor(subtipo="relatorio"),
+    "fgts_consignado_relatorio": FGTSExtractor(subtipo="consignado_relatorio"),
+    "dctfweb_declaracao":        DCTFWebExtractor,
+    "dctfweb_recibo":            DCTFWebExtractor,
+    "dctfweb_debitos":           DCTFWebExtractor,
+    "dctfweb_creditos":          DCTFWebExtractor,
+    "dctfweb_resumo_debitos":    DCTFWebExtractor,
+    "dctfweb_resumo_creditos":   DCTFWebExtractor,
+    "dctfweb_extrato":           DCTFWebExtractor,
+    "dctfweb_situacao":          DCTFWebExtractor,
+}
+```
+Thresholds: `confianca >= 0.90` → salva automático; `0.70–0.89` → revisao_manual=True; `< 0.70` → rejeitado.
+Categorias SEM extractor (folha_pagamento, contratos, recibos pessoais): não extraem valores do PDF.
+
+### INSSExtractor (`pdf_extractor/inss_extractor.py`)
+Extrai de DARFs INSS (GPS/DARF Receitas Federais):
+- `competencia` → regex "Período de Apuração {nome_mês_PT}/{YYYY}"
+- `valor` → "Valor: X.XXX,XX" seção PIX; fallback "Valor Total do Documento"
+- `vencimento` → "Pagar até: DD/MM/YYYY"
+- `codigo_barras` → 4×11 dígitos + check digits (48 total)
+- Validação: CNPJ Conecta Mais (35.710.481/0001-03) obrigatório
+
+### FGTSExtractor (`pdf_extractor/fgts_extractor.py`)
+Extrai de Guias FGTS Digital (GFD) — 4 subtipos:
+- `valor` → "Total da Guia: X.XXX,XX"
+- `vencimento` → "Vencimento da Guia: DD/MM/YYYY"
+- `competencia` → regex lookbehind MM/YYYY (evita capturar DD do vencimento)
+- Marcador discriminador: texto "GFD" ou "Guia do FGTS Digital" (≠ INSS/DAR)
+
+### DCTFWebExtractor (`pdf_extractor/dctfweb_extractor.py`)
+Extrai de 8 subtipos DCTFWeb:
+- `competencia` → "Período de Apuração MM/YYYY"
+- `numero_recibo` → "Número do Recibo XXXXXXXXX"
+- `data_transmissao` → "Data/Hora da Transmissão DD/MM/YYYY"
+- `valor` → apenas para subtipos com valor (debitos, creditos, resumo_*)
+- Nota: `competencia` extraída do PDF é mais precisa que `mes_ref` do nome do arquivo
+
+### OnvioClient (`onvio_client.py`) — campos completos da API:
+- `listar_todos_documentos()` → pagina automaticamente (page_size=100, cap 5000 docs)
+- `baixar_pdf(container_id, doc_id)` → `GET /api/storage/v1/Folders/{cid}/documents/{did}`
+  com `Accept: */*` (JSON retorna metadata, `*/*` retorna bytes PDF)
+- Autenticação: cookies OIDC + `Authorization: UDSLongToken {token}` (lido do Redis `onvio:session`)
+
+### onvio_controller.py — endpoints disponíveis:
+| Endpoint | Função |
+|----------|--------|
+| `GET /onvio/status` | Valida sessão Redis |
+| `POST /onvio/sync` | Dispara sync completo (ou por mes_ref) |
+| `GET /onvio/documentos` | Lista docs importados (filtro categoria/mes_ref) |
+| `GET /onvio/historico` | Histórico de syncs |
+| `GET /onvio/stats` | Totais por categoria |
+| `POST /onvio/reclassificar` | Reaplica parser v2 a todos os docs |
+| `POST /onvio/extrair-valores` | Executa EnrichmentService (extrai valores dos PDFs) |
+| `GET /onvio/guias/fgts` | Lista guias FGTS extraídas |
+| `GET /onvio/guias/inss` | Lista guias INSS extraídas |
+| `GET /onvio/valores-fiscais-resumo` | Resumo agregado FGTS + INSS |
+
+**Destaque:** `POST /onvio/reclassificar` usa `_classificar_extras()` como pós-processamento
+para casos que o parser v2 deixa em "outros" (TRCT, DCTFWEB sem prefixo, DAS sem "SIMPLES", etc.)
+
+### test_d2_onvio_matching.py — 3 testes de integração:
+1. `test_match_onvio_casa_docs_existentes` — confirma 7 folha_pagamento 03/2026 como placeholder
+2. `test_match_onvio_nao_sobrescreve` — kits 04/2026 sem Onvio não são sobrescritos
+3. `test_match_onvio_idempotente` — 2ª execução não cria duplicatas
+
+---
+
 ## Commits
 
 | Hash | Descrição |
 |------|-----------|
 | `fe5660d5` | `docs(contracts): §87 — Diagnóstico Onvio matching GEDEON (CPRO12 T1)` |
-| `[hash-auditoria]` | `docs(gedeon): auditoria T1-DIAG-ONVIO — MAPA_TIPOS_ONVIO + STEP 5/6 completos` |
+| `0aaa185d` | `docs(gedeon): auditoria T1-DIAG-ONVIO — MAPA_TIPOS_ONVIO 21 cats + STEP 5/6 completos` |
+| `[hash-2ª-auditoria]` | `docs(gedeon): auditoria 2ª rodada T1-DIAG-ONVIO — INV-1 100% (todos os arquivos lidos)` |
 
 ---
 
