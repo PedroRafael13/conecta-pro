@@ -252,7 +252,7 @@ class SolidesSyncService:
             logger.error(f"[Solides] Erro no full sync: {e}")
             sync_log.status = SyncStatus.FAILED
             sync_log.completed_at = datetime.utcnow()
-            sync_log.errors = [{"error": str(e)}]
+            sync_log.error_details = [{"error": str(e)}]
             self.db.commit()
 
             return SyncResult(success=False, stats=total_stats, sync_log_id=sync_log.id, error=str(e))
@@ -316,13 +316,13 @@ class SolidesSyncService:
             duration = int((datetime.utcnow() - start_time).total_seconds())
             sync_log.status = SyncStatus.COMPLETED
             sync_log.completed_at = datetime.utcnow()
-            sync_log.duration_seconds = duration
-            sync_log.total_processed = total_stats.total_processed
-            sync_log.created_count = total_stats.created
-            sync_log.updated_count = total_stats.updated
-            sync_log.skipped_count = total_stats.skipped
-            sync_log.conflict_count = total_stats.conflicts
-            sync_log.error_count = total_stats.errors
+            sync_log.duration_ms = duration * 1000
+            sync_log.items_processed = total_stats.total_processed
+            sync_log.items_created = total_stats.created
+            sync_log.items_updated = total_stats.updated
+            sync_log.items_skipped = total_stats.skipped
+            sync_log.conflicts_detected = total_stats.conflicts
+            sync_log.items_failed = total_stats.errors
             self.db.commit()
 
             return SyncResult(success=True, stats=total_stats, sync_log_id=sync_log.id, duration_seconds=duration)
