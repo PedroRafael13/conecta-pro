@@ -68,4 +68,30 @@ Todos os testes passam. Worker operacional sem DataError. TenantStatus alinhado 
 
 ---
 
+## Auditoria — Observações (INV-12)
+
+### STEP 6 — Erros de coleta pré-existentes (NÃO corrigidos)
+
+`python3 -m pytest tests/ -k "tenant_status or TenantStatus or config_model"` interrompeu
+a coleta por 2 erros pré-existentes sem relação com TenantStatus:
+
+| Arquivo | Erro |
+|---------|------|
+| `tests/test_recruitment_models.py` | `ImportError: cannot import name 'EducationLevel' from modules.recruitment.models.candidate_education` |
+| `tests/modules/crm/test_cpro11_regressions.py` | `Failed: 'regression' not a registered mark` |
+
+Ambos são bugs pré-existentes. INV-12 aplicado: **NÃO corrigidos**. Os testes
+específicos de TenantStatus foram executados diretamente por arquivo e obtiveram
+**105 passed, 0 failed**.
+
+### STEP 9 — Commit de código capturado por T4
+
+O `git commit` de código falhou na primeira tentativa (hook `detect-secrets` modificou
+`.secrets.baseline`). Enquanto corrigíamos o stage, a sessão T4 commitou os arquivos
+já staged (`tenant.py` + `test_config_model.py`) em `0a41c5f7`. As mudanças estão
+corretas no git mas com mensagem/session tag de T4 em vez de T2-B.
+Não foi possível corrigir retroativamente sem `git revert` (proibido por CLAUDE.md).
+
+---
+
 T2-B CPRO12 OK — TenantStatus alinhado com DB. Todas as queries de status funcionarão.
