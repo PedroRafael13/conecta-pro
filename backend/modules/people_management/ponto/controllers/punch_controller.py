@@ -34,6 +34,7 @@ from ..schemas.punch_schemas import (
     PunchSyncResponse,
 )
 from ..services import dashboard_service
+from ..services.folha_pdf_service import PontoFolhaPDFService
 from ..services.punch_service import PunchService
 
 router = APIRouter(prefix="/ponto", tags=["Ponto Eletronico"])
@@ -389,3 +390,66 @@ async def colaboradores_sem_escala(
     """Lista colaboradores ativos sem escala — necessitam correcao."""
     items = dashboard_service.get_colaboradores_sem_escala(db)
     return [ColaboradorSemEscalaResponse(**i) for i in items]
+
+
+# ==================== FOLHA DE PONTO PDF ====================
+
+
+@router.post(
+    "/folha-pdf/{employee_id}",
+    summary="Gerar folha de ponto HTML por funcionário/mês",
+    status_code=201,
+)
+async def gerar_folha_pdf(
+    employee_id: str,
+    mes_ref: str = Query(..., description="Mês de referência no formato MM.YYYY"),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_sync_db_dependency),
+) -> dict[str, Any]:
+    """Gera HTML de folha de ponto a partir das batidas em gp_clock_punches."""
+    svc = PontoFolhaPDFService(db)
+    try:
+        return svc.gerar_folha_pdf(employee_id, mes_ref)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.get(
+    "/folha-pdf/{employee_id}/download",
+    summary="Download da folha de ponto HTML",
+)
+async def download_folha_pdf(
+    employee_id: str,
+    mes_ref: str = Query(..., description="Mês de referência no formato MM.YYYY"),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_sync_db_dependency),
+) -> Any:
+    """Serve o arquivo HTML da folha de ponto como download."""
+    import re
+    from pathlib import Path
+
+    from fastapi.responses import FileResponse
+
+    if not re.match(r"^(0[1-9]|1[0-2])\.\d{4}$", mes_ref):
+        raise HTTPException(status_code=422, detail="mes_ref inválido. Formato: MM.YYYY")
+
+    storage = Path("/app/uploads/ponto") / str(employee_id) / mes_ref
+    arquivos = list(storage.glob("FolhaPonto_*.html")) if storage.exists() else []
+
+    if not arquivos:
+        # Gerar on-demand se ainda não existe
+        svc = PontoFolhaPDFService(db)
+        try:
+            result = svc.gerar_folha_pdf(employee_id, mes_ref)
+            filepath = Path(result["arquivo_path"])
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+    else:
+        filepath = arquivos[0]
+
+    return FileResponse(
+        path=str(filepath),
+        media_type="text/html",
+        filename=filepath.name,
+        headers={"Content-Disposition": f'attachment; filename="{filepath.name}"'},
+    )

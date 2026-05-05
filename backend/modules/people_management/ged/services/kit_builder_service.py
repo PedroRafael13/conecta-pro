@@ -5,6 +5,7 @@ Orquestra a coleta automatica de documentos de diferentes modulos
 (DP, Fiscal, Operacoes) para montar kits completos por cliente/mes.
 """
 
+import calendar
 import logging
 import unicodedata
 from datetime import date
@@ -345,8 +346,67 @@ class KitBuilderService:
             if existing.scalar_one_or_none():
                 continue
 
-            # Placeholder honesto: NULL até pipeline DP gerar o arquivo real (D3.1.1).
+            # Gerar folha de ponto a partir das batidas reais (§101 D3.1.1)
+            mes_ref = reference_month.strftime("%m.%Y")
+            mes_s = reference_month.strftime("%m")
+            ano_s = reference_month.strftime("%Y")
+            data_inicio = f"{ano_s}-{mes_s}-01"
+            ultimo_dia = calendar.monthrange(int(ano_s), int(mes_s))[1]
+            data_fim = f"{ano_s}-{mes_s}-{ultimo_dia:02d}"
+
+            batidas_rows = (
+                await self.db.execute(
+                    text("""
+                SELECT
+                    e.nome, e.cpf, e.cargo, e.matricula,
+                    cp.punch_timestamp::date AS data,
+                    cp.punch_timestamp::time AS hora,
+                    cp.punch_type
+                FROM gp_clock_punches cp
+                JOIN employees e ON e.id = cp.employee_id
+                WHERE cp.employee_id = CAST(:emp_id AS uuid)
+                  AND cp.punch_timestamp >= :inicio
+                  AND cp.punch_timestamp <= :fim
+                ORDER BY cp.punch_timestamp
+            """),
+                    {"emp_id": str(emp_id), "inicio": data_inicio, "fim": f"{data_fim} 23:59:59"},
+                )
+            ).fetchall()
+
             file_path = None
+            if batidas_rows:
+                try:
+                    from modules.people_management.ponto.services.folha_pdf_service import (
+                        PONTO_STORAGE,
+                        PontoFolhaPDFService,
+                    )
+
+                    dias: dict = {}
+                    for row in batidas_rows:
+                        d = str(row.data)
+                        if d not in dias:
+                            dias[d] = []
+                        dias[d].append({"hora": str(row.hora)[:5], "tipo": row.punch_type or ""})
+                    emp_row = batidas_rows[0]
+                    html = PontoFolhaPDFService.gerar_html(
+                        emp_nome=emp_row.nome,
+                        cpf=emp_row.cpf or "",
+                        cargo=emp_row.cargo or "",
+                        matricula=emp_row.matricula or "",
+                        mes_ref=mes_ref,
+                        dias=dias,
+                        data_inicio=data_inicio,
+                        data_fim=data_fim,
+                    )
+                    output_dir = PONTO_STORAGE / str(emp_id) / mes_ref
+                    output_dir.mkdir(parents=True, exist_ok=True)
+                    nome_seguro = emp_row.nome.replace(" ", "_").replace("/", "-")[:30]
+                    fp = output_dir / f"FolhaPonto_{mes_ref}_{nome_seguro}.html"
+                    fp.write_text(html, encoding="utf-8")
+                    file_path = str(fp)
+                except Exception as exc:
+                    logger.warning("Erro ao gerar folha ponto %s em %s: %s", emp_id, mes_ref, exc)
+                    file_path = None
 
             doc = KitDocument(
                 kit_id=kit_id,
@@ -354,7 +414,7 @@ class KitBuilderService:
                 document_type=DocumentType.FOLHA_PONTO,
                 document_name=f"Folha de Ponto {reference_month.strftime('%m/%Y')}",
                 file_path=file_path,
-                mime_type="application/pdf",
+                mime_type="text/html",
                 source_module=SourceModule.DP,
                 auto_generated=True,
                 is_signed=False,
