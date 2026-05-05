@@ -5095,6 +5095,7 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 **Resultado depois:** erros=[] — sync retorna success=true limpo
 **Arquivo:** backend/modules/people_management/ponto/services/dashboard_service.py (linhas 328-337)
 **Hot-copy:** conecta-pro-backend + celery-beat + celery-operacional + docker restart backend
+**Impacto:** sync de ausências desabilitado temporariamente (endpoints fora do plano Conecta Mais) — restante do sync (employees, escalas) funcionando normalmente
 **Validação:** POST /api/v1/people-management/ponto/sincronizar-solides → HTTP 201, erros=[]
 
 ## §103 — Fix collect_time_sheets: UPDATE slots file_path=NULL + asyncpg date fix (CPRO12 T4)
