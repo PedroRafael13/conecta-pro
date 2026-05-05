@@ -4928,3 +4928,70 @@ onvio_doc_scope_classifier.py OK | kit_builder_service.py OK | onvio_controller.
 | INV-6 | py_compile antes do deploy | ✅ |
 | INV-9 | main_production.py não modificado | ✅ |
 | INV-10 | Re-sync read-only do banco real | ✅ — ON CONFLICT garante idempotência |
+
+## §97 — Controle de Acesso por Módulo: Permissões Backend (CPRO12 T1-PERMISSOES)
+
+**Data:** 2026-05-05
+**Autorização:** Jordan Jesus (jjesus@conectamais.pro)
+**Branch:** feature/people-management-reorganization
+
+### Objetivo
+Implementar controle de acesso por módulo no backend do ERP, impedindo que usuários sem permissão explícita acessem módulos financeiros/fiscais confidenciais.
+
+### Invariante INV-4 — Financeiro = APENAS Jordan
+O módulo `financeiro` é protegido no backend via FastAPI dependency injection.
+Nenhuma rota de `/api/v1/financial/*` (exceto `fiscal`) responde a usuários sem `module:financeiro` em `users.permissions`.
+
+### Arquitetura implementada
+
+**`backend/core/permissions.py`** — Dependency factory centralizada:
+```python
+def requer_modulo(modulo: str) -> Depends:
+    # CEO (jjesus@conectamais.pro) sempre tem acesso (INV-3)
+    # Wildcard "all" em permissions = acesso total
+    # "module:<modulo>" em permissions = acesso ao módulo
+    # Caso contrário: HTTP 403 "Acesso negado ao módulo"
+```
+
+**`backend/modules/financeiro/__init__.py`** — Injeção de dependências em rotas:
+```python
+# FastAPI 0.115.6: include_router NÃO propaga router.dependencies
+# Solução: injetar em cada route.dependencies ANTES do include_router
+for _route in _routers_financeiro:
+    for _route_item in _r.routes:
+        _route_item.dependencies.append(_dep_financeiro)  # requer_modulo("financeiro")
+
+for _route in fiscal_router.routes:
+    _route.dependencies.append(_dep_fiscal)  # requer_modulo("fiscal")
+```
+
+### Matriz de permissões (users.permissions no banco)
+
+| Usuário | Email | Permissões |
+|---------|-------|-----------|
+| Jordan Jesus | jjesus@conectamais.pro | {all} (wildcard — CEO INV-3) |
+| Pyetra Jesus | pjesus@conectamais.pro | {module:fiscal, module:dp, module:operacional, module:crm, module:ged} |
+| Eliziel Gonzaga | egonzaga@conectamais.pro | {module:dp, module:operacional, module:ged} |
+| Orlailson Paiva | opaiva@conectamais.pro | {module:dp, module:operacional, module:ged} |
+| Ramon Araujo | romondossantosaraujo16@gmail.com | {module:dp, module:operacional, module:crm, module:ged, module:dev} |
+| Pedro Neves | pedrorafaeldsn12@gmail.com | {module:dp, module:operacional, module:crm, module:ged, module:dev} |
+| Ruan Souza | ruansouza538@gmail.com | {module:operacional, module:ged} |
+
+### Testes de validação (executados em produção)
+
+| Teste | Resultado |
+|-------|-----------|
+| Jordan → GET /financial/payables | HTTP 200 ✅ |
+| Ruan → GET /financial/payables | HTTP 403 "Acesso negado ao módulo 'financeiro'" ✅ |
+| Pyetra → GET /financial/payables | HTTP 403 "Acesso negado ao módulo 'financeiro'" ✅ |
+| Pyetra → GET /financial/fiscal/stats | HTTP 422 (permissão OK, faltou param) ✅ |
+
+### Nota técnica: FastAPI 0.115.6 + include_router
+
+`include_router()` lê `route.dependencies` no momento da chamada e cria novas `APIRoute` com esses deps compilados.
+A modificação de `route.dependencies` em `financeiro/__init__.py` acontece ANTES de `main_production.py` chamar `include_router()`,
+portanto as dependências são corretamente compiladas nas rotas finais do `api_router`.
+
+### Nota sobre módulos sem restrição atual
+Os módulos `operacional`, `ged`, `crm`, `dp`, `fiscal` não têm proteção de rota implementada nesta iteração.
+A proteção está na camada de dados (`users.permissions`) e pode ser expandida com novos `requer_modulo()` em futuros módulos.
