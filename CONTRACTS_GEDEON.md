@@ -4533,3 +4533,19 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **G4:** kit_controller send-email → delega para EmailKitService (HTML #1E3A5F + link Drive), remove smtplib plain text
 **Regra de negócio (INV-5):** envio bloqueado (HTTP 400) se completion_percentage < 100
 **Princípio:** §13.1 3 arquivos lidos inteiros; §13.4 apenas os 4 gaps corrigidos; INV-9 hot-copy
+
+## §80 — Instalação Evolution API + WhatsApp 0800 880 4414 (CPRO 12 T3-EVOLUTION)
+**Data:** 2026-05-05
+**Autorização:** Jordan Jesus — docker-compose + .env (explícita no chat)
+**Container:** evolution-api (atendai/evolution-api:latest) porta 8081
+**Instância:** conecta-pro | ownerJid: 558008804414@s.whatsapp.net
+**Número:** 0800 880 4414 (WhatsApp Business — profileName: Conecta Mais)
+**EVOLUTION_API_URL:** http://evolution-api:8080 (rede Docker interna)
+**EVOLUTION_DATABASE_URL:** postgresql://postgres@postgres:5432/evolution_api (49 Prisma migrations)
+**Fixes aplicados:**
+- DATABASE_PROVIDER=postgresql (v2 não suporta sqlite)
+- CACHE_REDIS_ENABLED=false + CACHE_LOCAL_ENABLED=true (QR codes não perdidos)
+- CONFIG_SESSION_PHONE_VERSION=2.3000.1035194821 (versão aceita pelo WhatsApp)
+**Status final:** online=true, connectionStatus=open ✅
+**Próximos passos:** integrar GED→WhatsApp + instalar Chatwoot multiagente
+**Princípio:** §13.1 docker-compose lido inteiro antes de editar; INV-3 serviços existentes intocados
