@@ -4202,3 +4202,14 @@ docker exec conecta-pro-backend kill -HUP 1
 - §13.1 Chesterton: diff disco vs container lido ANTES de qualquer edição
 - §13.4 Escopo sagrado: apenas `punch_controller.py` atualizado no container
 - INV-6: `docker cp + kill -HUP 1` (NÃO `docker restart`)
+
+## §55 — Fix Bug C1: TenantStatus.ATIVO → 'active' (CPRO 12 T4)
+**Data:** 2026-05-05
+**Arquivo:** backend/modules/operacional/services/notification_triggers.py
+**Problema:** TenantStatus.ATIVO resolvia para "ATIVO" (via Enum .name) mas DB tem enum inglês.
+DataError desde 2026-03-20. Worker celery-operacional falhava em toda execução.
+Erro: `DataError: invalid input value for enum tenant_status: "ATIVO"`
+**Fix:** Opção A — substituição cirúrgica `TenantStatus.ATIVO` → `'active'` na linha 39 (_get_active_tenants).
+Opção B descartada: quebraria test_config_model.py:648 e todos os usos no config_repository.
+**Impacto:** tasks de notificação executam sem DataError; pipeline de notif operacional desbloqueado.
+**Princípio:** §13.1 arquivo inteiro lido; §13.4 escopo restrito à query de status (1 linha).
