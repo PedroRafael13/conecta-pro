@@ -25,8 +25,8 @@
 | H4 agendamentos dia 21 no HOST | ✅ `crontab(day_of_month="21", hour="7", minute="0")` |
 | H5 beat agenda tasks novas | ✅ `gedeon-risk-monitor-5min (gedeon.risk_monitor)` agendado após sync |
 | H6 operacional não tinha SST antes | ✅ CONFIRMADO — grep retornou vazio pré-sync |
-| H7 nenhum worker em loop | ⚠️ PARCIAL — beat+batch estáveis; 4 workers restarting (ModuleNotFoundError) |
-| H8 script atualizado | ✅ sync_celery_workers.sh atualizado com bloco celery_app.py |
+| H7 nenhum worker em loop (`sleep 30 + docker ps`) | ⚠️ PARCIAL — beat+batch estáveis; 5 workers em restart loop (ModuleNotFoundError) |
+| H8 script atualizado (`cat scripts/deploy/sync_celery_workers.sh`) | ✅ bloco celery_app.py presente (10 linhas, python3 SIGHUP) |
 
 ---
 
@@ -78,6 +78,27 @@
 **Ação requerida (Jordan decide):** T2 (sync gedeon/ para integrations) + T3 (sync health_occupational/ para operacional/priority/nfse/sefaz).
 
 ---
+
+## STEP 4 — Tasks descobertas no celery-operacional (auditoria: executado no container correto)
+
+```python
+# docker exec 297439d0453a_conecta-pro-celery-operacional python3 -c "..."
+Total includes: 10
+ - modules.government_integrations.jobs.sync_tasks
+ - modules.government_integrations.jobs.monitoring_tasks
+ - modules.integrations.connectors.solides.tasks
+ - modules.operacional.tasks
+ - modules.bidding.tasks
+ - modules.people_management.sst.tasks
+ - modules.people_management.ged.tasks
+ - modules.health_occupational.tasks   ← novo (não existia antes)
+ - modules.gedeon.tasks.kronos_tasks   ← novo (não existia antes)
+ - modules.financial.tasks             ← novo (não existia antes)
+```
+
+**Nota:** celery_app.py importa corretamente no operacional entre restarts.
+O crash ocorre quando o worker process tenta importar `modules.health_occupational.tasks`
+(módulo existe no HOST mas não no container).
 
 ## STEP 4 — Tasks descobertas no beat
 
@@ -131,7 +152,7 @@ Push: `→ feature/people-management-reorganization`
 | STEP 2 — celery_app.py copiado para 7 containers com limpeza pyc | ✅ |
 | STEP 2 — SIGHUP enviado via python3 os.kill (kill ausente nos containers) | ✅ |
 | STEP 3 — status e logs verificados após restart | ✅ |
-| STEP 4 — tasks gedeon visíveis no beat (10 includes confirmados) | ✅ |
+| STEP 4 — tasks gedeon visíveis em operacional (10 includes, gedeon/health/financial novos) | ✅ |
 | STEP 5 — §67 no CONTRACTS_GEDEON ANTES do commit | ✅ |
 | STEP 6 — 2 commits + script atualizado + push | ✅ |
 | INV-3 — celery_app.py NÃO modificado | ✅ |
