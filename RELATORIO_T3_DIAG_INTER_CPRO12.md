@@ -300,15 +300,17 @@ Os `pix_e2e_id`/`pix_txid` desses registros seriam o elo de ligação com a API 
 
 ---
 
-## Próximos Passos (não implementados — INV-2)
+## Recomendação
 
-1. **FIX URGENTE:** `inter_sync_service.py:82` — salvar `detalhes_destinatario` + `raw_payload`
-2. **HOT-COPY:** `docker cp backend/modules/integrations/inter/ conecta-pro-backend:/app/modules/integrations/inter/`
-3. **Re-sync:** `POST /api/v1/financeiro/inter/sync-extrato?dias=60`
-4. **Conciliação:** `POST /api/v1/financeiro/inter/conciliar/2026-04`
-5. **Investigar `bank_transactions`:** verificar se tem dados e se `_add_comprovantes_bancarios` funciona
-6. **Executar `payroll_payments`:** completar fluxo D7 para Mar/2026 e gerar `pix_e2e_id` reais
-7. **Endpoint GEDEON comprovante:** `GET /gedeon/colaborador/{cpf}/comprovante-salario?mes_ref=MM.YYYY`
+**O que o GEDEON precisa que não existe ainda:**
+
+1. **Módulo `inter/` no container** — hot-copy `modules/integrations/inter/` para `conecta-pro-backend`
+2. **Fix `inter_sync_service.py:82`** — salvar `detalhes_destinatario` (CPF destinatário PIX) em vez de `raw_payload=None` hardcoded
+3. **Re-sync extrato** — `POST /api/v1/financeiro/inter/sync-extrato?dias=60` para repopular CPFs
+4. **Executar conciliação** — `POST /api/v1/financeiro/inter/conciliar/2026-04` — algoritmo correto existe, dado não chega
+5. **Endpoint GEDEON por CPF** — `GET /gedeon/colaborador/{cpf}/comprovante-salario?mes_ref=MM.YYYY` consultando `inter_conciliacao_folha`
+6. **Investigar `bank_transactions`** — se tem dados, `_add_comprovantes_bancarios` já gera PDF de comprovante
+7. **Executar fluxo D7** — completar `payroll_payments` para gerar `pix_e2e_id` reais Mar/2026
 
 ---
 
@@ -341,6 +343,8 @@ Os `pix_e2e_id`/`pix_txid` desses registros seriam o elo de ligação com a API 
 | INV-6 — commit único de docs ao final | ✅ |
 
 ---
+
+Commit: f49d2804
 
 T3 DIAG INTER CPRO12 OK — AUDITORIA 100%
 
