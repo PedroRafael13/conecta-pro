@@ -389,6 +389,12 @@ app.conf.beat_schedule = {
         "schedule": crontab(hour=9, minute=0),
         "options": {"queue": "gov.batch"},
     },
+    # Alerta kits GED 100% não enviados — 08:00 Manaus (12:00 UTC) — §79
+    "gedeon-verificar-kits-completos-0800": {
+        "task": "gedeon.verificar_kits_completos",
+        "schedule": crontab(hour="8", minute="0"),
+        "options": {"queue": "gov.batch"},
+    },
 }
 
 
