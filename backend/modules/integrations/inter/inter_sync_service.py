@@ -1,5 +1,6 @@
 """D6.1 — InterSyncService: sincroniza extrato em inter_transactions."""
 
+import json
 import logging
 import os
 from datetime import date, timedelta
@@ -64,14 +65,44 @@ class InterSyncService:
                 desc = (tx.description or "")[:255]
                 dt = tx.date.date() if hasattr(tx.date, "date") else tx.date
 
+                raw_dict = {
+                    "transaction_id": tx.transaction_id,
+                    "date": str(dt),
+                    "amount": float(tx.amount) if tx.amount else None,
+                    "transaction_type": tipo_tx,
+                    "description": tx.description,
+                    "balance_after": float(tx.balance_after) if tx.balance_after else None,
+                    "counterpart_name": tx.counterpart_name,
+                    "counterpart_document": tx.counterpart_document,
+                    "counterpart_bank": tx.counterpart_bank,
+                    "counterpart_agency": tx.counterpart_agency,
+                    "counterpart_account": tx.counterpart_account,
+                    "category": tx.category,
+                    "reference": tx.reference,
+                }
+                detalhes_dict = None
+                if tx.counterpart_document or tx.counterpart_name:
+                    detalhes_dict = {
+                        "cpf_cnpj": tx.counterpart_document,
+                        "nome": tx.counterpart_name,
+                        "banco": tx.counterpart_bank,
+                        "agencia": tx.counterpart_agency,
+                        "conta": tx.counterpart_account,
+                    }
+
                 await self.db.execute(
                     text("""
                         INSERT INTO inter_transactions
                           (data_lancamento, tipo_operacao, tipo_transacao,
-                           valor, descricao, raw_payload)
+                           valor, descricao, raw_payload, detalhes_destinatario)
                         VALUES
-                          (:dt, :op, :tipo, :valor, :desc, :raw)
-                        ON CONFLICT ON CONSTRAINT uq_inter_transactions_dedup DO NOTHING
+                          (:dt, :op, :tipo, :valor, :desc,
+                           CAST(:raw AS jsonb), CAST(:dest AS jsonb))
+                        ON CONFLICT ON CONSTRAINT uq_inter_transactions_dedup
+                        DO UPDATE SET
+                          raw_payload = EXCLUDED.raw_payload,
+                          detalhes_destinatario = EXCLUDED.detalhes_destinatario
+                        WHERE inter_transactions.raw_payload IS NULL
                     """),
                     {
                         "dt": dt,
@@ -79,7 +110,8 @@ class InterSyncService:
                         "tipo": tipo_tx,
                         "valor": valor,
                         "desc": desc,
-                        "raw": None,
+                        "raw": json.dumps(raw_dict),
+                        "dest": json.dumps(detalhes_dict) if detalhes_dict else None,
                     },
                 )
                 sincronizadas += 1
