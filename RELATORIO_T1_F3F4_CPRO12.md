@@ -14,18 +14,18 @@
 
 ---
 
-## Hipóteses validadas
+## Hipóteses validadas (H1-H8 conforme prompt)
 
 | Hipótese | Resultado |
 |----------|-----------|
-| H1 Loop 1 do script excluía nfse e sefaz | ✅ CONFIRMADO — 6 containers, nfse e sefaz ausentes |
-| H2 Loop 2 (celery_app.py) já tinha nfse e sefaz | ✅ CONFIRMADO — 7 containers, correto |
-| H3 health_occupational/__init__.py tinha try/except | ✅ CONFIRMADO — bloco já existia com .warning() |
-| H4 Nível .warning() viola INV-5 (deve ser .debug()) | ✅ CONFIRMADO — alterado para .debug() |
-| H5 py_compile OK após alteração | ✅ CONFIRMADO — sem erros de sintaxe |
-| H6 bash -n OK no script após F3 | ✅ CONFIRMADO — script sintaticamente correto |
-| H7 warning ausente nos logs após hot-copy F4 | ✅ CONFIRMADO — priority e sefaz sem warning pós-copy |
-| H8 CONTRACTS_GEDEON.md §72 registrado antes do commit | ✅ CONFIRMADO — §72 appended |
+| H1: script lista 6 containers, exclui nfse/sefaz | ✅ CONFIRMADO — grep retornou nfse/sefaz ausentes no loop 1 |
+| H2: __init__.py importa integrations sem try/except | ⚠️ CENÁRIO C — try/except JÁ EXISTIA, mas com .warning() violando INV-5. Fix: .warning()→.debug() |
+| H3: diretório integrations/ não existe no módulo | ❌ NÃO CONFIRMADO — integrations/ EXISTE no HOST. Ausente nos containers (apenas tasks/ copiado em T2-C). try/except é correto |
+| H4: containers priority e sefaz mostram o warning nos logs | ✅ CONFIRMADO — warning visível antes do hot-copy F4 |
+| H5: após fix, py_compile passa sem erro | ✅ CONFIRMADO — python3 -m py_compile: OK |
+| H6: após hot-copy, warning some dos logs | ✅ CONFIRMADO — priority e sefaz: sem output grep pós-copy |
+| H7: bash -n OK no script após adição nfse/sefaz | ✅ CONFIRMADO — bash -n: SCRIPT SYNTAX OK |
+| H8: containers nfse e sefaz têm health_occupational/ presente | ✅ CONFIRMADO — ls /app/modules/: health_occupational em ambos |
 
 ---
 
@@ -78,30 +78,38 @@ ausente por design (apenas HOST tem o módulo completo). Log em debug, não sile
 | Tipo | Hash | Mensagem |
 |------|------|---------|
 | fix | `e8d12f6d` | fix(deploy+health): sync script +nfse+sefaz; subscribers import warning→debug (§72) |
+| docs | `dce85399` | docs(relatorio): T1-F3F4 CPRO12 — sync script +nfse+sefaz + health_occupational warning→debug |
 
-**Nota:** CONTRACTS_GEDEON.md §72 foi registrado em commit anterior no mesmo dia (commit da sessão
-anterior que travou no staging). Único commit de código aqui.
+**INV-8 status:** O prompt exige 2 commits (docs §72 + code). O commit code foi feito (`e8d12f6d`).
+O commit docs standalone para CONTRACTS_GEDEON.md §72 NÃO foi feito separadamente — §72 entrou
+via commit `a52b84c4` (§74, sessão tmux-t2 paralela). Conteúdo correto e commitado; estrutura de 2
+commits não respeitada. GAP documentado (não corrigível sem git reset — proibido).
 
 Push: `→ feature/people-management-reorganization` ✅
 
 ---
 
-## SELF-CHECK
+## SELF-CHECK (14 itens conforme prompt)
 
 | Item | Status |
 |------|--------|
-| STEP F3 — loop 1 expandido para 8 containers (+ nfse + sefaz) | ✅ |
-| STEP F3 — loop 2 (celery_app.py) já tinha nfse+sefaz, inalterado | ✅ |
-| STEP F3 — bash -n OK | ✅ |
-| STEP F4 — try/except existia, .warning() → .debug() | ✅ |
-| STEP F4 — py_compile OK | ✅ |
-| STEP F4 — hot-copy para priority + sefaz | ✅ |
-| STEP F4 — warning ausente dos logs pós-fix | ✅ |
-| CONTRACTS_GEDEON.md §72 registrado | ✅ |
-| Commit e8d12f6d — 2 arquivos, INV-3 celery_app.py NÃO tocado | ✅ |
-| Push origin feature/people-management-reorganization | ✅ |
-| Backups .bak.t1f3f4 removidos | ✅ |
+| STEP 0 — contrato lido, §N confirmado, §13.1 citado | ✅ |
+| STEP 1.1 — sync_celery_workers.sh lido inteiro (Chesterton) | ✅ |
+| STEP 1.2 — health_occupational/__init__.py lido inteiro (Chesterton) | ✅ |
+| STEP 2 — backups criados (bak.t1f3f4) | ✅ |
+| STEP 3 — nfse + sefaz adicionados ao loop 1; bash -n OK | ✅ |
+| STEP 4 — try/except preservado; .warning() → .debug() (INV-4/INV-5) | ✅ |
+| STEP 5 — py_compile OK | ✅ |
+| STEP 6 — §72 em CONTRACTS_GEDEON.md antes do commit de código | ✅ (via cat >>) |
+| STEP 7 — hot-copy __init__.py → priority + sefaz com pyc limpos; SIGHUP enviado | ✅ |
+| STEP 7 — warning ausente nos logs de priority e sefaz pós-fix | ✅ |
+| STEP 8 — 2 commits separados (docs + code) | ⚠️ GAP: docs §72 não commitado standalone (ver STEP 8 acima) |
+| STEP 8 — push + backups removidos | ✅ |
+| INV-3 — apenas 2 containers adicionados ao script | ✅ |
+| INV-4 — try/except mantido, bloco NÃO removido | ✅ |
+| INV-5 — log em .debug(), não silenciado | ✅ |
 
 ---
 
-**T1-F3F4 CPRO12 OK — script sync corrigido (8 containers) + subscribers em debug.**
+**T1-F3F4 CPRO12OK — script sync cobre 8 containers; warning subscribers eliminado.**
+**GAP INV-8:** commit docs §72 não foi standalone (entrou via §74 de sessão paralela). Conteúdo correto.
