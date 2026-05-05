@@ -336,23 +336,32 @@ class KitBuilderService:
         """
         collected = 0
         for emp_id in employee_ids:
-            existing = await self.db.execute(
+            existing_result = await self.db.execute(
                 select(KitDocument).where(
                     KitDocument.kit_id == kit_id,
                     KitDocument.employee_id == emp_id,
                     KitDocument.document_type == DocumentType.FOLHA_PONTO,
                 )
             )
-            if existing.scalar_one_or_none():
+            existing_doc = existing_result.scalar_one_or_none()
+            if existing_doc is not None and existing_doc.file_path is not None:
                 continue
 
-            # Gerar folha de ponto a partir das batidas reais (§101 D3.1.1)
+            # Gerar folha de ponto a partir das batidas reais (§102 D3.1.1)
             mes_ref = reference_month.strftime("%m.%Y")
+            ano_i = reference_month.year
+            mes_i = reference_month.month
+            ultimo_dia = calendar.monthrange(ano_i, mes_i)[1]
             mes_s = reference_month.strftime("%m")
             ano_s = reference_month.strftime("%Y")
             data_inicio = f"{ano_s}-{mes_s}-01"
-            ultimo_dia = calendar.monthrange(int(ano_s), int(mes_s))[1]
             data_fim = f"{ano_s}-{mes_s}-{ultimo_dia:02d}"
+            # asyncpg exige date/datetime — strings causam DataError (§103)
+            from datetime import date as _date
+            from datetime import datetime as _datetime
+
+            dt_inicio = _date(ano_i, mes_i, 1)
+            dt_fim = _datetime(ano_i, mes_i, ultimo_dia, 23, 59, 59)
 
             batidas_rows = (
                 await self.db.execute(
@@ -369,7 +378,7 @@ class KitBuilderService:
                   AND cp.punch_timestamp <= :fim
                 ORDER BY cp.punch_timestamp
             """),
-                    {"emp_id": str(emp_id), "inicio": data_inicio, "fim": f"{data_fim} 23:59:59"},
+                    {"emp_id": str(emp_id), "inicio": dt_inicio, "fim": dt_fim},
                 )
             ).fetchall()
 
@@ -408,23 +417,30 @@ class KitBuilderService:
                     logger.warning("Erro ao gerar folha ponto %s em %s: %s", emp_id, mes_ref, exc)
                     file_path = None
 
-            doc = KitDocument(
-                kit_id=kit_id,
-                employee_id=emp_id,
-                document_type=DocumentType.FOLHA_PONTO,
-                document_name=f"Folha de Ponto {reference_month.strftime('%m/%Y')}",
-                file_path=file_path,
-                mime_type="text/html",
-                source_module=SourceModule.DP,
-                auto_generated=True,
-                is_signed=False,
-            )
-            self.db.add(doc)
-            collected += 1
+            if existing_doc is not None:
+                # Slot existente com file_path=NULL — atualizar se temos arquivo gerado (§103)
+                if file_path is not None:
+                    existing_doc.file_path = file_path
+                    existing_doc.mime_type = "text/html"
+                    collected += 1
+            else:
+                doc = KitDocument(
+                    kit_id=kit_id,
+                    employee_id=emp_id,
+                    document_type=DocumentType.FOLHA_PONTO,
+                    document_name=f"Folha de Ponto {reference_month.strftime('%m/%Y')}",
+                    file_path=file_path,
+                    mime_type="text/html",
+                    source_module=SourceModule.DP,
+                    auto_generated=True,
+                    is_signed=False,
+                )
+                self.db.add(doc)
+                collected += 1
 
         if collected > 0:
             await self.db.flush()
-            logger.info("Coletadas %d folhas de ponto para kit %s", collected, kit_id)
+            logger.info("Coletadas/atualizadas %d folhas de ponto para kit %s", collected, kit_id)
 
         return collected
 
