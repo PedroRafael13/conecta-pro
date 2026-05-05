@@ -112,7 +112,7 @@ def responder_com_ia(
         messages.append({"role": "user", "content": mensagem})
 
         response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model="claude-sonnet-4-6",
             max_tokens=400,
             system=SYSTEM_PROMPT,
             messages=messages,
