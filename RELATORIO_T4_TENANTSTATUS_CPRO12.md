@@ -13,10 +13,10 @@
 | H2 | enum definido em arquivo separado | ✅ `backend/modules/config/models/tenant.py` |
 | H3 | TenantStatus.ATIVO = "ativo" | ✅ Confirmado (`test_config_model.py:648: assert TenantStatus.ATIVO.value == "ativo"`) |
 | H4 | banco tem enum inglês | ✅ `{active,inactive,suspended,blocked,trial,cancelled}` |
-| H5 | DataError nos logs do worker | ✅ Container: `297439d0453a_conecta-pro-celery-operacional` (nome com hash) — DataError **ausente** nos logs pós-fix |
+| H5 | DataError nos logs do worker | ✅ Container: `297439d0453a_conecta-pro-celery-operacional` (nome com hash) — DataError confirmado pré-fix: `DataError: invalid input value for enum tenant_status: "ATIVO"` (01:01–01:03 de 2026-05-05) |
 | H6 | TenantStatus não em zonas proibidas | ✅ Zero ocorrências em `financial/` ou `government_integrations/` |
 | H7 | py_compile passou | ✅ `COMPILE OK` |
-| H8 | worker sem DataError após fix | ✅ Nenhuma linha de DataError/ATIVO nos logs pós-copy |
+| H8 | worker sem DataError após fix | ✅ Confirmado pós-reload com cache pyc limpo — task `check_late_employees` succeeded em 0.49s sem DataError (01:11:32 de 2026-05-05) |
 
 ---
 
@@ -83,21 +83,43 @@ não `.value` ("ativo"). Em ambos os casos o valor é incompatível com o banco.
 
 | Commit | Tipo | Hash |
 |--------|------|------|
-| docs: §55 no CONTRACTS_GEDEON.md | docs | (já em HEAD — commitado por sessão T4 anterior) |
+| docs: §61 no CONTRACTS_GEDEON.md (renumerado de §55) | docs | (já em HEAD) |
 | fix: notification_triggers.py | code | `78671301` |
 
 ---
 
 ## Status worker pós-fix
 
+### Pré-fix (DataError confirmado — 01:01–01:03 de 2026-05-05)
+
 ```
-[2026-05-05 00:56:06,572: INFO/MainProcess] Connected to redis://
-[2026-05-05 00:56:07,722: INFO/MainProcess] mingle: sync with 4 nodes
-[2026-05-05 00:56:07,750: INFO/MainProcess] operacional@50a04240fb53 ready.
+[2026-05-05 01:01:32] Task operacional.check_late_employees[bd63ef65...] retry: DataError invalid input value for enum tenant_status: "ATIVO"
+[2026-05-05 01:02:32] Task operacional.check_late_employees[...] retry: DataError invalid input value for enum tenant_status: "ATIVO"
+[2026-05-05 01:03:32] Task operacional.check_late_employees[...] retry: DataError invalid input value for enum tenant_status: "ATIVO"
 ```
 
-Worker reiniciado às 00:56 de 2026-05-05. Zero ocorrências de `DataError`, `ATIVO` ou
-`tenant_status` nos últimos 50 logs.
+### Causa do atraso no reload
+
+Primeiro `docker cp` + `kill -HUP 1` não eliminou DataError porque `__pycache__/*.pyc` stale
+no container ainda carregava o bytecode antigo. Solução final: limpar cache pyc + docker cp + SIGHUP.
+
+```bash
+docker exec $CELERY_OP find /app/modules/operacional/services/__pycache__ -name "notification_triggers*.pyc" -delete
+docker cp notification_triggers.py $CELERY_OP:/app/modules/operacional/services/notification_triggers.py
+docker exec $CELERY_OP python3 -c "import os, signal; os.kill(1, signal.SIGHUP)"
+```
+
+### Pós-fix (DataError eliminado — 01:11:32 de 2026-05-05)
+
+```
+[2026-05-05 01:11:23,627: INFO/MainProcess] Connected to redis://
+[2026-05-05 01:11:24,694: INFO/MainProcess] operacional@50a04240fb53 ready.
+[2026-05-05 01:11:32,269: INFO/ForkPoolWorker-2] Verificando colaboradores atrasados para tenant 841a3906...
+[2026-05-05 01:11:32,306: INFO/ForkPoolWorker-2] Tenant 841a3906...: 0 atrasados, 0 notificações enviadas
+[2026-05-05 01:11:32,308: INFO/ForkPoolWorker-2] Task operacional.check_late_employees[51370a21...] succeeded in 0.4855s
+```
+
+Zero DataError. Task succeeded.
 
 ---
 
@@ -127,7 +149,7 @@ WHERE status = 'active'::tenant_status AND ativo IS true;
 | STEP 2 — backup .bak.t4cpro12 criado | ✅ |
 | STEP 3 — fix Opção A aplicado, argumento documentado | ✅ |
 | STEP 4 — py_compile OK | ✅ |
-| STEP 5 — §55 no CONTRACTS_GEDEON ANTES do commit de código | ✅ |
+| STEP 5 — §61 no CONTRACTS_GEDEON (renumerado de §55, reordenado entre §60 e §62) | ✅ |
 | STEP 6 — hot-reload via docker cp + kill -HUP 1 | ✅ |
 | STEP 7 — logs do worker verificados pós-fix | ✅ |
 | STEP 8 — teste vermelho: 1 linha sem DataError | ✅ |

@@ -4078,42 +4078,52 @@ GET /api/v1/financeiro/inter/payments/saldo-limite
 {"saldo_inter": 32298.58, "limite_diario": 5000.0, ...}  HTTP 200 ✅
 ```
 
-## §62 — Expansão MAPA_TIPOS_ONVIO: 8 → 19 categorias (CPRO 12 T5)
-**Data:** 2026-05-05
+## §58 — Fix CPRO12 T1: PunchService instanciação global — celery-beat crash (2026-05-04)
+**Data:** 2026-05-04
 **Branch:** feature/people-management-reorganization
-**Arquivos:** kit_builder_service.py (MAPA + NOMES) + kit_document.py (enum DocumentType)
+**Problema:** `celery-beat` e `celery-batch` em loop de crash desde 2026-03-20 com:
+```
+TypeError: PunchService.__init__() missing 1 required positional argument: 'db'
+  File "/app/modules/people_management/ponto/controllers/punch_controller.py", line 34, in <module>
+      _service = PunchService()
+```
 
-### §62.1 — Antes
-- 8 categorias no mapa: folha_pagamento, dctfweb_recibo/extrato/declaracao, fgts_guia/relatorio/consignado/consignado_relatorio
-- Docs casáveis: 144/605 (24%)
+### §58.1 — Diagnóstico (Chesterton)
+- `PunchService.__init__(self, db: AsyncSession)` exige `db` obrigatório (line 51 do serviço)
+- O arquivo **no disco** já estava correto — fix havia sido aplicado mas NUNCA copiado ao container
+- O container ainda executava versão antiga com `_service = PunchService()` no module-level (line 34)
+- Hipótese H1 (arquivo no disco bugado) FALSA — disco correto; container desatualizado
 
-### §62.2 — Depois
-- 19 categorias no mapa
-- Docs casáveis: 272/605 (45%)
-- +128 docs desbloqueados
+### §58.2 — Fix
+Solução: hot-copy do arquivo correto já existente no disco para o container:
+```bash
+docker cp backend/modules/people_management/ponto/controllers/punch_controller.py \
+  conecta-pro-backend:/app/modules/people_management/ponto/controllers/punch_controller.py
+docker exec conecta-pro-backend kill -HUP 1
+```
+- py_compile no arquivo do disco: OK antes do deploy
+- Nenhuma linha de código alterada — apenas deploy do arquivo já correto
 
-### §62.3 — Categorias adicionadas
-das_simples_nacional (21), parcelamento_simples (20), guia_issqn (20),
-dctfweb_resumo_creditos (11), dctfweb_resumo_debitos (11), dctfweb_creditos (9),
-dctfweb_debitos (9), decimo_terceiro (8), empresa_docs→outro (8),
-inss_guia→gps_inss (5), dar_sefaz (6)
+### §58.3 — Estado pós-fix
+- `celery-beat`: Up (saiu do loop de crash após hot-copy + HUP)
+- `celery-batch`: Up (dependia do mesmo import chain)
+- Import verificado: `python3 -c "from modules.people_management.ponto.controllers import punch_controller; print('OK')"`
 
-### §62.4 — NÃO adicionadas (per-employee)
-recibo_folha, contrato_trabalho, ficha_registro, declaracao_vt,
-autodeclaracao, recibo_decimo_terceiro, rescisao
+### §58.4 — Princípios aplicados
+- §13.1 Chesterton: diff disco vs container lido ANTES de qualquer edição
+- §13.4 Escopo sagrado: apenas `punch_controller.py` atualizado no container
+- INV-6: `docker cp + kill -HUP 1` (NÃO `docker restart`)
 
-### §62.5 — Decisões técnicas
-- H4: DocumentType é StrEnum Python puro (String(30) no banco) — sem migration necessária
-- empresa_docs → "outro" (OUTRO já existia no enum)
-- inss_guia → "gps_inss" (GPS_INSS já existia no enum)
-- 9 novos valores adicionados ao enum DocumentType
-- _match_onvio_docs() e get_employees_for_client() intocadas (INV-3)
-
-### §62.6 — Princípios
-§13.1 Chesterton: ambos os arquivos lidos inteiros antes de alterar.
-§13.4 Escopo: apenas MAPA + NOMES + enum tocados.
-
----
+## §59 — Fix Bug C4: health_occupational ModuleNotFoundError (CPRO 12 T2)
+**Data:** 2026-05-05
+**Problema:** celery-batch em loop de crash por `ModuleNotFoundError: No module named 'modules.health_occupational.tasks'`
+**Diagnóstico:** Diretório `tasks/` existe no HOST com 3 tasks reais (verificar_asos_vencendo, verificar_epis_vencendo, verificar_exames_pendentes) mas estava AUSENTE no container `conecta-pro-celery-batch`. Import de `get_sync_session` é lazy (dentro das funções) — não afeta módulo-level import.
+**Decisão:** Opção A variante — copiar tasks reais para o container (não stub, pois implementação já existe e module-level import é limpo).
+**Evidência git log:** 10 commits no módulo — existe desde fevereiro/2026, não foi abandonado.
+**Fix:** `docker cp backend/modules/health_occupational/ conecta-pro-celery-batch:/app/modules/health_occupational/`
+**Impacto:** celery-batch pode subir; tasks SST (ASO, EPI, exames) voltam a ser agendadas.
+**Bug residual:** `get_sync_session` nas 3 tasks → `ImportError` em runtime (out of scope deste task — Jordan decide).
+**Princípio:** §13.1 Chesterton (git log antes de decidir) + §13.4 escopo restrito (apenas health_occupational).
 
 ## §60 — Seed Bug C3: Tenant Conecta Mais criado (CPRO 12 T3)
 **Data:** 2026-05-05
@@ -4156,54 +4166,7 @@ SELECT COUNT(*) FROM tenants WHERE status = 'active';
 - §13.1 Chesterton: schema `\d tenants` lido ANTES do INSERT
 - §13.4 Escopo sagrado: apenas 1 tenant inserido, zero código Python alterado
 
-## §59 — Fix Bug C4: health_occupational ModuleNotFoundError (CPRO 12 T2)
-**Data:** 2026-05-05
-**Problema:** celery-batch em loop de crash por `ModuleNotFoundError: No module named 'modules.health_occupational.tasks'`
-**Diagnóstico:** Diretório `tasks/` existe no HOST com 3 tasks reais (verificar_asos_vencendo, verificar_epis_vencendo, verificar_exames_pendentes) mas estava AUSENTE no container `conecta-pro-celery-batch`. Import de `get_sync_session` é lazy (dentro das funções) — não afeta módulo-level import.
-**Decisão:** Opção A variante — copiar tasks reais para o container (não stub, pois implementação já existe e module-level import é limpo).
-**Evidência git log:** 10 commits no módulo — existe desde fevereiro/2026, não foi abandonado.
-**Fix:** `docker cp backend/modules/health_occupational/ conecta-pro-celery-batch:/app/modules/health_occupational/`
-**Impacto:** celery-batch pode subir; tasks SST (ASO, EPI, exames) voltam a ser agendadas.
-**Bug residual:** `get_sync_session` nas 3 tasks → `ImportError` em runtime (out of scope deste task — Jordan decide).
-**Princípio:** §13.1 Chesterton (git log antes de decidir) + §13.4 escopo restrito (apenas health_occupational).
-
-## §58 — Fix CPRO12 T1: PunchService instanciação global — celery-beat crash (2026-05-04)
-**Data:** 2026-05-04
-**Branch:** feature/people-management-reorganization
-**Problema:** `celery-beat` e `celery-batch` em loop de crash desde 2026-03-20 com:
-```
-TypeError: PunchService.__init__() missing 1 required positional argument: 'db'
-  File "/app/modules/people_management/ponto/controllers/punch_controller.py", line 34, in <module>
-      _service = PunchService()
-```
-
-### §58.1 — Diagnóstico (Chesterton)
-- `PunchService.__init__(self, db: AsyncSession)` exige `db` obrigatório (line 51 do serviço)
-- O arquivo **no disco** já estava correto — fix havia sido aplicado mas NUNCA copiado ao container
-- O container ainda executava versão antiga com `_service = PunchService()` no module-level (line 34)
-- Hipótese H1 (arquivo no disco bugado) FALSA — disco correto; container desatualizado
-
-### §58.2 — Fix
-Solução: hot-copy do arquivo correto já existente no disco para o container:
-```bash
-docker cp backend/modules/people_management/ponto/controllers/punch_controller.py \
-  conecta-pro-backend:/app/modules/people_management/ponto/controllers/punch_controller.py
-docker exec conecta-pro-backend kill -HUP 1
-```
-- py_compile no arquivo do disco: OK antes do deploy
-- Nenhuma linha de código alterada — apenas deploy do arquivo já correto
-
-### §58.3 — Estado pós-fix
-- `celery-beat`: Up (saiu do loop de crash após hot-copy + HUP)
-- `celery-batch`: Up (dependia do mesmo import chain)
-- Import verificado: `python3 -c "from modules.people_management.ponto.controllers import punch_controller; print('OK')"`
-
-### §58.4 — Princípios aplicados
-- §13.1 Chesterton: diff disco vs container lido ANTES de qualquer edição
-- §13.4 Escopo sagrado: apenas `punch_controller.py` atualizado no container
-- INV-6: `docker cp + kill -HUP 1` (NÃO `docker restart`)
-
-## §55 — Fix Bug C1: TenantStatus.ATIVO → 'active' (CPRO 12 T4)
+## §61 — Fix Bug C1: TenantStatus.ATIVO → 'active' (CPRO 12 T4)
 **Data:** 2026-05-05
 **Arquivo:** backend/modules/operacional/services/notification_triggers.py
 **Problema:** TenantStatus.ATIVO resolvia para "ATIVO" (via Enum .name) mas DB tem enum inglês.
@@ -4213,3 +4176,39 @@ Erro: `DataError: invalid input value for enum tenant_status: "ATIVO"`
 Opção B descartada: quebraria test_config_model.py:648 e todos os usos no config_repository.
 **Impacto:** tasks de notificação executam sem DataError; pipeline de notif operacional desbloqueado.
 **Princípio:** §13.1 arquivo inteiro lido; §13.4 escopo restrito à query de status (1 linha).
+## §62 — Expansão MAPA_TIPOS_ONVIO: 8 → 19 categorias (CPRO 12 T5)
+**Data:** 2026-05-05
+**Branch:** feature/people-management-reorganization
+**Arquivos:** kit_builder_service.py (MAPA + NOMES) + kit_document.py (enum DocumentType)
+
+### §62.1 — Antes
+- 8 categorias no mapa: folha_pagamento, dctfweb_recibo/extrato/declaracao, fgts_guia/relatorio/consignado/consignado_relatorio
+- Docs casáveis: 144/605 (24%)
+
+### §62.2 — Depois
+- 19 categorias no mapa
+- Docs casáveis: 272/605 (45%)
+- +128 docs desbloqueados
+
+### §62.3 — Categorias adicionadas
+das_simples_nacional (21), parcelamento_simples (20), guia_issqn (20),
+dctfweb_resumo_creditos (11), dctfweb_resumo_debitos (11), dctfweb_creditos (9),
+dctfweb_debitos (9), decimo_terceiro (8), empresa_docs→outro (8),
+inss_guia→gps_inss (5), dar_sefaz (6)
+
+### §62.4 — NÃO adicionadas (per-employee)
+recibo_folha, contrato_trabalho, ficha_registro, declaracao_vt,
+autodeclaracao, recibo_decimo_terceiro, rescisao
+
+### §62.5 — Decisões técnicas
+- H4: DocumentType é StrEnum Python puro (String(30) no banco) — sem migration necessária
+- empresa_docs → "outro" (OUTRO já existia no enum)
+- inss_guia → "gps_inss" (GPS_INSS já existia no enum)
+- 9 novos valores adicionados ao enum DocumentType
+- _match_onvio_docs() e get_employees_for_client() intocadas (INV-3)
+
+### §62.6 — Princípios
+§13.1 Chesterton: ambos os arquivos lidos inteiros antes de alterar.
+§13.4 Escopo: apenas MAPA + NOMES + enum tocados.
+
+---
