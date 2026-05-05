@@ -5002,18 +5002,13 @@ A proteção está na camada de dados (`users.permissions`) e pode ser expandida
 **Email correto:** opaiva@conectamais.pro (Orlailson Paiva — Supervisor Operacional)
 **Motivo:** email antigo tinha {all} — violava INV-4 (financeiro apenas Jordan)
 
-## §99 — Fix Inter adapter: busca por nome do colaborador (CPRO12 T2-INTER-NOME)
+## §99 — InterComprovanteService: busca por nome do colaborador (CPRO12 T2-INTER-NOME)
 **Data:** 2026-05-05
-**Arquivos alterados:**
-- `modules/integrations/banking/adapters/inter.py` — helper `_extrair_nome_da_descricao()` + extração `counterpart_name` de `detalhes.nome` e fallback da descrição PIX
-- `modules/gedeon/services/inter_comprovante_service.py` — NOVO: `InterComprovanteService.buscar_por_nome()` + `gerar_resumo_pagamentos()`
-- `modules/gedeon/agents/hermes.py` — constante `TIPOS_INTER` + método `buscar_pagamentos_inter()`
-- `modules/gedeon/controllers/gedeon_controller.py` — endpoint `GET /gedeon/colaborador/{nome}/pagamentos?mes_ref=MM.YYYY` + fix try/except no sophia_startup
-
-**Resultado:**
-- 921 registros em `inter_transactions` com `counterpart_name` backfillado a partir da descrição PIX
-- Endpoint confirmado: GRACIENE → 7 txs R$510,07 | JONHATA → 7 txs R$2.415,76 (mar/2026)
-- Formato descrição Inter: `PIX ENVIADO - Cp :BANK_CODE-Nome Completo` → nome extraído via split
-
-**Constante sintática crítica:**
-- asyncpg: usar `CAST(:param AS jsonb)` — nunca `::jsonb` com named params
+**Decisão Jordan:** buscar por nome (não CPF) — cobre todos os tipos de chave PIX
+**Cobertura:** salário + VA + VT + qualquer pagamento para o colaborador no mês
+**Matching:** ILIKE no counterpart_name — tolerante a variações, stop words filtradas {DA,DE,DO,DOS,DAS,E}
+**Arquivo:** modules/gedeon/services/inter_comprovante_service.py
+**Integração:** HERMES chama InterComprovanteService para tipos comprovante_* (TIPOS_INTER)
+**Adapter fix:** inter.py — `_extrair_nome_da_descricao()` extrai nome da descrição PIX (`PIX ENVIADO - Cp :BANK-Nome`)
+**Endpoint:** `GET /api/v1/gedeon/colaborador/{nome}/pagamentos?mes_ref=MM.YYYY`
+**Validação produção:** 48 funcionários DP com match | GRACIENE PEREIRA DE CASTRO → 7 txs R$510,07 (03.2026)
