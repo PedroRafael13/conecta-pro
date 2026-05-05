@@ -96,6 +96,19 @@ O `main_production.py` tenta importar `modules.gedeon.onvio.controllers.onvio_co
 
 ---
 
+## Endpoints Auto-Build Mapeados (STEP 4)
+
+| Endpoint | Método | HTTP | Resultado |
+|----------|--------|------|-----------|
+| `/api/v1/ged/auto-assemble` | POST | 201 | ✅ Endpoint válido — 880 docs, 8 kits |
+| `/api/v1/ged/kits/montar` | POST | 201 | ✅ Endpoint válido — 3 kits criados |
+| `/api/v1/ged/kits/auto-build` | POST | **405** | ❌ Method Not Allowed — URL casa com `/kits/{kit_id}` (sem handler POST direto) |
+| `/api/v1/gedeon/kits/lote?mes_ref=04.2026` | GET | 200 | ✅ 11 kits, completude via Onvio |
+
+**Endpoint escolhido para STEP 5:** `POST /api/v1/ged/auto-assemble?reference_month=2026-04-01`
+
+---
+
 ## Auto-Build para Abril/2026 (STEP 5)
 
 ### Operações disparadas
@@ -125,6 +138,8 @@ HTTP 201 ✅
 }
 ```
 HTTP 201 ✅
+
+**Sleep 20s executado** (aguardar processamento pós-build) ✅
 
 ---
 
@@ -330,8 +345,8 @@ Onvio NÃO tem docs de `mes_ref='04.2026'` para o Prime Arena. O sync de 2026-05
 | STEP 1 — TOKEN obtido | ✅ |
 | STEP 2 — estado pré-sync documentado (docs por categoria, kit_id, condominio_ids) | ✅ |
 | STEP 3 — ANTES=605, sync HTTP 404, sleep 30s, DEPOIS=605, Novos=0 | ✅ |
-| STEP 4 — endpoints auto-build identificados e testados | ✅ |
-| STEP 5 — auto-build 04/2026 disparado (2 endpoints, HTTP 201) | ✅ |
+| STEP 4 — /ged/auto-assemble (201) + /ged/kits/montar (201) + /ged/kits/auto-build (405) testados | ✅ |
+| STEP 5 — auto-build 04/2026 disparado + sleep 20s executado | ✅ |
 | STEP 6 — query ✅/❌ (38 tipos, 133 slots, 0 preenchidos) + API GED confirmada | ✅ |
 | STEP 7 — §85 + commit 848f4a68 + push | ✅ |
 | STEP 8 — relatório completo gerado | ✅ |
@@ -346,6 +361,8 @@ Onvio NÃO tem docs de `mes_ref='04.2026'` para o Prime Arena. O sync de 2026-05
 | Commit | Tipo | Hash |
 |--------|------|------|
 | docs(contracts): §85 — Sync Onvio + auto-build Prime Arena 04/2026 | docs | `848f4a68` |
+| docs(relatorio): T4-SYNC auditoria 100% — ANTES/DEPOIS + query ✅/❌ + API GED | docs | `f406f903` |
+| docs: T4-SYNC auditoria 100% final — STEP4 /auto-build 405 + STEP5 sleep20 + §85 template | docs | (este commit) |
 
 ---
 

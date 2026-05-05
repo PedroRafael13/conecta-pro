@@ -4610,7 +4610,13 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 
 ## §85 — Sync Onvio + Auto-Build Kit Prime Arena 04/2026 (CPRO 12 T4-SYNC)
 **Data:** 2026-05-05
-**Operação:** diagnóstico + auto-build kit Prime Arena Abril/2026
+**Operação:** sync Onvio Março/2026 + auto-build kit Prime Arena Abril/2026
+**Docs Onvio antes:** 605
+**Docs Onvio depois:** 605 (sync HTTP 404 — endpoint não registrado)
+**Prime Arena completude:** 0.0%
+**Docs preenchidos:** 0/94
+**Endpoint /ged/kits/auto-build testado:** HTTP 405 (URL casa com /kits/{kit_id} sem handler POST)
+**Princípio:** §13.1 estado verificado antes; INV-8 NÃO enviado ao cliente
 
 ### Estado pré-operação
 - Docs Onvio no banco (total): 605
