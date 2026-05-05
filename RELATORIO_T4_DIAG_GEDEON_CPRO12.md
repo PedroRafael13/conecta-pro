@@ -1,156 +1,193 @@
 # T4 CPRO12 — Diagnóstico Profundo GEDEON
-**Data:** 2026-05-05
-**Branch:** feature/people-management-reorganization
-**Tipo:** READ-ONLY (INV-2: zero alterações de código)
-**Executor:** Claude Sonnet 4.6 [session: t4] [module: gedeon]
+Data: 2026-05-05
+Tipo: READ-ONLY (INV-2: zero alterações de código)
 
 ---
 
-## 1 — Arquitetura dos Agentes GEDEON
+## Agentes implementados
 
-O módulo GEDEON possui 4 agentes em `backend/modules/gedeon/agents/`:
+**KRONOS** (`backend/modules/gedeon/agents/kronos.py`, 401 linhas):
+- `calcular_nivel_alerta(data_vencimento)` — 60d/30d/15d/7d/CRÍTICO
+- `data_ideal_renovacao(tipo, vencimento)` — prazo por tipo de certidão
+- `verificar_certidoes_sync()` — queries DB sync, retorna lista de alertas
+- `verificar_asos_sync()` — queries `gp_asos` JOIN `employees`
+- `verificar_certidoes()` — wrapper async
+- `verificar_asos_funcionarios()` — wrapper async
+- `executar_verificacao_completa()` — orquestra certidões + ASOs + publica eventos
 
-| Agente | Arquivo | Responsabilidade | É matching? |
-|--------|---------|------------------|-------------|
-| KRONOS | `kronos.py` (401 linhas) | Alertas de vencimento de certidões + ASOs (janelas 60d/30d/15d/7d/CRÍTICO) | ❌ |
-| THEMIS | `themis.py` (192 linhas) | Monitoramento de assinaturas pendentes (limites 48h=alto / 72h=crítico) | ❌ |
-| ATLAS  | `atlas.py` (312 linhas) | Aprendizado de histórico de kits (`gedeon_kit_history`, `gedeon_client_patterns`) | ❌ |
-| SOPHIA | `sophia.py` | Assistente IA (NLP, busca semântica de documentos) | ❌ |
+**THEMIS** (`backend/modules/gedeon/agents/themis.py`, 192 linhas):
+- `verificar_pendentes()` — lista `ged_kit_documents` com `is_signed=False` há > 48h
+- `calcular_tempo_medio()` — média de tempo para assinatura dos fechados
+- `verificar_e_alertar()` — detecta pendentes + publica `GED_ASSINATURA_PENDENTE`
+- `resumo()` — totais para dashboard
 
-**Conclusão:** nenhum dos 4 agentes GEDEON faz matching de documentos Onvio para kits.
+**ATLAS** (`backend/modules/gedeon/agents/atlas.py`, 312 linhas):
+- `registrar_kit_concluido(kit)` — UPSERT em `gedeon_kit_history` + `gedeon_client_patterns`
+- `obter_contexto_historico(client_id, competencia)` — histórico de kits do cliente
+- `detectar_anomalia(client_id, competencia, score)` — flag se score difere >30% da média
+- `gerar_insights_mensais()` — insights agregados para dashboard ATLAS
 
----
-
-## 2 — Quem faz o matching hoje
-
-O matching é feito por **dois serviços separados**, não por agentes:
-
-### 2a — `OnvioDocScopeClassifier` (`gedeon/services/onvio_doc_scope_classifier.py`, 272 linhas)
-- Classifica cada `onvio_document` em 3 escopos: `condominio` / `funcionario` / `empresa_matriz`
-- Matching por regex no `nome_arquivo`:
-  - `match_condominio()`: 10 padrões fixos por condomínio (ideal_flores, mirante, laranjeiras, prime_arena, villa_dei_fiori, villa_passaros, michelangelo, gelain, green_hills, parise)
-  - `match_employee()`: primeiro+segundo nome do funcionário no filename
-  - `is_matriz()`: CNPJ `35\.710\.481` ou "conecta mais"
-- **NÃO usa CPF** — matching exclusivamente por nome no filename
-- `CATEGORIA_TO_SCOPE`: 34 mapeamentos categoria → escopo
-
-### 2b — `KitBuilderService` — módulo `people_management/ged` (`kit_builder_service.py`)
-- `MAPA_TIPOS_ONVIO` (19 categorias): converte `onvio_documents.categoria` → `document_type` em `ged_kit_documents`
-- `auto_build_all_kits(reference_month)`: orquestra criação de kits para todos os clientes ativos
-- `build_kit_for_client(client_id, reference_month)`: coleta payslips, time_sheets, benefit_receipts, certidões, escalas via DP+Fiscal
-- `get_employees_for_client(client_id)`: JOIN `employee_alocacoes` → retorna funcionários alocados ao cliente
-
-### 2c — `KitBuilderService` — módulo `gedeon` (`gedeon/services/kit_builder_service.py`)
-- `CategoriaToTipoDocumento` (23 mapeamentos): diferente do mapa anterior — para completude/scoring
-- `build_completude(condominio_id, mes_ref)`: calcula % de completude do kit por condomínio + mês
-- Usa `employee_alocacoes` para listar funcionários do condomínio
+> SOPHIA (`sophia.py`) referencia DP/alocação mas é assistente NLP — não é agente de matching.
 
 ---
 
-## 3 — Como deveria ser implementado (lacunas)
+## Como o kit é montado hoje
 
-| # | Lacuna | Impacto | Recomendação |
-|---|--------|---------|--------------|
-| L1 | `referente_a_employee_id` ausente em 566/605 docs (93,6%) | Docs `funcionario`-scope não vinculam a funcionário específico | Preencher via `match_employee()` + JOIN `employees` na re-classificação |
-| L2 | Apr/2026: 10 docs, 10 com `doc_scope=NULL` | Nenhum doc de abr/2026 pode ser casado com kit | Executar scope classifier (endpoint `/onvio/reclassify`) nos 169 docs sem scope |
-| L3 | Sem função retroativo/backfill | Fev/2026 tem 0 kits construídos apesar de 29 docs disponíveis | Criar endpoint `POST /gedeon/auto-build?mes_ref=02.2026&force=true` |
-| L4 | `MAPA_TIPOS_ONVIO` cobre 19/38 categorias (50%) | ~316 docs em categorias não mapeadas ficam como `outro` ou ignorados | Expandir MAPA com as 19 categorias restantes (pós T5 expansão) |
-| L5 | Matching por regex no nome_arquivo (frágil) | Novos condomínios requerem edição manual de `match_condominio()` | Médio prazo: lookup por CNPJ no filename (regex `\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}`) |
+**Fluxo completo:**
+```
+Onvio sync → onvio_documents (605 docs)
+     ↓
+OnvioDocScopeClassifier (regex no nome_arquivo)
+→ doc_scope = condominio | funcionario | empresa_matriz | NULL
+→ condominio_id preenchido via match_condominio() (10 padrões fixos)
+→ referente_a_employee_id via match_employee() (nome no filename)
+     ↓
+KitBuilderService (people_management/ged)
+→ auto_build_all_kits(reference_month) → build_kit_for_client()
+→ MAPA_TIPOS_ONVIO (19 categorias) → document_type em ged_kit_documents
+→ coleta: payslips (DP) + certidões + escalas + benefícios
+     ↓
+ged_document_kits (kits) + ged_kit_documents (slots)
+```
 
----
-
-## 4 — Estado do DB (STEP 5)
-
-### Kits por mês de referência
-| reference_month | Kits | Statuses |
-|-----------------|------|----------|
-| 2026-03-01 | 8 | 7 em_montagem + 1 enviado |
-| 2026-04-01 | 10 | 10 em_montagem |
-| 2026-05-01 | 11 | 11 em_montagem |
-| **2026-02-01** | **0** | **Sem kits construídos** |
-
-### Documentos por tipo em `ged_kit_documents` (top 20)
-| document_type | Total | Com arquivo | Sem arquivo |
-|---------------|-------|-------------|-------------|
-| contracheque | 186 | 51 | 135 |
-| comprovante_vt | 153 | 51 | 102 |
-| comprovante_vr | 153 | 51 | 102 |
-| comprovante_va | 153 | 51 | 102 |
-| folha_ponto | 153 | 51 | 102 |
-| escala_mes | 153 | 51 | 102 |
-| comp_salario_individual | 47 | 0 | 47 |
-| folhas_ponto | 47 | 0 | 47 |
-| comp_va_solides | 46 | 0 | 46 |
-| comp_vt_individual | 46 | 0 | 46 |
-| contrato_trabalho | 40 | 0 | 40 |
-| cnd_municipal | 24 | 8 | 16 |
-| cnd_federal | 24 | 8 | 16 |
-| cnd_estadual | 24 | 8 | 16 |
-| crf_fgts | 24 | 8 | 16 |
-| cndt_trabalhista | 24 | 8 | 16 |
-| folha_pagamento | 14 | 7 | 7 |
-
-**Padrão:** tipos coletados via DP (contracheque, ponto, escala) têm arquivo em 51/153 (33%). Tipos via Onvio (comp_salario_individual, folhas_ponto, etc.) têm 0 arquivos vinculados.
+**Critério de matching atual — por que 0% fica preenchido em abr/2026:**
+- Abr/2026: 10 docs Onvio, **todos com `doc_scope=NULL`** — scope classifier não foi executado
+- Mar/2026: 353 slots, apenas 7 preenchidos (2%) — docs Onvio têm scope mas `file_path` não é gravado nos slots
+- `referente_a_employee_id` preenchido em apenas 39/605 docs (6,4%)
 
 ---
 
-## 5 — 3 meses retroativos (STEP 7)
+## Lacunas para matching completo
 
-### `onvio_documents` por mes_ref
-| mes_ref | Total | condominio | funcionario | empresa_matriz | sem_scope |
-|---------|-------|------------|-------------|----------------|-----------|
-| 02.2026 | 29 | 22 | 2 | 4 | 1 |
-| 03.2026 | 43 | 26 | 3 | 14 | 0 |
-| 04.2026 | 10 | 0 | 0 | 0 | 10 |
-
-### Análise retroativo
-
-**Fevereiro/2026:**
-- 29 docs disponíveis no Onvio; 22 com scope `condominio`, 2 `funcionario`
-- **0 kits construídos** — nunca foi executado `auto_build_all_kits(date(2026,2,1))`
-- Ação: `POST /people-management/ged/auto-assemble?reference_month=2026-02-01` (HTTP 201 esperado)
-
-**Março/2026:**
-- 43 docs disponíveis; 26 condominio, 3 funcionario, 14 empresa_matriz
-- 8 kits já criados (7 em_montagem, 1 enviado); completude parcial (total_pct=107)
-- Ação: re-executar `auto_build_all_kits(date(2026,3,1))` para complementar slots vazios
-
-**Abril/2026:**
-- 10 docs — mas **todos com `doc_scope=NULL`** (10 sem scope)
-- 10 kits criados, todos em_montagem, completude=5,7% média
-- **Bloqueio:** sem scope classification esses docs não podem ser casados via `build_completude()`
-- Ação 1: executar scope classifier nos 10 docs de abr/2026 (`POST /api/v1/onvio/reclassify?mes_ref=04.2026`)
-- Ação 2: re-executar `auto_build_all_kits(date(2026,4,1))`
+| # | Lacuna | Impacto |
+|---|--------|---------|
+| L1 | `referente_a_employee_id` ausente em 566/605 docs | Docs `funcionario`-scope não vinculam ao funcionário correto |
+| L2 | Abr/2026: 10 docs com `doc_scope=NULL` | Bloqueio total — nenhum doc pode ser casado ao kit |
+| L3 | Sem `file_path` gravado no slot ao fazer match | `ged_kit_documents.file_path` fica NULL mesmo com doc Onvio disponível |
+| L4 | `MAPA_TIPOS_ONVIO` cobre 19/38 categorias (~50%) | ~316 docs em categorias não mapeadas ignorados no matching |
+| L5 | Matching por regex no `nome_arquivo` (frágil) | Novos condomínios exigem edição manual de `match_condominio()` |
+| L6 | Nenhuma task de retroativo/backfill existe | `reprocess` aparece só em `enrichment_service.py` (extração PDF) — não em kits |
+| L7 | Comprovante salário via Banco Inter: módulo `inter/` ausente no container | Bloqueio externo — Inter sync não funciona (ver §87) |
 
 ---
 
-## 6 — Resumo executivo
+## Qual agente deve fazer o matching?
 
-**O matching GEDEON hoje:**
-- Feito por dois serviços (`OnvioDocScopeClassifier` + `KitBuilderService`) — não por agentes
-- KRONOS/THEMIS/ATLAS/SOPHIA são agentes de monitoramento/alertas/aprendizado — sem papel no matching
-- Pipeline: Onvio sync → scope classifier (regex filename) → auto_build_all_kits → kits em `ged_document_kits`
+**Nenhum agente atual é adequado.** KRONOS é alertas temporais, THEMIS é assinaturas, ATLAS é aprendizado histórico.
 
-**Capacidades confirmadas:**
-- Scope classification por regex filename ✅
-- Mapeamento categoria→doc_type via `MAPA_TIPOS_ONVIO` (19 cats) ✅
-- `auto_build_all_kits()` para um mes_ref específico ✅
-- JOIN `employee_alocacoes` para funcionários por condomínio ✅
-- Alertas KRONOS (certidão) + THEMIS (assinatura) ✅
+**Recomendação: novo agente HERMES** (já existe esboço em `gedeon/agents/hermes.py`).
 
-**Lacunas críticas para retroativos:**
-- L1: 93,6% dos docs sem `referente_a_employee_id` → docs funcionario não vinculam ao funcionário ❌
-- L2: 10 docs abr/2026 com `doc_scope=NULL` → bloqueio total para abr ❌
-- L3: Fev/2026 tem 0 kits → nunca foi executado auto_build para esse mês ❌
+HERMES deve:
+1. Receber `onvio_document_id` + `mes_ref`
+2. Consultar `employee_alocacoes` para resolver `funcionario → condomínio`
+3. Gravar `referente_a_employee_id` + `condominio_id` no `onvio_documents`
+4. Executar `build_completude(condominio_id, mes_ref)` via `KitBuilderService` (gedeon)
+5. Gravar `file_path` no slot correspondente em `ged_kit_documents`
+6. Publicar evento `GED_KIT_DOCUMENTO_VINCULADO` no Event Bus
 
-**Plano de execução retroativos (sem code change):**
-1. `POST /api/v1/onvio/reclassify` para os 169 docs com scope=NULL (incluindo abr/2026)
-2. `POST /people-management/ged/auto-assemble?reference_month=2026-02-01`
-3. `POST /people-management/ged/auto-assemble?reference_month=2026-03-01`
-4. `POST /people-management/ged/auto-assemble?reference_month=2026-04-01` (após passo 1)
+Task Celery: `hermes_vincular_docs_mes(mes_ref)` — agendado na 1ª do mês + disponível ad hoc para retroativos.
 
 ---
 
-Commit: (a adicionar)
+## Dados disponíveis para os 3 meses retroativos
+
+| Mês | Docs Onvio | Kits | Slots | Preenchidos | Pct médio |
+|-----|------------|------|-------|-------------|-----------|
+| Fev/2026 | 29 (22 cond + 2 func + 4 matriz + 1 sem scope) | **0 kits** | — | — | N/A |
+| Mar/2026 | 43 (26 cond + 3 func + 14 matriz) | 8 kits | 353 | 7 | 2,0% |
+| Abr/2026 | 10 (10 sem scope — doc_digitalizado) | 10 kits | 884 | 0 | 0,0% |
+
+**Categorias disponíveis Fev/2026:** folha_pagamento(7), recibo_folha(7), dctfweb_*×6, fgts_*×3, inss_guia(1), documento_digitalizado(3)
+**Categorias disponíveis Mar/2026:** folha_pagamento(9), recibo_folha(9), dctfweb_*×6, fgts_*×3, atestado(1), documento_digitalizado(13)
+**Categorias disponíveis Abr/2026:** documento_digitalizado(10) — todos sem scope, todos não mapeáveis
+
+---
+
+## Tipos de doc preenchidos vs faltantes (retroativos)
+
+*(Filtro: `ged_document_kits.reference_month >= 2026-02-01`, todos os meses Mar+Abr)*
+
+| document_type | Slots | Preenchidos | % |
+|---------------|-------|-------------|---|
+| contracheque | 186 | 51 | 27,4% |
+| comprovante_vt | 153 | 51 | 33,3% |
+| comprovante_vr | 153 | 51 | 33,3% |
+| comprovante_va | 153 | 51 | 33,3% |
+| folha_ponto | 153 | 51 | 33,3% |
+| escala_mes | 153 | 51 | 33,3% |
+| crf_fgts | 24 | 8 | 33,3% |
+| cnd_municipal | 24 | 8 | 33,3% |
+| cnd_estadual | 24 | 8 | 33,3% |
+| cndt_trabalhista | 24 | 8 | 33,3% |
+| cnd_federal | 24 | 8 | 33,3% |
+| folha_pagamento | 14 | 7 | 50,0% |
+| folhas_ponto | 47 | 0 | 0% |
+| comp_salario_individual | 47 | 0 | 0% |
+| comp_va_solides | 46 | 0 | 0% |
+| comp_vt_individual | 46 | 0 | 0% |
+| contrato_trabalho | 40 | 0 | 0% |
+| comp_vt_va_combinado | 40 | 0 | 0% |
+| ficha_empregado | 40 | 0 | 0% |
+| gfd_fgts_rescisao | 34 | 0 | 0% |
+| relatorio_gfd_rescisao | 34 | 0 | 0% |
+| comp_fgts_rescisao | 13 | 0 | 0% |
+| nfse | 10 | 0 | 0% |
+| boleto | 8 | 0 | 0% |
+| dctfweb_extrato | 7 | 0 | 0% |
+| cnd_sefaz | 7 | 0 | 0% |
+| comp_pag_fgts | 7 | 0 | 0% |
+| dctfweb_recibo | 7 | 0 | 0% |
+| cnd_caixa | 7 | 0 | 0% |
+| relatorio_gfd_fgts | 7 | 0 | 0% |
+| dctfweb_declaracao | 7 | 0 | 0% |
+| gfd_fgts_mensal | 7 | 0 | 0% |
+| cnd_rfb | 7 | 0 | 0% |
+| cnd_prefeitura | 7 | 0 | 0% |
+| cnd_trabalhista | 7 | 0 | 0% |
+| recibo_vt_va | 7 | 0 | 0% |
+| relatorio_pedido_va | 6 | 0 | 0% |
+| aso | 3 | 0 | 0% |
+
+> Nota: Mai/2026 (11 kits, 346 slots, 346 preenchidos = 100%) excluído da tabela pois é o mês corrente — não retroativo.
+
+---
+
+## Plano para homologar os 3 meses
+
+**Pré-requisito:** scope classifier nos 169 docs com `doc_scope=NULL`
+```
+POST /api/v1/onvio/reclassify
+```
+Esperado: 10 docs de abr/2026 (documento_digitalizado) recebem scope após classificação.
+
+**Fevereiro/2026** — Prioridade 1 (0 kits, 29 docs disponíveis):
+```
+POST /people-management/ged/auto-assemble?reference_month=2026-02-01
+```
+Esperado: até 8 novos kits criados + matching folha_pagamento + dctfweb + fgts.
+
+**Março/2026** — Prioridade 2 (8 kits parciais, 43 docs disponíveis):
+```
+POST /people-management/ged/auto-assemble?reference_month=2026-03-01
+```
+Esperado: complementar kits existentes; slots folha_pagamento(9) e dctfweb devem ser preenchidos.
+
+**Abril/2026** — Prioridade 3 (pós reclassify):
+```
+POST /people-management/ged/auto-assemble?reference_month=2026-04-01
+```
+Esperado: se `documento_digitalizado` receber scope=condominio, até 10 docs vinculados a kits existentes.
+
+**Validação pós-execução:**
+```sql
+SELECT reference_month, COUNT(*) kits, COUNT(d.file_path) preenchidos
+FROM ged_document_kits k LEFT JOIN ged_kit_documents d ON d.kit_id = k.id
+WHERE k.reference_month >= '2026-02-01' AND k.reference_month < '2026-05-01'
+GROUP BY k.reference_month ORDER BY k.reference_month;
+```
+
+---
+
+Commit: bd6d021f
 
 T4 CPRO12 DIAGNÓSTICO OK — GEDEON matching e retroativos mapeados.
