@@ -42,7 +42,16 @@ docker exec conecta-pro-backend kill -9 1  # SIGKILL → uvicorn recarregou auto
 | `GET /api/v1/operacional/allocations/` | **200** ✅ | lista de alocações |
 | `GET /api/v1/operacional/allocations/employee/{id}` | **200** ✅ | alocações de ADAILSON |
 
-**Observação:** `GET /operacional/allocations` (sem trailing slash) → 404 (comportamento padrão FastAPI para routers com path `"/"`).
+**AUDIT FIX — trailing slash:** `GET /operacional/allocations` (sem trailing slash) retornava 404.
+Fix aplicado: dual decorator `@router.get("")` + `@router.get("/")` em `list_allocations`.
+Requer SIGKILL (não HUP) para registrar novo path. Após `kill -9 1` → **HTTP 200** ✅
+
+| Endpoint corrigido | HTTP | Status |
+|-------------------|------|--------|
+| `GET /api/v1/operacional/allocations?status=active&page_size=3` | **200** ✅ | Fix confirmado |
+| `GET /api/v1/operacional/allocations/` (com slash) | **200** ✅ | Mantido |
+
+**Commit fix:** `8b26bf12` — `fix(operacional): dual decorator GET /allocations sem trailing slash (§92 audit)`
 
 ---
 
@@ -71,4 +80,5 @@ WHERE ea.ativo = true AND e.cpf = :cpf
 | Hash | Mensagem |
 |------|----------|
 | `706f9bc7` | `docs(contracts): §92+§94 — commitado em conjunto com T4 (CPRO12 T3+T4)` |
-| ver abaixo | `chore(deploy): operacional.ai hot-copy → backend container (§92)` |
+| `f9811a51` | `chore(deploy): operacional.ai hot-copy → backend container (§92)` |
+| `8b26bf12` | `fix(operacional): dual decorator GET /allocations sem trailing slash (§92 audit)` |
