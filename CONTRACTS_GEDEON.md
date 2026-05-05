@@ -5083,3 +5083,16 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 **TypeScript:** sem `any`; useQuery<UsersResponse> staleTime 30s; useMutation para PATCH
 **Schema backend:** UserListItem (role: str, permissions: list[str]) — evita falha de enum UserRole
 **Deploy:** build via deploy_frontend.sh; backend hot-copy + docker restart
+
+## §104 — Fix Tangerino API: endpoint /absence/find-all (CPRO12 T2-Tangerino)
+**Data:** 2026-05-05
+**Problema:** sync_solides_ponto() chamava /absence/find-all e /occurrence/find-all → HTTP 404
+**Cenário encontrado:** C — endpoints descontinuados/fora do plano da conta Conecta Mais
+**Endpoints testados e confirmados 404:** /absence/find-all, /occurrence/find-all, /absenteeism/find-all, /api/v1/absence, /api/absence, /time-off/find-all, /punch-absence/find-all
+**Endpoints funcionando (mesma conta):** /test, /employee/find-all, /job-role/find-all, /workplace/find-all, /cost-center/find-all, /work-schedule
+**Fix aplicado:** _fetch_solides_entities() em dashboard_service.py — trata HTTP 404 como return [] com logger.warning (não re-raise). Sync continua sem crash e sem adicionar ao erros[].
+**Resultado antes:** erros=["Erro ao buscar ausencias...", "Erro ao buscar ocorrencias..."]
+**Resultado depois:** erros=[] — sync retorna success=true limpo
+**Arquivo:** backend/modules/people_management/ponto/services/dashboard_service.py (linhas 328-337)
+**Hot-copy:** conecta-pro-backend + celery-beat + celery-operacional + docker restart backend
+**Validação:** POST /api/v1/people-management/ponto/sincronizar-solides → HTTP 201, erros=[]
