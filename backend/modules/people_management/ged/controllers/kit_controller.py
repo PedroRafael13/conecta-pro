@@ -7,7 +7,7 @@ criacao, montagem automatica, envio, aprovacao e exportacao.
 
 import logging
 import os
-from datetime import date
+from datetime import UTC, date
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -365,6 +365,103 @@ async def send_kit_email(
         "client_name": client.name,
         "email": client.contact_email,
         "error": resultado.get("erro", "Falha no envio"),
+    }
+
+
+@router.post("/{kit_id}/enviar")
+async def enviar_kit(
+    kit_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Envia kit via GDrive + Email (atômico).
+
+    Fluxo: GDrive primeiro → email só se GDrive OK.
+    Valida completion_percentage = 100 antes de enviar.
+    Grava sent_at, sent_method='email+gdrive', sent_to.
+
+    Returns:
+        {sucesso, email_enviado, drive_link, sent_at, kit_id, documentos_drive}
+    """
+    from datetime import datetime
+
+    from sqlalchemy import select
+
+    from modules.gdrive.services.email_kit_service import email_kit_service as _email_svc
+    from modules.people_management.ged.models.client import GedClient
+    from modules.people_management.ged.models.document_kit import GedDocumentKit
+    from modules.people_management.ged.services.google_drive_service import GoogleDriveService
+
+    # 1. Buscar kit
+    kit_result = await db.execute(select(GedDocumentKit).where(GedDocumentKit.id == kit_id))
+    kit = kit_result.scalar_one_or_none()
+    if not kit:
+        raise HTTPException(status_code=404, detail="Kit não encontrado")
+
+    # 2. Validar completude (INV-5)
+    pct = float(kit.completion_percentage or 0)
+    if pct < 100:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Kit incompleto. Completude atual: {pct:.1f}%. Só é possível enviar kits com 100% de documentos.",
+        )
+
+    # 3. Buscar cliente e validar email
+    client_result = await db.execute(select(GedClient).where(GedClient.id == kit.client_id))
+    client = client_result.scalar_one_or_none()
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    if not client.contact_email:
+        raise HTTPException(status_code=422, detail="Cliente não possui email cadastrado em ged_clients")
+
+    # 4. GDrive (atômico: se falhar, não envia email)
+    drive_svc = GoogleDriveService(db)
+    try:
+        sync = await drive_svc.sync_kit_to_drive(str(kit.id))
+    except Exception as exc:
+        logger.error("Falha GDrive ao enviar kit %s: %s", kit_id, exc)
+        raise HTTPException(status_code=502, detail=f"Falha GDrive: {str(exc)}")
+
+    if not sync.get("configured"):
+        raise HTTPException(
+            status_code=502,
+            detail=f"GDrive não configurado: {sync.get('message', 'Google Drive não conectado')}",
+        )
+
+    drive_link = sync.get("drive_link") or getattr(kit, "google_drive_link", None)
+
+    # 5. Email (só se GDrive OK)
+    competencia = kit.reference_month.strftime("%Y-%m") if kit.reference_month else ""
+    resultado_email = _email_svc.enviar_kit_por_email(
+        client_id=str(kit.client_id),
+        competencia=competencia,
+        share_link=drive_link,
+        destinatario_override=client.contact_email,
+    )
+
+    if not resultado_email.get("sucesso"):
+        raise HTTPException(
+            status_code=502,
+            detail=f"Drive OK mas email falhou: {resultado_email.get('erro', 'Falha no envio')}",
+        )
+
+    # 6. Gravar sent_at, sent_method='email+gdrive', sent_to, status='enviado'
+    now_utc = datetime.now(UTC)
+    kit.sent_at = now_utc
+    kit.sent_method = "email+gdrive"
+    kit.sent_to = client.contact_email
+    kit.status = "enviado"
+    await db.commit()
+
+    logger.info("Kit %s enviado via email+gdrive para %s (%s)", kit_id, client.name, client.contact_email)
+
+    return {
+        "sucesso": True,
+        "email_enviado": client.contact_email,
+        "drive_link": drive_link,
+        "sent_at": now_utc.isoformat(),
+        "kit_id": kit_id,
+        "documentos_drive": sync.get("uploaded", 0),
     }
 
 

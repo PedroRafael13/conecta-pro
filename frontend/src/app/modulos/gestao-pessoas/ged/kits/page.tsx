@@ -1,12 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useKitsLote } from '@/hooks/useKitsCompletude';
 import { KitCard } from '@/components/gedeon/KitCard';
 import { KitDetalheModal } from '@/components/gedeon/KitDetalheModal';
 import { KitKPIs } from '@/components/gedeon/KitKPIs';
 import { MesRefSelector } from '@/components/gedeon/MesRefSelector';
 import type { CompletudeKit } from '@/types/kit-completude';
+
+interface EnvioResult {
+  sucesso: boolean;
+  email_enviado: string;
+  drive_link: string | null;
+  sent_at: string;
+}
 
 function defaultMesRef(): string {
   const d = new Date();
@@ -16,7 +23,16 @@ function defaultMesRef(): string {
 export default function KitsCompletudeePage() {
   const [mesRef, setMesRef] = useState(defaultMesRef);
   const [selected, setSelected] = useState<CompletudeKit | null>(null);
-  const { data: kits, isLoading, error } = useKitsLote(mesRef);
+  const [sentMap, setSentMap] = useState<Record<string, EnvioResult>>({});
+  const { data: kits, isLoading, error, refetch } = useKitsLote(mesRef);
+
+  const handleEnviado = useCallback(
+    (condominioId: string, result: EnvioResult) => {
+      setSentMap((prev) => ({ ...prev, [condominioId]: result }));
+      void refetch();
+    },
+    [refetch],
+  );
 
   return (
     <div className="container mx-auto p-6">
@@ -51,7 +67,12 @@ export default function KitsCompletudeePage() {
           {/* Grid de cards */}
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {kits.map((kit) => (
-              <KitCard key={kit.condominio_id} kit={kit} onClick={() => setSelected(kit)} />
+              <KitCard
+                key={kit.condominio_id}
+                kit={kit}
+                onClick={() => setSelected(kit)}
+                enviado={!!sentMap[kit.condominio_id]}
+              />
             ))}
           </div>
 
@@ -60,6 +81,8 @@ export default function KitsCompletudeePage() {
             kit={selected}
             open={!!selected}
             onClose={() => setSelected(null)}
+            onEnviado={handleEnviado}
+            sentResult={selected ? (sentMap[selected.condominio_id] ?? null) : null}
           />
         </>
       )}

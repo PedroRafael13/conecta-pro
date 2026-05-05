@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 interface KitCardProps {
   kit: CompletudeKit;
   onClick: () => void;
+  enviado?: boolean;
 }
 
 function getCardClasses(pct: number, tipo: TipoServico): string {
@@ -26,7 +27,7 @@ const TIPO_LABELS: Record<TipoServico, string> = {
   administrativo: 'Administrativo',
 };
 
-export function KitCard({ kit, onClick }: KitCardProps) {
+export function KitCard({ kit, onClick, enviado = false }: KitCardProps) {
   const { condominio_nome, tipo_servico, metricas } = kit;
   const isAdmin = tipo_servico === 'administrativo';
   const pct = metricas.pct_completude_confirmada;
@@ -43,9 +44,14 @@ export function KitCard({ kit, onClick }: KitCardProps) {
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-bold text-gray-900 leading-tight">{condominio_nome}</h3>
-        <Badge variant="outline" className="shrink-0 text-xs">
-          {TIPO_LABELS[tipo_servico]}
-        </Badge>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <Badge variant="outline" className="text-xs">
+            {TIPO_LABELS[tipo_servico]}
+          </Badge>
+          {enviado && (
+            <Badge className="bg-green-600 text-white text-xs">✓ Enviado</Badge>
+          )}
+        </div>
       </div>
 
       {isAdmin ? (

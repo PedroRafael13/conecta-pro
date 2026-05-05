@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import type { CompletudeKit, MotivoFaltante } from '@/types/kit-completude';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { customInstance } from '@/lib/api-client';
 
 const MOTIVO_LABELS: Record<MotivoFaltante, string> = {
   nao_encontrado_onvio: 'Não sincronizado do Onvio',
@@ -12,14 +15,71 @@ const MOTIVO_LABELS: Record<MotivoFaltante, string> = {
   nao_sincronizado: 'Não sincronizado',
 };
 
+interface EnvioResult {
+  sucesso: boolean;
+  email_enviado: string;
+  drive_link: string | null;
+  sent_at: string;
+}
+
 interface KitDetalheModalProps {
   kit: CompletudeKit | null;
   open: boolean;
   onClose: () => void;
+  onEnviado?: (condominioId: string, result: EnvioResult) => void;
+  sentResult?: EnvioResult | null;
 }
 
-export function KitDetalheModal({ kit, open, onClose }: KitDetalheModalProps) {
+export function KitDetalheModal({ kit, open, onClose, onEnviado, sentResult }: KitDetalheModalProps) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
   if (!kit) return null;
+
+  const pct = kit.metricas.pct_completude_confirmada;
+  const canSend = pct >= 100;
+  const alreadySent = !!sentResult;
+
+  async function handleEnviar() {
+    if (!canSend || sending) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      // Parse mes_ref (MM.YYYY) → month + year for GED kits lookup
+      const [mm, yyyy] = kit!.mes_ref.split('.');
+      const month = parseInt(mm, 10);
+      const year = parseInt(yyyy, 10);
+
+      // Step 1: find kit_id via GED kits list
+      const listResp = await customInstance<{ items: Array<{ id: string }> }>({
+        url: '/api/v1/ged/kits',
+        method: 'GET',
+        params: { client_id: kit!.condominio_id, month, year, limit: 1 },
+      });
+      const items = listResp?.items ?? [];
+      if (items.length === 0) {
+        setSendError('Kit não cadastrado no GED para este mês. Monte o kit primeiro.');
+        return;
+      }
+      const kitId = items[0].id;
+
+      // Step 2: send via unified endpoint
+      const result = await customInstance<EnvioResult>({
+        url: `/api/v1/ged/kits/${kitId}/enviar`,
+        method: 'POST',
+      });
+      setShowConfirm(false);
+      onEnviado?.(kit!.condominio_id, result);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        'Erro ao enviar kit. Tente novamente.';
+      setSendError(msg);
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -30,12 +90,73 @@ export function KitDetalheModal({ kit, open, onClose }: KitDetalheModalProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mb-3 flex gap-3 text-sm text-gray-600">
+        <div className="mb-3 flex flex-wrap items-center gap-3 text-sm text-gray-600">
           <span>Esperado: <strong>{kit.metricas.total_esperado}</strong></span>
           <span>Presentes: <strong>{kit.metricas.total_presente_confirmado}</strong></span>
           <span>Faltantes: <strong>{kit.metricas.total_faltante}</strong></span>
-          <span>Completude: <strong>{kit.metricas.pct_completude_confirmada.toFixed(1)}%</strong></span>
+          <span>Completude: <strong>{pct.toFixed(1)}%</strong></span>
+
+          {alreadySent ? (
+            <Badge className="ml-auto bg-green-600 text-white">
+              ✓ Enviado em {new Date(sentResult!.sent_at).toLocaleDateString('pt-BR')}
+            </Badge>
+          ) : (
+            <div className="ml-auto flex items-center gap-2">
+              {!showConfirm ? (
+                <Button
+                  size="sm"
+                  disabled={!canSend}
+                  title={canSend ? 'Enviar via GDrive + Email' : 'Kit incompleto'}
+                  onClick={() => { setSendError(null); setShowConfirm(true); }}
+                  className={canSend ? 'bg-[#1E3A5F] hover:bg-[#16304f] text-white' : ''}
+                  variant={canSend ? 'default' : 'secondary'}
+                >
+                  Enviar Kit
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-700">Confirmar envio?</span>
+                  <Button
+                    size="sm"
+                    onClick={handleEnviar}
+                    disabled={sending}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {sending ? 'Enviando…' : 'Sim, enviar'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={sending}
+                    onClick={() => setShowConfirm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
+        {sendError && (
+          <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {sendError}
+          </div>
+        )}
+
+        {alreadySent && sentResult?.drive_link && (
+          <div className="mb-3 rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
+            Kit enviado para <strong>{sentResult.email_enviado}</strong>.{' '}
+            <a
+              href={sentResult.drive_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Ver no Drive
+            </a>
+          </div>
+        )}
 
         <Tabs defaultValue="presentes">
           <TabsList>
