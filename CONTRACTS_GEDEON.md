@@ -4607,3 +4607,44 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Limitação outbound:** EVOLUTION_INSTANCE não está no container; o container usa WHATSAPP_INSTANCE_ID=conecta-pro via os.getenv fallback ✅
 **Controller:** client_portal/controllers/whatsapp_controller.py
 **Princípio:** §13.1 controller lido inteiro (249 linhas); INV-3 sem refatoração; INV-8 teste sem envio para cliente
+
+## §85 — Sync Onvio + Auto-Build Kit Prime Arena 04/2026 (CPRO 12 T4-SYNC)
+**Data:** 2026-05-05
+**Operação:** diagnóstico + auto-build kit Prime Arena Abril/2026
+
+### Estado pré-operação
+- Docs Onvio no banco (total): 605
+- Docs Onvio com condominio_id NULL: 489 (81%)
+- Última sync Onvio: 2026-05-04 (03.2026→12 docs, 04.2026→58 docs, mas 60 com mes_ref=NULL)
+- Prime Arena — onvio_documents disponíveis: 18 docs (meses 07/2025–03/2026), categorias: folha_pagamento + recibo_folha apenas
+
+### Operações executadas
+1. `POST /api/v1/ged/auto-assemble?reference_month=2026-04-01` → HTTP 201, 8 kits criados, 880 docs totais
+2. `POST /api/v1/ged/kits/montar` com `{"mes_ref":"04.2026"}` → HTTP 201, 3 kits novos (Conecta Matriz, Parise Village, Green Hills)
+
+### Resultado Prime Arena 04/2026
+- **GEDEON completude:** 0.0% (0/94 presentes, 30 tipos faltantes)
+- **GED slots (ged_kit_documents):** 133 slots, 0 com file_path
+- **Bloqueios identificados:** 4 causas
+  - `nao_encontrado_onvio` (12 tipos): folha_pagamento, contracheque, folhas_ponto, gfd_fgts_mensal/rescisao, dctfweb_declaracao/recibo/extrato, aso, contrato_trabalho, ficha_empregado, rescisao_contrato — Onvio não tem docs mes_ref='04.2026' para Prime Arena
+  - `aguarda_fase_2_banco` (9 tipos): boleto, comp_pag_fgts, comp_fgts_rescisao, comp_rescisao, comp_salario_individual — depende de integração bancária (FASE 2)
+  - `aguarda_fase_1_cnd` (5 tipos): cnd_rfb, cnd_caixa, cnd_prefeitura, cnd_sefaz, cnd_trabalhista — depende de busca automática CND (FASE 1)
+  - `nao_sincronizado` (4 tipos): comp_va_solides, comp_vt_va_combinado, recibo_vt_va, relatorio_pedido_va — VA não sincronizado
+
+### Causa raiz do 0%
+O KitBuilderService GEDEON busca `onvio_documents WHERE mes_ref='04.2026' AND condominio_id='21929c3d-...'`.
+Prime Arena tem apenas `mes_ref IN ('07.2025'..'03.2026')` — os docs de Abril/2026 ainda não foram publicados no Onvio.
+
+### Achado crítico: Endpoint Onvio sync inacessível
+- `POST /api/v1/onvio/sync` → HTTP 404
+- `POST /api/v1/gedeon/onvio/sync` → HTTP 404
+- Causa: main_production.py tenta importar `modules.gedeon.onvio.controllers.onvio_controller` (caminho errado). O endpoint existe em `modules.gedeon.controllers.onvio_controller` mas não está registrado.
+- Impacto: impossível disparar sync via API; sincronizações só ocorrem via cron ou trigger interno.
+
+### Próximos passos
+1. Aguardar publicação dos documentos de Abril/2026 no Onvio (folha, recibos, FGTS, DCTF-Web)
+2. Registrar `modules.gedeon.controllers.onvio_controller` no main_production.py (requer Jordan)
+3. Fase 1 (CND): quando FASE 1 do GEDEON estiver ativa, CNDs serão preenchidas automaticamente
+4. Fase 2 (banco): quando FASE 2 estiver ativa, comprovantes de pagamento serão preenchidos
+
+**Princípio:** §13.1 estado verificado antes; INV-8 kit NÃO enviado ao cliente; INV-3 código não modificado; INV-4/5 erros documentados, não corrigidos
