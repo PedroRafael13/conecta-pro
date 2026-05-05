@@ -4352,3 +4352,15 @@ Este fix completa o alinhamento do próprio enum — fonte de verdade do Python.
 **Contexto:** T3-B (§65) corrigiu health_occupational/; esta tarefa conclui os 2 módulos restantes listados em §13.4.
 **py_compile:** OK (ambos arquivos).
 **Princípio:** §13.1 ambos os arquivos lidos inteiros antes de alterar; INV-3 apenas imports trocados, lógica de negócio intacta; §13.4 escopo restrito a people_management e notifications.
+
+## §67 — Sync celery_app.py para todos os 7 workers (CPRO 12 T1-C) — 2026-05-05
+**Data:** 2026-05-05
+**Problema:** celery_app.py desatualizado em todos os 7 workers — includes
+gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz/integrations.
+**Fix:** docker cp celery_app.py HOST→7 containers + SIGHUP via python3 os.kill(1, SIGHUP).
+**Nota:** `kill` binário ausente nos containers — SIGHUP enviado via `python3 -c "import os,signal; os.kill(1,signal.SIGHUP)"`.
+**Impacto pós-sync:** beat+batch: ✅ running. operacional/priority/nfse/sefaz: ❌ ModuleNotFoundError: modules.health_occupational.tasks. integrations: ❌ ModuleNotFoundError: modules.gedeon.
+**INV-9:** erros documentados — NÃO corrigidos. Aguardam T2 (gedeon+financial sync) e T3 (health_occupational sync) para resolução.
+**H5 confirmado:** beat agendou `gedeon.risk_monitor` e `gedeon-risk-monitor-5min` após sync.
+**H4 confirmado:** dia 21 às 07:00 (HOST) substituiu dia 1 às 02:00 (containers antigos).
+**Princípio:** §13.1 diff verificado antes; §13.4 sem modificação de código; INV-9 erros = listar.
