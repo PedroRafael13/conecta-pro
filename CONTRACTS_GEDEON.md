@@ -4721,3 +4721,28 @@ Prime Arena tem apenas `mes_ref IN ('07.2025'..'03.2026')` — os docs de Abril/
 
 **Ver:** RELATORIO_T4_DIAG_GEDEON_CPRO12.md
 **Princípio:** INV-2 zero alterações; INV-1 todos os agentes lidos por completo (Chesterton)
+
+## §91 — Diagnóstico profundo DP para matching GEDEON (CPRO12 T2-DIAG-DP)
+**Data:** 2026-05-05
+**Tipo:** READ-ONLY (INV-2: zero alterações de código)
+**Objetivo:** Mapear estrutura DP — responder "dado nome/CPF de colaborador, em qual condomínio está alocado?"
+
+**Tabelas mapeadas:**
+- `employees` (58 rows) — nome/CPF/matricula 100% preenchidos; posto_atual_nome e cliente_nome 0% (NÃO USAR)
+- `employee_alocacoes` (47 ativas) — FK direta employee_id → condominio_id; índices em employee_id, condominio_id, ativo
+- `condominios` (7) — IDEAL FLORES(11), MIRANTE(10), PRIME ARENA(7), VILLA DEI FIORI(6), VILLA PÁSSAROS(6), LARANJEIRAS(6), MICHELANGELO(1)
+- `onvio_documents.referente_a_employee_id` — 39/93 employee docs já com FK preenchida
+
+**Resposta central: SIM** — GEDEON pode descobrir o condomínio de um colaborador via:
+```sql
+SELECT c.nome FROM employee_alocacoes ea
+JOIN employees e ON e.id = ea.employee_id
+JOIN condominios c ON c.id = ea.condominio_id
+WHERE ea.ativo = true AND e.cpf = :cpf;
+```
+
+**Prioridade de matching:** CPF (único) > nome (ILIKE) > matricula > referente_a_employee_id
+**Não existe** view SQL nem serviço Python para esse lookup — GEDEON implementa direto.
+
+**Ver:** RELATORIO_T2_DIAG_DP_CPRO12.md
+**Princípio:** INV-2 zero alterações; zero writes em banco
