@@ -71,6 +71,7 @@ Documentado aqui mas não corrigido na imagem (escopo §13.4).
 | str_replace | apenas `test:` + `start_period:` do celery-beat | ✅ cirúrgico |
 | YAML válido | antes + depois | ✅ |
 | docker compose up | `--no-deps -d celery-beat` (INV-6) | ✅ |
+| Downtime observado | ~10 min (loop restart por `modules.operacional.ai` ausente na imagem) | documentado |
 | Módulo ausente | `operacional/ai` hot-copy | ✅ |
 | Beat healthy | Up 55s (healthy), FailingStreak: 0 | ✅ |
 | Scheduling | 8 tasks no primeiro segundo | ✅ |
