@@ -4416,3 +4416,34 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 **Resultado:** 5/5 workers passaram para (healthy). Beat continua unhealthy (BUG-2 punch_controller — escopo T1, fora deste prompt).
 **Imports validados:** gedeon.kronos_tasks: OK, financial.tasks: OK, health_occupational.tasks: OK em todos os workers.
 **Princípio:** §13.1 ausência verificada antes do cp; INV-9 apenas tasks.py (não financial/ inteiro); INV-10 warning integrations documentado, não corrigido.
+
+## §73 — Fix F5: celery-beat healthcheck CENÁRIO B (CPRO 12 T2-F5)
+**Data:** 2026-05-05
+**Problema:** celery-beat (unhealthy) — healthcheck usa `ps aux | grep celery*beat | grep -v grep`
+  mas `ps` não existe na imagem slim. FailingStreak: 297. Beat funciona normalmente — falso negativo.
+**Docker version:** 29.1.3 — `docker update --health-cmd` não suportado (unknown flag).
+**kill binário:** ausente no container — `kill -0 1` via shell não funciona.
+**Alternativas disponíveis (aguardam autorização Jordan):**
+  - `python3 -c "import os; os.kill(1, 0)"` → funciona no container
+  - `sh -c "test -f /proc/1/status"` → funciona no container
+**Para aplicar o fix, Jordan deve autorizar uma das opções:**
+  A) docker-compose.yml: healthcheck: test: ["CMD-SHELL", "python3 -c 'import os; os.kill(1,0)'"]
+     + docker compose up --no-deps -d celery-beat (recria container com novo healthcheck)
+  B) docker run manual com --health-cmd="python3 -c 'import os; os.kill(1,0)'"
+     (substitui container sem tocar docker-compose)
+**Princípio:** INV-9 aplicado — docker update falhou, reportado Jordan sem workaround invasivo.
+  §13.1 healthcheck real inspecionado antes; INV-4 docker-compose NÃO tocado; INV-5 beat NÃO reiniciado.
+
+## §72 — F3+F4: sync script completo + health_occupational subscribers (CPRO 12 T1-F3F4)
+**Data:** 2026-05-05
+**F3:** sync_celery_workers.sh expandido para 8 containers (+ celery-nfse + celery-sefaz no loop 1 de módulos)
+  Loop 1 antes: 6 containers (backend+beat+batch+operacional+integrations+priority)
+  Loop 1 depois: 8 containers (+ nfse + sefaz)
+  Loop 2 (celery_app.py): já tinha nfse+sefaz — inalterado
+  bash -n: OK
+**F4:** health_occupational/__init__.py — try/except já existia; alterado nível de log warning→debug
+  INV-5: log em debug, não silenciado; mensagem: "integrations não disponível: %s"
+  integrations/ existe no HOST mas não nos containers (copiado apenas tasks/ na T2-C)
+  py_compile: OK
+**Hot-copy:** priority + sefaz (containers que exibiam warning)
+**Princípio:** §13.1 ambos lidos inteiros; §13.4 adição mínima em F3; warning→debug em F4.
