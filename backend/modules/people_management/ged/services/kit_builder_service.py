@@ -45,6 +45,7 @@ MAPA_TIPOS_ONVIO: dict[str, str] = {
     "dar_sefaz": "dar_sefaz",
     # Expansão CPRO12 T5-ONVIO — categorias faltantes (recibo_folha Grupo A + Grupo B)
     "recibo_folha": "contracheque",
+    "contracheque": "contracheque",
     "fgts_crf": "crf_fgts",
     "contrato_trabalho": "contrato_trabalho",
     "ficha_registro": "ficha_empregado",

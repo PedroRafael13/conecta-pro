@@ -4856,8 +4856,12 @@ hermes.py OK | kronos_tasks.py OK | celery_app.py OK
 **Nota trailing slash:** `GET /api/v1/operacional/allocations/` (com /) retorna 200; sem / retorna 404 (comportamento FastAPI)
 **INV-7 (6/6):** /hr/employees/cpf ✅ | /hr/employees ✅ | /hr/employees/search ✅ | /hr/employees/{id} ✅ | /allocations/ ✅ | /allocations/employee/{id} ✅
 
-## §95 — Fix Onvio: Grupo A is_matriz + sync router + MAPA_TIPOS expandido (CPRO12 T5-ONVIO)
+## §95 — Fix Onvio: Grupo A + sync registrado + 169 NULL + MAPA expandido (CPRO12 T5-ONVIO)
 **Data:** 2026-05-05
+**Bug A:** is_matriz() adicionado antes de match_condominio() no Grupo A
+**Sync:** POST /onvio/sync registrado em main_production.py
+**NULL:** 169 docs reclassificados via /onvio/reclassificar
+**MAPA:** recibo_folha, contracheque, aso, rescisao_contrato, contrato_trabalho adicionados
 
 ### Problema 1 (Sub-task A) — Bug Grupo A no OnvioDocScopeClassifier
 - **Causa raiz:** Bloco `scope == "condominio"` não chamava `is_matriz()` antes de `match_condominio()`
