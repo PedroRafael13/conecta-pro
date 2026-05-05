@@ -40,10 +40,10 @@ class NFeConfig(BaseModel):
         extra = "forbid"
 
 
-# Dados do emitente (Jordan Santos de Jesus Ltda / Conecta PRO)
+# Dados do emitente (CONECTAMAIS ELETRONICA LTDA / Conecta PRO)
 _EMITENTE = {
     "cnpj": "35710481000103",
-    "razao_social": "Jordan Santos de Jesus Ltda",
+    "razao_social": "CONECTAMAIS ELETRONICA LTDA",
     "nome_fantasia": "Conecta PRO Segurança",
     "ie": "",
     "im": "45177801",

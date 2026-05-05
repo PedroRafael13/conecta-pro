@@ -102,7 +102,7 @@ class NFSeEntradaSyncService:
                 "response": resp.json() if resp.ok else resp.text,
                 "portal": "nacional",
                 "metodo": "GET /nfse?cpfCnpjTomador=",
-                "cert_subject": "JORDAN SANTOS DE JESUS LTDA:35710481000103",
+                "cert_subject": "CONECTAMAIS ELETRONICA LTDA:35710481000103",
                 "cert_valido_ate": "2027-01-13",
             }
         except Exception as e:

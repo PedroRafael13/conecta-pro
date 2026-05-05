@@ -253,7 +253,7 @@ async def _add_certidoes(db: AsyncSession, kit_id: str, comp: date) -> int:
             ),
             Spacer(1, 0.4 * cm),
             Paragraph(
-                '<font size="9" color="grey">JORDAN SANTOS DE JESUS LTDA — CNPJ 35.710.481/0001-03</font>',
+                '<font size="9" color="grey">CONECTAMAIS ELETRONICA LTDA — CNPJ 35.710.481/0001-03</font>',
                 ParagraphStyle("s", alignment=TA_CENTER),
             ),
             Spacer(1, 0.5 * cm),
@@ -476,7 +476,7 @@ async def _add_comprovantes_bancarios(db: AsyncSession, kit_id: str, employees: 
         ),
         Spacer(1, 0.3 * cm),
         Paragraph(
-            '<font size="9" color="grey">JORDAN SANTOS DE JESUS LTDA — CNPJ 35.710.481/0001-03</font>',
+            '<font size="9" color="grey">CONECTAMAIS ELETRONICA LTDA — CNPJ 35.710.481/0001-03</font>',
             ParagraphStyle("s", alignment=TA_CENTER),
         ),
         Spacer(1, 0.5 * cm),
@@ -611,7 +611,7 @@ async def _add_boleto_nfse(db: AsyncSession, kit_id: str, client_id: str, comp: 
 
     nfs_str = ", ".join(f"NF {n['numero_nfse']}" for n in nfses)
     dados = [
-        ["BENEFICIARIO", "JORDAN SANTOS DE JESUS LTDA — CNPJ 35.710.481/0001-03"],
+        ["BENEFICIARIO", "CONECTAMAIS ELETRONICA LTDA — CNPJ 35.710.481/0001-03"],
         ["PAGADOR", cliente_nome],
         ["REFERENCIA", f"Servicos prestados — {mes_ano} ({nfs_str})"],
         ["VENCIMENTO", f"15/{comp.strftime('%m/%Y')}"],

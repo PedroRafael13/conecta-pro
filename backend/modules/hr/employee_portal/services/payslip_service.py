@@ -192,7 +192,7 @@ class PaySlipService:
 
         # Cabeçalho empresa
         story.append(Paragraph("<b>CONECTA MAIS SERVIÇOS LTDA</b>", title_s))
-        story.append(Paragraph("Jordan Santos de Jesus LTDA | CNPJ: 35.710.481/0001-03", normal_s))
+        story.append(Paragraph("CONECTAMAIS ELETRONICA LTDA | CNPJ: 35.710.481/0001-03", normal_s))
         story.append(Paragraph(f"CONTRACHEQUE — {payslip.payslip_code}", bold_s))
         story.append(Spacer(1, 5 * mm))
 

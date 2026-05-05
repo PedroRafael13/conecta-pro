@@ -9,7 +9,7 @@ Endpoints:
   GET  /fiscal/nfe/sefaz-status     — status do serviço SEFAZ-AM
 
 Certificado: /app/credentials/certificates/certificado.pfx (A1, valido ate 2027)
-Emitente: Jordan Santos de Jesus Ltda — CNPJ 35710481000103 — IE 45177801 — CRT 1 — Manaus-AM
+Emitente: CONECTAMAIS ELETRONICA LTDA — CNPJ 35710481000103 — IE 45177801 — CRT 1 — Manaus-AM
 SEFAZ-AM (producao): nfe.sefaz.am.gov.br
 """
 
@@ -34,10 +34,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/nfe", tags=["NF-e Produto"])
 
 # ---------------------------------------------------------------------------
-# Constantes do emitente (Jordan Santos de Jesus Ltda)
+# Constantes do emitente (CONECTAMAIS ELETRONICA LTDA)
 # ---------------------------------------------------------------------------
 EMITENTE_CNPJ = "35710481000103"
-EMITENTE_RAZAO_SOCIAL = "JORDAN SANTOS DE JESUS LTDA"
+EMITENTE_RAZAO_SOCIAL = "CONECTAMAIS ELETRONICA LTDA"
 EMITENTE_IE = "45177801"
 EMITENTE_CRT = "3"  # Lucro Real / Regime Normal → CRT 3
 EMITENTE_UF = "AM"
@@ -527,7 +527,7 @@ async def emitir_nfe(
     Emite NF-e modelo 55 via SEFAZ-AM (produção).
 
     1. Gera chave de acesso e XML NF-e layout 4.00
-    2. Assina com certificado A1 da Jordan Santos de Jesus Ltda
+    2. Assina com certificado A1 da CONECTAMAIS ELETRONICA LTDA
     3. Submete ao SEFAZ-AM em modo síncrono
     4. Persiste resultado em nfes + nfe_itens
     """

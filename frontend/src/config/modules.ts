@@ -510,6 +510,7 @@ export const modules: Module[] = [
       { id: 'sistema', title: 'Sistema', href: '/modulos/configuracoes/configuracoes-sistema', icon: 'Settings', permissions: ['config:system'] },
       { id: 'templates', title: 'Templates', href: '/modulos/configuracoes/templates-notificacao', icon: 'Mail', permissions: ['config:templates'] },
       { id: 'integracoes-config', title: 'Integrações', href: '/modulos/configuracoes/integracoes', icon: 'Plug', permissions: ['config:integrations'] },
+      { id: 'usuarios-permissoes', title: 'Usuários & Permissões', href: '/modulos/configuracoes/usuarios', icon: 'Shield', permissions: ['config:read'] },
     ],
   },
 ];

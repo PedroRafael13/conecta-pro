@@ -374,7 +374,7 @@ class EFDReinfService:
         # 1. Gerar XML do R-1000
         info = InfoContribuinte(
             cnpj=self.cnpj,
-            razao_social="JORDAN SANTOS DE JESUS LTDA",
+            razao_social="CONECTAMAIS ELETRONICA LTDA",
             classificacao_tributaria=ClassificacaoTributaria.EMPRESA_GERAL,
             inicio_validade="2026-01",
             ind_desoneracao="0",

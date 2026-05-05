@@ -275,7 +275,7 @@ def _gerar_nfse_pdf(
     s.append(Spacer(1, 0.3 * cm))
     s.append(
         Paragraph(
-            '<font size="9" color="grey">JORDAN SANTOS DE JESUS LTDA — CNPJ 35.710.481/0001-03</font>',
+            '<font size="9" color="grey">CONECTAMAIS ELETRONICA LTDA — CNPJ 35.710.481/0001-03</font>',
             ParagraphStyle("sub", alignment=TA_CENTER),
         )
     )

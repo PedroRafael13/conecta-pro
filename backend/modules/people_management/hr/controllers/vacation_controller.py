@@ -346,7 +346,7 @@ async def gerar_aviso_previo_ferias(
             ],
             [
                 Paragraph(
-                    "JORDAN SANTOS DE JESUS LTDA<br/>CNPJ 35.710.481/0001-03<br/>Empregadora",
+                    "CONECTAMAIS ELETRONICA LTDA<br/>CNPJ 35.710.481/0001-03<br/>Empregadora",
                     label_style,
                 ),
                 Paragraph(f"{employee_name}<br/>Empregado(a)", label_style),

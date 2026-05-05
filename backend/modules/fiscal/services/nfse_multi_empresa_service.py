@@ -46,7 +46,7 @@ SERVICOS_ELETRONICOS = [
 EMPRESAS_CONFIG: dict[str, dict[str, Any]] = {
     "conecta_eletronica": {
         "cnpj": "35710481000103",
-        "razao_social": "Jordan Santos de Jesus Ltda",
+        "razao_social": "CONECTAMAIS ELETRONICA LTDA",
         "inscricao_municipal": "45177801",
         "suframa": "210140500",
         "codigo_municipio": "1302603",

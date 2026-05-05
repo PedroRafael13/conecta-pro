@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/esocial", tags=["DP - eSocial"])
 
 EMPRESA_CNPJ = "35710481000103"
-EMPRESA_RAZAO = "Jordan Santos de Jesus Ltda"
+EMPRESA_RAZAO = "CONECTAMAIS ELETRONICA LTDA"
 
 
 class AdmissaoESocialRequest(BaseModel):

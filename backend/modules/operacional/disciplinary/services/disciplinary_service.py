@@ -712,7 +712,7 @@ class DisciplinaryService:
             "previous_warnings": str(action.previous_warnings_count),
             "previous_suspensions": str(action.previous_suspensions_count),
             # Empresa
-            "company_name": "JORDAN SANTOS DE JESUS LTDA",
+            "company_name": "CONECTAMAIS ELETRONICA LTDA",
             "company_cnpj": "35.710.481/0001-03",
             # Localizacao
             "city": "Manaus",

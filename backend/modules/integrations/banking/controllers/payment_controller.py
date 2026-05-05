@@ -52,7 +52,7 @@ class DARFRequest(BaseModel):
     codigo_receita: str = "6015"  # 6015=IRPJ 2372=CSLL 0561=COFINS 8109=PIS 2100=INSS
     data_vencimento: str | None = None
     descricao: str = "Pagamento DARF"
-    nome_empresa: str = "JORDAN SANTOS DE JESUS LTDA"
+    nome_empresa: str = "CONECTAMAIS ELETRONICA LTDA"
     telefone_empresa: str = "92986465328"
 
 

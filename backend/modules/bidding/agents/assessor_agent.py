@@ -44,7 +44,7 @@ class CriterioAvaliacao(BaseModel):
 class CompanyProfile(BaseModel):
     """Perfil da empresa para avaliacao de requisitos."""
 
-    razao_social: str = "Jordan Santos de Jesus Ltda"
+    razao_social: str = "CONECTAMAIS ELETRONICA LTDA"
     cnpj: str = "35.710.481/0001-03"
     uf: str = "AM"
     municipio: str = "Manaus"

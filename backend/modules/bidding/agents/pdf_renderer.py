@@ -35,7 +35,7 @@ PDF_OUTPUT_DIR = Path("/opt/conecta-pro/backend/media/bidding/proposals")
 
 # Dados da empresa para cabecalho
 COMPANY_HEADER = {
-    "razao_social": "JORDAN SANTOS DE JESUS LTDA",
+    "razao_social": "CONECTAMAIS ELETRONICA LTDA",
     "cnpj": "35.710.481/0001-03",
     "inscricao_municipal": "45177801",
     "endereco": "Manaus - AM",

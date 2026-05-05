@@ -5,7 +5,7 @@ Este serviço conecta os módulos operacional (funcionários, postos, alocaçõe
 com o módulo de kits documentais, permitindo buscar colaboradores por condomínio,
 período e outros filtros necessários para geração automática de kits mensais.
 
-Autor: Jordan Santos de Jesus LTDA
+Autor: CONECTAMAIS ELETRONICA LTDA
 Data: 23/01/2026
 """
 

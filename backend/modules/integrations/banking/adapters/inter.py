@@ -651,7 +651,7 @@ class InterAdapter(BaseBankingAdapter):
         codigo_receita: str = "6015",
         data_vencimento: str | None = None,
         descricao: str = "Pagamento DARF",
-        nome_empresa: str = "JORDAN SANTOS DE JESUS LTDA",
+        nome_empresa: str = "CONECTAMAIS ELETRONICA LTDA",
         telefone_empresa: str = "92986465328",
     ) -> dict:
         """

@@ -4,7 +4,7 @@ Serviço de Geração Automática de Kits Mensais.
 Este serviço gera automaticamente kits documentais mensais para todos os funcionários
 de um condomínio, usando a integração com o módulo operacional.
 
-Autor: Jordan Santos de Jesus LTDA
+Autor: CONECTAMAIS ELETRONICA LTDA
 Data: 23/01/2026
 """
 

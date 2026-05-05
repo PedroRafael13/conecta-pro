@@ -59,7 +59,7 @@ def emitente():
 
     return Emitente(
         cnpj="35.710.481/0001-03",
-        razao_social="JORDAN SANTOS DE JESUS LTDA",
+        razao_social="CONECTAMAIS ELETRONICA LTDA",
         nome_fantasia="Conecta PRO",
         inscricao_estadual="123456789",  # Substituir por IE válida
         endereco=endereco,

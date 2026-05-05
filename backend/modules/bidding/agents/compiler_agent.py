@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # ──────────────────────────────────────────────
 
 EMPRESA_PADRAO = {
-    "razao_social": "Jordan Santos de Jesus Ltda",
+    "razao_social": "CONECTAMAIS ELETRONICA LTDA",
     "cnpj": "35.710.481/0001-03",
     "inscricao_municipal": "45177801",
     "inscricao_suframa": "210140500",

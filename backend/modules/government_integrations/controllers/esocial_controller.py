@@ -43,7 +43,7 @@ class TransmitirS1000Request(BaseModel):
     """Request para transmissão real do S-1000."""
 
     cnpj: str = Field(default="35710481000103", description="CNPJ (somente números)")
-    razao_social: str = Field(default="JORDAN SANTOS DE JESUS LTDA")
+    razao_social: str = Field(default="CONECTAMAIS ELETRONICA LTDA")
     nat_jurid: str = Field(default="2062", description="Natureza jurídica")
     class_trib: str = Field(default="99", description="Classificação tributária")
     ini_valid: str = Field(default="2026-01", description="Início validade AAAA-MM")

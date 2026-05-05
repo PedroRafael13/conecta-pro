@@ -4,7 +4,7 @@ Scheduler para Geração Automática de Kits Mensais.
 Este módulo configura jobs agendados para geração automática de kits
 documentais mensais para todos os condomínios.
 
-Autor: Jordan Santos de Jesus LTDA
+Autor: CONECTAMAIS ELETRONICA LTDA
 Data: 23/01/2026
 """
 

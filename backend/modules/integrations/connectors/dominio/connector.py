@@ -159,7 +159,7 @@ def _exportar_arquivo(periodo: str, lancamentos: list[dict]) -> dict[str, Any]:
             "modo": "arquivo",
             "instrucao": (
                 "API indisponível. Arquivo gerado para importação manual no Domínio. "
-                "Encaminhar ao contador: Jordan Santos de Jesus Ltda (35.710.481/0001-03)"
+                "Encaminhar ao contador: CONECTAMAIS ELETRONICA LTDA (35.710.481/0001-03)"
             ),
         }
     except Exception as exc:

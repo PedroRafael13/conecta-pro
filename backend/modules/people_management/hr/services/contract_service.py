@@ -170,7 +170,7 @@ class ContractService:
         self,
         contract: EmploymentContract,
         employee_name: str,
-        company_name: str = "Jordan Santos de Jesus Ltda",
+        company_name: str = "CONECTAMAIS ELETRONICA LTDA",
         company_cnpj: str = "35.710.481/0001-03",
     ) -> dict:
         """Gera dados para documento de contrato de trabalho.

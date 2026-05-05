@@ -668,7 +668,7 @@ async def ltcat_status(
     return {
         "documento": "LTCAT - Laudo Técnico das Condições Ambientais de Trabalho",
         "base_legal": "Lei 8.213/91 Art. 58 + IN INSS 128/2022",
-        "empresa": "Jordan Santos de Jesus LTDA",
+        "empresa": "CONECTAMAIS ELETRONICA LTDA",
         "cnpj": "35.710.481/0001-03",
         "vigencia": "2026-01-01 a 2026-12-31",
         "responsavel_tecnico": "A definir (Engenheiro de Segurança)",
@@ -720,7 +720,7 @@ async def gerar_ppp(
         "base_legal": "Lei 8.213/91 Art. 58 § 4º + IN INSS 128/2022",
         "esocial_evento": "S-2240",
         "empresa": {
-            "razao_social": "Jordan Santos de Jesus LTDA",
+            "razao_social": "CONECTAMAIS ELETRONICA LTDA",
             "cnpj": "35.710.481/0001-03",
             "cnae": "8011-1/01 - Atividades de vigilância e segurança privada",
         },

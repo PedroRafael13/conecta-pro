@@ -43,7 +43,7 @@ class FileCredentialConfig:
     # Informações do tenant (fixo para instalação single-tenant)
     tenant_id: str = "default"
     cnpj: str = "35710481000103"
-    razao_social: str = "JORDAN SANTOS DE JESUS LTDA"
+    razao_social: str = "CONECTAMAIS ELETRONICA LTDA"
 
     # Ambiente
     ambiente: str = "producao"  # producao ou homologacao
@@ -60,7 +60,7 @@ class FileCredentialConfig:
             cert_pem_path=os.getenv("CERT_PEM_PATH", "/opt/conecta-pro/credentials/certificates/a1_cert.pem"),
             key_pem_path=os.getenv("KEY_PEM_PATH", "/opt/conecta-pro/credentials/certificates/a1_key.pem"),
             cnpj=os.getenv("EMPRESA_CNPJ", "35710481000103"),
-            razao_social=os.getenv("EMPRESA_RAZAO_SOCIAL", "JORDAN SANTOS DE JESUS LTDA"),
+            razao_social=os.getenv("EMPRESA_RAZAO_SOCIAL", "CONECTAMAIS ELETRONICA LTDA"),
             ambiente=os.getenv("SEFAZ_ENVIRONMENT", "1") == "1" and "producao" or "homologacao",
         )
 

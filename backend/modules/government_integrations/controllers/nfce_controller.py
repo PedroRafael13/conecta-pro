@@ -86,7 +86,7 @@ async def emitir_nfce(current_user: CurrentActiveUser, request: NFCeEmissaoReque
         # Montar dados do emitente (em producao, vem do banco)
         emitente = Emitente(
             cnpj="35710481000103",
-            razao_social="JORDAN SANTOS DE JESUS LTDA",
+            razao_social="CONECTAMAIS ELETRONICA LTDA",
             nome_fantasia="CONECTA MAIS",
             inscricao_estadual="054265746",
             regime_tributario="1",  # Simples Nacional
