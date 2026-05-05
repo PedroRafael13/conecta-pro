@@ -4402,3 +4402,15 @@ gedeon/financial/health_occupational ausentes em operacional/priority/nfse/sefaz
 | `/api/v1/people-management/dp/contratos/templates` | `/api/v1/people-management/hr/contracts/...` (prefix=/contracts) |
 
 **Princípio:** §13.1 — todos os arquivos de código lidos antes de qualquer conclusão; INV-9 — apenas "confirmado" / "não encontrado"; INV-2 — zero modificações de código.
+
+## §68 — Sync gedeon + financial/tasks + health_occupational/tasks nos workers (CPRO 12 T2-C)
+**Data:** 2026-05-05
+**Módulos sincronizados:**
+- gedeon/ → 5 workers (operacional, integrations, priority, nfse, sefaz)
+- financial/tasks.py → 5 workers (idem)
+- health_occupational/tasks/ → 4 workers (operacional, priority, nfse, sefaz)
+**Limpeza:** diretório aninhado health_occupational/health_occupational/ removido do beat
+**Diagnóstico:** diretórios existiam nos containers mas estavam vazios (docker cp com dir existente cria subdirectório). Fix: rm -rf + recopy.
+**Resultado:** 5/5 workers passaram para (healthy). Beat continua unhealthy (BUG-2 punch_controller — escopo T1, fora deste prompt).
+**Imports validados:** gedeon.kronos_tasks: OK, financial.tasks: OK, health_occupational.tasks: OK em todos os workers.
+**Princípio:** §13.1 ausência verificada antes do cp; INV-9 apenas tasks.py (não financial/ inteiro); INV-10 warning integrations documentado, não corrigido.
