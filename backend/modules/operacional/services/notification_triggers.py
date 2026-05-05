@@ -10,7 +10,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from modules.config.models.tenant import Tenant, TenantStatus
+from modules.config.models.tenant import Tenant
 from modules.notifications.models import QueuePriority
 from modules.notifications.services.push_service import PushNotificationService
 from modules.operacional.models.employee import Employee
@@ -36,7 +36,7 @@ def _get_active_tenants(db: Session) -> list[UUID]:
     rows = (
         db.query(Tenant.id)
         .filter(
-            Tenant.status == TenantStatus.ATIVO,
+            Tenant.status == "active",
             Tenant.ativo.is_(True),
         )
         .all()
