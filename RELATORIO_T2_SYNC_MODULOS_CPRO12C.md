@@ -101,12 +101,36 @@ conecta-pro-celery-beat             (unhealthy) ⚠️  BUG-2 punch_controller (
 
 ---
 
+## Incidente de Deploy — Overwrite acidental + Recovery
+
+Durante cópia de `health_occupational/tasks/`, o comando:
+```bash
+docker cp backend/modules/health_occupational/tasks/__init__.py $CONTAINER:/app/modules/health_occupational/
+```
+sobrescreveu o `__init__.py` do módulo raiz com o `__init__.py` do tasks/.
+**Recovery imediato:** restaurado via `docker cp backend/modules/health_occupational/__init__.py` em todos os 4 containers.
+**Verificação:** import `verificar_asos_vencendo` OK em 4/4 após recovery.
+
+---
+
+## STEP 7 — Imports validados pós-SIGHUP
+
+| Container | gedeon.kronos_tasks | financial.tasks | health_occupational.tasks |
+|-----------|---------------------|-----------------|--------------------------|
+| celery-operacional | ✅ OK | ✅ OK | ✅ OK |
+| celery-integrations | ✅ OK | ✅ OK | N/A |
+| celery-priority | ✅ OK | ✅ OK | ✅ OK |
+| celery-nfse | ✅ OK | ✅ OK | ✅ OK |
+| celery-sefaz | ✅ OK | ✅ OK | ✅ OK |
+
+---
+
 ## Commits
 
 | Tipo | Hash | Mensagem |
 |------|------|----------|
-| docs | (ver abaixo) | §68 CONTRACTS_GEDEON.md |
-| deploy | (ver abaixo) | chore: sync gedeon+financial+health_occupational |
+| docs | `5fc425f5` | `docs(contracts): §68 — Sync gedeon/financial/health_occupational workers (CPRO12 T2-C)` |
+| deploy | `3da0d7c4` | `chore(deploy): gedeon+financial/tasks+health_occupational/tasks→5 workers (§68) [CPRO12 T2-C]` |
 
 ---
 
