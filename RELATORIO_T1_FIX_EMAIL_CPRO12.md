@@ -96,13 +96,13 @@ if resultado.get("sucesso"):
 
 | Hipótese | Status | Evidência |
 |----------|--------|-----------|
-| H1: ged_clients.contact_email populado para kits | ✅ CONFIRMADO | gelain@, michelangelo@, villapassaros@, PRIME.ARENAA@ |
-| H2: query correta usa ged_clients | ✅ CONFIRMADO | `SELECT contact_email FROM ged_clients WHERE id=...` linha 81 |
-| H3: ponto claro no gdrive_controller para UPDATE | ✅ CONFIRMADO | após linha 254 `resultado_email = ...` |
+| H1: ged_clients.contact_email populado para kits | ✅ CONFIRMADO | Query auditoria: 5 kits com email — dfcfb2af→gelain@, c3b20b43→gelain@, af4f1cdf→parisevillage@, a5fa41d8→greenhills@, c4053743→villadei@ |
+| H2: query correta usa ged_clients | ✅ CONFIRMADO | grep auditoria: `GedClient` + `contact_email` em kit_controller linhas 107,129,303,321,326,331,341,349,352,357 |
+| H3: ponto claro no gdrive_controller para UPDATE | ✅ CONFIRMADO | grep auditoria: `# G2: Atualizar sent_at` linha 256 gdrive_controller; `enviar_kit_por_email` linha 250 |
 | H4: JOIN kit_controller funcional (não quebrado) | ✅ CONFIRMADO | token expirado = falso positivo; HTTP 201 com token válido |
 | H5: EmailKitService aceita share_link como parâmetro | ✅ CONFIRMADO | `def enviar_kit_por_email(self, ..., share_link: str | None = None, ...)` linha 172 |
 | H6: email real via ged_clients | ✅ CONFIRMADO | michelangelo@conectamais.pro, gelain@conectamais.pro |
-| H7: completion_percentage tipo numeric | ✅ CONFIRMADO | `float(kit.completion_percentage or 0)` — Decimal/numeric do DB |
+| H7: completion_percentage tipo numeric | ✅ CONFIRMADO | information_schema: `completion_percentage | numeric` + `sent_at | timestamp with time zone` + `sent_method | character varying` + `sent_to | character varying` |
 | H8: py_compile OK | ✅ CONFIRMADO | 3/3 arquivos — email_kit_service.py, gdrive_controller.py, kit_controller.py |
 
 ---
@@ -142,6 +142,45 @@ Celery workers continuam usando `kill -HUP 1` via sync_celery_workers.sh (difere
 | STEP 9 — hot-copy + reload + smoke test GET 200 + teste validação 400 | ✅ |
 | STEP 10 — 2 commits separados + push + backups removidos | ✅ c23a12c8 (docs) + 86940ba7 (code) |
 | INV-12 — nenhum email real enviado durante o teste | ✅ |
+
+---
+
+## Auditoria Pós-Fix (CAMADA 3 — validações explícitas)
+
+### H1 — Query executada:
+```sql
+SELECT gdk.id, gc.contact_email
+FROM ged_document_kits gdk
+JOIN ged_clients gc ON gc.id = gdk.client_id
+WHERE gc.contact_email IS NOT NULL LIMIT 5
+```
+Resultado: 5 kits com emails confirmados (dfcfb2af, c3b20b43, af4f1cdf, a5fa41d8, c4053743).
+
+### H2 — grep kit_controller.py pós-fix:
+```
+linha 107: from modules.people_management.ged.models.client import GedClient
+linha 321: client_result = await db.execute(select(GedClient).where(GedClient.id == kit.client_id))
+linha 326: if not client.contact_email:
+linha 341: destinatario_override=client.contact_email,
+```
+G4 confirmado — delegação completa para EmailKitService.
+
+### H3 — grep gdrive_controller.py pós-fix:
+```
+linha 250: resultado_email = await asyncio.to_thread(_email_svc.enviar_kit_por_email, ...)
+linha 256: # G2: Atualizar sent_at após envio bem-sucedido
+```
+G2 confirmado — sent_at atualizado após envio.
+
+### H7 — information_schema.columns para ged_document_kits:
+```
+completion_percentage | numeric
+status                | character varying
+sent_at               | timestamp with time zone
+sent_method           | character varying
+sent_to               | character varying
+```
+Tipos confirmados — `float()` necessário para numeric, colunas G2 existem no schema.
 
 ---
 
