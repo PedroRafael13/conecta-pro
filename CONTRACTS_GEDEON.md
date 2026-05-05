@@ -4746,3 +4746,84 @@ WHERE ea.ativo = true AND e.cpf = :cpf;
 
 **Ver:** RELATORIO_T2_DIAG_DP_CPRO12.md
 **Princípio:** INV-2 zero alterações; zero writes em banco
+
+
+## §94 — Agente HERMES implementado + 3 meses retroativos (CPRO12 T4-HERMES)
+**Data:** 2026-05-05
+
+### O que foi implementado
+
+`backend/modules/gedeon/agents/hermes.py` — novos métodos de matching na classe `Hermes`:
+
+| Método | Responsabilidade |
+|--------|-----------------|
+| `_build_cond_to_ged_map(db)` | Mapeia condominios.id → ged_clients.id via word-set intersection (espelho de kit_builder_service._match_onvio_docs) |
+| `_vincular_empresa(db, cond_to_ged, categoria, caminho_local, cond_id, ref_date)` | Vincula doc empresa/condomínio ao slot ged_kit_documents (INV-5: só slots vazios) |
+| `_vincular_funcionario(db, cond_to_ged, categoria, caminho_local, employee_id, ref_date)` | Vincula doc per-employee via employee_alocacoes → condominio → ged_client → kit → slot |
+| `_recalcular_completude_mes(db, ref_date)` | Recalcula completion_percentage de todos kits do mês (INV-12) |
+| `processar_mes(mes_ref)` | Orquestra o matching completo: get_sync_db → cond_to_ged → docs → vincular → commit → recalcular → commit |
+
+### Novos mapas de conversão
+
+```python
+# Empresa/condomínio (19 categorias):
+MAPA_TIPOS_ONVIO_EMPRESA = { "folha_pagamento": "folha_pagamento", "dctfweb_recibo": "dctfweb_recibo", ... }
+
+# Per-funcionário (6 categorias):
+MAPA_TIPOS_ONVIO_FUNCIONARIO = {
+    "recibo_folha": "contracheque",
+    "ficha_registro": "ficha_empregado",
+    "contrato_trabalho": "contrato_trabalho",
+    "atestado": "aso",
+    "folha_ponto": "folha_ponto",
+    "escala_mes": "escala_mes",
+}
+```
+
+### Fluxo de matching
+
+```
+onvio_documents (mes_ref, caminho_local IS NOT NULL)
+    ├── doc_scope=funcionario + referente_a_employee_id → employee_alocacoes → condominio_id
+    │       → cond_to_ged → ged_client_id → kit → slot (employee_id + document_type) → UPDATE file_path
+    └── condominio_id SET → cond_to_ged → ged_client_id → kit → slot (document_type, employee_id IS NULL) → UPDATE file_path
+```
+
+### Celery task adicionada
+
+`backend/modules/gedeon/tasks/kronos_tasks.py`:
+```python
+@shared_task(name="gedeon.hermes_vincular_docs_mes", bind=True, max_retries=3)
+def hermes_vincular_docs_mes(self, mes_ref: str | None = None):
+    hermes = Hermes(); return hermes.processar_mes(mes_ref)
+```
+
+### Beat schedule adicionado
+
+`backend/celery_app.py` — `gedeon-hermes-vincular-docs-0900`:
+- `schedule`: `crontab(day_of_month="1", hour="9", minute="0")`
+- `args`: `[None]` → mês corrente
+- `queue`: `gov.batch`
+
+### Invariantes respeitados
+
+| INV | Regra | Implementação |
+|-----|-------|---------------|
+| INV-5 | Nunca sobrescrever file_path já preenchido | `WHERE file_path IS NULL OR file_path = ''` |
+| INV-12 | Recalcular completion_percentage após vincular | `_recalcular_completude_mes()` pós-commit |
+| INV-3 | Código existente não modificado | Apenas métodos novos adicionados à classe Hermes |
+
+### py_compile — 3/3 OK
+
+```
+hermes.py OK | kronos_tasks.py OK | celery_app.py OK
+```
+
+## §92 — Fix DP: operacional.ai hot-copy + endpoints HR online (CPRO12 T3-FIX-DP)
+**Data:** 2026-05-05
+**Fix:** `docker cp backend/modules/operacional/ai/ conecta-pro-backend:/app/modules/operacional/ai/`
+**Causa raiz corrigida:** `No module named 'modules.operacional.ai'` → 14+ sub-routers do HR falhavam
+**Resultado:** Modulo Operacoes OK (15:50:40) + Modulo People Management OK
+**Endpoint GEDEON:** `GET /api/v1/people-management/hr/employees/cpf/{cpf}` → 200 ✅ (INV-9: já existe, não criado)
+**Nota trailing slash:** `GET /api/v1/operacional/allocations/` (com /) retorna 200; sem / retorna 404 (comportamento FastAPI)
+**INV-7 (6/6):** /hr/employees/cpf ✅ | /hr/employees ✅ | /hr/employees/search ✅ | /hr/employees/{id} ✅ | /allocations/ ✅ | /allocations/employee/{id} ✅
