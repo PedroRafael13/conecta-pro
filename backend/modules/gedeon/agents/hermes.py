@@ -455,6 +455,26 @@ class Hermes:
         """Vincular doc per-employee ao slot correspondente no kit."""
         from sqlalchemy import text
 
+        # Para categorias Inter: buscar transações e logar (INV-10, INV-11)
+        if categoria in TIPOS_INTER and employee_id:
+            try:
+                emp_row = db.execute(
+                    text("SELECT nome FROM employees WHERE id = CAST(:id AS uuid)"),
+                    {"id": employee_id},
+                ).fetchone()
+                if emp_row:
+                    mes_fmt = ref_date[5:7] + "." + ref_date[:4]  # "2026-03-01" → "03.2026"
+                    resultado = self.buscar_pagamentos_inter(emp_row[0], mes_fmt, db)
+                    logger.info(
+                        "HERMES Inter: %s (%s) → %d txs R$%.2f",
+                        emp_row[0],
+                        mes_fmt,
+                        resultado["total_transacoes"],
+                        resultado["total_valor"],
+                    )
+            except Exception as exc:
+                logger.debug("HERMES Inter lookup falhou: %s", exc)
+
         kit_doc_type = MAPA_TIPOS_ONVIO_FUNCIONARIO.get(categoria)
         if not kit_doc_type:
             return False
