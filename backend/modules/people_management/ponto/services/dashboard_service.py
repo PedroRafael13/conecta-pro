@@ -326,6 +326,14 @@ def _fetch_solides_entities(token: str, entity_path: str, start_date: str, end_d
             return data.get("content", data.get("data", []))
         return []
     except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            # Endpoint descontinuado ou plano sem modulo — nao e erro, apenas sem dados
+            logger.warning(
+                "Tangerino API endpoint indisponivel (404) para %s — descontinuado ou fora do plano. "
+                "Ausencias/ocorrencias nao importadas neste ciclo.",
+                entity_path,
+            )
+            return []
         logger.warning("Tangerino API HTTP error %s for %s: %s", exc.response.status_code, entity_path, exc)
         raise
     except Exception as exc:
