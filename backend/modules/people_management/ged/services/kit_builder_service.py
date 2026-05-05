@@ -31,6 +31,18 @@ MAPA_TIPOS_ONVIO: dict[str, str] = {
     "fgts_relatorio": "relatorio_gfd_fgts",
     "fgts_consignado": "comp_pag_fgts",
     "fgts_consignado_relatorio": "relatorio_gfd_fgts",
+    # Expansão CPRO12 T5 — 11 categorias empresa-level (100% com doc_scope)
+    "das_simples_nacional": "das_simples_nacional",
+    "parcelamento_simples": "parcelamento_simples",
+    "guia_issqn": "guia_issqn",
+    "dctfweb_resumo_creditos": "dctfweb_resumo_creditos",
+    "dctfweb_resumo_debitos": "dctfweb_resumo_debitos",
+    "dctfweb_creditos": "dctfweb_creditos",
+    "dctfweb_debitos": "dctfweb_debitos",
+    "decimo_terceiro": "decimo_terceiro",
+    "empresa_docs": "outro",
+    "inss_guia": "gps_inss",
+    "dar_sefaz": "dar_sefaz",
 }
 
 # Nomes de exibição para docs criados via Onvio matching
@@ -42,6 +54,18 @@ _NOMES_DOCS_ONVIO: dict[str, str] = {
     "gfd_fgts_mensal": "Guia FGTS Mensal",
     "relatorio_gfd_fgts": "Relatório GFD FGTS",
     "comp_pag_fgts": "Comprovante Pagamento FGTS",
+    # Expansão CPRO12 T5
+    "das_simples_nacional": "DAS Simples Nacional",
+    "parcelamento_simples": "Parcelamento Simples Nacional",
+    "guia_issqn": "Guia ISSQN",
+    "dctfweb_resumo_creditos": "DCTFWeb Resumo de Créditos",
+    "dctfweb_resumo_debitos": "DCTFWeb Resumo de Débitos",
+    "dctfweb_creditos": "DCTFWeb Créditos",
+    "dctfweb_debitos": "DCTFWeb Débitos",
+    "decimo_terceiro": "Décimo Terceiro Salário",
+    "outro": "Documentos da Empresa",
+    "gps_inss": "Guia INSS (GPS)",
+    "dar_sefaz": "DAR SEFAZ",
 }
 
 # Stop words ignoradas no fuzzy match de nomes de clientes/condomínios

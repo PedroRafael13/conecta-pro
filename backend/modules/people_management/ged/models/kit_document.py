@@ -60,6 +60,21 @@ class DocumentType(StrEnum):
     NFS_SERVICO = "nfs_servico"
     ESCALA_MES = "escala_mes"
 
+    # Documentos fiscais — Simples Nacional / ISSQN / SEFAZ
+    DAS_SIMPLES_NACIONAL = "das_simples_nacional"
+    PARCELAMENTO_SIMPLES = "parcelamento_simples"
+    GUIA_ISSQN = "guia_issqn"
+    DAR_SEFAZ = "dar_sefaz"
+
+    # DCTFWeb — variantes (resumos, créditos, débitos)
+    DCTFWEB_RESUMO_CREDITOS = "dctfweb_resumo_creditos"
+    DCTFWEB_RESUMO_DEBITOS = "dctfweb_resumo_debitos"
+    DCTFWEB_CREDITOS = "dctfweb_creditos"
+    DCTFWEB_DEBITOS = "dctfweb_debitos"
+
+    # Folha — eventos especiais
+    DECIMO_TERCEIRO = "decimo_terceiro"
+
     # Genérico
     OUTRO = "outro"
 
