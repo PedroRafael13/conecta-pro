@@ -4315,3 +4315,17 @@ BAIXO: remover diretório duplicado health_occupational/health_occupational/ do 
 
 **Princípio:** §13.1 estado real coletado de TODOS os 8 containers antes de qualquer conclusão.
 §13.4 ZERO alterações em containers (read-only).
+
+## §64 — Fix TenantStatus enum completo: PT-BR → inglês (CPRO 12 T2-B)
+**Data:** 2026-05-05
+**Arquivo:** backend/modules/config/models/tenant.py
+**Problema:** 5 dos 6 valores do enum TenantStatus em PT-BR incompatíveis com DB.
+T4 CPRO12 corrigiu apenas ATIVO cirurgicamente em notification_triggers.py.
+Este fix completa o alinhamento do próprio enum — fonte de verdade do Python.
+**Valores alterados:** ativo→active, inativo→inactive, suspenso→suspended,
+  bloqueado→blocked, cancelado→cancelled. TRIAL mantido ("trial" já correto).
+**Testes atualizados:** 1 arquivo — test_config_model.py:648-653 (6 assertions .value).
+**Resultado testes:** 105 passed, 0 failed.
+**Princípio:** §13.1 todos os 14 usos lidos antes de alterar; INV-5 apenas .value
+  alterado, .name (ATIVO, INATIVO, SUSPENSO, BLOQUEADO, CANCELADO) preservado —
+  zero impacto nos 14 usos do codebase. §13.4 escopo restrito a TenantStatus.
