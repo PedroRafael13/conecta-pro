@@ -645,12 +645,12 @@ class TestEnums:
 
     def test_tenant_status_values(self):
         """Testa valores de TenantStatus."""
-        assert TenantStatus.ATIVO.value == "ativo"
-        assert TenantStatus.INATIVO.value == "inativo"
-        assert TenantStatus.SUSPENSO.value == "suspenso"
-        assert TenantStatus.BLOQUEADO.value == "bloqueado"
+        assert TenantStatus.ATIVO.value == "active"
+        assert TenantStatus.INATIVO.value == "inactive"
+        assert TenantStatus.SUSPENSO.value == "suspended"
+        assert TenantStatus.BLOQUEADO.value == "blocked"
         assert TenantStatus.TRIAL.value == "trial"
-        assert TenantStatus.CANCELADO.value == "cancelado"
+        assert TenantStatus.CANCELADO.value == "cancelled"
 
     def test_tenant_plan_values(self):
         """Testa valores de TenantPlan."""

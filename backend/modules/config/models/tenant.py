@@ -17,12 +17,12 @@ from core.database import Base
 class TenantStatus(StrEnum):
     """Status do tenant."""
 
-    ATIVO = "ativo"
-    INATIVO = "inativo"
-    SUSPENSO = "suspenso"
-    BLOQUEADO = "bloqueado"
+    ATIVO = "active"
+    INATIVO = "inactive"
+    SUSPENSO = "suspended"
+    BLOQUEADO = "blocked"
     TRIAL = "trial"
-    CANCELADO = "cancelado"
+    CANCELADO = "cancelled"
 
 
 class TenantPlan(StrEnum):
