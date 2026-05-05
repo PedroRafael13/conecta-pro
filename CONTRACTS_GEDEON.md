@@ -4888,3 +4888,39 @@ onvio_doc_scope_classifier.py OK | kit_builder_service.py OK | onvio_controller.
 ```
 
 **Princípio:** §13.1 estado verificado antes; INV-8 zero doc_scope NULL; INV-3 apenas fixes nas 4 sub-tasks identificadas; INV-9 is_matriz Grupo A não viola §23.11 (scope preservado — mas reclassificado para empresa_matriz quando CNPJ/nome detectado)
+
+## §96 — Fix Banco Inter: raw_payload + hot-copy módulo inter/ (CPRO12 T2-FIX-INTER)
+**Data:** 2026-05-05
+
+### BLOQUEIO 1 — inter/ ausente do container (25 endpoints retornavam 404)
+- **Causa raiz:** Hot-copy anterior copiou apenas backend, não o container em execução; o SIGKILL (INV-7) não reiniciou o container (0 restarts, PID 1 = uvicorn direto)
+- **Fix:** SIGTERM ao PID 1 → uvicorn encerrou graciosamente → Docker restart policy reiniciou → novo processo importou inter/ do filesystem copiado
+- **Resultado:** `GET /api/v1/financeiro/inter/transactions` → HTTP 200 ✅ | `GET /api/v1/financeiro/inter/saldo` → HTTP 200 ✅
+
+### BLOQUEIO 2 — `raw_payload=None` hardcoded (CPF nunca salvo)
+- **Causa raiz:** `inter_sync_service.py:82` — `"raw": None` hardcoded; INSERT não incluía `detalhes_destinatario`
+- **Fix em `modules/integrations/inter/inter_sync_service.py`:**
+  - `import json` adicionado
+  - `raw_dict` construído com todos os campos da `BankTransaction`
+  - `detalhes_dict` populado se `counterpart_document` ou `counterpart_name` presentes
+  - INSERT expandido para incluir `detalhes_destinatario`
+  - `CAST(:raw AS jsonb)` (não `::jsonb` — asyncpg não suporta `::` com named params)
+  - `ON CONFLICT DO UPDATE SET raw_payload/detalhes_destinatario WHERE raw_payload IS NULL` — backfill automático de linhas existentes
+- **py_compile:** OK ✅
+- **Resultado pós-re-sync:** 1027/1027 linhas com `raw_payload` preenchido ✅
+
+### BLOQUEIO 3 — 46 payroll_payments Mar/2026 pendente_pagamento
+- **Re-sync 60 dias:** 1027 transações processadas (536 existentes backfilled + 491 novas) ✅
+- **Conciliação Mar/2026:** `preparar_competencia` criou 46 registros `previsto` em `inter_conciliacao_folha` ✅
+- **Resultado conciliação:** 0 matches fortes/médios — limitação documentada:
+  1. Inter adapter não retorna `counterpart_document` → `detalhes_destinatario` NULL → sem match por CPF
+  2. Salários Mar/2026 pagos via SOLIDES (batch) e não PIX individual por funcionário
+- **Próximo passo (fora escopo T2):** Corrigir Inter adapter para extrair CPF do response da API; ou implementar matching SOLIDES→employee
+
+### Invariantes respeitados
+| INV | Regra | Status |
+|-----|-------|--------|
+| INV-3 | Código existente não modificado além do fix | ✅ — apenas inter_sync_service.py:82 |
+| INV-6 | py_compile antes do deploy | ✅ |
+| INV-9 | main_production.py não modificado | ✅ |
+| INV-10 | Re-sync read-only do banco real | ✅ — ON CONFLICT garante idempotência |
