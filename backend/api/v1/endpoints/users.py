@@ -2,6 +2,8 @@
 Endpoints de gerenciamento de usuarios.
 """
 
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -14,6 +16,50 @@ from core.models import User
 from core.schemas.user import UserResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+JORDAN_EMAIL = "jjesus@conectamais.pro"
+MODULOS_VALIDOS = {
+    "module:financeiro",
+    "module:fiscal",
+    "module:dp",
+    "module:operacional",
+    "module:crm",
+    "module:ged",
+    "module:dev",
+}
+
+
+class UserListItem(BaseModel):
+    id: UUID
+    email: str
+    name: str
+    role: str
+    permissions: list[str]
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_user(cls, u: User) -> "UserListItem":
+        return cls(
+            id=u.id,
+            email=u.email,
+            name=u.name,
+            role=u.role,
+            permissions=list(u.permissions or []),
+            is_active=u.is_active,
+        )
+
+
+class UserListItemResponse(BaseModel):
+    users: list[UserListItem]
+    total: int
+    page: int
+    per_page: int
+
+
+class UserPermissionsUpdate(BaseModel):
+    permissions: list[str]
 
 
 # Schemas para gerenciamento de usuarios
@@ -60,7 +106,7 @@ def require_admin(current_user: User = Depends(get_current_active_user)) -> User
     return current_user
 
 
-@router.get("/", response_model=UserListResponse)
+@router.get("/", response_model=UserListItemResponse)
 async def list_users(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -68,39 +114,77 @@ async def list_users(
     search: str | None = Query(None, description="Buscar por nome ou email"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin),
-) -> UserListResponse:
+) -> UserListItemResponse:
     """Lista todos os usuarios (admin only)."""
     query = select(User)
     count_query = select(func.count(User.id))
 
-    # Filtrar por role
     if role:
         query = query.where(User.role == role)
         count_query = count_query.where(User.role == role)
 
-    # Buscar por nome ou email
     if search:
         search_filter = f"%{search}%"
         query = query.where((User.name.ilike(search_filter)) | (User.email.ilike(search_filter)))
         count_query = count_query.where((User.name.ilike(search_filter)) | (User.email.ilike(search_filter)))
 
-    # Paginacao
     offset = (page - 1) * per_page
     query = query.offset(offset).limit(per_page).order_by(User.created_at.desc())
 
-    # Executar queries
     result = await db.execute(query)
     users = result.scalars().all()
 
     count_result = await db.execute(count_query)
     total = count_result.scalar()
 
-    return UserListResponse(
-        users=[UserResponse.model_validate(u) for u in users],
+    return UserListItemResponse(
+        users=[UserListItem.from_user(u) for u in users],
         total=total,
         page=page,
         per_page=per_page,
     )
+
+
+@router.patch("/{user_id}/permissions", response_model=UserListItem)
+async def update_user_permissions(
+    user_id: str,
+    body: UserPermissionsUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> UserListItem:
+    """Atualiza permissões de módulos de um usuário (apenas Jordan)."""
+    if current_user.email != JORDAN_EMAIL:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas Jordan Jesus pode gerenciar permissões de módulos.",
+        )
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+
+    # Jordan não pode ter suas permissões alteradas
+    if user.email == JORDAN_EMAIL:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="As permissões de Jordan Jesus não podem ser alteradas.",
+        )
+
+    # Módulo financeiro só Jordan pode ter — remover se presente
+    perms_limpas = [p for p in body.permissions if p in MODULOS_VALIDOS]
+    if "module:financeiro" in perms_limpas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Módulo financeiro é exclusivo de Jordan Jesus e não pode ser concedido a outros usuários.",
+        )
+
+    user.permissions = perms_limpas
+    await db.commit()
+    await db.refresh(user)
+
+    logger.info("Permissões atualizadas: %s → %s (por %s)", user.email, perms_limpas, current_user.email)
+    return UserListItem.from_user(user)
 
 
 @router.get("/pending", response_model=list[UserResponse])

@@ -46,6 +46,13 @@ const subModules = [
     icon: Mail,
     color: 'text-green-600 bg-green-50',
   },
+  {
+    title: 'Usuários & Permissões',
+    description: 'Gerir módulos acessíveis por usuário',
+    href: '/modulos/configuracoes/usuarios',
+    icon: Users,
+    color: 'text-indigo-600 bg-indigo-50',
+  },
 ];
 
 export default function ConfiguracoesPage() {
