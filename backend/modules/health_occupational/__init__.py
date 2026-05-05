@@ -135,4 +135,4 @@ try:
 except Exception as _e:
     import logging as _log
 
-    _log.getLogger(__name__).warning("Health Occupational: falha ao registrar subscribers: %s", _e)
+    _log.getLogger(__name__).debug("Health Occupational: integrations não disponível: %s", _e)
