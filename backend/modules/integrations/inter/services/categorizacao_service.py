@@ -526,6 +526,217 @@ class InterCategorizacaoService:
             "transacoes": txs,
         }
 
+    # ─── LINKAGEM HERMES → KIT GED ──────────────────────────────
+
+    def _build_cond_ged_map(self) -> dict[str, str]:
+        """Mapeia condominios.id → ged_clients.id por interseção de palavras significativas."""
+        _stop = {
+            "CONDOMINIO",
+            "CONDOMINIUM",
+            "RESIDENCIAL",
+            "EDIFICIO",
+            "VILLAGE",
+            "DO",
+            "DA",
+            "DE",
+            "DOS",
+            "DAS",
+            "E",
+            "O",
+            "A",
+            "EM",
+        }
+
+        def _sig(s: str) -> set[str]:
+            import unicodedata
+
+            nfkd = unicodedata.normalize("NFKD", (s or "").upper())
+            clean = "".join(c for c in nfkd if not unicodedata.combining(c))
+            return {w for w in clean.split() if w not in _stop and len(w) >= 3}
+
+        condominios = self.db.execute(text("SELECT id::text, nome FROM condominios WHERE ativo = true")).fetchall()
+        ged_clients = self.db.execute(text("SELECT id::text, name FROM ged_clients WHERE is_active = true")).fetchall()
+
+        mapping: dict[str, str] = {}
+        for cond_id, cond_nome in condominios:
+            cond_sig = _sig(cond_nome or "")
+            if not cond_sig:
+                continue
+            for ged_id, ged_name in ged_clients:
+                ged_sig = _sig(ged_name or "")
+                if cond_sig and ged_sig and (cond_sig <= ged_sig or ged_sig <= cond_sig):
+                    mapping[cond_id] = ged_id
+                    break
+        return mapping
+
+    def _encontrar_kit_document(
+        self,
+        employee_id: str,
+        document_type: str,
+        reference_month_date: str,
+        cond_ged_map: dict[str, str],
+    ) -> str | None:
+        """Retorna ged_kit_documents.id vazio para employee + doc_type + mês. None se não achar."""
+        aloc = self.db.execute(
+            text("""
+                SELECT condominio_id::text FROM employee_alocacoes
+                WHERE employee_id = CAST(:emp_id AS uuid) AND ativo = true
+                ORDER BY data_inicio DESC LIMIT 1
+            """),
+            {"emp_id": employee_id},
+        ).fetchone()
+        if not aloc:
+            return None
+
+        ged_client_id = cond_ged_map.get(aloc[0])
+        if not ged_client_id:
+            return None
+
+        kit = self.db.execute(
+            text("""
+                SELECT id::text FROM ged_document_kits
+                WHERE client_id = CAST(:cid AS uuid)
+                  AND reference_month = CAST(:ref AS date)
+            """),
+            {"cid": ged_client_id, "ref": reference_month_date},
+        ).fetchone()
+        if not kit:
+            return None
+
+        slot = self.db.execute(
+            text("""
+                SELECT id::text FROM ged_kit_documents
+                WHERE kit_id = CAST(:kid AS uuid)
+                  AND document_type = :dt
+                  AND employee_id = CAST(:emp_id AS uuid)
+                  AND (file_path IS NULL OR file_path = '')
+                LIMIT 1
+            """),
+            {"kid": kit[0], "dt": document_type, "emp_id": employee_id},
+        ).fetchone()
+        return slot[0] if slot else None
+
+    def processar_linkagem_bulk(self, mes_ref: str | None = None) -> dict:
+        """
+        Vincula inter_transactions ao slot ged_kit_documents correspondente.
+
+        Para cada transação com categoria de kit e kit_document_id IS NULL:
+        1. Resolve beneficiário pelo nome (counterpart_name / detalhes_destinatario.nome)
+        2. Encontra employee via ILIKE (primeiro + último nome)
+        3. Encontra condomínio via alocações ativas
+        4. Encontra kit pelo mês + ged_client
+        5. Encontra slot vazio no kit para o employee + document_type
+        6. UPDATE inter_transactions.kit_document_id
+        7. UPDATE ged_kit_documents.file_path, source_record_id, source_module
+        """
+
+        date_filter = ""
+        params: dict = {}
+        if mes_ref:
+            mes, ano = mes_ref.split(".")
+            import calendar as _cal
+
+            ultimo = _cal.monthrange(int(ano), int(mes))[1]
+            date_filter = "AND it.data_lancamento BETWEEN :inicio AND :fim"
+            params["inicio"] = f"{ano}-{mes}-01"
+            params["fim"] = f"{ano}-{mes}-{ultimo}"
+
+        txs = self.db.execute(
+            text(f"""
+                SELECT
+                    it.id::text AS tx_id,
+                    it.data_lancamento,
+                    COALESCE(
+                        it.detalhes_destinatario->>'nome',
+                        it.raw_payload->>'counterpart_name'
+                    ) AS beneficiario,
+                    itc.categoria,
+                    itc.document_type
+                FROM inter_transactions it
+                JOIN inter_transaction_categorias itc ON itc.transaction_id = it.id
+                WHERE itc.categoria IN ('salario','vale_transporte','vale_alimentacao','vt_va_combinado')
+                  AND it.kit_document_id IS NULL
+                  AND itc.incluir_no_kit = true
+                  {date_filter}
+                ORDER BY it.data_lancamento
+            """),
+            params,
+        ).fetchall()
+
+        cond_ged_map = self._build_cond_ged_map()
+        vinculados = 0
+        sem_funcionario = 0
+        sem_slot = 0
+
+        for tx in txs:
+            tx_id = tx.tx_id
+            beneficiario = (tx.beneficiario or "").upper().strip()
+            doc_type = tx.document_type
+            if not beneficiario or not doc_type:
+                sem_funcionario += 1
+                continue
+
+            primeiro, ultimo = _split_nome(beneficiario)
+
+            emp = self.db.execute(
+                text("""
+                    SELECT id::text FROM employees
+                    WHERE UPPER(nome) ILIKE :primeiro AND UPPER(nome) ILIKE :ultimo
+                    LIMIT 1
+                """),
+                {"primeiro": f"%{primeiro}%", "ultimo": f"%{ultimo}%"},
+            ).fetchone()
+            if not emp:
+                sem_funcionario += 1
+                continue
+
+            ref_date = tx.data_lancamento.replace(day=1).strftime("%Y-%m-%d")
+            slot_id = self._encontrar_kit_document(emp[0], doc_type, ref_date, cond_ged_map)
+            if not slot_id:
+                sem_slot += 1
+                continue
+
+            self.db.execute(
+                text("""
+                    UPDATE inter_transactions
+                    SET kit_document_id = CAST(:kid AS uuid), updated_at = NOW()
+                    WHERE id = CAST(:tx_id AS uuid)
+                """),
+                {"kid": slot_id, "tx_id": tx_id},
+            )
+            self.db.execute(
+                text("""
+                    UPDATE ged_kit_documents
+                    SET file_path = :fp,
+                        source_record_id = CAST(:tx_id AS uuid),
+                        source_module = 'inter',
+                        updated_at = NOW()
+                    WHERE id = CAST(:slot_id AS uuid)
+                """),
+                {
+                    "fp": f"/inter/comprovante/{tx_id}",
+                    "tx_id": tx_id,
+                    "slot_id": slot_id,
+                },
+            )
+            vinculados += 1
+
+        self.db.commit()
+        logger.info(
+            "HERMES bulk link: %d vinculados, %d sem_funcionario, %d sem_slot (mes_ref=%s)",
+            vinculados,
+            sem_funcionario,
+            sem_slot,
+            mes_ref or "todos",
+        )
+        return {
+            "vinculados": vinculados,
+            "sem_funcionario": sem_funcionario,
+            "sem_slot": sem_slot,
+            "total_candidatos": len(txs),
+            "mes_ref": mes_ref or "todos",
+        }
+
     def stats_mes(self, mes_ref: str) -> dict:
         """Estatísticas de categorização do mês."""
         mes, ano = mes_ref.split(".")

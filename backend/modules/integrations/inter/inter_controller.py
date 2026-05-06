@@ -585,6 +585,24 @@ def auto_processar_categorias(
     return svc.auto_processar(mes_ref=mes_ref)
 
 
+@router.post("/hermes/linkar", status_code=200)
+def hermes_linkar_bulk(
+    mes_ref: str | None = Query(None, description="Mês MM.YYYY — sem valor: todos os meses"),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_sync_db_dependency),
+):
+    """
+    HERMES bulk link — vincula inter_transactions ao slot ged_kit_documents correto.
+    Para cada transação com categoria de kit (salario/VT/VA) e kit_document_id IS NULL:
+    resolve employee → condomínio → kit → slot e atualiza ambas as tabelas.
+    Idempotente: pula transações já vinculadas.
+    """
+    from modules.integrations.inter.services.categorizacao_service import InterCategorizacaoService
+
+    svc = InterCategorizacaoService(db)
+    return svc.processar_linkagem_bulk(mes_ref=mes_ref)
+
+
 @router.get("/categorias/stats")
 def stats_categorias(
     mes_ref: str = Query(..., description="Mês de referência — formato MM.YYYY"),
