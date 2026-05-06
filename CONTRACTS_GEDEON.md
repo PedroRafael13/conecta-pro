@@ -5178,3 +5178,15 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 - 1007 com nome: auto_categorizar_colaborador() por (nome, mes_ref)
 - 105 sem nome: heurística por valor
 - Meses processados: 03.2026, 04.2026, 05.2026
+
+## §111 — Sync manual Sólides 2026-05-06
+**Data:** 2026-05-06
+**Executor:** Claude Sonnet 4.6 [session: t5] [module: ged]
+**Endpoint usado:** POST /api/v1/integrations/solides/sync/trigger (full_sync=true)
+**Último sync full anterior:** 2026-05-05 21:48 (89 itens, executado automaticamente)
+**Resultado:** status=completed, items_processed=89, items_created=45, items_updated=0, items_failed=0, duration_ms=3805
+**Funcionários antes:** 45 ativos / 13 inativos / 58 total
+**Funcionários depois:** 45 ativos / 13 inativos / 58 total (sem alterações)
+**Novos/alterados:** nenhum — último updated_at em employees = 2026-04-10 (dados já sincronizados)
+**Observação:** items_created=45 reflete o comportamento de upsert do connector (empregados re-avaliados), não novos registros. Zero mudanças efetivas no banco.
+**Diagnóstico endpoint:** /api/v1/dp/solides/sync/status retorna 404 — endpoint real é /api/v1/integrations/solides/sync/trigger
