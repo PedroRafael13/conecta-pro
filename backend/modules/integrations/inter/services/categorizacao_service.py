@@ -7,6 +7,8 @@ saber o que vai pro kit (salário, VT, VA) vs o que não vai (diárias, outros).
 
 import calendar
 import logging
+import re
+import unicodedata
 from decimal import Decimal
 
 from sqlalchemy import text
@@ -31,7 +33,59 @@ CATEGORIA_PARA_DOC_TYPE: dict[str, str | None] = {
 # Categorias que entram no kit documental (INV-5)
 CATEGORIAS_KIT: set[str] = {cat for cat, doc in CATEGORIA_PARA_DOC_TYPE.items() if doc is not None}
 
-_STOP_WORDS = {"DA", "DE", "DO", "DOS", "DAS", "E"}
+_STOP_WORDS = {"DA", "DE", "DO", "DOS", "DAS", "E", "DI", "DEL", "LA", "LAS", "LOS"}
+
+# Tokens que indicam pessoa jurídica — transações para empresas não vinculam a funcionário
+_TOKENS_EMPRESA = {
+    "LTDA",
+    "EIRELI",
+    "SA",
+    "ME",
+    "POSTO",
+    "CONDOMINIO",
+    "CONDOMÍNIO",
+    "ASSESSORIA",
+    "CONTABIL",
+    "CONTÁBIL",
+    "SERVICOS",
+    "SERVICO",
+    "PETROLEO",
+    "PETRÓLEO",
+    "CEF",
+    "MOTOS",
+    "PECAS",
+    "PEÇAS",
+    "ADVOGADOS",
+    "MONITORAMENTO",
+    "CONTABILIDADE",
+    "MATRIZ",
+    "CELL",
+    "BORDADO",
+    "ARENA",
+    "ATLAS",
+    "PORTTE",
+    "MEGAMOTOS",
+    "ALEIXO",
+    "TIRADENTES",
+    "AMAZONAS",
+}
+
+
+def _normalizar_nome(s: str) -> str:
+    """Converte para maiúsculas e remove acentos (NFKD)."""
+    nfkd = unicodedata.normalize("NFKD", (s or "").upper())
+    return "".join(c for c in nfkd if not unicodedata.combining(c)).strip()
+
+
+def _strip_cpf_prefix(nome: str) -> str:
+    """Remove prefixo numérico de CPF: '58003041 Eliziel...' → 'Eliziel...'"""
+    return re.sub(r"^[\d\s./\-]+", "", nome).strip()
+
+
+def _is_empresa(nome_norm: str) -> bool:
+    """Retorna True se o nome normalizado sugere pessoa jurídica."""
+    palavras = set(nome_norm.split())
+    return bool(palavras & _TOKENS_EMPRESA)
 
 
 def _split_nome(nome: str) -> tuple[str, str]:
@@ -664,34 +718,79 @@ class InterCategorizacaoService:
         ).fetchall()
 
         cond_ged_map = self._build_cond_ged_map()
+
+        # Carrega todos os employees em memória uma única vez (evita N queries + permite
+        # normalização de acentos em Python, já que unaccent não está instalado no DB).
+        emps_raw = self.db.execute(text("SELECT id::text, nome FROM employees")).fetchall()
+        emp_parts_map: dict[str, list[str]] = {}  # emp_id → palavras significativas normalizadas
+        for e_row in emps_raw:
+            norm = _normalizar_nome(e_row[1])
+            partes = [p for p in norm.split() if p not in _STOP_WORDS and len(p) >= 3]
+            if partes:
+                emp_parts_map[e_row[0]] = partes
+
         vinculados = 0
         sem_funcionario = 0
         sem_slot = 0
 
         for tx in txs:
             tx_id = tx.tx_id
-            beneficiario = (tx.beneficiario or "").upper().strip()
             doc_type = tx.document_type
-            if not beneficiario or not doc_type:
+            if not doc_type:
                 sem_funcionario += 1
                 continue
 
-            primeiro, ultimo = _split_nome(beneficiario)
+            # 1. Limpeza do nome: strip CPF prefix → normaliza acentos
+            beneficiario_raw = (tx.beneficiario or "").strip()
+            nome_limpo = _strip_cpf_prefix(beneficiario_raw)
+            nome_norm = _normalizar_nome(nome_limpo)
 
-            emp = self.db.execute(
-                text("""
-                    SELECT id::text FROM employees
-                    WHERE UPPER(nome) ILIKE :primeiro AND UPPER(nome) ILIKE :ultimo
-                    LIMIT 1
-                """),
-                {"primeiro": f"%{primeiro}%", "ultimo": f"%{ultimo}%"},
-            ).fetchone()
-            if not emp:
+            if not nome_norm:
+                sem_funcionario += 1
+                continue
+
+            # 2. Descarta pessoas jurídicas
+            if _is_empresa(nome_norm):
+                sem_funcionario += 1
+                continue
+
+            partes_norm = [p for p in nome_norm.split() if p not in _STOP_WORDS and len(p) >= 3]
+            if not partes_norm:
+                sem_funcionario += 1
+                continue
+
+            prim, ult = partes_norm[0], partes_norm[-1]
+
+            # Estratégia 1: primeiro + último nome normalizados (in-memory)
+            emp_id: str | None = None
+            for eid, emp_partes in emp_parts_map.items():
+                emp_set = set(emp_partes)
+                if prim in emp_set and ult in emp_set:
+                    emp_id = eid
+                    break
+
+            # Estratégia 2: interseção de palavras significativas (≥2 palavras comuns e score ≥ 0.5)
+            if not emp_id and len(partes_norm) >= 2:
+                best_score = 0.0
+                best_id: str | None = None
+                partes_set = set(partes_norm)
+                for eid, emp_partes in emp_parts_map.items():
+                    emp_set = set(emp_partes)
+                    comuns = partes_set & emp_set
+                    if len(comuns) >= 2:
+                        score = len(comuns) / max(len(partes_set), len(emp_set))
+                        if score > best_score:
+                            best_score = score
+                            best_id = eid
+                if best_score >= 0.5:
+                    emp_id = best_id
+
+            if not emp_id:
                 sem_funcionario += 1
                 continue
 
             ref_date = tx.data_lancamento.replace(day=1).strftime("%Y-%m-%d")
-            slot_id = self._encontrar_kit_document(emp[0], doc_type, ref_date, cond_ged_map)
+            slot_id = self._encontrar_kit_document(emp_id, doc_type, ref_date, cond_ged_map)
             if not slot_id:
                 sem_slot += 1
                 continue
