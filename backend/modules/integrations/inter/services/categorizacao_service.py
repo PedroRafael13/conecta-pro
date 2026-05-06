@@ -761,28 +761,38 @@ class InterCategorizacaoService:
 
             prim, ult = partes_norm[0], partes_norm[-1]
 
-            # Estratégia 1: primeiro + último nome normalizados (in-memory)
+            # Estratégia 0: match exato — nome completo normalizado
             emp_id: str | None = None
             for eid, emp_partes in emp_parts_map.items():
-                emp_set = set(emp_partes)
-                if prim in emp_set and ult in emp_set:
+                if emp_partes == partes_norm:
                     emp_id = eid
                     break
 
-            # Estratégia 2: interseção de palavras significativas (≥2 palavras comuns e score ≥ 0.5)
-            if not emp_id and len(partes_norm) >= 2:
-                best_score = 0.0
-                best_id: str | None = None
-                partes_set = set(partes_norm)
+            # Estratégia 1: primeiro + último nome normalizados (in-memory)
+            if not emp_id:
                 for eid, emp_partes in emp_parts_map.items():
                     emp_set = set(emp_partes)
-                    comuns = partes_set & emp_set
-                    if len(comuns) >= 2:
-                        score = len(comuns) / max(len(partes_set), len(emp_set))
+                    if prim in emp_set and ult in emp_set:
+                        emp_id = eid
+                        break
+
+            # Estratégia 2: bigrams (2 palavras consecutivas) — confiança >= 0.7
+            # "qualquer 2 palavras consecutivas do nome (trigrama)" — §118 bis
+            if not emp_id and len(partes_norm) >= 2:
+                inter_bigrams = {(partes_norm[i], partes_norm[i + 1]) for i in range(len(partes_norm) - 1)}
+                best_score = 0.0
+                best_id: str | None = None
+                for eid, emp_partes in emp_parts_map.items():
+                    if len(emp_partes) < 2:
+                        continue
+                    emp_bigrams = {(emp_partes[i], emp_partes[i + 1]) for i in range(len(emp_partes) - 1)}
+                    comuns = inter_bigrams & emp_bigrams
+                    if comuns:
+                        score = len(comuns) / len(inter_bigrams)
                         if score > best_score:
                             best_score = score
                             best_id = eid
-                if best_score >= 0.5:
+                if best_score >= 0.7:
                     emp_id = best_id
 
             if not emp_id:
