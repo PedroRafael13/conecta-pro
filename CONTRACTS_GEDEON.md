@@ -5169,7 +5169,12 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 | vale_alimentacao | 15  |
 | **TOTAL KIT**    | **701** |
 
-**Método:** Cenário C — script Python bulk direto (InterCategorizacaoService)
+**Cenários testados:**
+- Cenário A: POST /inter/categorias/auto-processar → 404 (endpoint inexistente)
+- Cenário B: POST /inter/categorias/auto-processar?mes_ref={2026-01..04} → 404 todos os meses
+- Cenário C: script Python bulk direto (InterCategorizacaoService) → **executado com sucesso**
+
+**Método (Cenário C):**
 - 1007 com nome: auto_categorizar_colaborador() por (nome, mes_ref)
 - 105 sem nome: heurística por valor
 - Meses processados: 03.2026, 04.2026, 05.2026
