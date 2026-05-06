@@ -5385,3 +5385,56 @@ com seus postos, permitindo que Jordan valide quem está ou não na empresa.
   - Alocação permanece ativa (is_active=true, alloc_status='active') — INV-3 respeitado
 **Alocações ativas: 51 → 44 (−7)**
 **Backups criados:** allocations_backup_20260506, employees_backup_20260506
+
+## §112 — Refinamento heurísticas Inter + endpoint auto-processar
+**Data:** 2026-05-06
+**Responsável:** Jordan Jesus (jjesus@conectamais.pro)
+
+**Heurísticas adicionadas (sugerir_categoria):**
+| ID | Regra | Categoria | Confiança |
+|----|-------|-----------|-----------|
+| H1 | R$32,00 exato (VT R$10 + VR R$22) | vt_va_combinado | 0.92 |
+| H2 | Múltiplos de R$32 (N dias, máx 20×) | vt_va_combinado | 0.85 |
+| H5 | Valores exatos {70,80,90,100} — tabela diárias | diaria_avulsa | 0.88 |
+| H6 | Múltiplos de {70,80,90,100} (máx 20 diárias/mês) | diaria_avulsa | 0.80 |
+| H3 | Múltiplos de R$10, 10≤v≤200, não múltiplo de R$22 | vale_transporte | 0.75 |
+| H4 | Múltiplos de R$22, 22≤v≤440 | vale_alimentacao | 0.75 |
+| — | Faixa salarial CLT R$1.500-R$3.000 (refinada) | salario | 0.65 |
+
+**Prioridade:** histórico (0.9) > H1 > H2 > H5 > H6 > H3 > H4 > salário > fallback
+
+**Endpoint criado:** POST /api/v1/financeiro/inter/categorias/auto-processar
+- sem mes_ref: processa todos os meses com confiança < 0.8
+- com mes_ref (YYYY-MM): processa apenas aquele mês
+- retorna: {processadas, categorizadas, mes_ref, breakdown}
+
+**Breakdown ANTES (heurísticas antigas):**
+| Categoria        | Qtd | Conf. média |
+|------------------|-----|-------------|
+| vt_va_combinado  | 430 | 0.70 |
+| outros           | 325 | 0.20 |
+| salario          | 204 | 0.50 |
+| vale_transporte  | 52  | 0.65 |
+| vale_alimentacao | 15  | 0.65 |
+
+**Breakdown DEPOIS (heurísticas H1-H6):**
+| Categoria        | Qtd | Conf. média |
+|------------------|-----|-------------|
+| vt_va_combinado  | 433 | 0.92 |
+| outros           | 290 | 0.20 |
+| diaria_avulsa    | 121 | 0.81 |
+| vale_transporte  | 91  | 0.75 |
+| salario          | 82  | 0.65 |
+| vale_alimentacao | 9   | 0.75 |
+
+**Vinculadas ao kit HERMES (incluir_no_kit=true) após refinamento:**
+| Categoria        | Qtd |
+|------------------|-----|
+| vt_va_combinado  | 433 |
+| vale_transporte  | 91  |
+| salario          | 82  |
+| vale_alimentacao | 9   |
+| **TOTAL KIT**    | **615** |
+
+**Re-categorização:** 1.022 transações com conf < 0.8 atualizadas pelas novas heurísticas
+**Principais mudanças:** 121 de `outros` → `diaria_avulsa`; 39 de `outros` → `vale_transporte`; `vt_va_combinado` conf média: 0.70 → 0.92
