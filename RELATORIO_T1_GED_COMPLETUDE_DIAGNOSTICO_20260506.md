@@ -212,3 +212,67 @@ Melhor tipo preenchido — fonte `dp` funciona para `folha_ponto`.
 ---
 
 **Diagnóstico completo. Completude global ~25%. Principal bloqueio: matching Onvio → kit com `onvio_matched: 0` (100% dos docs Onvio não processados). Auto-assemble funcional mas não vincula docs.**
+
+---
+
+## AUDITORIA — ACHADOS ADICIONAIS (2ª passagem)
+
+### STEP 4b — Query original falhou (coluna ausente)
+
+A query prescrita no prompt usa `it.kit_document_id` que **não existe** em `inter_transactions`:
+
+```sql
+-- ERRO: column it.kit_document_id does not exist
+COUNT(*) FILTER (WHERE it.kit_document_id IS NOT NULL) as vinculados,
+```
+
+Não há FK de vinculação `inter_transactions → ged_kit_documents` na estrutura atual.
+Comprovantes Inter disponíveis (433 vt_va_combinado, 91 VT, 82 salário, 9 VA) mas
+**sem mecanismo de linkagem ao kit** — feature não implementada.
+
+### STEP 5 — Leitura do service (head -1 pegou arquivo errado)
+
+O comando `find ... | head -1` retornou `main_production.py` (não o controller).
+Arquivo correto: `modules/ged/controllers/auto_assemble_controller.py`.
+Análise correta: `auto_assemble_kits` chama `KitBuilderService.auto_build_all_kits`
+→ `_match_onvio_docs`.
+
+### Root cause real do `onvio_matched: 0`
+
+**Não é bug de matching — é ausência de dados para o mês corrente.**
+
+O `_match_onvio_docs` busca:
+```sql
+WHERE condominio_id = ANY(matching_cond_ids)
+  AND mes_ref = '05.2026'          ← mês atual
+  AND caminho_local IS NOT NULL
+```
+
+| mes_ref | Docs disponíveis |
+|---------|-----------------|
+| 01.2026 | 27 |
+| 02.2026 | 29 |
+| 03.2026 | 43 |
+| 04.2026 | 10 |
+| **05.2026** | **0** ← nenhum doc sincronizado ainda |
+
+O matching funciona corretamente. O job de sync Onvio simplesmente ainda
+não importou documentos de maio/2026. Quando chegarem, o auto-assemble
+os vinculará automaticamente.
+
+### Confirmações adicionais
+
+- `onvio_documents.caminho_local`: 605/605 preenchidos (0 NULL) — sync OK
+- `onvio_documents.condominio_id`: 116 docs vinculados a condomínios
+- `condominios` ativos: 11
+- Matching por palavras significativas (subset): funciona corretamente
+  (ex: "MICHELANGELO" ∈ "CONDOMINIO DO EDIFICIO MICHELANGELO")
+
+### Diagnóstico consolidado REVISADO
+
+| Bloqueio | Impacto | Evidência | Gravidade |
+|---------|---------|-----------|-----------|
+| Onvio maio/2026 não sincronizado | onvio_matched=0 para mês atual | 0 docs com mes_ref='05.2026' | ⚠️ Temporal |
+| Source `gedeon` não popula slots individuais | 22 tipos em 0% | file_path=NULL nos slots criados pelo kit builder Gedeon | 🔴 Funcional |
+| Inter → kit sem FK | Comprovantes não chegam ao kit | kit_document_id ausente em inter_transactions | 🔴 Feature ausente |
+| Abril Ideal Flores: 0% | Mês inteiro zerado | Nenhuma fonte alimentou em abril | 🟡 Investigar |
