@@ -5500,3 +5500,9 @@ Queries adaptadas para JOIN correto.
 - Livia Carise Pereira Consentine (200) → Ideal Flores
 - Rilem Ferreira de Souza (199) → Prime Arena
 - Fernando Souza Simplicio Junior (188) → Villa dos Pássaros
+
+## §117 — Botão Auto-Categorizar Todos — Inter Pagamentos
+**Data:** 2026-05-06
+**Arquivo:** frontend/src/app/modulos/financeiro/inter/pagamentos/page.tsx
+**Endpoint:** POST /api/v1/financeiro/inter/categorias/auto-processar
+**Mudanças:** autoProcessarMutation + botão orange + feedback resultado
