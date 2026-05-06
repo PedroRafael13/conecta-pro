@@ -5367,3 +5367,21 @@ com seus postos, permitindo que Jordan valide quem está ou não na empresa.
 | 199 | RILEM SOUSA DE OLIVEIRA | Agente de Portaria |
 
 **Ação:** Jordan deve verificar esses 6 ativos sem posto e alocá-los ou confirmar desligamento.
+
+## §113 — Fechamento alocações 7 demitidos + Orlailson PJ
+**Data:** 2026-05-06
+**Confirmado por:** Jordan Jesus (CEO)
+**7 demitidos — alocações encerradas (status=terminated, is_active=false):**
+- Roberto Pereira Menezes (000196) — end_date: 2026-02-28
+- Carlos Alberto Assis de Lima (183) — end_date: 2026-02-28
+- Andrew Costa Vasconcelos (000161) — end_date: 2026-02-28
+- Gelson Bernardo Lima (178) — end_date: 2026-02-28
+- Jefferson da Silva Batista (000182) — end_date: 2026-02-19
+- Jordana Bacry Pires (179) — end_date: 2026-02-28
+- Júlio César Assis Santos (000185) — end_date: 2025-12-03
+**Orlailson Paiva Pereira (000192):** continua como PJ
+  - Campo tipo_contrato: existe na tabela employees → Cenário A executado
+  - UPDATE: tipo_contrato='pj', observacoes registrada com data+CEO
+  - Alocação permanece ativa (is_active=true, alloc_status='active') — INV-3 respeitado
+**Alocações ativas: 51 → 44 (−7)**
+**Backups criados:** allocations_backup_20260506, employees_backup_20260506
