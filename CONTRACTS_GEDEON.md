@@ -5551,3 +5551,32 @@ TODOS os 10 clientes com kit de abril estão a 0% de `file_path` preenchido.
 **sem_funcionario:** 408 (beneficiário não mapeado em employees — matching por nome inexato)
 **sem_slot:** 166 (slot do kit não encontrado para o mês/funcionário)
 **Impacto GED:** 24.3% → 26.8% (+2.5pp, +41 slots preenchidos)
+
+### §120 — ERRATA (auditoria 2026-05-06)
+
+O relatório original afirmou "0 slots preenchidos em abril" — **incorreto**.
+O auto-assemble preencheu 41 de 914 slots via integração **Inter** (comprovantes bancários).
+
+**Resultado real do auto-assemble:**
+
+| Cliente | Slots preenchidos (Inter) | Document types |
+|---------|--------------------------|----------------|
+| Ideal Flores da Cidade | 12/204 (5.9%) | comp_salario_individual, comp_vt_individual, comp_vt_va_combinado |
+| Mirante das Flores | 9 | idem |
+| Villa dos Pássaros | 7 | idem |
+| Laranjeiras Village | 5 | idem |
+| Prime Arena | 4 | idem |
+| Villa Dei Fiori | 3 | idem |
+| Michelangelo | 1 | idem |
+
+**Total abril:** 41 slots preenchidos / 914 total = **4.5%**
+Todos via `source_module='inter'` — comprovantes de salário/VT do Inter bancário.
+Preenchidos automaticamente em 2026-04-22 pela integração Inter.
+
+**Bloqueio real:** `dp` (folha, contracheque), `gedeon`, `fiscal` e `operacoes`
+permanecem a 0% por ausência de dados fonte:
+- `gp_clock_punches`: zero batidas de abril
+- `onvio_documents`: 10 docs são CamScanner sem `condominio_id`
+- `solides_sync_log`: zero syncs em abril
+
+**Arquivo:** `/opt/conecta-pro/RELATORIO_AUDITORIA_ABRIL_IDEAL_FLORES_20260506.csv`
