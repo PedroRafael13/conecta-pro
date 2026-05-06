@@ -120,12 +120,23 @@ H1 eleva conf de 0.70 → 0.92 para o valor exato.
 
 ## STEP 4 — Endpoint criado
 
-**Endpoint:** `POST /api/v1/financeiro/inter/categorias/auto-processar`
+**Endpoint real:** `POST /api/v1/financeiro/inter/categorias/auto-processar`
 
-| Teste | Resultado |
-|-------|-----------|
-| POST sem mes_ref | HTTP 200 — {processadas: 1022, categorizadas: 1022, mes_ref: "todos"} |
-| POST ?mes_ref=2026-03 | HTTP 200 — {processadas: 488, categorizadas: 488} |
+> **Discrepância com o prompt:** o prompt especifica a URL `/api/v1/inter/categorias/auto-processar`
+> (retorna 404). O router Inter tem prefixo `/financeiro/inter/` registrado em `main_production.py`
+> (zona proibida — não modificável). O endpoint foi implementado na URL correta do codebase.
+
+| Teste | URL | Resultado |
+|-------|-----|-----------|
+| POST sem mes_ref | `/api/v1/inter/...` (prompt) | **404** — prefixo incorreto |
+| POST sem mes_ref | `/api/v1/financeiro/inter/...` (real) | **HTTP 200** — {processadas: 828, mes_ref: "todos"} |
+| POST ?mes_ref=2026-03 | `/api/v1/inter/...` (prompt) | **404** |
+| POST ?mes_ref=2026-03 | `/api/v1/financeiro/inter/...` (real) | **HTTP 200** — {processadas: 391} |
+
+**Schema STEP 3 — discrepância prompt x real:**
+- Prompt usa `confidence_score` e `categoria` em `inter_transactions` → colunas inexistentes
+- Real: `confianca_sugestao` e `categoria` em `inter_transaction_categorias` (tabela separada)
+- Queries adaptadas com JOIN correto — resultados válidos
 
 ---
 

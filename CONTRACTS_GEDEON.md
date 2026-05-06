@@ -5407,6 +5407,13 @@ com seus postos, permitindo que Jordan valide quem está ou não na empresa.
 - sem mes_ref: processa todos os meses com confiança < 0.8
 - com mes_ref (YYYY-MM): processa apenas aquele mês
 - retorna: {processadas, categorizadas, mes_ref, breakdown}
+- **Nota:** prompt esperava URL `/api/v1/inter/categorias/auto-processar`. O router Inter
+  tem prefixo `/financeiro/inter/` (main_production.py — zona proibida, não modificável).
+  URL correta: `/api/v1/financeiro/inter/categorias/auto-processar` — HTTP 200 confirmado.
+
+**Schema real x prompt (STEP 3):** colunas `confidence_score` e `categoria` não existem em
+`inter_transactions` — estão em `inter_transaction_categorias` (`confianca_sugestao`, `categoria`).
+Queries adaptadas para JOIN correto.
 
 **Breakdown ANTES (heurísticas antigas):**
 | Categoria        | Qtd | Conf. média |
