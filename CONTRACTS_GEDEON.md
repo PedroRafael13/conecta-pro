@@ -5506,3 +5506,39 @@ Queries adaptadas para JOIN correto.
 **Arquivo:** frontend/src/app/modulos/financeiro/inter/pagamentos/page.tsx
 **Endpoint:** POST /api/v1/financeiro/inter/categorias/auto-processar
 **Mudanças:** autoProcessarMutation + botão orange + feedback resultado
+
+## §120 — Investigação abril Ideal Flores zerado
+**Data:** 2026-05-06
+
+### Causa raiz (confirmada)
+
+**1. gp_clock_punches sem dados de abril:**
+`gp_clock_punches` contém APENAS março/2026 (1.830 batidas, 43 funcionários).
+Zero batidas em abril — o coletor REP não importou abril.
+Isso impede a geração de `folha_ponto` e `folhas_ponto` para qualquer condomínio.
+
+**2. Onvio: 10 docs de abril sem mapeamento:**
+Os 10 docs de `mes_ref='04.2026'` são todos `categoria='documento_digitalizado'`
+(scans CamScanner) e têm `condominio_id=NULL`. O auto-assemble retornou `onvio_matched=0`
+pois não há categoria mapeável para nenhum slot dos kits.
+
+**3. Sólides: zero syncs em abril:**
+`solides_sync_log` não tem nenhum registro de abril/2026.
+
+**4. Não é problema exclusivo de Ideal Flores:**
+TODOS os 10 clientes com kit de abril estão a 0% de `file_path` preenchido.
+É um problema sistêmico: o mês de abril/2026 não teve coleta de dados.
+
+### Ação tomada
+- `POST /api/v1/ged/auto-assemble?reference_month=2026-04-01` executado
+- Resultado: `kits_created=8`, `total_documents=910`, `onvio_matched=0`
+- `file_path` permanece NULL em todos os 910 slots — sem dados fonte para preencher
+
+### Pendência Jordan
+| Item | Ação necessária |
+|------|-----------------|
+| Batidas REP abril | Importar via REP ou coletor — dados não chegaram ao sistema |
+| Onvio abril | Enviar holerites/contracheques corretos (não CamScanner genérico) |
+| Sólides | Executar sync manual de abril se necessário |
+
+**Resultado:** 0 slots preenchidos — aguarda dados fonte de Jordan
