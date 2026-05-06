@@ -80,6 +80,14 @@ run "docker cp $SERVER_SRC/.  $CONTAINER:/app/.next/server/"
 run "docker cp $FRONTEND_DIR/.next/standalone/. $CONTAINER:/app/.next/standalone/" 2>/dev/null || true
 run "docker cp $FRONTEND_DIR/.next/BUILD_ID     $CONTAINER:/app/.next/BUILD_ID"
 run "docker cp $FRONTEND_DIR/.next/routes-manifest.json $CONTAINER:/app/.next/" 2>/dev/null || true
+# Manifestos raiz (app-path-routes-manifest, prerender-manifest, build-manifest, etc.)
+# Sem estes arquivos rotas novas ficam ausentes e retornam 404 mesmo com page.js correto
+for _manifest in app-path-routes-manifest.json app-paths-manifest.json build-manifest.json \
+                 fallback-build-manifest.json prerender-manifest.json \
+                 react-loadable-manifest.json export-marker.json; do
+    [[ -f "$FRONTEND_DIR/.next/$_manifest" ]] && \
+        run "docker cp $FRONTEND_DIR/.next/$_manifest $CONTAINER:/app/.next/$_manifest" || true
+done
 
 # ── STEP 6: Reinjetar chunks antigos no container (preservação anti-ChunkLoadError)
 log "Reinjetando chunks antigos → container (preservação)"
