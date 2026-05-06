@@ -5542,3 +5542,12 @@ TODOS os 10 clientes com kit de abril estão a 0% de `file_path` preenchido.
 | Sólides | Executar sync manual de abril se necessário |
 
 **Resultado:** 0 slots preenchidos — aguarda dados fonte de Jordan
+
+## §118 — FK Inter → kit + linkagem HERMES bulk
+**Data:** 2026-05-06
+**Migration:** sprint89_inter_kit_fk — ADD COLUMN kit_document_id UUID FK → ged_kit_documents.id ON DELETE SET NULL
+**Endpoint:** POST /api/v1/financeiro/inter/hermes/linkar
+**Vinculados:** 41/615 comprovantes linkados ao kit
+**sem_funcionario:** 408 (beneficiário não mapeado em employees — matching por nome inexato)
+**sem_slot:** 166 (slot do kit não encontrado para o mês/funcionário)
+**Impacto GED:** 24.3% → 26.8% (+2.5pp, +41 slots preenchidos)
