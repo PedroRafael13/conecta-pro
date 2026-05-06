@@ -80,9 +80,16 @@ _REUTILIZAVEIS: dict[str, bool] = {
 # Mapa Onvio categoria → ged_kit_documents document_type — docs de empresa/condomínio
 MAPA_TIPOS_ONVIO_EMPRESA: dict[str, str] = {
     "folha_pagamento": "folha_pagamento",
+    # recibo_folha com doc_scope='condominio' → contracheque (per-kit, não per-employee)
+    "recibo_folha": "contracheque",
     "dctfweb_recibo": "dctfweb_recibo",
     "dctfweb_extrato": "dctfweb_extrato",
     "dctfweb_declaracao": "dctfweb_declaracao",
+    # dctfweb sub-tipos mapeados para o slot canônico dctfweb_extrato (§119)
+    "dctfweb_creditos": "dctfweb_extrato",
+    "dctfweb_debitos": "dctfweb_extrato",
+    "dctfweb_resumo_creditos": "dctfweb_extrato",
+    "dctfweb_resumo_debitos": "dctfweb_extrato",
     "fgts_guia": "gfd_fgts_mensal",
     "fgts_relatorio": "relatorio_gfd_fgts",
     "fgts_consignado": "comp_pag_fgts",
@@ -90,10 +97,6 @@ MAPA_TIPOS_ONVIO_EMPRESA: dict[str, str] = {
     "das_simples_nacional": "das_simples_nacional",
     "parcelamento_simples": "parcelamento_simples",
     "guia_issqn": "guia_issqn",
-    "dctfweb_resumo_creditos": "dctfweb_resumo_creditos",
-    "dctfweb_resumo_debitos": "dctfweb_resumo_debitos",
-    "dctfweb_creditos": "dctfweb_creditos",
-    "dctfweb_debitos": "dctfweb_debitos",
     "decimo_terceiro": "decimo_terceiro",
     "empresa_docs": "outro",
     "inss_guia": "gps_inss",
