@@ -5438,3 +5438,48 @@ com seus postos, permitindo que Jordan valide quem está ou não na empresa.
 
 **Re-categorização:** 1.022 transações com conf < 0.8 atualizadas pelas novas heurísticas
 **Principais mudanças:** 121 de `outros` → `diaria_avulsa`; 39 de `outros` → `vale_transporte`; `vt_va_combinado` conf média: 0.70 → 0.92
+
+## §115 — Limpeza definitiva funcionários 2026-05-06
+**Autorizado por:** Jordan Jesus (CEO)
+
+### 5 demitidos — alocações encerradas
+
+| Matrícula | Nome | Alloc Status | End Date | Obs |
+|-----------|------|--------------|----------|-----|
+| 000184 | Josiane de Sousa Silva | terminated | 2026-02-28 | ✅ |
+| 155 | Railson Coelho Batista | terminated | 2026-02-28 | ✅ |
+| 175 | Raimundo Jose Batista da Silva | terminated | 2026-02-28 | ✅ |
+| 000201 | Wanderson Matos Dias | sem alocação | — | ✅ |
+| 000185 | Júlio César Assis Santos | terminated | 2025-12-03 | já estava fechada |
+
+### Aryelton Braga Figueira (mat. 98) — Suspensão Judicial
+- Alocação: `status=on_hold`, `is_active=true` (contrato não encerrado)
+- Observação adicionada: suspensão por ação trabalhista, aguarda decisão judicial
+- **NÃO é demissão** — INV-5 respeitado
+
+### Orlailson Paiva Pereira (mat. 000192) — PJ Supervisor Geral
+- Alocação (Villa Dei Fiori): `terminated`, `end_date=2026-05-06`
+- Observação adicionada: PJ, supervisor operacional, rondas diárias, sem ponto, fora do Sólides
+
+### 6 CLTs ativos sem posto — CENÁRIO B (sem alocação criada)
+**Aguardam Jordan vincular posto:**
+
+| Matrícula | Nome | Cargo | Admissão |
+|-----------|------|-------|----------|
+| 198 | Daniel Vidal Larroque | Agente de Serviços Gerais | 2026-03-23 |
+| 188 | Fernando Souza Simplicio Jr | Agente de Portaria | 2026-01-23 |
+| 201 | Geilson Rodrigues de Andrade | Jardineiro | 2026-03-23 |
+| 189 | Jonhata Diniz Benaion | Agente de Portaria | 2026-01-23 |
+| 200 | Livia Carise Pereira Consentine | Agente de Portaria | 2026-03-23 |
+| 199 | Rilem Ferreira de Souza | Agente de Portaria | 2026-03-23 |
+
+**Postos disponíveis para Jordan escolher:**
+- Condomínio Gelain
+- Condomínio Ideal Flores da Cidade
+- Condomínio Michelangelo
+- Condomínio Mirante das Flores
+- Condomínio Prime Arena
+- Condomínio Villa Dei Fiori
+- Condomínio Villa dos Pássaros
+- Portaria Principal - Mirante das Flores
+- Residencial Laranjeiras Village
