@@ -5247,3 +5247,123 @@ não foram encerradas. Devem ter `allocations.end_date` preenchido e `is_active=
 - 45 `ativo` + 13 `inativo` = 58 total employees
 - 43 `ativo` + 4 `inativo` com batidas em 03/2026 = 47 funcionários com ponto
 - Os 8 aqui: todos `inativo` no Sólides, todos com alocação `active` no sistema — inconsistência a resolver
+
+---
+
+## §114 — Sync Sólides completo 2026-05-06 + Relatório de Funcionários
+
+**Data:** 2026-05-06
+**Responsável:** Jordan Jesus
+**Branch:** feature/people-management-reorganization
+
+### Contexto
+Sync completo com a API Sólides executado para gerar relatório de todos os funcionários
+com seus postos, permitindo que Jordan valide quem está ou não na empresa.
+
+### Resultado do Sync
+
+| Campo | Valor |
+|-------|-------|
+| Início | 2026-05-06 16:40:58 |
+| Conclusão | 2026-05-06 16:41:02 |
+| Duração | ~4 segundos |
+| `items_processed` | 89 |
+| `items_created` | 45 |
+| `items_updated` | 0 |
+| `items_failed` | 0 |
+| Status | **completed** |
+
+> O sync escreve nas tabelas `solides_*` (staging). Os dados de `employees` são
+> sincronizados pelo script `sync_solides_to_employees.py` (Tangerino API).
+
+### Quadro de Funcionários
+
+**Total:** 58 employees — **45 ativos** · **13 inativos**
+
+#### ATIVOS (45) — com posto
+
+| Matrícula | Nome | Cargo | Posto |
+|-----------|------|-------|-------|
+| 85 | ADAILSON SERRA ALVES | Agente de Portaria | Condomínio Ideal Flores da Cidade |
+| 173 | ADEMIR SALUSTIANO DE SOUZA FILHO | Agente de Serviços Gerais | Condomínio Ideal Flores da Cidade |
+| 60 | AILTON CÉSAR VASCONCELOS | Agente de Portaria | Condomínio Ideal Flores da Cidade |
+| 190 | ANDREA GONÇALVES DOS SANTOS | Agente de Portaria | Condomínio Ideal Flores da Cidade |
+| 154 | ANILSON JOSE SEIXAS NEVES | Agente de Portaria | Condomínio Ideal Flores da Cidade |
+| 66 | ANTONIO CARLOS CASTRO GAMA | Agente de Portaria | Condomínio Ideal Flores da Cidade |
+| 91 | ANTONIO CARLOS VIEIRA | Artífice | Condomínio Ideal Flores da Cidade |
+| 86 | ANTONIO DINIZ ASSIS DOS SANTOS | Agente de Portaria | Condomínio Ideal Flores da Cidade |
+| 159 | ANTONIO WALCICLEY PEREIRA DA SILVA | Líder de Portaria | Residencial Laranjeiras Village |
+| 195 | BIANCA HELEM DA SILVA MEIRA | Agente de Portaria | Residencial Laranjeiras Village |
+| 194 | CARLOS EDUARDO DA SILVA FAÇANHA | Agente de Portaria | Residencial Laranjeiras Village |
+| 153 | CELIANE GARCIA DE SOUSA | Agente de Serviços Gerais | Residencial Laranjeiras Village |
+| 191 | CINTIA BEZERRA OLIVEIRA | Agente de Portaria | Condomínio Mirante das Flores |
+| 198 | DANIEL VIDAL LARROQUE | Agente de Serviços Gerais | — sem posto — |
+| 186 | EDILENE SALES SOUSA | Agente de Serviços Gerais | Condomínio Mirante das Flores |
+| 136 | EDIWILSON CORREA MARQUES | Agente de Portaria | Condomínio Mirante das Flores |
+| 184 | EDUARDO OLIVEIRA DE SOUZA | Agente de Portaria | Condomínio Mirante das Flores |
+| 56 | EDWARD JOSÉ ATENCIO DOMINGUEZ | Agente de Portaria | Condomínio Mirante das Flores |
+| 163 | EIDY CULIER DE CASTRO | Agente de Portaria | Condomínio Mirante das Flores |
+| 69 | ELEN XAVIER NUNES | Agente de Portaria | Condomínio Mirante das Flores |
+| 137 | ERIKA CRISTINA MAQUINE PEREIRA | Líder de Portaria | Condomínio Mirante das Flores |
+| 174 | FERNANDA VINHOTE MACIEL | Agente de Portaria | Condomínio Mirante das Flores |
+| 188 | FERNANDO SOUZA SIMPLICIO JUNIOR | Agente de Portaria | — sem posto — |
+| 138 | FRANCISCO RAMON FARIAS DE SOUZA | Agente de Portaria | Condomínio Prime Arena |
+| 201 | GEILSON ANDRADE DE SOUZA | Agente de Serviços Gerais | — sem posto — |
+| 180 | GILMAR VIEIRA DA SILVA | Agente de Portaria | Condomínio Gelain |
+| 193 | HEMERSON DA SILVA FARIAS | Agente de Portaria | Condomínio Gelain |
+| 167 | JAINE VALE RODRIGUES | Agente de Portaria | Condomínio Mirante das Flores |
+| 176 | JAILSON AZEVEDO CAVALCANTE | Agente de Portaria | Condomínio Gelain |
+| 181 | JANAINA MEDEIROS TAVARES | Agente de Serviços Gerais | Condomínio Mirante das Flores |
+| 189 | JONHATA RODRIGUES BENAION | Agente de Portaria | — sem posto — |
+| 147 | JOSE CARLOS XAVIER PESSOA | Agente de Portaria | Condomínio Gelain |
+| 148 | JOSE RAIMUNDO DE OLIVEIRA | Agente de Portaria | Condomínio Gelain |
+| 102 | KETHYLLY SENA BARROS | Agente de Portaria | Condomínio Michelangelo |
+| 200 | LIVIA CONSENTINE BALBINO DE LIMA | Agente de Portaria | — sem posto — |
+| 143 | MARCOS CORREA MENDES | Agente de Portaria | Condomínio Prime Arena |
+| 168 | MARCOS VINICIUS DA SILVA SANTOS | Agente de Portaria | Condomínio Prime Arena |
+| 169 | NATAN FELIX DA SILVA | Agente de Portaria | Condomínio Villa Dei Fiori |
+| 170 | PATRICIA AGUIAR LIMA | Agente de Portaria | Condomínio Villa Dei Fiori |
+| 199 | RILEM SOUSA DE OLIVEIRA | Agente de Portaria | — sem posto — |
+| 177 | RODRIGO FERREIRA SILVA | Agente de Portaria | Condomínio Gelain |
+| 196 | TAYLANE MONTEIRO FIGUEIREDO | Agente de Portaria | Residencial Laranjeiras Village |
+| 187 | THAIS ALMEIDA NUNES | Agente de Portaria | Condomínio Prime Arena |
+| 145 | UELITON AZEVEDO DA SILVA | Agente de Portaria | Condomínio Villa dos Pássaros |
+| 192 | WELTER BARBOSA DOS SANTOS | Agente de Portaria | Condomínio Villa Dei Fiori |
+
+#### INATIVOS (13)
+
+| Matrícula | Nome | Cargo | Admissão |
+|-----------|------|-------|----------|
+| 000161 | ANDREW COSTA VASCONCELOS | Agente de Serviços Gerais | 2026-01-19 |
+| 98 | ARYELTON BRAGA FIGUEIRA | Agente de Portaria | 2024-07-22 |
+| 183 | CARLOS ALBERTO ASSIS DE LIMA | Artífice | 2025-12-08 |
+| 178 | GELSON BERNARDO LIMA | Agente de Portaria | 2025-12-08 |
+| 000182 | JEFFERSON DA SILVA BATISTA | Agente de Portaria | 2026-01-19 |
+| 179 | JORDANA BACRY PIRES | Agente de Portaria | 2025-12-08 |
+| 000184 | JOSIANE DE SOUSA SILVA | Agente de Serviços Gerais | 2026-01-19 |
+| 000185 | JÚLIO CÉSAR ASSIS SANTOS | Agente de Portaria | 2026-01-19 |
+| 000192 | ORLAILSON PAIVA PEREIRA | Líder de Portaria | 2026-01-19 |
+| 155 | RAILSON COELHO BATISTA | Agente de Serviços Gerais | 2025-06-02 |
+| 175 | RAIMUNDO JOSE BATISTA DA SILVA | Agente de Portaria | 2025-10-09 |
+| 000196 | ROBERTO PEREIRA MENEZES | Agente de Portaria | 2026-01-19 |
+| 000201 | WANDERSON MATOS DIAS | Agente de Serviços Gerais | 2026-01-19 |
+
+> **Nota:** Os 13 inativos têm `employees.status = 'inativo'` (sincronizado via Sólides).
+> 6 deles possuem `allocations.status = active` — inconsistência documentada em §110.
+
+### Arquivo CSV gerado
+
+`/opt/conecta-pro/RELATORIO_FUNCIONARIOS_20260506.csv` — 58 linhas (ativos + inativos com posto)
+
+### Sem posto (6 ativos)
+
+| Matrícula | Nome | Cargo |
+|-----------|------|-------|
+| 198 | DANIEL VIDAL LARROQUE | Agente de Serviços Gerais |
+| 188 | FERNANDO SOUZA SIMPLICIO JUNIOR | Agente de Portaria |
+| 201 | GEILSON ANDRADE DE SOUZA | Agente de Serviços Gerais |
+| 189 | JONHATA RODRIGUES BENAION | Agente de Portaria |
+| 200 | LIVIA CONSENTINE BALBINO DE LIMA | Agente de Portaria |
+| 199 | RILEM SOUSA DE OLIVEIRA | Agente de Portaria |
+
+**Ação:** Jordan deve verificar esses 6 ativos sem posto e alocá-los ou confirmar desligamento.
