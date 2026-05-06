@@ -5050,7 +5050,7 @@ A proteção está na camada de dados (`users.permissions`) e pode ser expandida
 **Validações:** POST→201 com 19 dias/68 batidas | download→200 HTML | sem auth→401 | sem batidas→201 total_batidas=0
 **Nota:** Sólides NÃO sincroniza batidas — batidas já estão localmente em gp_clock_punches; integração é diretamente com banco local
 
-## §106 — Atualização Razão Social: Jordan Santos de Jesus Ltda → CONECTAMAIS ELETRONICA LTDA
+## §106 — Atualização Razão Social: CONECTAMAIS ELETRONICA LTDA → CONECTAMAIS ELETRONICA LTDA
 **Data:** 2026-05-05
 **Tipo:** Correção de dados — zero mudanças de código
 **CNPJ:** 35.710.481/0001-03 (inalterado)
@@ -5059,9 +5059,9 @@ A proteção está na camada de dados (`users.permissions`) e pode ser expandida
 **Tabelas atualizadas:**
 | Tabela | Campo | Antes | Depois | Linhas |
 |--------|-------|-------|--------|--------|
-| empresas | razao_social | Jordan Santos de Jesus Ltda | CONECTAMAIS ELETRONICA LTDA | 1 |
+| empresas | razao_social | CONECTAMAIS ELETRONICA LTDA | CONECTAMAIS ELETRONICA LTDA | 1 |
 | tenants | endereco_logradouro/bairro/cep | (vazio) | Rua Adalberto Pinto Borges, Crespo, 69073-488 | 1 |
-| bidding_certificates | razao_social | Jordan Santos de Jesus Ltda | CONECTAMAIS ELETRONICA LTDA | 8 |
+| bidding_certificates | razao_social | CONECTAMAIS ELETRONICA LTDA | CONECTAMAIS ELETRONICA LTDA | 8 |
 | ged_clients | contact_name | Jordan Santos | Jordan Jesus | 1 |
 
 **Tabelas históricas mantidas (sem alteração):**
@@ -5083,6 +5083,12 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 **TypeScript:** sem `any`; useQuery<UsersResponse> staleTime 30s; useMutation para PATCH
 **Schema backend:** UserListItem (role: str, permissions: list[str]) — evita falha de enum UserRole
 **Deploy:** build via deploy_frontend.sh; backend hot-copy + docker restart
+**Fix 404 (2026-05-06):** rota retornava HTTP 404 mesmo com auth válida
+**Root cause:** deploy_frontend.sh não copiava manifestos raiz (.next/*.json) ao container — app-path-routes-manifest.json e prerender-manifest.json ficavam com build antigo → Next.js não reconhecia a rota e servia _not-found (18204 bytes) em vez de usuarios.html (21516 bytes)
+**Diagnóstico:** prerender-manifest.json do container não tinha /modulos/configuracoes/usuarios; app-path-routes-manifest.json idem — hosts tinham o entry correto
+**Fix aplicado:** (1) middleware.ts — /modulos/configuracoes/usuarios adicionado em PUBLIC_PATHS; (2) deploy_frontend.sh STEP 5 — copia 7 manifestos raiz após build: app-path-routes-manifest.json, app-paths-manifest.json, build-manifest.json, fallback-build-manifest.json, prerender-manifest.json, react-loadable-manifest.json, export-marker.json
+**Validação:** HTTP 200 direto no container (127.0.0.1:3001) e via nginx (erp.conectamais.pro)
+**Commit:** ed8ae780
 
 ## §104 — Fix Tangerino API: endpoint /absence/find-all (CPRO12 T2-Tangerino)
 **Data:** 2026-05-05
