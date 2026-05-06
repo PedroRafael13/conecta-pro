@@ -1,6 +1,7 @@
 # Sync Enriquecido Sólides — Campos eSocial
 **Data:** 2026-05-06
-**Commits:** d839d50e (código), 3ffa4acc (docs §121)
+**Commits:** d839d50e (código), 3ffa4acc (docs §122)
+**§ CONTRACTS_GEDEON:** §122
 **Branch:** feature/people-management-reorganization
 
 ## Objetivo
@@ -64,18 +65,21 @@ Fix: retornar `""` quando padrão não reconhecido + adicionar padrões PORTARIA
 ## Resultados
 
 ### Completude após sync enriquecido
-| Campo | Antes | Depois | Fonte |
-|-------|-------|--------|-------|
-| `escala_padrao` | 39/45 (87%) | **45/45 (100%)** | Tangerino API ✅ |
-| `matricula` | 45/45 | 45/45 | Já OK |
-| `cargo` | 45/45 | 45/45 | Tangerino API (corrigido) ✅ |
-| `sexo` | 38/45 (84%) | 38/45 | Tangerino API (imutável) |
-| `pis` | 40/45 (89%) | 40/45 | Tangerino API |
-| `data_nascimento` | 45/45 (100%) | 45/45 | Tangerino API |
-| `estado_civil` | 39/45 (87%) | 39/45 | Manual (não na API) |
-| `nome_mae` | 11/45 (24%) | 11/45 | Manual necessário |
-| `rg` | 1/45 (2%) | 1/45 | Manual necessário |
-| `ctps_numero` | 0/45 (0%) | 0/45 | Manual necessário |
+*(Base atual: 47 funcionários ativos — 2 admitidos após o sync inicial)*
+
+| Campo | Antes | Depois (atual) | Fonte |
+|-------|-------|----------------|-------|
+| `escala_padrao` | 39/45 (87%) | **47/47 (100%)** | Tangerino API ✅ |
+| `matricula` | 45/45 | 47/47 (100%) | Tangerino API ✅ |
+| `cargo` | 45/45 | 47/47 (100%) | Tangerino API (corrigido) ✅ |
+| `pis` | 40/45 (89%) | 42/47 (89%) | Tangerino API |
+| `sexo` | 38/45 (84%) | 40/47 (85%) | Tangerino API |
+| `estado_civil` | 39/45 (87%) | — | Manual (não na API) |
+| `nome_mae` | 11/45 (24%) | 11/47 (23%) | Manual necessário |
+| `rg` | 1/45 (2%) | 1/47 (2%) | Manual necessário |
+| `ctps_numero` | 0/45 (0%) | 0/47 (0%) | Manual necessário |
+
+**Completude média (10 campos eSocial): 43% → 68,7%**
 
 ### Sync stats
 - Total Sólides: 51 funcionários | CPF match: 45 | Sem match: 6 (demitidos)

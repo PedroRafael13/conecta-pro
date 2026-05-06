@@ -5636,7 +5636,7 @@ Geradas folhas de ponto de **março/2026** para todos os 43 funcionários com ba
 Para gerar folhas de abril: importar batidas do REP/leitor biométrico para `gp_clock_punches`.
 Sem dados de ponto, nenhum PDF pode ser gerado (INV-2).
 
-## §121 — Sync enriquecido Sólides campos eSocial
+## §122 — Sync enriquecido Sólides campos eSocial
 **Data:** 2026-05-06
 **Arquivo:** `backend/modules/integrations/connectors/solides/tasks.py`
 **Commit:** d839d50e
@@ -5660,17 +5660,18 @@ estado_civil, nome_mae, nome_pai, rg, ctps_*, titulo_eleitor, naturalidade, naci
 - escala_padrao ✅ (corrigido) | data_demissao/status ✅
 
 ### Completude antes → depois
+*(Base: 47 funcionários ativos pós-sync)*
+
 | Campo | Antes | Depois |
 |-------|-------|--------|
-| escala_padrao | 39/45 (87%) | 45/45 (100%) |
-| matricula | 45/45 | 45/45 |
-| cargo | 45/45 | 45/45 |
-| sexo | 38/45 (84%) | 38/45 (imutável via API) |
-| pis | 40/45 (89%) | 40/45 |
-| estado_civil | 39/45 (87%) | 39/45 (não na API) |
-| nome_mae | 11/45 (24%) | 11/45 (não na API) |
-| rg | 1/45 (2%) | 1/45 (não na API) |
-| ctps | 0/45 (0%) | 0/45 (não na API) |
+| escala_padrao | 39/45 (87%) | **47/47 (100%)** |
+| matricula | 45/45 | 47/47 (100%) |
+| cargo | 45/45 | 47/47 (100%) |
+| pis | 40/45 (89%) | 42/47 (89%) |
+| sexo | 38/45 (84%) | 40/47 (85%) |
+| nome_mae | 11/45 (24%) | 11/47 (23%) — não na API |
+| rg | 1/45 (2%) | 1/47 (2%) — não na API |
+| ctps | 0/45 (0%) | 0/47 (0%) — não na API |
 
-**Completude média campos disponíveis via API: 43% → ~53%** (escala resolvida)
-**Campos eSocial críticos ausentes (rg, ctps, nome_mae): requerem importação manual ou fonte alternativa**
+**Completude média (10 campos eSocial): 43% → 68,7%**
+**Campos críticos ausentes (rg, ctps, nome_mae): requerem importação manual ou fonte alternativa**
