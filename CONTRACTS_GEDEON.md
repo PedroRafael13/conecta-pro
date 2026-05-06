@@ -5190,3 +5190,52 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 **Novos/alterados:** nenhum — último updated_at em employees = 2026-04-10 (dados já sincronizados)
 **Observação:** items_created=45 reflete o comportamento de upsert do connector (empregados re-avaliados), não novos registros. Zero mudanças efetivas no banco.
 **Diagnóstico endpoint:** /api/v1/dp/solides/sync/status retorna 404 — endpoint real é /api/v1/integrations/solides/sync/trigger
+
+## §110 — Diagnóstico 8 funcionários sem batidas 03/2026
+**Data:** 2026-05-06
+**Branch:** feature/people-management-reorganization
+
+### Contexto
+Em §102, o `collect_time_sheets()` gerou folha_ponto para 43/51 registros de `ged_kit_documents`
+em 03/2026. Os 8 restantes ficaram com `file_path IS NULL` por terem zero batidas.
+Este §110 identifica e classifica esses 8.
+
+### Os 8 funcionários
+
+| # | Nome | Matrícula | Cargo | Status | Admissão | Batidas históricas |
+|---|------|-----------|-------|--------|----------|-------------------|
+| 1 | ANDREW COSTA VASCONCELOS | 000161 | Agente de Serviços Gerais | inativo | 2026-01-19 | 0 |
+| 2 | CARLOS ALBERTO ASSIS DE LIMA | 183 | Artífice | inativo | 2025-12-08 | 0 |
+| 3 | GELSON BERNARDO LIMA | 178 | Agente de Portaria | inativo | 2025-12-08 | 0 |
+| 4 | JEFFERSON DA SILVA BATISTA | 000182 | Agente de Portaria | inativo | 2026-01-19 | 0 |
+| 5 | JORDANA BACRY PIRES | 179 | Agente de Portaria | inativo | 2025-12-08 | 0 |
+| 6 | JÚLIO CÉSAR ASSIS SANTOS | 000185 | Agente de Portaria | inativo | 2026-01-19 | 0 |
+| 7 | ORLAILSON PAIVA PEREIRA | 000192 | Líder de Portaria | inativo | 2026-01-19 | 0 |
+| 8 | ROBERTO PEREIRA MENEZES | 000196 | Agente de Portaria | inativo | 2026-01-19 | 0 |
+
+### Classificação
+**Categoria: Ex-funcionários desligados antes de registrar ponto**
+
+Evidências:
+- Todos têm `status = inativo` no banco (sincronizado via Sólides)
+- Nenhum tem `data_desligamento` registrado (campo não capturado pelo conector Sólides)
+- Zero batidas em TODA a história — não apenas em 03/2026
+- Todos têm `solides_id` preenchido (originam do Sólides)
+- Nenhum consta em `termination_processes`, `solides_absences` ou `sst_afastamentos`
+
+**Diagnóstico:** Foram admitidos em Dez/2025–Jan/2026, desligados pelo Sólides antes de
+registrar qualquer ponto no sistema. Os kit_documents em 03/2026 existem porque foram
+gerados retrospectivamente (kit GEDEON Bloco C — seed automático 2026-04-22) e não
+houve filtro por `status = ativo` na query de coleta.
+
+### Ação necessária
+- **Nenhuma** do ponto de vista de folha (file_path NULL é correto — sem batidas, sem folha)
+- **Melhoria futura (opcional):** filtrar `e.status = 'ativo'` em `collect_time_sheets()` para não
+  gerar registros de `ged_kit_documents.document_type = 'folha_ponto'` para inativos
+- **Dado faltante:** campo `data_desligamento` não é sincronizado do Sólides — considerar
+  capturar em próxima versão do conector
+
+### Verificação cruzada confirmada
+- 45 funcionários `ativo` em 03/2026 → 43 com batidas → 2 sem batidas no período
+  mas com batidas em outros meses (correto — escalas específicas)
+- Os 8 `inativo` têm 0 batidas históricas: **desligados antes de usar o REP**
