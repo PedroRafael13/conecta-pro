@@ -567,6 +567,24 @@ def auto_categorizar_colaborador(
     return svc.auto_categorizar_colaborador(nome, mes_ref, apenas_sem_categoria)
 
 
+@router.post("/categorias/auto-processar", status_code=200)
+def auto_processar_categorias(
+    mes_ref: str | None = Query(
+        None, description="Mês opcional — formato YYYY-MM. Sem valor: todos os meses com confiança < 0.8"
+    ),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_sync_db_dependency),
+):
+    """
+    Auto-processa categorização de transações Inter com confiança < 0.8.
+    Respeita INV-4: não toca em transações com confiança >= 0.8.
+    """
+    from modules.integrations.inter.services.categorizacao_service import InterCategorizacaoService
+
+    svc = InterCategorizacaoService(db)
+    return svc.auto_processar(mes_ref=mes_ref)
+
+
 @router.get("/categorias/stats")
 def stats_categorias(
     mes_ref: str = Query(..., description="Mês de referência — formato MM.YYYY"),
