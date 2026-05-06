@@ -110,12 +110,87 @@ def run_async(coro):
     return loop.run_until_complete(coro)
 
 
+def _fetch_tangerino_lookup_maps(api_token: str) -> tuple[dict, dict]:
+    """Busca job-roles e work-schedules da API Tangerino para lookup por ID.
+
+    Retorna:
+        job_roles_map: {id: description} para resolver jobRoleDTO.id → nome cargo
+        schedules_map: {id: name} para resolver currentWorkSchedule.id → nome escala
+    """
+    import requests
+
+    job_roles_map: dict = {}
+    schedules_map: dict = {}
+    if not api_token:
+        return job_roles_map, schedules_map
+
+    headers = {"Authorization": f"Basic {api_token}", "Accept": "application/json"}
+    base = "https://employer.tangerino.com.br"
+
+    try:
+        resp = requests.get(f"{base}/job-role/find-all", headers=headers, timeout=15)
+        if resp.status_code == 200:
+            data = resp.json()
+            items = data.get("content", data) if isinstance(data, dict) else data
+            for jr in (items if isinstance(items, list) else []):
+                if jr.get("id"):
+                    job_roles_map[jr["id"]] = jr.get("description", "")
+    except Exception as exc:
+        logger.warning("[Solides] Erro ao buscar job-roles: %s", exc)
+
+    try:
+        resp = requests.get(f"{base}/work-schedule", params={"size": 200}, headers=headers, timeout=15)
+        if resp.status_code == 200:
+            data = resp.json()
+            items = data.get("content", data) if isinstance(data, dict) else data
+            for ws in (items if isinstance(items, list) else []):
+                if ws.get("id"):
+                    schedules_map[ws["id"]] = ws.get("name", "")
+    except Exception as exc:
+        logger.warning("[Solides] Erro ao buscar work-schedules: %s", exc)
+
+    logger.info("[Solides] Lookup maps: %d job-roles, %d schedules", len(job_roles_map), len(schedules_map))
+    return job_roles_map, schedules_map
+
+
+def _resolve_escala(schedule_name: str) -> str:
+    """Converte nome de escala Tangerino para código padronizado (max 20 chars).
+
+    Retorna "" se o padrão não for reconhecido (evita StringDataRightTruncation).
+    """
+    if not schedule_name:
+        return ""
+    s = schedule_name.upper()
+    if "12" in s and "36" in s:
+        return "12x36"
+    if "24" in s and "72" in s:
+        return "24x72"
+    if "44" in s or "8H" in s or "8 H" in s:
+        return "44h"
+    if "36" in s and "H" in s:
+        return "36h"
+    if "30" in s:
+        return "30h"
+    if "COMERCIAL" in s or "ESCRIT" in s:
+        return "44h"
+    # Turnos de portaria (diurno/noturno) sem identificação de horas = 12x36
+    if "PORTARIA" in s or "DIURNO" in s or "NOTURNO" in s:
+        return "12x36"
+    # Não reconhecido: não atualizar (evita truncamento em varchar(20))
+    return ""
+
+
 def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
     """Propaga dados do Sólides para tabela employees (por CPF).
 
-    Atualiza campos pessoais (nascimento, sexo, PIS, admissao, solides_id, cargo).
-    Propaga terminationDate → data_demissao + status='inativo' imediatamente.
-    Inativa (com data_demissao=CURRENT_DATE) funcionarios que desapareceram do Solides.
+    Campos sincronizados (disponíveis na API Tangerino /employee/find-all):
+      data_nascimento, sexo, pis, data_admissao, solides_id, nome,
+      matricula (via externalId), cargo (via jobRoleDTO.id),
+      escala_padrao (via currentWorkSchedule.id), data_demissao/status.
+
+    Campos NÃO disponíveis na API Tangerino (requerem entrada manual):
+      estado_civil, nome_mae, nome_pai, rg, ctps_*, titulo_eleitor,
+      naturalidade, nacionalidade, telefone, celular, endereço.
 
     Returns:
         Dict com estatisticas de propagacao.
@@ -128,6 +203,10 @@ def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
     if not db_url:
         logger.warning("[Solides] DATABASE_URL nao configurado, pulando propagacao")
         return {"propagated": 0, "error": "no_db_url"}
+
+    # Pre-fetch lookup maps para cargo e escala
+    api_token = os.getenv("SOLIDES_API_TOKEN", "")
+    job_roles_map, schedules_map = _fetch_tangerino_lookup_maps(api_token)
 
     engine = create_engine(db_url)
     updated = 0
@@ -172,7 +251,7 @@ def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
                 except Exception:
                     pass
 
-            # Gender (varchar(1))
+            # Gender (varchar(1)) — API retorna "MASCULINO"/"FEMININO"
             gender = emp.get("gender", "")
             sexo = None
             if "FEM" in gender.upper():
@@ -183,6 +262,39 @@ def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
             pis = (emp.get("pis", "") or "")[:20]
             sid = str(emp.get("id", ""))
             name = emp.get("name", "")
+
+            # Matricula via externalId (API retorna "000206" → armazenar "206")
+            external_id = (emp.get("externalId") or "").strip()
+            matricula = None
+            if external_id:
+                try:
+                    matricula = str(int(external_id))
+                except ValueError:
+                    matricula = external_id[:20]
+
+            # Cargo via jobRoleDTO.id → job_roles_map (corrige bug: API usa jobRoleDTO, não jobRole)
+            job_role_dto = emp.get("jobRoleDTO", {})
+            job_role_id = job_role_dto.get("id") if isinstance(job_role_dto, dict) else None
+            cargo_nome = job_roles_map.get(job_role_id, "") if job_role_id else ""
+            # Fallback para campo legado (webhook/outros paths)
+            if not cargo_nome:
+                legacy = emp.get("jobRole", {})
+                if isinstance(legacy, dict):
+                    cargo_nome = legacy.get("name", "") or legacy.get("description", "")
+                elif isinstance(legacy, str):
+                    cargo_nome = legacy
+
+            # Escala via currentWorkSchedule.id → schedules_map (corrige bug: API usa currentWorkSchedule)
+            ws_dto = emp.get("currentWorkSchedule", {})
+            ws_id = ws_dto.get("id") if isinstance(ws_dto, dict) else None
+            schedule_name = schedules_map.get(ws_id, "") if ws_id else ""
+            # Fallback para campo legado
+            if not schedule_name:
+                legacy_ws = emp.get("workSchedule") or emp.get("work_schedule") or {}
+                if isinstance(legacy_ws, dict):
+                    schedule_name = legacy_ws.get("name", "") or legacy_ws.get("description", "")
+                elif isinstance(legacy_ws, str):
+                    schedule_name = legacy_ws
 
             sets = []
             params = {"cpf": cpf}
@@ -204,18 +316,12 @@ def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
             if name:
                 sets.append("nome = :nome")
                 params["nome"] = name
-
-            # Parse jobRole / cargo do Sólides
-            cargo_solides = emp.get("jobRole", {})
-            if isinstance(cargo_solides, dict):
-                cargo_nome = cargo_solides.get("name", "")
-            elif isinstance(cargo_solides, str):
-                cargo_nome = cargo_solides
-            else:
-                cargo_nome = ""
+            if matricula:
+                sets.append("matricula = :mat")
+                params["mat"] = matricula
             if cargo_nome:
                 sets.append("cargo = :cargo")
-                params["cargo"] = cargo_nome[:100]
+                params["cargo"] = cargo_nome[:100].upper()
 
             if termination:
                 sets.append("data_demissao = :td")
@@ -223,30 +329,8 @@ def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
                 sets.append("status = :st")
                 params["st"] = "inativo"
 
-            # Escala de trabalho (workSchedule)
-            work_schedule_data = emp.get("workSchedule") or emp.get("work_schedule") or {}
-            if isinstance(work_schedule_data, dict):
-                schedule_name = work_schedule_data.get("name", "") or work_schedule_data.get("description", "")
-            elif isinstance(work_schedule_data, str):
-                schedule_name = work_schedule_data
-            else:
-                schedule_name = ""
-
-            if schedule_name:
-                sched_upper = schedule_name.upper()
-                if "12" in sched_upper and "36" in sched_upper:
-                    escala = "12x36"
-                elif "44" in sched_upper or "8H" in sched_upper or "8 H" in sched_upper:
-                    escala = "44h"
-                elif "36" in sched_upper and "H" in sched_upper:
-                    escala = "36h"
-                elif "30" in sched_upper:
-                    escala = "30h"
-                elif "24" in sched_upper and "72" in sched_upper:
-                    escala = "24x72"
-                else:
-                    escala = schedule_name[:30]  # Usar nome original truncado
-
+            escala = _resolve_escala(schedule_name)
+            if escala:
                 sets.append("escala_padrao = :escala")
                 params["escala"] = escala
 

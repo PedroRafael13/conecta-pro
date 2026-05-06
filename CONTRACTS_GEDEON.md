@@ -5590,3 +5590,48 @@ permanecem a 0% por ausência de dados fonte:
 **Tipos corrigidos via HERMES fix:** contracheque (recibo_folha) + dctfweb_extrato (4 sub-tipos)
 **Slots preenchidos:** 0 imediatos (April Onvio sync pendente); fix estrutural para próximas sincronizações
 **Estado:** March kit: 14/14 gedeon slots preenchidos ✅ | April kit: 0/511 aguarda sync 04.2026
+
+## §118 bis — Matching fuzzy HERMES bulk
+**Data:** 2026-05-06
+**Antes:** 41/615 vinculados (sem_funcionario: 408)
+**Depois:** 44/615 vinculados (sem_funcionario: 399)
+**Completude GED:** 26.8% → 27.0%
+**Técnicas aplicadas:**
+- Strip prefixo CPF numérico (regex `^[\d\s./\-]+`)
+- Normalização de acentos em Python (NFKD) — `unaccent` não instalado no DB
+- Descarte de pessoas jurídicas por token-set (LTDA, POSTO, CEF, etc.)
+- Estratégia 1: primeiro+último nome (in-memory, normalizado)
+- Estratégia 2: interseção de palavras ≥2 comuns e score ≥0.5
+**Nomes que ainda não matcheiam (399):**
+- Beneficiários externos (prestadores, postos, empresas) sem cadastro em `employees`
+- Nomes com CPF prefix cujo funcionário não está na tabela (Eliziel, Francisco Ediney, etc.)
+- Limite intransponível: matching só resolve nomes que JÁ EXISTEM em `employees`
+
+## §121 — Geração folhas de ponto via endpoint 2026-05-06
+**Data:** 2026-05-06
+
+### Resultado STEP 1 — Batidas de abril
+`gp_clock_punches` tem **zero batidas em abril/2026**.
+O banco possui apenas março/2026 (1.830 batidas, 43 funcionários).
+Por INV-2 (não criar batidas falsas) e INV-3, a geração de PDFs de abril é impossível.
+
+### Endpoint real
+- Prompt: `POST /api/v1/dp/ponto/gerar-folha` → **404 Not Found**
+- Endpoint real: `POST /api/v1/people-management/ponto/folha-pdf/{employee_id}?mes_ref=MM.YYYY`
+- Sem rota de geração em batch (`todos=true` não existe)
+
+### Ação executada
+Geradas folhas de ponto de **março/2026** para todos os 43 funcionários com batidas.
+- **43 HTMLs gerados**, 0 erros
+- Salvos em `/app/uploads/ponto/{employee_id}/03.2026/FolhaPonto_03.2026_*.html`
+- Os 43 slots `folha_ponto` de março já tinham `file_path` (set pelo kit_builder_service)
+
+### Estado dos slots GED após geração
+| Mês | document_type | com_pdf | sem_pdf |
+|-----|---------------|---------|---------|
+| 2026-03-01 | folha_ponto | 43 | 8 (employees inativo — §110) |
+| 2026-04-01 | folha_ponto + folhas_ponto | 0 | 104 (zero batidas no banco) |
+
+### Pendência Jordan
+Para gerar folhas de abril: importar batidas do REP/leitor biométrico para `gp_clock_punches`.
+Sem dados de ponto, nenhum PDF pode ser gerado (INV-2).
