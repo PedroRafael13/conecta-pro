@@ -5490,3 +5490,13 @@ Queries adaptadas para JOIN correto.
 - Condomínio Villa dos Pássaros
 - Portaria Principal - Mirante das Flores
 - Residencial Laranjeiras Village
+
+## §116 — Criação alocações 6 CLTs ativos 2026-05-06
+**Autorizado por:** Jordan Jesus (CEO)
+**Alocações criadas:**
+- Daniel Vidal Larroque (198) → Ideal Flores
+- Geilson Rodrigues de Andrade (201) → Ideal Flores
+- Jonhata Diniz Benaion (189) → Ideal Flores
+- Livia Carise Pereira Consentine (200) → Ideal Flores
+- Rilem Ferreira de Souza (199) → Prime Arena
+- Fernando Souza Simplicio Junior (188) → Villa dos Pássaros
