@@ -5725,3 +5725,32 @@ estado_civil, nome_mae, nome_pai, rg, ctps_*, titulo_eleitor, naturalidade, naci
 
 **Completude média (10 campos eSocial): 43% → 68,7%**
 **Campos críticos ausentes (rg, ctps, nome_mae): requerem importação manual ou fonte alternativa**
+
+## §122 — SolidesBenefitService — pedidos VT/VA → kit GED
+**Data:** 2026-05-06
+**Branch:** feature/people-management-reorganization
+**Commits:** `c833a2a3` (feat §122)
+
+### Identificação Inter
+- Contraparte: SOLIDES / SWAP IP S.A.
+- CNPJ: 10.461.302/0001-10
+- Tipo: PIX lump-sum (debit, counterpart_name ILIKE '%solides%')
+
+### Tabelas criadas
+- `solides_benefit_orders` — pedidos VT/VA (order_number UNIQUE, inter_transaction_id FK)
+- `solides_benefit_order_items` — itens por funcionário (employee_id FK, kit_document_id FK)
+
+### Resultados
+- API Sólides (Tangerino): endpoint benefit-orders **não exposto** (todos os 6 endpoints → 404)
+- Pedidos sincronizados via fallback Inter: **30**
+- Itens vinculados ao kit: **0** (sem breakdown por CPF — API não fornece)
+- Completude GED: **27.0% → 27.0%** (sem alteração — requer upload relatório Sólides)
+
+### Endpoints
+- `POST /api/v1/integrations/solides/beneficios/sync` → sync + match Inter
+- `POST /api/v1/integrations/solides/beneficios/vincular-kits` → vincula slots kit por CPF
+
+### Limitações documentadas
+- API Sólides não expõe endpoint de benefit-orders (§122, INV-4)
+- Breakdown por funcionário requer upload manual de relatório Sólides (PDF/CSV)
+- `solides_benefit_order_items` permanece vazio até enriquecimento externo
