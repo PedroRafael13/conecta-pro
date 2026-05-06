@@ -5580,3 +5580,13 @@ permanecem a 0% por ausência de dados fonte:
 - `solides_sync_log`: zero syncs em abril
 
 **Arquivo:** `/opt/conecta-pro/RELATORIO_AUDITORIA_ABRIL_IDEAL_FLORES_20260506.csv`
+
+## §119 — Fix slots gedeon file_path=NULL
+**Data:** 2026-05-06
+**Causa raiz:**
+1. `recibo_folha` (doc_scope=condominio) não estava em `MAPA_TIPOS_ONVIO_EMPRESA` do HERMES → sempre ignorado
+2. `dctfweb_creditos/debitos/resumo_*` mapeados para tipos inexistentes (ex: `dctfweb_creditos`) em vez de `dctfweb_extrato`
+3. April 2026 kit: 511 slots null aguardam onvio_documents 04.2026 (folha/recibo/dctfweb/fgts) — sync ainda não executado
+**Tipos corrigidos via HERMES fix:** contracheque (recibo_folha) + dctfweb_extrato (4 sub-tipos)
+**Slots preenchidos:** 0 imediatos (April Onvio sync pendente); fix estrutural para próximas sincronizações
+**Estado:** March kit: 14/14 gedeon slots preenchidos ✅ | April kit: 0/511 aguarda sync 04.2026
