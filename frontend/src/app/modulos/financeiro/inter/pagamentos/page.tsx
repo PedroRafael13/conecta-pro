@@ -603,6 +603,17 @@ export default function PagamentosPage() {
     },
   });
 
+  const autoProcessarMutation = useMutation({
+    mutationFn: () => apiFetch(
+      `${API_CAT}/categorias/auto-processar${catMes ? `?mes_ref=${catMes}` : ""}`,
+      { method: "POST" },
+    ),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["inter-cat-txs", catNomeBusca, catMes] });
+      void qc.invalidateQueries({ queryKey: ["inter-cat-stats", catMes] });
+    },
+  });
+
   const categorizarMutation = useMutation({
     mutationFn: ({ id, categoria, observacao }: { id: string; categoria: Categoria; observacao?: string }) =>
       apiFetch(`${API_CAT}/transacoes/${id}/categorizar`, {
@@ -829,6 +840,13 @@ export default function PagamentosPage() {
                 {autoCatMutation.isPending ? "Processando..." : "Auto-Categorizar"}
               </button>
               <button
+                onClick={() => autoProcessarMutation.mutate()}
+                disabled={autoProcessarMutation.isPending}
+                className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-700 disabled:opacity-50"
+              >
+                {autoProcessarMutation.isPending ? "Processando..." : "Auto-Categorizar Todos"}
+              </button>
+              <button
                 onClick={() => void qc.invalidateQueries({ queryKey: ["inter-cat-stats", catMes] })}
                 disabled={catLoading}
                 className="border border-gray-300 px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
@@ -836,6 +854,12 @@ export default function PagamentosPage() {
                 Atualizar Stats
               </button>
             </div>
+
+            {autoProcessarMutation.isSuccess && autoProcessarMutation.data && (
+              <p className="text-sm text-green-600 mt-2">
+                ✓ {(autoProcessarMutation.data as { categorizadas: number }).categorizadas} transações categorizadas automaticamente
+              </p>
+            )}
 
             {catError && (
               <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">
