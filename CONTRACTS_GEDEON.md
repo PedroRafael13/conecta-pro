@@ -5128,3 +5128,11 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 **Arquivo:** backend/modules/integrations/connectors/solides/tasks.py + sync_service.py
 **Validação:** sync triggered → solides_sync_log: status=completed, duration_ms=3853, items_processed=89, items_created=45
 **Hot-copy:** conecta-pro-backend + conecta-pro-celery-integrations (+ SIGHUP em ambos)
+
+## §108 — Diagnóstico TenantStatus.INATIVO nos testes
+**Data:** 2026-05-06
+**Arquivos:** tests/test_config_service.py, tests/test_config_model.py
+**Diagnóstico:** TenantStatus.INATIVO reportado como inválido no diagnóstico anterior — FALSO POSITIVO.
+**Enum real:** ATIVO/INATIVO/SUSPENSO/BLOQUEADO/TRIAL/CANCELADO — INATIVO = "inactive" existe em produção.
+**Causa do falso positivo:** grep com head -20 truncou antes de exibir a definição da classe.
+**Testes:** 71/71 PASS — nenhuma alteração necessária.
